@@ -5,13 +5,15 @@ i.e:
 
 ```python
 import pytest
-from strawberry.channels.testing import GqlWsCommunicator
+from strawberry.channels.testing import GraphQLWebsocketCommunicator
 from myapp.asgi import application
 
 
 @pytest.fixture
 async def gql_communicator():
-    async with GqlWsCommunicator(application=application, path="/graphql") as client:
+    async with GraphQLWebsocketCommunicator(
+        application=application, path="/graphql"
+    ) as client:
         yield client
 
 

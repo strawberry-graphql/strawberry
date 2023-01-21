@@ -348,12 +348,12 @@ installed_
 from channels.testing import WebsocketCommunicator
 import pytest
 from myapp.asgi import application  # your channels asgi
-from strawberry.channels.testing import GqlWsCommunicator
+from strawberry.channels.testing import GraphQLWebsocketCommunicator
 
 
 @pytest.fixture
-async def gql_communicator() -> GqlWsCommunicator:
-    client = GqlWsCommunicator(application=application, path="/graphql")
+async def gql_communicator() -> GraphQLWebsocketCommunicator:
+    client = GraphQLWebsocketCommunicator(application=application, path="/graphql")
     await client.gql_init()
     yield client
     await client.disconnect()

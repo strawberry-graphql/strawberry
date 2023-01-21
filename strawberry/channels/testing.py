@@ -15,7 +15,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
 from strawberry.types import ExecutionResult
 
 
-class GqlWsCommunicator(WebsocketCommunicator):
+class GraphQLWebsocketCommunicator(WebsocketCommunicator):
     """
     Usage:
     ```python
@@ -54,7 +54,7 @@ class GqlWsCommunicator(WebsocketCommunicator):
         )
         super().__init__(application, path, headers, subprotocols)
 
-    async def __aenter__(self) -> "GqlWsCommunicator":
+    async def __aenter__(self) -> "GraphQLWebsocketCommunicator":
         await self.gql_init()
         return self
 

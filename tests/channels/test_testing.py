@@ -1,7 +1,7 @@
 import pytest
 
 from strawberry.channels.handlers.ws_handler import GraphQLWSConsumer
-from strawberry.channels.testing import GqlWsCommunicator
+from strawberry.channels.testing import GraphQLWebsocketCommunicator
 
 from .schema import schema
 
@@ -10,7 +10,9 @@ application = GraphQLWSConsumer.as_asgi(schema=schema, keep_alive_interval=50)
 
 @pytest.fixture
 async def communicator():
-    async with GqlWsCommunicator(application=application, path="/graphql") as client:
+    async with GraphQLWebsocketCommunicator(
+        application=application, path="/graphql"
+    ) as client:
         yield client
 
 
