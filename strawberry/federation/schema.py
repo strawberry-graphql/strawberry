@@ -3,6 +3,8 @@ from copy import copy
 from functools import partial
 from itertools import chain
 from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
+import inspect
+import asyncio
 
 from graphql import ExecutionContext as GraphQLExecutionContext
 from graphql import (
@@ -29,6 +31,19 @@ from strawberry.utils.inspect import get_func_args
 from ..printer import print_schema
 from ..schema import Schema as BaseSchema
 from ..schema.config import StrawberryConfig
+
+
+def create_catch_GraphQLError(get_result, definition):
+    def catch_GraphQLError(representation):
+        try:
+            result = get_result(representation)
+        except Exception as e:
+            result = GraphQLError(
+                f"Unable to resolve reference for {definition.origin}",
+                original_error=e,
+            )
+        return result
+    return catch_GraphQLError
 
 
 class Schema(BaseSchema):
@@ -150,7 +165,7 @@ class Schema(BaseSchema):
         self._schema.query_type = query_type
         self._schema.type_map[query_type.name] = query_type
 
-    def entities_resolver(self, root, info, representations):
+    def _entities_resolver(self, root, info, representations):
         results = []
 
         for representation in representations:
@@ -197,6 +212,137 @@ class Schema(BaseSchema):
             results.append(result)
 
         return results
+
+    def entities_resolver(self, root, info, representations):
+        results = []
+        type_dict = {}
+        for index, representation in enumerate(representations):
+            type_name = representation.pop("__typename")
+            type_ = self.schema_converter.type_map[type_name]
+            type_row = type_dict.get(type_name, None)
+            if type_row is None:
+                type_row = {
+                    'type': type_, 
+                    'questions': [],
+                    'indexes': [],
+                    'results': [],
+                    'lazy': False,
+                    'get_result': lambda item: None
+                }
+                type_dict[type_name] = type_row
+                definition = cast(TypeDefinition, type_.definition)
+                key_names = list(representation.keys())
+                #key_values = list(representation.values())
+                if hasattr(definition.origin, "resolve_references") and (len(key_names) == 1):
+                    key_name = key_names[0]
+                    type_row['lazy'] = True
+                    #type_row['solved'] = False
+
+                    resolve_references = definition.origin.resolve_references
+
+                    func_args = get_func_args(resolve_references)
+
+                    def get_result_func(_, type_row=type_row, key_name=key_name, resolve_references=resolve_references, func_args=func_args):
+                        key_values = type_row['questions']
+                        kwargs = {}
+                        kwargs[key_name] = list(map(lambda item: item[key_name], key_values))
+                        # TODO: use the same logic we use for other resolvers
+                        if "info" in func_args:
+                            kwargs["info"] = info
+                        return resolve_references(**kwargs)
+
+                    if key_name not in func_args:
+                        def get_result(_, type_row=type_row, definition=definition, key_names=key_names):
+                            result = GraphQLError(
+                                f"Got confused while trying use resolve_references for {definition.origin}. Resolver resolve_references has not a prameter {key_names[0]}"
+                                )
+                            return [result] * len(type_row['questions'])
+                    #get_result = partial(resolve_references, **kwargs)
+                    else:
+                        get_result = create_catch_GraphQLError(get_result_func, definition)
+                    type_row['get_result'] = get_result
+                elif hasattr(definition.origin, "resolve_reference"):
+                    type_row['lazy'] = False
+
+                    resolve_reference = definition.origin.resolve_reference
+
+                    func_args = get_func_args(resolve_reference)
+
+                    # TODO: use the same logic we use for other resolvers
+                    if "info" in func_args:
+                        def get_result_func(representation, resolve_reference=resolve_reference, info=info):
+                            return resolve_reference(info=info, **representation)
+                    else:
+                        def get_result_func(representation, resolve_reference=resolve_reference):
+                            return resolve_reference(**representation)
+
+                    type_row['get_result'] = create_catch_GraphQLError(get_result_func, definition)
+                else:
+                    from strawberry.arguments import convert_argument
+
+                    type_row['lazy'] = False
+                    strawberry_schema = info.schema.extensions["strawberry-definition"]
+                    config = strawberry_schema.config
+                    scalar_registry = strawberry_schema.schema_converter.scalar_registry
+
+                    def create_get_result(convert_argument,
+                        type_,
+                        scalar_registry,
+                        config):
+                        def get_result(representation):
+                            result = convert_argument(representation, 
+                                type_=type_,
+                                scalar_registry=scalar_registry,
+                                config=config)
+                            return result
+                        return get_result
+
+                        # return partial(
+                        #     convert_argument,
+                        #     representation,
+                        #     type_=definition.origin,
+                        #     scalar_registry=scalar_registry,
+                        #     config=config,
+                        # )
+                    get_result = create_get_result(convert_argument, type_=definition.origin, scalar_registry=scalar_registry,
+                        config=config)
+                    type_row['get_result'] = create_catch_GraphQLError(get_result, definition)
+            type_row['indexes'].append(index)
+            type_row['questions'].append(representation)
+
+
+        async def awaitable_wrapper(index, row):
+            semaphore = row['semaphore']
+            list_of_indexes = row['indexes']
+            index_of = list_of_indexes.index(index)
+            async with semaphore:
+                list_of_results = row['results']
+                if inspect.isawaitable(list_of_results):
+                    list_of_results = await list_of_results
+                    row['results'] = list_of_results
+                single_result = list_of_results[index_of]
+            return single_result
+
+        indexed_results = []
+        for entity_name, row in type_dict.items():
+            if row['lazy']:
+                row['semaphore'] = asyncio.BoundedSemaphore(1)
+
+                get_result = row['get_result']
+                result = get_result(None)
+                row['results'] = result
+                current_indexed_results = [(index, awaitable_wrapper(index, row)) for index in row['indexes']]
+                indexed_results.extend(current_indexed_results)
+            else:
+                get_result = row['get_result']
+                row['results'] = [get_result(item) for item in row['questions']]
+                current_indexed_results = [(index, result) for index, result in zip(row['indexes'], row['results'])]
+                indexed_results.extend(current_indexed_results)
+
+        indexed_results.sort(key=lambda a: a[0])
+        results = list(map(lambda item: item[1], indexed_results))
+        return results
+
 
     def _add_scalars(self):
         self.Any = GraphQLScalarType("_Any")
