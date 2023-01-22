@@ -198,6 +198,7 @@ class Schema(BaseSchema):
                     func_args = get_func_args(resolve_references)
 
                     if key_name not in func_args:
+
                         def get_result(
                             representation,
                             type_row=type_row,
@@ -212,8 +213,10 @@ class Schema(BaseSchema):
                                 f" {definition.origin}. "
                                 "Resolver resolve_references has not a prameter"
                                 f" {key_names[0]}"
-                            )                           
+                            )
+
                     else:
+
                         def get_result_func(
                             representation,
                             type_row=type_row,

@@ -448,6 +448,7 @@ async def test_got_confused_resolve_references():
         "Got confused while trying use resolve_references for"
     )
 
+
 async def test_info_param_in_resolve_references():
     used_resolve_references = False
 
