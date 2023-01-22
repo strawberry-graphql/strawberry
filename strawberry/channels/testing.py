@@ -2,6 +2,7 @@ import dataclasses
 import uuid
 from typing import AsyncIterator, Dict, List, Optional, Tuple, Union
 
+from asgiref.typing import ASGIApplication
 from graphql import GraphQLError
 
 from channels.testing.websocket import WebsocketCommunicator
@@ -40,7 +41,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
 
     def __init__(
         self,
-        application,
+        application: ASGIApplication,
         path: str,
         headers: Optional[List[Tuple[bytes, bytes]]] = None,
         subprotocols: Optional[List[str]] = None,
