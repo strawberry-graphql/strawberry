@@ -296,3 +296,154 @@ async def test_can_use_async_resolve_reference_multiple_representations():
     assert not result.errors
 
     assert result.data == {"_entities": [{"upc": "B00005N5PF"}, {"upc": "B00005N5PG"}]}
+
+
+async def test_can_use_sync_resolve_references_multiple_representations():
+    used_resolve_references = False
+
+    @strawberry.federation.type(keys=["upc"])
+    class Product:
+        upc: str
+
+        @classmethod
+        def resolve_reference(cls, upc: str):
+            return Product(upc=upc)
+
+        @classmethod
+        def resolve_references(cls, upc: typing.List[str]):
+            nonlocal used_resolve_references
+            used_resolve_references = True
+            return [Product(upc=upc_item) for upc_item in upc]
+
+    @strawberry.federation.type(extend=True)
+    class Query:
+        @strawberry.field
+        def top_products(self, first: int) -> typing.List[Product]:
+            return []
+
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+
+    query = """
+        query ($representations: [_Any!]!) {
+            _entities(representations: $representations) {
+                ... on Product {
+                    upc
+                }
+            }
+        }
+    """
+
+    result = await schema.execute(
+        query,
+        variable_values={
+            "representations": [
+                {"__typename": "Product", "upc": "B00005N5PF"},
+                {"__typename": "Product", "upc": "B00005N5PG"},
+            ]
+        },
+    )
+
+    assert not result.errors
+    assert used_resolve_references
+    assert result.data == {"_entities": [{"upc": "B00005N5PF"}, {"upc": "B00005N5PG"}]}
+
+
+async def test_can_use_async_resolve_references_multiple_representations():
+    used_resolve_references = False
+
+    @strawberry.federation.type(keys=["upc"])
+    class Product:
+        upc: str
+
+        @classmethod
+        async def resolve_reference(cls, upc: str):
+            return Product(upc=upc)
+
+        @classmethod
+        async def resolve_references(cls, upc: typing.List[str]):
+            nonlocal used_resolve_references
+            used_resolve_references = True
+            return [Product(upc=upc_item) for upc_item in upc]
+
+    @strawberry.federation.type(extend=True)
+    class Query:
+        @strawberry.field
+        def top_products(self, first: int) -> typing.List[Product]:
+            return []
+
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+
+    query = """
+        query ($representations: [_Any!]!) {
+            _entities(representations: $representations) {
+                ... on Product {
+                    upc
+                }
+            }
+        }
+    """
+
+    result = await schema.execute(
+        query,
+        variable_values={
+            "representations": [
+                {"__typename": "Product", "upc": "B00005N5PF"},
+                {"__typename": "Product", "upc": "B00005N5PG"},
+            ]
+        },
+    )
+
+    assert not result.errors
+    assert used_resolve_references
+    assert result.data == {"_entities": [{"upc": "B00005N5PF"}, {"upc": "B00005N5PG"}]}
+
+
+async def test_got_confused_resolve_references():
+    used_resolve_references = False
+
+    @strawberry.federation.type(keys=["upc"])
+    class Product:
+        upc: str
+
+        @classmethod
+        async def resolve_reference(cls, upc: str):
+            return Product(upc=upc)
+
+        @classmethod
+        async def resolve_references(cls, upcs: typing.List[str]):
+            nonlocal used_resolve_references
+            used_resolve_references = True
+            return [Product(upc=upc_item) for upc_item in upcs]
+
+    @strawberry.federation.type(extend=True)
+    class Query:
+        @strawberry.field
+        def top_products(self, first: int) -> typing.List[Product]:
+            return []
+
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+
+    query = """
+        query ($representations: [_Any!]!) {
+            _entities(representations: $representations) {
+                ... on Product {
+                    upc
+                }
+            }
+        }
+    """
+
+    result = await schema.execute(
+        query,
+        variable_values={
+            "representations": [
+                {"__typename": "Product", "upc": "B00005N5PF"},
+                {"__typename": "Product", "upc": "B00005N5PG"},
+            ]
+        },
+    )
+
+    assert result.errors
+    assert result.errors[0].message.startswith(
+        "Got confused while trying use resolve_references for"
+    )
