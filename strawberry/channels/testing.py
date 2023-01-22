@@ -10,6 +10,8 @@ from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     ConnectionAckMessage,
     ConnectionInitMessage,
+    ErrorMessage,
+    NextMessage,
     SubscribeMessage,
     SubscribeMessagePayload,
 )
@@ -82,13 +84,14 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         while True:
             response = await self.receive_json_from(timeout=5)
             message_type = response["type"]
-            if message_type == "next":
-                payload = response["payload"]
+            if message_type == NextMessage.type:
+                payload = NextMessage(**response).payload
                 ret = ExecutionResult(None, None)
                 for field in dataclasses.fields(ExecutionResult):
                     setattr(ret, field.name, payload.get(field.name, None))
                     yield ret
-            elif message_type == "error":
+            elif message_type == ErrorMessage.type:
+                payload = ErrorMessage(**response).payload
                 yield ExecutionResult(
                     data=None,
                     errors=[
@@ -96,7 +99,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
                             message=message["message"],
                             extensions=message.get("extensions", None),
                         )
-                        for message in response["payload"]
+                        for message in payload
                     ],
                 )
             else:
