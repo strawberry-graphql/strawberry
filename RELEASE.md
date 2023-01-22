@@ -1,6 +1,6 @@
 Release type: patch
 
-Add `GqlWsCommunicator` for testing websockets on channels.
+Add `GraphQLWebsocketCommunicator` for testing websockets on channels.
 i.e:
 
 ```python
