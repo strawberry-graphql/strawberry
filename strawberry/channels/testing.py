@@ -20,7 +20,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
     Usage:
     ```python
     import pytest
-    from strawberry.channels.testing import GqlWsCommunicator
+    from strawberry.channels.testing import GraphQLWebsocketCommunicator
     from myapp.asgi import application
 
 
