@@ -6,14 +6,6 @@ from typing import Any, Callable, Optional, Tuple, Type, cast
 
 from .exception import StrawberryException, UnableToFindExceptionSource
 
-original_exception_hook = sys.excepthook
-
-
-if sys.version_info >= (3, 8):
-    original_threading_exception_hook = threading.excepthook
-else:
-    original_threading_exception_hook = None
-
 ExceptionHandler = Callable[
     [Type[BaseException], BaseException, Optional[TracebackType]], None
 ]
@@ -44,11 +36,11 @@ def _get_handler(exception_type: Type[BaseException]) -> ExceptionHandler:
                 # we check if weren't able to find the exception source
                 # in that case we fallback to the original exception handler
                 except UnableToFindExceptionSource:
-                    original_exception_hook(exception_type, exception, traceback)
+                    sys.__excepthook__(exception_type, exception, traceback)
 
             return _handler
 
-    return original_exception_hook
+    return sys.__excepthook__
 
 
 def strawberry_exception_handler(
@@ -76,7 +68,7 @@ def strawberry_threading_exception_handler(
             # (we'd need to do type ignore for python 3.8 and above, but mypy
             # doesn't seem to be able to handle that and will complain in python 3.7)
 
-            cast(Any, original_threading_exception_hook)(args)
+            cast(Any, threading.__excepthook__)(args)
 
         return
 
@@ -84,10 +76,10 @@ def strawberry_threading_exception_handler(
 
 
 def reset_exception_handler():
-    sys.excepthook = original_exception_hook
+    sys.excepthook = sys.__excepthook__
 
     if sys.version_info >= (3, 8):
-        threading.excepthook = original_threading_exception_hook
+        threading.excepthook = threading.__excepthook__
 
 
 def setup_exception_handler():
