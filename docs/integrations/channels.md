@@ -340,7 +340,7 @@ Look here for some more complete examples:
 
 ## Testing
 
-We provide a minimal application communicator (`GqlWsCommunicator`) for subscribing.
+We provide a minimal application communicator (`GraphQLWebsocketCommunicator`) for subscribing.
 Here is an example based on the tutorial above: _Make sure you have pytest-async
 installed_
 
