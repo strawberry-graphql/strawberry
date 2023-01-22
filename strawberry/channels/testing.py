@@ -26,7 +26,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
 
     @pytest.fixture
     async def gql_communicator():
-        async with GqlWsCommunicator(application, path="/graphql") as client:
+        async with GraphQLWebsocketCommunicator(application, path="/graphql") as client:
             yield client
 
 
