@@ -1,6 +1,5 @@
 from collections import defaultdict
 from copy import copy
-from functools import partial
 from itertools import chain
 from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
