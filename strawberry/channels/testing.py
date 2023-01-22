@@ -91,7 +91,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
                     setattr(ret, field.name, payload.get(field.name, None))
                     yield ret
             elif message_type == ErrorMessage.type:
-                payload = ErrorMessage(**response).payload
+                error_payload = ErrorMessage(**response).payload
                 yield ExecutionResult(
                     data=None,
                     errors=[
@@ -99,7 +99,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
                             message=message["message"],
                             extensions=message.get("extensions", None),
                         )
-                        for message in payload
+                        for message in error_payload
                     ],
                 )
             else:
