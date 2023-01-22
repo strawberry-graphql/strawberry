@@ -447,3 +447,55 @@ async def test_got_confused_resolve_references():
     assert result.errors[0].message.startswith(
         "Got confused while trying use resolve_references for"
     )
+
+async def test_info_param_in_resolve_references():
+    used_resolve_references = False
+
+    @strawberry.federation.type(keys=["upc"])
+    class Product:
+        upc: str
+        info: str
+
+        @classmethod
+        def resolve_reference(cls, info, upc):
+            return Product(upc=upc, info=info)
+
+        @classmethod
+        def resolve_references(cls, info, upc: typing.List[str]):
+            nonlocal used_resolve_references
+            used_resolve_references = True
+            return [Product(upc=upc_item, info=info) for upc_item in upc]
+
+    @strawberry.federation.type(extend=True)
+    class Query:
+        @strawberry.field
+        def top_products(self, first: int) -> typing.List[Product]:
+            return []
+
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+
+    query = """
+        query ($representations: [_Any!]!) {
+            _entities(representations: $representations) {
+                ... on Product {
+                    upc
+                    info
+                }
+            }
+        }
+    """
+
+    result = schema.execute_sync(
+        query,
+        variable_values={
+            "representations": [{"__typename": "Product", "upc": "B00005N5PF"}]
+        },
+    )
+
+    assert not result.errors
+    assert used_resolve_references
+
+    assert (
+        "GraphQLResolveInfo(field_name='_entities', field_nodes=[FieldNode"
+        in result.data["_entities"][0]["info"]
+    )
