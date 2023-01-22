@@ -164,54 +164,6 @@ class Schema(BaseSchema):
         self._schema.query_type = query_type
         self._schema.type_map[query_type.name] = query_type
 
-    def _entities_resolver(self, root, info, representations):
-        results = []
-
-        for representation in representations:
-            type_name = representation.pop("__typename")
-            type_ = self.schema_converter.type_map[type_name]
-
-            definition = cast(TypeDefinition, type_.definition)
-
-            if hasattr(definition.origin, "resolve_reference"):
-
-                resolve_reference = definition.origin.resolve_reference
-
-                func_args = get_func_args(resolve_reference)
-                kwargs = representation
-
-                # TODO: use the same logic we use for other resolvers
-                if "info" in func_args:
-                    kwargs["info"] = info
-
-                get_result = partial(resolve_reference, **kwargs)
-            else:
-                from strawberry.arguments import convert_argument
-
-                strawberry_schema = info.schema.extensions["strawberry-definition"]
-                config = strawberry_schema.config
-                scalar_registry = strawberry_schema.schema_converter.scalar_registry
-
-                get_result = partial(
-                    convert_argument,
-                    representation,
-                    type_=definition.origin,
-                    scalar_registry=scalar_registry,
-                    config=config,
-                )
-
-            try:
-                result = get_result()
-            except Exception as e:
-                result = GraphQLError(
-                    f"Unable to resolve reference for {definition.origin}",
-                    original_error=e,
-                )
-
-            results.append(result)
-
-        return results
-
     def entities_resolver(self, root, info, representations):
         results = []
         type_dict: Dict[str, Dict[str, Any]] = {}
