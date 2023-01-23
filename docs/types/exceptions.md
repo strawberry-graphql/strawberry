@@ -21,8 +21,8 @@ class Query:
     def c(self) -> str:
         return "I'm a resolver"
 
-# Throws 'Field "c" on type "Query" cannot define a default_factory and a resolver.'
 
+# Throws 'Field "c" on type "Query" cannot define a default_factory and a resolver.'
 ```
 
 ### FieldWithResolverAndDefaultValueError
@@ -30,15 +30,18 @@ class Query:
 This exception is raised when `strawberry.field` is used with both `resolver`
 and `default` arguments.
 
-````python
+```python
 def test_resolver() -> str:
     return "I'm a resolver"
+
 
 @strawberry.type
 class Query:
     c: str = strawberry.field(default="Example C", resolver=test_resolver)
 
+
 # Throws 'Field "c" on type "Query" cannot define a default value and a resolver.'
+```
 
 ### MissingTypesForGenericError
 
@@ -65,8 +68,9 @@ def name(
 ) -> str:
     return "Name"
 
+
 # Throws 'Annotation for argument `argument` on field `name` cannot have multiple `strawberry.argument`s'
-````
+```
 
 ### UnsupportedTypeError
 
@@ -78,10 +82,10 @@ only
 class Model(pydantic.BaseModel):
     field: pydantic.Json
 
+
 @strawberry.experimental.pydantic.type(Model, fields=["field"])
 class Type:
     pass
-
 ```
 
 ### WrongNumberOfResultsReturned
@@ -92,6 +96,7 @@ results than requested.
 ```python
 async def idx(keys):
     return [1, 2]
+
 
 loader = DataLoader(load_fn=idx)
 
@@ -125,19 +130,23 @@ Union types.
 class Outside:
     c: int
 
+
 @strawberry.type
 class A:
     a: int
 
+
 @strawberry.type
 class B:
     b: int
+
 
 @strawberry.type
 class Mutation:
     @strawberry.mutation
     def hello(self) -> Union[A, B]:
         return Outside(c=5)
+
 
 query = """
     mutation {
@@ -180,13 +189,16 @@ a `strawberry.field`.
 class A:
     a: int
 
+
 @strawberry.type
 class B:
     b: int
 
+
 @strawberry.type
 class Query:
-    ab: Union[A, B] = "ciao" // missing `strawberry.field` !
+    ab: Union[A, B] = "ciao"  # missing `strawberry.field` !
+
 
 query = """{
     ab {

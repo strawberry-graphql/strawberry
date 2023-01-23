@@ -1,12 +1,12 @@
 repos:
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.1
+  - repo: https://github.com/psf/black
+    rev: 22.12.0
     hooks:
-      - id: pyupgrade
-        args: [--py37-plus, --keep-runtime-typing]
+      - id: black
+        exclude: ^tests/codegen/snapshots/python/
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.186
+    rev: v0.0.225
     hooks:
       - id: ruff
         exclude: ^tests/codegen/snapshots/python/
@@ -31,8 +31,7 @@ repos:
       - id: end-of-file-fixer
       - id: check-toml
 
-  - repo: https://github.com/psf/black
-    rev: 22.12.0
+  - repo: https://github.com/adamchainz/blacken-docs
+    rev: 1.13.0
     hooks:
-      - id: black
-        exclude: ^tests/codegen/snapshots/python/
+      - id: blacken-docs

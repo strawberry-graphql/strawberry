@@ -45,7 +45,7 @@ These errors are only enabled when `rich` and `libcst` are installed. You can
 install Strawberry with errors enabled by running:
 
 ```bash
-pip install strawberry-graphql[cli]
+pip install "strawberry-graphql[cli]"
 ```
 
 If you want to disable the errors you can do so by setting the

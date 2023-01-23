@@ -41,6 +41,7 @@ resolvers; the first is to pass a function to the field definition, like this:
 def get_last_user() -> User:
     return User(name="Marco")
 
+
 @strawberry.type
 class Query:
     last_user: User = strawberry.field(resolver=get_last_user)
@@ -71,7 +72,6 @@ The other way to define a resolver is to use `strawberry.field` as a decorator,
 like here:
 
 ```python
-
 @strawberry.type
 class Query:
     @strawberry.field
@@ -210,8 +210,10 @@ the value of the parent:
 ```python
 import strawberry
 
+
 def full_name(root: User) -> str:
     return f"{root.first_name} {root.last_name}"
+
 
 @strawberry.type
 class User:
@@ -231,8 +233,10 @@ for the current execution context.
 import strawberry
 from strawberry.types import Info
 
+
 def full_name(root: User, info: Info) -> str:
     return f"{root.first_name} {root.last_name} {info.field_name}"
+
 
 @strawberry.type
 class User:

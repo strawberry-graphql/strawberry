@@ -13,17 +13,20 @@ GraphQL, for example, the following code:
 ```python
 import strawberry
 
+
 @strawberry.type
 class User:
     name: str
     age: int
     password: strawberry.Private[str]
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def user(self) -> User:
         return User(name="Patrick", age=100, password="This is fake")
+
 
 schema = strawberry.Schema(query=Query)
 ```
@@ -54,6 +57,7 @@ import strawberry
 
 if TYPE_CHECKING:
     from .users import User
+
 
 @strawberry.type
 class Post:

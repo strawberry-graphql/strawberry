@@ -203,7 +203,7 @@ class Schema(BaseSchema):
 
     async def execute(
         self,
-        query: str,
+        query: Optional[str],
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
@@ -225,7 +225,6 @@ class Schema(BaseSchema):
 
         result = await execute(
             self._schema,
-            query,
             extensions=self.get_extensions(),
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
@@ -237,7 +236,7 @@ class Schema(BaseSchema):
 
     def execute_sync(
         self,
-        query: str,
+        query: Optional[str],
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
@@ -258,7 +257,6 @@ class Schema(BaseSchema):
 
         result = execute_sync(
             self._schema,
-            query,
             extensions=self.get_extensions(sync=True),
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
@@ -270,6 +268,7 @@ class Schema(BaseSchema):
 
     async def subscribe(
         self,
+        # TODO: make this optional when we support extensions
         query: str,
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,

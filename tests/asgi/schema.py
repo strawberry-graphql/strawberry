@@ -123,7 +123,7 @@ class Subscription:
         raise ValueError(message)
 
         # Without this yield, the method is not recognised as an async generator
-        yield "Hi"  # noqa
+        yield "Hi"
 
     @strawberry.subscription
     async def flavors(self) -> typing.AsyncGenerator[Flavor, None]:
@@ -148,6 +148,10 @@ class Subscription:
             num_active_result_handlers=len(active_result_handlers),
             is_connection_init_timeout_task_done=is_connection_init_timeout_task_done,
         )
+
+    @strawberry.subscription
+    async def connection_params(self, info: Info) -> typing.AsyncGenerator[str, None]:
+        yield info.context["connection_params"]["strawberry"]
 
 
 schema = strawberry.Schema(Query, mutation=Mutation, subscription=Subscription)

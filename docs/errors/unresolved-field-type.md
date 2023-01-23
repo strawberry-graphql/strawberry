@@ -18,6 +18,7 @@ import strawberry
 class Query:
     user: "User"
 
+
 schema = strawberry.Schema(query=Query)
 ```
 
@@ -42,6 +43,7 @@ from .user import User
 @strawberry.type
 class Query:
     user: "User"
+
 
 schema = strawberry.Schema(query=Query)
 ```

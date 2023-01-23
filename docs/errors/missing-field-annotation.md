@@ -16,11 +16,12 @@ import strawberry
 @strawberry.type
 class Query:
     name: str
-    age = strawberry.field(name="ageInYears")  # note that here we don't have a type for this field
+    age = strawberry.field(
+        name="ageInYears"
+    )  # note that here we don't have a type for this field
 
 
 schema = strawberry.Schema(query=Query)
-
 ```
 
 This happens because Strawberry needs to know the type of every field for a type
