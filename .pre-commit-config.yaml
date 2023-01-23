@@ -6,7 +6,7 @@ repos:
         exclude: ^tests/codegen/snapshots/python/
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.225
+    rev: v0.0.230
     hooks:
       - id: ruff
         exclude: ^tests/codegen/snapshots/python/
