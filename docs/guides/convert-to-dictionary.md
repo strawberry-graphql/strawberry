@@ -19,6 +19,3 @@ class User:
 # should be {"name": "Lorem", "age": 25}
 user_dict = strawberry.asdict(User(name="Lorem", age=25))
 ```
-
-> Note: This function is not recursive, so if you have nested objects, you will
-> need to convert them manually.
