@@ -27,6 +27,8 @@ from .utils.dataclasses import add_custom_init_fn
 from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__
 
+T = TypeVar("T", bound=Type)
+
 
 def _get_interfaces(cls: Type) -> List[TypeDefinition]:
     interfaces = []
@@ -177,9 +179,6 @@ def _process_type(
             setattr(cls, field_.python_name, wrapped_func)
 
     return cls
-
-
-T = TypeVar("T", bound=Type)
 
 
 @overload
@@ -364,9 +363,25 @@ def interface(
     )
 
 
+def asdict(obj: object) -> Dict[str, object]:
+    """Convert a strawberry object into a dictionary.
+    This wraps the dataclasses.asdict function to strawberry.
+
+    Example usage:
+    >>> @strawberry.type
+    >>> class User:
+    >>>     name: str
+    >>>     age: int
+    >>> # should be {"name": "Lorem", "age": 25}
+    >>> user_dict = strawberry.asdict(User(name="Lorem", age=25))
+    """
+    return dataclasses.asdict(obj)
+
+
 __all__ = [
     "TypeDefinition",
     "input",
     "interface",
     "type",
+    "asdict",
 ]
