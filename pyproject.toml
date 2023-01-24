@@ -22,6 +22,7 @@ classifiers = [
 include = ["strawberry/py.typed"]
 
 [tool.poetry.urls]
+"Changelog" = "https://strawberry.rocks/changelog"
 "Discord" = "https://discord.com/invite/3uQ2PaY"
 "Twitter" = "https://twitter.com/strawberry_gql"
 "Mastodon" = "https://farbun.social/@strawberry"
