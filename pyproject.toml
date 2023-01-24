@@ -271,6 +271,7 @@ ignore = [
 
     "PLR",
     "INP",
+    "TRY",
 ]
 fix = true
 exclude = [
