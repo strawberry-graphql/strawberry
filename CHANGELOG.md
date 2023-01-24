@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.155.1 - 2023-01-24
+--------------------
+
+A link to the changelog has been added to the package metadata, so it shows up on PyPI.
+
+Contributed by [Tom Most](https://github.com/twm) via [PR #2490](https://github.com/strawberry-graphql/strawberry/pull/2490/)
+
+
 0.155.0 - 2023-01-23
 --------------------
 
