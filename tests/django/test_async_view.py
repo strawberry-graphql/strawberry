@@ -92,8 +92,8 @@ async def test_async_graphql_post_query_fails_using_params():
     factory = RequestFactory()
     request = factory.post(
         "/graphql",
-        **{"QUERY_STRING": urlencode(params, doseq=True)},
-        content_type="application/x-www-form-urlencoded"
+        content_type="application/x-www-form-urlencoded",
+        QUERY_STRING=urlencode(params, doseq=True),
     )
 
     with pytest.raises(
