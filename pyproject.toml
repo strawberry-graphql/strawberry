@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.154.1"
+version = "0.155.1"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -22,6 +22,7 @@ classifiers = [
 include = ["strawberry/py.typed"]
 
 [tool.poetry.urls]
+"Changelog" = "https://strawberry.rocks/changelog"
 "Discord" = "https://discord.com/invite/3uQ2PaY"
 "Twitter" = "https://twitter.com/strawberry_gql"
 "Mastodon" = "https://farbun.social/@strawberry"
@@ -270,6 +271,7 @@ ignore = [
 
     "PLR",
     "INP",
+    "TRY",
 ]
 fix = true
 exclude = [

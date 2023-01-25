@@ -100,7 +100,7 @@ class Query:
 union MediaItem = Audio | Video | Image
 
 type Query {
-  latest_media: AudioVideoImage!
+  latest_media: MediaItem!
 }
 
 type Audio {
