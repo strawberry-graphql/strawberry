@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.155.2 - 2023-01-25
+--------------------
+
+This release fixes a bug in subscriptions using the graphql-transport-ws protocol
+where the conversion of the NextMessage object to a dictionary took an unnecessary
+amount of time leading to an increase in CPU usage.
+
+Contributed by [rjwills28](https://github.com/rjwills28) via [PR #2481](https://github.com/strawberry-graphql/strawberry/pull/2481/)
+
+
 0.155.1 - 2023-01-24
 --------------------
 
