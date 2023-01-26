@@ -156,3 +156,26 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           verbose: true
+
+  federation-tests:
+    name: Federation tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: export schema
+        run: poetry run strawberry export-schema schema:schema
+        working-directory: federation-compatibility
+
+      - uses: apollographql/federation-subgraph-compatibility@v1
+        with:
+          # [Required] Docker Compose file to start up the subgraph
+          compose: 'path/to/docker-compose.yaml'
+          # [Required] Path to the GraphQL schema file
+          schema: 'path/to/schema.graphql'
+          # GraphQL endpoint HTTP port, defaults to 4001
+          port: 8000
+          # Github Token / PAT for submitting PR comments
+          # token: ''
+
+          failOnWarning: true
+          failOnRequired: true
