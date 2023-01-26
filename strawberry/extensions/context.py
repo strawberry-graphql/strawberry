@@ -80,7 +80,7 @@ class ExtensionContextManagerBase:
     LEGACY_ENTER: str
     LEGACY_EXIT: str
 
-    def _legacy_extension_compat(self, extension: Extension) -> bool:
+    def _parse_legacy_extension(self, extension: Extension) -> bool:
         """
         Returns: a flag if there was any legacy extension
         """
@@ -120,45 +120,44 @@ class ExtensionContextManagerBase:
             return True
         return False
 
+    def _parse_extension(self, extension: Extension) -> None:
+        generator_or_func: Optional[Union[AsyncIteratorOrIterator, Callable]] = getattr(
+            extension, self.HOOK_NAME, None
+        )
+        if not generator_or_func or (
+            inspect.getfile(generator_or_func) == _EXTENSION_FILENAME  # type: ignore
+        ):
+            return
+        if inspect.isasyncgenfunction(generator_or_func):
+            self._execution_order.add(async_iterable=generator_or_func)
+
+        elif inspect.isgeneratorfunction(generator_or_func):
+            self._execution_order.add(iterable=generator_or_func)
+        # if it is just normal function make a fake generator:
+        else:
+            func: Callable[[], AwaitableOrValue] = generator_or_func  # type: ignore
+            if iscoroutinefunction(func):
+
+                async def fake_gen():
+                    await func()
+                    yield
+
+                self._execution_order.add(async_iterable=fake_gen)
+            else:
+
+                def fake_gen():
+                    func()
+                    yield
+
+                self._execution_order.add(iterable=fake_gen)
+
     def __init__(self, extensions: List[Extension]):
         self._execution_order: ExecutionOrderManager = ExecutionOrderManager()
         self._initialized_steps: List[ExecutionStepInitialized]
         for extension in extensions:
             # maybe it is a legacy extension, so find the old hooks first
-            if not self._legacy_extension_compat(extension):
-                generator_or_func: Optional[
-                    Union[AsyncIteratorOrIterator, Callable]
-                ] = getattr(extension, self.HOOK_NAME, None)
-                if not generator_or_func or (
-                    inspect.getfile(generator_or_func)  # type: ignore
-                    == _EXTENSION_FILENAME
-                ):
-                    continue
-
-                if inspect.isasyncgenfunction(generator_or_func):
-                    self._execution_order.add(async_iterable=generator_or_func)
-
-                elif inspect.isgeneratorfunction(generator_or_func):
-                    self._execution_order.add(iterable=generator_or_func)
-                # if it is just normal function make a fake generator:
-                else:
-                    func: Callable[
-                        [], AwaitableOrValue
-                    ] = generator_or_func  # type: ignore
-                    if iscoroutinefunction(func):
-
-                        async def fake_gen():
-                            await func()
-                            yield
-
-                        self._execution_order.add(async_iterable=fake_gen)
-                    else:
-
-                        def fake_gen():
-                            func()
-                            yield
-
-                        self._execution_order.add(iterable=fake_gen)
+            if not self._parse_legacy_extension(extension):
+                self._parse_extension(extension)
 
     def run_sync(self):
         for step in self._initialized_steps:
