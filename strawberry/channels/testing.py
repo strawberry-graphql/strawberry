@@ -6,7 +6,7 @@ from asgiref.typing import ASGIApplication
 from graphql import GraphQLError
 
 from channels.testing.websocket import WebsocketCommunicator
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     ConnectionAckMessage,
     ConnectionInitMessage,
@@ -14,6 +14,11 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     NextMessage,
     SubscribeMessage,
     SubscribeMessagePayload,
+)
+from strawberry.subscriptions.protocols.graphql_ws import (
+    GQL_CONNECTION_ACK,
+    GQL_CONNECTION_INIT,
+    GQL_START,
 )
 from strawberry.types import ExecutionResult
 
@@ -46,16 +51,20 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         application: ASGIApplication,
         path: str,
         headers: Optional[List[Tuple[bytes, bytes]]] = None,
-        subprotocols: Optional[List[str]] = None,
+        protocol: str = GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        **kwargs
     ):
-        subprotocols = (
-            subprotocols
-            if subprotocols
-            else [
-                GRAPHQL_TRANSPORT_WS_PROTOCOL,
-            ]
-        )
-        super().__init__(application, path, headers, subprotocols)
+        """
+
+        Args:
+            application: Your asgi application that encapsulates the strawberry schema.
+            path: the url endpoint for the schema.
+            protocol: currently this supports `graphql-transport-ws` only.
+        """
+        self.protocol = protocol
+        subprotocols = kwargs.get("subprotocols", [])
+        subprotocols.append(protocol)
+        super().__init__(application, path, headers, subprotocols=subprotocols)
 
     async def __aenter__(self) -> "GraphQLWebsocketCommunicator":
         await self.gql_init()
@@ -66,21 +75,37 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
 
     async def gql_init(self):
         res = await self.connect()
-        assert res == (True, GRAPHQL_TRANSPORT_WS_PROTOCOL)
-        await self.send_json_to(ConnectionInitMessage().as_dict())
-        response = await self.receive_json_from()
-        assert response == ConnectionAckMessage().as_dict()
+        if self.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
+            assert res == (True, GRAPHQL_TRANSPORT_WS_PROTOCOL)
+            await self.send_json_to(ConnectionInitMessage().as_dict())
+            response = await self.receive_json_from()
+            assert response == ConnectionAckMessage().as_dict()
+        else:
+            assert res == (True, GRAPHQL_WS_PROTOCOL)
+            await self.send_json_to({"type": GQL_CONNECTION_INIT})
+            response = await self.receive_json_from()
+            assert response["type"] == GQL_CONNECTION_ACK
 
     async def subscribe(
         self, query: str, variables: Optional[Dict] = None
     ) -> Union[ExecutionResult, AsyncIterator[ExecutionResult]]:
         id_ = uuid.uuid4().hex
-        await self.send_json_to(
-            SubscribeMessage(
-                id=id_,
-                payload=SubscribeMessagePayload(query=query, variables=variables),
-            ).as_dict()
-        )
+        payload = SubscribeMessagePayload(query=query, variables=variables)
+        if self.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
+            await self.send_json_to(
+                SubscribeMessage(
+                    id=id_,
+                    payload=payload,
+                ).as_dict()
+            )
+        else:
+            await self.send_json_to(
+                {
+                    "type": GQL_START,
+                    "id": id_,
+                    "payload": dataclasses.asdict(payload),
+                }
+            )
         while True:
             response = await self.receive_json_from(timeout=5)
             message_type = response["type"]

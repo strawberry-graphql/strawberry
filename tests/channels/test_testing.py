@@ -2,16 +2,17 @@ import pytest
 
 from strawberry.channels.handlers.ws_handler import GraphQLWSConsumer
 from strawberry.channels.testing import GraphQLWebsocketCommunicator
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 from .schema import schema
 
 application = GraphQLWSConsumer.as_asgi(schema=schema, keep_alive_interval=50)
 
 
-@pytest.fixture
-async def communicator():
+@pytest.fixture(params=[GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL])
+async def communicator(request):
     async with GraphQLWebsocketCommunicator(
-        application=application, path="/graphql"
+        protocol=request.param, application=application, path="/graphql"
     ) as client:
         yield client
 
