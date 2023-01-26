@@ -162,6 +162,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v3
       - name: export schema
         run: poetry run strawberry export-schema schema:schema
         working-directory: federation-compatibility
