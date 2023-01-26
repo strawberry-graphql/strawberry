@@ -160,38 +160,44 @@ class ExtensionContextManagerBase:
 
                         self._execution_order.add(iterable=fake_gen)
 
-    def iter_gens(self):
-        # Note: we can't create similar async version
-        # because coroutines are not allowed to raise StopIteration
+    def run_sync(self):
         for step in self._initialized_steps:
             for iterable in step.iterables:
                 with contextlib.suppress(StopIteration):
                     iterable.__next__()
 
+    async def run_async(self, is_exit: bool = False):
+        """Run extensions asynchronously with support for sync lifecycle hooks.
+
+        The ``is_exit`` flag is required as a `StopIteration` cannot be raised from
+        within a coroutine.
+        """
+        for step in self._initialized_steps:
+            for iterator in step.iterables:
+                with contextlib.suppress(
+                    StopIteration
+                ) if is_exit else contextlib.nullcontext():
+                    iterator.__next__()
+            for async_iterator in step.async_iterables:
+                with contextlib.suppress(
+                    StopAsyncIteration
+                ) if is_exit else contextlib.nullcontext():
+                    await async_iterator.__anext__()
+
     def __enter__(self):
         self._initialized_steps = self._execution_order.initialized()
-        self.iter_gens()
+        self.run_sync()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.iter_gens()
+        self.run_sync()
         self._initialized_steps = []
 
     async def __aenter__(self) -> None:
         self._initialized_steps = self._execution_order.initialized()
-        for step in self._initialized_steps:
-            for iterator in step.iterables:
-                iterator.__next__()
-            for async_iterator in step.async_iterables:
-                await async_iterator.__anext__()
+        await self.run_async()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        for step in self._initialized_steps:
-            for iterator in step.iterables:
-                with contextlib.suppress(StopIteration):
-                    iterator.__next__()
-            for async_iterator in step.async_iterables:
-                with contextlib.suppress(StopAsyncIteration):
-                    await async_iterator.__anext__()
+        await self.run_async(is_exit=True)
         self._initialized_steps = []
 
 
