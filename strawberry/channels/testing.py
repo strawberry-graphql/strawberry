@@ -90,12 +90,12 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         self, query: str, variables: Optional[Dict] = None
     ) -> Union[ExecutionResult, AsyncIterator[ExecutionResult]]:
         id_ = uuid.uuid4().hex
-        payload = SubscribeMessagePayload(query=query, variables=variables)
+        sub_payload = SubscribeMessagePayload(query=query, variables=variables)
         if self.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
             await self.send_json_to(
                 SubscribeMessage(
                     id=id_,
-                    payload=payload,
+                    payload=sub_payload,
                 ).as_dict()
             )
         else:
@@ -103,7 +103,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
                 {
                     "type": GQL_START,
                     "id": id_,
-                    "payload": dataclasses.asdict(payload),
+                    "payload": dataclasses.asdict(sub_payload),
                 }
             )
         while True:
