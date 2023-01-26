@@ -180,7 +180,7 @@ jobs:
       - uses: apollographql/federation-subgraph-compatibility@v1
         with:
           # [Required] Docker Compose file to start up the subgraph
-          compose: 'federation-compatibility/docker-compose.yaml'
+          compose: 'federation-compatibility/docker-compose.yml'
           # [Required] Path to the GraphQL schema file
           schema: 'federation-compatibility/schema.graphql'
           # GraphQL endpoint HTTP port, defaults to 4001
