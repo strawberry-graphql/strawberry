@@ -1,0 +1,5 @@
+services:
+  products:
+    build: federation-compatibility
+    ports:
+      - 4001:4001
