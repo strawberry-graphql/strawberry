@@ -174,7 +174,7 @@ jobs:
       - run: poetry install
 
       - name: export schema
-        run: poetry run strawberry export-schema schema:schema
+        run: poetry run strawberry export-schema schema:schema > schema.graphql
         working-directory: federation-compatibility
 
       - uses: apollographql/federation-subgraph-compatibility@v1
