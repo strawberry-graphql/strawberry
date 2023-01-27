@@ -14,6 +14,10 @@ DataLoaders provide an async API, so they only work in async context
 
 </Note>
 
+Refer the official DataLoaders
+[specification](https://github.com/graphql/dataloader) for an advanced guide on
+DataLoaders.
+
 ## Basic usage
 
 Here's how you'd use a DataLoader, first we need to define a function that
@@ -22,6 +26,7 @@ only an id:
 
 ```python
 import strawberry
+
 
 @strawberry.type
 class User:
@@ -33,6 +38,7 @@ keys passed:
 
 ```python
 from typing import List
+
 
 async def load_users(keys: List[int]) -> List[User]:
     return [User(id=key) for key in keys]
@@ -97,14 +103,16 @@ users_database = {
     2: User(id=2),
 }
 
+
 async def load_users(keys: List[int]) -> List[Union[User, ValueError]]:
     def lookup(key: int) -> Union[User, ValueError]:
-       if user := users_database.get(key):
-           return user
+        if user := users_database.get(key):
+            return user
 
-       return ValueError("not found")
+        return ValueError("not found")
 
     return [lookup(key) for key in keys]
+
 
 loader = DataLoader(load_fn=load_users)
 ```
@@ -118,12 +126,59 @@ the list for each incorrect key. A call with `keys == [1, 3]` returns
 directly. If the `load_users` function raises an exception, even `load`s with an
 otherwise valid key, like `await loader.load(1)`, will raise that exception.
 
+### Overriding Cache Key
+
+By default, the input is used as cache key. In the above examples, the cache key
+is always a scalar (int, float, string, etc.) and uniquely resolves the data for
+the input.
+
+In practical applications there are situations where it requires combination of
+fields to uniquely identify the data. By providing `cache_key_fn` argument to
+the `DataLoader` the behaviour of generating key is changed. It is also useful
+when objects are keys and two objects should be considered equivalent. The
+function definition takes an input parameter and returns a `Hashable` type.
+
+```python
+from typing import List, Union
+from strawberry.dataloader import DataLoader
+
+
+class User:
+    def __init__(self, custom_id: int, name: str):
+        self.id: int = custom_id
+        self.name: str = name
+
+
+async def loader_fn(keys):
+    return keys
+
+
+def custom_cache_key(key):
+    return key.id
+
+
+loader = DataLoader(load_fn=loader_fn, cache_key_fn=custom_cache_key)
+data1 = await loader.load(User(1, "Nick"))
+data2 = await loader.load(User(1, "Nick"))
+assert data1 == data2  # returns true
+```
+
+`loader.load(User(1, "Nick"))` will call `custom_cache_key` internally, passing
+the object as parameter to the function which will return `User.id` as key that
+is `1`. The second call will check the cache for the key returned by
+`custom_cache_key` and will return the cache object from the loader cache.
+
+The implementation relies on users to handle conflicts while generating the
+cache key. In case of conflict the data will be overriden for the key.
+
 ### Cache invalidation
 
-By default DataLoaders use an internal cache. It is great for performance, however it can cause problems when the data is modified
-(i.e., a mutation), as the cached data is no longer be valid! 😮
+By default DataLoaders use an internal cache. It is great for performance,
+however it can cause problems when the data is modified (i.e., a mutation), as
+the cached data is no longer be valid! 😮
 
-To fix it, you can explicitly invalidate the data in the cache, using one of these ways:
+To fix it, you can explicitly invalidate the data in the cache, using one of
+these ways:
 
 - Specifying a key with `loader.clear(id)`,
 - Specifying several keys with `loader.clear_many([id1, id2, id3, ...])`,
@@ -131,12 +186,14 @@ To fix it, you can explicitly invalidate the data in the cache, using one of the
 
 ### Importing data into cache
 
-While dataloaders are powerful and efficient, they do not support complex queries.
+While dataloaders are powerful and efficient, they do not support complex
+queries.
 
-If your app needs them, you'll probably mix dataloaders and direct database calls.
+If your app needs them, you'll probably mix dataloaders and direct database
+calls.
 
-In these scenarios, it is useful to import the data retrieved externally into the dataloader,
-in order to avoid reloading data afterwards.
+In these scenarios, it is useful to import the data retrieved externally into
+the dataloader, in order to avoid reloading data afterwards.
 
 For example:
 
@@ -174,6 +231,79 @@ class Query:
 }
 ```
 
+### Custom Cache
+
+DataLoader's default cache is per-request and it caches data in memory. This
+strategy might not be optimal or safe for all use cases. For example, if you are
+using DataLoader in a distributed environment, you might want to use a
+distributed cache. DataLoader let you override the custom caching logic, which
+can get data from other persistent caches (e.g Redis)
+
+`DataLoader` provides an argument `cache_map`. It takes an instance of a class
+which implements an abstract interface `AbstractCache`. The interface methods
+are `get`, `set`, `delete` and `clear`
+
+The `cache_map` parameter overrides the `cache_key_fn` if both arguments are
+provided.
+
+```python
+from typing import List, Union, Any, Optional
+
+import strawberry
+from strawberry.types import Info
+from strawberry.asgi import GraphQL
+from strawberry.dataloader import DataLoader, AbstractCache
+
+from starlette.requests import Request
+from starlette.websockets import WebSocket
+from starlette.responses import Response
+
+
+class UserCache(AbstractCache):
+    def __init__(self):
+        self.cache = {}
+
+    def get(self, key: Any) -> Union[Any, None]:
+        return self.cache.get(key)  # fetch data from persistent cache
+
+    def set(self, key: Any, value: Any) -> None:
+        self.cache[key] = value  # store data in the cache
+
+    def delete(self, key: Any) -> None:
+        del self.cache[key]  # delete key from the cache
+
+    def clear(self) -> None:
+        self.cache.clear()  # clear the cache
+
+
+@strawberry.type
+class User:
+    id: strawberry.ID
+    name: str
+
+
+async def load_users(keys) -> List[User]:
+    return [User(id=key, name="Jane Doe") for key in keys]
+
+
+class MyGraphQL(GraphQL):
+    async def get_context(
+        self, request: Union[Request, WebSocket], response: Optional[Response]
+    ) -> Any:
+        return {"user_loader": DataLoader(load_fn=load_users, cache_map=UserCache())}
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    async def get_user(self, info: Info, id: strawberry.ID) -> User:
+        return await info.context["user_loader"].load(id)
+
+
+schema = strawberry.Schema(query=Query)
+app = MyGraphQL(schema, graphiql=True)
+```
+
 ## Usage with GraphQL
 
 Let's see an example of how you can use DataLoaders with GraphQL:
@@ -184,9 +314,11 @@ from typing import List
 from strawberry.dataloader import DataLoader
 import strawberry
 
+
 @strawberry.type
 class User:
     id: strawberry.ID
+
 
 async def load_users(keys) -> List[User]:
     return [User(id=key) for key in keys]
@@ -194,11 +326,13 @@ async def load_users(keys) -> List[User]:
 
 loader = DataLoader(load_fn=load_users)
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     async def get_user(self, id: strawberry.ID) -> User:
         return await loader.load(id)
+
 
 schema = strawberry.Schema(query=Query)
 ```
@@ -268,10 +402,10 @@ async def load_users(keys) -> List[User]:
 
 
 class MyGraphQL(GraphQL):
-    async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response]) -> Any:
-        return {
-            "user_loader": DataLoader(load_fn=load_users)
-        }
+    async def get_context(
+        self, request: Union[Request, WebSocket], response: Optional[Response]
+    ) -> Any:
+        return {"user_loader": DataLoader(load_fn=load_users)}
 
 
 @strawberry.type
@@ -285,9 +419,9 @@ schema = strawberry.Schema(query=Query)
 app = MyGraphQL(schema)
 ```
 
-You can now run the example above with any ASGI server, you can read [ASGI](../integrations/asgi.md)) to
-get more details on how to run the app.
-In case you choose uvicorn you can install it wih
+You can now run the example above with any ASGI server, you can read
+[ASGI](../integrations/asgi.md)) to get more details on how to run the app. In
+case you choose uvicorn you can install it wih
 
 ```bash
 pip install uvicorn

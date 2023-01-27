@@ -24,11 +24,13 @@ import strawberry
 from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def hello(self) -> str:
         return "Hello World"
+
 
 schema = strawberry.Schema(Query)
 
@@ -100,11 +102,12 @@ class Query:
     def example(self, info: Info) -> str:
         return f"Hello {info.context['custom_value']}"
 
+
 schema = strawberry.Schema(Query)
 
 graphql_app = GraphQLRouter(
-  schema,
-  context_getter=get_context,
+    schema,
+    context_getter=get_context,
 )
 
 app = FastAPI()
@@ -151,11 +154,12 @@ class Query:
     def example(self, info: Info) -> str:
         return f"Hello {info.context.name}, {info.context.greeting}"
 
+
 schema = strawberry.Schema(Query)
 
 graphql_app = GraphQLRouter(
-  schema,
-  context_getter=get_context,
+    schema,
+    context_getter=get_context,
 )
 
 app = FastAPI()
@@ -183,6 +187,7 @@ import strawberry
 from fastapi import FastAPI, BackgroundTasks
 from strawberry.types import Info
 from strawberry.fastapi import GraphQLRouter
+
 
 async def notify_new_flavour(name: str):
     print(name)
@@ -247,7 +252,6 @@ graphql_app = GraphQLRouter(
 
 app = FastAPI()
 app.include_router(graphql_app, prefix="/graphql")
-
 ```
 
 Here we are returning a Query where the name is "Patrick", so when we request
@@ -270,9 +274,9 @@ from strawberry.types import ExecutionResult
 
 from graphql.error.graphql_error import format_error as format_graphql_error
 
-class MyGraphQLRouter(GraphQLRouter):
 
-  async def process_result(
+class MyGraphQLRouter(GraphQLRouter):
+    async def process_result(
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         data: GraphQLHTTPResponse = {"data": result.data}
@@ -285,3 +289,14 @@ class MyGraphQLRouter(GraphQLRouter):
 
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
+
+## encode_json
+
+`encode_json` allows to customize the encoding of the JSON response. By default
+we use `json.dumps` but you can override this method to use a different encoder.
+
+```python
+class MyGraphQLRouter(GraphQLRouter):
+    def encode_json(self, data: GraphQLHTTPResponse) -> str:
+        return json.dumps(data, indent=2)
+```

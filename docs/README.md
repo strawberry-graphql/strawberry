@@ -9,6 +9,8 @@
 - [Mutations](./general/mutations.md)
 - [Subscriptions](./general/subscriptions.md)
 - [Why](./general/why.md)
+- [Breaking changes](./breaking-changes.md)
+- [FAQ](./faq.md)
 
 ## Types
 
@@ -42,11 +44,15 @@
 - [Federation V1](./guides/federation-v1.md)
 - [Custom extensions](./guides/custom-extensions.md)
 - [File upload](./guides/file-upload.md)
-- [Pagination](./guides/pagination.md)
+- [Pagination](./guides/pagination/overview.md)
+  - [Implementing Offset Pagination](./guides/pagination/offset-based.md)
+  - [Implementing Cursor Pagination](./guides/pagination/cursor-based.md)
+  - [Implementing the Connection specification](./guides/pagination/connections.md)
 - [Permissions](./guides/permissions.md)
 - [Builtin server](./guides/server.md)
 - [Tools](./guides/tools.md)
 - [Schema export](./guides/schema-export.md)
+- [Convert to dictionary](./guides/convert-to-dictionary.md)
 
 ## Editor integration
 

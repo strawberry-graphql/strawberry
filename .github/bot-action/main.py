@@ -4,7 +4,6 @@ import os
 
 import httpx
 
-
 API_URL = os.environ["BOT_API_URL"]
 API_TOKEN = os.environ["API_SECRET"]
 

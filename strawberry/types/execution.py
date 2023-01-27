@@ -1,11 +1,8 @@
 import dataclasses
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
-from graphql import (
-    ASTValidationRule,
-    ExecutionResult as GraphQLExecutionResult,
-    specified_rules,
-)
+from graphql import ASTValidationRule, specified_rules
+from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql.error.graphql_error import GraphQLError
 from graphql.language import DocumentNode, OperationDefinitionNode
 
@@ -13,14 +10,13 @@ from strawberry.utils.operation import get_first_operation, get_operation_type
 
 from .graphql import OperationType
 
-
 if TYPE_CHECKING:
     from strawberry.schema import Schema
 
 
 @dataclasses.dataclass
 class ExecutionContext:
-    query: str
+    query: Optional[str]
     schema: "Schema"
     context: Any = None
     variables: Optional[Dict[str, Any]] = None

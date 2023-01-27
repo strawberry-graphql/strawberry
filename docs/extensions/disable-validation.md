@@ -26,7 +26,7 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         DisableValidation(),
-    ]
+    ],
 )
 ```
 

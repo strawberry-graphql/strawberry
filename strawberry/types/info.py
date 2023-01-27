@@ -9,13 +9,11 @@ from graphql.pyutils.path import Path
 from strawberry.type import StrawberryType
 from strawberry.utils.cached_property import cached_property
 
-
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
     from strawberry.schema import Schema
 
 from .nodes import Selection, convert_selections
-
 
 ContextType = TypeVar("ContextType")
 RootValueType = TypeVar("RootValueType")

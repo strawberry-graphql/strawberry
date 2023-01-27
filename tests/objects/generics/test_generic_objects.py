@@ -1,9 +1,8 @@
 import datetime
 from typing import Generic, List, Optional, TypeVar, Union
+from typing_extensions import Annotated
 
 import pytest
-
-from typing_extensions import Annotated
 
 import strawberry
 from strawberry.type import (
@@ -13,7 +12,6 @@ from strawberry.type import (
     StrawberryTypeVar,
 )
 from strawberry.union import StrawberryUnion
-
 
 T = TypeVar("T")
 

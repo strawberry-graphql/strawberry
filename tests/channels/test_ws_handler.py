@@ -11,7 +11,7 @@ from tests.channels.schema import schema
 
 
 async def test_wrong_protocol():
-    GraphQLWSConsumer.as_asgi(schema=schema),
+    GraphQLWSConsumer.as_asgi(schema=schema)
     client = WebsocketCommunicator(
         GraphQLWSConsumer.as_asgi(schema=schema),
         "/graphql",
@@ -24,7 +24,7 @@ async def test_wrong_protocol():
 
 
 @pytest.mark.parametrize(
-    "protocol,handler",
+    ("protocol", "handler"),
     [
         (GRAPHQL_TRANSPORT_WS_PROTOCOL, GraphQLTransportWSHandler),
         (GRAPHQL_WS_PROTOCOL, GraphQLWSHandler),

@@ -45,8 +45,10 @@ class GraphQLView:
     @staticmethod
     def render_graphiql() -> str:
         """
-        Returns a string containing the html for the graphiql webpage. It also caches the
-        result using lru cache. This saves loading from disk each time it is invoked.
+        Returns a string containing the html for the graphiql webpage. It also caches
+        the result using lru cache.
+        This saves loading from disk each time it is invoked.
+
         Returns:
             The GraphiQL html page as a string
         """
@@ -158,14 +160,7 @@ class GraphQLView:
                 http_status_code=404,
             )
 
-        try:
-            request_data = parse_request_data(data)
-        except MissingQueryError:
-            return self.error_response(
-                error_code="BadRequestError",
-                message="No GraphQL query found in the request",
-                http_status_code=400,
-            )
+        request_data = parse_request_data(data)
 
         allowed_operation_types = OperationType.from_http(method)
 
@@ -190,6 +185,12 @@ class GraphQLView:
                 message=e.as_http_error_reason(method),
                 http_status_code=400,
             )
+        except MissingQueryError:
+            return self.error_response(
+                error_code="BadRequestError",
+                message="No GraphQL query found in the request",
+                http_status_code=400,
+            )
 
         http_result: GraphQLHTTPResponse = self.process_result(request, result)
 
@@ -199,4 +200,7 @@ class GraphQLView:
             # TODO: we might want to use typed dict for context
             status_code = context["response"].status_code  # type: ignore[attr-defined]
 
-        return Response(body=http_result, status_code=status_code)
+        return Response(body=self.encode_json(http_result), status_code=status_code)
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        return json.dumps(response_data)

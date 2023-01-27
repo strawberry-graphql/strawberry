@@ -1,17 +1,28 @@
 import json
 from datetime import timedelta
 from inspect import signature
-from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Iterable,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 from starlette import status
 from starlette.background import BackgroundTasks
-from starlette.requests import Request
-from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
+from starlette.requests import HTTPConnection, Request
+from starlette.responses import HTMLResponse, PlainTextResponse, Response
 from starlette.types import ASGIApp
 from starlette.websockets import WebSocket
 
 from fastapi import APIRouter, Depends
 from strawberry.exceptions import InvalidCustomContext, MissingQueryError
+from strawberry.fastapi.context import BaseContext, CustomContext, MergedContext
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
@@ -29,19 +40,6 @@ from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.graphiql import get_graphiql_html
 
 
-CustomContext = Union["BaseContext", Dict[str, Any]]
-MergedContext = Union[
-    "BaseContext", Dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]]
-]
-
-
-class BaseContext:
-    def __init__(self):
-        self.request: Optional[Union[Request, WebSocket]] = None
-        self.background_tasks: Optional[BackgroundTasks] = None
-        self.response: Optional[Response] = None
-
-
 class GraphQLRouter(APIRouter):
     graphql_ws_handler_class = GraphQLWSHandler
     graphql_transport_ws_handler_class = GraphQLTransportWSHandler
@@ -52,26 +50,28 @@ class GraphQLRouter(APIRouter):
 
     @staticmethod
     def __get_context_getter(
-        custom_getter: Callable[..., Optional[CustomContext]]
-    ) -> Callable[..., CustomContext]:
-        def dependency(
+        custom_getter: Callable[
+            ..., Union[Optional[CustomContext], Awaitable[Optional[CustomContext]]]
+        ]
+    ) -> Callable[..., Awaitable[CustomContext]]:
+        async def dependency(
             custom_context: Optional[CustomContext],
             background_tasks: BackgroundTasks,
-            request: Request = None,
-            response: Response = None,
-            ws: WebSocket = None,
+            connection: HTTPConnection,
+            response: Response = None,  # type: ignore
         ) -> MergedContext:
-            default_context = {
-                "request": request or ws,
-                "background_tasks": background_tasks,
-                "response": response,
-            }
+            request = cast(Union[Request, WebSocket], connection)
             if isinstance(custom_context, BaseContext):
-                custom_context.request = request or ws
+                custom_context.request = request
                 custom_context.background_tasks = background_tasks
                 custom_context.response = response
                 return custom_context
-            elif isinstance(custom_context, dict):
+            default_context = {
+                "request": request,
+                "background_tasks": background_tasks,
+                "response": response,
+            }
+            if isinstance(custom_context, dict):
                 return {
                     **default_context,
                     **custom_context,
@@ -151,10 +151,16 @@ class GraphQLRouter(APIRouter):
             context=Depends(self.context_getter),
             root_value=Depends(self.root_value_getter),
         ) -> Response:
-            actual_response: Response
-
             if request.query_params:
-                query_data = parse_query_params(request.query_params._dict)
+                try:
+                    query_data = parse_query_params(request.query_params._dict)
+
+                except json.JSONDecodeError:
+                    return PlainTextResponse(
+                        "Unable to parse request body as JSON",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+
                 return await self.execute_request(
                     request=request,
                     response=response,
@@ -164,7 +170,7 @@ class GraphQLRouter(APIRouter):
                 )
             elif self.should_render_graphiql(request):
                 return self.get_graphiql_response()
-            return Response(status_code=status.HTTP_400_BAD_REQUEST)
+            return Response(status_code=status.HTTP_404_NOT_FOUND)
 
         @self.post(path)
         async def handle_http_post(
@@ -189,12 +195,29 @@ class GraphQLRouter(APIRouter):
                     return self._merge_responses(response, actual_response)
             elif content_type.startswith("multipart/form-data"):
                 multipart_data = await request.form()
-                operations_text = multipart_data.get("operations", "{}")
-                operations = json.loads(operations_text)  # type: ignore
-                files_map = json.loads(multipart_data.get("map", "{}"))  # type: ignore
-                data = replace_placeholders_with_files(
-                    operations, files_map, multipart_data
-                )
+                try:
+                    operations_text = multipart_data.get("operations", "{}")
+                    operations = json.loads(operations_text)  # type: ignore
+                    files_map = json.loads(multipart_data.get("map", "{}"))  # type: ignore # noqa: E501
+                except json.JSONDecodeError:
+                    actual_response = PlainTextResponse(
+                        "Unable to parse request body as JSON",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                    return self._merge_responses(response, actual_response)
+
+                try:
+                    data = replace_placeholders_with_files(
+                        operations, files_map, multipart_data
+                    )
+                except KeyError:
+                    actual_response = PlainTextResponse(
+                        "File(s) missing in form data",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                    return self._merge_responses(response, actual_response)
             else:
                 actual_response = PlainTextResponse(
                     "Unsupported Media Type",
@@ -278,14 +301,14 @@ class GraphQLRouter(APIRouter):
 
     async def execute(
         self,
-        query: str,
+        query: Optional[str],
         variables: Optional[Dict[str, Any]] = None,
         context: Any = None,
         operation_name: Optional[str] = None,
         root_value: Any = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ):
-        if self.debug:
+        if self.debug and query:
             pretty_print_graphql_operation(operation_name, query, variables)
 
         return await self.schema.execute(
@@ -305,14 +328,7 @@ class GraphQLRouter(APIRouter):
     async def execute_request(
         self, request: Request, response: Response, data: dict, context, root_value
     ) -> Response:
-        try:
-            request_data = parse_request_data(data)
-        except MissingQueryError:
-            missing_query_response = PlainTextResponse(
-                "No GraphQL query found in the request",
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-            return self._merge_responses(response, missing_query_response)
+        request_data = parse_request_data(data)
 
         method = request.method
         allowed_operation_types = OperationType.from_http(method)
@@ -334,12 +350,22 @@ class GraphQLRouter(APIRouter):
                 e.as_http_error_reason(method),
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
+        except MissingQueryError:
+            missing_query_response = PlainTextResponse(
+                "No GraphQL query found in the request",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+            return self._merge_responses(response, missing_query_response)
 
         response_data = await self.process_result(request, result)
 
-        actual_response: JSONResponse = JSONResponse(
-            response_data,
+        actual_response = Response(
+            self.encode_json(response_data),
+            media_type="application/json",
             status_code=status.HTTP_200_OK,
         )
 
         return self._merge_responses(response, actual_response)
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        return json.dumps(response_data)

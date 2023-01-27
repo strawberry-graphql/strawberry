@@ -4,7 +4,6 @@ from typing import Optional
 from unittest.mock import patch
 
 import pytest
-
 from graphql import GraphQLError, ValidationRule, validate
 
 import strawberry
@@ -183,6 +182,7 @@ async def test_logging_exceptions(caplog):
         root_value=Query(),
     )
 
+    assert result.errors
     assert len(result.errors) == 1
 
     # Exception was logged
@@ -238,6 +238,148 @@ async def test_logging_graphql_exceptions(caplog):
     assert record.levelname == "ERROR"
     assert record.name == "strawberry.execution"
     assert record.exc_info[0] is TypeError
+
+
+@pytest.mark.asyncio
+async def test_logging_parsing_error(caplog):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self) -> str:
+            return "hi"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+        query {
+            example
+    """
+
+    result = await schema.execute(
+        query,
+        root_value=Query(),
+    )
+
+    assert result.errors
+    assert len(result.errors) == 1
+
+    # Exception was logged
+    assert len(caplog.records) == 1
+    record = caplog.records[0]
+
+    assert record.levelname == "ERROR"
+    assert record.name == "strawberry.execution"
+    assert "Syntax Error" in record.message
+
+
+def test_logging_parsing_error_sync(caplog):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self) -> str:
+            return "hi"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+        query {
+            example
+    """
+
+    result = schema.execute_sync(
+        query,
+        root_value=Query(),
+    )
+
+    assert result.errors
+    assert len(result.errors) == 1
+
+    # Exception was logged
+    assert len(caplog.records) == 1
+    record = caplog.records[0]
+
+    assert record.levelname == "ERROR"
+    assert record.name == "strawberry.execution"
+    assert "Syntax Error" in record.message
+
+
+@pytest.mark.asyncio
+async def test_logging_validation_errors(caplog):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self) -> str:
+            return "hi"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+        query {
+            example {
+                foo
+            }
+            missingField
+        }
+    """
+
+    result = await schema.execute(
+        query,
+        root_value=Query(),
+    )
+
+    assert result.errors
+    assert len(result.errors) == 2
+
+    # Exception was logged
+    assert len(caplog.records) == 2
+    record1 = caplog.records[0]
+    assert record1.levelname == "ERROR"
+    assert record1.name == "strawberry.execution"
+    assert "Field 'example' must not have a selection" in record1.message
+
+    record2 = caplog.records[1]
+    assert record2.levelname == "ERROR"
+    assert record2.name == "strawberry.execution"
+    assert "Cannot query field 'missingField'" in record2.message
+
+
+def test_logging_validation_errors_sync(caplog):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self) -> str:
+            return "hi"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+        query {
+            example {
+                foo
+            }
+            missingField
+        }
+    """
+
+    result = schema.execute_sync(
+        query,
+        root_value=Query(),
+    )
+
+    assert result.errors
+    assert len(result.errors) == 2
+
+    # Exception was logged
+    assert len(caplog.records) == 2
+    record1 = caplog.records[0]
+    assert record1.levelname == "ERROR"
+    assert record1.name == "strawberry.execution"
+    assert "Field 'example' must not have a selection" in record1.message
+
+    record2 = caplog.records[1]
+    assert record2.levelname == "ERROR"
+    assert record2.name == "strawberry.execution"
+    assert "Cannot query field 'missingField'" in record2.message
 
 
 def test_overriding_process_errors(caplog):

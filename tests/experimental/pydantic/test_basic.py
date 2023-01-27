@@ -2,9 +2,8 @@ import dataclasses
 from enum import Enum
 from typing import Any, List, Optional, Union
 
-import pytest
-
 import pydantic
+import pytest
 
 import strawberry
 from strawberry.enum import EnumDefinition
@@ -841,3 +840,25 @@ def test_alias_fields_with_use_pydantic_alias():
 
     assert field3.python_name == "country"
     assert field3.graphql_name == "countryPydantic"
+
+
+def test_field_metadata():
+    class User(pydantic.BaseModel):
+        private: bool
+        public: bool
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        private: strawberry.auto = strawberry.field(metadata={"admin_only": True})
+        public: strawberry.auto
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    [field1, field2] = definition.fields
+
+    assert field1.python_name == "private"
+    assert field1.metadata["admin_only"]
+
+    assert field2.python_name == "public"
+    assert not field2.metadata

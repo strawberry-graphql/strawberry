@@ -20,7 +20,7 @@ jobs:
   unit-tests:
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11-dev"]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
 
     name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
@@ -35,16 +35,16 @@ jobs:
           cache: "poetry"
 
       - run: poetry env use ${{ matrix.python-version }}
-      - run: poetry run python --version
       - run: poetry install
         if: steps.setup-python.outputs.cache-hit != 'true'
 
       - name: pytest
         run:
-          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not
+          poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m "not
           starlette" -m "not django" --ignore=tests/mypy --ignore=tests/pyright
 
-      - uses: codecov/codecov-action@v1
+        if: ${{ always() }}
+      - uses: codecov/codecov-action@v3
         if: ${{ always() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -52,7 +52,7 @@ jobs:
           verbose: true
 
   unit-tests-on-windows:
-    name: Python 3.10 on Windows
+    name: Python 3.10.0 on Windows
     runs-on: windows-latest
 
     steps:
@@ -61,21 +61,19 @@ jobs:
       - uses: actions/setup-python@v4
         id: setup-python
         with:
-          python-version: "3.10"
+          python-version: "3.10.0"
           cache: "poetry"
 
-      - run:
-          poetry env use C:\hostedtoolcache\windows\Python\3.8.10\x86\python.exe
-      - run: poetry run python --version
       - run: poetry install
         if: steps.setup-python.outputs.cache-hit != 'true'
 
       - name: pytest
         run:
-          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not
+          poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m "not
           django" --ignore=tests/mypy --ignore=tests/pyright
 
-      - uses: codecov/codecov-action@v1
+        if: ${{ always() }}
+      - uses: codecov/codecov-action@v3
         if: ${{ always() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -108,9 +106,10 @@ jobs:
 
       - name: pytest
         run:
-          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m django
+          poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m django
 
-      - uses: codecov/codecov-action@v1
+        if: ${{ always() }}
+      - uses: codecov/codecov-action@v3
         if: ${{ always() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -120,7 +119,7 @@ jobs:
   starlette-unit-tests:
     strategy:
       matrix:
-        starlette: ["0.17.1", "0.18.0", "0.19.1", "0.20.4"]
+        starlette: ["0.20.4", "0.21.0", "0.22.0", "0.23.0"]
 
     name: Starlette ${{ matrix.starlette }}
     runs-on: ubuntu-latest
@@ -141,17 +140,17 @@ jobs:
       - name: Install starlette ${{ matrix.starlette }}
         run: poetry run pip install starlette==${{ matrix.starlette }}
 
-      # install fastapi < 0.85.0 if we are testing starlette before 0.20.4
-      - name: Install fastapi 0.85.0
-        run: poetry run pip install "fastapi<0.85.0"
-        if: matrix.starlette != '0.20.4'
+      - name: Install fastapi 0.88.0
+        run: poetry run pip install "fastapi<0.88.0"
+        if: matrix.starlette == '0.20.4'
 
       - name: pytest
         run:
-          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m
+          poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m
           starlette
 
-      - uses: codecov/codecov-action@v1
+        if: ${{ always() }}
+      - uses: codecov/codecov-action@v3
         if: ${{ always() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

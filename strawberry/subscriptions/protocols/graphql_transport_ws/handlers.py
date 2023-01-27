@@ -4,12 +4,8 @@ from contextlib import suppress
 from datetime import timedelta
 from typing import Any, AsyncGenerator, Callable, Dict, List, Optional
 
-from graphql import (
-    ExecutionResult as GraphQLExecutionResult,
-    GraphQLError,
-    GraphQLSyntaxError,
-    parse,
-)
+from graphql import ExecutionResult as GraphQLExecutionResult
+from graphql import GraphQLError, GraphQLSyntaxError, parse
 from graphql.error.graphql_error import format_error as format_graphql_error
 
 from strawberry.schema import BaseSchema
@@ -26,6 +22,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessagePayload,
 )
 from strawberry.types.graphql import OperationType
+from strawberry.unset import UNSET
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.operation import get_operation_type
 
@@ -46,6 +43,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         self.subscriptions: Dict[str, AsyncGenerator] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
         self.completed_tasks: List[asyncio.Task] = []
+        self.connection_params: Optional[Dict[str, Any]] = None
 
     @abstractmethod
     async def get_context(self) -> Any:
@@ -121,6 +119,12 @@ class BaseGraphQLTransportWSHandler(ABC):
         await self.reap_completed_tasks()
 
     async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
+        if message.payload is not UNSET and not isinstance(message.payload, dict):
+            await self.close(code=4400, reason="Invalid connection init payload")
+            return
+
+        self.connection_params = message.payload
+
         if self.connection_init_received:
             reason = "Too many initialisation requests"
             await self.close(code=4429, reason=reason)
@@ -168,6 +172,8 @@ class BaseGraphQLTransportWSHandler(ABC):
             )
 
         context = await self.get_context()
+        if isinstance(context, dict):
+            context["connection_params"] = self.connection_params
         root_value = await self.get_root_value()
 
         # Get an AsyncGenerator yielding the results

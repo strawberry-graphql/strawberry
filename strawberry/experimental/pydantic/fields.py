@@ -14,7 +14,6 @@ from strawberry.experimental.pydantic.exceptions import (
 )
 from strawberry.types.types import TypeDefinition
 
-
 try:
     from typing import GenericAlias as TypingGenericAlias  # type: ignore
 except ImportError:
@@ -77,6 +76,8 @@ FIELDS_MAP = {
 def get_basic_type(type_) -> Type[Any]:
     if lenient_issubclass(type_, pydantic.ConstrainedInt):
         return int
+    if lenient_issubclass(type_, pydantic.ConstrainedFloat):
+        return float
     if lenient_issubclass(type_, pydantic.ConstrainedStr):
         return str
     if lenient_issubclass(type_, pydantic.ConstrainedList):

@@ -1,7 +1,6 @@
 import datetime
 
 import pytest
-
 from graphql import GraphQLError
 
 import strawberry

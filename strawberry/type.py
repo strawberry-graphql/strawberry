@@ -12,9 +12,7 @@ from typing import (
     Union,
     cast,
 )
-
 from typing_extensions import Annotated, get_args, get_origin
-
 
 if TYPE_CHECKING:
     from .types.types import TypeDefinition
@@ -35,6 +33,9 @@ class StrawberryType(ABC):
     @abstractmethod
     def is_generic(self) -> bool:
         raise NotImplementedError()
+
+    def has_generic(self, type_var) -> bool:
+        return False
 
     def __eq__(self, other: object) -> bool:
         from strawberry.annotation import StrawberryAnnotation
@@ -83,7 +84,7 @@ class StrawberryContainer(StrawberryType):
             if isinstance(self.of_type, type)
             else repr(self.of_type)
         )
-        args = ", ".join((of_type_name,) + tuple(map(repr, self.args)))
+        args = ", ".join((of_type_name, *tuple(map(repr, self.args))))
         return f"{type(self).__name__}[{args}]"
 
     @property
@@ -102,13 +103,11 @@ class StrawberryContainer(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> StrawberryType:
-        of_type_copy: Union[StrawberryType, type]
+        of_type_copy: Union[StrawberryType, type] = self.of_type
 
         # TODO: Obsolete with StrawberryObject
         if hasattr(self.of_type, "_type_definition"):
-            type_definition: TypeDefinition = (
-                self.of_type._type_definition  # type: ignore
-            )
+            type_definition: TypeDefinition = self.of_type._type_definition
 
             if type_definition.is_generic:
                 of_type_copy = type_definition.copy_with(type_var_map)
@@ -125,11 +124,16 @@ class StrawberryContainer(StrawberryType):
         # TODO: Obsolete with StrawberryObject
         type_ = self.of_type
         if hasattr(self.of_type, "_type_definition"):
-            type_ = self.of_type._type_definition  # type: ignore
+            type_ = self.of_type._type_definition
 
         if isinstance(type_, StrawberryType):
             return type_.is_generic
 
+        return False
+
+    def has_generic(self, type_var) -> bool:
+        if isinstance(self.of_type, StrawberryType):
+            return self.of_type.has_generic(type_var)
         return False
 
 
@@ -184,6 +188,9 @@ class StrawberryTypeVar(StrawberryType):
     @property
     def is_generic(self) -> bool:
         return True
+
+    def has_generic(self, type_var) -> bool:
+        return self.type_var == type_var
 
     @property
     def type_params(self) -> List[TypeVar]:

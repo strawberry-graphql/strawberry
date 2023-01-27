@@ -21,17 +21,23 @@ Strawberry is built on top of Python’s
 
 Let’s create a new folder:
 
-    mkdir strawberry-demo
-    cd strawberry-demo
+```bash
+mkdir strawberry-demo
+cd strawberry-demo
+```
 
 After that we need a new virtualenv:
 
-    python -m venv virtualenv
+```bash
+python -m venv virtualenv
+```
 
 Activate the virtualenv and then install strawberry plus the debug server.
 
-    source virtualenv/bin/activate
-    pip install 'strawberry-graphql[debug-server]'
+```bash
+source virtualenv/bin/activate
+pip install 'strawberry-graphql[debug-server]'
+```
 
 ## Step 2: Define the schema
 
@@ -46,10 +52,12 @@ contents:
 import typing
 import strawberry
 
+
 @strawberry.type
 class Book:
     title: str
     author: str
+
 
 @strawberry.type
 class Query:
@@ -71,8 +79,8 @@ Let’s create a function that returns some books.
 def get_books():
     return [
         Book(
-            title='The Great Gatsby',
-            author='F. Scott Fitzgerald',
+            title="The Great Gatsby",
+            author="F. Scott Fitzgerald",
         ),
     ]
 ```
@@ -117,11 +125,15 @@ schema = strawberry.Schema(query=Query)
 
 Then run the following command
 
-    strawberry server schema
+```bash
+strawberry server schema
+```
 
 This will start a debug server, you should see the following output:
 
-    Running strawberry on http://0.0.0.0:8000/graphql 🍓
+```bash
+Running strawberry on http://0.0.0.0:8000/graphql 🍓
+```
 
 ## Step 6: execute your first query
 

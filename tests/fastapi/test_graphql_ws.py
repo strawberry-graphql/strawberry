@@ -1,11 +1,11 @@
 import pytest
-
 from starlette.websockets import WebSocketDisconnect
 
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_COMPLETE,
     GQL_CONNECTION_ACK,
+    GQL_CONNECTION_ERROR,
     GQL_CONNECTION_INIT,
     GQL_CONNECTION_KEEP_ALIVE,
     GQL_CONNECTION_TERMINATE,
@@ -517,3 +517,60 @@ def test_task_cancellation_separation(test_client):
         response = ws1.receive_json()
         assert response["type"] == GQL_COMPLETE
         assert response["id"] == "debug1"
+
+
+def test_injects_connection_params(test_client):
+    with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
+        ws.send_json(
+            {
+                "type": GQL_CONNECTION_INIT,
+                "id": "demo",
+                "payload": {"strawberry": "rocks"},
+            }
+        )
+        ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "demo",
+                "payload": {
+                    "query": "subscription { connectionParams }",
+                },
+            }
+        )
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ACK
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "demo"
+        assert response["payload"]["data"] == {"connectionParams": "rocks"}
+
+        ws.send_json({"type": GQL_STOP, "id": "demo"})
+        response = ws.receive_json()
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "demo"
+
+        ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+
+        # make sure the websocket is disconnected now
+        with pytest.raises(WebSocketDisconnect):
+            ws.receive_json()
+
+
+def test_rejects_connection_params(test_client):
+    with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
+        ws.send_json(
+            {
+                "type": GQL_CONNECTION_INIT,
+                "id": "demo",
+                "payload": "gonna fail",
+            }
+        )
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ERROR
+
+        # make sure the websocket is disconnected now
+        with pytest.raises(WebSocketDisconnect):
+            ws.receive_json()

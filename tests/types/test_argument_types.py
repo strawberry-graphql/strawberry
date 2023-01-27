@@ -1,10 +1,9 @@
 import warnings
 from enum import Enum
 from typing import Any, List, Optional, TypeVar
+from typing_extensions import Annotated
 
 import pytest
-
-from typing_extensions import Annotated
 
 import strawberry
 from strawberry.types.info import Info

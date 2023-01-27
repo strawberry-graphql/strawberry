@@ -121,17 +121,24 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
                     for k, v in parse_qs(self.scope["query_string"].decode()).items()
                 }
             )
-            if "query" not in params:
-                raise ExecutionError("No GraphQL query found in the request")
 
-            result = await self.execute(parse_request_data(params))
+            try:
+                result = await self.execute(parse_request_data(params))
+            except MissingQueryError as e:
+                raise ExecutionError("No GraphQL query found in the request") from e
+
             return Result(response=json.dumps(result).encode())
         else:
             raise MethodNotAllowed()
 
     async def post(self, body: bytes) -> Result:
         request_data = await self.parse_body(body)
-        result = await self.execute(request_data)
+
+        try:
+            result = await self.execute(request_data)
+        except MissingQueryError as e:
+            raise ExecutionError("No GraphQL query found in the request") from e
+
         return Result(response=json.dumps(result).encode())
 
     async def parse_body(self, body: bytes) -> GraphQLRequestData:
@@ -143,10 +150,7 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         except json.JSONDecodeError as e:
             raise ExecutionError("Unable to parse request body as JSON") from e
 
-        try:
-            return parse_request_data(data)
-        except MissingQueryError as e:
-            raise ExecutionError("No GraphQL query found in the request") from e
+        return parse_request_data(data)
 
     async def parse_multipart_body(self, body: bytes) -> GraphQLRequestData:
         raise ExecutionError("Unable to parse the multipart body")
@@ -195,7 +199,7 @@ class SyncGraphQLHTTPConsumer(GraphQLHTTPConsumer):
     def get_root_value(self, request: Optional["ChannelsConsumer"] = None) -> Any:
         return None
 
-    def get_context(
+    def get_context(  # type: ignore[override]
         self,
         request: Optional["ChannelsConsumer"] = None,
     ) -> StrawberryChannelsContext:

@@ -20,7 +20,6 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
 )
 from tests.channels.schema import schema
 
-
 pytestmark = [
     pytest.mark.asyncio,
 ]
@@ -423,3 +422,43 @@ async def test_subscription_exceptions(ws):
     assert response["id"] == "sub1"
     assert len(response["payload"]) == 1
     assert response["payload"][0] == {"message": "TEST EXC"}
+
+
+async def test_injects_connection_params(ws):
+    await ws.send_json_to(
+        ConnectionInitMessage(payload={"strawberry": "rocks"}).as_dict()
+    )
+
+    response = await ws.receive_json_from()
+    assert response == ConnectionAckMessage().as_dict()
+
+    await ws.send_json_to(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(query="subscription { connectionParams }"),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json_from()
+    assert (
+        response
+        == NextMessage(
+            id="sub1", payload={"data": {"connectionParams": "rocks"}}
+        ).as_dict()
+    )
+
+    await ws.send_json_to(CompleteMessage(id="sub1").as_dict())
+
+
+async def test_rejects_connection_params_not_dict(ws):
+    await ws.send_json_to(ConnectionInitMessage(payload="gonna fail").as_dict())
+    data = await ws.receive_output()
+    assert data["type"] == "websocket.close"
+    assert data["code"] == 4400
+
+
+async def test_rejects_connection_params_not_unset(ws):
+    await ws.send_json_to(ConnectionInitMessage(payload=None).as_dict())
+    data = await ws.receive_output()
+    assert data["type"] == "websocket.close"
+    assert data["code"] == 4400

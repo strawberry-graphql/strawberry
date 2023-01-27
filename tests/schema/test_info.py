@@ -291,7 +291,7 @@ def test_info_selected_fields_undefined_variable():
 
 
 @pytest.mark.parametrize(
-    "return_type,return_value",
+    ("return_type", "return_value"),
     [
         (str, "text"),
         (List[str], ["text"]),

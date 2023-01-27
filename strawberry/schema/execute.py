@@ -13,17 +13,14 @@ from typing import (
     cast,
 )
 
-from graphql import (
-    ExecutionContext as GraphQLExecutionContext,
-    ExecutionResult as GraphQLExecutionResult,
-    GraphQLError,
-    GraphQLSchema,
-    execute as original_execute,
-    parse,
-)
+from graphql import ExecutionContext as GraphQLExecutionContext
+from graphql import ExecutionResult as GraphQLExecutionResult
+from graphql import GraphQLError, GraphQLSchema, parse
+from graphql import execute as original_execute
 from graphql.language import DocumentNode
 from graphql.validation import ASTValidationRule, validate
 
+from strawberry.exceptions import MissingQueryError
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
 from strawberry.types import ExecutionContext, ExecutionResult
@@ -62,7 +59,6 @@ def _run_validation(execution_context: ExecutionContext) -> None:
 
 async def execute(
     schema: GraphQLSchema,
-    query: str,
     *,
     allowed_operation_types: Iterable[OperationType],
     extensions: Sequence[Union[Type[Extension], Extension]],
@@ -78,14 +74,19 @@ async def execute(
     async with extensions_runner.request():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
+        if not execution_context.query:
+            raise MissingQueryError()
 
         async with extensions_runner.parsing():
             try:
                 if not execution_context.graphql_document:
-                    execution_context.graphql_document = parse_document(query)
+                    execution_context.graphql_document = parse_document(
+                        execution_context.query
+                    )
 
             except GraphQLError as error:
                 execution_context.errors = [error]
+                process_errors([error], execution_context)
                 return ExecutionResult(
                     data=None,
                     errors=[error],
@@ -96,6 +97,8 @@ async def execute(
                 error = GraphQLError(str(error), original_error=error)
 
                 execution_context.errors = [error]
+                process_errors([error], execution_context)
+
                 return ExecutionResult(
                     data=None,
                     errors=[error],
@@ -108,6 +111,7 @@ async def execute(
         async with extensions_runner.validation():
             _run_validation(execution_context)
             if execution_context.errors:
+                process_errors(execution_context.errors, execution_context)
                 return ExecutionResult(data=None, errors=execution_context.errors)
 
         async with extensions_runner.executing():
@@ -148,7 +152,6 @@ async def execute(
 
 def execute_sync(
     schema: GraphQLSchema,
-    query: str,
     *,
     allowed_operation_types: Iterable[OperationType],
     extensions: Sequence[Union[Type[Extension], Extension]],
@@ -164,14 +167,19 @@ def execute_sync(
     with extensions_runner.request():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
+        if not execution_context.query:
+            raise MissingQueryError()
 
         with extensions_runner.parsing():
             try:
                 if not execution_context.graphql_document:
-                    execution_context.graphql_document = parse_document(query)
+                    execution_context.graphql_document = parse_document(
+                        execution_context.query
+                    )
 
             except GraphQLError as error:
                 execution_context.errors = [error]
+                process_errors([error], execution_context)
                 return ExecutionResult(
                     data=None,
                     errors=[error],
@@ -182,6 +190,7 @@ def execute_sync(
                 error = GraphQLError(str(error), original_error=error)
 
                 execution_context.errors = [error]
+                process_errors([error], execution_context)
                 return ExecutionResult(
                     data=None,
                     errors=[error],
@@ -194,6 +203,7 @@ def execute_sync(
         with extensions_runner.validation():
             _run_validation(execution_context)
             if execution_context.errors:
+                process_errors(execution_context.errors, execution_context)
                 return ExecutionResult(data=None, errors=execution_context.errors)
 
         with extensions_runner.executing():

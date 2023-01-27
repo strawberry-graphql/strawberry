@@ -12,7 +12,6 @@ from typing import (
     Optional,
     Sequence,
 )
-
 from typing_extensions import Literal, Protocol, TypedDict
 
 from channels.consumer import AsyncConsumer
@@ -86,8 +85,11 @@ class ChannelsConsumer(AsyncConsumer):
     async def get_context(
         self,
         request: Optional["ChannelsConsumer"] = None,
+        connection_params: Optional[Dict[str, Any]] = None,
     ) -> StrawberryChannelsContext:
-        return StrawberryChannelsContext(request=request or self)
+        return StrawberryChannelsContext(
+            request=request or self, connection_params=connection_params
+        )
 
     async def dispatch(self, message: ChannelsMessage):
         # AsyncConsumer will try to get a function for message["type"] to handle

@@ -1,6 +1,5 @@
 import textwrap
 from typing import Generic, Optional, TypeVar
-
 from typing_extensions import Annotated
 
 import strawberry

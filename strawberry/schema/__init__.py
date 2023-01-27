@@ -1,5 +1,4 @@
-from .base import BaseSchema as BaseSchema
-from .schema import Schema as Schema
-
+from .base import BaseSchema
+from .schema import Schema
 
 __all__ = ["BaseSchema", "Schema"]

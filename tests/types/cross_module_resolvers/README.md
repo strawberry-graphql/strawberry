@@ -12,9 +12,11 @@ a resolver from a different module:
 ```python
 from other_module import generic_resolver
 
+
 @strawberry.field
 class Foo:
-    bar: 'Bar' = strawberry.field(resolver=generic_resolver)
+    bar: "Bar" = strawberry.field(resolver=generic_resolver)
+
 
 @strawberry.field
 class Bar:

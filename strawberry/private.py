@@ -1,5 +1,4 @@
 from typing import TypeVar, Union
-
 from typing_extensions import Annotated
 
 from strawberry.type import StrawberryAnnotated, StrawberryType

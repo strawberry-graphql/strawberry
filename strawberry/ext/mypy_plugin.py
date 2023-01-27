@@ -2,7 +2,6 @@ import re
 import warnings
 from decimal import Decimal
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
-
 from typing_extensions import Final
 
 import mypy
@@ -61,7 +60,6 @@ from mypy.types import (
 from mypy.typevars import fill_typevars
 from mypy.util import get_unique_redefinition_name
 
-
 # Backwards compatible with the removal of `TypeVarDef` in mypy 0.920.
 try:
     from mypy.types import TypeVarDef  # type: ignore
@@ -70,7 +68,8 @@ except ImportError:
 
 # To be compatible with user who don't use pydantic
 try:
-    from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY, PydanticModelField
+    from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY
+    from pydantic.mypy import PydanticModelField
 except ImportError:
     PYDANTIC_METADATA_KEY = ""
 
@@ -414,7 +413,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
 
         pydantic_fields: Set["PydanticModelField"] = set()
         try:
-            for name, data in model_type.type.metadata[PYDANTIC_METADATA_KEY][
+            for _name, data in model_type.type.metadata[PYDANTIC_METADATA_KEY][
                 "fields"
             ].items():
                 field = PydanticModelField.deserialize(ctx.cls.info, data)

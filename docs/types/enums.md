@@ -17,7 +17,9 @@ First, create a new class for the new type, which extends class Enum:
 ```python
 from enum import Enum
 
+
 class IceCreamFlavour(Enum):
+    ...
 ```
 
 Then, list options as variables in that class:
@@ -87,6 +89,7 @@ class Cone:
     flavour: IceCreamFlavour
     num_scoops: int
 
+
 @strawberry.type
 class Query:
     @strawberry.field
@@ -134,9 +137,7 @@ and verbose syntax.
 @strawberry.enum
 class IceCreamFlavour(Enum):
     VANILLA = strawberry.enum_value("vanilla")
-    STRAWBERRY = strawberry.enum_value(
-        "strawberry", deprecation_reason="We ran out"
-    )
+    STRAWBERRY = strawberry.enum_value("strawberry", deprecation_reason="We ran out")
     CHOCOLATE = "chocolate"
 ```
 

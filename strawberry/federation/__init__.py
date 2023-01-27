@@ -7,7 +7,6 @@ from .scalar import scalar
 from .schema import Schema
 from .union import union
 
-
 __all__ = [
     "argument",
     "enum",

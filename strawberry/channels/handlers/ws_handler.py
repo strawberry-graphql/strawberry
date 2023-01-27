@@ -92,6 +92,7 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
             return await self.close(code=4406)
 
         await self._handler.handle()
+        return None
 
     async def receive(self, *args, **kwargs):
         # Overriding this so that we can pass the errors to handle_invalid_message

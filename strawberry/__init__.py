@@ -7,7 +7,7 @@ from .enum import enum, enum_value
 from .field import field
 from .lazy_type import LazyType, lazy
 from .mutation import mutation, subscription
-from .object_type import input, interface, type
+from .object_type import asdict, input, interface, type
 from .permission import BasePermission
 from .private import Private
 from .scalars import ID
@@ -15,7 +15,6 @@ from .schema import Schema
 from .schema_directive import schema_directive
 from .union import union
 from .unset import UNSET
-
 
 __all__ = [
     "BasePermission",
@@ -42,4 +41,5 @@ __all__ = [
     "type",
     "union",
     "auto",
+    "asdict",
 ]

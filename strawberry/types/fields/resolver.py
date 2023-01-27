@@ -22,7 +22,6 @@ from typing import (  # type: ignore[attr-defined]
     _eval_type,
     cast,
 )
-
 from typing_extensions import Annotated, Protocol, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
@@ -204,13 +203,14 @@ class StrawberryResolver(Generic[T]):
         parameters = self.signature.parameters.values()
         reserved_parameters = set(self.reserved_parameters.values())
 
-        missing_annotations = set()
+        missing_annotations = []
         arguments = []
         user_parameters = (p for p in parameters if p not in reserved_parameters)
+
         for param in user_parameters:
             annotation = self._resolved_annotations.get(param, param.annotation)
             if annotation is inspect.Signature.empty:
-                missing_annotations.add(param.name)
+                missing_annotations.append(param.name)
             else:
                 argument = StrawberryArgument(
                     python_name=param.name,
@@ -222,7 +222,7 @@ class StrawberryResolver(Generic[T]):
                 )
                 arguments.append(argument)
         if missing_annotations:
-            raise MissingArgumentsAnnotationsError(self.name, missing_annotations)
+            raise MissingArgumentsAnnotationsError(self, missing_annotations)
         return arguments
 
     @cached_property
@@ -294,16 +294,24 @@ class StrawberryResolver(Generic[T]):
         if self.type:
             if isinstance(self.type, StrawberryType):
                 type_override = self.type.copy_with(type_var_map)
-            else:
-                type_override = self.type._type_definition.copy_with(  # type: ignore
+            elif hasattr(self.type, "_type_definition"):
+                type_override = self.type._type_definition.copy_with(
                     type_var_map,
                 )
 
-        return type(self)(
+        other = type(self)(
             func=self.wrapped_func,
             description=self._description,
             type_override=type_override,
         )
+        # Resolve generic arguments
+        for argument in other.arguments:
+            if isinstance(argument.type, StrawberryType) and argument.type.is_generic:
+                argument.type_annotation = StrawberryAnnotation(
+                    annotation=argument.type.copy_with(type_var_map),
+                    namespace=argument.type_annotation.namespace,
+                )
+        return other
 
     @cached_property
     def _namespace(self) -> Dict[str, Any]:

@@ -45,6 +45,7 @@ methods:
 - `async get_context(self, request: aiohttp.web.Request, response: aiohttp.web.StreamResponse) -> object`
 - `async get_root_value(self, request: aiohttp.web.Request) -> object`
 - `async process_result(self, request: aiohttp.web.Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def encode_json(self, data: GraphQLHTTPResponse) -> str`
 
 ## get_context
 
@@ -136,3 +137,14 @@ class MyGraphQLView(GraphQLView):
 
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
+
+## encode_json
+
+`encode_json` allows to customize the encoding of the JSON response. By default
+we use `json.dumps` but you can override this method to use a different encoder.
+
+```python
+class MyGraphQLView(GraphQLView):
+    def encode_json(self, data: GraphQLHTTPResponse) -> str:
+        return json.dumps(data, indent=2)
+```

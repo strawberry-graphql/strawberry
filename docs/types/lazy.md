@@ -22,6 +22,7 @@ import strawberry
 if TYPE_CHECKING:
     from .users import User
 
+
 @strawberry.type
 class Post:
     title: str
@@ -37,6 +38,7 @@ import strawberry
 if TYPE_CHECKING:
     from .posts import Post
 
+
 @strawberry.type
 class User:
     name: str
@@ -47,3 +49,27 @@ class User:
 of the module of the type we want to use, this allows us to leverage Python's
 type hints, while preventing circular imports and preserving type safety by
 using `TYPE_CHECKING` to tell type checkers where to look for the type.
+
+<Note>
+
+`Annotated` is only available in Python 3.9+, if you are using an older version
+of Python you can use `typing_extensions.Annotated` instead.
+
+```python
+# users.py
+from typing import TYPE_CHECKING, List
+from typing_extensions import Annotated
+
+import strawberry
+
+if TYPE_CHECKING:
+    from .posts import Post
+
+
+@strawberry.type
+class User:
+    name: str
+    posts: List[Annotated["Post", strawberry.lazy(".posts")]]
+```
+
+</Note>
