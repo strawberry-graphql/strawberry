@@ -2652,6 +2652,45 @@ files = [
 httpx = ">=0.18,<0.24"
 
 [[package]]
+name = "sentry-sdk"
+version = "1.14.0"
+description = "Python client for Sentry (https://sentry.io)"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "sentry-sdk-1.14.0.tar.gz", hash = "sha256:273fe05adf052b40fd19f6d4b9a5556316807246bd817e5e3482930730726bb0"},
+    {file = "sentry_sdk-1.14.0-py2.py3-none-any.whl", hash = "sha256:72c00322217d813cf493fe76590b23a757e063ff62fec59299f4af7201dd4448"},
+]
+
+[package.dependencies]
+certifi = "*"
+urllib3 = {version = ">=1.26.11", markers = "python_version >= \"3.6\""}
+
+[package.extras]
+aiohttp = ["aiohttp (>=3.5)"]
+beam = ["apache-beam (>=2.12)"]
+bottle = ["bottle (>=0.12.13)"]
+celery = ["celery (>=3)"]
+chalice = ["chalice (>=1.16.0)"]
+django = ["django (>=1.8)"]
+falcon = ["falcon (>=1.4)"]
+fastapi = ["fastapi (>=0.79.0)"]
+flask = ["blinker (>=1.1)", "flask (>=0.11)"]
+httpx = ["httpx (>=0.16.0)"]
+opentelemetry = ["opentelemetry-distro (>=0.35b0)"]
+pure-eval = ["asttokens", "executing", "pure-eval"]
+pymongo = ["pymongo (>=3.1)"]
+pyspark = ["pyspark (>=2.4.4)"]
+quart = ["blinker (>=1.1)", "quart (>=0.16.1)"]
+rq = ["rq (>=0.6)"]
+sanic = ["sanic (>=0.8)"]
+sqlalchemy = ["sqlalchemy (>=1.2)"]
+starlette = ["starlette (>=0.19.1)"]
+starlite = ["starlite (>=1.48)"]
+tornado = ["tornado (>=5)"]
+
+[[package]]
 name = "service-identity"
 version = "21.1.0"
 description = "Service identity verification for pyOpenSSL & cryptography."
@@ -3584,4 +3623,4 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "c680a46ccd92baa44a3490515c7e5e828717b1bf794b66b3c1d7934af128f82a"
+content-hash = "fbaf9c5eeab2a98d8acb548609220fdcc40e426dc4fe8abc8e32f900d5b96a3a"

@@ -110,6 +110,7 @@ libcst = {version = "^0.4.7", optional = false}
 ddtrace = "^1.6.4"
 python-multipart = "^0.0.5"
 pygments = "^2.3"
+sentry-sdk = "^1.14.0"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
