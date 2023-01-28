@@ -81,6 +81,7 @@ async def test_sentry_tracer(sentry_extension, mocker):
         [
             mocker.call(op="gql", name="Anonymous Query"),
             mocker.call().set_tag("graphql.operation_type", "query"),
+            mocker.call().set_data("graphql.query", query),
             mocker.call().start_child(op="parsing", description="Parsing"),
             mocker.call().start_child().finish(),
             mocker.call().start_child(op="validation", description="Validation"),
@@ -184,6 +185,7 @@ def test_sentry_tracer_sync(sentry_extension_sync, mocker):
         [
             mocker.call(op="gql", name="Anonymous Query"),
             mocker.call().set_tag("graphql.operation_type", "query"),
+            mocker.call().set_data("graphql.query", query),
             mocker.call().start_child(op="parsing", description="Parsing"),
             mocker.call().start_child().finish(),
             mocker.call().start_child(op="validation", description="Validation"),
