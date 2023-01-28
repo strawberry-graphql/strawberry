@@ -77,39 +77,34 @@ async def test_sentry_tracer(sentry_extension, mocker):
 
     await schema.execute(query)
 
-    mock.start_transaction.assert_has_calls(
-        [
-            mocker.call(op="gql", name="Anonymous Query"),
-            mocker.call().set_tag("graphql.operation_type", "query"),
-            mocker.call().set_data("graphql.query", query),
-            mocker.call().start_child(op="parsing", description="Parsing"),
-            mocker.call().start_child().finish(),
-            mocker.call().start_child(op="validation", description="Validation"),
-            mocker.call().start_child().finish(),
-            mocker.call().start_child(
-                op="resolve", description="Resolving: Query.personAsync"
-            ),
-            mocker.call().start_child().__enter__(),
-            mocker.call()
-            .start_child()
-            .__enter__()
-            .set_tag("graphql.field_name", "personAsync"),
-            mocker.call()
-            .start_child()
-            .__enter__()
-            .set_tag("graphql.parent_type", "Query"),
-            mocker.call()
-            .start_child()
-            .__enter__()
-            .set_tag("graphql.field_path", "Query.personAsync"),
-            mocker.call()
-            .start_child()
-            .__enter__()
-            .set_tag("graphql.path", "personAsync"),
-            mocker.call().start_child().__exit__(None, None, None),
-            mocker.call().finish(),
-        ]
-    )
+    assert mock.start_transaction.mock_calls == [
+        mocker.call(op="gql", name="Anonymous Query"),
+        mocker.call().set_tag("graphql.operation_type", "query"),
+        mocker.call().set_tag(
+            "graphql.resource_name", "63a280256ca4e8514e06cf90b30c8c3a"
+        ),
+        mocker.call().set_data("graphql.query", query),
+        mocker.call().start_child(op="parsing", description="Parsing"),
+        mocker.call().start_child().finish(),
+        mocker.call().start_child(op="validation", description="Validation"),
+        mocker.call().start_child().finish(),
+        mocker.call().start_child(
+            op="resolve", description="Resolving: Query.personAsync"
+        ),
+        mocker.call().start_child().__enter__(),
+        mocker.call()
+        .start_child()
+        .__enter__()
+        .set_tag("graphql.field_name", "personAsync"),
+        mocker.call().start_child().__enter__().set_tag("graphql.parent_type", "Query"),
+        mocker.call()
+        .start_child()
+        .__enter__()
+        .set_tag("graphql.field_path", "Query.personAsync"),
+        mocker.call().start_child().__enter__().set_tag("graphql.path", "personAsync"),
+        mocker.call().start_child().__exit__(None, None, None),
+        mocker.call().finish(),
+    ]
 
 
 @pytest.mark.asyncio
@@ -181,39 +176,32 @@ def test_sentry_tracer_sync(sentry_extension_sync, mocker):
 
     schema.execute_sync(query)
 
-    mock.start_transaction.assert_has_calls(
-        [
-            mocker.call(op="gql", name="Anonymous Query"),
-            mocker.call().set_tag("graphql.operation_type", "query"),
-            mocker.call().set_data("graphql.query", query),
-            mocker.call().start_child(op="parsing", description="Parsing"),
-            mocker.call().start_child().finish(),
-            mocker.call().start_child(op="validation", description="Validation"),
-            mocker.call().start_child().finish(),
-            mocker.call().start_child(
-                op="resolve", description="Resolving: Query.person"
-            ),
-            mocker.call().start_child().__enter__(),
-            mocker.call()
-            .start_child()
-            .__enter__()
-            .set_tag("graphql.field_name", "person"),
-            mocker.call()
-            .start_child()
-            .__enter__()
-            .set_tag("graphql.parent_type", "Query"),
-            mocker.call()
-            .start_child()
-            .__enter__()
-            .set_tag("graphql.field_path", "Query.person"),
-            mocker.call().start_child().__enter__().set_tag("graphql.path", "person"),
-            mocker.call().start_child().__exit__(None, None, None),
-            mocker.call().finish(),
-        ]
-    )
+    assert mock.start_transaction.mock_calls == [
+        mocker.call(op="gql", name="Anonymous Query"),
+        mocker.call().set_tag("graphql.operation_type", "query"),
+        mocker.call().set_tag(
+            "graphql.resource_name", "659edba9e6ac9c20d03da1b2d0f9a956"
+        ),
+        mocker.call().set_data("graphql.query", query),
+        mocker.call().start_child(op="parsing", description="Parsing"),
+        mocker.call().start_child().finish(),
+        mocker.call().start_child(op="validation", description="Validation"),
+        mocker.call().start_child().finish(),
+        mocker.call().start_child(op="resolve", description="Resolving: Query.person"),
+        mocker.call().start_child().__enter__(),
+        mocker.call().start_child().__enter__().set_tag("graphql.field_name", "person"),
+        mocker.call().start_child().__enter__().set_tag("graphql.parent_type", "Query"),
+        mocker.call()
+        .start_child()
+        .__enter__()
+        .set_tag("graphql.field_path", "Query.person"),
+        mocker.call().start_child().__enter__().set_tag("graphql.path", "person"),
+        mocker.call().start_child().__exit__(None, None, None),
+        mocker.call().finish(),
+    ]
 
 
-def test_uses_operation_name__sync(sentry_extension_sync):
+def test_uses_operation_name_sync(sentry_extension_sync):
     extension, mock = sentry_extension_sync
 
     schema = strawberry.Schema(query=Query, mutation=Mutation, extensions=[extension])

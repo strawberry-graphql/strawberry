@@ -52,6 +52,7 @@ class SentryTracingExtension(Extension):
             operation_type = "subscription"
 
         self.transaction.set_tag("graphql.operation_type", operation_type)
+        self.transaction.set_tag("graphql.resource_name", self._resource_name)
         self.transaction.set_data("graphql.query", self.execution_context.query)
 
     def on_request_end(self) -> None:
