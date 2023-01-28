@@ -1,7 +1,7 @@
 import enum
 from copy import deepcopy
 from inspect import isawaitable
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Union
 
 from graphql import GraphQLResolveInfo
 from opentelemetry import trace
@@ -16,6 +16,30 @@ from .utils import should_skip_tracing
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 ArgFilter = Callable[[Dict[str, Any], GraphQLResolveInfo], Dict[str, Any]]
+ArgSerializer = Callable[[Dict[str, Any], GraphQLResolveInfo], Dict[str, Any]]
+ArgValueEncoder = Callable[[Any], Union[bool, str, bytes, int, float]]
+
+
+def _flatten_dict_gen(d, parent_key, sep, encoder):
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, dict):
+            yield from flatten_dict(v, new_key, sep).items()
+        else:
+            yield new_key, encoder(v)
+
+
+def flatten_dict(
+    d: Dict[str, Any],
+    parent_key: str = "",
+    sep: str = ".",
+    encoder: ArgValueEncoder = str,
+):
+    return dict(_flatten_dict_gen(d, parent_key, sep, encoder))
+
+
+def default_arg_serializer(args, info):
+    return flatten_dict(args)
 
 
 class RequestStage(enum.Enum):
@@ -26,6 +50,7 @@ class RequestStage(enum.Enum):
 
 class OpenTelemetryExtension(Extension):
     _arg_filter: Optional[ArgFilter]
+    _arg_serializer: Optional[ArgSerializer]
     _span_holder: Dict[RequestStage, Span] = dict()
     _tracer: Tracer
 
@@ -34,8 +59,10 @@ class OpenTelemetryExtension(Extension):
         *,
         execution_context: Optional[ExecutionContext] = None,
         arg_filter: Optional[ArgFilter] = None,
+        arg_serializer: Optional[ArgSerializer] = None,
     ):
         self._arg_filter = arg_filter
+        self._arg_serializer = arg_serializer
         self._tracer = trace.get_tracer("strawberry")
         if execution_context:
             self.execution_context = execution_context
@@ -95,6 +122,20 @@ class OpenTelemetryExtension(Extension):
             return args
         return self._arg_filter(deepcopy(args), info)
 
+    def serialize_resolver_args(
+        self, args: Dict[str, Any], info: GraphQLResolveInfo
+    ) -> Dict[str, Any]:
+        if not self._arg_serializer:
+            return default_arg_serializer(args, info)
+
+        # args might not have been cloned yet so do it now.
+        # It does not need to be done for default_arg_serializer
+        # because it does not modify it.
+        if not self._arg_filter:
+            args = deepcopy(args)
+
+        return self._arg_serializer(args, info)
+
     def add_tags(self, span: Span, info: GraphQLResolveInfo, kwargs: Dict[str, Any]):
         graphql_path = ".".join(map(str, get_path_from_info(info)))
 
@@ -104,8 +145,9 @@ class OpenTelemetryExtension(Extension):
 
         if kwargs:
             filtered_kwargs = self.filter_resolver_args(kwargs, info)
+            serialized_kwargs = self.serialize_resolver_args(filtered_kwargs, info)
 
-            for kwarg, value in filtered_kwargs.items():
+            for kwarg, value in serialized_kwargs.items():
                 span.set_attribute(f"graphql.param.{kwarg}", value)
 
     async def resolve(self, _next, root, info, *args, **kwargs):
