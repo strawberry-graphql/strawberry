@@ -124,7 +124,7 @@ def test_with_invalid_context_getter():
     )
     test_client = TestClient(app, raise_server_exceptions=True)
     # FIXME:
-    #! assert starlite.exceptions.http_exceptions.InternalServerException is raised
+#! assert starlite.exceptions.http_exceptions.InternalServerException is raised
     # with pytest.raises(
     #     InternalServerException,
     #     r"A dependency failed validation for POST .*"
