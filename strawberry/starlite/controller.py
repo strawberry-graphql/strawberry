@@ -62,7 +62,13 @@ if TYPE_CHECKING:
 
     MergedContext = Union[
         "BaseContext",
-        Dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]],
+        Union[
+            Dict[str, Any],
+            Dict[str, BackgroundTasks],
+            Dict[str, Request],
+            Dict[str, Response],
+            Dict[str, websocket],
+        ],
     ]
 
 CustomContext = Union["BaseContext", Dict[str, Any]]
@@ -134,7 +140,7 @@ def make_graphql_controller(
     root_value_getter: Optional[AnyCallable] = None,
     # TODO: context typevar
     context_getter: Optional[AnyCallable] = None,
-    subscription_protocols: Iterable[str] = (
+    subscription_protocols: Tuple[str, ...] = (
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
         GRAPHQL_WS_PROTOCOL,
     ),
@@ -181,7 +187,7 @@ def make_graphql_controller(
 
         async def execute(
             self,
-            query: str,
+            query: "Optional[str]",
             variables: "Optional[Dict[str, Any]]" = None,
             context: "Optional[CustomContext]" = None,
             operation_name: "Optional[str]" = None,
@@ -189,7 +195,7 @@ def make_graphql_controller(
             allowed_operation_types: "Optional[Iterable[OperationType]]" = None,
         ):
             if self._debug:
-                pretty_print_graphql_operation(operation_name, query, variables)
+                pretty_print_graphql_operation(operation_name, query or "", variables)
 
             return await self._schema.execute(
                 query,
@@ -221,7 +227,9 @@ def make_graphql_controller(
                     OperationType.QUERY
                 }
 
-            response = Response({}, background=BackgroundTasks([]))
+            response: "Union[Response[dict], Response[BaseContext]]" = Response(
+                {}, background=BackgroundTasks([])
+            )
 
             if isinstance(context, BaseContext):
                 context.response = response
@@ -390,12 +398,15 @@ def make_graphql_controller(
                 await socket.close(code=WS_4406_PROTOCOL_NOT_ACCEPTABLE)
 
         def pick_preferred_protocol(self, socket: WebSocket) -> Optional[str]:
-            protocols = socket.scope["subprotocols"]
+            protocols: "List[str]" = socket.scope["subprotocols"]
             intersection = set(protocols) & set(self._protocols)
-            return min(
-                intersection,
-                key=lambda i: protocols.index(i),
-                default=None,
+            return (
+                min(
+                    intersection,
+                    key=lambda i: protocols.index(i) if i else "",
+                    default=None,
+                )
+                or None
             )
 
     return GraphQLController
