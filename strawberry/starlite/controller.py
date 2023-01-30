@@ -40,9 +40,8 @@ from strawberry.http import (
 )
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
-from strawberry.subscriptions import (
-    GRAPHQL_TRANSPORT_WS_PROTOCOL,
-    GRAPHQL_WS_PROTOCOL,
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions.protocols.graphql_transport_ws import (
     WS_4406_PROTOCOL_NOT_ACCEPTABLE,
 )
 from strawberry.types import ExecutionResult
