@@ -12,6 +12,14 @@ from strawberry.permission import BasePermission
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
 from strawberry.types import Info
 
+# Starlite is only available on python 3.8+
+try:
+    import starlite  # noqa: F401
+
+    IS_STARLITE_INSTALLED: bool = False
+except ModuleNotFoundError:
+    IS_STARLITE_INSTALLED: bool = True
+
 
 class AlwaysFailPermission(BasePermission):
     message = "You are not authorized"
@@ -32,6 +40,11 @@ def _read_file(text_file: Upload) -> str:
     # async methods for reading
     if isinstance(text_file, UploadFile):
         text_file = text_file.file._file  # type: ignore
+    if IS_STARLITE_INSTALLED:
+        from starlite import UploadFile as StarliteUploadFile
+
+        if isinstance(text_file, StarliteUploadFile):
+            text_file = text_file.file  # type: ignore
 
     return text_file.read().decode()
 
