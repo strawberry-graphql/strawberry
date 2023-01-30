@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING
 
+import pytest
+
 from . import IS_STARLITE_INSTALLED
 from .clients import HttpClient
 from .clients.aiohttp import AioHttpClient
@@ -14,8 +16,6 @@ from .clients.sanic import SanicHttpClient
 
 if TYPE_CHECKING:
     from typing import Any, Dict, Type
-
-    import pytest
 
 
 _clients_dict: "Dict[Type[HttpClient], Any]" = {
@@ -33,7 +33,7 @@ _clients_dict: "Dict[Type[HttpClient], Any]" = {
 }
 
 
-def pytest_generate_tests(metafunc: "pytest.Metafunc") -> None:
+def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     if "http_client_class" in metafunc.fixturenames and IS_STARLITE_INSTALLED:
         from .clients.starlite import StarliteHttpClient
 
