@@ -55,7 +55,7 @@ from .handlers.graphql_transport_ws_handler import (
 from .handlers.graphql_ws_handler import GraphQLWSHandler as BaseGraphQLWSHandler
 
 if TYPE_CHECKING:
-    from typing import Iterable, List, Tuple, Type
+    from typing import FrozenSet, Iterable, List, Set, Tuple, Type
 
     from starlite.types import AnyCallable, Dependencies
 
@@ -183,6 +183,7 @@ def make_graphql_controller(
         _debug: bool = debug
         _protocols: Tuple[str, ...] = subscription_protocols
         _connection_init_wait_timeout: timedelta = connection_init_wait_timeout
+        _graphiql_allowed_accept: FrozenSet[str] = {"text/html", "*/*"}
 
         async def execute(
             self,
@@ -267,10 +268,10 @@ def make_graphql_controller(
         def should_render_graphiql(self, request: Request) -> bool:
             if not self._graphiql:
                 return False
-
-            return bool(
-                {"text/html", "*/*"} & (set(request.headers.getall("accept", set())))
-            )
+            accept: Set[str] = set()
+            for value in request.headers.getall("accept", ""):
+                accept.symmetric_difference_update(set(value.split(",")))
+            return bool(self._graphiql_allowed_accept & accept)
 
         def get_graphiql_response(self) -> Response[str]:
             html = get_graphiql_html()
