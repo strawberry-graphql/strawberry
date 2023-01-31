@@ -207,7 +207,7 @@ def test_raises_error_when_argument_annotation_missing_default_value():
 )
 def test_raises_error_when_missing_annotation_and_resolver():
     @strawberry.type
-    class Query:  # noqa: F841
+    class Query:
         missing = strawberry.field(name="annotation")
 
 
@@ -224,7 +224,7 @@ def test_raises_error_when_missing_type():
     uses dataclasses.field"""
 
     @strawberry.type
-    class Query:  # noqa: F841
+    class Query:
         missing = dataclasses.field()
 
 
@@ -253,7 +253,7 @@ def test_raises_error_when_missing_type_on_dynamic_class():
 )
 def test_raises_error_when_missing_type_on_longish_class():
     @strawberry.type
-    class Query:  # noqa: F841
+    class Query:
         field_1: str = strawberry.field(name="field_1")
         field_2: str = strawberry.field(name="field_2")
         field_3: str = strawberry.field(name="field_3")
@@ -384,9 +384,7 @@ def test_resolver_with_unhashable_default():
     @strawberry.type
     class Query:
         @strawberry.field
-        def field(
-            self, x: List[str] = ["foo"], y: JSON = {"foo": 42}  # noqa: B006
-        ) -> str:
+        def field(self, x: List[str] = ["foo"], y: JSON = {"foo": 42}) -> str:
             return f"{x} {y}"
 
     schema = strawberry.Schema(Query)

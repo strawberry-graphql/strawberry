@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.154.0"
+version = "0.155.2"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -22,6 +22,7 @@ classifiers = [
 include = ["strawberry/py.typed"]
 
 [tool.poetry.urls]
+"Changelog" = "https://strawberry.rocks/changelog"
 "Discord" = "https://discord.com/invite/3uQ2PaY"
 "Twitter" = "https://twitter.com/strawberry_gql"
 "Mastodon" = "https://farbun.social/@strawberry"
@@ -161,8 +162,117 @@ stubPath = ""
 
 [tool.ruff]
 line-length = 88
-select = ["E", "F", "ERA", "I"]
-ignore = ["TID252"]
+select = ["ALL"]
+target-version = "py37"
+ignore = [
+    "TID252",
+    # we use asserts in tests and to hint mypy
+    "S101",
+    "S102",
+    "S104",
+    "S324",
+    # maybe we can enable this in future
+    # we'd want to have consistent docstrings in future
+    "D",
+    "ANN101", # missing annotation for self?
+    # definitely enable these, maybe not in tests
+    "ANN001",
+    "ANN002",
+    "ANN003",
+    "ANN102",
+    "ANN201",
+    "ANN202",
+    "ANN204",
+    "ANN205",
+    "ANN206",
+    "ANN401",
+    "PGH003",
+    "PGH004",
+    "RET504",
+    "RET505",
+    "RET506",
+    "RET507",
+    "BLE001",
+    "B008",
+    "N811",
+    "N804",
+    "N818",
+    # Variable `T` in function should be lowercase
+    # this seems a potential bug or opportunity for improvement in ruff
+    "N806",
+
+    # first argument should named self (found in tests)
+    "N805",
+
+    "N815",
+
+    # shadowing builtins
+    "A001",
+    "A002",
+    "A003",
+
+    "ARG001",
+    "ARG002",
+    "ARG003",
+    "ARG004",
+    "ARG005",
+    "FBT001",
+    "FBT002",
+    "FBT003",
+
+    "PT001",
+    "PT023",
+
+    # enable these, we have some in tests
+    "B006",
+    "PT004",
+    "PT007",
+    "PT011",
+    "PT012",
+    "PT015",
+    "PT017",
+    "C414",
+    "N802",
+    "SIM117",
+    "SIM102",
+
+    "F841",
+    "B027",
+    "B905",
+    "ISC001",
+
+    # same?
+    "S105",
+    "S106",
+
+    "DTZ003",
+    "DTZ005",
+    # in tests
+    "DTZ001",
+
+    "EM101",
+    "EM102",
+    "EM103",
+
+    "B904",
+    "B019",
+
+    "N801",
+    "N807",
+
+    # pandas
+    "PD",
+
+    # code complexity
+    "C",
+
+    # trailing commas
+    "COM812",
+
+    "PLR",
+    "INP",
+    "TRY",
+]
 fix = true
 exclude = [
     ".bzr",
@@ -198,3 +308,7 @@ src = ["strawberry", "tests"]
 known-first-party = ["strawberry"]
 known-third-party = ["django", "graphql"]
 extra-standard-library = ["typing_extensions"]
+
+[tool.ruff.pyupgrade]
+# Preserve types, even if a file imports `from __future__ import annotations`.
+keep-runtime-typing = true

@@ -47,13 +47,13 @@ class FolderInput:
 class Mutation:
     @strawberry.mutation
     async def read_file(self, file: Upload) -> str:
-        return await file.read()
+        return (await file.read()).decode("utf-8")
 
     @strawberry.mutation
     async def read_files(self, files: typing.List[Upload]) -> typing.List[str]:
         contents = []
         for file in files:
-            content = (await file.read()).decode()
+            content = (await file.read()).decode("utf-8")
             contents.append(content)
         return contents
 
@@ -61,7 +61,7 @@ class Mutation:
     async def read_folder(self, folder: FolderInput) -> typing.List[str]:
         contents = []
         for file in folder.files:
-            content = (await file.read()).decode()
+            content = (await file.read()).decode("utf-8")
             contents.append(content)
         return contents
 ```
@@ -85,13 +85,13 @@ class FolderInput:
 class Mutation:
     @strawberry.mutation
     def read_file(self, file: Upload) -> str:
-        return file.read().decode()
+        return file.read().decode("utf-8")
 
     @strawberry.mutation
     def read_files(self, files: typing.List[Upload]) -> typing.List[str]:
         contents = []
         for file in files:
-            content = file.read().decode()
+            content = file.read().decode("utf-8")
             contents.append(content)
         return contents
 
@@ -99,7 +99,7 @@ class Mutation:
     def read_folder(self, folder: FolderInput) -> typing.List[str]:
         contents = []
         for file in folder.files:
-            contents.append(file.read().decode())
+            contents.append(file.read().decode("utf-8"))
         return contents
 ```
 
@@ -119,9 +119,9 @@ Assuming you have your schema up and running, here there are some requests examp
 
 ```bash
 curl localhost:8000/graphql \
-  -F operations='{ "query": "mutation($textFile: Upload!){ readText(textFile: $textFile) }", "variables": { "textFile": null } }' \
-  -F map='{ "textFile": ["variables.textFile"] }' \
-  -F textFile=@a.txt
+  -F operations='{ "query": "mutation($file: Upload!){ readFile(file: $file) }", "variables": { "file": null } }' \
+  -F map='{ "file": ["variables.file"] }' \
+  -F file=@a.txt
 ```
 
 ### Sending a list of files

@@ -31,7 +31,7 @@ class TypeB:
 
 
 @pytest.mark.parametrize(
-    "types,expected_name",
+    ("types", "expected_name"),
     [
         ([StrawberryList(str)], "StrListExample"),
         ([StrawberryList(StrawberryList(str))], "StrListListExample"),

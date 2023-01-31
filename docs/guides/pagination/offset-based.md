@@ -2,63 +2,18 @@
 title: Pagination - Offset based
 ---
 
-# Implementing Offset Pagination
+# Implementing Offset-Based Pagination
 
 Make sure to check our introduction to pagination [here](./overview.md)!
 
-Let us implement offset based pagination in GraphQL. By the end of this tutorial, we
-should be able to return a paginated list of users when requested.
+Let us implement offset-based pagination in GraphQL. By the end of this tutorial, we
+should be able to return a sorted, filtered, and paginated list of users.
 
-```graphql+response
-query getUsers {
-  getUsers(offset: 0, limit: 2) {
-    users {
-      id
-      name
-      occupation
-      age
-    }
-    pageMeta {
-      total
-      pages
-    }
-  }
-}
----
-{
-  "data": {
-    "getUsers": {
-      "users": [
-        {
-          "id": 1,
-          "name": "Norman Osborn",
-          "occupation": "Founder, Oscorp Industries",
-          "age": 42
-        },
-        {
-          "id": 2,
-          "name": "Peter Parker",
-          "occupation": "Freelance Photographer, The Daily Bugle",
-          "age": 20
-        }
-      ],
-      "pageMeta": {
-          "total": 4,
-          "page": 1,
-          "pages": 2
-      }
-    }
-  }
-}
-```
+Let us model the `User` type, which represents one user, with a name, occupation, and age.
 
-Let us model our schema like this:
-
-```py
+```py line=1-24
 # example.py
-
-from typing import List
-
+from typing import List, TypeVar, Dict, Any
 import strawberry
 
 
@@ -67,253 +22,175 @@ class User:
     name: str = strawberry.field(
         description="The name of the user."
     )
-
     occupation: str = strawberry.field(
         description="The occupation of the user."
     )
-
     age: int = strawberry.field(
         description="The age of the user."
     )
 
+    @staticmethod
+    def from_row(row: Dict[str, Any]):
+        return User(
+            name=row['name'],
+            occupation=row['occupation'],
+            age=row['age']
+        )
+```
+
+Let us now model the `PaginationWindow`, which represents one "slice" of sorted, filtered, and paginated items.
+
+```py line=27-38
+GenericType = TypeVar("GenericType")
+
 
 @strawberry.type
-class PageMeta:
-    total: int = strawberry.field(
-        description="The total number of items in the dataset."
+class PaginationWindow(List[GenericType]):
+    items: List[GenericType] = strawberry.field(
+        description="The list of items in this pagination window."
     )
 
-    page: int = strawberry.field(
-        description="The current page number in the dataset."
+    total_items_count: int = strawberry.field(
+        description="Total number of items in the filtered dataset."
     )
+```
 
-    pages: int = strawberry.field(
-        description="The total number of pages in the dataset."
-    )
+Note that `PaginationWindow` is generic - it can represent a slice of users, or a slice of any other type of
+items that we might want to paginate.
 
+`PaginationWindow` also contains `total_items_count`, which specifies how many items there are in total in the filtered
+dataset, so that the client knows what the highest offset value can be.
 
-@strawberry.type
-class UserResponse:
-    users: List[User] = strawberry.field(
-        description="The list of users."
-    )
+Let's define the query:
 
-    page_meta: PageMeta = strawberry.field(
-        description="Metadata to aid in pagination."
-    )
-
-
+```py line=41-70
 @strawberry.type
 class Query:
     @strawberry.field(description="Get a list of users.")
-    def get_users(self) -> UserResponse:
-        ...
+    def users(self,
+              order_by: str,
+              limit: int,
+              offset: int = 0,
+              name: str | None = None,
+              occupation: str| None = None
+              ) -> PaginationWindow[User]:
 
-schema = strawberry.Schema(query=Query)
+        filters = {}
 
-```
+        if name:
+            filters['name'] = name
 
-As you can see above, we have modeled our field to return an object type, rather than a list.
-The return type contains additional metadata that the client can query for, to know more about the paginated list.
+        if occupation:
+            filters['occupation'] = occupation
 
-For simplicity's sake, our dataset is going to be an in-memory list.
-
-```py line=7-32
-# example.py
-
-from typing import List
-
-import strawberry
-
-user_data = [
-  {
-    "id": 1,
-    "name": "Norman Osborn",
-    "occupation": "Founder, Oscorp Industries",
-    "age": 42
-  },
-  {
-    "id": 2,
-    "name": "Peter Parker",
-    "occupation": "Freelance Photographer, The Daily Bugle",
-    "age": 20
-  },
-  {
-    "id": 3,
-    "name": "Harold Osborn",
-    "occupation": "President, Oscorp Industries",
-    "age": 19
-  },
-  {
-    "id": 4,
-    "name": "Eddie Brock",
-    "occupation": "Journalist, The Eddie Brock Report",
-    "age": 20
-  }
-]
-
-@strawberry.type
-class User:
-    name: str = strawberry.field(
-        description="The name of the user."
-    )
-
-    occupation: str = strawberry.field(
-        description="The occupation of the user."
-    )
-
-    age: int = strawberry.field(
-        description="The age of the user."
-    )
-
-
-@strawberry.type
-class PageMeta:
-    total: int = strawberry.field(
-        description="The total number of items in the dataset."
-    )
-
-    page: int = strawberry.field(
-        description="The current page number in the dataset."
-    )
-
-    pages: int = strawberry.field(
-        description="The total number of pages in the dataset."
-    )
-
-
-@strawberry.type
-class UserResponse:
-    users: List[User] = strawberry.field(
-        description="The list of users."
-    )
-
-    page_meta: PageMeta = strawberry.field(
-        description="Metadata to aid in pagination."
-    )
-
-
-@strawberry.type
-class Query:
-    @strawberry.field(description="Get a list of users.")
-    def get_users(self) -> UserResponse:
-        ...
-
-schema = strawberry.Schema(query=Query)
-
-```
-
-We're going to use the dataset we defined in our `get_users` field resolver.
-Our field is going to accept two arguments, `limit` and `offset`, to control pagination.
-Let us implement the pagination logic as follows.
-
-```py line=76-102
-# example.py
-
-from typing import List
-
-import strawberry
-
-user_data = [
-  {
-    "id": 1,
-    "name": "Norman Osborn",
-    "occupation": "Founder, Oscorp Industries",
-    "age": 42
-  },
-  {
-    "id": 2,
-    "name": "Peter Parker",
-    "occupation": "Freelance Photographer, The Daily Bugle",
-    "age": 20
-  },
-  {
-    "id": 3,
-    "name": "Harold Osborn",
-    "occupation": "President, Oscorp Industries",
-    "age": 19
-  },
-  {
-    "id": 4,
-    "name": "Eddie Brock",
-    "occupation": "Journalist, The Eddie Brock Report",
-    "age": 20
-  }
-]
-
-@strawberry.type
-class User:
-    name: str = strawberry.field(
-        description="The name of the user."
-    )
-
-    occupation: str = strawberry.field(
-        description="The occupation of the user."
-    )
-
-    age: int = strawberry.field(
-        description="The age of the user."
-    )
-
-
-@strawberry.type
-class PageMeta:
-    total: int = strawberry.field(
-        description="The total number of items in the dataset."
-    )
-
-    page: int = strawberry.field(
-        description="The current page number in the dataset."
-    )
-
-    pages: int = strawberry.field(
-        description="The total number of pages in the dataset."
-    )
-
-
-@strawberry.type
-class UserResponse:
-    users: List[User] = strawberry.field(
-        description="The list of users."
-    )
-
-    page_meta: PageMeta = strawberry.field(
-        description="Metadata to aid in pagination."
-    )
-
-
-
-@strawberry.type
-class Query:
-    @strawberry.field(description="Returns a paginated list of users.")
-    def get_users(self, offset: int, limit: int) -> UserResponse:
-        # slice the relevant user data.
-        sliced_users = user_data[offset:offset+limit]
-
-        # type cast the sliced data.
-        sliced_users = cast(List[UserType], sliced_users)
-
-        # calculate the total items present.
-        total = len(user_data)
-
-        # calculate the client's current page number.
-        page = ceil((offset-1) / limit) + 1
-
-        # calculate the total number of pages.
-        pages = ceil(total / limit)
-
-        return UserResponse(
-            users=sliced_users,
-            page_meta=PageMeta(
-                total=total,
-                page=page,
-                pages=pages
-            )
+        return get_pagination_window(
+            dataset=user_data,
+            ItemType=User,
+            order_by=order_by,
+            limit=limit,
+            offset=offset,
+            filters=filters
         )
 
 schema = strawberry.Schema(query=Query)
-
 ```
+
+Now we'll define a mock dataset and implement the `get_pagination_window` function, which is used by the `users` query.
+
+For the sake of simplicity, our dataset will be an in-memory list containing four users:
+
+```py line=72-97
+user_data = [
+  {
+    "id": 1,
+    "name": "Norman Osborn",
+    "occupation": "Founder, Oscorp Industries",
+    "age": 42
+  },
+  {
+    "id": 2,
+    "name": "Peter Parker",
+    "occupation": "Freelance Photographer, The Daily Bugle",
+    "age": 20
+  },
+  {
+    "id": 3,
+    "name": "Harold Osborn",
+    "occupation": "President, Oscorp Industries",
+    "age": 19
+  },
+  {
+    "id": 4,
+    "name": "Eddie Brock",
+    "occupation": "Journalist, The Eddie Brock Report",
+    "age": 20
+  }
+]
+```
+
+Here's the implementation of the `get_pagination_window` function. Note that it is generic and should work for all item types,
+not only for the `User` type.
+
+```py line=100-146
+def get_pagination_window(
+        dataset: List[GenericType],
+        ItemType: type,
+        order_by: str,
+        limit: int,
+        offset: int = 0,
+        filters: dict[str, str] = {}) -> PaginationWindow:
+    """
+    Get one pagination window on the given dataset for the given limit
+    and offset, ordered by the given attribute and filtered using the
+    given filters
+    """
+
+    if limit <= 0 or limit > 100:
+        raise Exception(f'limit ({limit}) must be between 0-100')
+
+    if filters:
+        dataset = list(filter(lambda x: matches(x, filters), dataset))
+
+    dataset.sort(key=lambda x: x[order_by])
+
+    if offset != 0 and not 0 <= offset < len(dataset):
+        raise Exception(f'offset ({offset}) is out of range '
+                        f'(0-{len(dataset) - 1})')
+
+    total_items_count = len(dataset)
+
+    items = dataset[offset:offset + limit]
+
+    items = [ItemType.from_row(x) for x in items]
+
+    return PaginationWindow(
+        items=items,
+        total_items_count=total_items_count
+    )
+
+
+def matches(item, filters):
+    """
+    Test whether the item matches the given filters.
+    This demo only supports filtering by string fields.
+    """
+
+    for attr_name, val in filters.items():
+        if val not in item[attr_name]:
+            return False
+    return True
+```
+
+The above code first filters the dataset according to the given filters, then sorts the dataset according to the
+given `order_by` field.
+
+It then calculates `total_items_count` (this must be done after filtering), and then slices the relevant items
+according to `offset` and `limit`.
+
+Finally, it converts the items to the given strawberry type, and returns a `PaginationWindow` containing these items,
+as well as the `total_items_count`.
+
+In a real project, you would probably replace this with code that fetches from a database using `offset` and `limit`.
 
 <Tip>
 
@@ -322,27 +199,115 @@ Django pagination API. You can check it out [here](https://docs.djangoproject.co
 
 </Tip>
 
-Now, let us start a debug server with our schema!
+## Running the Query
 
-```text
+Now, let us start the server and see offset-based pagination in action!
+
+```
 strawberry server example:schema
 ```
 
-We should be able to query for users on the GraphiQL explorer. Here's a sample query for you!
+You will get the following message:
+
+```
+Running strawberry on http://0.0.0.0:8000/graphql 🍓
+```
+
+Go to [http://0.0.0.0:8000/graphql](http://0.0.0.0:8000/graphql) to
+open **GraphiQL**, and run the following query to get first two users,
+ordered by name:
 
 ```graphql
-query getUsers {
-  getUsers(offset: 0, limit: 2) {
-    users {
-      id
+{
+  users(orderBy: "name", offset: 0, limit: 2) {
+    items {
       name
-      occupation
       age
+      occupation
     }
-    pageMeta {
-      total
-      pages
+    totalItemsCount
+  }
+}
+```
+
+The result should look like this:
+
+```graphql
+{
+  "data": {
+    "users": {
+      "items": [
+        {
+          "name": "Eddie Brock",
+          "age": 20,
+          "occupation": "Journalist, The Eddie Brock Report"
+        },
+        {
+          "name": "Harold Osborn",
+          "age": 19,
+          "occupation": "President, Oscorp Industries"
+        }
+      ],
+      "totalItemsCount": 4
     }
   }
 }
 ```
+
+The result contains:
+
+- `items` - A list of the users in this pagination window
+- `totalItemsCount` - The total number of items in the filtered dataset. In this case, since no filter was given
+  in the request, `totalItemsCount` is 4, which is equal to the total number of users in the in-memory dataset.
+
+Get the next page of users by running the same query, after incrementing
+`offset` by `limit`.
+
+Repeat until `offset` reaches `totalItemsCount`.
+
+## Running a Filtered Query
+
+Let's run the query again, but this time we'll filter out some users based on their occupation.
+
+```graphql
+{
+  users(orderBy: "name", offset: 0, limit: 2, occupation: "ie") {
+    items {
+      name
+      age
+      occupation
+    }
+    totalItemsCount
+  }
+}
+```
+
+By supplying `occupation: "ie"` in the query, we are requesting only users whose occupation
+contains the substring "ie".
+
+This is the result:
+
+```
+{
+  "data": {
+    "users": {
+      "items": [
+        {
+          "name": "Eddie Brock",
+          "age": 20,
+          "occupation": "Journalist, The Eddie Brock Report"
+        },
+        {
+          "name": "Harold Osborn",
+          "age": 19,
+          "occupation": "President, Oscorp Industries"
+        }
+      ],
+      "totalItemsCount": 3
+    }
+  }
+}
+```
+
+Note that `totalItemsCount` is now 3 and not 4, because only 3 users in total
+match the filter.

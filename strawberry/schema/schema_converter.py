@@ -721,8 +721,18 @@ class GraphQLCoreConverter:
                 # may be referencing the same actual type
                 if isinstance(type1, LazyType):
                     type1 = type1.resolve_type()
+                elif isinstance(type1, StrawberryOptional) and isinstance(
+                    type1.of_type, LazyType
+                ):
+                    type1.of_type = type1.of_type.resolve_type()
+
                 if isinstance(type2, LazyType):
                     type2 = type2.resolve_type()
+                elif isinstance(type2, StrawberryOptional) and isinstance(
+                    type2.of_type, LazyType
+                ):
+                    type2.of_type = type2.of_type.resolve_type()
+
                 if type1 != type2:
                     equal = False
                     break
