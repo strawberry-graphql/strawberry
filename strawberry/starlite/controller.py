@@ -183,7 +183,7 @@ def make_graphql_controller(
         _debug: bool = debug
         _protocols: Tuple[str, ...] = subscription_protocols
         _connection_init_wait_timeout: timedelta = connection_init_wait_timeout
-        _graphiql_allowed_accept: FrozenSet[str] = {"text/html", "*/*"}
+        _graphiql_allowed_accept: FrozenSet[str] = frozenset({"text/html", "*/*"})
 
         async def execute(
             self,
@@ -343,16 +343,28 @@ def make_graphql_controller(
                 multipart_data = await request.form()
                 operations: Dict[str, Any] = multipart_data.get("operations", "{}")
                 files_map: Dict[str, List[str]] = multipart_data.get("map", "{}")
-                data = replace_placeholders_with_files(
-                    operations, files_map, multipart_data
-                )
+                try:
+                    data = replace_placeholders_with_files(
+                        operations, files_map, multipart_data
+                    )
+                except KeyError:
+                    return Response(
+                        "File(s) missing in form data",
+                        status_code=HTTP_400_BAD_REQUEST,
+                        media_type=MediaType.TEXT,
+                    )
+                except (TypeError, AttributeError):
+                    return Response(
+                        "Unable to parse the multipart body",
+                        status_code=HTTP_400_BAD_REQUEST,
+                        media_type=MediaType.TEXT,
+                    )
             else:
-                actual_response = Response(
+                return Response(
                     "Unsupported Media Type",
                     status_code=HTTP_415_UNSUPPORTED_MEDIA_TYPE,
                     media_type=MediaType.TEXT,
                 )
-                return actual_response
 
             return await self.execute_request(
                 request=request,
