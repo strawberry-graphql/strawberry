@@ -301,10 +301,10 @@ def make_graphql_controller(
                     query_data = parse_query_params(
                         cast("Dict[str, Any]", request.query_params)
                     )
-                except json.JSONDecodeError:
+                except json.JSONDecodeError as error:
                     raise ValidationException(
                         detail="Unable to parse request body as JSON"
-                    )
+                    ) from error
                 return await self.execute_request(
                     request=request,
                     data=query_data,
