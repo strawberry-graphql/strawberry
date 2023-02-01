@@ -245,7 +245,7 @@ def is_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -> bo
             if rule.match(field_name):
                 return True
         elif isinstance(rule, FieldAttributesRule):
-            if should_ignore_field_attributes(node, rule):
+            if should_ignore_by_field_attributes(node, rule):
                 return True
         elif callable(rule):
             if rule(field_name):
@@ -256,7 +256,7 @@ def is_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -> bo
     return False
 
 
-def should_ignore_field_name(node: FieldNode, rule: FieldNameRuleType) -> bool:
+def should_ignore_by_field_name(node: FieldNode, rule: FieldNameRuleType) -> bool:
     field_name = node.name.value
     if isinstance(rule, str):
         if field_name == rule:
@@ -273,9 +273,11 @@ def should_ignore_field_name(node: FieldNode, rule: FieldNameRuleType) -> bool:
     return False
 
 
-def should_ignore_field_attributes(node: FieldNode, rule: FieldAttributesRule) -> bool:
+def should_ignore_by_field_attributes(
+    node: FieldNode, rule: FieldAttributesRule
+) -> bool:
     # Should not ignore if field name is not ignored
-    if not should_ignore_field_name(node, rule.field_name):
+    if not should_ignore_by_field_name(node, rule.field_name):
         return False
 
     if rule.field_arguments is None:
@@ -284,16 +286,15 @@ def should_ignore_field_attributes(node: FieldNode, rule: FieldAttributesRule) -
     # If should ignore this field_name and there is field_arguments
     # then ignore this field if its arguments matches field_arguments
     if rule.field_arguments is not None:
-        if should_ignore_field_arguments(node, rule):
+        if should_ignore_by_field_arguments(node, rule):
             return True
 
     return False
 
 
-def should_ignore_field_arguments(node: FieldNode, rule: FieldAttributesRule) -> bool:
-    if rule.field_arguments is None:
-        return False
-
+def should_ignore_by_field_arguments(
+    node: FieldNode, rule: FieldAttributesRule
+) -> bool:
     arg_names = [arg.name.value for arg in node.arguments]
     for key, value in rule.field_arguments.items():
         if key in arg_names:
