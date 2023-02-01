@@ -27,7 +27,7 @@
 
 import re
 from dataclasses import dataclass
-from typing import Callable, Dict, Iterable, List, Optional, Type, Union
+from typing import Callable, Dict, Iterable, List, Optional, Type, Union, cast
 
 from graphql import GraphQLError
 from graphql.language import (
@@ -38,6 +38,7 @@ from graphql.language import (
     InlineFragmentNode,
     Node,
     OperationDefinitionNode,
+    StringValueNode
 )
 from graphql.validation import ValidationContext, ValidationRule
 
@@ -284,7 +285,8 @@ def validate_field_attributes(node: FieldNode, rule: FieldAttributesRule) -> boo
         for key, value in rule.field_arguments.items():
             if key in arg_names:
                 loc = arg_names.index(key)
-                arg_value = node.arguments[loc].value.value
+                node_value = cast(StringValueNode, node.arguments[loc].value)
+                arg_value = node_value.value
                 for arg_rule in value:
                     if arg_rule == arg_value:
                         return True
