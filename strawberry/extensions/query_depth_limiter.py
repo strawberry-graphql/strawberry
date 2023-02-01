@@ -278,7 +278,7 @@ def should_ignore_field_attributes(node: FieldNode, rule: FieldAttributesRule) -
     if not should_ignore_field_name(node, rule.field_name):
         return False
 
-    if rule.field_arguments is None and rule.field_keys is None:
+    if rule.field_arguments is None:
         return True
 
     # If should ignore this field_name and there is field_arguments
