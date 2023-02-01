@@ -213,7 +213,7 @@ def test_should_catch_query_thats_too_deep():
     assert errors[0].message == "'anonymous' exceeds maximum operation depth of 4"
 
 
-def test_should_ignore_field():
+def test_should_ignore_field_simple():
     query = """
     query read1 {
       user { address { city } }
@@ -254,7 +254,7 @@ def test_should_raise_invalid_ignore():
         )
 
 
-def test_should_ignore_field_attributes():
+def test_should_ignore_field_attributes_field_arguments():
     query = """
     query read1 {
       matt: user(name: "matt") {
@@ -313,15 +313,27 @@ def test_should_ignore_field_attributes():
     assert not errors
     assert result == expected
 
-    errors, result = run_query(
-        query,
-        10,
-        ignore=[FieldAttributesRule(field_name="user")],
-    )
 
-    expected = {"read1": 0}
-    assert not errors
-    assert result == expected
+def test_should_ignore_field_attributes_field_keys():
+    query = """
+    query read1 {
+      matt: user(name: "matt") {
+        email
+      }
+      andy: user(name: "andy") {
+        email
+        address {
+          city
+        }
+        pets {
+          name
+          owner {
+            name
+          }
+        }
+      }
+    }
+    """
 
     errors, result = run_query(
         query,
@@ -332,6 +344,47 @@ def test_should_ignore_field_attributes():
     expected = {"read1": 2}
     assert not errors
     assert result == expected
+
+    
+def test_should_ignore_field_attributes_rule_field_name():
+    query = """
+    query read1 {
+      user { address { city } }
+    }
+    query read2 {
+      user1 { address { city } }
+      user2 { address { city } }
+      user3 { address { city } }
+    }
+    """
+
+    errors, result = run_query(
+        query,
+        10,
+        ignore=[
+            FieldAttributesRule(field_name="user1"),
+            FieldAttributesRule(field_name=re.compile("user2")),
+            FieldAttributesRule(field_name=lambda x: x == "user3"),
+        ],
+    )
+
+    expected = {"read1": 2, "read2": 0}
+    assert not errors
+    assert result == expected
+
+
+def test_should_raise_invalid_field_attributes_rule_field_name():
+    query = """
+    query read1 {
+      user { address { city } }
+    }
+    """
+    with pytest.raises(TypeError, match="Invalid ignore option:"):
+        run_query(
+            query,
+            10,
+            ignore=[FieldAttributesRule(field_name=True)],
+        )
 
 
 def test_should_work_as_extension():

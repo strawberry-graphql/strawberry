@@ -246,7 +246,8 @@ def is_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -> bo
             if rule.match(field_name):
                 return True
         elif isinstance(rule, FieldAttributesRule):
-            return validate_field_attributes(node, rule)
+            if should_ignore_field_attributes(node, rule):
+                return True
         elif callable(rule):
             if rule(field_name):
                 return True
@@ -256,7 +257,7 @@ def is_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -> bo
     return False
 
 
-def validate_field_name(node: FieldNode, rule: FieldNameRuleType) -> bool:
+def should_ignore_field_name(node: FieldNode, rule: FieldNameRuleType) -> bool:
     field_name = node.name.value
     if isinstance(rule, str):
         if field_name == rule:
@@ -268,15 +269,15 @@ def validate_field_name(node: FieldNode, rule: FieldNameRuleType) -> bool:
         if rule(field_name):
             return True
     else:
-        raise ValueError(f"Invalid ignore option: {rule}")
+        raise TypeError(f"Invalid ignore option: {rule}")
 
     return False
 
 
-def validate_field_attributes(node: FieldNode, rule: FieldAttributesRule) -> bool:
-    if not validate_field_name(node, rule.field_name):
+def should_ignore_field_attributes(node: FieldNode, rule: FieldAttributesRule) -> bool:
+    if not should_ignore_field_name(node, rule.field_name):
         return False
-
+    
     if rule.field_arguments is None and rule.field_keys is None:
         return True
 
