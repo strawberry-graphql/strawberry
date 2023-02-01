@@ -29,13 +29,17 @@ the following query:
     }
 """
 ```
-can have its depth limited by the following `FieldAttributesRule`:
+can have its depth limited by the following `[FieldAttributesRule]`:
 ```python
-FieldAttributesRule(
-    field_name=user,
-    field_arguments={"name": "matt"},
-    field_keys=address,
-)
+rules = [
+    FieldAttributesRule(
+        field_name=user,
+        field_arguments={"name": "matt"},
+    ),
+    FieldAttributesRule(
+        field_name=address,
+    ),
+]
 ```
 so that it *effectively* becomes:
 ```python
