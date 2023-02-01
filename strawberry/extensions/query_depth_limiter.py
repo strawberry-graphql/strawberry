@@ -46,6 +46,7 @@ from strawberry.extensions import AddValidationRules
 from strawberry.extensions.utils import is_introspection_key
 
 FieldNameRuleType = Union[Callable[[str], bool], re.Pattern, str]
+FieldArgumentsRuleType = Dict[str, List]
 
 
 @dataclass
@@ -56,7 +57,7 @@ class FieldAttributesRule:
     """
 
     field_name: FieldNameRuleType
-    field_arguments: Optional[Dict[str, List]] = None
+    field_arguments: Optional[FieldArgumentsRuleType] = None
 
 
 IgnoreType = Union[FieldNameRuleType, FieldAttributesRule]
@@ -276,27 +277,24 @@ def should_ignore_by_field_name(node: FieldNode, rule: FieldNameRuleType) -> boo
 def should_ignore_by_field_attributes(
     node: FieldNode, rule: FieldAttributesRule
 ) -> bool:
-    # Should not ignore if field name is not ignored
     if not should_ignore_by_field_name(node, rule.field_name):
         return False
 
     if rule.field_arguments is None:
         return True
-
-    # If should ignore this field_name and there is field_arguments
-    # then ignore this field if its arguments matches field_arguments
-    if rule.field_arguments is not None:
-        if should_ignore_by_field_arguments(node, rule):
+    else:
+        if should_ignore_by_field_arguments(node, rule.field_arguments):
             return True
 
     return False
 
 
 def should_ignore_by_field_arguments(
-    node: FieldNode, rule: FieldAttributesRule
+    node: FieldNode,
+    field_arguments: FieldArgumentsRuleType,
 ) -> bool:
     arg_names = [arg.name.value for arg in node.arguments]
-    for key, value in rule.field_arguments.items():
+    for key, value in field_arguments.items():
         if key in arg_names:
             loc = arg_names.index(key)
             node_value = cast(StringValueNode, node.arguments[loc].value)
