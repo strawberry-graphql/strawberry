@@ -57,7 +57,6 @@ class FieldAttributesRule:
 
     field_name: FieldNameRuleType
     field_arguments: Optional[Dict[str, List]] = None
-    field_keys: Optional[List[str]] = None
 
 
 IgnoreType = Union[FieldNameRuleType, FieldAttributesRule]
@@ -275,26 +274,34 @@ def should_ignore_field_name(node: FieldNode, rule: FieldNameRuleType) -> bool:
 
 
 def should_ignore_field_attributes(node: FieldNode, rule: FieldAttributesRule) -> bool:
+    # Should not ignore if field name is not ignored
     if not should_ignore_field_name(node, rule.field_name):
         return False
 
     if rule.field_arguments is None and rule.field_keys is None:
         return True
 
+    # If should ignore this field_name and there is field_arguments
+    # then ignore this field if its arguments matches field_arguments
     if rule.field_arguments is not None:
-        arg_names = [arg.name.value for arg in node.arguments]
-        for key, value in rule.field_arguments.items():
-            if key in arg_names:
-                loc = arg_names.index(key)
-                node_value = cast(StringValueNode, node.arguments[loc].value)
-                arg_value = node_value.value
-                for arg_rule in value:
-                    if arg_rule == arg_value:
-                        return True
+        if should_ignore_field_arguments(node, rule):
+            return True
 
-    if rule.field_keys is not None:
-        for key in rule.field_keys:
-            if key in node.keys:
-                return True
+    return False
+
+
+def should_ignore_field_arguments(node: FieldNode, rule: FieldAttributesRule) -> bool:
+    if rule.field_arguments is None:
+        return False
+
+    arg_names = [arg.name.value for arg in node.arguments]
+    for key, value in rule.field_arguments.items():
+        if key in arg_names:
+            loc = arg_names.index(key)
+            node_value = cast(StringValueNode, node.arguments[loc].value)
+            arg_value = node_value.value
+            for arg_rule in value:
+                if arg_rule == arg_value:
+                    return True
 
     return False

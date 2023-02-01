@@ -254,6 +254,33 @@ def test_should_raise_invalid_ignore():
         )
 
 
+def test_should_ignore_field_attributes_rule_field_name():
+    query = """
+    query read1 {
+      user { address { city } }
+    }
+    query read2 {
+      user1 { address { city } }
+      user2 { address { city } }
+      user3 { address { city } }
+    }
+    """
+
+    errors, result = run_query(
+        query,
+        10,
+        ignore=[
+            FieldAttributesRule(field_name="user1"),
+            FieldAttributesRule(field_name=re.compile("user2")),
+            FieldAttributesRule(field_name=lambda x: x == "user3"),
+        ],
+    )
+
+    expected = {"read1": 2, "read2": 0}
+    assert not errors
+    assert result == expected
+
+
 def test_should_ignore_field_attributes_field_arguments():
     query = """
     query read1 {
@@ -342,33 +369,6 @@ def test_should_ignore_field_attributes_field_keys():
     )
 
     expected = {"read1": 2}
-    assert not errors
-    assert result == expected
-
-
-def test_should_ignore_field_attributes_rule_field_name():
-    query = """
-    query read1 {
-      user { address { city } }
-    }
-    query read2 {
-      user1 { address { city } }
-      user2 { address { city } }
-      user3 { address { city } }
-    }
-    """
-
-    errors, result = run_query(
-        query,
-        10,
-        ignore=[
-            FieldAttributesRule(field_name="user1"),
-            FieldAttributesRule(field_name=re.compile("user2")),
-            FieldAttributesRule(field_name=lambda x: x == "user3"),
-        ],
-    )
-
-    expected = {"read1": 2, "read2": 0}
     assert not errors
     assert result == expected
 
