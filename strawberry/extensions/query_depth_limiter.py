@@ -38,7 +38,7 @@ from graphql.language import (
     InlineFragmentNode,
     Node,
     OperationDefinitionNode,
-    StringValueNode
+    StringValueNode,
 )
 from graphql.validation import ValidationContext, ValidationRule
 
