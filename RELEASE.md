@@ -33,7 +33,7 @@ can have its depth limited by the following `FieldAttributesRule`:
 ```python
 FieldAttributesRule(
     field_name=user,
-    field_arguments={ "name": "matt" },
+    field_arguments={"name": "matt"},
     field_keys=address,
 )
 ```
