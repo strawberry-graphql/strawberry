@@ -345,7 +345,7 @@ def test_should_ignore_field_attributes_field_keys():
     assert not errors
     assert result == expected
 
-    
+
 def test_should_ignore_field_attributes_rule_field_name():
     query = """
     query read1 {

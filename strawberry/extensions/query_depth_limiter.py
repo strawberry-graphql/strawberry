@@ -277,7 +277,7 @@ def should_ignore_field_name(node: FieldNode, rule: FieldNameRuleType) -> bool:
 def should_ignore_field_attributes(node: FieldNode, rule: FieldAttributesRule) -> bool:
     if not should_ignore_field_name(node, rule.field_name):
         return False
-    
+
     if rule.field_arguments is None and rule.field_keys is None:
         return True
 
