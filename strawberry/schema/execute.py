@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from asyncio import ensure_future
 from inspect import isawaitable
 from typing import (
+    TYPE_CHECKING,
     Awaitable,
     Callable,
     Iterable,
@@ -13,18 +16,25 @@ from typing import (
     cast,
 )
 
-from graphql import ExecutionContext as GraphQLExecutionContext
-from graphql import ExecutionResult as GraphQLExecutionResult
-from graphql import GraphQLError, GraphQLSchema, parse
+if TYPE_CHECKING:
+    from graphql import ExecutionContext as GraphQLExecutionContext
+    from graphql import ExecutionResult as GraphQLExecutionResult
+    from graphql import GraphQLSchema
+    from graphql.language import DocumentNode
+    from graphql.validation import ASTValidationRule
+
+    from strawberry.extensions import Extension
+    from strawberry.types import ExecutionContext
+    from strawberry.types.graphql import OperationType
+
+
+from graphql import GraphQLError, parse
 from graphql import execute as original_execute
-from graphql.language import DocumentNode
-from graphql.validation import ASTValidationRule, validate
+from graphql.validation import validate
 
 from strawberry.exceptions import MissingQueryError
-from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
-from strawberry.types import ExecutionContext, ExecutionResult
-from strawberry.types.graphql import OperationType
+from strawberry.types import ExecutionResult
 
 from .exceptions import InvalidOperationTypeError
 

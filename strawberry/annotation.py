@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 import typing
 from collections import abc
@@ -26,18 +28,14 @@ except ImportError:  # pragma: no cover
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType, StrawberryLazyReference
-from strawberry.type import (
-    StrawberryList,
-    StrawberryOptional,
-    StrawberryType,
-    StrawberryTypeVar,
-)
+from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
 from strawberry.types.types import TypeDefinition
 from strawberry.unset import UNSET
 from strawberry.utils.typing import is_generic, is_list, is_type_var, is_union
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
+    from strawberry.type import StrawberryType
     from strawberry.union import StrawberryUnion
 
 

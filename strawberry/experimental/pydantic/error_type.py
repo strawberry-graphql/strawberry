@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 import dataclasses
 import warnings
-from typing import Any, List, Optional, Sequence, Tuple, Type, cast
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Type, cast
+
+if TYPE_CHECKING:
+    from pydantic.fields import ModelField
 
 from pydantic import BaseModel
-from pydantic.fields import ModelField
 from pydantic.utils import lenient_issubclass
 
 from strawberry.auto import StrawberryAuto
@@ -54,7 +58,7 @@ def error_type(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-    all_fields: bool = False
+    all_fields: bool = False,
 ):
     def wrap(cls):
         model_fields = model.__fields__

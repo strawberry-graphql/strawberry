@@ -1,6 +1,11 @@
+from __future__ import annotations
+
 import dataclasses
 import sys
-from typing import Dict, List, Type
+from typing import TYPE_CHECKING, Dict, List, Type
+
+if TYPE_CHECKING:
+    from strawberry.field import StrawberryField
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -8,7 +13,6 @@ from strawberry.exceptions import (
     FieldWithResolverAndDefaultValueError,
     PrivateStrawberryFieldError,
 )
-from strawberry.field import StrawberryField
 from strawberry.private import is_private
 from strawberry.unset import UNSET
 

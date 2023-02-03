@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 import json
 from datetime import timedelta
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 from aiohttp import web
 from strawberry.aiohttp.handlers import (
@@ -9,10 +11,13 @@ from strawberry.aiohttp.handlers import (
     GraphQLWSHandler,
     HTTPHandler,
 )
-from strawberry.http import GraphQLHTTPResponse, process_result
-from strawberry.schema import BaseSchema
+from strawberry.http import process_result
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from strawberry.types import ExecutionResult
+
+if TYPE_CHECKING:
+    from strawberry.http import GraphQLHTTPResponse
+    from strawberry.schema import BaseSchema
+    from strawberry.types import ExecutionResult
 
 
 class GraphQLView:

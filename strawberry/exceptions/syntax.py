@@ -1,9 +1,11 @@
-from typing import Dict, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Set, Tuple
 
 from pygments.lexers import PythonLexer
-from rich.console import Console, ConsoleOptions, RenderResult
 from rich.segment import Segment
 from rich.syntax import Syntax as RichSyntax
+
+if TYPE_CHECKING:
+    from rich.console import Console, ConsoleOptions, RenderResult
 
 
 class Syntax(RichSyntax):

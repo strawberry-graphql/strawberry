@@ -1,16 +1,18 @@
+from __future__ import annotations
+
 import textwrap
-from typing import List
+from typing import TYPE_CHECKING, List
+
+if TYPE_CHECKING:
+    from strawberry.codegen.types import GraphQLField, GraphQLOperation, GraphQLType
 
 from strawberry.codegen import CodegenFile, QueryCodegenPlugin
 from strawberry.codegen.types import (
     GraphQLEnum,
-    GraphQLField,
     GraphQLList,
     GraphQLObjectType,
-    GraphQLOperation,
     GraphQLOptional,
     GraphQLScalar,
-    GraphQLType,
     GraphQLUnion,
 )
 

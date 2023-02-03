@@ -25,20 +25,25 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from __future__ import annotations
+
 import re
-from typing import Callable, Dict, Iterable, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Callable, Dict, Iterable, List, Optional, Type, Union
 
 from graphql import GraphQLError
 from graphql.language import (
-    DefinitionNode,
     FieldNode,
     FragmentDefinitionNode,
     FragmentSpreadNode,
     InlineFragmentNode,
-    Node,
     OperationDefinitionNode,
 )
-from graphql.validation import ValidationContext, ValidationRule
+
+if TYPE_CHECKING:
+    from graphql.language import DefinitionNode, Node
+    from graphql.validation import ValidationContext
+
+from graphql.validation import ValidationRule
 
 from strawberry.extensions import AddValidationRules
 from strawberry.extensions.utils import is_introspection_key

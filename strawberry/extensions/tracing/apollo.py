@@ -6,7 +6,9 @@ from inspect import isawaitable
 
 from strawberry.extensions import Extension
 from strawberry.extensions.utils import get_path_from_info
-from strawberry.types.execution import ExecutionContext
+
+if typing.TYPE_CHECKING:
+    from strawberry.types.execution import ExecutionContext
 
 from .utils import should_skip_tracing
 

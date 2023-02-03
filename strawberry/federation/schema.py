@@ -1,34 +1,40 @@
+from __future__ import annotations
+
 from collections import defaultdict
 from copy import copy
 from functools import partial
 from itertools import chain
-from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union, cast
 
-from graphql import ExecutionContext as GraphQLExecutionContext
 from graphql import (
     GraphQLError,
     GraphQLField,
     GraphQLInterfaceType,
     GraphQLList,
     GraphQLNonNull,
-    GraphQLObjectType,
     GraphQLScalarType,
     GraphQLUnionType,
 )
 from graphql.type.definition import GraphQLArgument
 
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-from strawberry.enum import EnumDefinition
-from strawberry.extensions import Extension
-from strawberry.schema.types.concrete_type import TypeMap
 from strawberry.types.types import TypeDefinition
-from strawberry.union import StrawberryUnion
 from strawberry.utils.cached_property import cached_property
 from strawberry.utils.inspect import get_func_args
 
 from ..printer import print_schema
 from ..schema import Schema as BaseSchema
-from ..schema.config import StrawberryConfig
+
+if TYPE_CHECKING:
+    from graphql import ExecutionContext as GraphQLExecutionContext
+    from graphql import GraphQLObjectType
+
+    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.enum import EnumDefinition
+    from strawberry.extensions import Extension
+    from strawberry.schema.types.concrete_type import TypeMap
+    from strawberry.union import StrawberryUnion
+
+    from ..schema.config import StrawberryConfig
 
 
 class Schema(BaseSchema):

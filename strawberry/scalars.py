@@ -1,7 +1,12 @@
-import base64
-from typing import Any, Dict, NewType, Union
+from __future__ import annotations
 
-from .custom_scalar import ScalarDefinition, ScalarWrapper, scalar
+import base64
+from typing import TYPE_CHECKING, Any, Dict, NewType, Union
+
+if TYPE_CHECKING:
+    from .custom_scalar import ScalarDefinition, ScalarWrapper
+
+from .custom_scalar import scalar
 
 ID = NewType("ID", str)
 

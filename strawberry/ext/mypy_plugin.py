@@ -1,10 +1,35 @@
 import re
 import warnings
 from decimal import Decimal
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
-from typing_extensions import Final
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 import mypy
+
+if TYPE_CHECKING:
+    from typing_extensions import Final
+
+    from mypy.nodes import ClassDef, Expression, TypeInfo
+    from mypy.plugins import (
+        AnalyzeTypeContext,
+        CheckerPluginInterface,
+        ClassDefContext,
+        DynamicClassDefContext,
+        FunctionContext,
+    )
+    from mypy.types import Type
+
+
 from mypy.nodes import (
     ARG_OPT,
     ARG_POS,
@@ -16,8 +41,6 @@ from mypy.nodes import (
     Block,
     CallExpr,
     CastExpr,
-    ClassDef,
-    Expression,
     FuncDef,
     IndexExpr,
     MemberExpr,
@@ -29,16 +52,10 @@ from mypy.nodes import (
     TempNode,
     TupleExpr,
     TypeAlias,
-    TypeInfo,
     TypeVarExpr,
     Var,
 )
 from mypy.plugin import (
-    AnalyzeTypeContext,
-    CheckerPluginInterface,
-    ClassDefContext,
-    DynamicClassDefContext,
-    FunctionContext,
     Plugin,
     SemanticAnalyzerPluginInterface,
 )
@@ -51,7 +68,6 @@ from mypy.types import (
     CallableType,
     Instance,
     NoneType,
-    Type,
     TypeOfAny,
     TypeVarType,
     UnionType,
@@ -337,7 +353,7 @@ def add_static_method_to_class(
             cls.defs.body.remove(sym.node)
 
     # For compat with mypy < 0.93
-    if MypyVersion.VERSION < Decimal("0.93"):
+    if Decimal("0.93") > MypyVersion.VERSION:
         function_type = api.named_type("__builtins__.function")  # type: ignore
     else:
         if isinstance(api, SemanticAnalyzerPluginInterface):
@@ -762,9 +778,9 @@ class CustomDataclassTransformer:
 
             # Support the addition of `info` in mypy 0.800 and `kw_only` in mypy 0.920
             # without breaking backwards compatibility.
-            if MypyVersion.VERSION >= Decimal("0.800"):
+            if Decimal("0.800") <= MypyVersion.VERSION:
                 params["info"] = cls.info
-            if MypyVersion.VERSION >= Decimal("0.920"):
+            if Decimal("0.920") <= MypyVersion.VERSION:
                 params["kw_only"] = True
 
             attribute = DataclassAttribute(**params)  # type: ignore

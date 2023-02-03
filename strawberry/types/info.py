@@ -1,19 +1,26 @@
+from __future__ import annotations
+
 import dataclasses
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-from graphql import GraphQLResolveInfo, OperationDefinitionNode
-from graphql.language import FieldNode
-from graphql.pyutils.path import Path
+if TYPE_CHECKING:
+    from graphql import GraphQLResolveInfo, OperationDefinitionNode
+    from graphql.language import FieldNode
+    from graphql.pyutils.path import Path
 
-from strawberry.type import StrawberryType
+    from strawberry.type import StrawberryType
+
+    from .nodes import Selection
+from typing import Generic, TypeVar
+
 from strawberry.utils.cached_property import cached_property
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
     from strawberry.schema import Schema
 
-from .nodes import Selection, convert_selections
+from .nodes import convert_selections
 
 ContextType = TypeVar("ContextType")
 RootValueType = TypeVar("RootValueType")

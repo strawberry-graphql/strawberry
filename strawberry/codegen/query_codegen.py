@@ -1,15 +1,39 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Callable, Iterable, List, Optional, Tuple, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
+
+if TYPE_CHECKING:
+    from pathlib import Path
+    from types import GraphQLArgumentValue, GraphQLSelection, GraphQLType
+
+    from graphql import (
+        ArgumentNode,
+        DirectiveNode,
+        DocumentNode,
+        SelectionNode,
+        SelectionSetNode,
+        TypeNode,
+        ValueNode,
+        VariableDefinitionNode,
+    )
+
+    import strawberry
+
 from typing_extensions import Literal, Protocol
 
 from graphql import (
-    ArgumentNode,
     BooleanValueNode,
-    DirectiveNode,
-    DocumentNode,
     EnumValueNode,
     FieldNode,
     InlineFragmentNode,
@@ -19,17 +43,11 @@ from graphql import (
     NamedTypeNode,
     NonNullTypeNode,
     OperationDefinitionNode,
-    SelectionNode,
-    SelectionSetNode,
     StringValueNode,
-    TypeNode,
-    ValueNode,
-    VariableDefinitionNode,
     VariableNode,
     parse,
 )
 
-import strawberry
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
@@ -45,7 +63,6 @@ from .exceptions import (
 )
 from .types import (
     GraphQLArgument,
-    GraphQLArgumentValue,
     GraphQLBoolValue,
     GraphQLDirective,
     GraphQLEnum,
@@ -60,9 +77,7 @@ from .types import (
     GraphQLOperation,
     GraphQLOptional,
     GraphQLScalar,
-    GraphQLSelection,
     GraphQLStringValue,
-    GraphQLType,
     GraphQLUnion,
     GraphQLVariable,
     GraphQLVariableReference,

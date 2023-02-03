@@ -1,15 +1,19 @@
 import enum
 from copy import deepcopy
 from inspect import isawaitable
-from typing import Any, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
 from graphql import GraphQLResolveInfo
 from opentelemetry import trace
-from opentelemetry.trace import Span, SpanKind, Tracer
+from opentelemetry.trace import SpanKind
 
 from strawberry.extensions import Extension
 from strawberry.extensions.utils import get_path_from_info
-from strawberry.types.execution import ExecutionContext
+
+if TYPE_CHECKING:
+    from opentelemetry.trace import Span, Tracer
+
+    from strawberry.types.execution import ExecutionContext
 
 from .utils import should_skip_tracing
 

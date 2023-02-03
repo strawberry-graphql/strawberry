@@ -1,4 +1,5 @@
-import builtins
+from __future__ import annotations
+
 import dataclasses
 import inspect
 import sys
@@ -17,21 +18,24 @@ from typing import (
     Union,
     overload,
 )
-from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import InvalidArgumentTypeError, InvalidDefaultFactoryError
 from strawberry.type import StrawberryType
-from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
 from strawberry.utils.cached_property import cached_property
 
-from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
 
 if TYPE_CHECKING:
+    import builtins
+    from typing_extensions import Literal
+
+    from strawberry.arguments import StrawberryArgument
+    from strawberry.types.info import Info
+
     from .object_type import TypeDefinition
+    from .permission import BasePermission
 
 T = TypeVar("T")
 

@@ -1,21 +1,24 @@
 import json
-from typing import Dict
+from typing import TYPE_CHECKING, Dict
 
 from flask import Response, render_template_string, request
-from flask.typing import ResponseReturnValue
+
+if TYPE_CHECKING:
+    from flask.typing import ResponseReturnValue
+    from strawberry.http import GraphQLHTTPResponse
+    from strawberry.schema.base import BaseSchema
+    from strawberry.types import ExecutionResult
+
 from flask.views import View
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.flask.graphiql import should_render_graphiql
 from strawberry.http import (
-    GraphQLHTTPResponse,
     parse_query_params,
     parse_request_data,
     process_result,
 )
-from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
-from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 from strawberry.utils.graphiql import get_graphiql_html
 

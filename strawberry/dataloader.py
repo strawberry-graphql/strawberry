@@ -3,10 +3,10 @@ from __future__ import annotations
 import dataclasses
 from abc import ABC, abstractmethod
 from asyncio import create_task, gather, get_event_loop
-from asyncio.events import AbstractEventLoop
 from asyncio.futures import Future
 from dataclasses import dataclass
 from typing import (
+    TYPE_CHECKING,
     Any,
     Awaitable,
     Callable,
@@ -22,6 +22,10 @@ from typing import (
     Union,
     overload,
 )
+
+if TYPE_CHECKING:
+    from asyncio.events import AbstractEventLoop
+
 
 from .exceptions import WrongNumberOfResultsReturned
 

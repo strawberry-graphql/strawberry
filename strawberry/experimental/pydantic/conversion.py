@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 import copy
 import dataclasses
-from typing import Union, cast
+from typing import TYPE_CHECKING, Union, cast
+
+if TYPE_CHECKING:
+    from strawberry.field import StrawberryField
+    from strawberry.type import StrawberryType
 
 from strawberry.enum import EnumDefinition
-from strawberry.field import StrawberryField
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
+from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.union import StrawberryUnion
 
 

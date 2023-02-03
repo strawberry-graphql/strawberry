@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Coroutine, Dict, List, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Mapping, Optional, Union
 from typing_extensions import Literal, TypedDict
 
-from graphql import GraphQLFormattedError
+if TYPE_CHECKING:
+    from graphql import GraphQLFormattedError
 
 
 @dataclass
@@ -157,7 +160,7 @@ class BaseGraphQLTestClient(ABC):
         map_without_vars = {k: v for k, v in map.items() if k in files}
         return map_without_vars
 
-    def _decode(self, response, type: Literal["multipart", "json"]):
+    def _decode(self, response: Response, type: Literal["multipart", "json"]):
         if type == "multipart":
             return json.loads(response.content.decode())
         return response.json()

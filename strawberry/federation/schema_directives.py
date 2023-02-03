@@ -1,11 +1,12 @@
 from dataclasses import dataclass
-from typing import ClassVar, List, Optional
+from typing import TYPE_CHECKING, ClassVar, List, Optional
 
 from strawberry import directive_field
 from strawberry.schema_directive import Location, schema_directive
 from strawberry.unset import UNSET
 
-from .types import FieldSet, LinkImport, LinkPurpose
+if TYPE_CHECKING:
+    from .types import FieldSet, LinkImport, LinkPurpose
 
 
 @dataclass

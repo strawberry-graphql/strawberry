@@ -9,7 +9,7 @@ from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
 from strawberry.schema_directive import StrawberrySchemaDirective
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
+from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
@@ -17,6 +17,7 @@ from strawberry.utils.str_converters import capitalize_first, to_camel_case
 if TYPE_CHECKING:
     from strawberry.arguments import StrawberryArgument
     from strawberry.field import StrawberryField
+    from strawberry.type import StrawberryType
 
 
 class HasGraphQLName(Protocol):

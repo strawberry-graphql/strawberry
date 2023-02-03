@@ -2,10 +2,17 @@
 
 A consumer to provide a graphql endpoint, and optionally graphiql.
 """
+from __future__ import annotations
 
 import dataclasses
 import json
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
+
+if TYPE_CHECKING:
+    from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
+    from strawberry.schema import BaseSchema
+    from strawberry.types import ExecutionResult
+
 from urllib.parse import parse_qs
 
 from channels.db import database_sync_to_async
@@ -13,15 +20,11 @@ from channels.generic.http import AsyncHttpConsumer
 from strawberry.channels.context import StrawberryChannelsContext
 from strawberry.exceptions import MissingQueryError
 from strawberry.http import (
-    GraphQLHTTPResponse,
-    GraphQLRequestData,
     parse_query_params,
     parse_request_data,
     process_result,
 )
-from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
-from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 from strawberry.utils.graphiql import get_graphiql_html
 

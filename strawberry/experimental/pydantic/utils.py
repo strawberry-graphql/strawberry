@@ -1,9 +1,26 @@
-import dataclasses
-from typing import Any, List, NamedTuple, NoReturn, Set, Tuple, Type, Union, cast
+from __future__ import annotations
 
-from pydantic import BaseModel
-from pydantic.fields import ModelField
-from pydantic.typing import NoArgAnyCallable
+import dataclasses
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    List,
+    NamedTuple,
+    NoReturn,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
+    from pydantic.fields import ModelField
+    from pydantic.typing import NoArgAnyCallable
+
+    from strawberry.utils.typing import get_list_annotation
+
 from pydantic.utils import smart_deepcopy
 
 from strawberry.experimental.pydantic.exceptions import (
@@ -14,7 +31,6 @@ from strawberry.experimental.pydantic.exceptions import (
 from strawberry.private import is_private
 from strawberry.unset import UNSET
 from strawberry.utils.typing import (
-    get_list_annotation,
     get_optional_annotation,
     is_list,
     is_optional,

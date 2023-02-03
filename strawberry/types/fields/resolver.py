@@ -1,11 +1,11 @@
 from __future__ import annotations as _
 
-import builtins
 import inspect
 import sys
 import warnings
 from inspect import isasyncgenfunction, iscoroutinefunction
 from typing import (  # type: ignore[attr-defined]
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -22,6 +22,10 @@ from typing import (  # type: ignore[attr-defined]
     _eval_type,
     cast,
 )
+
+if TYPE_CHECKING:
+    import builtins
+
 from typing_extensions import Annotated, Protocol, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation

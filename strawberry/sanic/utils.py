@@ -1,7 +1,8 @@
 from io import BytesIO
-from typing import Dict, List, Union
+from typing import TYPE_CHECKING, Dict, List, Union
 
-from sanic.request import Request
+if TYPE_CHECKING:
+    from sanic.request import Request
 
 
 def convert_request_to_files_dict(request: Request) -> dict:

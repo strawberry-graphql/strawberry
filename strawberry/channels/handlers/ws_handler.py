@@ -1,7 +1,10 @@
-import datetime
-from typing import Optional, Sequence, Union
+from __future__ import annotations
 
-from strawberry.schema import BaseSchema
+import datetime
+from typing import TYPE_CHECKING, Optional, Sequence, Union
+
+if TYPE_CHECKING:
+    from strawberry.schema import BaseSchema
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 from .base import ChannelsWSConsumer

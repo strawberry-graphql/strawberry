@@ -233,6 +233,7 @@ ignore = [
     "PT017",
     "C414",
     "N802",
+
     "SIM117",
     "SIM102",
 
@@ -247,6 +248,10 @@ ignore = [
 
     "DTZ003",
     "DTZ005",
+
+    "RSE102",
+    "SLF001",
+
     # in tests
     "DTZ001",
 
@@ -299,10 +304,12 @@ exclude = [
 src = ["strawberry", "tests"]
 
 [tool.ruff.per-file-ignores]
+"strawberry/schema/types/concrete_type.py" = ["TCH002"]
 "tests/federation/printer/*" = ["E501"]
 "tests/test_printer/test_basic.py" = ["E501"]
 "tests/pyright/test_federation.py" = ["E501"]
 "tests/test_printer/test_schema_directives.py" = ["E501"]
+"tests/*" = ["RSE102", "SLF001", "TCH001", "TCH002", "TCH003"]
 
 [tool.ruff.isort]
 known-first-party = ["strawberry"]

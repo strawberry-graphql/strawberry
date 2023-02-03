@@ -16,8 +16,9 @@ from typing import (
     cast,
 )
 
-from graphql import GraphQLResolveInfo
-from pydantic.fields import ModelField
+if TYPE_CHECKING:
+    from graphql import GraphQLResolveInfo
+    from pydantic.fields import ModelField
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.auto import StrawberryAuto

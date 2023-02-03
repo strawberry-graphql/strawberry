@@ -1,7 +1,10 @@
-from typing import Any, List, Type
+from __future__ import annotations
 
-from pydantic import BaseModel
-from pydantic.typing import NoArgAnyCallable
+from typing import TYPE_CHECKING, Any, List, Type
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
+    from pydantic.typing import NoArgAnyCallable
 
 
 class MissingFieldsListError(Exception):

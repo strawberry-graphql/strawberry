@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import dataclasses
-import inspect
-from typing import Any, Callable, List, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, TypeVar
+
+if TYPE_CHECKING:
+    import inspect
+
+    from graphql import DirectiveLocation
+
+    from strawberry.arguments import StrawberryArgument
+
 from typing_extensions import Annotated
 
-from graphql import DirectiveLocation
-
-from strawberry.arguments import StrawberryArgument
 from strawberry.field import StrawberryField
 from strawberry.types.fields.resolver import (
     INFO_PARAMSPEC,

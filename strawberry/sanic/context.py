@@ -1,8 +1,10 @@
 import warnings
+from typing import TYPE_CHECKING
 from typing_extensions import TypedDict
 
-from sanic.request import Request
-from strawberry.http.temporal_response import TemporalResponse
+if TYPE_CHECKING:
+    from sanic.request import Request
+    from strawberry.http.temporal_response import TemporalResponse
 
 
 class StrawberrySanicContext(TypedDict):

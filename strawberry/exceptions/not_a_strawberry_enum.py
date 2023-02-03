@@ -1,10 +1,14 @@
-from enum import EnumMeta
-from typing import Optional
+from __future__ import annotations
 
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from enum import EnumMeta
+
+    from .exception_source import ExceptionSource
 from strawberry.utils.cached_property import cached_property
 
 from .exception import StrawberryException
-from .exception_source import ExceptionSource
 from .utils.source_finder import SourceFinder
 
 

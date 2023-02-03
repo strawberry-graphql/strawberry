@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import itertools
 from itertools import chain
 from typing import (
@@ -16,14 +18,15 @@ from typing import (
     cast,
 )
 
-from graphql import (
-    GraphQLAbstractType,
-    GraphQLNamedType,
-    GraphQLResolveInfo,
-    GraphQLType,
-    GraphQLTypeResolver,
-    GraphQLUnionType,
-)
+if TYPE_CHECKING:
+    from graphql import (
+        GraphQLAbstractType,
+        GraphQLResolveInfo,
+        GraphQLType,
+        GraphQLTypeResolver,
+    )
+
+from graphql import GraphQLNamedType, GraphQLUnionType
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (

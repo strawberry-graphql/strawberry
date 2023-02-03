@@ -30,7 +30,7 @@ def maintain_version():
 def test_plugin(version, expected):
 
     plugin(version)
-    assert MypyVersion.VERSION == expected
+    assert expected == MypyVersion.VERSION
 
 
 def test_plugin_negative():

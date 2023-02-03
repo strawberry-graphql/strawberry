@@ -4,7 +4,6 @@ import importlib
 import importlib.util
 import sys
 from dataclasses import dataclass
-from inspect import Traceback
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Type, cast
 
@@ -13,6 +12,8 @@ from strawberry.utils.cached_property import cached_property
 from ..exception_source import ExceptionSource
 
 if TYPE_CHECKING:
+    from inspect import Traceback
+
     from libcst import CSTNode, FunctionDef
 
     from strawberry.custom_scalar import ScalarDefinition
@@ -73,7 +74,9 @@ class LibCSTSourceFinder:
     def _find_definition_by_qualname(
         self, qualname: str, nodes: Sequence[CSTNode]
     ) -> Optional[CSTNode]:
-        from libcst import ClassDef, CSTNode, FunctionDef
+        if TYPE_CHECKING:
+            from libcst import CSTNode
+        from libcst import ClassDef, FunctionDef
 
         for definition in nodes:
             parent: Optional[CSTNode] = definition
@@ -102,7 +105,9 @@ class LibCSTSourceFinder:
         self, source: SourcePath, function: Callable
     ) -> Optional[FunctionDef]:
         import libcst.matchers as m
-        from libcst import FunctionDef
+
+        if TYPE_CHECKING:
+            from libcst import FunctionDef
 
         matcher = m.FunctionDef(name=m.Name(value=function.__name__))
 
@@ -264,7 +269,9 @@ class LibCSTSourceFinder:
         self, path: Path, union_name: str, invalid_type: object
     ) -> Optional[ExceptionSource]:
         import libcst.matchers as m
-        from libcst import Call
+
+        if TYPE_CHECKING:
+            from libcst import Call
 
         source = path.read_text()
 
@@ -341,7 +348,9 @@ class LibCSTSourceFinder:
         self, union: StrawberryUnion, other: object, frame: Traceback
     ) -> Optional[ExceptionSource]:
         import libcst.matchers as m
-        from libcst import BinaryOperation
+
+        if TYPE_CHECKING:
+            from libcst import BinaryOperation
 
         path = Path(frame.filename)
         source = path.read_text()

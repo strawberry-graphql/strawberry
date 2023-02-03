@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses
 import sys
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -23,26 +24,37 @@ from graphql import (
     GraphQLField,
     GraphQLInputField,
     GraphQLInputObjectType,
-    GraphQLInputType,
     GraphQLInterfaceType,
     GraphQLList,
     GraphQLNonNull,
-    GraphQLNullableType,
     GraphQLObjectType,
-    GraphQLOutputType,
-    GraphQLResolveInfo,
-    GraphQLScalarType,
     GraphQLUnionType,
     Undefined,
-    ValueNode,
 )
 from graphql.language.directive_locations import DirectiveLocation
 
+if TYPE_CHECKING:
+    from graphql import (
+        GraphQLInputType,
+        GraphQLNullableType,
+        GraphQLOutputType,
+        GraphQLResolveInfo,
+        GraphQLScalarType,
+        ValueNode,
+    )
+
+    from strawberry.custom_scalar import ScalarDefinition
+    from strawberry.directive import StrawberryDirective
+    from strawberry.enum import EnumValue
+    from strawberry.field import StrawberryField
+    from strawberry.schema.config import StrawberryConfig
+    from strawberry.schema_directive import StrawberrySchemaDirective
+    from strawberry.type import StrawberryType
+
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument, convert_arguments
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-from strawberry.directive import StrawberryDirective
-from strawberry.enum import EnumDefinition, EnumValue
+from strawberry.custom_scalar import ScalarWrapper
+from strawberry.enum import EnumDefinition
 from strawberry.exceptions import (
     DuplicatedTypeName,
     InvalidTypeInputForUnion,
@@ -50,13 +62,11 @@ from strawberry.exceptions import (
     ScalarAlreadyRegisteredError,
     UnresolvedFieldTypeError,
 )
-from strawberry.field import UNRESOLVED, StrawberryField
+from strawberry.field import UNRESOLVED
 from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
-from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.scalar import _make_scalar_type
-from strawberry.schema_directive import StrawberrySchemaDirective
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
+from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion

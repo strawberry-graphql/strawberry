@@ -1,7 +1,19 @@
-from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
+from __future__ import annotations
 
-from graphql import ExecutionContext as GraphQLExecutionContext
+from functools import lru_cache
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union, cast
+
+if TYPE_CHECKING:
+    from graphql import ExecutionContext as GraphQLExecutionContext
+
+    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.directive import StrawberryDirective
+    from strawberry.enum import EnumDefinition
+    from strawberry.extensions import Extension
+    from strawberry.field import StrawberryField
+    from strawberry.types import ExecutionResult
+    from strawberry.union import StrawberryUnion
+
 from graphql import (
     GraphQLNamedType,
     GraphQLNonNull,
@@ -14,21 +26,15 @@ from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-from strawberry.directive import StrawberryDirective
-from strawberry.enum import EnumDefinition
-from strawberry.extensions import Extension
 from strawberry.extensions.directives import (
     DirectivesExtension,
     DirectivesExtensionSync,
 )
-from strawberry.field import StrawberryField
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
-from strawberry.types import ExecutionContext, ExecutionResult
+from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
 from strawberry.types.types import TypeDefinition
-from strawberry.union import StrawberryUnion
 
 from ..printer import print_schema
 from . import compat
@@ -70,7 +76,7 @@ class Schema(BaseSchema):
         self.config = config or StrawberryConfig()
 
         SCALAR_OVERRIDES_DICT_TYPE = Dict[
-            object, Union[ScalarWrapper, ScalarDefinition]
+            object, Union["ScalarWrapper", "ScalarDefinition"]
         ]
 
         scalar_registry: SCALAR_OVERRIDES_DICT_TYPE = {**DEFAULT_SCALAR_REGISTRY}

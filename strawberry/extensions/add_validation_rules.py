@@ -1,6 +1,9 @@
-from typing import List, Type
+from __future__ import annotations
 
-from graphql import ASTValidationRule
+from typing import TYPE_CHECKING, List, Type
+
+if TYPE_CHECKING:
+    from graphql import ASTValidationRule
 
 from strawberry.extensions.base_extension import Extension
 

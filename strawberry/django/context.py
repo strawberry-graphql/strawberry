@@ -1,6 +1,8 @@
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from django.http import HttpRequest, HttpResponse
+if TYPE_CHECKING:
+    from django.http import HttpRequest, HttpResponse
 
 
 @dataclass

@@ -1,7 +1,10 @@
-from abc import ABC
-from typing import List
+from __future__ import annotations
 
-from strawberry.extensions import Extension
+from abc import ABC
+from typing import TYPE_CHECKING, List
+
+if TYPE_CHECKING:
+    from strawberry.extensions import Extension
 from strawberry.utils.await_maybe import await_maybe
 
 

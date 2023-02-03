@@ -1,7 +1,18 @@
+from __future__ import annotations
+
 import dataclasses
 import re
 from math import isfinite
-from typing import Any, Mapping, Optional, cast
+from typing import TYPE_CHECKING, Any, Mapping, Optional, cast
+
+if TYPE_CHECKING:
+    from graphql.language import ValueNode
+    from graphql.type import (
+        GraphQLInputObjectType,
+        GraphQLInputType,
+        GraphQLList,
+        GraphQLNonNull,
+    )
 
 from graphql.language import (
     BooleanValueNode,
@@ -14,15 +25,10 @@ from graphql.language import (
     ObjectFieldNode,
     ObjectValueNode,
     StringValueNode,
-    ValueNode,
 )
 from graphql.pyutils import Undefined, inspect, is_iterable
 from graphql.type import (
     GraphQLID,
-    GraphQLInputObjectType,
-    GraphQLInputType,
-    GraphQLList,
-    GraphQLNonNull,
     is_enum_type,
     is_input_object_type,
     is_leaf_type,

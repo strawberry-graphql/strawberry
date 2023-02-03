@@ -1,6 +1,8 @@
 import json
-from typing import Dict, Mapping, Optional
-from typing_extensions import Literal
+from typing import TYPE_CHECKING, Dict, Mapping, Optional
+
+if TYPE_CHECKING:
+    from typing_extensions import Literal
 
 from strawberry.test import BaseGraphQLTestClient
 

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Optional, TypeVar
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
+
+    from strawberry.types.types import TypeDefinition
+
 from typing_extensions import Protocol
-
-from pydantic import BaseModel
-
-from strawberry.types.types import TypeDefinition
 
 PydanticModel = TypeVar("PydanticModel", bound=BaseModel)
 

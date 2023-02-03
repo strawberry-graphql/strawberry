@@ -1,10 +1,19 @@
+from __future__ import annotations
+
 import json
 from datetime import timedelta
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
-from starlette.requests import Request
-from starlette.responses import Response
-from starlette.types import Receive, Scope, Send
+if TYPE_CHECKING:
+    from starlette.requests import Request
+    from starlette.responses import Response
+    from starlette.types import Receive, Scope, Send
+
+    from strawberry.http import GraphQLHTTPResponse
+    from strawberry.schema import BaseSchema
+    from strawberry.types import ExecutionResult
+
+
 from starlette.websockets import WebSocket
 
 from strawberry.asgi.handlers import (
@@ -12,10 +21,8 @@ from strawberry.asgi.handlers import (
     GraphQLWSHandler,
     HTTPHandler,
 )
-from strawberry.http import GraphQLHTTPResponse, process_result
-from strawberry.schema import BaseSchema
+from strawberry.http import process_result
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from strawberry.types import ExecutionResult
 
 
 class GraphQL:

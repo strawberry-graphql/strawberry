@@ -1,11 +1,12 @@
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional
 from typing_extensions import TypedDict
 
 from graphql.error.graphql_error import format_error as format_graphql_error
 
-from strawberry.types import ExecutionResult
+if TYPE_CHECKING:
+    from strawberry.types import ExecutionResult
 
 
 class GraphQLHTTPResponse(TypedDict, total=False):
