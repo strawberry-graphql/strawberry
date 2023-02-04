@@ -63,15 +63,17 @@ DEFAULT_SCALAR_REGISTRY: Dict[object, ScalarDefinition] = {
     datetime.datetime: _get_scalar_definition(base_scalars.DateTime),
     datetime.time: _get_scalar_definition(base_scalars.Time),
     decimal.Decimal: _get_scalar_definition(base_scalars.Decimal),
-    GlobalID: scalar(
-        NewType("GlobalID", GlobalID),
-        name="GlobalID",
-        description=GraphQLID.description,
-        parse_literal=lambda v, vars=None: GlobalID.from_id(
-            GraphQLID.parse_literal(v, vars)
-        ),
-        parse_value=GlobalID.from_id,
-        serialize=str,
-        specified_by_url="https://relay.dev/graphql/objectidentification.htm",
-    )._scalar_definition,  # type:ignore
+    GlobalID: _get_scalar_definition(
+        scalar(
+            NewType("GlobalID", GlobalID),
+            name="GlobalID",
+            description=GraphQLID.description,
+            parse_literal=lambda v, vars=None: GlobalID.from_id(
+                GraphQLID.parse_literal(v, vars)
+            ),
+            parse_value=GlobalID.from_id,
+            serialize=str,
+            specified_by_url=("https://relay.dev/graphql/objectidentification.htm"),
+        )
+    ),
 }
