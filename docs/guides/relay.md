@@ -186,6 +186,11 @@ For example, when working with `Django`, `resolve_nodes` can return a `QuerySet`
 meaning that the slice on it will translate to a `LIMIT`/`OFFSET` in the SQL
 query, which will fetch only the data that is needed from the database.
 
+Also note that if that object doesn't have a `__getitem__` attribute, it will
+use `itertools.islice` to paginate it, meaning that when a generator is being
+resolved it will only generate as much results as needed for the given pagination,
+the worst case scenario being the last results needing to be returned.
+
 </Note>
 
 You may want to use a different approach to paginate your results. For example,
