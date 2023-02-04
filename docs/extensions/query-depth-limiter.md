@@ -227,7 +227,7 @@ schema.execute(
 <details>
   <summary>Ignoring fields with FieldRule and arguments</summary>
 
-```python
+```
 import strawberry
 from strawberry.extensions import FieldRule, QueryDepthLimiter
 
@@ -238,7 +238,8 @@ schema = strawberry.Schema(
             max_depth=2,
             ignore=[
                 FieldRule(
-                    field_name=lambda field_name: field_name == "book",
+                  field_name="book",
+                  field_arguments: { "id": ["1"] }
                 )
             ],
         ),
@@ -248,7 +249,47 @@ schema = strawberry.Schema(
 # This query succeeds because the `book` field
 # with an argument of id: 1 is ignored
 schema.execute(
-    """
+"""
+  query NotTooDeep {
+    book(id: "1") {
+      author {
+        publishedBooks {
+          title
+        }
+      }
+    }
+  }
+"""
+)
+```
+
+</details>
+<details>
+  <summary>Ignoring fields with complex FieldRule and arguments</summary>
+
+```
+import strawberry
+from strawberry.extensions import FieldRule, QueryDepthLimiter
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        QueryDepthLimiter(
+            max_depth=2,
+            ignore=[
+                FieldRule(
+                  field_name=lambda name: name == "book",
+                  field_arguments: { "id": [lambda arg: arg == "1"] }
+                )
+            ],
+        ),
+    ],
+)
+
+# This query succeeds because the `book` field
+# with an argument of id: 1 is ignored
+schema.execute(
+"""
   query NotTooDeep {
     book(id: "1") {
       author {
