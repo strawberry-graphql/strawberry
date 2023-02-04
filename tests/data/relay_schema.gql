@@ -1,0 +1,130 @@
+type Fruit implements Node {
+  """The Globally Unique ID of this object"""
+  id: GlobalID!
+  name: String!
+  color: String!
+}
+
+"""A connection to a list of items."""
+type FruitConnection {
+  """Pagination data for this connection"""
+  pageInfo: PageInfo!
+
+  """Contains the nodes in this connection"""
+  edges: [FruitEdge!]!
+
+  """Total quantity of existing nodes"""
+  totalCount: Int
+}
+
+type FruitCustomPaginationConnection {
+  """Pagination data for this connection"""
+  pageInfo: PageInfo!
+
+  """Contains the nodes in this connection"""
+  edges: [FruitEdge!]!
+
+  """Total quantity of existing nodes"""
+  totalCount: Int
+  something: String!
+}
+
+"""An edge in a connection."""
+type FruitEdge {
+  """A cursor for use in pagination"""
+  cursor: String!
+
+  """The item at the end of the edge"""
+  node: Fruit!
+}
+
+"""
+The `ID` scalar type represents a unique identifier, often used to refetch an object or as key for a cache. The ID type appears in a JSON response as a String; however, it is not intended to be human-readable. When expected as an input type, any string (such as `"4"`) or integer (such as `4`) input value will be accepted as an ID.
+"""
+scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
+
+"""An object with a Globally Unique ID"""
+interface Node {
+  """The Globally Unique ID of this object"""
+  id: GlobalID!
+}
+
+"""Information to aid in pagination."""
+type PageInfo {
+  """When paginating forwards, are there more items?"""
+  hasNextPage: Boolean!
+
+  """When paginating backwards, are there more items?"""
+  hasPreviousPage: Boolean!
+
+  """When paginating backwards, the cursor to continue."""
+  startCursor: String
+
+  """When paginating forwards, the cursor to continue."""
+  endCursor: String
+}
+
+type Query {
+  node(
+    """The ID of the object."""
+    id: GlobalID!
+  ): Node!
+  nodes(
+    """The IDs of the objects."""
+    ids: [GlobalID!]!
+  ): [Node!]!
+  fruits(
+    """Returns the items in the list that come before the specified cursor."""
+    before: String = null
+
+    """Returns the items in the list that come after the specified cursor."""
+    after: String = null
+
+    """Returns the first n items from the list."""
+    first: Int = null
+
+    """Returns the items in the list that come after the specified cursor."""
+    last: Int = null
+  ): FruitConnection!
+  fruitsCustomPagination(
+    """Returns the items in the list that come before the specified cursor."""
+    before: String = null
+
+    """Returns the items in the list that come after the specified cursor."""
+    after: String = null
+
+    """Returns the first n items from the list."""
+    first: Int = null
+
+    """Returns the items in the list that come after the specified cursor."""
+    last: Int = null
+  ): FruitCustomPaginationConnection!
+  fruitsCustomResolver(
+    """Returns the items in the list that come before the specified cursor."""
+    before: String = null
+
+    """Returns the items in the list that come after the specified cursor."""
+    after: String = null
+
+    """Returns the first n items from the list."""
+    first: Int = null
+
+    """Returns the items in the list that come after the specified cursor."""
+    last: Int = null
+    nameEndswith: String = null
+  ): FruitConnection!
+  fruitsCustomResolverReturningList(
+    """Returns the items in the list that come before the specified cursor."""
+    before: String = null
+
+    """Returns the items in the list that come after the specified cursor."""
+    after: String = null
+
+    """Returns the first n items from the list."""
+    first: Int = null
+
+    """Returns the items in the list that come after the specified cursor."""
+    last: Int = null
+    nameEndswith: String = null
+  ): FruitConnection!
+}

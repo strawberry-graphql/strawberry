@@ -1,6 +1,7 @@
 import dataclasses
 import sys
 from typing import Dict, List, Type
+from typing_extensions import get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -48,6 +49,15 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     """
     # Deferred import to avoid import cycles
     from strawberry.field import StrawberryField
+
+    # Relay uses @interface/@type while creating its types, which calls this function
+    try:
+        from strawberry.relay import Connection, ConnectionField, Node, NodeField
+    except ImportError:
+        Connection = None  # type: ignore[misc,assignment]
+        ConnectionField = None  # type: ignore[misc,assignment]
+        Node = None  # type: ignore[misc,assignment]
+        NodeField = None  # type: ignore[misc,assignment]
 
     fields: Dict[str, StrawberryField] = {}
 
@@ -138,8 +148,31 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             origin = origins.get(field.name, cls)
             module = sys.modules[origin.__module__]
 
+            # Support relay fields with only annotations
+            field_class = StrawberryField
+            if Connection is not None:
+                field_type_origin = get_origin(field_type)
+                if isinstance(field_type_origin, type) and issubclass(
+                    field_type_origin,
+                    Connection,
+                ):
+                    assert ConnectionField is not None
+                    field_class = ConnectionField
+            if Node is not None:
+                field_type_origin = get_origin(field_type)
+                field_type_args = get_args(field_type)
+                if (isinstance(field_type, type) and issubclass(field_type, Node)) or (
+                    isinstance(field_type_origin, type)
+                    and issubclass(field_type_origin, List)
+                    and field_type_args
+                    and isinstance(field_type_args[0], type)
+                    and issubclass(field_type_args[0], Node)
+                ):
+                    assert NodeField is not None
+                    field_class = NodeField
+
             # Create a StrawberryField, for fields of Types #1 and #2a
-            field = StrawberryField(
+            field = field_class(
                 python_name=field.name,
                 graphql_name=None,
                 type_annotation=StrawberryAnnotation(
