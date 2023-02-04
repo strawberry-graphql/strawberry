@@ -183,7 +183,7 @@ schema.execute(
 
 </details>
 
-<detail>
+<details>
   <summary>Ignoring fields with FieldRule and no arguments</summary>
 
 ```python
@@ -227,6 +227,9 @@ schema.execute(
 <details>
   <summary>Ignoring fields with FieldRule and arguments</summary>
 
+<!-- Cannot specify python as code for this block as blacken-docs fails
+to parse the field_arguments line within FieldRule -->
+
 ```
 import strawberry
 from strawberry.extensions import FieldRule, QueryDepthLimiter
@@ -266,6 +269,9 @@ schema.execute(
 </details>
 <details>
   <summary>Ignoring fields with complex FieldRule and arguments</summary>
+
+<!-- Cannot specify python as code for this block as blacken-docs fails
+to parse the field_arguments line within FieldRule -->
 
 ```
 import strawberry
