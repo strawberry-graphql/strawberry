@@ -45,22 +45,22 @@ from graphql.validation import ValidationContext, ValidationRule
 from strawberry.extensions import AddValidationRules
 from strawberry.extensions.utils import is_introspection_key
 
-FieldNameRuleType = Union[Callable[[str], bool], re.Pattern, str]
-FieldArgumentsRuleType = Dict[str, List]
+FieldAttributeRuleType = Union[Callable[[str], bool], re.Pattern, str]
+FieldArgumentsRuleType = Dict[str, List[FieldAttributeRuleType]]
 
 
 @dataclass
-class FieldAttributesRule:
+class FieldRule:
     """
     Use this dataclass to specify which fields to ignore with options to
     specify any rules on arguments and keys within the returned field.
     """
 
-    field_name: FieldNameRuleType
+    field_name: FieldAttributeRuleType
     field_arguments: Optional[FieldArgumentsRuleType] = None
 
 
-IgnoreType = Union[FieldNameRuleType, FieldAttributesRule]
+IgnoreType = Union[FieldAttributeRuleType, FieldRule]
 
 
 class QueryDepthLimiter(AddValidationRules):
@@ -245,7 +245,7 @@ def is_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -> bo
         elif isinstance(rule, re.Pattern):
             if rule.match(field_name):
                 return True
-        elif isinstance(rule, FieldAttributesRule):
+        elif isinstance(rule, FieldRule):
             if should_ignore_by_field_attributes(node, rule):
                 return True
         elif callable(rule):
@@ -257,7 +257,7 @@ def is_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -> bo
     return False
 
 
-def should_ignore_by_field_name(node: FieldNode, rule: FieldNameRuleType) -> bool:
+def should_ignore_by_field_name(node: FieldNode, rule: FieldAttributeRuleType) -> bool:
     field_name = node.name.value
     if isinstance(rule, str):
         if field_name == rule:
@@ -274,9 +274,7 @@ def should_ignore_by_field_name(node: FieldNode, rule: FieldNameRuleType) -> boo
     return False
 
 
-def should_ignore_by_field_attributes(
-    node: FieldNode, rule: FieldAttributesRule
-) -> bool:
+def should_ignore_by_field_attributes(node: FieldNode, rule: FieldRule) -> bool:
     if not should_ignore_by_field_name(node, rule.field_name):
         return False
 

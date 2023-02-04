@@ -5,7 +5,7 @@ import pytest
 from graphql import get_introspection_query, parse, specified_rules, validate
 
 import strawberry
-from strawberry.extensions import FieldAttributesRule, QueryDepthLimiter
+from strawberry.extensions import FieldRule, QueryDepthLimiter
 from strawberry.extensions.query_depth_limiter import create_validator
 
 
@@ -270,9 +270,9 @@ def test_should_ignore_field_attributes_rule_field_name():
         query,
         10,
         ignore=[
-            FieldAttributesRule(field_name="user1"),
-            FieldAttributesRule(field_name=re.compile("user2")),
-            FieldAttributesRule(field_name=lambda x: x == "user3"),
+            FieldRule(field_name="user1"),
+            FieldRule(field_name=re.compile("user2")),
+            FieldRule(field_name=lambda x: x == "user3"),
         ],
     )
 
@@ -305,9 +305,7 @@ def test_should_ignore_field_attributes_field_arguments():
     errors, result = run_query(
         query,
         10,
-        ignore=[
-            FieldAttributesRule(field_name="user", field_arguments={"name": ["andy"]})
-        ],
+        ignore=[FieldRule(field_name="user", field_arguments={"name": ["andy"]})],
     )
 
     expected = {"read1": 1}
@@ -317,9 +315,7 @@ def test_should_ignore_field_attributes_field_arguments():
     errors, result = run_query(
         query,
         10,
-        ignore=[
-            FieldAttributesRule(field_name="user", field_arguments={"name": ["matt"]})
-        ],
+        ignore=[FieldRule(field_name="user", field_arguments={"name": ["matt"]})],
     )
 
     expected = {"read1": 3}
@@ -330,9 +326,7 @@ def test_should_ignore_field_attributes_field_arguments():
         query,
         10,
         ignore=[
-            FieldAttributesRule(
-                field_name="user", field_arguments={"name": ["andy", "matt"]}
-            )
+            FieldRule(field_name="user", field_arguments={"name": ["andy", "matt"]})
         ],
     )
 
@@ -351,7 +345,7 @@ def test_should_raise_invalid_field_attributes_rule_field_name():
         run_query(
             query,
             10,
-            ignore=[FieldAttributesRule(field_name=True)],
+            ignore=[FieldRule(field_name=True)],
         )
 
 
