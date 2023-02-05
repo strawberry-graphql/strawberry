@@ -27,7 +27,7 @@ from strawberry.arguments import StrawberryArgument
 from strawberry.field import _RESOLVER_TYPE, StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.permission import BasePermission
-from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.fields.resolver import StrawberryResolver
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
@@ -76,6 +76,16 @@ class RelayField(StrawberryField):
             type_ = type_.of_type
 
         return isinstance(type_, StrawberryList)
+
+    def copy_with(
+        self,
+        type_var_map: Mapping[TypeVar, Union[StrawberryType, type]],
+    ) -> "RelayField":
+        # We should use Self in the return value of copy_with,
+        # but mypy is not accepting it
+        retval = cast(RelayField, super().copy_with(type_var_map))
+        retval.default_args = self.default_args
+        return retval
 
 
 class NodeField(RelayField):

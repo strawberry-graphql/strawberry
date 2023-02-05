@@ -77,9 +77,7 @@ class FruitAsync(Fruit):
 
 
 @strawberry.type
-class CustomPaginationConnection(
-    strawberry.relay.Connection[strawberry.relay.NodeType]
-):
+class CustomPaginationConnection(strawberry.relay.Connection[Fruit]):
     @strawberry.field
     def something(self) -> str:
         return "foobar"
@@ -157,7 +155,7 @@ class Query:
     nodes: List[strawberry.relay.Node]
     fruits: strawberry.relay.Connection[Fruit]
     fruits_async: strawberry.relay.Connection[FruitAsync]
-    fruits_custom_pagination: CustomPaginationConnection[Fruit]
+    fruits_custom_pagination: CustomPaginationConnection
 
     @strawberry.relay.connection
     def fruits_custom_resolver(

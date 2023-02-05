@@ -204,9 +204,7 @@ from strawberry.relay import to_base64
 
 
 @strawberry.type
-class CustomPaginationConnection(
-    strawberry.relay.Connection[strawberry.relay.NodeType]
-):
+class CustomPaginationConnection(strawberry.relay.Connection[Fruit]):
     @classmethod
     def from_nodes(
         cls,
@@ -263,8 +261,17 @@ class CustomPaginationConnection(
 
 @strawberry.type
 class Query:
-    fruits: CustomPaginationConnection[Fruit]
+    fruits: CustomPaginationConnection
 ```
+
+<Note>
+
+In the example above we specialized the `FruitCustomPaginationConnection` by
+inheriting it from `relay.Connection[Fruit]`. We could still keep it generic by
+inheriting it from `relay.Connection[relay.NodeType]` and then specialize it
+in when defining the field.
+
+</Note>
 
 ### Custom connection resolver
 

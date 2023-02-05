@@ -305,7 +305,7 @@ class StrawberryField(dataclasses.Field):
             else None
         )
 
-        return StrawberryField(
+        return type(self)(
             python_name=self.python_name,
             graphql_name=self.graphql_name,
             # TODO: do we need to wrap this in `StrawberryAnnotation`?

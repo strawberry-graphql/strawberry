@@ -1,6 +1,6 @@
 import dataclasses
 import sys
-from typing import Dict, List, Type
+from typing import Dict, Generic, List, Type, TypeVar, Union
 from typing_extensions import get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
@@ -11,7 +11,35 @@ from strawberry.exceptions import (
 )
 from strawberry.field import StrawberryField
 from strawberry.private import is_private
+from strawberry.type import StrawberryType
 from strawberry.unset import UNSET
+
+
+def _get_specialized_type_var_map(cls: Union[StrawberryType, type]):
+    orig_bases = getattr(cls, "__orig_bases__", None)
+    if orig_bases is None:
+        return None
+
+    type_var_map = {}
+
+    for base in orig_bases:
+        args = get_args(base)
+        while hasattr(base, "__origin__"):
+            if base.__origin__ is Generic:
+                break
+
+            base = base.__origin__
+
+        try:
+            params = base.__parameters__
+        except AttributeError:
+            continue
+
+        type_var_map.update(
+            {p: a for p, a in zip(params, args) if not isinstance(a, TypeVar)}
+        )
+
+    return type_var_map
 
 
 def _get_fields(cls: Type) -> List[StrawberryField]:
@@ -152,9 +180,14 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             field_class = StrawberryField
             if Connection is not None:
                 field_type_origin = get_origin(field_type)
-                if isinstance(field_type_origin, type) and issubclass(
-                    field_type_origin,
-                    Connection,
+                if (
+                    isinstance(field_type, type) and issubclass(field_type, Connection)
+                ) or (
+                    isinstance(field_type_origin, type)
+                    and issubclass(
+                        field_type_origin,
+                        Connection,
+                    )
                 ):
                     assert ConnectionField is not None
                     field_class = ConnectionField
@@ -170,6 +203,18 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                 ):
                     assert NodeField is not None
                     field_class = NodeField
+
+            # If field_type is specialized, copy its type_var_map to the field
+            if isinstance(field_type, TypeVar):
+                specialized_type_var_map = _get_specialized_type_var_map(cls)
+                if specialized_type_var_map and field_type in specialized_type_var_map:
+                    field_type = specialized_type_var_map[field_type]
+            else:
+                specialized_type_var_map = _get_specialized_type_var_map(field_type)
+                if specialized_type_var_map:
+                    field_type = field_type._type_definition.copy_with(  # type: ignore
+                        specialized_type_var_map
+                    )
 
             # Create a StrawberryField, for fields of Types #1 and #2a
             field = field_class(
