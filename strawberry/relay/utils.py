@@ -55,7 +55,7 @@ def to_base64(type_: Union[str, type, TypeDefinition], node_id: Any) -> str:
             type_name = type_.name
         elif isinstance(type_, type):
             type_name = type_._type_definition.name  # type:ignore
-        else:  # pragma: nocover
+        else:  # pragma: no cover
             assert_never(type_)
     except Exception as e:
         raise ValueError(f"{type_} is not a valid GraphQL type or name") from e

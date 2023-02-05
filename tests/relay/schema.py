@@ -44,6 +44,39 @@ class Fruit(strawberry.relay.Node):
 
 
 @strawberry.type
+class FruitAsync(Fruit):
+    @classmethod
+    async def resolve_id(cls, root: Self, *, info: Optional[Info] = None):
+        return super().resolve_id(root, info=info)
+
+    @classmethod
+    async def resolve_nodes(
+        cls,
+        *,
+        info: Optional[Info] = None,
+        node_ids: Optional[Iterable[str]] = None,
+    ):
+        if node_ids is not None:
+            return [fruits_async[nid] for nid in node_ids]
+
+        return list(fruits_async.values())
+
+    @classmethod
+    async def resolve_node(
+        cls,
+        node_id: str,
+        *,
+        info: Optional[Info] = None,
+        required: bool = False,
+    ):
+        obj = fruits_async.get(node_id, None)
+        if required and obj is None:
+            raise ValueError(f"No fruit by id {node_id}")
+
+        return obj
+
+
+@strawberry.type
 class CustomPaginationConnection(
     strawberry.relay.Connection[strawberry.relay.NodeType]
 ):
@@ -113,6 +146,9 @@ fruits = {
         Fruit(_id=5, name="Orange", color="orange"),
     ]
 }
+fruits_async = {
+    k: FruitAsync(_id=v._id, name=v.name, color=v.color) for k, v in fruits.items()
+}
 
 
 @strawberry.type
@@ -120,6 +156,7 @@ class Query:
     node: strawberry.relay.Node
     nodes: List[strawberry.relay.Node]
     fruits: strawberry.relay.Connection[Fruit]
+    fruits_async: strawberry.relay.Connection[FruitAsync]
     fruits_custom_pagination: CustomPaginationConnection[Fruit]
 
     @strawberry.relay.connection

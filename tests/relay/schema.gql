@@ -5,6 +5,34 @@ type Fruit implements Node {
   color: String!
 }
 
+type FruitAsync implements Node {
+  """The Globally Unique ID of this object"""
+  id: GlobalID!
+  name: String!
+  color: String!
+}
+
+"""A connection to a list of items."""
+type FruitAsyncConnection {
+  """Pagination data for this connection"""
+  pageInfo: PageInfo!
+
+  """Contains the nodes in this connection"""
+  edges: [FruitAsyncEdge!]!
+
+  """Total quantity of existing nodes"""
+  totalCount: Int
+}
+
+"""An edge in a connection."""
+type FruitAsyncEdge {
+  """A cursor for use in pagination"""
+  cursor: String!
+
+  """The item at the end of the edge"""
+  node: FruitAsync!
+}
+
 """A connection to a list of items."""
 type FruitConnection {
   """Pagination data for this connection"""
@@ -86,6 +114,19 @@ type Query {
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
   ): FruitConnection!
+  fruitsAsync(
+    """Returns the items in the list that come before the specified cursor."""
+    before: String = null
+
+    """Returns the items in the list that come after the specified cursor."""
+    after: String = null
+
+    """Returns the first n items from the list."""
+    first: Int = null
+
+    """Returns the items in the list that come after the specified cursor."""
+    last: Int = null
+  ): FruitAsyncConnection!
   fruitsCustomPagination(
     """Returns the items in the list that come before the specified cursor."""
     before: String = null

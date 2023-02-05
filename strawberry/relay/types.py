@@ -129,9 +129,11 @@ class GlobalID:
         if origin is None:
             type_def = info.schema.get_type_by_name(self.type_name)
             assert isinstance(type_def, TypeDefinition)
-            origin = type_def.origin
-            if isinstance(origin, LazyType):
-                origin = origin.resolve_type()
+            origin = (
+                type_def.origin.resolve_type
+                if isinstance(origin, LazyType)
+                else type_def.origin
+            )
             assert issubclass(origin, Node)
             self._nodes_cache[key] = origin
 
@@ -152,19 +154,9 @@ class GlobalID:
         self,
         info: Info,
         *,
-        required: Literal[True] = ...,
-        ensure_type: Awaitable[Type[_T]],
-    ) -> Awaitable[_T]:
-        ...
-
-    @overload
-    def resolve_node(
-        self,
-        info: Info,
-        *,
         required: Literal[True],
         ensure_type: None = ...,
-    ) -> AwaitableOrValue["Node"]:
+    ) -> "Node":
         ...
 
     @overload
@@ -174,7 +166,7 @@ class GlobalID:
         *,
         required: bool = ...,
         ensure_type: None = ...,
-    ) -> AwaitableOrValue[Optional["Node"]]:
+    ) -> Optional["Node"]:
         ...
 
     def resolve_node(self, info, *, required=False, ensure_type=None) -> Any:
@@ -212,25 +204,90 @@ class GlobalID:
 
         if node is not None and ensure_type is not None:
             origin = get_origin(ensure_type)
-            if origin and issubclass(origin, Awaitable):
-                ensure_type = get_args(ensure_type)[0]
+            if origin and origin is Union:
+                ensure_type = tuple(get_args(ensure_type))
 
+            if not isinstance(node, ensure_type):
+                raise TypeError(f"{ensure_type} expected, found {repr(node)}")
+
+        return node
+
+    @overload
+    async def aresolve_node(
+        self,
+        info: Info,
+        *,
+        required: Literal[True] = ...,
+        ensure_type: Type[_T],
+    ) -> _T:
+        ...
+
+    @overload
+    async def aresolve_node(
+        self,
+        info: Info,
+        *,
+        required: Literal[True],
+        ensure_type: None = ...,
+    ) -> "Node":
+        ...
+
+    @overload
+    async def aresolve_node(
+        self,
+        info: Info,
+        *,
+        required: bool = ...,
+        ensure_type: None = ...,
+    ) -> Optional["Node"]:
+        ...
+
+    async def aresolve_node(self, info, *, required=False, ensure_type=None) -> Any:
+        """Resolve the type name and node id info to the node itself.
+
+        Tip: When you know the expected type, calling `ensure_type` should help
+        not only to enforce it, but also help with typing since it will know that,
+        if this function returns successfully, the retval should be of that
+        type and not `Node`.
+
+        Args:
+            info:
+                The strawberry execution info resolve the type name from
+            required:
+                If the value is required to exist. Note that asking to ensure
+                the type automatically makes required true.
+            ensure_type:
+                Optionally check if the returned node is really an instance
+                of this type.
+
+        Returns:
+            The resolved node
+
+        Raises:
+            TypeError:
+                If ensure_type was provided and the type is not an instance of it
+
+        """
+        n_type = self.resolve_type(info)
+        node = cast(
+            Awaitable[Node],
+            n_type.resolve_node(
+                self.node_id,
+                info=info,
+                required=required or ensure_type is not None,
+            ),
+        )
+
+        if node is not None:
+            node = await node
+
+        if ensure_type is not None:
             origin = get_origin(ensure_type)
             if origin and origin is Union:
                 ensure_type = tuple(get_args(ensure_type))
 
-            if inspect.isawaitable(node):
-
-                async def resolve():
-                    res = await cast(Awaitable[Node], node)
-                    if not isinstance(res, ensure_type):
-                        raise TypeError(f"{ensure_type} expected, found {repr(res)}")
-                    return res
-
-                node = resolve()
-            else:
-                if not isinstance(node, ensure_type):
-                    raise TypeError(f"{ensure_type} expected, found {repr(node)}")
+            if not isinstance(node, ensure_type):
+                raise TypeError(f"{ensure_type} expected, found {repr(node)}")
 
         return node
 
@@ -360,7 +417,7 @@ class Node(abc.ABC):
             An iterable of resolved nodes.
 
         """
-        raise NotImplementedError  # pragma:nocover
+        raise NotImplementedError  # pragma: no cover
 
     @overload
     @classmethod
@@ -413,7 +470,7 @@ class Node(abc.ABC):
             The resolved node or None if it was not found
 
         """
-        raise NotImplementedError  # pragma:nocover
+        raise NotImplementedError  # pragma:no cover
 
 
 @type(description="Information to aid in pagination.")
