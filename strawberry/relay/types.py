@@ -278,18 +278,17 @@ class GlobalID:
             ),
         )
 
-        if node is not None:
-            node = await node
+        res = await node if node is not None else None
 
         if ensure_type is not None:
             origin = get_origin(ensure_type)
             if origin and origin is Union:
                 ensure_type = tuple(get_args(ensure_type))
 
-            if not isinstance(node, ensure_type):
-                raise TypeError(f"{ensure_type} expected, found {repr(node)}")
+            if not isinstance(res, ensure_type):
+                raise TypeError(f"{ensure_type} expected, found {repr(res)}")
 
-        return node
+        return res
 
 
 @interface(description="An object with a Globally Unique ID")

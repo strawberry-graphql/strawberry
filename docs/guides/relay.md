@@ -70,7 +70,7 @@ class Fruit(strawberry.relay.Node):
         return obj
 
 
-# Let's suppose we have a dict mapping the fruits code to the Fruit object itself
+# Assume we have a dict mapping the fruits code to the Fruit object itself
 fruits: Dict[int, Fruit]
 ```
 
@@ -301,3 +301,30 @@ type Query {
   ): FruitConnection!
 }
 ```
+
+### The GlobalID scalar
+
+The `GlobalID` scalar is a special object that contains all the info necessary to
+identify and retrieve a given object that implements the `Node` interface.
+
+It can for example be useful in a mutation, to receive and object and retrieve
+it in its resolver. For example:
+
+```python
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def update_fruit_weight(
+        self,
+        info: Info,
+        id: strawberry.relay.GlobalID,
+        weight: float,
+    ) -> Fruit:
+        # resolve_node will return the Fruit object
+        fruit = id.resolve_node(info, ensure_type=Fruit)
+        fruit.weight = weight
+        return fruit
+```
+
+In the example above, you can also access the type name directly with `id.type_name`,
+the raw node ID with `id.id`, or even resolve the type itself with `id.resolve_type(info)`.
