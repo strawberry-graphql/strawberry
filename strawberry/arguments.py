@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import dataclasses
 import inspect
 import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    ForwardRef,
     Iterable,
     List,
     Mapping,
@@ -13,13 +15,17 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType, StrawberryLazyReference
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
+from strawberry.type import (
+    StrawberryAnnotated,
+    StrawberryList,
+    StrawberryOptional,
+    StrawberryType,
+)
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
@@ -39,23 +45,12 @@ DEPRECATED_NAMES: Dict[str, str] = {
 }
 
 
+@dataclasses.dataclass(frozen=True)
 class StrawberryArgumentAnnotation:
     description: Optional[str]
     name: Optional[str]
     deprecation_reason: Optional[str]
-    directives: Iterable[object]
-
-    def __init__(
-        self,
-        description: Optional[str] = None,
-        name: Optional[str] = None,
-        deprecation_reason: Optional[str] = None,
-        directives: Iterable[object] = (),
-    ):
-        self.description = description
-        self.name = name
-        self.deprecation_reason = deprecation_reason
-        self.directives = directives
+    directives: Iterable[object] = dataclasses.field(hash=False)
 
 
 class StrawberryArgument:
@@ -84,29 +79,23 @@ class StrawberryArgument:
             _deprecated_UNSET if default is inspect.Parameter.empty else default
         )
 
-        if self._annotation_is_annotated(type_annotation):
-            self._parse_annotated()
+        self._parse_annotated()
 
     @property
     def type(self) -> Union[StrawberryType, type]:
         return self.type_annotation.resolve()
 
-    @classmethod
-    def _annotation_is_annotated(cls, annotation: StrawberryAnnotation) -> bool:
-        return get_origin(annotation.annotation) is Annotated
-
     def _parse_annotated(self):
-        annotated_args = get_args(self.type_annotation.annotation)
-
-        # The first argument to Annotated is always the underlying type
-        self.type_annotation = StrawberryAnnotation(annotated_args[0])
+        base_type, annotated_args = StrawberryAnnotated.get_type_and_args(
+            self.type_annotation.annotation
+        )
 
         # Find any instances of StrawberryArgumentAnnotation
         # in the other Annotated args, raising an exception if there
         # are multiple StrawberryArgumentAnnotations
         argument_annotation_seen = False
 
-        for arg in annotated_args[1:]:
+        for arg in annotated_args:
             if isinstance(arg, StrawberryArgumentAnnotation):
                 if argument_annotation_seen:
                     raise MultipleStrawberryArgumentsError(
@@ -121,8 +110,15 @@ class StrawberryArgument:
                 self.directives = arg.directives
 
             if isinstance(arg, StrawberryLazyReference):
+                assert isinstance(base_type, ForwardRef)
+                lazy_type = arg.resolve_forward_ref(base_type)
+                annotated_args = [
+                    arg
+                    for arg in annotated_args
+                    if not isinstance(arg, StrawberryLazyReference)
+                ]
                 self.type_annotation = StrawberryAnnotation(
-                    arg.resolve_forward_ref(annotated_args[0])
+                    StrawberryAnnotated(lazy_type, *annotated_args)
                 )
 
 
@@ -140,7 +136,7 @@ def convert_argument(
     if value is _deprecated_UNSET:
         return _deprecated_UNSET
 
-    if isinstance(type_, StrawberryOptional):
+    if isinstance(type_, (StrawberryOptional, StrawberryAnnotated)):
         return convert_argument(value, type_.of_type, scalar_registry, config)
 
     if isinstance(type_, StrawberryList):

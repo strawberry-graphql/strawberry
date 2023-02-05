@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from typing import Any, Optional, Union, cast
-from typing_extensions import Annotated, get_args, get_origin
+from typing_extensions import Annotated
 
-from strawberry.type import StrawberryType
+from strawberry.type import StrawberryAnnotated, StrawberryType
 
 from .annotation import StrawberryAnnotation
 
@@ -36,8 +36,9 @@ class StrawberryAutoMeta(type):
 
     def __instancecheck__(
         self,
-        instance: Union[StrawberryAuto, StrawberryAnnotation, StrawberryType, type],
+        instance: Union[StrawberryAnnotation, StrawberryType, type],
     ):
+        # resolve StrawberryAnnotations
         if isinstance(instance, StrawberryAnnotation):
             resolved = instance.annotation
             if isinstance(resolved, str):
@@ -51,10 +52,11 @@ class StrawberryAutoMeta(type):
             return True
 
         # Support uses of Annotated[auto, something()]
-        if get_origin(instance) is Annotated:
-            args = get_args(instance)
-            if args[0] is Any:
-                return any(isinstance(arg, StrawberryAuto) for arg in args[1:])
+        annotated_type, annotated_args = StrawberryAnnotated.get_type_and_args(instance)
+        if annotated_type is Any and any(
+            isinstance(arg, StrawberryAuto) for arg in annotated_args
+        ):
+            return True
 
         # StrawberryType's `__eq__` tries to find the string passed in the global
         # namespace, which will fail with a `NameError` if "strawberry.auto" hasn't

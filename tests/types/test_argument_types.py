@@ -1,6 +1,7 @@
 import warnings
 from enum import Enum
 from typing import Any, List, Optional, TypeVar
+from typing_extensions import Annotated
 
 import pytest
 
@@ -146,3 +147,121 @@ def test_custom_info_negative():
         info_parameter = get_info.base_resolver.info_parameter
         assert info_parameter is not None
         assert info_parameter.name == "info"
+
+
+def test_type_equals_hash_repr():
+    """Checks StrawberryType.equals/hash/repr"""
+
+    global Value, A, B
+
+    @strawberry.type
+    class Value:
+        query: str
+
+    A = TypeVar("A")
+    B = TypeVar("B")
+
+    @strawberry.type
+    class ObjectType:
+        number: int
+        number_optional: Optional[int]
+        number_list: List[int]
+        number_annotated: Annotated[int, "Hi"]
+        value: Value
+        value_optional: Optional[Value]
+        value_list: List[Value]
+        value_annotated: Annotated[Value, "Hi"]
+
+        ref_number: "int"
+        ref_number_optional: "Optional[int]"
+        ref_number_list: "List[int]"
+        ref_number_annotated: 'Annotated[int, "Hi"]'
+        ref_value: "Value"
+        ref_value_optional: "Optional[Value]"
+        ref_value_list: "List[Value]"
+        ref_value_annotated: 'Annotated[Value, "Hi"]'
+
+        a: A
+        ref_a: "A"
+        b: B
+        ref_b: "B"
+
+    fields = {}
+    for field in ObjectType._type_definition.fields:
+        type_annotation = field.type_annotation
+
+        # Assert that strawberryAnnotation.resolve() == strawberryAnnotation
+        assert type_annotation == type_annotation.resolve()
+        assert type_annotation.resolve() == type_annotation
+        assert hash(type_annotation) == hash(type_annotation.resolve())
+
+        fields[field.python_name] = field.type
+
+    type_matrix = {
+        "<class 'int'>": [
+            fields["number"],
+            fields["number_optional"].of_type,
+            fields["number_list"].of_type,
+            fields["number_annotated"].of_type,
+            fields["ref_number"],
+            fields["ref_number_optional"].of_type,
+            fields["ref_number_list"].of_type,
+            fields["ref_number_annotated"].of_type,
+        ],
+        "StrawberryOptional[int]": [
+            fields["number_optional"],
+            fields["ref_number_optional"],
+        ],
+        "StrawberryList[int]": [
+            fields["number_list"],
+            fields["ref_number_list"],
+        ],
+        "StrawberryAnnotated[int, 'Hi']": [
+            fields["number_annotated"],
+            fields["ref_number_annotated"],
+        ],
+        "<class 'test_argument_types.Value'>": [
+            fields["value"],
+            fields["value_optional"].of_type,
+            fields["value_list"].of_type,
+            fields["value_annotated"].of_type,
+            fields["ref_value"],
+            fields["ref_value_optional"].of_type,
+            fields["ref_value_list"].of_type,
+            fields["ref_value_annotated"].of_type,
+        ],
+        "StrawberryOptional[Value]": [
+            fields["value_optional"],
+            fields["ref_value_optional"],
+        ],
+        "StrawberryList[Value]": [
+            fields["value_list"],
+            fields["ref_value_list"],
+        ],
+        "StrawberryAnnotated[Value, 'Hi']": [
+            fields["value_annotated"],
+            fields["ref_value_annotated"],
+        ],
+        "StrawberryTypeVar[A]": [
+            fields["a"],
+            fields["ref_a"],
+        ],
+        "StrawberryTypeVar[B]": [
+            fields["b"],
+            fields["ref_b"],
+        ],
+    }
+
+    # Tests all type permutations to check if they equals only when expected
+    for group1, group1_types in type_matrix.items():
+        for group2, group2_types in type_matrix.items():
+            for type1 in group1_types:
+                assert group1 == repr(type1)
+                for type2 in group2_types:
+                    if group1 == group2:
+                        assert type1 == type2
+                        assert hash(type1) == hash(type2)
+                    else:
+                        assert type1 != type2
+
+    del Value, A, B
