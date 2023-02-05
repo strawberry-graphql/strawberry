@@ -5,11 +5,9 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from typing import List, cast
-
-import pytest
-
 from typing_extensions import Literal
 
+import pytest
 
 ResultType = Literal["error", "information"]
 
@@ -43,7 +41,7 @@ def run_pyright(code: str, strict: bool = True) -> List[Result]:
 
     process_result = subprocess.run(["pyright", f.name], stdout=subprocess.PIPE)
 
-    os.remove(f.name)
+    os.unlink(f.name)  # noqa: PTH108
 
     output = process_result.stdout.decode("utf-8")
 

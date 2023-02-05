@@ -67,9 +67,12 @@ jobs:
         id: get-version
         shell: python
         run: |
+          import os
+          from pathlib import Path
           from autopub.base import get_project_version
 
-          print(f"::set-output name=version::{get_project_version()}")
+          with Path(os.environ["GITHUB_OUTPUT"]).open('a') as f:
+              f.write(f"version={get_project_version()}\n")
 
   get-contributor-info:
     name: Get PR info
@@ -143,9 +146,9 @@ jobs:
 
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
-          TAG: ${{ steps.release.outputs.version }}
-          CONTRIBUTOR_USERNAME: ${{ steps.get-contributor-info.outputs.contributor-username }}
-          PR_NUMBER: ${{ steps.get-contributor-info.outputs.pr-number }}
+          TAG: ${{ needs.release.outputs.version }}
+          CONTRIBUTOR_USERNAME: ${{ needs.get-contributor-info.outputs.contributor-username }}
+          PR_NUMBER: ${{ needs.get-contributor-info.outputs.pr-number }}
 
   read-tweet-md:
     name: Read TWEET.md

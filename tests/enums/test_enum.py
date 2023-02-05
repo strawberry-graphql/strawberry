@@ -5,6 +5,7 @@ import pytest
 import strawberry
 from strawberry.enum import EnumDefinition
 from strawberry.exceptions import ObjectIsNotAnEnumError
+from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 
 
 def test_basic_enum():
@@ -60,13 +61,14 @@ def test_can_use_enum_as_arguments():
     assert isinstance(field.arguments[0].type, EnumDefinition)
 
 
+@pytest.mark.raises_strawberry_exception(
+    ObjectIsNotAnEnumError,
+    match="strawberry.enum can only be used with subclasses of Enum. ",
+)
 def test_raises_error_when_using_enum_with_a_not_enum_class():
-    expected_error = "strawberry.enum can only be used with subclasses of Enum"
-    with pytest.raises(ObjectIsNotAnEnumError, match=expected_error):
-
-        @strawberry.enum
-        class NormalClass:
-            hello = "world"
+    @strawberry.enum
+    class AClass:
+        hello = "world"
 
 
 def test_can_deprecate_enum_values():
@@ -116,3 +118,38 @@ def test_can_describe_enum_values():
     assert definition.values[2].name == "CHOCOLATE"
     assert definition.values[2].value == "chocolate"
     assert definition.values[2].description is None
+
+
+@pytest.mark.raises_strawberry_exception(
+    NotAStrawberryEnumError, match='Enum "IceCreamFlavour" is not a Strawberry enum'
+)
+def test_raises_error_when_using_enum_not_decorated():
+    class IceCreamFlavour(Enum):
+        VANILLA = strawberry.enum_value("vanilla")
+        STRAWBERRY = strawberry.enum_value(
+            "strawberry",
+            description="Our favourite",
+        )
+        CHOCOLATE = "chocolate"
+
+    @strawberry.type
+    class Query:
+        flavour: IceCreamFlavour
+
+    strawberry.Schema(query=Query)
+
+
+def test_can_use_enum_values():
+    @strawberry.enum
+    class TestEnum(Enum):
+        A = "A"
+        B = strawberry.enum_value("B")
+        C = strawberry.enum_value("Coconut", deprecation_reason="We ran out")
+
+    assert TestEnum.B.value == "B"
+
+    assert [x.value for x in TestEnum.__members__.values()] == [
+        "A",
+        "B",
+        "Coconut",
+    ]

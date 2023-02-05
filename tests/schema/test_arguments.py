@@ -1,6 +1,5 @@
 from textwrap import dedent
 from typing import Optional
-
 from typing_extensions import Annotated
 
 import strawberry
@@ -13,7 +12,7 @@ def test_argument_descriptions():
         @strawberry.field
         def hello(  # type: ignore
             name: Annotated[
-                str, strawberry.argument(description="Your name")  # noqa: F722
+                str, strawberry.argument(description="Your name")
             ] = "Patrick"
         ) -> str:
             return f"Hi {name}"
@@ -37,7 +36,7 @@ def test_argument_deprecation_reason():
         @strawberry.field
         def hello(  # type: ignore
             name: Annotated[
-                str, strawberry.argument(deprecation_reason="Your reason")  # noqa: F722
+                str, strawberry.argument(deprecation_reason="Your reason")
             ] = "Patrick"
         ) -> str:
             return f"Hi {name}"

@@ -24,7 +24,9 @@ if __name__ == "__main__":
     app.run()
 ```
 
-If you'd prefer to use an asynchronous view you can instead use the following import which has the same interface as `GraphQLView`. This is helpful if using a dataloader.
+If you'd prefer to use an asynchronous view you can instead use the following
+import which has the same interface as `GraphQLView`. This is helpful if using a
+dataloader.
 
 ```python
 from strawberry.flask.views import AsyncGraphQLView
@@ -44,15 +46,25 @@ The `GraphQLView` accepts two options at the moment:
 
 We allow to extend the base `GraphQLView`, by overriding the following methods:
 
-- `get_context(self) -> Any`
+- `get_context(self, response: Response) -> Any`
 - `get_root_value(self) -> Any`
 - `process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `encode_json(self, response_data: GraphQLHTTPResponse) -> str`
+
+<Note>
+
+Note that the `AsyncGraphQLView` can also be extended by overriding the same
+methods above, but `get_context`, `get_root_value` and `process_result` are
+async functions.
+
+</Note>
 
 ## get_context
 
 `get_context` allows to provide a custom context object that can be used in your
 resolver. You can return anything here, by default we return a dictionary with
-the request. By default; the `Response` object from `flask` is injected via the parameters.
+the request. By default; the `Response` object from `flask` is injected via the
+parameters.
 
 ```python
 class MyGraphQLView(GraphQLView):
@@ -100,7 +112,8 @@ the field name we'll return "Patrick" in this case.
 to the clients. This can be useful logging errors or hiding them (for example to
 hide internal exceptions).
 
-It needs to return an object of `GraphQLHTTPResponse` and accepts the execution result.
+It needs to return an object of `GraphQLHTTPResponse` and accepts the execution
+result.
 
 ```python
 from strawberry.http import GraphQLHTTPResponse
@@ -108,10 +121,9 @@ from strawberry.types import ExecutionResult
 
 from graphql.error.graphql_error import format_error as format_graphql_error
 
+
 class MyGraphQLView(GraphQLView):
-    def process_result(
-        self, result: ExecutionResult
-    ) -> GraphQLHTTPResponse:
+    def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
         data: GraphQLHTTPResponse = {"data": result.data}
 
         if result.errors:
@@ -122,3 +134,14 @@ class MyGraphQLView(GraphQLView):
 
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
+
+## encode_json
+
+`encode_json` allows to customize the encoding of the JSON response. By default
+we use `json.dumps` but you can override this method to use a different encoder.
+
+```python
+class MyGraphQLView(GraphQLView):
+    def encode_json(self, data: GraphQLHTTPResponse) -> str:
+        return json.dumps(data, indent=2)
+```

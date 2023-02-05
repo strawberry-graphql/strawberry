@@ -41,7 +41,8 @@ class EnumDefinition(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> Union[StrawberryType, type]:
-        return super().copy_with(type_var_map)
+        # enum don't support type parameters, so we can safely return self
+        return self
 
     @property
     def is_generic(self) -> bool:
@@ -101,6 +102,11 @@ def _process_enum(
             enum_value_description = item_value.description
             deprecation_reason = item_value.deprecation_reason
             item_value = item_value.value
+
+            # update _value2member_map_ so that doing `MyEnum.MY_VALUE` and
+            # `MyEnum['MY_VALUE']` both work
+            cls._value2member_map_[item_value] = item
+            cls._member_map_[item_name]._value_ = item_value
 
         value = EnumValue(
             item_name,

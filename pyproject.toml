@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.136.0"
+version = "0.155.3"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -22,10 +22,14 @@ classifiers = [
 include = ["strawberry/py.typed"]
 
 [tool.poetry.urls]
+"Changelog" = "https://strawberry.rocks/changelog"
 "Discord" = "https://discord.com/invite/3uQ2PaY"
 "Twitter" = "https://twitter.com/strawberry_gql"
+"Mastodon" = "https://farbun.social/@strawberry"
 "Sponsor on GitHub" = "https://github.com/sponsors/strawberry-graphql"
 "Sponsor on Open Collective" = "https://opencollective.com/strawberry-graphql"
+
+
 
 [build-system]
 requires = ["poetry>=0.12"]
@@ -37,12 +41,11 @@ python = "^3.7"
 graphql-core = "~3.2.0"
 typing_extensions = ">=3.7.4,<5.0.0"
 python-dateutil = "^2.7.0"
-"backports.cached-property" = {version = "^1.0.2", python = "<3.8"}
 
 starlette = {version = ">=0.13.6", optional = true}
 click = {version = ">=7.0,<9.0", optional = true}
 pygments = {version = "^2.3", optional = true}
-uvicorn = {version = ">=0.11.6,<0.20.0", optional = true}
+uvicorn = {version = ">=0.11.6,<0.21.0", optional = true}
 Django = {version = ">=3.2", optional = true}
 asgiref = {version = "^3.2", optional = true}
 flask = {version = ">=1.1", optional = true}
@@ -51,22 +54,23 @@ opentelemetry-sdk = {version = "<2", optional = true}
 chalice = {version = "^1.22", optional = true}
 pydantic = {version = "<2", optional = true}
 python-multipart = {version = "^0.0.5", optional = true}
-sanic = {version = ">=20.12.2,<22.0.0", optional = true}
+sanic = {version = ">=20.12.2", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
 fastapi = {version = ">=0.65.2", optional = true}
 channels = {version = ">=3.0.5", optional = true}
+"backports.cached-property" = {version = "^1.0.2", python = "<3.8"}
+libcst = {version = ">=0.4.7", optional = true}
+rich = {version = ">=12.0.0", optional = true}
 
-[tool.poetry.dev-dependencies]
-pytest = "^7.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest-xdist = {extras = ["psutil"], version = "^3.1.0"}
+pytest-cov = "^4.0.0"
+pytest = "^7.2"
 pytest-emoji = "^0.2.0"
-flake8 = "^5.0"
 black = "^22"
-isort = "^5.10.1"
-pytest-asyncio = "^0.19.0"
-pytest-cov = "^4.0"
-mypy = "^0.982"
-flake8-bugbear = "^22.9.23"
-flake8-eradicate = "^1.3.0"
+pytest-asyncio = "^0.20.3"
+mypy = "^0.991"
 pytest-mypy-plugins = "^1.10"
 pytest-mock = "^3.10"
 pytest-django = {version = "^4.5"}
@@ -75,43 +79,43 @@ pytest-flask = {version = "^1.2.0"}
 flask = ">=1.1"
 chalice = {version = "^1.22"}
 requests = "^2.28.1"
-pytest-benchmark = "^3.4.1"
+pytest-benchmark = "^4.0.0"
 freezegun = "^1.2.1"
 opentelemetry-api = "<2"
 opentelemetry-sdk = "<2"
-flake8-isort = "^5.0.0"
-flake8-black = "^0.3"
 Django = ">=3.2"
 pydantic = {version = "<2", optional = false}
 email-validator = {version = "^1.1.3", optional = false}
 uvicorn = ">=0.11.6"
 starlette = ">=0.13.6"
-sanic = ">=20.12.2,<22.0.0"
+sanic = ">=20.12.2"
 aiohttp = "^3.7.4.post0"
 pytest-aiohttp = "^1.0.3"
 types-typed-ast = "^1.5.8"
-types-toml = "^0.10.7"
-types-ujson = "^5.5.0"
-types-setuptools = "^65.5.0"
+types-toml = "^0.10.8"
+types-ujson = "^5.6.0"
 types-requests = "^2.28.11"
 types-python-dateutil = "^2.8.19"
 types-freezegun = "^1.1.9"
 types-chardet = "^5.0.4"
 types-certifi = "^2021.10.8"
 types-aiofiles = "^22.1.0"
-sanic-testing = "^22.3"
+sanic-testing = "^22.9.0"
 fastapi = {version = ">=0.65.0", optional = false}
-pytest-xprocess = "^0.20.0"
 MarkupSafe = "2.1.1"
 pytest-snapshot = "^0.9.0"
 channels = "^3.0.5"
+rich = {version = "^12.5.1", optional = false}
+libcst = {version = "^0.4.7", optional = false}
+ddtrace = "^1.6.4"
 python-multipart = "^0.0.5"
 pygments = "^2.3"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
 asgi = ["starlette", "python-multipart"]
-debug-server = ["starlette", "uvicorn", "python-multipart", "click", "pygments"]
+debug = ["rich", "libcst"]
+debug-server = ["starlette", "uvicorn", "python-multipart", "click", "pygments", "rich", "libcst"]
 django = ["Django", "pytest-django", "asgiref"]
 channels = ["channels", "asgiref"]
 flask = ["flask", "pytest-flask"]
@@ -120,7 +124,7 @@ pydantic = ["pydantic"]
 sanic = ["sanic"]
 fastapi = ["fastapi", "python-multipart"]
 chalice = ["chalice"]
-cli = ["click", "pygments"]
+cli = ["click", "pygments", "rich", "libcst"]
 
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"
@@ -130,19 +134,6 @@ line-length = 88
 extend-exclude = '''
 tests/codegen/snapshots/
 '''
-
-[tool.isort]
-src_paths = ["strawberry", "tests", "scripts"]
-profile = "black"
-indent = 4
-combine_star = true
-combine_as_imports = true
-lines_after_imports = 2
-known_django = ["django"]
-known_graphql = ["graphql"]
-known_pytest = ["pytest"]
-known_first_party = ["strawberry"]
-sections = ["FUTURE", "STDLIB", "PYTEST", "THIRDPARTY", "DJANGO", "GRAPHQL", "FIRSTPARTY", "LOCALFOLDER"]
 
 [tool.pytest.ini_options]
 addopts = "-s --emoji --mypy-ini-file=mypy.ini --benchmark-disable"
@@ -168,3 +159,156 @@ reportMissingImports = true
 reportMissingTypeStubs = false
 pythonVersion = "3.7"
 stubPath = ""
+
+[tool.ruff]
+line-length = 88
+select = ["ALL"]
+target-version = "py37"
+ignore = [
+    "TID252",
+    # we use asserts in tests and to hint mypy
+    "S101",
+    "S102",
+    "S104",
+    "S324",
+    # maybe we can enable this in future
+    # we'd want to have consistent docstrings in future
+    "D",
+    "ANN101", # missing annotation for self?
+    # definitely enable these, maybe not in tests
+    "ANN001",
+    "ANN002",
+    "ANN003",
+    "ANN102",
+    "ANN201",
+    "ANN202",
+    "ANN204",
+    "ANN205",
+    "ANN206",
+    "ANN401",
+    "PGH003",
+    "PGH004",
+    "RET504",
+    "RET505",
+    "RET506",
+    "RET507",
+    "BLE001",
+    "B008",
+    "N811",
+    "N804",
+    "N818",
+    # Variable `T` in function should be lowercase
+    # this seems a potential bug or opportunity for improvement in ruff
+    "N806",
+
+    # first argument should named self (found in tests)
+    "N805",
+
+    "N815",
+
+    # shadowing builtins
+    "A001",
+    "A002",
+    "A003",
+
+    "ARG001",
+    "ARG002",
+    "ARG003",
+    "ARG004",
+    "ARG005",
+    "FBT001",
+    "FBT002",
+    "FBT003",
+
+    "PT001",
+    "PT023",
+
+    # enable these, we have some in tests
+    "B006",
+    "PT004",
+    "PT007",
+    "PT011",
+    "PT012",
+    "PT015",
+    "PT017",
+    "C414",
+    "N802",
+    "SIM117",
+    "SIM102",
+
+    "F841",
+    "B027",
+    "B905",
+    "ISC001",
+
+    # same?
+    "S105",
+    "S106",
+
+    "DTZ003",
+    "DTZ005",
+    # in tests
+    "DTZ001",
+
+    "EM101",
+    "EM102",
+    "EM103",
+
+    "B904",
+    "B019",
+
+    "N801",
+    "N807",
+
+    # pandas
+    "PD",
+
+    # code complexity
+    "C",
+
+    # trailing commas
+    "COM812",
+
+    "PLR",
+    "INP",
+    "TRY",
+]
+fix = true
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "tests/codegen/snapshots"
+]
+src = ["strawberry", "tests"]
+
+[tool.ruff.per-file-ignores]
+"tests/federation/printer/*" = ["E501"]
+"tests/test_printer/test_basic.py" = ["E501"]
+"tests/pyright/test_federation.py" = ["E501"]
+"tests/test_printer/test_schema_directives.py" = ["E501"]
+
+[tool.ruff.isort]
+known-first-party = ["strawberry"]
+known-third-party = ["django", "graphql"]
+extra-standard-library = ["typing_extensions"]
+
+[tool.ruff.pyupgrade]
+# Preserve types, even if a file imports `from __future__ import annotations`.
+keep-runtime-typing = true

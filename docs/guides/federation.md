@@ -116,11 +116,13 @@ class Review:
     id: int
     body: str
 
+
 def get_reviews(root: "Book") -> List[Review]:
     return [
-      Review(id=id_, body=f"A review for {root.id}")
-      for id_ in range(root.reviews_count)
+        Review(id=id_, body=f"A review for {root.id}")
+        for id_ in range(root.reviews_count)
     ]
+
 
 @strawberry.federation.type(keys=["id"])
 class Book:
@@ -134,11 +136,15 @@ class Book:
         # or even from an API
         return Book(id=id, reviews_count=3)
 
+
 @strawberry.type
 class Query:
     _hi: str = strawberry.field(resolver=lambda: "Hello World!")
 
-schema = strawberry.federation.Schema(query=Query, types=[Book, Review], enable_federation_2=True)
+
+schema = strawberry.federation.Schema(
+    query=Query, types=[Book, Review], enable_federation_2=True
+)
 ```
 
 Now things are looking more interesting; the `Review` type is a GraphQL type
@@ -188,6 +194,22 @@ defines a Query type, even if it ends up being empty/unused.
 Finally we also need to let Strawberry know about our Book and Review types.
 Since they are not reachable from the `Query` field itself, Strawberry won't be
 able to find them.
+
+<Note>
+
+If you don't need any custom logic for your resolve_reference, you can omit it
+and Strawberry will automatically instanciate the type for you. For example,
+if we had a `Book` type with only an `id` field, Strawberry would be able to
+instanciate it for us based on the data returned by the gateway.
+
+```python
+@strawberry.federation.type(keys=["id"])
+class Book:
+    id: strawberry.ID
+    reviews: List[Review] = strawberry.field(resolver=get_reviews)
+```
+
+</Note>
 
 ## Let's run our services
 

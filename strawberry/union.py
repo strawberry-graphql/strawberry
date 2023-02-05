@@ -27,12 +27,13 @@ from graphql import (
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
-    InvalidUnionType,
+    InvalidTypeForUnionMergeError,
+    InvalidUnionTypeError,
     UnallowedReturnTypeForUnion,
     WrongReturnTypeForUnion,
 )
+from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryOptional, StrawberryType
-
 
 if TYPE_CHECKING:
     from strawberry.schema.types.concrete_type import TypeMap
@@ -76,7 +77,7 @@ class StrawberryUnion(StrawberryType):
         # Raise an error in any other case.
         # There is Work in progress to deal with more merging cases, see:
         # https://github.com/strawberry-graphql/strawberry/pull/1455
-        raise InvalidUnionType(other)
+        raise InvalidTypeForUnionMergeError(self, other)
 
     @property
     def types(self) -> Tuple[StrawberryType, ...]:
@@ -88,6 +89,9 @@ class StrawberryUnion(StrawberryType):
     @property
     def type_params(self) -> List[TypeVar]:
         def _get_type_params(type_: StrawberryType):
+            if isinstance(type_, LazyType):
+                type_ = cast(StrawberryType, type_.resolve_type())
+
             if hasattr(type_, "_type_definition"):
                 parameters = getattr(type_, "__parameters__", None)
 
@@ -116,7 +120,7 @@ class StrawberryUnion(StrawberryType):
             new_type: Union[StrawberryType, type]
 
             if hasattr(type_, "_type_definition"):
-                type_definition: TypeDefinition = type_._type_definition  # type: ignore
+                type_definition: TypeDefinition = type_._type_definition
 
                 if type_definition.is_generic:
                     new_type = type_definition.copy_with(type_var_map)
@@ -209,7 +213,7 @@ def union(
     name: str,
     types: Collection[Types],
     *,
-    description: str = None,
+    description: Optional[str] = None,
     directives: Iterable[object] = (),
 ) -> Union[Types]:
     """Creates a new named Union type.
@@ -224,14 +228,12 @@ def union(
     """
 
     # Validate types
-    if len(types) == 0:
+    if not types:
         raise TypeError("No types passed to `union`")
 
-    for _type in types:
-        if not isinstance(_type, TypeVar) and not hasattr(_type, "_type_definition"):
-            raise InvalidUnionType(
-                f"Type `{_type.__name__}` cannot be used in a GraphQL Union"
-            )
+    for type_ in types:
+        if not isinstance(type_, TypeVar) and not hasattr(type_, "_type_definition"):
+            raise InvalidUnionTypeError(union_name=name, invalid_type=type_)
 
     union_definition = StrawberryUnion(
         name=name,

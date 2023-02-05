@@ -13,7 +13,6 @@ from typing import (
     Union,
     cast,
 )
-
 from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
@@ -25,8 +24,8 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
 from .types.types import TypeDefinition
-from .unset import UNSET as _deprecated_UNSET, _deprecated_is_unset  # noqa
-
+from .unset import UNSET as _deprecated_UNSET
+from .unset import _deprecated_is_unset  # noqa
 
 if TYPE_CHECKING:
     from strawberry.schema.config import StrawberryConfig
@@ -133,6 +132,8 @@ def convert_argument(
     scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
     config: StrawberryConfig,
 ) -> object:
+    # TODO: move this somewhere else and make it first class
+
     if value is None:
         return None
 
@@ -159,13 +160,11 @@ def convert_argument(
         return convert_argument(value, type_.resolve_type(), scalar_registry, config)
 
     if hasattr(type_, "_enum_definition"):
-        enum_definition: EnumDefinition = type_._enum_definition  # type: ignore
+        enum_definition: EnumDefinition = type_._enum_definition
         return convert_argument(value, enum_definition, scalar_registry, config)
 
     if hasattr(type_, "_type_definition"):  # TODO: Replace with StrawberryInputObject
-        type_definition: TypeDefinition = type_._type_definition  # type: ignore
-
-        assert type_definition.is_input
+        type_definition: TypeDefinition = type_._type_definition
 
         kwargs = {}
 

@@ -291,7 +291,7 @@ def test_info_selected_fields_undefined_variable():
 
 
 @pytest.mark.parametrize(
-    "return_type,return_value",
+    ("return_type", "return_value"),
     [
         (str, "text"),
         (List[str], ["text"]),
@@ -361,7 +361,7 @@ def test_info_context():
 
             ctx2 = strawberry.get_context()
             assert ctx2 is info2.context
-            assert "context" == ctx2
+            assert ctx2 == "context"
 
         @strawberry.field
         def test_2(self) -> None:
@@ -371,7 +371,7 @@ def test_info_context():
 
             ctx2 = strawberry.get_context()
             assert ctx2 is info2.context
-            assert "context" == ctx2
+            assert ctx2 == "context"
 
     schema = strawberry.Schema(query=Query)
 

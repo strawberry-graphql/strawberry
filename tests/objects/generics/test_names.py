@@ -1,9 +1,8 @@
 import textwrap
 from typing import Generic, List, NewType, TypeVar
+from typing_extensions import Annotated
 
 import pytest
-
-from typing_extensions import Annotated
 
 import strawberry
 from strawberry.enum import EnumDefinition
@@ -11,7 +10,6 @@ from strawberry.lazy_type import LazyType
 from strawberry.schema.config import StrawberryConfig
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.union import StrawberryUnion
-
 
 T = TypeVar("T")
 K = TypeVar("K")
@@ -33,7 +31,7 @@ class TypeB:
 
 
 @pytest.mark.parametrize(
-    "types,expected_name",
+    ("types", "expected_name"),
     [
         ([StrawberryList(str)], "StrListExample"),
         ([StrawberryList(StrawberryList(str))], "StrListListExample"),

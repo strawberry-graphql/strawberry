@@ -1,8 +1,8 @@
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
+from graphql import ExecutionContext as GraphQLExecutionContext
 from graphql import (
-    ExecutionContext as GraphQLExecutionContext,
     GraphQLNamedType,
     GraphQLNonNull,
     GraphQLSchema,
@@ -13,6 +13,7 @@ from graphql import (
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
@@ -35,7 +36,6 @@ from .base import BaseSchema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
 
-
 DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.QUERY,
     OperationType.MUTATION,
@@ -46,7 +46,8 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 class Schema(BaseSchema):
     def __init__(
         self,
-        # TODO: can we make sure we only allow to pass something that has been decorated?
+        # TODO: can we make sure we only allow to pass
+        # something that has been decorated?
         query: Type,
         mutation: Optional[Type] = None,
         subscription: Optional[Type] = None,
@@ -104,6 +105,9 @@ class Schema(BaseSchema):
                     self.schema_converter.from_schema_directive(type_)
                 )
             else:
+                if hasattr(type_, "_type_definition"):
+                    if type_._type_definition.is_generic:
+                        type_ = StrawberryAnnotation(type_).resolve()
                 graphql_type = self.schema_converter.from_maybe_optional(type_)
                 if isinstance(graphql_type, GraphQLNonNull):
                     graphql_type = graphql_type.of_type
@@ -122,7 +126,12 @@ class Schema(BaseSchema):
                     GraphQLCoreConverter.DEFINITION_BACKREF: self,
                 },
             )
+
         except TypeError as error:
+            # GraphQL core throws a TypeError if there's any exception raised
+            # during the schema creation, so we check if the cause was a
+            # StrawberryError and raise it instead if that's the case.
+
             from strawberry.exceptions import StrawberryException
 
             if isinstance(error.__cause__, StrawberryException):
@@ -151,7 +160,7 @@ class Schema(BaseSchema):
         return extensions
 
     @lru_cache()
-    def get_type_by_name(  # type: ignore  # lru_cache makes mypy complain
+    def get_type_by_name(
         self, name: str
     ) -> Optional[
         Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
@@ -194,7 +203,7 @@ class Schema(BaseSchema):
 
     async def execute(
         self,
-        query: str,
+        query: Optional[str],
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
@@ -216,7 +225,6 @@ class Schema(BaseSchema):
 
         result = await execute(
             self._schema,
-            query,
             extensions=self.get_extensions(),
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
@@ -228,7 +236,7 @@ class Schema(BaseSchema):
 
     def execute_sync(
         self,
-        query: str,
+        query: Optional[str],
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
@@ -249,7 +257,6 @@ class Schema(BaseSchema):
 
         result = execute_sync(
             self._schema,
-            query,
             extensions=self.get_extensions(sync=True),
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
@@ -261,6 +268,7 @@ class Schema(BaseSchema):
 
     async def subscribe(
         self,
+        # TODO: make this optional when we support extensions
         query: str,
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,

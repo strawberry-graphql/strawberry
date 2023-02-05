@@ -52,12 +52,12 @@ class DataclassCreationFields(NamedTuple):
     """Fields required for the fields parameter of make_dataclass"""
 
     name: str
-    type_annotation: Type
+    field_type: Type
     field: dataclasses.Field
 
     def to_tuple(self) -> Tuple[str, Type, dataclasses.Field]:
         # fields parameter wants (name, type, Field)
-        return self.name, self.type_annotation, self.field
+        return self.name, self.field_type, self.field
 
 
 def get_default_factory_for_field(
@@ -66,7 +66,8 @@ def get_default_factory_for_field(
     """
     Gets the default factory for a pydantic field.
 
-    Handles mutable defaults when making the dataclass by using pydantic's smart_deepcopy
+    Handles mutable defaults when making the dataclass by
+    using pydantic's smart_deepcopy
 
     Returns optionally a NoArgAnyCallable representing a default_factory parameter
     """

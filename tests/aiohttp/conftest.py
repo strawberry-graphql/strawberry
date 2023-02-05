@@ -1,5 +1,4 @@
 import pytest
-
 import pytest_asyncio
 
 from strawberry.aiohttp.test.client import GraphQLTestClient
@@ -22,4 +21,4 @@ async def aiohttp_app_client_no_get(event_loop, aiohttp_client):
 
 @pytest.fixture
 def graphql_client(aiohttp_app_client):
-    yield GraphQLTestClient(aiohttp_app_client, url="/graphql")
+    return GraphQLTestClient(aiohttp_app_client, url="/graphql")

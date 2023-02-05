@@ -2,11 +2,9 @@ import re
 import sys
 
 import pytest
-
 import uvicorn
 
 from strawberry.cli.commands.server import server as cmd_server
-
 
 BOOT_MSG = "Running strawberry on http://0.0.0.0:8000/graphql"
 if sys.platform != "win32":

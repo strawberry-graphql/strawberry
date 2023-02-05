@@ -49,12 +49,15 @@ class Book:
     id: strawberry.ID
     title: str
 
+
 def get_all_books() -> List[Book]:
     return [Book(id=1, title="The Dark Tower")]
+
 
 @strawberry.type
 class Query:
     all_books: List[Book] = strawberry.field(resolver=get_all_books)
+
 
 schema = strawberry.federation.Schema(query=Query)
 ```
@@ -88,11 +91,13 @@ class Review:
     id: int
     body: str
 
+
 def get_reviews(root: "Book") -> List[Review]:
     return [
-      Review(id=id_, body=f"A review for {root.id}")
-      for id_ in range(root.reviews_count)
+        Review(id=id_, body=f"A review for {root.id}")
+        for id_ in range(root.reviews_count)
     ]
+
 
 @strawberry.federation.type(extend=True, keys=["id"])
 class Book:
@@ -160,6 +165,7 @@ Strawberry won't be able to find them by default.
 @strawberry.type
 class Query:
     _hi: str = strawberry.field(resolver=lambda: "Hello world!")
+
 
 schema = strawberry.federation.Schema(query=Query, types=[Book, Review])
 ```

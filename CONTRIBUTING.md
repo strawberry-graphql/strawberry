@@ -118,7 +118,7 @@ that the current tests are passing on your machine:
 
 ```bash
 $ poetry install
-$ poetry run pytest tests
+$ poetry run pytest tests -n auto
 ```
 
 Strawberry uses the [black](https://github.com/ambv/black) coding style and you

@@ -3,7 +3,10 @@ import sys
 
 import click
 
-from strawberry.cli.constants import DEBUG_SERVER_SCHEMA_ENV_VAR_KEY
+from strawberry.cli.constants import (
+    DEBUG_SERVER_LOG_OPERATIONS,
+    DEBUG_SERVER_SCHEMA_ENV_VAR_KEY,
+)
 from strawberry.cli.utils import load_schema
 
 
@@ -28,7 +31,14 @@ from strawberry.cli.utils import load_schema
         "Works the same as `--app-dir` in uvicorn."
     ),
 )
-def server(schema, host, port, log_level, app_dir):
+@click.option(
+    "--log-operations",
+    default=True,
+    type=bool,
+    show_default=True,
+    help="Log GraphQL operations",
+)
+def server(schema, host, port, log_level, app_dir, log_operations):
     sys.path.insert(0, app_dir)
 
     try:
@@ -44,11 +54,12 @@ def server(schema, host, port, log_level, app_dir):
     load_schema(schema, app_dir=app_dir)
 
     os.environ[DEBUG_SERVER_SCHEMA_ENV_VAR_KEY] = schema
+    os.environ[DEBUG_SERVER_LOG_OPERATIONS] = str(log_operations)
     app = "strawberry.cli.debug_server:app"
 
     # Windows doesn't support UTF-8 by default
     endl = " 🍓\n" if sys.platform != "win32" else "\n"
-    print(f"Running strawberry on http://{host}:{port}/graphql", end=endl)
+    print(f"Running strawberry on http://{host}:{port}/graphql", end=endl)  # noqa: T201
 
     uvicorn.run(
         app,

@@ -5,7 +5,6 @@ from .handlers.http_handler import GraphQLHTTPConsumer
 from .handlers.ws_handler import GraphQLWSConsumer
 from .router import GraphQLProtocolTypeRouter
 
-
 __all__ = [
     "GraphQLProtocolTypeRouter",
     "GraphQLWSHandler",

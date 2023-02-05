@@ -3,7 +3,6 @@ from typing import Any, Dict, NewType, Union
 
 from .custom_scalar import ScalarDefinition, ScalarWrapper, scalar
 
-
 ID = NewType("ID", str)
 
 JSON = scalar(
