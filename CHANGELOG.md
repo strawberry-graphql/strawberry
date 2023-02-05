@@ -1,6 +1,40 @@
 CHANGELOG
 =========
 
+0.155.3 - 2023-02-01
+--------------------
+
+Fix missing custom `resolve_reference` for using pydantic with federation
+
+i.e:
+
+```python
+import typing
+from pydantic import BaseModel
+import strawberry
+from strawberry.federation.schema_directives import Key
+
+
+class ProductInDb(BaseModel):
+    upc: str
+    name: str
+
+
+@strawberry.experimental.pydantic.type(
+    model=ProductInDb, directives=[Key(fields="upc", resolvable=True)]
+)
+class Product:
+    upc: str
+    name: str
+
+    @classmethod
+    def resolve_reference(cls, upc):
+        return Product(upc=upc, name="")
+```
+
+Contributed by [filwaline](https://github.com/filwaline) via [PR #2503](https://github.com/strawberry-graphql/strawberry/pull/2503/)
+
+
 0.155.2 - 2023-01-25
 --------------------
 
