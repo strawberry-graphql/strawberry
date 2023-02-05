@@ -1,5 +1,4 @@
 from typing import Any, Awaitable, Optional, Union
-
 from typing_extensions import Annotated
 
 from strawberry.types.info import Info

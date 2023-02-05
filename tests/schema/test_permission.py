@@ -1,8 +1,7 @@
 import typing
+from typing_extensions import Annotated
 
 import pytest
-
-from typing_extensions import Annotated
 
 import strawberry
 from strawberry.permission import BasePermission
