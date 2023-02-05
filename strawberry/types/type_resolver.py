@@ -212,7 +212,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             else:
                 specialized_type_var_map = _get_specialized_type_var_map(field_type)
                 if specialized_type_var_map:
-                    field_type = field_type._type_definition.copy_with(  # type: ignore
+                    field_type = field_type._type_definition.copy_with(
                         specialized_type_var_map
                     )
 
