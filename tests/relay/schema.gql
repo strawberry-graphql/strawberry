@@ -1,3 +1,13 @@
+input CreateFruitAsyncInput {
+  name: String!
+  color: String!
+}
+
+input CreateFruitInput {
+  name: String!
+  color: String!
+}
+
 type Fruit implements Node {
   """The Globally Unique ID of this object"""
   id: GlobalID!
@@ -168,4 +178,12 @@ type Query {
     last: Int = null
     nameEndswith: String = null
   ): FruitConnection!
+  createFruit(
+    """Input data for `createFruit` mutation"""
+    input: CreateFruitInput!
+  ): Fruit!
+  createFruitAsync(
+    """Input data for `createFruitAsync` mutation"""
+    input: CreateFruitAsyncInput!
+  ): Fruit!
 }

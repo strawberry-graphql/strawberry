@@ -179,5 +179,31 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith)
         ]
 
+    @strawberry.relay.input_mutation
+    def create_fruit(
+        self,
+        info: Info,
+        name: str,
+        color: str,
+    ) -> Fruit:
+        return Fruit(
+            _id=len(fruits) + 1,
+            name=name,
+            color=color,
+        )
+
+    @strawberry.relay.input_mutation
+    async def create_fruit_async(
+        self,
+        info: Info,
+        name: str,
+        color: str,
+    ) -> Fruit:
+        return Fruit(
+            _id=len(fruits) + 1,
+            name=name,
+            color=color,
+        )
+
 
 schema = strawberry.Schema(query=Query)

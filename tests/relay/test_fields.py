@@ -34,8 +34,73 @@ def test_query_node():
     }
 
 
+async def test_query_node_async():
+    result = await schema.execute(
+        """
+        query TestQuery ($id: GlobalID!) {
+            node (id: $id) {
+                ... on Node {
+                    id
+                }
+                ... on Fruit {
+                    name
+                    color
+                }
+            }
+        }
+        """,
+        variable_values={
+            "id": to_base64("Fruit", 2),
+        },
+    )
+    assert result.errors is None
+    assert result.data == {
+        "node": {
+            "id": to_base64("Fruit", 2),
+            "color": "red",
+            "name": "Apple",
+        },
+    }
+
+
 def test_query_nodes():
     result = schema.execute_sync(
+        """
+        query TestQuery ($ids: [GlobalID!]!) {
+            nodes (ids: $ids) {
+                ... on Node {
+                    id
+                }
+                ... on Fruit {
+                    name
+                    color
+                }
+            }
+        }
+        """,
+        variable_values={
+            "ids": [to_base64("Fruit", 2), to_base64("Fruit", 4)],
+        },
+    )
+    assert result.errors is None
+    assert result.data == {
+        "nodes": [
+            {
+                "id": to_base64("Fruit", 2),
+                "name": "Apple",
+                "color": "red",
+            },
+            {
+                "id": to_base64("Fruit", 4),
+                "name": "Grape",
+                "color": "purple",
+            },
+        ],
+    }
+
+
+async def test_query_nodes_async():
+    result = await schema.execute(
         """
         query TestQuery ($ids: [GlobalID!]!) {
             nodes (ids: $ids) {
@@ -108,6 +173,70 @@ query TestQuery (
 )
 def test_query_connection(query_attr: str):
     result = schema.execute_sync(
+        fruits_query.format(query_attr),
+        variable_values={},
+    )
+    assert result.errors is None
+    assert result.data == {
+        query_attr: {
+            "edges": [
+                {
+                    "cursor": "YXJyYXljb25uZWN0aW9uOjA=",
+                    "node": {
+                        "id": to_base64("Fruit", 1),
+                        "color": "yellow",
+                        "name": "Banana",
+                    },
+                },
+                {
+                    "cursor": "YXJyYXljb25uZWN0aW9uOjE=",
+                    "node": {
+                        "id": to_base64("Fruit", 2),
+                        "color": "red",
+                        "name": "Apple",
+                    },
+                },
+                {
+                    "cursor": "YXJyYXljb25uZWN0aW9uOjI=",
+                    "node": {
+                        "id": to_base64("Fruit", 3),
+                        "color": "yellow",
+                        "name": "Pineapple",
+                    },
+                },
+                {
+                    "cursor": "YXJyYXljb25uZWN0aW9uOjM=",
+                    "node": {
+                        "id": to_base64("Fruit", 4),
+                        "color": "purple",
+                        "name": "Grape",
+                    },
+                },
+                {
+                    "cursor": "YXJyYXljb25uZWN0aW9uOjQ=",
+                    "node": {
+                        "id": to_base64("Fruit", 5),
+                        "color": "orange",
+                        "name": "Orange",
+                    },
+                },
+            ],
+            "pageInfo": {
+                "hasNextPage": False,
+                "hasPreviousPage": False,
+                "startCursor": to_base64("arrayconnection", "0"),
+                "endCursor": to_base64("arrayconnection", "4"),
+            },
+        }
+    }
+
+
+@pytest.mark.parametrize(
+    "query_attr",
+    ["fruits", "fruitsCustomResolver", "fruitsCustomResolverReturningList"],
+)
+async def test_query_connection_async(query_attr: str):
+    result = await schema.execute(
         fruits_query.format(query_attr),
         variable_values={},
     )
