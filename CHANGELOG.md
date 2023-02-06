@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.155.4 - 2023-02-06
+--------------------
+
+Fix file not found error when exporting schema with lazy types from CLI #2469
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #2512](https://github.com/strawberry-graphql/strawberry/pull/2512/)
+
+
 0.155.3 - 2023-02-01
 --------------------
 
