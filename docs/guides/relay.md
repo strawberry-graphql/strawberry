@@ -14,7 +14,7 @@ core assumptions about a GraphQL server:
 2. It provides a description of how to page through connections.
 
 You can read more about the relay spec
-[here](https://relay.dev/docs/en/graphql-server-specification).
+[here](https://relay.dev/docs/en/graphql-server-specification/).
 
 ### Relay implementation example
 
@@ -335,3 +335,47 @@ class Mutation:
 
 In the example above, you can also access the type name directly with `id.type_name`,
 the raw node ID with `id.id`, or even resolve the type itself with `id.resolve_type(info)`.
+
+### The Input Mutation
+
+Although not a part of the spec anymore, relay suggests a pattern of receiving only
+one argument for mutations called `input`, which should be an [input type](./input-types).
+
+That pattern makes it easier to include/remove arguments without breaking the whole API,
+which could happen when using positional arguments.
+
+Strawberry provides a helper to create a [mutation](./mutations) that automatically
+creates an input type for you, whose attributes are the same as the args in the resolver.
+
+For example, suppose we want the mutation defined in the section above to be an
+input mutation. We need to replace `@strawberry.mutation` by
+`@strawberry.relay.input_mutation`, like this:
+
+```python
+@strawberry.type
+class Mutation:
+    @strawberry.relay.input_mutation
+    def update_fruit_weight(
+        self,
+        info: Info,
+        id: strawberry.relay.GlobalID,
+        weight: float,
+    ) -> Fruit:
+        # resolve_node will return the Fruit object
+        fruit = id.resolve_node(info, ensure_type=Fruit)
+        fruit.weight = weight
+        return fruit
+```
+
+That would generate a schema like this:
+
+```graphql
+input CreateFruitInput {
+  id: GlobalID!
+  weight: Float!
+}
+
+type Mutation {
+  updateFruitWeight(input: CreateFruitInput!): Fruit!
+}
+```
