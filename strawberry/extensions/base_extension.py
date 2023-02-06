@@ -40,5 +40,5 @@ class Extension:
 
 _BASE_EXTENSION_MODULE = inspect.getmodule(
     Extension
-)  # this is just for testing ease. we could just inspect directly...
+)  # this is just for testing ease. we could just inspect directly.
 Hook = Callable[[Extension], AsyncIteratorOrIterator[None]]
