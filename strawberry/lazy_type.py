@@ -53,7 +53,9 @@ class LazyType(Generic[TypeName, Module]):
                 if main_file and module_file:
                     try:
                         is_samefile = Path(main_file).samefile(module_file)
-                    except Exception:
+                    except FileNotFoundError:
+                        # Can be raised when run through the CLI as the __main__ file
+                        # path contains `strawberry.exe`
                         is_samefile = False
                     module = main_module if is_samefile else module
         return module.__dict__[self.type_name]
