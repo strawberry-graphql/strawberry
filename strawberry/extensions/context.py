@@ -5,7 +5,7 @@ from asyncio import iscoroutinefunction
 from typing import AsyncIterator, Callable, Iterator, List, NamedTuple, Optional, Union
 
 from strawberry.extensions import Extension
-from strawberry.extensions.base_extension import _EXTENSION_FILENAME
+from strawberry.extensions.base_extension import _BASE_EXTENSION_MODULE
 from strawberry.utils.await_maybe import (
     AsyncIteratorOrIterator,
     AwaitableOrValue,
@@ -125,7 +125,7 @@ class ExtensionContextManagerBase:
             extension, self.HOOK_NAME, None
         )
         if not generator_or_func or (
-            inspect.getfile(generator_or_func) == _EXTENSION_FILENAME  # type: ignore
+            inspect.getmodule(generator_or_func) == _BASE_EXTENSION_MODULE
         ):
             return
         if inspect.isasyncgenfunction(generator_or_func):

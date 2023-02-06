@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from typing import Any, Callable, Dict
 
 from graphql import GraphQLResolveInfo
@@ -37,7 +38,7 @@ class Extension:
         return {}
 
 
-_EXTENSION_FILENAME = (
-    __file__  # this is just for testing ease. we could just inspect...
-)
+_BASE_EXTENSION_MODULE = inspect.getmodule(
+    Extension
+)  # this is just for testing ease. we could just inspect directly...
 Hook = Callable[[Extension], AsyncIteratorOrIterator[None]]

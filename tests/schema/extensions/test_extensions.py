@@ -1,5 +1,6 @@
 import contextlib
 import dataclasses
+import inspect
 import json
 import warnings
 from typing import Optional, Type
@@ -55,7 +56,9 @@ def test_called_only_if_overriden(monkeypatch):
 
     from strawberry.extensions import context
 
-    monkeypatch.setattr(context, "_EXTENSION_FILENAME", __file__)
+    monkeypatch.setattr(
+        context, "_BASE_EXTENSION_MODULE", inspect.getmodule(ExtensionNoHooks)
+    )
     for hook in (
         ExtensionNoHooks.on_parse,
         ExtensionNoHooks.on_operation,
