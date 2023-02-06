@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import itertools
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -13,7 +14,7 @@ from typing import (
     TypeVar,
     Union,
 )
-from typing_extensions import Self
+from typing_extensions import Self, get_args
 
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.utils.typing import is_generic as is_type_generic
@@ -112,6 +113,22 @@ class TypeDefinition(StrawberryType):
     @property
     def is_generic(self) -> bool:
         return is_type_generic(self.origin)
+
+    @property
+    def is_generic_specialized(self) -> bool:
+        args = list(
+            itertools.chain.from_iterable(
+                get_args(o) for o in getattr(self.origin, "__orig_bases__", [])
+            )
+        )
+        # If no TypeVar in __args__, this means that this generic type is
+        # already specialized, like:
+        #
+        # @strawberry.type
+        # class Foo(SomeGeneric[int]):
+        #     ....
+        #
+        return not any(isinstance(arg, TypeVar) for arg in args)
 
     @property
     def type_params(self) -> List[TypeVar]:

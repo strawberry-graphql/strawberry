@@ -204,7 +204,7 @@ from strawberry.relay import to_base64
 
 
 @strawberry.type
-class CustomPaginationConnection(strawberry.relay.Connection[Fruit]):
+class FruitCustomPaginationConnection(strawberry.relay.Connection[Fruit]):
     @classmethod
     def from_nodes(
         cls,
@@ -261,7 +261,7 @@ class CustomPaginationConnection(strawberry.relay.Connection[Fruit]):
 
 @strawberry.type
 class Query:
-    fruits: CustomPaginationConnection
+    fruits: FruitCustomPaginationConnection
 ```
 
 <Note>
