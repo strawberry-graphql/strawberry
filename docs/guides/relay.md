@@ -269,7 +269,7 @@ class Query:
 In the example above we specialized the `FruitCustomPaginationConnection` by
 inheriting it from `relay.Connection[Fruit]`. We could still keep it generic by
 inheriting it from `relay.Connection[relay.NodeType]` and then specialize it
-in when defining the field.
+when defining the field.
 
 </Note>
 
