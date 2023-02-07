@@ -53,7 +53,7 @@ class NameConverter:
         return self.get_graphql_name(argument)
 
     def from_object(self, object_type: TypeDefinition) -> str:
-        if object_type.concrete_of:
+        if object_type.concrete_of and not object_type.is_generic_specialized:
             return self.from_generic(
                 object_type, list(object_type.type_var_map.values())
             )
@@ -140,10 +140,16 @@ class NameConverter:
         elif hasattr(type_, "_type_definition"):
             strawberry_type = type_._type_definition
 
-            if strawberry_type.is_generic:
+            if (
+                strawberry_type.is_generic
+                and not strawberry_type.is_generic_specialized
+            ):
                 types = type_.__args__  # type: ignore
                 name = self.from_generic(strawberry_type, types)
-            elif strawberry_type.concrete_of:
+            elif (
+                strawberry_type.concrete_of
+                and not strawberry_type.is_generic_specialized
+            ):
                 types = list(strawberry_type.type_var_map.values())
                 name = self.from_generic(strawberry_type, types)
             else:

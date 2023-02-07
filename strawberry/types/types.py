@@ -16,6 +16,7 @@ from typing import (
 from typing_extensions import Self
 
 from strawberry.type import StrawberryType, StrawberryTypeVar
+from strawberry.utils.inspect import get_specialized_type_var_map
 from strawberry.utils.typing import is_generic as is_type_generic
 
 if TYPE_CHECKING:
@@ -114,6 +115,16 @@ class TypeDefinition(StrawberryType):
         return is_type_generic(self.origin)
 
     @property
+    def is_generic_specialized(self) -> bool:
+        if not self.is_generic:
+            return False
+
+        type_var_map = get_specialized_type_var_map(self.origin, include_type_vars=True)
+        return type_var_map is None or not any(
+            isinstance(arg, TypeVar) for arg in type_var_map.values()
+        )
+
+    @property
     def type_params(self) -> List[TypeVar]:
         type_params: List[TypeVar] = []
         for field in self.fields:
@@ -125,7 +136,7 @@ class TypeDefinition(StrawberryType):
         # TODO: Accept StrawberryObject instead
         # TODO: Support dicts
         if isinstance(root, dict):
-            raise NotImplementedError()
+            raise NotImplementedError
 
         type_definition = root._type_definition  # type: ignore
 
