@@ -53,7 +53,7 @@ class NameConverter:
         return self.get_graphql_name(argument)
 
     def from_object(self, object_type: TypeDefinition) -> str:
-        if object_type.concrete_of and not object_type.is_generic_specialized:
+        if object_type.concrete_of:
             return self.from_generic(
                 object_type, list(object_type.type_var_map.values())
             )
