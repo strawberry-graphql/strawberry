@@ -1,5 +1,6 @@
 import dataclasses
 import warnings
+from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, TypeVar, Union
 
 from graphql import GraphQLResolveInfo, OperationDefinitionNode
@@ -77,3 +78,15 @@ class Info(Generic[ContextType, RootValueType]):
         return self._raw_info.path
 
     # TODO: parent_type as strawberry types
+
+
+# Stores the info for the current resolver
+current_info: ContextVar[Info] = ContextVar("current_info")
+
+
+def get_info() -> Info:
+    return current_info.get()
+
+
+def get_context() -> Any:
+    return current_info.get().context

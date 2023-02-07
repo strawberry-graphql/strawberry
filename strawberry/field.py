@@ -23,7 +23,7 @@ from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import InvalidArgumentTypeError, InvalidDefaultFactoryError
 from strawberry.type import StrawberryType
-from strawberry.types.info import Info
+from strawberry.types.info import Info, current_info
 from strawberry.union import StrawberryUnion
 from strawberry.utils.cached_property import cached_property
 
@@ -165,10 +165,16 @@ class StrawberryField(dataclasses.Field):
         to using the default resolver specified in StrawberryConfig.
         """
 
-        if self.base_resolver:
-            return self.base_resolver(*args, **kwargs)
+        if info is not None:
+            old_info = current_info.set(info)
+        try:
+            if self.base_resolver:
+                return self.base_resolver(*args, **kwargs)
 
-        return self.default_resolver(source, self.python_name)
+            return self.default_resolver(source, self.python_name)
+        finally:
+            if info is not None:
+                current_info.reset(old_info)
 
     @property
     def is_basic_field(self) -> bool:
