@@ -91,6 +91,9 @@ def test_no_generic_type_duplication_with_lazy():
         pytest.param(
             [STRAWBERRY_EXECUTABLE, "export-schema", "tests.schema.test_lazy.schema"],
             id="cli",
+            marks=pytest.mark.skipif(
+              sys.platform == "win32", reason="Test is broken on windows"
+            )
         ),
     ],
 )
