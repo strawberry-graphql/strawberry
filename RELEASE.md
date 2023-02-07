@@ -9,9 +9,11 @@ provided to the generic type:
 class Foo(Generic[T]):
     some_var: T
 
+
 @strawberry.type
 class IntFoo(Foo[int]):
-    ....
+    ...
+
 
 @strawberry.type
 class Query:
