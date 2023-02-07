@@ -1,7 +1,7 @@
 Release type: minor
 
 This release adds support for specialized generic types.
-Before, the following code would give an error, saying that \_T was not
+Before, the following code would give an error, saying that `T` was not
 provided to the generic type:
 
 ```python
