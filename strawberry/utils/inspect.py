@@ -30,9 +30,19 @@ def get_specialized_type_var_map(
 def get_specialized_type_var_map(
     cls: type,
     *,
-    # NOTE: Union[bool, Literal[False]] is to make both mypy/pyright happy
-    include_type_vars: Union[bool, Literal[False]] = ...,
-) -> Optional[Dict[TypeVar, Union[TypeVar, type]]]:
+    include_type_vars: Literal[False] = ...,
+) -> Optional[Dict[TypeVar, type]]:
+    ...
+
+
+@overload
+def get_specialized_type_var_map(
+    cls: type,
+    *,
+    include_type_vars: bool,
+) -> Optional[
+    Union[Optional[Dict[TypeVar, type]], Dict[TypeVar, Union[TypeVar, type]]]
+]:
     ...
 
 
