@@ -38,6 +38,7 @@ def get_specialized_type_var_map(
 
 def get_specialized_type_var_map(cls: type, *, include_type_vars: bool = False):
     """Get a type var map for specialized types.
+
     Consider the following:
         >>> class Foo(Generic[T]):
         ...     ...
@@ -49,6 +50,7 @@ def get_specialized_type_var_map(cls: type, *, include_type_vars: bool = False):
         ...     ...
         >>> class IntBarFoo(IntBar, Foo[str]):
         ...     ...
+
     This would return:
         >>> get_specialized_type_var_map(object)
         None
@@ -64,6 +66,7 @@ def get_specialized_type_var_map(cls: type, *, include_type_vars: bool = False):
         {~T: int}
         >>> get_specialized_type_var_map(IntBarFoo)
         {~T: int, ~K: str}
+
     """
     orig_bases = getattr(cls, "__orig_bases__", None)
     if orig_bases is None:
