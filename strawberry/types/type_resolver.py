@@ -139,13 +139,14 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             origin = origins.get(field.name, cls)
             module = sys.modules[origin.__module__]
 
-            # If field_type is specialized, copy its type_var_map to the field
             if isinstance(field_type, TypeVar):
                 specialized_type_var_map = get_specialized_type_var_map(cls)
+                # If field_type is specialized and a TypeVar, replace it with its
                 if specialized_type_var_map and field_type in specialized_type_var_map:
                     field_type = specialized_type_var_map[field_type]
             else:
                 specialized_type_var_map = get_specialized_type_var_map(field_type)
+                # If field_type is specialized, copy its type_var_map to the definition
                 if specialized_type_var_map:
                     field_type = field_type._type_definition.copy_with(
                         specialized_type_var_map
