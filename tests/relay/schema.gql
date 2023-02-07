@@ -55,7 +55,16 @@ type FruitConnection {
   totalCount: Int
 }
 
-type FruitCustomPaginationConnection {
+"""An edge in a connection."""
+type FruitEdge {
+  """A cursor for use in pagination"""
+  cursor: String!
+
+  """The item at the end of the edge"""
+  node: Fruit!
+}
+
+type FruitFruitCustomPaginationConnection {
   """Pagination data for this connection"""
   pageInfo: PageInfo!
 
@@ -65,15 +74,6 @@ type FruitCustomPaginationConnection {
   """Total quantity of existing nodes"""
   totalCount: Int
   something: String!
-}
-
-"""An edge in a connection."""
-type FruitEdge {
-  """A cursor for use in pagination"""
-  cursor: String!
-
-  """The item at the end of the edge"""
-  node: Fruit!
 }
 
 """
@@ -149,7 +149,7 @@ type Query {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
-  ): FruitCustomPaginationConnection!
+  ): FruitFruitCustomPaginationConnection!
   fruitsCustomResolver(
     """Returns the items in the list that come before the specified cursor."""
     before: String = null
