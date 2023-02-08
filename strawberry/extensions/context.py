@@ -223,7 +223,6 @@ class OperationContextManager(ExtensionContextManagerBase):
         super().__enter__()
         self.ensure_query()
 
-    HOOK_NAME = Extension.on_operation.__name__
     LEGACY_ENTER = "on_request_start"
     LEGACY_EXIT = "on_request_end"
 
