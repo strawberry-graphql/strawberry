@@ -70,7 +70,7 @@ def run_query(query: str, max_depth: int, ignore=None):
     errors = validate(
         schema._schema,
         document,
-        rules=specified_rules + (validation_rule,),
+        rules=(*specified_rules, validation_rule),
     )
 
     return errors, result
@@ -246,7 +246,7 @@ def test_should_raise_invalid_ignore():
       user { address { city } }
     }
     """
-    with pytest.raises(ValueError, match="Invalid ignore option:"):
+    with pytest.raises(TypeError, match="Invalid ignore option:"):
         run_query(
             query,
             10,

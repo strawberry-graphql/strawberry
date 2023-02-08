@@ -191,7 +191,7 @@ class StrawberryAnnotation:
         types = evaled_type.__args__
         non_optional_types = tuple(
             filter(
-                lambda x: x is not type(None) and x is not type(UNSET),  # noqa: E721
+                lambda x: x is not type(None) and x is not type(UNSET),
                 types,
             )
         )
@@ -262,7 +262,7 @@ class StrawberryAnnotation:
         types = annotation.__args__
 
         # A Union to be optional needs to have at least one None type
-        return any(x is type(None) for x in types)  # noqa: E721
+        return any(x is type(None) for x in types)
 
     @classmethod
     def _is_list(cls, annotation: Any) -> bool:
@@ -270,11 +270,7 @@ class StrawberryAnnotation:
 
         annotation_origin = getattr(annotation, "__origin__", None)
 
-        return (
-            annotation_origin == list
-            or annotation_origin == tuple
-            or annotation_origin is abc.Sequence
-        )
+        return (annotation_origin in (list, tuple)) or annotation_origin is abc.Sequence
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:

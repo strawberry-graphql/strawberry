@@ -52,6 +52,7 @@
 - [Builtin server](./guides/server.md)
 - [Tools](./guides/tools.md)
 - [Schema export](./guides/schema-export.md)
+- [Convert to dictionary](./guides/convert-to-dictionary.md)
 
 ## Editor integration
 
