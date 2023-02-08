@@ -137,17 +137,34 @@ class Subscription:
             )
 
         async for message in ws.channel_listen("chat.message", groups=room_ids):
-            yield ChatRoomMessage(
-                room_name=message["room_id"],
-                message=message["message"],
-                current_user=user,
-            )
+            if message["room_id"] in room_ids:
+                yield ChatRoomMessage(
+                    room_name=message["room_id"],
+                    message=message["message"],
+                    current_user=user,
+                )
 ```
 
 Explanation: `Info.context.ws` or `Info.context.request` is a pointer to the
 [`ChannelsConsumer`](#channelsconsumer) instance. Here we have first sent a
 message to all the channel_layer groups (specified in the subscription argument
 `rooms`) that we have joined the chat.
+
+<Note>
+
+The `ChannelsConsumer` instance is shared between all subscriptions created in
+a single websocket connection. The `ws.channel_listen` function will yield all
+messages sent using the given message `type` (`chat.message` in the above example)
+but does not ensure that the message was sent to the same group or groups that
+it was called with - if another subscription using the same `ChannelsConsumer`
+also uses `ws.channel_listen` with some other group names, those will be returned
+as well.
+
+In the example we ensure `message["room_id"] in room_ids` before passing messages
+on to the subscription client to ensure subscriptions only receive messages for
+the chat rooms requested in that subscription.
+
+</Note>
 
 <Note>
 
