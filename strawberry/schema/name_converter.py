@@ -140,10 +140,16 @@ class NameConverter:
         elif hasattr(type_, "_type_definition"):
             strawberry_type = type_._type_definition
 
-            if strawberry_type.is_generic:
+            if (
+                strawberry_type.is_generic
+                and not strawberry_type.is_specialized_generic
+            ):
                 types = type_.__args__  # type: ignore
                 name = self.from_generic(strawberry_type, types)
-            elif strawberry_type.concrete_of:
+            elif (
+                strawberry_type.concrete_of
+                and not strawberry_type.is_specialized_generic
+            ):
                 types = list(strawberry_type.type_var_map.values())
                 name = self.from_generic(strawberry_type, types)
             else:

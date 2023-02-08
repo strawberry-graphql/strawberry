@@ -1,6 +1,6 @@
 import dataclasses
 import sys
-from typing import Dict, List, Type
+from typing import Dict, List, Type, TypeVar
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -11,6 +11,7 @@ from strawberry.exceptions import (
 from strawberry.field import StrawberryField
 from strawberry.private import is_private
 from strawberry.unset import UNSET
+from strawberry.utils.inspect import get_specialized_type_var_map
 
 
 def _get_fields(cls: Type) -> List[StrawberryField]:
@@ -137,6 +138,20 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
 
             origin = origins.get(field.name, cls)
             module = sys.modules[origin.__module__]
+
+            if isinstance(field_type, TypeVar):
+                specialized_type_var_map = get_specialized_type_var_map(cls)
+                # If field_type is specialized and a TypeVar, replace it with its
+                # mapped type
+                if specialized_type_var_map and field_type in specialized_type_var_map:
+                    field_type = specialized_type_var_map[field_type]
+            else:
+                specialized_type_var_map = get_specialized_type_var_map(field_type)
+                # If field_type is specialized, copy its type_var_map to the definition
+                if specialized_type_var_map:
+                    field_type = field_type._type_definition.copy_with(
+                        specialized_type_var_map
+                    )
 
             # Create a StrawberryField, for fields of Types #1 and #2a
             field = StrawberryField(
