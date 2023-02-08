@@ -6,8 +6,7 @@ from typing import AsyncIterator, Callable, Iterator, List, NamedTuple, Optional
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.extensions import Extension
-from strawberry.extensions.base_extension import _EXTENSION_FILENAME
-from strawberry.types import ExecutionContext
+from strawberry.extensions.base_extension import _BASE_EXTENSION_MODULE
 from strawberry.utils.await_maybe import (
     AsyncIteratorOrIterator,
     AwaitableOrValue,
@@ -82,7 +81,7 @@ class ExtensionContextManagerBase:
     LEGACY_ENTER: str
     LEGACY_EXIT: str
 
-    def _legacy_extension_compat(self, extension: Extension) -> bool:
+    def _parse_legacy_extension(self, extension: Extension) -> bool:
         """
         Returns: a flag if there was any legacy extension
         """
@@ -122,81 +121,83 @@ class ExtensionContextManagerBase:
             return True
         return False
 
-    def __init__(
-        self, extensions: List[Extension], execution_context: ExecutionContext
-    ):
-        self.execution_context = execution_context
+    def _parse_extension(self, extension: Extension) -> None:
+        generator_or_func: Optional[Union[AsyncIteratorOrIterator, Callable]] = getattr(
+            extension, self.HOOK_NAME, None
+        )
+        if not generator_or_func or (
+            inspect.getmodule(generator_or_func) == _BASE_EXTENSION_MODULE
+        ):
+            return
+        if inspect.isasyncgenfunction(generator_or_func):
+            self._execution_order.add(async_iterable=generator_or_func)
+
+        elif inspect.isgeneratorfunction(generator_or_func):
+            self._execution_order.add(iterable=generator_or_func)
+        # if it is just normal function make a fake generator:
+        else:
+            func: Callable[[], AwaitableOrValue] = generator_or_func  # type: ignore
+            if iscoroutinefunction(func):
+
+                async def fake_gen():
+                    await func()
+                    yield
+
+                self._execution_order.add(async_iterable=fake_gen)
+            else:
+
+                def fake_gen():
+                    func()
+                    yield
+
+                self._execution_order.add(iterable=fake_gen)
+
+    def __init__(self, extensions: List[Extension]):
         self._execution_order: ExecutionOrderManager = ExecutionOrderManager()
         self._initialized_steps: List[ExecutionStepInitialized]
         for extension in extensions:
             # maybe it is a legacy extension, so find the old hooks first
-            if not self._legacy_extension_compat(extension):
-                generator_or_func: Optional[
-                    Union[AsyncIteratorOrIterator, Callable]
-                ] = getattr(extension, self.HOOK_NAME, None)
-                if not generator_or_func or (
-                    inspect.getfile(generator_or_func)  # type: ignore
-                    == _EXTENSION_FILENAME
-                ):
-                    continue
+            if not self._parse_legacy_extension(extension):
+                self._parse_extension(extension)
 
-                if inspect.isasyncgenfunction(generator_or_func):
-                    self._execution_order.add(async_iterable=generator_or_func)
-
-                elif inspect.isgeneratorfunction(generator_or_func):
-                    self._execution_order.add(iterable=generator_or_func)
-                # if it is just normal function make a fake generator:
-                else:
-                    func: Callable[
-                        [], AwaitableOrValue
-                    ] = generator_or_func  # type: ignore
-                    if iscoroutinefunction(func):
-
-                        async def fake_gen():
-                            await func()
-                            yield
-
-                        self._execution_order.add(async_iterable=fake_gen)
-                    else:
-
-                        def fake_gen():
-                            func()
-                            yield
-
-                        self._execution_order.add(iterable=fake_gen)
-
-    def iter_gens(self):
-        # Note: we can't create similar async version
-        # because coroutines are not allowed to raise StopIteration
+    def run_sync(self):
         for step in self._initialized_steps:
             for iterable in step.iterables:
                 with contextlib.suppress(StopIteration):
                     iterable.__next__()
 
+    async def run_async(self, is_exit: bool = False):
+        """Run extensions asynchronously with support for sync lifecycle hooks.
+
+        The ``is_exit`` flag is required as a `StopIteration` cannot be raised from
+        within a coroutine.
+        """
+        for step in self._initialized_steps:
+            for iterator in step.iterables:
+                with contextlib.suppress(
+                    StopIteration
+                ) if is_exit else contextlib.nullcontext():
+                    iterator.__next__()
+            for async_iterator in step.async_iterables:
+                with contextlib.suppress(
+                    StopAsyncIteration
+                ) if is_exit else contextlib.nullcontext():
+                    await async_iterator.__anext__()
+
     def __enter__(self):
         self._initialized_steps = self._execution_order.initialized()
-        self.iter_gens()
+        self.run_sync()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.iter_gens()
+        self.run_sync()
         self._initialized_steps = []
 
     async def __aenter__(self) -> None:
         self._initialized_steps = self._execution_order.initialized()
-        for step in self._initialized_steps:
-            for iterator in step.iterables:
-                iterator.__next__()
-            for async_iterator in step.async_iterables:
-                await async_iterator.__anext__()
+        await self.run_async()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        for step in self._initialized_steps:
-            for iterator in step.iterables:
-                with contextlib.suppress(StopIteration):
-                    iterator.__next__()
-            for async_iterator in step.async_iterables:
-                with contextlib.suppress(StopAsyncIteration):
-                    await async_iterator.__anext__()
+        await self.run_async(is_exit=True)
         self._initialized_steps = []
 
     async def exit(self, exc: Exception) -> None:
