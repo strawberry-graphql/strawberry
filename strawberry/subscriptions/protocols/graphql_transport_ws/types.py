@@ -85,6 +85,9 @@ class NextMessage(GraphQLTransportMessage):
     payload: Dict[str, Any]  # TODO: shape like ExecutionResult
     type: str = "next"
 
+    def as_dict(self) -> dict:
+        return {"id": self.id, "payload": self.payload, "type": self.type}
+
 
 @dataclass
 class ErrorMessage(GraphQLTransportMessage):

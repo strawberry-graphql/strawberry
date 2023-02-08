@@ -82,10 +82,10 @@ there is a difference between Objects Types and Inputs types:
 And this is also true for Input types' fields: you can only use Strawberry Input
 types or scalar.
 
-See our [Input Types](../types/input-types.md) docs.
+See our [Input Types](./types/input-types.md) docs.
 
 ## Can I use asyncio with Strawberry and Django?
 
 Yes, Strawberry provides an async view that can be used with Django, you can
-Check [Async Django](../integrations/django.md#async-django) for more
+Check [Async Django](./integrations/django.md#async-django) for more
 information.

@@ -24,7 +24,7 @@ QUERIES = list(HERE.glob("queries/*.graphql"))
 
 
 @pytest.mark.parametrize(
-    "plugin_class,plugin_name,extension",
+    ("plugin_class", "plugin_name", "extension"),
     [
         (PythonPlugin, "python", "py"),
         (TypeScriptPlugin, "typescript", "ts"),

@@ -12,7 +12,7 @@ from strawberry.types.types import TypeDefinition
 
 
 @pytest.mark.parametrize(
-    "pydantic_type, field_type",
+    ("pydantic_type", "field_type"),
     [
         (pydantic.ConstrainedInt, int),
         (pydantic.PositiveInt, int),
@@ -50,7 +50,7 @@ def test_types(pydantic_type, field_type):
 
 
 @pytest.mark.parametrize(
-    "pydantic_type, field_type",
+    ("pydantic_type", "field_type"),
     [(pydantic.NoneStr, str)],
 )
 def test_types_optional(pydantic_type, field_type):

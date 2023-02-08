@@ -214,6 +214,9 @@ def type(
         if has_custom_to_pydantic:
             namespace["to_pydantic"] = cls.to_pydantic
 
+        if hasattr(cls, "resolve_reference"):
+            namespace["resolve_reference"] = cls.resolve_reference
+
         kwargs: Dict[str, object] = {}
 
         # Python 3.10.1 introduces the kw_only param to `make_dataclass`.

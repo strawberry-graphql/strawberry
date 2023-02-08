@@ -17,7 +17,7 @@ def maintain_version():
 
 
 @pytest.mark.parametrize(
-    "version, expected",
+    ("version", "expected"),
     [
         ("0.93", Decimal("0.93")),
         ("0.800", Decimal("0.800")),

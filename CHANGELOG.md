@@ -1,6 +1,132 @@
 CHANGELOG
 =========
 
+0.155.4 - 2023-02-06
+--------------------
+
+Fix file not found error when exporting schema with lazy types from CLI #2469
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #2512](https://github.com/strawberry-graphql/strawberry/pull/2512/)
+
+
+0.155.3 - 2023-02-01
+--------------------
+
+Fix missing custom `resolve_reference` for using pydantic with federation
+
+i.e:
+
+```python
+import typing
+from pydantic import BaseModel
+import strawberry
+from strawberry.federation.schema_directives import Key
+
+
+class ProductInDb(BaseModel):
+    upc: str
+    name: str
+
+
+@strawberry.experimental.pydantic.type(
+    model=ProductInDb, directives=[Key(fields="upc", resolvable=True)]
+)
+class Product:
+    upc: str
+    name: str
+
+    @classmethod
+    def resolve_reference(cls, upc):
+        return Product(upc=upc, name="")
+```
+
+Contributed by [filwaline](https://github.com/filwaline) via [PR #2503](https://github.com/strawberry-graphql/strawberry/pull/2503/)
+
+
+0.155.2 - 2023-01-25
+--------------------
+
+This release fixes a bug in subscriptions using the graphql-transport-ws protocol
+where the conversion of the NextMessage object to a dictionary took an unnecessary
+amount of time leading to an increase in CPU usage.
+
+Contributed by [rjwills28](https://github.com/rjwills28) via [PR #2481](https://github.com/strawberry-graphql/strawberry/pull/2481/)
+
+
+0.155.1 - 2023-01-24
+--------------------
+
+A link to the changelog has been added to the package metadata, so it shows up on PyPI.
+
+Contributed by [Tom Most](https://github.com/twm) via [PR #2490](https://github.com/strawberry-graphql/strawberry/pull/2490/)
+
+
+0.155.0 - 2023-01-23
+--------------------
+
+This release adds a new utility function to convert a Strawberry object to a
+dictionary.
+
+You can use `strawberry.asdict(...)` function to convert a Strawberry object to
+a dictionary:
+
+```python
+@strawberry.type
+class User:
+    name: str
+    age: int
+
+
+# should be {"name": "Lorem", "age": 25}
+user_dict = strawberry.asdict(User(name="Lorem", age=25))
+```
+
+> Note: This function uses the `dataclasses.asdict` function under the hood, so
+> you can safely replace `dataclasses.asdict` with `strawberry.asdict` in your
+> code. This will make it easier to update your code to newer versions of
+> Strawberry if we decide to change the implementation.
+
+Contributed by [Haze Lee](https://github.com/Hazealign) via [PR #2417](https://github.com/strawberry-graphql/strawberry/pull/2417/)
+
+
+0.154.1 - 2023-01-17
+--------------------
+
+Fix `DuplicatedTypeName` exception being raised on generics declared using
+`strawberry.lazy`. Previously the following would raise:
+
+```python
+# issue_2397.py
+from typing import Annotated, Generic, TypeVar
+
+import strawberry
+
+T = TypeVar("T")
+
+
+@strawberry.type
+class Item:
+    name: str
+
+
+@strawberry.type
+class Edge(Generic[T]):
+    node: T
+
+
+@strawberry.type
+class Query:
+    edges_normal: Edge[Item]
+    edges_lazy: Edge[Annotated["Item", strawberry.lazy("issue_2397")]]
+
+
+if __name__ == "__main__":
+    schema = strawberry.Schema(query=Query)
+```
+
+Contributed by [pre-commit-ci](https://github.com/pre-commit-ci) via [PR #2462](https://github.com/strawberry-graphql/strawberry/pull/2462/)
+
+
 0.154.0 - 2023-01-13
 --------------------
 
@@ -3358,7 +3484,7 @@ from django.test.client import Client
 from strawberry.django.test import GraphQLTestClient
 
 
-@pytest.fixture()
+@pytest.fixture
 def graphql_client():
     yield GraphQLTestClient(Client())
 ```
