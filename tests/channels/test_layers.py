@@ -230,13 +230,40 @@ async def test_channel_listen_group_twice(ws: WebsocketCommunicator):
     assert channel_layer
 
     # Wait for channel subscriptions to start
-    response = await ws.receive_json_from()
-    assert response["id"] == "sub1"
-    response = await ws.receive_json_from()
-    assert response["id"] == "sub2"
+    response1, response2 = (await ws.receive_json_from(), await ws.receive_json_from())
+    assert {"sub1", "sub2"} == {response1["id"], response2["id"]}
+    channel_name = response1["payload"]["data"]["listener"]
 
-    # Send message to group 2 first (it should not be significant which order the
-    # subscriptions were created).
+    # Sent at least once to the consumer to make sure the groups were registered
+    await channel_layer.send(
+        channel_name,
+        {
+            "type": "test.message",
+            "text": "Hello there!",
+        },
+    )
+    response1, response2 = (await ws.receive_json_from(), await ws.receive_json_from())
+    assert {"sub1", "sub2"} == {response1["id"], response2["id"]}
+    assert response1["payload"]["data"]["listener"] == "Hello there!"
+    assert response2["payload"]["data"]["listener"] == "Hello there!"
+
+    # When a message is sent to a group, it is received by both subscribers (there
+    # is no intrinsic way for the subscribers to know which group the message was
+    # sent to - if you wanted to filter, that would need to be explicitly written
+    # in to the subscription handler).
+    await channel_layer.group_send(
+        "group1",
+        {
+            "type": "test.message",
+            "text": "Hello group 1!",
+        },
+    )
+
+    response1, response2 = (await ws.receive_json_from(), await ws.receive_json_from())
+    assert {"sub1", "sub2"} == {response1["id"], response2["id"]}
+    assert response1["payload"]["data"]["listener"] == "Hello group 1!"
+    assert response2["payload"]["data"]["listener"] == "Hello group 1!"
+
     await channel_layer.group_send(
         "group2",
         {
@@ -245,29 +272,10 @@ async def test_channel_listen_group_twice(ws: WebsocketCommunicator):
         },
     )
 
-    response = await ws.receive_json_from()
-    assert (
-        response
-        == NextMessage(
-            id="sub2", payload={"data": {"listener": "Hello group 2!"}}
-        ).as_dict()
-    )
-
-    await channel_layer.group_send(
-        "group1",
-        {
-            "type": "test.message",
-            "text": "Hello group 1",
-        },
-    )
-
-    response = await ws.receive_json_from()
-    assert (
-        response
-        == NextMessage(
-            id="sub1", payload={"data": {"listener": "Hello group 1!"}}
-        ).as_dict()
-    )
+    response1, response2 = (await ws.receive_json_from(), await ws.receive_json_from())
+    assert {"sub1", "sub2"} == {response1["id"], response2["id"]}
+    assert response1["payload"]["data"]["listener"] == "Hello group 2!"
+    assert response2["payload"]["data"]["listener"] == "Hello group 2!"
 
     await ws.send_json_to(CompleteMessage(id="sub1").as_dict())
     await ws.send_json_to(CompleteMessage(id="sub2").as_dict())
