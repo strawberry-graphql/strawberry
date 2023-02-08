@@ -70,7 +70,7 @@ class ChannelsConsumer(AsyncConsumer):
     channel_receive: Callable[[], Awaitable[dict]]
 
     def __init__(self, *args, **kwargs):
-        self.listen_queues: DefaultDict[str, WeakSet(asyncio.Queue)] = defaultdict(
+        self.listen_queues: DefaultDict[str, WeakSet[asyncio.Queue]] = defaultdict(
             WeakSet
         )
         super().__init__(*args, **kwargs)
@@ -142,7 +142,7 @@ class ChannelsConsumer(AsyncConsumer):
         added_groups = []
         try:
             # This queue will receive incoming messages for this generator instance
-            queue = asyncio.Queue()
+            queue: asyncio.Queue = asyncio.Queue()
             # Create a weak reference to the queue. Once we leave the current scope, it
             # will be garbage collected
             self.listen_queues[type].add(queue)
