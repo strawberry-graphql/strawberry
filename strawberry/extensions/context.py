@@ -7,6 +7,7 @@ from typing import AsyncIterator, Callable, Iterator, List, NamedTuple, Optional
 from strawberry.exceptions import MissingQueryError
 from strawberry.extensions import Extension
 from strawberry.extensions.base_extension import _BASE_EXTENSION_MODULE
+from strawberry.types import ExecutionContext
 from strawberry.utils.await_maybe import (
     AsyncIteratorOrIterator,
     AwaitableOrValue,
@@ -152,7 +153,10 @@ class ExtensionContextManagerBase:
 
                 self._execution_order.add(iterable=fake_gen)
 
-    def __init__(self, extensions: List[Extension]):
+    def __init__(
+        self, extensions: List[Extension], execution_context: ExecutionContext
+    ):
+        self.execution_context = execution_context
         self._execution_order: ExecutionOrderManager = ExecutionOrderManager()
         self._initialized_steps: List[ExecutionStepInitialized]
         for extension in extensions:
