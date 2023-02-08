@@ -200,3 +200,74 @@ async def test_channel_listen_group(ws: WebsocketCommunicator):
     )
 
     await ws.send_json_to(CompleteMessage(id="sub1").as_dict())
+
+
+async def test_channel_listen_group_twice(ws: WebsocketCommunicator):
+    await ws.send_json_to(ConnectionInitMessage().as_dict())
+
+    response = await ws.receive_json_from()
+    assert response == ConnectionAckMessage().as_dict()
+
+    await ws.send_json_to(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query='subscription { listener(group: "group1") }',
+            ),
+        ).as_dict()
+    )
+
+    await ws.send_json_to(
+        SubscribeMessage(
+            id="sub2",
+            payload=SubscribeMessagePayload(
+                query='subscription { listener(group: "group2") }',
+            ),
+        ).as_dict()
+    )
+
+    channel_layer = get_channel_layer()
+    assert channel_layer
+
+    # Wait for channel subscriptions to start
+    response = await ws.receive_json_from()
+    assert response["id"] == "sub1"
+    response = await ws.receive_json_from()
+    assert response["id"] == "sub2"
+
+    # Send message to group 2 first (it should not be significant which order the
+    # subscriptions were created).
+    await channel_layer.group_send(
+        "group2",
+        {
+            "type": "test.message",
+            "text": "Hello group 2!",
+        },
+    )
+
+    response = await ws.receive_json_from()
+    assert (
+        response
+        == NextMessage(
+            id="sub2", payload={"data": {"listener": "Hello group 2!"}}
+        ).as_dict()
+    )
+
+    await channel_layer.group_send(
+        "group1",
+        {
+            "type": "test.message",
+            "text": "Hello group 1",
+        },
+    )
+
+    response = await ws.receive_json_from()
+    assert (
+        response
+        == NextMessage(
+            id="sub1", payload={"data": {"listener": "Hello group 1!"}}
+        ).as_dict()
+    )
+
+    await ws.send_json_to(CompleteMessage(id="sub1").as_dict())
+    await ws.send_json_to(CompleteMessage(id="sub2").as_dict())
