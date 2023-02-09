@@ -57,6 +57,39 @@ type UserPage {
 }
 ```
 
+It is also possible to use a specialized generic type directly. For example, the
+same example above could be written like this:
+
+```python+schema
+import strawberry
+
+@strawberry.type
+class User:
+    name: str
+
+
+@strawberry.type
+class UserPage(Page[User]):
+    ...
+
+@strawberry.type
+class Query:
+    users: UserPage
+---
+type Query {
+  users: UserPage!
+}
+
+type User {
+  name: String!
+}
+
+type UserPage {
+  number: Int!
+  items: [User!]!
+}
+```
+
 # Input and Argument Types
 
 Arguments to queries and mutations can also be made generic by creating Generic

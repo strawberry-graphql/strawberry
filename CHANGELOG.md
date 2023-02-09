@@ -1,6 +1,70 @@
 CHANGELOG
 =========
 
+0.156.0 - 2023-02-08
+--------------------
+
+This release adds support for specialized generic types.
+Before, the following code would give an error, saying that `T` was not
+provided to the generic type:
+
+```python
+@strawberry.type
+class Foo(Generic[T]):
+    some_var: T
+
+
+@strawberry.type
+class IntFoo(Foo[int]):
+    ...
+
+
+@strawberry.type
+class Query:
+    int_foo: IntFoo
+```
+
+Also, because the type is already specialized, `Int` won't get inserted to its name,
+meaning it will be exported to the schema with a type name of `IntFoo` and not
+`IntIntFoo`.
+
+For example, this query:
+
+```python
+@strawberry.type
+class Query:
+    int_foo: IntFoo
+    str_foo: Foo[str]
+```
+
+Will generate a schema like this:
+
+```graphql
+type IntFoo {
+  someVar: Int!
+}
+
+type StrFoo {
+  someVar: String!
+}
+
+type Query {
+  intFoo: IntFoo!
+  strfoo: StrFoo!
+}
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2517](https://github.com/strawberry-graphql/strawberry/pull/2517/)
+
+
+0.155.4 - 2023-02-06
+--------------------
+
+Fix file not found error when exporting schema with lazy types from CLI #2469
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #2512](https://github.com/strawberry-graphql/strawberry/pull/2512/)
+
+
 0.155.3 - 2023-02-01
 --------------------
 

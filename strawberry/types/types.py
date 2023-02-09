@@ -115,7 +115,7 @@ class TypeDefinition(StrawberryType):
         return is_type_generic(self.origin)
 
     @property
-    def is_generic_specialized(self) -> bool:
+    def is_specialized_generic(self) -> bool:
         if not self.is_generic:
             return False
 

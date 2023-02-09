@@ -35,22 +35,40 @@ def get_specialized_type_var_map(
     ...
 
 
+@overload
+def get_specialized_type_var_map(
+    cls: type,
+    *,
+    include_type_vars: bool,
+) -> Optional[
+    Union[Optional[Dict[TypeVar, type]], Dict[TypeVar, Union[TypeVar, type]]]
+]:
+    ...
+
+
 def get_specialized_type_var_map(cls: type, *, include_type_vars: bool = False):
     """Get a type var map for specialized types.
 
     Consider the following:
+
         >>> class Foo(Generic[T]):
         ...     ...
+        ...
         >>> class Bar(Generic[K]):
         ...     ...
+        ...
         >>> class IntBar(Bar[int]):
         ...     ...
+        ...
         >>> class IntBarSubclass(IntBar):
         ...     ...
+        ...
         >>> class IntBarFoo(IntBar, Foo[str]):
         ...     ...
+        ...
 
     This would return:
+
         >>> get_specialized_type_var_map(object)
         None
         >>> get_specialized_type_var_map(Foo)
