@@ -117,6 +117,14 @@ need a reliable and consistent way to handle pagination.
 
 ### Cursor based pagination
 
+<Note>
+
+Strawberry provides a cursor based pagination implementing the
+[relay spec](https://relay.dev/docs/guides/graphql-server-specification/).
+You can read more about it in the [relay](./input-types) page.
+
+<Note/>
+
 Cursor based pagination, also known as keyset pagination, works by returning a pointer to a specific item in the dataset. On subsequent requests,
 the server returns results after the given pointer. This method addresses the drawbacks of using offset pagination, but does so by making certain trade offs:
 
