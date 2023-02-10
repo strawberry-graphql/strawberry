@@ -1775,7 +1775,7 @@ files = [
 name = "packaging"
 version = "23.0"
 description = "Core utilities for Python packages"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -3583,4 +3583,4 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "d129a9b32603606095f96cc3526019d6bb9843c4ff8e4d6ec78de47a19803dd1"
+content-hash = "a847d6e2c5daa2db33311d3483f8956387cdba824d1667154338161dea477e22"

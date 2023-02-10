@@ -1,10 +1,8 @@
 import re
+import warnings
 from decimal import Decimal
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
 from typing_extensions import Final
-
-from packaging.version import Version
-from packaging.version import parse as parse_version
 
 import mypy
 from mypy.nodes import (
@@ -82,7 +80,7 @@ FALLBACK_VERSION = Decimal("0.800")
 class MypyVersion:
     """Stores the mypy version to be used by the plugin"""
 
-    VERSION: Version
+    VERSION: Decimal
 
 
 class InvalidNodeTypeException(Exception):
@@ -339,7 +337,7 @@ def add_static_method_to_class(
             cls.defs.body.remove(sym.node)
 
     # For compat with mypy < 0.93
-    if MypyVersion.VERSION < parse_version("0.93"):
+    if MypyVersion.VERSION < Decimal("0.93"):
         function_type = api.named_type("__builtins__.function")  # type: ignore
     else:
         if isinstance(api, SemanticAnalyzerPluginInterface):
@@ -574,7 +572,7 @@ class CustomDataclassTransformer:
             )
             and attributes
         ):
-            args = [info] if MypyVersion.VERSION >= parse_version("1.0.0") else []
+            args = [info] if MypyVersion.VERSION >= Decimal("1.0") else []
 
             add_method(
                 ctx,
@@ -768,9 +766,9 @@ class CustomDataclassTransformer:
 
             # Support the addition of `info` in mypy 0.800 and `kw_only` in mypy 0.920
             # without breaking backwards compatibility.
-            if MypyVersion.VERSION >= parse_version("0.800"):
+            if MypyVersion.VERSION >= Decimal("0.800"):
                 params["info"] = cls.info
-            if MypyVersion.VERSION >= parse_version("0.920"):
+            if MypyVersion.VERSION >= Decimal("0.920"):
                 params["kw_only"] = True
 
             attribute = DataclassAttribute(**params)  # type: ignore
@@ -1005,6 +1003,13 @@ class StrawberryPlugin(Plugin):
 
 
 def plugin(version: str):
-    MypyVersion.VERSION = parse_version(version)
+    match = VERSION_RE.match(version)
+    if match:
+        MypyVersion.VERSION = Decimal(".".join(match.groups()))
+    else:
+        MypyVersion.VERSION = FALLBACK_VERSION
+        warnings.warn(
+            f"Mypy version {version} could not be parsed. Reverting to v0.800"
+        )
 
     return StrawberryPlugin
