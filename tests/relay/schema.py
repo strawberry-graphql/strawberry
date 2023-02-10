@@ -35,7 +35,7 @@ class Fruit(strawberry.relay.Node):
         *,
         info: Optional[Info] = None,
         required: bool = False,
-    ):
+    ) -> Self:
         obj = fruits.get(node_id, None)
         if required and obj is None:
             raise ValueError(f"No fruit by id {node_id}")
