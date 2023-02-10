@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.156.3 - 2023-02-10
+--------------------
+
+This release adds support for Mypy 1.0
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2516](https://github.com/strawberry-graphql/strawberry/pull/2516/)
+
+
 0.156.2 - 2023-02-09
 --------------------
 
