@@ -40,8 +40,6 @@ from strawberry.utils.cached_property import cached_property
 
 from .types import Connection, GlobalID, Node, NodeType
 
-_T = TypeVar("_T")
-
 
 class RelayField(StrawberryField):
     """Base relay field, containing utilities for both Node and Connection fields."""
@@ -452,7 +450,7 @@ def node(
 @overload
 def connection(
     *,
-    resolver: Callable[[], _T],
+    resolver: _RESOLVER_TYPE[Union[Connection[NodeType], Iterable[NodeType]]],
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
@@ -464,7 +462,7 @@ def connection(
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
     graphql_type: Optional[Any] = None,
-) -> _T:
+) -> Connection[NodeType]:
     ...
 
 
@@ -488,7 +486,7 @@ def connection(
 
 @overload
 def connection(
-    resolver: Union[StrawberryResolver, Callable, staticmethod, classmethod],
+    resolver: _RESOLVER_TYPE[Union[Connection[NodeType], Iterable[NodeType]]],
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
@@ -505,7 +503,7 @@ def connection(
 
 
 def connection(
-    resolver=None,
+    resolver: Optional[_RESOLVER_TYPE[Any]] = None,
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,

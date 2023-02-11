@@ -3,6 +3,7 @@ import inspect
 import sys
 import types
 from typing import (
+    TYPE_CHECKING,
     Callable,
     Dict,
     List,
@@ -181,9 +182,25 @@ def _process_type(
     return cls
 
 
+if TYPE_CHECKING:
+    # Avoid circular import issues
+    from .relay import ConnectionField, NodeField, connection, node
+
+    field_descriptors = (
+        field,
+        node,
+        connection,
+        StrawberryField,
+        NodeField,
+        ConnectionField,
+    )
+else:
+    field_descriptors = (field, StrawberryField)
+
+
 @overload
 @__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+    order_default=True, kw_only_default=True, field_descriptors=field_descriptors
 )
 def type(
     cls: T,
@@ -200,7 +217,7 @@ def type(
 
 @overload
 @__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+    order_default=True, kw_only_default=True, field_descriptors=field_descriptors
 )
 def type(
     *,
@@ -262,7 +279,7 @@ def type(
 
 @overload
 @__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+    order_default=True, kw_only_default=True, field_descriptors=field_descriptors
 )
 def input(
     cls: T,
@@ -276,7 +293,7 @@ def input(
 
 @overload
 @__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+    order_default=True, kw_only_default=True, field_descriptors=field_descriptors
 )
 def input(
     *,
@@ -312,7 +329,7 @@ def input(
 
 @overload
 @__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+    order_default=True, kw_only_default=True, field_descriptors=field_descriptors
 )
 def interface(
     cls: T,
@@ -326,7 +343,7 @@ def interface(
 
 @overload
 @__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+    order_default=True, kw_only_default=True, field_descriptors=field_descriptors
 )
 def interface(
     *,
@@ -338,7 +355,7 @@ def interface(
 
 
 @__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+    order_default=True, kw_only_default=True, field_descriptors=field_descriptors
 )
 def interface(
     cls: Optional[T] = None,
