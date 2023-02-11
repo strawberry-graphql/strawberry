@@ -64,7 +64,7 @@ def test_global_id_resolve_node_non_existing():
 
 
 def test_global_id_resolve_node_non_existing_but_required():
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         gid = strawberry.relay.GlobalID(type_name="Fruit", node_id="999")
         fruit = gid.resolve_node(fake_info, required=True)
 
@@ -116,7 +116,7 @@ async def test_global_id_aresolve_node_non_existing():
 
 
 async def test_global_id_aresolve_node_non_existing_but_required():
-    with pytest.raises(ValueError):
+    with pytest.raises(KeyError):
         gid = strawberry.relay.GlobalID(type_name="FruitAsync", node_id="999")
         fruit = await gid.aresolve_node(fake_info, required=True)
 

@@ -1,4 +1,3 @@
-import abc
 import dataclasses
 import inspect
 import itertools
@@ -22,7 +21,7 @@ from typing import (
     cast,
     overload,
 )
-from typing_extensions import Literal, get_args, get_origin
+from typing_extensions import Literal, Self, get_args, get_origin
 
 from strawberry.field import field
 from strawberry.lazy_type import LazyType
@@ -292,11 +291,10 @@ class GlobalID:
 
 
 @interface(description="An object with a Globally Unique ID")
-class Node(abc.ABC):
+class Node:
     """Node interface for GraphQL types.
 
-    All types that are relay ready should inherit from this interface and
-    implement the following methods.
+    All types that are relay ready should inherit from this interface.
 
     Attributes:
         ID_ATTR:
@@ -358,17 +356,17 @@ class Node(abc.ABC):
                     node_id=await cast(Awaitable, node_id),
                 )
 
-            return resolve()
+            return cast(GlobalID, resolve())
 
         # If node_id is not str, GlobalID will raise an error for us
         return GlobalID(type_name=type_name, node_id=cast(str, node_id))
 
     @classmethod
     def resolve_id(
-        cls: Type[NodeType],
-        root: NodeType,
+        cls,
+        root: Self,
         *,
-        info: Optional[Info] = None,
+        info: Info,
     ) -> AwaitableOrValue[str]:
         """Resolve the node id.
 
@@ -389,17 +387,62 @@ class Node(abc.ABC):
         return getattr(root, id_attr)
 
     @classmethod
-    def resolve_typename(cls: Type[NodeType], root: NodeType, info: Info):
+    def resolve_typename(cls, root: Self, info: Info):
         return info.path.typename
 
+    @overload
     @classmethod
-    @abc.abstractmethod
     def resolve_nodes(
-        cls: Type[NodeType],
+        cls,
         *,
-        info: Optional[Info] = None,
+        info: Info,
+    ) -> AwaitableOrValue[Iterable[Self]]:
+        ...
+
+    @overload
+    @classmethod
+    def resolve_nodes(
+        cls,
+        *,
+        info: Info,
+        node_ids: Iterable[str],
+        required: Literal[True],
+    ) -> AwaitableOrValue[Iterable[Self]]:
+        ...
+
+    @overload
+    @classmethod
+    def resolve_nodes(
+        cls,
+        *,
+        info: Info,
         node_ids: Optional[Iterable[str]] = None,
-    ) -> AwaitableOrValue[Iterable[NodeType]]:
+        required: Literal[False] = ...,
+    ) -> AwaitableOrValue[Iterable[Optional[Self]]]:
+        ...
+
+    @overload
+    @classmethod
+    def resolve_nodes(
+        cls,
+        *,
+        info: Info,
+        node_ids: Optional[Iterable[str]] = None,
+        required: bool,
+    ) -> Union[
+        AwaitableOrValue[Iterable[Self]],
+        AwaitableOrValue[Iterable[Optional[Self]]],
+    ]:
+        ...
+
+    @classmethod
+    def resolve_nodes(
+        cls,
+        *,
+        info: Info,
+        node_ids: Optional[Iterable[str]] = None,
+        required: bool = False,
+    ):
         """Resolve a list of nodes.
 
         This method *should* be defined by anyone implementing the `Node` interface.
@@ -411,6 +454,11 @@ class Node(abc.ABC):
                 Optional list of ids that, when provided, should be used to filter
                 the results to only contain the nodes of those ids. When empty,
                 all nodes of this type shall be returned.
+            required:
+                If `True`, all `node_ids` requested must exist. If they don't,
+                an error must be raised. If `False`, missing nodes should be
+                returned as `None`. It only makes sense when passing a list of
+                `node_ids`, otherwise it will should ignored.
 
         Returns:
             An iterable of resolved nodes.
@@ -420,40 +468,49 @@ class Node(abc.ABC):
 
     @overload
     @classmethod
-    @abc.abstractmethod
-    def resolve_node(
-        cls: Type[NodeType],
-        node_id: str,
-        *,
-        info: Optional[Info] = ...,
-        required: Literal[True],
-    ) -> AwaitableOrValue[NodeType]:
-        ...
-
-    @overload
-    @classmethod
-    @abc.abstractmethod
-    def resolve_node(
-        cls: Type[NodeType],
-        node_id: str,
-        *,
-        info: Optional[Info] = ...,
-        required: bool = ...,
-    ) -> AwaitableOrValue[Optional[NodeType]]:
-        ...
-
-    @classmethod
-    @abc.abstractmethod
     def resolve_node(
         cls,
         node_id: str,
         *,
-        info: Optional[Info] = None,
+        info: Info,
+        required: Literal[True],
+    ) -> AwaitableOrValue[Self]:
+        ...
+
+    @overload
+    @classmethod
+    def resolve_node(
+        cls,
+        node_id: str,
+        *,
+        info: Info,
+        required: Literal[False] = ...,
+    ) -> AwaitableOrValue[Optional[Self]]:
+        ...
+
+    @overload
+    @classmethod
+    def resolve_node(
+        cls,
+        node_id: str,
+        *,
+        info: Info,
+        required: bool,
+    ) -> AwaitableOrValue[Optional[Self]]:
+        ...
+
+    @classmethod
+    def resolve_node(
+        cls,
+        node_id: str,
+        *,
+        info: Info,
         required: bool = False,
-    ):
+    ) -> AwaitableOrValue[Optional[Self]]:
         """Resolve a node given its id.
 
-        This method *should* be defined by anyone implementing the `Node` interface.
+        This method is a convenience method that calls `resolve_nodes` for
+        a single node id.
 
         Args:
             info:
@@ -469,7 +526,15 @@ class Node(abc.ABC):
             The resolved node or None if it was not found
 
         """
-        raise NotImplementedError  # pragma:no cover
+        retval = cls.resolve_nodes(info=info, node_ids=[node_id], required=required)
+        if inspect.isawaitable(retval):
+
+            async def resolver():
+                return next(iter(await retval))  # type: ignore[misc]
+
+            return resolver()
+
+        return next(iter(cast(Iterable[Self], retval)))
 
 
 @type(description="Information to aid in pagination.")

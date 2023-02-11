@@ -30,7 +30,7 @@ class Fruit:
 We want it to have a globally unique ID, a way to retrieve a paginated results
 list of it and a way to refetch if if necessary. For that, we need to inherit it
 from the `Node` interface and implement its abstract methods: `resolve_id`,
-`resolve_node` and `resolve_nodes`.
+and `resolve_nodes`.
 
 ```python
 @strawberry.type
@@ -47,13 +47,14 @@ class Fruit(strawberry.relay.Node):
     def resolve_nodes(
         cls,
         *,
-        info: Optional[Info] = None,
+        info: Info,
         node_ids: Optional[Iterable[str]] = None,
+        required: bool = False,
     ):
         if node_ids is not None:
-            return [fruits[nid] for nid in node_ids]
+            return [fruits[nid] if required else fruits.get(nid) for nid in node_ids]
 
-        return list(fruits.values())
+        return fruits.values()
 
     @classmethod
     def resolve_node(

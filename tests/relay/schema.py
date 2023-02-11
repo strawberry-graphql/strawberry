@@ -20,27 +20,14 @@ class Fruit(strawberry.relay.Node):
     def resolve_nodes(
         cls,
         *,
-        info: Optional[Info] = None,
+        info: Info,
         node_ids: Optional[Iterable[str]] = None,
+        required: bool = False,
     ):
         if node_ids is not None:
-            return [fruits[nid] for nid in node_ids]
+            return [fruits[nid] if required else fruits.get(nid) for nid in node_ids]
 
-        return list(fruits.values())
-
-    @classmethod
-    def resolve_node(
-        cls,
-        node_id: str,
-        *,
-        info: Optional[Info] = None,
-        required: bool = False,
-    ) -> Self:
-        obj = fruits.get(node_id, None)
-        if required and obj is None:
-            raise ValueError(f"No fruit by id {node_id}")
-
-        return obj
+        return fruits.values()
 
 
 @strawberry.type
@@ -55,25 +42,15 @@ class FruitAsync(Fruit):
         *,
         info: Optional[Info] = None,
         node_ids: Optional[Iterable[str]] = None,
-    ):
-        if node_ids is not None:
-            return [fruits_async[nid] for nid in node_ids]
-
-        return list(fruits_async.values())
-
-    @classmethod
-    async def resolve_node(
-        cls,
-        node_id: str,
-        *,
-        info: Optional[Info] = None,
         required: bool = False,
     ):
-        obj = fruits_async.get(node_id, None)
-        if required and obj is None:
-            raise ValueError(f"No fruit by id {node_id}")
+        if node_ids is not None:
+            return [
+                fruits_async[nid] if required else fruits_async.get(nid)
+                for nid in node_ids
+            ]
 
-        return obj
+        return fruits_async.values()
 
 
 @strawberry.type
