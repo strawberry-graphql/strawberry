@@ -1,5 +1,4 @@
 from .fields import ConnectionField, NodeField, RelayField, connection, node
-from .mutations import InputMutationField, input_mutation
 from .types import (
     Connection,
     Edge,
@@ -18,7 +17,6 @@ __all__ = [
     "Edge",
     "GlobalID",
     "GlobalIDValueError",
-    "InputMutationField",
     "Node",
     "NodeField",
     "NodeID",
@@ -27,7 +25,6 @@ __all__ = [
     "RelayField",
     "connection",
     "from_base64",
-    "input_mutation",
     "node",
     "to_base64",
 ]
