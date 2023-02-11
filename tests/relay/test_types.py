@@ -103,7 +103,7 @@ async def test_global_id_aresolve_node():
     gid = strawberry.relay.GlobalID(type_name="FruitAsync", node_id="1")
     fruit = await gid.aresolve_node(fake_info)
     assert_type(fruit, Optional[Node])
-    assert isinstance(fruit, Fruit)
+    assert isinstance(fruit, FruitAsync)
     assert fruit.id == 1
     assert fruit.name == "Banana"
 

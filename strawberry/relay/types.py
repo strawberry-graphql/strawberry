@@ -333,7 +333,7 @@ class Node:
     _id_attr: ClassVar[str] = "id"
 
     def __init_subclass__(cls, **kwargs):
-        annotations = {}
+        annotations: Dict[str, Type] = {}
         for base in reversed(cls.__mro__):
             annotations.update(getattr(base, "__annotations__", {}))
 

@@ -1,10 +1,13 @@
+import asyncio
 import dataclasses
 import inspect
 import sys
+from collections import defaultdict
 from typing import (  # type: ignore[attr-defined]
     Any,
     Awaitable,
     Callable,
+    DefaultDict,
     Dict,
     ForwardRef,
     Iterable,
@@ -13,6 +16,7 @@ from typing import (  # type: ignore[attr-defined]
     Optional,
     Sequence,
     Set,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -67,7 +71,11 @@ class RelayField(StrawberryField):
 
     @cached_property
     def is_optional(self):
-        return isinstance(self.type, StrawberryOptional)
+        type_ = self.type
+        if isinstance(type_, StrawberryList):
+            type_ = type_.of_type
+
+        return isinstance(type_, StrawberryOptional)
 
     @cached_property
     def is_list(self):
@@ -89,7 +97,8 @@ class RelayField(StrawberryField):
 class NodeField(RelayField):
     """Relay Node field.
 
-    Do not instantiate this directly. Instead, use `@relay.node`
+    This field is used to fetch a single object by its ID or multiple
+    objects given a list of IDs.
 
     """
 
@@ -156,20 +165,58 @@ class NodeField(RelayField):
         info: Info,
         args: List[Any],
         kwargs: Dict[str, Any],
-    ) -> AwaitableOrValue[Iterable[Node]]:
-        nodes_map: Dict[Type[Node], List[str]] = {}
-        for gid in kwargs["ids"]:
+    ) -> AwaitableOrValue[List[Node]]:
+        gids: list[GlobalID] = kwargs["ids"]
+
+        nodes_map: DefaultDict[Type[Node], List[str]] = defaultdict(list)
+        # Store the index of the node in the list of nodes of the same type
+        # so that we can return them in the same order while also supporting different
+        # types
+        index_map: Dict[GlobalID, Tuple[Type[Node], int]] = {}
+        for gid in gids:
             node_t = gid.resolve_type(info)
-            nodes_map.setdefault(node_t, []).append(gid.node_id)
+            nodes_map[node_t].append(gid.node_id)
+            index_map[gid] = (node_t, len(nodes_map[node_t]) - 1)
 
         if len(nodes_map) == 0:
             return []
-        if len(nodes_map) > 1:
-            # FIXME: Maybe we want to support this in the future?
-            raise TypeError("More than one node type found...")
 
-        node_t, ids = next(iter(nodes_map.items()))
-        return node_t.resolve_nodes(info=info, node_ids=ids)
+        resolved_nodes = {
+            node_t: node_t.resolve_nodes(
+                info=info,
+                node_ids=node_ids,
+                required=not self.is_optional,
+            )
+            for node_t, node_ids in nodes_map.items()
+        }
+        awaitable_nodes = {
+            node_t: nodes
+            for node_t, nodes in resolved_nodes.items()
+            if inspect.isawaitable(nodes)
+        }
+
+        if any(inspect.isawaitable(v) for k, v in resolved_nodes.items()):
+
+            async def resolve(resolved=resolved_nodes):
+                resolved.update(
+                    zip(
+                        awaitable_nodes.keys(),
+                        # Resolve all awaitable nodes concurrently
+                        await asyncio.gather(*awaitable_nodes.values()),
+                    )
+                )
+                # Resolve any generator to lists
+                resolved = {node_t: list(nodes) for node_t, nodes in resolved.items()}
+                return [resolved[index_map[gid][0]][index_map[gid][1]] for gid in gids]
+
+            return resolve()
+
+        # Resolve any generator to lists
+        resolved = {
+            node_t: list(cast(Iterable[Node], nodes))
+            for node_t, nodes in resolved_nodes.items()
+        }
+        return [resolved[index_map[gid][0]][index_map[gid][1]] for gid in gids]
 
 
 class ConnectionField(RelayField):

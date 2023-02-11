@@ -15,6 +15,49 @@ from strawberry.unset import UNSET
 from strawberry.utils.inspect import get_specialized_type_var_map
 
 
+def _get_field_for_type(type_: Type) -> Type[StrawberryField]:
+    # Deferred import to avoid import cycles
+    from strawberry.field import StrawberryField
+
+    try:
+        from strawberry.relay import Connection, ConnectionField, Node, NodeField
+    except ImportError:
+        return StrawberryField
+
+    # Supoort for "foo: Node"
+    if isinstance(type_, type) and issubclass(type_, Node):
+        return NodeField
+
+    # Support for "foo: SpecializedConnection"
+    if isinstance(type_, type) and issubclass(type_, Connection):
+        return ConnectionField
+
+    type_origin = get_origin(type_)
+
+    # Support for "foo: Connection[Foo]"
+    if isinstance(type_origin, type) and issubclass(
+        type_origin,
+        Connection,
+    ):
+        return ConnectionField
+
+    type_args = get_args(type_)
+
+    # Support for "foo: Optional[Node]" and "foo: List[Node]"
+    if any(isinstance(arg, type) and issubclass(arg, Node) for arg in type_args):
+        return NodeField
+
+    # Support for "foo: List[Optional[Node]]"
+    if isinstance(type_origin, type) and issubclass(type_origin, List):
+        if any(
+            isinstance(arg, type) and issubclass(arg, Node)
+            for arg in get_args(type_args[0])
+        ):
+            return NodeField
+
+    return StrawberryField
+
+
 def _get_fields(cls: Type) -> List[StrawberryField]:
     """Get all the strawberry fields off a strawberry.type cls
 
@@ -48,18 +91,6 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     passing a named function (i.e. not an anonymous lambda) to strawberry.field
     (typically as a decorator).
     """
-    # Deferred import to avoid import cycles
-    from strawberry.field import StrawberryField
-
-    # Relay uses @interface/@type while creating its types, which calls this function
-    try:
-        from strawberry.relay import Connection, ConnectionField, Node, NodeField
-    except ImportError:
-        Connection = None  # type: ignore[misc,assignment]
-        ConnectionField = None  # type: ignore[misc,assignment]
-        Node = None  # type: ignore[misc,assignment]
-        NodeField = None  # type: ignore[misc,assignment]
-
     fields: Dict[str, StrawberryField] = {}
 
     # before trying to find any fields, let's first add the fields defined in
@@ -149,34 +180,6 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             origin = origins.get(field.name, cls)
             module = sys.modules[origin.__module__]
 
-            # Support relay fields with only annotations
-            field_class = StrawberryField
-            if Connection is not None:
-                field_type_origin = get_origin(field_type)
-                if (
-                    isinstance(field_type, type) and issubclass(field_type, Connection)
-                ) or (
-                    isinstance(field_type_origin, type)
-                    and issubclass(
-                        field_type_origin,
-                        Connection,
-                    )
-                ):
-                    assert ConnectionField is not None
-                    field_class = ConnectionField
-            if Node is not None:
-                field_type_origin = get_origin(field_type)
-                field_type_args = get_args(field_type)
-                if (isinstance(field_type, type) and issubclass(field_type, Node)) or (
-                    isinstance(field_type_origin, type)
-                    and issubclass(field_type_origin, List)
-                    and field_type_args
-                    and isinstance(field_type_args[0], type)
-                    and issubclass(field_type_args[0], Node)
-                ):
-                    assert NodeField is not None
-                    field_class = NodeField
-
             if isinstance(field_type, TypeVar):
                 specialized_type_var_map = get_specialized_type_var_map(cls)
                 # If field_type is specialized and a TypeVar, replace it with its
@@ -192,6 +195,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                     )
 
             # Create a StrawberryField, for fields of Types #1 and #2a
+            field_class = _get_field_for_type(field_type)
             field = field_class(
                 python_name=field.name,
                 graphql_name=None,

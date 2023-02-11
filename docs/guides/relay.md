@@ -157,6 +157,22 @@ query {
 }
 ```
 
+### The node field
+
+As demonstrated above, the `Node` field can be used to retrieve/refetch any
+object in the schema that implements the `Node` interface.
+
+It can be defined in in the `Query` objects in 4 ways:
+
+- `node: Node`: This will define a field that accepts a `GlobalID!` and returns
+  a `Node` instance. This is the most basic way to define it.
+- `node: Optional[Node]`: The same as `Node`, but if the given object doesn't
+  exist, it will return `null`.
+- `node: List[Node]`: This will define a field that accepts `[GlobalID!]!` and
+  returns a list of `Node` instances. They can even be from different types.
+- `node: List[Optional[Node]]`: The same as `List[Node]`, but the returned list
+  can contain `null` values if the given objects don't exist.
+
 ### Custom connection pagination
 
 The default `Connection` implementation uses a limit/offset approach to paginate

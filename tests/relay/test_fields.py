@@ -34,6 +34,29 @@ def test_query_node():
     }
 
 
+def test_query_node_optional():
+    result = schema.execute_sync(
+        """
+        query TestQuery ($id: GlobalID!) {
+            nodeOptional (id: $id) {
+                ... on Node {
+                    id
+                }
+                ... on Fruit {
+                    name
+                    color
+                }
+            }
+        }
+        """,
+        variable_values={
+            "id": to_base64("Fruit", 999),
+        },
+    )
+    assert result.errors is None
+    assert result.data == {"nodeOptional": None}
+
+
 async def test_query_node_async():
     result = await schema.execute(
         """
@@ -61,6 +84,29 @@ async def test_query_node_async():
             "name": "Apple",
         },
     }
+
+
+async def test_query_node_optional_async():
+    result = await schema.execute(
+        """
+        query TestQuery ($id: GlobalID!) {
+            nodeOptional (id: $id) {
+                ... on Node {
+                    id
+                }
+                ... on Fruit {
+                    name
+                    color
+                }
+            }
+        }
+        """,
+        variable_values={
+            "id": to_base64("Fruit", 999),
+        },
+    )
+    assert result.errors is None
+    assert result.data == {"nodeOptional": None}
 
 
 def test_query_nodes():
@@ -99,6 +145,47 @@ def test_query_nodes():
     }
 
 
+def test_query_nodes_optional():
+    result = schema.execute_sync(
+        """
+        query TestQuery ($ids: [GlobalID!]!) {
+            nodesOptional (ids: $ids) {
+                ... on Node {
+                    id
+                }
+                ... on Fruit {
+                    name
+                    color
+                }
+            }
+        }
+        """,
+        variable_values={
+            "ids": [
+                to_base64("Fruit", 2),
+                to_base64("Fruit", 999),
+                to_base64("Fruit", 4),
+            ],
+        },
+    )
+    assert result.errors is None
+    assert result.data == {
+        "nodesOptional": [
+            {
+                "id": to_base64("Fruit", 2),
+                "name": "Apple",
+                "color": "red",
+            },
+            None,
+            {
+                "id": to_base64("Fruit", 4),
+                "name": "Grape",
+                "color": "purple",
+            },
+        ],
+    }
+
+
 async def test_query_nodes_async():
     result = await schema.execute(
         """
@@ -111,11 +198,19 @@ async def test_query_nodes_async():
                     name
                     color
                 }
+                ... on FruitAsync {
+                    name
+                    color
+                }
             }
         }
         """,
         variable_values={
-            "ids": [to_base64("Fruit", 2), to_base64("Fruit", 4)],
+            "ids": [
+                to_base64("Fruit", 2),
+                to_base64("Fruit", 4),
+                to_base64("FruitAsync", 2),
+            ],
         },
     )
     assert result.errors is None
@@ -130,6 +225,64 @@ async def test_query_nodes_async():
                 "id": to_base64("Fruit", 4),
                 "name": "Grape",
                 "color": "purple",
+            },
+            {
+                "id": to_base64("FruitAsync", 2),
+                "name": "Apple",
+                "color": "red",
+            },
+        ],
+    }
+
+
+async def test_query_nodes_optional_async():
+    result = await schema.execute(
+        """
+        query TestQuery ($ids: [GlobalID!]!) {
+            nodesOptional (ids: $ids) {
+                ... on Node {
+                    id
+                }
+                ... on Fruit {
+                    name
+                    color
+                }
+                ... on FruitAsync {
+                    name
+                    color
+                }
+            }
+        }
+        """,
+        variable_values={
+            "ids": [
+                to_base64("Fruit", 2),
+                to_base64("FruitAsync", 999),
+                to_base64("Fruit", 4),
+                to_base64("Fruit", 999),
+                to_base64("FruitAsync", 2),
+            ],
+        },
+    )
+    assert result.errors is None
+    assert result.data == {
+        "nodesOptional": [
+            {
+                "id": to_base64("Fruit", 2),
+                "name": "Apple",
+                "color": "red",
+            },
+            None,
+            {
+                "id": to_base64("Fruit", 4),
+                "name": "Grape",
+                "color": "purple",
+            },
+            None,
+            {
+                "id": to_base64("FruitAsync", 2),
+                "name": "Apple",
+                "color": "red",
             },
         ],
     }

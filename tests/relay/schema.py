@@ -26,7 +26,11 @@ class Fruit(strawberry.relay.Node):
 
 
 @strawberry.type
-class FruitAsync(Fruit):
+class FruitAsync(strawberry.relay.Node):
+    id: strawberry.relay.NodeID[int]
+    name: str
+    color: str
+
     @classmethod
     async def resolve_nodes(
         cls,
@@ -121,6 +125,8 @@ fruits_async = {
 class Query:
     node: strawberry.relay.Node
     nodes: List[strawberry.relay.Node]
+    node_optional: Optional[strawberry.relay.Node]
+    nodes_optional: List[Optional[strawberry.relay.Node]]
     fruits: strawberry.relay.Connection[Fruit]
     fruits_async: strawberry.relay.Connection[FruitAsync]
     fruits_custom_pagination: FruitCustomPaginationConnection

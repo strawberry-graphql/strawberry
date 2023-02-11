@@ -111,6 +111,14 @@ type Query {
     """The IDs of the objects."""
     ids: [GlobalID!]!
   ): [Node!]!
+  nodeOptional(
+    """The ID of the object."""
+    id: GlobalID!
+  ): Node
+  nodesOptional(
+    """The IDs of the objects."""
+    ids: [GlobalID!]!
+  ): [Node]!
   fruits(
     """Returns the items in the list that come before the specified cursor."""
     before: String = null
