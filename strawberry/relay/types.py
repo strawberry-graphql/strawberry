@@ -37,7 +37,7 @@ from .utils import from_base64, to_base64
 
 _T = TypeVar("_T")
 _R = TypeVar("_R")
-connection_typename = "arrayconnection"
+PREFIX = "arrayconnection"
 
 NodeType = TypeVar("NodeType", bound="Node")
 
@@ -523,7 +523,7 @@ class Edge(Generic[NodeType]):
 
     @classmethod
     def from_node(cls, node: NodeType, *, cursor: Any = None):
-        return cls(cursor=to_base64(connection_typename, cursor), node=node)
+        return cls(cursor=to_base64(PREFIX, cursor), node=node)
 
 
 @type(description="A connection to a list of items.")
@@ -611,11 +611,11 @@ class Connection(Generic[NodeType]):
 
         if after:
             after_type, after_parsed = from_base64(after)
-            assert after_type == connection_typename
+            assert after_type == PREFIX
             start = int(after_parsed) + 1
         if before:
             before_type, before_parsed = from_base64(before)
-            assert before_type == connection_typename
+            assert before_type == PREFIX
             end = int(before_parsed)
 
         if isinstance(first, int):
