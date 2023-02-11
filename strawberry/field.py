@@ -17,7 +17,7 @@ from typing import (
     Union,
     overload,
 )
-from typing_extensions import Literal
+from typing_extensions import Literal, Self
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
@@ -122,7 +122,7 @@ class StrawberryField(dataclasses.Field):
             try:
                 self.default_value = default_factory()
             except TypeError as exc:
-                raise InvalidDefaultFactoryError() from exc
+                raise InvalidDefaultFactoryError from exc
 
         self.is_subscription = is_subscription
 
@@ -286,7 +286,7 @@ class StrawberryField(dataclasses.Field):
 
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
-    ) -> "StrawberryField":
+    ) -> Self:
         new_type: Union[StrawberryType, type] = self.type
 
         # TODO: Remove with creation of StrawberryObject. Will act same as other

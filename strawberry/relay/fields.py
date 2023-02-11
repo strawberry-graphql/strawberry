@@ -20,7 +20,7 @@ from typing import (  # type: ignore[attr-defined]
     cast,
     overload,
 )
-from typing_extensions import Literal, get_args, get_origin
+from typing_extensions import Literal, Self, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
@@ -80,10 +80,8 @@ class RelayField(StrawberryField):
     def copy_with(
         self,
         type_var_map: Mapping[TypeVar, Union[StrawberryType, type]],
-    ) -> "RelayField":
-        # We should use Self in the return value of copy_with,
-        # but mypy is not accepting it
-        retval = cast(RelayField, super().copy_with(type_var_map))
+    ) -> Self:
+        retval = super().copy_with(type_var_map)
         retval.default_args = self.default_args
         return retval
 
