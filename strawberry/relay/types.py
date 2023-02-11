@@ -21,11 +21,12 @@ from typing import (
     cast,
     overload,
 )
-from typing_extensions import Literal, Self, get_args, get_origin
+from typing_extensions import Annotated, Literal, Self, TypeAlias, get_args, get_origin
 
 from strawberry.field import field
 from strawberry.lazy_type import LazyType
 from strawberry.object_type import interface, type
+from strawberry.private import StrawberryPrivate
 from strawberry.scalars import ID
 from strawberry.type import StrawberryContainer
 from strawberry.types.info import Info
@@ -290,31 +291,73 @@ class GlobalID:
         return res
 
 
+class NodeIDPrivate(StrawberryPrivate):
+    ...
+
+
+NodeID: TypeAlias = Annotated[_T, NodeIDPrivate()]
+
+
 @interface(description="An object with a Globally Unique ID")
 class Node:
     """Node interface for GraphQL types.
 
-    All types that are relay ready should inherit from this interface.
+    Subclasses must type the id field using `NodeID`. It will be private to the
+    schema because it will be converted to a global ID and exposed as `id: GlobalID!`
 
-    Attributes:
-        ID_ATTR:
-            (Optional) Define id field of node
-
-    Methods:
+    The following methods can also be implemented:
         resolve_id:
-            (Optional) Called to resolve the node's id.
-            By default it returns `getattr(node, getattr(node, 'ID_ATTR'. 'id'))`
-            to use the one provided when creating the node itself.
-        resolve_node:
-            Called to retrieve a node given its id
+            (Optional) Called to resolve the node's id. Can be overriden to
+            customize how the id is retrieved (e.g. in case you don't want
+            to define a `NodeID` field)
         resolve_nodes:
             Called to retrieve an iterable of node given their ids
+        resolve_node:
+            (Optional) Called to retrieve a node given its id. If not defined
+            the default implementation will call `.resolve_nodes` with that
+            single node id.
+
+    Example:
+        >>> @strawberry.type
+        ... class Fruit(Node):
+        ...     id: NodeID[int]
+        ...     name: str
+        ...
+        ... @classmethod
+        ... def resolve_nodes(cls, *, info, node_ids, required=False):
+        ...     # Return an iterable of fruits in here
+        ...     ...
 
     """
 
-    @field(description="The Globally Unique ID of this object")
+    _id_attr: ClassVar[str] = "id"
+
+    def __init_subclass__(cls, **kwargs):
+        annotations = {}
+        for base in reversed(cls.__mro__):
+            annotations.update(getattr(base, "__annotations__", {}))
+
+        candidates = [
+            attr
+            for attr, annotation in annotations.items()
+            if (
+                get_origin(annotation) is Annotated
+                and any(
+                    isinstance(argument, NodeIDPrivate)
+                    for argument in get_args(annotation)
+                )
+            )
+        ]
+        if len(candidates) > 1:
+            raise TypeError(
+                f"More than one field annotated with `NodeID` found on {cls!r}"
+            )
+        elif len(candidates) == 1:
+            cls._id_attr = candidates[0]
+
+    @field(name="id", description="The Globally Unique ID of this object")
     @classmethod
-    def id(cls, root: "Node", info: Info) -> GlobalID:
+    def _id(cls, root: "Node", info: Info) -> GlobalID:
         # FIXME: We want to support both integration objects that doesn't define
         # a resolve_id and also the ones that does override it. Is there a better
         # way of handling this?
@@ -370,8 +413,10 @@ class Node:
     ) -> AwaitableOrValue[str]:
         """Resolve the node id.
 
-        By default this returns `getattr(node, getattr(node, 'ID_ATTR'. 'id'))`.
-        Override this to return something else.
+        By default this will return `getattr(root, <id_attr>)`, where <id_attr>
+        is the field typed with `NodeID`.
+
+        You can override this method to provide a custom implementation.
 
         Args:
             info:
@@ -383,8 +428,7 @@ class Node:
             The resolved id (which is expected to be str)
 
         """
-        id_attr = getattr(cls, "ID_ATTR", "id")
-        return getattr(root, id_attr)
+        return getattr(root, cls._id_attr)
 
     @classmethod
     def resolve_typename(cls, root: Self, info: Info):

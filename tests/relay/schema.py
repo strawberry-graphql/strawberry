@@ -1,5 +1,4 @@
 from typing import Iterable, List, Optional
-from typing_extensions import Self
 
 import strawberry
 from strawberry.relay.utils import to_base64
@@ -8,13 +7,9 @@ from strawberry.types import Info
 
 @strawberry.type
 class Fruit(strawberry.relay.Node):
-    _id: strawberry.Private[int]
+    id: strawberry.relay.NodeID[int]
     name: str
     color: str
-
-    @classmethod
-    def resolve_id(cls, root: Self, *, info: Optional[Info] = None):
-        return root._id
 
     @classmethod
     def resolve_nodes(
@@ -32,10 +27,6 @@ class Fruit(strawberry.relay.Node):
 
 @strawberry.type
 class FruitAsync(Fruit):
-    @classmethod
-    async def resolve_id(cls, root: Self, *, info: Optional[Info] = None):
-        return super().resolve_id(root, info=info)
-
     @classmethod
     async def resolve_nodes(
         cls,
@@ -112,17 +103,17 @@ class FruitCustomPaginationConnection(strawberry.relay.Connection[Fruit]):
 
 
 fruits = {
-    str(f._id): f
+    str(f.id): f
     for f in [
-        Fruit(_id=1, name="Banana", color="yellow"),
-        Fruit(_id=2, name="Apple", color="red"),
-        Fruit(_id=3, name="Pineapple", color="yellow"),
-        Fruit(_id=4, name="Grape", color="purple"),
-        Fruit(_id=5, name="Orange", color="orange"),
+        Fruit(id=1, name="Banana", color="yellow"),
+        Fruit(id=2, name="Apple", color="red"),
+        Fruit(id=3, name="Pineapple", color="yellow"),
+        Fruit(id=4, name="Grape", color="purple"),
+        Fruit(id=5, name="Orange", color="orange"),
     ]
 }
 fruits_async = {
-    k: FruitAsync(_id=v._id, name=v.name, color=v.color) for k, v in fruits.items()
+    k: FruitAsync(id=v.id, name=v.name, color=v.color) for k, v in fruits.items()
 }
 
 
@@ -164,7 +155,7 @@ class Query:
         color: str,
     ) -> Fruit:
         return Fruit(
-            _id=len(fruits) + 1,
+            id=len(fruits) + 1,
             name=name,
             color=color,
         )
@@ -177,7 +168,7 @@ class Query:
         color: str,
     ) -> Fruit:
         return Fruit(
-            _id=len(fruits) + 1,
+            id=len(fruits) + 1,
             name=name,
             color=color,
         )

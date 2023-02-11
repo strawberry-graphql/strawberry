@@ -52,7 +52,7 @@ def test_global_id_resolve_node():
     gid = strawberry.relay.GlobalID(type_name="Fruit", node_id="1")
     fruit = gid.resolve_node(fake_info)
     assert isinstance(fruit, Fruit)
-    assert fruit._id == 1
+    assert fruit.id == 1
     assert fruit.name == "Banana"
 
 
@@ -74,7 +74,7 @@ def test_global_id_resolve_node_ensure_type():
     fruit = gid.resolve_node(fake_info, ensure_type=Fruit)
     assert_type(fruit, Fruit)
     assert isinstance(fruit, Fruit)
-    assert fruit._id == 1
+    assert fruit.id == 1
     assert fruit.name == "Banana"
 
 
@@ -86,7 +86,7 @@ def test_global_id_resolve_node_ensure_type_with_union():
     fruit = gid.resolve_node(fake_info, ensure_type=Union[Fruit, Foo])
     assert_type(fruit, Union[Fruit, Foo])
     assert isinstance(fruit, Fruit)
-    assert fruit._id == 1
+    assert fruit.id == 1
     assert fruit.name == "Banana"
 
 
@@ -104,7 +104,7 @@ async def test_global_id_aresolve_node():
     fruit = await gid.aresolve_node(fake_info)
     assert_type(fruit, Optional[Node])
     assert isinstance(fruit, Fruit)
-    assert fruit._id == 1
+    assert fruit.id == 1
     assert fruit.name == "Banana"
 
 
@@ -126,7 +126,7 @@ async def test_global_id_aresolve_node_ensure_type():
     fruit = await gid.aresolve_node(fake_info, ensure_type=FruitAsync)
     assert_type(fruit, FruitAsync)
     assert isinstance(fruit, FruitAsync)
-    assert fruit._id == 1
+    assert fruit.id == 1
     assert fruit.name == "Banana"
 
 
@@ -138,7 +138,7 @@ async def test_global_id_aresolve_node_ensure_type_with_union():
     fruit = await gid.aresolve_node(fake_info, ensure_type=Union[FruitAsync, Foo])
     assert_type(fruit, Union[FruitAsync, Foo])
     assert isinstance(fruit, FruitAsync)
-    assert fruit._id == 1
+    assert fruit.id == 1
     assert fruit.name == "Banana"
 
 

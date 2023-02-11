@@ -33,15 +33,14 @@ from the `Node` interface and implement its abstract methods: `resolve_id`,
 and `resolve_nodes`.
 
 ```python
+from strawberry import relay
+
+
 @strawberry.type
-class Fruit(strawberry.relay.Node):
-    code: strawberry.Private[int]
+class Fruit(relay.Node):
+    code: relay.NodeID[str]
     name: str
     weight: float
-
-    @classmethod
-    def resolve_id(cls, root: Self, *, info: Optional[Info] = None):
-        return root.code
 
     @classmethod
     def resolve_nodes(
@@ -56,20 +55,6 @@ class Fruit(strawberry.relay.Node):
 
         return fruits.values()
 
-    @classmethod
-    def resolve_node(
-        cls,
-        node_id: str,
-        *,
-        info: Optional[Info] = None,
-        required: bool = False,
-    ):
-        obj = fruits.get(node_id, None)
-        if required and obj is None:
-            raise ValueError(f"No fruit by id {node_id}")
-
-        return obj
-
 
 # Assume we have a dict mapping the fruits code to the Fruit object itself
 fruits: Dict[int, Fruit]
@@ -83,8 +68,8 @@ Now we can expose it in the schema for retrieval and pagination like:
 ```python
 @strawberry.type
 class Query:
-    node: strawberry.relay.Node
-    fruits: strawberry.relay.Connection[Fruit]
+    node: relay.Node
+    fruits: relay.Connection[Fruit]
 ```
 
 This will generate a schema like this:
@@ -201,11 +186,11 @@ exaple above, we want to use the fruit's weight as the cursor, we can implement
 it like that:
 
 ```python
-from strawberry.relay import to_base64
+from strawberry import relay
 
 
 @strawberry.type
-class FruitCustomPaginationConnection(strawberry.relay.Connection[Fruit]):
+class FruitCustomPaginationConnection(relay.Connection[Fruit]):
     @classmethod
     def from_nodes(
         cls,
@@ -221,9 +206,9 @@ class FruitCustomPaginationConnection(strawberry.relay.Connection[Fruit]):
         # Note that this is a showcase implementation and is far from
         # being optimal performance wise
         edges_mapping = {
-            to_base64("fruit_name", n.name): strawberry.relay.Edge(
+            relay.to_base64("fruit_name", n.name): strawberry.relay.Edge(
                 node=n,
-                cursor=to_base64("fruit_name", n.name),
+                cursor=relay.to_base64("fruit_name", n.name),
             )
             for n in sorted(nodes, key=lambda f: f.name)
         }
@@ -285,7 +270,7 @@ of all fruits whose name starts with a given string:
 ```python
 @strawberry.type
 class Query:
-    @strawberry.relay.connection
+    @relay.connection
     def fruits_with_filter(
         self,
         info: Info,
@@ -325,11 +310,23 @@ class Mutation:
     def update_fruit_weight(
         self,
         info: Info,
-        id: strawberry.relay.GlobalID,
+        id: relay.GlobalID,
         weight: float,
     ) -> Fruit:
         # resolve_node will return the Fruit object
         fruit = id.resolve_node(info, ensure_type=Fruit)
+        fruit.weight = weight
+        return fruit
+
+    @strawberry.mutation
+    async def update_fruit_weight_async(
+        self,
+        info: Info,
+        id: relay.GlobalID,
+        weight: float,
+    ) -> Fruit:
+        # aresolve_node will return an awaitable that returns the Fruit object
+        fruit = await id.aresolve_node(info, ensure_type=Fruit)
         fruit.weight = weight
         return fruit
 ```
@@ -355,11 +352,11 @@ input mutation. We need to replace `@strawberry.mutation` by
 ```python
 @strawberry.type
 class Mutation:
-    @strawberry.relay.input_mutation
+    @relay.input_mutation
     def update_fruit_weight(
         self,
         info: Info,
-        id: strawberry.relay.GlobalID,
+        id: relay.GlobalID,
         weight: float,
     ) -> Fruit:
         # resolve_node will return the Fruit object

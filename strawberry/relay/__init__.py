@@ -6,6 +6,7 @@ from .types import (
     GlobalID,
     GlobalIDValueError,
     Node,
+    NodeID,
     NodeType,
     PageInfo,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "InputMutationField",
     "Node",
     "NodeField",
+    "NodeID",
     "NodeType",
     "PageInfo",
     "RelayField",
