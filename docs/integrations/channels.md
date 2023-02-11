@@ -340,50 +340,22 @@ Look here for some more complete examples:
 
 ## Testing
 
-To test our chat app we can use the Channels
-[`ApplicationCommunicator`](https://channels.readthedocs.io/en/stable/topics/testing.html#applicationcommunicator).
+We provide a minimal application communicator (`GraphQLWebsocketCommunicator`) for subscribing.
 Here is an example based on the tutorial above: _Make sure you have pytest-async
 installed_
 
 ```python
 from channels.testing import WebsocketCommunicator
 import pytest
-from strawberry.channels import GraphQLWSConsumer
-from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
-from strawberry.subscriptions.protocols.graphql_ws import (
-    GQL_CONNECTION_ACK,
-    GQL_CONNECTION_INIT,
-    GQL_DATA,
-    GQL_START,
-)
-
-from mysite.graphql import schema
-
-
-class DebuggableGraphQLWSConsumer(GraphQLWSConsumer):
-    async def get_context(self, *args, **kwargs) -> object:
-        context = await super().get_context(*args, **kwargs)
-        context.tasks = self._handler.tasks
-        context.connectionInitTimeoutTask = None
-        return context
+from myapp.asgi import application  # your channels asgi
+from strawberry.channels.testing import GraphQLWebsocketCommunicator
 
 
 @pytest.fixture
-async def ws():
-    client = WebsocketCommunicator(
-        DebuggableGraphQLWSConsumer.as_asgi(
-            schema=schema, subscription_protocols=(GRAPHQL_WS_PROTOCOL,)
-        ),
-        "",
-        subprotocols=[
-            GRAPHQL_WS_PROTOCOL,
-        ],
-    )
-    res = await client.connect()
-    assert res == (True, GRAPHQL_WS_PROTOCOL)
-
+async def gql_communicator() -> GraphQLWebsocketCommunicator:
+    client = GraphQLWebsocketCommunicator(application=application, path="/graphql")
+    await client.gql_init()
     yield client
-
     await client.disconnect()
 
 
@@ -401,25 +373,12 @@ chat_subscription_query = """
 
 
 @pytest.mark.asyncio
-async def test_joinChatRooms_sends_welcome_message(ws):
-    await ws.send_json_to({"type": GQL_CONNECTION_INIT})
-    await ws.send_json_to(
-        {
-            "type": GQL_START,
-            "id": "demo_consumer",
-            "payload": {"query": f"{chat_subscription_query}"},
-        }
-    )
-    response = await ws.receive_json_from()
-    assert response["type"] == GQL_CONNECTION_ACK
-
-    response = await ws.receive_json_from()
-    assert response["type"] == GQL_DATA
-    assert response["id"] == "demo_consumer"
-    data = response["payload"]["data"]["joinChatRooms"]
-    assert data["currentUser"] == "foo"
-    assert "room1" in data["roomName"]
-    assert "hello" in data["message"]
+async def test_joinChatRooms_sends_welcome_message(gql_communicator):
+    async for result in gql_communicator.subscribe(query=chat_subscription_query):
+        data = result.data
+        assert data["currentUser"] == "foo"
+        assert "room1" in data["roomName"]
+        assert "hello" in data["message"]
 ```
 
 In order to test a real server connection we can use python

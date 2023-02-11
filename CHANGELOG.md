@@ -1,6 +1,69 @@
 CHANGELOG
 =========
 
+0.156.3 - 2023-02-10
+--------------------
+
+This release adds support for Mypy 1.0
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2516](https://github.com/strawberry-graphql/strawberry/pull/2516/)
+
+
+0.156.2 - 2023-02-09
+--------------------
+
+This release updates the typing for the resolver argument in
+`strawberry.field`i to support async resolvers.
+This means that now you won't get any type
+error from Pyright when using async resolver, like the following example:
+
+```python
+import strawberry
+
+
+async def get_user_age() -> int:
+    return 0
+
+
+@strawberry.type
+class User:
+    name: str
+    age: int = strawberry.field(resolver=get_user_age)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2528](https://github.com/strawberry-graphql/strawberry/pull/2528/)
+
+
+0.156.1 - 2023-02-09
+--------------------
+
+Add `GraphQLWebsocketCommunicator` for testing websockets on channels.
+i.e:
+
+```python
+import pytest
+from strawberry.channels.testing import GraphQLWebsocketCommunicator
+from myapp.asgi import application
+
+
+@pytest.fixture
+async def gql_communicator():
+    async with GraphQLWebsocketCommunicator(
+        application=application, path="/graphql"
+    ) as client:
+        yield client
+
+
+async def test_subscribe_echo(gql_communicator):
+    async for res in gql_communicator.subscribe(
+        query='subscription { echo(message: "Hi") }'
+    ):
+        assert res.data == {"echo": "Hi"}
+```
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #2458](https://github.com/strawberry-graphql/strawberry/pull/2458/)
+
+
 0.156.0 - 2023-02-08
 --------------------
 
