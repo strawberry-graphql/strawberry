@@ -1,6 +1,6 @@
 Release type: patch
 
-This patch introduces the `FieldAttributesRule` to the `QueryDepthLimiter` extension that provides
+This patch introduces the `FieldRule` dataclass to the `QueryDepthLimiter` extension that provides
 a more verbose way of specifying the rules by which a query's depth should be limited.
 
 These can be any or all of the field name, the field arguments, and the field keys. Multiple
@@ -29,14 +29,14 @@ the following query:
     }
 """
 ```
-can have its depth limited by the following `[FieldAttributesRule]`:
+can have its depth limited by the following `[FieldRule]`:
 ```python
 rules = [
-    FieldAttributesRule(
+    FieldRule(
         field_name=user,
         field_arguments={"name": "matt"},
     ),
-    FieldAttributesRule(
+    FieldRule(
         field_name=address,
     ),
 ]
