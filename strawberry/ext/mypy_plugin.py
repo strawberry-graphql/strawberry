@@ -588,10 +588,14 @@ class CustomDataclassTransformer:
             )
             and attributes
         ):
+            args = [info] if Decimal("1.0") <= MypyVersion.VERSION else []
+
             add_method(
                 ctx,
                 "__init__",
-                args=[attr.to_argument() for attr in attributes if attr.is_in_init],
+                args=[
+                    attr.to_argument(*args) for attr in attributes if attr.is_in_init
+                ],
                 return_type=NoneType(),
             )
 
@@ -833,8 +837,12 @@ class CustomDataclassTransformer:
                 assert isinstance(var, Var)
                 var.is_property = True
             else:
-                var = attr.to_var()
-                var.info = info
+                if Decimal("1.0") <= MypyVersion.VERSION:
+                    var = attr.to_var(current_info=info)
+                else:
+                    var = attr.to_var()  # type: ignore
+                    var.info = info
+
                 var.is_property = True
                 var._fullname = info.fullname + "." + var.name
                 info.names[var.name] = SymbolTableNode(MDEF, var)
@@ -850,8 +858,12 @@ class CustomDataclassTransformer:
         info = self._ctx.cls.info
         for attr in attributes:
             if isinstance(get_proper_type(attr.type), CallableType):
-                var = attr.to_var()
-                var.info = info
+                if Decimal("1.0") <= MypyVersion.VERSION:
+                    var = attr.to_var(current_info=info)
+                else:
+                    var = attr.to_var()  # type: ignore
+                    var.info = info
+
                 var.is_property = True
                 var.is_settable_property = True
                 var._fullname = info.fullname + "." + var.name

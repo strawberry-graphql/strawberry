@@ -1,3 +1,4 @@
+import sys
 from typing import Generic, TypeVar
 from typing_extensions import Annotated
 
@@ -27,3 +28,4 @@ class Query:
 
 if __name__ == "__main__":
     schema = strawberry.Schema(query=Query)
+    sys.stdout.write(f"{schema.as_str()}\n")
