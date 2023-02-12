@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 
 from strawberry.channels.router import GraphQLProtocolTypeRouter
-from tests.channels.schema import schema
+from tests.views.schema import schema
 
 
 def _fake_asgi():

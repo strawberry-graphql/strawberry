@@ -1,4 +1,5 @@
 import json
+import sys
 from typing import Any, Dict, Optional
 
 import pytest
@@ -6,13 +7,14 @@ import pytest
 from channels.testing import HttpCommunicator
 from strawberry.channels import GraphQLHTTPConsumer
 from strawberry.channels.handlers.http_handler import SyncGraphQLHTTPConsumer
-from tests.channels.schema import schema
+from tests.views.schema import schema
 
 pytestmark = pytest.mark.xfail(
+    sys.platform == "win32",
     reason=(
         "Some of these tests seems to crash on windows "
         "due to usage of database_sync_to_async"
-    )
+    ),
 )
 
 
@@ -252,16 +254,16 @@ async def test_returns_errors_and_data(consumer):
     )
     response = await client.get_response()
     assert response["status"] == 200
-    assert json.loads(response["body"]) == {
-        "data": {"alwaysFail": None, "hello": "Hello world"},
-        "errors": [
-            {
-                "locations": [{"column": 10, "line": 1}],
-                "message": "You are not authorized",
-                "path": ["alwaysFail"],
-            }
-        ],
-    }
+
+    body = json.loads(response["body"])
+    assert body["data"] == {"alwaysFail": None, "hello": "Hello world"}
+    assert body["errors"] == [
+        {
+            "locations": [{"column": 10, "line": 1}],
+            "message": "You are not authorized",
+            "path": ["alwaysFail"],
+        }
+    ]
 
 
 @pytest.mark.django_db
