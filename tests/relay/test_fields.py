@@ -323,6 +323,7 @@ attrs = [
     "fruits",
     "fruitsCustomResolver",
     "fruitsCustomResolverWithNodeConverter",
+    "fruitsCustomResolverWithNodeConverterForwardRef",
     "fruitsCustomResolverIterator",
     "fruitsCustomResolverIterable",
     "fruitsCustomResolverGenerator",
@@ -886,6 +887,7 @@ query TestQuery (
 custom_attrs = [
     "fruitsCustomResolver",
     "fruitsCustomResolverWithNodeConverter",
+    "fruitsCustomResolverWithNodeConverterForwardRef",
     "fruitsCustomResolverIterator",
     "fruitsCustomResolverIterable",
     "fruitsCustomResolverGenerator",

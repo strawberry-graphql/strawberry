@@ -144,6 +144,14 @@ def fruit_converter(fruit_alike: FruitAlike) -> Fruit:
     )
 
 
+def fruit_converter_forward_ref(fruit_alike: FruitAlike) -> "Fruit":
+    return Fruit(
+        id=fruit_alike.id,
+        name=fruit_alike.name,
+        color=fruit_alike.color,
+    )
+
+
 @strawberry.type
 class Query:
     node: strawberry.relay.Node
@@ -168,6 +176,18 @@ class Query:
 
     @strawberry.relay.connection(node_converter=fruit_converter)
     def fruits_custom_resolver_with_node_converter(
+        self,
+        info: Info,
+        name_endswith: Optional[str] = None,
+    ) -> List[FruitAlike]:
+        return [
+            FruitAlike(f.id, f.name, f.color)
+            for f in fruits.values()
+            if name_endswith is None or f.name.endswith(name_endswith)
+        ]
+
+    @strawberry.relay.connection(node_converter=fruit_converter_forward_ref)
+    def fruits_custom_resolver_with_node_converter_forward_ref(
         self,
         info: Info,
         name_endswith: Optional[str] = None,

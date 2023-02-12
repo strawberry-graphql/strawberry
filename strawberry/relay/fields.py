@@ -319,6 +319,11 @@ class ConnectionField(RelayField):
         if is_iterable and not is_connection and self.type_annotation is None:
             if self.node_converter is not None:
                 ntype = self.node_converter.__annotations__.get("return")
+                if isinstance(ntype, str):
+                    ntype = _eval_type(
+                        ForwardRef(ntype, is_argument=False), namespace, None
+                    )
+
                 if isinstance(ntype, LazyType):
                     ntype = ntype.resolve_type()
 
