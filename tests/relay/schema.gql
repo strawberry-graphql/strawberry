@@ -19,9 +19,6 @@ type FruitAsyncConnection {
 
   """Contains the nodes in this connection"""
   edges: [FruitAsyncEdge!]!
-
-  """Total quantity of existing nodes"""
-  totalCount: Int
 }
 
 """An edge in a connection."""
@@ -40,9 +37,6 @@ type FruitConnection {
 
   """Contains the nodes in this connection"""
   edges: [FruitEdge!]!
-
-  """Total quantity of existing nodes"""
-  totalCount: Int
 }
 
 """An edge in a connection."""
@@ -60,9 +54,6 @@ type FruitFruitCustomPaginationConnection {
 
   """Contains the nodes in this connection"""
   edges: [FruitEdge!]!
-
-  """Total quantity of existing nodes"""
-  totalCount: Int
   something: String!
 }
 

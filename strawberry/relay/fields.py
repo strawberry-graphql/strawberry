@@ -417,6 +417,7 @@ class ConnectionField(RelayField):
         **kwargs,
     ):
         return_type = cast(Connection[Node], info.return_type)
+        kwargs.setdefault("info", info)
         return return_type.from_nodes(nodes, **kwargs)
 
 

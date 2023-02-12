@@ -14,7 +14,6 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Sized,
     Tuple,
     Type,
     TypeVar,
@@ -647,8 +646,6 @@ class Connection(Generic[NodeType]):
             Pagination data for this connection
         edges:
             Contains the nodes in this connection
-        total_count:
-            Total quantity of existing nodes
 
     """
 
@@ -657,10 +654,6 @@ class Connection(Generic[NodeType]):
     )
     edges: List[Edge[NodeType]] = field(
         description="Contains the nodes in this connection",
-    )
-    total_count: Optional[int] = field(
-        description="Total quantity of existing nodes",
-        default=None,
     )
 
     @classmethod
@@ -673,8 +666,7 @@ class Connection(Generic[NodeType]):
             AsyncIterable[NodeType],
         ],
         *,
-        info: Optional[Info] = None,
-        total_count: Optional[int] = None,
+        info: Info,
         before: Optional[str] = None,
         after: Optional[str] = None,
         first: Optional[int] = None,
@@ -690,10 +682,6 @@ class Connection(Generic[NodeType]):
                 The strawberry execution info resolve the type name from
             nodes:
                 An iterable of nodes to transform to a connection
-            total_count:
-                Optionally provide a total count so that the connection
-                doesn't have to calculate it. Might be useful for some ORMs
-                for performance reasons.
             before:
                 Returns the items in the list that come before the specified cursor
             after:
@@ -710,21 +698,9 @@ class Connection(Generic[NodeType]):
             https://relay.dev/graphql/connections.htm#sec-Pagination-algorithm
 
         """
-        if total_count is None:
-            # Support ORMs that define .count() (e.g. django)
-            try:
-                total_count = int(nodes.count())  # type:ignore
-            except (AttributeError, ValueError, TypeError):
-                if isinstance(nodes, Sized):
-                    total_count = len(nodes)
-
-        # TODO: This should be configurable
-        max_results = 100
-        if max_results is None:
-            max_results = sys.maxsize
-
+        max_results = info.schema.config.relay_max_results
         start = 0
-        end: Optional[int] = total_count if total_count is not None else sys.maxsize
+        end: Optional[int] = None
 
         if after:
             after_type, after_parsed = from_base64(after)
@@ -744,8 +720,10 @@ class Connection(Generic[NodeType]):
                     f"Argument 'first' cannot be higher than {max_results}."
                 )
 
-            assert end is not None
-            end = min(end, start + first)
+            if end is not None:
+                start = max(0, end - 1)
+
+            end = start + first
         if isinstance(last, int):
             if last < 0:
                 raise ValueError("Argument 'last' must be a non-negative integer.")
@@ -755,35 +733,18 @@ class Connection(Generic[NodeType]):
                     f"Argument 'last' cannot be higher than {max_results}."
                 )
 
-            if end == sys.maxsize:
-                # This is the worst case, someone is asking for last without
-                # specifying an after argument. We basically want the
-                # total_count - last in here. If we don't have the total_count
-                # (e.g. because nodes is a generator), the slice below will
-                # have to iterate over it all, so we can transform it to a list
-                # here to retrieve that total_count right now
-                if total_count is None:
-                    nodes = list(nodes)
-                    total_count = len(nodes)
-
-                start = max(start, total_count - last)
-                end = None
-            else:
-                assert end is not None
+            if end is not None:
                 start = max(start, end - last)
+            else:
+                end = sys.maxsize
 
-        # If at this point end is still inf, consider it to be start + max_results
-        if end == sys.maxsize:
-            end = start + max_results
+        if end is None:
+            end = max_results
 
-        expected = end - start if end is not None else abs(start)
-        # If no parameters are given, end could be total_results at this point.
-        # Make sure we don't exceed max_results in here
-        if expected > max_results:
-            end = start + max_results
-            expected = end - start
-
+        expected = end - start if end != sys.maxsize else None
         # Overfetch by 1 to check if we have a next result
+        overfetch = end + 1 if end != sys.maxsize else end
+
         type_def = cast(TypeDefinition, cls._type_definition)  # type:ignore
         field_def = type_def.get_field("edges")
         assert field_def
@@ -800,16 +761,12 @@ class Connection(Generic[NodeType]):
                 try:
                     iterator = cast(
                         Union[AsyncIterator[NodeType], AsyncIterable[NodeType]],
-                        cast(Sequence, nodes)[
-                            start : end + 1 if end is not None else None
-                        ],
+                        cast(Sequence, nodes)[start:overfetch],
                     )
                 except TypeError:
                     # FIXME: Why mypy isn't narrowing this based on the if above?
                     assert isinstance(nodes, (AsyncIterator, AsyncIterable))
-                    iterator = aislice(
-                        nodes, start, end + 1 if end is not None else None
-                    )
+                    iterator = aislice(nodes, start, overfetch)
 
                 assert isinstance(iterator, (AsyncIterator, AsyncIterable))
                 edges: List[Edge] = [
@@ -817,24 +774,29 @@ class Connection(Generic[NodeType]):
                     async for i, v in aenumerate(iterator)
                 ]
 
-                # Remove the overfetched result
-                if len(edges) == expected + 1:
+                has_previous_page = start > 0
+                if expected is not None and len(edges) == expected + 1:
+                    # Remove the overfetched result
                     edges = edges[:-1]
                     has_next_page = True
+                elif end == sys.maxsize:
+                    # Last was asked without any after/before
+                    assert last is not None
+                    original_len = len(edges)
+                    edges = edges[-last:]
+                    has_next_page = False
+                    has_previous_page = len(edges) != original_len
                 else:
                     has_next_page = False
 
-                page_info = PageInfo(
-                    start_cursor=edges[0].cursor if edges else None,
-                    end_cursor=edges[-1].cursor if edges else None,
-                    has_previous_page=start > 0,
-                    has_next_page=has_next_page,
-                )
-
                 return cls(
                     edges=edges,
-                    page_info=page_info,
-                    total_count=total_count,
+                    page_info=PageInfo(
+                        start_cursor=edges[0].cursor if edges else None,
+                        end_cursor=edges[-1].cursor if edges else None,
+                        has_previous_page=has_previous_page,
+                        has_next_page=has_next_page,
+                    ),
                 )
 
             return resolver()
@@ -842,34 +804,37 @@ class Connection(Generic[NodeType]):
         try:
             iterator = cast(
                 Union[Iterator[NodeType], Iterable[NodeType]],
-                cast(Sequence, nodes)[start : end + 1 if end is not None else None],
+                cast(Sequence, nodes)[start:overfetch],
             )
         except TypeError:
             assert isinstance(nodes, (Iterable, Iterator))
-            iterator = itertools.islice(
-                nodes, start, end + 1 if end is not None else None
-            )
+            iterator = itertools.islice(nodes, start, overfetch)
 
         edges = [
             edge_class.from_node(v, cursor=start + i) for i, v in enumerate(iterator)
         ]
 
-        # Remove the overfetched result
-        if len(edges) == expected + 1:
+        has_previous_page = start > 0
+        if expected is not None and len(edges) == expected + 1:
+            # Remove the overfetched result
             edges = edges[:-1]
             has_next_page = True
+        elif end == sys.maxsize:
+            # Last was asked without any after/before
+            assert last is not None
+            original_len = len(edges)
+            edges = edges[-last:]
+            has_next_page = False
+            has_previous_page = len(edges) != original_len
         else:
             has_next_page = False
 
-        page_info = PageInfo(
-            start_cursor=edges[0].cursor if edges else None,
-            end_cursor=edges[-1].cursor if edges else None,
-            has_previous_page=start > 0,
-            has_next_page=has_next_page,
-        )
-
         return cls(
             edges=edges,
-            page_info=page_info,
-            total_count=total_count,
+            page_info=PageInfo(
+                start_cursor=edges[0].cursor if edges else None,
+                end_cursor=edges[-1].cursor if edges else None,
+                has_previous_page=has_previous_page,
+                has_next_page=has_next_page,
+            ),
         )
