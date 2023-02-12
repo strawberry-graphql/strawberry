@@ -1,7 +1,7 @@
 import sys
-from collections.abc import AsyncGenerator
 from typing import (  # type: ignore
     Any,
+    AsyncGenerator,
     Callable,
     ClassVar,
     Generic,

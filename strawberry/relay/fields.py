@@ -3,15 +3,17 @@ import dataclasses
 import inspect
 import sys
 from collections import defaultdict
-from collections.abc import AsyncIterable, AsyncIterator, Iterator
 from typing import (  # type: ignore[attr-defined]
     Any,
+    AsyncIterable,
+    AsyncIterator,
     Awaitable,
     Callable,
     DefaultDict,
     Dict,
     ForwardRef,
     Iterable,
+    Iterator,
     List,
     Mapping,
     Optional,

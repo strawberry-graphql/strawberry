@@ -1,7 +1,16 @@
 import itertools
 import sys
-from collections.abc import AsyncGenerator, AsyncIterator
-from typing import Any, AsyncIterable, List, Optional, Tuple, TypeVar, Union
+from typing import (
+    Any,
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 itertools.islice
 _T = TypeVar("_T")

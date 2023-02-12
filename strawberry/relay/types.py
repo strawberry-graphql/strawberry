@@ -3,15 +3,17 @@ import inspect
 import itertools
 import sys
 import uuid
-from collections.abc import AsyncIterable, AsyncIterator, Iterator
 from typing import (
     Any,
+    AsyncIterable,
+    AsyncIterator,
     Awaitable,
     Callable,
     ClassVar,
     Dict,
     Generic,
     Iterable,
+    Iterator,
     List,
     Optional,
     Sequence,

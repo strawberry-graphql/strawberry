@@ -4,9 +4,9 @@ pytestmark = [skip_on_windows, requires_pyright]
 
 
 CODE = """
-from collections.abc import AsyncIterator
 from typing import (
     Any,
+    AsyncIterator,
     AsyncGenerator,
     AsyncIterable,
     Generator,

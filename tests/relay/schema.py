@@ -1,9 +1,9 @@
 from collections import namedtuple
-from collections.abc import AsyncIterator
 from typing import (
     Any,
     AsyncGenerator,
     AsyncIterable,
+    AsyncIterator,
     Generator,
     Iterable,
     Iterator,
