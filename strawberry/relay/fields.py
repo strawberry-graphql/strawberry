@@ -175,7 +175,7 @@ class NodeField(RelayField):
         args: List[Any],
         kwargs: Dict[str, Any],
     ) -> AwaitableOrValue[List[Node]]:
-        gids: list[GlobalID] = kwargs["ids"]
+        gids: List[GlobalID] = kwargs["ids"]
 
         nodes_map: DefaultDict[Type[Node], List[str]] = defaultdict(list)
         # Store the index of the node in the list of nodes of the same type
