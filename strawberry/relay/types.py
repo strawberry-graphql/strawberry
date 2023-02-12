@@ -3,6 +3,7 @@ import inspect
 import itertools
 import sys
 import uuid
+from collections.abc import AsyncIterable, AsyncIterator, Iterator
 from typing import (
     Any,
     Awaitable,
@@ -31,7 +32,9 @@ from strawberry.scalars import ID
 from strawberry.type import StrawberryContainer
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
+from strawberry.utils.aio import aenumerate, aislice
 from strawberry.utils.await_maybe import AwaitableOrValue
+from strawberry.utils.inspect import in_async_context
 
 from .utils import from_base64, to_base64
 
@@ -663,7 +666,12 @@ class Connection(Generic[NodeType]):
     @classmethod
     def from_nodes(
         cls,
-        nodes: Iterable[NodeType],
+        nodes: Union[
+            Iterator[NodeType],
+            AsyncIterator[NodeType],
+            Iterable[NodeType],
+            AsyncIterable[NodeType],
+        ],
         *,
         info: Optional[Info] = None,
         total_count: Optional[int] = None,
@@ -785,11 +793,63 @@ class Connection(Generic[NodeType]):
             field = field.of_type
 
         edge_class = cast(Edge[NodeType], field)
-        iterator = (
-            cast(Sequence, nodes)[start : end + 1 if end is not None else None]
-            if hasattr(nodes, "__getitem__")
-            else itertools.islice(nodes, start, end + 1 if end is not None else None)
-        )
+
+        if isinstance(nodes, (AsyncIterator, AsyncIterable)) and in_async_context():
+
+            async def resolver():
+                try:
+                    iterator = cast(
+                        Union[AsyncIterator[NodeType], AsyncIterable[NodeType]],
+                        cast(Sequence, nodes)[
+                            start : end + 1 if end is not None else None
+                        ],
+                    )
+                except TypeError:
+                    # FIXME: Why mypy isn't narrowing this based on the if above?
+                    assert isinstance(nodes, (AsyncIterator, AsyncIterable))
+                    iterator = aislice(
+                        nodes, start, end + 1 if end is not None else None
+                    )
+
+                assert isinstance(iterator, (AsyncIterator, AsyncIterable))
+                edges: List[Edge] = [
+                    edge_class.from_node(v, cursor=start + i)
+                    async for i, v in aenumerate(iterator)
+                ]
+
+                # Remove the overfetched result
+                if len(edges) == expected + 1:
+                    edges = edges[:-1]
+                    has_next_page = True
+                else:
+                    has_next_page = False
+
+                page_info = PageInfo(
+                    start_cursor=edges[0].cursor if edges else None,
+                    end_cursor=edges[-1].cursor if edges else None,
+                    has_previous_page=start > 0,
+                    has_next_page=has_next_page,
+                )
+
+                return cls(
+                    edges=edges,
+                    page_info=page_info,
+                    total_count=total_count,
+                )
+
+            return resolver()
+
+        try:
+            iterator = cast(
+                Union[Iterator[NodeType], Iterable[NodeType]],
+                cast(Sequence, nodes)[start : end + 1 if end is not None else None],
+            )
+        except TypeError:
+            assert isinstance(nodes, (Iterable, Iterator))
+            iterator = itertools.islice(
+                nodes, start, end + 1 if end is not None else None
+            )
+
         edges = [
             edge_class.from_node(v, cursor=start + i) for i, v in enumerate(iterator)
         ]

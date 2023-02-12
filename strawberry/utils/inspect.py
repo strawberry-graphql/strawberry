@@ -1,7 +1,19 @@
+import asyncio
 import inspect
 from functools import lru_cache
 from typing import Any, Callable, Dict, Optional, TypeVar, Union, overload
 from typing_extensions import Literal, get_args
+
+
+def in_async_context() -> bool:
+    # Based on the way django checks if there's an event loop in the current thread
+    # https://github.com/django/django/blob/main/django/utils/asyncio.py
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return False
+    else:
+        return True
 
 
 @lru_cache(maxsize=250)

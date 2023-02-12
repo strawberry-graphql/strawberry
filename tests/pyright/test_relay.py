@@ -4,7 +4,18 @@ pytestmark = [skip_on_windows, requires_pyright]
 
 
 CODE = """
-from typing import Any, Iterable, List, Optional
+from collections.abc import AsyncIterator
+from typing import (
+    Any,
+    AsyncGenerator,
+    AsyncIterable,
+    Generator,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Union,
+)
 
 import strawberry
 from strawberry.types import Info
@@ -27,7 +38,12 @@ class FruitCustomPaginationConnection(strawberry.relay.Connection[Fruit]):
     @classmethod
     def from_nodes(
         cls,
-        nodes: Iterable[Fruit],
+        nodes: Union[
+            Iterator[Fruit],
+            AsyncIterator[Fruit],
+            Iterable[Fruit],
+            AsyncIterable[Fruit],
+        ],
         *,
         info: Optional[Info[Any, Any]] = None,
         total_count: Optional[int] = None,
@@ -55,15 +71,55 @@ class Query:
         self,
         info: Info[Any, Any],
         name_endswith: Optional[str] = None,
+    ) -> List[Fruit]:
+        ...
+
+    @strawberry.relay.connection
+    def fruits_custom_resolver_iterator(
+        self,
+        info: Info[Any, Any],
+        name_endswith: Optional[str] = None,
+    ) -> Iterator[Fruit]:
+        ...
+
+    @strawberry.relay.connection
+    def fruits_custom_resolver_iterable(
+        self,
+        info: Info[Any, Any],
+        name_endswith: Optional[str] = None,
     ) -> Iterable[Fruit]:
         ...
 
     @strawberry.relay.connection
-    def fruits_custom_resolver_returning_list(
+    def fruits_custom_resolver_generator(
         self,
         info: Info[Any, Any],
         name_endswith: Optional[str] = None,
-    ) -> List[Fruit]:
+    ) -> Generator[Fruit, None, None]:
+        ...
+
+    @strawberry.relay.connection
+    async def fruits_custom_resolver_async_iterator(
+        self,
+        info: Info[Any, Any],
+        name_endswith: Optional[str] = None,
+    ) -> AsyncIterator[Fruit]:
+        ...
+
+    @strawberry.relay.connection
+    async def fruits_custom_resolver_async_iterable(
+        self,
+        info: Info[Any, Any],
+        name_endswith: Optional[str] = None,
+    ) -> AsyncIterable[Fruit]:
+        ...
+
+    @strawberry.relay.connection
+    async def fruits_custom_resolver_async_generator(
+        self,
+        info: Info[Any, Any],
+        name_endswith: Optional[str] = None,
+    ) -> AsyncGenerator[Fruit, None]:
         ...
 
 reveal_type(Query.node)
@@ -74,7 +130,12 @@ reveal_type(Query.fruits)
 reveal_type(Query.fruits_conn)
 reveal_type(Query.fruits_custom_pagination)
 reveal_type(Query.fruits_custom_resolver)
-reveal_type(Query.fruits_custom_resolver_returning_list)
+reveal_type(Query.fruits_custom_resolver_iterator)
+reveal_type(Query.fruits_custom_resolver_iterable)
+reveal_type(Query.fruits_custom_resolver_generator)
+reveal_type(Query.fruits_custom_resolver_async_iterator)
+reveal_type(Query.fruits_custom_resolver_async_iterable)
+reveal_type(Query.fruits_custom_resolver_async_generator)
 """
 
 
@@ -85,57 +146,92 @@ def test_pyright():
         Result(
             type="information",
             message='Type of "Query.node" is "Node"',
-            line=64,
+            line=120,
             column=13,
         ),
         Result(
             type="information",
             message='Type of "Query.nodes" is "List[Node]"',
-            line=65,
+            line=121,
             column=13,
         ),
         Result(
             type="information",
             message='Type of "Query.node_optional" is "Node | None"',
-            line=66,
+            line=122,
             column=13,
         ),
         Result(
             type="information",
             message='Type of "Query.nodes_optional" is "List[Node | None]"',
-            line=67,
+            line=123,
             column=13,
         ),
         Result(
             type="information",
             message='Type of "Query.fruits" is "Connection[Fruit]"',
-            line=68,
+            line=124,
             column=13,
         ),
         Result(
             type="information",
             message='Type of "Query.fruits_conn" is "Connection[Fruit]"',
-            line=69,
+            line=125,
             column=13,
         ),
         Result(
             type="information",
             message='Type of "Query.fruits_custom_pagination" is '
             '"FruitCustomPaginationConnection"',
-            line=70,
+            line=126,
             column=13,
         ),
         Result(
             type="information",
             message='Type of "Query.fruits_custom_resolver" is "ConnectionField"',
-            line=71,
+            line=127,
             column=13,
         ),
         Result(
             type="information",
-            message='Type of "Query.fruits_custom_resolver_returning_list" is '
+            message='Type of "Query.fruits_custom_resolver_iterator" is '
             '"ConnectionField"',
-            line=72,
+            line=128,
+            column=13,
+        ),
+        Result(
+            type="information",
+            message='Type of "Query.fruits_custom_resolver_iterable" is '
+            '"ConnectionField"',
+            line=129,
+            column=13,
+        ),
+        Result(
+            type="information",
+            message='Type of "Query.fruits_custom_resolver_generator" is '
+            '"ConnectionField"',
+            line=130,
+            column=13,
+        ),
+        Result(
+            type="information",
+            message='Type of "Query.fruits_custom_resolver_async_iterator" is '
+            '"ConnectionField"',
+            line=131,
+            column=13,
+        ),
+        Result(
+            type="information",
+            message='Type of "Query.fruits_custom_resolver_async_iterable" is '
+            '"ConnectionField"',
+            line=132,
+            column=13,
+        ),
+        Result(
+            type="information",
+            message='Type of "Query.fruits_custom_resolver_async_generator" is '
+            '"ConnectionField"',
+            line=133,
             column=13,
         ),
     ]

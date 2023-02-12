@@ -1,4 +1,13 @@
-from typing import Iterable, List, Optional
+from collections.abc import AsyncIterator
+from typing import (
+    AsyncGenerator,
+    AsyncIterable,
+    Generator,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+)
 
 import strawberry
 from strawberry.relay.utils import to_base64
@@ -136,22 +145,72 @@ class Query:
         self,
         info: Info,
         name_endswith: Optional[str] = None,
-    ) -> Iterable[Fruit]:
-        for f in fruits.values():
-            if name_endswith is None or f.name.endswith(name_endswith):
-                yield f
-
-    @strawberry.relay.connection
-    def fruits_custom_resolver_returning_list(
-        self,
-        info: Info,
-        name_endswith: Optional[str] = None,
     ) -> List[Fruit]:
         return [
             f
             for f in fruits.values()
             if name_endswith is None or f.name.endswith(name_endswith)
         ]
+
+    @strawberry.relay.connection
+    def fruits_custom_resolver_iterator(
+        self,
+        info: Info,
+        name_endswith: Optional[str] = None,
+    ) -> Iterator[Fruit]:
+        for f in fruits.values():
+            if name_endswith is None or f.name.endswith(name_endswith):
+                yield f
+
+    @strawberry.relay.connection
+    def fruits_custom_resolver_iterable(
+        self,
+        info: Info,
+        name_endswith: Optional[str] = None,
+    ) -> Iterator[Fruit]:
+        for f in fruits.values():
+            if name_endswith is None or f.name.endswith(name_endswith):
+                yield f
+
+    @strawberry.relay.connection
+    def fruits_custom_resolver_generator(
+        self,
+        info: Info,
+        name_endswith: Optional[str] = None,
+    ) -> Generator[Fruit, None, None]:
+        for f in fruits.values():
+            if name_endswith is None or f.name.endswith(name_endswith):
+                yield f
+
+    @strawberry.relay.connection
+    async def fruits_custom_resolver_async_iterable(
+        self,
+        info: Info,
+        name_endswith: Optional[str] = None,
+    ) -> AsyncIterable[Fruit]:
+        for f in fruits.values():
+            if name_endswith is None or f.name.endswith(name_endswith):
+                yield f
+
+    @strawberry.relay.connection
+    async def fruits_custom_resolver_async_iterator(
+        self,
+        info: Info,
+        name_endswith: Optional[str] = None,
+    ) -> AsyncIterator[Fruit]:
+        for f in fruits.values():
+            if name_endswith is None or f.name.endswith(name_endswith):
+                yield f
+
+    @strawberry.relay.connection
+    async def fruits_custom_resolver_async_generator(
+        self,
+        info: Info,
+        name_endswith: Optional[str] = None,
+    ) -> AsyncGenerator[Fruit, None]:
+        for f in fruits.values():
+            if name_endswith is None or f.name.endswith(name_endswith):
+                yield f
 
 
 schema = strawberry.Schema(query=Query)

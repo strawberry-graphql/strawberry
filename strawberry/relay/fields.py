@@ -3,6 +3,7 @@ import dataclasses
 import inspect
 import sys
 from collections import defaultdict
+from collections.abc import AsyncIterable, AsyncIterator, Iterator
 from typing import (  # type: ignore[attr-defined]
     Any,
     Awaitable,
@@ -35,6 +36,7 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.fields.resolver import StrawberryResolver
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
+from strawberry.utils.aio import asyncgen_to_list
 from strawberry.utils.await_maybe import AwaitableOrValue
 from strawberry.utils.cached_property import cached_property
 
@@ -192,17 +194,33 @@ class NodeField(RelayField):
             for node_t, nodes in resolved_nodes.items()
             if inspect.isawaitable(nodes)
         }
+        # Async generators are not awaitable, so we need to handle them separately
+        asyncgen_nodes = {
+            node_t: nodes
+            for node_t, nodes in resolved_nodes.items()
+            if inspect.isasyncgen(nodes)
+        }
 
-        if any(inspect.isawaitable(v) for k, v in resolved_nodes.items()):
+        if awaitable_nodes or asyncgen_nodes:
 
             async def resolve(resolved=resolved_nodes):
                 resolved.update(
                     zip(
-                        awaitable_nodes.keys(),
+                        [
+                            *awaitable_nodes.keys(),
+                            *asyncgen_nodes.keys(),
+                        ],
                         # Resolve all awaitable nodes concurrently
-                        await asyncio.gather(*awaitable_nodes.values()),
+                        await asyncio.gather(
+                            *awaitable_nodes.values(),
+                            *(
+                                asyncgen_to_list(nodes)
+                                for nodes in asyncgen_nodes.values()
+                            ),
+                        ),
                     )
                 )
+
                 # Resolve any generator to lists
                 resolved = {node_t: list(nodes) for node_t, nodes in resolved.items()}
                 return [resolved[index_map[gid][0]][index_map[gid][1]] for gid in gids]
@@ -211,7 +229,7 @@ class NodeField(RelayField):
 
         # Resolve any generator to lists
         resolved = {
-            node_t: list(cast(Iterable[Node], nodes))
+            node_t: list(cast(Iterator[Node], nodes))
             for node_t, nodes in resolved_nodes.items()
         }
         return [resolved[index_map[gid][0]][index_map[gid][1]] for gid in gids]
@@ -275,13 +293,17 @@ class ConnectionField(RelayField):
                 origin and isinstance(origin, type) and issubclass(origin, Connection)
             )
             is_iterable = (
-                origin and isinstance(origin, type) and issubclass(origin, Iterable)
+                origin
+                and isinstance(origin, type)
+                and issubclass(
+                    origin, (Iterator, AsyncIterator, Iterable, AsyncIterable)
+                )
             )
             if not is_connection and not is_iterable:
                 raise TypeError(
                     "Connection nodes resolver needs to return either a "
-                    "`Connection[<NodeType]` or an Iterable like "
-                    "`Iterable[<NodeType>]`, `List[<NodeType>]`, etc"
+                    "`Connection[<NodeType]` or an Iterator/AsyncIterator like "
+                    "`Iterator[<NodeType>]`, `List[<NodeType>]`, etc"
                 )
 
             if is_iterable and not is_connection and self.type_annotation is None:
@@ -379,15 +401,18 @@ class ConnectionField(RelayField):
                     nodes=await cast(Awaitable, nodes),
                 )
 
-            return resolver()
-
         # Avoid info being passed twice in case the custom resolver has one
         kwargs.pop("info", None)
         return self.resolve_connection(cast(Iterable[Node], nodes), info, **kwargs)
 
     def resolve_connection(
         self,
-        nodes: Iterable[Node],
+        nodes: Union[
+            Iterator[NodeType],
+            AsyncIterator[NodeType],
+            Iterable[NodeType],
+            AsyncIterable[NodeType],
+        ],
         info: Info,
         **kwargs,
     ):
@@ -450,7 +475,15 @@ def node(
 @overload
 def connection(
     *,
-    resolver: _RESOLVER_TYPE[Union[Connection[NodeType], Iterable[NodeType]]],
+    resolver: _RESOLVER_TYPE[
+        Union[
+            Connection[NodeType],
+            Iterator[NodeType],
+            AsyncIterator[NodeType],
+            Iterable[NodeType],
+            AsyncIterable[NodeType],
+        ]
+    ],
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
@@ -486,7 +519,15 @@ def connection(
 
 @overload
 def connection(
-    resolver: _RESOLVER_TYPE[Union[Connection[NodeType], Iterable[NodeType]]],
+    resolver: _RESOLVER_TYPE[
+        Union[
+            Connection[NodeType],
+            Iterator[NodeType],
+            AsyncIterator[NodeType],
+            Iterable[NodeType],
+            AsyncIterable[NodeType],
+        ]
+    ],
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
@@ -514,8 +555,8 @@ def connection(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    graphql_type: Optional[Any] = None,
     # This init parameter is used by pyright to determine whether this field
+    graphql_type: Optional[Any] = None,
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
     init: Literal[True, False, None] = None,

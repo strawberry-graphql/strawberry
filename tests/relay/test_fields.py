@@ -319,11 +319,22 @@ query TestQuery (
 }}
 """
 
+attrs = [
+    "fruits",
+    "fruitsCustomResolver",
+    "fruitsCustomResolverIterator",
+    "fruitsCustomResolverIterable",
+    "fruitsCustomResolverGenerator",
+]
+async_attrs = [
+    *attrs,
+    "fruitsCustomResolverAsyncIterator",
+    "fruitsCustomResolverAsyncIterable",
+    "fruitsCustomResolverAsyncGenerator",
+]
 
-@pytest.mark.parametrize(
-    "query_attr",
-    ["fruits", "fruitsCustomResolver", "fruitsCustomResolverReturningList"],
-)
+
+@pytest.mark.parametrize("query_attr", attrs)
 def test_query_connection(query_attr: str):
     result = schema.execute_sync(
         fruits_query.format(query_attr),
@@ -384,10 +395,7 @@ def test_query_connection(query_attr: str):
     }
 
 
-@pytest.mark.parametrize(
-    "query_attr",
-    ["fruits", "fruitsCustomResolver", "fruitsCustomResolverReturningList"],
-)
+@pytest.mark.parametrize("query_attr", async_attrs)
 async def test_query_connection_async(query_attr: str):
     result = await schema.execute(
         fruits_query.format(query_attr),
@@ -448,10 +456,7 @@ async def test_query_connection_async(query_attr: str):
     }
 
 
-@pytest.mark.parametrize(
-    "query_attr",
-    ["fruits", "fruitsCustomResolver", "fruitsCustomResolverReturningList"],
-)
+@pytest.mark.parametrize("query_attr", attrs)
 def test_query_connection_filtering_first(query_attr: str):
     result = schema.execute_sync(
         fruits_query.format(query_attr),
@@ -488,10 +493,7 @@ def test_query_connection_filtering_first(query_attr: str):
     }
 
 
-@pytest.mark.parametrize(
-    "query_attr",
-    ["fruits", "fruitsCustomResolver", "fruitsCustomResolverReturningList"],
-)
+@pytest.mark.parametrize("query_attr", attrs)
 def test_query_connection_filtering_first_with_after(query_attr: str):
     result = schema.execute_sync(
         fruits_query.format(query_attr),
@@ -528,10 +530,7 @@ def test_query_connection_filtering_first_with_after(query_attr: str):
     }
 
 
-@pytest.mark.parametrize(
-    "query_attr",
-    ["fruits", "fruitsCustomResolver", "fruitsCustomResolverReturningList"],
-)
+@pytest.mark.parametrize("query_attr", attrs)
 def test_query_connection_filtering_last(query_attr: str):
     result = schema.execute_sync(
         fruits_query.format(query_attr),
@@ -568,10 +567,7 @@ def test_query_connection_filtering_last(query_attr: str):
     }
 
 
-@pytest.mark.parametrize(
-    "query_attr",
-    ["fruits", "fruitsCustomResolver", "fruitsCustomResolverReturningList"],
-)
+@pytest.mark.parametrize("query_attr", attrs)
 def test_query_connection_filtering_last_with_before(query_attr: str):
     result = schema.execute_sync(
         fruits_query.format(query_attr),
@@ -886,10 +882,21 @@ query TestQuery (
 }}
 """
 
+custom_attrs = [
+    "fruitsCustomResolver",
+    "fruitsCustomResolverIterator",
+    "fruitsCustomResolverIterable",
+    "fruitsCustomResolverGenerator",
+]
+custom_async_attrs = [
+    *attrs,
+    "fruitsCustomResolverAsyncIterator",
+    "fruitsCustomResolverAsyncIterable",
+    "fruitsCustomResolverAsyncGenerator",
+]
 
-@pytest.mark.parametrize(
-    "query_attr", ["fruitsCustomResolver", "fruitsCustomResolverReturningList"]
-)
+
+@pytest.mark.parametrize("query_attr", custom_attrs)
 def test_query_connection_custom_resolver(query_attr: str):
     result = schema.execute_sync(
         fruits_query_custom_resolver.format(query_attr),
@@ -942,9 +949,7 @@ def test_query_connection_custom_resolver(query_attr: str):
     }
 
 
-@pytest.mark.parametrize(
-    "query_attr", ["fruitsCustomResolver", "fruitsCustomResolverReturningList"]
-)
+@pytest.mark.parametrize("query_attr", custom_attrs)
 def test_query_connection_custom_resolver_filtering_first(query_attr: str):
     result = schema.execute_sync(
         fruits_query_custom_resolver.format(query_attr),
@@ -981,9 +986,7 @@ def test_query_connection_custom_resolver_filtering_first(query_attr: str):
     }
 
 
-@pytest.mark.parametrize(
-    "query_attr", ["fruitsCustomResolver", "fruitsCustomResolverReturningList"]
-)
+@pytest.mark.parametrize("query_attr", custom_attrs)
 def test_query_connection_custom_resolver_filtering_first_with_after(query_attr: str):
     result = schema.execute_sync(
         fruits_query_custom_resolver.format(query_attr),
@@ -1024,9 +1027,7 @@ def test_query_connection_custom_resolver_filtering_first_with_after(query_attr:
     }
 
 
-@pytest.mark.parametrize(
-    "query_attr", ["fruitsCustomResolver", "fruitsCustomResolverReturningList"]
-)
+@pytest.mark.parametrize("query_attr", custom_attrs)
 def test_query_connection_custom_resolver_filtering_last(query_attr: str):
     result = schema.execute_sync(
         fruits_query_custom_resolver.format(query_attr),
@@ -1063,9 +1064,7 @@ def test_query_connection_custom_resolver_filtering_last(query_attr: str):
     }
 
 
-@pytest.mark.parametrize(
-    "query_attr", ["fruitsCustomResolver", "fruitsCustomResolverReturningList"]
-)
+@pytest.mark.parametrize("query_attr", custom_attrs)
 def test_query_connection_custom_resolver_filtering_last_with_before(query_attr: str):
     result = schema.execute_sync(
         fruits_query_custom_resolver.format(query_attr),
