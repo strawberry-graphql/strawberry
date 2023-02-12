@@ -29,6 +29,7 @@ from typing_extensions import Literal, Self, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
+from strawberry.exceptions.missing_return_annotation import MissingReturnAnnotationError
 from strawberry.field import _RESOLVER_TYPE, StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.permission import BasePermission
@@ -40,7 +41,10 @@ from strawberry.utils.aio import asyncgen_to_list
 from strawberry.utils.await_maybe import AwaitableOrValue
 from strawberry.utils.cached_property import cached_property
 
+from .exceptions import RelayWrongAnnotationError, RelayWrongNodeResolverAnnotationError
 from .types import Connection, GlobalID, Node, NodeType
+
+_T = TypeVar("_T")
 
 
 class RelayField(StrawberryField):
@@ -49,6 +53,9 @@ class RelayField(StrawberryField):
     default_args: Dict[str, StrawberryArgument]
 
     def __init__(self, *args, **kwargs):
+        self.node_converter: Optional[Callable[[object], Node]] = kwargs.pop(
+            "node_converter", None
+        )
         default_args = getattr(self.__class__, "default_args", {})
         if isinstance(default_args, dict):
             self.default_args = default_args.copy()
@@ -281,40 +288,52 @@ class ConnectionField(RelayField):
 
     def __call__(self, resolver: _RESOLVER_TYPE):
         nodes_type = resolver.__annotations__.get("return")
-        if nodes_type is not None:
-            namespace = sys.modules[resolver.__module__].__dict__
-            if isinstance(nodes_type, str):
-                nodes_type = ForwardRef(nodes_type, is_argument=False)
-
-            resolved = _eval_type(nodes_type, namespace, None)
-            origin = get_origin(resolved)
-
-            is_connection = (
-                origin and isinstance(origin, type) and issubclass(origin, Connection)
+        if nodes_type is None:
+            raise MissingReturnAnnotationError(
+                self.name, resolver=StrawberryResolver(resolver)
             )
-            is_iterable = (
-                origin
-                and isinstance(origin, type)
-                and issubclass(
-                    origin, (Iterator, AsyncIterator, Iterable, AsyncIterable)
-                )
-            )
-            if not is_connection and not is_iterable:
-                raise TypeError(
-                    "Connection nodes resolver needs to return either a "
-                    "`Connection[<NodeType]` or an Iterator/AsyncIterator like "
-                    "`Iterator[<NodeType>]`, `List[<NodeType>]`, etc"
-                )
 
-            if is_iterable and not is_connection and self.type_annotation is None:
+        namespace = sys.modules[resolver.__module__].__dict__
+        if isinstance(nodes_type, str):
+            nodes_type = ForwardRef(nodes_type, is_argument=False)
+
+        resolved = _eval_type(nodes_type, namespace, None)
+        origin = get_origin(resolved)
+
+        is_connection = (
+            origin and isinstance(origin, type) and issubclass(origin, Connection)
+        )
+        is_iterable = (
+            origin
+            and isinstance(origin, type)
+            and issubclass(origin, (Iterator, AsyncIterator, Iterable, AsyncIterable))
+        )
+        if not is_connection and not is_iterable:
+            raise RelayWrongAnnotationError(
+                field_name=self.name,
+                resolver=StrawberryResolver(resolver),
+            )
+
+        if is_iterable and not is_connection and self.type_annotation is None:
+            if self.node_converter is not None:
+                ntype = self.node_converter.__annotations__.get("return")
+                if isinstance(ntype, LazyType):
+                    ntype = ntype.resolve_type()
+
+                if not ntype or not issubclass(ntype, Node):
+                    raise RelayWrongNodeResolverAnnotationError(
+                        field_name=self.name,
+                        resolver=StrawberryResolver(resolver),
+                    )
+            else:
                 ntype = get_args(resolved)[0]
                 if isinstance(ntype, LazyType):
                     ntype = ntype.resolve_type()
 
-                self.type_annotation = StrawberryAnnotation(
-                    Connection[ntype],  # type: ignore[valid-type]
-                    namespace=namespace,
-                )
+            self.type_annotation = StrawberryAnnotation(
+                Connection[ntype],  # type: ignore[valid-type]
+                namespace=namespace,
+            )
 
         return super().__call__(resolver)
 
@@ -418,6 +437,7 @@ class ConnectionField(RelayField):
     ):
         return_type = cast(Connection[Node], info.return_type)
         kwargs.setdefault("info", info)
+        kwargs.setdefault("node_converter", self.node_converter)
         return return_type.from_nodes(nodes, **kwargs)
 
 
@@ -432,6 +452,7 @@ def node(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    node_converter: Optional[Callable[[object], NodeType]] = None,
     # This init parameter is used by pyright to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
@@ -470,6 +491,7 @@ def node(
         default_factory=default_factory,
         metadata=metadata,
         directives=directives or (),
+        node_converter=node_converter,
     )
 
 
@@ -478,7 +500,6 @@ def connection(
     *,
     resolver: _RESOLVER_TYPE[
         Union[
-            Connection[NodeType],
             Iterator[NodeType],
             AsyncIterator[NodeType],
             Iterable[NodeType],
@@ -514,6 +535,7 @@ def connection(
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
     graphql_type: Optional[Any] = None,
+    node_converter: Optional[Callable[[Any], NodeType]] = None,
 ) -> Any:
     ...
 
@@ -522,7 +544,6 @@ def connection(
 def connection(
     resolver: _RESOLVER_TYPE[
         Union[
-            Connection[NodeType],
             Iterator[NodeType],
             AsyncIterator[NodeType],
             Iterable[NodeType],
@@ -544,6 +565,32 @@ def connection(
     ...
 
 
+@overload
+def connection(
+    resolver: _RESOLVER_TYPE[
+        Union[
+            Iterator[_T],
+            AsyncIterator[_T],
+            Iterable[_T],
+            AsyncIterable[_T],
+        ]
+    ],
+    *,
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
+    directives: Optional[Sequence[object]] = (),
+    graphql_type: Optional[Any] = None,
+    node_converter: Callable[[_T], NodeType],
+) -> ConnectionField:
+    ...
+
+
 def connection(
     resolver: Optional[_RESOLVER_TYPE[Any]] = None,
     *,
@@ -558,6 +605,7 @@ def connection(
     directives: Optional[Sequence[object]] = (),
     # This init parameter is used by pyright to determine whether this field
     graphql_type: Optional[Any] = None,
+    node_converter: Optional[Callable[[Any], NodeType]] = None,
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
     init: Literal[True, False, None] = None,
@@ -632,6 +680,7 @@ def connection(
         default_factory=default_factory,
         metadata=metadata,
         directives=directives or (),
+        node_converter=node_converter,
     )
     if resolver is not None:
         f = f(resolver)

@@ -7,6 +7,7 @@ from collections.abc import AsyncIterable, AsyncIterator, Iterator
 from typing import (
     Any,
     Awaitable,
+    Callable,
     ClassVar,
     Dict,
     Generic,
@@ -656,6 +657,7 @@ class Connection(Generic[NodeType]):
         description="Contains the nodes in this connection",
     )
 
+    @overload
     @classmethod
     def from_nodes(
         cls,
@@ -671,6 +673,51 @@ class Connection(Generic[NodeType]):
         after: Optional[str] = None,
         first: Optional[int] = None,
         last: Optional[int] = None,
+        **kwargs,
+    ) -> Self:
+        ...
+
+    @overload
+    @classmethod
+    def from_nodes(
+        cls,
+        nodes: Union[
+            Iterator[_T],
+            AsyncIterator[_T],
+            Iterable[_T],
+            AsyncIterable[_T],
+        ],
+        *,
+        info: Info,
+        before: Optional[str] = None,
+        after: Optional[str] = None,
+        first: Optional[int] = None,
+        last: Optional[int] = None,
+        node_converter: Callable[[_T], NodeType],
+        **kwargs,
+    ) -> Self:
+        ...
+
+    @classmethod
+    def from_nodes(
+        cls,
+        nodes: Union[
+            Iterator[NodeType],
+            AsyncIterator[NodeType],
+            Iterable[NodeType],
+            AsyncIterable[NodeType],
+            Iterator[_T],
+            AsyncIterator[_T],
+            Iterable[_T],
+            AsyncIterable[_T],
+        ],
+        *,
+        info: Info,
+        before: Optional[str] = None,
+        after: Optional[str] = None,
+        first: Optional[int] = None,
+        last: Optional[int] = None,
+        node_converter: Optional[Callable[[_T], NodeType]] = None,
         **kwargs,
     ):
         """Resolve a connection from the list of nodes.
@@ -766,11 +813,22 @@ class Connection(Generic[NodeType]):
                 except TypeError:
                     # FIXME: Why mypy isn't narrowing this based on the if above?
                     assert isinstance(nodes, (AsyncIterator, AsyncIterable))
-                    iterator = aislice(nodes, start, overfetch)
+                    iterator = aislice(
+                        nodes,  # type: ignore[arg-type]
+                        start,
+                        overfetch,
+                    )
 
                 assert isinstance(iterator, (AsyncIterator, AsyncIterable))
                 edges: List[Edge] = [
-                    edge_class.from_node(v, cursor=start + i)
+                    edge_class.from_node(
+                        (
+                            node_converter(cast(_T, v))
+                            if node_converter is not None
+                            else cast(NodeType, v)  # type: ignore[redundant-cast]
+                        ),
+                        cursor=start + i,
+                    )
                     async for i, v in aenumerate(iterator)
                 ]
 
@@ -808,10 +866,22 @@ class Connection(Generic[NodeType]):
             )
         except TypeError:
             assert isinstance(nodes, (Iterable, Iterator))
-            iterator = itertools.islice(nodes, start, overfetch)
+            iterator = itertools.islice(
+                nodes,  # type: ignore[arg-type]
+                start,
+                overfetch,
+            )
 
         edges = [
-            edge_class.from_node(v, cursor=start + i) for i, v in enumerate(iterator)
+            edge_class.from_node(
+                (
+                    node_converter(cast(_T, v))
+                    if node_converter is not None
+                    else cast(NodeType, v)  # type: ignore[redundant-cast]
+                ),
+                cursor=start + i,
+            )
+            for i, v in enumerate(iterator)
         ]
 
         has_previous_page = start > 0
