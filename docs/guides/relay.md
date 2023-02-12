@@ -279,8 +279,8 @@ when defining the field.
 
 We can define custom resolvers for the `Connection` as a way to pre-filter
 the results. All that needs to be done is to decorate the resolver with
-`@strawberry.relay.connection` and return an `Iterable` of that given
-`Node` type in it. For example, suppose we want to return the pagination
+`@strawberry.relay.connection` and return an `Iterator`/`AsyncIterator` of that
+given `Node` type in it. For example, suppose we want to return the pagination
 of all fruits whose name starts with a given string:
 
 ```python
@@ -310,6 +310,49 @@ type Query {
   ): FruitConnection!
 }
 ```
+
+The custom resolver can to be annotated with any of the following:
+
+- `List[<NodeType>]`
+- `Iterator[<NodeType>]`
+- `Iterable[<NodeType>]`
+- `AsyncIterator[<NodeType>]`
+- `AsyncIterable[<NodeType>]`
+- `Generator[<NodeType>, Any, Any]`
+- `AsyncGenerator[<NodeType>, Any]`
+
+<Note>
+
+If your custom resolver returns something different than the expected type
+(e.g. a django model, and you are not using the django integration), you can pass
+a `node_converter` function to the `Connection` to convert it properly, like:
+
+```python
+def fruit_converter(model: models.Fruit) -> Fruit:
+    return Fruit(id=model.pk, name=model.name, weight=model.weight)
+
+
+@strawberry.type
+class Query:
+    @relay.connection(node_converter=fruit_converter)
+    def fruits_with_filter(
+        self,
+        info: Info,
+        name_endswith: str,
+    ) -> Iterable[Fruit]:
+        return models.Fruit.objects.filter(name__endswith=name_endswith)
+```
+
+The main advantage of this approach instead of converting it inside the custom
+resolver is that the `Connection` will paginate the `QuerySet` first, which in
+case of django will make sure that only the paginated results are fetched from the
+database. After that, the `fruit_converter` function will be called for each result
+to retrieve the correct object for it.
+
+We used django for this example, but the same applies to any other other
+similar use case, like SQLAlchemy, etc.
+
+</Note>
 
 ### The GlobalID scalar
 
