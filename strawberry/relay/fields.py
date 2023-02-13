@@ -41,7 +41,10 @@ from strawberry.utils.aio import asyncgen_to_list, resolve_awaitable
 from strawberry.utils.await_maybe import AwaitableOrValue
 from strawberry.utils.cached_property import cached_property
 
-from .exceptions import RelayWrongAnnotationError
+from .exceptions import (
+    RelayWrongAnnotationError,
+    RelayWrongNodeResolverAnnotationError,
+)
 from .types import Connection, GlobalID, Node, NodeIterableType, NodeType
 
 _T = TypeVar("_T")
@@ -133,9 +136,7 @@ class NodeField(RelayField):
             }
 
     def __call__(self, resolver):
-        raise TypeError(
-            "`NodeField` cannot have a resolver, use `@strawberry.field` instead."
-        )
+        raise NotImplementedError
 
     def get_result(
         self,
@@ -291,11 +292,16 @@ class ConnectionField(RelayField):
         }
 
     def __call__(self, resolver: _RESOLVER_TYPE):
+        retval = super().__call__(resolver)
+        assert self.base_resolver
+
+        field_name = self.base_resolver.wrapped_func.__name__
         namespace = sys.modules[resolver.__module__].__dict__
         resolved = get_type_hints(cast(Type, resolver), namespace).get("return")
         if resolved is None:
             raise MissingReturnAnnotationError(
-                self.name, resolver=StrawberryResolver(resolver)
+                field_name,
+                resolver=StrawberryResolver(resolver),
             )
 
         origin = get_origin(resolved)
@@ -310,22 +316,37 @@ class ConnectionField(RelayField):
         )
         if not is_connection and not is_iterable:
             raise RelayWrongAnnotationError(
-                field_name=self.name,
+                field_name=field_name,
                 resolver=StrawberryResolver(resolver),
             )
 
         if is_iterable and not is_connection and self.type_annotation is None:
             if self.node_converter is not None:
                 ntype = get_type_hints(self.node_converter).get("return")
+                if ntype is None:
+                    raise MissingReturnAnnotationError(
+                        field_name,
+                        resolver=self.base_resolver,
+                    )
+                if not isinstance(ntype, type) or not issubclass(ntype, Node):
+                    raise RelayWrongNodeResolverAnnotationError(
+                        field_name,
+                        resolver=self.base_resolver,
+                    )
             else:
                 ntype = get_args(resolved)[0]
+                if not issubclass(ntype, Node):
+                    raise RelayWrongAnnotationError(
+                        field_name,
+                        resolver=StrawberryResolver(resolver),
+                    )
 
             self.type_annotation = StrawberryAnnotation(
                 Connection[ntype],  # type: ignore[valid-type]
                 namespace=namespace,
             )
 
-        return super().__call__(resolver)
+        return retval
 
     @cached_property
     def resolver_args(self) -> Set[str]:

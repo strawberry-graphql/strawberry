@@ -18,7 +18,7 @@ class RelayWrongAnnotationError(StrawberryException):
             f'Unable to determine the connection type of field "{field_name}". '
             "It should be annotated with a return value of `List[<NodeType>]`, "
             "`Iterable[<NodeType>]`, `Iterator[<NodeType>]`, "
-            "`AsyncIterable[<NodeType>]` or `AsyncIterator[<NodeType]`"
+            "`AsyncIterable[<NodeType>]` or `AsyncIterator[<NodeType>]`"
         )
         self.rich_message = (
             f"Wrong annotation for field `[underline]{self.field_name}[/]`"
@@ -27,7 +27,7 @@ class RelayWrongAnnotationError(StrawberryException):
             "To fix this error you can annotate the return it using "
             "a return value of `List[<NodeType>]`, "
             "`Iterable[<NodeType>]`, `Iterator[<NodeType>]`, "
-            "`AsyncIterable[<NodeType>]` or `AsyncIterator[<NodeType]`"
+            "`AsyncIterable[<NodeType>]` or `AsyncIterator[<NodeType>]`"
         )
         self.annotation_message = "relay custom resolver wrong annotation"
 
@@ -50,11 +50,12 @@ class RelayWrongNodeResolverAnnotationError(StrawberryException):
         self.message = (
             f'Unable to determine the connection type of field "{field_name}". '
             "The `node_resolver` function should be annotated with a return value "
-            "of `<NodeType>`, "
+            "of `<NodeType>`"
         )
         self.rich_message = (
-            f"Wrong annotation for field `[underline]{self.field_name}[/]`'s "
-            "`node_resolver` function"
+            "Wrong annotation for field `node_resolver` function used "
+            "in the `@relay.connection` decorator of field "
+            "[underline]{self.field_name}[/]`"
         )
         self.suggestion = (
             "To fix this error you can annotate the `node_resolver` function "
