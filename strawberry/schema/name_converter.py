@@ -28,6 +28,12 @@ class NameConverter:
     def __init__(self, auto_camel_case: bool = True) -> None:
         self.auto_camel_case = auto_camel_case
 
+    def apply_naming_config(self, name: str) -> str:
+        if self.auto_camel_case:
+            name = to_camel_case(name)
+
+        return name
+
     def from_type(
         self,
         type_: Union[StrawberryType, StrawberryDirective, StrawberryDirective],
@@ -46,8 +52,8 @@ class NameConverter:
             return self.from_union(type_)
         elif isinstance(type_, ScalarDefinition):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
-
-        raise TypeError(f"Unexpected type '{type_}'")
+        else:
+            return self.apply_naming_config(str(type_))
 
     def from_argument(self, argument: StrawberryArgument) -> str:
         return self.get_graphql_name(argument)
@@ -96,8 +102,14 @@ class NameConverter:
             if isinstance(type_, LazyType):
                 type_ = cast(StrawberryType, type_.resolve_type())
 
-            assert hasattr(type_, "_type_definition")
-            name += self.from_type(type_._type_definition)
+            if hasattr(type_, "_type_definition"):
+                type_name = self.from_type(type_._type_definition)
+            else:
+                # This should only be hit when generating names for type-related
+                # exceptions
+                type_name = self.from_type(type_)
+
+            name += type_name
 
         return name
 
@@ -165,7 +177,4 @@ class NameConverter:
 
         assert obj.python_name
 
-        if self.auto_camel_case:
-            return to_camel_case(obj.python_name)
-
-        return obj.python_name
+        return self.apply_naming_config(obj.python_name)
