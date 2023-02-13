@@ -1,5 +1,4 @@
 import json
-import sys
 from typing import Any, Dict, Optional
 
 import pytest
@@ -10,10 +9,8 @@ from strawberry.channels.handlers.http_handler import SyncGraphQLHTTPConsumer
 from tests.views.schema import schema
 
 pytestmark = pytest.mark.xfail(
-    sys.platform == "win32",
     reason=(
-        "Some of these tests seems to crash on windows "
-        "due to usage of database_sync_to_async"
+        "Some of these tests seems to crash due to usage of database_sync_to_async"
     ),
 )
 
