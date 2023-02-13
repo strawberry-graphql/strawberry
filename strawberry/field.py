@@ -125,7 +125,7 @@ class StrawberryField(dataclasses.Field):
             try:
                 self.default_value = default_factory()
             except TypeError as exc:
-                raise InvalidDefaultFactoryError() from exc
+                raise InvalidDefaultFactoryError from exc
 
         self.is_subscription = is_subscription
 
@@ -245,7 +245,6 @@ class StrawberryField(dataclasses.Field):
             if self.base_resolver is not None:
                 # Handle unannotated functions (such as lambdas)
                 if self.base_resolver.type is not None:
-
                     # Generics will raise MissingTypesForGenericError later
                     # on if we let it be returned. So use `type_annotation` instead
                     # which is the same behaviour as having no type information.

@@ -117,7 +117,7 @@ class GraphQLView(HTTPMethodView):
             template = get_graphiql_html(False)
             return self.render_template(template=template)
 
-        raise NotFound()
+        raise NotFound
 
     async def get_response(
         self, response_data: GraphQLHTTPResponse, context: StrawberrySanicContext

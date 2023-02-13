@@ -58,7 +58,7 @@ class HTTPHandler:
 
         elif self.should_render_graphiql(request):
             return self.render_graphiql()
-        raise web.HTTPNotFound()
+        raise web.HTTPNotFound
 
     async def post(self, request: web.Request) -> web.StreamResponse:
         request_data = await self.get_request_data(request)

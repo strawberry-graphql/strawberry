@@ -427,7 +427,6 @@ def info_directive_schema() -> strawberry.Schema:
 
 
 def test_info_directive_schema(info_directive_schema: strawberry.Schema):
-
     expected_schema = '''
     """Interpolate string on the server from context data"""
     directive @interpolate on FIELD
@@ -560,7 +559,6 @@ def test_name_first_directive_value():
 
 
 def test_named_based_directive_value_is_deprecated():
-
     with pytest.deprecated_call(match=r"Argument name-based matching of 'value'"):
 
         @strawberry.type

@@ -40,7 +40,6 @@ class TypeScriptPlugin(QueryCodegenPlugin):
 
     def _get_type_name(self, type_: GraphQLType) -> str:
         if isinstance(type_, GraphQLOptional):
-
             return f"{self._get_type_name(type_.of_type)} | undefined"
 
         if isinstance(type_, GraphQLList):

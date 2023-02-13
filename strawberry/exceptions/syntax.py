@@ -38,7 +38,6 @@ class Syntax(RichSyntax):
         current_line = self.line_range[0] or 0
 
         for segment in segments:
-
             if segment.text == "\n":
                 # 3 = | + space + space
                 prefix = " " * (self._numbers_column_width + 3)

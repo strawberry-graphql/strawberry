@@ -49,7 +49,6 @@ class Schema(BaseSchema):
         schema_directives: Iterable[object] = (),
         enable_federation_2: bool = False,
     ):
-
         query = self._get_federation_query_type(query)
 
         super().__init__(
@@ -160,7 +159,6 @@ class Schema(BaseSchema):
             definition = cast(TypeDefinition, type_.definition)
 
             if hasattr(definition.origin, "resolve_reference"):
-
                 resolve_reference = definition.origin.resolve_reference
 
                 func_args = get_func_args(resolve_reference)

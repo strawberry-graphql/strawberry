@@ -16,12 +16,12 @@ class StrawberryType(ABC):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> Union[StrawberryType, type]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def is_generic(self) -> bool:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def has_generic(self, type_var) -> bool:
         return False

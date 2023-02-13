@@ -144,15 +144,15 @@ class QueryCodegen:
         operations = self._get_operations(ast)
 
         if not operations:
-            raise NoOperationProvidedError()
+            raise NoOperationProvidedError
 
         if len(operations) > 1:
-            raise MultipleOperationsProvidedError()
+            raise MultipleOperationsProvidedError
 
         operation = operations[0]
 
         if operation.name is None:
-            raise NoOperationNameProvidedError()
+            raise NoOperationNameProvidedError
 
         self.operation = self._convert_operation(operation)
 
@@ -188,7 +188,6 @@ class QueryCodegen:
     def _convert_selection_set(
         self, selection_set: Optional[SelectionSetNode]
     ) -> List[GraphQLSelection]:
-
         if selection_set is None:
             return []
 
@@ -478,7 +477,6 @@ class QueryCodegen:
     def _get_field(
         self, selection: FieldNode, class_name: str, parent_type: TypeDefinition
     ) -> GraphQLField:
-
         if selection.selection_set:
             return self._field_from_selection_set(selection, class_name, parent_type)
 

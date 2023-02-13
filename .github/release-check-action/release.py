@@ -29,7 +29,7 @@ def get_release_info(file_path: Path) -> ReleaseInfo:
         match = RELEASE_TYPE_REGEX.match(line)
 
         if not match:
-            raise InvalidReleaseFileError()
+            raise InvalidReleaseFileError
 
         change_type_key = match.group(1)
         change_type = ChangeType[change_type_key.upper()]

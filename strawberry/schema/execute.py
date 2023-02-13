@@ -75,7 +75,7 @@ async def execute(
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
         if not execution_context.query:
-            raise MissingQueryError()
+            raise MissingQueryError
 
         async with extensions_runner.parsing():
             try:
@@ -168,7 +168,7 @@ def execute_sync(
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
         if not execution_context.query:
-            raise MissingQueryError()
+            raise MissingQueryError
 
         with extensions_runner.parsing():
             try:

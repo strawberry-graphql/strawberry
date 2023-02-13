@@ -1087,7 +1087,6 @@ def test_supports_generic_input_type():
 def test_generic_interface():
     @strawberry.interface
     class ObjectType:
-
         obj: strawberry.Private[Any]
 
         @strawberry.field

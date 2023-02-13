@@ -86,7 +86,7 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
             elif self.scope["method"] == "POST":
                 result = await self.post(body)
             else:
-                raise MethodNotAllowed()
+                raise MethodNotAllowed
         except MethodNotAllowed:
             await self.send_response(
                 405,
@@ -129,7 +129,7 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
 
             return Result(response=json.dumps(result).encode())
         else:
-            raise MethodNotAllowed()
+            raise MethodNotAllowed
 
     async def post(self, body: bytes) -> Result:
         request_data = await self.parse_body(body)

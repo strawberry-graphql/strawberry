@@ -43,7 +43,6 @@ VALUE_PARAMSPEC = ReservedType(name="value", type=StrawberryDirectiveValue)
 
 
 class StrawberryDirectiveResolver(StrawberryResolver[T]):
-
     RESERVED_PARAMSPEC = (
         INFO_PARAMSPEC,
         VALUE_PARAMSPEC,

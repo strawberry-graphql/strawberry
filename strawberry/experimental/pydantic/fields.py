@@ -87,7 +87,7 @@ def get_basic_type(type_) -> Type[Any]:
         type_ = FIELDS_MAP.get(type_)
 
         if type_ is None:
-            raise UnsupportedTypeError()
+            raise UnsupportedTypeError
 
     if is_new_type(type_):
         return new_type_supertype(type_)

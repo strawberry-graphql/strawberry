@@ -4,7 +4,6 @@ from strawberry.utils.typing import get_optional_annotation
 
 
 def test_get_optional_annotation():
-
     # Pair Union
     assert get_optional_annotation(Optional[Union[str, bool]]) == Union[str, bool]
 

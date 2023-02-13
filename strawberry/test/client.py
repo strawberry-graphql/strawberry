@@ -62,7 +62,6 @@ class BaseGraphQLTestClient(ABC):
         variables: Optional[Dict[str, Mapping]] = None,
         files: Optional[Dict[str, object]] = None,
     ) -> Dict[str, object]:
-
         body: Dict[str, object] = {"query": query}
 
         if variables:

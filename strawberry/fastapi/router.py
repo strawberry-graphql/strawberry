@@ -79,7 +79,7 @@ class GraphQLRouter(APIRouter):
             elif custom_context is None:
                 return default_context
             else:
-                raise InvalidCustomContext()
+                raise InvalidCustomContext
 
         # replace the signature parameters of dependency...
         # ...with the old parameters minus the first argument as it will be replaced...

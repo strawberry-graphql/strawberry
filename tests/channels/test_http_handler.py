@@ -126,7 +126,6 @@ async def test_fails_on_multipart_body(consumer):
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 @pytest.mark.parametrize("body", [b"{}", b'{"foo": "bar"}'])
 async def test_fails_on_missing_query(consumer, body: bytes):
-
     client = HttpCommunicator(
         consumer.as_asgi(schema=schema),
         "POST",

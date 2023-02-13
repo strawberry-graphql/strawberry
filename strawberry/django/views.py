@@ -135,7 +135,7 @@ class BaseView(View):
 
     def _render_graphiql(self, request: HttpRequest, context=None):
         if not self.graphiql:
-            raise Http404()
+            raise Http404
 
         try:
             template = Template(render_to_string("graphql/graphiql.html"))
