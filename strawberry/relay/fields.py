@@ -3,7 +3,7 @@ import dataclasses
 import inspect
 import sys
 from collections import defaultdict
-from typing import (  # type: ignore[attr-defined]
+from typing import (
     Any,
     AsyncIterable,
     AsyncIterator,
@@ -11,7 +11,6 @@ from typing import (  # type: ignore[attr-defined]
     Callable,
     DefaultDict,
     Dict,
-    ForwardRef,
     Iterable,
     Iterator,
     List,
@@ -23,11 +22,10 @@ from typing import (  # type: ignore[attr-defined]
     Type,
     TypeVar,
     Union,
-    _eval_type,
     cast,
     overload,
 )
-from typing_extensions import Literal, Self, get_args, get_origin
+from typing_extensions import Literal, Self, get_args, get_origin, get_type_hints
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
@@ -39,12 +37,12 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.fields.resolver import StrawberryResolver
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
-from strawberry.utils.aio import asyncgen_to_list
+from strawberry.utils.aio import asyncgen_to_list, resolve_awaitable
 from strawberry.utils.await_maybe import AwaitableOrValue
 from strawberry.utils.cached_property import cached_property
 
-from .exceptions import RelayWrongAnnotationError, RelayWrongNodeResolverAnnotationError
-from .types import Connection, GlobalID, Node, NodeType
+from .exceptions import RelayWrongAnnotationError
+from .types import Connection, GlobalID, Node, NodeIterableType, NodeType
 
 _T = TypeVar("_T")
 
@@ -54,13 +52,14 @@ class RelayField(StrawberryField):
 
     default_args: Dict[str, StrawberryArgument]
 
-    def __init__(self, *args, **kwargs):
-        self.node_converter: Optional[Callable[[object], Node]] = kwargs.pop(
-            "node_converter", None
-        )
-        default_args = getattr(self.__class__, "default_args", {})
-        if isinstance(default_args, dict):
-            self.default_args = default_args.copy()
+    def __init__(
+        self,
+        *args,
+        node_converter: Optional[Callable[[object], Node]] = None,
+        **kwargs,
+    ):
+        self.node_converter = node_converter
+
         base_resolver = kwargs.pop("base_resolver", None)
         super().__init__(*args, **kwargs)
         if base_resolver:
@@ -115,30 +114,28 @@ class NodeField(RelayField):
         super().__init__(*args, **kwargs)
 
         if not self.base_resolver and self.is_list:
-            self.default_args.update(
-                {
-                    "ids": StrawberryArgument(
-                        python_name="ids",
-                        graphql_name=None,
-                        type_annotation=StrawberryAnnotation(List[GlobalID]),
-                        description="The IDs of the objects.",
-                    ),
-                }
-            )
+            self.default_args = {
+                "ids": StrawberryArgument(
+                    python_name="ids",
+                    graphql_name=None,
+                    type_annotation=StrawberryAnnotation(List[GlobalID]),
+                    description="The IDs of the objects.",
+                ),
+            }
         elif not self.base_resolver:
-            self.default_args.update(
-                {
-                    "id": StrawberryArgument(
-                        python_name="id",
-                        graphql_name=None,
-                        type_annotation=StrawberryAnnotation(GlobalID),
-                        description="The ID of the object.",
-                    ),
-                }
-            )
+            self.default_args = {
+                "id": StrawberryArgument(
+                    python_name="id",
+                    graphql_name=None,
+                    type_annotation=StrawberryAnnotation(GlobalID),
+                    description="The ID of the object.",
+                ),
+            }
 
     def __call__(self, resolver):
-        raise TypeError("NodeField cannot have a resolver, use a common field instead.")
+        raise TypeError(
+            "`NodeField` cannot have a resolver, use `@strawberry.field` instead."
+        )
 
     def get_result(
         self,
@@ -148,10 +145,9 @@ class NodeField(RelayField):
         kwargs: Dict[str, Any],
     ) -> Union[Awaitable[Any], Any]:
         assert info is not None
-        if self.is_list:
-            return self.resolve_nodes(source, info, args, kwargs)
-        else:
-            return self.resolve_node(source, info, args, kwargs)
+        resolver = self.resolve_nodes if self.is_list else self.resolve_node
+
+        return resolver(source, info, args, kwargs)
 
     def resolve_node(
         self,
@@ -251,55 +247,57 @@ class ConnectionField(RelayField):
 
     """
 
-    default_args: Dict[str, StrawberryArgument] = {
-        "before": StrawberryArgument(
-            python_name="before",
-            graphql_name=None,
-            type_annotation=StrawberryAnnotation(Optional[str]),
-            description=(
-                "Returns the items in the list that come before the specified cursor."
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.default_args = {
+            "before": StrawberryArgument(
+                python_name="before",
+                graphql_name=None,
+                type_annotation=StrawberryAnnotation(Optional[str]),
+                description=(
+                    "Returns the items in the list that come before the "
+                    "specified cursor."
+                ),
+                default=None,
             ),
-            default=None,
-        ),
-        "after": StrawberryArgument(
-            python_name="after",
-            graphql_name=None,
-            type_annotation=StrawberryAnnotation(Optional[str]),
-            description=(
-                "Returns the items in the list that come after the specified cursor."
+            "after": StrawberryArgument(
+                python_name="after",
+                graphql_name=None,
+                type_annotation=StrawberryAnnotation(Optional[str]),
+                description=(
+                    "Returns the items in the list that come after the "
+                    "specified cursor."
+                ),
+                default=None,
             ),
-            default=None,
-        ),
-        "first": StrawberryArgument(
-            python_name="first",
-            graphql_name=None,
-            type_annotation=StrawberryAnnotation(Optional[int]),
-            description="Returns the first n items from the list.",
-            default=None,
-        ),
-        "last": StrawberryArgument(
-            python_name="last",
-            graphql_name=None,
-            type_annotation=StrawberryAnnotation(Optional[int]),
-            description=(
-                "Returns the items in the list that come after the specified cursor."
+            "first": StrawberryArgument(
+                python_name="first",
+                graphql_name=None,
+                type_annotation=StrawberryAnnotation(Optional[int]),
+                description="Returns the first n items from the list.",
+                default=None,
             ),
-            default=None,
-        ),
-    }
+            "last": StrawberryArgument(
+                python_name="last",
+                graphql_name=None,
+                type_annotation=StrawberryAnnotation(Optional[int]),
+                description=(
+                    "Returns the items in the list that come after the "
+                    "specified cursor."
+                ),
+                default=None,
+            ),
+        }
 
     def __call__(self, resolver: _RESOLVER_TYPE):
-        nodes_type = resolver.__annotations__.get("return")
-        if nodes_type is None:
+        namespace = sys.modules[resolver.__module__].__dict__
+        resolved = get_type_hints(cast(Type, resolver), namespace).get("return")
+        if resolved is None:
             raise MissingReturnAnnotationError(
                 self.name, resolver=StrawberryResolver(resolver)
             )
 
-        namespace = sys.modules[resolver.__module__].__dict__
-        if isinstance(nodes_type, str):
-            nodes_type = ForwardRef(nodes_type, is_argument=False)
-
-        resolved = _eval_type(nodes_type, namespace, None)
         origin = get_origin(resolved)
 
         is_connection = (
@@ -318,24 +316,9 @@ class ConnectionField(RelayField):
 
         if is_iterable and not is_connection and self.type_annotation is None:
             if self.node_converter is not None:
-                ntype = self.node_converter.__annotations__.get("return")
-                if isinstance(ntype, str):
-                    ntype = _eval_type(
-                        ForwardRef(ntype, is_argument=False), namespace, None
-                    )
-
-                if isinstance(ntype, LazyType):
-                    ntype = ntype.resolve_type()
-
-                if not ntype or not issubclass(ntype, Node):
-                    raise RelayWrongNodeResolverAnnotationError(
-                        field_name=self.name,
-                        resolver=StrawberryResolver(resolver),
-                    )
+                ntype = get_type_hints(self.node_converter).get("return")
             else:
                 ntype = get_args(resolved)[0]
-                if isinstance(ntype, LazyType):
-                    ntype = ntype.resolve_type()
 
             self.type_annotation = StrawberryAnnotation(
                 Connection[ntype],  # type: ignore[valid-type]
@@ -417,15 +400,16 @@ class ConnectionField(RelayField):
             nodes = cast(Node, field_type).resolve_nodes(info=info)
 
         if inspect.isawaitable(nodes):
-
-            async def resolver():
-                return self.resolver(
+            return resolve_awaitable(
+                nodes,
+                lambda resolved: self.resolver(
                     source,
                     info,
                     args,
                     kwargs,
-                    nodes=await cast(Awaitable, nodes),
-                )
+                    nodes=resolved,
+                ),
+            )
 
         # Avoid info being passed twice in case the custom resolver has one
         kwargs.pop("info", None)
@@ -433,19 +417,17 @@ class ConnectionField(RelayField):
 
     def resolve_connection(
         self,
-        nodes: Union[
-            Iterator[NodeType],
-            AsyncIterator[NodeType],
-            Iterable[NodeType],
-            AsyncIterable[NodeType],
-        ],
+        nodes: NodeIterableType[NodeType],
         info: Info,
         **kwargs,
     ):
         return_type = cast(Connection[Node], info.return_type)
         kwargs.setdefault("info", info)
-        kwargs.setdefault("node_converter", self.node_converter)
-        return return_type.from_nodes(nodes, **kwargs)
+        return return_type.from_nodes(
+            nodes,
+            node_converter=self.node_converter,
+            **kwargs,
+        )
 
 
 def node(
@@ -505,14 +487,7 @@ def node(
 @overload
 def connection(
     *,
-    resolver: _RESOLVER_TYPE[
-        Union[
-            Iterator[NodeType],
-            AsyncIterator[NodeType],
-            Iterable[NodeType],
-            AsyncIterable[NodeType],
-        ]
-    ],
+    resolver: _RESOLVER_TYPE[NodeIterableType[NodeType]],
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
@@ -549,14 +524,7 @@ def connection(
 
 @overload
 def connection(
-    resolver: _RESOLVER_TYPE[
-        Union[
-            Iterator[NodeType],
-            AsyncIterator[NodeType],
-            Iterable[NodeType],
-            AsyncIterable[NodeType],
-        ]
-    ],
+    resolver: _RESOLVER_TYPE[NodeIterableType[NodeType]],
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
@@ -574,14 +542,7 @@ def connection(
 
 @overload
 def connection(
-    resolver: _RESOLVER_TYPE[
-        Union[
-            Iterator[_T],
-            AsyncIterator[_T],
-            Iterable[_T],
-            AsyncIterable[_T],
-        ]
-    ],
+    resolver: _RESOLVER_TYPE[NodeIterableType[_T]],
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,

@@ -5,6 +5,8 @@ from typing import (
     AsyncGenerator,
     AsyncIterable,
     AsyncIterator,
+    Awaitable,
+    Callable,
     List,
     Optional,
     Tuple,
@@ -14,6 +16,7 @@ from typing import (
 
 itertools.islice
 _T = TypeVar("_T")
+_R = TypeVar("_R")
 
 
 async def aenumerate(
@@ -52,3 +55,11 @@ async def aislice(
 async def asyncgen_to_list(generator: AsyncGenerator[_T, Any]) -> List[_T]:
     """Convert an async generator to a list."""
     return [element async for element in generator]
+
+
+async def resolve_awaitable(
+    awaitable: Awaitable[_T],
+    callback: Callable[[_T], _R],
+) -> _R:
+    """Resolves an awaitable object and calls a callback with the resolved value."""
+    return callback(await awaitable)

@@ -4,6 +4,7 @@ import itertools
 import sys
 import uuid
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterable,
     AsyncIterator,
@@ -24,7 +25,15 @@ from typing import (
     cast,
     overload,
 )
-from typing_extensions import Annotated, Literal, Self, TypeAlias, get_args, get_origin
+from typing_extensions import (
+    Annotated,
+    Literal,
+    Self,
+    TypeAlias,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 from strawberry.field import field
 from strawberry.lazy_type import LazyType
@@ -34,17 +43,27 @@ from strawberry.scalars import ID
 from strawberry.type import StrawberryContainer
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
-from strawberry.utils.aio import aenumerate, aislice
+from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
 from strawberry.utils.await_maybe import AwaitableOrValue
 from strawberry.utils.inspect import in_async_context
 
 from .utils import from_base64, to_base64
 
+if TYPE_CHECKING:
+    from strawberry.schema.schema import Schema
+
 _T = TypeVar("_T")
 _R = TypeVar("_R")
-PREFIX = "arrayconnection"
 
+NodeIterableType: TypeAlias = Union[
+    Iterator[_T],
+    Iterable[_T],
+    AsyncIterator[_T],
+    AsyncIterable[_T],
+]
 NodeType = TypeVar("NodeType", bound="Node")
+
+PREFIX = "arrayconnection"
 
 
 class GlobalIDValueError(ValueError):
@@ -73,7 +92,7 @@ class GlobalID:
 
     """
 
-    _nodes_cache: ClassVar[Dict[Tuple[int, str], Type["Node"]]] = {}
+    _nodes_cache: ClassVar[Dict[Tuple["Schema", str], Type["Node"]]] = {}
 
     type_name: str
     node_id: str
@@ -128,7 +147,7 @@ class GlobalID:
         """
         schema = info.schema
         # Put the schema in the key so that different schemas can have different types
-        key = (id(schema), self.type_name)
+        key = (schema, self.type_name)
         origin = self._nodes_cache.get(key)
 
         if origin is None:
@@ -335,13 +354,10 @@ class Node:
 
     """
 
-    _id_attr: ClassVar[str] = "id"
+    _id_attr: ClassVar[str]
 
     def __init_subclass__(cls, **kwargs):
-        annotations: Dict[str, Type] = {}
-        for base in reversed(cls.__mro__):
-            annotations.update(getattr(base, "__annotations__", {}))
-
+        annotations = get_type_hints(cls, include_extras=True)
         candidates = [
             attr
             for attr, annotation in annotations.items()
@@ -353,12 +369,15 @@ class Node:
                 )
             )
         ]
+
+        if len(candidates) > 1:
+            raise TypeError(f"No field annotated with `NodeID` found on {cls!r}")
         if len(candidates) > 1:
             raise TypeError(
                 f"More than one field annotated with `NodeID` found on {cls!r}"
             )
-        elif len(candidates) == 1:
-            cls._id_attr = candidates[0]
+
+        cls._id_attr = candidates[0]
 
     @field(name="id", description="The Globally Unique ID of this object")
     @classmethod
@@ -390,21 +409,22 @@ class Node:
         type_name = resolve_typename(root, info)
         assert type_name
 
-        if isinstance(node_id, str):
-            # str is the default and is faster to check for it than is_awaitable
-            return GlobalID(type_name=type_name, node_id=node_id)
-        elif isinstance(node_id, (int, uuid.UUID)):
-            # those are very common ids and are safe to convert to str
+        # `inspect.isawaitable` is slow, so try to avoid if the type is safe
+        # to be used as an id (i.e. str, int, uuid, etc)
+        if isinstance(node_id, (str, int, uuid.UUID)):
             return GlobalID(type_name=type_name, node_id=str(node_id))
-        elif inspect.isawaitable(node_id):
 
-            async def resolve():
-                return GlobalID(
-                    type_name=type_name,
-                    node_id=await cast(Awaitable, node_id),
-                )
-
-            return cast(GlobalID, resolve())
+        if inspect.isawaitable(node_id):
+            return cast(
+                GlobalID,
+                resolve_awaitable(
+                    node_id,
+                    lambda resolved: GlobalID(
+                        type_name=type_name,
+                        node_id=resolved,
+                    ),
+                ),
+            )
 
         # If node_id is not str, GlobalID will raise an error for us
         return GlobalID(type_name=type_name, node_id=cast(str, node_id))
@@ -513,7 +533,7 @@ class Node:
             An iterable of resolved nodes.
 
         """
-        raise NotImplementedError  # pragma: no cover
+        raise NotImplementedError
 
     @overload
     @classmethod
@@ -576,12 +596,9 @@ class Node:
 
         """
         retval = cls.resolve_nodes(info=info, node_ids=[node_id], required=required)
+
         if inspect.isawaitable(retval):
-
-            async def resolver():
-                return next(iter(await retval))  # type: ignore[misc]
-
-            return resolver()
+            return resolve_awaitable(retval, lambda resolved: next(iter(resolved)))
 
         return next(iter(cast(Iterable[Self], retval)))
 
@@ -683,12 +700,7 @@ class Connection(Generic[NodeType]):
     @classmethod
     def from_nodes(
         cls,
-        nodes: Union[
-            Iterator[_T],
-            AsyncIterator[_T],
-            Iterable[_T],
-            AsyncIterable[_T],
-        ],
+        nodes: NodeIterableType[_T],
         *,
         info: Info,
         before: Optional[str] = None,
@@ -703,16 +715,7 @@ class Connection(Generic[NodeType]):
     @classmethod
     def from_nodes(
         cls,
-        nodes: Union[
-            Iterator[NodeType],
-            AsyncIterator[NodeType],
-            Iterable[NodeType],
-            AsyncIterable[NodeType],
-            Iterator[_T],
-            AsyncIterator[_T],
-            Iterable[_T],
-            AsyncIterable[_T],
-        ],
+        nodes: Union[NodeIterableType[_T], NodeIterableType[NodeType]],
         *,
         info: Info,
         before: Optional[str] = None,
