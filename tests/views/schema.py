@@ -11,14 +11,7 @@ from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
 from strawberry.types import Info
-
-# Starlite is only available on python 3.8+
-try:
-    import starlite  # noqa: F401
-
-    IS_STARLITE_INSTALLED: bool = False
-except ModuleNotFoundError:
-    IS_STARLITE_INSTALLED: bool = True
+from tests import IS_STARLITE_INSTALLED
 
 
 class AlwaysFailPermission(BasePermission):

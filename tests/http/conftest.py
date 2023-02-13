@@ -2,7 +2,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from . import IS_STARLITE_INSTALLED
+from tests import IS_STARLITE_INSTALLED
+
 from .clients import HttpClient
 from .clients.aiohttp import AioHttpClient
 from .clients.asgi import AsgiHttpClient
