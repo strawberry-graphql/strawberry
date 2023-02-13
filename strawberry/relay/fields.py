@@ -295,7 +295,7 @@ class ConnectionField(RelayField):
         retval = super().__call__(resolver)
         assert self.base_resolver
 
-        field_name = self.base_resolver.wrapped_func.__name__
+        field_name = cast(Callable, self.base_resolver.wrapped_func).__name__
         namespace = sys.modules[resolver.__module__].__dict__
         resolved = get_type_hints(cast(Type, resolver), namespace).get("return")
         if resolved is None:
