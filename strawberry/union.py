@@ -2,7 +2,6 @@ import itertools
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
-    Annotated,
     Any,
     Collection,
     Iterable,
@@ -16,7 +15,7 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import get_origin
+from typing_extensions import Annotated, get_origin
 
 from graphql import (
     GraphQLAbstractType,
