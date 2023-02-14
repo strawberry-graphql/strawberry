@@ -230,7 +230,7 @@ class GraphQLCoreConverter:
             argument_name = self.config.name_converter.from_argument(argument)
             graphql_arguments[argument_name] = self.from_argument(argument)
 
-        return GraphQLField(
+        g_field = GraphQLField(
             type_=field_type,
             args=graphql_arguments,
             resolve=resolver,
@@ -241,6 +241,10 @@ class GraphQLCoreConverter:
                 GraphQLCoreConverter.DEFINITION_BACKREF: field,
             },
         )
+
+        g_field._strawberry_field = field  # type: ignore
+
+        return g_field
 
     def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
         field_type = cast(GraphQLInputType, self.from_maybe_optional(field.type))
