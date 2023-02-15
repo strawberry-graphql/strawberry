@@ -242,7 +242,9 @@ class Schema(BaseSchema):
 
         return directives
 
-    def _add_link_directives(self, additional_directives: List[object] = None):
+    def _add_link_directives(
+        self, additional_directives: Optional[List[object]] = None
+    ):
         from .schema_directives import FederationDirective, Link
 
         directive_by_url: defaultdict[str, set[str]] = defaultdict(set)
