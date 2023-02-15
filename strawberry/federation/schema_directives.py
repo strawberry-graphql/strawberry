@@ -64,6 +64,7 @@ class Key(FederationDirective):
 @schema_directive(
     locations=[Location.FIELD_DEFINITION, Location.OBJECT],
     name="shareable",
+    repeatable=True,
     print_definition=False,
 )
 class Shareable(FederationDirective):
