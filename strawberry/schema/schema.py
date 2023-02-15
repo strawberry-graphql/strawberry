@@ -80,7 +80,7 @@ class Schema(BaseSchema):
 
         self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
         self.directives = directives
-        self.schema_directives = schema_directives
+        self.schema_directives = list(schema_directives)
 
         query_type = self.schema_converter.from_object(query._type_definition)
         mutation_type = (

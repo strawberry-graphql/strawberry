@@ -952,6 +952,8 @@ class StrawberryPlugin(Plugin):
                 "strawberry.federation.interface",
                 "strawberry.federation.object_type.interface",
                 "strawberry.schema_directive.schema_directive",
+                "strawberry.federation.schema_directive",
+                "strawberry.federation.schema_directive.schema_directive",
                 "strawberry.object_type.input",
                 "strawberry.object_type.interface",
             }
@@ -970,6 +972,7 @@ class StrawberryPlugin(Plugin):
                 "strawberry.input",
                 "strawberry.interface",
                 "strawberry.schema_directive",
+                "strawberry.federation.schema_directive",
             }
         )
 
