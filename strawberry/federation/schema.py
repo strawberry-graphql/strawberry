@@ -2,7 +2,19 @@ from collections import defaultdict
 from copy import copy
 from functools import partial
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    DefaultDict,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Type,
+    Union,
+    cast,
+)
 
 from graphql import ExecutionContext as GraphQLExecutionContext
 from graphql import (
@@ -247,7 +259,7 @@ class Schema(BaseSchema):
     ):
         from .schema_directives import FederationDirective, Link
 
-        directive_by_url: defaultdict[str, set[str]] = defaultdict(set)
+        directive_by_url: DefaultDict[str, Set[str]] = defaultdict(set)
 
         additional_directives = additional_directives or []
 
