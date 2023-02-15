@@ -6,13 +6,22 @@ from strawberry.schema_directive import Location
 
 def test_schema_directives_and_compose_schema():
     @strawberry.federation.schema_directive(
-        locations=[Location.OBJECT], name="cacheControl"
+        locations=[Location.OBJECT], name="cacheControl", compose=True
     )
     class CacheControl:
         max_age: int
 
+    @strawberry.federation.schema_directive(
+        locations=[Location.OBJECT], name="sensitive"
+    )
+    class Sensitive:
+        reason: str
+
     @strawberry.federation.type(
-        keys=["id"], shareable=True, extend=True, directives=[CacheControl(max_age=42)]
+        keys=["id"],
+        shareable=True,
+        extend=True,
+        directives=[CacheControl(max_age=42), Sensitive(reason="example")],
     )
     class FederatedType:
         id: strawberry.ID
@@ -24,11 +33,13 @@ def test_schema_directives_and_compose_schema():
     expected_type = """
     directive @cacheControl(maxAge: Int!) on OBJECT
 
+    directive @sensitive(reason: String!) on OBJECT
+
     schema @composeDirective(name: "cacheControl") @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@composeDirective", "@key", "@shareable"]) {
       query: Query
     }
 
-    extend type FederatedType @cacheControl(maxAge: 42) @key(fields: "id") @shareable {
+    extend type FederatedType @cacheControl(maxAge: 42) @sensitive(reason: "example") @key(fields: "id") @shareable {
       id: ID!
     }
 

@@ -285,14 +285,15 @@ class Schema(BaseSchema):
         compose_directives: List[ComposeDirective] = []
 
         for directive in self.schema_directives_in_use:
-            directive_definition = directive.__strawberry_directive__  # type: ignore
+            definition = directive.__strawberry_directive__  # type: ignore
 
-            if isinstance(directive_definition, StrawberryFederationSchemaDirective):
+            if (
+                isinstance(definition, StrawberryFederationSchemaDirective)
+                and definition.compose_on_schema
+            ):
                 compose_directives.append(
                     ComposeDirective(
-                        name=self.config.name_converter.from_directive(
-                            directive_definition
-                        )
+                        name=self.config.name_converter.from_directive(definition)
                     )
                 )
 
