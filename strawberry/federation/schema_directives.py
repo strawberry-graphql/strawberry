@@ -159,3 +159,12 @@ class ComposeDirective(FederationDirective):
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
         name="composeDirective", url="https://specs.apollo.dev/federation/v2.3"
     )
+
+
+@schema_directive(
+    locations=[Location.OBJECT], name="interfaceObject", print_definition=False
+)
+class InterfaceObject(FederationDirective):
+    imported_from: ClassVar[ImportedFrom] = ImportedFrom(
+        name="interfaceObject", url="https://specs.apollo.dev/federation/v2.3"
+    )
