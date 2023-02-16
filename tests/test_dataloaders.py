@@ -97,7 +97,7 @@ async def test_error_and_values():
 
 async def test_when_raising_error_in_loader():
     async def idx(keys):
-        raise ValueError()
+        raise ValueError
 
     loader = DataLoader(load_fn=idx)
 

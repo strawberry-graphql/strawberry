@@ -59,7 +59,7 @@ async def test_upload(http_client: HttpClient):
         files={"textFile": f},
     )
 
-    assert response.json == {"data": {"readText": "strawberry"}}
+    assert response.json["data"] == {"readText": "strawberry"}
 
 
 async def test_file_list_upload(http_client: HttpClient):
@@ -136,15 +136,13 @@ async def test_upload_invalid_query(http_client: HttpClient):
     )
 
     assert response.status_code == 200
-    assert response.json == {
-        "data": None,
-        "errors": [
-            {
-                "locations": [{"column": 5, "line": 4}],
-                "message": "Syntax Error: Expected Name, found <EOF>.",
-            }
-        ],
-    }
+    assert response.json["data"] is None
+    assert response.json["errors"] == [
+        {
+            "locations": [{"column": 5, "line": 4}],
+            "message": "Syntax Error: Expected Name, found <EOF>.",
+        }
+    ]
 
 
 async def test_upload_missing_file(http_client: HttpClient):

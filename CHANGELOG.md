@@ -1,6 +1,31 @@
 CHANGELOG
 =========
 
+0.156.4 - 2023-02-13
+--------------------
+
+This release fixes a regression introduce in version 0.156.2 that
+would make Mypy throw an error in the following code:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Author:
+    name: str
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    async def get_authors(self) -> list[Author]:
+        return [Author(name="Michael Crichton")]
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2535](https://github.com/strawberry-graphql/strawberry/pull/2535/)
+
+
 0.156.3 - 2023-02-10
 --------------------
 
