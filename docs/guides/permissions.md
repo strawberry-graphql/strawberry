@@ -49,6 +49,52 @@ on how errors are handled.
 }
 ```
 
+## Documenting your permissions
+
+By defaults, permissions are not exposed on the GraphQL schema.
+
+However, you may want to add them for documentation purposes.
+
+There are currently 2 ways to do that, both enabled by a StrawberryConfig flag
+
+### Documenting using schema directives
+
+You can use `StrawberryConfig(permissions_directive=True)` to add `@requiresPermissions` schema directives to the fields that perform permission checks.
+
+```python+graphql
+from strawberry.schema.config import StrawberryConfig
+schema = strawberry.Schema(
+    query=Query,
+    config=StrawberryConfig(permissions_directive=True)
+)
+---
+directive @requiresPermissions(permissions: [String!]!) on FIELD_DEFINITION
+
+type Query {
+  user: String! @requiresPermissions(permissions: ["IsAuthenticated"])
+}
+```
+
+### Documenting using field descriptions
+
+You can use `StrawberryConfig(permissions_description=True)` to permission information on field descriptions
+
+```python+graphql
+from strawberry.schema.config import StrawberryConfig
+schema = strawberry.Schema(
+    query=Query,
+    config=StrawberryConfig(permissions_description=True)
+)
+---
+type Query {
+  """
+  Required permissions:
+   - *IsAuthenticated*: User is not authenticated
+  """
+  user: String!
+}
+```
+
 ## Accessing user information
 
 Accessing the current user information to implement your permission checks

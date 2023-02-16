@@ -47,6 +47,7 @@ from graphql.utilities.print_schema import print_type as original_print_type
 from strawberry.custom_scalar import ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.field import StrawberryField
+from strawberry.permission_directive import RequiresPermissionsDirective
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.type import StrawberryContainer
@@ -161,14 +162,21 @@ def print_field_directives(
     if not field:
         return ""
 
-    directives = (
+    directives = [
         directive
         for directive in field.directives
         if any(
             location in [Location.FIELD_DEFINITION, Location.INPUT_FIELD_DEFINITION]
             for location in directive.__strawberry_directive__.locations  # type: ignore
         )
-    )
+    ]
+
+    if schema.config.permissions_directive and field.permission_classes:
+        directives.append(
+            RequiresPermissionsDirective(
+                permissions=[perm.__name__ for perm in field.permission_classes]
+            )
+        )
 
     return "".join(
         print_schema_directive(directive, schema=schema, extras=extras)

@@ -1,9 +1,11 @@
 import typing
+from textwrap import dedent
 
 import pytest
 
 import strawberry
 from strawberry.permission import BasePermission
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import Info
 
 
@@ -172,6 +174,109 @@ def test_can_use_args_when_testing_permission():
 
     result = schema.execute_sync(query)
     assert result.errors[0].message == "Cannot see email for this user"
+
+
+def test_permission_documentation():
+    class Permission1(BasePermission):
+        message: str = "Something something"
+
+        def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+            return False
+
+    class Permission2(BasePermission):
+        def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+            return True
+
+    @strawberry.type
+    class Query:
+        a: str = strawberry.field(description="Field A")
+        b: str = strawberry.field(permission_classes=[Permission1])
+        c: str = strawberry.field(
+            permission_classes=[Permission2], description="Field C"
+        )
+        d: str = strawberry.field(
+            permission_classes=[Permission1, Permission2], description="Field D"
+        )
+
+    # Without permission documentation
+    schema = strawberry.Schema(query=Query)
+    expected_schema = dedent(
+        '''
+        type Query {
+          """Field A"""
+          a: String!
+          b: String!
+
+          """Field C"""
+          c: String!
+
+          """Field D"""
+          d: String!
+        }
+        '''
+    ).strip()
+    assert str(schema) == expected_schema
+
+    # With directive documentation
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(permissions_directive=True)
+    )
+    expected_schema = dedent(
+        '''
+        """Indicates that a field requires special permissions to be accessed"""
+        directive @requiresPermissions(permissions: [String!]!) on FIELD_DEFINITION
+
+        type Query {
+          """Field A"""
+          a: String!
+          b: String! @requiresPermissions(permissions: ["Permission1"])
+
+          """Field C"""
+          c: String! @requiresPermissions(permissions: ["Permission2"])
+
+          """Field D"""
+          d: String! @requiresPermissions(permissions: ["Permission1", "Permission2"])
+        }
+        '''
+    ).strip()
+    assert str(schema) == expected_schema
+
+    # With description documentation
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(permissions_description=True)
+    )
+    expected_schema = dedent(
+        '''
+        type Query {
+          """Field A"""
+          a: String!
+
+          """
+          Required permissions:
+           - *Permission1*: Something something
+          """
+          b: String!
+
+          """
+          Field C
+
+          Required permissions:
+           - *Permission2*
+          """
+          c: String!
+
+          """
+          Field D
+
+          Required permissions:
+           - *Permission1*: Something something
+           - *Permission2*
+          """
+          d: String!
+        }
+        '''
+    ).strip()
+    assert dedent(str(schema)) == expected_schema
 
 
 def test_can_use_on_simple_fields():
