@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 from channels.layers import get_channel_layer
@@ -230,7 +232,9 @@ async def test_channel_listen_group_twice(ws: WebsocketCommunicator):
     assert channel_layer
 
     # Wait for channel subscriptions to start
-    response1, response2 = (await ws.receive_json_from(), await ws.receive_json_from())
+    response1, response2 = await asyncio.gather(
+        ws.receive_json_from(), ws.receive_json_from()
+    )
     assert {"sub1", "sub2"} == {response1["id"], response2["id"]}
     channel_name = response1["payload"]["data"]["listener"]
 
@@ -242,15 +246,18 @@ async def test_channel_listen_group_twice(ws: WebsocketCommunicator):
             "text": "Hello there!",
         },
     )
-    response1, response2 = (await ws.receive_json_from(), await ws.receive_json_from())
+    response1, response2 = await asyncio.gather(
+        ws.receive_json_from(), ws.receive_json_from()
+    )
     assert {"sub1", "sub2"} == {response1["id"], response2["id"]}
     assert response1["payload"]["data"]["listener"] == "Hello there!"
     assert response2["payload"]["data"]["listener"] == "Hello there!"
 
-    # When a message is sent to a group, it is received by both subscribers (there
-    # is no intrinsic way for the subscribers to know which group the message was
-    # sent to - if you wanted to filter, that would need to be explicitly written
-    # in to the subscription handler).
+    # We now have two channel_listen AsyncGenerators waiting, one for id="sub1"
+    # and one for id="sub2". This group message will be received by both of them
+    # as they are both running on the same ChannelsConsumer instance so even
+    # though "sub2" was initialised with "group2" as the argument, it will receive
+    # this message for "group1"
     await channel_layer.group_send(
         "group1",
         {
@@ -259,7 +266,9 @@ async def test_channel_listen_group_twice(ws: WebsocketCommunicator):
         },
     )
 
-    response1, response2 = (await ws.receive_json_from(), await ws.receive_json_from())
+    response1, response2 = await asyncio.gather(
+        ws.receive_json_from(), ws.receive_json_from()
+    )
     assert {"sub1", "sub2"} == {response1["id"], response2["id"]}
     assert response1["payload"]["data"]["listener"] == "Hello group 1!"
     assert response2["payload"]["data"]["listener"] == "Hello group 1!"
@@ -272,7 +281,9 @@ async def test_channel_listen_group_twice(ws: WebsocketCommunicator):
         },
     )
 
-    response1, response2 = (await ws.receive_json_from(), await ws.receive_json_from())
+    response1, response2 = await asyncio.gather(
+        ws.receive_json_from(), ws.receive_json_from()
+    )
     assert {"sub1", "sub2"} == {response1["id"], response2["id"]}
     assert response1["payload"]["data"]["listener"] == "Hello group 2!"
     assert response2["payload"]["data"]["listener"] == "Hello group 2!"
