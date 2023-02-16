@@ -291,9 +291,11 @@ class Schema(BaseSchema):
                 isinstance(definition, StrawberryFederationSchemaDirective)
                 and definition.compose_on_schema
             ):
+                name = self.config.name_converter.from_directive(definition)
+
                 compose_directives.append(
                     ComposeDirective(
-                        name=self.config.name_converter.from_directive(definition)
+                        name=f"@{name}",
                     )
                 )
 

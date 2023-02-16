@@ -35,7 +35,7 @@ def test_schema_directives_and_compose_schema():
 
     directive @sensitive(reason: String!) on OBJECT
 
-    schema @composeDirective(name: "cacheControl") @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@composeDirective", "@key", "@shareable"]) {
+    schema @composeDirective(name: "@cacheControl") @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@composeDirective", "@key", "@shareable"]) {
       query: Query
     }
 
