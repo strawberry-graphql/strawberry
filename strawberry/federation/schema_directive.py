@@ -10,8 +10,13 @@ from strawberry.utils.typing import __dataclass_transform__
 
 
 @dataclasses.dataclass
+class ComposeOptions:
+    import_url: Optional[str]
+
+
+@dataclasses.dataclass
 class StrawberryFederationSchemaDirective(StrawberrySchemaDirective):
-    compose_on_schema: bool = False
+    compose_options: Optional[ComposeOptions] = None
 
 
 T = TypeVar("T", bound=Type)
@@ -30,6 +35,7 @@ def schema_directive(
     repeatable: bool = False,
     print_definition: bool = True,
     compose: bool = False,
+    import_url: Optional[str] = None,
 ):
     def _wrap(cls: T) -> T:
         cls = _wrap_dataclass(cls)
@@ -44,7 +50,7 @@ def schema_directive(
             fields=fields,
             print_definition=print_definition,
             origin=cls,
-            compose_on_schema=compose,
+            compose_options=ComposeOptions(import_url=import_url) if compose else None,
         )
 
         return cls

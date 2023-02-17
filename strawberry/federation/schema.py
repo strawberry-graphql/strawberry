@@ -264,6 +264,20 @@ class Schema(BaseSchema):
         additional_directives = additional_directives or []
 
         for directive in self.schema_directives_in_use + additional_directives:
+            definition = directive.__strawberry_directive__  # type: ignore
+
+            if (
+                isinstance(definition, StrawberryFederationSchemaDirective)
+                and definition.compose_options
+            ):
+                import_url = definition.compose_options.import_url
+                name = self.config.name_converter.from_directive(definition)
+
+                if import_url is None:
+                    import_url = f"https://directives.strawberry.rocks/{name}/v0.1"
+
+                directive_by_url[import_url].add(f"@{name}")
+
             if isinstance(directive, FederationDirective):
                 directive_by_url[directive.imported_from.url].add(
                     f"@{directive.imported_from.name}"
@@ -287,10 +301,11 @@ class Schema(BaseSchema):
         for directive in self.schema_directives_in_use:
             definition = directive.__strawberry_directive__  # type: ignore
 
-            if (
-                isinstance(definition, StrawberryFederationSchemaDirective)
-                and definition.compose_on_schema
-            ):
+            is_federation_schema_directive = isinstance(
+                definition, StrawberryFederationSchemaDirective
+            )
+
+            if is_federation_schema_directive and definition.compose_options:
                 name = self.config.name_converter.from_directive(definition)
 
                 compose_directives.append(
