@@ -68,7 +68,7 @@ class User:
     id: str = strawberry.field(
         description="ID of the user."
     )
-    
+
     name: str = strawberry.field(
         description="The name of the user."
     )
@@ -163,7 +163,7 @@ class User:
     id: str = strawberry.field(
         description="ID of the user."
     )
-    
+
     name: str = strawberry.field(
         description="The name of the user."
     )
@@ -291,7 +291,7 @@ class User:
     id: str = strawberry.field(
         description="ID of the user."
     )
-    
+
     name: str = strawberry.field(
         description="The name of the user."
     )
@@ -303,7 +303,7 @@ class User:
     age: int = strawberry.field(
         description="The age of the user."
     )
-    
+
     @staticmethod
     def from_row(row: Dict[str, Any]):
         return User(
@@ -412,7 +412,7 @@ class User:
     id: str = strawberry.field(
         description="ID of the user."
     )
-    
+
     name: str = strawberry.field(
         description="The name of the user."
     )
@@ -424,7 +424,7 @@ class User:
     age: int = strawberry.field(
         description="The age of the user."
     )
-    
+
     @staticmethod
     def from_row(row: Dict[str, Any]):
         return User(
@@ -482,7 +482,7 @@ class Query:
           next_cursor = None
 
         sliced_users = [User.from_row(x) for x in sliced_users]
-        
+
         return UserResponse(
             users=sliced_users,
             page_meta=PageMeta(
