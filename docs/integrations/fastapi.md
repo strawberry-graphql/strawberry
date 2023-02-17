@@ -301,5 +301,3 @@ class MyGraphQLRouter(GraphQLRouter):
     def encode_json(self, data: GraphQLHTTPResponse) -> bytes:
         return orjson.dumps(data)
 ```
-
-
