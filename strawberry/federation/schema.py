@@ -9,6 +9,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Mapping,
     Optional,
     Set,
     Type,
@@ -36,6 +37,7 @@ from strawberry.printer import print_schema
 from strawberry.schema import Schema as BaseSchema
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.concrete_type import TypeMap
+from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.cached_property import cached_property
@@ -254,6 +256,28 @@ class Schema(BaseSchema):
 
         return directives
 
+    def _add_link_for_composed_directive(
+        self,
+        directive: StrawberrySchemaDirective,
+        directive_by_url: Mapping[str, Set[str]],
+    ) -> None:
+        if not isinstance(directive, StrawberryFederationSchemaDirective):
+            return
+
+        if not directive.compose_options:
+            return
+
+        import_url = directive.compose_options.import_url
+        name = self.config.name_converter.from_directive(directive)
+
+        # import url is required by Apollo Federation, this might change in
+        # future to be optional, so for now, when it is not passed we
+        # define a mock one. The URL isn't used for validation anyway.
+        if import_url is None:
+            import_url = f"https://directives.strawberry.rocks/{name}/v0.1"
+
+        directive_by_url[import_url].add(f"@{name}")
+
     def _add_link_directives(
         self, additional_directives: Optional[List[object]] = None
     ):
@@ -266,17 +290,7 @@ class Schema(BaseSchema):
         for directive in self.schema_directives_in_use + additional_directives:
             definition = directive.__strawberry_directive__  # type: ignore
 
-            if (
-                isinstance(definition, StrawberryFederationSchemaDirective)
-                and definition.compose_options
-            ):
-                import_url = definition.compose_options.import_url
-                name = self.config.name_converter.from_directive(definition)
-
-                if import_url is None:
-                    import_url = f"https://directives.strawberry.rocks/{name}/v0.1"
-
-                directive_by_url[import_url].add(f"@{name}")
+            self._add_link_for_composed_directive(definition, directive_by_url)
 
             if isinstance(directive, FederationDirective):
                 directive_by_url[directive.imported_from.url].add(
