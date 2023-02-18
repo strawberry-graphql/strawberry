@@ -28,6 +28,7 @@ except ImportError:  # pragma: no cover
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType, StrawberryLazyReference
+from strawberry.subscriptions.types import SubscriptionResult
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
 from strawberry.types.types import TypeDefinition
 from strawberry.unset import UNSET
@@ -47,6 +48,7 @@ ASYNC_TYPES = (
     typing.AsyncGenerator,
     typing.AsyncIterable,
     typing.AsyncIterator,
+    SubscriptionResult,
 )
 
 
