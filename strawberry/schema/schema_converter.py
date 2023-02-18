@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
+from functools import partial, reduce
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -55,14 +56,13 @@ from strawberry.union import StrawberryUnion
 from strawberry.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
 
+from ..extensions.field_extension import check_field_extension_compatibility
 from . import compat
 from .types.concrete_type import ConcreteType
 
 if TYPE_CHECKING:
     from graphql import (
-        GraphQLInputType,
         GraphQLNullableType,
-        GraphQLOutputType,
         GraphQLResolveInfo,
         GraphQLScalarType,
         ValueNode,
@@ -73,7 +73,6 @@ if TYPE_CHECKING:
     from strawberry.enum import EnumValue
     from strawberry.field import StrawberryField
     from strawberry.schema.config import StrawberryConfig
-    from strawberry.schema_directive import StrawberrySchemaDirective
     from strawberry.type import StrawberryType
 
 
@@ -524,17 +523,44 @@ class GraphQLCoreConverter:
                 _source, info=info, args=field_args, kwargs=field_kwargs
             )
 
+        def wrap_field_extensions() -> Callable[..., Any]:
+            """Wrap the provided field resolver with the middleware."""
+
+            if field.extensions is None:
+                return _get_result
+
+            for extension in field.extensions:
+                extension.apply(field)
+
+            check_field_extension_compatibility(field)
+
+            extension_functions = []
+            for extension in field.extensions:
+                extension_functions.append(
+                    extension.resolve_async if field.is_async else extension.resolve
+                )
+
+            return reduce(
+                lambda chained_fns, next_fn: partial(next_fn, chained_fns),
+                extension_functions,
+                _get_result,
+            )
+
+        _get_result_with_extensions = wrap_field_extensions()
+
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)
             _check_permissions(_source, strawberry_info, kwargs)
 
-            return _get_result(_source, strawberry_info, **kwargs)
+            return _get_result_with_extensions(_source, strawberry_info, **kwargs)
 
         async def _async_resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)
             await _check_permissions_async(_source, strawberry_info, kwargs)
 
-            return await await_maybe(_get_result(_source, strawberry_info, **kwargs))
+            return await await_maybe(
+                _get_result_with_extensions(_source, strawberry_info, **kwargs)
+            )
 
         if field.is_async:
             _async_resolver._is_default = not field.base_resolver  # type: ignore
