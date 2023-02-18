@@ -48,7 +48,7 @@ class TypeDefinition(StrawberryType):
     def __post_init__(self):
         # resolve `Self` annotation with the origin type
         for index, field in enumerate(self.fields):
-            if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):
+            if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):  # type: ignore  # noqa: E501
                 self.fields[index] = field.copy_with({Self: self.origin})  # type: ignore  # noqa: E501
 
     # TODO: remove wrapped cls when we "merge" this with `StrawberryObject`

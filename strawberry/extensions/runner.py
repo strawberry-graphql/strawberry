@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import inspect
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
 from graphql import MiddlewareManager
 
@@ -9,10 +11,12 @@ from strawberry.extensions.context import (
     RequestContextManager,
     ValidationContextManager,
 )
-from strawberry.types import ExecutionContext
 from strawberry.utils.await_maybe import await_maybe
 
 from . import Extension
+
+if TYPE_CHECKING:
+    from strawberry.types import ExecutionContext
 
 
 class ExtensionsRunner:

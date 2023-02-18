@@ -1,20 +1,22 @@
+from __future__ import annotations
+
 import textwrap
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Dict, List, Optional, Set
 
 from strawberry.codegen import CodegenFile, QueryCodegenPlugin
 from strawberry.codegen.types import (
     GraphQLEnum,
-    GraphQLField,
     GraphQLList,
     GraphQLObjectType,
-    GraphQLOperation,
     GraphQLOptional,
     GraphQLScalar,
-    GraphQLType,
     GraphQLUnion,
 )
+
+if TYPE_CHECKING:
+    from strawberry.codegen.types import GraphQLField, GraphQLOperation, GraphQLType
 
 
 @dataclass

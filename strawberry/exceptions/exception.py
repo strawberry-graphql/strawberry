@@ -1,13 +1,15 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional
 
 from strawberry.utils.cached_property import cached_property
 from strawberry.utils.str_converters import to_kebab_case
 
-from .exception_source import ExceptionSource
-
 if TYPE_CHECKING:
     from rich.console import RenderableType
+
+    from .exception_source import ExceptionSource
 
 
 class UnableToFindExceptionSource(Exception):

@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import dataclasses
 import sys
-from typing import Dict, List, Type, TypeVar
+from typing import TYPE_CHECKING, Dict, List, Type, TypeVar
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -8,10 +10,12 @@ from strawberry.exceptions import (
     FieldWithResolverAndDefaultValueError,
     PrivateStrawberryFieldError,
 )
-from strawberry.field import StrawberryField
 from strawberry.private import is_private
 from strawberry.unset import UNSET
 from strawberry.utils.inspect import get_specialized_type_var_map
+
+if TYPE_CHECKING:
+    from strawberry.field import StrawberryField
 
 
 def _get_fields(cls: Type) -> List[StrawberryField]:

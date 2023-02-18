@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import dataclasses
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Iterable,
@@ -11,12 +14,16 @@ from typing import (
     Union,
     overload,
 )
-from typing_extensions import Literal
 
-from strawberry.field import _RESOLVER_TYPE, StrawberryField
 from strawberry.field import field as base_field
-from strawberry.permission import BasePermission
 from strawberry.unset import UNSET
+
+if TYPE_CHECKING:
+    from typing_extensions import Literal
+
+    from strawberry.field import _RESOLVER_TYPE, StrawberryField
+    from strawberry.permission import BasePermission
+
 
 T = TypeVar("T")
 
