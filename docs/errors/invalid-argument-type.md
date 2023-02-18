@@ -36,6 +36,6 @@ schema = strawberry.Schema(query=Query)
 
 The latest [GraphQL specification](https://spec.graphql.org/October2021/)
 doesn't allow using unions as arguments. There's currently an
-[RFC for adding a `oneOf` directive](https://github.com/graphql/graphql-spec/pull/825)
+[RFC for adding a `OneOf` directive](https://github.com/graphql/graphql-spec/pull/825)
 that might work for your use case, but it's not yet implemented in the spec and
 Strawberry

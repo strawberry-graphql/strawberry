@@ -72,4 +72,13 @@ def schema_directive(
     return _wrap
 
 
-__all__ = ["Location", "StrawberrySchemaDirective", "schema_directive"]
+@schema_directive(
+    name="oneOf",
+    locations=[Location.INPUT_OBJECT],
+    print_definition=False,
+)
+class OneOf:
+    pass
+
+
+__all__ = ["Location", "StrawberrySchemaDirective", "schema_directive", "OneOf"]

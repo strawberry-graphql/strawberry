@@ -6,7 +6,7 @@ from typing_extensions import Annotated
 import strawberry
 from strawberry.printer import print_schema
 from strawberry.schema.config import StrawberryConfig
-from strawberry.schema_directive import Location
+from strawberry.schema_directive import Location, OneOf
 from strawberry.unset import UNSET
 
 
@@ -634,5 +634,65 @@ def test_print_directive_on_argument_with_description():
     """
 
     schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_one_of_schema_directive():
+    @strawberry.input
+    class CatInput:
+        name: str
+
+    @strawberry.input
+    class DogInput:
+        name: str
+
+    @strawberry.input(directives=[OneOf()])
+    class PetInput:
+        cat: CatInput
+        dog: DogInput
+
+    @strawberry.type
+    class Pet:
+        name: str
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def add_pet(self, pet: PetInput) -> Pet:
+            return Pet(name=pet.cat.name)
+
+    @strawberry.type
+    class Query:
+        hi: str
+
+    expected_output = """
+        input CatInput {
+          name: String!
+        }
+
+        input DogInput {
+          name: String!
+        }
+
+        type Mutation {
+          addPet(pet: PetInput!): Pet!
+        }
+
+        type Pet {
+          name: String!
+        }
+
+        input PetInput @oneOf {
+          cat: CatInput!
+          dog: DogInput!
+        }
+
+        type Query {
+          hi: String!
+        }
+    """
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
