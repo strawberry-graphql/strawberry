@@ -1,12 +1,12 @@
 from django.core.management.base import BaseCommand, CommandError
+
 from strawberry import Schema
 from strawberry.printer import print_schema
 from strawberry.utils.importer import import_module_symbol
 
 
 class Command(BaseCommand):
-
-    help = "Export the graphql schema"  # noqa:A003
+    help = "Export the graphql schema"
 
     def add_arguments(self, parser):
         parser.add_argument("schema", nargs=1, type=str, help="The schema location")
