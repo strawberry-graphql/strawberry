@@ -79,7 +79,7 @@ if TYPE_CHECKING:
         VariableDefinitionNode,
     )
 
-    import strawberry
+    from strawberry.schema import Schema
 
     from .types import GraphQLArgumentValue, GraphQLSelection, GraphQLType
 
@@ -146,7 +146,7 @@ class QueryCodegenPluginManager:
 
 
 class QueryCodegen:
-    def __init__(self, schema: strawberry.Schema, plugins: List[QueryCodegenPlugin]):
+    def __init__(self, schema: Schema, plugins: List[QueryCodegenPlugin]):
         self.schema = schema
         self.plugin_manager = QueryCodegenPluginManager(plugins)
         self.types: List[GraphQLType] = []
