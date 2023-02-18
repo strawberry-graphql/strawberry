@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
 
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 from strawberry.extensions.utils import get_path_from_info
 
 from .utils import should_skip_tracing
@@ -31,7 +31,7 @@ class RequestStage(enum.Enum):
     VALIDATION = enum.auto()
 
 
-class OpenTelemetryExtension(Extension):
+class OpenTelemetryExtension(SchemaExtension):
     _arg_filter: Optional[ArgFilter]
     _span_holder: Dict[RequestStage, Span] = dict()
     _tracer: Tracer

@@ -1,7 +1,7 @@
 import pytest
 
 import strawberry
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 
 
 @strawberry.type
@@ -15,7 +15,7 @@ def test_execution_context_operation_name_and_type():
     operation_name = None
     operation_type = None
 
-    class MyExtension(Extension):
+    class MyExtension(SchemaExtension):
         def on_request_end(self):
             nonlocal operation_name
             nonlocal operation_type
@@ -58,7 +58,7 @@ def test_execution_context_operation_type_mutation():
     operation_name = None
     operation_type = None
 
-    class MyExtension(Extension):
+    class MyExtension(SchemaExtension):
         def on_request_end(self):
             nonlocal operation_name
             nonlocal operation_type
@@ -107,7 +107,7 @@ def test_execution_context_operation_name_and_type_with_fragments():
     operation_name = None
     operation_type = None
 
-    class MyExtension(Extension):
+    class MyExtension(SchemaExtension):
         def on_request_end(self):
             nonlocal operation_name
             nonlocal operation_type
@@ -138,7 +138,7 @@ def test_execution_context_operation_name_and_type_with_fragments():
 
 
 def test_error_when_accessing_operation_type_before_parsing():
-    class MyExtension(Extension):
+    class MyExtension(SchemaExtension):
         def on_request_start(self):
             execution_context = self.execution_context
 
@@ -152,7 +152,7 @@ def test_error_when_accessing_operation_type_before_parsing():
 
 
 def test_error_when_accessing_operation_type_with_invalid_operation_name():
-    class MyExtension(Extension):
+    class MyExtension(SchemaExtension):
         def on_parsing_end(self):
             execution_context = self.execution_context
 

@@ -21,7 +21,7 @@ from graphql import execute as original_execute
 from graphql.validation import validate
 
 from strawberry.exceptions import MissingQueryError
-from strawberry.extensions.runner import ExtensionsRunner
+from strawberry.extensions.runner import SchemaExtensionsRunner
 from strawberry.types import ExecutionResult
 
 from .exceptions import InvalidOperationTypeError
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from graphql.language import DocumentNode
     from graphql.validation import ASTValidationRule
 
-    from strawberry.extensions import Extension
+    from strawberry.extensions import SchemaExtension
     from strawberry.types import ExecutionContext
     from strawberry.types.graphql import OperationType
 
@@ -70,12 +70,12 @@ async def execute(
     schema: GraphQLSchema,
     *,
     allowed_operation_types: Iterable[OperationType],
-    extensions: Sequence[Union[Type[Extension], Extension]],
+    extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
 ) -> ExecutionResult:
-    extensions_runner = ExtensionsRunner(
+    extensions_runner = SchemaExtensionsRunner(
         execution_context=execution_context,
         extensions=list(extensions),
     )
@@ -163,12 +163,12 @@ def execute_sync(
     schema: GraphQLSchema,
     *,
     allowed_operation_types: Iterable[OperationType],
-    extensions: Sequence[Union[Type[Extension], Extension]],
+    extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
 ) -> ExecutionResult:
-    extensions_runner = ExtensionsRunner(
+    extensions_runner = SchemaExtensionsRunner(
         execution_context=execution_context,
         extensions=list(extensions),
     )

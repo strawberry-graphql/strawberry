@@ -105,7 +105,7 @@ schema = strawberry.Schema(Query, types=[Individual, Company])
 
 </details>
 
-#### `extensions: List[Type[Extension]] = []`
+#### `extensions: List[Type[SchemaExtension]] = []`
 
 List of [extensions](/docs/extensions) to add to your Schema.
 

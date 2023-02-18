@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.directive import StrawberryDirective
     from strawberry.enum import EnumDefinition
-    from strawberry.extensions import Extension
+    from strawberry.extensions import SchemaExtension
     from strawberry.field import StrawberryField
     from strawberry.types import ExecutionResult
     from strawberry.union import StrawberryUnion
@@ -59,7 +59,7 @@ class Schema(BaseSchema):
         subscription: Optional[Type] = None,
         directives: Iterable[StrawberryDirective] = (),
         types=(),
-        extensions: Iterable[Union[Type[Extension], Extension]] = (),
+        extensions: Iterable[Union[Type[SchemaExtension], SchemaExtension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
         scalar_overrides: Optional[
@@ -157,7 +157,7 @@ class Schema(BaseSchema):
 
     def get_extensions(
         self, sync: bool = False
-    ) -> List[Union[Type[Extension], Extension]]:
+    ) -> List[Union[Type[SchemaExtension], SchemaExtension]]:
         extensions = list(self.extensions)
 
         if self.directives:
