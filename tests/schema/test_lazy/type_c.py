@@ -21,7 +21,6 @@ class Edge(Generic[T]):
 
 @strawberry.type
 class Query:
-
     type_a: Edge[TypeC]
     type_b: Edge[Annotated["TypeC", strawberry.lazy("tests.schema.test_lazy.type_c")]]
 

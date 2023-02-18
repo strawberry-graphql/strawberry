@@ -198,12 +198,12 @@ class SyncGraphQLHTTPConsumer(GraphQLHTTPConsumer):
     synchronous and not asynchronous).
     """
 
-    def get_root_value(self, request: Optional["ChannelsConsumer"] = None) -> Any:
+    def get_root_value(self, request: Optional[ChannelsConsumer] = None) -> Any:
         return None
 
     def get_context(  # type: ignore[override]
         self,
-        request: Optional["ChannelsConsumer"] = None,
+        request: Optional[ChannelsConsumer] = None,
     ) -> StrawberryChannelsContext:
         return StrawberryChannelsContext(request=request or self)
 

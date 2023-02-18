@@ -531,7 +531,6 @@ def test_info_argument(resolver):
 
 
 def test_name_based_info_is_deprecated():
-
     with pytest.deprecated_call(match=r"Argument name-based matching of 'info'"):
 
         @strawberry.type

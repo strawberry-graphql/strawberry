@@ -17,7 +17,6 @@ async def communicator(request):
 
 
 async def test_simple_subscribe(communicator):
-
     async for res in communicator.subscribe(
         query='subscription { echo(message: "Hi") }'
     ):

@@ -46,7 +46,7 @@ class StrawberryUnion(StrawberryType):
     def __init__(
         self,
         name: Optional[str] = None,
-        type_annotations: Tuple["StrawberryAnnotation", ...] = tuple(),
+        type_annotations: Tuple[StrawberryAnnotation, ...] = tuple(),
         description: Optional[str] = None,
         directives: Iterable[object] = (),
     ):
@@ -146,7 +146,7 @@ class StrawberryUnion(StrawberryType):
         """
         raise ValueError("Cannot use union type directly")
 
-    def get_type_resolver(self, type_map: "TypeMap") -> GraphQLTypeResolver:
+    def get_type_resolver(self, type_map: TypeMap) -> GraphQLTypeResolver:
         def _resolve_union_type(
             root: Any, info: GraphQLResolveInfo, type_: GraphQLAbstractType
         ) -> str:

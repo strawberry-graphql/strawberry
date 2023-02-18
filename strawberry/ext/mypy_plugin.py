@@ -426,7 +426,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                 lhs = cast(NameExpr, stmt.lvalues[0])
                 new_strawberry_fields.add(lhs.name)
 
-        pydantic_fields: Set["PydanticModelField"] = set()
+        pydantic_fields: Set[PydanticModelField] = set()
         try:
             for _name, data in model_type.type.metadata[PYDANTIC_METADATA_KEY][
                 "fields"
@@ -442,7 +442,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                 ctx.reason,
             )
 
-        potentially_missing_fields: Set["PydanticModelField"] = {
+        potentially_missing_fields: Set[PydanticModelField] = {
             f for f in pydantic_fields if f.name not in new_strawberry_fields
         }
 
@@ -453,7 +453,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         This means that the user is using all_fields=True
         """
         is_all_fields: bool = len(potentially_missing_fields) == len(pydantic_fields)
-        missing_pydantic_fields: Set["PydanticModelField"] = (
+        missing_pydantic_fields: Set[PydanticModelField] = (
             potentially_missing_fields if not is_all_fields else set()
         )
 

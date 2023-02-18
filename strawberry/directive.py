@@ -4,7 +4,7 @@ import dataclasses
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, TypeVar
 from typing_extensions import Annotated
 
-from graphql import DirectiveLocation  # noqa: TCH002
+from graphql import DirectiveLocation
 
 from strawberry.field import StrawberryField
 from strawberry.types.fields.resolver import (
@@ -46,7 +46,6 @@ VALUE_PARAMSPEC = ReservedType(name="value", type=StrawberryDirectiveValue)
 
 
 class StrawberryDirectiveResolver(StrawberryResolver[T]):
-
     RESERVED_PARAMSPEC = (
         INFO_PARAMSPEC,
         VALUE_PARAMSPEC,
