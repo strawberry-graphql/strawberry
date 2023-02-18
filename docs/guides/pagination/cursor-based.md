@@ -84,7 +84,7 @@ class User:
     )
 
     @staticmethod
-    def from_row(row: Dict[str, Any]):
+    def from_row(row: Dict[str, Any]) -> "User":
         return User(
             id=row['id'],
             name=row['name'],
@@ -179,7 +179,7 @@ class User:
     )
 
     @staticmethod
-    def from_row(row: Dict[str, Any]):
+    def from_row(row: Dict[str, Any]) -> "User":
         return User(
             id=row['id'],
             name=row['name'],
@@ -305,7 +305,7 @@ class User:
     )
 
     @staticmethod
-    def from_row(row: Dict[str, Any]):
+    def from_row(row: Dict[str, Any]) -> "User":
         return User(
             id=row['id'],
             name=row['name'],
@@ -426,7 +426,7 @@ class User:
     )
 
     @staticmethod
-    def from_row(row: Dict[str, Any]):
+    def from_row(row: Dict[str, Any]) -> "User":
         return User(
             id=row['id'],
             name=row['name'],
