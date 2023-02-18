@@ -21,7 +21,8 @@ While reading about GraphQL you might have encountered 3 special object types: `
 - `Mutation` is the entry point for all the mutations
 - `Subscription` is the entry point for all the subscriptions.
 
-. TODO: add a link to docs on defining a schema.
+For a walk-through on how to define schemas, read the [schema
+basics](/docs/general/schema-basics.md).
 
 ## Defining object types
 

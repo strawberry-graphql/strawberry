@@ -1,53 +1,37 @@
 repos:
-  - repo: https://github.com/myint/autoflake
-    rev: 'v1.4'
+  - repo: https://github.com/psf/black
+    rev: 23.1.0
     hooks:
-    - id: autoflake
-      args: ['--in-place', '--remove-all-unused-imports', '--ignore-init-module-imports']
-      name: autoflake
-      entry: autoflake
-      language: python
-      'types': [python]
-      require_serial: true
+      - id: black
+        exclude: ^tests/codegen/snapshots/python/
 
-  - repo: https://github.com/PyCQA/flake8
-    rev: 4.0.1
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.247
     hooks:
-      - id: flake8
-        additional_dependencies: ["flake8-eradicate==1.2.0"]
-
-  - repo: https://github.com/pycqa/isort
-    rev: 5.10.1
-    hooks:
-      - id: isort
+      - id: ruff
+        exclude: ^tests/codegen/snapshots/python/
 
   - repo: https://github.com/patrick91/pre-commit-alex
     rev: aa5da9e54b92ab7284feddeaf52edf14b1690de3
     hooks:
       - id: alex
-        exclude: CHANGELOG.md
+        exclude: (CHANGELOG|TWEET).md
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.4.1
+    rev: v3.0.0-alpha.4
     hooks:
       - id: prettier
         files: '^docs/.*\.mdx?$'
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.0.1
+    rev: v4.4.0
     hooks:
       - id: trailing-whitespace
       - id: check-merge-conflict
       - id: end-of-file-fixer
       - id: check-toml
 
-  - repo: https://github.com/humitos/mirrors-autoflake.git
-    rev: v1.1
+  - repo: https://github.com/adamchainz/blacken-docs
+    rev: 1.13.0
     hooks:
-      - id: autoflake
-        args: ['--in-place', '--remove-all-unused-imports', '--remove-unused-variable']
-
-  - repo: https://github.com/psf/black
-    rev: 21.11b1
-    hooks:
-      - id: black
+      - id: blacken-docs

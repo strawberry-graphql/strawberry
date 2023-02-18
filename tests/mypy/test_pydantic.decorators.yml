@@ -1,0 +1,287 @@
+
+- case: test_converted_pydantic_init_any_kwargs
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    reveal_type(UserStrawberry)
+    reveal_type(UserStrawberry(age=123))
+  out: |
+     main:11: note: Revealed type is "def (**kwargs: Any) -> main.UserStrawberry"
+     main:12: note: Revealed type is "main.UserStrawberry"
+
+- case: test_converted_to_pydantic
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    reveal_type(UserStrawberry(age=123).to_pydantic())
+  out: |
+     main:11: note: Revealed type is "main.UserPydantic"
+
+- case: test_converted_from_pydantic
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    reveal_type(UserStrawberry.from_pydantic(UserPydantic(age=123)))
+  out: |
+     main:11: note: Revealed type is "main.UserStrawberry"
+
+- case: test_converted_to_pydantic_input
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.input(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    reveal_type(UserStrawberry(age=123).to_pydantic())
+  out: |
+     main:11: note: Revealed type is "main.UserPydantic"
+
+- case: test_converted_from_pydantic_input
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.input(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    reveal_type(UserStrawberry.from_pydantic(UserPydantic(age=123)))
+  out: |
+     main:11: note: Revealed type is "main.UserStrawberry"
+
+- case: test_converted_to_pydantic_interface
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.interface(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    reveal_type(UserStrawberry(age=123).to_pydantic())
+  out: |
+     main:11: note: Revealed type is "main.UserPydantic"
+
+- case: test_converted_from_pydantic_interface
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.interface(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    reveal_type(UserStrawberry.from_pydantic(UserPydantic(age=123)))
+  out: |
+     main:11: note: Revealed type is "main.UserStrawberry"
+
+- case: test_converted_from_pydantic_raise_error_wrong_instance
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    class AnotherModel(BaseModel):
+        age: int
+
+    UserStrawberry.from_pydantic(AnotherModel(age=123))
+  out: |
+     main:14: error: Argument 1 to "from_pydantic" of "UserStrawberry" has incompatible type "AnotherModel"; expected "UserPydantic"  [arg-type]
+
+- case: test_converted_from_pydantic_chained
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    reveal_type(UserStrawberry.from_pydantic(UserPydantic(age=123)).to_pydantic())
+  out: |
+     main:11: note: Revealed type is "main.UserPydantic"
+
+- case: test_to_pydantic_kwargs
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+
+    class MyModel(BaseModel):
+        email: str
+        password: str
+
+
+    @strawberry.experimental.pydantic.input(model=MyModel)
+    class MyModelStrawberry:
+        email: strawberry.auto
+
+
+    MyModelStrawberry(email="").to_pydantic()
+  out: |
+     main:15: error: Missing named argument "password" for "to_pydantic" of "MyModelStrawberry"  [call-arg]
+- case: test_to_pydantic_kwargs_with_defaults
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+
+    class MyModel(BaseModel):
+        email: str
+        password: str = "hunter2"
+
+
+    @strawberry.experimental.pydantic.input(model=MyModel)
+    class MyModelStrawberry:
+        email: strawberry.auto
+
+
+    MyModelStrawberry(email="").to_pydantic()
+  out: |
+- case: test_to_pydantic_kwargs_with_optional_default
+  main: |
+    from pydantic import BaseModel
+    from typing import Optional
+    import strawberry
+
+
+    class MyModel(BaseModel):
+        email: str
+        password: Optional[str] # pydantic makes this implicit = None default
+
+
+    @strawberry.experimental.pydantic.input(model=MyModel)
+    class MyModelStrawberry:
+        email: strawberry.auto
+
+
+    MyModelStrawberry(email="").to_pydantic()
+  out: |
+- case: test_to_pydantic_kwargs_with_all_fields
+  main: |
+    from pydantic import BaseModel
+    from typing import Optional
+    import strawberry
+
+
+    class MyModel(BaseModel):
+        email: str
+        password: Optional[str]
+
+
+    @strawberry.experimental.pydantic.input(model=MyModel, all_fields=True)
+    class MyModelStrawberry:
+        ...
+
+
+    MyModelStrawberry(email="").to_pydantic()
+  out: |
+- case: test_to_pydantic_kwargs_with_all_fields_adding_field
+  main: |
+    from pydantic import BaseModel
+    from typing import Optional
+    import strawberry
+
+
+    class MyModel(BaseModel):
+        email: str
+        password: Optional[str]
+
+        @property
+        def age(self) -> int:
+            return 42
+
+
+    @strawberry.experimental.pydantic.input(model=MyModel, all_fields=True)
+    class MyModelStrawberry:
+        age: int # read from the property
+
+
+    MyModelStrawberry(email="").to_pydantic()
+  out: |
+- case: test_to_pydantic_kwargs_private_field
+  main: |
+    from pydantic import BaseModel
+    from typing import Optional
+    import strawberry
+
+
+    class MyModel(BaseModel):
+        email: str
+        _age: int # for pydantic, underscore means private field
+
+
+    @strawberry.experimental.pydantic.input(model=MyModel)
+    class MyModelStrawberry:
+        email: strawberry.auto
+
+
+    MyModelStrawberry(email="").to_pydantic()
+  out: |
+- case: test_to_pydantic_custom
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class MyModel(BaseModel):
+        email: str
+
+    @strawberry.experimental.pydantic.input(model=MyModel)
+    class MyModelStrawberry:
+        email: strawberry.auto
+
+        def to_pydantic(self, another_param: str):
+            # custom to_pydantic overwrites default params
+            ...
+
+    MyModelStrawberry(email="").to_pydantic()
+
+  out: |
+    main:15: error: Missing positional argument "another_param" in call to "to_pydantic" of "MyModelStrawberry"  [call-arg]

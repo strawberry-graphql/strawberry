@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import dataclasses
 import sys
-from typing import Dict, List, Type
+from typing import TYPE_CHECKING, Dict, List, Type, TypeVar
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -8,10 +10,12 @@ from strawberry.exceptions import (
     FieldWithResolverAndDefaultValueError,
     PrivateStrawberryFieldError,
 )
-from strawberry.field import StrawberryField
 from strawberry.private import is_private
+from strawberry.unset import UNSET
+from strawberry.utils.inspect import get_specialized_type_var_map
 
-from ..arguments import UNSET
+if TYPE_CHECKING:
+    from strawberry.field import StrawberryField
 
 
 def _get_fields(cls: Type) -> List[StrawberryField]:
@@ -59,7 +63,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             base_fields = {
                 field.python_name: field
                 # TODO: we need to rename _fields to something else
-                for field in base._type_definition._fields  # type: ignore
+                for field in base._type_definition._fields
             }
 
             # Add base's fields to cls' fields
@@ -72,21 +76,21 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
 
     for base in cls.__mro__:
         if hasattr(base, "_type_definition"):
-            for field in base._type_definition._fields:  # type: ignore
+            for field in base._type_definition._fields:
                 if field.python_name in base.__annotations__:
                     origins.setdefault(field.name, base)
 
     # then we can proceed with finding the fields for the current class
     for field in dataclasses.fields(cls):
-
         if isinstance(field, StrawberryField):
             # Check that the field type is not Private
             if is_private(field.type):
-                raise PrivateStrawberryFieldError(field.python_name, cls.__name__)
+                raise PrivateStrawberryFieldError(field.python_name, cls)
 
             # Check that default is not set if a resolver is defined
             if (
                 field.default is not dataclasses.MISSING
+                and field.default is not UNSET
                 and field.base_resolver is not None
             ):
                 raise FieldWithResolverAndDefaultValueError(
@@ -96,8 +100,10 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # Check that default_factory is not set if a resolver is defined
             # Note: using getattr because of this issue:
             # https://github.com/python/mypy/issues/6910
+            default_factory = getattr(field, "default_factory", None)
             if (
-                getattr(field, "default_factory") is not dataclasses.MISSING  # noqa
+                default_factory is not dataclasses.MISSING
+                and default_factory is not UNSET
                 and field.base_resolver is not None
             ):
                 raise FieldWithResolverAndDefaultFactoryError(
@@ -115,12 +121,15 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # the types.
             field.origin = field.origin or cls
 
-            # Make sure types are StrawberryAnnotations
-            if not isinstance(field.type_annotation, StrawberryAnnotation):
-                module = sys.modules[field.origin.__module__]
-                field.type_annotation = StrawberryAnnotation(
-                    annotation=field.type_annotation, namespace=module.__dict__
-                )
+            # Set the correct namespace for annotations if a namespace isn't
+            # already set
+            # Note: We do this here rather in the `Strawberry.type` setter
+            # function because at that point we don't have a link to the object
+            # type that the field as attached to.
+            if isinstance(field.type_annotation, StrawberryAnnotation):
+                type_annotation = field.type_annotation
+                if type_annotation.namespace is None:
+                    type_annotation.set_namespace_from_field(field)
 
         # Create a StrawberryField for fields that didn't use strawberry.field
         else:
@@ -133,6 +142,20 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             origin = origins.get(field.name, cls)
             module = sys.modules[origin.__module__]
 
+            if isinstance(field_type, TypeVar):
+                specialized_type_var_map = get_specialized_type_var_map(cls)
+                # If field_type is specialized and a TypeVar, replace it with its
+                # mapped type
+                if specialized_type_var_map and field_type in specialized_type_var_map:
+                    field_type = specialized_type_var_map[field_type]
+            else:
+                specialized_type_var_map = get_specialized_type_var_map(field_type)
+                # If field_type is specialized, copy its type_var_map to the definition
+                if specialized_type_var_map:
+                    field_type = field_type._type_definition.copy_with(
+                        specialized_type_var_map
+                    )
+
             # Create a StrawberryField, for fields of Types #1 and #2a
             field = StrawberryField(
                 python_name=field.name,
@@ -142,7 +165,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                     namespace=module.__dict__,
                 ),
                 origin=origin,
-                default=getattr(cls, field.name, UNSET),
+                default=getattr(cls, field.name, dataclasses.MISSING),
             )
 
         field_name = field.python_name

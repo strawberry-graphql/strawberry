@@ -24,6 +24,7 @@ Here's how we can use it in our schema:
 import strawberry
 from strawberry.schema_directive import Location
 
+
 @strawberry.schema_directive(locations=[Location.OBJECT])
 class Keys:
     fields: str
@@ -31,7 +32,8 @@ class Keys:
 
 from .directives import Keys
 
-@strawberry.type(directives=Keys(fields="id"))
+
+@strawberry.type(directives=[Keys(fields="id")])
 class User:
     id: strawberry.ID
     name: str
@@ -44,6 +46,16 @@ type User @keys(fields: "id") {
   id: ID!
   name: String!
 }
+```
+
+## Overriding field names
+
+You can use `strawberry.directive_field` to override the name of a field:
+
+```python
+@strawberry.schema_directive(locations=[Location.OBJECT])
+class Keys:
+    fields: str = strawberry.directive_field(name="as")
 ```
 
 ## Locations

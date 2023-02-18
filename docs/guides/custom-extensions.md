@@ -15,11 +15,11 @@ class:
 import strawberry
 from strawberry.extensions import Extension
 
+
 class MyExtension(Extension):
     def get_results(self):
-        return {
-            "example": "this is an example for an extension"
-        }
+        return {"example": "this is an example for an extension"}
+
 
 schema = strawberry.Schema(query=Query, extensions=[MyExtension])
 ```
@@ -34,13 +34,48 @@ starts and ends. Both methods can alternatively be implemented asynchronously.
 ```python
 from strawberry.extensions import Extension
 
+
 class MyExtension(Extension):
     def on_request_start(self):
-        print('GraphQL request start')
+        print("GraphQL request start")
 
     def on_request_end(self):
-        print('GraphQL request end')
+        print("GraphQL request end")
 ```
+
+<details>
+  <summary>Extend error response format</summary>
+
+```python
+class ExtendErrorFormat(Extension):
+    def on_request_end(self):
+        result = self.execution_context.result
+        if getattr(result, "errors", None):
+            result.errors = [
+                StrawberryGraphQLError(
+                    extensions={"additional_key": "additional_value"},
+                    nodes=error.nodes,
+                    source=error.source,
+                    positions=error.positions,
+                    path=error.path,
+                    original_error=error.original_error,
+                    message=error.message,
+                )
+                for error in result.errors
+            ]
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def ping(self) -> str:
+        raise Exception("This error occurred while querying the ping field")
+
+
+schema = strawberry.Schema(query=Query, extensions=[ExtendErrorFormat])
+```
+
+</details>
 
 ### Resolve
 
@@ -53,6 +88,7 @@ Note that `resolve` can also be implemented asynchronously.
 ```python
 from strawberry.types import Info
 from strawberry.extensions import Extension
+
 
 class MyExtension(Extension):
     def resolve(self, _next, root, info: Info, *args, **kwargs):
@@ -68,6 +104,7 @@ resolving to a dictionary of data that will be included in the GraphQL response.
 from typing import Any, Dict
 from strawberry.extensions import Extension
 
+
 class MyExtension(Extension):
     def get_results(self) -> Dict[str, Any]:
         return {}
@@ -81,12 +118,13 @@ step of the GraphQL execution. Both methods can be implemented asynchronously.
 ```python
 from strawberry.extensions import Extension
 
+
 class MyExtension(Extension):
     def on_validation_start(self):
-        print('GraphQL validation start')
+        print("GraphQL validation start")
 
     def on_validation_end(self):
-        print('GraphQL validation end')
+        print("GraphQL validation end")
 ```
 
 ### Parsing
@@ -97,12 +135,13 @@ the GraphQL execution. Both methods can be implemented asynchronously.
 ```python
 from strawberry.extensions import Extension
 
+
 class MyExtension(Extension):
     def on_parsing_start(self):
-        print('GraphQL parsing start')
+        print("GraphQL parsing start")
 
     def on_parsing_end(self):
-        print('GraphQL parsing end')
+        print("GraphQL parsing end")
 ```
 
 ### Execution
@@ -113,12 +152,13 @@ the GraphQL execution. Both methods can be implemented asynchronously.
 ```python
 from strawberry.extensions import Extension
 
+
 class MyExtension(Extension):
     def on_executing_start(self):
-        print('GraphQL execution start')
+        print("GraphQL execution start")
 
     def on_executing_end(self):
-        print('GraphQL execution end')
+        print("GraphQL execution end")
 ```
 
 #### Examples:
@@ -133,6 +173,7 @@ from strawberry.extensions import Extension
 
 # Use an actual cache in production so that this doesn't grow unbounded
 response_cache = {}
+
 
 class ExecutionCache(Extension):
     def on_executing_start(self):
@@ -154,7 +195,7 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         ExecutionCache,
-    ]
+    ],
 )
 ```
 
@@ -166,6 +207,7 @@ schema = strawberry.Schema(
 ```python
 import strawberry
 from strawberry.extensions import Extension
+
 
 class RejectSomeQueries(Extension):
     def on_executing_start(self):
@@ -182,7 +224,7 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         RejectSomeQueries,
-    ]
+    ],
 )
 ```
 
@@ -201,6 +243,7 @@ for available data.
 from strawberry.extensions import Extension
 
 from mydb import get_db_session
+
 
 class MyExtension(Extension):
     def on_request_start(self):

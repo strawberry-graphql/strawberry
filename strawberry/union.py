@@ -1,7 +1,12 @@
+from __future__ import annotations
+
 import itertools
+from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
+    Collection,
+    Iterable,
     List,
     Mapping,
     NoReturn,
@@ -12,26 +17,28 @@ from typing import (
     Union,
     cast,
 )
+from typing_extensions import Annotated, get_origin
 
-from graphql import (
-    GraphQLAbstractType,
-    GraphQLNamedType,
-    GraphQLResolveInfo,
-    GraphQLType,
-    GraphQLTypeResolver,
-    GraphQLUnionType,
-)
+from graphql import GraphQLNamedType, GraphQLUnionType
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
-    InvalidUnionType,
+    InvalidTypeForUnionMergeError,
+    InvalidUnionTypeError,
     UnallowedReturnTypeForUnion,
     WrongReturnTypeForUnion,
 )
-from strawberry.type import StrawberryType
-
+from strawberry.lazy_type import LazyType
+from strawberry.type import StrawberryOptional, StrawberryType
 
 if TYPE_CHECKING:
+    from graphql import (
+        GraphQLAbstractType,
+        GraphQLResolveInfo,
+        GraphQLType,
+        GraphQLTypeResolver,
+    )
+
     from strawberry.schema.types.concrete_type import TypeMap
     from strawberry.types.types import TypeDefinition
 
@@ -40,12 +47,14 @@ class StrawberryUnion(StrawberryType):
     def __init__(
         self,
         name: Optional[str] = None,
-        type_annotations: Tuple["StrawberryAnnotation", ...] = tuple(),
+        type_annotations: Tuple[StrawberryAnnotation, ...] = tuple(),
         description: Optional[str] = None,
+        directives: Iterable[object] = (),
     ):
         self.graphql_name = name
         self.type_annotations = type_annotations
         self.description = description
+        self.directives = directives
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryType):
@@ -63,6 +72,16 @@ class StrawberryUnion(StrawberryType):
         # TODO: Is this a bad idea? __eq__ objects are supposed to have the same hash
         return id(self)
 
+    def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
+        if other is None:
+            # Return the correct notation when using `StrawberryUnion | None`.
+            return StrawberryOptional(of_type=self)
+
+        # Raise an error in any other case.
+        # There is Work in progress to deal with more merging cases, see:
+        # https://github.com/strawberry-graphql/strawberry/pull/1455
+        raise InvalidTypeForUnionMergeError(self, other)
+
     @property
     def types(self) -> Tuple[StrawberryType, ...]:
         return tuple(
@@ -73,6 +92,9 @@ class StrawberryUnion(StrawberryType):
     @property
     def type_params(self) -> List[TypeVar]:
         def _get_type_params(type_: StrawberryType):
+            if isinstance(type_, LazyType):
+                type_ = cast("StrawberryType", type_.resolve_type())
+
             if hasattr(type_, "_type_definition"):
                 parameters = getattr(type_, "__parameters__", None)
 
@@ -88,7 +110,16 @@ class StrawberryUnion(StrawberryType):
 
     @property
     def is_generic(self) -> bool:
-        return len(self.type_params) > 0
+        def _is_generic(type_: object) -> bool:
+            if hasattr(type_, "_type_definition"):
+                type_ = type_._type_definition
+
+            if isinstance(type_, StrawberryType):
+                return type_.is_generic
+
+            return False
+
+        return any(map(_is_generic, self.types))
 
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
@@ -101,7 +132,7 @@ class StrawberryUnion(StrawberryType):
             new_type: Union[StrawberryType, type]
 
             if hasattr(type_, "_type_definition"):
-                type_definition: TypeDefinition = type_._type_definition  # type: ignore
+                type_definition: TypeDefinition = type_._type_definition
 
                 if type_definition.is_generic:
                     new_type = type_definition.copy_with(type_var_map)
@@ -125,9 +156,7 @@ class StrawberryUnion(StrawberryType):
         """
         raise ValueError("Cannot use union type directly")
 
-    def get_type_resolver(self, type_map: "TypeMap") -> GraphQLTypeResolver:
-        # TODO: Type annotate returned function
-
+    def get_type_resolver(self, type_map: TypeMap) -> GraphQLTypeResolver:
         def _resolve_union_type(
             root: Any, info: GraphQLResolveInfo, type_: GraphQLAbstractType
         ) -> str:
@@ -135,16 +164,29 @@ class StrawberryUnion(StrawberryType):
 
             from strawberry.types.types import TypeDefinition
 
-            # Make sure that the type that's passed in is an Object type
+            # If the type given is not an Object type, try resolving using `is_type_of`
+            # defined on the union's inner types
             if not hasattr(root, "_type_definition"):
-                # TODO: If root=python dict, this won't work
+                for inner_type in type_.types:
+                    if inner_type.is_type_of is not None and inner_type.is_type_of(
+                        root, info
+                    ):
+                        return inner_type.name
+
+                # Couldn't resolve using `is_type_of`
                 raise WrongReturnTypeForUnion(info.field_name, str(type(root)))
 
             return_type: Optional[GraphQLType]
 
-            # Iterate over all of our known types and find the first concrete type that
-            # implements the type
-            for possible_concrete_type in type_map.values():
+            # Iterate over all of our known types and find the first concrete
+            # type that implements the type. We prioritise checking types named in the
+            # Union in case a nested generic object matches against more than one type.
+            concrete_types_for_union = (type_map[x.name] for x in type_.types)
+
+            # TODO: do we still need to iterate over all types in `type_map`?
+            for possible_concrete_type in chain(
+                concrete_types_for_union, type_map.values()
+            ):
                 possible_type = possible_concrete_type.definition
                 if not isinstance(possible_type, TypeDefinition):
                     continue
@@ -170,6 +212,22 @@ class StrawberryUnion(StrawberryType):
 
         return _resolve_union_type
 
+    @staticmethod
+    def is_valid_union_type(type_: object) -> bool:
+        # Usual case: Union made of @strawberry.types
+        if hasattr(type_, "_type_definition"):
+            return True
+
+        # Can't confidently assert that these types are valid/invalid within Unions
+        # until full type resolving stage is complete
+        ignored_types = (LazyType, TypeVar)
+        if isinstance(type_, ignored_types):
+            return True
+        if get_origin(type_) is Annotated:
+            return True
+
+        return False
+
 
 Types = TypeVar("Types", bound=Type)
 
@@ -180,8 +238,12 @@ Types = TypeVar("Types", bound=Type)
 # yet supported in any python implementation (or in typing_extensions).
 # See https://www.python.org/dev/peps/pep-0646/ for more information
 def union(
-    name: str, types: Tuple[Types, ...], *, description: str = None
-) -> Union[Types]:  # type: ignore
+    name: str,
+    types: Collection[Types],
+    *,
+    description: Optional[str] = None,
+    directives: Iterable[object] = (),
+) -> Union[Types]:
     """Creates a new named Union type.
 
     Example usages:
@@ -194,19 +256,20 @@ def union(
     """
 
     # Validate types
-    if len(types) == 0:
+    if not types:
         raise TypeError("No types passed to `union`")
 
-    for _type in types:
-        if not isinstance(_type, TypeVar) and not hasattr(_type, "_type_definition"):
-            raise InvalidUnionType(
-                f"Type `{_type.__name__}` cannot be used in a GraphQL Union"
-            )
+    for type_ in types:
+        # Due to TypeVars, Annotations, LazyTypes, etc., this does not perfectly detect
+        # issues. This check also occurs in the Schema conversion stage as a backup.
+        if not StrawberryUnion.is_valid_union_type(type_):
+            raise InvalidUnionTypeError(union_name=name, invalid_type=type_)
 
     union_definition = StrawberryUnion(
         name=name,
         type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
         description=description,
+        directives=directives,
     )
 
     return union_definition  # type: ignore

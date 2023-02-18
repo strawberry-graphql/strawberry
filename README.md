@@ -14,7 +14,7 @@ The quick start method provides a server and CLI to get going quickly. Install
 with:
 
 ```shell
-pip install 'strawberry-graphql[debug-server]'
+pip install "strawberry-graphql[debug-server]"
 ```
 
 ## Getting Started
@@ -76,8 +76,8 @@ A Django view is provided for adding a GraphQL endpoint to your application.
 
 ```python
 INSTALLED_APPS = [
-    ...
-    'strawberry.django',
+    ...,  # your other apps
+    "strawberry.django",
 ]
 ```
 
@@ -89,7 +89,7 @@ from .schema import schema
 
 urlpatterns = [
     ...,
-    path('graphql', GraphQLView.as_view(schema=schema)),
+    path("graphql", GraphQLView.as_view(schema=schema)),
 ]
 ```
 
@@ -147,3 +147,5 @@ pre-commit install
 
 The code in this project is licensed under MIT license. See [LICENSE](./LICENSE)
 for more information.
+
+![Recent Activity](https://images.repography.com/0/strawberry-graphql/strawberry/recent-activity/d751713988987e9331980363e24189ce.svg)

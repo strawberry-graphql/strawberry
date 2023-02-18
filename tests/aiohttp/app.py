@@ -1,7 +1,7 @@
 from aiohttp import web
 from strawberry.aiohttp.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.aiohttp.views import GraphQLView
-from tests.aiohttp.schema import Query, schema
+from tests.views.schema import Query, schema
 
 
 class DebuggableGraphQLTransportWSHandler(GraphQLTransportWSHandler):

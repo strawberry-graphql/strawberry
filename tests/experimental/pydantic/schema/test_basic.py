@@ -271,8 +271,8 @@ def test_basic_type_with_extended_fields():
     }
 
     type User {
-      age: Int!
       name: String!
+      age: Int!
     }
     """
     assert str(schema) == textwrap.dedent(expected_schema).strip()
@@ -332,7 +332,7 @@ def test_basic_type_with_union():
     class BranchBType:
         pass
 
-    @strawberry.experimental.pydantic.type(User, fields=["age", "union_field"])
+    @strawberry.experimental.pydantic.type(User, fields=["union_field"])
     class UserType:
         pass
 
@@ -341,6 +341,45 @@ def test_basic_type_with_union():
         @strawberry.field
         def user(self) -> UserType:
             return UserType(union_field=BranchBType(field_b=10))
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ user { unionField { ... on BranchBType { fieldB } } } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["user"]["unionField"]["fieldB"] == 10
+
+
+def test_basic_type_with_union_pydantic_types():
+    class BranchA(pydantic.BaseModel):
+        field_a: str
+
+    class BranchB(pydantic.BaseModel):
+        field_b: int
+
+    class User(pydantic.BaseModel):
+        union_field: Union[BranchA, BranchB]
+
+    @strawberry.experimental.pydantic.type(BranchA, fields=["field_a"])
+    class BranchAType:
+        pass
+
+    @strawberry.experimental.pydantic.type(BranchB, fields=["field_b"])
+    class BranchBType:
+        pass
+
+    @strawberry.experimental.pydantic.type(User, fields=["union_field"])
+    class UserType:
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> UserType:
+            # note that BranchB is a pydantic type, not a strawberry type
+            return UserType(union_field=BranchB(field_b=10))
 
     schema = strawberry.Schema(query=Query)
 
@@ -407,7 +446,7 @@ def test_basic_type_with_interface():
     class BranchBType(BaseType):
         pass
 
-    @strawberry.experimental.pydantic.type(User, fields=["age", "interface_field"])
+    @strawberry.experimental.pydantic.type(User, fields=["interface_field"])
     class UserType:
         pass
 

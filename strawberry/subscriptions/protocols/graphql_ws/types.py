@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Union
-
 from typing_extensions import TypedDict
 
+from graphql import GraphQLFormattedError
 
 ConnectionInitPayload = Dict[str, Any]
 
@@ -19,14 +19,10 @@ class DataPayload(TypedDict, total=False):
     data: Any
 
     # Optional list of formatted graphql.GraphQLError objects
-    errors: Optional[List[Dict[str, Any]]]
+    errors: Optional[List[GraphQLFormattedError]]
 
 
-class ErrorPayload(TypedDict):
-    id: str
-
-    # Formatted graphql.GraphQLError object
-    payload: Dict[str, Any]
+ErrorPayload = GraphQLFormattedError
 
 
 OperationMessagePayload = Union[

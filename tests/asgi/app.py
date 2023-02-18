@@ -6,7 +6,7 @@ from starlette.websockets import WebSocket
 
 from strawberry.asgi import GraphQL as BaseGraphQL
 from strawberry.asgi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
-from tests.asgi.schema import Query, schema
+from tests.views.schema import Query, schema
 
 
 class DebuggableGraphQLTransportWSHandler(GraphQLTransportWSHandler):

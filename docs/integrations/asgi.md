@@ -5,8 +5,8 @@ title: ASGI
 # ASGI
 
 Strawberry comes with a basic ASGI integration. It provides an app that you can
-use to serve your GraphQL schema. Before using Strawberry's ASGI support make sure
-you install all the required dependencies by running:
+use to serve your GraphQL schema. Before using Strawberry's ASGI support make
+sure you install all the required dependencies by running:
 
 ```
 pip install 'strawberry-graphql[asgi]'
@@ -15,6 +15,7 @@ pip install 'strawberry-graphql[asgi]'
 Once that's done you can use Strawberry with ASGI like so:
 
 ```python
+# server.py
 from strawberry.asgi import GraphQL
 
 from api.schema import schema
@@ -22,13 +23,19 @@ from api.schema import schema
 app = GraphQL(schema)
 ```
 
+Every ASGI server will accept this `app` instance to start the server. For
+example if you're using [uvicorn](https://pypi.org/project/uvicorn/) you run the
+app with `uvicorn server:app`
+
 ## Options
 
 The `GraphQL` app accepts two options at the moment:
 
-- schema: mandatory, the schema created by `strawberry.Schema`.
-- graphiql: optional, defaults to `True`, whether to enable the GraphiQL
+- `schema`: mandatory, the schema created by `strawberry.Schema`.
+- `graphiql`: optional, defaults to `True`, whether to enable the GraphiQL
   interface.
+- `allow_queries_via_get`: optional, defaults to `True`, whether to enable
+  queries via `GET` requests
 
 ## Extending the view
 
@@ -37,6 +44,7 @@ We allow to extend the base `GraphQL` app, by overriding the following methods:
 - `async get_context(self, request: Union[Request, WebSocket], response: Optional[Response] = None) -> Any`
 - `async get_root_value(self, request: Request) -> Any`
 - `async process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def encode_json(self, response_data: GraphQLHTTPResponse) -> str`
 
 ## get_context
 
@@ -46,7 +54,9 @@ the request and the response.
 
 ```python
 class MyGraphQL(GraphQL):
-    async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response] = None) -> Any:
+    async def get_context(
+        self, request: Union[Request, WebSocket], response: Optional[Response] = None
+    ) -> Any:
         return {"example": 1}
 
 
@@ -65,10 +75,12 @@ case.
 
 ### Setting response headers
 
-It is possible to use `get_context` to set response headers. A common use case might be cookie-based user authentication,
-where your login mutation resolver needs to set a cookie on the response.
+It is possible to use `get_context` to set response headers. A common use case
+might be cookie-based user authentication, where your login mutation resolver
+needs to set a cookie on the response.
 
-This is possible by updating the response object contained inside the context of the `Info` object.
+This is possible by updating the response object contained inside the context of
+the `Info` object.
 
 ```python
 @strawberry.type
@@ -82,13 +94,16 @@ class Mutation:
 
 ### Setting background tasks
 
-Similarly, [background tasks](https://www.starlette.io/background/) can be set on the response via the context:
+Similarly, [background tasks](https://www.starlette.io/background/) can be set
+on the response via the context:
 
 ```python
 from starlette.background import BackgroundTask
 
+
 async def notify_new_flavour(name: str):
     ...
+
 
 @strawberry.type
 class Mutation:
@@ -131,7 +146,8 @@ and the execution results.
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
-from graphql.error import format_error as format_graphql_error
+from graphql.error.graphql_error import format_error as format_graphql_error
+
 
 class MyGraphQL(GraphQL):
     async def process_result(
@@ -147,3 +163,14 @@ class MyGraphQL(GraphQL):
 
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
+
+## encode_json
+
+`encode_json` allows to customize the encoding of the JSON response. By default
+we use `json.dumps` but you can override this method to use a different encoder.
+
+```python
+class MyGraphQLView(GraphQL):
+    def encode_json(self, data: GraphQLHTTPResponse) -> str:
+        return json.dumps(data, indent=2)
+```

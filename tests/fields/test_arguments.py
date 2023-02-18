@@ -1,13 +1,15 @@
 import sys
 from typing import List, Optional
+from typing_extensions import Annotated
 
 import pytest
 
-from typing_extensions import Annotated
-
 import strawberry
-from strawberry.arguments import UNSET
-from strawberry.exceptions import InvalidFieldArgument, MultipleStrawberryArgumentsError
+from strawberry import UNSET
+from strawberry.exceptions import (
+    InvalidArgumentTypeError,
+    MultipleStrawberryArgumentsError,
+)
 from strawberry.type import StrawberryList, StrawberryOptional
 
 
@@ -255,7 +257,7 @@ def test_annotated_argument_on_resolver():
         def name(  # type: ignore
             argument: Annotated[
                 str,
-                strawberry.argument(description="This is a description"),  # noqa: F722
+                strawberry.argument(description="This is a description"),
             ]
         ) -> str:
             return "Name"
@@ -279,7 +281,7 @@ def test_annotated_optional_arguments_on_resolver():
         def name(  # type: ignore
             argument: Annotated[
                 Optional[str],
-                strawberry.argument(description="This is a description"),  # noqa: F722
+                strawberry.argument(description="This is a description"),
             ]
         ) -> str:
             return "Name"
@@ -301,11 +303,12 @@ def test_annotated_argument_with_default_value():
     @strawberry.type
     class Query:
         @strawberry.field
-        def name(  # type: ignore
+        def name(
+            self,
             argument: Annotated[
                 str,
-                strawberry.argument(description="This is a description"),  # noqa: F722
-            ] = "Patrick"
+                strawberry.argument(description="This is a description"),
+            ] = "Patrick",
         ) -> str:
             return "Name"
 
@@ -326,11 +329,12 @@ def test_annotated_argument_with_rename():
     @strawberry.type
     class Query:
         @strawberry.field
-        def name(  # type: ignore
+        def name(
+            self,
             arg: Annotated[
                 str,
-                strawberry.argument(name="argument"),  # noqa: F722
-            ] = "Patrick"
+                strawberry.argument(name="argument"),
+            ] = "Patrick",
         ) -> str:
             return "Name"
 
@@ -354,12 +358,12 @@ def test_multiple_annotated_arguments_exception():
     with pytest.raises(MultipleStrawberryArgumentsError) as error:
 
         @strawberry.field
-        def name(  # type: ignore
+        def name(
             argument: Annotated[
                 str,
-                strawberry.argument(description="This is a description"),  # noqa: F722
-                strawberry.argument(description="Another description"),  # noqa: F722
-            ]
+                strawberry.argument(description="This is a description"),
+                strawberry.argument(description="Another description"),
+            ],
         ) -> str:
             return "Name"
 
@@ -374,9 +378,7 @@ def test_annotated_with_other_information():
     @strawberry.type
     class Query:
         @strawberry.field
-        def name(  # type: ignore
-            argument: Annotated[str, "Some other info"]  # noqa: F722
-        ) -> str:
+        def name(self, argument: Annotated[str, "Some other info"]) -> str:
             return "Name"
 
     definition = Query._type_definition
@@ -401,11 +403,12 @@ def test_annotated_python_39():
     @strawberry.type
     class Query:
         @strawberry.field
-        def name(  # type: ignore
+        def name(
+            self,
             argument: Annotated[
                 str,
-                strawberry.argument(description="This is a description"),  # noqa: F722
-            ]
+                strawberry.argument(description="This is a description"),
+            ],
         ) -> str:
             return "Name"
 
@@ -422,46 +425,71 @@ def test_annotated_python_39():
     assert argument.type is str
 
 
+@pytest.mark.raises_strawberry_exception(
+    InvalidArgumentTypeError,
+    'Argument "word" on field "add_word" cannot be of type "Union"',
+)
 def test_union_as_an_argument_type():
-    with pytest.raises(InvalidFieldArgument):
+    @strawberry.type
+    class Noun:
+        text: str
 
-        @strawberry.type
-        class Noun:
-            text: str
+    @strawberry.type
+    class Verb:
+        text: str
 
-        @strawberry.type
-        class Verb:
-            text: str
+    Word = strawberry.union("Word", types=(Noun, Verb))
 
-        Word = strawberry.union("Word", types=(Noun, Verb))
-
-        @strawberry.field
-        def add_word(word: Word) -> bool:
-            return True
+    @strawberry.field
+    def add_word(word: Word) -> bool:
+        return True
 
 
+@pytest.mark.raises_strawberry_exception(
+    InvalidArgumentTypeError,
+    'Argument "adjective" on field "add_adjective" cannot be of type "Interface"',
+)
 def test_interface_as_an_argument_type():
-    with pytest.raises(InvalidFieldArgument):
+    @strawberry.interface
+    class Adjective:
+        text: str
 
-        @strawberry.interface
-        class Adjective:
-            text: str
-
-        @strawberry.field
-        def add_adjective(adjective: Adjective) -> bool:
-            return True
+    @strawberry.field
+    def add_adjective(adjective: Adjective) -> bool:
+        return True
 
 
+@pytest.mark.raises_strawberry_exception(
+    InvalidArgumentTypeError,
+    (
+        'Argument "adjective" on field "add_adjective_resolver" cannot be '
+        'of type "Interface"'
+    ),
+)
 def test_resolver_with_invalid_field_argument_type():
-    with pytest.raises(InvalidFieldArgument):
+    @strawberry.interface
+    class Adjective:
+        text: str
 
-        @strawberry.interface
-        class Adjective:
-            text: str
+    def add_adjective_resolver(adjective: Adjective) -> bool:
+        return True
 
-        def add_adjective_resolver(adjective: Adjective) -> bool:
-            return True
+    @strawberry.type
+    class Mutation:
+        add_adjective: bool = strawberry.field(resolver=add_adjective_resolver)
 
-        @strawberry.type
-        class Mutation:
-            add_adjective: bool = strawberry.field(resolver=add_adjective_resolver)
+
+def test_unset_deprecation_warning():
+    with pytest.deprecated_call():
+        from strawberry.arguments import UNSET  # noqa: F401
+    with pytest.deprecated_call():
+        from strawberry.arguments import is_unset  # noqa: F401
+
+
+def test_deprecated_unset():
+    with pytest.deprecated_call():
+        from strawberry.unset import is_unset
+    assert is_unset(UNSET)
+    assert not is_unset(None)
+    assert not is_unset(False)
+    assert not is_unset("hello world")

@@ -1,9 +1,9 @@
-from datetime import timedelta
-from typing import Any, Optional, Union
+from __future__ import annotations
 
-from starlette.requests import Request
-from starlette.responses import Response
-from starlette.types import Receive, Scope, Send
+import json
+from datetime import timedelta
+from typing import TYPE_CHECKING, Any, Optional, Union
+
 from starlette.websockets import WebSocket
 
 from strawberry.asgi.handlers import (
@@ -11,10 +11,17 @@ from strawberry.asgi.handlers import (
     GraphQLWSHandler,
     HTTPHandler,
 )
-from strawberry.http import GraphQLHTTPResponse, process_result
-from strawberry.schema import BaseSchema
+from strawberry.http import process_result
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from strawberry.types import ExecutionResult
+
+if TYPE_CHECKING:
+    from starlette.requests import Request
+    from starlette.responses import Response
+    from starlette.types import Receive, Scope, Send
+
+    from strawberry.http import GraphQLHTTPResponse
+    from strawberry.schema import BaseSchema
+    from strawberry.types import ExecutionResult
 
 
 class GraphQL:
@@ -26,6 +33,7 @@ class GraphQL:
         self,
         schema: BaseSchema,
         graphiql: bool = True,
+        allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
         debug: bool = False,
@@ -34,6 +42,7 @@ class GraphQL:
     ) -> None:
         self.schema = schema
         self.graphiql = graphiql
+        self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
         self.debug = debug
@@ -45,10 +54,12 @@ class GraphQL:
             await self.http_handler_class(
                 schema=self.schema,
                 graphiql=self.graphiql,
+                allow_queries_via_get=self.allow_queries_via_get,
                 debug=self.debug,
                 get_context=self.get_context,
                 get_root_value=self.get_root_value,
                 process_result=self.process_result,
+                encode_json=self.encode_json,
             ).handle(scope=scope, receive=receive, send=send)
 
         elif scope["type"] == "websocket":
@@ -79,7 +90,7 @@ class GraphQL:
                 await ws.close(code=4406)
 
         else:  # pragma: no cover
-            raise ValueError("Unknown scope type: %r" % (scope["type"],))
+            raise ValueError("Unknown scope type: {!r}".format(scope["type"]))
 
     def pick_preferred_protocol(self, ws: WebSocket) -> Optional[str]:
         protocols = ws["subprotocols"]
@@ -101,3 +112,6 @@ class GraphQL:
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        return json.dumps(response_data)

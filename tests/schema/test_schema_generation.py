@@ -1,18 +1,17 @@
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, List, Optional
 
 import pytest
-
+from graphql import ExecutionContext as GraphQLExecutionContext
 from graphql import (
-    ExecutionContext as GraphQLExecutionContext,
     ExecutionResult,
+    GraphQLError,
     GraphQLField,
     GraphQLNonNull,
     GraphQLObjectType,
     GraphQLSchema,
     GraphQLString,
-    print_schema as graphql_core_print_schema,
 )
-from graphql.pyutils import AwaitableOrValue
+from graphql import print_schema as graphql_core_print_schema
 
 import strawberry
 
@@ -66,10 +65,14 @@ def test_schema_fails_on_an_invalid_schema():
 
 def test_custom_execution_context():
     class CustomExecutionContext(GraphQLExecutionContext):
+        @staticmethod
         def build_response(
-            self, data: AwaitableOrValue[Optional[Dict[str, Any]]]
-        ) -> AwaitableOrValue[ExecutionResult]:
-            result = cast(ExecutionResult, super().build_response(data))
+            data: Optional[Dict[str, Any]],
+            errors: List[GraphQLError],
+        ) -> ExecutionResult:
+            result = super(
+                CustomExecutionContext, CustomExecutionContext
+            ).build_response(data, errors)
 
             if not result.data:
                 return result

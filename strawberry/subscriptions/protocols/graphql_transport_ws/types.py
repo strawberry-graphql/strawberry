@@ -1,7 +1,12 @@
-from dataclasses import asdict, dataclass
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
 
-from strawberry.arguments import UNSET
+from dataclasses import asdict, dataclass
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
+
+from strawberry.unset import UNSET
+
+if TYPE_CHECKING:
+    from graphql import GraphQLFormattedError
 
 
 @dataclass
@@ -83,6 +88,9 @@ class NextMessage(GraphQLTransportMessage):
     payload: Dict[str, Any]  # TODO: shape like ExecutionResult
     type: str = "next"
 
+    def as_dict(self) -> dict:
+        return {"id": self.id, "payload": self.payload, "type": self.type}
+
 
 @dataclass
 class ErrorMessage(GraphQLTransportMessage):
@@ -91,7 +99,7 @@ class ErrorMessage(GraphQLTransportMessage):
     """
 
     id: str
-    payload: List[Dict[str, Any]]  # TODO: shape like List[GraphQLError]
+    payload: List[GraphQLFormattedError]
     type: str = "error"
 
 

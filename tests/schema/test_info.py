@@ -5,9 +5,9 @@ from typing import List, Optional
 import pytest
 
 import strawberry
-from strawberry.arguments import UNSET
 from strawberry.types import Info
 from strawberry.types.nodes import FragmentSpread, InlineFragment, SelectedField
+from strawberry.unset import UNSET
 
 
 def test_info_has_the_correct_shape():
@@ -291,7 +291,7 @@ def test_info_selected_fields_undefined_variable():
 
 
 @pytest.mark.parametrize(
-    "return_type,return_value",
+    ("return_type", "return_value"),
     [
         (str, "text"),
         (List[str], ["text"]),

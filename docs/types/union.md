@@ -45,7 +45,7 @@ fields depending on which kind of object that member is. We can do that by using
 
 In Strawberry there are two ways to define a union:
 
-You can use the use the `Union` type from the `typing` module which will
+You can use the `Union` type from the `typing` module which will
 autogenerate the type name from the names of the union members:
 
 ```python+schema
@@ -100,7 +100,7 @@ class Query:
 union MediaItem = Audio | Video | Image
 
 type Query {
-  latest_media: AudioVideoImage!
+  latest_media: MediaItem!
 }
 
 type Audio {
@@ -126,6 +126,7 @@ to always return an instance of an object type from your resolver:
 ```python
 from typing import Union
 import strawberry
+
 
 @strawberry.type
 class Query:

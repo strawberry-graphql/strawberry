@@ -9,7 +9,7 @@
     User(name="Patrick")
     User(n="Patrick")
   out: |
-    main:8: error: Unexpected keyword argument "n" for "User"
+    main:8: error: Unexpected keyword argument "n" for "User"  [call-arg]
 
 - case: test_all_field_usage
   main: |
@@ -66,9 +66,9 @@
             return self.age.trim()
   out: |
     main:13: note: Revealed type is "builtins.int"
-    main:14: error: "int" has no attribute "trim"
+    main:14: error: "int" has no attribute "trim"  [attr-defined]
 
-- case: test_field_with_default_cannot_be_before_non_default
+- case: test_field_with_default_before_non_default
   main: |
     import strawberry
 
@@ -78,7 +78,6 @@
         b: str
 
   out: |
-    main:6: error: Attributes without a default cannot follow attributes with one
 
 - case: test_using_strawberry_field_does_not_break
   main: |
@@ -112,15 +111,21 @@
   out: |
     main:14: note: Revealed type is "builtins.str"
 
-- case: test_using_strawberry_federation_field_does_not_break
+- case: test_does_not_put_fields_with_async_resolver_in_init
   main: |
     import strawberry
 
+    async def resolver() -> str:
+        return "hi"
+
     @strawberry.type
     class Example:
-        a: str = strawberry.federation.field(description="Example")
-        b: str
+        a: str = strawberry.field(description="Example")
+        b: str = strawberry.field(resolver=resolver)
+        c: str
 
-    reveal_type(Example.a)
+    i = Example(a="a", c="c")
+
+    reveal_type(i.a)
   out: |
-    main:8: note: Revealed type is "builtins.str"
+    main:14: note: Revealed type is "builtins.str"

@@ -1,16 +1,14 @@
 import datetime
 
-import pytest
-
 import dateutil.tz
-
+import pytest
 from graphql import GraphQLError
 
 import strawberry
 
 
 @pytest.mark.parametrize(
-    "typing,instance,serialized",
+    ("typing", "instance", "serialized"),
     [
         (datetime.date, datetime.date(2019, 10, 25), "2019-10-25"),
         (
@@ -37,7 +35,7 @@ def test_serialization(typing, instance, serialized):
 
 
 @pytest.mark.parametrize(
-    "typing,name,instance,serialized",
+    ("typing", "name", "instance", "serialized"),
     [
         (datetime.date, "Date", datetime.date(2019, 10, 25), "2019-10-25"),
         (
@@ -77,7 +75,7 @@ def test_deserialization(typing, name, instance, serialized):
 
 
 @pytest.mark.parametrize(
-    "typing,instance,serialized",
+    ("typing", "instance", "serialized"),
     [
         (datetime.date, datetime.date(2019, 10, 25), "2019-10-25"),
         (
@@ -145,7 +143,7 @@ def execute_mutation(value):
         "20120411T03:30-25:40",
         "20120411T03:30+00:60",
         "20120411T03:30+00:61",
-        "20120411T033030.123456012:00" "2014-03-12Т12:30:14",
+        "20120411T033030.123456012:00" "2014-03-12T12:30:14",
         "2014-04-21T24:00:01",
     ),
 )

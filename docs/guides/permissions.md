@@ -15,12 +15,14 @@ import strawberry
 from strawberry.permission import BasePermission
 from strawberry.types import Info
 
+
 class IsAuthenticated(BasePermission):
     message = "User is not authenticated"
 
     # This method can also be async!
     def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
         return False
+
 
 @strawberry.type
 class Query:
@@ -72,6 +74,7 @@ from starlette.requests import Request
 from starlette.websockets import WebSocket
 from strawberry.permission import BasePermission
 from strawberry.types import Info
+
 
 class IsAuthenticated(BasePermission):
     message = "User is not authenticated"

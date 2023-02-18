@@ -37,6 +37,7 @@ There are several built-in scalars, and you can define custom scalars too.
 - `Time`, an ISO-8601 encoded [time](https://docs.python.org/3/library/datetime.html#time-objects)
 - `Decimal`, a [Decimal](https://docs.python.org/3/library/decimal.html#decimal.Decimal) value serialized as a string
 - `UUID`, a [UUID](https://docs.python.org/3/library/uuid.html#uuid.UUID) value serialized as a string
+- `Void`, always null, maps to Python’s `None`
 
 Fields can return built-in scalars by using the Python equivalent:
 
@@ -56,6 +57,7 @@ class Product:
     same_day_shipping_before: datetime.time
     created_at: datetime.datetime
     price: decimal.Decimal
+    void: None
 ---
 type Product {
   id: UUID!
@@ -66,6 +68,7 @@ type Product {
   sameDayShippingBefore: Time!
   createdAt: DateTime!
   price: Decimal!
+  void: Void
 }
 ```
 
@@ -74,6 +77,7 @@ Scalar types can also be used as inputs:
 ```python
 import datetime
 import strawberry
+
 
 @strawberry.type
 class Query:
@@ -102,8 +106,9 @@ import strawberry
 Base64 = strawberry.scalar(
     NewType("Base64", bytes),
     serialize=lambda v: base64.b64encode(v).decode("utf-8"),
-    parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
+    parse_value=lambda v: base64.b64decode(v).encode("utf-8"),
 )
+
 
 @strawberry.type
 class Query:
@@ -111,12 +116,23 @@ class Query:
     def base64(self) -> Base64:
         return Base64(b"hi")
 
+
 schema = strawberry.Schema(Query)
 
 result = schema.execute_sync("{ base64 }")
 
-assert results.data  == {"base64": "aGk="}
+assert results.data == {"base64": "aGk="}
 ```
+
+<Note>
+
+The `Base16`, `Base32` and `Base64` scalar types are available in `strawberry.scalars`
+
+```python
+from strawberry.scalars import Base16, Base32, Base64
+```
+
+</Note>
 
 ## Example JSONScalar
 
@@ -126,13 +142,12 @@ from typing import Any, NewType
 
 import strawberry
 
-JSONScalar = strawberry.scalar(
-    NewType("JSONScalar", Any),
+JSON = strawberry.scalar(
+    NewType("JSON", object),
+    description="The `JSON` scalar type represents JSON values as specified by ECMA-404",
     serialize=lambda v: v,
-    parse_value=lambda v: json.loads(v),
-    description="The GenericScalar scalar type represents a generic GraphQL scalar value that could be: List or Object."
+    parse_value=lambda v: v,
 )
-
 ```
 
 Usage:
@@ -141,9 +156,8 @@ Usage:
 @strawberry.type
 class Query:
     @strawberry.field
-    def data(self, info) -> JSONScalar:
+    def data(self, info) -> JSON:
         return {"hello": {"a": 1}, "someNumbers": [1, 2, 3]}
-
 ```
 
 ```graphql+response
@@ -160,6 +174,16 @@ query ExampleDataQuery {
   }
 }
 ```
+
+<Note>
+
+The `JSON` scalar type is available in `strawberry.scalars`
+
+```python
+from strawberry.scalars import JSON
+```
+
+</Note>
 
 ## Overriding built in scalars
 
@@ -180,17 +204,19 @@ EpochDateTime = strawberry.scalar(
     parse_value=lambda value: datetime.fromtimestamp(int(value), timezone.utc),
 )
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def current_time(self) -> datetime:
         return datetime.now()
 
+
 schema = strawberry.Schema(
-  Query,
-  scalar_overrides={
-    datetime: EpochDateTime,
-  }
+    Query,
+    scalar_overrides={
+        datetime: EpochDateTime,
+    },
 )
 result = schema.execute_sync("{ currentTime }")
 assert result.data == {"currentTime": 1628683200}

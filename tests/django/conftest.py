@@ -1,6 +1,9 @@
 import pathlib
 
 import pytest
+from django.test.client import Client
+
+from strawberry.django.test import GraphQLTestClient
 
 
 def pytest_collection_modifyitems(config, items):
@@ -13,3 +16,8 @@ def pytest_collection_modifyitems(config, items):
 
         if str(rel_path).startswith("tests/django"):
             item.add_marker(pytest.mark.django)
+
+
+@pytest.fixture()
+def graphql_client():
+    return GraphQLTestClient(Client())

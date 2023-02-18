@@ -1,16 +1,16 @@
 import json
-from typing import Any, Optional
+from typing import Any
 
 import pytest
-
-from django.core.exceptions import SuspiciousOperation
-from django.http import Http404
+from django.http import JsonResponse
 from django.test.client import RequestFactory
 
 import strawberry
-from strawberry.django.views import GraphQLView as BaseGraphQLView
+from strawberry.django.views import GraphQLView, TemporalHttpResponse
+from strawberry.http import GraphQLHTTPResponse
 from strawberry.permission import BasePermission
-from strawberry.types import ExecutionResult, Info
+from strawberry.types import Info
+from tests.views.schema import schema
 
 from .app.models import Example
 
@@ -22,123 +22,17 @@ class AlwaysFailPermission(BasePermission):
         return False
 
 
-@strawberry.type
-class Query:
-    hello: str = "strawberry"
-
-    @strawberry.field(permission_classes=[AlwaysFailPermission])
-    def always_fail(self) -> Optional[str]:
-        return "Hey"
-
-    @strawberry.field
-    def example(self) -> str:
-        return Example.objects.first().name
-
-
-@strawberry.type
-class GetRequestValueWithDotNotationQuery:
-    @strawberry.field
-    def get_request_value(self, info: Info) -> str:
-        return info.context.request
-
-
-@strawberry.type
-class GetRequestValueUsingGetQuery:
-    @strawberry.field
-    def get_request_value(self, info: Info) -> str:
-        return info.context.get("request")
-
-
-@strawberry.type
-class GetRequestValueQuery:
-    @strawberry.field
-    def get_request_value(self, info: Info) -> str:
-        return info.context["request"]
-
-
-schema = strawberry.Schema(query=Query)
-
-
-class GraphQLView(BaseGraphQLView):
-    def get_root_value(self, request):
-        return Query()
-
-
-def test_graphiql_view():
-    factory = RequestFactory()
-
-    request = factory.get("/graphql/", HTTP_ACCEPT="text/html")
-
-    response = GraphQLView.as_view(schema=schema)(request)
-    body = response.content.decode()
-
-    assert "GraphiQL" in body
-
-
-@pytest.mark.parametrize("method", ["DELETE", "HEAD", "PUT", "PATCH"])
-def test_disabled_methods(method):
-    factory = RequestFactory()
-
-    rf = getattr(factory, method.lower())
-
-    request = rf("/graphql/")
-
-    response = GraphQLView.as_view(schema=schema, graphiql=False)(request)
-
-    assert response.status_code == 405
-
-
-def test_fails_when_not_sending_query():
-    factory = RequestFactory()
-
-    request = factory.post("/graphql/")
-
-    with pytest.raises(SuspiciousOperation) as e:
-        GraphQLView.as_view(schema=schema, graphiql=False)(request)
-
-    assert e.value.args == ("No GraphQL query found in the request",)
-
-
-def test_fails_when_request_body_has_invalid_json():
-    factory = RequestFactory()
-
-    request = factory.post(
-        "/graphql/", "definitely-not-json-string", content_type="application/json"
-    )
-
-    with pytest.raises(SuspiciousOperation) as e:
-        GraphQLView.as_view(schema=schema, graphiql=False)(request)
-
-    assert e.value.args == ("Unable to parse request body as JSON",)
-
-
-def test_graphiql_disabled_view():
-    factory = RequestFactory()
-
-    request = factory.get("/graphql/", HTTP_ACCEPT="text/html")
-
-    with pytest.raises(Http404):
-        GraphQLView.as_view(schema=schema, graphiql=False)(request)
-
-
-def test_graphql_query():
-    query = "{ hello }"
-
-    factory = RequestFactory()
-    request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
-    )
-
-    response = GraphQLView.as_view(schema=schema)(request)
-    data = json.loads(response.content.decode())
-
-    assert response["content-type"] == "application/json"
-    assert data["data"]["hello"] == "strawberry"
-
-
 @pytest.mark.django_db
 def test_graphql_query_model():
     Example.objects.create(name="This is a demo")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self) -> str:
+            return Example.objects.first().name
+
+    custom_schema = strawberry.Schema(query=Query)
 
     query = "{ example }"
 
@@ -147,111 +41,13 @@ def test_graphql_query_model():
         "/graphql/", {"query": query}, content_type="application/json"
     )
 
-    response = GraphQLView.as_view(schema=schema)(request)
+    response = GraphQLView.as_view(schema=custom_schema)(request)
     data = json.loads(response.content.decode())
 
     assert not data.get("errors")
     assert data["data"]["example"] == "This is a demo"
 
     Example.objects.all().delete()
-
-
-def test_returns_errors_and_data():
-    query = "{ hello, alwaysFail }"
-
-    factory = RequestFactory()
-    request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
-    )
-
-    response = GraphQLView.as_view(schema=schema)(request)
-    data = json.loads(response.content.decode())
-
-    assert response.status_code == 200
-
-    assert data["data"]["hello"] == "strawberry"
-    assert data["data"]["alwaysFail"] is None
-
-    assert len(data["errors"]) == 1
-    assert data["errors"][0]["message"] == "You are not authorized"
-
-
-@pytest.mark.parametrize(
-    "query",
-    (
-        GetRequestValueWithDotNotationQuery,
-        GetRequestValueUsingGetQuery,
-        GetRequestValueQuery,
-    ),
-)
-def test_strawberry_django_context(query):
-    factory = RequestFactory()
-
-    schema = strawberry.Schema(query=query)
-
-    query = "{ getRequestValue }"
-    request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
-    )
-
-    response = GraphQLView.as_view(schema=schema)(request)
-    data = json.loads(response.content.decode())
-    assert response.status_code == 200
-    assert data["data"] == {"getRequestValue": "<WSGIRequest: POST '/graphql/'>"}
-
-
-def test_custom_context():
-    class CustomGraphQLView(BaseGraphQLView):
-        def get_context(self, request, response):
-            return {"request": request, "custom_value": "Hi!"}
-
-    factory = RequestFactory()
-
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def custom_context_value(self, info: Info) -> str:
-            return info.context["custom_value"]
-
-    schema = strawberry.Schema(query=Query)
-
-    query = "{ customContextValue }"
-    request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
-    )
-
-    response = CustomGraphQLView.as_view(schema=schema)(request)
-    data = json.loads(response.content.decode())
-
-    assert response.status_code == 200
-    assert data["data"] == {"customContextValue": "Hi!"}
-
-
-def test_custom_process_result():
-    class CustomGraphQLView(BaseGraphQLView):
-        def process_result(self, request, result: ExecutionResult):
-            return {}
-
-    factory = RequestFactory()
-
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def abc(self) -> str:
-            return "ABC"
-
-    schema = strawberry.Schema(query=Query)
-
-    query = "{ abc }"
-    request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
-    )
-
-    response = CustomGraphQLView.as_view(schema=schema)(request)
-    data = json.loads(response.content.decode())
-
-    assert response.status_code == 200
-    assert data == {}
 
 
 def test_can_set_cookies():
@@ -265,14 +61,14 @@ def test_can_set_cookies():
 
             return "ABC"
 
-    schema = strawberry.Schema(query=Query)
+    custom_schema = strawberry.Schema(query=Query)
 
     query = "{ abc }"
     request = factory.post(
         "/graphql/", {"query": query}, content_type="application/json"
     )
 
-    response = GraphQLView.as_view(schema=schema)(request)
+    response = GraphQLView.as_view(schema=custom_schema)(request)
     data = json.loads(response.content.decode())
 
     assert response.status_code == 200
@@ -291,14 +87,14 @@ def test_can_set_headers():
 
             return "ABC"
 
-    schema = strawberry.Schema(query=Query)
+    custom_schema = strawberry.Schema(query=Query)
 
     query = "{ abc }"
     request = factory.post(
         "/graphql/", {"query": query}, content_type="application/json"
     )
 
-    response = GraphQLView.as_view(schema=schema)(request)
+    response = GraphQLView.as_view(schema=custom_schema)(request)
     data = json.loads(response.content.decode())
 
     assert response.status_code == 200
@@ -317,15 +113,106 @@ def test_can_change_status_code():
 
             return "ABC"
 
-    schema = strawberry.Schema(query=Query)
+    custom_schema = strawberry.Schema(query=Query)
 
     query = "{ abc }"
     request = factory.post(
         "/graphql/", {"query": query}, content_type="application/json"
     )
 
-    response = GraphQLView.as_view(schema=schema)(request)
+    response = GraphQLView.as_view(schema=custom_schema)(request)
     data = json.loads(response.content.decode())
 
     assert response.status_code == 418
     assert data == {"data": {"abc": "ABC"}}
+
+
+def test_custom_json_encoder():
+    query = "{ hello }"
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    class MyGraphQLView(GraphQLView):
+        def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+            return "fake_encoder"
+
+    response = MyGraphQLView.as_view(schema=schema)(request)
+    assert response.content.decode() == "fake_encoder"
+
+
+def test_json_encoder_as_class_works_with_warning():
+    class CustomEncoder(json.JSONEncoder):
+        def encode(self, o: Any) -> str:
+            return "this is deprecated"
+
+    query = "{ hello }"
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    with pytest.warns(DeprecationWarning):
+        response1 = GraphQLView.as_view(schema=schema, json_encoder=CustomEncoder)(
+            request
+        )
+
+        assert response1.content.decode() == "this is deprecated"
+
+    with pytest.warns(DeprecationWarning):
+
+        class CustomGraphQLView(GraphQLView):
+            json_encoder = CustomEncoder
+
+        CustomGraphQLView(schema=schema)
+
+
+def test_json_dumps_params_deprecated_via_param():
+    query = "{ hello }"
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    dumps_params = {"separators": (",", ":")}
+
+    with pytest.warns(DeprecationWarning):
+        response1 = GraphQLView.as_view(schema=schema, json_dumps_params=dumps_params)(
+            request
+        )
+        data = json.loads(response1.content.decode())
+        assert data["data"] == {"hello": "Hello world"}
+
+
+def test_json_dumps_params_deprecated_via_property():
+    query = "{ hello }"
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    dumps_params = {"separators": (",", ":")}
+
+    with pytest.warns(DeprecationWarning):
+
+        class CustomGraphQLView(GraphQLView):
+            json_dumps_params = dumps_params
+
+        response = CustomGraphQLView.as_view(schema=schema)(request)
+        data = json.loads(response.content.decode())
+        assert data["data"] == {"hello": "Hello world"}
+
+
+def test_TemporalHttpResponse() -> None:
+    resp = TemporalHttpResponse()
+    assert repr(resp) == '<TemporalHttpResponse status_code=None, "application/json">'
+
+    # Check that `__repr__` matches Django's output.
+    resp.status_code = 200
+    repr1 = repr(resp).replace("TemporalHttpResponse", "JsonResponse")
+    assert repr1 == repr(JsonResponse({}))

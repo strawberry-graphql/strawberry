@@ -1,6 +1,7 @@
 SECRET_KEY = 1
 
-INSTALLED_APPS = ["strawberry.django", "tests.django.app"]
+INSTALLED_APPS = ["tests.django.app"]
+ROOT_URLCONF = "tests.django.app.urls"
 
 TEMPLATES = [
     {
@@ -11,3 +12,7 @@ TEMPLATES = [
 ]
 
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
+
+# This is for channels integration, but only one django settings can be used
+# per pytest_django settings
+CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}

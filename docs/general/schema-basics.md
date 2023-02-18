@@ -57,35 +57,24 @@ As mentioned Strawberry uses a code first approach. The previous schema would
 look like this in Strawberry
 
 ```python
-from __future__ import annotations
-
 import typing
 import strawberry
 
+
 @strawberry.type
 class Book:
-  title: str
-  author: Author
+    title: str
+    author: "Author"
+
 
 @strawberry.type
 class Author:
-  name: str
-  books: typing.List['Book']
+    name: str
+    books: typing.List["Book"]
 ```
 
 As you can see the code maps almost one to one with the schema, thanks to
 python’s type hints feature.
-
-The `__future__` import allows us to annotate types that are defined later in
-the file, as per [PEP 563](https://www.python.org/dev/peps/pep-0563/). If you
-can’t use this feature (because your other code is incompatible with it), you
-need to quote the `Author` annotation.
-
-```python
-    ...
-    author: 'Author'
-    ...
-```
 
 Notice that here we are also not specifying how to fetch data, that will be
 explained in the resolvers section.
@@ -113,6 +102,7 @@ default scalar types in GraphQL:
 - Boolean, true or false, maps to python’s bool
 - ID, a unique identifier that usually used to refetch an object or as the key
   for a cache. Serialized as string and available as `strawberry.ID(“value”)`
+- `UUID`, a [UUID](https://docs.python.org/3/library/uuid.html#uuid.UUID) value serialized as a string
 
 <Note>
 
@@ -139,16 +129,72 @@ Object types can refer to each other, as we had in our schema earlier:
 import typing
 import strawberry
 
+
 @strawberry.type
 class Book:
-  title: str
-  author: Author
+    title: str
+    author: "Author"
+
 
 @strawberry.type
 class Author:
-  name: str
-  books: typing.List[Book]
+    name: str
+    books: typing.List[Book]
 ```
+
+## Providing data to fields
+
+In the above schema, a `Book` has an `author` field and an `Author` has a `books`
+field, yet we do not know how our data can be mapped to fulfil the structure of
+the promised schema.
+
+To achieve this, we introduce the concept of the [_resolver_](../types/resolvers.md) that provides some
+data to a field through a function.
+
+Continuing with this example of books and authors, resolvers can be defined
+to provides values to the fields:
+
+```python
+def get_author_for_book(root) -> "Author":
+    return Author(name="Michael Crichton")
+
+
+@strawberry.type
+class Book:
+    title: str
+    author: "Author" = strawberry.field(resolver=get_author_for_book)
+
+
+def get_books_for_author(root):
+    return [Book(title="Jurassic Park")]
+
+
+@strawberry.type
+class Author:
+    name: str
+    books: typing.List[Book] = strawberry.field(resolver=get_books_for_author)
+
+
+def get_authors(root) -> typing.List[Author]:
+    return [Author(name="Michael Crichton")]
+
+
+@strawberry.type
+class Query:
+    authors: typing.List[Author] = strawberry.field(resolver=get_authors)
+    books: typing.List[Book] = strawberry.field(resolver=get_books_for_author)
+```
+
+These functions provide the `strawberry.field` with the ability to render data
+to the GraphQL query upon request and are the backbone of all GraphQL APIs.
+
+This example is trivial since the resolved data is entirely static. However,
+when building more complex APIs, these resolvers can be written to map data
+from databases, e.g. making SQL queries using SQLAlchemy, and other APIs,
+e.g. making HTTP requests using aiohttp.
+
+For more information and detail on the different ways to write resolvers,
+see the [resolvers section](../types/resolvers.md).
 
 ## The Query type
 
@@ -250,9 +296,9 @@ the following:
 ```python
 @strawberry.type
 class Mutation:
-  @strawberry.field
-  def add_book(self, title: str, author: str) -> Book:
-    ...
+    @strawberry.field
+    def add_book(self, title: str, author: str) -> Book:
+        ...
 ```
 
 This Mutation type defines a single available mutation, `addBook`. The mutation
@@ -311,9 +357,9 @@ Consider our previous mutation to add a book:
 ```python
 @strawberry.type
 class Mutation:
-  @strawberry.field
-  def add_book(self, title: str, author: str) -> Book:
-    ...
+    @strawberry.field
+    def add_book(self, title: str, author: str) -> Book:
+        ...
 ```
 
 Instead of accepting two arguments, this mutation could accept a single input
@@ -326,26 +372,26 @@ keyword:
 ```python
 @strawberry.input
 class AddBookInput:
-  title: str
-  author: str
+    title: str
+    author: str
 
 
 @strawberry.type
 class Mutation:
-  @strawberry.field
-  def add_book(self, book: AddBookInput) -> Book:
-    ...
+    @strawberry.field
+    def add_book(self, book: AddBookInput) -> Book:
+        ...
 ```
 
-Not only does this facilitate passing the PostAndMediaInput type around within
+Not only does this facilitate passing the AddBookInput type around within
 our schema, it also provides a basis for annotating fields with descriptions
 that are automatically exposed by GraphQL-enabled tools:
 
 ```python
 @strawberry.input
 class AddBookInput:
-  title: str = strawberry.field(description="The title of the book")
-  author: str = strawberry.field(description="The name of the author")
+    title: str = strawberry.field(description="The title of the book")
+    author: str = strawberry.field(description="The name of the author")
 ```
 
 Input types can sometimes be useful when multiple operations require the exact
