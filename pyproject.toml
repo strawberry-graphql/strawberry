@@ -174,7 +174,6 @@ ignore = [
     "D",
     "ANN101", # missing annotation for self?
     # definitely enable these, maybe not in tests
-    "ANN001",
     "ANN002",
     "ANN003",
     "ANN102",
@@ -312,7 +311,7 @@ src = ["strawberry", "tests"]
 "tests/test_printer/test_basic.py" = ["E501"]
 "tests/pyright/test_federation.py" = ["E501"]
 "tests/test_printer/test_schema_directives.py" = ["E501"]
-"tests/*" = ["RSE102", "SLF001", "TCH001", "TCH002", "TCH003"]
+"tests/*" = ["RSE102", "SLF001", "TCH001", "TCH002", "TCH003", "ANN001"]
 "strawberry/extensions/tracing/__init__.py" = ["TCH004"]
 
 [tool.ruff.isort]
