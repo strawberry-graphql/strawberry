@@ -1,10 +1,9 @@
-from collections.abc import AsyncGenerator
-from typing import TypeVar
+from typing import AsyncGenerator, Type, TypeVar
 
-__all__ = ["SubscriptionResult"]
+__all__ = ["subscription_result"]
 
 T = TypeVar("T")
 
-# Simple wrapper for Result type of GraphQL Subscription.
-# Same as AsyncGenerator[T, None]
-SubscriptionResult = AsyncGenerator[T, None]
+
+def subscription_result(result_type: Type[T]) -> Type[AsyncGenerator[T, None]]:
+    return AsyncGenerator[tuple([result_type, None])]  # type: ignore

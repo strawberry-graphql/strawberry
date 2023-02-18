@@ -26,7 +26,7 @@ class Query:
 @strawberry.type
 class Subscription:
     @strawberry.subscription
-    async def count(self, target: int = 100) -> strawberry.SubscriptionResult[int]:
+    async def count(self, target: int = 100) -> strawberry.subscription_result(int):
         for i in range(target):
             yield i
             await asyncio.sleep(0.5)
@@ -41,9 +41,9 @@ from 0 to the target sleeping between each loop iteration.
 
 <Note>
 
-The return type of `count` is `SubscriptionResult` where the first generic
-argument is the actual type of the response. `SubscriptionResult[T]` is same as
-Python's `AsyncGenerator[T, None]`. (more about Generator typing [here](https://docs.python.org/3/library/typing.html#typing.AsyncGenerator)).
+The return type of `count` is `strawberry.subscription_result(...)` where the first
+argument is the actual type of the response. It is same as Python's `AsyncGenerator[T, None]`.
+(more about Generator typing [here](https://docs.python.org/3/library/typing.html#typing.AsyncGenerator)).
 
 </Note>
 
@@ -122,7 +122,7 @@ class Subscription:
     @strawberry.subscription
     async def count(
         self, info: Info, target: int = 100
-    ) -> strawberry.SubscriptionResult[int]:
+    ) -> strawberry.subscription_result(int):
         connection_params: dict = info.context.get("connection_params")
         token: str = connection_params.get(
             "authToken"
@@ -167,7 +167,7 @@ import strawberry
 import asyncio
 import asyncio.subprocess as subprocess
 from asyncio import streams
-from typing import Any, AsyncGenerator, AsyncIterator, Coroutine, Optional
+from typing import Any, AsyncIterator, AsyncGenerator, Coroutine, Optional
 
 
 async def wait_for_call(coro: Coroutine[Any, Any, bytes]) -> Optional[bytes]:
@@ -238,7 +238,7 @@ class Subscription:
     @strawberry.subscription
     async def run_command(
         self, target: int = 100
-    ) -> strawberry.SubscriptionResult[str]:
+    ) -> strawberry.subscription_result(str):
         proc = await exec_proc(target)
         return tail(proc)
 

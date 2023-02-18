@@ -1,0 +1,16 @@
+- case: test_subscription_result
+  main: |
+    from typing_extensions import TypeAlias
+    import strawberry
+
+    StrSubscriptionResult: TypeAlias = strawberry.subscription_result(str)  # type: ignore
+
+    reveal_type(StrSubscriptionResult)
+
+    @strawberry.type
+    class Subscription:
+        @strawberry.subscription
+        async def time(self) -> StrSubscriptionResult:
+            ...
+  out: |
+    main:6: note: Revealed type is "Any"

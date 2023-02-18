@@ -18,7 +18,7 @@ async def test_subscription():
     @strawberry.type
     class Subscription:
         @strawberry.subscription
-        async def example(self) -> strawberry.SubscriptionResult[str]:
+        async def example(self) -> strawberry.subscription_result(str):
             yield "Hi"
 
     schema = strawberry.Schema(query=Query, subscription=Subscription)
@@ -41,7 +41,7 @@ async def test_subscription_with_arguments():
     @strawberry.type
     class Subscription:
         @strawberry.subscription
-        async def example(self, name: str) -> strawberry.SubscriptionResult[str]:
+        async def example(self, name: str) -> strawberry.subscription_result(str):
             yield f"Hi {name}"
 
     schema = strawberry.Schema(query=Query, subscription=Subscription)

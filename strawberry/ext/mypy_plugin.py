@@ -884,6 +884,11 @@ class StrawberryPlugin(Plugin):
         if self._is_strawberry_union(fullname):
             return union_hook
 
+        if self._is_strawberry_subscription_result(fullname):
+            # returning classes/type aliases is not supported yet by mypy
+            # see https://github.com/python/mypy/issues/5865
+            return create_type_hook
+
         if self._is_strawberry_enum(fullname):
             return enum_hook
 
@@ -923,6 +928,12 @@ class StrawberryPlugin(Plugin):
     def _is_strawberry_union(self, fullname: str) -> bool:
         return fullname == "strawberry.union.union" or fullname.endswith(
             "strawberry.union"
+        )
+
+    def _is_strawberry_subscription_result(self, fullname: str) -> bool:
+        return (
+            fullname == "strawberry.subscriptions.types.subscription_result"
+            or fullname.endswith("strawberry.subscription_result")
         )
 
     def _is_strawberry_field(self, fullname: str) -> bool:
