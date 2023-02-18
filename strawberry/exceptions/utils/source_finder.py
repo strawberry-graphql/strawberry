@@ -14,7 +14,7 @@ from ..exception_source import ExceptionSource
 if TYPE_CHECKING:
     from inspect import Traceback
 
-    from libcst import CSTNode, FunctionDef
+    from libcst import BinaryOperation, Call, CSTNode, FunctionDef
 
     from strawberry.custom_scalar import ScalarDefinition
     from strawberry.union import StrawberryUnion
@@ -106,15 +106,12 @@ class LibCSTSourceFinder:
     ) -> Optional[FunctionDef]:
         import libcst.matchers as m
 
-        if TYPE_CHECKING:
-            from libcst import FunctionDef
-
         matcher = m.FunctionDef(name=m.Name(value=function.__name__))
 
         function_defs = self._find(source.code, matcher)
 
         return cast(
-            FunctionDef,
+            "FunctionDef",
             self._find_definition_by_qualname(function.__qualname__, function_defs),
         )
 
@@ -270,9 +267,6 @@ class LibCSTSourceFinder:
     ) -> Optional[ExceptionSource]:
         import libcst.matchers as m
 
-        if TYPE_CHECKING:
-            from libcst import Call
-
         source = path.read_text()
 
         invalid_type_name = getattr(invalid_type, "__name__", None)
@@ -316,7 +310,7 @@ class LibCSTSourceFinder:
         if not union_calls:
             return None  # pragma: no cover
 
-        union_call = cast(Call, union_calls[0])
+        union_call = cast("Call", union_calls[0])
 
         if invalid_type_name:
             invalid_type_nodes = m.findall(
@@ -349,9 +343,6 @@ class LibCSTSourceFinder:
     ) -> Optional[ExceptionSource]:
         import libcst.matchers as m
 
-        if TYPE_CHECKING:
-            from libcst import BinaryOperation
-
         path = Path(frame.filename)
         source = path.read_text()
 
@@ -367,7 +358,7 @@ class LibCSTSourceFinder:
         if not merge_calls:
             return None  # pragma: no cover
 
-        merge_call_node = cast(BinaryOperation, merge_calls[0])
+        merge_call_node = cast("BinaryOperation", merge_calls[0])
         invalid_type_node = merge_call_node.right
 
         position = self._position_metadata[merge_call_node]

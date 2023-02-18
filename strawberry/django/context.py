@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -10,11 +12,11 @@ class StrawberryDjangoContext:
     request: HttpRequest
     response: HttpResponse
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         # __getitem__ override needed to avoid issues for who's
         # using info.context["request"]
         return super().__getattribute__(key)
 
-    def get(self, key):
+    def get(self, key: str):
         """Enable .get notation for accessing the request"""
         return super().__getattribute__(key)

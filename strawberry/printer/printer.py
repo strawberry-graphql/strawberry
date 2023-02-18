@@ -38,7 +38,6 @@ from graphql.utilities.print_schema import print_type as original_print_type
 
 from strawberry.custom_scalar import ScalarWrapper
 from strawberry.enum import EnumDefinition
-from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.type import StrawberryContainer
 from strawberry.unset import UNSET
@@ -227,6 +226,8 @@ def print_args(
 
 
 def print_fields(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
+    from strawberry.schema.schema_converter import GraphQLCoreConverter
+
     fields = []
 
     for i, (name, field) in enumerate(type_.fields.items()):
@@ -320,6 +321,8 @@ def print_enum(
 
 
 def print_extends(type_, schema: BaseSchema):
+    from strawberry.schema.schema_converter import GraphQLCoreConverter
+
     strawberry_type = type_.extensions and type_.extensions.get(
         GraphQLCoreConverter.DEFINITION_BACKREF
     )
@@ -331,6 +334,8 @@ def print_extends(type_, schema: BaseSchema):
 
 
 def print_type_directives(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
+    from strawberry.schema.schema_converter import GraphQLCoreConverter
+
     strawberry_type = type_.extensions and type_.extensions.get(
         GraphQLCoreConverter.DEFINITION_BACKREF
     )
@@ -388,6 +393,8 @@ def print_input_value(name: str, arg: GraphQLArgument) -> str:
 
 
 def _print_input_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
+    from strawberry.schema.schema_converter import GraphQLCoreConverter
+
     fields = []
     for i, (name, field) in enumerate(type_.fields.items()):
         strawberry_field = field.extensions and field.extensions.get(

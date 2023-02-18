@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from datetime import timedelta
 from inspect import signature
@@ -15,13 +17,18 @@ from typing import (
 )
 
 from starlette import status
-from starlette.requests import Request
-from starlette.responses import HTMLResponse, PlainTextResponse, Response
-from starlette.websockets import WebSocket
+from starlette.background import BackgroundTasks  # noqa: TCH002
+from starlette.requests import HTTPConnection, Request  # noqa: TCH002
+from starlette.responses import (
+    HTMLResponse,
+    PlainTextResponse,
+    Response,
+)
+from starlette.websockets import WebSocket  # noqa: TCH002
 
 from fastapi import APIRouter, Depends
 from strawberry.exceptions import InvalidCustomContext, MissingQueryError
-from strawberry.fastapi.context import BaseContext
+from strawberry.fastapi.context import BaseContext, CustomContext
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
@@ -31,20 +38,17 @@ from strawberry.http import (
 )
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-
-if TYPE_CHECKING:
-    from starlette.background import BackgroundTasks
-    from starlette.requests import HTTPConnection
-    from starlette.types import ASGIApp
-
-    from strawberry.fastapi.context import CustomContext, MergedContext
-    from strawberry.http import GraphQLHTTPResponse
-    from strawberry.schema import BaseSchema
-    from strawberry.types import ExecutionResult
-
 from strawberry.types.graphql import OperationType
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.graphiql import get_graphiql_html
+
+if TYPE_CHECKING:
+    from starlette.types import ASGIApp
+
+    from strawberry.fastapi.context import MergedContext
+    from strawberry.http import GraphQLHTTPResponse
+    from strawberry.schema import BaseSchema
+    from strawberry.types import ExecutionResult
 
 
 class GraphQLRouter(APIRouter):

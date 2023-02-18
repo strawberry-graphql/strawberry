@@ -8,12 +8,9 @@ from dataclasses import (  # type: ignore
     _POST_INIT_NAME,
     _set_new_attribute,
 )
-from typing import TYPE_CHECKING
+from typing import Any
 
 from strawberry.ext.dataclasses.dataclasses import dataclass_init_fn
-
-if TYPE_CHECKING:
-    from type import Any
 
 
 def add_custom_init_fn(cls: Any):

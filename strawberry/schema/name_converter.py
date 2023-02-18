@@ -95,7 +95,7 @@ class NameConverter:
 
         for type_ in union.types:
             if isinstance(type_, LazyType):
-                type_ = cast(StrawberryType, type_.resolve_type())
+                type_ = cast("StrawberryType", type_.resolve_type())
 
             assert hasattr(type_, "_type_definition")
             name += self.from_type(type_._type_definition)

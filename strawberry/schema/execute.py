@@ -16,6 +16,16 @@ from typing import (
     cast,
 )
 
+from graphql import GraphQLError, parse
+from graphql import execute as original_execute
+from graphql.validation import validate
+
+from strawberry.exceptions import MissingQueryError
+from strawberry.extensions.runner import ExtensionsRunner
+from strawberry.types import ExecutionResult
+
+from .exceptions import InvalidOperationTypeError
+
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
     from graphql import ExecutionResult as GraphQLExecutionResult
@@ -26,17 +36,6 @@ if TYPE_CHECKING:
     from strawberry.extensions import Extension
     from strawberry.types import ExecutionContext
     from strawberry.types.graphql import OperationType
-
-
-from graphql import GraphQLError, parse
-from graphql import execute as original_execute
-from graphql.validation import validate
-
-from strawberry.exceptions import MissingQueryError
-from strawberry.extensions.runner import ExtensionsRunner
-from strawberry.types import ExecutionResult
-
-from .exceptions import InvalidOperationTypeError
 
 
 def parse_document(query: str) -> DocumentNode:
@@ -138,9 +137,9 @@ async def execute(
                 )
 
                 if isawaitable(result):
-                    result = await cast(Awaitable[GraphQLExecutionResult], result)
+                    result = await cast(Awaitable["GraphQLExecutionResult"], result)
 
-                result = cast(GraphQLExecutionResult, result)
+                result = cast("GraphQLExecutionResult", result)
                 execution_context.result = result
                 # Also set errors on the execution_context so that it's easier
                 # to access in extensions
@@ -230,13 +229,13 @@ def execute_sync(
                 )
 
                 if isawaitable(result):
-                    result = cast(Awaitable[GraphQLExecutionResult], result)
+                    result = cast(Awaitable["GraphQLExecutionResult"], result)
                     ensure_future(result).cancel()
                     raise RuntimeError(
                         "GraphQL execution failed to complete synchronously."
                     )
 
-                result = cast(GraphQLExecutionResult, result)
+                result = cast("GraphQLExecutionResult", result)
                 execution_context.result = result
                 # Also set errors on the execution_context so that it's easier
                 # to access in extensions

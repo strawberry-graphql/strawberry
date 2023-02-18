@@ -116,7 +116,9 @@ class GraphQLCoreConverter:
         self.scalar_registry = scalar_registry
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
-        argument_type = cast(GraphQLInputType, self.from_maybe_optional(argument.type))
+        argument_type = cast(
+            "GraphQLInputType", self.from_maybe_optional(argument.type)
+        )
         default_value = Undefined if argument.default is UNSET else argument.default
 
         return GraphQLArgument(
@@ -189,7 +191,7 @@ class GraphQLCoreConverter:
 
     def from_schema_directive(self, cls: Type) -> GraphQLDirective:
         strawberry_directive = cast(
-            StrawberrySchemaDirective, cls.__strawberry_directive__
+            "StrawberrySchemaDirective", cls.__strawberry_directive__
         )
         module = sys.modules[cls.__module__]
 
@@ -226,7 +228,7 @@ class GraphQLCoreConverter:
         )
 
     def from_field(self, field: StrawberryField) -> GraphQLField:
-        field_type = cast(GraphQLOutputType, self.from_maybe_optional(field.type))
+        field_type = cast("GraphQLOutputType", self.from_maybe_optional(field.type))
 
         resolver = self.from_resolver(field)
         subscribe = None
@@ -253,7 +255,7 @@ class GraphQLCoreConverter:
         )
 
     def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
-        field_type = cast(GraphQLInputType, self.from_maybe_optional(field.type))
+        field_type = cast("GraphQLInputType", self.from_maybe_optional(field.type))
         default_value: object
 
         if field.default_value is UNSET or field.default_value is dataclasses.MISSING:
@@ -573,12 +575,12 @@ class GraphQLCoreConverter:
             # handle this case better, since right now we assume it is a scalar
 
             if other_definition != scalar_definition:
-                other_definition = cast(ScalarDefinition, other_definition)
+                other_definition = cast("ScalarDefinition", other_definition)
 
                 raise ScalarAlreadyRegisteredError(scalar_definition, other_definition)
 
             implementation = cast(
-                GraphQLScalarType, self.type_map[scalar_name].implementation
+                "GraphQLScalarType", self.type_map[scalar_name].implementation
             )
 
         return implementation

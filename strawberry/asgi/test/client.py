@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import json
 from typing import TYPE_CHECKING, Dict, Mapping, Optional
 
+from strawberry.test import BaseGraphQLTestClient
+
 if TYPE_CHECKING:
     from typing_extensions import Literal
-
-from strawberry.test import BaseGraphQLTestClient
 
 
 class GraphQLTestClient(BaseGraphQLTestClient):

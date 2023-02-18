@@ -141,7 +141,7 @@ class StrawberryTypeVar(StrawberryType):
     def type_params(self) -> List[TypeVar]:
         return [self.type_var]
 
-    def __eq__(self, other: Union[StrawberryTypeVar, TypeVar]) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryTypeVar):
             return self.type_var == other.type_var
         if isinstance(other, TypeVar):

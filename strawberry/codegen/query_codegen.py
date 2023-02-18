@@ -284,7 +284,7 @@ class QueryCodegen:
             selections=self._convert_selection_set(operation_definition.selection_set),
             directives=self._convert_directives(operation_definition.directives),
             variables=variables,
-            type=cast(GraphQLObjectType, operation_type),
+            type=cast("GraphQLObjectType", operation_type),
             variables_type=variables_type,
         )
 

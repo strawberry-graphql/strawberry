@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 import warnings
 from decimal import Decimal
@@ -13,22 +15,6 @@ from typing import (
     Union,
     cast,
 )
-
-import mypy
-
-if TYPE_CHECKING:
-    from typing_extensions import Final
-
-    from mypy.nodes import ClassDef, Expression, TypeInfo
-    from mypy.plugins import (
-        AnalyzeTypeContext,
-        CheckerPluginInterface,
-        ClassDefContext,
-        DynamicClassDefContext,
-        FunctionContext,
-    )
-    from mypy.types import Type
-
 
 from mypy.nodes import (
     ARG_OPT,
@@ -88,6 +74,21 @@ try:
     from pydantic.mypy import PydanticModelField
 except ImportError:
     PYDANTIC_METADATA_KEY = ""
+
+
+if TYPE_CHECKING:
+    from typing_extensions import Final
+
+    from mypy.nodes import ClassDef, Expression, TypeInfo
+    from mypy.plugins import (
+        AnalyzeTypeContext,
+        CheckerPluginInterface,
+        ClassDefContext,
+        DynamicClassDefContext,
+        FunctionContext,
+    )
+    from mypy.types import Type
+
 
 VERSION_RE = re.compile(r"(^0|^(?:[1-9][0-9]*))\.(0|(?:[1-9][0-9]*))")
 FALLBACK_VERSION = Decimal("0.800")
@@ -414,9 +415,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         ]
         add_method(ctx, "__init__", init_args, NoneType())
 
-        model_type = cast(
-            mypy.types.Instance, _get_type_for_expr(model_expression, ctx.api)
-        )
+        model_type = cast(Instance, _get_type_for_expr(model_expression, ctx.api))
 
         # these are the fields that the user added to the strawberry type
         new_strawberry_fields: Set[str] = set()

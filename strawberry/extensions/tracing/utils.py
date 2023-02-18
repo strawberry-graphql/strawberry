@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
@@ -9,7 +9,7 @@ from strawberry.extensions.utils import is_introspection_field
 from strawberry.resolvers import is_default_resolver
 
 
-def should_skip_tracing(resolver: Callable, info: GraphQLResolveInfo) -> bool:
+def should_skip_tracing(resolver: Callable[..., Any], info: GraphQLResolveInfo) -> bool:
     if info.field_name not in info.parent_type.fields:
         return True
     resolver = info.parent_type.fields[info.field_name].resolve

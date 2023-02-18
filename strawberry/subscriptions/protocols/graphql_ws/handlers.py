@@ -97,7 +97,7 @@ class BaseGraphQLWSHandler(ABC):
             await self.close()
             return
 
-        payload = cast(Optional[ConnectionInitPayload], payload)
+        payload = cast(Optional["ConnectionInitPayload"], payload)
         self.connection_params = payload
 
         acknowledge_message: OperationMessage = {"type": GQL_CONNECTION_ACK}
@@ -112,7 +112,7 @@ class BaseGraphQLWSHandler(ABC):
 
     async def handle_start(self, message: OperationMessage) -> None:
         operation_id = message["id"]
-        payload = cast(StartPayload, message["payload"])
+        payload = cast("StartPayload", message["payload"])
         query = payload["query"]
         operation_name = payload.get("operationName")
         variables = payload.get("variables")
