@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Any, List, Type
 
 from strawberry.utils.await_maybe import await_maybe
 
@@ -22,7 +22,7 @@ class RequestContextManager(ExtensionContextManager):
         for extension in self.extensions:
             extension.on_request_start()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Type, exc_val: Any, exc_tb: Any):
         for extension in self.extensions:
             extension.on_request_end()
 
@@ -30,7 +30,7 @@ class RequestContextManager(ExtensionContextManager):
         for extension in self.extensions:
             await await_maybe(extension.on_request_start())
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Type, exc_val: Any, exc_tb: Any):
         for extension in self.extensions:
             await await_maybe(extension.on_request_end())
 
@@ -40,7 +40,7 @@ class ValidationContextManager(ExtensionContextManager):
         for extension in self.extensions:
             extension.on_validation_start()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Type, exc_val: Any, exc_tb: Any):
         for extension in self.extensions:
             extension.on_validation_end()
 
@@ -48,7 +48,7 @@ class ValidationContextManager(ExtensionContextManager):
         for extension in self.extensions:
             await await_maybe(extension.on_validation_start())
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Type, exc_val: Any, exc_tb: Any):
         for extension in self.extensions:
             await await_maybe(extension.on_validation_end())
 
@@ -58,7 +58,7 @@ class ParsingContextManager(ExtensionContextManager):
         for extension in self.extensions:
             extension.on_parsing_start()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Type, exc_val: Any, exc_tb: Any):
         for extension in self.extensions:
             extension.on_parsing_end()
 
@@ -66,7 +66,7 @@ class ParsingContextManager(ExtensionContextManager):
         for extension in self.extensions:
             await await_maybe(extension.on_parsing_start())
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Type, exc_val: Any, exc_tb: Any):
         for extension in self.extensions:
             await await_maybe(extension.on_parsing_end())
 
@@ -76,7 +76,7 @@ class ExecutingContextManager(ExtensionContextManager):
         for extension in self.extensions:
             extension.on_executing_start()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Type, exc_val: Any, exc_tb: Any):
         for extension in self.extensions:
             extension.on_executing_end()
 
@@ -84,6 +84,6 @@ class ExecutingContextManager(ExtensionContextManager):
         for extension in self.extensions:
             await await_maybe(extension.on_executing_start())
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Type, exc_val: Any, exc_tb: Any):
         for extension in self.extensions:
             await await_maybe(extension.on_executing_end())
