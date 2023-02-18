@@ -354,7 +354,7 @@ def add_static_method_to_class(
             cls.defs.body.remove(sym.node)
 
     # For compat with mypy < 0.93
-    if Decimal("0.93") > MypyVersion.VERSION:
+    if MypyVersion.VERSION < Decimal("0.93"):
         function_type = api.named_type("__builtins__.function")  # type: ignore
     else:
         if isinstance(api, SemanticAnalyzerPluginInterface):
@@ -587,7 +587,7 @@ class CustomDataclassTransformer:
             )
             and attributes
         ):
-            args = [info] if Decimal("1.0") <= MypyVersion.VERSION else []
+            args = [info] if MypyVersion.VERSION >= Decimal("1.0") else []
 
             add_method(
                 ctx,
@@ -781,9 +781,9 @@ class CustomDataclassTransformer:
 
             # Support the addition of `info` in mypy 0.800 and `kw_only` in mypy 0.920
             # without breaking backwards compatibility.
-            if Decimal("0.800") <= MypyVersion.VERSION:
+            if MypyVersion.VERSION >= Decimal("0.800"):
                 params["info"] = cls.info
-            if Decimal("0.920") <= MypyVersion.VERSION:
+            if MypyVersion.VERSION >= Decimal("0.920"):
                 params["kw_only"] = True
 
             attribute = DataclassAttribute(**params)  # type: ignore
@@ -836,7 +836,7 @@ class CustomDataclassTransformer:
                 assert isinstance(var, Var)
                 var.is_property = True
             else:
-                if Decimal("1.0") <= MypyVersion.VERSION:
+                if MypyVersion.VERSION >= Decimal("1.0"):
                     var = attr.to_var(current_info=info)
                 else:
                     var = attr.to_var()  # type: ignore
@@ -857,7 +857,7 @@ class CustomDataclassTransformer:
         info = self._ctx.cls.info
         for attr in attributes:
             if isinstance(get_proper_type(attr.type), CallableType):
-                if Decimal("1.0") <= MypyVersion.VERSION:
+                if MypyVersion.VERSION >= Decimal("1.0"):
                     var = attr.to_var(current_info=info)
                 else:
                     var = attr.to_var()  # type: ignore
