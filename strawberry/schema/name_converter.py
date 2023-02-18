@@ -53,7 +53,7 @@ class NameConverter:
         elif isinstance(type_, ScalarDefinition):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
         else:
-            return self.apply_naming_config(str(type_))
+            return str(type_)
 
     def from_argument(self, argument: StrawberryArgument) -> str:
         return self.get_graphql_name(argument)
