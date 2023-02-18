@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import itertools
 from itertools import chain
 from typing import (
@@ -16,14 +18,7 @@ from typing import (
     cast,
 )
 
-from graphql import (
-    GraphQLAbstractType,
-    GraphQLNamedType,
-    GraphQLResolveInfo,
-    GraphQLType,
-    GraphQLTypeResolver,
-    GraphQLUnionType,
-)
+from graphql import GraphQLNamedType, GraphQLUnionType
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -36,6 +31,13 @@ from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryOptional, StrawberryType
 
 if TYPE_CHECKING:
+    from graphql import (
+        GraphQLAbstractType,
+        GraphQLResolveInfo,
+        GraphQLType,
+        GraphQLTypeResolver,
+    )
+
     from strawberry.schema.types.concrete_type import TypeMap
     from strawberry.types.types import TypeDefinition
 
@@ -90,7 +92,7 @@ class StrawberryUnion(StrawberryType):
     def type_params(self) -> List[TypeVar]:
         def _get_type_params(type_: StrawberryType):
             if isinstance(type_, LazyType):
-                type_ = cast(StrawberryType, type_.resolve_type())
+                type_ = cast("StrawberryType", type_.resolve_type())
 
             if hasattr(type_, "_type_definition"):
                 parameters = getattr(type_, "__parameters__", None)

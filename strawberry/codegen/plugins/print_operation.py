@@ -1,25 +1,31 @@
+from __future__ import annotations
+
 import textwrap
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from strawberry.codegen import CodegenFile, QueryCodegenPlugin
 from strawberry.codegen.types import (
-    GraphQLArgument,
-    GraphQLArgumentValue,
     GraphQLBoolValue,
-    GraphQLDirective,
     GraphQLEnumValue,
     GraphQLFieldSelection,
     GraphQLInlineFragment,
     GraphQLIntValue,
     GraphQLList,
     GraphQLListValue,
-    GraphQLOperation,
     GraphQLOptional,
-    GraphQLSelection,
     GraphQLStringValue,
-    GraphQLType,
     GraphQLVariableReference,
 )
+
+if TYPE_CHECKING:
+    from strawberry.codegen.types import (
+        GraphQLArgument,
+        GraphQLArgumentValue,
+        GraphQLDirective,
+        GraphQLOperation,
+        GraphQLSelection,
+        GraphQLType,
+    )
 
 
 class PrintOperationPlugin(QueryCodegenPlugin):

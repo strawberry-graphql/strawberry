@@ -2,33 +2,37 @@ from collections import defaultdict
 from copy import copy
 from functools import partial
 from itertools import chain
-from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union, cast
 
-from graphql import ExecutionContext as GraphQLExecutionContext
 from graphql import (
     GraphQLError,
     GraphQLField,
     GraphQLInterfaceType,
     GraphQLList,
     GraphQLNonNull,
-    GraphQLObjectType,
     GraphQLScalarType,
     GraphQLUnionType,
 )
 from graphql.type.definition import GraphQLArgument
 
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-from strawberry.enum import EnumDefinition
-from strawberry.extensions import Extension
-from strawberry.schema.types.concrete_type import TypeMap
 from strawberry.types.types import TypeDefinition
-from strawberry.union import StrawberryUnion
 from strawberry.utils.cached_property import cached_property
 from strawberry.utils.inspect import get_func_args
 
 from ..printer import print_schema
 from ..schema import Schema as BaseSchema
-from ..schema.config import StrawberryConfig
+
+if TYPE_CHECKING:
+    from graphql import ExecutionContext as GraphQLExecutionContext
+    from graphql import GraphQLObjectType
+
+    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.enum import EnumDefinition
+    from strawberry.extensions import Extension
+    from strawberry.schema.types.concrete_type import TypeMap
+    from strawberry.union import StrawberryUnion
+
+    from ..schema.config import StrawberryConfig
 
 
 class Schema(BaseSchema):
@@ -40,11 +44,11 @@ class Schema(BaseSchema):
         # TODO: we should update directives' type in the main schema
         directives: Iterable[Type] = (),
         types: Iterable[Type] = (),
-        extensions: Iterable[Union[Type[Extension], Extension]] = (),
-        execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
-        config: Optional[StrawberryConfig] = None,
+        extensions: Iterable[Union[Type["Extension"], "Extension"]] = (),
+        execution_context_class: Optional[Type["GraphQLExecutionContext"]] = None,
+        config: Optional["StrawberryConfig"] = None,
         scalar_overrides: Optional[
-            Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]]
+            Dict[object, Union[Type, "ScalarWrapper", "ScalarDefinition"]]
         ] = None,
         schema_directives: Iterable[object] = (),
         enable_federation_2: bool = False,
@@ -141,7 +145,7 @@ class Schema(BaseSchema):
         fields = {"_entities": self._get_entities_field(entity_type)}
 
         # Copy the query type, update it to use the modified fields
-        query_type = cast(GraphQLObjectType, self._schema.query_type)
+        query_type = cast("GraphQLObjectType", self._schema.query_type)
         fields.update(query_type.fields)
 
         query_type = copy(query_type)
@@ -268,7 +272,7 @@ class Schema(BaseSchema):
         )
 
 
-def _get_entity_type(type_map: TypeMap):
+def _get_entity_type(type_map: "TypeMap"):
     # https://www.apollographql.com/docs/apollo-server/federation/federation-spec/#resolve-requests-for-entities
 
     # To implement the _Entity union, each type annotated with @key
@@ -304,7 +308,9 @@ def _is_key(directive: Any) -> bool:
 
 
 def _has_federation_keys(
-    definition: Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
+    definition: Union[
+        TypeDefinition, "ScalarDefinition", "EnumDefinition", "StrawberryUnion"
+    ]
 ) -> bool:
     if isinstance(definition, TypeDefinition):
         return any(_is_key(directive) for directive in definition.directives or [])

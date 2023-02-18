@@ -1,9 +1,12 @@
-from typing import Any, Dict
+from __future__ import annotations
 
-from graphql import GraphQLResolveInfo
+from typing import TYPE_CHECKING, Any, Dict
 
-from strawberry.types import ExecutionContext
-from strawberry.utils.await_maybe import AwaitableOrValue
+if TYPE_CHECKING:
+    from graphql import GraphQLResolveInfo
+
+    from strawberry.types import ExecutionContext
+    from strawberry.utils.await_maybe import AwaitableOrValue
 
 
 class Extension:

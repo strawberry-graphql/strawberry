@@ -1,12 +1,18 @@
+from __future__ import annotations
+
 from contextlib import suppress
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
-from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
+from starlette.websockets import WebSocketDisconnect, WebSocketState
 
-from strawberry.schema import BaseSchema
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
-from strawberry.subscriptions.protocols.graphql_ws.types import OperationMessage
+
+if TYPE_CHECKING:
+    from starlette.websockets import WebSocket
+
+    from strawberry.schema import BaseSchema
+    from strawberry.subscriptions.protocols.graphql_ws.types import OperationMessage
 
 
 class GraphQLWSHandler(BaseGraphQLWSHandler):
