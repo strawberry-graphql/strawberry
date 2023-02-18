@@ -15,7 +15,6 @@ from typing import (
 
 if TYPE_CHECKING:
     from pathlib import Path
-    from types import GraphQLArgumentValue, GraphQLSelection, GraphQLType
 
     from graphql import (
         ArgumentNode,
@@ -29,6 +28,8 @@ if TYPE_CHECKING:
     )
 
     import strawberry
+
+    from .types import GraphQLArgumentValue, GraphQLSelection, GraphQLType
 
 from typing_extensions import Literal, Protocol
 

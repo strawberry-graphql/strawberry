@@ -80,7 +80,7 @@ if TYPE_CHECKING:
     from typing_extensions import Final
 
     from mypy.nodes import ClassDef, Expression, TypeInfo
-    from mypy.plugins import (
+    from mypy.plugins import (  # type: ignore
         AnalyzeTypeContext,
         CheckerPluginInterface,
         ClassDefContext,
