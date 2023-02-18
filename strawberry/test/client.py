@@ -23,7 +23,8 @@ class Body(TypedDict, total=False):
 
 
 class BaseGraphQLTestClient(ABC):
-    def __init__(self, client, url: str = "/graphql/"):
+    def __init__(self, client: Any, url: str = "/graphql/"):
+        breakpoint
         self._client = client
         self.url = url
 
