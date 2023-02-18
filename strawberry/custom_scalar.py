@@ -6,6 +6,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Generic,
     Iterable,
     Mapping,
     NewType,
@@ -64,7 +65,7 @@ class ScalarDefinition(StrawberryType):
         return False
 
 
-class ScalarWrapper:
+class ScalarWrapper(Generic[_T]):
     _scalar_definition: ScalarDefinition
 
     def __init__(self, wrap: Callable[[Any], Any]):
@@ -72,6 +73,9 @@ class ScalarWrapper:
 
     def __call__(self, *args, **kwargs):
         return self.wrap(*args, **kwargs)
+
+    def __getitem__(self, params):
+        return self.wrap.__class_getitem__(params)  # type: ignore[attr-defined]
 
     def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
         if other is None:
@@ -108,7 +112,7 @@ def _process_scalar(
         _source_file = frame.f_code.co_filename
         _source_line = frame.f_lineno
 
-    wrapper = ScalarWrapper(cls)
+    wrapper = ScalarWrapper[Any](cls)
     wrapper._scalar_definition = ScalarDefinition(
         name=name,
         description=description,

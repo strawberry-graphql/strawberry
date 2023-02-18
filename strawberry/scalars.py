@@ -1,18 +1,35 @@
 from __future__ import annotations
 
 import base64
-from typing import TYPE_CHECKING, Any, Dict, NewType, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generic,
+    NewType,
+    Union,
+)
+from typing_extensions import TypeVar
 
 from .custom_scalar import scalar
 
 if TYPE_CHECKING:
     from .custom_scalar import ScalarDefinition, ScalarWrapper
 
-
+T = TypeVar("T", bound=Any, default=Any)
 ID = NewType("ID", str)
 
-JSON = scalar(
-    NewType("JSON", object),  # mypy doesn't like `NewType("name", Any)`
+
+# This is required for mypy/pyright identify JSON[T] as T and not JSON[T]
+# They will respect only the typings on `__getitem__` defined in the metaclass
+# and ignore `__class_getitem__` on both
+class JSONMeta(type):
+    def __getitem__(self, item: T) -> T:
+        return self.__class_getitem__(item)  # type: ignore
+
+
+@scalar(
+    name="JSON",
     description=(
         "The `JSON` scalar type represents JSON values as specified by "
         "[ECMA-404]"
@@ -24,6 +41,9 @@ JSON = scalar(
     serialize=lambda v: v,
     parse_value=lambda v: v,
 )
+class JSON(Generic[T], metaclass=JSONMeta):
+    ...
+
 
 Base16 = scalar(
     NewType("Base16", bytes),
