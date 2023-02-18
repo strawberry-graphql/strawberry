@@ -10,19 +10,19 @@ if TYPE_CHECKING:
 
 
 class FieldExtension:
-    def apply(self, field: StrawberryField) -> None:
+    def apply(self, field: StrawberryField) -> None: # nocov
         pass
 
-    def resolve(self, next: Callable[..., Any], source: Any, info: Info, **kwargs):
-        pass
+    def resolve(self, next: Callable[..., Any], source: Any, info: Info, **kwargs) -> Any: # nocov
+        raise NotImplementedError("Sync Resolve is not supported for this Field Extension")
 
     async def resolve_async(
         self, next: Callable[..., Any], source: Any, info: Info, **kwargs
-    ):
-        pass
+    ) -> Any: # nocov
+        raise NotImplementedError("Async Resolve is not supported for this Field Extension")
 
     @cached_property
-    def supports_sync(self):
+    def supports_sync(self) -> bool:
         return type(self).resolve is not FieldExtension.resolve
 
     @cached_property
@@ -40,9 +40,9 @@ def check_field_extension_compatibility(field: StrawberryField):
         return
 
     if field.is_async:
-        non_async_extensions = list(
-            filter(lambda extension: not extension.supports_async, field.extensions)
-        )
+        # Fixme we can wrap all sync results in async and have a warning for performance drawbacks in this case
+        non_async_extensions = [extension for extension in field.extensions if
+                               not extension.supports_async]
         if len(non_async_extensions) > 0:
             extension_names = ",".join(
                 [extension.__class__.__name__ for extension in non_async_extensions]
@@ -53,9 +53,9 @@ def check_field_extension_compatibility(field: StrawberryField):
                 f"Please add a resolve_async method to the extension."
             )
     else:
-        non_sync_extensions = list(
-            filter(lambda extension: not extension.supports_sync, field.extensions)
-        )
+        non_sync_extensions = [extension for extension in field.extensions if
+                               not extension.supports_sync]
+
         if len(non_sync_extensions) > 0:
             extension_names = ",".join(
                 [extension.__class__.__name__ for extension in non_sync_extensions]
