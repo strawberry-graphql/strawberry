@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.158.0 - 2023-02-18
+--------------------
+
+Throw proper exceptions when Unions are created with invalid types
+
+Previously, using Lazy types inside of Unions would raise unexpected, unhelpful errors.
+
+Contributed by [ignormies](https://github.com/BryceBeagle) via [PR #2540](https://github.com/strawberry-graphql/strawberry/pull/2540/)
+
+
 0.157.0 - 2023-02-18
 --------------------
 
