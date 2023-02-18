@@ -2,7 +2,7 @@ import hashlib
 from inspect import isawaitable
 from typing import Optional
 
-from sentry_sdk import configure_scope, start_transaction
+from sentry_sdk import configure_scope, start_span
 
 from strawberry.extensions import Extension
 from strawberry.extensions.tracing.utils import should_skip_tracing
@@ -38,15 +38,14 @@ class SentryTracingExtension(Extension):
         name = f"{self._operation_name}" if self._operation_name else "Anonymous Query"
 
         with configure_scope() as scope:
-            if scope.transaction:
-                self.transaction = scope.transaction.start_child(
+            if scope.span:
+                self.gql_span = scope.span.start_child(
                     op="gql",
                     description=name,
                 )
             else:
-                self.transaction = start_transaction(
+                self.gql_span = start_span(
                     op="gql",
-                    name=name,
                 )
 
         operation_type = "query"
@@ -58,28 +57,28 @@ class SentryTracingExtension(Extension):
         if self.execution_context.query.strip().startswith("subscription"):
             operation_type = "subscription"
 
-        self.transaction.set_tag("graphql.operation_type", operation_type)
-        self.transaction.set_tag("graphql.resource_name", self._resource_name)
-        self.transaction.set_data("graphql.query", self.execution_context.query)
+        self.gql_span.set_tag("graphql.operation_type", operation_type)
+        self.gql_span.set_tag("graphql.resource_name", self._resource_name)
+        self.gql_span.set_data("graphql.query", self.execution_context.query)
 
     def on_request_end(self) -> None:
-        self.transaction.finish()
+        self.gql_span.finish()
 
     def on_validation_start(self):
-        self.validation_transaction = self.transaction.start_child(
+        self.validation_span = self.gql_span.start_child(
             op="validation", description="Validation"
         )
 
     def on_validation_end(self):
-        self.validation_transaction.finish()
+        self.validation_span.finish()
 
     def on_parsing_start(self):
-        self.parsing_transaction = self.transaction.start_child(
+        self.parsing_span = self.gql_span.start_child(
             op="parsing", description="Parsing"
         )
 
     def on_parsing_end(self):
-        self.parsing_transaction.finish()
+        self.parsing_span.finish()
 
     async def resolve(self, _next, root, info, *args, **kwargs):
         if should_skip_tracing(_next, info):
@@ -92,7 +91,7 @@ class SentryTracingExtension(Extension):
 
         field_path = f"{info.parent_type}.{info.field_name}"
 
-        with self.transaction.start_child(
+        with self.gql_span.start_child(
             op="resolve", description=f"Resolving: {field_path}"
         ) as span:
             span.set_tag("graphql.field_name", info.field_name)
@@ -115,7 +114,7 @@ class SentryTracingExtensionSync(SentryTracingExtension):
 
         field_path = f"{info.parent_type}.{info.field_name}"
 
-        with self.transaction.start_child(
+        with self.gql_span.start_child(
             op="resolve", description=f"Resolving: {field_path}"
         ) as span:
             span.set_tag("graphql.field_name", info.field_name)
