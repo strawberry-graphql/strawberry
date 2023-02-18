@@ -26,14 +26,14 @@ RootValueType = TypeVar("RootValueType")
 @dataclasses.dataclass
 class Info(Generic[ContextType, RootValueType]):
     _raw_info: GraphQLResolveInfo
-    _field: "StrawberryField"
+    _field: StrawberryField
 
     @property
     def field_name(self) -> str:
         return self._raw_info.field_name
 
     @property
-    def schema(self) -> "Schema":
+    def schema(self) -> Schema:
         return self._raw_info.schema._strawberry_schema  # type: ignore
 
     @property

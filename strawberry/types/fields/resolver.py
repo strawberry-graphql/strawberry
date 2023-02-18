@@ -54,7 +54,6 @@ class Parameter(inspect.Parameter):
 
 
 class Signature(inspect.Signature):
-
     _parameter_cls = Parameter
 
 
@@ -154,7 +153,6 @@ T = TypeVar("T")
 
 
 class StrawberryResolver(Generic[T]):
-
     RESERVED_PARAMSPEC: Tuple[ReservedParameterSpecification, ...] = (
         SELF_PARAMSPEC,
         CLS_PARAMSPEC,
@@ -329,7 +327,7 @@ class StrawberryResolver(Generic[T]):
 
 
 class UncallableResolverError(Exception):
-    def __init__(self, resolver: "StrawberryResolver"):
+    def __init__(self, resolver: StrawberryResolver):
         message = (
             f"Attempted to call resolver {resolver} with uncallable function "
             f"{resolver.wrapped_func}"

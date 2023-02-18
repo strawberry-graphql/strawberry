@@ -70,7 +70,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         subprotocols.append(protocol)
         super().__init__(application, path, headers, subprotocols=subprotocols)
 
-    async def __aenter__(self) -> "GraphQLWebsocketCommunicator":
+    async def __aenter__(self) -> GraphQLWebsocketCommunicator:
         await self.gql_init()
         return self
 

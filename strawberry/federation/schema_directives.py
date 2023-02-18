@@ -5,7 +5,7 @@ from strawberry import directive_field
 from strawberry.schema_directive import Location, schema_directive
 from strawberry.unset import UNSET
 
-from .types import FieldSet, LinkImport, LinkPurpose  # noqa: TCH001
+from .types import FieldSet, LinkImport, LinkPurpose
 
 
 @dataclass
