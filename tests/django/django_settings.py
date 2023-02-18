@@ -1,6 +1,6 @@
 SECRET_KEY = 1
 
-INSTALLED_APPS = ["tests.django.app"]
+INSTALLED_APPS = ["tests.django.app", "strawberry.django"]
 ROOT_URLCONF = "tests.django.app.urls"
 
 TEMPLATES = [
