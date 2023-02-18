@@ -160,7 +160,7 @@ class BaseGraphQLTestClient(ABC):
         map_without_vars = {k: v for k, v in map.items() if k in files}
         return map_without_vars
 
-    def _decode(self, response: Response, type: Literal["multipart", "json"]):
+    def _decode(self, response: Any, type: Literal["multipart", "json"]):
         if type == "multipart":
             return json.loads(response.content.decode())
         return response.json()
