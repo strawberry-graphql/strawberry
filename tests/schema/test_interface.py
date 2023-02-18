@@ -325,3 +325,48 @@ def test_interface_specialized_resolve_type(mocker: MockerFixture):
     assert not result.errors
     assert result.data == {"food": {"name": "strawberry"}}
     spy_resolve_type.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_derived_interface(mocker: MockerFixture):
+    """Test if correct resolve_type is called on a derived interface."""
+
+    class NodeInterfaceTester:
+        @classmethod
+        def resolve_type(cls, obj, *args) -> str:
+            return obj._type_definition.name
+
+    class NamedNodeInterfaceTester:
+        @classmethod
+        def resolve_type(cls, obj, *args) -> str:
+            return obj._type_definition.name
+
+    spy_node_resolve_type = mocker.spy(NodeInterfaceTester, "resolve_type")
+    spy_named_node_resolve_type = mocker.spy(NamedNodeInterfaceTester, "resolve_type")
+
+    @strawberry.interface
+    class Node(NodeInterfaceTester):
+        id: int
+
+    @strawberry.interface
+    class NamedNode(NamedNodeInterfaceTester, Node):
+        name: str
+
+    @strawberry.type
+    class Person(NamedNode):
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def friends(self) -> List[NamedNode]:
+            return [Person(id=1, name="foo"), Person(id=2, name="bar")]
+
+    schema = strawberry.Schema(Query, types=[Person])
+    result = await schema.execute("query { friends { name } }")
+
+    assert not result.errors
+    assert result.data == {"friends": [{"name": "foo"}, {"name": "bar"}]}
+
+    assert spy_named_node_resolve_type.call_count == len(result.data["friends"])
+    spy_node_resolve_type.assert_not_called()
