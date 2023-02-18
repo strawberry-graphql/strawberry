@@ -1,5 +1,6 @@
-import strawberry
 import json
+
+import strawberry
 from robyn import jsonify
 
 
@@ -28,11 +29,7 @@ def BaseGraphQLView(schema):
                 {
                     "data": (data.data),
                     **({"errors": data.errors} if data.errors else {}),
-                    **(
-                        {"extensions": data.extensions}
-                        if data.extensions
-                        else {}
-                    ),
+                    **({"extensions": data.extensions} if data.extensions else {}),
                 }
             )
 
