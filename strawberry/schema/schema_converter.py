@@ -97,7 +97,7 @@ class CustomGraphQLEnumType(GraphQLEnumType):
         return self.wrapped_cls(super().parse_value(input_value))
 
     def parse_literal(
-            self, value_node: ValueNode, _variables: Optional[Dict[str, Any]] = None
+        self, value_node: ValueNode, _variables: Optional[Dict[str, Any]] = None
     ) -> Any:
         return self.wrapped_cls(super().parse_literal(value_node, _variables))
 
@@ -109,9 +109,9 @@ class GraphQLCoreConverter:
     DEFINITION_BACKREF = "strawberry-definition"
 
     def __init__(
-            self,
-            config: StrawberryConfig,
-            scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+        self,
+        config: StrawberryConfig,
+        scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
     ):
         self.type_map: Dict[str, ConcreteType] = {}
         self.config = config
@@ -279,9 +279,9 @@ class GraphQLCoreConverter:
 
     @staticmethod
     def _get_thunk_mapping(
-            type_definition: TypeDefinition,
-            name_converter: Callable[[StrawberryField], str],
-            field_converter: Callable[[StrawberryField], FieldType],
+        type_definition: TypeDefinition,
+        name_converter: Callable[[StrawberryField], str],
+        field_converter: Callable[[StrawberryField], FieldType],
     ) -> Dict[str, FieldType]:
         """Create a GraphQL core `ThunkMapping` mapping of field names to field types.
 
@@ -306,7 +306,7 @@ class GraphQLCoreConverter:
         return thunk_mapping
 
     def get_graphql_fields(
-            self, type_definition: TypeDefinition
+        self, type_definition: TypeDefinition
     ) -> Dict[str, GraphQLField]:
         return self._get_thunk_mapping(
             type_definition=type_definition,
@@ -315,7 +315,7 @@ class GraphQLCoreConverter:
         )
 
     def get_graphql_input_fields(
-            self, type_definition: TypeDefinition
+        self, type_definition: TypeDefinition
     ) -> Dict[str, GraphQLInputField]:
         return self._get_thunk_mapping(
             type_definition=type_definition,
@@ -408,8 +408,8 @@ class GraphQLCoreConverter:
 
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
                 if object_type.concrete_of and (
-                        hasattr(obj, "_type_definition")
-                        and obj._type_definition.origin is object_type.concrete_of.origin
+                    hasattr(obj, "_type_definition")
+                    and obj._type_definition.origin is object_type.concrete_of.origin
                 ):
                     return True
 
@@ -435,11 +435,12 @@ class GraphQLCoreConverter:
         return graphql_object_type
 
     def from_resolver(
-            self, field: StrawberryField
+        self, field: StrawberryField
     ) -> Callable:  # TODO: Take StrawberryResolver
         field.default_resolver = self.config.default_resolver
 
         if field.is_basic_field:
+
             def _get_basic_result(_source: Any, *args, **kwargs):
                 # Call `get_result` without an info object or any args or
                 # kwargs because this is a basic field with no resolver.
@@ -450,9 +451,9 @@ class GraphQLCoreConverter:
             return _get_basic_result
 
         def _get_arguments(
-                source: Any,
-                info: Info,
-                kwargs: Dict[str, Any],
+            source: Any,
+            info: Info,
+            kwargs: Dict[str, Any],
         ) -> Tuple[List[Any], Dict[str, Any]]:
             kwargs = convert_arguments(
                 kwargs,
@@ -496,7 +497,7 @@ class GraphQLCoreConverter:
                     raise PermissionError(message)
 
         async def _check_permissions_async(
-                source: Any, info: Info, kwargs: Dict[str, Any]
+            source: Any, info: Info, kwargs: Dict[str, Any]
         ):
             for permission_class in field.permission_classes:
                 permission = permission_class()
@@ -614,7 +615,7 @@ class GraphQLCoreConverter:
         return implementation
 
     def from_maybe_optional(
-            self, type_: Union[StrawberryType, type]
+        self, type_: Union[StrawberryType, type]
     ) -> Union[GraphQLNullableType, GraphQLNonNull]:
         NoneType = type(None)
         if type_ is None or type_ is NoneType:
@@ -650,7 +651,7 @@ class GraphQLCoreConverter:
         elif isinstance(type_, LazyType):
             return self.from_type(type_.resolve_type())
         elif compat.is_scalar(
-                type_, self.scalar_registry
+            type_, self.scalar_registry
         ):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
 
@@ -692,8 +693,8 @@ class GraphQLCoreConverter:
         return graphql_union
 
     def _get_is_type_of(
-            self,
-            object_type: TypeDefinition,
+        self,
+        object_type: TypeDefinition,
     ) -> Optional[Callable[[Any, GraphQLResolveInfo], bool]]:
         if object_type.is_type_of:
             return object_type.is_type_of
@@ -702,8 +703,8 @@ class GraphQLCoreConverter:
 
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
                 if object_type.concrete_of and (
-                        hasattr(obj, "_type_definition")
-                        and obj._type_definition.origin is object_type.concrete_of.origin
+                    hasattr(obj, "_type_definition")
+                    and obj._type_definition.origin is object_type.concrete_of.origin
                 ):
                     return True
 
@@ -714,7 +715,7 @@ class GraphQLCoreConverter:
         return None
 
     def validate_same_type_definition(
-            self, name: str, type_definition: StrawberryType, cached_type: ConcreteType
+        self, name: str, type_definition: StrawberryType, cached_type: ConcreteType
     ) -> None:
         # if the type definitions are the same we can return
         if cached_type.definition == type_definition:
@@ -743,14 +744,14 @@ class GraphQLCoreConverter:
         # var map is the same, in that case we can return
 
         if (
-                isinstance(type_definition, TypeDefinition)
-                and isinstance(cached_type.definition, TypeDefinition)
-                and cached_type.definition.concrete_of is not None
-                and cached_type.definition.concrete_of == type_definition.concrete_of
-                and (
+            isinstance(type_definition, TypeDefinition)
+            and isinstance(cached_type.definition, TypeDefinition)
+            and cached_type.definition.concrete_of is not None
+            and cached_type.definition.concrete_of == type_definition.concrete_of
+            and (
                 cached_type.definition.type_var_map.keys()
                 == type_definition.type_var_map.keys()
-        )
+            )
         ):
             # manually compare type_var_maps while resolving any lazy types
             # so that they're considered equal to the actual types they're referencing
@@ -762,14 +763,14 @@ class GraphQLCoreConverter:
                 if isinstance(type1, LazyType):
                     type1 = type1.resolve_type()
                 elif isinstance(type1, StrawberryOptional) and isinstance(
-                        type1.of_type, LazyType
+                    type1.of_type, LazyType
                 ):
                     type1.of_type = type1.of_type.resolve_type()
 
                 if isinstance(type2, LazyType):
                     type2 = type2.resolve_type()
                 elif isinstance(type2, StrawberryOptional) and isinstance(
-                        type2.of_type, LazyType
+                    type2.of_type, LazyType
                 ):
                     type2.of_type = type2.of_type.resolve_type()
 
