@@ -2976,7 +2976,7 @@ name = "typer"
 version = "0.7.0"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.6"
 files = [
     {file = "typer-0.7.0-py3-none-any.whl", hash = "sha256:b5e704f4e48ec263de1c0b3a2387cd405a13767d2f907f44c1a08cbad96f606d"},
@@ -3687,4 +3687,4 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "cb6554076e8d3eaeff2997009bb5316ce8a94064c2eca42616608e451894fab7"
+content-hash = "c843e6a62c77009731fa716c7a933fe1adb596c1bcfba62648be9a143928bef6"

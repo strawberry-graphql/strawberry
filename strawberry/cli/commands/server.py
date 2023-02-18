@@ -24,7 +24,7 @@ class LogLevel(str, Enum):
 def server(
     schema: str,
     host: str = typer.Option("0.0.0.0", "-h", "--host", show_default=True),
-    port: str = typer.Option(8000, "-p", "--port", show_default=True),
+    port: int = typer.Option(8000, "-p", "--port", show_default=True),
     log_level: LogLevel = typer.Option(
         "error",
         "--log-level",
