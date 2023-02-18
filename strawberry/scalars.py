@@ -44,7 +44,8 @@ class JSONMeta(type):
     parse_value=lambda v: v,
 )
 class JSON(Generic[T], metaclass=JSONMeta):
-    ...
+    def __call__(self, value: T) -> T:
+        return value
 
 
 Base16 = scalar(
