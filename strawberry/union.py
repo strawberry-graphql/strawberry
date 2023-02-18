@@ -17,6 +17,7 @@ from typing import (
     Union,
     cast,
 )
+from typing_extensions import Annotated, get_origin
 
 from graphql import GraphQLNamedType, GraphQLUnionType
 
@@ -109,7 +110,16 @@ class StrawberryUnion(StrawberryType):
 
     @property
     def is_generic(self) -> bool:
-        return len(self.type_params) > 0
+        def _is_generic(type_: object) -> bool:
+            if hasattr(type_, "_type_definition"):
+                type_ = type_._type_definition
+
+            if isinstance(type_, StrawberryType):
+                return type_.is_generic
+
+            return False
+
+        return any(map(_is_generic, self.types))
 
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
@@ -202,6 +212,22 @@ class StrawberryUnion(StrawberryType):
 
         return _resolve_union_type
 
+    @staticmethod
+    def is_valid_union_type(type_: object) -> bool:
+        # Usual case: Union made of @strawberry.types
+        if hasattr(type_, "_type_definition"):
+            return True
+
+        # Can't confidently assert that these types are valid/invalid within Unions
+        # until full type resolving stage is complete
+        ignored_types = (LazyType, TypeVar)
+        if isinstance(type_, ignored_types):
+            return True
+        if get_origin(type_) is Annotated:
+            return True
+
+        return False
+
 
 Types = TypeVar("Types", bound=Type)
 
@@ -234,7 +260,9 @@ def union(
         raise TypeError("No types passed to `union`")
 
     for type_ in types:
-        if not isinstance(type_, TypeVar) and not hasattr(type_, "_type_definition"):
+        # Due to TypeVars, Annotations, LazyTypes, etc., this does not perfectly detect
+        # issues. This check also occurs in the Schema conversion stage as a backup.
+        if not StrawberryUnion.is_valid_union_type(type_):
             raise InvalidUnionTypeError(union_name=name, invalid_type=type_)
 
     union_definition = StrawberryUnion(
