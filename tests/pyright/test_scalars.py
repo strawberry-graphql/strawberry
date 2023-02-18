@@ -57,14 +57,30 @@ def test_pyright():
 
     # NOTE: This is also guaranteeing that those scalars could be used to annotate
     # the attributes. Pyright 1.1.224+ doesn't allow non-types to be used there
-    __import__("pprint").pprint(results)
     assert results == [
+        # The lack of `default=Any` in mypy makes us unable to support this for pyright,
+        # which will raise this error for strict checkings. It can go away by typing it
+        # as JSON[Any]. Once mypy supports it, adding `default=Any` should make this
+        # error go away
+        Result(
+            type="error",
+            message='Expected type arguments for generic class "JSON" '
+            "(reportMissingTypeArgument)",
+            line=16,
+            column=11,
+        ),
         Result(
             type="information", message='Type of "obj.id" is "ID"', line=38, column=13
         ),
         Result(
+            type="error",
+            message='Type of "json" is partially unknown',
+            line=39,
+            column=13,
+        ),
+        Result(
             type="information",
-            message='Type of "obj.json" is "JSON[Any]"',
+            message='Type of "obj.json" is "JSON[Unknown]"',
             line=39,
             column=13,
         ),

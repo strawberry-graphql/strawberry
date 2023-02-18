@@ -7,16 +7,18 @@ from typing import (
     Dict,
     Generic,
     NewType,
+    TypeVar,
     Union,
 )
-from typing_extensions import TypeVar
 
 from .custom_scalar import scalar
 
 if TYPE_CHECKING:
     from .custom_scalar import ScalarDefinition, ScalarWrapper
 
-T = TypeVar("T", bound=Any, default=Any)
+# FIXME: We want to add `default=Any` in the future here, so JSON will be evaluated
+# to JSON[Any] instead of JSON[Unknown]. Pyright already supports it, but mypy doesn't
+T = TypeVar("T", bound=Any)
 ID = NewType("ID", str)
 
 
