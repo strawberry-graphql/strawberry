@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any, Callable, Dict
 
 from aiohttp import http, web
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
@@ -20,7 +20,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         schema: BaseSchema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
-        get_context: Dict[str, Any],
+        get_context: Callable[..., Dict[str, Any]],
         get_root_value: Any,
         request: web.Request,
     ):
@@ -31,7 +31,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         self._ws = web.WebSocketResponse(protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL])
 
     async def get_context(self) -> Any:
-        return await self._get_context(request=self._request, response=self._ws)
+        return await self._get_context(request=self._request, response=self._ws)  # type: ignore  # noqa: E501
 
     async def get_root_value(self) -> Any:
         return await self._get_root_value(request=self._request)

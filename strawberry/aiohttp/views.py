@@ -62,7 +62,7 @@ class GraphQLView:
                     schema=self.schema,
                     debug=self.debug,
                     connection_init_wait_timeout=self.connection_init_wait_timeout,
-                    get_context=self.get_context,
+                    get_context=self.get_context,  # type: ignore
                     get_root_value=self.get_root_value,
                     request=request,
                 ).handle()

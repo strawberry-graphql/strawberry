@@ -355,7 +355,7 @@ def add_static_method_to_class(
 
     # For compat with mypy < 0.93
     if MypyVersion.VERSION < Decimal("0.93"):
-        function_type = api.named_type("__builtins__.function")  # type: ignore
+        function_type = api.named_type("__builtins__.function")
     else:
         if isinstance(api, SemanticAnalyzerPluginInterface):
             function_type = api.named_type("builtins.function")
@@ -404,7 +404,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
     # >>> model_type = ctx.api.named_type("UserModel")
     # >>> model_type = ctx.api.lookup(model_name, Context())
 
-    model_expression = _get_argument(call=ctx.reason, name="model")  # type: ignore
+    model_expression = _get_argument(call=ctx.reason, name="model")
     if model_expression is None:
         ctx.api.fail("model argument in decorator failed to be parsed", ctx.reason)
 
@@ -786,7 +786,7 @@ class CustomDataclassTransformer:
             if MypyVersion.VERSION >= Decimal("0.920"):
                 params["kw_only"] = True
 
-            attribute = DataclassAttribute(**params)  # type: ignore
+            attribute = DataclassAttribute(**params)
             attrs.append(attribute)
 
         # Next, collect attributes belonging to any class in the MRO
