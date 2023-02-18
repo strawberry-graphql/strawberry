@@ -278,6 +278,8 @@ ignore = [
     "TRY",
     "SIM300",
     "SIM114",
+
+    "DJ008",
 ]
 fix = true
 exclude = [
