@@ -2,7 +2,7 @@ import hashlib
 from inspect import isawaitable
 from typing import Optional
 
-from sentry_sdk import start_transaction
+from sentry_sdk import configure_scope, start_transaction
 
 from strawberry.extensions import Extension
 from strawberry.extensions.tracing.utils import should_skip_tracing
@@ -37,10 +37,17 @@ class SentryTracingExtension(Extension):
         self._operation_name = self.execution_context.operation_name
         name = f"{self._operation_name}" if self._operation_name else "Anonymous Query"
 
-        self.transaction = start_transaction(
-            op="gql",
-            name=name,
-        )
+        with configure_scope() as scope:
+            if scope.transaction:
+                self.transaction = scope.transaction.start_child(
+                    op="gql",
+                    description=name,
+                )
+            else:
+                self.transaction = start_transaction(
+                    op="gql",
+                    name=name,
+                )
 
         operation_type = "query"
 
@@ -88,7 +95,6 @@ class SentryTracingExtension(Extension):
         with self.transaction.start_child(
             op="resolve", description=f"Resolving: {field_path}"
         ) as span:
-
             span.set_tag("graphql.field_name", info.field_name)
             span.set_tag("graphql.parent_type", info.parent_type.name)
             span.set_tag("graphql.field_path", field_path)
