@@ -10,7 +10,7 @@ from strawberry.extensions import FieldExtension
 
 class UpperCaseExtension(FieldExtension):
     async def resolve_async(
-            self, next: Callable[..., Any], source: Any, info: Info, **kwargs
+        self, next: Callable[..., Any], source: Any, info: Info, **kwargs
     ):
         result = await next(source, info, **kwargs)
         return str(result).upper()
