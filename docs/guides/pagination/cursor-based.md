@@ -58,24 +58,39 @@ Let us model our schema like this:
 ```py
 # example.py
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any, cast
 
 import strawberry
 
 
 @strawberry.type
 class User:
+    id: str = strawberry.field(
+        description="ID of the user."
+    )
+
     name: str = strawberry.field(
         description="The name of the user."
     )
+
 
     occupation: str = strawberry.field(
         description="The occupation of the user."
     )
 
+
     age: int = strawberry.field(
         description="The age of the user."
     )
+
+    @staticmethod
+    def from_row(row: Dict[str, Any]) -> "User":
+        return User(
+            id=row['id'],
+            name=row['name'],
+            occupation=row['occupation'],
+            age=row['age']
+        )
 
 
 @strawberry.type
@@ -111,7 +126,7 @@ For simplicity's sake, our dataset is going to be an in-memory list.
 ```py line=7-32
 # example.py
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any, cast
 
 import strawberry
 
@@ -145,17 +160,32 @@ user_data = [
 
 @strawberry.type
 class User:
+    id: str = strawberry.field(
+        description="ID of the user."
+    )
+
     name: str = strawberry.field(
         description="The name of the user."
     )
+
 
     occupation: str = strawberry.field(
         description="The occupation of the user."
     )
 
+
     age: int = strawberry.field(
         description="The age of the user."
     )
+
+    @staticmethod
+    def from_row(row: Dict[str, Any]) -> "User":
+        return User(
+            id=row['id'],
+            name=row['name'],
+            occupation=row['occupation'],
+            age=row['age']
+        )
 
 
 @strawberry.type
@@ -202,7 +232,7 @@ Let us define a couple of helper functions to encode and decode cursors as follo
 # example.py
 
 from base64 import b64encode, b64decode
-from typing import List, Optional
+from typing import List, Optional, Dict, Any, cast
 
 import strawberry
 
@@ -258,6 +288,10 @@ def decode_user_cursor(cursor: str) -> int:
 
 @strawberry.type
 class User:
+    id: str = strawberry.field(
+        description="ID of the user."
+    )
+
     name: str = strawberry.field(
         description="The name of the user."
     )
@@ -269,6 +303,15 @@ class User:
     age: int = strawberry.field(
         description="The age of the user."
     )
+
+    @staticmethod
+    def from_row(row: Dict[str, Any]) -> "User":
+        return User(
+            id=row['id'],
+            name=row['name'],
+            occupation=row['occupation'],
+            age=row['age']
+        )
 
 
 @strawberry.type
@@ -309,7 +352,7 @@ Now, let us implement the pagination logic.
 # example.py
 
 from base64 import b64encode, b64decode
-from typing import List, Optional, cast
+from typing import List, Optional, Dict, Any, cast
 
 import strawberry
 
@@ -365,6 +408,11 @@ def decode_user_cursor(cursor: str) -> int:
 
 @strawberry.type
 class User:
+
+    id: str = strawberry.field(
+        description="ID of the user."
+    )
+
     name: str = strawberry.field(
         description="The name of the user."
     )
@@ -376,6 +424,15 @@ class User:
     age: int = strawberry.field(
         description="The age of the user."
     )
+
+    @staticmethod
+    def from_row(row: Dict[str, Any]) -> "User":
+        return User(
+            id=row['id'],
+            name=row['name'],
+            occupation=row['occupation'],
+            age=row['age']
+        )
 
 
 @strawberry.type
@@ -409,7 +466,7 @@ class Query:
           user_id = 0
 
         # filter the user data, going through the next set of results.
-        filtered_data = map(lambda user: user.id > user_id, user_data)
+        filtered_data = [user for user in user_data if user['id'] >= user_id]
 
         # slice the relevant user data (Here, we also slice an
         # additional user instance, to prepare the next cursor).
@@ -418,14 +475,13 @@ class Query:
         if len(sliced_users) > limit:
           # calculate the client's next cursor.
           last_user = sliced_users.pop(-1)
-          next_cursor = encode_user_cursor(id=last_user.id)
+          next_cursor = encode_user_cursor(id=last_user['id'])
         else:
           # We have reached the last page, and
           # don't have the next cursor.
           next_cursor = None
 
-        # type cast the sliced data.
-        sliced_users = cast(List[UserType], sliced_users)
+        sliced_users = [User.from_row(x) for x in sliced_users]
 
         return UserResponse(
             users=sliced_users,
