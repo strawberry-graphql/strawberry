@@ -17,7 +17,7 @@ from graphql import GraphQLError
 
 from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.extensions import FieldExtension
-from strawberry.schema_directive import StrawberrySchemaDirective, Location
+from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.utils.await_maybe import await_maybe
 
 if TYPE_CHECKING:
@@ -71,12 +71,16 @@ class BasePermission(abc.ABC):
     def schema_directive(self) -> Optional[StrawberrySchemaDirective]:
         if not self._schema_directive:
             self._schema_directive = StrawberrySchemaDirective(
-                self.__class__.__name__, self.__class__.__name__, [Location.FIELD_DEFINITION],[]
+                self.__class__.__name__,
+                self.__class__.__name__,
+                [Location.FIELD_DEFINITION],
+                [],
             )
         return self._schema_directive
 
+
 class PermissionExtension(FieldExtension):
-    def __init__(self, permissions : List[BasePermission]):
+    def __init__(self, permissions: List[BasePermission]):
         self.permissions = permissions
 
     def apply(self, field: StrawberryField) -> None:  # nocov
@@ -93,7 +97,6 @@ class PermissionExtension(FieldExtension):
         raises an exception if not
         """
         for permission in self.permissions:
-
             if not permission.has_permission(source, info, **kwargs):
                 permission.raise_error()
 
