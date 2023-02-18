@@ -38,9 +38,11 @@ def _impl_type(
     tags: Iterable[str] = (),
     is_input: bool = False,
     is_interface: bool = False,
+    is_interface_object: bool = False,
 ) -> T:
     from strawberry.federation.schema_directives import (
         Inaccessible,
+        InterfaceObject,
         Key,
         Shareable,
         Tag,
@@ -61,6 +63,9 @@ def _impl_type(
 
     if tags:
         directives.extend(Tag(name=tag) for tag in tags)
+
+    if is_interface_object:
+        directives.append(InterfaceObject())
 
     return base_type(  # type: ignore
         cls,
@@ -247,5 +252,65 @@ def interface(
         keys=keys,
         inaccessible=inaccessible,
         is_interface=True,
+        tags=tags,
+    )
+
+
+@overload
+@__dataclass_transform__(
+    order_default=True,
+    kw_only_default=True,
+    field_descriptors=(base_field, field, StrawberryField),
+)
+def interface_object(
+    cls: T,
+    *,
+    keys: Iterable[Union["Key", str]],
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    inaccessible: bool = UNSET,
+    tags: Iterable[str] = (),
+    directives: Iterable[object] = (),
+) -> T:
+    ...
+
+
+@overload
+@__dataclass_transform__(
+    order_default=True,
+    kw_only_default=True,
+    field_descriptors=(base_field, field, StrawberryField),
+)
+def interface_object(
+    *,
+    keys: Iterable[Union["Key", str]],
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    inaccessible: bool = UNSET,
+    tags: Iterable[str] = (),
+    directives: Iterable[object] = (),
+) -> Callable[[T], T]:
+    ...
+
+
+def interface_object(
+    cls: Optional[T] = None,
+    *,
+    keys: Iterable[Union["Key", str]],
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    inaccessible: bool = UNSET,
+    tags: Iterable[str] = (),
+    directives: Iterable[object] = (),
+):
+    return _impl_type(
+        cls,
+        name=name,
+        description=description,
+        directives=directives,
+        keys=keys,
+        inaccessible=inaccessible,
+        is_interface=False,
+        is_interface_object=True,
         tags=tags,
     )

@@ -1,11 +1,11 @@
 from __future__ import annotations as _
 
-import builtins
 import inspect
 import sys
 import warnings
 from inspect import isasyncgenfunction, iscoroutinefunction
 from typing import (  # type: ignore[attr-defined]
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -30,6 +30,9 @@ from strawberry.exceptions import MissingArgumentsAnnotationsError
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 from strawberry.utils.cached_property import cached_property
+
+if TYPE_CHECKING:
+    import builtins
 
 
 class Parameter(inspect.Parameter):

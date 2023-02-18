@@ -23,7 +23,7 @@ class StrawberryType(ABC):
     def is_generic(self) -> bool:
         raise NotImplementedError()
 
-    def has_generic(self, type_var) -> bool:
+    def has_generic(self, type_var: TypeVar) -> bool:
         return False
 
     def __eq__(self, other: object) -> bool:
@@ -107,7 +107,7 @@ class StrawberryContainer(StrawberryType):
 
         return False
 
-    def has_generic(self, type_var) -> bool:
+    def has_generic(self, type_var: TypeVar) -> bool:
         if isinstance(self.of_type, StrawberryType):
             return self.of_type.has_generic(type_var)
         return False
@@ -134,14 +134,14 @@ class StrawberryTypeVar(StrawberryType):
     def is_generic(self) -> bool:
         return True
 
-    def has_generic(self, type_var) -> bool:
+    def has_generic(self, type_var: TypeVar) -> bool:
         return self.type_var == type_var
 
     @property
     def type_params(self) -> List[TypeVar]:
         return [self.type_var]
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryTypeVar):
             return self.type_var == other.type_var
         if isinstance(other, TypeVar):

@@ -1,15 +1,18 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Dict, Tuple
 
-from graphql import DirectiveNode, GraphQLResolveInfo
-
-from strawberry.directive import StrawberryDirective
 from strawberry.extensions import Extension
-from strawberry.field import StrawberryField
 from strawberry.types import Info
-from strawberry.utils.await_maybe import AwaitableOrValue, await_maybe
+from strawberry.utils.await_maybe import await_maybe
 
 if TYPE_CHECKING:
+    from graphql import DirectiveNode, GraphQLResolveInfo
+
+    from strawberry.directive import StrawberryDirective
+    from strawberry.field import StrawberryField
     from strawberry.schema.schema import Schema
+    from strawberry.utils.await_maybe import AwaitableOrValue
 
 
 SPECIFIED_DIRECTIVES = {"include", "skip"}
