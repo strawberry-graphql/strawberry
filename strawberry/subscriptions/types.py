@@ -1,4 +1,5 @@
-from typing import AsyncGenerator, TypeVar
+from collections.abc import AsyncGenerator
+from typing import TypeVar
 
 __all__ = ["SubscriptionResult"]
 

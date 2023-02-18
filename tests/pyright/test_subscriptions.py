@@ -3,14 +3,14 @@ from .utils import requires_pyright, run_pyright, skip_on_windows
 pytestmark = [skip_on_windows, requires_pyright]
 
 CODE_ASYNCGENERATOR = """
-import typing
+from collections.abc import AsyncGenerator
 
 import strawberry
 
 @strawberry.type
 class Subscription:
     @strawberry.subscription
-    async def time(self) -> typing.AsyncGenerator[str, None]:
+    async def time(self) -> AsyncGenerator[str, None]:
         ...
 """
 
