@@ -259,7 +259,7 @@ class Schema(BaseSchema):
 
     def _add_link_for_composed_directive(
         self,
-        directive: StrawberrySchemaDirective,
+        directive: "StrawberrySchemaDirective",
         directive_by_url: Mapping[str, Set[str]],
     ) -> None:
         if not isinstance(directive, StrawberryFederationSchemaDirective):
