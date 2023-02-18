@@ -5,16 +5,6 @@ from abc import ABC, abstractmethod
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional, cast
 
-if TYPE_CHECKING:
-    from strawberry.schema import BaseSchema
-    from strawberry.subscriptions.protocols.graphql_ws.types import (
-        ConnectionInitPayload,
-        OperationMessage,
-        OperationMessagePayload,
-        StartPayload,
-    )
-
-
 from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError
 from graphql.error.graphql_error import format_error as format_graphql_error
@@ -32,6 +22,15 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_STOP,
 )
 from strawberry.utils.debug import pretty_print_graphql_operation
+
+if TYPE_CHECKING:
+    from strawberry.schema import BaseSchema
+    from strawberry.subscriptions.protocols.graphql_ws.types import (
+        ConnectionInitPayload,
+        OperationMessage,
+        OperationMessagePayload,
+        StartPayload,
+    )
 
 
 class BaseGraphQLWSHandler(ABC):

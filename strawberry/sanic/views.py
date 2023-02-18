@@ -4,16 +4,6 @@ import json
 import warnings
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Union
 
-if TYPE_CHECKING:
-    from typing_extensions import Literal
-
-    from sanic.request import Request
-    from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
-    from strawberry.schema import BaseSchema
-    from strawberry.types import ExecutionResult
-
-    from .context import StrawberrySanicContext
-
 from sanic.exceptions import NotFound, SanicException, ServerError
 from sanic.response import HTTPResponse, html
 from sanic.views import HTTPMethodView
@@ -30,6 +20,16 @@ from strawberry.sanic.utils import convert_request_to_files_dict
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types.graphql import OperationType
 from strawberry.utils.graphiql import get_graphiql_html
+
+if TYPE_CHECKING:
+    from typing_extensions import Literal
+
+    from sanic.request import Request
+    from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
+    from strawberry.schema import BaseSchema
+    from strawberry.types import ExecutionResult
+
+    from .context import StrawberrySanicContext
 
 
 class GraphQLView(HTTPMethodView):

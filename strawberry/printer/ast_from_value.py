@@ -5,15 +5,6 @@ import re
 from math import isfinite
 from typing import TYPE_CHECKING, Any, Mapping, Optional, cast
 
-if TYPE_CHECKING:
-    from graphql.language import ValueNode
-    from graphql.type import (
-        GraphQLInputObjectType,
-        GraphQLInputType,
-        GraphQLList,
-        GraphQLNonNull,
-    )
-
 from graphql.language import (
     BooleanValueNode,
     EnumValueNode,
@@ -35,6 +26,15 @@ from graphql.type import (
     is_list_type,
     is_non_null_type,
 )
+
+if TYPE_CHECKING:
+    from graphql.language import ValueNode
+    from graphql.type import (
+        GraphQLInputObjectType,
+        GraphQLInputType,
+        GraphQLList,
+        GraphQLNonNull,
+    )
 
 __all__ = ["ast_from_value"]
 

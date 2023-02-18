@@ -33,24 +33,6 @@ from graphql import (
 )
 from graphql.language.directive_locations import DirectiveLocation
 
-if TYPE_CHECKING:
-    from graphql import (
-        GraphQLInputType,
-        GraphQLNullableType,
-        GraphQLOutputType,
-        GraphQLResolveInfo,
-        GraphQLScalarType,
-        ValueNode,
-    )
-
-    from strawberry.custom_scalar import ScalarDefinition
-    from strawberry.directive import StrawberryDirective
-    from strawberry.enum import EnumValue
-    from strawberry.field import StrawberryField
-    from strawberry.schema.config import StrawberryConfig
-    from strawberry.schema_directive import StrawberrySchemaDirective
-    from strawberry.type import StrawberryType
-
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument, convert_arguments
 from strawberry.custom_scalar import ScalarWrapper
@@ -75,6 +57,24 @@ from strawberry.utils.await_maybe import await_maybe
 
 from . import compat
 from .types.concrete_type import ConcreteType
+
+if TYPE_CHECKING:
+    from graphql import (
+        GraphQLInputType,
+        GraphQLNullableType,
+        GraphQLOutputType,
+        GraphQLResolveInfo,
+        GraphQLScalarType,
+        ValueNode,
+    )
+
+    from strawberry.custom_scalar import ScalarDefinition
+    from strawberry.directive import StrawberryDirective
+    from strawberry.enum import EnumValue
+    from strawberry.field import StrawberryField
+    from strawberry.schema.config import StrawberryConfig
+    from strawberry.schema_directive import StrawberrySchemaDirective
+    from strawberry.type import StrawberryType
 
 
 # graphql-core expects a resolver for an Enum type to return

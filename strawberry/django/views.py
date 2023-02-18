@@ -5,15 +5,6 @@ import json
 import warnings
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
-if TYPE_CHECKING:
-    from django.http import HttpRequest
-
-    from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
-    from strawberry.types import ExecutionResult
-
-    from ..schema import BaseSchema
-
-
 from django.core.exceptions import BadRequest, SuspiciousOperation
 from django.core.serializers.json import DjangoJSONEncoder
 from django.http import Http404, HttpResponseNotAllowed, JsonResponse
@@ -38,6 +29,14 @@ from strawberry.types.graphql import OperationType
 from strawberry.utils.graphiql import get_graphiql_html
 
 from .context import StrawberryDjangoContext
+
+if TYPE_CHECKING:
+    from django.http import HttpRequest
+
+    from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
+    from strawberry.types import ExecutionResult
+
+    from ..schema import BaseSchema
 
 
 class TemporalHttpResponse(JsonResponse):

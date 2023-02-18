@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import sys
 from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
@@ -8,9 +10,6 @@ if TYPE_CHECKING:
     from graphql.error import GraphQLError
 
     from strawberry.types import ExecutionContext
-
-import logging
-import sys
 
 
 class StrawberryLogger:

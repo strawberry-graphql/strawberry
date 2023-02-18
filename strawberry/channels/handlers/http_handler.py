@@ -7,12 +7,6 @@ from __future__ import annotations
 import dataclasses
 import json
 from typing import TYPE_CHECKING, Any, Optional
-
-if TYPE_CHECKING:
-    from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
-    from strawberry.schema import BaseSchema
-    from strawberry.types import ExecutionResult
-
 from urllib.parse import parse_qs
 
 from channels.db import database_sync_to_async
@@ -29,6 +23,11 @@ from strawberry.types.graphql import OperationType
 from strawberry.utils.graphiql import get_graphiql_html
 
 from .base import ChannelsConsumer
+
+if TYPE_CHECKING:
+    from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
+    from strawberry.schema import BaseSchema
+    from strawberry.types import ExecutionResult
 
 
 class MethodNotAllowed(Exception):

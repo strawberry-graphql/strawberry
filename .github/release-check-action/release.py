@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+import dataclasses
+import re
+from enum import Enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-import dataclasses
-import re
-from enum import Enum
 
 RELEASE_TYPE_REGEX = re.compile(r"^[Rr]elease [Tt]ype: (major|minor|patch)$")
 

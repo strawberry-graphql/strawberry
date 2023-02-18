@@ -74,8 +74,6 @@ class LibCSTSourceFinder:
     def _find_definition_by_qualname(
         self, qualname: str, nodes: Sequence[CSTNode]
     ) -> Optional[CSTNode]:
-        if TYPE_CHECKING:
-            from libcst import CSTNode
         from libcst import ClassDef, FunctionDef
 
         for definition in nodes:

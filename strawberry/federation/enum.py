@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, Union, overload
 
-if TYPE_CHECKING:
-    from strawberry.enum import EnumType, EnumValueDefinition
 from strawberry.enum import _process_enum
 from strawberry.enum import enum_value as base_enum_value
+
+if TYPE_CHECKING:
+    from strawberry.enum import EnumType, EnumValueDefinition
 
 
 def enum_value(

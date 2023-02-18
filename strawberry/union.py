@@ -18,14 +18,6 @@ from typing import (
     cast,
 )
 
-if TYPE_CHECKING:
-    from graphql import (
-        GraphQLAbstractType,
-        GraphQLResolveInfo,
-        GraphQLType,
-        GraphQLTypeResolver,
-    )
-
 from graphql import GraphQLNamedType, GraphQLUnionType
 
 from strawberry.annotation import StrawberryAnnotation
@@ -39,6 +31,13 @@ from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryOptional, StrawberryType
 
 if TYPE_CHECKING:
+    from graphql import (
+        GraphQLAbstractType,
+        GraphQLResolveInfo,
+        GraphQLType,
+        GraphQLTypeResolver,
+    )
+
     from strawberry.schema.types.concrete_type import TypeMap
     from strawberry.types.types import TypeDefinition
 

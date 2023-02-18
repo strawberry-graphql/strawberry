@@ -5,6 +5,8 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union
 from typing_extensions import Protocol
 
+from strawberry.utils.logging import StrawberryLogger
+
 if TYPE_CHECKING:
     from graphql import GraphQLError
 
@@ -18,8 +20,6 @@ if TYPE_CHECKING:
     from strawberry.union import StrawberryUnion
 
     from .config import StrawberryConfig
-
-from strawberry.utils.logging import StrawberryLogger
 
 
 class BaseSchema(Protocol):

@@ -11,12 +11,12 @@ from strawberry.extensions.context import (
     RequestContextManager,
     ValidationContextManager,
 )
-
-if TYPE_CHECKING:
-    from strawberry.types import ExecutionContext
 from strawberry.utils.await_maybe import await_maybe
 
 from . import Extension
+
+if TYPE_CHECKING:
+    from strawberry.types import ExecutionContext
 
 
 class ExtensionsRunner:

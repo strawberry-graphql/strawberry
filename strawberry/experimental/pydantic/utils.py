@@ -14,12 +14,6 @@ from typing import (
     cast,
 )
 
-if TYPE_CHECKING:
-    from pydantic import BaseModel
-    from pydantic.fields import ModelField
-    from pydantic.typing import NoArgAnyCallable
-
-
 from pydantic.utils import smart_deepcopy
 
 from strawberry.experimental.pydantic.exceptions import (
@@ -35,6 +29,11 @@ from strawberry.utils.typing import (
     is_list,
     is_optional,
 )
+
+if TYPE_CHECKING:
+    from pydantic import BaseModel
+    from pydantic.fields import ModelField
+    from pydantic.typing import NoArgAnyCallable
 
 
 def normalize_type(type_) -> Any:

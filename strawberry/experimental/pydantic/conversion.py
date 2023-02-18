@@ -4,13 +4,13 @@ import copy
 import dataclasses
 from typing import TYPE_CHECKING, Union, cast
 
-if TYPE_CHECKING:
-    from strawberry.field import StrawberryField
-    from strawberry.type import StrawberryType
-
 from strawberry.enum import EnumDefinition
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.union import StrawberryUnion
+
+if TYPE_CHECKING:
+    from strawberry.field import StrawberryField
+    from strawberry.type import StrawberryType
 
 
 def _convert_from_pydantic_to_strawberry_type(

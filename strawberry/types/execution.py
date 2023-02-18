@@ -3,19 +3,19 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
+from graphql import specified_rules
+
+from strawberry.utils.operation import get_first_operation, get_operation_type
+
 if TYPE_CHECKING:
     from graphql import ASTValidationRule
     from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql.error.graphql_error import GraphQLError
     from graphql.language import DocumentNode, OperationDefinitionNode
 
-    from .graphql import OperationType
-from graphql import specified_rules
-
-from strawberry.utils.operation import get_first_operation, get_operation_type
-
-if TYPE_CHECKING:
     from strawberry.schema import Schema
+
+    from .graphql import OperationType
 
 
 @dataclasses.dataclass

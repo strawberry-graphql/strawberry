@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict
 
-if TYPE_CHECKING:
-    from datetime import timedelta
-
-    from strawberry.schema import BaseSchema
-
 from aiohttp import http, web
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
     BaseGraphQLTransportWSHandler,
 )
+
+if TYPE_CHECKING:
+    from datetime import timedelta
+
+    from strawberry.schema import BaseSchema
 
 
 class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):

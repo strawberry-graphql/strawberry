@@ -23,11 +23,11 @@ from typing import (
     overload,
 )
 
+from .exceptions import WrongNumberOfResultsReturned
+
 if TYPE_CHECKING:
     from asyncio.events import AbstractEventLoop
 
-
-from .exceptions import WrongNumberOfResultsReturned
 
 T = TypeVar("T")
 K = TypeVar("K")

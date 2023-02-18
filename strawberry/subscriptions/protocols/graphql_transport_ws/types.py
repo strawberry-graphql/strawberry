@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from strawberry.unset import UNSET
+
 if TYPE_CHECKING:
     from graphql import GraphQLFormattedError
-
-from strawberry.unset import UNSET
 
 
 @dataclass

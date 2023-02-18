@@ -16,6 +16,7 @@ from typing import (
 )
 
 from strawberry.field import field as base_field
+from strawberry.unset import UNSET
 
 if TYPE_CHECKING:
     from typing_extensions import Literal
@@ -23,8 +24,6 @@ if TYPE_CHECKING:
     from strawberry.field import _RESOLVER_TYPE, StrawberryField
     from strawberry.permission import BasePermission
 
-
-from strawberry.unset import UNSET
 
 T = TypeVar("T")
 

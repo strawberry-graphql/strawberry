@@ -4,8 +4,6 @@ import dataclasses
 import uuid
 from typing import TYPE_CHECKING, AsyncIterator, Dict, List, Optional, Tuple, Union
 
-if TYPE_CHECKING:
-    from asgiref.typing import ASGIApplication
 from graphql import GraphQLError
 
 from channels.testing.websocket import WebsocketCommunicator
@@ -24,6 +22,9 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
 )
 from strawberry.types import ExecutionResult
+
+if TYPE_CHECKING:
+    from asgiref.typing import ASGIApplication
 
 
 class GraphQLWebsocketCommunicator(WebsocketCommunicator):

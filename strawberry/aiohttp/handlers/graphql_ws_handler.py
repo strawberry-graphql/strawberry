@@ -3,13 +3,13 @@ from __future__ import annotations
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Optional
 
-if TYPE_CHECKING:
-    from strawberry.schema import BaseSchema
-    from strawberry.subscriptions.protocols.graphql_ws.types import OperationMessage
-
 from aiohttp import http, web
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
+
+if TYPE_CHECKING:
+    from strawberry.schema import BaseSchema
+    from strawberry.subscriptions.protocols.graphql_ws.types import OperationMessage
 
 
 class GraphQLWSHandler(BaseGraphQLWSHandler):

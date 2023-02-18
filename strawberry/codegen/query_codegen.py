@@ -12,25 +12,6 @@ from typing import (
     Union,
     cast,
 )
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    from graphql import (
-        ArgumentNode,
-        DirectiveNode,
-        DocumentNode,
-        SelectionNode,
-        SelectionSetNode,
-        TypeNode,
-        ValueNode,
-        VariableDefinitionNode,
-    )
-
-    import strawberry
-
-    from .types import GraphQLArgumentValue, GraphQLSelection, GraphQLType
-
 from typing_extensions import Literal, Protocol
 
 from graphql import (
@@ -83,6 +64,24 @@ from .types import (
     GraphQLVariable,
     GraphQLVariableReference,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from graphql import (
+        ArgumentNode,
+        DirectiveNode,
+        DocumentNode,
+        SelectionNode,
+        SelectionSetNode,
+        TypeNode,
+        ValueNode,
+        VariableDefinitionNode,
+    )
+
+    import strawberry
+
+    from .types import GraphQLArgumentValue, GraphQLSelection, GraphQLType
 
 
 @dataclass

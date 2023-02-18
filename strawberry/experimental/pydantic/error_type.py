@@ -4,9 +4,6 @@ import dataclasses
 import warnings
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Type, cast
 
-if TYPE_CHECKING:
-    from pydantic.fields import ModelField
-
 from pydantic import BaseModel
 from pydantic.utils import lenient_issubclass
 
@@ -21,6 +18,9 @@ from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.typing import get_list_annotation, is_list
 
 from .exceptions import MissingFieldsListError
+
+if TYPE_CHECKING:
+    from pydantic.fields import ModelField
 
 
 def get_type_for_field(field: ModelField):

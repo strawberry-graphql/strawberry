@@ -38,15 +38,15 @@ from graphql.language import (
     InlineFragmentNode,
     OperationDefinitionNode,
 )
+from graphql.validation import ValidationRule
+
+from strawberry.extensions import AddValidationRules
+from strawberry.extensions.utils import is_introspection_key
 
 if TYPE_CHECKING:
     from graphql.language import DefinitionNode, Node
     from graphql.validation import ValidationContext
 
-from graphql.validation import ValidationRule
-
-from strawberry.extensions import AddValidationRules
-from strawberry.extensions.utils import is_introspection_key
 
 IgnoreType = Union[Callable[[str], bool], re.Pattern, str]
 

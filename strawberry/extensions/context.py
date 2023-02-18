@@ -3,9 +3,10 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING, List
 
+from strawberry.utils.await_maybe import await_maybe
+
 if TYPE_CHECKING:
     from strawberry.extensions import Extension
-from strawberry.utils.await_maybe import await_maybe
 
 
 class ExtensionContextManager(ABC):

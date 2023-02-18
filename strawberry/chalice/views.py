@@ -4,12 +4,6 @@ import json
 import warnings
 from typing import TYPE_CHECKING, Dict, Mapping, Optional
 
-if TYPE_CHECKING:
-    from chalice.app import Request
-    from strawberry.http import GraphQLHTTPResponse
-    from strawberry.schema import BaseSchema
-    from strawberry.types import ExecutionResult
-
 from chalice.app import BadRequestError, Response
 from strawberry.exceptions import MissingQueryError
 from strawberry.http import (
@@ -21,6 +15,12 @@ from strawberry.http.temporal_response import TemporalResponse
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types.graphql import OperationType
 from strawberry.utils.graphiql import get_graphiql_html
+
+if TYPE_CHECKING:
+    from chalice.app import Request
+    from strawberry.http import GraphQLHTTPResponse
+    from strawberry.schema import BaseSchema
+    from strawberry.types import ExecutionResult
 
 
 class GraphQLView:

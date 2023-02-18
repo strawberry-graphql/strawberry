@@ -3,17 +3,6 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union, cast
 
-if TYPE_CHECKING:
-    from graphql import ExecutionContext as GraphQLExecutionContext
-
-    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-    from strawberry.directive import StrawberryDirective
-    from strawberry.enum import EnumDefinition
-    from strawberry.extensions import Extension
-    from strawberry.field import StrawberryField
-    from strawberry.types import ExecutionResult
-    from strawberry.union import StrawberryUnion
-
 from graphql import (
     GraphQLNamedType,
     GraphQLNonNull,
@@ -41,6 +30,17 @@ from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
+
+if TYPE_CHECKING:
+    from graphql import ExecutionContext as GraphQLExecutionContext
+
+    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.directive import StrawberryDirective
+    from strawberry.enum import EnumDefinition
+    from strawberry.extensions import Extension
+    from strawberry.field import StrawberryField
+    from strawberry.types import ExecutionResult
+    from strawberry.union import StrawberryUnion
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.QUERY,

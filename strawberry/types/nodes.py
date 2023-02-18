@@ -14,12 +14,6 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING, Any, Collection, Dict, Iterable, List, Optional, Union
 
-if TYPE_CHECKING:
-    from graphql import GraphQLResolveInfo
-    from graphql.language import ArgumentNode as GQLArgumentNode
-    from graphql.language import DirectiveNode as GQLDirectiveNode
-    from graphql.language import ValueNode as GQLValueNode
-
 from graphql.language import FieldNode as GQLFieldNode
 from graphql.language import FragmentSpreadNode as GQLFragmentSpreadNode
 from graphql.language import InlineFragmentNode as GQLInlineFragmentNode
@@ -27,6 +21,11 @@ from graphql.language import ListValueNode as GQLListValueNode
 from graphql.language import ObjectValueNode as GQLObjectValueNode
 from graphql.language import VariableNode as GQLVariableNode
 
+if TYPE_CHECKING:
+    from graphql import GraphQLResolveInfo
+    from graphql.language import ArgumentNode as GQLArgumentNode
+    from graphql.language import DirectiveNode as GQLDirectiveNode
+    from graphql.language import ValueNode as GQLValueNode
 Arguments = Dict[str, Any]
 Directives = Dict[str, Arguments]
 Selection = Union["SelectedField", "FragmentSpread", "InlineFragment"]

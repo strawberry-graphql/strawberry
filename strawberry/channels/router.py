@@ -13,11 +13,11 @@ from django.urls import re_path
 
 from channels.routing import ProtocolTypeRouter, URLRouter
 
-if TYPE_CHECKING:
-    from strawberry.schema import BaseSchema
-
 from .handlers.http_handler import GraphQLHTTPConsumer
 from .handlers.ws_handler import GraphQLWSConsumer
+
+if TYPE_CHECKING:
+    from strawberry.schema import BaseSchema
 
 
 class GraphQLProtocolTypeRouter(ProtocolTypeRouter):

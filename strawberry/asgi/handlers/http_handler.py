@@ -3,10 +3,6 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Optional
 
-if TYPE_CHECKING:
-    from starlette.types import Receive, Scope, Send
-
-    from strawberry.schema import BaseSchema
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, PlainTextResponse, Response
@@ -18,6 +14,11 @@ from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types.graphql import OperationType
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.graphiql import get_graphiql_html
+
+if TYPE_CHECKING:
+    from starlette.types import Receive, Scope, Send
+
+    from strawberry.schema import BaseSchema
 
 
 class HTTPHandler:
