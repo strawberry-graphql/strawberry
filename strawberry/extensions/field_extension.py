@@ -42,11 +42,12 @@ def check_field_extension_compatibility(field: StrawberryField):
     sync or async depending on the field resolver.
     Throws a TypeError otherwise.
     """
-    if not field.extensions or not len(field.extensions):
+    if not field.extensions or not len(field.extensions):  # nocov
         return
 
     if field.is_async:
-        # Fixme we can wrap all sync results in async and have a warning for performance drawbacks in this case
+        # Fixme we can wrap all sync results in async and have a warning for performance
+        #  drawbacks in this case
         non_async_extensions = [
             extension for extension in field.extensions if not extension.supports_async
         ]
