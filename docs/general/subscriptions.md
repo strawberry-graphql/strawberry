@@ -12,7 +12,6 @@ This is how you define a subscription-capable resolver:
 
 ```python
 import asyncio
-from typing import AsyncGenerator
 
 import strawberry
 
@@ -27,7 +26,7 @@ class Query:
 @strawberry.type
 class Subscription:
     @strawberry.subscription
-    async def count(self, target: int = 100) -> AsyncGenerator[int, None]:
+    async def count(self, target: int = 100) -> strawberry.SubscriptionResult[int]:
         for i in range(target):
             yield i
             await asyncio.sleep(0.5)
@@ -42,9 +41,9 @@ from 0 to the target sleeping between each loop iteration.
 
 <Note>
 
-The return type of `count` is `AsyncGenerator` where the first generic
-argument is the actual type of the response, in most cases the second argument
-should be left as `None` (more about Generator typing [here](https://docs.python.org/3/library/typing.html#typing.AsyncGenerator)).
+The return type of `count` is `SubscriptionResult` where the first generic
+argument is the actual type of the response. `SubscriptionResult[T]` is same as
+Python's `AsyncGenerator[T, None]`. (more about Generator typing [here](https://docs.python.org/3/library/typing.html#typing.AsyncGenerator)).
 
 </Note>
 
@@ -104,7 +103,6 @@ Strawberry injects this `connectionParams` object as follows:
 
 ```python
 import asyncio
-from typing import AsyncGenerator
 
 import strawberry
 from strawberry.types import Info
@@ -122,7 +120,9 @@ class Query:
 @strawberry.type
 class Subscription:
     @strawberry.subscription
-    async def count(self, info: Info, target: int = 100) -> AsyncGenerator[int, None]:
+    async def count(
+        self, info: Info, target: int = 100
+    ) -> strawberry.SubscriptionResult[int]:
         connection_params: dict = info.context.get("connection_params")
         token: str = connection_params.get(
             "authToken"
@@ -148,7 +148,7 @@ Typically a GraphQL subscription is streaming something more interesting back.
 With that in mind your subscription function can return one of:
 
 - `AsyncIterator`, or
-- `AsyncGenerator`
+- `SubscriptionResult`(`AsyncGenerator`)
 
 Both of these types are documented in [PEP-525][pep-525]. Anything yielded from
 these types of resolvers will be shipped across the websocket. Care needs to be
@@ -236,7 +236,9 @@ class Query:
 @strawberry.type
 class Subscription:
     @strawberry.subscription
-    async def run_command(self, target: int = 100) -> AsyncGenerator[str, None]:
+    async def run_command(
+        self, target: int = 100
+    ) -> strawberry.SubscriptionResult[str]:
         proc = await exec_proc(target)
         return tail(proc)
 
