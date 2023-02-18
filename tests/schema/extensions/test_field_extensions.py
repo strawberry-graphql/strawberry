@@ -93,7 +93,7 @@ def test_fail_on_missing_sync_extensions():
     msg = (
         "Query fields cannot be resolved. Cannot add async-only extension(s) "
         "UpperCaseExtension to the sync resolver of Field string. "
-        "Please add a resolve_async method to the extension."
+        "Please add a resolve method to the extension."
     )
     with pytest.raises(TypeError, match=re.escape(msg)):
         strawberry.Schema(query=Query)
