@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.158.1 - 2023-02-19
+--------------------
+
+Version 1.5.10 of GraphiQL disabled introspection for deprecated
+arguments because it wasn't supported by all GraphQL server versions.
+This PR enables it so that deprecated arguments show up again in
+GraphiQL.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2575](https://github.com/strawberry-graphql/strawberry/pull/2575/)
+
+
 0.158.0 - 2023-02-18
 --------------------
 
