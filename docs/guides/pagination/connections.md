@@ -516,9 +516,9 @@ class Edge(Generic[GenericType]):
 class User:
 
     id: int = strawberry.field(
-        description="The ID of the user."    
+        description="The ID of the user."
     )
-    
+
     name: str = strawberry.field(
         description="The name of the user."
     )
@@ -530,7 +530,7 @@ class User:
     age: int = strawberry.field(
         description="The age of the user."
     )
-    
+
     @staticmethod
     def from_row(row: Dict[str, Any]):
         return User(
