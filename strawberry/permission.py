@@ -13,14 +13,14 @@ from typing import (
     cast,
 )
 
-from graphql import GraphQLError
-
 from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.extensions import FieldExtension
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.utils.await_maybe import await_maybe
 
 if TYPE_CHECKING:
+    from graphql import GraphQLError, GraphQLErrorExtensions
+
     from strawberry.field import StrawberryField
     from strawberry.types import Info
 
@@ -32,7 +32,7 @@ class BasePermission(abc.ABC):
 
     message: Optional[str] = None
 
-    error_extensions: Optional[dict[str, str]] = None
+    error_extensions: Optional[GraphQLErrorExtensions] = None
 
     error_class: Type[GraphQLError] = StrawberryGraphQLError
 
@@ -48,22 +48,18 @@ class BasePermission(abc.ABC):
 
     def raise_error(self) -> None:
         """
-        Default error raising for permissions. This can be overridden to customize the behavior.
+        Default error raising for permissions.
+        This can be overridden to customize the behavior.
         """
 
         # Instantiate error class
-        error = self.error_class(self.message)
+        error = self.error_class(self.message or "")
 
         if self.error_extensions:
-            # If no custom error class is used, use the standard GraphQLError so we can add the extensions
-            if not error:
-                error = GraphQLError(self.message)
             # Add our extensions to the error
+            if not error.extensions:
+                error.extensions = dict()
             error.extensions.update(self.error_extensions)
-
-        # If none of the new attributes were used, fall back to prevent breaking changes
-        if not error:
-            raise PermissionError(self.message)
 
         raise error
 
