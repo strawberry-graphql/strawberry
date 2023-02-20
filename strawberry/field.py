@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses
 import inspect
 import sys
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -350,6 +351,10 @@ class StrawberryField(dataclasses.Field):
 
     @property
     def _has_async_permission_classes(self) -> bool:
+        warnings.warn(
+            "_has_async_permission_classes is deprecated and will be removed "
+            "in a future release. Please use PermissionExtension.supports_sync instead."
+        )
         for permission_class in self.permission_classes:
             if inspect.iscoroutinefunction(permission_class.has_permission):
                 return True
@@ -361,7 +366,7 @@ class StrawberryField(dataclasses.Field):
 
     @cached_property
     def is_async(self) -> bool:
-        return self._has_async_permission_classes or self._has_async_base_resolver
+        return self._has_async_base_resolver
 
 
 @overload

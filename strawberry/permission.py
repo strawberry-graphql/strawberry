@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from inspect import iscoroutine
+from inspect import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -120,6 +120,6 @@ class PermissionExtension(FieldExtension):
         async_permissions = [
             True
             for permission in self.permissions
-            if iscoroutine(permission.has_permission)
+            if iscoroutinefunction(permission.has_permission)
         ]
         return len(async_permissions) == 0
