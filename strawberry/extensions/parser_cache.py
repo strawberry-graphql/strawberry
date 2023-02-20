@@ -2,6 +2,7 @@ from functools import lru_cache
 from typing import Optional
 
 from strawberry.extensions.base_extension import SchemaExtension
+from strawberry.schema.execute import parse_document
 
 
 class ParserCache(SchemaExtension):
@@ -30,8 +31,6 @@ class ParserCache(SchemaExtension):
     """
 
     def __init__(self, maxsize: Optional[int] = None):
-        from strawberry.schema.execute import parse_document
-
         self.cached_parse_document = lru_cache(maxsize=maxsize)(parse_document)
 
     def on_parsing_start(self) -> None:
