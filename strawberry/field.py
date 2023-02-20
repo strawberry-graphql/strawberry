@@ -84,7 +84,7 @@ class StrawberryField(dataclasses.Field):
         default_factory: Union[Callable[[], Any], object] = dataclasses.MISSING,
         metadata: Optional[Mapping[Any, Any]] = None,
         deprecation_reason: Optional[str] = None,
-        directives: Sequence[object] = (),
+        directives: Sequence[object] = [],
         extensions: Optional[List[FieldExtension]] = None,
     ):
         # basic fields are fields with no provided resolver
@@ -137,6 +137,17 @@ class StrawberryField(dataclasses.Field):
         self.directives = list(directives)
         self.extensions: Optional[List[FieldExtension]] = extensions
 
+        # Automatically add the permissions extension
+        if len(self.permission_classes):
+            from .permission import PermissionExtension
+
+            if not self.extensions:
+                self.extensions = []
+            permission_instances = [
+                permission_class() for permission_class in permission_classes
+            ]
+            # Append to make it run first (last is outermost)
+            self.extensions.append(PermissionExtension(permission_instances))
         self.deprecation_reason = deprecation_reason
 
     def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
@@ -213,7 +224,9 @@ class StrawberryField(dataclasses.Field):
     def _set_python_name(self, name: str) -> None:
         self.name = name
 
-    python_name: str = property(_python_name, _set_python_name)  # type: ignore[assignment]  # noqa: E501
+    python_name: str = property(
+        _python_name, _set_python_name
+    )  # type: ignore[assignment]
 
     @property
     def base_resolver(self) -> Optional[StrawberryResolver]:
