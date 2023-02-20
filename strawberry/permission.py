@@ -48,7 +48,7 @@ class BasePermission(abc.ABC):
             "Permission classes should override has_permission method"
         )
 
-    def raise_error(self) -> None:
+    def get_error(self) -> GraphQLError:
         """
         Default error raising for permissions.
         This can be overridden to customize the behavior.
@@ -63,7 +63,7 @@ class BasePermission(abc.ABC):
                 error.extensions = dict()
             error.extensions.update(self.error_extensions)
 
-        raise error
+        return error
 
     @property
     def schema_directive(self) -> Optional[StrawberrySchemaDirective]:
@@ -96,7 +96,7 @@ class PermissionExtension(FieldExtension):
         """
         for permission in self.permissions:
             if not permission.has_permission(source, info, **kwargs):
-                permission.raise_error()
+                raise permission.get_error()
         return next(source, info, **kwargs)
 
     async def resolve_async(
@@ -110,7 +110,7 @@ class PermissionExtension(FieldExtension):
             )
 
             if not has_permission:
-                permission.raise_error()
+                raise permission.get_error()
         return await next(source, info, **kwargs)
 
     @cached_property
