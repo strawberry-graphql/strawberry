@@ -1,7 +1,7 @@
 Release type: minor
 
 This release adds a django command to export strawberry schemas. To use it, add
-`"strawberry.django"` to your `INSTALLED_APP` like:
+`"strawberry.django"` to your `INSTALLED_APP` like so:
 
 ```python
 INSTALLED_APP = [
