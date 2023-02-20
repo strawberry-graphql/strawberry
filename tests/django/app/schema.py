@@ -1,8 +1,6 @@
 import typing
 import strawberry
 
-strawberry.type
-
 
 @strawberry.type
 class Query:
