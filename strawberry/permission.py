@@ -111,5 +111,4 @@ class PermissionExtension(FieldExtension):
             )
 
             if not has_permission:
-                message = getattr(permission, "message", None)
-                raise PermissionError(message)
+                permission.raise_error()
