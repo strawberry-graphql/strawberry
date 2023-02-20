@@ -1,3 +1,4 @@
+import pathlib
 from django.core.management.base import BaseCommand, CommandError
 from strawberry import Schema
 from strawberry.printer import print_schema
@@ -28,7 +29,6 @@ class Command(BaseCommand):
         schema_output = print_schema(schema_symbol)
         path = options.get("path")
         if path:
-            with open(path, "w") as f:
-                f.write(schema_output)
+            pathlib.Path(path).write_text(schema_output)
         else:
             self.stdout.write(schema_output)
