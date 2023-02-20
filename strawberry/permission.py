@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+from inspect import iscoroutine
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -17,6 +18,7 @@ from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.extensions import FieldExtension
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.utils.await_maybe import await_maybe
+from strawberry.utils.cached_property import cached_property
 
 if TYPE_CHECKING:
     from graphql import GraphQLError, GraphQLErrorExtensions
@@ -95,6 +97,7 @@ class PermissionExtension(FieldExtension):
         for permission in self.permissions:
             if not permission.has_permission(source, info, **kwargs):
                 permission.raise_error()
+        return next(source, info, **kwargs)
 
     async def resolve_async(
         self, next: Callable[..., Any], source: Any, info: Info, **kwargs
@@ -108,3 +111,15 @@ class PermissionExtension(FieldExtension):
 
             if not has_permission:
                 permission.raise_error()
+        return await next(source, info, **kwargs)
+
+    @cached_property
+    def supports_sync(self) -> bool:
+        """The Permission extension always supports async checking using await_maybe,
+        but only supports sync checking if there are no async permissions"""
+        async_permissions = [
+            True
+            for permission in self.permissions
+            if iscoroutine(permission.has_permission)
+        ]
+        return len(async_permissions) == 0

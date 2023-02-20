@@ -1,3 +1,4 @@
+import re
 import typing
 
 import pytest
@@ -11,21 +12,17 @@ def test_raises_graphql_error_when_permission_method_is_missing():
     class IsAuthenticated(BasePermission):
         pass
 
-    @strawberry.type
-    class Query:
-        @strawberry.field(permission_classes=[IsAuthenticated])
-        def user(self) -> str:
-            return "patrick"
-
-    schema = strawberry.Schema(query=Query)
-
-    query = "{ user }"
-
-    result = schema.execute_sync(query)
-    assert (
-        result.errors[0].message
-        == "Permission classes should override has_permission method"
+    error_msg = re.escape(
+        "Can't instantiate abstract class IsAuthenticated "
+        "with abstract method has_permission"
     )
+    with pytest.raises(TypeError, match=error_msg):
+
+        @strawberry.type
+        class Query:
+            @strawberry.field(permission_classes=[IsAuthenticated])
+            def user(self) -> str:
+                return "patrick"
 
 
 def test_raises_graphql_error_when_permission_is_denied():
