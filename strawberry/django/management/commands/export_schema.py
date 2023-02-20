@@ -1,4 +1,5 @@
 import pathlib
+
 from django.core.management.base import BaseCommand, CommandError
 
 from strawberry import Schema
