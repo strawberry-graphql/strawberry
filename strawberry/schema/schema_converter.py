@@ -56,7 +56,7 @@ from strawberry.union import StrawberryUnion
 from strawberry.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
 
-from ..extensions.field_extension import check_field_extension_compatibility
+from ..extensions.field_extension import ensure_field_extension_compatibility
 from . import compat
 from .types.concrete_type import ConcreteType
 
@@ -535,12 +535,12 @@ class GraphQLCoreConverter:
             for extension in field.extensions:
                 extension.apply(field)
 
-            check_field_extension_compatibility(field)
+            use_async = ensure_field_extension_compatibility(field)
 
             extension_functions = []
             for extension in field.extensions:
                 extension_functions.append(
-                    extension.resolve_async if field.is_async else extension.resolve
+                    extension.resolve_async if use_async else extension.resolve
                 )
 
             return reduce(
