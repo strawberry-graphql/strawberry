@@ -1,8 +1,18 @@
+from __future__ import annotations
+
 import contextlib
 import inspect
 import warnings
 from asyncio import iscoroutinefunction
-from typing import AsyncIterator, Callable, Iterator, List, NamedTuple, Optional, Union
+from typing import (
+    AsyncIterator,
+    Callable,
+    Iterator,
+    List,
+    NamedTuple,
+    Optional,
+    Union,
+)
 
 from strawberry.extensions import Extension
 from strawberry.extensions.base_extension import _BASE_EXTENSION_MODULE

@@ -2,10 +2,11 @@
 
 A consumer to provide a graphql endpoint, and optionally graphiql.
 """
+from __future__ import annotations
 
 import dataclasses
 import json
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import parse_qs
 
 from channels.db import database_sync_to_async
@@ -13,19 +14,20 @@ from channels.generic.http import AsyncHttpConsumer
 from strawberry.channels.context import StrawberryChannelsContext
 from strawberry.exceptions import MissingQueryError
 from strawberry.http import (
-    GraphQLHTTPResponse,
-    GraphQLRequestData,
     parse_query_params,
     parse_request_data,
     process_result,
 )
-from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
-from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 from strawberry.utils.graphiql import get_graphiql_html
 
 from .base import ChannelsConsumer
+
+if TYPE_CHECKING:
+    from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
+    from strawberry.schema import BaseSchema
+    from strawberry.types import ExecutionResult
 
 
 class MethodNotAllowed(Exception):
@@ -196,12 +198,12 @@ class SyncGraphQLHTTPConsumer(GraphQLHTTPConsumer):
     synchronous and not asynchronous).
     """
 
-    def get_root_value(self, request: Optional["ChannelsConsumer"] = None) -> Any:
+    def get_root_value(self, request: Optional[ChannelsConsumer] = None) -> Any:
         return None
 
     def get_context(  # type: ignore[override]
         self,
-        request: Optional["ChannelsConsumer"] = None,
+        request: Optional[ChannelsConsumer] = None,
     ) -> StrawberryChannelsContext:
         return StrawberryChannelsContext(request=request or self)
 

@@ -13,7 +13,7 @@ example the following code will throw this error:
 import strawberry
 
 
-@strawberry.enum
+# note the lack of @strawberry.enum here:
 class NotAnEnum:
     A = "A"
 
