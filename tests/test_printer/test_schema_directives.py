@@ -140,7 +140,7 @@ def test_directive_on_types():
       key: String!
       value: String!
     }
-    """  # noqa:E501
+    """
 
     schema = strawberry.Schema(query=Query)
 
@@ -166,7 +166,7 @@ def test_using_different_names_for_directive_field():
     type Query {
       firstName: String! @sensitive(as: "GDPR", realAge: "1", real_age: "2")
     }
-    """  # noqa:E501
+    """
 
     schema = strawberry.Schema(query=Query)
 

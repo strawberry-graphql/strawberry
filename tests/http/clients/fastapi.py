@@ -10,9 +10,9 @@ from fastapi.testclient import TestClient
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
+from tests.views.schema import Query, schema
 
 from ..context import get_context
-from ..schema import Query, schema
 from . import JSON, HttpClient, Response, ResultOverrideFunction
 
 

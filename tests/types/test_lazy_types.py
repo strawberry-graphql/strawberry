@@ -1,6 +1,7 @@
 # type: ignore
 import enum
 from typing import Generic, TypeVar
+from typing_extensions import Annotated
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
@@ -8,6 +9,7 @@ from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.types.fields.resolver import StrawberryResolver
 from strawberry.types.types import TypeDefinition
+from strawberry.union import StrawberryUnion, union
 
 
 # This type is in the same file but should adequately test the logic.
@@ -33,6 +35,16 @@ def test_lazy_type():
     # without a second resolving step.
     assert isinstance(resolved, LazyType)
     assert resolved is LazierType
+    assert resolved.resolve_type() is LaziestType
+
+
+def test_lazy_type_function():
+    LethargicType = Annotated["LaziestType", strawberry.lazy("test_lazy_types")]
+
+    annotation = StrawberryAnnotation(LethargicType)
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, LazyType)
     assert resolved.resolve_type() is LaziestType
 
 
@@ -129,3 +141,35 @@ def test_lazy_type_resolver():
     assert isinstance(resolver.type, LazyType)
     assert resolver.type is LazierType
     assert resolver.type.resolve_type() is LaziestType
+
+
+def test_lazy_type_in_union():
+    ActiveType = LazyType("LaziestType", "test_lazy_types")
+    ActiveEnum = LazyType("LazyEnum", "test_lazy_types")
+
+    something = union(name="CoolUnion", types=(ActiveType, ActiveEnum))
+    annotation = StrawberryAnnotation(something)
+
+    resolved = annotation.resolve()
+    assert isinstance(resolved, StrawberryUnion)
+
+    [type1, type2] = resolved.types
+    assert type1 is ActiveType
+    assert type2 is ActiveEnum
+    assert type1.resolve_type() is LaziestType
+    assert type2.resolve_type() is LazyEnum
+
+
+def test_lazy_function_in_union():
+    ActiveType = Annotated["LaziestType", strawberry.lazy("test_lazy_types")]
+    ActiveEnum = Annotated["LazyEnum", strawberry.lazy("test_lazy_types")]
+
+    something = union(name="CoolUnion", types=(ActiveType, ActiveEnum))
+    annotation = StrawberryAnnotation(something)
+
+    resolved = annotation.resolve()
+    assert isinstance(resolved, StrawberryUnion)
+
+    [type1, type2] = resolved.types
+    assert type1.resolve_type() is LaziestType
+    assert type2.resolve_type() is LazyEnum

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses
 import sys
 from typing import Dict, List, Type, TypeVar
@@ -119,7 +121,6 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
 
     # then we can proceed with finding the fields for the current class
     for field in dataclasses.fields(cls):
-
         if isinstance(field, StrawberryField):
             # Check that the field type is not Private
             if is_private(field.type):

@@ -1,15 +1,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Callable, Iterable, List, Optional, Tuple, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 from typing_extensions import Literal, Protocol
 
 from graphql import (
-    ArgumentNode,
     BooleanValueNode,
-    DirectiveNode,
-    DocumentNode,
     EnumValueNode,
     FieldNode,
     InlineFragmentNode,
@@ -19,17 +25,11 @@ from graphql import (
     NamedTypeNode,
     NonNullTypeNode,
     OperationDefinitionNode,
-    SelectionNode,
-    SelectionSetNode,
     StringValueNode,
-    TypeNode,
-    ValueNode,
-    VariableDefinitionNode,
     VariableNode,
     parse,
 )
 
-import strawberry
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
@@ -45,7 +45,6 @@ from .exceptions import (
 )
 from .types import (
     GraphQLArgument,
-    GraphQLArgumentValue,
     GraphQLBoolValue,
     GraphQLDirective,
     GraphQLEnum,
@@ -60,13 +59,29 @@ from .types import (
     GraphQLOperation,
     GraphQLOptional,
     GraphQLScalar,
-    GraphQLSelection,
     GraphQLStringValue,
-    GraphQLType,
     GraphQLUnion,
     GraphQLVariable,
     GraphQLVariableReference,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from graphql import (
+        ArgumentNode,
+        DirectiveNode,
+        DocumentNode,
+        SelectionNode,
+        SelectionSetNode,
+        TypeNode,
+        ValueNode,
+        VariableDefinitionNode,
+    )
+
+    from strawberry.schema import Schema
+
+    from .types import GraphQLArgumentValue, GraphQLSelection, GraphQLType
 
 
 @dataclass
@@ -131,7 +146,7 @@ class QueryCodegenPluginManager:
 
 
 class QueryCodegen:
-    def __init__(self, schema: strawberry.Schema, plugins: List[QueryCodegenPlugin]):
+    def __init__(self, schema: Schema, plugins: List[QueryCodegenPlugin]):
         self.schema = schema
         self.plugin_manager = QueryCodegenPluginManager(plugins)
         self.types: List[GraphQLType] = []
@@ -188,7 +203,6 @@ class QueryCodegen:
     def _convert_selection_set(
         self, selection_set: Optional[SelectionSetNode]
     ) -> List[GraphQLSelection]:
-
         if selection_set is None:
             return []
 
@@ -269,7 +283,7 @@ class QueryCodegen:
             selections=self._convert_selection_set(operation_definition.selection_set),
             directives=self._convert_directives(operation_definition.directives),
             variables=variables,
-            type=cast(GraphQLObjectType, operation_type),
+            type=cast("GraphQLObjectType", operation_type),
             variables_type=variables_type,
         )
 
@@ -478,7 +492,6 @@ class QueryCodegen:
     def _get_field(
         self, selection: FieldNode, class_name: str, parent_type: TypeDefinition
     ) -> GraphQLField:
-
         if selection.selection_set:
             return self._field_from_selection_set(selection, class_name, parent_type)
 

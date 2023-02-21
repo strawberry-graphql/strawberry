@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import sys
 from dataclasses import dataclass
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Iterable,
@@ -13,12 +16,14 @@ from typing import (
     overload,
 )
 
-from graphql import GraphQLScalarType
-
 from strawberry.exceptions import InvalidUnionTypeError
 from strawberry.type import StrawberryOptional, StrawberryType
 
 from .utils.str_converters import to_camel_case
+
+if TYPE_CHECKING:
+    from graphql import GraphQLScalarType
+
 
 # in python 3.10+ NewType is a class
 if sys.version_info >= (3, 10):

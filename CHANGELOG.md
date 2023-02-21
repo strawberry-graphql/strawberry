@@ -1,6 +1,94 @@
 CHANGELOG
 =========
 
+0.158.1 - 2023-02-19
+--------------------
+
+Version 1.5.10 of GraphiQL disabled introspection for deprecated
+arguments because it wasn't supported by all GraphQL server versions.
+This PR enables it so that deprecated arguments show up again in
+GraphiQL.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2575](https://github.com/strawberry-graphql/strawberry/pull/2575/)
+
+
+0.158.0 - 2023-02-18
+--------------------
+
+Throw proper exceptions when Unions are created with invalid types
+
+Previously, using Lazy types inside of Unions would raise unexpected, unhelpful errors.
+
+Contributed by [ignormies](https://github.com/BryceBeagle) via [PR #2540](https://github.com/strawberry-graphql/strawberry/pull/2540/)
+
+
+0.157.0 - 2023-02-18
+--------------------
+
+This releases adds support for Apollo Federation 2.1, 2.2 and 2.3.
+
+This includes support for `@composeDirective` and `@interfaceObject`,
+we expose directives for both, but we also have shortcuts, for example
+to use `@composeDirective` with a custom schema directive, you can do
+the following:
+
+```python
+@strawberry.federation.schema_directive(
+    locations=[Location.OBJECT], name="cacheControl", compose=True
+)
+class CacheControl:
+    max_age: int
+```
+
+The `compose=True` makes so that this directive is included in the supergraph
+schema.
+
+For `@interfaceObject` we introduced a new `@strawberry.federation.interface_object`
+decorator. This works like `@strawberry.federation.type`, but it adds, the appropriate
+directive, for example:
+
+```python
+@strawberry.federation.interface_object(keys=["id"])
+class SomeInterface:
+    id: strawberry.ID
+```
+
+generates the following type:
+
+```graphql
+type SomeInterface @key(fields: "id") @interfaceObject {
+  id: ID!
+}
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2549](https://github.com/strawberry-graphql/strawberry/pull/2549/)
+
+
+0.156.4 - 2023-02-13
+--------------------
+
+This release fixes a regression introduce in version 0.156.2 that
+would make Mypy throw an error in the following code:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Author:
+    name: str
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    async def get_authors(self) -> list[Author]:
+        return [Author(name="Michael Crichton")]
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2535](https://github.com/strawberry-graphql/strawberry/pull/2535/)
+
+
 0.156.3 - 2023-02-10
 --------------------
 

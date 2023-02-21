@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import dataclasses
 import uuid
-from typing import AsyncIterator, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, AsyncIterator, Dict, List, Optional, Tuple, Union
 
-from asgiref.typing import ASGIApplication
 from graphql import GraphQLError
 
 from channels.testing.websocket import WebsocketCommunicator
@@ -21,6 +22,9 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
 )
 from strawberry.types import ExecutionResult
+
+if TYPE_CHECKING:
+    from asgiref.typing import ASGIApplication
 
 
 class GraphQLWebsocketCommunicator(WebsocketCommunicator):
@@ -52,7 +56,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         path: str,
         headers: Optional[List[Tuple[bytes, bytes]]] = None,
         protocol: str = GRAPHQL_TRANSPORT_WS_PROTOCOL,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -66,7 +70,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         subprotocols.append(protocol)
         super().__init__(application, path, headers, subprotocols=subprotocols)
 
-    async def __aenter__(self) -> "GraphQLWebsocketCommunicator":
+    async def __aenter__(self) -> GraphQLWebsocketCommunicator:
         await self.gql_init()
         return self
 

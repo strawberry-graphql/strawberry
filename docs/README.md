@@ -35,6 +35,8 @@
 
 ## [Extensions](./extensions)
 
+## [Errors](./errors/)
+
 ## Guides
 
 - [Authentication](./guides/authentication.md)
@@ -77,6 +79,13 @@
 - [Chalice](./integrations/chalice.md)
 - [Starlette](./integrations/starlette.md)
 - [Pydantic **experimental**](./integrations/pydantic.md)
+
+## Federation
+
+- [Introduction](./federation/introduction.md)
+- [Entities](./federation/entities.md)
+- [Entity interfaces](./federation/entity-interfaces.md)
+- [Custom directives](./federation/custom_directives.md)
 
 ## Operations
 

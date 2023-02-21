@@ -1,12 +1,17 @@
+from __future__ import annotations
+
 import importlib
 import inspect
 from pathlib import Path
-from typing import List, Optional, Type
+from typing import TYPE_CHECKING, List, Optional, Type
 
 import click
 
 from strawberry.cli.utils import load_schema
-from strawberry.codegen import CodegenResult, QueryCodegen, QueryCodegenPlugin
+from strawberry.codegen import QueryCodegen, QueryCodegenPlugin
+
+if TYPE_CHECKING:
+    from strawberry.codegen import CodegenResult
 
 
 def _is_codegen_plugin(obj: object) -> bool:

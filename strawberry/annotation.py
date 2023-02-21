@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 import typing
 from collections import abc
@@ -26,18 +28,14 @@ except ImportError:  # pragma: no cover
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType, StrawberryLazyReference
-from strawberry.type import (
-    StrawberryList,
-    StrawberryOptional,
-    StrawberryType,
-    StrawberryTypeVar,
-)
+from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
 from strawberry.types.types import TypeDefinition
 from strawberry.unset import UNSET
 from strawberry.utils.typing import is_generic, is_list, is_type_var, is_union
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
+    from strawberry.type import StrawberryType
     from strawberry.union import StrawberryUnion
 
 
@@ -68,7 +66,7 @@ class StrawberryAnnotation:
     @staticmethod
     def from_annotation(
         annotation: object, namespace: Optional[Dict] = None
-    ) -> Optional["StrawberryAnnotation"]:
+    ) -> Optional[StrawberryAnnotation]:
         if annotation is None:
             return None
 
@@ -161,7 +159,7 @@ class StrawberryAnnotation:
         # ... raise NotImplementedError(f"Unknown type {evaled_type}")
         return evaled_type
 
-    def set_namespace_from_field(self, field: "StrawberryField"):
+    def set_namespace_from_field(self, field: StrawberryField):
         module = sys.modules[field.origin.__module__]
         self.namespace = module.__dict__
 
@@ -213,7 +211,7 @@ class StrawberryAnnotation:
     def create_type_var(self, evaled_type: TypeVar) -> StrawberryTypeVar:
         return StrawberryTypeVar(evaled_type)
 
-    def create_union(self, evaled_type) -> "StrawberryUnion":
+    def create_union(self, evaled_type) -> StrawberryUnion:
         # Prevent import cycles
         from strawberry.union import StrawberryUnion
 
