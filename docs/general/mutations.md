@@ -84,3 +84,47 @@ type Mutation {
 Mutations with void-result go against [GQL best practices](https://graphql-rules.com/rules/mutation-payload)
 
 </Note>
+
+### The Input Mutation
+
+It is usually useful to use a pattern of defining a mutation that receives a single
+[input type](./input-types) argument called `input`.
+
+That pattern makes it easier to include/remove arguments without breaking the
+whole API, which could happen when using positional arguments.
+
+Strawberry provides a helper to create a mutation that automatically
+creates an input type for you, whose attributes are the same as the args in the resolver.
+
+For example, suppose we want the mutation defined in the section above to be an
+input mutation. We need to replace `@strawberry.mutation` by
+`@strawberry.input_mutation`, like this:
+
+```python
+@strawberry.type
+class Mutation:
+    @relay.input_mutation
+    def update_fruit_weight(
+        self,
+        info: Info,
+        id: strawberry.ID,
+        weight: float,
+    ) -> Fruit:
+        fruit = ...  # retrieve the fruit with the given ID
+        fruit.weight = weight
+        ...  # maybe save the fruit in the database
+        return fruit
+```
+
+That would generate a schema like this:
+
+```graphql
+input CreateFruitInput {
+  id: ID!
+  weight: Float!
+}
+
+type Mutation {
+  updateFruitWeight(input: CreateFruitInput!): Fruit!
+}
+```

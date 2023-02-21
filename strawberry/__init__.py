@@ -6,7 +6,7 @@ from .directive import directive, directive_field
 from .enum import enum, enum_value
 from .field import field
 from .lazy_type import LazyType, lazy
-from .mutation import mutation, subscription
+from .mutation import input_mutation, mutation, subscription
 from .object_type import asdict, input, interface, type
 from .permission import BasePermission
 from .private import Private
@@ -36,6 +36,7 @@ __all__ = [
     "input",
     "interface",
     "mutation",
+    "input_mutation",
     "scalar",
     "subscription",
     "type",
