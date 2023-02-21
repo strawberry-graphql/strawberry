@@ -39,7 +39,6 @@ if TYPE_CHECKING:
     from .permission import BasePermission
 
 T = TypeVar("T")
-F = TypeVar("F", bound="StrawberryField")
 
 
 _RESOLVER_TYPE = Union[
@@ -349,7 +348,7 @@ class StrawberryField(dataclasses.Field):
 @overload
 def field(
     *,
-    field_class: Type[F] = StrawberryField,
+    field_class: Type[StrawberryField] = StrawberryField,
     resolver: _RESOLVER_TYPE[T],
     name: Optional[str] = None,
     is_subscription: bool = False,
@@ -369,7 +368,7 @@ def field(
 @overload
 def field(
     *,
-    field_class: Type[F] = StrawberryField,
+    field_class: Type[StrawberryField] = StrawberryField,
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
@@ -389,7 +388,7 @@ def field(
 def field(
     resolver: _RESOLVER_TYPE[T],
     *,
-    field_class: Type[F] = StrawberryField,
+    field_class: Type[StrawberryField] = StrawberryField,
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
@@ -400,14 +399,14 @@ def field(
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
     graphql_type: Optional[Any] = None,
-) -> F:
+) -> StrawberryField:
     ...
 
 
 def field(
     resolver: Optional[_RESOLVER_TYPE[Any]] = None,
     *,
-    field_class: Type[F] = StrawberryField,
+    field_class: Type[StrawberryField] = StrawberryField,
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
