@@ -34,9 +34,8 @@ if TYPE_CHECKING:
     from django.http import HttpRequest
 
     from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
+    from strawberry.schema import Schema
     from strawberry.types import ExecutionResult
-
-    from ..schema import BaseSchema
 
 
 class TemporalHttpResponse(JsonResponse):
@@ -60,13 +59,13 @@ class BaseView(View):
     subscriptions_enabled = False
     graphiql = True
     allow_queries_via_get = True
-    schema: Optional[BaseSchema] = None
+    schema: Optional[Schema] = None
     json_encoder: Optional[Type[json.JSONEncoder]] = None
     json_dumps_params: Optional[Dict[str, Any]] = None
 
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         subscriptions_enabled: bool = False,

@@ -11,13 +11,13 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
 if TYPE_CHECKING:
     from datetime import timedelta
 
-    from strawberry.schema import BaseSchema
+    from strawberry.schema import Schema
 
 
 class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
         get_context: Callable[..., Dict[str, Any]],

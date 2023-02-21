@@ -1,17 +1,26 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
 
 from graphql import (
+    GraphQLError,
     GraphQLNamedType,
     GraphQLNonNull,
     GraphQLSchema,
     get_introspection_query,
-    parse,
     validate_schema,
 )
-from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
 from strawberry.annotation import StrawberryAnnotation
@@ -26,10 +35,11 @@ from strawberry.types.graphql import OperationType
 from strawberry.types.types import TypeDefinition
 
 from ..printer import print_schema
+from ..utils.logging import StrawberryLogger
 from . import compat
-from .base import BaseSchema
 from .config import StrawberryConfig
-from .execute import execute, execute_sync
+from .execute import AsyncExecution, execute_sync
+from .subscribe import Subscription
 
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
@@ -40,6 +50,7 @@ if TYPE_CHECKING:
     from strawberry.extensions import Extension
     from strawberry.field import StrawberryField
     from strawberry.types import ExecutionResult
+    from strawberry.types.execution import ExecutionResultError
     from strawberry.union import StrawberryUnion
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
@@ -49,7 +60,7 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 }
 
 
-class Schema(BaseSchema):
+class Schema:
     def __init__(
         self,
         # TODO: can we make sure we only allow to pass
@@ -207,20 +218,15 @@ class Schema(BaseSchema):
             None,
         )
 
-    async def execute(
+    def _create_execution_context(
         self,
         query: Optional[str],
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-        allowed_operation_types: Optional[Iterable[OperationType]] = None,
-    ) -> ExecutionResult:
-        if allowed_operation_types is None:
-            allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
-
-        # Create execution context
-        execution_context = ExecutionContext(
+    ):
+        return ExecutionContext(
             query=query,
             schema=self,
             context=context_value,
@@ -228,17 +234,6 @@ class Schema(BaseSchema):
             variables=variable_values,
             provided_operation_name=operation_name,
         )
-
-        result = await execute(
-            self._schema,
-            extensions=self.get_extensions(),
-            execution_context_class=self.execution_context_class,
-            execution_context=execution_context,
-            allowed_operation_types=allowed_operation_types,
-            process_errors=self.process_errors,
-        )
-
-        return result
 
     def execute_sync(
         self,
@@ -252,13 +247,8 @@ class Schema(BaseSchema):
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
 
-        execution_context = ExecutionContext(
-            query=query,
-            schema=self,
-            context=context_value,
-            root_value=root_value,
-            variables=variable_values,
-            provided_operation_name=operation_name,
+        execution_context = self._create_execution_context(
+            query, variable_values, context_value, root_value, operation_name
         )
 
         result = execute_sync(
@@ -272,23 +262,50 @@ class Schema(BaseSchema):
 
         return result
 
-    async def subscribe(
+    async def execute(
         self,
-        # TODO: make this optional when we support extensions
-        query: str,
+        query: Optional[str],
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ):
-        return await subscribe(
-            self._schema,
-            parse(query),
-            root_value=root_value,
-            context_value=context_value,
-            variable_values=variable_values,
-            operation_name=operation_name,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
+    ) -> ExecutionResult:
+        if allowed_operation_types is None:
+            allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
+
+        execution_context = self._create_execution_context(
+            query, variable_values, context_value, root_value, operation_name
         )
+
+        return await AsyncExecution(
+            schema=self._schema,
+            extensions=self.get_extensions(),
+            execution_context_class=self.execution_context_class,
+            execution_context=execution_context,
+            allowed_operation_types=allowed_operation_types,
+            process_errors=self.process_errors,
+        ).execute()
+
+    async def subscribe(
+        self,
+        query: Optional[str],
+        variable_values: Optional[Dict[str, Any]] = None,
+        context_value: Optional[Any] = None,
+        root_value: Optional[Any] = None,
+        operation_name: Optional[str] = None,
+    ) -> Union[ExecutionResultError, Subscription]:
+        execution_context = self._create_execution_context(
+            query, variable_values, context_value, root_value, operation_name
+        )
+
+        return await Subscription(
+            schema=self._schema,
+            extensions=self.get_extensions(),
+            execution_context=execution_context,
+            allowed_operation_types=[OperationType.SUBSCRIPTION],
+            process_errors=self.process_errors,
+        ).subscribe()
 
     def as_str(self) -> str:
         return print_schema(self)
@@ -306,3 +323,11 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors {introspection.errors!r}")
 
         return introspection.data
+
+    def process_errors(
+        self,
+        errors: List[GraphQLError],
+        execution_context: Optional[ExecutionContext] = None,
+    ) -> None:
+        for error in errors:
+            StrawberryLogger.error(error, execution_context)

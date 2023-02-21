@@ -3,9 +3,8 @@ from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 
-from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError
 from graphql.error.graphql_error import format_error as format_graphql_error
 
@@ -21,10 +20,12 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
     GQL_STOP,
 )
+from strawberry.types.execution import ExecutionResult, ExecutionResultError
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 if TYPE_CHECKING:
-    from strawberry.schema import BaseSchema
+    from strawberry.schema import Schema
+    from strawberry.schema.subscribe import Subscription
     from strawberry.subscriptions.protocols.graphql_ws.types import (
         ConnectionInitPayload,
         OperationMessage,
@@ -36,7 +37,7 @@ if TYPE_CHECKING:
 class BaseGraphQLWSHandler(ABC):
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         debug: bool,
         keep_alive: bool,
         keep_alive_interval: float,
@@ -46,7 +47,7 @@ class BaseGraphQLWSHandler(ABC):
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
         self.keep_alive_task: Optional[asyncio.Task] = None
-        self.subscriptions: Dict[str, AsyncGenerator] = {}
+        self.subscriptions: Dict[str, Subscription] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
         self.connection_params: Optional[ConnectionInitPayload] = None
 
@@ -124,21 +125,15 @@ class BaseGraphQLWSHandler(ABC):
         if self.debug:
             pretty_print_graphql_operation(operation_name, query, variables)
 
-        try:
-            result_source = await self.schema.subscribe(
-                query=query,
-                variable_values=variables,
-                operation_name=operation_name,
-                context_value=context,
-                root_value=root_value,
-            )
-        except GraphQLError as error:
-            error_payload = format_graphql_error(error)
-            await self.send_message(GQL_ERROR, operation_id, error_payload)
-            self.schema.process_errors([error])
-            return
+        result_source = await self.schema.subscribe(
+            query=query,
+            variable_values=variables,
+            operation_name=operation_name,
+            context_value=context,
+            root_value=root_value,
+        )
 
-        if isinstance(result_source, GraphQLExecutionResult):
+        if isinstance(result_source, ExecutionResultError):
             assert result_source.errors
             error_payload = format_graphql_error(result_source.errors[0])
             await self.send_message(GQL_ERROR, operation_id, error_payload)
@@ -161,12 +156,13 @@ class BaseGraphQLWSHandler(ABC):
 
     async def handle_async_results(
         self,
-        result_source: AsyncGenerator,
+        subscription: Subscription,
         operation_id: str,
     ) -> None:
         try:
-            async for result in result_source:
-                payload = {"data": result.data}
+            result: ExecutionResult
+            async for result in subscription:
+                payload: dict[str, Any] = {"data": result.data}
                 if result.errors:
                     payload["errors"] = [
                         format_graphql_error(err) for err in result.errors

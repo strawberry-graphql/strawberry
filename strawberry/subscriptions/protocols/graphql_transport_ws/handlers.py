@@ -3,9 +3,8 @@ from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, AsyncIterator, Callable, Dict, List, Optional
 
-from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 from graphql.error.graphql_error import format_error as format_graphql_error
 
@@ -20,6 +19,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
+from strawberry.types.execution import ExecutionResultError
 from strawberry.types.graphql import OperationType
 from strawberry.unset import UNSET
 from strawberry.utils.debug import pretty_print_graphql_operation
@@ -28,16 +28,18 @@ from strawberry.utils.operation import get_operation_type
 if TYPE_CHECKING:
     from datetime import timedelta
 
-    from strawberry.schema import BaseSchema
+    from strawberry.schema import Schema
+    from strawberry.schema.subscribe import Subscription
     from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
         GraphQLTransportMessage,
     )
+    from strawberry.types.execution import ExecutionResult
 
 
 class BaseGraphQLTransportWSHandler(ABC):
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
     ):
@@ -47,7 +49,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         self.connection_init_timeout_task: Optional[asyncio.Task] = None
         self.connection_init_received = False
         self.connection_acknowledged = False
-        self.subscriptions: Dict[str, AsyncGenerator] = {}
+        self.subscriptions: Dict[str, Subscription] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
         self.completed_tasks: List[asyncio.Task] = []
         self.connection_params: Optional[Dict[str, Any]] = None
@@ -206,7 +208,7 @@ class BaseGraphQLTransportWSHandler(ABC):
             result_source = get_result_source()
 
         # Handle initial validation errors
-        if isinstance(result_source, GraphQLExecutionResult):
+        if isinstance(result_source, ExecutionResultError):
             assert result_source.errors
             payload = [format_graphql_error(result_source.errors[0])]
             await self.send_message(ErrorMessage(id=message.id, payload=payload))
@@ -220,7 +222,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         )
 
     async def operation_task(
-        self, result_source: AsyncGenerator, operation_id: str
+        self, result_source: AsyncIterator[ExecutionResult], operation_id: str
     ) -> None:
         """
         Operation task top level method.  Cleans up and de-registers the operation
@@ -252,7 +254,7 @@ class BaseGraphQLTransportWSHandler(ABC):
 
     async def handle_async_results(
         self,
-        result_source: AsyncGenerator,
+        result_source: AsyncIterator[ExecutionResult],
         operation_id: str,
     ) -> None:
         try:

@@ -10,7 +10,7 @@ from .graphql_transport_ws_handler import GraphQLTransportWSHandler
 from .graphql_ws_handler import GraphQLWSHandler
 
 if TYPE_CHECKING:
-    from strawberry.schema import BaseSchema
+    from strawberry.schema import Schema
 
 
 class GraphQLWSConsumer(ChannelsWSConsumer):
@@ -44,7 +44,7 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
 
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
         debug: bool = False,

@@ -17,7 +17,7 @@ from .handlers.http_handler import GraphQLHTTPConsumer
 from .handlers.ws_handler import GraphQLWSConsumer
 
 if TYPE_CHECKING:
-    from strawberry.schema import BaseSchema
+    from strawberry.schema import Schema
 
 
 class GraphQLProtocolTypeRouter(ProtocolTypeRouter):
@@ -45,7 +45,7 @@ class GraphQLProtocolTypeRouter(ProtocolTypeRouter):
 
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         django_application=None,
         url_pattern="^graphql",
     ):

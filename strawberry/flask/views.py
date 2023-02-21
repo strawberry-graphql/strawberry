@@ -7,8 +7,8 @@ from flask import Response, render_template_string, request
 
 if TYPE_CHECKING:
     from flask.typing import ResponseReturnValue
+    from strawberry import Schema
     from strawberry.http import GraphQLHTTPResponse
-    from strawberry.schema.base import BaseSchema
     from strawberry.types import ExecutionResult
 
 from flask.views import View
@@ -30,7 +30,7 @@ class BaseGraphQLView(View):
 
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
     ):

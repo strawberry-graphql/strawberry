@@ -301,10 +301,9 @@ async def test_subscription_field_error(aiohttp_client):
         assert response["type"] == GQL_ERROR
         assert response["id"] == "invalid-field"
         assert response["payload"] == {
+            "message": "Cannot query field 'notASubscriptionField'"
+            " on type 'Subscription'.",
             "locations": [{"line": 1, "column": 16}],
-            "message": (
-                "The subscription field 'notASubscriptionField' is not defined."
-            ),
         }
 
         await ws.send_json({"type": GQL_CONNECTION_TERMINATE})

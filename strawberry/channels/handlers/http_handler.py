@@ -26,7 +26,7 @@ from .base import ChannelsConsumer
 
 if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
-    from strawberry.schema import BaseSchema
+    from strawberry.schema import Schema
     from strawberry.types import ExecutionResult
 
 
@@ -69,7 +69,7 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
 
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         subscriptions_enabled: bool = True,

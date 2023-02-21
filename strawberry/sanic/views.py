@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
     from sanic.request import Request
     from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
-    from strawberry.schema import BaseSchema
+    from strawberry.schema import Schema
     from strawberry.types import ExecutionResult
 
     from .context import StrawberrySanicContext
@@ -53,7 +53,7 @@ class GraphQLView(HTTPMethodView):
 
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         json_encoder: Optional[Type[json.JSONEncoder]] = None,

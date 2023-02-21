@@ -47,7 +47,7 @@ if TYPE_CHECKING:
 
     from strawberry.fastapi.context import MergedContext
     from strawberry.http import GraphQLHTTPResponse
-    from strawberry.schema import BaseSchema
+    from strawberry.schema import Schema
     from strawberry.types import ExecutionResult
 
 
@@ -112,7 +112,7 @@ class GraphQLRouter(APIRouter):
 
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         path: str = "",
         graphiql: bool = True,
         allow_queries_via_get: bool = True,

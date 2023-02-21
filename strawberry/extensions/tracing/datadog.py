@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Iterator, Optional
 
 from ddtrace import tracer
 
@@ -37,7 +37,7 @@ class DatadogTracingExtension(Extension):
     def hash_query(self, query: str):
         return hashlib.md5(query.encode("utf-8")).hexdigest()
 
-    def on_request_start(self) -> None:
+    def on_operation(self) -> Iterator[None]:
         self._operation_name = self.execution_context.operation_name
         span_name = (
             f"{self._operation_name}" if self._operation_name else "Anonymous Query"
@@ -61,20 +61,17 @@ class DatadogTracingExtension(Extension):
             operation_type = "subscription"
 
         self.request_span.set_tag("graphql.operation_type", operation_type)
-
-    def on_request_end(self) -> None:
+        yield
         self.request_span.finish()
 
-    def on_validation_start(self):
+    def on_validate(self):
         self.validation_span = tracer.trace("Validation", span_type="graphql")
-
-    def on_validation_end(self):
+        yield
         self.validation_span.finish()
 
-    def on_parsing_start(self):
+    def on_parse(self):
         self.parsing_span = tracer.trace("Parsing", span_type="graphql")
-
-    def on_parsing_end(self):
+        yield
         self.parsing_span.finish()
 
     async def resolve(self, _next, root, info, *args, **kwargs):

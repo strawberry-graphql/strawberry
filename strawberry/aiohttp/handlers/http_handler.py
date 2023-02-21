@@ -16,13 +16,13 @@ if TYPE_CHECKING:
     from typing_extensions import Literal
 
     from strawberry.http import GraphQLRequestData
-    from strawberry.schema import BaseSchema
+    from strawberry.schema import Schema
 
 
 class HTTPHandler:
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         graphiql: bool,
         allow_queries_via_get: bool,
         get_context,

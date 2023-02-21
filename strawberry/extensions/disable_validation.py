@@ -1,3 +1,5 @@
+from typing import Iterator
+
 from strawberry.extensions.base_extension import Extension
 
 
@@ -13,7 +15,7 @@ class DisableValidation(Extension):
     >>> schema = strawberry.Schema(
     ...     Query,
     ...     extensions=[
-    ...         DisableValidation(),
+    ...         DisableValidation,
     ...     ]
     ... )
 
@@ -24,5 +26,6 @@ class DisableValidation(Extension):
         # some in the future
         pass
 
-    def on_request_start(self) -> None:
+    def on_operation(self) -> Iterator[None]:
         self.execution_context.validation_rules = ()  # remove all validation_rules
+        yield

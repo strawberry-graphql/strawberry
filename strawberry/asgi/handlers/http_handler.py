@@ -18,13 +18,13 @@ from strawberry.utils.graphiql import get_graphiql_html
 if TYPE_CHECKING:
     from starlette.types import Receive, Scope, Send
 
-    from strawberry.schema import BaseSchema
+    from strawberry.schema import Schema
 
 
 class HTTPHandler:
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         graphiql: bool,
         allow_queries_via_get: bool,
         debug: bool,
