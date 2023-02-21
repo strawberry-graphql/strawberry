@@ -8,6 +8,7 @@ if TYPE_CHECKING:
         OpenTelemetryExtension,
         OpenTelemetryExtensionSync,
     )
+    from .xray import XRayTracingExtension, XRayTracingExtensionSync
 
 __all__ = [
     "ApolloTracingExtension",
@@ -16,6 +17,8 @@ __all__ = [
     "DatadogTracingExtensionSync",
     "OpenTelemetryExtension",
     "OpenTelemetryExtensionSync",
+    "XRayTracingExtension",
+    "XRayTracingExtensionSync",
 ]
 
 
@@ -28,5 +31,8 @@ def __getattr__(name: str):
 
     if name in {"OpenTelemetryExtension", "OpenTelemetryExtensionSync"}:
         return getattr(importlib.import_module(".opentelemetry", __name__), name)
+
+    if name in {"XRayTracingExtension", "XRayTracingExtensionSync"}:
+        return getattr(importlib.import_module(".xray", __name__), name)
 
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -260,3 +260,23 @@ def main():
     DjangoInstrumentor().instrument()
     ...
 ```
+
+## X-Ray
+
+To enable [X-Ray tracing](https://docs.aws.amazon.com/xray/latest/devguide/xray-sdk-python.html) you
+can use the XRayExtension provided:
+
+```python
+from strawberry.extensions.tracing import XRayExtension
+
+schema = strawberry.Schema(query=Query, extensions=[XRayExtension])
+```
+
+Note that if you're not running under ASGI you'd need to use the sync version of
+XRayExtensionSync:
+
+```python
+from strawberry.extensions.tracing import XRayExtensionSync
+
+schema = strawberry.Schema(query=Query, extensions=[XRayExtensionSync])
+```
