@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-import inspect
-from typing import TYPE_CHECKING, Any, Callable, Dict
+from typing import TYPE_CHECKING, Any, Callable, Dict, Set
+
+from strawberry.utils.await_maybe import AsyncIteratorOrIterator, AwaitableOrValue
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
 
     from strawberry.types import ExecutionContext
-
-from strawberry.utils.await_maybe import AsyncIteratorOrIterator, AwaitableOrValue
 
 
 class Extension:
@@ -40,7 +39,11 @@ class Extension:
         return {}
 
 
-_BASE_EXTENSION_MODULE = inspect.getmodule(
-    Extension
-)  # this is just for testing ease. we could just inspect directly.
 Hook = Callable[[Extension], AsyncIteratorOrIterator[None]]
+
+HOOK_METHODS: Set[str] = {
+    Extension.on_operation.__name__,
+    Extension.on_validate.__name__,
+    Extension.on_parse.__name__,
+    Extension.on_execute.__name__,
+}

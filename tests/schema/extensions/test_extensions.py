@@ -1,9 +1,8 @@
 import contextlib
 import dataclasses
-import inspect
 import json
 import warnings
-from typing import Optional, Type
+from typing import List, Optional, Type
 from unittest.mock import patch
 
 import pytest
@@ -44,7 +43,7 @@ def test_base_extension():
     assert result.extensions == {}
 
 
-def test_called_only_if_overriden(monkeypatch):
+def test_called_only_if_overriden(monkeypatch: pytest.MonkeyPatch):
     called = False
 
     def dont_call_me(self_):
@@ -54,11 +53,6 @@ def test_called_only_if_overriden(monkeypatch):
     class ExtensionNoHooks(Extension):
         ...
 
-    from strawberry.extensions import context
-
-    monkeypatch.setattr(
-        context, "_BASE_EXTENSION_MODULE", inspect.getmodule(ExtensionNoHooks)
-    )
     for hook in (
         ExtensionNoHooks.on_parse,
         ExtensionNoHooks.on_operation,
@@ -368,62 +362,63 @@ async def test_execution_order(default_query_types_and_query):
         yield
         called_hooks.append(f"{klass.__name__}, {hook_name} Exited")
 
-    class A(TestAbleExtension):
+    class ExtensionA(TestAbleExtension):
         async def on_operation(self):
-            with register_hook(Extension.on_operation.__name__, A):
+            with register_hook(Extension.on_operation.__name__, ExtensionA):
                 yield
 
         async def on_parse(self):
-            with register_hook(Extension.on_parse.__name__, A):
+            with register_hook(Extension.on_parse.__name__, ExtensionA):
                 yield
 
         def on_validate(self):
-            with register_hook(Extension.on_validate.__name__, A):
+            with register_hook(Extension.on_validate.__name__, ExtensionA):
                 yield
 
         def on_execute(self):
-            with register_hook(Extension.on_execute.__name__, A):
+            with register_hook(Extension.on_execute.__name__, ExtensionA):
                 yield
 
-    class B(TestAbleExtension):
+    class ExtensionB(TestAbleExtension):
         async def on_operation(self):
-            with register_hook(Extension.on_operation.__name__, B):
+            with register_hook(Extension.on_operation.__name__, ExtensionB):
                 yield
 
         def on_parse(self):
-            with register_hook(Extension.on_parse.__name__, B):
+            with register_hook(Extension.on_parse.__name__, ExtensionB):
                 yield
 
         def on_validate(self):
-            with register_hook(Extension.on_validate.__name__, B):
+            with register_hook(Extension.on_validate.__name__, ExtensionB):
                 yield
 
         async def on_execute(self):
-            with register_hook(Extension.on_execute.__name__, B):
+            with register_hook(Extension.on_execute.__name__, ExtensionB):
                 yield
 
     schema = strawberry.Schema(
-        query=default_query_types_and_query.query_type, extensions=[A, B]
+        query=default_query_types_and_query.query_type,
+        extensions=[ExtensionA, ExtensionB],
     )
     result = await schema.execute(default_query_types_and_query.query)
     assert result.errors is None
     assert called_hooks == [
-        "A, on_operation Entered",
-        "B, on_operation Entered",
-        "A, on_parse Entered",
-        "B, on_parse Entered",
-        "A, on_parse Exited",
-        "B, on_parse Exited",
-        "A, on_validate Entered",
-        "B, on_validate Entered",
-        "A, on_validate Exited",
-        "B, on_validate Exited",
-        "A, on_execute Entered",
-        "B, on_execute Entered",
-        "A, on_execute Exited",
-        "B, on_execute Exited",
-        "A, on_operation Exited",
-        "B, on_operation Exited",
+        "ExtensionA, on_operation Entered",
+        "ExtensionB, on_operation Entered",
+        "ExtensionA, on_parse Entered",
+        "ExtensionB, on_parse Entered",
+        "ExtensionA, on_parse Exited",
+        "ExtensionB, on_parse Exited",
+        "ExtensionA, on_validate Entered",
+        "ExtensionB, on_validate Entered",
+        "ExtensionA, on_validate Exited",
+        "ExtensionB, on_validate Exited",
+        "ExtensionA, on_execute Entered",
+        "ExtensionB, on_execute Entered",
+        "ExtensionA, on_execute Exited",
+        "ExtensionB, on_execute Exited",
+        "ExtensionA, on_operation Exited",
+        "ExtensionB, on_operation Exited",
     ]
 
 
@@ -576,6 +571,46 @@ def test_on_parsing_end_called_when_errors():
     assert result.errors
 
     assert result.errors == execution_errors
+
+
+def test_extension_execution_order_sync():
+    """Ensure mixed hooks (async & sync) are called correctly."""
+
+    execution_order: List[Type[Extension]] = []
+
+    class ExtensionA(Extension):
+        async def on_execute(self):
+            execution_order.append(type(self))
+            yield
+
+    class ExtensionB(Extension):
+        def on_execute(self):
+            execution_order.append(type(self))
+            yield
+
+    class ExtensionC(Extension):
+        async def on_execute(self):
+            execution_order.append(type(self))
+            yield
+
+    @strawberry.type
+    class Query:
+        food: str = "strawberry"
+
+    extensions = [ExtensionA, ExtensionB, ExtensionC]
+    schema = strawberry.Schema(query=Query, extensions=extensions)
+
+    query = """
+        query TestQuery {
+            food
+        }
+    """
+
+    result = schema.execute_sync(query, root_value=Query())
+
+    assert not result.errors
+    assert result.data == {"food": "strawberry"}
+    assert execution_order == extensions
 
 
 def test_extension_override_execution():
