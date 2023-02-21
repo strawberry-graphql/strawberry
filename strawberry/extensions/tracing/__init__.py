@@ -8,7 +8,7 @@ if TYPE_CHECKING:
         OpenTelemetryExtension,
         OpenTelemetryExtensionSync,
     )
-    from .xray import XRayTracingExtension, XRayTracingExtensionSync
+    from .xray import XRayExtension, XRayExtensionSync
 
 __all__ = [
     "ApolloTracingExtension",
@@ -17,8 +17,8 @@ __all__ = [
     "DatadogTracingExtensionSync",
     "OpenTelemetryExtension",
     "OpenTelemetryExtensionSync",
-    "XRayTracingExtension",
-    "XRayTracingExtensionSync",
+    "XRayExtension",
+    "XRayExtensionSync",
 ]
 
 

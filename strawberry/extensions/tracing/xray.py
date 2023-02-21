@@ -55,12 +55,12 @@ class XRayExtension(Extension):
             name=segment_name
         )
         if self._segment_holder.get(RequestStage.REQUEST) is not None:
-            self._segment_holder.get(RequestStage.REQUEST).put_annotation(
+            self._segment_holder[RequestStage.REQUEST].put_annotation(
                 "component", "graphql"
             )
 
             if self.execution_context.query:
-                self._segment_holder.get(RequestStage.REQUEST).put_annotation(
+                self._segment_holder[RequestStage.REQUEST].put_annotation(
                     "query", self.execution_context.query
                 )
 
@@ -77,15 +77,14 @@ class XRayExtension(Extension):
             and self._segment_holder.get(RequestStage.REQUEST) is not None
         ):
             segment_name = f"GraphQL Query: {self.execution_context.operation_name}"
-            self._segment_holder.get(RequestStage.REQUEST).name = segment_name
+            self._segment_holder[RequestStage.REQUEST].name = segment_name
 
         result = self.execution_context.result
-        if self._segment_holder.get(RequestStage.REQUEST) is not None and getattr(
-            result, "errors", None
-        ):
+        errors = getattr(result, "errors", [])
+        if self._segment_holder.get(RequestStage.REQUEST) is not None and errors:
             stack = stacktrace.get_stacktrace(limit=xray_recorder.max_trace_back)
-            for error in result.errors:
-                self._segment_holder.get(RequestStage.REQUEST).add_exception(
+            for error in errors:
+                self._segment_holder[RequestStage.REQUEST].add_exception(
                     error.original_error, stack
                 )
         if self._segment_holder.get(RequestStage.REQUEST) is not None:
