@@ -1,18 +1,31 @@
+from __future__ import annotations
+
 import contextlib
 import inspect
 import warnings
 from asyncio import iscoroutinefunction
-from typing import AsyncIterator, Callable, Iterator, List, NamedTuple, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    AsyncIterator,
+    Callable,
+    Iterator,
+    List,
+    NamedTuple,
+    Optional,
+    Union,
+)
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.extensions import Extension
 from strawberry.extensions.base_extension import _BASE_EXTENSION_MODULE
-from strawberry.types import ExecutionContext
 from strawberry.utils.await_maybe import (
     AsyncIteratorOrIterator,
     AwaitableOrValue,
     await_maybe,
 )
+
+if TYPE_CHECKING:
+    from strawberry.types import ExecutionContext
 
 
 class ExecutionStepInitialized(NamedTuple):

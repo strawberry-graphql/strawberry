@@ -1,19 +1,18 @@
+from __future__ import annotations
+
 import asyncio
 from abc import ABC, abstractmethod
 from contextlib import suppress
-from datetime import timedelta
-from typing import Any, AsyncGenerator, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Callable, Dict, List, Optional
 
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 from graphql.error.graphql_error import format_error as format_graphql_error
 
-from strawberry.schema import Schema
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
     ConnectionInitMessage,
     ErrorMessage,
-    GraphQLTransportMessage,
     NextMessage,
     PingMessage,
     PongMessage,
@@ -25,6 +24,14 @@ from strawberry.types.graphql import OperationType
 from strawberry.unset import UNSET
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.operation import get_operation_type
+
+if TYPE_CHECKING:
+    from datetime import timedelta
+
+    from strawberry.schema import Schema
+    from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
+        GraphQLTransportMessage,
+    )
 
 
 class BaseGraphQLTransportWSHandler(ABC):

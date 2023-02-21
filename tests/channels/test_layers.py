@@ -13,7 +13,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
-from tests.channels.schema import schema
+from tests.views.schema import schema
 
 
 @pytest.fixture

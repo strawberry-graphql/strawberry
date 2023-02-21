@@ -1,7 +1,18 @@
-from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
+from __future__ import annotations
 
-from graphql import ExecutionContext as GraphQLExecutionContext
+from functools import lru_cache
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
+
 from graphql import (
     GraphQLError,
     GraphQLNamedType,
@@ -13,21 +24,15 @@ from graphql import (
 from graphql.type.directives import specified_directives
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-from strawberry.directive import StrawberryDirective
-from strawberry.enum import EnumDefinition
-from strawberry.extensions import Extension
 from strawberry.extensions.directives import (
     DirectivesExtension,
     DirectivesExtensionSync,
 )
-from strawberry.field import StrawberryField
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
-from strawberry.types import ExecutionContext, ExecutionResult
+from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
 from strawberry.types.types import TypeDefinition
-from strawberry.union import StrawberryUnion
 
 from ..printer import print_schema
 from ..utils.logging import StrawberryLogger
@@ -35,6 +40,18 @@ from . import compat
 from .config import StrawberryConfig
 from .execute import AsyncExecution, execute_sync
 from .subscribe import Subscription
+
+if TYPE_CHECKING:
+    from graphql import ExecutionContext as GraphQLExecutionContext
+
+    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.directive import StrawberryDirective
+    from strawberry.enum import EnumDefinition
+    from strawberry.extensions import Extension
+    from strawberry.field import StrawberryField
+    from strawberry.types import ExecutionResult
+    from strawberry.types.execution import ExecutionResultError
+    from strawberry.union import StrawberryUnion
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.QUERY,
@@ -70,7 +87,7 @@ class Schema:
         self.config = config or StrawberryConfig()
 
         SCALAR_OVERRIDES_DICT_TYPE = Dict[
-            object, Union[ScalarWrapper, ScalarDefinition]
+            object, Union["ScalarWrapper", "ScalarDefinition"]
         ]
 
         scalar_registry: SCALAR_OVERRIDES_DICT_TYPE = {**DEFAULT_SCALAR_REGISTRY}
@@ -80,7 +97,7 @@ class Schema:
 
         self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
         self.directives = directives
-        self.schema_directives = schema_directives
+        self.schema_directives = list(schema_directives)
 
         query_type = self.schema_converter.from_object(query._type_definition)
         mutation_type = (
@@ -209,7 +226,6 @@ class Schema:
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
     ):
-
         return ExecutionContext(
             query=query,
             schema=self,
@@ -278,8 +294,7 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ):
-
+    ) -> Union[ExecutionResultError, Subscription]:
         execution_context = self._create_execution_context(
             query, variable_values, context_value, root_value, operation_name
         )

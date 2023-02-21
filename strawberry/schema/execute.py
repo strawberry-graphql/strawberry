@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from asyncio import ensure_future
 from inspect import isawaitable
 from typing import (
+    TYPE_CHECKING,
     Awaitable,
     Callable,
     Iterable,
@@ -13,17 +16,22 @@ from typing import (
     cast,
 )
 
-from graphql import ExecutionContext as GraphQLExecutionContext
 from graphql import ExecutionResult as GraphQLExecutionResult
-from graphql import GraphQLError, GraphQLSchema, parse
+from graphql import GraphQLError, parse
 from graphql import execute as original_execute
-from graphql.language import DocumentNode
-from graphql.validation import ASTValidationRule, validate
+from graphql.validation import validate
 
-from strawberry.extensions import Extension
+if TYPE_CHECKING:
+    from graphql import ExecutionContext as GraphQLExecutionContext
+    from graphql import GraphQLSchema
+    from graphql.language import DocumentNode
+    from graphql.validation import ASTValidationRule
+
+    from strawberry.extensions import Extension
+    from strawberry.types.graphql import OperationType
+
 from strawberry.extensions.runner import ExtensionsRunner
 from strawberry.types import ExecutionContext, ExecutionResult
-from strawberry.types.graphql import OperationType
 
 from ..types.execution import ExecutionResultError
 from .exceptions import InvalidOperationTypeError
@@ -132,7 +140,7 @@ def execute_sync(
                         "GraphQL execution failed to complete synchronously."
                     )
 
-                result = cast(GraphQLExecutionResult, result)
+                result = cast("GraphQLExecutionResult", result)
                 execution_context.result = result
                 # Also set errors on the execution_context so that it's easier
                 # to access in extensions

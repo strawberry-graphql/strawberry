@@ -16,7 +16,7 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_STOP,
 )
 from tests.aiohttp.app import create_app
-from tests.aiohttp.schema import schema
+from tests.views.schema import schema
 
 
 async def test_simple_subscription(aiohttp_client):

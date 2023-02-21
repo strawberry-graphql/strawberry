@@ -15,7 +15,7 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
     GQL_STOP,
 )
-from tests.channels.schema import schema
+from tests.views.schema import schema
 
 pytestmark = [
     pytest.mark.asyncio,

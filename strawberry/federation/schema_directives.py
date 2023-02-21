@@ -11,7 +11,7 @@ from .types import FieldSet, LinkImport, LinkPurpose
 @dataclass
 class ImportedFrom:
     name: str
-    url: str = "https://specs.apollo.dev/federation/v2.0"
+    url: str = "https://specs.apollo.dev/federation/v2.3"
 
 
 class FederationDirective:
@@ -23,7 +23,7 @@ class FederationDirective:
 )
 class External(FederationDirective):
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="external", url="https://specs.apollo.dev/federation/v2.0"
+        name="external", url="https://specs.apollo.dev/federation/v2.3"
     )
 
 
@@ -33,7 +33,7 @@ class External(FederationDirective):
 class Requires(FederationDirective):
     fields: FieldSet
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="requires", url="https://specs.apollo.dev/federation/v2.0"
+        name="requires", url="https://specs.apollo.dev/federation/v2.3"
     )
 
 
@@ -43,7 +43,7 @@ class Requires(FederationDirective):
 class Provides(FederationDirective):
     fields: FieldSet
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="provides", url="https://specs.apollo.dev/federation/v2.0"
+        name="provides", url="https://specs.apollo.dev/federation/v2.3"
     )
 
 
@@ -57,18 +57,19 @@ class Key(FederationDirective):
     fields: FieldSet
     resolvable: Optional[bool] = True
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="key", url="https://specs.apollo.dev/federation/v2.0"
+        name="key", url="https://specs.apollo.dev/federation/v2.3"
     )
 
 
 @schema_directive(
     locations=[Location.FIELD_DEFINITION, Location.OBJECT],
     name="shareable",
+    repeatable=True,
     print_definition=False,
 )
 class Shareable(FederationDirective):
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="shareable", url="https://specs.apollo.dev/federation/v2.0"
+        name="shareable", url="https://specs.apollo.dev/federation/v2.3"
     )
 
 
@@ -114,7 +115,7 @@ class Link:
 class Tag(FederationDirective):
     name: str
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="tag", url="https://specs.apollo.dev/federation/v2.0"
+        name="tag", url="https://specs.apollo.dev/federation/v2.3"
     )
 
 
@@ -124,7 +125,7 @@ class Tag(FederationDirective):
 class Override(FederationDirective):
     override_from: str = directive_field(name="from")
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="override", url="https://specs.apollo.dev/federation/v2.0"
+        name="override", url="https://specs.apollo.dev/federation/v2.3"
     )
 
 
@@ -146,5 +147,24 @@ class Override(FederationDirective):
 )
 class Inaccessible(FederationDirective):
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="inaccessible", url="https://specs.apollo.dev/federation/v2.0"
+        name="inaccessible", url="https://specs.apollo.dev/federation/v2.3"
+    )
+
+
+@schema_directive(
+    locations=[Location.SCHEMA], name="composeDirective", print_definition=False
+)
+class ComposeDirective(FederationDirective):
+    name: str
+    imported_from: ClassVar[ImportedFrom] = ImportedFrom(
+        name="composeDirective", url="https://specs.apollo.dev/federation/v2.3"
+    )
+
+
+@schema_directive(
+    locations=[Location.OBJECT], name="interfaceObject", print_definition=False
+)
+class InterfaceObject(FederationDirective):
+    imported_from: ClassVar[ImportedFrom] = ImportedFrom(
+        name="interfaceObject", url="https://specs.apollo.dev/federation/v2.3"
     )

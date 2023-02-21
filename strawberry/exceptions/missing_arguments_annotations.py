@@ -1,19 +1,22 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, List, Optional
 
 from strawberry.utils.cached_property import cached_property
 
 from .exception import StrawberryException
-from .exception_source import ExceptionSource
 from .utils.source_finder import SourceFinder
 
 if TYPE_CHECKING:
     from strawberry.types.fields.resolver import StrawberryResolver
 
+    from .exception_source import ExceptionSource
+
 
 class MissingArgumentsAnnotationsError(StrawberryException):
     """The field is missing the annotation for one or more arguments"""
 
-    def __init__(self, resolver: "StrawberryResolver", arguments: List[str]):
+    def __init__(self, resolver: StrawberryResolver, arguments: List[str]):
         self.missing_arguments = arguments
         self.function = resolver.wrapped_func
         self.argument_name = arguments[0]

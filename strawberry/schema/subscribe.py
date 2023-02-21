@@ -1,11 +1,15 @@
-from typing import AsyncGenerator, Optional, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, AsyncGenerator, Optional, Union
 
 from graphql import ExecutionResult as OriginalExecutionResult
 from graphql import subscribe as original_subscribe
 
 from strawberry.schema.execute import AsyncExecutionBase
-from strawberry.types import ExecutionResult
 from strawberry.types.execution import ExecutionResultError
+
+if TYPE_CHECKING:
+    from strawberry.types import ExecutionResult
 
 
 class Subscription(AsyncExecutionBase):
@@ -16,7 +20,7 @@ class Subscription(AsyncExecutionBase):
             AsyncGenerator[OriginalExecutionResult, None]
         ] = None
 
-    async def subscribe(self) -> Union[ExecutionResultError, "Subscription"]:
+    async def subscribe(self) -> Union[ExecutionResultError, Subscription]:
         initial_error = await self._parse_and_validate_runner()
         generator_or_result = None
         if not initial_error:
@@ -49,7 +53,7 @@ class Subscription(AsyncExecutionBase):
         self._original_generator = generator.__aiter__()  # type: ignore
         return self
 
-    def __aiter__(self) -> "Subscription":
+    def __aiter__(self) -> Subscription:
         return self
 
     async def _collect_and_return(self, result: ExecutionResult) -> ExecutionResult:
@@ -62,7 +66,6 @@ class Subscription(AsyncExecutionBase):
         self.execution_context.result = None
         async with self.extensions_runner.executing():
             if not self.execution_context.result:
-
                 try:
                     result = await self._original_generator.__anext__()
                 except StopAsyncIteration as exc:

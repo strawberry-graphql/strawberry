@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import dataclasses
 import time
-import typing
 from datetime import datetime
 from inspect import isawaitable
+from typing import Any, Dict, List, Optional
 
 from strawberry.extensions import Extension
 from strawberry.extensions.utils import get_path_from_info
@@ -17,20 +19,20 @@ class ApolloStepStats:
     start_offset: int
     duration: int
 
-    def to_json(self) -> typing.Dict[str, typing.Any]:
+    def to_json(self) -> Dict[str, Any]:
         return {"startOffset": self.start_offset, "duration": self.duration}
 
 
 @dataclasses.dataclass
 class ApolloResolverStats:
-    path: typing.List[str]
-    parent_type: typing.Any
+    path: List[str]
+    parent_type: Any
     field_name: str
-    return_type: typing.Any
+    return_type: Any
     start_offset: int
-    duration: typing.Optional[int] = None
+    duration: Optional[int] = None
 
-    def to_json(self) -> typing.Dict[str, typing.Any]:
+    def to_json(self) -> Dict[str, Any]:
         return {
             "path": self.path,
             "field_name": self.field_name,
@@ -43,9 +45,9 @@ class ApolloResolverStats:
 
 @dataclasses.dataclass
 class ApolloExecutionStats:
-    resolvers: typing.List[ApolloResolverStats]
+    resolvers: List[ApolloResolverStats]
 
-    def to_json(self) -> typing.Dict[str, typing.Any]:
+    def to_json(self) -> Dict[str, Any]:
         return {"resolvers": [resolver.to_json() for resolver in self.resolvers]}
 
 
@@ -59,7 +61,7 @@ class ApolloTracingStats:
     parsing: ApolloStepStats
     version: int = 1
 
-    def to_json(self) -> typing.Dict[str, typing.Any]:
+    def to_json(self) -> Dict[str, Any]:
         return {
             "version": self.version,
             "startTime": self.start_time.strftime(DATETIME_FORMAT),
@@ -74,7 +76,7 @@ class ApolloTracingStats:
 class ApolloTracingExtension(Extension):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._resolver_stats: typing.List[ApolloResolverStats] = []
+        self._resolver_stats: List[ApolloResolverStats] = []
 
     def on_operation(self):
         self.start_timestamp = self.now()

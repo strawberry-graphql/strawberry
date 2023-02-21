@@ -1,11 +1,15 @@
+from __future__ import annotations
+
 import logging
 import sys
-from typing import Any, Optional
-from typing_extensions import Final
+from typing import TYPE_CHECKING, Any, Optional
 
-from graphql.error import GraphQLError
+if TYPE_CHECKING:
+    from typing_extensions import Final
 
-from strawberry.types import ExecutionContext
+    from graphql.error import GraphQLError
+
+    from strawberry.types import ExecutionContext
 
 
 class StrawberryLogger:

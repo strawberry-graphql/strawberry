@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 import copy
 import dataclasses
-from typing import Union, cast
+from typing import TYPE_CHECKING, Union, cast
 
 from strawberry.enum import EnumDefinition
-from strawberry.field import StrawberryField
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
+from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.union import StrawberryUnion
+
+if TYPE_CHECKING:
+    from strawberry.field import StrawberryField
+    from strawberry.type import StrawberryType
 
 
 def _convert_from_pydantic_to_strawberry_type(
@@ -64,7 +69,7 @@ def convert_pydantic_model_to_strawberry_class(cls, *, model_instance=None, extr
     kwargs = {}
 
     for field in cls._type_definition.fields:
-        field = cast(StrawberryField, field)
+        field = cast("StrawberryField", field)
         python_name = field.python_name
 
         data_from_extra = extra.get(python_name, None)

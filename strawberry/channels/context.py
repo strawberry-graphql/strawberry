@@ -17,3 +17,6 @@ class StrawberryChannelsContext:
     @property
     def ws(self):
         return self.request
+
+    def __getitem__(self, item: str) -> Any:
+        return getattr(self, item)

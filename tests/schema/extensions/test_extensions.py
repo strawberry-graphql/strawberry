@@ -556,10 +556,10 @@ def test_warning_about_async_get_results_hooks_in_sync_context():
     schema = strawberry.Schema(query=Query, extensions=[MyExtension])
     query = "query { string }"
 
-    with pytest.raises(RuntimeError) as exc_info:
+    with pytest.raises(
+        RuntimeError, match="Cannot use async extension hook during sync execution"
+    ):
         schema.execute_sync(query)
-        msg = "Cannot use async extension hook during sync execution"
-        assert str(exc_info.value) == msg
 
 
 @pytest.mark.asyncio

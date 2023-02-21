@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable, Dict
+from typing import TYPE_CHECKING, Any, Callable, Dict
 
-from graphql import GraphQLResolveInfo
+if TYPE_CHECKING:
+    from graphql import GraphQLResolveInfo
 
-from strawberry.types import ExecutionContext
+    from strawberry.types import ExecutionContext
+
 from strawberry.utils.await_maybe import AsyncIteratorOrIterator, AwaitableOrValue
 
 
