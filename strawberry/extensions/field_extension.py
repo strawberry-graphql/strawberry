@@ -42,7 +42,7 @@ class SyncToAsyncExtension(FieldExtension):
 
     async def resolve_async(
         self, next: Callable[..., Any], source: Any, info: Info, **kwargs
-    ) -> Any:  # nocov
+    ) -> Any:
         return next(source, info, **kwargs)
 
 
@@ -57,8 +57,8 @@ def ensure_field_extension_compatibility(field: StrawberryField) -> bool:
     Returns True if resolving should be async, False on sync resolving
     based on the resolver and extensions
     """
-    if not field.extensions or not len(field.extensions):  # nocov
-        return field.is_async
+    if not field.extensions or not len(field.extensions):
+        return field.is_async  # nocov
 
     non_async_extensions = [
         extension for extension in field.extensions if not extension.supports_async
