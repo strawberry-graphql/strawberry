@@ -16,7 +16,7 @@ class Fruit:
 
 @strawberry.type
 class Mutation:
-    @relay.input_mutation
+    @strawberry.input_mutation
     def update_fruit_weight(
         self,
         info: Info,

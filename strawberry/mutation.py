@@ -29,9 +29,13 @@ _T = TypeVar("_T")
 
 
 class StrawberryInputMutationField(StrawberryField):
-    """Relay Mutation field.
+    """Input mutation field.
 
-    Do not instantiate this directly. Instead, use `@relay.mutation`
+    This is a mutation field that automatically creates an input type from
+    the resolver arguments and receive it as a single argument named `input`.
+
+    NOTE: Do not instantiate this directly. Instead, use
+    `@strawberry.input_mutation`
 
     """
 
