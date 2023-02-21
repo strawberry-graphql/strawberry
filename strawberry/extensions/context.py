@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 import inspect
 import warnings
-from asyncio import AbstractEventLoop, get_event_loop, iscoroutinefunction
+from asyncio import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
     AsyncIterator,
@@ -140,13 +140,13 @@ class ExtensionContextManagerBase:
             if is_exit
             else contextlib.nullcontext()
         )
-        loop: Optional[AbstractEventLoop] = None
         for hook in self.hooks:
             with ctx:
                 if hook.is_async:
-                    if loop is None:
-                        loop = get_event_loop()
-                    loop.run_until_complete(hook.initialized_hook.__anext__())
+                    raise RuntimeError(
+                        f"Extension hook {hook.extension}.{self.HOOK_NAME} "
+                        "failed to complete synchronously."
+                    )
                 else:
                     hook.initialized_hook.__next__()
 

@@ -578,18 +578,13 @@ def test_extension_execution_order_sync():
 
     execution_order: List[Type[Extension]] = []
 
-    class ExtensionA(Extension):
-        async def on_execute(self):
-            execution_order.append(type(self))
-            yield
-
     class ExtensionB(Extension):
         def on_execute(self):
             execution_order.append(type(self))
             yield
 
     class ExtensionC(Extension):
-        async def on_execute(self):
+        def on_execute(self):
             execution_order.append(type(self))
             yield
 
@@ -597,7 +592,7 @@ def test_extension_execution_order_sync():
     class Query:
         food: str = "strawberry"
 
-    extensions = [ExtensionA, ExtensionB, ExtensionC]
+    extensions = [ExtensionB, ExtensionC]
     schema = strawberry.Schema(query=Query, extensions=extensions)
 
     query = """
@@ -611,6 +606,21 @@ def test_extension_execution_order_sync():
     assert not result.errors
     assert result.data == {"food": "strawberry"}
     assert execution_order == extensions
+
+
+def test_async_extension_in_sync_context():
+    class ExtensionA(Extension):
+        async def on_execute(self):
+            yield
+
+    @strawberry.type
+    class Query:
+        food: str = "strawberry"
+
+    schema = strawberry.Schema(query=Query, extensions=[ExtensionA])
+
+    with pytest.raises(RuntimeError, match="failed to complete synchronously"):
+        schema.execute_sync("query { food }")
 
 
 def test_extension_override_execution():
