@@ -4,6 +4,7 @@ from typing_extensions import assert_type
 import pytest
 
 import strawberry
+from strawberry import relay
 from strawberry.relay.types import GlobalIDValueError, Node
 from strawberry.types.info import Info
 
@@ -149,3 +150,21 @@ async def test_global_id_aresolve_node_ensure_type_wrong_type():
     gid = strawberry.relay.GlobalID(type_name="FruitAsync", node_id="1")
     with pytest.raises(TypeError):
         fruit = await gid.aresolve_node(fake_info, ensure_type=Foo)
+
+
+async def test_node_no_id():
+    with pytest.raises(TypeError):
+
+        @strawberry.type
+        class Foo(relay.Node):
+            foo: str
+            bar: str
+
+
+async def test_node_more_than_one_id():
+    with pytest.raises(TypeError):
+
+        @strawberry.type
+        class Foo(relay.Node):
+            foo: relay.NodeID[str]
+            bar: relay.NodeID[str]

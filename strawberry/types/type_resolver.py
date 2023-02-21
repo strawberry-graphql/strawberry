@@ -19,12 +19,7 @@ from strawberry.utils.inspect import get_specialized_type_var_map
 
 def _get_field_for_type(type_: Type) -> Type[StrawberryField]:
     # Deferred import to avoid import cycles
-    from strawberry.field import StrawberryField
-
-    try:
-        from strawberry.relay import Connection, ConnectionField, Node, NodeField
-    except ImportError:
-        return StrawberryField
+    from strawberry.relay import Connection, ConnectionField, Node, NodeField
 
     # Supoort for "foo: Node"
     if isinstance(type_, type) and issubclass(type_, Node):

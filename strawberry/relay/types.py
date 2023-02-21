@@ -4,7 +4,6 @@ import dataclasses
 import inspect
 import itertools
 import sys
-import uuid
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -372,7 +371,7 @@ class Node:
             )
         ]
 
-        if len(candidates) > 1:
+        if len(candidates) == 0:
             raise TypeError(f"No field annotated with `NodeID` found on {cls!r}")
         if len(candidates) > 1:
             raise TypeError(
@@ -390,17 +389,10 @@ class Node:
         if isinstance(root, Node):
             resolve_id = root.__class__.resolve_id
         else:
-            # Try to use a custom resolve_id from the type itself. If it doesn't
-            # define one, fallback to cls.resolve_id
-            try:
-                parent_type = info._raw_info.parent_type
-                type_def = info.schema.get_type_by_name(parent_type.name)
-                if not isinstance(type_def, TypeDefinition):
-                    raise RuntimeError
-
-                resolve_id = type_def.origin.resolve_id
-            except (RuntimeError, AttributeError):
-                resolve_id = cls.resolve_id
+            parent_type = info._raw_info.parent_type
+            type_def = info.schema.get_type_by_name(parent_type.name)
+            assert isinstance(type_def, TypeDefinition)
+            resolve_id = type_def.origin.resolve_id
 
         node_id = resolve_id(root, info=info)
         resolve_typename = (
@@ -411,11 +403,6 @@ class Node:
         type_name = resolve_typename(root, info)
         assert type_name
 
-        # `inspect.isawaitable` is slow, so try to avoid if the type is safe
-        # to be used as an id (i.e. str, int, uuid, etc)
-        if isinstance(node_id, (str, int, uuid.UUID)):
-            return GlobalID(type_name=type_name, node_id=str(node_id))
-
         if inspect.isawaitable(node_id):
             return cast(
                 GlobalID,
@@ -423,13 +410,13 @@ class Node:
                     node_id,
                     lambda resolved: GlobalID(
                         type_name=type_name,
-                        node_id=resolved,
+                        node_id=str(resolved),
                     ),
                 ),
             )
 
         # If node_id is not str, GlobalID will raise an error for us
-        return GlobalID(type_name=type_name, node_id=cast(str, node_id))
+        return GlobalID(type_name=type_name, node_id=str(node_id))
 
     @classmethod
     def resolve_id(

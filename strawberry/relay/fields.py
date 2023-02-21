@@ -67,11 +67,7 @@ class RelayField(StrawberryField):
         **kwargs,
     ):
         self.node_converter = node_converter
-
-        base_resolver = kwargs.pop("base_resolver", None)
         super().__init__(*args, **kwargs)
-        if base_resolver:
-            self.__call__(base_resolver)
 
     @property
     def arguments(self) -> List[StrawberryArgument]:
@@ -188,9 +184,6 @@ class NodeField(RelayField):
             node_t = gid.resolve_type(info)
             nodes_map[node_t].append(gid.node_id)
             index_map[gid] = (node_t, len(nodes_map[node_t]) - 1)
-
-        if len(nodes_map) == 0:
-            return []
 
         resolved_nodes = {
             node_t: node_t.resolve_nodes(

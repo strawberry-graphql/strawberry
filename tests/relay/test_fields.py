@@ -1,8 +1,39 @@
 import pytest
 
+import strawberry
+from strawberry.relay.fields import ConnectionField, NodeField
+from strawberry.relay.types import NodeType
 from strawberry.relay.utils import to_base64
 
 from .schema import schema
+
+
+def test_type_uses_node_field():
+    @strawberry.type
+    class Query:
+        node: strawberry.relay.Node
+
+    node_field = Query._type_definition.get_field("node")  # type: ignore
+    assert isinstance(node_field, NodeField)
+
+    copied = node_field.copy_with({})
+    assert copied.default_args == node_field.default_args
+
+
+def test_type_uses_connection_field():
+    @strawberry.type
+    class Fruit:
+        ...
+
+    @strawberry.type
+    class Query:
+        connection: strawberry.relay.Connection
+
+    connection_field = Query._type_definition.get_field("connection")  # type: ignore
+    assert isinstance(connection_field, ConnectionField)
+
+    copied = connection_field.copy_with({NodeType: Fruit})
+    assert copied.default_args == connection_field.default_args
 
 
 def test_query_node():
@@ -1107,3 +1138,45 @@ def test_query_connection_custom_resolver_filtering_last_with_before(query_attr:
             },
         }
     }
+
+
+@pytest.mark.parametrize("query_attr", custom_attrs)
+def test_query_first_negative(query_attr: str):
+    result = schema.execute_sync(
+        fruits_query_custom_resolver.format(query_attr),
+        variable_values={"first": -1},
+    )
+    assert result.errors is not None
+    assert (
+        result.errors[0].message == "Argument 'first' must be a non-negative integer."
+    )
+
+
+@pytest.mark.parametrize("query_attr", custom_attrs)
+def test_query_first_higher_than_max_results(query_attr: str):
+    result = schema.execute_sync(
+        fruits_query_custom_resolver.format(query_attr),
+        variable_values={"first": 500},
+    )
+    assert result.errors is not None
+    assert result.errors[0].message == "Argument 'first' cannot be higher than 100."
+
+
+@pytest.mark.parametrize("query_attr", custom_attrs)
+def test_query_last_negative(query_attr: str):
+    result = schema.execute_sync(
+        fruits_query_custom_resolver.format(query_attr),
+        variable_values={"last": -1},
+    )
+    assert result.errors is not None
+    assert result.errors[0].message == "Argument 'last' must be a non-negative integer."
+
+
+@pytest.mark.parametrize("query_attr", custom_attrs)
+def test_query_last_higher_than_max_results(query_attr: str):
+    result = schema.execute_sync(
+        fruits_query_custom_resolver.format(query_attr),
+        variable_values={"last": 500},
+    )
+    assert result.errors is not None
+    assert result.errors[0].message == "Argument 'last' cannot be higher than 100."
