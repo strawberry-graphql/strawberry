@@ -10,19 +10,19 @@ if TYPE_CHECKING:
 
 
 class FieldExtension:
-    def apply(self, field: StrawberryField) -> None:  # nocov
+    def apply(self, field: StrawberryField) -> None:  # pragma: no cover
         pass
 
     def resolve(
         self, next: Callable[..., Any], source: Any, info: Info, **kwargs
-    ) -> Any:  # nocov
+    ) -> Any:  # pragma: no cover
         raise NotImplementedError(
             "Sync Resolve is not supported for this Field Extension"
         )
 
     async def resolve_async(
         self, next: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
-    ) -> Any:  # nocov
+    ) -> Any:  # pragma: no cover
         raise NotImplementedError(
             "Async Resolve is not supported for this Field Extension"
         )
@@ -58,7 +58,7 @@ def ensure_field_extension_compatibility(field: StrawberryField) -> bool:
     based on the resolver and extensions
     """
     if not field.extensions or not len(field.extensions):
-        return field.is_async  # nocov
+        return field.is_async  # pragma: no cover
 
     non_async_extensions = [
         extension for extension in field.extensions if not extension.supports_async
