@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Awaitable, Callable
 
 from strawberry.utils.cached_property import cached_property
 
@@ -21,7 +21,7 @@ class FieldExtension:
         )
 
     async def resolve_async(
-        self, next: Callable[..., Any], source: Any, info: Info, **kwargs
+        self, next: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
     ) -> Any:  # nocov
         raise NotImplementedError(
             "Async Resolve is not supported for this Field Extension"

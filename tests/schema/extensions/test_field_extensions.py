@@ -1,5 +1,5 @@
 import re
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 import pytest
 
@@ -51,7 +51,7 @@ def test_extension_result_modification_sync():
 async def test_async_extension_on_sync_resolver():
     class UpperCaseExtension(FieldExtension):
         async def resolve_async(
-            self, next: Callable[..., Any], source: Any, info: Info, **kwargs
+            self, next: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
         ):
             result = await next(source, info, **kwargs)
             return str(result).upper()
@@ -73,7 +73,7 @@ async def test_async_extension_on_sync_resolver():
 async def test_extension_result_modification_async():
     class UpperCaseExtension(FieldExtension):
         async def resolve_async(
-            self, next: Callable[..., Any], source: Any, info: Info, **kwargs
+            self, next: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
         ):
             result = await next(source, info, **kwargs)
             return str(result).upper()
@@ -100,7 +100,7 @@ def test_fail_cannot_mix_async_and_sync_extensions():
 
     class UpperCaseExtension(FieldExtension):
         async def resolve_async(
-            self, next: Callable[..., Any], source: Any, info: Info, **kwargs
+            self, next: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
         ):
             result = await next(source, info, **kwargs)
             return str(result).upper()
