@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, AsyncIterator, Callable, Dict, List, Optional
 
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 from graphql.error.graphql_error import format_error as format_graphql_error
@@ -29,9 +29,11 @@ if TYPE_CHECKING:
     from datetime import timedelta
 
     from strawberry.schema import Schema
+    from strawberry.schema.subscribe import Subscription
     from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
         GraphQLTransportMessage,
     )
+    from strawberry.types.execution import ExecutionResult
 
 
 class BaseGraphQLTransportWSHandler(ABC):
@@ -47,7 +49,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         self.connection_init_timeout_task: Optional[asyncio.Task] = None
         self.connection_init_received = False
         self.connection_acknowledged = False
-        self.subscriptions: Dict[str, AsyncGenerator] = {}
+        self.subscriptions: Dict[str, Subscription] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
         self.completed_tasks: List[asyncio.Task] = []
         self.connection_params: Optional[Dict[str, Any]] = None
@@ -220,7 +222,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         )
 
     async def operation_task(
-        self, result_source: AsyncGenerator, operation_id: str
+        self, result_source: AsyncIterator[ExecutionResult], operation_id: str
     ) -> None:
         """
         Operation task top level method.  Cleans up and de-registers the operation
@@ -252,7 +254,7 @@ class BaseGraphQLTransportWSHandler(ABC):
 
     async def handle_async_results(
         self,
-        result_source: AsyncGenerator,
+        result_source: AsyncIterator[ExecutionResult],
         operation_id: str,
     ) -> None:
         try:
