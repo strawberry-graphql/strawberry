@@ -196,6 +196,8 @@ async def test_uses_operation_subscription(xray_extension):
             call.end_subsegment(),
         ]
     )
+    assert len(mock_xray_recorder.mock_calls) == 5
+    mock_xray_recorder.begin_subsegment().add_exception.assert_called()
 
 
 def test_datadog_tracer_sync(xray_extension_sync, mocker):
