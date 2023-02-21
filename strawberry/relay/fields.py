@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 import dataclasses
 import inspect
 import sys
 from collections import defaultdict
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterable,
     AsyncIterator,
@@ -32,13 +35,10 @@ from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions.missing_return_annotation import MissingReturnAnnotationError
 from strawberry.field import _RESOLVER_TYPE, StrawberryField
 from strawberry.lazy_type import LazyType
-from strawberry.permission import BasePermission
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.fields.resolver import StrawberryResolver
-from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
 from strawberry.utils.aio import asyncgen_to_list, resolve_awaitable
-from strawberry.utils.await_maybe import AwaitableOrValue
 from strawberry.utils.cached_property import cached_property
 
 from .exceptions import (
@@ -46,6 +46,11 @@ from .exceptions import (
     RelayWrongNodeResolverAnnotationError,
 )
 from .types import Connection, GlobalID, Node, NodeIterableType, NodeType
+
+if TYPE_CHECKING:
+    from strawberry.permission import BasePermission
+    from strawberry.types.info import Info
+    from strawberry.utils.await_maybe import AwaitableOrValue
 
 _T = TypeVar("_T")
 

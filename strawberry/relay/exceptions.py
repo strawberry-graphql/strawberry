@@ -1,16 +1,18 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Callable, Optional, cast
 
 from strawberry.exceptions.exception import StrawberryException
-from strawberry.exceptions.exception_source import ExceptionSource
 from strawberry.exceptions.utils.source_finder import SourceFinder
 from strawberry.utils.cached_property import cached_property
 
 if TYPE_CHECKING:
+    from strawberry.exceptions.exception_source import ExceptionSource
     from strawberry.types.fields.resolver import StrawberryResolver
 
 
 class RelayWrongAnnotationError(StrawberryException):
-    def __init__(self, field_name: str, resolver: "StrawberryResolver"):
+    def __init__(self, field_name: str, resolver: StrawberryResolver):
         self.resolver = resolver.wrapped_func
         self.field_name = field_name
 
@@ -43,7 +45,7 @@ class RelayWrongAnnotationError(StrawberryException):
 
 
 class RelayWrongNodeResolverAnnotationError(StrawberryException):
-    def __init__(self, field_name: str, resolver: "StrawberryResolver"):
+    def __init__(self, field_name: str, resolver: StrawberryResolver):
         self.resolver = resolver.wrapped_func
         self.field_name = field_name
 

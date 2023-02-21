@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses
 import inspect
 import itertools
@@ -39,18 +41,18 @@ from strawberry.field import field
 from strawberry.lazy_type import LazyType
 from strawberry.object_type import interface, type
 from strawberry.private import StrawberryPrivate
-from strawberry.scalars import ID
 from strawberry.type import StrawberryContainer
-from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
 from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
-from strawberry.utils.await_maybe import AwaitableOrValue
 from strawberry.utils.inspect import in_async_context
 
 from .utils import from_base64, to_base64
 
 if TYPE_CHECKING:
+    from strawberry.scalars import ID
     from strawberry.schema.schema import Schema
+    from strawberry.types.info import Info
+    from strawberry.utils.await_maybe import AwaitableOrValue
 
 _T = TypeVar("_T")
 _R = TypeVar("_R")
@@ -92,7 +94,7 @@ class GlobalID:
 
     """
 
-    _nodes_cache: ClassVar[Dict[Tuple["Schema", str], Type["Node"]]] = {}
+    _nodes_cache: ClassVar[Dict[Tuple[Schema, str], Type[Node]]] = {}
 
     type_name: str
     node_id: str
@@ -134,7 +136,7 @@ class GlobalID:
 
         return cls(type_name=type_name, node_id=node_id)
 
-    def resolve_type(self, info: Info) -> Type["Node"]:
+    def resolve_type(self, info: Info) -> Type[Node]:
         """Resolve the internal type name to its type itself.
 
         Args:
@@ -180,7 +182,7 @@ class GlobalID:
         *,
         required: Literal[True],
         ensure_type: None = ...,
-    ) -> "Node":
+    ) -> Node:
         ...
 
     @overload
@@ -190,7 +192,7 @@ class GlobalID:
         *,
         required: bool = ...,
         ensure_type: None = ...,
-    ) -> Optional["Node"]:
+    ) -> Optional[Node]:
         ...
 
     def resolve_node(self, info, *, required=False, ensure_type=None) -> Any:
@@ -253,7 +255,7 @@ class GlobalID:
         *,
         required: Literal[True],
         ensure_type: None = ...,
-    ) -> "Node":
+    ) -> Node:
         ...
 
     @overload
@@ -263,7 +265,7 @@ class GlobalID:
         *,
         required: bool = ...,
         ensure_type: None = ...,
-    ) -> Optional["Node"]:
+    ) -> Optional[Node]:
         ...
 
     async def aresolve_node(self, info, *, required=False, ensure_type=None) -> Any:
@@ -381,7 +383,7 @@ class Node:
 
     @field(name="id", description="The Globally Unique ID of this object")
     @classmethod
-    def _id(cls, root: "Node", info: Info) -> GlobalID:
+    def _id(cls, root: Node, info: Info) -> GlobalID:
         # FIXME: We want to support both integration objects that doesn't define
         # a resolve_id and also the ones that does override it. Is there a better
         # way of handling this?
