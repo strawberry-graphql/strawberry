@@ -3072,14 +3072,14 @@ files = [
 
 [[package]]
 name = "types-ujson"
-version = "5.7.0.0"
+version = "5.7.0.1"
 description = "Typing stubs for ujson"
 category = "dev"
 optional = false
 python-versions = "*"
 files = [
-    {file = "types-ujson-5.7.0.0.tar.gz", hash = "sha256:d7c001f668a2e1ac2decbafd2c42cc0bf58798a5cc3b5a3ee397b7ee37775919"},
-    {file = "types_ujson-5.7.0.0-py3-none-any.whl", hash = "sha256:ad48848c3da10e8023e9e75b1833282c28568ea680938c271e34d4d1426be816"},
+    {file = "types-ujson-5.7.0.1.tar.gz", hash = "sha256:54351a62ec1b6550efb17af63ef7f0c00d0efa9c099de7da5c627e1efa280553"},
+    {file = "types_ujson-5.7.0.1-py3-none-any.whl", hash = "sha256:67cdedbab6ea905f21e236497e9e97d8f7f0845d72b47a7404974dcb88adeb22"},
 ]
 
 [[package]]
