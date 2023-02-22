@@ -14,19 +14,27 @@ class Extension:
     def __init__(self, *, execution_context: ExecutionContext):
         self.execution_context = execution_context
 
-    def on_operation(self) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
+    def on_operation(
+        self,
+    ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover # pyright: ignore
         """Called before and after a GraphQL operation (query / mutation) starts"""
         yield None
 
-    def on_validate(self) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
+    def on_validate(
+        self,
+    ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover # pyright: ignore
         """Called before and after the validation step"""
         yield None
 
-    def on_parse(self) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
+    def on_parse(
+        self,
+    ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover # pyright: ignore
         """Called before and after the parsing step"""
         yield None
 
-    def on_execute(self) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
+    def on_execute(
+        self,
+    ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover # pyright: ignore
         """Called before and after the execution step"""
         yield None
 
