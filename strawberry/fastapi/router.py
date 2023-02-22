@@ -62,7 +62,11 @@ class StrawberryAPIRoute(APIRoute):
                 return await original_route_handler(request)
             except Exception as e:
                 return JSONResponse(
-                    status_code=200, content={"errors": [{"message": str(e)}]}
+                    status_code=200,
+                    content={
+                        "data": None,
+                        "errors": [{"message": str(e)}],
+                    },
                 )
 
         return strawberry_route_handler
