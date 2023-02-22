@@ -6,21 +6,23 @@ import warnings
 from asyncio import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
+    Any,
     AsyncIterator,
     Callable,
     Iterator,
     List,
     NamedTuple,
     Optional,
+    Type,
     Union,
-    no_type_check,
 )
 
-from strawberry.exceptions import StrawberryException
 from strawberry.extensions import Extension
 from strawberry.utils.await_maybe import AwaitableOrValue, await_maybe
 
 if TYPE_CHECKING:
+    from types import TracebackType
+
     from strawberry.extensions.base_extension import Hook
 
 
@@ -61,7 +63,7 @@ class ExtensionContextManagerBase:
         hook_fn: Optional[Hook] = getattr(type(extension), self.HOOK_NAME)
         hook_fn = hook_fn if hook_fn is not self.default_hook else None
         if is_legacy and hook_fn is not None:
-            raise StrawberryException(
+            raise ValueError(
                 f"{Extension} defines both legacy and new style extension hooks for "
                 "{self.HOOK_NAME}"
             )
@@ -114,15 +116,15 @@ class ExtensionContextManagerBase:
     @staticmethod
     def from_callable(
         extension: Extension,
-        func: Callable[[Extension], AwaitableOrValue],
+        func: Callable[[Extension], AwaitableOrValue[Any]],
     ) -> WrappedHook:
         if iscoroutinefunction(func):
 
-            async def iterator():
+            async def async_iterator():
                 await func(extension)
                 yield
 
-            hook = iterator()
+            hook = async_iterator()
             return WrappedHook(extension, hook, True)
         else:
 
@@ -133,7 +135,6 @@ class ExtensionContextManagerBase:
             hook = iterator()
             return WrappedHook(extension, hook, False)
 
-    @no_type_check
     def run_hooks_sync(self, is_exit: bool = False):
         """Run extensions synchronously."""
         ctx = (
@@ -149,9 +150,8 @@ class ExtensionContextManagerBase:
                         "failed to complete synchronously."
                     )
                 else:
-                    hook.initialized_hook.__next__()
+                    hook.initialized_hook.__next__()  # type: ignore[union-attr]
 
-    @no_type_check
     async def run_hooks_async(self, is_exit: bool = False):
         """Run extensions asynchronously with support for sync lifecycle hooks.
 
@@ -167,20 +167,30 @@ class ExtensionContextManagerBase:
         for hook in self.hooks:
             with ctx:
                 if hook.is_async:
-                    await hook.initialized_hook.__anext__()
+                    await hook.initialized_hook.__anext__()  # type: ignore[union-attr]
                 else:
-                    hook.initialized_hook.__next__()
+                    hook.initialized_hook.__next__()  # type: ignore[union-attr]
 
     def __enter__(self):
         self.run_hooks_sync()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ):
         self.run_hooks_sync(is_exit=True)
 
     async def __aenter__(self):
         await self.run_hooks_async()
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ):
         await self.run_hooks_async(is_exit=True)
 
 
