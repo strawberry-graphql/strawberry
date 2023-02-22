@@ -11,7 +11,7 @@ from graphql import GraphQLError
 from graphql import execute as original_execute
 
 import strawberry
-from strawberry.exceptions import StrawberryGraphQLError
+from strawberry.exceptions import StrawberryException, StrawberryGraphQLError
 from strawberry.extensions import Extension
 
 
@@ -456,7 +456,22 @@ async def test_extension_no_yield(default_query_types_and_query):
     SyncExt.preform_test()
 
 
-async def test_old_style_extensions():
+def test_raise_if_defined_both_legacy_and_new_style(default_query_types_and_query):
+    class WrongUsageExtension(Extension):
+        def on_execute(self):
+            yield
+
+        def on_executing_start(self):
+            ...
+
+    schema = strawberry.Schema(
+        query=default_query_types_and_query.query_type, extensions=[WrongUsageExtension]
+    )
+    with pytest.raises(StrawberryException):
+        schema.execute_sync(default_query_types_and_query.query)
+
+
+async def test_legacy_extension_supported():
     with warnings.catch_warnings(record=True) as w:
 
         class CompatExtension(TestAbleExtension):

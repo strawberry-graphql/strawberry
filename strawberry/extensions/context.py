@@ -16,6 +16,7 @@ from typing import (
     no_type_check,
 )
 
+from strawberry.exceptions import StrawberryException
 from strawberry.extensions import Extension
 from strawberry.utils.await_maybe import AwaitableOrValue, await_maybe
 
@@ -60,7 +61,7 @@ class ExtensionContextManagerBase:
         hook_fn: Optional[Hook] = getattr(type(extension), self.HOOK_NAME)
         hook_fn = hook_fn if hook_fn is not self.default_hook else None
         if is_legacy and hook_fn is not None:
-            raise RuntimeError(
+            raise StrawberryException(
                 f"{Extension} defines both legacy and new style extension hooks for "
                 "{self.HOOK_NAME}"
             )
