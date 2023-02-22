@@ -8,11 +8,11 @@ The old style hooks are still supported but will be removed in future releases.
 **Before:**
 
 ```python
-def on_execution_started(self):  # Called before the execution start
+def on_executing_start(self):  # Called before the execution start
     ...
 
 
-def on_execution_end(self):  # Called after the execution ends
+def on_executing_end(self):  # Called after the execution ends
     ...
 ```
 
