@@ -27,6 +27,8 @@ from starlette.responses import (
 from starlette.websockets import WebSocket
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
+from fastapi.routing import APIRoute
 from strawberry.exceptions import InvalidCustomContext, MissingQueryError
 from strawberry.fastapi.context import BaseContext, CustomContext
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
@@ -49,6 +51,21 @@ if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.schema import BaseSchema
     from strawberry.types import ExecutionResult
+
+
+class StrawberryAPIRoute(APIRoute):
+    def get_route_handler(self) -> Callable:
+        original_route_handler = super().get_route_handler()
+
+        async def strawberry_route_handler(request: Request) -> JSONResponse:
+            try:
+                return await original_route_handler(request)
+            except Exception as e:
+                return JSONResponse(
+                    status_code=200, content={"errors": [{"message": str(e)}]}
+                )
+
+        return strawberry_route_handler
 
 
 class GraphQLRouter(APIRouter):
@@ -131,6 +148,7 @@ class GraphQLRouter(APIRouter):
             default=default,
             on_startup=on_startup,
             on_shutdown=on_shutdown,
+            route_class=StrawberryAPIRoute,
         )
         self.schema = schema
         self.graphiql = graphiql

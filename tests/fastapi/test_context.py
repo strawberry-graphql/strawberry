@@ -7,7 +7,6 @@ from starlette.websockets import WebSocketDisconnect
 import strawberry
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
-from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi import BaseContext, GraphQLRouter
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
@@ -169,14 +168,15 @@ def test_with_invalid_context_getter():
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
-    with pytest.raises(
-        InvalidCustomContext,
-        match=(
-            "The custom context must be either a class "
-            "that inherits from BaseContext or a dictionary"
-        ),
-    ):
-        test_client.post("/graphql", json={"query": "{ abc }"})
+    data = test_client.post("/graphql", json={"query": "{ abc }"})
+    assert data.json() == {
+        "errors": [
+            {
+                "message": "The custom context must be either a class "
+                "that inherits from BaseContext or a dictionary"
+            },
+        ],
+    }
 
 
 def test_class_context_injects_connection_params_over_transport_ws():
