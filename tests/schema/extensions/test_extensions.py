@@ -11,7 +11,7 @@ from graphql import GraphQLError
 from graphql import execute as original_execute
 
 import strawberry
-from strawberry.exceptions import StrawberryException, StrawberryGraphQLError
+from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.extensions import Extension
 
 
@@ -467,7 +467,7 @@ def test_raise_if_defined_both_legacy_and_new_style(default_query_types_and_quer
     schema = strawberry.Schema(
         query=default_query_types_and_query.query_type, extensions=[WrongUsageExtension]
     )
-    with pytest.raises(StrawberryException):
+    with pytest.raises(ValueError):
         schema.execute_sync(default_query_types_and_query.query)
 
 
