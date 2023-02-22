@@ -79,9 +79,12 @@ schema = strawberry.Schema(query=Query, extensions=[ExtendErrorFormat])
 
 ### Resolve
 
-`resolve` can be used to run code before or after the execution of resolvers, this
-method _must_ call `_next` with all the arguments, as they will be needed by the
-resolvers.
+`resolve` can be used to run code before and after the execution of **all** resolvers.
+When calling the underlying resolver using `_next`, all of the arguments to resolve need
+to be passed to `_next`, as they will be needed by the resolvers.
+
+If you need to wrap only certain field resolvers with additional logic,
+please check out [field extensions](field-extensions.md).
 
 Note that `resolve` can also be implemented asynchronously.
 
