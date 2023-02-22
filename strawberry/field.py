@@ -134,7 +134,7 @@ class StrawberryField(dataclasses.Field):
         self.is_subscription = is_subscription
 
         self.permission_classes: List[Type[BasePermission]] = list(permission_classes)
-        self.directives = directives
+        self.directives = list(directives)
         self.extensions: Optional[List[FieldExtension]] = extensions
 
         self.deprecation_reason = deprecation_reason
