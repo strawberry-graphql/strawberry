@@ -5,13 +5,19 @@ It's a simple "SubProtocolRouter" that selects the websocket subprotocol based
 on preferences and client support. Then it hands off to the appropriate consumer.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.urls import re_path
 
 from channels.routing import ProtocolTypeRouter, URLRouter
-from strawberry.schema import BaseSchema
 
 from .handlers.http_handler import GraphQLHTTPConsumer
 from .handlers.ws_handler import GraphQLWSConsumer
+
+if TYPE_CHECKING:
+    from strawberry.schema import BaseSchema
 
 
 class GraphQLProtocolTypeRouter(ProtocolTypeRouter):

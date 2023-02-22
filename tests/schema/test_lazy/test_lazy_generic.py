@@ -1,7 +1,9 @@
 import os
 import subprocess
 import sys
+import sysconfig
 import textwrap
+from pathlib import Path
 from typing import TYPE_CHECKING, Generic, List, Optional, Sequence, TypeVar
 from typing_extensions import Annotated
 
@@ -12,6 +14,9 @@ import strawberry
 if TYPE_CHECKING:
     from tests.schema.test_lazy.type_a import TypeA  # noqa
 
+STRAWBERRY_EXECUTABLE = next(
+    Path(sysconfig.get_path("scripts")).glob("strawberry*"), None
+)
 
 T = TypeVar("T")
 
@@ -75,8 +80,21 @@ def test_no_generic_type_duplication_with_lazy():
 @pytest.mark.parametrize(
     "commands",
     [
-        pytest.param(["tests/schema/test_lazy/type_c.py"], id="script"),
-        pytest.param(["-m", "tests.schema.test_lazy.type_c"], id="module"),
+        pytest.param(
+            [sys.executable, "tests/schema/test_lazy/type_c.py"],
+            id="script",
+        ),
+        pytest.param(
+            [sys.executable, "-m", "tests.schema.test_lazy.type_c"],
+            id="module",
+        ),
+        pytest.param(
+            [STRAWBERRY_EXECUTABLE, "export-schema", "tests.schema.test_lazy.schema"],
+            id="cli",
+            marks=pytest.mark.skipif(
+                sys.platform == "win32", reason="Test is broken on windows"
+            ),
+        ),
     ],
 )
 def test_lazy_types_loaded_from_same_module(commands: Sequence[str]):
@@ -86,11 +104,29 @@ def test_lazy_types_loaded_from_same_module(commands: Sequence[str]):
       `subprocess` is used since the test must be run as the main module / script.
     """
     result = subprocess.run(
-        args=[sys.executable, *commands],
+        args=[*commands],
         env=os.environ,
         capture_output=True,
     )
     result.check_returncode()
+
+    expected = """\
+    type Query {
+      typeA: TypeCEdge!
+      typeB: TypeCEdge!
+    }
+
+    type TypeC {
+      name: String!
+    }
+
+    type TypeCEdge {
+      node: TypeC!
+    }
+    """
+
+    schema_sdl = result.stdout.decode().replace(os.linesep, "\n")
+    assert textwrap.dedent(schema_sdl) == textwrap.dedent(expected)
 
 
 def test_lazy_types_declared_within_optional():
@@ -98,7 +134,6 @@ def test_lazy_types_declared_within_optional():
 
     @strawberry.type
     class Query:
-
         normal_edges: List[Edge[Optional[TypeC]]]
         lazy_edges: List[
             Edge[

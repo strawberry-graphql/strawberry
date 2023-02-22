@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 from io import BytesIO
-from typing import Dict, List, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Union
 
-from sanic.request import Request
+if TYPE_CHECKING:
+    from sanic.request import Request
 
 
-def convert_request_to_files_dict(request: Request) -> dict:
+def convert_request_to_files_dict(request: Request) -> Dict[str, Any]:
     """
     request.files has the following format, even if only a single file is uploaded:
 
@@ -20,7 +23,7 @@ def convert_request_to_files_dict(request: Request) -> dict:
 
     Note that the dictionary entries are lists.
     """
-    request_files: dict = request.files
+    request_files = request.files
     files_dict: Dict[str, Union[BytesIO, List[BytesIO]]] = {}
 
     for field_name, file_list in request_files.items():
