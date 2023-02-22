@@ -14,14 +14,14 @@ class FieldExtension:
         pass
 
     def resolve(
-        self, next: Callable[..., Any], source: Any, info: Info, **kwargs
+        self, next_: Callable[..., Any], source: Any, info: Info, **kwargs
     ) -> Any:  # pragma: no cover
         raise NotImplementedError(
             "Sync Resolve is not supported for this Field Extension"
         )
 
     async def resolve_async(
-        self, next: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
+        self, next_: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
     ) -> Any:  # pragma: no cover
         raise NotImplementedError(
             "Async Resolve is not supported for this Field Extension"
@@ -41,9 +41,9 @@ class SyncToAsyncExtension(FieldExtension):
     Applied automatically"""
 
     async def resolve_async(
-        self, next: Callable[..., Any], source: Any, info: Info, **kwargs
+        self, next_: Callable[..., Any], source: Any, info: Info, **kwargs
     ) -> Any:
-        return next(source, info, **kwargs)
+        return next_(source, info, **kwargs)
 
 
 def ensure_field_extension_compatibility(field: StrawberryField) -> bool:
