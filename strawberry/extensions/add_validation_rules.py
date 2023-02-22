@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Type
+from typing import TYPE_CHECKING, Iterator, List, Type
 
 from strawberry.extensions.base_extension import Extension
 
@@ -41,7 +41,8 @@ class AddValidationRules(Extension):
     def __init__(self, validation_rules: List[Type[ASTValidationRule]]):
         self.validation_rules = validation_rules
 
-    def on_request_start(self) -> None:
+    def on_operation(self) -> Iterator[None]:
         self.execution_context.validation_rules = (
             self.execution_context.validation_rules + tuple(self.validation_rules)
         )
+        yield
