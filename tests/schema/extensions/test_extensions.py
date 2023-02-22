@@ -916,3 +916,24 @@ async def test_extension_can_set_query_async():
 
     assert not result.errors
     assert result.data == {"hi": "👋"}
+
+
+def test_raise_if_hook_is_not_callable():
+    class MyExtension(Extension):
+        on_operation = "ABC"  # type: ignore
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hi(self) -> str:
+            return "👋"
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+
+    # Query not set on input
+    query = "{ hi }"
+
+    with pytest.raises(
+        ValueError, match="Hook on_operation on <(.*)> must be callable, received 'ABC'"
+    ):
+        schema.execute_sync(query)

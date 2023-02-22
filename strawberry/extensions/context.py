@@ -64,7 +64,7 @@ class ExtensionContextManagerBase:
         hook_fn = hook_fn if hook_fn is not self.default_hook else None
         if is_legacy and hook_fn is not None:
             raise ValueError(
-                f"{Extension} defines both legacy and new style extension hooks for "
+                f"{extension} defines both legacy and new style extension hooks for "
                 "{self.HOOK_NAME}"
             )
         elif is_legacy:
@@ -75,11 +75,16 @@ class ExtensionContextManagerBase:
             if inspect.isgeneratorfunction(hook_fn):
                 return WrappedHook(extension, hook_fn(extension), False)
 
-            elif inspect.isasyncgenfunction(hook_fn):
+            if inspect.isasyncgenfunction(hook_fn):
                 return WrappedHook(extension, hook_fn(extension), True)
 
-            elif callable(hook_fn):
+            if callable(hook_fn):
                 return self.from_callable(extension, hook_fn)
+
+            raise ValueError(
+                f"Hook {self.HOOK_NAME} on {extension} "
+                f"must be callable, received {hook_fn!r}"
+            )
 
         return None  # Current extension does not define a hook for this lifecycle stage
 
