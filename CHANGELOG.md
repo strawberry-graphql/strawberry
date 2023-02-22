@@ -1,6 +1,37 @@
 CHANGELOG
 =========
 
+0.159.0 - 2023-02-22
+--------------------
+
+This release changes how extension hooks are defined. The new style hooks are
+more flexible and allow to run code before and after the execution.
+
+The old style hooks are still supported but will be removed in future releases.
+
+**Before:**
+
+```python
+def on_executing_start(self):  # Called before the execution start
+    ...
+
+
+def on_executing_end(self):  # Called after the execution ends
+    ...
+```
+
+**After**
+
+```python
+def on_execute(self):
+    #  This part is called before the execution start
+    yield
+    #  This part is called after the execution ends
+```
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #2428](https://github.com/strawberry-graphql/strawberry/pull/2428/)
+
+
 0.158.2 - 2023-02-21
 --------------------
 
