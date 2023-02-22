@@ -191,7 +191,7 @@ class DefaultSchemaQuery:
     query: str
 
 
-class TestAbleExtension(Extension):
+class ExampleExtension(Extension):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         cls.called_hooks = set()
@@ -241,8 +241,8 @@ def test_can_initialize_extension(default_query_types_and_query):
 
 
 @pytest.fixture()
-def async_extension() -> Type[TestAbleExtension]:
-    class MyExtension(TestAbleExtension):
+def async_extension() -> Type[ExampleExtension]:
+    class MyExtension(ExampleExtension):
         async def on_operation(self):
             self.called_hooks.add(1)
             yield
@@ -275,8 +275,8 @@ def async_extension() -> Type[TestAbleExtension]:
 
 
 @pytest.fixture()
-def sync_extension() -> Type[TestAbleExtension]:
-    class MyExtension(TestAbleExtension):
+def sync_extension() -> Type[ExampleExtension]:
+    class MyExtension(ExampleExtension):
         def on_operation(self):
             self.called_hooks.add(1)
             yield
@@ -362,7 +362,7 @@ async def test_execution_order(default_query_types_and_query):
         yield
         called_hooks.append(f"{klass.__name__}, {hook_name} Exited")
 
-    class ExtensionA(TestAbleExtension):
+    class ExtensionA(ExampleExtension):
         async def on_operation(self):
             with register_hook(Extension.on_operation.__name__, ExtensionA):
                 yield
@@ -379,7 +379,7 @@ async def test_execution_order(default_query_types_and_query):
             with register_hook(Extension.on_execute.__name__, ExtensionA):
                 yield
 
-    class ExtensionB(TestAbleExtension):
+    class ExtensionB(ExampleExtension):
         async def on_operation(self):
             with register_hook(Extension.on_operation.__name__, ExtensionB):
                 yield
@@ -437,7 +437,7 @@ async def test_sync_extension_hooks(default_query_types_and_query, sync_extensio
 
 
 async def test_extension_no_yield(default_query_types_and_query):
-    class SyncExt(TestAbleExtension):
+    class SyncExt(ExampleExtension):
         expected = {1, 2}
 
         def on_operation(self):
@@ -474,7 +474,7 @@ def test_raise_if_defined_both_legacy_and_new_style(default_query_types_and_quer
 async def test_legacy_extension_supported():
     with warnings.catch_warnings(record=True) as w:
 
-        class CompatExtension(TestAbleExtension):
+        class CompatExtension(ExampleExtension):
             expected = {1, 2, 3, 4, 5, 6, 7, 8}
 
             async def on_request_start(self):
@@ -873,8 +873,9 @@ def test_extend_error_format_example():
 
 def test_extension_can_set_query():
     class MyExtension(Extension):
-        def on_request_start(self):
+        def on_operation(self):
             self.execution_context.query = "{ hi }"
+            yield
 
     @strawberry.type
     class Query:
