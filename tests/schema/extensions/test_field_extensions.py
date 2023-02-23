@@ -114,7 +114,7 @@ def test_fail_cannot_use_async_before_sync_extensions():
     # LowerCaseExtension should work just fine because it's sync
     msg = (
         "Query fields cannot be resolved. Cannot mix async-only extension(s) "
-        "UpperCaseExtension with sync-only extension(s) "
+        "AsyncUpperCaseExtension with sync-only extension(s) "
         "LowerCaseExtension on Field string. "
         "If possible try to change the execution order so that all sync-only "
         "extensions are executed first."
