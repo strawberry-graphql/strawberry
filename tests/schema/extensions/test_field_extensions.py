@@ -1,19 +1,50 @@
 import re
-from typing import Any, Awaitable, Callable
+from typing import Any, Callable
 
 import pytest
 
 import strawberry
-from strawberry.extensions.field_extension import FieldExtension
+from strawberry.extensions.field_extension import (
+    AsyncExtensionResolver,
+    FieldExtension,
+    SyncExtensionResolver,
+)
 from strawberry.types import Info
 
 
-def test_extension_argument_modification():
-    class UpperCaseExtension(FieldExtension):
-        def resolve(self, next: Callable[..., Any], source: Any, info: Info, **kwargs):
-            result = next(source, info, **kwargs)
-            return str(result).upper()
+class UpperCaseExtension(FieldExtension):
+    def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+        result = next_(source, info, **kwargs)
+        return str(result).upper()
 
+
+class LowerCaseExtension(FieldExtension):
+    def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+        result = next_(source, info, **kwargs)
+        return str(result).lower()
+
+
+class AsyncUpperCaseExtension(FieldExtension):
+    async def resolve_async(
+        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs
+    ):
+        result = await next_(source, info, **kwargs)
+        return str(result).upper()
+
+
+class IdentityExtension(FieldExtension):
+    def resolve(
+        self, next_: SyncExtensionResolver, source: Any, info: Info, **kwargs
+    ) -> Any:
+        return next_(source, info, **kwargs)
+
+    async def resolve_async(
+        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs
+    ) -> Any:
+        return await next_(source, info, **kwargs)
+
+
+def test_extension_argument_modification():
     @strawberry.type
     class Query:
         @strawberry.field(extensions=[UpperCaseExtension()])
@@ -29,11 +60,6 @@ def test_extension_argument_modification():
 
 
 def test_extension_result_modification_sync():
-    class UpperCaseExtension(FieldExtension):
-        def resolve(self, next: Callable[..., Any], source: Any, info: Info, **kwargs):
-            result = next(source, info, **kwargs)
-            return str(result).upper()
-
     @strawberry.type
     class Query:
         @strawberry.field(extensions=[UpperCaseExtension()])
@@ -49,16 +75,9 @@ def test_extension_result_modification_sync():
 
 
 async def test_async_extension_on_sync_resolver():
-    class UpperCaseExtension(FieldExtension):
-        async def resolve_async(
-            self, next: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
-        ):
-            result = await next(source, info, **kwargs)
-            return str(result).upper()
-
     @strawberry.type
     class Query:
-        @strawberry.field(extensions=[UpperCaseExtension()])
+        @strawberry.field(extensions=[AsyncUpperCaseExtension()])
         def string(self) -> str:
             return "This is a test!!"
 
@@ -71,16 +90,9 @@ async def test_async_extension_on_sync_resolver():
 
 
 async def test_extension_result_modification_async():
-    class UpperCaseExtension(FieldExtension):
-        async def resolve_async(
-            self, next: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
-        ):
-            result = await next(source, info, **kwargs)
-            return str(result).upper()
-
     @strawberry.type
     class Query:
-        @strawberry.field(extensions=[UpperCaseExtension()])
+        @strawberry.field(extensions=[AsyncUpperCaseExtension()])
         async def string(self) -> str:
             return "This is a test!!"
 
@@ -92,22 +104,10 @@ async def test_extension_result_modification_async():
     assert result.data["string"] == "THIS IS A TEST!!"
 
 
-def test_fail_cannot_mix_async_and_sync_extensions():
-    class LowerCaseExtension(FieldExtension):
-        def resolve(self, next: Callable[..., Any], source: Any, info: Info, **kwargs):
-            result = next(source, info, **kwargs)
-            return str(result).lower()
-
-    class UpperCaseExtension(FieldExtension):
-        async def resolve_async(
-            self, next: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
-        ):
-            result = await next(source, info, **kwargs)
-            return str(result).upper()
-
+def test_fail_cannot_use_async_before_sync_extensions():
     @strawberry.type
     class Query:
-        @strawberry.field(extensions=[UpperCaseExtension(), LowerCaseExtension()])
+        @strawberry.field(extensions=[AsyncUpperCaseExtension(), LowerCaseExtension()])
         def string(self) -> str:
             return "This is a test!!"
 
@@ -115,23 +115,66 @@ def test_fail_cannot_mix_async_and_sync_extensions():
     msg = (
         "Query fields cannot be resolved. Cannot mix async-only extension(s) "
         "UpperCaseExtension with sync-only extension(s) "
-        "LowerCaseExtension on Field string."
+        "LowerCaseExtension on Field string. "
+        "If possible try to change the execution order so that all sync-only "
+        "extensions are executed first."
     )
     with pytest.raises(TypeError, match=re.escape(msg)):
         strawberry.Schema(query=Query)
 
 
+async def test_can_use_sync_before_async_extensions():
+    @strawberry.type
+    class Query:
+        @strawberry.field(extensions=[LowerCaseExtension(), AsyncUpperCaseExtension()])
+        def string(self) -> str:
+            return "This is a test!!"
+
+    schema = strawberry.Schema(query=Query)
+    query = "query { string }"
+
+    result = await schema.execute(query)
+    # The result should be lowercase because that is the last extension in the chain
+    assert result.data["string"] == "THIS IS A TEST!!"
+
+
+async def test_can_use_sync_only_and_sync_before_async_extensions():
+    """
+    Use Sync - Sync + Async - Sync - Async possible
+    """
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(
+            extensions=[
+                LowerCaseExtension(),
+                IdentityExtension(),
+                LowerCaseExtension(),
+                AsyncUpperCaseExtension(),
+            ]
+        )
+        def string(self) -> str:
+            return "This is a test!!"
+
+    schema = strawberry.Schema(query=Query)
+    query = "query { string }"
+
+    result = await schema.execute(query)
+    # The result should be lowercase because that is the last extension in the chain
+    assert result.data["string"] == "THIS IS A TEST!!"
+
+
 def test_fail_on_missing_async_extensions():
     class LowerCaseExtension(FieldExtension):
-        def resolve(self, next: Callable[..., Any], source: Any, info: Info, **kwargs):
-            result = next(source, info, **kwargs)
+        def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+            result = next_(source, info, **kwargs)
             return str(result).lower()
 
     class UpperCaseExtension(FieldExtension):
         async def resolve_async(
-            self, next: Callable[..., Any], source: Any, info: Info, **kwargs
+            self, next_: Callable[..., Any], source: Any, info: Info, **kwargs
         ):
-            result = await next(source, info, **kwargs)
+            result = await next_(source, info, **kwargs)
             return str(result).upper()
 
     @strawberry.type
@@ -152,13 +195,13 @@ def test_fail_on_missing_async_extensions():
 
 def test_extension_order_respected():
     class LowerCaseExtension(FieldExtension):
-        def resolve(self, next: Callable[..., Any], source: Any, info: Info, **kwargs):
-            result = next(source, info, **kwargs)
+        def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+            result = next_(source, info, **kwargs)
             return str(result).lower()
 
     class UpperCaseExtension(FieldExtension):
-        def resolve(self, next: Callable[..., Any], source: Any, info: Info, **kwargs):
-            result = next(source, info, **kwargs)
+        def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+            result = next_(source, info, **kwargs)
             return str(result).upper()
 
     @strawberry.type

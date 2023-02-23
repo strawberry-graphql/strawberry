@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Awaitable, Callable
+import itertools
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Union
 
 from strawberry.utils.cached_property import cached_property
 
@@ -8,20 +9,23 @@ if TYPE_CHECKING:
     from strawberry.field import StrawberryField
     from strawberry.types import Info
 
+SyncExtensionResolver = Callable[..., Any]
+AsyncExtensionResolver = Callable[..., Awaitable[Any]]
+
 
 class FieldExtension:
     def apply(self, field: StrawberryField) -> None:  # pragma: no cover
         pass
 
     def resolve(
-        self, next_: Callable[..., Any], source: Any, info: Info, **kwargs
+        self, next_: SyncExtensionResolver, source: Any, info: Info, **kwargs
     ) -> Any:  # pragma: no cover
         raise NotImplementedError(
             "Sync Resolve is not supported for this Field Extension"
         )
 
     async def resolve_async(
-        self, next_: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
+        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs
     ) -> Any:  # pragma: no cover
         raise NotImplementedError(
             "Async Resolve is not supported for this Field Extension"
@@ -41,12 +45,26 @@ class SyncToAsyncExtension(FieldExtension):
     Applied automatically"""
 
     async def resolve_async(
-        self, next_: Callable[..., Any], source: Any, info: Info, **kwargs
+        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs
     ) -> Any:
         return next_(source, info, **kwargs)
 
 
-def ensure_field_extension_compatibility(field: StrawberryField) -> bool:
+def _get_sync_resolvers(
+    extensions: list[FieldExtension],
+) -> list[SyncExtensionResolver]:
+    return [extension.resolve for extension in extensions]
+
+
+def _get_async_resolvers(
+    extensions: list[FieldExtension],
+) -> list[AsyncExtensionResolver]:
+    return [extension.resolve_async for extension in extensions]
+
+
+def build_field_extension_resolvers(
+    field: StrawberryField,
+) -> list[Union[SyncExtensionResolver, AsyncExtensionResolver]]:
     """
     Verifies that all of the field extensions for a given field support
     sync or async depending on the field resolver.
@@ -58,7 +76,7 @@ def ensure_field_extension_compatibility(field: StrawberryField) -> bool:
     based on the resolver and extensions
     """
     if not field.extensions or not len(field.extensions):
-        return field.is_async  # pragma: no cover
+        return []  # pragma: no cover
 
     non_async_extensions = [
         extension for extension in field.extensions if not extension.supports_async
@@ -74,7 +92,7 @@ def ensure_field_extension_compatibility(field: StrawberryField) -> bool:
                 f"to the async resolver of Field {field.name}. "
                 f"Please add a resolve_async method to the extension(s)."
             )
-        return True
+        return _get_async_resolvers(field.extensions)
     else:
         # Try to wrap all sync resolvers in async so that we can use async extensions
         # on sync fields. This is not possible the other way around since
@@ -86,20 +104,48 @@ def ensure_field_extension_compatibility(field: StrawberryField) -> bool:
         ]
 
         if len(non_sync_extensions) == 0:
-            return False
+            # Resolve everything sync
+            return _get_sync_resolvers(field.extensions)
 
         # We have async-only extensions and need to wrap the resolver
-        # That means we can't have sync-only extensions anymore
-        if len(non_async_extensions) > 0:
-            async_extension_names = ",".join(
-                [extension.__class__.__name__ for extension in non_sync_extensions]
-            )
-            raise TypeError(
-                f"Cannot mix async-only extension(s) {async_extension_names} "
-                f"with sync-only extension(s) {non_async_extension_names} "
-                f"on Field {field.name}."
+        # That means we can't have sync-only extensions after the first async one
+
+        # Check if we have a chain of sync-compatible
+        # extensions before the async extensions
+        # -> S-S-S-S-A-A-A-A
+        found_sync_extensions = 0
+
+        # All sync only extensions must be found before the first async-only one
+        found_sync_only_extensions = 0
+        for extension in field.extensions:
+            # ...A, abort
+            if extension in non_sync_extensions:
+                break
+            # ...S
+            if extension in non_async_extensions:
+                found_sync_only_extensions += 1
+            found_sync_extensions += 1
+
+        # Length of the chain equals length of non async extensions
+        # All sync extensions run first
+        if len(non_async_extensions) == found_sync_only_extensions:
+            # Prepend sync to async extension to field extensions
+            return list(
+                itertools.chain(
+                    _get_sync_resolvers(field.extensions[:found_sync_extensions]),
+                    [SyncToAsyncExtension().resolve_async],
+                    _get_async_resolvers(field.extensions[found_sync_extensions:]),
+                )
             )
 
-        # Prepend sync to async extension to field extensions
-        field.extensions.insert(0, SyncToAsyncExtension())
-        return True
+        # Some sync extensions follow the first async-only extension. Error case
+        async_extension_names = ",".join(
+            [extension.__class__.__name__ for extension in non_sync_extensions]
+        )
+        raise TypeError(
+            f"Cannot mix async-only extension(s) {async_extension_names} "
+            f"with sync-only extension(s) {non_async_extension_names} "
+            f"on Field {field.name}. "
+            f"If possible try to change the execution order so that all sync-only "
+            f"extensions are executed first."
+        )
