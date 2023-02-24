@@ -6,7 +6,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Awaitable,
-    Callable,
     List,
     Optional,
     Type,
@@ -17,12 +16,17 @@ from typing import (
 from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.extensions import FieldExtension
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
+from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.utils.await_maybe import await_maybe
 from strawberry.utils.cached_property import cached_property
 
 if TYPE_CHECKING:
     from graphql import GraphQLError, GraphQLErrorExtensions
 
+    from strawberry.extensions.field_extension import (
+        AsyncExtensionResolver,
+        SyncExtensionResolver,
+    )
     from strawberry.field import StrawberryField
     from strawberry.types import Info
 
@@ -48,7 +52,7 @@ class BasePermission(abc.ABC):
             "Permission classes should override has_permission method"
         )
 
-    def get_error(self) -> GraphQLError:
+    def handle_no_permission(self) -> None:
         """
         Default error raising for permissions.
         This can be overridden to customize the behavior.
@@ -63,7 +67,7 @@ class BasePermission(abc.ABC):
                 error.extensions = dict()
             error.extensions.update(self.error_extensions)
 
-        return error
+        raise error
 
     @property
     def schema_directive(self) -> Optional[StrawberrySchemaDirective]:
@@ -78,17 +82,52 @@ class BasePermission(abc.ABC):
 
 
 class PermissionExtension(FieldExtension):
-    def __init__(self, permissions: List[BasePermission]):
-        self.permissions = permissions
+    """
+    Handles permissions for a field
+    Instantiate this as a field extension with all of the permissions you want to apply
 
-    def apply(self, field: StrawberryField) -> None:  # nocov
+    fail_silently: bool = False will return None or [] if the permission fails
+    instead of raising an exception. This is only valid for optional or list fields.
+
+    NOTE:
+    Currently, this is automatically added to the field, when using
+    field.permission_classes
+    This is deprecated behavior, please manually add the extension to field.extensions
+    """
+
+    def __init__(self, permissions: List[BasePermission], fail_silently: bool = False):
+        self.permissions = permissions
+        self.fail_silently = fail_silently
+        self.return_empty_list = False
+
+    def apply(self, field: StrawberryField) -> None:
         """Applies all of the permission directives to the schema"""
         for permission in self.permissions:
             if permission.schema_directive:
                 cast(List, field.directives).append(permission.schema_directive)
+        # We can only fail silently if the field is optional or a list
+        if self.fail_silently:
+            if isinstance(field.type, StrawberryOptional):
+                if isinstance(field.type.of_type, StrawberryList):
+                    self.return_empty_list = True
+            elif isinstance(field.type, StrawberryList):
+                self.return_empty_list = True
+            else:
+                raise Exception(
+                    "Cannot use fail_silently=True with a non-optional "
+                    "or non-list field"
+                )
+
+    def _handle_no_permission(self, permission: BasePermission) -> Any:
+        if self.fail_silently:
+            if self.return_empty_list:
+                return []
+            else:
+                return None
+        return permission.handle_no_permission()
 
     def resolve(
-        self, next: Callable[..., Any], source: Any, info: Info, **kwargs
+        self, next_: SyncExtensionResolver, source: Any, info: Info, **kwargs
     ) -> Any:
         """
         Checks if the permission should be accepted and
@@ -96,22 +135,20 @@ class PermissionExtension(FieldExtension):
         """
         for permission in self.permissions:
             if not permission.has_permission(source, info, **kwargs):
-                raise permission.get_error()
-        return next(source, info, **kwargs)
+                return self._handle_no_permission(permission)
+        return next_(source, info, **kwargs)
 
     async def resolve_async(
-        self, next: Callable[..., Any], source: Any, info: Info, **kwargs
+        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs
     ) -> Any:
         for permission in self.permissions:
-            has_permission: bool
-
             has_permission = await await_maybe(
                 permission.has_permission(source, info, **kwargs)
             )
 
             if not has_permission:
-                raise permission.get_error()
-        return await next(source, info, **kwargs)
+                return self._handle_no_permission(permission)
+        return await next_(source, info, **kwargs)
 
     @cached_property
     def supports_sync(self) -> bool:

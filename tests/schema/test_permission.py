@@ -1,10 +1,12 @@
 import re
 import typing
+from typing import List, Optional
 
 import pytest
 
 import strawberry
-from strawberry.permission import BasePermission
+from strawberry.exceptions import StrawberryGraphQLError
+from strawberry.permission import BasePermission, PermissionExtension
 from strawberry.types import Info
 
 
@@ -335,3 +337,145 @@ async def test_mixed_sync_and_async_permission_classes():
     context = {"passAsync": True, "passSync": True}
     result = await schema.execute(query, context_value=context)
     assert result.data["user"]["email"] == "patrick.arminio@gmail.com"
+
+
+def test_permissions_with_custom_extensions():
+    class IsAuthorized(BasePermission):
+        message = "User is not authorized"
+        error_extensions = {"code": "UNAUTHORIZED"}
+
+        def has_permission(self, source, info, **kwargs) -> bool:
+            return False
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(permission_classes=[IsAuthorized])
+        def name(self) -> str:
+            return "ABC"
+
+    schema = strawberry.Schema(query=Query)
+    query = "{ name }"
+
+    result = schema.execute_sync(query)
+    assert result.errors[0].message == "User is not authorized"
+    assert result.errors[0].extensions
+    assert result.errors[0].extensions["code"] == "UNAUTHORIZED"
+
+
+def test_permissions_with_custom_extensions_on_custom_error():
+    class CustomError(StrawberryGraphQLError):
+        def __init__(self, message: str):
+            super().__init__(message, extensions={"general_info": "CUSTOM_ERROR"})
+
+    class IsAuthorized(BasePermission):
+        message = "User is not authorized"
+        error_class = CustomError
+        error_extensions = {"code": "UNAUTHORIZED"}
+
+        def has_permission(self, source, info, **kwargs) -> bool:
+            return False
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(permission_classes=[IsAuthorized])
+        def name(self) -> str:
+            return "ABC"
+
+    schema = strawberry.Schema(query=Query)
+    query = "{ name }"
+
+    result = schema.execute_sync(query)
+
+    assert result.errors[0].message == "User is not authorized"
+    assert result.errors[0].extensions
+    assert result.errors[0].extensions["code"] == "UNAUTHORIZED"
+    assert result.errors[0].extensions["general_info"] == "CUSTOM_ERROR"
+
+
+def test_silent_permissions_optional():
+    class IsAuthorized(BasePermission):
+        message = "User is not authorized"
+
+        def has_permission(self, source, info, **kwargs) -> bool:
+            return False
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(
+            extensions=[PermissionExtension([IsAuthorized()], fail_silently=True)]
+        )
+        def name(self) -> Optional[str]:
+            return "ABC"
+
+    schema = strawberry.Schema(query=Query)
+    query = "{ name }"
+    result = schema.execute_sync(query)
+
+    assert result.data["name"] is None
+    assert result.errors is None
+
+
+def test_silent_permissions_optional_list():
+    class IsAuthorized(BasePermission):
+        message = "User is not authorized"
+
+        def has_permission(self, source, info, **kwargs) -> bool:
+            return False
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(
+            extensions=[PermissionExtension([IsAuthorized()], fail_silently=True)]
+        )
+        def names(self) -> Optional[List[str]]:
+            return ["ABC"]
+
+    schema = strawberry.Schema(query=Query)
+    query = "{ names }"
+    result = schema.execute_sync(query)
+
+    assert result.data["names"] == []
+    assert result.errors is None
+
+
+def test_silent_permissions_list():
+    class IsAuthorized(BasePermission):
+        message = "User is not authorized"
+
+        def has_permission(self, source, info, **kwargs) -> bool:
+            return False
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(
+            extensions=[PermissionExtension([IsAuthorized()], fail_silently=True)]
+        )
+        def names(self) -> Optional[List[str]]:
+            return ["ABC"]
+
+    schema = strawberry.Schema(query=Query)
+    query = "{ names }"
+    result = schema.execute_sync(query)
+
+    assert result.data["names"] == []
+    assert result.errors is None
+
+
+def test_silent_permissions_incompatible_types():
+    class IsAuthorized(BasePermission):
+        message = "User is not authorized"
+
+        def has_permission(self, source, info, **kwargs) -> bool:
+            return False
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(
+            extensions=[PermissionExtension([IsAuthorized()], fail_silently=True)]
+        )
+        def name(self) -> str:
+            return "ABC"
+
+    error = re.escape(
+        "Cannot use fail_silently=True with a non-optional " "or non-list field"
+    )
