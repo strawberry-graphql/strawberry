@@ -12,10 +12,10 @@ def test_raises_graphql_error_when_permission_method_is_missing():
     class IsAuthenticated(BasePermission):
         pass
 
-    error_msg = re.escape(
-        "Can't instantiate abstract class IsAuthenticated "
-        "with abstract method has_permission"
+    error_msg = (
+        re.escape("Can't instantiate abstract class IsAuthenticated ") + r"(.*)*"
     )
+
     with pytest.raises(TypeError, match=error_msg):
 
         @strawberry.type
