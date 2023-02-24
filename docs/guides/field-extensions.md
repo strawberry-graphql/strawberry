@@ -149,9 +149,7 @@ from strawberry.extensions import FieldExtension
 
 
 class UpperCaseExtension(FieldExtension):
-    def resolve(
-        self, next: Callable[...,Any], source: Any, info: Info, **kwargs
-    ):
+    def resolve(self, next: Callable[..., Any], source: Any, info: Info, **kwargs):
         result = next(source, info, **kwargs)
         return str(result).upper()
 
