@@ -80,7 +80,6 @@ if TYPE_CHECKING:
         GraphQLOutputType,
         GraphQLResolveInfo,
         GraphQLScalarType,
-        ValueNode,
     )
 
     from strawberry.custom_scalar import ScalarDefinition
@@ -439,6 +438,8 @@ class GraphQLCoreConverter:
                 if isinstance(obj, interface.origin):
                     return obj._type_definition.name
                 else:
+                    # Revert to calling is_type_of for cases where a direct subclass
+                    # of the interface is not returned (i.e. an ORM object)
                     return default_type_resolver(obj, info, abstract_type)
 
             return resolve_type
