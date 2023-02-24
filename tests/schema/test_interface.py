@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import Any, List
 
 import pytest
 from pytest_mock import MockerFixture
@@ -43,6 +43,7 @@ def test_query_interface():
     result = schema.execute_sync(query)
 
     assert not result.errors
+    assert result.data is not None
     assert result.data["assortment"] == [
         {"name": "Asiago", "province": "Friuli"},
         {"canton": "Vaud", "name": "Tomme"},
@@ -93,6 +94,7 @@ def test_interfaces_can_implement_other_interfaces():
     result = schema.execute_sync(query)
 
     assert not result.errors
+    assert result.data is not None
     assert result.data["alwaysError"] == {
         "message": "Password Too Short",
         "field": "Password",
@@ -110,7 +112,7 @@ def test_interface_duck_typing():
         name: str
 
         @classmethod
-        def is_type_of(cls, obj, _info) -> bool:
+        def is_type_of(cls, obj: Any, _) -> bool:
             return isinstance(obj, AnimeORM)
 
     @dataclass
@@ -121,19 +123,19 @@ def test_interface_duck_typing():
     @strawberry.type
     class Query:
         @strawberry.field
-        def anime(self) -> Anime:
+        def anime(self) -> Entity:
             return AnimeORM(id=1, name="One Piece")  # type: ignore
 
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(query=Query, types=[Anime])
 
     query = """{
-        anime { name }
+        anime { id ... on Anime { name } }
     }"""
 
     result = schema.execute_sync(query)
 
     assert not result.errors
-    assert result.data == {"anime": {"name": "One Piece"}}
+    assert result.data == {"anime": {"id": 1, "name": "One Piece"}}
 
 
 def test_interface_explicit_type_resolution():
@@ -151,7 +153,7 @@ def test_interface_explicit_type_resolution():
         name: str
 
         @classmethod
-        def is_type_of(cls, obj, _info) -> bool:
+        def is_type_of(cls, obj: Any, _) -> bool:
             return isinstance(obj, AnimeORM)
 
     @strawberry.type
@@ -162,11 +164,17 @@ def test_interface_explicit_type_resolution():
 
     schema = strawberry.Schema(query=Query, types=[Anime])
 
-    query = "{ node { __typename, id } }"
+    query = "{ node { __typename, id ... on Anime { name }} }"
     result = schema.execute_sync(query)
 
     assert not result.errors
-    assert result.data == {"node": {"__typename": "Anime", "id": 1}}
+    assert result.data == {
+        "node": {
+            "__typename": "Anime",
+            "id": 1,
+            "name": "One Piece",
+        }
+    }
 
 
 @pytest.mark.xfail(reason="We don't support returning dictionaries yet")
@@ -177,11 +185,6 @@ def test_interface_duck_typing_returning_dict():
 
     @strawberry.type
     class Anime(Entity):
-        name: str
-
-    @dataclass
-    class AnimeORM:
-        id: int
         name: str
 
     @strawberry.type
@@ -258,7 +261,7 @@ def test_interface_resolve_type(mocker: MockerFixture):
 
     class IsTypeOfTester:
         @classmethod
-        def is_type_of(cls, obj, _info) -> bool:
+        def is_type_of(cls, obj: Any, _) -> bool:
             return isinstance(obj, cls)
 
     spy_is_type_of = mocker.spy(IsTypeOfTester, "is_type_of")
@@ -276,7 +279,7 @@ def test_interface_resolve_type(mocker: MockerFixture):
         title: str
 
         @classmethod
-        def is_type_of(cls, obj, _info) -> bool:
+        def is_type_of(cls, *_) -> bool:
             raise RuntimeError("Movie.is_type_of shouldn't have been called")
 
     @strawberry.type
@@ -300,7 +303,7 @@ def test_interface_specialized_resolve_type(mocker: MockerFixture):
 
     class InterfaceTester:
         @classmethod
-        def resolve_type(cls, obj, *args) -> str:
+        def resolve_type(cls, obj: Any, *_) -> str:
             return obj._type_definition.name
 
     spy_resolve_type = mocker.spy(InterfaceTester, "resolve_type")
@@ -333,12 +336,12 @@ async def test_derived_interface(mocker: MockerFixture):
 
     class NodeInterfaceTester:
         @classmethod
-        def resolve_type(cls, obj, *args) -> str:
+        def resolve_type(cls, obj: Any, *_) -> str:
             return obj._type_definition.name
 
     class NamedNodeInterfaceTester:
         @classmethod
-        def resolve_type(cls, obj, *args) -> str:
+        def resolve_type(cls, obj: Any, *_) -> str:
             return obj._type_definition.name
 
     spy_node_resolve_type = mocker.spy(NodeInterfaceTester, "resolve_type")
@@ -368,5 +371,6 @@ async def test_derived_interface(mocker: MockerFixture):
     assert not result.errors
     assert result.data == {"friends": [{"name": "foo"}, {"name": "bar"}]}
 
+    assert result.data is not None
     assert spy_named_node_resolve_type.call_count == len(result.data["friends"])
     spy_node_resolve_type.assert_not_called()
