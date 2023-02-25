@@ -69,7 +69,7 @@ class BasePermission(abc.ABC):
         raise error
 
     @property
-    def schema_directive(self) -> Optional[StrawberrySchemaDirective]:
+    def schema_directive(self) -> object:
         if not self._schema_directive:
 
             class AutoDirective:
