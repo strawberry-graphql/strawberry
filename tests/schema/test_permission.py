@@ -1,4 +1,5 @@
 import re
+import textwrap
 import typing
 from typing import List, Optional
 
@@ -7,6 +8,7 @@ import pytest
 import strawberry
 from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.permission import BasePermission, PermissionExtension
+from strawberry.printer import print_schema
 from strawberry.types import Info
 
 
@@ -479,3 +481,51 @@ def test_silent_permissions_incompatible_types():
     error = re.escape(
         "Cannot use fail_silently=True with a non-optional " "or non-list field"
     )
+
+
+def test_permission_directives_added():
+    class IsAuthorized(BasePermission):
+        message = "User is not authorized"
+
+        def has_permission(self, source, info, **kwargs) -> bool:
+            return False
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(extensions=[PermissionExtension([IsAuthorized()])])
+        def name(self) -> str:
+            return "ABC"
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_output = """
+    directive @isAuthorized on FIELD_DEFINITION
+
+    type Query {
+      name: String! @isAuthorized
+    }
+    """
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_permission_directives_not_added_on_field():
+    class IsAuthorized(BasePermission):
+        message = "User is not authorized"
+
+        def has_permission(self, source, info, **kwargs) -> bool:
+            return False
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(permission_classes=[IsAuthorized])
+        def name(self) -> str:
+            return "ABC"
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_output = """
+    type Query {
+      name: String!
+    }
+    """
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()

@@ -10,7 +10,6 @@ from typing import (
     Optional,
     Type,
     Union,
-    cast,
 )
 
 from strawberry.exceptions import StrawberryGraphQLError
@@ -42,7 +41,7 @@ class BasePermission(abc.ABC):
 
     error_class: Type[GraphQLError] = StrawberryGraphQLError
 
-    _schema_directive: Optional[StrawberrySchemaDirective] = None
+    _schema_directive: Optional[object] = None
 
     @abc.abstractmethod
     def has_permission(
@@ -72,12 +71,17 @@ class BasePermission(abc.ABC):
     @property
     def schema_directive(self) -> Optional[StrawberrySchemaDirective]:
         if not self._schema_directive:
-            self._schema_directive = StrawberrySchemaDirective(
-                self.__class__.__name__,
-                self.__class__.__name__,
-                [Location.FIELD_DEFINITION],
-                [],
-            )
+
+            class AutoDirective:
+                __strawberry_directive__ = StrawberrySchemaDirective(
+                    self.__class__.__name__,
+                    self.__class__.__name__,
+                    [Location.FIELD_DEFINITION],
+                    [],
+                )
+
+            self._schema_directive = AutoDirective()
+
         return self._schema_directive
 
 
@@ -95,16 +99,26 @@ class PermissionExtension(FieldExtension):
     This is deprecated behavior, please manually add the extension to field.extensions
     """
 
-    def __init__(self, permissions: List[BasePermission], fail_silently: bool = False):
+    def __init__(
+        self,
+        permissions: List[BasePermission],
+        use_directives: bool = True,
+        fail_silently: bool = False,
+    ):
         self.permissions = permissions
         self.fail_silently = fail_silently
         self.return_empty_list = False
+        self.use_directives = use_directives
 
     def apply(self, field: StrawberryField) -> None:
-        """Applies all of the permission directives to the schema"""
-        for permission in self.permissions:
-            if permission.schema_directive:
-                cast(List, field.directives).append(permission.schema_directive)
+        """
+        Applies all of the permission directives to the schema
+        and sets up silent permissions
+        """
+        if self.use_directives:
+            for permission in self.permissions:
+                if permission.schema_directive:
+                    field.directives.append(permission.schema_directive)
         # We can only fail silently if the field is optional or a list
         if self.fail_silently:
             if isinstance(field.type, StrawberryOptional):

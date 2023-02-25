@@ -148,7 +148,9 @@ class StrawberryField(dataclasses.Field):
                 permission_class() for permission_class in permission_classes
             ]
             # Append to make it run first (last is outermost)
-            self.extensions.append(PermissionExtension(permission_instances))
+            self.extensions.append(
+                PermissionExtension(permission_instances, use_directives=False)
+            )
         self.deprecation_reason = deprecation_reason
 
     def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
