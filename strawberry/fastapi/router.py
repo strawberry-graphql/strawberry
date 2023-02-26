@@ -57,7 +57,7 @@ class StrawberryAPIRoute(APIRoute):
     def get_route_handler(self) -> Callable:
         original_route_handler = super().get_route_handler()
 
-        async def strawberry_route_handler(request: Request) -> JSONResponse:
+        async def strawberry_route_handler(request: Request) -> Response:
             try:
                 return await original_route_handler(request)
             except Exception as e:
