@@ -42,7 +42,8 @@ def get_generic_alias(type_: Type) -> Type:
         return type_
 
     for attr_name in dir(typing):
-        if attr_name.startswith("_"):
+        # ignore private attributes, they are not Generic aliases
+        if attr_name.startswith("_"):  # pragma: no cover
             continue
 
         attr = getattr(typing, attr_name)
