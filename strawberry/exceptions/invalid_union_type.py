@@ -37,7 +37,7 @@ class InvalidUnionTypeError(StrawberryException):
                 type_name = invalid_type.__name__  # type: ignore
             except AttributeError:
                 # might be StrawberryList instance
-                type_name = invalid_type.__class__.__name__  # type: ignore
+                type_name = invalid_type.__class__.__name__
 
         self.message = f"Type `{type_name}` cannot be used in a GraphQL Union"
         self.rich_message = (
