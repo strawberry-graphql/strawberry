@@ -1,6 +1,8 @@
 import ast
 import sys
+import typing
 from collections.abc import AsyncGenerator
+from functools import lru_cache
 from typing import (  # type: ignore
     TYPE_CHECKING,
     Any,
@@ -8,17 +10,15 @@ from typing import (  # type: ignore
     ClassVar,
     Dict,
     ForwardRef,
-    FrozenSet,
     Generic,
-    List,
     Optional,
-    Set,
     Tuple,
     Type,
     TypeVar,
     Union,
     _eval_type,
     _GenericAlias,
+    _SpecialForm,
     cast,
     overload,
 )
@@ -34,6 +34,25 @@ if not TYPE_CHECKING and ast_unparse is None:
     import astunparse
 
     ast_unparse = astunparse.unparse
+
+
+@lru_cache()
+def get_generic_alias(type_: Type) -> Type:
+    if isinstance(type_, _SpecialForm):
+        return type_
+
+    for attr_name in dir(typing):
+        if attr_name.startswith("_"):
+            continue
+
+        attr = getattr(typing, attr_name)
+        # _GenericAlias overrides all the methods that we can use to know if
+        # this is a subclass of it. But if it has an "_inst" attribute
+        # then it for sure is a _GenericAlias
+        if hasattr(attr, "_inst") and attr.__origin__ is type_:
+            return attr
+
+    raise AssertionError(f"No GenericAlias available for {type_}")  # pragma: no cover
 
 
 def is_list(annotation: object) -> bool:
@@ -241,25 +260,20 @@ def eval_type(
             if len(args) == 1:
                 return args[0]
 
-        # generic type aliases are only available for python 3.9+, but future
-        # annotations can be used to create them in python 3.7+
-        if sys.version_info < (3, 9):
-            origin = {
-                list: List,
-                dict: Dict,
-                tuple: Tuple,
-                type: Type,
-                set: Set,
-                frozenset: FrozenSet,
-            }.get(origin, origin)
-
         # python 3.10 will return UnionType for origin, and it cannot be
-        # subscribed like Union[Foo, Bar]
+        # subscripted like Union[Foo, Bar]
         if sys.version_info >= (3, 10):
             from types import UnionType
 
             if origin is UnionType:
                 origin = Union
+
+        # Future annotations in older versions will eval generic aliases to their
+        # real types (i.e. List[foo] will have its origin set to list instead
+        # of List). If that type is not subscriptable, retrieve its generic
+        # alias version instead.
+        if sys.version_info < (3, 9) and not hasattr(origin, "__class_getitem__"):
+            origin = get_generic_alias(origin)
 
         type_ = (
             origin[tuple(eval_type(a, globalns, localns) for a in args)]
