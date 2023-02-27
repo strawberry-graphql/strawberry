@@ -4,7 +4,7 @@ import sys
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import ForwardRef, Generic, Optional, Type, TypeVar, cast
+from typing import ForwardRef, Generic, Optional, Type, TypeVar, Union, cast
 
 TypeName = TypeVar("TypeName")
 Module = TypeVar("Module")
@@ -78,8 +78,16 @@ class StrawberryLazyReference:
             assert frame is not None
             self.package = cast(str, frame.f_globals["__package__"])
 
-    def resolve_forward_ref(self, forward_ref: ForwardRef) -> LazyType:
-        return LazyType(forward_ref.__forward_arg__, self.module, self.package)
+    def resolve_forward_ref(self, forward_ref: Union[ForwardRef, str]) -> LazyType:
+        return LazyType(
+            (
+                forward_ref.__forward_arg__
+                if isinstance(forward_ref, ForwardRef)
+                else forward_ref
+            ),
+            self.module,
+            self.package,
+        )
 
 
 def lazy(module_path: str) -> StrawberryLazyReference:

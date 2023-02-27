@@ -15,6 +15,7 @@ from typing import (
     Union,
     cast,
 )
+from typing_extensions import Annotated, get_args, get_origin
 
 from graphql import (
     GraphQLArgument,
@@ -598,6 +599,9 @@ class GraphQLCoreConverter:
             return GraphQLNonNull(self.from_type(type_))
 
     def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
+        if get_origin(type_) is Annotated:
+            type_ = get_args(type_)[0]
+
         if compat.is_generic(type_):
             raise MissingTypesForGenericError(type_)
 

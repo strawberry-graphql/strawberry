@@ -1,16 +1,31 @@
+import ast
 import sys
 from collections.abc import AsyncGenerator
 from typing import (  # type: ignore
     Any,
     Callable,
     ClassVar,
+    Dict,
+    ForwardRef,
     Generic,
+    Optional,
     Tuple,
     Type,
     TypeVar,
     Union,
+    _eval_type,
     _GenericAlias,
+    cast,
+    overload,
 )
+from typing_extensions import Annotated, get_args, get_origin
+
+try:
+    ast_unparse = ast.unparse
+except AttributeError:
+    import astunparse  # type: ignore[import]
+
+    ast_unparse = astunparse.unparse
 
 
 def is_list(annotation: object) -> bool:
@@ -113,6 +128,129 @@ def get_parameters(annotation: Type):
         return annotation.__parameters__
     else:
         return ()  # pragma: no cover
+
+
+@overload
+def _ast_replace_union_operation(expr: ast.expr) -> ast.expr:
+    ...
+
+
+@overload
+def _ast_replace_union_operation(expr: ast.Expr) -> ast.Expr:
+    ...
+
+
+def _ast_replace_union_operation(
+    expr: Union[ast.Expr, ast.expr]
+) -> Union[ast.Expr, ast.expr]:
+    if isinstance(expr, ast.Expr) and isinstance(expr.value, ast.BinOp):
+        expr = ast.Expr(_ast_replace_union_operation(expr.value))
+    elif isinstance(expr, ast.expr):
+        if isinstance(expr, ast.BinOp):
+            left = _ast_replace_union_operation(expr.left)
+            right = _ast_replace_union_operation(expr.right)
+            expr = ast.Subscript(
+                ast.Name(id="Union"),
+                ast.Tuple([left, right], ast.Load()),
+                ast.Load(),
+            )
+        elif isinstance(expr, ast.Subscript):
+            if isinstance(expr.slice, ast.BinOp):
+                expr = ast.Subscript(
+                    expr.value,
+                    _ast_replace_union_operation(expr.slice),
+                    ast.Load(),
+                )
+            elif isinstance(expr.slice, ast.Tuple):
+                expr = ast.Subscript(
+                    expr.value,
+                    ast.Tuple(
+                        [_ast_replace_union_operation(elt) for elt in expr.slice.elts],
+                        ast.Load(),
+                    ),
+                    ast.Load(),
+                )
+
+    return expr
+
+
+def eval_type(
+    type_: Any,
+    globalns: Optional[Dict] = None,
+    localns: Optional[Dict] = None,
+) -> Type:
+    """Evaluates a type, resolving forward references."""
+    from strawberry.auto import StrawberryAuto
+    from strawberry.lazy_type import StrawberryLazyReference
+    from strawberry.private import StrawberryPrivate
+
+    globalns = globalns or {}
+    # If this is not a string, maybe its ares are (e.g. List["Foo"])
+    if isinstance(type_, ForwardRef):
+        parsed = ast.parse(type_.__forward_arg__).body[0]
+        # For Python 3.10+, we can use the built-in _eval_type function directly.
+        # It will handle "|" notations properly
+        if sys.version_info < (3, 10):
+            parsed = _ast_replace_union_operation(cast(ast.Expr, parsed))
+            # We replaced "a | b" with "Union[a, b], so make sure Union can be resolved
+            # at globalns because it may not be there
+            if "Union" not in globalns:
+                globalns["Union"] = Union
+
+        type_ = ast_unparse(parsed)
+
+        retval = _eval_type(ForwardRef(type_), globalns, localns)
+        return retval
+
+    origin = get_origin(type_)
+    if origin is not None:
+        args = get_args(type_)
+        if origin is Annotated:
+            for arg in args[1:]:
+                if isinstance(arg, StrawberryPrivate):
+                    return type_
+
+                if isinstance(arg, StrawberryLazyReference):
+                    remaining_args = [
+                        a
+                        for a in args[1:]
+                        if not isinstance(arg, StrawberryLazyReference)
+                    ]
+                    args = (arg.resolve_forward_ref(args[0]), *remaining_args)
+                    break
+                if isinstance(arg, StrawberryAuto):
+                    remaining_args = [
+                        a for a in args[1:] if not isinstance(arg, StrawberryAuto)
+                    ]
+                    args = (arg, *remaining_args)
+                    break
+
+            # If we have only a StrawberryLazyReference and no more annotations,
+            # we need to return the argument directly because Annotated
+            # will raise an error if trying to instantiate it with only
+            # one argument.
+            if len(args) == 1:
+                return args[0]
+
+        # python 3.10 will return UnionType for origin, and it cannot be
+        if origin is type:
+            origin = Type
+
+        # python 3.10 will return UnionType for origin, and it cannot be
+        # subscribed like Union[Foo, Bar]
+        if sys.version_info >= (3, 10):
+            from types import UnionType
+
+            if origin is UnionType:
+                origin = Union
+
+        type_ = (
+            origin[tuple(eval_type(a, globalns, localns) for a in args)]
+            if args
+            else origin
+        )
+
+    return type_
 
 
 _T = TypeVar("_T")
