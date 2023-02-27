@@ -2,6 +2,7 @@ import ast
 import sys
 from collections.abc import AsyncGenerator
 from typing import (  # type: ignore
+    TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
@@ -20,10 +21,14 @@ from typing import (  # type: ignore
 )
 from typing_extensions import Annotated, get_args, get_origin
 
-try:
-    ast_unparse = ast.unparse
-except AttributeError:
-    import astunparse  # type: ignore[import]
+ast_unparse = getattr(ast, "unparse", None)
+# ast.unparse is only available on python 3.9+. For older versions we will
+# use `astunparse.unparse`.
+# We area also using "not TYPE_CHECKING" here because mypy gives an erorr
+# on tests because "astunparse" is missing stubs, but the mypy action says
+# that the comment is unused.
+if not TYPE_CHECKING and ast_unparse is None:
+    import astunparse
 
     ast_unparse = astunparse.unparse
 
@@ -197,6 +202,7 @@ def eval_type(
             if "Union" not in globalns:
                 globalns["Union"] = Union
 
+        assert ast_unparse
         type_ = ast_unparse(parsed)
 
         retval = _eval_type(ForwardRef(type_), globalns, localns)
