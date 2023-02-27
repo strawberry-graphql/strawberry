@@ -170,33 +170,37 @@ def _ast_replace_union_operation(expr: ast.Expr) -> ast.Expr:
 def _ast_replace_union_operation(
     expr: Union[ast.Expr, ast.expr]
 ) -> Union[ast.Expr, ast.expr]:
-    if isinstance(expr, ast.Expr) and isinstance(expr.value, ast.BinOp):
+    if isinstance(expr, ast.Expr) and isinstance(
+        expr.value, (ast.BinOp, ast.Subscript)
+    ):
         expr = ast.Expr(_ast_replace_union_operation(expr.value))
-    elif isinstance(expr, ast.expr):
-        if isinstance(expr, ast.BinOp):
-            left = _ast_replace_union_operation(expr.left)
-            right = _ast_replace_union_operation(expr.right)
+    elif isinstance(expr, ast.BinOp):
+        left = _ast_replace_union_operation(expr.left)
+        right = _ast_replace_union_operation(expr.right)
+        expr = ast.Subscript(
+            ast.Name(id="Union"),
+            ast.Tuple([left, right], ast.Load()),
+            ast.Load(),
+        )
+    elif isinstance(expr, ast.Tuple):
+        expr = ast.Tuple(
+            [_ast_replace_union_operation(elt) for elt in expr.elts],
+            ast.Load(),
+        )
+    elif isinstance(expr, ast.Subscript):
+        if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
             expr = ast.Subscript(
-                ast.Name(id="Union"),
-                ast.Tuple([left, right], ast.Load()),
+                expr.value,
+                # The cast is required for mypy on python 3.7 and 3.8
+                ast.Index(_ast_replace_union_operation(cast(Any, expr.slice).value)),
                 ast.Load(),
             )
-        elif isinstance(expr, ast.Subscript):
-            if isinstance(expr.slice, ast.BinOp):
-                expr = ast.Subscript(
-                    expr.value,
-                    _ast_replace_union_operation(expr.slice),
-                    ast.Load(),
-                )
-            elif isinstance(expr.slice, ast.Tuple):
-                expr = ast.Subscript(
-                    expr.value,
-                    ast.Tuple(
-                        [_ast_replace_union_operation(elt) for elt in expr.slice.elts],
-                        ast.Load(),
-                    ),
-                    ast.Load(),
-                )
+        elif isinstance(expr.slice, (ast.BinOp, ast.Tuple)):
+            expr = ast.Subscript(
+                expr.value,
+                _ast_replace_union_operation(expr.slice),
+                ast.Load(),
+            )
 
     return expr
 

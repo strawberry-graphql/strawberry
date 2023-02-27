@@ -158,7 +158,7 @@ def test_annotated_or_notation():
     class User:
         name: str
 
-    def get_users() -> List[User]:
+    def get_users() -> List[User] | None:
         return []
 
     @strawberry.type

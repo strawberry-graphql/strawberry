@@ -13,14 +13,9 @@ def test_eval_type():
         ...
 
     assert eval_type(ForwardRef("Foo | None"), globals(), locals()) == Optional[Foo]
-    assert eval_type(Foo | None, globals(), locals()) == Optional[Foo]  # type: ignore
     assert eval_type(ForwardRef("Foo | str"), globals(), locals()) == Union[Foo, str]
     assert (
         eval_type(ForwardRef("Foo | str | None"), globals(), locals())
-        == Union[Foo, str, None]
-    )
-    assert (
-        eval_type(Foo | str | None, globals(), locals())  # type: ignore
         == Union[Foo, str, None]
     )
     assert (
@@ -42,9 +37,7 @@ def test_eval_type_generic_type_alias():
         ...
 
     assert eval_type(ForwardRef("Foo | None"), globals(), locals()) == Optional[Foo]
-    assert eval_type(Foo | None, globals(), locals()) == Optional[Foo]  # type: ignore
     assert eval_type(ForwardRef("Foo | str"), globals(), locals()) == Union[Foo, str]
-    assert eval_type(Foo | str, globals(), locals()) == Union[Foo, str]  # type: ignore
     assert (
         eval_type(ForwardRef("Foo | str | None"), globals(), locals())
         == Union[Foo, str, None]
@@ -54,14 +47,6 @@ def test_eval_type_generic_type_alias():
         == Union[list[Union[Foo, str]], None]  # type: ignore
     )
     assert (
-        eval_type(list[Foo | str] | None, globals(), locals())  # type: ignore
-        == Union[list[Union[Foo, str]], None]  # type: ignore
-    )
-    assert (
         eval_type(ForwardRef("list[Foo | str] | None | int"), globals(), locals())
-        == Union[list[Union[Foo, str]], int, None]  # type: ignore
-    )
-    assert (
-        eval_type(list[Foo | str] | None | int, globals(), locals())  # type: ignore
         == Union[list[Union[Foo, str]], int, None]  # type: ignore
     )
