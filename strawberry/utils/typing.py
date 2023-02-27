@@ -217,23 +217,24 @@ def eval_type(
     from strawberry.private import StrawberryPrivate
 
     globalns = globalns or {}
-    # If this is not a string, maybe its ares are (e.g. List["Foo"])
+    # If this is not a string, maybe its args are (e.g. List["Foo"])
     if isinstance(type_, ForwardRef):
-        parsed = ast.parse(type_.__forward_arg__).body[0]
         # For Python 3.10+, we can use the built-in _eval_type function directly.
         # It will handle "|" notations properly
         if sys.version_info < (3, 10):
-            parsed = _ast_replace_union_operation(cast(ast.Expr, parsed))
+            parsed = _ast_replace_union_operation(
+                cast(ast.Expr, ast.parse(type_.__forward_arg__).body[0])
+            )
+
             # We replaced "a | b" with "Union[a, b], so make sure Union can be resolved
             # at globalns because it may not be there
             if "Union" not in globalns:
                 globalns["Union"] = Union
 
-        assert ast_unparse
-        type_ = ast_unparse(parsed)
+            assert ast_unparse
+            type_ = ForwardRef(ast_unparse(parsed))
 
-        retval = _eval_type(ForwardRef(type_), globalns, localns)
-        return retval
+        return _eval_type(type_, globalns, localns)
 
     origin = get_origin(type_)
     if origin is not None:
