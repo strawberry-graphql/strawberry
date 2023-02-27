@@ -670,6 +670,8 @@ def test_error_with_invalid_annotated_type():
 def test_raises_on_union_of_scalars(annotation: str):
     # using forward refs because they deduced later
     # catching all edge cases.
+    if annotation == "list[str]" and sys.version_info <= (3, 8, 0):
+        return
 
     @strawberry.type
     class ICanBeInUnion:
