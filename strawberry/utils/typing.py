@@ -8,8 +8,11 @@ from typing import (  # type: ignore
     ClassVar,
     Dict,
     ForwardRef,
+    FrozenSet,
     Generic,
+    List,
     Optional,
+    Set,
     Tuple,
     Type,
     TypeVar,
@@ -238,9 +241,17 @@ def eval_type(
             if len(args) == 1:
                 return args[0]
 
-        # python 3.10 will return UnionType for origin, and it cannot be
-        if origin is type:
-            origin = Type
+        # generic type aliases are only available for python 3.9+, but future
+        # annotations can be used to create them in python 3.7+
+        if sys.version_info < (3, 9):
+            origin = {
+                list: List,
+                dict: Dict,
+                tuple: Tuple,
+                type: Type,
+                set: Set,
+                frozenset: FrozenSet,
+            }.get(origin, origin)
 
         # python 3.10 will return UnionType for origin, and it cannot be
         # subscribed like Union[Foo, Bar]
