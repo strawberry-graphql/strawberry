@@ -662,3 +662,28 @@ def test_error_with_invalid_annotated_type():
         union: Union[Something, AnnotatedInt]
 
     strawberry.Schema(query=Query)
+
+
+@pytest.mark.parametrize(
+    "annotation", ("int", "str", "float", "list[str]", "List[str]")
+)
+def test_raises_on_union_of_scalars(annotation: str):
+    # using forward refs because they deduced later
+    # catching all edge cases.
+
+    @strawberry.type
+    class ICanBeInUnion:
+        foo: str
+
+    globals()[ICanBeInUnion.__name__] = ICanBeInUnion
+
+    annotation = f"Union[{ICanBeInUnion.__name__}, {annotation}]"
+    with pytest.raises(
+        InvalidUnionTypeError, match="cannot be used in a GraphQL Union"
+    ):
+
+        @strawberry.type
+        class Query:
+            union: annotation
+
+        strawberry.Schema(query=Query)
