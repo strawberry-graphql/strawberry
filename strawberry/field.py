@@ -204,7 +204,6 @@ class StrawberryField(dataclasses.Field):
         """
         return (
             not self.base_resolver
-            and not self.permission_classes
             and not self.extensions
         )
 
