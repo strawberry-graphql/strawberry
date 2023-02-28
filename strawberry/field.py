@@ -85,7 +85,7 @@ class StrawberryField(dataclasses.Field):
         metadata: Optional[Mapping[Any, Any]] = None,
         deprecation_reason: Optional[str] = None,
         directives: Sequence[object] = (),
-        extensions: Sequence[FieldExtension] = (),
+        extensions: List[FieldExtension] = (),
     ):
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
@@ -457,7 +457,7 @@ def field(
         default_factory=default_factory,
         metadata=metadata,
         directives=directives or (),
-        extensions=extensions,
+        extensions=extensions or [],
     )
 
     if resolver:
