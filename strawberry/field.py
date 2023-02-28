@@ -85,7 +85,7 @@ class StrawberryField(dataclasses.Field):
         metadata: Optional[Mapping[Any, Any]] = None,
         deprecation_reason: Optional[str] = None,
         directives: Sequence[object] = (),
-        extensions: Optional[List[FieldExtension]] = None,
+        extensions: Sequence[FieldExtension] = (),
     ):
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
@@ -135,7 +135,7 @@ class StrawberryField(dataclasses.Field):
 
         self.permission_classes: List[Type[BasePermission]] = list(permission_classes)
         self.directives = list(directives)
-        self.extensions: Optional[List[FieldExtension]] = extensions
+        self.extensions: List[FieldExtension] = list(extensions)
 
         self.deprecation_reason = deprecation_reason
 
