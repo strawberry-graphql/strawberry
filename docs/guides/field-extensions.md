@@ -49,6 +49,10 @@ query {
 
 ## Modifying the field
 
+<Warning>
+The `StrawberryField` API is not stable and might change in the future without warning.
+</Warning>
+
 In some cases, the extended field needs to be compatible with the added extension.
 `FieldExtension` provides an `apply(field: StrawberryField)` method that can be
 overriden to modify the field. It is called during _Schema Conversion_.
