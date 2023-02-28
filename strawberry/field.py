@@ -202,10 +202,7 @@ class StrawberryField(dataclasses.Field):
         an `Info` object and running any permission checks in the resolver
         which improves performance.
         """
-        return (
-            not self.base_resolver
-            and not self.extensions
-        )
+        return not self.base_resolver and not self.extensions
 
     @property
     def arguments(self) -> List[StrawberryArgument]:
