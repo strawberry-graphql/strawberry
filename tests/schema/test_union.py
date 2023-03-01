@@ -667,18 +667,17 @@ def test_error_with_invalid_annotated_type():
 @pytest.mark.parametrize(
     "annotation", ("int", "str", "float", "list[str]", "List[str]")
 )
-def test_raises_on_union_of_scalars(annotation: str):
+def test_raises_on_union_of_scalars(annotation: str, monkeypatch):
     # using forward refs because they deduced later
     # catching all edge cases.
     if annotation == "list[str]" and sys.version_info < (3, 9, 0):
-        return
+        pytest.skip("list has not __class_getitem__ prior to py39")
 
     @strawberry.type
     class ICanBeInUnion:
         foo: str
 
-    globals()[ICanBeInUnion.__name__] = ICanBeInUnion
-
+    monkeypatch.setitem(globals(), ICanBeInUnion.__name__, ICanBeInUnion)
     annotation = f"Union[{ICanBeInUnion.__name__}, {annotation}]"
     with pytest.raises(
         InvalidUnionTypeError, match="cannot be used in a GraphQL Union"
