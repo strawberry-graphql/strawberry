@@ -203,7 +203,7 @@ schema = strawberry.Schema(
 </details>
 
 <details>
-  <summary>Rejecting a request before executing it</summary>
+  <summary>Rejecting an operation before executing it</summary>
 
 ```python
 import strawberry
