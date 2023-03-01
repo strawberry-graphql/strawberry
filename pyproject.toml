@@ -68,7 +68,7 @@ pytest = "^7.2"
 pytest-emoji = "^0.2.0"
 black = "^22"
 pytest-asyncio = "^0.20.3"
-mypy = "1.0.0"
+mypy = "1.0.1"
 pytest-mypy-plugins = "^1.10"
 pytest-mock = "^3.10"
 pytest-django = {version = "^4.5"}
