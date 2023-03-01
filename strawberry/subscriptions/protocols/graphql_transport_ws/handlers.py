@@ -215,7 +215,7 @@ class BaseGraphQLTransportWSHandler(ABC):
 
         # Create task to handle this subscription, reserve the operation ID
         self.subscriptions[message.id] = result_source
-        operation = Operation(result_source, message.id)
+        operation = Operation(self, result_source, message.id)
         self.tasks[message.id] = asyncio.create_task(self.operation_task(operation))
 
     async def operation_task(self, operation: Operation) -> None:
@@ -240,7 +240,7 @@ class BaseGraphQLTransportWSHandler(ABC):
             # to make the `operation_id` immediately available for re-use
             del self.subscriptions[operation.id]
             del self.tasks[operation.id]
-            await self.send_message(CompleteMessage(id=operation.id))
+            await operation.send_message(CompleteMessage(id=operation.id))
         finally:
             # add this task to a list to be reaped later
             task = asyncio.current_task()
@@ -256,7 +256,7 @@ class BaseGraphQLTransportWSHandler(ABC):
                 if result.errors:
                     error_payload = [format_graphql_error(err) for err in result.errors]
                     error_message = ErrorMessage(id=operation.id, payload=error_payload)
-                    await self.send_message(error_message)
+                    await operation.send_message(error_message)
                     self.schema.process_errors(result.errors)
                     return
                 else:
@@ -272,7 +272,7 @@ class BaseGraphQLTransportWSHandler(ABC):
             error = GraphQLError(str(error), original_error=error)
             error_payload = [format_graphql_error(error)]
             error_message = ErrorMessage(id=operation.id, payload=error_payload)
-            await self.send_message(error_message)
+            await operation.send_message(error_message)
             self.schema.process_errors([error])
             return
 
@@ -311,8 +311,17 @@ class BaseGraphQLTransportWSHandler(ABC):
 class Operation:
     """
     A class encapsulating a single operation with its id.
+    Helps enforce protocol state transition.
     """
-
-    def __init__(self, result_source: AsyncGenerator, id: str):
+    def __init__(self, handler: BaseGraphQLTransportWSHandler, result_source: AsyncGenerator, id: str):
+        self.handler = handler
         self.result_source = result_source
         self.id = id
+        self.sent_error = False
+
+    async def send_message(self, message: GraphQLTransportMessage) -> None:
+        if self.sent_error:
+            return
+        await self.handler.send_message(message)
+        if isinstance(message, ErrorMessage):
+            self.sent_error = True
