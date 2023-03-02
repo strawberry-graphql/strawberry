@@ -735,25 +735,31 @@ class GraphQLCoreConverter:
             # manually compare type_var_maps while resolving any lazy types
             # so that they're considered equal to the actual types they're referencing
             equal = True
+            lazy_types = False
+
             for type_var, type1 in cached_type.definition.type_var_map.items():
                 type2 = type_definition.type_var_map[type_var]
                 # both lazy types are always resolved because two different lazy types
                 # may be referencing the same actual type
                 if isinstance(type1, LazyType):
                     type1 = type1.resolve_type()
+                    lazy_types = True
                 elif isinstance(type1, StrawberryOptional) and isinstance(
                     type1.of_type, LazyType
                 ):
+                    lazy_types = True
                     type1.of_type = type1.of_type.resolve_type()
 
                 if isinstance(type2, LazyType):
                     type2 = type2.resolve_type()
+                    lazy_types = True
                 elif isinstance(type2, StrawberryOptional) and isinstance(
                     type2.of_type, LazyType
                 ):
                     type2.of_type = type2.of_type.resolve_type()
+                    lazy_types = True
 
-                if type1 != type2:
+                if lazy_types and type1 != type2:
                     equal = False
                     break
             if equal:
