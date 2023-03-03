@@ -158,4 +158,4 @@ async def test_returning_status_code(
     )
 
     assert response.status_code == 401
-    assert response.json == {"data": {"returns401": "hey"}}
+    assert response.json["data"] == {"returns401": "hey"}

@@ -14,7 +14,7 @@ MergedContext = Union[
 class BaseContext:
     connection_params: Optional[Any] = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.request: Optional[Union[Request, WebSocket]] = None
         self.background_tasks: Optional[BackgroundTasks] = None
         self.response: Optional[Response] = None

@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-from typing import Optional, Set, Union
+from typing import TYPE_CHECKING, Optional, Set, Union
 
-from graphql import GraphQLError, GraphQLInputObjectType, GraphQLObjectType
+from graphql import GraphQLError
 
-from strawberry.type import StrawberryType
 from strawberry.utils.cached_property import cached_property
 
 from .duplicated_type_name import DuplicatedTypeName
 from .exception import StrawberryException, UnableToFindExceptionSource
-from .exception_source import ExceptionSource
 from .handler import setup_exception_handler
 from .invalid_argument_type import InvalidArgumentTypeError
 from .invalid_union_type import InvalidTypeForUnionMergeError, InvalidUnionTypeError
@@ -22,6 +20,13 @@ from .object_is_not_an_enum import ObjectIsNotAnEnumError
 from .private_strawberry_field import PrivateStrawberryFieldError
 from .scalar_already_registered import ScalarAlreadyRegisteredError
 from .unresolved_field_type import UnresolvedFieldTypeError
+
+if TYPE_CHECKING:
+    from graphql import GraphQLInputObjectType, GraphQLObjectType
+
+    from strawberry.type import StrawberryType
+
+    from .exception_source import ExceptionSource
 
 setup_exception_handler()
 

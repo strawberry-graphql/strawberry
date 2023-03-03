@@ -1,16 +1,22 @@
+from __future__ import annotations
+
 import json
 from io import BytesIO
-from typing import Any, Dict, Union
-from typing_extensions import Literal
+from typing import TYPE_CHECKING, Any, Dict, Union
 
 from aiohttp import web
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
-from strawberry.http import GraphQLRequestData, parse_query_params, parse_request_data
-from strawberry.schema import BaseSchema
+from strawberry.http import parse_query_params, parse_request_data
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types.graphql import OperationType
 from strawberry.utils.graphiql import get_graphiql_html
+
+if TYPE_CHECKING:
+    from typing_extensions import Literal
+
+    from strawberry.http import GraphQLRequestData
+    from strawberry.schema import BaseSchema
 
 
 class HTTPHandler:

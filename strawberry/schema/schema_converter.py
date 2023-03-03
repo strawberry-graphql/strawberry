@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses
 import sys
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -23,40 +24,32 @@ from graphql import (
     GraphQLField,
     GraphQLInputField,
     GraphQLInputObjectType,
-    GraphQLInputType,
     GraphQLInterfaceType,
     GraphQLList,
     GraphQLNonNull,
-    GraphQLNullableType,
     GraphQLObjectType,
-    GraphQLOutputType,
-    GraphQLResolveInfo,
-    GraphQLScalarType,
     GraphQLUnionType,
     Undefined,
-    ValueNode,
 )
 from graphql.language.directive_locations import DirectiveLocation
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument, convert_arguments
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-from strawberry.directive import StrawberryDirective
-from strawberry.enum import EnumDefinition, EnumValue
+from strawberry.custom_scalar import ScalarWrapper
+from strawberry.enum import EnumDefinition
 from strawberry.exceptions import (
     DuplicatedTypeName,
     InvalidTypeInputForUnion,
+    InvalidUnionTypeError,
     MissingTypesForGenericError,
     ScalarAlreadyRegisteredError,
     UnresolvedFieldTypeError,
 )
-from strawberry.field import UNRESOLVED, StrawberryField
+from strawberry.field import UNRESOLVED
 from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
-from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.scalar import _make_scalar_type
-from strawberry.schema_directive import StrawberrySchemaDirective
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
+from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
@@ -65,6 +58,24 @@ from strawberry.utils.await_maybe import await_maybe
 
 from . import compat
 from .types.concrete_type import ConcreteType
+
+if TYPE_CHECKING:
+    from graphql import (
+        GraphQLInputType,
+        GraphQLNullableType,
+        GraphQLOutputType,
+        GraphQLResolveInfo,
+        GraphQLScalarType,
+        ValueNode,
+    )
+
+    from strawberry.custom_scalar import ScalarDefinition
+    from strawberry.directive import StrawberryDirective
+    from strawberry.enum import EnumValue
+    from strawberry.field import StrawberryField
+    from strawberry.schema.config import StrawberryConfig
+    from strawberry.schema_directive import StrawberrySchemaDirective
+    from strawberry.type import StrawberryType
 
 
 # graphql-core expects a resolver for an Enum type to return
@@ -106,7 +117,9 @@ class GraphQLCoreConverter:
         self.scalar_registry = scalar_registry
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
-        argument_type = cast(GraphQLInputType, self.from_maybe_optional(argument.type))
+        argument_type = cast(
+            "GraphQLInputType", self.from_maybe_optional(argument.type)
+        )
         default_value = Undefined if argument.default is UNSET else argument.default
 
         return GraphQLArgument(
@@ -179,7 +192,7 @@ class GraphQLCoreConverter:
 
     def from_schema_directive(self, cls: Type) -> GraphQLDirective:
         strawberry_directive = cast(
-            StrawberrySchemaDirective, cls.__strawberry_directive__
+            "StrawberrySchemaDirective", cls.__strawberry_directive__
         )
         module = sys.modules[cls.__module__]
 
@@ -216,7 +229,7 @@ class GraphQLCoreConverter:
         )
 
     def from_field(self, field: StrawberryField) -> GraphQLField:
-        field_type = cast(GraphQLOutputType, self.from_maybe_optional(field.type))
+        field_type = cast("GraphQLOutputType", self.from_maybe_optional(field.type))
 
         resolver = self.from_resolver(field)
         subscribe = None
@@ -243,7 +256,7 @@ class GraphQLCoreConverter:
         )
 
     def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
-        field_type = cast(GraphQLInputType, self.from_maybe_optional(field.type))
+        field_type = cast("GraphQLInputType", self.from_maybe_optional(field.type))
         default_value: object
 
         if field.default_value is UNSET or field.default_value is dataclasses.MISSING:
@@ -563,12 +576,12 @@ class GraphQLCoreConverter:
             # handle this case better, since right now we assume it is a scalar
 
             if other_definition != scalar_definition:
-                other_definition = cast(ScalarDefinition, other_definition)
+                other_definition = cast("ScalarDefinition", other_definition)
 
                 raise ScalarAlreadyRegisteredError(scalar_definition, other_definition)
 
             implementation = cast(
-                GraphQLScalarType, self.type_map[scalar_name].implementation
+                "GraphQLScalarType", self.type_map[scalar_name].implementation
             )
 
         return implementation
@@ -618,6 +631,13 @@ class GraphQLCoreConverter:
 
     def from_union(self, union: StrawberryUnion) -> GraphQLUnionType:
         union_name = self.config.name_converter.from_type(union)
+
+        for type_ in union.types:
+            # This check also occurs in the Annotation resolving, but because of
+            # TypeVars, Annotations, LazyTypes, etc it can't perfectly detect issues at
+            # that stage
+            if not StrawberryUnion.is_valid_union_type(type_):
+                raise InvalidUnionTypeError(union_name, type_)
 
         # Don't reevaluate known types
         if union_name in self.type_map:

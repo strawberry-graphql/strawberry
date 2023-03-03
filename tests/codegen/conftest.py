@@ -10,7 +10,6 @@ import pytest
 import strawberry
 
 if TYPE_CHECKING:
-
     from .lazy_type import LaziestType
 
 JSON = strawberry.scalar(NewType("JSON", str))

@@ -24,7 +24,7 @@ def test_field_override_printed_correctly():
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@external", "@key", "@override"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@external", "@key", "@override"]) {
           query: Query
         }
 
