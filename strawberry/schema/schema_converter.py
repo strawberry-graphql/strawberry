@@ -18,7 +18,6 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import Protocol
 
 from graphql import (
     GraphQLAbstractType,
@@ -39,6 +38,7 @@ from graphql import (
     default_type_resolver,
 )
 from graphql.language.directive_locations import DirectiveLocation
+from typing_extensions import Protocol
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument, convert_arguments
@@ -53,6 +53,7 @@ from strawberry.exceptions import (
     UnresolvedFieldTypeError,
 )
 from strawberry.field import UNRESOLVED
+from strawberry.identifier import SchemaIdentifier
 from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
 from strawberry.schema.types.scalar import _make_scalar_type
@@ -109,6 +110,7 @@ def _get_thunk_mapping(
     type_definition: StrawberryObjectDefinition,
     name_converter: Callable[[StrawberryField], str],
     field_converter: FieldConverterProtocol[FieldType],
+    schema_identifier: Optional[SchemaIdentifier],
 ) -> Dict[str, FieldType]:
     """Create a GraphQL core `ThunkMapping` mapping of field names to field types.
 
@@ -129,7 +131,9 @@ def _get_thunk_mapping(
         if field_type is UNRESOLVED:
             raise UnresolvedFieldTypeError(type_definition, field)
 
-        if not is_private(field_type):
+        if not is_private(field_type) and _is_schema_supported(
+            schema_identifier, field
+        ):
             thunk_mapping[name_converter(field)] = field_converter(
                 field,
                 type_definition=type_definition,
@@ -178,10 +182,12 @@ class GraphQLCoreConverter:
         self,
         config: StrawberryConfig,
         scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+        schema_identifier: Optional[SchemaIdentifier] = None,
     ):
         self.type_map: Dict[str, ConcreteType] = {}
         self.config = config
         self.scalar_registry = scalar_registry
+        self.schema_identifier = schema_identifier
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
         argument_type = cast(
@@ -374,6 +380,7 @@ class GraphQLCoreConverter:
             type_definition=type_definition,
             name_converter=self.config.name_converter.from_field,
             field_converter=self.from_field,
+            schema_identifier=self.schema_identifier,
         )
 
     def get_graphql_input_fields(
@@ -383,6 +390,7 @@ class GraphQLCoreConverter:
             type_definition=type_definition,
             name_converter=self.config.name_converter.from_field,
             field_converter=self.from_input_field,
+            schema_identifier=self.schema_identifier,
         )
 
     def from_input_object(self, object_type: type) -> GraphQLInputObjectType:
@@ -947,3 +955,20 @@ class GraphQLCoreConverter:
             second_origin = None
 
         raise DuplicatedTypeName(first_origin, second_origin, name)
+
+
+def _is_schema_supported(
+    schema_identifier: Optional[SchemaIdentifier],
+    field: StrawberryField,
+) -> bool:
+    supported_schemas = field.supported_schemas or []
+    if not supported_schemas:
+        # If we don't define any specific schema to support, we support everything
+        return True
+    for schema in supported_schemas:
+        if schema.matches(schema_identifier):
+            # We try to find a supported schema that would match the current
+            # name and version
+            return True
+    # Nothing was found, the schema is not supported at all.
+    return False

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import warnings
 from functools import lru_cache
 from typing import (
@@ -32,6 +33,7 @@ from strawberry.extensions.directives import (
     DirectivesExtension,
     DirectivesExtensionSync,
 )
+from strawberry.identifier import SchemaIdentifier
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.type import has_object_definition
@@ -82,6 +84,7 @@ class Schema(BaseSchema):
             Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]]
         ] = None,
         schema_directives: Iterable[object] = (),
+        schema_identifier: Optional[SchemaIdentifier] = None,
     ):
         self.query = query
         self.mutation = mutation
@@ -90,6 +93,7 @@ class Schema(BaseSchema):
         self.extensions = extensions
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
+        self.schema_identifier = schema_identifier
 
         SCALAR_OVERRIDES_DICT_TYPE = Dict[
             object, Union["ScalarWrapper", "ScalarDefinition"]
@@ -100,7 +104,9 @@ class Schema(BaseSchema):
             # TODO: check that the overrides are valid
             scalar_registry.update(cast(SCALAR_OVERRIDES_DICT_TYPE, scalar_overrides))
 
-        self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
+        self.schema_converter = GraphQLCoreConverter(
+            self.config, scalar_registry, self.schema_identifier
+        )
         self.directives = directives
         self.schema_directives = list(schema_directives)
 

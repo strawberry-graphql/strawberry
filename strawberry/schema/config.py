@@ -19,3 +19,9 @@ class StrawberryConfig:
     ):
         if auto_camel_case is not None:
             self.name_converter.auto_camel_case = auto_camel_case
+
+
+@dataclass
+class SchemaIdentifier:
+    name: str
+    version: str
