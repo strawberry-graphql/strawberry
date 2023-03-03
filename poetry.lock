@@ -284,6 +284,22 @@ six = "*"
 visualize = ["Twisted (>=16.1.1)", "graphviz (>0.5.1)"]
 
 [[package]]
+name = "aws-xray-sdk"
+version = "2.11.0"
+description = "The AWS X-Ray SDK for Python (the SDK) enables Python developers to record and emit information from within their applications to the AWS X-Ray service."
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "aws-xray-sdk-2.11.0.tar.gz", hash = "sha256:78835fc841f03e550858f18a9973eab8618f47f22d2f59edf130578fa545a867"},
+    {file = "aws_xray_sdk-2.11.0-py2.py3-none-any.whl", hash = "sha256:693fa3a4c790e131fe1e20814ede415a9eeeab5c3b7c868686d3e3c696b8524d"},
+]
+
+[package.dependencies]
+botocore = ">=1.11.3"
+wrapt = "*"
+
+[[package]]
 name = "backports-cached-property"
 version = "1.0.2"
 description = "cached_property() - computed once per instance, cached as attribute"
@@ -3666,4 +3682,4 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "a847d6e2c5daa2db33311d3483f8956387cdba824d1667154338161dea477e22"
+content-hash = "9e6d6d11abb37f66f8b9e956607ae9912803641a78c552986dcde917a926fba7"
