@@ -1022,3 +1022,76 @@ async def test_rejects_connection_params_not_unset(aiohttp_client):
         assert ws.closed
         assert ws.close_code == 4400
         assert data.extra == "Invalid connection init payload"
+
+
+async def test_connection_handler_add(aiohttp_client):
+    """
+    Test that custom on_ws_connect() can add to connection_params
+    """
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        payload = {"add": True}
+        await ws.send_json(ConnectionInitMessage(payload=payload).as_dict())
+        response = await ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query="subscription { connectionParamsAll }"
+                ),
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub1",
+                payload={
+                    "data": {"connectionParamsAll": str({"add": True, "added": True})}
+                },
+            ).as_dict()
+        )
+
+
+async def test_connection_handler_reject(aiohttp_client):
+    """
+    Test that custom on_ws_connect() can reject a connection
+    """
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        payload = {"reject-me": True}
+        await ws.send_json(ConnectionInitMessage(payload=payload).as_dict())
+        data = await ws.receive(timeout=2)
+        assert ws.closed
+        assert ws.close_code == 4403
+        assert data.extra == "Forbidden"
+
+
+async def test_connection_handler_response(aiohttp_client):
+    """
+    Test that custom on_ws_connect() can add to connection_params
+    """
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        payload = {"response": {"my-response": "hello"}}
+        await ws.send_json(ConnectionInitMessage(payload=payload).as_dict())
+        response = await ws.receive_json()
+
+        assert (
+            response == ConnectionAckMessage(payload={"my-response": "hello"}).as_dict()
+        )

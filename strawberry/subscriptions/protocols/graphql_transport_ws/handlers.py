@@ -130,16 +130,23 @@ class BaseGraphQLTransportWSHandler(ABC):
             await self.close(code=4400, reason="Invalid connection init payload")
             return
 
-        self.connection_params = message.payload
-
         if self.connection_init_received:
             reason = "Too many initialisation requests"
             await self.close(code=4429, reason=reason)
             return
 
         self.connection_init_received = True
-        await self.send_message(ConnectionAckMessage())
+        result = await self.schema.on_ws_connect(message.payload)
+        if result is False:
+            await self.close(code=4403, reason="Forbidden")
+            return
+
+        self.connection_params = message.payload
         self.connection_acknowledged = True
+        connection_ack = (
+            ConnectionAckMessage(payload=result) if result else ConnectionAckMessage()
+        )
+        await self.send_message(connection_ack)
 
     async def handle_ping(self, message: PingMessage) -> None:
         await self.send_message(PongMessage())

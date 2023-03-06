@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union
-from typing_extensions import Protocol
+from typing_extensions import Literal, Protocol
 
 from strawberry.utils.logging import StrawberryLogger
 
@@ -89,3 +89,16 @@ class BaseSchema(Protocol):
     ) -> None:
         for error in errors:
             StrawberryLogger.error(error, execution_context)
+
+    async def on_ws_connect(
+        self, connection_params: Dict[str, Any]
+    ) -> Union[Literal[False], None, Dict[str, Any]]:
+        """
+        Validate the connection parameters provided with a websocket connection.
+        The default implementation leaves them unmodified, and returns no
+        response payload.
+        A custom implementation may return False to reject the connection.
+        Otherwise, it may optionally modify the parameters and return
+        a payload to the client.
+        """
+        return None

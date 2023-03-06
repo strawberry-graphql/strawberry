@@ -1,5 +1,6 @@
 import asyncio
 import typing
+import typing_extensions
 from enum import Enum
 
 from graphql import GraphQLError
@@ -214,8 +215,43 @@ class Subscription:
     async def connection_params(self, info) -> typing.AsyncGenerator[str, None]:
         yield info.context["connection_params"]["strawberry"]
 
+    @strawberry.subscription
+    async def connection_params_all(self, info) -> typing.AsyncGenerator[str, None]:
+        yield str(info.context["connection_params"])
 
-schema = strawberry.Schema(
+
+class Schema(strawberry.Schema):
+    """
+    A custom schema class overriding the websockets connection handler
+    with one testing various behaviour.
+    """
+
+    async def on_ws_connect(
+        self, connection_params: typing.Optional[typing.Dict[str, typing.Any]]
+    ) -> typing.Union[
+        typing_extensions.Literal[False], None, typing.Dict[str, typing.Any]
+    ]:
+        # default behaviour
+        if not connection_params:
+            return None
+        # 1. Add a member to the payload, and hence, connection_params
+        if "add" in connection_params:
+            connection_params["added"] = True
+        # 2. Reject if payload contains "reject-me"
+        if "reject-me" in connection_params:
+            return False
+        # 3. spend time evaluating
+        if "sleep" in connection_params:
+            try:
+                await asyncio.sleep(float(connection_params["sleep"]))
+            except ValueError:
+                pass
+        # 4. return any response in the payload
+        if "response" in connection_params:
+            return connection_params["response"]
+
+
+schema = Schema(
     query=Query,
     mutation=Mutation,
     subscription=Subscription,
