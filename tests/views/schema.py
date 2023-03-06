@@ -249,6 +249,7 @@ class Schema(strawberry.Schema):
         # 4. return any response in the payload
         if "response" in connection_params:
             return connection_params["response"]
+        return None
 
 
 schema = Schema(

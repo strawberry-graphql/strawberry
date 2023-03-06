@@ -136,15 +136,18 @@ class BaseGraphQLTransportWSHandler(ABC):
             return
 
         self.connection_init_received = True
-        result = await self.schema.on_ws_connect(message.payload)
-        if result is False:
+        payload = message.payload or {}
+        response = await self.schema.on_ws_connect(payload)
+        if response is False:
             await self.close(code=4403, reason="Forbidden")
             return
 
-        self.connection_params = message.payload
+        self.connection_params = payload
         self.connection_acknowledged = True
         connection_ack = (
-            ConnectionAckMessage(payload=result) if result else ConnectionAckMessage()
+            ConnectionAckMessage(payload=response)
+            if response
+            else ConnectionAckMessage()
         )
         await self.send_message(connection_ack)
 
