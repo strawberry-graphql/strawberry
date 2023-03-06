@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Type
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.auto import StrawberryAuto
@@ -18,13 +18,9 @@ class PydanticTypeExtension(TypeExtension):
     def __init__(
         self,
         model: Type[PydanticModel],
-        *,
-        name: Optional[str] = None,
-        is_input: bool = False,
-        is_interface: bool = False,
-        all_fields: bool = False,
         use_pydantic_alias: bool = True,
     ):
+        # TODO add all_fields support
         self.model = model
         self.use_pydantic_alias = use_pydantic_alias
 
