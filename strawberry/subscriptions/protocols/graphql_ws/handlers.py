@@ -96,10 +96,21 @@ class BaseGraphQLWSHandler(ABC):
             await self.close()
             return
 
-        payload = cast(Optional["ConnectionInitPayload"], payload)
-        self.connection_params = payload
+        payload = cast(Optional["ConnectionInitPayload"], payload) or {}
+        response = await self.schema.on_ws_connect(payload)
+        if response is False:
+            error_message = {
+                "type": GQL_CONNECTION_ERROR,
+                "payload": {"reason": "Forbidden"},
+            }
+            await self.send_json(error_message)
+            await self.close()
+            return
 
+        self.connection_params = payload
         acknowledge_message: OperationMessage = {"type": GQL_CONNECTION_ACK}
+        if response:
+            acknowledge_message["payload"] = response
         await self.send_json(acknowledge_message)
 
         if self.keep_alive:

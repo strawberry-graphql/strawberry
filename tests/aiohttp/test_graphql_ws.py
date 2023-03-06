@@ -653,3 +653,93 @@ async def test_rejects_connection_params(aiohttp_client):
         # make sure the WebSocket is disconnected now
         await ws.receive(timeout=2)  # receive close
         assert ws.closed
+
+
+async def test_connection_handler_add(aiohttp_client):
+    """
+    Test that custom on_ws_connect() can add to connection_params
+    """
+    app = create_app(keep_alive=False)
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
+        payload = {"add": True}
+        await ws.send_json(
+            {
+                "type": GQL_CONNECTION_INIT,
+                "id": "demo",
+                "payload": payload,
+            }
+        )
+
+        response = await ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ACK
+
+        await ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "demo",
+                "payload": {
+                    "query": "subscription { connectionParamsAll }",
+                },
+            }
+        )
+
+        response = await ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "demo"
+        assert response["payload"]["data"] == {
+            "connectionParamsAll": str({"add": True, "added": True})
+        }
+
+
+async def test_connection_handler_reject(aiohttp_client):
+    """
+    Test that custom on_ws_connect() can reject a connection
+    """
+    app = create_app(keep_alive=False)
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
+        payload = {"reject-me": True}
+        await ws.send_json(
+            {
+                "type": GQL_CONNECTION_INIT,
+                "id": "demo",
+                "payload": payload,
+            }
+        )
+
+        response = await ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ERROR
+        assert response["payload"] == {"reason": "Forbidden"}
+        await ws.receive(timeout=2)  # receive close
+        assert ws.closed
+
+
+async def test_connection_handler_response(aiohttp_client):
+    """
+    Test that custom on_ws_connect() can add to connection_params
+    """
+    app = create_app(keep_alive=False)
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
+        payload = {"response": {"my-response": "hello"}}
+        await ws.send_json(
+            {
+                "type": GQL_CONNECTION_INIT,
+                "id": "demo",
+                "payload": payload,
+            }
+        )
+
+        response = await ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ACK
+        assert response["payload"] == {"my-response": "hello"}
