@@ -83,6 +83,10 @@ and [server](https://www.apollographql.com/docs/apollo-server/data/subscriptions
 implementations, by reading the contents of the initial
 websocket connection message into the `info.context` object.
 
+The user can override the `on_ws_connect()` method of `strawberry.Schema` to verify the connection parameters and reject the
+connection if they are incorrect.  Individual operations can also examine the `connection_params` for fine grained
+permissions.
+
 With Apollo-client as an example of how to send this initial connection information, one defines a `ws-link` as:
 
 ```javascript
@@ -99,7 +103,9 @@ const wsLink = new GraphQLWsLink(
 );
 ```
 
-and then, upon the establishment of the Susbcription request and underlying websocket connection,
+When a websocket connection is made, a handler is given the chance to examine
+and modify this information, optionally rejecting the connection.
+Then, upon the establishment of the Susbcription request
 Strawberry injects this `connectionParams` object as follows:
 
 ```python
@@ -123,24 +129,43 @@ class Query:
 class Subscription:
     @strawberry.subscription
     async def count(self, info: Info, target: int = 100) -> AsyncGenerator[int, None]:
+        # perform _authorization_ for this subscription
         connection_params: dict = info.context.get("connection_params")
-        token: str = connection_params.get(
-            "authToken"
-        )  # equal to "Bearer I_AM_A_VALID_AUTH_TOKEN"
-        if not authenticate_token(token):
+        username: str = connection_params.get(
+            "app_username"
+        )
+        if not username == "superuser":
             raise Exception("Forbidden!")
         for i in range(target):
             yield i
             await asyncio.sleep(0.5)
 
+# Subclass the schema so that we can pre-process the
+# connection_params
+class Schema(strawberry.Schema):
+    async def on_ws_connect(self, connection_params: Dict[str, Any]) -> Union[Literal[False], None, Dict[str,Any]]:
+        # perform _authentication_ for this connection
+        token: str = connection_params.get(
+            "authToken"
+        )  # equal to "Bearer I_AM_A_VALID_AUTH_TOKEN"
+        username = await authenticate_token(token):
+        if not username:
+            return False  # Reject connection
+        # Augment connection_params with retrieved information
+        connection_params["app_username"] = username
+        # Return a payload back to the client
+        return {"message": "Welcome to the application!",
+          "username": username
+        }
 
-schema = strawberry.Schema(query=Query, subscription=Subscription)
+
+schema = Schema(query=Query, subscription=Subscription)
 ```
 
-Strawberry expects the `connection_params` object to be any type, so the client is free to send
-any valid JSON object as the initial message of the websocket connection, which is abstracted
-as `connectionParams` in Apollo-client, and it will be successfully
-injected into the `info.context` object. It is then up to you to handle it correctly!
+Strawberry expects the `connection_params` object to be a mapping of strings to any type.
+so the client is free to send such a  JSON dict as the initial message of the websocket connection, which is abstracted
+as `connectionParams` in Apollo-client, and, after being handled by the `on_ws_connect()` handler,  it will be
+injected into the `info.context` object as a (possibly empty) dict. It is then up to you to interpret it correctly!
 
 ## Advanced Subscription Patterns
 
@@ -356,3 +381,42 @@ to learn how to correctly set up the graphql client of your choice.
 
 Strawberry supports single result operations out of the box when the `graphql-transport-ws` protocol is enabled.
 Single result operations are normal queries and mutations, so there is no need to adjust any resolvers.
+
+#### Authenticating Single result operations
+
+The same caveats apply to authenticating _single result operations_ as for _subscriptions_.
+
+In general, if the `graphql-transport-ws` protocol is enabled at all, **any** _Query_ or _Mutation_ can be
+initiated from a _websocket_ connection instead of a http request.  A client which performs subscriptions
+may well choose to use the same websocket connection for queries and mutations and not use http at all.
+The server cannot know by which _transport_ an operation will be performed and
+therefore must be able to support **both kinds** of authorization/authentication for a resolver.
+If _autentication_ is needed, perform it in the `on_ws_connect()` handler.  If per-operation _authorization_ is
+needed, check for the existence of a `connection_params` member in the context
+
+A query operation requiring authorization, on a server which supports the `graphql_transport_ws` protocol,
+might be written like this:
+
+"""python
+@strawberry.type
+class Query:
+    @strawberry.field
+    async def hello(self, info: Info) -> str:
+        # perform _authorization_ for this query, whether
+        # invoked over websocket or http
+        if info.context["connection_params"] is not None:
+            # We're being executed over websocket
+            connection_params: dict = info.context.get("connection_params")
+            username: str = connection_params.get(
+                "app_username"
+            )
+        else:
+            # check our http auth
+            username = info.context["http_auth"]["app_username"]
+        if not username == "superuser":
+            raise Exception("Forbidden!")
+        return "you were authenticated and authorized!"
+"""
+
+Different framework integrations provide different ways to perform http authentication and
+to intercept http headers and inject them into the `info.context`.
