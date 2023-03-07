@@ -1,10 +1,10 @@
 ---
-title: Custom schema extensions
+title: Custom extensions
 ---
 
-# Custom schema extensions
+# Custom extensions
 
-Strawberry provides support for adding schema extensions. Extensions can be used to
+Strawberry provides support for adding extensions. Extensions can be used to
 hook into different parts of the GraphQL execution and to provide additional
 results to the GraphQL response.
 
@@ -25,60 +25,6 @@ schema = strawberry.Schema(query=Query, extensions=[MyExtension])
 ```
 
 ## Hooks
-
-### Request
-
-`on_request_start` and `on_request_end` can be used to run code when a GraphQL request
-starts and ends. Both methods can alternatively be implemented asynchronously.
-
-```python
-from strawberry.extensions import SchemaExtension
-
-
-class MyExtension(SchemaExtension):
-    def on_request_start(self):
-        print("GraphQL request start")
-
-    def on_request_end(self):
-        print("GraphQL request end")
-```
-
-<details>
-  <summary>Extend error response format</summary>
-
-```python
-from strawberry.extensions import SchemaExtension
-
-
-class ExtendErrorFormat(SchemaExtension):
-    def on_request_end(self):
-        result = self.execution_context.result
-        if getattr(result, "errors", None):
-            result.errors = [
-                StrawberryGraphQLError(
-                    extensions={"additional_key": "additional_value"},
-                    nodes=error.nodes,
-                    source=error.source,
-                    positions=error.positions,
-                    path=error.path,
-                    original_error=error.original_error,
-                    message=error.message,
-                )
-                for error in result.errors
-            ]
-
-
-@strawberry.type
-class Query:
-    @strawberry.field
-    def ping(self) -> str:
-        raise Exception("This error occurred while querying the ping field")
-
-
-schema = strawberry.Schema(query=Query, extensions=[ExtendErrorFormat])
-```
-
-</details>
 
 ### Resolve
 
@@ -113,54 +59,107 @@ class MyExtension(SchemaExtension):
         return {}
 ```
 
-### Validation
+### Lifecycle hooks
 
-`on_validation_start` and `on_validation_end` can be used to run code on the validation
-step of the GraphQL execution. Both methods can be implemented asynchronously.
+Lifecycle hooks runs before graphql operation occur and after it is done.
+Lifecycle hooks uses generator syntax.
+In example:
+`on_operation` hook can be used to run code when a GraphQL operation
+starts and ends.
 
 ```python
 from strawberry.extensions import SchemaExtension
 
 
 class MyExtension(SchemaExtension):
-    def on_validation_start(self):
-        print("GraphQL validation start")
+    def on_operation(self):
+        print("GraphQL operation start")
+        yield
+        print("GraphQL operation end")
+```
 
-    def on_validation_end(self):
+<details>
+  <summary>Extend error response format</summary>
+
+```python
+class ExtendErrorFormat(SchemaExtension):
+    def on_operation(self):
+        yield
+        result = self.execution_context.result
+        if getattr(result, "errors", None):
+            result.errors = [
+                StrawberryGraphQLError(
+                    extensions={"additional_key": "additional_value"},
+                    nodes=error.nodes,
+                    source=error.source,
+                    positions=error.positions,
+                    path=error.path,
+                    original_error=error.original_error,
+                    message=error.message,
+                )
+                for error in result.errors
+            ]
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def ping(self) -> str:
+        raise Exception("This error occurred while querying the ping field")
+
+
+schema = strawberry.Schema(query=Query, extensions=[ExtendErrorFormat])
+```
+
+</details>
+
+#### Supported lifecycle hooks:
+
+- Validation
+
+`on_validate` can be used to run code on the validation
+step of the GraphQL execution.
+
+```python
+from strawberry.extensions import SchemaExtension
+
+
+class MyExtension(SchemaExtension):
+    def on_validate(self):
+        print("GraphQL validation start")
+        yield
         print("GraphQL validation end")
 ```
 
-### Parsing
+- Parse
 
-`on_parsing_start` and `on_parsing_end` can be used to run code on the parsing step of
-the GraphQL execution. Both methods can be implemented asynchronously.
+`on_parse` can be used to run code on the parsing step of
+the GraphQL execution.
 
 ```python
 from strawberry.extensions import SchemaExtension
 
 
 class MyExtension(SchemaExtension):
-    def on_parsing_start(self):
+    def on_parse(self):
         print("GraphQL parsing start")
-
-    def on_parsing_end(self):
+        yield
         print("GraphQL parsing end")
 ```
 
-### Execution
+- Execution
 
-`on_executing_start` and `on_executing_end` can be used to run code on the execution step of
-the GraphQL execution. Both methods can be implemented asynchronously.
+`on_execute` can be used to run code on the execution step of
+the GraphQL execution.
 
 ```python
 from strawberry.extensions import SchemaExtension
 
 
 class MyExtension(SchemaExtension):
-    def on_executing_start(self):
+    def on_execute(self):
         print("GraphQL execution start")
-
-    def on_executing_end(self):
+        yield
         print("GraphQL execution end")
 ```
 
@@ -179,7 +178,7 @@ response_cache = {}
 
 
 class ExecutionCache(SchemaExtension):
-    def on_executing_start(self):
+    def on_execute(self):
         # Check if we've come across this query before
         execution_context = self.execution_context
         self.cache_key = (
@@ -187,8 +186,7 @@ class ExecutionCache(SchemaExtension):
         )
         if self.cache_key in response_cache:
             self.execution_context.result = response_cache[self.cache_key]
-
-    def on_executing_end(self):
+        yield
         execution_context = self.execution_context
         if self.cache_key not in response_cache:
             response_cache[self.cache_key] = execution_context.result
@@ -205,7 +203,7 @@ schema = strawberry.Schema(
 </details>
 
 <details>
-  <summary>Rejecting a request before executing it</summary>
+  <summary>Rejecting an operation before executing it</summary>
 
 ```python
 import strawberry
@@ -213,7 +211,7 @@ from strawberry.extensions import SchemaExtension
 
 
 class RejectSomeQueries(SchemaExtension):
-    def on_executing_start(self):
+    def on_execute(self):
         # Reject all operations called "RejectMe"
         execution_context = self.execution_context
         if execution_context.operation_name == "RejectMe":
@@ -249,9 +247,8 @@ from mydb import get_db_session
 
 
 class MyExtension(SchemaExtension):
-    def on_request_start(self):
+    def on_operation(self):
         self.execution_context.context["db"] = get_db_session()
-
-    def on_request_end(self):
+        yield
         self.execution_context.context["db"].close()
 ```

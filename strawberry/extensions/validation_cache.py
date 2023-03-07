@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Optional
+from typing import Iterator, Optional
 
 from strawberry.extensions.base_extension import SchemaExtension
 from strawberry.schema.execute import validate_document
@@ -33,7 +33,7 @@ class ValidationCache(SchemaExtension):
     def __init__(self, maxsize: Optional[int] = None):
         self.cached_validate_document = lru_cache(maxsize=maxsize)(validate_document)
 
-    def on_validation_start(self) -> None:
+    def on_validate(self) -> Iterator[None]:
         execution_context = self.execution_context
 
         errors = self.cached_validate_document(
@@ -42,3 +42,4 @@ class ValidationCache(SchemaExtension):
             execution_context.validation_rules,
         )
         execution_context.errors = errors
+        yield

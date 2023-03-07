@@ -1,6 +1,65 @@
 CHANGELOG
 =========
 
+0.159.1 - 2023-03-07
+--------------------
+
+This releases adds support for Mypy 1.1.1
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2616](https://github.com/strawberry-graphql/strawberry/pull/2616/)
+
+
+0.159.0 - 2023-02-22
+--------------------
+
+This release changes how extension hooks are defined. The new style hooks are
+more flexible and allow to run code before and after the execution.
+
+The old style hooks are still supported but will be removed in future releases.
+
+**Before:**
+
+```python
+def on_executing_start(self):  # Called before the execution start
+    ...
+
+
+def on_executing_end(self):  # Called after the execution ends
+    ...
+```
+
+**After**
+
+```python
+def on_execute(self):
+    #  This part is called before the execution start
+    yield
+    #  This part is called after the execution ends
+```
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #2428](https://github.com/strawberry-graphql/strawberry/pull/2428/)
+
+
+0.158.2 - 2023-02-21
+--------------------
+
+Add a type annotation to `strawberry.fastapi.BaseContext`'s `__init__` method so that
+it can be used without `mypy` raising an error.
+
+Contributed by [Martin Winkel](https://github.com/SaturnFromTitan) via [PR #2581](https://github.com/strawberry-graphql/strawberry/pull/2581/)
+
+
+0.158.1 - 2023-02-19
+--------------------
+
+Version 1.5.10 of GraphiQL disabled introspection for deprecated
+arguments because it wasn't supported by all GraphQL server versions.
+This PR enables it so that deprecated arguments show up again in
+GraphiQL.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2575](https://github.com/strawberry-graphql/strawberry/pull/2575/)
+
+
 0.158.0 - 2023-02-18
 --------------------
 

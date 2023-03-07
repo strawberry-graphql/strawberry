@@ -7,8 +7,8 @@ from graphql import MiddlewareManager
 
 from strawberry.extensions.context import (
     ExecutingContextManager,
+    OperationContextManager,
     ParsingContextManager,
-    RequestContextManager,
     ValidationContextManager,
 )
 from strawberry.utils.await_maybe import await_maybe
@@ -47,8 +47,8 @@ class SchemaExtensionsRunner:
 
         self.extensions = init_extensions
 
-    def request(self) -> RequestContextManager:
-        return RequestContextManager(self.extensions)
+    def operation(self) -> OperationContextManager:
+        return OperationContextManager(self.extensions)
 
     def validation(self) -> ValidationContextManager:
         return ValidationContextManager(self.extensions)
