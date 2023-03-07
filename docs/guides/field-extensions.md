@@ -140,7 +140,7 @@ graph TD;
 
 <Tip>
 
-**Order matters**: the last extension in the list will be executed first, 
+**Order matters**: the last extension in the list will be executed first,
 while the first extension in the list extension will be applied to the field
 first. This enables cases like adding relay pagination in front of an extension
 that modifies the field's type.
