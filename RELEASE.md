@@ -23,7 +23,7 @@ class Query:
         return "This is a test!!"
 ```
 
-```gql
+```graphql
 query {
     string
 }

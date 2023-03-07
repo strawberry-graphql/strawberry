@@ -37,7 +37,7 @@ The extension will be called instead of the resolver and receives
 the resolver function as the `next` argument. Therefore, it is important
 to not modify any arguments that are passed to `next` in an incompatible way.
 
-```gql+json
+```graphql+response
 query {
     string
 }
