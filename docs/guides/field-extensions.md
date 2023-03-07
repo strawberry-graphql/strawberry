@@ -1,4 +1,6 @@
-## title: Field extensions
+---
+title: Field extensions
+---
 
 # Field extensions
 
@@ -9,7 +11,7 @@ modify the field and all arguments passed to the resolver.
 <Note>
 
 The following examples only cover sync execution. To use extensions in async contexts,
-please have a look at [Async Extensions and Resolvers](#Async Extensions and Resolvers)
+please have a look at [Async Extensions and Resolvers](#async-extensions-and-resolvers)
 
 </Note>
 
@@ -50,7 +52,9 @@ query {
 ## Modifying the field
 
 <Warning>
+
 The `StrawberryField` API is not stable and might change in the future without warning.
+
 </Warning>
 
 In some cases, the extended field needs to be compatible with the added extension.
