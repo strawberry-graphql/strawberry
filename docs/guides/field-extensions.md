@@ -109,20 +109,41 @@ type Client {
 
 ## Combining multiple field extensions
 
-When chaining multiple field extensions, the outermost extension is called first,
-and then it calls the next extension until it reaches the resolver.
+When chaining multiple field extensions, the last extension in the list is called first.
+Then, it calls the next extension until it reaches the resolver.
 The return value of each extension is passed as an argument to the next extension.
 This allows for creating a chain of field extensions that each perform a specific
 transformation on the data being passed through them.
 
+```python
+@strawberry.field(extensions=[LowerCaseExtension(), UpperCaseExtension()])
+def my_field():
+    return "My Result"
+```
+
+```mermaid
+graph TD;
+    style START fill:#FFFFFF00, stroke:#FFFFFF00;
+    style STOP fill:#FFFFFF00, stroke:#FFFFFF00;
+    STOP[ ]
+    START["execution context"]
+    A["UpperCaseExtension"];
+    B["LowerCaseExtension"];
+    R["Resolver"];
+    START--"resolve_field()"-->A;
+    A--"MY RESULT"-->START;
+    A--"next_()"-->B;
+    B--"my result"-->A;
+    B--"next_()"-->R;
+    R--"My Result"-->B;
+```
+
 <Tip>
 
-**Order matters**: the outermost extension will be executed first, while the innermost
-extension will be applied to the field first. This enables cases like
-adding relay pagination in front of an extension that modifies the field's type.
-
-For a of `extensions` of length `n`, `extensions[0]` is the innermost extension,
-while `extensions[n-1]` is the outermost.
+**Order matters**: the last extension in the list will be executed first, 
+while the first extension in the list extension will be applied to the field
+first. This enables cases like adding relay pagination in front of an extension
+that modifies the field's type.
 
 </Tip>
 
