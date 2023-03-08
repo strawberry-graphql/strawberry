@@ -509,3 +509,66 @@ def test_field_type_default():
     """
 
     assert print_schema(schema) == textwrap.dedent(expected).strip()
+
+
+def test_pydantic_type_default_none():
+    class UserPydantic(pydantic.BaseModel):
+        name: Optional[str] = None
+
+    @strawberry.experimental.pydantic.type(UserPydantic, all_fields=True)
+    class User:
+        ...
+
+    @strawberry.type
+    class Query:
+        a: User = strawberry.field()
+
+        @strawberry.field
+        def a(self) -> User:
+            return User()
+
+    schema = strawberry.Schema(Query)
+
+    expected = """
+    type Query {
+      a: User!
+    }
+
+    type User {
+      name: String
+    }
+    """
+
+    assert print_schema(schema) == textwrap.dedent(expected).strip()
+
+
+def test_pydantic_type_no_default_but_optional():
+    class UserPydantic(pydantic.BaseModel):
+        # pydantic automatically adds a default of None for Optional fields
+        name: Optional[str]
+
+    @strawberry.experimental.pydantic.type(UserPydantic, all_fields=True)
+    class User:
+        ...
+
+    @strawberry.type
+    class Query:
+        a: User = strawberry.field()
+
+        @strawberry.field
+        def a(self) -> User:
+            return User()
+
+    schema = strawberry.Schema(Query)
+
+    expected = """
+    type Query {
+      a: User!
+    }
+
+    type User {
+      name: String
+    }
+    """
+
+    assert print_schema(schema) == textwrap.dedent(expected).strip()
