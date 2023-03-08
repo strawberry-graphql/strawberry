@@ -1,6 +1,21 @@
 CHANGELOG
 =========
 
+0.161.0 - 2023-03-08
+--------------------
+
+Calling `ChannelsConsumer.channel_listen` multiple times will now pass
+along the messages being listened for to multiple callers, rather than
+only one of the callers, which was the old behaviour.
+
+This resolves an issue where creating multiple GraphQL subscriptions
+using a single websocket connection could result in only one of those
+subscriptions (in a non-deterministic order) being triggered if they
+are listening for channel layer messages of the same type.
+
+Contributed by [James Thorniley](https://github.com/jthorniley) via [PR #2525](https://github.com/strawberry-graphql/strawberry/pull/2525/)
+
+
 0.160.0 - 2023-03-08
 --------------------
 
