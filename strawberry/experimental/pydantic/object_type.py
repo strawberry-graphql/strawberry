@@ -37,14 +37,18 @@ from strawberry.utils.dataclasses import add_custom_init_fn
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
-    from pydantic.fields import ModelField
+    from pydantic.fields import ModelField, UndefinedType
 
 
 def get_type_for_field(field: ModelField, is_input: bool):
     outer_type = field.outer_type_
     replaced_type = replace_types_recursively(outer_type, is_input)
 
-    if not field.required:
+    default_defined: bool = (
+        field.default_factory is not None or field.default is not None
+    )
+    required: bool = field.required or default_defined
+    if not required:
         return Optional[replaced_type]
     else:
         return replaced_type

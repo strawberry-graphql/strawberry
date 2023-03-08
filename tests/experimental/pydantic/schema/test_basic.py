@@ -5,6 +5,7 @@ from typing import List, Optional, Union
 import pydantic
 
 import strawberry
+from strawberry.printer import print_schema
 
 
 def test_basic_type_field_list():
@@ -465,3 +466,46 @@ def test_basic_type_with_interface():
     assert not result.errors
     assert result.data["user"]["interfaceField"]["baseField"] == "abc"
     assert result.data["user"]["interfaceField"]["fieldB"] == 10
+
+
+def test_field_type_default():
+    class User(pydantic.BaseModel):
+        name: str = "James"
+
+    @strawberry.experimental.pydantic.type(User, all_fields=True)
+    class PydanticUser:
+        ...
+
+    @strawberry.type
+    class StrawberryUser:
+        name: str = "James"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def a(self) -> PydanticUser:
+            return PydanticUser()
+
+        @strawberry.field
+        def b(self) -> StrawberryUser:
+            return StrawberryUser()
+
+    schema = strawberry.Schema(Query)
+
+    # name should be required in both the PydanticUser and StrawberryUser
+    expected = """
+    type PydanticUser {
+      name: String!
+    }
+    
+    type Query {
+      a: PydanticUser!
+      b: StrawberryUser!
+    }
+    
+    type StrawberryUser {
+      name: String!
+    }
+    """
+
+    assert print_schema(schema) == textwrap.dedent(expected).strip()
