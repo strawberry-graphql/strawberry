@@ -1,6 +1,28 @@
 CHANGELOG
 =========
 
+0.160.0 - 2023-03-08
+--------------------
+
+Rename `Extension` to `SchemaExtension` to pave the way for FieldExtensions.
+Importing `Extension` from `strawberry.extensions` will now raise a deprecation
+warning.
+
+Before:
+
+```python
+from strawberry.extensions import Extension
+```
+
+After:
+
+```python
+from strawberry.extensions import SchemaExtension
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2574](https://github.com/strawberry-graphql/strawberry/pull/2574/)
+
+
 0.159.1 - 2023-03-07
 --------------------
 
