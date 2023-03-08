@@ -36,7 +36,7 @@ jobs:
 
       - run: poetry env use ${{ matrix.python-version }}
       - run: poetry install
-        # if: steps.setup-python.outputs.cache-hit != 'true'
+        if: steps.setup-python.outputs.cache-hit != 'true'
 
       - name: pytest
         run:
