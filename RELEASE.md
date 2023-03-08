@@ -7,9 +7,11 @@ This makes the behavior consistent with the behavior of normal strawberry types.
 class UserPydantic(pydantic.BaseModel):
     name: str = "James"
 
+
 @strawberry.experimental.pydantic.type(UserPydantic, all_fields=True)
 class User:
     ...
+
 
 @strawberry.type
 class Query:
