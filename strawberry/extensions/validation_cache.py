@@ -1,11 +1,11 @@
 from functools import lru_cache
 from typing import Iterator, Optional
 
-from strawberry.extensions.base_extension import Extension
+from strawberry.extensions.base_extension import SchemaExtension
 from strawberry.schema.execute import validate_document
 
 
-class ValidationCache(Extension):
+class ValidationCache(SchemaExtension):
     """
     Add LRU caching the validation step during execution to improve performance.
 

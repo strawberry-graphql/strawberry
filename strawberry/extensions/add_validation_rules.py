@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterator, List, Type
 
-from strawberry.extensions.base_extension import Extension
+from strawberry.extensions.base_extension import SchemaExtension
 
 if TYPE_CHECKING:
     from graphql import ASTValidationRule
 
 
-class AddValidationRules(Extension):
+class AddValidationRules(SchemaExtension):
     """
     Add graphql-core validation rules
 

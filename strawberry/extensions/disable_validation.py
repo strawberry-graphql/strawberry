@@ -1,9 +1,9 @@
 from typing import Iterator
 
-from strawberry.extensions.base_extension import Extension
+from strawberry.extensions.base_extension import SchemaExtension
 
 
-class DisableValidation(Extension):
+class DisableValidation(SchemaExtension):
     """
     Disable query validation
 
