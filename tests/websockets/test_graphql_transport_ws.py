@@ -962,3 +962,70 @@ async def test_subscription_errors_continue(ws: WebSocketClient):
         response = await ws.receive_json()
         assert response["type"] == CompleteMessage.type
         assert response["id"] == "sub1"
+
+
+async def test_long_validation_concurrent_query(ws: WebSocketClient):
+    """
+    Test that the websocket is not blocked while validating a
+    single-result-operation
+    """
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="query { conditionalFail(sleep:0.1) }"
+            ),
+        ).as_dict()
+    )
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub2",
+            payload=SubscribeMessagePayload(
+                query="query { conditionalFail(fail:false) }"
+            ),
+        ).as_dict()
+    )
+
+    # we expect the second query to arrive first, because the
+    # first query is stuck in validation
+    response = await ws.receive_json()
+    assert (
+        response
+        == NextMessage(
+            id="sub2", payload={"data": {"conditionalFail": "Hey"}}
+        ).as_dict()
+    )
+
+
+@pytest.mark.xfail
+async def test_long_validation_concurrent_subscription(ws: WebSocketClient):
+    """
+    Test that the websocket is not blocked while validating a
+    subscription
+    """
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="subscription { conditionalFail(sleep:0.1) }"
+            ),
+        ).as_dict()
+    )
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub2",
+            payload=SubscribeMessagePayload(
+                query="query { conditionalFail(fail:false) }"
+            ),
+        ).as_dict()
+    )
+
+    # we expect the second query to arrive first, because the
+    # first operation is stuck in validation
+    response = await ws.receive_json()
+    assert (
+        response
+        == NextMessage(
+            id="sub2", payload={"data": {"conditionalFail": "Hey"}}
+        ).as_dict()
+    )
