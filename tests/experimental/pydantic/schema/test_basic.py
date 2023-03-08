@@ -497,12 +497,12 @@ def test_field_type_default():
     type PydanticUser {
       name: String!
     }
-    
+
     type Query {
       a: PydanticUser!
       b: StrawberryUser!
     }
-    
+
     type StrawberryUser {
       name: String!
     }

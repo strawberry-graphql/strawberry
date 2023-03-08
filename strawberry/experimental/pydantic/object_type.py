@@ -37,7 +37,7 @@ from strawberry.utils.dataclasses import add_custom_init_fn
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
-    from pydantic.fields import ModelField, UndefinedType
+    from pydantic.fields import ModelField
 
 
 def get_type_for_field(field: ModelField, is_input: bool):

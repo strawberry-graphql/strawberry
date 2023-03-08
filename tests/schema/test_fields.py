@@ -166,7 +166,7 @@ def test_field_type_default():
     type Query {
       a: User!
     }
-    
+
     type User {
       name: String!
     }
