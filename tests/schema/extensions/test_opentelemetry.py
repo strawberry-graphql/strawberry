@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from opentelemetry.trace import SpanKind
 
@@ -160,17 +162,21 @@ async def test_open_tracing_gets_operation_name(global_tracer_mock, mocker):
 
 @pytest.mark.asyncio
 async def test_tracing_add_kwargs(global_tracer_mock, mocker):
+    @strawberry.input
+    class ComplexInputObject:
+        input: str
+
     @strawberry.type
     class Query:
         @strawberry.field
-        def hi(self, name: str) -> str:
-            return f"Hi {name}"
+        def hi(self, name: str, obj: ComplexInputObject) -> str:
+            return f"Hi {name}, {obj.input}"
 
     schema = strawberry.Schema(query=Query, extensions=[OpenTelemetryExtension])
 
     query = """
         query {
-            hi(name: "Patrick")
+            hi(name: "Patrick", obj: {input:"my_data"})
         }
     """
 
@@ -181,6 +187,9 @@ async def test_tracing_add_kwargs(global_tracer_mock, mocker):
             mocker.call().__enter__().set_attribute("graphql.parentType", "Query"),
             mocker.call().__enter__().set_attribute("graphql.path", "hi"),
             mocker.call().__enter__().set_attribute("graphql.param.name", "Patrick"),
+            mocker.call()
+            .__enter__()
+            .set_attribute("graphql.param.obj", json.dumps({"input": "my_data"})),
         ]
     )
 
