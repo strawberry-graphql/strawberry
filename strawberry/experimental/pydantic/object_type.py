@@ -47,8 +47,8 @@ def get_type_for_field(field: ModelField, is_input: bool):
     default_defined: bool = (
         field.default_factory is not None or field.default is not None
     )
-    required: bool = field.required or default_defined
-    if not required:
+    should_add_optional: bool = not (field.required or default_defined)
+    if should_add_optional:
         return Optional[replaced_type]
     else:
         return replaced_type
