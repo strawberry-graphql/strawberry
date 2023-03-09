@@ -433,6 +433,43 @@ def test_subscription_errors(test_client):
         ws.close()
 
 
+def test_subscription_error_no_complete(test_client):
+    """
+    Test that an "error" message is not followed by "complete"
+    """
+    with test_client.websocket_connect("/", [GRAPHQL_TRANSPORT_WS_PROTOCOL]) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='subscription { error(message: "TEST ERR") }',
+                ),
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert response["type"] == ErrorMessage.type
+        assert response["id"] == "sub1"
+
+        ws.send_json(
+            SubscribeMessage(
+                id="sub2",
+                payload=SubscribeMessagePayload(
+                    query='subscription { error(message: "TEST ERR") }',
+                ),
+            ).as_dict()
+        )
+        response = ws.receive_json()
+        assert response["type"] == ErrorMessage.type
+        assert response["id"] == "sub2"
+        ws.close()
+
+
 def test_subscription_exceptions(test_client):
     with test_client.websocket_connect("/", [GRAPHQL_TRANSPORT_WS_PROTOCOL]) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
