@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.161.1 - 2023-03-09
+--------------------
+
+Ensure that no other messages follow a "complete" or "error" message
+for an operation in the graphql-transport-ws protocol.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2600](https://github.com/strawberry-graphql/strawberry/pull/2600/)
+
+
 0.161.0 - 2023-03-08
 --------------------
 
