@@ -42,7 +42,7 @@ class HTTPHandler:
         self.process_result = process_result
         self.encode_json = encode_json
 
-    async def handle(self, scope: Scope, receive: Receive, send: Send):
+    async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
         request = Request(scope=scope, receive=receive)
         root_value = await self.get_root_value(request)
 

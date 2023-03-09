@@ -159,7 +159,7 @@ class StrawberryAnnotation:
         # ... raise NotImplementedError(f"Unknown type {evaled_type}")
         return evaled_type
 
-    def set_namespace_from_field(self, field: StrawberryField):
+    def set_namespace_from_field(self, field: StrawberryField) -> None:
         module = sys.modules[field.origin.__module__]
         self.namespace = module.__dict__
 

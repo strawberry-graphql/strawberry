@@ -46,7 +46,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
     async def handle_request(self) -> Any:
         await self._ws.accept(subprotocol=GRAPHQL_WS_PROTOCOL)
 
-    async def handle_disconnect(self, code):
+    async def handle_disconnect(self, code) -> None:
         if self.keep_alive_task:
             self.keep_alive_task.cancel()
             with suppress(BaseException):

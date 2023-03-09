@@ -53,7 +53,7 @@ def strawberry_exception_handler(
     exception_type: Type[BaseException],
     exception: BaseException,
     traceback: Optional[TracebackType],
-):
+) -> None:
     _get_handler(exception_type)(exception_type, exception, traceback)
 
 
@@ -64,7 +64,7 @@ def strawberry_threading_exception_handler(
         Optional[TracebackType],
         Optional[threading.Thread],
     ]
-):
+) -> None:
     (exception_type, exception, traceback, _) = args
 
     if exception is None:
@@ -81,14 +81,14 @@ def strawberry_threading_exception_handler(
     _get_handler(exception_type)(exception_type, exception, traceback)
 
 
-def reset_exception_handler():
+def reset_exception_handler() -> None:
     sys.excepthook = sys.__excepthook__
 
     if sys.version_info >= (3, 8):
         threading.excepthook = original_threading_exception_hook
 
 
-def setup_exception_handler():
+def setup_exception_handler() -> None:
     if should_use_rich_exceptions():
         sys.excepthook = strawberry_exception_handler
 

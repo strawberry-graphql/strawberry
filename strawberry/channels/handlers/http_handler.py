@@ -81,7 +81,7 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         self.subscriptions_enabled = subscriptions_enabled
         super().__init__(**kwargs)
 
-    async def handle(self, body: bytes):
+    async def handle(self, body: bytes) -> None:
         try:
             if self.scope["method"] == "GET":
                 result = await self.get(body)

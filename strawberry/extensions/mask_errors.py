@@ -32,7 +32,7 @@ class MaskErrors(SchemaExtension):
             original_error=None,
         )
 
-    def on_request_end(self):
+    def on_request_end(self) -> None:
         result = self.execution_context.result
         if result and result.errors:
             processed_errors = []

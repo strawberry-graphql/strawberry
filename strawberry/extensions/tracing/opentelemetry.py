@@ -101,7 +101,9 @@ class OpenTelemetryExtension(SchemaExtension):
             return args
         return self._arg_filter(deepcopy(args), info)
 
-    def add_tags(self, span: Span, info: GraphQLResolveInfo, kwargs: Dict[str, Any]):
+    def add_tags(
+        self, span: Span, info: GraphQLResolveInfo, kwargs: Dict[str, Any]
+    ) -> None:
         graphql_path = ".".join(map(str, get_path_from_info(info)))
 
         span.set_attribute("component", "graphql")

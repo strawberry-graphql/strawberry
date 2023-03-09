@@ -38,7 +38,7 @@ from strawberry.cli.utils import load_schema
     show_default=True,
     help="Log GraphQL operations",
 )
-def server(schema, host, port, log_level, app_dir, log_operations):
+def server(schema, host, port, log_level, app_dir, log_operations) -> None:
     sys.path.insert(0, app_dir)
 
     try:

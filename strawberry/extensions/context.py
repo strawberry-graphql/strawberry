@@ -140,7 +140,7 @@ class ExtensionContextManagerBase:
             hook = iterator()
             return WrappedHook(extension, hook, False)
 
-    def run_hooks_sync(self, is_exit: bool = False):
+    def run_hooks_sync(self, is_exit: bool = False) -> None:
         """Run extensions synchronously."""
         ctx = (
             contextlib.suppress(StopIteration, StopAsyncIteration)
@@ -157,7 +157,7 @@ class ExtensionContextManagerBase:
                 else:
                     hook.initialized_hook.__next__()  # type: ignore[union-attr]
 
-    async def run_hooks_async(self, is_exit: bool = False):
+    async def run_hooks_async(self, is_exit: bool = False) -> None:
         """Run extensions asynchronously with support for sync lifecycle hooks.
 
         The ``is_exit`` flag is required as a `StopIteration` cannot be raised from

@@ -11,7 +11,7 @@ class StrawberryJSONEncoder(JSONEncoder):
 
 def pretty_print_graphql_operation(
     operation_name: Optional[str], query: str, variables: Optional[Dict["str", Any]]
-):
+) -> None:
     """Pretty print a GraphQL operation using pygments.
 
     Won't print introspection operation to prevent noise in the output."""
