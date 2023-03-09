@@ -79,7 +79,7 @@ class GraphQLView(HTTPMethodView):
 
             self.json_encoder = json.JSONEncoder
 
-    def get_root_value(self):
+    def get_root_value(self) -> Any:
         return None
 
     async def get_context(

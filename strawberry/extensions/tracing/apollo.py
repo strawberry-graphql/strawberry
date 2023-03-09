@@ -121,7 +121,7 @@ class ApolloTracingExtension(SchemaExtension):
     def get_results(self):
         return {"tracing": self.stats.to_json()}
 
-    async def resolve(self, _next, root, info, *args, **kwargs):
+    async def resolve(self, _next, root, info, *args, **kwargs) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -154,7 +154,7 @@ class ApolloTracingExtension(SchemaExtension):
 
 
 class ApolloTracingExtensionSync(ApolloTracingExtension):
-    def resolve(self, _next, root, info, *args, **kwargs):
+    def resolve(self, _next, root, info, *args, **kwargs) -> Any:
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 

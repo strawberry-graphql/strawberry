@@ -46,7 +46,7 @@ def normalize_type(type_) -> Any:
     return type_
 
 
-def get_strawberry_type_from_model(type_: Any):
+def get_strawberry_type_from_model(type_: Any) -> Any:
     if hasattr(type_, "_strawberry_type"):
         return type_._strawberry_type
     else:
