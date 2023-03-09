@@ -242,10 +242,7 @@ class Schema(strawberry.Schema):
             return False
         # 3. spend time evaluating
         if "sleep" in connection_params:
-            try:
-                await asyncio.sleep(float(connection_params["sleep"]))
-            except ValueError:
-                pass
+            await asyncio.sleep(float(connection_params["sleep"]))
         # 4. return any response in the payload
         if "response" in connection_params:
             return connection_params["response"]
