@@ -533,6 +533,53 @@ async def test_subscription_errors(aiohttp_client):
         assert ws.closed
 
 
+async def test_subscription_error_no_complete(aiohttp_client):
+    """
+    Test that an "error" message is not followed by "complete"
+    """
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = await ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        # get an "error" message
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='subscription { error(message: "TEST ERR") }',
+                ),
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert response["type"] == ErrorMessage.type
+        assert response["id"] == "sub1"
+
+        # after an "error" message, there should be nothing more
+        # sent regarding "sub1", not even a "complete".
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub2",
+                payload=SubscribeMessagePayload(
+                    query='subscription { error(message: "TEST ERR") }',
+                ),
+            ).as_dict()
+        )
+        response = await ws.receive_json()
+        assert response["type"] == ErrorMessage.type
+        assert response["id"] == "sub2"
+
+        await ws.close()
+        assert ws.closed
+
+
 async def test_subscription_exceptions(aiohttp_client):
     app = create_app()
     aiohttp_app_client = await aiohttp_client(app)

@@ -17,7 +17,7 @@ from typing import (
     Union,
 )
 
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 from strawberry.utils.await_maybe import AwaitableOrValue, await_maybe
 
 if TYPE_CHECKING:
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 class WrappedHook(NamedTuple):
-    extension: Extension
+    extension: SchemaExtension
     initialized_hook: Union[AsyncIterator[None], Iterator[None]]
     is_async: bool
 
@@ -47,15 +47,15 @@ class ExtensionContextManagerBase:
     LEGACY_ENTER: str
     LEGACY_EXIT: str
 
-    def __init__(self, extensions: List[Extension]):
+    def __init__(self, extensions: List[SchemaExtension]):
         self.hooks: List[WrappedHook] = []
-        self.default_hook: Hook = getattr(Extension, self.HOOK_NAME)
+        self.default_hook: Hook = getattr(SchemaExtension, self.HOOK_NAME)
         for extension in extensions:
             hook = self.get_hook(extension)
             if hook:
                 self.hooks.append(hook)
 
-    def get_hook(self, extension: Extension) -> Optional[WrappedHook]:
+    def get_hook(self, extension: SchemaExtension) -> Optional[WrappedHook]:
         on_start = getattr(extension, self.LEGACY_ENTER, None)
         on_end = getattr(extension, self.LEGACY_EXIT, None)
 
@@ -90,7 +90,7 @@ class ExtensionContextManagerBase:
 
     @staticmethod
     def from_legacy(
-        extension: Extension,
+        extension: SchemaExtension,
         on_start: Optional[Callable[[], None]] = None,
         on_end: Optional[Callable[[], None]] = None,
     ) -> WrappedHook:
@@ -120,8 +120,8 @@ class ExtensionContextManagerBase:
 
     @staticmethod
     def from_callable(
-        extension: Extension,
-        func: Callable[[Extension], AwaitableOrValue[Any]],
+        extension: SchemaExtension,
+        func: Callable[[SchemaExtension], AwaitableOrValue[Any]],
     ) -> WrappedHook:
         if iscoroutinefunction(func):
 
@@ -151,7 +151,7 @@ class ExtensionContextManagerBase:
             with ctx:
                 if hook.is_async:
                     raise RuntimeError(
-                        f"Extension hook {hook.extension}.{self.HOOK_NAME} "
+                        f"SchemaExtension hook {hook.extension}.{self.HOOK_NAME} "
                         "failed to complete synchronously."
                     )
                 else:
@@ -200,24 +200,24 @@ class ExtensionContextManagerBase:
 
 
 class OperationContextManager(ExtensionContextManagerBase):
-    HOOK_NAME = Extension.on_operation.__name__
+    HOOK_NAME = SchemaExtension.on_operation.__name__
     LEGACY_ENTER = "on_request_start"
     LEGACY_EXIT = "on_request_end"
 
 
 class ValidationContextManager(ExtensionContextManagerBase):
-    HOOK_NAME = Extension.on_validate.__name__
+    HOOK_NAME = SchemaExtension.on_validate.__name__
     LEGACY_ENTER = "on_validation_start"
     LEGACY_EXIT = "on_validation_end"
 
 
 class ParsingContextManager(ExtensionContextManagerBase):
-    HOOK_NAME = Extension.on_parse.__name__
+    HOOK_NAME = SchemaExtension.on_parse.__name__
     LEGACY_ENTER = "on_parsing_start"
     LEGACY_EXIT = "on_parsing_end"
 
 
 class ExecutingContextManager(ExtensionContextManagerBase):
-    HOOK_NAME = Extension.on_execute.__name__
+    HOOK_NAME = SchemaExtension.on_execute.__name__
     LEGACY_ENTER = "on_executing_start"
     LEGACY_EXIT = "on_executing_end"

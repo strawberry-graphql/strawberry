@@ -8,15 +8,15 @@ Strawberry provides support for adding extensions. Extensions can be used to
 hook into different parts of the GraphQL execution and to provide additional
 results to the GraphQL response.
 
-To create a custom extensions you can use extend from our `Extension` base
+To create a custom extensions you can use extend from our `SchemaExtension` base
 class:
 
 ```python
 import strawberry
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 
 
-class MyExtension(Extension):
+class MyExtension(SchemaExtension):
     def get_results(self):
         return {"example": "this is an example for an extension"}
 
@@ -36,10 +36,10 @@ Note that `resolve` can also be implemented asynchronously.
 
 ```python
 from strawberry.types import Info
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 
 
-class MyExtension(Extension):
+class MyExtension(SchemaExtension):
     def resolve(self, _next, root, info: Info, *args, **kwargs):
         return _next(root, info, *args, **kwargs)
 ```
@@ -51,10 +51,10 @@ resolving to a dictionary of data that will be included in the GraphQL response.
 
 ```python
 from typing import Any, Dict
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 
 
-class MyExtension(Extension):
+class MyExtension(SchemaExtension):
     def get_results(self) -> Dict[str, Any]:
         return {}
 ```
@@ -68,10 +68,10 @@ In example:
 starts and ends.
 
 ```python
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 
 
-class MyExtension(Extension):
+class MyExtension(SchemaExtension):
     def on_operation(self):
         print("GraphQL operation start")
         yield
@@ -82,7 +82,7 @@ class MyExtension(Extension):
   <summary>Extend error response format</summary>
 
 ```python
-class ExtendErrorFormat(Extension):
+class ExtendErrorFormat(SchemaExtension):
     def on_operation(self):
         yield
         result = self.execution_context.result
@@ -121,10 +121,10 @@ schema = strawberry.Schema(query=Query, extensions=[ExtendErrorFormat])
 step of the GraphQL execution.
 
 ```python
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 
 
-class MyExtension(Extension):
+class MyExtension(SchemaExtension):
     def on_validate(self):
         print("GraphQL validation start")
         yield
@@ -137,10 +137,10 @@ class MyExtension(Extension):
 the GraphQL execution.
 
 ```python
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 
 
-class MyExtension(Extension):
+class MyExtension(SchemaExtension):
     def on_parse(self):
         print("GraphQL parsing start")
         yield
@@ -153,10 +153,10 @@ class MyExtension(Extension):
 the GraphQL execution.
 
 ```python
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 
 
-class MyExtension(Extension):
+class MyExtension(SchemaExtension):
     def on_execute(self):
         print("GraphQL execution start")
         yield
@@ -171,13 +171,13 @@ class MyExtension(Extension):
 ```python
 import json
 import strawberry
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 
 # Use an actual cache in production so that this doesn't grow unbounded
 response_cache = {}
 
 
-class ExecutionCache(Extension):
+class ExecutionCache(SchemaExtension):
     def on_execute(self):
         # Check if we've come across this query before
         execution_context = self.execution_context
@@ -207,10 +207,10 @@ schema = strawberry.Schema(
 
 ```python
 import strawberry
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 
 
-class RejectSomeQueries(Extension):
+class RejectSomeQueries(SchemaExtension):
     def on_execute(self):
         # Reject all operations called "RejectMe"
         execution_context = self.execution_context
@@ -233,7 +233,7 @@ schema = strawberry.Schema(
 
 ### Execution Context
 
-The `Extension` object has an `execution_context` property on `self` of type
+The `SchemaExtension` object has an `execution_context` property on `self` of type
 `ExecutionContext`.
 
 This object can be used to gain access to additional GraphQL context, or the request
@@ -241,12 +241,12 @@ context. Take a look at the [`ExecutionContext` type](https://github.com/strawbe
 for available data.
 
 ```python
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 
 from mydb import get_db_session
 
 
-class MyExtension(Extension):
+class MyExtension(SchemaExtension):
     def on_operation(self):
         self.execution_context.context["db"] = get_db_session()
         yield

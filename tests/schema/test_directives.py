@@ -6,7 +6,7 @@ import pytest
 
 import strawberry
 from strawberry.directive import DirectiveLocation, DirectiveValue
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 from strawberry.schema.config import StrawberryConfig
 from strawberry.types.info import Info
 from strawberry.utils.await_maybe import await_maybe
@@ -329,7 +329,7 @@ def test_runs_directives_with_extensions():
     def uppercase(value: str):
         return value.upper()
 
-    class ExampleExtension(Extension):
+    class ExampleExtension(SchemaExtension):
         def resolve(self, _next, root, info, *args, **kwargs):
             return _next(root, info, *args, **kwargs)
 
@@ -368,7 +368,7 @@ async def test_runs_directives_with_extensions_async():
     def uppercase(value: str):
         return value.upper()
 
-    class ExampleExtension(Extension):
+    class ExampleExtension(SchemaExtension):
         async def resolve(self, _next, root, info, *args, **kwargs):
             return await await_maybe(_next(root, info, *args, **kwargs))
 
