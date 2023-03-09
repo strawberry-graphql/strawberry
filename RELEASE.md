@@ -9,6 +9,7 @@ This is now fixed, and the schema will now correctly show the type as required.
 import pydantic
 import strawberry
 
+
 class UserPydantic(pydantic.BaseModel):
     name: str = "James"
 

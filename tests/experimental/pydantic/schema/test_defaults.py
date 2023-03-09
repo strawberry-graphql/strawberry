@@ -142,12 +142,12 @@ def test_input_type_default():
     input PydanticUser {
       name: String! = "James"
     }
-    
+
     type Query {
       a(user: PydanticUser!): String!
       b(user: StrawberryUser!): String!
     }
-    
+
     input StrawberryUser {
       name: String! = "James"
     }
