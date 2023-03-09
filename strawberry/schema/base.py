@@ -101,4 +101,4 @@ class BaseSchema(Protocol):
         Otherwise, it may optionally modify the parameters and return
         a payload to the client.
         """
-        return
+        return None
