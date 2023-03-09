@@ -280,6 +280,8 @@ ignore = [
     "SIM114",
 
     "DJ008",
+
+    "RET501",  # removing `return None` conflicts with mypy
 ]
 fix = true
 exclude = [
