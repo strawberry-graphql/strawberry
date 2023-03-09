@@ -4,6 +4,7 @@ import pytest
 from graphql import GraphQLError
 
 import strawberry
+from strawberry.types.execution import ExecutionResult
 
 
 def test_serialization():
@@ -63,7 +64,7 @@ def test_deserialization_with_parse_literal():
     assert Query.deserialized == datetime.date(2019, 10, 25)
 
 
-def execute_mutation(value):
+def execute_mutation(value) -> ExecutionResult:
     @strawberry.type
     class Query:
         ok: bool

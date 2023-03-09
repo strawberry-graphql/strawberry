@@ -7,7 +7,7 @@ AwaitableOrValue = Union[Awaitable[T], T]
 AsyncIteratorOrIterator = Union[AsyncIterator[T], Iterator[T]]
 
 
-async def await_maybe(value: AwaitableOrValue):
+async def await_maybe(value: AwaitableOrValue):  # noqa: ANN201
     if inspect.isawaitable(value):
         return await value
 

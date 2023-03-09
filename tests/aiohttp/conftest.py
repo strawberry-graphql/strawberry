@@ -22,5 +22,5 @@ async def aiohttp_app_client_no_get(event_loop, aiohttp_client) -> Any:
 
 
 @pytest.fixture
-def graphql_client(aiohttp_app_client):
+def graphql_client(aiohttp_app_client) -> GraphQLTestClient:
     return GraphQLTestClient(aiohttp_app_client, url="/graphql")

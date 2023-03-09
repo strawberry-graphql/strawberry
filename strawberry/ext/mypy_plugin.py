@@ -905,7 +905,7 @@ class StrawberryPlugin(Plugin):
 
         return None
 
-    def get_type_analyze_hook(self, fullname: str):
+    def get_type_analyze_hook(self, fullname: str) -> Union[Callable[..., Type], None]:
         if self._is_strawberry_lazy_type(fullname):
             return lazy_type_analyze_callback
 
@@ -1030,7 +1030,7 @@ class StrawberryPlugin(Plugin):
         )
 
 
-def plugin(version: str):
+def plugin(version: str) -> Type[StrawberryPlugin]:
     match = VERSION_RE.match(version)
     if match:
         MypyVersion.VERSION = Decimal(".".join(match.groups()))

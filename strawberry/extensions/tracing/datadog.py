@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Iterator, Optional
+from typing import TYPE_CHECKING, Any, Generator, Iterator, Optional
 
 from ddtrace import tracer
 
@@ -34,7 +34,7 @@ class DatadogTracingExtension(SchemaExtension):
 
         return query_hash
 
-    def hash_query(self, query: str):
+    def hash_query(self, query: str) -> str:
         return hashlib.md5(query.encode("utf-8")).hexdigest()
 
     def on_operation(self) -> Iterator[None]:
@@ -64,12 +64,12 @@ class DatadogTracingExtension(SchemaExtension):
         yield
         self.request_span.finish()
 
-    def on_validate(self):
+    def on_validate(self) -> Generator[None, None, None]:
         self.validation_span = tracer.trace("Validation", span_type="graphql")
         yield
         self.validation_span.finish()
 
-    def on_parse(self):
+    def on_parse(self) -> Generator[None, None, None]:
         self.parsing_span = tracer.trace("Parsing", span_type="graphql")
         yield
         self.parsing_span.finish()

@@ -103,7 +103,7 @@ def is_type_var(annotation: Type) -> bool:
     return isinstance(annotation, TypeVar)
 
 
-def get_parameters(annotation: Type):
+def get_parameters(annotation: Type) -> Union[Tuple[object], Tuple[()]]:
     if (
         isinstance(annotation, _GenericAlias)
         or isinstance(annotation, type)

@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from starlette.types import Receive, Scope, Send
 
     from strawberry.schema import BaseSchema
+    from strawberry.types.execution import ExecutionResult
 
 
 class HTTPHandler:
@@ -199,7 +200,7 @@ class HTTPHandler:
         operation_name: Optional[str] = None,
         root_value: Any = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
-    ):
+    ) -> ExecutionResult:
         if self.debug:
             pretty_print_graphql_operation(operation_name, query, variables)
 
