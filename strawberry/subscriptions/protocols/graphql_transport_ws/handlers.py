@@ -322,6 +322,8 @@ class Operation:
     Helps enforce protocol state transition.
     """
 
+    __slots__ = ["handler", "id", "completed"]
+
     def __init__(self, handler: BaseGraphQLTransportWSHandler, id: str):
         self.handler = handler
         self.id = id
