@@ -1,9 +1,14 @@
-Release type: patch
+Release type: minor
 
-Fixes an issue where a pydantic type that is required, with a default, would get converted to a strawberry type that is not required.
-This makes the behavior consistent with the behavior of normal strawberry types.
+This release introduces a breaking change to make pydantic default behavior consistent with normal strawberry types.
+This changes the schema generated for pydantic types, that are required, and have default values.
+Previously pydantic type with a default, would get converted to a strawberry type that is not required.
+This is now fixed, and the schema will now correctly show the type as required.
 
 ```python
+import pydantic
+import strawberry
+
 class UserPydantic(pydantic.BaseModel):
     name: str = "James"
 
