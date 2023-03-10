@@ -1,6 +1,47 @@
 CHANGELOG
 =========
 
+0.162.0 - 2023-03-10
+--------------------
+
+Adds support for a custom field using the approach specified in issue [#2168](abc).
+Field Extensions may be used to change the way how fields work and what they return.
+Use cases might include pagination, permissions or other behavior modifications.
+
+```python
+from strawberry.extensions import FieldExtension
+
+
+class UpperCaseExtension(FieldExtension):
+    async def resolve_async(
+        self, next: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
+    ):
+        result = await next(source, info, **kwargs)
+        return str(result).upper()
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(extensions=[UpperCaseExtension()])
+    async def string(self) -> str:
+        return "This is a test!!"
+```
+
+```graphql
+query {
+    string
+}
+```
+
+```json
+{
+  "string": "THIS IS A TEST!!"
+}
+```
+
+Contributed by [Erik Wrede](https://github.com/erikwrede) via [PR #2567](https://github.com/strawberry-graphql/strawberry/pull/2567/)
+
+
 0.161.1 - 2023-03-09
 --------------------
 
