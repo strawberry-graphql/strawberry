@@ -7,6 +7,7 @@ from typing_extensions import Annotated
 import pytest
 
 import strawberry
+from strawberry.exceptions import InvalidUnionTypeError
 from strawberry.lazy_type import lazy
 
 
@@ -644,3 +645,20 @@ def test_lazy_union():
 
     assert result.data["a"]["__typename"] == "TypeA"
     assert result.data["b"]["__typename"] == "TypeB"
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidUnionTypeError, match="Type `int` cannot be used in a GraphQL Union"
+)
+def test_error_with_invalid_annotated_type():
+    @strawberry.type
+    class Something:
+        h: str
+
+    AnnotatedInt = Annotated[int, "something_else"]
+
+    @strawberry.type
+    class Query:
+        union: Union[Something, AnnotatedInt]
+
+    strawberry.Schema(query=Query)

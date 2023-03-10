@@ -72,7 +72,6 @@ class GraphQLView(BaseGraphQLView):
                     status=400, response="Unable to parse request body as JSON"
                 )
         elif content_type.startswith("multipart/form-data"):
-
             try:
                 operations = json.loads(request.form.get("operations", "{}"))
                 files_map = json.loads(request.form.get("map", "{}"))
@@ -162,7 +161,6 @@ class AsyncGraphQLView(BaseGraphQLView):
                     status=400, response="Unable to parse request body as JSON"
                 )
         elif content_type.startswith("multipart/form-data"):
-
             try:
                 operations = json.loads(request.form.get("operations", "{}"))
                 files_map = json.loads(request.form.get("map", "{}"))

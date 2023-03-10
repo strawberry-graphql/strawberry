@@ -85,8 +85,8 @@ class StrawberryField(dataclasses.Field):
         default_factory: Union[Callable[[], Any], object] = dataclasses.MISSING,
         metadata: Optional[Mapping[Any, Any]] = None,
         deprecation_reason: Optional[str] = None,
-        directives: Sequence[object] = [],
-        extensions: Optional[List[FieldExtension]] = None,
+        directives: Sequence[object] = (),
+        extensions: List[FieldExtension] = (),  # type: ignore
     ):
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
@@ -136,7 +136,7 @@ class StrawberryField(dataclasses.Field):
 
         self.permission_classes: List[Type[BasePermission]] = list(permission_classes)
         self.directives = list(directives)
-        self.extensions: Optional[List[FieldExtension]] = extensions
+        self.extensions: List[FieldExtension] = list(extensions)
 
         # Automatically add the permissions extension
         if len(self.permission_classes):
@@ -153,7 +153,7 @@ class StrawberryField(dataclasses.Field):
             )
         self.deprecation_reason = deprecation_reason
 
-    def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
+    def __call__(self, resolver: _RESOLVER_TYPE) -> StrawberryField:
         """Add a resolver to the field"""
 
         # Allow for StrawberryResolvers or bare functions to be provided
@@ -266,7 +266,6 @@ class StrawberryField(dataclasses.Field):
             if self.base_resolver is not None:
                 # Handle unannotated functions (such as lambdas)
                 if self.base_resolver.type is not None:
-
                     # Generics will raise MissingTypesForGenericError later
                     # on if we let it be returned. So use `type_annotation` instead
                     # which is the same behaviour as having no type information.
@@ -310,7 +309,7 @@ class StrawberryField(dataclasses.Field):
 
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
-    ) -> "StrawberryField":
+    ) -> StrawberryField:
         new_type: Union[StrawberryType, type] = self.type
 
         # TODO: Remove with creation of StrawberryObject. Will act same as other
@@ -473,7 +472,7 @@ def field(
         default_factory=default_factory,
         metadata=metadata,
         directives=directives or (),
-        extensions=extensions,
+        extensions=extensions or [],
     )
 
     if resolver:

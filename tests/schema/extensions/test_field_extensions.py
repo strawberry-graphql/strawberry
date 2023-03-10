@@ -100,6 +100,7 @@ async def test_extension_result_modification_async():
     query = "query { string }"
 
     result = await schema.execute(query)
+
     # The result should be lowercase because that is the last extension in the chain
     assert result.data["string"] == "THIS IS A TEST!!"
 

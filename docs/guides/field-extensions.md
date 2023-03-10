@@ -1,4 +1,6 @@
-## title: Field extensions
+---
+title: Field extensions
+---
 
 # Field extensions
 
@@ -9,7 +11,7 @@ modify the field and all arguments passed to the resolver.
 <Note>
 
 The following examples only cover sync execution. To use extensions in async contexts,
-please have a look at [Async Extensions and Resolvers](#Async Extensions and Resolvers)
+please have a look at [Async Extensions and Resolvers](#async-extensions-and-resolvers)
 
 </Note>
 
@@ -37,7 +39,7 @@ The extension will be called instead of the resolver and receives
 the resolver function as the `next` argument. Therefore, it is important
 to not modify any arguments that are passed to `next` in an incompatible way.
 
-```gql+json
+```graphql+response
 query {
     string
 }
@@ -48,6 +50,12 @@ query {
 ```
 
 ## Modifying the field
+
+<Warning>
+
+The `StrawberryField` API is not stable and might change in the future without warning.
+
+</Warning>
 
 In some cases, the extended field needs to be compatible with the added extension.
 `FieldExtension` provides an `apply(field: StrawberryField)` method that can be
@@ -101,20 +109,24 @@ type Client {
 
 ## Combining multiple field extensions
 
-When chaining multiple field extensions, the outermost extension is called first,
-and then it calls the next extension until it reaches the resolver.
+When chaining multiple field extensions, the last extension in the list is called first.
+Then, it calls the next extension until it reaches the resolver.
 The return value of each extension is passed as an argument to the next extension.
 This allows for creating a chain of field extensions that each perform a specific
 transformation on the data being passed through them.
 
+```python
+@strawberry.field(extensions=[LowerCaseExtension(), UpperCaseExtension()])
+def my_field():
+    return "My Result"
+```
+
 <Tip>
 
-**Order matters**: the outermost extension will be executed first, while the innermost
-extension will be applied to the field first. This enables cases like
-adding relay pagination in front of an extension that modifies the field's type.
-
-For a of `extensions` of length `n`, `extensions[0]` is the innermost extension,
-while `extensions[n-1]` is the outermost.
+**Order matters**: the last extension in the list will be executed first,
+while the first extension in the list extension will be applied to the field
+first. This enables cases like adding relay pagination in front of an extension
+that modifies the field's type.
 
 </Tip>
 
@@ -149,10 +161,8 @@ from strawberry.extensions import FieldExtension
 
 
 class UpperCaseExtension(FieldExtension):
-    async def resolve(
-        self, next: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
-    ):
-        result = await next(source, info, **kwargs)
+    def resolve(self, next: Callable[..., Any], source: Any, info: Info, **kwargs):
+        result = next(source, info, **kwargs)
         return str(result).upper()
 
     async def resolve_async(

@@ -35,6 +35,8 @@
 
 ## [Extensions](./extensions)
 
+## [Errors](./errors/)
+
 ## Guides
 
 - [Authentication](./guides/authentication.md)

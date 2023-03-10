@@ -18,13 +18,13 @@ from typing import (
 
 from starlette import status
 from starlette.background import BackgroundTasks  # noqa: TCH002
-from starlette.requests import HTTPConnection, Request  # noqa: TCH002
+from starlette.requests import HTTPConnection, Request
 from starlette.responses import (
     HTMLResponse,
     PlainTextResponse,
     Response,
 )
-from starlette.websockets import WebSocket  # noqa: TCH002
+from starlette.websockets import WebSocket
 
 from fastapi import APIRouter, Depends
 from strawberry.exceptions import InvalidCustomContext, MissingQueryError

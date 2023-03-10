@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.enum import EnumDefinition
-    from strawberry.extensions import Extension
+    from strawberry.extensions import SchemaExtension
     from strawberry.federation.schema_directives import ComposeDirective
     from strawberry.schema.config import StrawberryConfig
     from strawberry.schema.types.concrete_type import TypeMap
@@ -59,7 +59,7 @@ class Schema(BaseSchema):
         # TODO: we should update directives' type in the main schema
         directives: Iterable[Type] = (),
         types: Iterable[Type] = (),
-        extensions: Iterable[Union[Type["Extension"], "Extension"]] = (),
+        extensions: Iterable[Union[Type["SchemaExtension"], "SchemaExtension"]] = (),
         execution_context_class: Optional[Type["GraphQLExecutionContext"]] = None,
         config: Optional["StrawberryConfig"] = None,
         scalar_overrides: Optional[
@@ -68,7 +68,6 @@ class Schema(BaseSchema):
         schema_directives: Iterable[object] = (),
         enable_federation_2: bool = False,
     ):
-
         query = self._get_federation_query_type(query)
 
         super().__init__(
@@ -182,7 +181,6 @@ class Schema(BaseSchema):
             definition = cast(TypeDefinition, type_.definition)
 
             if hasattr(definition.origin, "resolve_reference"):
-
                 resolve_reference = definition.origin.resolve_reference
 
                 func_args = get_func_args(resolve_reference)

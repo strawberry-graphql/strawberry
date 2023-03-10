@@ -39,4 +39,4 @@ jobs:
         if: steps.cache-poetry-dependencies.outputs.cache-hit != 'true'
 
       - run: mkdir -p .mypy_cache
-      - run: poetry run mypy --ignore-missing-imports --config-file mypy.ini --install-types --non-interactive --show-traceback strawberry
+      - run: poetry run mypy --config-file mypy.ini

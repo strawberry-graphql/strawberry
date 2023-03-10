@@ -75,7 +75,7 @@ def build_field_extension_resolvers(
     Returns True if resolving should be async, False on sync resolving
     based on the resolver and extensions
     """
-    if not field.extensions or not len(field.extensions):
+    if not field.extensions:
         return []  # pragma: no cover
 
     non_async_extensions = [

@@ -41,6 +41,7 @@ from strawberry.enum import EnumDefinition
 from strawberry.exceptions import (
     DuplicatedTypeName,
     InvalidTypeInputForUnion,
+    InvalidUnionTypeError,
     MissingTypesForGenericError,
     ScalarAlreadyRegisteredError,
     UnresolvedFieldTypeError,
@@ -502,7 +503,7 @@ class GraphQLCoreConverter:
         def wrap_field_extensions() -> Callable[..., Any]:
             """Wrap the provided field resolver with the middleware."""
 
-            if field.extensions is None:
+            if not field.extensions:
                 return _get_result
 
             for extension in field.extensions:
@@ -623,6 +624,13 @@ class GraphQLCoreConverter:
 
     def from_union(self, union: StrawberryUnion) -> GraphQLUnionType:
         union_name = self.config.name_converter.from_type(union)
+
+        for type_ in union.types:
+            # This check also occurs in the Annotation resolving, but because of
+            # TypeVars, Annotations, LazyTypes, etc it can't perfectly detect issues at
+            # that stage
+            if not StrawberryUnion.is_valid_union_type(type_):
+                raise InvalidUnionTypeError(union_name, type_)
 
         # Don't reevaluate known types
         if union_name in self.type_map:
