@@ -223,9 +223,7 @@ class StrawberryField(dataclasses.Field):
     def _set_python_name(self, name: str) -> None:
         self.name = name
 
-    python_name: str = property(  # type: ignore[assignment]
-        _python_name, _set_python_name
-    )
+    python_name: str = property(_python_name, _set_python_name)  # type: ignore[assignment]  # noqa: E501
 
     @property
     def base_resolver(self) -> Optional[StrawberryResolver]:
