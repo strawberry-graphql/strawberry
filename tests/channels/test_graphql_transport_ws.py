@@ -402,6 +402,42 @@ async def test_subscription_errors(ws):
     assert response["payload"][0]["message"] == "TEST ERR"
 
 
+async def test_subscription_error_no_complete(ws):
+    """
+    Test that an "error" message is not followed by "complete"
+    """
+    await ws.send_json_to(ConnectionInitMessage().as_dict())
+
+    response = await ws.receive_json_from()
+    assert response == ConnectionAckMessage().as_dict()
+
+    await ws.send_json_to(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query='subscription { error(message: "TEST ERR") }',
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json_from()
+    assert response["type"] == ErrorMessage.type
+    assert response["id"] == "sub1"
+
+    await ws.send_json_to(
+        SubscribeMessage(
+            id="sub2",
+            payload=SubscribeMessagePayload(
+                query='subscription { error(message: "TEST ERR") }',
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json_from()
+    assert response["type"] == ErrorMessage.type
+    assert response["id"] == "sub2"
+
+
 async def test_subscription_exceptions(ws):
     await ws.send_json_to(ConnectionInitMessage().as_dict())
 

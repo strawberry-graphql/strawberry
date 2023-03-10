@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 @dataclasses.dataclass
 class ExecutionContext:
     query: Optional[str]
-    schema: "Schema"
+    schema: Schema
     context: Any = None
     variables: Optional[Dict[str, Any]] = None
     root_value: Optional[Any] = None

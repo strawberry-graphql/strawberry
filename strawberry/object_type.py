@@ -67,7 +67,6 @@ def _check_field_annotations(cls: Type):
         # If the field is a StrawberryField we need to do a bit of extra work
         # to make sure dataclasses.dataclass is ready for it
         if isinstance(field_, StrawberryField):
-
             # If the field has a type override then use that instead of using
             # the class annotations or resolver annotation
             if field_.type_annotation is not None:
@@ -375,7 +374,7 @@ def asdict(obj: object) -> Dict[str, object]:
     >>> # should be {"name": "Lorem", "age": 25}
     >>> user_dict = strawberry.asdict(User(name="Lorem", age=25))
     """
-    return dataclasses.asdict(obj)
+    return dataclasses.asdict(obj)  # type: ignore
 
 
 __all__ = [

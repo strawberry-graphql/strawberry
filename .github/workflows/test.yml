@@ -47,7 +47,7 @@ jobs:
       - uses: codecov/codecov-action@v3
         if: ${{ always() }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: c0eec83c-17c8-4e8a-adf9-a34e4c22ef6a
           fail_ci_if_error: true
           verbose: true
 
@@ -76,7 +76,7 @@ jobs:
       - uses: codecov/codecov-action@v3
         if: ${{ always() }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: c0eec83c-17c8-4e8a-adf9-a34e4c22ef6a
           fail_ci_if_error: true
           verbose: true
 
@@ -112,7 +112,7 @@ jobs:
       - uses: codecov/codecov-action@v3
         if: ${{ always() }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: c0eec83c-17c8-4e8a-adf9-a34e4c22ef6a
           fail_ci_if_error: true
           verbose: true
 
@@ -153,6 +153,6 @@ jobs:
       - uses: codecov/codecov-action@v3
         if: ${{ always() }}
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: c0eec83c-17c8-4e8a-adf9-a34e4c22ef6a
           fail_ci_if_error: true
           verbose: true

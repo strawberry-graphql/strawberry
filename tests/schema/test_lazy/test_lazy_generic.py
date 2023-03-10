@@ -134,7 +134,6 @@ def test_lazy_types_declared_within_optional():
 
     @strawberry.type
     class Query:
-
         normal_edges: List[Edge[Optional[TypeC]]]
         lazy_edges: List[
             Edge[

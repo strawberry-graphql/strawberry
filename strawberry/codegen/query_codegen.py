@@ -203,7 +203,6 @@ class QueryCodegen:
     def _convert_selection_set(
         self, selection_set: Optional[SelectionSetNode]
     ) -> List[GraphQLSelection]:
-
         if selection_set is None:
             return []
 
@@ -493,7 +492,6 @@ class QueryCodegen:
     def _get_field(
         self, selection: FieldNode, class_name: str, parent_type: TypeDefinition
     ) -> GraphQLField:
-
         if selection.selection_set:
             return self._field_from_selection_set(selection, class_name, parent_type)
 

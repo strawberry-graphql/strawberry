@@ -139,7 +139,7 @@ class StrawberryField(dataclasses.Field):
 
         self.deprecation_reason = deprecation_reason
 
-    def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
+    def __call__(self, resolver: _RESOLVER_TYPE) -> StrawberryField:
         """Add a resolver to the field"""
 
         # Allow for StrawberryResolvers or bare functions to be provided
@@ -254,7 +254,6 @@ class StrawberryField(dataclasses.Field):
             if self.base_resolver is not None:
                 # Handle unannotated functions (such as lambdas)
                 if self.base_resolver.type is not None:
-
                     # Generics will raise MissingTypesForGenericError later
                     # on if we let it be returned. So use `type_annotation` instead
                     # which is the same behaviour as having no type information.
@@ -298,7 +297,7 @@ class StrawberryField(dataclasses.Field):
 
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
-    ) -> "StrawberryField":
+    ) -> StrawberryField:
         new_type: Union[StrawberryType, type] = self.type
 
         # TODO: Remove with creation of StrawberryObject. Will act same as other

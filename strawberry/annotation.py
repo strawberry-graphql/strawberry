@@ -66,7 +66,7 @@ class StrawberryAnnotation:
     @staticmethod
     def from_annotation(
         annotation: object, namespace: Optional[Dict] = None
-    ) -> Optional["StrawberryAnnotation"]:
+    ) -> Optional[StrawberryAnnotation]:
         if annotation is None:
             return None
 
@@ -159,7 +159,7 @@ class StrawberryAnnotation:
         # ... raise NotImplementedError(f"Unknown type {evaled_type}")
         return evaled_type
 
-    def set_namespace_from_field(self, field: "StrawberryField"):
+    def set_namespace_from_field(self, field: StrawberryField):
         module = sys.modules[field.origin.__module__]
         self.namespace = module.__dict__
 
@@ -211,7 +211,7 @@ class StrawberryAnnotation:
     def create_type_var(self, evaled_type: TypeVar) -> StrawberryTypeVar:
         return StrawberryTypeVar(evaled_type)
 
-    def create_union(self, evaled_type) -> "StrawberryUnion":
+    def create_union(self, evaled_type) -> StrawberryUnion:
         # Prevent import cycles
         from strawberry.union import StrawberryUnion
 
