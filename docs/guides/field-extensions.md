@@ -121,23 +121,6 @@ def my_field():
     return "My Result"
 ```
 
-```mermaid
-graph TD;
-    style START fill:#FFFFFF00, stroke:#FFFFFF00;
-    style STOP fill:#FFFFFF00, stroke:#FFFFFF00;
-    STOP[ ]
-    START["execution context"]
-    A["UpperCaseExtension"];
-    B["LowerCaseExtension"];
-    R["Resolver"];
-    START--"resolve_field()"-->A;
-    A--"MY RESULT"-->START;
-    A--"next_()"-->B;
-    B--"my result"-->A;
-    B--"next_()"-->R;
-    R--"My Result"-->B;
-```
-
 <Tip>
 
 **Order matters**: the last extension in the list will be executed first,
