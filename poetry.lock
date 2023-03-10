@@ -504,23 +504,22 @@ pycparser = "*"
 
 [[package]]
 name = "chalice"
-version = "1.27.3"
+version = "1.28.0"
 description = "Microframework"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "chalice-1.27.3-py3-none-any.whl", hash = "sha256:f41d0eaac1edb70ce1904b234bfc6ad4af35b7321f79b998bc6a95ff5f8cb4f6"},
-    {file = "chalice-1.27.3.tar.gz", hash = "sha256:58ccf0ada3727de1b93fd1d5c6e9e17d92a3e929ff37cb14cfaa6fc9e729c92e"},
+    {file = "chalice-1.28.0-py3-none-any.whl", hash = "sha256:57ed833c72b75af0a276fd030daf240e0e31882a5e11a91547160c07f3dd29ab"},
+    {file = "chalice-1.28.0.tar.gz", hash = "sha256:f57bae2460578f6a74c7769ca4f30f6c16ce327910f13fc4fe90fd4fa59b0db4"},
 ]
 
 [package.dependencies]
-attrs = ">=19.3.0,<21.5.0"
 botocore = ">=1.14.0,<2.0.0"
 click = ">=7,<9.0"
 inquirer = ">=2.7.0,<3.0.0"
 jmespath = ">=0.9.3,<2.0.0"
-pip = ">=9,<22.3"
+pip = ">=9,<23.1"
 pyyaml = ">=5.3.1,<7.0.0"
 setuptools = "*"
 six = ">=1.10.0,<2.0.0"
