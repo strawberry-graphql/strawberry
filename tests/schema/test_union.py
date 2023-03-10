@@ -664,27 +664,35 @@ def test_error_with_invalid_annotated_type():
     strawberry.Schema(query=Query)
 
 
+@pytest.mark.raises_strawberry_exception(
+    InvalidUnionTypeError, match="Type `(.*)` cannot be used in a GraphQL Union"
+)
 @pytest.mark.parametrize(
-    "annotation", ("int", "str", "float", "list[str]", "List[str]")
+    "annotation",
+    (
+        "int",
+        "str",
+        "float",
+        pytest.param(
+            "list[str]",
+            marks=pytest.mark.skipif(
+                sys.version_info < (3, 9, 0),
+                reason="list[str] is only available on python 3.9+",
+            ),
+        ),
+        "List[str]",
+    ),
 )
 def test_raises_on_union_of_scalars(annotation: str, monkeypatch):
-    # using forward refs because they deduced later
-    # catching all edge cases.
-    if annotation == "list[str]" and sys.version_info < (3, 9, 0):
-        pytest.skip("list has not __class_getitem__ prior to py39")
-
     @strawberry.type
     class ICanBeInUnion:
         foo: str
 
     monkeypatch.setitem(globals(), ICanBeInUnion.__name__, ICanBeInUnion)
     annotation = f"Union[{ICanBeInUnion.__name__}, {annotation}]"
-    with pytest.raises(
-        InvalidUnionTypeError, match="cannot be used in a GraphQL Union"
-    ):
 
-        @strawberry.type
-        class Query:
-            union: annotation
+    @strawberry.type
+    class Query:
+        union: annotation  # type: ignore
 
-        strawberry.Schema(query=Query)
+    strawberry.Schema(query=Query)
