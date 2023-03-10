@@ -10,7 +10,9 @@ if TYPE_CHECKING:
     from strawberry.types import ExecutionContext
 
 
-class Extension:
+class SchemaExtension:
+    execution_context: ExecutionContext
+
     def __init__(self, *, execution_context: ExecutionContext):
         self.execution_context = execution_context
 
@@ -47,11 +49,11 @@ class Extension:
         return {}
 
 
-Hook = Callable[[Extension], AsyncIteratorOrIterator[None]]
+Hook = Callable[[SchemaExtension], AsyncIteratorOrIterator[None]]
 
 HOOK_METHODS: Set[str] = {
-    Extension.on_operation.__name__,
-    Extension.on_validate.__name__,
-    Extension.on_parse.__name__,
-    Extension.on_execute.__name__,
+    SchemaExtension.on_operation.__name__,
+    SchemaExtension.on_validate.__name__,
+    SchemaExtension.on_parse.__name__,
+    SchemaExtension.on_execute.__name__,
 }

@@ -1,11 +1,11 @@
 from functools import lru_cache
 from typing import Iterator, Optional
 
-from strawberry.extensions.base_extension import Extension
+from strawberry.extensions.base_extension import SchemaExtension
 from strawberry.schema.execute import parse_document
 
 
-class ParserCache(Extension):
+class ParserCache(SchemaExtension):
     """
     Add LRU caching the parsing step during execution to improve performance.
 

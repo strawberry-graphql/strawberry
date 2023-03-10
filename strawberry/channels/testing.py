@@ -131,5 +131,6 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
                         for message in error_payload
                     ],
                 )
+                return  # an error message is the last message for a subscription
             else:
                 return

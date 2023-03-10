@@ -6,7 +6,7 @@ from datetime import datetime
 from inspect import isawaitable
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 from strawberry.extensions.utils import get_path_from_info
 
 from .utils import should_skip_tracing
@@ -76,7 +76,7 @@ class ApolloTracingStats:
         }
 
 
-class ApolloTracingExtension(Extension):
+class ApolloTracingExtension(SchemaExtension):
     def __init__(self, execution_context: ExecutionContext):
         self._resolver_stats: List[ApolloResolverStats] = []
         self.execution_context = execution_context

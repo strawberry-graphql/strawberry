@@ -12,7 +12,7 @@ from graphql import execute as original_execute
 
 import strawberry
 from strawberry.exceptions import StrawberryGraphQLError
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 
 
 def test_base_extension():
@@ -26,7 +26,7 @@ def test_base_extension():
         def person(self) -> Person:
             return Person()
 
-    schema = strawberry.Schema(query=Query, extensions=[Extension])
+    schema = strawberry.Schema(query=Query, extensions=[SchemaExtension])
 
     query = """
         query {
@@ -50,7 +50,7 @@ def test_called_only_if_overriden(monkeypatch: pytest.MonkeyPatch):
         nonlocal called
         called = True
 
-    class ExtensionNoHooks(Extension):
+    class ExtensionNoHooks(SchemaExtension):
         ...
 
     for hook in (
@@ -59,7 +59,7 @@ def test_called_only_if_overriden(monkeypatch: pytest.MonkeyPatch):
         ExtensionNoHooks.on_execute,
         ExtensionNoHooks.on_validate,
     ):
-        monkeypatch.setattr(Extension, hook.__name__, dont_call_me)
+        monkeypatch.setattr(SchemaExtension, hook.__name__, dont_call_me)
 
     @strawberry.type
     class Person:
@@ -92,7 +92,7 @@ def test_called_only_if_overriden(monkeypatch: pytest.MonkeyPatch):
 def test_extension_access_to_parsed_document():
     query_name = ""
 
-    class MyExtension(Extension):
+    class MyExtension(SchemaExtension):
         def on_parse(self):
             nonlocal query_name
             yield
@@ -128,7 +128,7 @@ def test_extension_access_to_parsed_document():
 def test_extension_access_to_errors():
     execution_errors = []
 
-    class MyExtension(Extension):
+    class MyExtension(SchemaExtension):
         def on_operation(self):
             nonlocal execution_errors
             yield
@@ -163,7 +163,7 @@ def test_extension_access_to_errors():
 def test_extension_access_to_root_value():
     root_value = None
 
-    class MyExtension(Extension):
+    class MyExtension(SchemaExtension):
         def on_operation(self):
             nonlocal root_value
             yield
@@ -191,7 +191,7 @@ class DefaultSchemaQuery:
     query: str
 
 
-class ExampleExtension(Extension):
+class ExampleExtension(SchemaExtension):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         cls.called_hooks = set()
@@ -221,7 +221,7 @@ def default_query_types_and_query() -> DefaultSchemaQuery:
 
 
 def test_can_initialize_extension(default_query_types_and_query):
-    class CustomizableExtension(Extension):
+    class CustomizableExtension(SchemaExtension):
         def __init__(self, arg: int):
             self.arg = arg
 
@@ -364,36 +364,36 @@ async def test_execution_order(default_query_types_and_query):
 
     class ExtensionA(ExampleExtension):
         async def on_operation(self):
-            with register_hook(Extension.on_operation.__name__, ExtensionA):
+            with register_hook(SchemaExtension.on_operation.__name__, ExtensionA):
                 yield
 
         async def on_parse(self):
-            with register_hook(Extension.on_parse.__name__, ExtensionA):
+            with register_hook(SchemaExtension.on_parse.__name__, ExtensionA):
                 yield
 
         def on_validate(self):
-            with register_hook(Extension.on_validate.__name__, ExtensionA):
+            with register_hook(SchemaExtension.on_validate.__name__, ExtensionA):
                 yield
 
         def on_execute(self):
-            with register_hook(Extension.on_execute.__name__, ExtensionA):
+            with register_hook(SchemaExtension.on_execute.__name__, ExtensionA):
                 yield
 
     class ExtensionB(ExampleExtension):
         async def on_operation(self):
-            with register_hook(Extension.on_operation.__name__, ExtensionB):
+            with register_hook(SchemaExtension.on_operation.__name__, ExtensionB):
                 yield
 
         def on_parse(self):
-            with register_hook(Extension.on_parse.__name__, ExtensionB):
+            with register_hook(SchemaExtension.on_parse.__name__, ExtensionB):
                 yield
 
         def on_validate(self):
-            with register_hook(Extension.on_validate.__name__, ExtensionB):
+            with register_hook(SchemaExtension.on_validate.__name__, ExtensionB):
                 yield
 
         async def on_execute(self):
-            with register_hook(Extension.on_execute.__name__, ExtensionB):
+            with register_hook(SchemaExtension.on_execute.__name__, ExtensionB):
                 yield
 
     schema = strawberry.Schema(
@@ -457,7 +457,7 @@ async def test_extension_no_yield(default_query_types_and_query):
 
 
 def test_raise_if_defined_both_legacy_and_new_style(default_query_types_and_query):
-    class WrongUsageExtension(Extension):
+    class WrongUsageExtension(SchemaExtension):
         def on_execute(self):
             yield
 
@@ -594,7 +594,7 @@ async def test_legacy_only_end():
 
 
 def test_warning_about_async_get_results_hooks_in_sync_context():
-    class MyExtension(Extension):
+    class MyExtension(SchemaExtension):
         async def get_results(self):
             pass
 
@@ -615,7 +615,7 @@ def test_warning_about_async_get_results_hooks_in_sync_context():
 
 @pytest.mark.asyncio
 async def test_dont_swallow_errors_in_parsing_hooks():
-    class MyExtension(Extension):
+    class MyExtension(SchemaExtension):
         def on_parse(self):
             raise Exception("This shouldn't be swallowed")
 
@@ -638,7 +638,7 @@ async def test_dont_swallow_errors_in_parsing_hooks():
 def test_on_parsing_end_called_when_errors():
     execution_errors = False
 
-    class MyExtension(Extension):
+    class MyExtension(SchemaExtension):
         def on_parse(self):
             nonlocal execution_errors
             yield
@@ -663,14 +663,14 @@ def test_on_parsing_end_called_when_errors():
 def test_extension_execution_order_sync():
     """Ensure mixed hooks (async & sync) are called correctly."""
 
-    execution_order: List[Type[Extension]] = []
+    execution_order: List[Type[SchemaExtension]] = []
 
-    class ExtensionB(Extension):
+    class ExtensionB(SchemaExtension):
         def on_execute(self):
             execution_order.append(type(self))
             yield
 
-    class ExtensionC(Extension):
+    class ExtensionC(SchemaExtension):
         def on_execute(self):
             execution_order.append(type(self))
             yield
@@ -696,7 +696,7 @@ def test_extension_execution_order_sync():
 
 
 def test_async_extension_in_sync_context():
-    class ExtensionA(Extension):
+    class ExtensionA(SchemaExtension):
         async def on_execute(self):
             yield
 
@@ -711,7 +711,7 @@ def test_async_extension_in_sync_context():
 
 
 def test_extension_override_execution():
-    class MyExtension(Extension):
+    class MyExtension(SchemaExtension):
         def on_execute(self):
             # Always return a static response
             self.execution_context.result = GraphQLExecutionResult(
@@ -745,7 +745,7 @@ def test_extension_override_execution():
 
 @pytest.mark.asyncio
 async def test_extension_override_execution_async():
-    class MyExtension(Extension):
+    class MyExtension(SchemaExtension):
         def on_execute(self):
             # Always return a static response
             self.execution_context.result = GraphQLExecutionResult(
@@ -784,7 +784,7 @@ def test_execution_cache_example(mock_original_execute):
 
     response_cache = {}
 
-    class ExecutionCache(Extension):
+    class ExecutionCache(SchemaExtension):
         def on_execute(self):
             # Check if we've come across this query before
             execution_context = self.execution_context
@@ -854,7 +854,7 @@ def test_execution_reject_example(mock_original_execute):
     # Test that the example of how to use the on_executing_start hook in the
     # docs actually works
 
-    class RejectSomeQueries(Extension):
+    class RejectSomeQueries(SchemaExtension):
         def on_execute(self):
             # Reject all operations called "RejectMe"
             execution_context = self.execution_context
@@ -904,7 +904,7 @@ def test_execution_reject_example(mock_original_execute):
 def test_extend_error_format_example():
     # Test that the example of how to extend error format
 
-    class ExtendErrorFormat(Extension):
+    class ExtendErrorFormat(SchemaExtension):
         def on_operation(self):
             yield
             result = self.execution_context.result
@@ -944,7 +944,7 @@ def test_extend_error_format_example():
 
 
 def test_extension_can_set_query():
-    class MyExtension(Extension):
+    class MyExtension(SchemaExtension):
         def on_operation(self):
             self.execution_context.query = "{ hi }"
             yield
@@ -968,7 +968,7 @@ def test_extension_can_set_query():
 
 @pytest.mark.asyncio
 async def test_extension_can_set_query_async():
-    class MyExtension(Extension):
+    class MyExtension(SchemaExtension):
         def on_operation(self):
             self.execution_context.query = "{ hi }"
             yield
@@ -991,7 +991,7 @@ async def test_extension_can_set_query_async():
 
 
 def test_raise_if_hook_is_not_callable():
-    class MyExtension(Extension):
+    class MyExtension(SchemaExtension):
         on_operation = "ABC"  # type: ignore
 
     @strawberry.type
