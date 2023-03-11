@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import contextlib
 import json
 from io import BytesIO
-from typing import Dict, Optional
+from typing import Any, AsyncGenerator, Dict, List, Optional
 from typing_extensions import Literal
 
 from aiohttp import web
@@ -16,8 +17,10 @@ from ..context import get_context
 from .base import (
     JSON,
     HttpClient,
+    Message,
     Response,
     ResultOverrideFunction,
+    WebSocketClient,
 )
 
 
@@ -134,3 +137,39 @@ class AioHttpClient(HttpClient):
                 status_code=response.status,
                 data=(await response.text()).encode(),
             )
+
+    @contextlib.asynccontextmanager
+    async def ws_connect(
+        self,
+        url: str,
+        *,
+        protocols: List[str],
+    ) -> AsyncGenerator[AioWebSocketClient, None]:
+        server = TestServer(self.app)
+        await server.start_server()
+        client = TestClient(server)
+        async with client.ws_connect(url, protocols=protocols) as ws:
+            yield AioWebSocketClient(ws)
+
+
+class AioWebSocketClient(WebSocketClient):
+    def __init__(self, ws):
+        self.ws = ws
+
+    async def send_json(self, payload: Dict[str, Any]) -> None:
+        await self.ws.send_json(payload)
+
+    async def receive(self, timeout: Optional[float] = None) -> Message:
+        m = await self.ws.receive(timeout)
+        return Message(type=m.type, data=m.data, extra=m.extra)
+
+    async def close(self) -> None:
+        await self.ws.close()
+
+    @property
+    def closed(self) -> bool:
+        return self.ws.closed
+
+    @property
+    def close_code(self) -> int:
+        return self.ws.close_code

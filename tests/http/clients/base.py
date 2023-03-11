@@ -2,7 +2,7 @@ import abc
 import json
 from dataclasses import dataclass
 from io import BytesIO
-from typing import Callable, Dict, List, Optional
+from typing import Any, AsyncContextManager, Callable, Dict, List, Optional
 from typing_extensions import Literal
 
 from strawberry.http import GraphQLHTTPResponse
@@ -164,3 +164,49 @@ class HttpClient(abc.ABC):
                 files_map[key] = [f"variables.{key}"]
 
         return files_map
+
+    async def ws_connect(
+        self,
+        url: str,
+        *,
+        protocols: List[str],
+    ) -> AsyncContextManager["WebSocketClient"]:
+        raise NotImplementedError
+
+@dataclass
+class Message:
+    type: Any
+    data: Any
+    extra: Optional[str]
+
+    def json(self) -> any:
+        return json.loads(self.data)
+
+class WebSocketClient(abc.ABC):
+    
+    @abc.abstractmethod
+    async def send_json(self, payload: Dict[str, Any]) -> None:
+        ...
+
+    @abc.abstractmethod
+    async def receive(self, timeout: Optional[float] = None) -> Message:
+        ...
+
+    async def receive_json(self, timeout: Optional[float] = None) -> Any:
+        msg = await self.receive(timeout)
+        return msg.json()
+    
+   
+    @abc.abstractmethod
+    async def close(self) -> None:
+        ...
+
+    @property
+    @abc.abstractmethod
+    def closed(self) -> bool:
+        ...
+
+    @property
+    @abc.abstractmethod
+    def close_code(self) -> int:
+        ...
