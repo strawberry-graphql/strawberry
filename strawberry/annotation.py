@@ -18,6 +18,7 @@ from typing_extensions import Annotated, Self, get_args, get_origin
 
 from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 from strawberry.private import is_private
+from strawberry.scalars import JSON
 
 try:
     from typing import ForwardRef
@@ -125,6 +126,12 @@ class StrawberryAnnotation:
             annotation = ForwardRef(self.annotation)
 
         evaled_type = _eval_type(annotation, self.namespace, None)
+
+        # FIXME: We allow JSON to be annotated for better typing support, but that means
+        # we need to handle it differently, otherwise it will be considered a generic
+        # type and be handled by self.create_concrete_type. How to make this better?
+        if get_origin(evaled_type) is JSON.wrap:  # type: ignore[attr-defined]
+            return JSON
 
         if is_private(evaled_type):
             return evaled_type

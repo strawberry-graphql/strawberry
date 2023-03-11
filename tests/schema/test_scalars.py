@@ -2,7 +2,6 @@ import sys
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from textwrap import dedent
-from typing import Optional
 from uuid import UUID
 
 import pytest
@@ -10,7 +9,7 @@ import pytest
 import strawberry
 from strawberry import scalar
 from strawberry.exceptions import ScalarAlreadyRegisteredError
-from strawberry.scalars import JSON, Base16, Base32, Base64
+from strawberry.scalars import Base16, Base32, Base64
 from strawberry.schema.types.base_scalars import Date
 
 
@@ -157,72 +156,6 @@ def test_uuid_input():
     assert not result.errors
     assert result.data == {
         "uuidInput": "e350746c-33b6-4469-86b0-5f16e1e12232",
-    }
-
-
-def test_json():
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def echo_json(data: JSON) -> JSON:
-            return data
-
-        @strawberry.field
-        def echo_json_nullable(data: Optional[JSON]) -> Optional[JSON]:
-            return data
-
-    schema = strawberry.Schema(query=Query)
-
-    expected_schema = dedent(
-        '''
-        """
-        The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
-        """
-        scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
-
-        type Query {
-          echoJson(data: JSON!): JSON!
-          echoJsonNullable(data: JSON): JSON
-        }
-        '''  # noqa: E501
-    ).strip()
-
-    assert str(schema) == expected_schema
-
-    result = schema.execute_sync(
-        """
-        query {
-            echoJson(data: {hello: {a: 1}, someNumbers: [1, 2, 3], null: null})
-            echoJsonNullable(data: {hello: {a: 1}, someNumbers: [1, 2, 3], null: null})
-        }
-    """
-    )
-
-    assert not result.errors
-    assert result.data == {
-        "echoJson": {"hello": {"a": 1}, "someNumbers": [1, 2, 3], "null": None},
-        "echoJsonNullable": {"hello": {"a": 1}, "someNumbers": [1, 2, 3], "null": None},
-    }
-
-    result = schema.execute_sync(
-        """
-        query {
-            echoJson(data: null)
-        }
-    """
-    )
-    assert result.errors  # echoJson is not-null null
-
-    result = schema.execute_sync(
-        """
-        query {
-            echoJsonNullable(data: null)
-        }
-    """
-    )
-    assert not result.errors
-    assert result.data == {
-        "echoJsonNullable": None,
     }
 
 

@@ -73,6 +73,9 @@ class ScalarWrapper:
     def __call__(self, *args, **kwargs):
         return self.wrap(*args, **kwargs)
 
+    def __getitem__(self, params):
+        return self.wrap.__class_getitem__(params)  # type: ignore[attr-defined]
+
     def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
         if other is None:
             # Return the correct notation when using `StrawberryUnion | None`.
