@@ -31,4 +31,4 @@ async def test_unknown_message_type(http_client: HttpClient):
         data = await ws.receive(timeout=2)
         assert ws.closed
         assert ws.close_code == 4400
-        assert data.extra == "Unknown message type: NOT_A_MESSAGE_TYPE"
+        ws.assert_reason("Unknown message type: NOT_A_MESSAGE_TYPE")

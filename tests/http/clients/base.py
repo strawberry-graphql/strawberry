@@ -210,3 +210,8 @@ class WebSocketClient(abc.ABC):
     @abc.abstractmethod
     def close_code(self) -> int:
         ...
+
+    @abc.abstractmethod
+    def assert_reason(self, reason: str) -> None:
+        ...
+    

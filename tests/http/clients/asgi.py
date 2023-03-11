@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import contextlib
 import json
 from io import BytesIO
-from typing import Dict, Optional, Union
+from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 from typing_extensions import Literal
 
 from starlette.requests import Request
@@ -16,7 +17,7 @@ from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
 from ..context import get_context
-from .base import JSON, HttpClient, Response, ResultOverrideFunction
+from .base import JSON, HttpClient, Message, Response, ResultOverrideFunction, WebSocketClient
 
 
 class GraphQLView(BaseGraphQLView):
@@ -127,3 +128,49 @@ class AsgiHttpClient(HttpClient):
             status_code=response.status_code,
             data=response.content,
         )
+
+    @contextlib.asynccontextmanager
+    async def ws_connect(
+        self,
+        url: str,
+        *,
+        protocols: List[str],
+    ) -> AsyncGenerator[AsgiWebSocketClient, None]:
+        with self.client.websocket_connect(url, protocols) as ws:
+            yield AsgiWebSocketClient(ws)
+
+
+class AsgiWebSocketClient(WebSocketClient):
+    def __init__(self, ws: Any):
+        self.ws = ws
+        self._closed: bool=False
+        self._close_code: Optional[int] = None
+        self._close_reason: Optional[str] = None
+
+    async def send_json(self, payload: Dict[str, Any]) -> None:
+        self.ws.send_json(payload)
+
+    async def receive(self, timeout: Optional[float] = None) -> Message:
+        m = self.ws.receive()
+        if m["type"] == "websocket.close":
+            self._closed = True
+            self._close_code = m["code"]
+            self._close_reason = m["reason"]
+            return Message(type=m["type"], data=m["code"], extra=m["reason"])
+        return Message(type=m["type"], data=m["data"], extra=m["extra"])
+
+    async def close(self) -> None:
+        self.ws.close()
+
+    @property
+    def closed(self) -> bool:
+        return self._closed
+
+    @property
+    def close_code(self) -> int:
+        return self._close_code
+    
+    def assert_reason(self, reason: str) -> None:
+        # This client does not provide close reason
+        return
+        

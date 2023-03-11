@@ -7,6 +7,7 @@ from typing import Any, AsyncGenerator, Dict, List, Optional
 from typing_extensions import Literal
 
 from aiohttp import web
+from aiohttp.client_ws import ClientWebSocketResponse
 from aiohttp.test_utils import TestClient, TestServer
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
@@ -153,14 +154,16 @@ class AioHttpClient(HttpClient):
 
 
 class AioWebSocketClient(WebSocketClient):
-    def __init__(self, ws):
+    def __init__(self, ws: ClientWebSocketResponse):
         self.ws = ws
+        self._reason: Optional[str] = None
 
     async def send_json(self, payload: Dict[str, Any]) -> None:
         await self.ws.send_json(payload)
 
     async def receive(self, timeout: Optional[float] = None) -> Message:
         m = await self.ws.receive(timeout)
+        self._reason = m.extra
         return Message(type=m.type, data=m.data, extra=m.extra)
 
     async def close(self) -> None:
@@ -173,3 +176,6 @@ class AioWebSocketClient(WebSocketClient):
     @property
     def close_code(self) -> int:
         return self.ws.close_code
+
+    def assert_reason(self, reason:str) -> None:
+        assert self._reason == reason

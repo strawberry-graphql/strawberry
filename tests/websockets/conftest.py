@@ -11,7 +11,7 @@ from ..http.clients.fastapi import FastAPIHttpClient
 @pytest.fixture(
     params=[
         AioHttpClient,
-        #AsgiHttpClient,
+        AsgiHttpClient,
         #FastAPIHttpClient,
     ]
 )
