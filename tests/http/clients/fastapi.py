@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import contextlib
 import json
 from io import BytesIO
-from typing import Dict, Optional
+from typing import AsyncGenerator, Dict, List, Optional
 from typing_extensions import Literal
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
@@ -14,6 +15,7 @@ from tests.views.schema import Query, schema
 
 from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
+from .asgi import AsgiWebSocketClient
 
 
 def custom_context_dependency() -> str:
@@ -137,3 +139,13 @@ class FastAPIHttpClient(HttpClient):
             status_code=response.status_code,
             data=response.content,
         )
+
+    @contextlib.asynccontextmanager
+    async def ws_connect(
+        self,
+        url: str,
+        *,
+        protocols: List[str],
+    ) -> AsyncGenerator[AsgiWebSocketClient, None]:
+        with self.client.websocket_connect(url, protocols) as ws:
+            yield AsgiWebSocketClient(ws)

@@ -12,7 +12,7 @@ from ..http.clients.fastapi import FastAPIHttpClient
     params=[
         AioHttpClient,
         AsgiHttpClient,
-        #FastAPIHttpClient,
+        FastAPIHttpClient,
     ]
 )
 def http_client_class(request) -> Type[HttpClient]:
