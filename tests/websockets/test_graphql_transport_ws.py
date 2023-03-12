@@ -11,6 +11,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
     ConnectionInitMessage,
+    ErrorMessage,
     NextMessage,
     PingMessage,
     PongMessage,
@@ -276,3 +277,180 @@ async def test_reused_operation_ids(ws: WebSocketClient):
         == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
     )
 
+
+async def test_simple_subscription(ws: WebSocketClient):
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query='subscription { echo(message: "Hi") }'
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert (
+        response
+        == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
+    )
+
+    await ws.send_json(CompleteMessage(id="sub1").as_dict())
+
+
+async def test_subscription_syntax_error(ws: WebSocketClient):
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(query="subscription { INVALID_SYNTAX "),
+        ).as_dict()
+    )
+
+    data = await ws.receive(timeout=2)
+    assert ws.closed
+    assert ws.close_code == 4400
+    ws.assert_reason("Syntax Error: Expected Name, found <EOF>.")
+
+
+async def test_subscription_field_errors(ws: WebSocketClient):
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="subscription { notASubscriptionField }",
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == ErrorMessage.type
+    assert response["id"] == "sub1"
+    assert len(response["payload"]) == 1
+    assert response["payload"][0].get("path") is None
+    assert response["payload"][0]["locations"] == [{"line": 1, "column": 16}]
+    assert (
+        response["payload"][0]["message"]
+        == "The subscription field 'notASubscriptionField' is not defined."
+    )
+
+
+async def test_subscription_cancellation(ws: WebSocketClient):
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query='subscription { echo(message: "Hi", delay: 99) }'
+            ),
+        ).as_dict()
+    )
+
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub2",
+            payload=SubscribeMessagePayload(
+                query="subscription { debug { numActiveResultHandlers } }",
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert (
+        response
+        == NextMessage(
+            id="sub2", payload={"data": {"debug": {"numActiveResultHandlers": 2}}}
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert response == CompleteMessage(id="sub2").as_dict()
+
+    await ws.send_json(CompleteMessage(id="sub1").as_dict())
+
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub3",
+            payload=SubscribeMessagePayload(
+                query="subscription { debug { numActiveResultHandlers } }",
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert (
+        response
+        == NextMessage(
+            id="sub3", payload={"data": {"debug": {"numActiveResultHandlers": 1}}}
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert response == CompleteMessage(id="sub3").as_dict()
+
+
+async def test_subscription_errors(ws: WebSocketClient):
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query='subscription { error(message: "TEST ERR") }',
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == ErrorMessage.type
+    assert response["id"] == "sub1"
+    assert len(response["payload"]) == 1
+    assert response["payload"][0].get("path") == ["error"]
+    assert response["payload"][0]["message"] == "TEST ERR"
+
+
+async def test_subscription_error_no_complete(ws: WebSocketClient):
+    """
+    Test that an "error" message is not followed by "complete"
+    """
+    # get an "error" message
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query='subscription { error(message: "TEST ERR") }',
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == ErrorMessage.type
+    assert response["id"] == "sub1"
+
+    # after an "error" message, there should be nothing more
+    # sent regarding "sub1", not even a "complete".
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub2",
+            payload=SubscribeMessagePayload(
+                query='subscription { error(message: "TEST ERR") }',
+            ),
+        ).as_dict()
+    )
+    response = await ws.receive_json()
+    assert response["type"] == ErrorMessage.type
+    assert response["id"] == "sub2"
+
+
+async def test_subscription_exceptions(ws: WebSocketClient):
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query='subscription { exception(message: "TEST EXC") }',
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == ErrorMessage.type
+    assert response["id"] == "sub1"
+    assert len(response["payload"]) == 1
+    assert response["payload"][0].get("path") is None
+    assert response["payload"][0].get("locations") is None
+    assert response["payload"][0]["message"] == "TEST EXC"
