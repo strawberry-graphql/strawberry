@@ -357,10 +357,10 @@ async def test_non_text_ws_messages_are_ignored(aiohttp_app_client: HttpClient):
     async with aiohttp_app_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
     ) as ws:
-        await ws.send_bytes(b"")
+        await ws.send_bytes(b"foo")
         await ws.send_json({"type": GQL_CONNECTION_INIT})
 
-        await ws.send_bytes(b"")
+        await ws.send_bytes(b"bar")
         await ws.send_json(
             {
                 "type": GQL_START,
@@ -379,13 +379,13 @@ async def test_non_text_ws_messages_are_ignored(aiohttp_app_client: HttpClient):
         assert response["id"] == "demo"
         assert response["payload"]["data"] == {"echo": "Hi"}
 
-        await ws.send_bytes(b"")
+        await ws.send_bytes(b"gaz")
         await ws.send_json({"type": GQL_STOP, "id": "demo"})
         response = await ws.receive_json()
         assert response["type"] == GQL_COMPLETE
         assert response["id"] == "demo"
 
-        await ws.send_bytes(b"")
+        await ws.send_bytes(b"wat")
         await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
 
         # make sure the WebSocket is disconnected now
