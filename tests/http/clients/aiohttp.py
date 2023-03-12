@@ -164,10 +164,18 @@ class AioWebSocketClient(WebSocketClient):
     async def send_json(self, payload: Dict[str, Any]) -> None:
         await self.ws.send_json(payload)
 
+    async def send_bytes(self, payload: bytes) -> None:
+        await self.ws.send_bytes(payload)
+
     async def receive(self, timeout: Optional[float] = None) -> Message:
         m = await self.ws.receive(timeout)
         self._reason = m.extra
         return Message(type=m.type, data=m.data, extra=m.extra)
+
+    async def receive_json(self, timeout: Optional[float] = None) -> Any:
+        m = await self.ws.receive(timeout)
+        assert m.type == WSMsgType.TEXT
+        return json.loads(m.data)
 
     async def close(self) -> None:
         await self.ws.close()

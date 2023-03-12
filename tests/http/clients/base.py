@@ -177,7 +177,7 @@ class HttpClient(abc.ABC):
 class Message:
     type: Any
     data: Any
-    extra: Optional[str]
+    extra: Optional[str] = None
 
     def json(self) -> any:
         return json.loads(self.data)
@@ -189,13 +189,15 @@ class WebSocketClient(abc.ABC):
         ...
 
     @abc.abstractmethod
+    async def send_bytes(self, payload: bytes) -> None:
+        ...
+
+    @abc.abstractmethod
     async def receive(self, timeout: Optional[float] = None) -> Message:
         ...
 
     async def receive_json(self, timeout: Optional[float] = None) -> Any:
-        msg = await self.receive(timeout)
-        return msg.json()
-    
+        ...
    
     @abc.abstractmethod
     async def close(self) -> None:

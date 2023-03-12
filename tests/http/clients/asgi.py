@@ -153,6 +153,9 @@ class AsgiWebSocketClient(WebSocketClient):
     async def send_json(self, payload: Dict[str, Any]) -> None:
         self.ws.send_json(payload)
 
+    async def send_bytes(self, payload: bytes) -> None:
+        self.ws.send_bytes(payload)
+
     async def receive(self, timeout: Optional[float] = None) -> Message:
         m = self.ws.receive()
         if m["type"] == "websocket.close":
@@ -160,7 +163,15 @@ class AsgiWebSocketClient(WebSocketClient):
             self._close_code = m["code"]
             self._close_reason = m["reason"]
             return Message(type=m["type"], data=m["code"], extra=m["reason"])
+        elif m["type"] == "websocket.send":
+            return Message(type=m["type"], data=m["text"])
         return Message(type=m["type"], data=m["data"], extra=m["extra"])
+
+    async def receive_json(self, timeout: Optional[float] = None) -> Any:
+        m = self.ws.receive(timeout)
+        assert m["type"] == "websocket.send"
+        assert "text" in m
+        return json.loads(m["text"])
 
     async def close(self) -> None:
         self.ws.close()
