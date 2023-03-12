@@ -10,7 +10,7 @@ from typing_extensions import Literal
 from starlette.requests import Request
 from starlette.responses import Response as StarletteResponse
 from starlette.testclient import TestClient
-from starlette.websockets import WebSocket
+from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from strawberry.asgi import GraphQL as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
@@ -142,9 +142,14 @@ class AsgiHttpClient(HttpClient):
         *,
         protocols: List[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
-        with self.client.websocket_connect(url, protocols) as ws:
-            yield AsgiWebSocketClient(ws)
-
+        try:
+            with self.client.websocket_connect(url, protocols) as ws:
+                yield AsgiWebSocketClient(ws)
+        except WebSocketDisconnect as error:
+            ws = AsgiWebSocketClient(None)
+            ws.handle_disconnect(error)
+            yield ws
+            
 
 class AsgiWebSocketClient(WebSocketClient):
     def __init__(self, ws: Any):
@@ -153,6 +158,11 @@ class AsgiWebSocketClient(WebSocketClient):
         self._close_code: Optional[int] = None
         self._close_reason: Optional[str] = None
 
+    def handle_disconnect(self, exc: WebSocketDisconnect)->None:
+        self._closed = True
+        self._close_code = exc.code
+        self._close_reason = exc.reason
+
     async def send_json(self, payload: Dict[str, Any]) -> None:
         self.ws.send_json(payload)
 
@@ -160,6 +170,9 @@ class AsgiWebSocketClient(WebSocketClient):
         self.ws.send_bytes(payload)
 
     async def receive(self, timeout: Optional[float] = None) -> Message:
+        if self._closed:
+            # if close was received via exception, fake it so that recv works
+            return Message(type="websocket.close", data=self._close_code, extra = self._close_reason)
         m = self.ws.receive()
         if m["type"] == "websocket.close":
             self._closed = True

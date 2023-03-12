@@ -9,6 +9,7 @@ from typing_extensions import Literal
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
@@ -153,5 +154,10 @@ class FastAPIHttpClient(HttpClient):
         *,
         protocols: List[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
-        with self.client.websocket_connect(url, protocols) as ws:
-            yield AsgiWebSocketClient(ws)
+        try:
+            with self.client.websocket_connect(url, protocols) as ws:
+                yield AsgiWebSocketClient(ws)
+        except WebSocketDisconnect as error:
+            ws = AsgiWebSocketClient(None)
+            ws.handle_disconnect(error)
+            yield ws
