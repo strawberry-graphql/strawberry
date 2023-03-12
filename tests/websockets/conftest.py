@@ -2,10 +2,13 @@ from typing import Type
 
 import pytest
 
-from ..http.clients import HttpClient
-from ..http.clients.aiohttp import AioHttpClient
-from ..http.clients.asgi import AsgiHttpClient
-from ..http.clients.fastapi import FastAPIHttpClient
+from ..http.clients import (
+    AioHttpClient,
+    AsgiHttpClient,
+    ChannelsHttpClient,
+    FastAPIHttpClient,
+    HttpClient,
+)
 
 
 @pytest.fixture(
@@ -13,8 +16,9 @@ from ..http.clients.fastapi import FastAPIHttpClient
         AioHttpClient,
         AsgiHttpClient,
         FastAPIHttpClient,
+        ChannelsHttpClient,
     ],
-    ids=["aio", "asgi", "fastapi"],
+    ids=["aio", "asgi", "fastapi", "channels"],
 )
 def http_client_class(request) -> Type[HttpClient]:
     return request.param

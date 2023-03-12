@@ -186,6 +186,9 @@ class Message:
 
 
 class WebSocketClient(abc.ABC):
+    def name(self) -> str:
+        return ""
+
     @abc.abstractmethod
     async def send_json(self, payload: Dict[str, Any]) -> None:
         ...

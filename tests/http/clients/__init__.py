@@ -10,6 +10,7 @@ from .async_django import AsyncDjangoHttpClient
 from .async_flask import AsyncFlaskHttpClient
 from .base import HttpClient, WebSocketClient
 from .chalice import ChaliceHttpClient
+from .channels import ChannelsHttpClient
 from .django import DjangoHttpClient
 from .fastapi import FastAPIHttpClient
 from .flask import FlaskHttpClient
