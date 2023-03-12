@@ -1,4 +1,5 @@
 import abc
+from datetime import timedelta
 import json
 from dataclasses import dataclass
 from io import BytesIO
@@ -179,7 +180,7 @@ class Message:
     data: Any
     extra: Optional[str] = None
 
-    def json(self) -> any:
+    def json(self) -> Any:
         return json.loads(self.data)
 
 class WebSocketClient(abc.ABC):

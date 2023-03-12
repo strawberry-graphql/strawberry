@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+from datetime import timedelta
 import json
 from io import BytesIO
 from typing import Any, AsyncGenerator, Dict, List, Optional
@@ -8,6 +9,7 @@ from typing_extensions import Literal
 
 from aiohttp import web
 from aiohttp.client_ws import ClientWebSocketResponse
+from aiohttp.http_websocket import WSMsgType
 from aiohttp.test_utils import TestClient, TestServer
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
@@ -56,11 +58,13 @@ class AioHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     ):
         view = GraphQLView(
             schema=schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
+            connection_init_wait_timeout=connection_init_wait_timeout,
         )
         view.result_override = result_override
 
@@ -148,7 +152,7 @@ class AioHttpClient(HttpClient):
         url: str,
         *,
         protocols: List[str],
-    ) -> AsyncGenerator[AioWebSocketClient, None]:
+    ) -> AsyncGenerator[WebSocketClient, None]:
         server = TestServer(self.app)
         await server.start_server()
         client = TestClient(server)
@@ -186,6 +190,7 @@ class AioWebSocketClient(WebSocketClient):
 
     @property
     def close_code(self) -> int:
+        assert self.ws.close_code is not None
         return self.ws.close_code
 
     def assert_reason(self, reason:str) -> None:

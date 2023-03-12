@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+from datetime import timedelta
 import json
 from io import BytesIO
 from typing import AsyncGenerator, Dict, List, Optional
@@ -15,7 +16,7 @@ from tests.fastapi.app import DebuggableGraphQLTransportWSHandler, DebuggableGra
 from tests.views.schema import Query, schema
 
 from ..context import get_context
-from .base import JSON, HttpClient, Response, ResultOverrideFunction
+from .base import JSON, HttpClient, Response, ResultOverrideFunction, WebSocketClient
 from .asgi import AsgiWebSocketClient
 
 
@@ -61,6 +62,7 @@ class FastAPIHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     ):
         self.app = FastAPI()
 
@@ -70,6 +72,7 @@ class FastAPIHttpClient(HttpClient):
             context_getter=fastapi_get_context,
             root_value_getter=get_root_value,
             allow_queries_via_get=allow_queries_via_get,
+            connection_init_wait_timeout=connection_init_wait_timeout,
         )
         graphql_app.result_override = result_override
         self.app.include_router(graphql_app, prefix="/graphql")
@@ -149,6 +152,6 @@ class FastAPIHttpClient(HttpClient):
         url: str,
         *,
         protocols: List[str],
-    ) -> AsyncGenerator[AsgiWebSocketClient, None]:
+    ) -> AsyncGenerator[WebSocketClient, None]:
         with self.client.websocket_connect(url, protocols) as ws:
             yield AsgiWebSocketClient(ws)

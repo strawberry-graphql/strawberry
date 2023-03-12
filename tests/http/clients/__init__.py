@@ -8,7 +8,7 @@ from .aiohttp import AioHttpClient
 from .asgi import AsgiHttpClient
 from .async_django import AsyncDjangoHttpClient
 from .async_flask import AsyncFlaskHttpClient
-from .base import HttpClient
+from .base import HttpClient, WebSocketClient
 from .chalice import ChaliceHttpClient
 from .django import DjangoHttpClient
 from .fastapi import FastAPIHttpClient

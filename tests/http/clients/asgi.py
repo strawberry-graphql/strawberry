@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+from datetime import timedelta
 import json
 from io import BytesIO
 from typing import Any, AsyncGenerator, Dict, List, Optional, Union
@@ -53,11 +54,13 @@ class AsgiHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        connection_init_wait_timeout: timedelta = timedelta(minutes=1),  
     ):
         view = GraphQLView(
             schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
+            connection_init_wait_timeout=connection_init_wait_timeout,
         )
         view.result_override = result_override
 
@@ -138,7 +141,7 @@ class AsgiHttpClient(HttpClient):
         url: str,
         *,
         protocols: List[str],
-    ) -> AsyncGenerator[AsgiWebSocketClient, None]:
+    ) -> AsyncGenerator[WebSocketClient, None]:
         with self.client.websocket_connect(url, protocols) as ws:
             yield AsgiWebSocketClient(ws)
 
@@ -168,13 +171,14 @@ class AsgiWebSocketClient(WebSocketClient):
         return Message(type=m["type"], data=m["data"], extra=m["extra"])
 
     async def receive_json(self, timeout: Optional[float] = None) -> Any:
-        m = self.ws.receive(timeout)
+        m = self.ws.receive()
         assert m["type"] == "websocket.send"
         assert "text" in m
         return json.loads(m["text"])
 
     async def close(self) -> None:
         self.ws.close()
+        self._closed = True
 
     @property
     def closed(self) -> bool:
@@ -182,6 +186,7 @@ class AsgiWebSocketClient(WebSocketClient):
 
     @property
     def close_code(self) -> int:
+        assert self._close_code is not None
         return self._close_code
     
     def assert_reason(self, reason: str) -> None:
