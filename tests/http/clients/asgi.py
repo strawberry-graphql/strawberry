@@ -14,6 +14,7 @@ from starlette.websockets import WebSocket
 from strawberry.asgi import GraphQL as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
+from tests.asgi.app import DebuggableGraphQLTransportWSHandler, DebuggableGraphQLWSHandler
 from tests.views.schema import Query, schema
 
 from ..context import get_context
@@ -22,6 +23,8 @@ from .base import JSON, HttpClient, Message, Response, ResultOverrideFunction, W
 
 class GraphQLView(BaseGraphQLView):
     result_override: ResultOverrideFunction = None
+    graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
+    graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
     async def get_root_value(self, request: Union[WebSocket, Request]) -> Query:
         return Query()

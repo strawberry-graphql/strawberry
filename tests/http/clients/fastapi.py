@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
+from tests.fastapi.app import DebuggableGraphQLTransportWSHandler, DebuggableGraphQLWSHandler
 from tests.views.schema import Query, schema
 
 from ..context import get_context
@@ -42,6 +43,8 @@ async def get_root_value(request: Request = None, ws: WebSocket = None):
 
 class GraphQLRouter(BaseGraphQLRouter):
     result_override: ResultOverrideFunction = None
+    graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
+    graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
     async def process_result(
         self, request: Request, result: ExecutionResult

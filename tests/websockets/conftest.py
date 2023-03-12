@@ -13,7 +13,8 @@ from ..http.clients.fastapi import FastAPIHttpClient
         AioHttpClient,
         AsgiHttpClient,
         FastAPIHttpClient,
-    ]
+    ],
+    ids=["aio", "asgi", "fastapi"]
 )
 def http_client_class(request) -> Type[HttpClient]:
     return request.param

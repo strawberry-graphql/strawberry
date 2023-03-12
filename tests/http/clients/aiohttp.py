@@ -12,6 +12,7 @@ from aiohttp.test_utils import TestClient, TestServer
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
+from tests.aiohttp.app import DebuggableGraphQLTransportWSHandler, DebuggableGraphQLWSHandler
 from tests.views.schema import Query, schema
 
 from ..context import get_context
@@ -27,6 +28,8 @@ from .base import (
 
 class GraphQLView(BaseGraphQLView):
     result_override: ResultOverrideFunction = None
+    graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
+    graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
     async def get_context(
         self, request: web.Request, response: web.StreamResponse
