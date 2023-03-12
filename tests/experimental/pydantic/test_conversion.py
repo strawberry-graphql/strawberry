@@ -1194,3 +1194,64 @@ def test_can_convert_optional_union_type_expression_fields_to_strawberry():
 
     assert test.optional_list == [1, 2, 3]
     assert test.optional_str is None
+
+
+def test_exclude_options_after_conversion_from_strawberry_type_to_pydantic_type():
+    class BaseUser(BaseModel):
+        name: str
+
+    class User(BaseUser):
+        id: int
+        surname: Optional[str] = None
+        email: str = "default_email"
+
+    @strawberry.experimental.pydantic.interface(model=BaseUser, all_fields=True)
+    class BaseUserType:
+        pass
+
+    @strawberry.experimental.pydantic.type(model=User, all_fields=True)
+    class UserType(BaseUserType):
+        pass
+
+    # without optional surname and email
+    user = User(id=1, name="leffe")
+    user_type = UserType(id=1, name="leffe")
+    user_type_pydantic = user_type.to_pydantic()
+    assert user.dict(exclude_unset=True) == {"id": 1, "name": "leffe"}
+    assert user.dict(exclude_defaults=True) == {"id": 1, "name": "leffe"}
+    assert user.dict(exclude_none=True) == {
+        "id": 1,
+        "name": "leffe",
+        "email": "default_email",
+    }
+    assert user.dict(exclude_unset=True) == user_type_pydantic.dict(exclude_unset=True)
+    assert user.dict(exclude_defaults=True) == user_type_pydantic.dict(
+        exclude_defaults=True
+    )
+    assert user.dict(exclude_none=True) == user_type_pydantic.dict(exclude_none=True)
+
+    # with given surname and email
+    user = User(id=1, name="leffe", surname=None, email="my_email")
+    user_type = UserType(id=1, name="leffe", surname=None, email="my_email")
+    user_type_pydantic = user_type.to_pydantic()
+    assert user.dict(exclude_unset=True) == {
+        "id": 1,
+        "name": "leffe",
+        "surname": None,
+        "email": "my_email",
+    }
+    assert user.dict(exclude_defaults=True) == {
+        "id": 1,
+        "name": "leffe",
+        "email": "my_email",
+    }
+    assert user.dict(exclude_none=True) == {
+        "id": 1,
+        "name": "leffe",
+        "email": "my_email",
+    }
+    assert user.dict(exclude_unset=True) == user_type_pydantic.dict(exclude_unset=True)
+    assert user.dict(exclude_defaults=True) == user_type_pydantic.dict(
+        exclude_defaults=True
+    )
+    assert user.dict(exclude_none=True) == user_type_pydantic.dict(exclude_none=True)

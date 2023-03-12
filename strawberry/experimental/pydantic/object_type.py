@@ -269,14 +269,23 @@ def type(
                     getattr(self, f.name)
                 )
                 for f in dataclasses.fields(self)
+                if f.name in self._field_set
             }
             instance_kwargs.update(kwargs)
             return model(**instance_kwargs)
+
+        # We need to know which fields are explicitly set on strawberry type instance
+        # to make pydantic's dict options (e.g. exclude_unset) work correctly
+        def make_new(cls, *args, **kwargs):
+            instance = object.__new__(cls)
+            instance._field_set = set(kwargs.keys())
+            return instance
 
         if not has_custom_from_pydantic:
             cls.from_pydantic = staticmethod(from_pydantic_default)
         if not has_custom_to_pydantic:
             cls.to_pydantic = to_pydantic_default
+        cls.__new__ = make_new
 
         return cls
 
