@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import contextlib
-from datetime import timedelta
 import json
+from datetime import timedelta
 from io import BytesIO
 from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 from typing_extensions import Literal
@@ -15,11 +15,21 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 from strawberry.asgi import GraphQL as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
-from tests.asgi.app import DebuggableGraphQLTransportWSHandler, DebuggableGraphQLWSHandler
+from tests.asgi.app import (
+    DebuggableGraphQLTransportWSHandler,
+    DebuggableGraphQLWSHandler,
+)
 from tests.views.schema import Query, schema
 
 from ..context import get_context
-from .base import JSON, HttpClient, Message, Response, ResultOverrideFunction, WebSocketClient
+from .base import (
+    JSON,
+    HttpClient,
+    Message,
+    Response,
+    ResultOverrideFunction,
+    WebSocketClient,
+)
 
 
 class GraphQLView(BaseGraphQLView):
@@ -54,7 +64,7 @@ class AsgiHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
-        connection_init_wait_timeout: timedelta = timedelta(minutes=1),  
+        connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     ):
         view = GraphQLView(
             schema,
@@ -149,16 +159,16 @@ class AsgiHttpClient(HttpClient):
             ws = AsgiWebSocketClient(None)
             ws.handle_disconnect(error)
             yield ws
-            
+
 
 class AsgiWebSocketClient(WebSocketClient):
     def __init__(self, ws: Any):
         self.ws = ws
-        self._closed: bool=False
+        self._closed: bool = False
         self._close_code: Optional[int] = None
         self._close_reason: Optional[str] = None
 
-    def handle_disconnect(self, exc: WebSocketDisconnect)->None:
+    def handle_disconnect(self, exc: WebSocketDisconnect) -> None:
         self._closed = True
         self._close_code = exc.code
         self._close_reason = exc.reason
@@ -172,7 +182,9 @@ class AsgiWebSocketClient(WebSocketClient):
     async def receive(self, timeout: Optional[float] = None) -> Message:
         if self._closed:
             # if close was received via exception, fake it so that recv works
-            return Message(type="websocket.close", data=self._close_code, extra = self._close_reason)
+            return Message(
+                type="websocket.close", data=self._close_code, extra=self._close_reason
+            )
         m = self.ws.receive()
         if m["type"] == "websocket.close":
             self._closed = True
@@ -201,8 +213,7 @@ class AsgiWebSocketClient(WebSocketClient):
     def close_code(self) -> int:
         assert self._close_code is not None
         return self._close_code
-    
+
     def assert_reason(self, reason: str) -> None:
         # This client does not provide close reason
         return
-        

@@ -1,5 +1,4 @@
 import abc
-from datetime import timedelta
 import json
 from dataclasses import dataclass
 from io import BytesIO
@@ -11,6 +10,7 @@ from strawberry.types import ExecutionResult
 
 JSON = Dict[str, object]
 ResultOverrideFunction = Optional[Callable[[ExecutionResult], GraphQLHTTPResponse]]
+
 
 @dataclass
 class Response:
@@ -174,6 +174,7 @@ class HttpClient(abc.ABC):
     ) -> AsyncContextManager["WebSocketClient"]:
         raise NotImplementedError
 
+
 @dataclass
 class Message:
     type: Any
@@ -183,8 +184,8 @@ class Message:
     def json(self) -> Any:
         return json.loads(self.data)
 
+
 class WebSocketClient(abc.ABC):
-    
     @abc.abstractmethod
     async def send_json(self, payload: Dict[str, Any]) -> None:
         ...
@@ -199,7 +200,7 @@ class WebSocketClient(abc.ABC):
 
     async def receive_json(self, timeout: Optional[float] = None) -> Any:
         ...
-   
+
     @abc.abstractmethod
     async def close(self) -> None:
         ...
@@ -217,4 +218,3 @@ class WebSocketClient(abc.ABC):
     @abc.abstractmethod
     def assert_reason(self, reason: str) -> None:
         ...
-    

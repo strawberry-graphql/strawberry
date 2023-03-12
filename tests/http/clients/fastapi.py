@@ -1,24 +1,28 @@
 from __future__ import annotations
 
 import contextlib
-from datetime import timedelta
 import json
+from datetime import timedelta
 from io import BytesIO
 from typing import AsyncGenerator, Dict, List, Optional
 from typing_extensions import Literal
 
+from starlette.websockets import WebSocketDisconnect
+
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
-from starlette.websockets import WebSocketDisconnect
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
-from tests.fastapi.app import DebuggableGraphQLTransportWSHandler, DebuggableGraphQLWSHandler
+from tests.fastapi.app import (
+    DebuggableGraphQLTransportWSHandler,
+    DebuggableGraphQLWSHandler,
+)
 from tests.views.schema import Query, schema
 
 from ..context import get_context
-from .base import JSON, HttpClient, Response, ResultOverrideFunction, WebSocketClient
 from .asgi import AsgiWebSocketClient
+from .base import JSON, HttpClient, Response, ResultOverrideFunction, WebSocketClient
 
 
 def custom_context_dependency() -> str:

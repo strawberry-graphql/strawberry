@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import contextlib
-from datetime import timedelta
 import json
+from datetime import timedelta
 from io import BytesIO
 from typing import Any, AsyncGenerator, Dict, List, Optional
 from typing_extensions import Literal
@@ -14,7 +14,10 @@ from aiohttp.test_utils import TestClient, TestServer
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
-from tests.aiohttp.app import DebuggableGraphQLTransportWSHandler, DebuggableGraphQLWSHandler
+from tests.aiohttp.app import (
+    DebuggableGraphQLTransportWSHandler,
+    DebuggableGraphQLWSHandler,
+)
 from tests.views.schema import Query, schema
 
 from ..context import get_context
@@ -193,5 +196,5 @@ class AioWebSocketClient(WebSocketClient):
         assert self.ws.close_code is not None
         return self.ws.close_code
 
-    def assert_reason(self, reason:str) -> None:
+    def assert_reason(self, reason: str) -> None:
         assert self._reason == reason
