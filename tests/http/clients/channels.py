@@ -25,7 +25,7 @@ class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
     async def get_context(self, *args, **kwargs) -> object:
         context = await super().get_context(*args, **kwargs)
         context.tasks = self._handler.tasks
-        context.connectionInitTimeoutTask = self._handler.connection_init_timeout_task
+        context.connectionInitTimeoutTask = getattr(self._handler, "connection_init_timeout_task", None)
         return context
 
 
@@ -42,8 +42,11 @@ class ChannelsHttpClient(HttpClient):
     ):
 
         self.app = DebuggableGraphQLTransportWSConsumer.as_asgi(
-            schema=schema, connection_init_wait_timeout=connection_init_wait_timeout)
+            schema=schema, connection_init_wait_timeout=connection_init_wait_timeout, keep_alive=False)
 
+    def create_app(self, **kwargs: Any) -> None:
+        self.app = DebuggableGraphQLTransportWSConsumer.as_asgi(
+            schema=schema, **kwargs)
 
     async def _graphql_request(
         self,
@@ -123,8 +126,8 @@ class ChannelsWebSocketClient(WebSocketClient):
         if m["type"] == "websocket.close":
             self._closed = True
             self._close_code = m["code"]
-            self._close_reason = m["reason"]
-            return Message(type=m["type"], data=m["code"], extra=m["reason"])
+            self._close_reason = m.get("reason")
+            return Message(type=m["type"], data=m["code"], extra=m.get("reason"))
         elif m["type"] == "websocket.send":
             return Message(type=m["type"], data=m["text"])
         return Message(type=m["type"], data=m["data"], extra=m["extra"])

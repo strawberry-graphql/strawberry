@@ -4,7 +4,7 @@ import contextlib
 import json
 from datetime import timedelta
 from io import BytesIO
-from typing import AsyncGenerator, Dict, List, Optional
+from typing import Any, AsyncGenerator, Dict, List, Optional
 from typing_extensions import Literal
 
 from starlette.websockets import WebSocketDisconnect
@@ -78,8 +78,17 @@ class FastAPIHttpClient(HttpClient):
             root_value_getter=get_root_value,
             allow_queries_via_get=allow_queries_via_get,
             connection_init_wait_timeout=connection_init_wait_timeout,
+            keep_alive=False,
         )
         graphql_app.result_override = result_override
+        self.app.include_router(graphql_app, prefix="/graphql")
+
+        self.client = TestClient(self.app)
+
+    def create_app(self, **kwargs: Any) -> None:
+        graphql_app = FastAPI()
+        view = GraphQLRouter(
+            schema=schema, **kwargs)
         self.app.include_router(graphql_app, prefix="/graphql")
 
         self.client = TestClient(self.app)

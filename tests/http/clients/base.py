@@ -166,6 +166,12 @@ class HttpClient(abc.ABC):
 
         return files_map
 
+    def create_app(self, **kwargs: Any) -> None:
+        """
+        For use by websocket tests
+        """
+        raise NotImplementedError
+
     async def ws_connect(
         self,
         url: str,
