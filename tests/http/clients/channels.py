@@ -25,7 +25,9 @@ class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
     async def get_context(self, *args, **kwargs) -> object:
         context = await super().get_context(*args, **kwargs)
         context.tasks = self._handler.tasks
-        context.connectionInitTimeoutTask = getattr(self._handler, "connection_init_timeout_task", None)
+        context.connectionInitTimeoutTask = getattr(
+            self._handler, "connection_init_timeout_task", None
+        )
         return context
 
 
@@ -33,6 +35,7 @@ class ChannelsHttpClient(HttpClient):
     """
     A client to test websockets over channels
     """
+
     def __init__(
         self,
         graphiql: bool = True,
@@ -40,13 +43,14 @@ class ChannelsHttpClient(HttpClient):
         result_override: ResultOverrideFunction = None,
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     ):
-
         self.app = DebuggableGraphQLTransportWSConsumer.as_asgi(
-            schema=schema, connection_init_wait_timeout=connection_init_wait_timeout, keep_alive=False)
+            schema=schema,
+            connection_init_wait_timeout=connection_init_wait_timeout,
+            keep_alive=False,
+        )
 
     def create_app(self, **kwargs: Any) -> None:
-        self.app = DebuggableGraphQLTransportWSConsumer.as_asgi(
-            schema=schema, **kwargs)
+        self.app = DebuggableGraphQLTransportWSConsumer.as_asgi(schema=schema, **kwargs)
 
     async def _graphql_request(
         self,
@@ -90,12 +94,7 @@ class ChannelsHttpClient(HttpClient):
         *,
         protocols: List[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
-
-        client = WebsocketCommunicator(
-            self.app,
-            url,
-            subprotocols=protocols
-        )
+        client = WebsocketCommunicator(self.app, url, subprotocols=protocols)
 
         res = await client.connect()
         assert res == (True, protocols[0])

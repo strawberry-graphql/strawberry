@@ -80,8 +80,7 @@ class AioHttpClient(HttpClient):
         )
 
     def create_app(self, **kwargs: Any) -> None:
-        view = GraphQLView(
-            schema=schema, **kwargs)
+        view = GraphQLView(schema=schema, **kwargs)
 
         self.app = web.Application()
         self.app.router.add_route(

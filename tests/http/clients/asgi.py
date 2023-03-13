@@ -71,15 +71,14 @@ class AsgiHttpClient(HttpClient):
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
             connection_init_wait_timeout=connection_init_wait_timeout,
-            keep_alive=False
+            keep_alive=False,
         )
         view.result_override = result_override
 
         self.client = TestClient(view)
 
     def create_app(self, **kwargs: Any) -> None:
-        view = GraphQLView(
-            schema=schema, **kwargs)
+        view = GraphQLView(schema=schema, **kwargs)
         self.client = TestClient(view)
 
     async def _graphql_request(

@@ -250,8 +250,7 @@ async def test_reused_operation_ids(ws: WebSocketClient):
 
     response = await ws.receive_json()
     assert (
-        response
-        == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
+        response == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
     )
 
     response = await ws.receive_json()
@@ -270,8 +269,7 @@ async def test_reused_operation_ids(ws: WebSocketClient):
 
     response = await ws.receive_json()
     assert (
-        response
-        == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
+        response == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
     )
 
 
@@ -287,8 +285,7 @@ async def test_simple_subscription(ws: WebSocketClient):
 
     response = await ws.receive_json()
     assert (
-        response
-        == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
+        response == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
     )
 
     await ws.send_json(CompleteMessage(id="sub1").as_dict())
@@ -464,9 +461,7 @@ async def test_single_result_query_operation(ws: WebSocketClient):
     response = await ws.receive_json()
     assert (
         response
-        == NextMessage(
-            id="sub1", payload={"data": {"hello": "Hello world"}}
-        ).as_dict()
+        == NextMessage(id="sub1", payload={"data": {"hello": "Hello world"}}).as_dict()
     )
 
     response = await ws.receive_json()
@@ -549,9 +544,7 @@ async def test_single_result_mutation_operation(ws: WebSocketClient):
     response = await ws.receive_json()
     assert (
         response
-        == NextMessage(
-            id="sub1", payload={"data": {"hello": "strawberry"}}
-        ).as_dict()
+        == NextMessage(id="sub1", payload={"data": {"hello": "strawberry"}}).as_dict()
     )
 
     response = await ws.receive_json()
@@ -711,10 +704,8 @@ async def test_single_result_duplicate_ids_query(ws: WebSocketClient):
 
 
 async def test_injects_connection_params(ws_raw: WebSocketClient):
-    ws=ws_raw
-    await ws.send_json(
-        ConnectionInitMessage(payload={"strawberry": "rocks"}).as_dict()
-    )
+    ws = ws_raw
+    await ws.send_json(ConnectionInitMessage(payload={"strawberry": "rocks"}).as_dict())
 
     response = await ws.receive_json()
     assert response == ConnectionAckMessage().as_dict()
@@ -722,9 +713,7 @@ async def test_injects_connection_params(ws_raw: WebSocketClient):
     await ws.send_json(
         SubscribeMessage(
             id="sub1",
-            payload=SubscribeMessagePayload(
-                query="subscription { connectionParams }"
-            ),
+            payload=SubscribeMessagePayload(query="subscription { connectionParams }"),
         ).as_dict()
     )
 
@@ -740,7 +729,7 @@ async def test_injects_connection_params(ws_raw: WebSocketClient):
 
 
 async def test_rejects_connection_params_not_dict(ws_raw: WebSocketClient):
-    ws=ws_raw
+    ws = ws_raw
     await ws.send_json(ConnectionInitMessage(payload="gonna fail").as_dict())
 
     data = await ws.receive(timeout=2)
@@ -750,7 +739,7 @@ async def test_rejects_connection_params_not_dict(ws_raw: WebSocketClient):
 
 
 async def test_rejects_connection_params_not_unset(ws_raw: WebSocketClient):
-    ws=ws_raw
+    ws = ws_raw
     await ws.send_json(ConnectionInitMessage(payload=None).as_dict())
 
     data = await ws.receive(timeout=2)

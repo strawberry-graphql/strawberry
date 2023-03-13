@@ -87,8 +87,7 @@ class FastAPIHttpClient(HttpClient):
 
     def create_app(self, **kwargs: Any) -> None:
         self.app = FastAPI()
-        graphql_app = GraphQLRouter(
-            schema=schema, **kwargs)
+        graphql_app = GraphQLRouter(schema=schema, **kwargs)
         self.app.include_router(graphql_app, prefix="/graphql")
 
         self.client = TestClient(self.app)
