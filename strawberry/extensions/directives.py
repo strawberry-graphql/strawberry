@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, Tuple
 
 from strawberry.extensions import SchemaExtension
 from strawberry.types import Info
+from strawberry.types.nodes import convert_arguments
 from strawberry.utils.await_maybe import await_maybe
 
 if TYPE_CHECKING:
@@ -60,11 +61,7 @@ def process_directive(
     strawberry_directive = schema.get_directive_by_name(directive_name)
     assert strawberry_directive is not None, f"Directive {directive_name} not found"
 
-    # TODO: support converting lists
-    arguments = {
-        argument.name.value: argument.value.value  # type: ignore
-        for argument in directive.arguments
-    }
+    arguments = convert_arguments(info=info, nodes=directive.arguments)
     resolver = strawberry_directive.resolver
 
     info_parameter = resolver.info_parameter
