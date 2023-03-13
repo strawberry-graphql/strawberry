@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import contextlib
 import json
-from datetime import timedelta
 from io import BytesIO
 from typing import Any, AsyncGenerator, Dict, List, Optional
 from typing_extensions import Literal
@@ -61,13 +60,11 @@ class AioHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
-        connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     ):
         view = GraphQLView(
             schema=schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
-            connection_init_wait_timeout=connection_init_wait_timeout,
             keep_alive=False,
         )
         view.result_override = result_override

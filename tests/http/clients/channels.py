@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import contextlib
 import json
-from datetime import timedelta
 from io import BytesIO
 from typing import Any, AsyncGenerator, Dict, List, Optional
 from typing_extensions import Literal
@@ -44,11 +43,9 @@ class ChannelsHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
-        connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     ):
         self.app = DebuggableGraphQLTransportWSConsumer.as_asgi(
             schema=schema,
-            connection_init_wait_timeout=connection_init_wait_timeout,
             keep_alive=False,
         )
 

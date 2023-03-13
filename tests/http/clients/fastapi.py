@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import contextlib
 import json
-from datetime import timedelta
 from io import BytesIO
 from typing import Any, AsyncGenerator, Dict, List, Optional
 from typing_extensions import Literal
@@ -67,7 +66,6 @@ class FastAPIHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
-        connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     ):
         self.app = FastAPI()
 
@@ -77,7 +75,6 @@ class FastAPIHttpClient(HttpClient):
             context_getter=fastapi_get_context,
             root_value_getter=get_root_value,
             allow_queries_via_get=allow_queries_via_get,
-            connection_init_wait_timeout=connection_init_wait_timeout,
             keep_alive=False,
         )
         graphql_app.result_override = result_override
