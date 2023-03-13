@@ -3047,14 +3047,14 @@ files = [
 
 [[package]]
 name = "types-typed-ast"
-version = "1.5.8.4"
+version = "1.5.8.5"
 description = "Typing stubs for typed-ast"
 category = "dev"
 optional = false
 python-versions = "*"
 files = [
-    {file = "types-typed-ast-1.5.8.4.tar.gz", hash = "sha256:285538645289751b4a7c59e1d96648da8f383b8a3c9d47187b289befcd578cb8"},
-    {file = "types_typed_ast-1.5.8.4-py3-none-any.whl", hash = "sha256:c551096abac967634de4fa9bdac25c104e19008901b1339b99ea8a3ad40d1d5c"},
+    {file = "types-typed-ast-1.5.8.5.tar.gz", hash = "sha256:fdec308ed991c267969c12e31f2d4a8eb527540a3833a72eb0bd479b2554f360"},
+    {file = "types_typed_ast-1.5.8.5-py3-none-any.whl", hash = "sha256:3a4b18e4312249d6a667d215d2c1a4060efce5fc4c4807b27b75c85896787a90"},
 ]
 
 [[package]]
