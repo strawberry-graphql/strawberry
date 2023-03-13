@@ -436,15 +436,6 @@ async def test_unknown_protocol_messages_are_ignored(aiohttp_app_client: HttpCli
 
 
 async def test_custom_context(aiohttp_app_client: HttpClient):
-    class MyGraphQLView(GraphQLView):
-        async def get_context(self, request, response) -> object:
-            return {"request": request, "response": response, "custom_value": "Hi"}
-
-    view = MyGraphQLView(schema=schema, keep_alive=False)
-    app = web.Application()
-    app.router.add_route("*", "/graphql", view)
-    aiohttp_app_client = await aiohttp_client(app)
-
     async with aiohttp_app_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
     ) as ws:
@@ -465,7 +456,7 @@ async def test_custom_context(aiohttp_app_client: HttpClient):
         response = await ws.receive_json()
         assert response["type"] == GQL_DATA
         assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"context": "Hi"}
+        assert response["payload"]["data"] == {"context": "a value from context"}
 
         await ws.send_json({"type": GQL_STOP, "id": "demo"})
         response = await ws.receive_json()

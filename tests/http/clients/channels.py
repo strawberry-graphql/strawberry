@@ -11,6 +11,7 @@ from channels.testing import WebsocketCommunicator
 from strawberry.channels import GraphQLWSConsumer
 from tests.views.schema import schema
 
+from ..context import get_context
 from .base import (
     JSON,
     HttpClient,
@@ -28,6 +29,8 @@ class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
         context.connectionInitTimeoutTask = getattr(
             self._handler, "connection_init_timeout_task", None
         )
+        for key, val in get_context({}).items():
+            setattr(context, key, val)
         return context
 
 
