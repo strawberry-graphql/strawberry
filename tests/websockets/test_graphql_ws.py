@@ -22,7 +22,7 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_STOP,
 )
 
-from ..http.clients import HttpClient, WebSocketClient
+from ..http.clients import AioHttpClient, HttpClient, WebSocketClient
 
 
 @pytest_asyncio.fixture
@@ -42,10 +42,12 @@ async def ws(ws_raw: WebSocketClient) -> WebSocketClient:
     assert response == ConnectionAckMessage().as_dict()
     return ws_raw
 
+
 # convenience fixture to use previous name
 @pytest.fixture
 def aiohttp_app_client(http_client: HttpClient) -> HttpClient:
     return http_client
+
 
 async def test_simple_subscription(aiohttp_app_client: HttpClient):
     async with aiohttp_app_client.ws_connect(
@@ -525,6 +527,10 @@ async def test_resolving_enums(aiohttp_app_client: HttpClient):
 async def test_task_cancellation_separation(aiohttp_app_client: HttpClient):
     # Note Python 3.7 does not support Task.get_name/get_coro so we have to use
     # repr(Task) to check whether expected tasks are running.
+    # This only works for aiohttp, where we are using the same event loop
+    # on the client side and server.
+    aio = aiohttp_app_client == AioHttpClient
+
     def get_result_handler_tasks():
         return [
             task
@@ -546,37 +552,62 @@ async def test_task_cancellation_separation(aiohttp_app_client: HttpClient):
             "payload": {"query": 'subscription { infinity(message: "Hi") }'},
         }
 
-        assert len(get_result_handler_tasks()) == 0
+        # 0 active result handler tasks
+        if aio:
+            assert len(get_result_handler_tasks()) == 0
 
         await ws1.send_json({"type": GQL_CONNECTION_INIT})
         await ws1.send_json(start_payload)
-        await ws1.receive_json()
+        await ws1.receive_json()  # ack
+        await ws1.receive_json()  # data
 
-        assert len(get_result_handler_tasks()) == 1
+        # 1 active result handler tasks
+        if aio:
+            assert len(get_result_handler_tasks()) == 1
 
         await ws2.send_json({"type": GQL_CONNECTION_INIT})
         await ws2.send_json(start_payload)
         await ws2.receive_json()
+        await ws2.receive_json()
 
-        assert len(get_result_handler_tasks()) == 2
+        # 2 active result handler tasks
+        if aio:
+            assert len(get_result_handler_tasks()) == 2
 
         await ws1.send_json({"type": GQL_STOP, "id": "demo"})
-        await ws1.send_json({"type": GQL_CONNECTION_TERMINATE})
+        await ws1.receive_json()  # complete
 
-        async for _msg in ws1:
-            # Receive all outstanding messages including the final close message
-            pass
-
-        assert len(get_result_handler_tasks()) == 1
+        # 1 active result handler tasks
+        if aio:
+            assert len(get_result_handler_tasks()) == 1
 
         await ws2.send_json({"type": GQL_STOP, "id": "demo"})
-        await ws2.send_json({"type": GQL_CONNECTION_TERMINATE})
+        await ws2.receive_json()  # complete
 
-        async for _msg in ws2:
-            # Receive all outstanding messages including the final close message
-            pass
+        # 0 active result handler tasks
+        if aio:
+            assert len(get_result_handler_tasks()) == 0
 
-        assert len(get_result_handler_tasks()) == 0
+        await ws1.send_json(
+            {
+                "type": GQL_START,
+                "id": "debug1",
+                "payload": {
+                    "query": "subscription { debug { numActiveResultHandlers } }",
+                },
+            }
+        )
+
+        response = await ws1.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "debug1"
+
+        # The one active result handler is the one for this debug subscription
+        assert response["payload"]["data"] == {"debug": {"numActiveResultHandlers": 1}}
+
+        response = await ws1.receive_json()
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "debug1"
 
 
 async def test_injects_connection_params(aiohttp_app_client: HttpClient):
