@@ -2,7 +2,15 @@ import abc
 import json
 from dataclasses import dataclass
 from io import BytesIO
-from typing import Any, AsyncContextManager, Callable, Dict, List, Optional
+from typing import (
+    Any,
+    AsyncContextManager,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    List,
+    Optional,
+)
 from typing_extensions import Literal
 
 from strawberry.http import GraphQLHTTPResponse
@@ -227,3 +235,7 @@ class WebSocketClient(abc.ABC):
     @abc.abstractmethod
     def assert_reason(self, reason: str) -> None:
         ...
+
+    async def __aiter__(self) -> AsyncGenerator[Message, None]:
+        while not self.closed:
+            yield await self.receive()
