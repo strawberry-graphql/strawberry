@@ -121,7 +121,7 @@ async def test_connection_init_timeout_cancellation(
     http_client_class: Type[HttpClient],
 ):
     test_client = http_client_class()
-    test_client.create_app(connection_init_wait_timeout=timedelta(milliseconds=50))
+    test_client.create_app(connection_init_wait_timeout=timedelta(milliseconds=100))
     async with test_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
@@ -130,7 +130,7 @@ async def test_connection_init_timeout_cancellation(
         response = await ws.receive_json()
         assert response == ConnectionAckMessage().as_dict()
 
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.2)
 
         await ws.send_json(
             SubscribeMessage(
