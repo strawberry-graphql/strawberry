@@ -5,10 +5,6 @@ import pytest
 import pytest_asyncio
 
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
-from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
-    ConnectionAckMessage,
-    ConnectionInitMessage,
-)
 from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_COMPLETE,
     GQL_CONNECTION_ACK,
@@ -36,11 +32,18 @@ async def ws_raw(http_client: HttpClient) -> AsyncGenerator[WebSocketClient, Non
 
 
 @pytest_asyncio.fixture
-async def ws(ws_raw: WebSocketClient) -> WebSocketClient:
-    await ws_raw.send_json(ConnectionInitMessage().as_dict())
-    response = await ws_raw.receive_json()
-    assert response == ConnectionAckMessage().as_dict()
-    return ws_raw
+async def ws(ws_raw: WebSocketClient) -> AsyncGenerator[WebSocketClient, None]:
+    ws = ws_raw
+    await ws.send_json({"type": GQL_CONNECTION_INIT})
+    response = await ws.receive_json()
+    assert response["type"] == GQL_CONNECTION_ACK
+
+    yield ws
+
+    await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+    # make sure the WebSocket is disconnected now
+    await ws.receive(timeout=2)  # receive close
+    assert ws.closed
 
 
 # convenience fixture to use previous name
@@ -49,78 +52,52 @@ def aiohttp_app_client(http_client: HttpClient) -> HttpClient:
     return http_client
 
 
-async def test_simple_subscription(aiohttp_app_client: HttpClient):
-    async with aiohttp_app_client.ws_connect(
-        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
-    ) as ws:
-        await ws.send_json({"type": GQL_CONNECTION_INIT})
-        await ws.send_json(
-            {
-                "type": GQL_START,
-                "id": "demo",
-                "payload": {
-                    "query": 'subscription { echo(message: "Hi") }',
-                },
-            }
-        )
+async def test_simple_subscription(ws: WebSocketClient):
+    await ws.send_json(
+        {
+            "type": GQL_START,
+            "id": "demo",
+            "payload": {
+                "query": 'subscription { echo(message: "Hi") }',
+            },
+        }
+    )
 
-        response = await ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_ACK
+    response = await ws.receive_json()
+    assert response["type"] == GQL_DATA
+    assert response["id"] == "demo"
+    assert response["payload"]["data"] == {"echo": "Hi"}
 
-        response = await ws.receive_json()
-        assert response["type"] == GQL_DATA
-        assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"echo": "Hi"}
-
-        await ws.send_json({"type": GQL_STOP, "id": "demo"})
-        response = await ws.receive_json()
-        assert response["type"] == GQL_COMPLETE
-        assert response["id"] == "demo"
-
-        await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
-
-        # make sure the WebSocket is disconnected now
-        await ws.receive(timeout=2)  # receive close
-        assert ws.closed
+    await ws.send_json({"type": GQL_STOP, "id": "demo"})
+    response = await ws.receive_json()
+    assert response["type"] == GQL_COMPLETE
+    assert response["id"] == "demo"
 
 
-async def test_operation_selection(aiohttp_app_client: HttpClient):
-    async with aiohttp_app_client.ws_connect(
-        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
-    ) as ws:
-        await ws.send_json({"type": GQL_CONNECTION_INIT})
-        await ws.send_json(
-            {
-                "type": GQL_START,
-                "id": "demo",
-                "payload": {
-                    "query": """
-                        subscription Subscription1 { echo(message: "Hi1") }
-                        subscription Subscription2 { echo(message: "Hi2") }
-                    """,
-                    "operationName": "Subscription2",
-                },
-            }
-        )
+async def test_operation_selection(ws: WebSocketClient):
+    await ws.send_json(
+        {
+            "type": GQL_START,
+            "id": "demo",
+            "payload": {
+                "query": """
+                    subscription Subscription1 { echo(message: "Hi1") }
+                    subscription Subscription2 { echo(message: "Hi2") }
+                """,
+                "operationName": "Subscription2",
+            },
+        }
+    )
 
-        response = await ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_ACK
+    response = await ws.receive_json()
+    assert response["type"] == GQL_DATA
+    assert response["id"] == "demo"
+    assert response["payload"]["data"] == {"echo": "Hi2"}
 
-        response = await ws.receive_json()
-        assert response["type"] == GQL_DATA
-        assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"echo": "Hi2"}
-
-        await ws.send_json({"type": GQL_STOP, "id": "demo"})
-        response = await ws.receive_json()
-        assert response["type"] == GQL_COMPLETE
-        assert response["id"] == "demo"
-
-        await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
-
-        # make sure the WebSocket is disconnected now
-        await ws.receive(timeout=2)  # receive close
-        assert ws.closed
+    await ws.send_json({"type": GQL_STOP, "id": "demo"})
+    response = await ws.receive_json()
+    assert response["type"] == GQL_COMPLETE
+    assert response["id"] == "demo"
 
 
 async def test_sends_keep_alive(aiohttp_app_client: HttpClient):
@@ -160,359 +137,266 @@ async def test_sends_keep_alive(aiohttp_app_client: HttpClient):
         await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
 
 
-async def test_subscription_cancellation(aiohttp_app_client: HttpClient):
-    async with aiohttp_app_client.ws_connect(
-        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
-    ) as ws:
-        await ws.send_json({"type": GQL_CONNECTION_INIT})
-        response = await ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_ACK
-
-        await ws.send_json(
-            {
-                "type": GQL_START,
-                "id": "demo",
-                "payload": {"query": 'subscription { echo(message: "Hi", delay: 99) }'},
-            }
-        )
-
-        await ws.send_json(
-            {
-                "type": GQL_START,
-                "id": "debug1",
-                "payload": {
-                    "query": "subscription { debug { numActiveResultHandlers } }",
-                },
-            }
-        )
-
-        response = await ws.receive_json()
-        assert response["type"] == GQL_DATA
-        assert response["id"] == "debug1"
-        assert response["payload"]["data"] == {"debug": {"numActiveResultHandlers": 2}}
-
-        response = await ws.receive_json()
-        assert response["type"] == GQL_COMPLETE
-        assert response["id"] == "debug1"
-
-        await ws.send_json({"type": GQL_STOP, "id": "demo"})
-        response = await ws.receive_json()
-        assert response["type"] == GQL_COMPLETE
-        assert response["id"] == "demo"
-
-        await ws.send_json(
-            {
-                "type": GQL_START,
-                "id": "debug2",
-                "payload": {
-                    "query": "subscription { debug { numActiveResultHandlers} }",
-                },
-            }
-        )
-
-        response = await ws.receive_json()
-        assert response["type"] == GQL_DATA
-        assert response["id"] == "debug2"
-        assert response["payload"]["data"] == {"debug": {"numActiveResultHandlers": 1}}
-
-        response = await ws.receive_json()
-        assert response["type"] == GQL_COMPLETE
-        assert response["id"] == "debug2"
-
-        await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
-
-        # make sure the WebSocket is disconnected now
-        await ws.receive(timeout=2)  # receive close
-        assert ws.closed
-
-
-async def test_subscription_errors(aiohttp_app_client: HttpClient):
-    async with aiohttp_app_client.ws_connect(
-        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
-    ) as ws:
-        await ws.send_json({"type": GQL_CONNECTION_INIT})
-        await ws.send_json(
-            {
-                "type": GQL_START,
-                "id": "demo",
-                "payload": {"query": 'subscription { error(message: "TEST ERR") }'},
-            }
-        )
-
-        response = await ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_ACK
-
-        response = await ws.receive_json()
-        assert response["type"] == GQL_DATA
-        assert response["id"] == "demo"
-        assert response["payload"]["data"] is None
-        assert len(response["payload"]["errors"]) == 1
-        assert response["payload"]["errors"][0]["path"] == ["error"]
-        assert response["payload"]["errors"][0]["message"] == "TEST ERR"
-
-        response = await ws.receive_json()
-        assert response["type"] == GQL_COMPLETE
-        assert response["id"] == "demo"
-
-        await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
-
-
-async def test_subscription_exceptions(aiohttp_app_client: HttpClient):
-    async with aiohttp_app_client.ws_connect(
-        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
-    ) as ws:
-        await ws.send_json({"type": GQL_CONNECTION_INIT})
-        await ws.send_json(
-            {
-                "type": GQL_START,
-                "id": "demo",
-                "payload": {"query": 'subscription { exception(message: "TEST EXC") }'},
-            }
-        )
-
-        response = await ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_ACK
-
-        response = await ws.receive_json()
-        assert response["type"] == GQL_DATA
-        assert response["id"] == "demo"
-        assert response["payload"]["data"] is None
-        assert response["payload"]["errors"] == [{"message": "TEST EXC"}]
-
-        await ws.send_json({"type": GQL_STOP, "id": "demo"})
-        response = await ws.receive_json()
-        assert response["type"] == GQL_COMPLETE
-        assert response["id"] == "demo"
-
-        await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
-
-        # make sure the WebSocket is disconnected now
-        await ws.receive(timeout=2)  # receive close
-        assert ws.closed
-
-
-async def test_subscription_field_error(aiohttp_app_client: HttpClient):
-    async with aiohttp_app_client.ws_connect(
-        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
-    ) as ws:
-        await ws.send_json({"type": GQL_CONNECTION_INIT})
-        await ws.send_json(
-            {
-                "type": GQL_START,
-                "id": "invalid-field",
-                "payload": {"query": "subscription { notASubscriptionField }"},
-            }
-        )
-
-        response = await ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_ACK
-
-        response = await ws.receive_json()
-        assert response["type"] == GQL_ERROR
-        assert response["id"] == "invalid-field"
-        assert response["payload"] == {
-            "locations": [{"line": 1, "column": 16}],
-            "message": (
-                "The subscription field 'notASubscriptionField' is not defined."
-            ),
+async def test_subscription_cancellation(ws: WebSocketClient):
+    await ws.send_json(
+        {
+            "type": GQL_START,
+            "id": "demo",
+            "payload": {"query": 'subscription { echo(message: "Hi", delay: 99) }'},
         }
+    )
 
-        await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
-
-        # make sure the WebSocket is disconnected now
-        await ws.receive(timeout=2)  # receive close
-        assert ws.closed
-
-
-async def test_subscription_syntax_error(aiohttp_app_client: HttpClient):
-    async with aiohttp_app_client.ws_connect(
-        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
-    ) as ws:
-        await ws.send_json({"type": GQL_CONNECTION_INIT})
-        await ws.send_json(
-            {
-                "type": GQL_START,
-                "id": "syntax-error",
-                "payload": {"query": "subscription { example "},
-            }
-        )
-
-        response = await ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_ACK
-
-        response = await ws.receive_json()
-        assert response["type"] == GQL_ERROR
-        assert response["id"] == "syntax-error"
-        assert response["payload"] == {
-            "locations": [{"line": 1, "column": 24}],
-            "message": "Syntax Error: Expected Name, found <EOF>.",
+    await ws.send_json(
+        {
+            "type": GQL_START,
+            "id": "debug1",
+            "payload": {
+                "query": "subscription { debug { numActiveResultHandlers } }",
+            },
         }
+    )
 
-        await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+    response = await ws.receive_json()
+    assert response["type"] == GQL_DATA
+    assert response["id"] == "debug1"
+    assert response["payload"]["data"] == {"debug": {"numActiveResultHandlers": 2}}
 
-        # make sure the WebSocket is disconnected now
-        await ws.receive(timeout=2)  # receive close
-        assert ws.closed
+    response = await ws.receive_json()
+    assert response["type"] == GQL_COMPLETE
+    assert response["id"] == "debug1"
 
+    await ws.send_json({"type": GQL_STOP, "id": "demo"})
+    response = await ws.receive_json()
+    assert response["type"] == GQL_COMPLETE
+    assert response["id"] == "demo"
 
-async def test_non_text_ws_messages_are_ignored(aiohttp_app_client: HttpClient):
-    async with aiohttp_app_client.ws_connect(
-        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
-    ) as ws:
-        await ws.send_bytes(b"foo")
-        await ws.send_json({"type": GQL_CONNECTION_INIT})
+    await ws.send_json(
+        {
+            "type": GQL_START,
+            "id": "debug2",
+            "payload": {
+                "query": "subscription { debug { numActiveResultHandlers} }",
+            },
+        }
+    )
 
-        await ws.send_bytes(b"bar")
-        await ws.send_json(
-            {
-                "type": GQL_START,
-                "id": "demo",
-                "payload": {
-                    "query": 'subscription { echo(message: "Hi") }',
-                },
-            }
-        )
+    response = await ws.receive_json()
+    assert response["type"] == GQL_DATA
+    assert response["id"] == "debug2"
+    assert response["payload"]["data"] == {"debug": {"numActiveResultHandlers": 1}}
 
-        response = await ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_ACK
-
-        response = await ws.receive_json()
-        assert response["type"] == GQL_DATA
-        assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"echo": "Hi"}
-
-        await ws.send_bytes(b"gaz")
-        await ws.send_json({"type": GQL_STOP, "id": "demo"})
-        response = await ws.receive_json()
-        assert response["type"] == GQL_COMPLETE
-        assert response["id"] == "demo"
-
-        await ws.send_bytes(b"wat")
-        await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
-
-        # make sure the WebSocket is disconnected now
-        await ws.receive(timeout=2)  # receive close
-        assert ws.closed
+    response = await ws.receive_json()
+    assert response["type"] == GQL_COMPLETE
+    assert response["id"] == "debug2"
 
 
-async def test_unknown_protocol_messages_are_ignored(aiohttp_app_client: HttpClient):
-    async with aiohttp_app_client.ws_connect(
-        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
-    ) as ws:
-        await ws.send_json({"type": "NotAProtocolMessage"})
-        await ws.send_json({"type": GQL_CONNECTION_INIT})
+async def test_subscription_errors(ws: WebSocketClient):
+    await ws.send_json(
+        {
+            "type": GQL_START,
+            "id": "demo",
+            "payload": {"query": 'subscription { error(message: "TEST ERR") }'},
+        }
+    )
 
-        await ws.send_json({"type": "NotAProtocolMessage"})
-        await ws.send_json(
-            {
-                "type": GQL_START,
-                "id": "demo",
-                "payload": {
-                    "query": 'subscription { echo(message: "Hi") }',
-                },
-            }
-        )
+    response = await ws.receive_json()
+    assert response["type"] == GQL_DATA
+    assert response["id"] == "demo"
+    assert response["payload"]["data"] is None
+    assert len(response["payload"]["errors"]) == 1
+    assert response["payload"]["errors"][0]["path"] == ["error"]
+    assert response["payload"]["errors"][0]["message"] == "TEST ERR"
 
-        response = await ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_ACK
-
-        response = await ws.receive_json()
-        assert response["type"] == GQL_DATA
-        assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"echo": "Hi"}
-
-        await ws.send_json({"type": "NotAProtocolMessage"})
-        await ws.send_json({"type": GQL_STOP, "id": "demo"})
-        response = await ws.receive_json()
-        assert response["type"] == GQL_COMPLETE
-        assert response["id"] == "demo"
-
-        await ws.send_json({"type": "NotAProtocolMessage"})
-        await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
-
-        # make sure the WebSocket is disconnected now
-        await ws.receive(timeout=2)  # receive close
-        assert ws.closed
+    response = await ws.receive_json()
+    assert response["type"] == GQL_COMPLETE
+    assert response["id"] == "demo"
 
 
-async def test_custom_context(aiohttp_app_client: HttpClient):
-    async with aiohttp_app_client.ws_connect(
-        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
-    ) as ws:
-        await ws.send_json({"type": GQL_CONNECTION_INIT})
-        await ws.send_json(
-            {
-                "type": GQL_START,
-                "id": "demo",
-                "payload": {
-                    "query": "subscription { context }",
-                },
-            }
-        )
+async def test_subscription_exceptions(ws: WebSocketClient):
+    await ws.send_json(
+        {
+            "type": GQL_START,
+            "id": "demo",
+            "payload": {"query": 'subscription { exception(message: "TEST EXC") }'},
+        }
+    )
 
-        response = await ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_ACK
+    response = await ws.receive_json()
+    assert response["type"] == GQL_DATA
+    assert response["id"] == "demo"
+    assert response["payload"]["data"] is None
+    assert response["payload"]["errors"] == [{"message": "TEST EXC"}]
 
-        response = await ws.receive_json()
-        assert response["type"] == GQL_DATA
-        assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"context": "a value from context"}
-
-        await ws.send_json({"type": GQL_STOP, "id": "demo"})
-        response = await ws.receive_json()
-        assert response["type"] == GQL_COMPLETE
-        assert response["id"] == "demo"
-
-        await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
-
-        # make sure the WebSocket is disconnected now
-        await ws.receive(timeout=2)  # receive close
-        assert ws.closed
+    await ws.send_json({"type": GQL_STOP, "id": "demo"})
+    response = await ws.receive_json()
+    assert response["type"] == GQL_COMPLETE
+    assert response["id"] == "demo"
 
 
-async def test_resolving_enums(aiohttp_app_client: HttpClient):
-    async with aiohttp_app_client.ws_connect(
-        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
-    ) as ws:
-        await ws.send_json({"type": GQL_CONNECTION_INIT})
-        await ws.send_json(
-            {
-                "type": GQL_START,
-                "id": "demo",
-                "payload": {
-                    "query": "subscription { flavors }",
-                },
-            }
-        )
+async def test_subscription_field_error(ws: WebSocketClient):
+    await ws.send_json(
+        {
+            "type": GQL_START,
+            "id": "invalid-field",
+            "payload": {"query": "subscription { notASubscriptionField }"},
+        }
+    )
 
-        response = await ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_ACK
+    response = await ws.receive_json()
+    assert response["type"] == GQL_ERROR
+    assert response["id"] == "invalid-field"
+    assert response["payload"] == {
+        "locations": [{"line": 1, "column": 16}],
+        "message": ("The subscription field 'notASubscriptionField' is not defined."),
+    }
 
-        response = await ws.receive_json()
-        assert response["type"] == GQL_DATA
-        assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"flavors": "VANILLA"}
 
-        response = await ws.receive_json()
-        assert response["type"] == GQL_DATA
-        assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"flavors": "STRAWBERRY"}
+async def test_subscription_syntax_error(ws: WebSocketClient):
+    await ws.send_json(
+        {
+            "type": GQL_START,
+            "id": "syntax-error",
+            "payload": {"query": "subscription { example "},
+        }
+    )
 
-        response = await ws.receive_json()
-        assert response["type"] == GQL_DATA
-        assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"flavors": "CHOCOLATE"}
+    response = await ws.receive_json()
+    assert response["type"] == GQL_ERROR
+    assert response["id"] == "syntax-error"
+    assert response["payload"] == {
+        "locations": [{"line": 1, "column": 24}],
+        "message": "Syntax Error: Expected Name, found <EOF>.",
+    }
 
-        await ws.send_json({"type": GQL_STOP, "id": "demo"})
-        response = await ws.receive_json()
-        assert response["type"] == GQL_COMPLETE
-        assert response["id"] == "demo"
 
-        await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+async def test_non_text_ws_messages_are_ignored(ws_raw: WebSocketClient):
+    ws = ws_raw
+    await ws.send_bytes(b"foo")
+    await ws.send_json({"type": GQL_CONNECTION_INIT})
 
-        # make sure the WebSocket is disconnected now
-        await ws.receive(timeout=2)  # receive close
-        assert ws.closed
+    await ws.send_bytes(b"bar")
+    await ws.send_json(
+        {
+            "type": GQL_START,
+            "id": "demo",
+            "payload": {
+                "query": 'subscription { echo(message: "Hi") }',
+            },
+        }
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == GQL_CONNECTION_ACK
+
+    response = await ws.receive_json()
+    assert response["type"] == GQL_DATA
+    assert response["id"] == "demo"
+    assert response["payload"]["data"] == {"echo": "Hi"}
+
+    await ws.send_bytes(b"gaz")
+    await ws.send_json({"type": GQL_STOP, "id": "demo"})
+    response = await ws.receive_json()
+    assert response["type"] == GQL_COMPLETE
+    assert response["id"] == "demo"
+
+    await ws.send_bytes(b"wat")
+    await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+
+    # make sure the WebSocket is disconnected now
+    await ws.receive(timeout=2)  # receive close
+    assert ws.closed
+
+
+async def test_unknown_protocol_messages_are_ignored(ws_raw: WebSocketClient):
+    ws = ws_raw
+    await ws.send_json({"type": "NotAProtocolMessage"})
+    await ws.send_json({"type": GQL_CONNECTION_INIT})
+
+    await ws.send_json({"type": "NotAProtocolMessage"})
+    await ws.send_json(
+        {
+            "type": GQL_START,
+            "id": "demo",
+            "payload": {
+                "query": 'subscription { echo(message: "Hi") }',
+            },
+        }
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == GQL_CONNECTION_ACK
+
+    response = await ws.receive_json()
+    assert response["type"] == GQL_DATA
+    assert response["id"] == "demo"
+    assert response["payload"]["data"] == {"echo": "Hi"}
+
+    await ws.send_json({"type": "NotAProtocolMessage"})
+    await ws.send_json({"type": GQL_STOP, "id": "demo"})
+    response = await ws.receive_json()
+    assert response["type"] == GQL_COMPLETE
+    assert response["id"] == "demo"
+
+    await ws.send_json({"type": "NotAProtocolMessage"})
+    await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+
+    # make sure the WebSocket is disconnected now
+    await ws.receive(timeout=2)  # receive close
+    assert ws.closed
+
+
+async def test_custom_context(ws: WebSocketClient):
+    await ws.send_json(
+        {
+            "type": GQL_START,
+            "id": "demo",
+            "payload": {
+                "query": "subscription { context }",
+            },
+        }
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == GQL_DATA
+    assert response["id"] == "demo"
+    assert response["payload"]["data"] == {"context": "a value from context"}
+
+    await ws.send_json({"type": GQL_STOP, "id": "demo"})
+    response = await ws.receive_json()
+    assert response["type"] == GQL_COMPLETE
+    assert response["id"] == "demo"
+
+
+async def test_resolving_enums(ws: WebSocketClient):
+    await ws.send_json(
+        {
+            "type": GQL_START,
+            "id": "demo",
+            "payload": {
+                "query": "subscription { flavors }",
+            },
+        }
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == GQL_DATA
+    assert response["id"] == "demo"
+    assert response["payload"]["data"] == {"flavors": "VANILLA"}
+
+    response = await ws.receive_json()
+    assert response["type"] == GQL_DATA
+    assert response["id"] == "demo"
+    assert response["payload"]["data"] == {"flavors": "STRAWBERRY"}
+
+    response = await ws.receive_json()
+    assert response["type"] == GQL_DATA
+    assert response["id"] == "demo"
+    assert response["payload"]["data"] == {"flavors": "CHOCOLATE"}
+
+    await ws.send_json({"type": GQL_STOP, "id": "demo"})
+    response = await ws.receive_json()
+    assert response["type"] == GQL_COMPLETE
+    assert response["id"] == "demo"
 
 
 async def test_task_cancellation_separation(aiohttp_app_client: HttpClient):
