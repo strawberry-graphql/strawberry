@@ -374,7 +374,7 @@ def asdict(obj: object) -> Dict[str, object]:
     >>> # should be {"name": "Lorem", "age": 25}
     >>> user_dict = strawberry.asdict(User(name="Lorem", age=25))
     """
-    return dataclasses.asdict(obj)
+    return dataclasses.asdict(obj)  # type: ignore
 
 
 __all__ = [

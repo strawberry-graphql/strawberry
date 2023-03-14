@@ -1,12 +1,6 @@
 import pytest
 
 import strawberry
-from strawberry.extensions import Extension
-
-
-class MyExtension(Extension):
-    def get_results(self):
-        return {"example": "example"}
 
 
 def test_runs_parsing():
