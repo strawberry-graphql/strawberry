@@ -140,6 +140,10 @@ jobs:
       - name: Install starlette ${{ matrix.starlette }}
         run: poetry run pip install starlette==${{ matrix.starlette }}
 
+      - name: Install fastapi 0.92.0
+        run: poetry run pip install "fastapi<0.92.0"
+        if: ${{ matrix.starlette == '0.23.1' || matrix.starlette == '0.24.0' }}
+
       - name: pytest
         run:
           poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m
