@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.163.1 - 2023-03-14
+--------------------
+
+Provide close reason to ASGI websocket as specified by ASGI 2.3
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2639](https://github.com/strawberry-graphql/strawberry/pull/2639/)
+
+
 0.163.0 - 2023-03-13
 --------------------
 
