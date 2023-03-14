@@ -6,8 +6,7 @@ a more verbose way of specifying the rules by which a query's depth should be li
 These can be any or all of the field name, the field arguments, and the field keys. Multiple
 rules can be specified that will be evaluated independently to yield the final fully limited query.
 
-For example,
-the following query:
+For example, the following query:
 ```python
 """
     query {
