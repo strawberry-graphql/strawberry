@@ -27,6 +27,7 @@ def test_unknown_message_type(test_client):
         data = ws.receive()
         assert data["type"] == "websocket.close"
         assert data["code"] == 4400
+        assert data["reason"] == "Unknown message type: NOT_A_MESSAGE_TYPE"
 
 
 def test_missing_message_type(test_client):
@@ -36,6 +37,7 @@ def test_missing_message_type(test_client):
         data = ws.receive()
         assert data["type"] == "websocket.close"
         assert data["code"] == 4400
+        assert data["reason"] == "Failed to parse message"
 
 
 def test_parsing_an_invalid_message(test_client):
@@ -45,6 +47,7 @@ def test_parsing_an_invalid_message(test_client):
         data = ws.receive()
         assert data["type"] == "websocket.close"
         assert data["code"] == 4400
+        assert data["reason"] == "Failed to parse message"
 
 
 def test_parsing_an_invalid_payload(test_client):
@@ -54,6 +57,7 @@ def test_parsing_an_invalid_payload(test_client):
         data = ws.receive()
         assert data["type"] == "websocket.close"
         assert data["code"] == 4400
+        assert data["reason"] == "Failed to parse message"
 
 
 def test_ws_messages_must_be_text(test_client):
@@ -63,6 +67,7 @@ def test_ws_messages_must_be_text(test_client):
         data = ws.receive()
         assert data["type"] == "websocket.close"
         assert data["code"] == 4400
+        assert data["reason"] == "WebSocket message type must be text"
 
 
 async def test_connection_init_timeout():
@@ -77,8 +82,10 @@ async def test_connection_init_timeout():
             data = ws.receive()
             assert data["type"] == "websocket.close"
             assert data["code"] == 4408
+            assert data["reason"] == "Connection initialisation timeout"
     except WebSocketDisconnect as exc:
         assert exc.code == 4408
+        assert exc.reason == "Connection initialisation timeout"
 
 
 async def test_connection_init_timeout_cancellation(test_client):

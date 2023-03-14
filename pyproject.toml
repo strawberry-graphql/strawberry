@@ -40,7 +40,7 @@ graphql-core = "~3.2.0"
 typing_extensions = ">=3.7.4,<5.0.0"
 python-dateutil = "^2.7.0"
 
-starlette = {version = ">=0.13.6", optional = true}
+starlette = {version = ">=0.18.0", optional = true}
 click = {version = ">=7.0,<9.0", optional = true}
 pygments = {version = "^2.3", optional = true}
 uvicorn = {version = ">=0.11.6,<0.22.0", optional = true}
