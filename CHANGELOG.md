@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.163.2 - 2023-03-14
+--------------------
+
+This release covers an edge case where the following would not give a nice error.
+```python
+some_field: "Union[list[str], SomeType]]"
+```
+Fixes [#2591](https://github.com/strawberry-graphql/strawberry/issues/2591)
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #2593](https://github.com/strawberry-graphql/strawberry/pull/2593/)
+
+
 0.163.1 - 2023-03-14
 --------------------
 
