@@ -22,6 +22,7 @@ from strawberry.utils.typing import is_generic as is_type_generic
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
 
+    from strawberry.extensions.type_extensions import TypeExtension
     from strawberry.field import StrawberryField
 
 
@@ -33,6 +34,7 @@ class TypeDefinition(StrawberryType):
     origin: Type
     description: Optional[str]
     interfaces: List[TypeDefinition]
+    extensions: List[TypeExtension]
     extend: bool
     directives: Optional[Sequence[object]]
     is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
@@ -46,6 +48,8 @@ class TypeDefinition(StrawberryType):
     )
 
     def __post_init__(self):
+        for extension in self.extensions:
+            extension.apply(self)
         # resolve `Self` annotation with the origin type
         for index, field in enumerate(self.fields):
             if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):  # type: ignore  # noqa: E501

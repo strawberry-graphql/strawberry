@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import dataclasses
 import inspect
 import sys
 import types
 from typing import (
+    TYPE_CHECKING,
     Callable,
     Dict,
     List,
@@ -27,6 +30,8 @@ from .utils.dataclasses import add_custom_init_fn
 from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__
 
+if TYPE_CHECKING:
+    from .extensions.type_extensions import TypeExtension
 T = TypeVar("T", bound=Type)
 
 
@@ -135,6 +140,7 @@ def _process_type(
     is_interface: bool = False,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: Optional[List[TypeExtension]] = None,
     extend: bool = False,
 ):
     name = name or to_camel_case(cls.__name__)
@@ -151,6 +157,7 @@ def _process_type(
         description=description,
         directives=directives,
         origin=cls,
+        extensions=extensions or [],
         extend=extend,
         _fields=fields,
         is_type_of=is_type_of,
@@ -192,6 +199,7 @@ def type(
     is_interface: bool = False,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: Optional[List[TypeExtension]] = None,
     extend: bool = False,
 ) -> T:
     ...
@@ -208,6 +216,7 @@ def type(
     is_interface: bool = False,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: Optional[List[TypeExtension]] = None,
     extend: bool = False,
 ) -> Callable[[T], T]:
     ...
@@ -221,6 +230,7 @@ def type(
     is_interface: bool = False,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: Optional[List[TypeExtension]] = None,
     extend: bool = False,
 ) -> Union[T, Callable[[T], T]]:
     """Annotates a class as a GraphQL type.
@@ -250,6 +260,7 @@ def type(
             is_interface=is_interface,
             description=description,
             directives=directives,
+            extensions=extensions,
             extend=extend,
         )
 
@@ -319,6 +330,7 @@ def interface(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: Optional[List[TypeExtension]] = None,
 ) -> T:
     ...
 
@@ -332,6 +344,7 @@ def interface(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: Optional[List[TypeExtension]] = None,
 ) -> Callable[[T], T]:
     ...
 
@@ -345,6 +358,7 @@ def interface(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: Optional[List[TypeExtension]] = None,
 ):
     """Annotates a class as a GraphQL Interface.
     Example usage:
@@ -359,6 +373,7 @@ def interface(
         description=description,
         directives=directives,
         is_interface=True,
+        extensions=extensions,
     )
 
 
