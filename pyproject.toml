@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.161.1"
+version = "0.164.0"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -40,10 +40,10 @@ graphql-core = "~3.2.0"
 typing_extensions = ">=3.7.4,<5.0.0"
 python-dateutil = "^2.7.0"
 
-starlette = {version = ">=0.13.6", optional = true}
+starlette = {version = ">=0.18.0", optional = true}
 click = {version = ">=7.0,<9.0", optional = true}
 pygments = {version = "^2.3", optional = true}
-uvicorn = {version = ">=0.11.6,<0.21.0", optional = true}
+uvicorn = {version = ">=0.11.6,<0.22.0", optional = true}
 Django = {version = ">=3.2", optional = true}
 asgiref = {version = "^3.2", optional = true}
 flask = {version = ">=1.1", optional = true}

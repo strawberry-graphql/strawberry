@@ -1,6 +1,129 @@
 CHANGELOG
 =========
 
+0.164.0 - 2023-03-14
+--------------------
+
+This release introduces a breaking change to make pydantic default behavior consistent with normal strawberry types.
+This changes the schema generated for pydantic types, that are required, and have default values.
+Previously pydantic type with a default, would get converted to a strawberry type that is not required.
+This is now fixed, and the schema will now correctly show the type as required.
+
+```python
+import pydantic
+import strawberry
+
+
+class UserPydantic(pydantic.BaseModel):
+    name: str = "James"
+
+
+@strawberry.experimental.pydantic.type(UserPydantic, all_fields=True)
+class User:
+    ...
+
+
+@strawberry.type
+class Query:
+    a: User = strawberry.field()
+
+    @strawberry.field
+    def a(self) -> User:
+        return User()
+```
+The schema is now
+```
+type Query {
+  a: User!
+}
+
+type User {
+  name: String! // String! rather than String previously
+}
+```
+
+Contributed by [James Chua](https://github.com/thejaminator) via [PR #2623](https://github.com/strawberry-graphql/strawberry/pull/2623/)
+
+
+0.163.2 - 2023-03-14
+--------------------
+
+This release covers an edge case where the following would not give a nice error.
+```python
+some_field: "Union[list[str], SomeType]]"
+```
+Fixes [#2591](https://github.com/strawberry-graphql/strawberry/issues/2591)
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #2593](https://github.com/strawberry-graphql/strawberry/pull/2593/)
+
+
+0.163.1 - 2023-03-14
+--------------------
+
+Provide close reason to ASGI websocket as specified by ASGI 2.3
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2639](https://github.com/strawberry-graphql/strawberry/pull/2639/)
+
+
+0.163.0 - 2023-03-13
+--------------------
+
+This release adds support for list arguments in operation directives.
+
+The following is now supported:
+
+```python
+@strawberry.directive(locations=[DirectiveLocation.FIELD])
+def append_names(
+    value: DirectiveValue[str], names: List[str]
+):  # note the usage of List here
+    return f"{value} {', '.join(names)}"
+```
+
+Contributed by [chenyijian](https://github.com/hot123s) via [PR #2632](https://github.com/strawberry-graphql/strawberry/pull/2632/)
+
+
+0.162.0 - 2023-03-10
+--------------------
+
+Adds support for a custom field using the approach specified in issue [#2168](abc).
+Field Extensions may be used to change the way how fields work and what they return.
+Use cases might include pagination, permissions or other behavior modifications.
+
+```python
+from strawberry.extensions import FieldExtension
+
+
+class UpperCaseExtension(FieldExtension):
+    async def resolve_async(
+        self, next: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
+    ):
+        result = await next(source, info, **kwargs)
+        return str(result).upper()
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(extensions=[UpperCaseExtension()])
+    async def string(self) -> str:
+        return "This is a test!!"
+```
+
+```graphql
+query {
+    string
+}
+```
+
+```json
+{
+  "string": "THIS IS A TEST!!"
+}
+```
+
+Contributed by [Erik Wrede](https://github.com/erikwrede) via [PR #2567](https://github.com/strawberry-graphql/strawberry/pull/2567/)
+
+
 0.161.1 - 2023-03-09
 --------------------
 
