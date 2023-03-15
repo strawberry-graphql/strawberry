@@ -10,7 +10,7 @@ from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
 from ..context import get_context
-from . import ResultOverrideFunction
+from .base import ResultOverrideFunction
 from .flask import FlaskHttpClient
 
 

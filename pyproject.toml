@@ -314,6 +314,7 @@ src = ["strawberry", "tests"]
 "tests/test_printer/test_schema_directives.py" = ["E501"]
 "tests/*" = ["RSE102", "SLF001", "TCH001", "TCH002", "TCH003"]
 "strawberry/extensions/tracing/__init__.py" = ["TCH004"]
+"tests/http/clients/__init__.py" = ["F401"]
 
 [tool.ruff.isort]
 known-first-party = ["strawberry"]

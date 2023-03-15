@@ -1,19 +1,27 @@
 from __future__ import annotations
 
+import contextlib
 import json
 from io import BytesIO
-from typing import Dict, Optional
+from typing import Any, AsyncGenerator, Dict, List, Optional
 from typing_extensions import Literal
+
+from starlette.websockets import WebSocketDisconnect
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
+from tests.fastapi.app import (
+    DebuggableGraphQLTransportWSHandler,
+    DebuggableGraphQLWSHandler,
+)
 from tests.views.schema import Query, schema
 
 from ..context import get_context
-from . import JSON, HttpClient, Response, ResultOverrideFunction
+from .asgi import AsgiWebSocketClient
+from .base import JSON, HttpClient, Response, ResultOverrideFunction, WebSocketClient
 
 
 def custom_context_dependency() -> str:
@@ -40,6 +48,8 @@ async def get_root_value(request: Request = None, ws: WebSocket = None):
 
 class GraphQLRouter(BaseGraphQLRouter):
     result_override: ResultOverrideFunction = None
+    graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
+    graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
     async def process_result(
         self, request: Request, result: ExecutionResult
@@ -65,8 +75,16 @@ class FastAPIHttpClient(HttpClient):
             context_getter=fastapi_get_context,
             root_value_getter=get_root_value,
             allow_queries_via_get=allow_queries_via_get,
+            keep_alive=False,
         )
         graphql_app.result_override = result_override
+        self.app.include_router(graphql_app, prefix="/graphql")
+
+        self.client = TestClient(self.app)
+
+    def create_app(self, **kwargs: Any) -> None:
+        self.app = FastAPI()
+        graphql_app = GraphQLRouter(schema=schema, **kwargs)
         self.app.include_router(graphql_app, prefix="/graphql")
 
         self.client = TestClient(self.app)
@@ -137,3 +155,18 @@ class FastAPIHttpClient(HttpClient):
             status_code=response.status_code,
             data=response.content,
         )
+
+    @contextlib.asynccontextmanager
+    async def ws_connect(
+        self,
+        url: str,
+        *,
+        protocols: List[str],
+    ) -> AsyncGenerator[WebSocketClient, None]:
+        try:
+            with self.client.websocket_connect(url, protocols) as ws:
+                yield AsgiWebSocketClient(ws)
+        except WebSocketDisconnect as error:
+            ws = AsgiWebSocketClient(None)
+            ws.handle_disconnect(error)
+            yield ws
