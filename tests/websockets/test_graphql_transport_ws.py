@@ -746,3 +746,59 @@ async def test_rejects_connection_params_not_unset(ws_raw: WebSocketClient):
     assert ws.closed
     assert ws.close_code == 4400
     ws.assert_reason("Invalid connection init payload")
+
+
+async def test_connection_handler_add(ws_raw: WebSocketClient):
+    """
+    Test that custom on_ws_connect() can add to connection_params
+    """
+    ws = ws_raw
+    payload = {"add": True}
+    await ws.send_json(ConnectionInitMessage(payload=payload).as_dict())
+    response = await ws.receive_json()
+    assert response == ConnectionAckMessage().as_dict()
+
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="subscription { connectionParamsAll }"
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert (
+        response
+        == NextMessage(
+            id="sub1",
+            payload={
+                "data": {"connectionParamsAll": str({"add": True, "added": True})}
+            },
+        ).as_dict()
+    )
+
+
+async def test_connection_handler_reject(ws_raw: WebSocketClient):
+    """
+    Test that custom on_ws_connect() can reject a connection
+    """
+    ws = ws_raw
+    payload = {"reject-me": True}
+    await ws.send_json(ConnectionInitMessage(payload=payload).as_dict())
+    data = await ws.receive(timeout=2)
+    assert ws.closed
+    assert ws.close_code == 4403
+    assert data.extra == "Forbidden"
+
+
+async def test_connection_handler_response(ws_raw: WebSocketClient):
+    """
+    Test that custom on_ws_connect() can return a payload
+    """
+    ws = ws_raw
+    payload = {"response": {"my-response": "hello"}}
+    await ws.send_json(ConnectionInitMessage(payload=payload).as_dict())
+    response = await ws.receive_json()
+
+    assert response == ConnectionAckMessage(payload={"my-response": "hello"}).as_dict()
