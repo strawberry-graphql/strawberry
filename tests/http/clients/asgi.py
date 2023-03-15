@@ -217,5 +217,4 @@ class AsgiWebSocketClient(WebSocketClient):
         return self._close_code
 
     def assert_reason(self, reason: str) -> None:
-        # This client does not provide close reason
-        return
+        assert self._close_reason == reason
