@@ -44,6 +44,9 @@ from strawberry.extensions import IgnoreContext
 
 def should_ignore(ignore: IgnoreContext):
     return ignore.field_args.get("name") == "matt"
+
+
+query_depth_limiter = QueryDepthLimiter(should_ignore=should_ignore)
 ```
 so that it *effectively* becomes:
 ```python
