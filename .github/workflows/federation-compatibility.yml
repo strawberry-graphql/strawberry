@@ -1,7 +1,7 @@
 name: 🛰️ Federation compatibility tests
 
 concurrency:
-  group: ${{ github.head_ref || github.run_id }}
+  group: ${{ github.head_ref || github.run_id }}-federation
   cancel-in-progress: true
 
 on:
