@@ -1,12 +1,15 @@
-import re
 from typing import List, Optional
 
 import pytest
 from graphql import get_introspection_query, parse, specified_rules, validate
 
 import strawberry
-from strawberry.extensions import FieldRule, QueryDepthLimiter
-from strawberry.extensions.query_depth_limiter import create_validator
+from strawberry.extensions import QueryDepthLimiter
+from strawberry.extensions.query_depth_limiter import (
+    IgnoreContext,
+    ShouldIgnoreType,
+    create_validator,
+)
 
 
 @strawberry.interface
@@ -41,10 +44,30 @@ class Human:
     pets: List[Pet]
 
 
+@strawberry.input
+class Biography:
+    name: str
+    owner_name: str
+
+
 @strawberry.type
 class Query:
     @strawberry.field
-    def user(self, name: Optional[str]) -> Human:
+    def user(
+        self,
+        name: Optional[str],
+        id: Optional[int],
+        age: Optional[float],
+        is_cool: Optional[bool],
+    ) -> Human:
+        pass
+
+    @strawberry.field
+    def users(self, names: Optional[List[str]]) -> List[Human]:
+        pass
+
+    @strawberry.field
+    def cat(bio: Biography) -> Cat:
         pass
 
     version: str
@@ -56,7 +79,7 @@ class Query:
 schema = strawberry.Schema(Query)
 
 
-def run_query(query: str, max_depth: int, ignore=None):
+def run_query(query: str, max_depth: int, should_ignore: ShouldIgnoreType = None):
     document = parse(query)
 
     result = None
@@ -65,7 +88,7 @@ def run_query(query: str, max_depth: int, ignore=None):
         nonlocal result
         result = query_depths
 
-    validation_rule = create_validator(max_depth, ignore, callback)
+    validation_rule = create_validator(max_depth, should_ignore, callback)
 
     errors = validate(
         schema._schema,
@@ -213,48 +236,22 @@ def test_should_catch_query_thats_too_deep():
     assert errors[0].message == "'anonymous' exceeds maximum operation depth of 4"
 
 
-def test_should_ignore_field_simple():
-    query = """
-    query read1 {
-      user { address { city } }
-    }
-    query read2 {
-      user1 { address { city } }
-      user2 { address { city } }
-      user3 { address { city } }
-    }
-    """
-
-    errors, result = run_query(
-        query,
-        10,
-        ignore=[
-            "user1",
-            re.compile("user2"),
-            lambda field_name: field_name == "user3",
-        ],
-    )
-
-    expected = {"read1": 2, "read2": 0}
-    assert not errors
-    assert result == expected
-
-
 def test_should_raise_invalid_ignore():
     query = """
     query read1 {
       user { address { city } }
     }
     """
-    with pytest.raises(TypeError, match="Invalid ignore option:"):
-        run_query(
-            query,
-            10,
-            ignore=[True],
+    with pytest.raises(
+        TypeError,
+        match="The `should_ignore` argument to `QueryDepthLimiter` must be a callable.",
+    ):
+        strawberry.Schema(
+            Query, extensions=[QueryDepthLimiter(max_depth=10, should_ignore=True)]
         )
 
 
-def test_should_ignore_field_attributes_rule_field_name():
+def test_should_ignore_field_by_name():
     query = """
     query read1 {
       user { address { city } }
@@ -266,87 +263,175 @@ def test_should_ignore_field_attributes_rule_field_name():
     }
     """
 
-    errors, result = run_query(
-        query,
-        10,
-        ignore=[
-            FieldRule(field_name="user1"),
-            FieldRule(field_name=re.compile("user2")),
-            FieldRule(field_name=lambda x: x == "user3"),
-        ],
-    )
+    def should_ignore(ignore: IgnoreContext) -> bool:
+        return (
+            ignore.field_name == "user1"
+            or ignore.field_name == "user2"
+            or ignore.field_name == "user3"
+        )
+
+    errors, result = run_query(query, 10, should_ignore=should_ignore)
 
     expected = {"read1": 2, "read2": 0}
     assert not errors
     assert result == expected
 
 
-def test_should_ignore_field_attributes_field_arguments():
+def test_should_ignore_field_by_str_argument():
     query = """
     query read1 {
-      matt: user(name: "matt") {
-        email
-      }
-      andy: user(name: "andy") {
-        email
-        address {
-          city
-        }
-        pets {
-          name
-          owner {
-            name
-          }
-        }
-      }
+      user(name:"matt") { address { city } }
+    }
+    query read2 {
+      user1 { address { city } }
+      user2 { address { city } }
+      user3 { address { city } }
     }
     """
 
-    errors, result = run_query(
-        query,
-        10,
-        ignore=[FieldRule(field_name="user", field_arguments={"name": ["andy"]})],
-    )
+    def should_ignore(ignore: IgnoreContext) -> bool:
+        return ignore.field_args.get("name") == "matt"
 
-    expected = {"read1": 1}
-    assert not errors
-    assert result == expected
+    errors, result = run_query(query, 10, should_ignore=should_ignore)
 
-    errors, result = run_query(
-        query,
-        10,
-        ignore=[FieldRule(field_name="user", field_arguments={"name": ["matt"]})],
-    )
-
-    expected = {"read1": 3}
-    assert not errors
-    assert result == expected
-
-    errors, result = run_query(
-        query,
-        10,
-        ignore=[
-            FieldRule(field_name="user", field_arguments={"name": ["andy", "matt"]})
-        ],
-    )
-
-    expected = {"read1": 0}
+    expected = {"read1": 0, "read2": 2}
     assert not errors
     assert result == expected
 
 
-def test_should_raise_invalid_field_attributes_rule_field_name():
+def test_should_ignore_field_by_int_argument():
     query = """
     query read1 {
-      user { address { city } }
+      user(id:1) { address { city } }
+    }
+    query read2 {
+      user1 { address { city } }
+      user2 { address { city } }
+      user3 { address { city } }
     }
     """
-    with pytest.raises(TypeError, match="Invalid ignore option:"):
-        run_query(
-            query,
-            10,
-            ignore=[FieldRule(field_name=True)],
-        )
+
+    def should_ignore(ignore: IgnoreContext) -> bool:
+        return ignore.field_args.get("id") == 1
+
+    errors, result = run_query(query, 10, should_ignore=should_ignore)
+
+    expected = {"read1": 0, "read2": 2}
+    assert not errors
+    assert result == expected
+
+
+def test_should_ignore_field_by_float_argument():
+    query = """
+    query read1 {
+      user(age:10.5) { address { city } }
+    }
+    query read2 {
+      user1 { address { city } }
+      user2 { address { city } }
+      user3 { address { city } }
+    }
+    """
+
+    def should_ignore(ignore: IgnoreContext) -> bool:
+        return ignore.field_args.get("age") == 10.5
+
+    errors, result = run_query(query, 10, should_ignore=should_ignore)
+
+    expected = {"read1": 0, "read2": 2}
+    assert not errors
+    assert result == expected
+
+
+def test_should_ignore_field_by_bool_argument():
+    query = """
+    query read1 {
+      user(isCool:false) { address { city } }
+    }
+    query read2 {
+      user1 { address { city } }
+      user2 { address { city } }
+      user3 { address { city } }
+    }
+    """
+
+    def should_ignore(ignore: IgnoreContext) -> bool:
+        return ignore.field_args.get("isCool") is False
+
+    errors, result = run_query(query, 10, should_ignore=should_ignore)
+
+    expected = {"read1": 0, "read2": 2}
+    assert not errors
+    assert result == expected
+
+
+def test_should_ignore_field_by_name_and_str_argument():
+    query = """
+    query read1 {
+      user(name:"matt") { address { city } }
+    }
+    query read2 {
+      user1 { address { city } }
+      user2 { address { city } }
+      user3 { address { city } }
+    }
+    """
+
+    def should_ignore(ignore: IgnoreContext) -> bool:
+        return ignore.field_args.get("name") == "matt"
+
+    errors, result = run_query(query, 10, should_ignore=should_ignore)
+
+    expected = {"read1": 0, "read2": 2}
+    assert not errors
+    assert result == expected
+
+
+def test_should_ignore_field_by_list_argument():
+    query = """
+    query read1 {
+      users(names:["matt","andy"]) { address { city } }
+    }
+    query read2 {
+      user1 { address { city } }
+      user2 { address { city } }
+      user3 { address { city } }
+    }
+    """
+
+    def should_ignore(ignore: IgnoreContext) -> bool:
+        return "matt" in ignore.field_args.get("names", [])
+
+    errors, result = run_query(query, 10, should_ignore=should_ignore)
+
+    expected = {"read1": 0, "read2": 2}
+    assert not errors
+    assert result == expected
+
+
+def test_should_ignore_field_by_object_argument():
+    query = """
+    query read1 {
+      cat(bio:{
+        name:"Momo",
+        ownerName:"Tommy"
+      }) { name }
+    }
+    query read2 {
+      user1 { address { city } }
+      user2 { address { city } }
+      user3 { address { city } }
+    }
+    """
+
+    def should_ignore(ignore: IgnoreContext) -> bool:
+        return ignore.field_args.get("bio", {}).get("name") == "Momo"
+
+    errors, result = run_query(query, 10, should_ignore=should_ignore)
+
+    expected = {"read1": 0, "read2": 2}
+    assert not errors
+    assert result == expected
 
 
 def test_should_work_as_extension():
@@ -366,7 +451,13 @@ def test_should_work_as_extension():
     }
     }
     """
-    schema = strawberry.Schema(Query, extensions=[QueryDepthLimiter(max_depth=4)])
+
+    def should_ignore(ignore: IgnoreContext) -> bool:
+        return False
+
+    schema = strawberry.Schema(
+        Query, extensions=[QueryDepthLimiter(max_depth=4, should_ignore=should_ignore)]
+    )
 
     result = schema.execute_sync(query)
 

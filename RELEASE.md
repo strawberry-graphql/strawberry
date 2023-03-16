@@ -1,10 +1,19 @@
 Release type: patch
 
-This patch introduces the `FieldRule` dataclass to the `QueryDepthLimiter` extension that provides
-a more verbose way of specifying the rules by which a query's depth should be limited.
+This patch introduces the new `should_ignore` argument to the `QueryDepthLimiter` extension that provides
+a more general and more verbose way of specifying the rules by which a query's depth should be limited.
 
-These can be any or all of the field name, the field arguments, and the field keys. Multiple
-rules can be specified that will be evaluated independently to yield the final fully limited query.
+The `should_ignore` argument should be a function that accepts a single argument of type `IgnoreContext`.
+The `IgnoreContext` class has the following attributes:
+- `field_name` of type `str`: the name of the field to be compared against
+- `field_args` of type `strawberry.extensions.query_depth_limiter.FieldArgumentsType`: the arguments of the field to be compared against
+- `query` of type `graphql.language.Node`: the query string
+- `context` of type `graphql.validation.ValidationContext`: the context passed to the query
+and returns `True` if the field should be ignored and `False` otherwise.
+This argument is injected, regardless of name, by the `QueryDepthLimiter` class and should not be passed by the user.
+
+Instead, the user should write business logic to determine whether a field should be ignored or not by
+the attributes of the `IgnoreContext` class.
 
 For example, the following query:
 ```python
@@ -28,17 +37,13 @@ For example, the following query:
     }
 """
 ```
-can have its depth limited by the following `[FieldRule]`:
+can have its depth limited by the following `should_ignore`:
 ```python
-rules = [
-    FieldRule(
-        field_name=user,
-        field_arguments={"name": "matt"},
-    ),
-    FieldRule(
-        field_name=address,
-    ),
-]
+from strawberry.extensions import IgnoreContext
+
+
+def should_ignore(ignore: IgnoreContext):
+    return ignore.field_args.get("name") == "matt"
 ```
 so that it *effectively* becomes:
 ```python

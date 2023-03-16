@@ -6,7 +6,7 @@ from .disable_validation import DisableValidation
 from .field_extension import FieldExtension
 from .mask_errors import MaskErrors
 from .parser_cache import ParserCache
-from .query_depth_limiter import FieldRule, QueryDepthLimiter
+from .query_depth_limiter import IgnoreContext, QueryDepthLimiter
 from .validation_cache import ValidationCache
 
 
@@ -30,9 +30,9 @@ __all__ = [
     "SchemaExtension",
     "AddValidationRules",
     "DisableValidation",
-    "FieldRule",
     "ParserCache",
     "QueryDepthLimiter",
+    "IgnoreContext",
     "ValidationCache",
     "MaskErrors",
 ]
