@@ -7,7 +7,6 @@ import pytest
 
 import strawberry
 
-
 # TODO: check for deprecations
 
 
