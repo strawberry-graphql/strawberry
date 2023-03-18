@@ -559,7 +559,7 @@ def test_print_directive_on_union():
     }
 
     type Query {
-      example: Union!
+      example: MyUnion!
     }
 
     union Union @sensitive(reason: "example") = A | B
