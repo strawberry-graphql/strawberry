@@ -38,6 +38,21 @@ if not TYPE_CHECKING and ast_unparse is None:
 
 @lru_cache()
 def get_generic_alias(type_: Type) -> Type:
+    """Get the generic alias for a type.
+
+    Given a type, its generic alias from `typing` module will be returned
+    if it exists. For example:
+
+        >>> get_generic_alias(list)
+        typing.List
+        >>> get_generic_alias(dict)
+        typing.Dict
+
+    This is mostly useful for python versions prior to 3.9, to get a version
+    of a concrete type which supports `__class_getitem__`. In 3.9+ types like
+    `list`/`dict`/etc are subscriptable and can be used directly instead
+    of their generic alias version.
+    """
     if isinstance(type_, _SpecialForm):
         return type_
 
@@ -94,7 +109,7 @@ def is_optional(annotation: Type) -> bool:
     types = annotation.__args__
 
     # A Union to be optional needs to have at least one None type
-    return any([x == None.__class__ for x in types])
+    return any(x == None.__class__ for x in types)
 
 
 def get_optional_annotation(annotation: Type) -> Type:
