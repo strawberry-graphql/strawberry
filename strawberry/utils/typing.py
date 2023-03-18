@@ -27,7 +27,7 @@ from typing_extensions import Annotated, get_args, get_origin
 ast_unparse = getattr(ast, "unparse", None)
 # ast.unparse is only available on python 3.9+. For older versions we will
 # use `astunparse.unparse`.
-# We area also using "not TYPE_CHECKING" here because mypy gives an erorr
+# We are also using "not TYPE_CHECKING" here because mypy gives an erorr
 # on tests because "astunparse" is missing stubs, but the mypy action says
 # that the comment is unused.
 if not TYPE_CHECKING and ast_unparse is None:
