@@ -126,7 +126,7 @@ def test_union():
     # TODO: Remove reference to ._type_definition with StrawberryObject
     field: StrawberryField = WishfulThinking._type_definition.fields[0]
 
-    assert field.type is EU
+    assert field.type == EU
 
 
 def test_fields_with_defaults():

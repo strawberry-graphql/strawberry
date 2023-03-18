@@ -558,11 +558,11 @@ def test_print_directive_on_union():
       b: Int!
     }
 
+    union MyUnion @sensitive(reason: "example") = A | B
+
     type Query {
       example: MyUnion!
     }
-
-    union Union @sensitive(reason: "example") = A | B
     """
 
     schema = strawberry.Schema(query=Query)
