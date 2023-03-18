@@ -184,7 +184,7 @@ class StrawberryAnnotation:
     @classmethod
     def _is_async_type(cls, annotation: type) -> bool:
         origin = getattr(annotation, "__origin__", None)
-        return isinstance(origin, type) and issubclass(origin, ASYNC_TYPES)
+        return origin in ASYNC_TYPES
 
     @classmethod
     def _is_enum(cls, annotation: Any) -> bool:
