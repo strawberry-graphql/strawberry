@@ -1,6 +1,46 @@
 CHANGELOG
 =========
 
+0.165.0 - 2023-03-18
+--------------------
+
+Add full support for forward references, specially when using
+`from __future__ import annotations`.
+
+Before the following would fail on python versions older than 3.10:
+
+```python
+from __future__ import annotations
+
+import strawberry
+
+
+@strawberry.type
+class Query:
+    foo: str | None
+```
+
+Also, this would fail in any python versions:
+
+```python
+from __future__ import annotations
+
+from typing import Annotated
+
+import strawberry
+
+
+@strawberry.type
+class Query:
+    foo: Annotated[str, "some annotation"]
+```
+
+Now both of these cases are supported.
+Please open an issue if you find any edge cases that are still not supported.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2592](https://github.com/strawberry-graphql/strawberry/pull/2592/)
+
+
 0.164.1 - 2023-03-18
 --------------------
 
