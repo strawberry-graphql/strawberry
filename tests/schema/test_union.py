@@ -274,7 +274,9 @@ def test_named_union_description():
     class B:
         b: int
 
-    Result = strawberry.union("Result", (A, B), description="Example Result")
+    Result = Annotated[
+        Union[A, B], strawberry.union(name="Result", description="Example Result")
+    ]
 
     @strawberry.type
     class Query:
@@ -313,7 +315,7 @@ def test_can_use_union_in_optional():
     class B:
         b: int
 
-    Result = strawberry.union("Result", (A, B))
+    Result = Annotated[Union[A, B], strawberry.union(name="Result")]
 
     @strawberry.type
     class Query:
@@ -397,7 +399,7 @@ def test_union_used_multiple_times():
     class B:
         b: int
 
-    MyUnion = strawberry.union("MyUnion", types=(A, B))
+    MyUnion = Annotated[Union[A, B], strawberry.union("MyUnion")]
 
     @strawberry.type
     class Query:
@@ -442,7 +444,7 @@ def test_union_explicit_type_resolution():
     class B:
         b: int
 
-    MyUnion = strawberry.union("MyUnion", types=(A, B))
+    MyUnion = Annotated[Union[A, B], strawberry.union("MyUnion")]
 
     @strawberry.type
     class Query:
@@ -477,7 +479,7 @@ def test_union_optional_with_or_operator():
     class Dog:
         name: str
 
-    animal_union = strawberry.union("Animal", (Cat, Dog))
+    animal_union = Annotated[Cat | Dog, strawberry.union("Animal")]
 
     @strawberry.type
     class Query:

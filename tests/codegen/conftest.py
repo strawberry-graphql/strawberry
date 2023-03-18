@@ -1,7 +1,7 @@
 import datetime
 import decimal
 import enum
-from typing import TYPE_CHECKING, List, NewType, Optional
+from typing import TYPE_CHECKING, List, NewType, Optional, Union
 from typing_extensions import Annotated
 from uuid import UUID
 
@@ -34,7 +34,7 @@ class Animal:
     age: int
 
 
-PersonOrAnimal = strawberry.union("PersonOrAnimal", (Person, Animal))
+PersonOrAnimal = Annotated[Union[Person, Animal], strawberry.union("PersonOrAnimal")]
 
 
 @strawberry.interface

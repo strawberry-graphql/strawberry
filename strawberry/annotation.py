@@ -76,13 +76,15 @@ class StrawberryAnnotation:
         if isinstance(annotation, str):
             annotation = ForwardRef(annotation)
 
+        args = []
+
         evaled_type = eval_type(annotation, self.namespace, None)
 
         if is_private(evaled_type):
             return evaled_type
 
         if get_origin(evaled_type) is Annotated:
-            evaled_type = get_args(evaled_type)[0]
+            evaled_type, *args = get_args(evaled_type)
 
         if self._is_async_type(evaled_type):
             evaled_type = self._strip_async_type(evaled_type)
@@ -107,7 +109,7 @@ class StrawberryAnnotation:
         elif self._is_optional(evaled_type):
             return self.create_optional(evaled_type)
         elif self._is_union(evaled_type):
-            return self.create_union(evaled_type)
+            return self.create_union(evaled_type, args)
         elif is_type_var(evaled_type) or evaled_type is Self:
             return self.create_type_var(cast(TypeVar, evaled_type))
 
@@ -167,7 +169,7 @@ class StrawberryAnnotation:
     def create_type_var(self, evaled_type: TypeVar) -> StrawberryTypeVar:
         return StrawberryTypeVar(evaled_type)
 
-    def create_union(self, evaled_type) -> StrawberryUnion:
+    def create_union(self, evaled_type, args) -> StrawberryUnion:
         # Prevent import cycles
         from strawberry.union import StrawberryUnion
 
@@ -179,6 +181,13 @@ class StrawberryAnnotation:
         union = StrawberryUnion(
             type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
         )
+
+        for arg in args:
+            if isinstance(arg, StrawberryUnion):
+                union.graphql_name = arg.graphql_name
+                union.description = arg.description
+                union.directives = arg.directives
+
         return union
 
     @classmethod

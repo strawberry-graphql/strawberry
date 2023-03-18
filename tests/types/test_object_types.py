@@ -2,7 +2,8 @@
 import dataclasses
 import re
 from enum import Enum
-from typing import List, Optional, TypeVar
+from typing import List, Optional, TypeVar, Union
+from typing_extensions import Annotated
 
 import pytest
 
@@ -116,7 +117,7 @@ def test_union():
     class UK:
         name: str
 
-    EU = strawberry.union("EU", types=(Europe, UK))
+    EU = Annotated[Union[Europe, UK], strawberry.union("EU")]
 
     @strawberry.type
     class WishfulThinking:

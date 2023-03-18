@@ -244,7 +244,7 @@ def union(
     ... class A: ...
     >>> @strawberry.type
     ... class B: ...
-    >>> strawberry.union("Name", (A, Optional[B]))
+    >>> Annotated[A | B, strawberry.union("Name")]
     """
 
     if types is None:

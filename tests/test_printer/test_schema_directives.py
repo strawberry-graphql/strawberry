@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Union
 from typing_extensions import Annotated
 
 import strawberry
@@ -538,11 +538,14 @@ def test_print_directive_on_union():
     class Sensitive:
         reason: str
 
-    Union = strawberry.union("Union", (A, B), directives=[Sensitive(reason="example")])
+    MyUnion = Annotated[
+        Union[A, B],
+        strawberry.union(name="MyUnion", directives=[Sensitive(reason="example")]),
+    ]
 
     @strawberry.type
     class Query:
-        example: Union
+        example: MyUnion
 
     expected_output = """
     directive @sensitive(reason: String!) on SCALAR

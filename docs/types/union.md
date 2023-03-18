@@ -87,15 +87,17 @@ type Image {
 }
 ```
 
-Or if you need to specify a name or a description for a union you can use the
-`strawberry.union` function:
+Or if you need to specify a name or a description for a union you can use Annotated
+with the `strawberry.union` function:
 
 ```python+schema
 import strawberry
 
+from typing import Union, Annotated
+
 @strawberry.type
 class Query:
-    latest_media: strawberry.union("MediaItem", types=(Audio, Video, Image))
+    latest_media: Annotated[Union[Audio, Video, Image], strawberry.union("MediaItem")]
 ---
 union MediaItem = Audio | Video | Image
 
