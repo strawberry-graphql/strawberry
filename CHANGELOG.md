@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.164.1 - 2023-03-18
+--------------------
+
+Fix interface duplication leading to schema compilation error in multiple
+inheritance scenarios (i.e. "Diamond Problem" inheritance)
+
+Thank you @mzhu22 for the thorough bug report!
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #2647](https://github.com/strawberry-graphql/strawberry/pull/2647/)
+
+
 0.164.0 - 2023-03-14
 --------------------
 
