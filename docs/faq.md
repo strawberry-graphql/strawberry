@@ -13,17 +13,20 @@ GraphQL, for example, the following code:
 ```python
 import strawberry
 
+
 @strawberry.type
 class User:
     name: str
     age: int
     password: strawberry.Private[str]
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def user(self) -> User:
         return User(name="Patrick", age=100, password="This is fake")
+
 
 schema = strawberry.Schema(query=Query)
 ```
@@ -55,6 +58,7 @@ import strawberry
 if TYPE_CHECKING:
     from .users import User
 
+
 @strawberry.type
 class Post:
     title: str
@@ -78,10 +82,10 @@ there is a difference between Objects Types and Inputs types:
 And this is also true for Input types' fields: you can only use Strawberry Input
 types or scalar.
 
-See our [Input Types](../types/input-types.md) docs.
+See our [Input Types](./types/input-types.md) docs.
 
 ## Can I use asyncio with Strawberry and Django?
 
 Yes, Strawberry provides an async view that can be used with Django, you can
-Check [Async Django](../integrations/django.md#async-django) for more
+Check [Async Django](./integrations/django.md#async-django) for more
 information.

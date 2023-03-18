@@ -35,6 +35,8 @@
 
 ## [Extensions](./extensions)
 
+## [Errors](./errors/)
+
 ## Guides
 
 - [Authentication](./guides/authentication.md)
@@ -44,11 +46,15 @@
 - [Federation V1](./guides/federation-v1.md)
 - [Custom extensions](./guides/custom-extensions.md)
 - [File upload](./guides/file-upload.md)
-- [Pagination](./guides/pagination.md)
+- [Pagination](./guides/pagination/overview.md)
+  - [Implementing Offset Pagination](./guides/pagination/offset-based.md)
+  - [Implementing Cursor Pagination](./guides/pagination/cursor-based.md)
+  - [Implementing the Connection specification](./guides/pagination/connections.md)
 - [Permissions](./guides/permissions.md)
 - [Builtin server](./guides/server.md)
 - [Tools](./guides/tools.md)
 - [Schema export](./guides/schema-export.md)
+- [Convert to dictionary](./guides/convert-to-dictionary.md)
 
 ## Editor integration
 
@@ -72,6 +78,13 @@
 - [Chalice](./integrations/chalice.md)
 - [Starlette](./integrations/starlette.md)
 - [Pydantic **experimental**](./integrations/pydantic.md)
+
+## Federation
+
+- [Introduction](./federation/introduction.md)
+- [Entities](./federation/entities.md)
+- [Entity interfaces](./federation/entity-interfaces.md)
+- [Custom directives](./federation/custom_directives.md)
 
 ## Operations
 

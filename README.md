@@ -14,7 +14,7 @@ The quick start method provides a server and CLI to get going quickly. Install
 with:
 
 ```shell
-pip install 'strawberry-graphql[debug-server]'
+pip install "strawberry-graphql[debug-server]"
 ```
 
 ## Getting Started
@@ -76,8 +76,8 @@ A Django view is provided for adding a GraphQL endpoint to your application.
 
 ```python
 INSTALLED_APPS = [
-    ...
-    'strawberry.django',
+    ...,  # your other apps
+    "strawberry.django",
 ]
 ```
 
@@ -89,7 +89,7 @@ from .schema import schema
 
 urlpatterns = [
     ...,
-    path('graphql', GraphQLView.as_view(schema=schema)),
+    path("graphql", GraphQLView.as_view(schema=schema)),
 ]
 ```
 

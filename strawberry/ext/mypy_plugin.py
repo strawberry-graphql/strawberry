@@ -1,10 +1,21 @@
+from __future__ import annotations
+
 import re
 import warnings
 from decimal import Decimal
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
-from typing_extensions import Final
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
-import mypy
 from mypy.nodes import (
     ARG_OPT,
     ARG_POS,
@@ -16,8 +27,6 @@ from mypy.nodes import (
     Block,
     CallExpr,
     CastExpr,
-    ClassDef,
-    Expression,
     FuncDef,
     IndexExpr,
     MemberExpr,
@@ -29,16 +38,10 @@ from mypy.nodes import (
     TempNode,
     TupleExpr,
     TypeAlias,
-    TypeInfo,
     TypeVarExpr,
     Var,
 )
 from mypy.plugin import (
-    AnalyzeTypeContext,
-    CheckerPluginInterface,
-    ClassDefContext,
-    DynamicClassDefContext,
-    FunctionContext,
     Plugin,
     SemanticAnalyzerPluginInterface,
 )
@@ -51,7 +54,6 @@ from mypy.types import (
     CallableType,
     Instance,
     NoneType,
-    Type,
     TypeOfAny,
     TypeVarType,
     UnionType,
@@ -72,6 +74,21 @@ try:
     from pydantic.mypy import PydanticModelField
 except ImportError:
     PYDANTIC_METADATA_KEY = ""
+
+
+if TYPE_CHECKING:
+    from typing_extensions import Final
+
+    from mypy.nodes import ClassDef, Expression, TypeInfo
+    from mypy.plugins import (  # type: ignore
+        AnalyzeTypeContext,
+        CheckerPluginInterface,
+        ClassDefContext,
+        DynamicClassDefContext,
+        FunctionContext,
+    )
+    from mypy.types import Type
+
 
 VERSION_RE = re.compile(r"(^0|^(?:[1-9][0-9]*))\.(0|(?:[1-9][0-9]*))")
 FALLBACK_VERSION = Decimal("0.800")
@@ -338,7 +355,7 @@ def add_static_method_to_class(
 
     # For compat with mypy < 0.93
     if MypyVersion.VERSION < Decimal("0.93"):
-        function_type = api.named_type("__builtins__.function")  # type: ignore
+        function_type = api.named_type("__builtins__.function")
     else:
         if isinstance(api, SemanticAnalyzerPluginInterface):
             function_type = api.named_type("builtins.function")
@@ -387,7 +404,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
     # >>> model_type = ctx.api.named_type("UserModel")
     # >>> model_type = ctx.api.lookup(model_name, Context())
 
-    model_expression = _get_argument(call=ctx.reason, name="model")  # type: ignore
+    model_expression = _get_argument(call=ctx.reason, name="model")
     if model_expression is None:
         ctx.api.fail("model argument in decorator failed to be parsed", ctx.reason)
 
@@ -398,9 +415,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         ]
         add_method(ctx, "__init__", init_args, NoneType())
 
-        model_type = cast(
-            mypy.types.Instance, _get_type_for_expr(model_expression, ctx.api)
-        )
+        model_type = cast(Instance, _get_type_for_expr(model_expression, ctx.api))
 
         # these are the fields that the user added to the strawberry type
         new_strawberry_fields: Set[str] = set()
@@ -411,9 +426,9 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                 lhs = cast(NameExpr, stmt.lvalues[0])
                 new_strawberry_fields.add(lhs.name)
 
-        pydantic_fields: Set["PydanticModelField"] = set()
+        pydantic_fields: Set[PydanticModelField] = set()
         try:
-            for name, data in model_type.type.metadata[PYDANTIC_METADATA_KEY][
+            for _name, data in model_type.type.metadata[PYDANTIC_METADATA_KEY][
                 "fields"
             ].items():
                 field = PydanticModelField.deserialize(ctx.cls.info, data)
@@ -427,7 +442,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                 ctx.reason,
             )
 
-        potentially_missing_fields: Set["PydanticModelField"] = {
+        potentially_missing_fields: Set[PydanticModelField] = {
             f for f in pydantic_fields if f.name not in new_strawberry_fields
         }
 
@@ -438,7 +453,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         This means that the user is using all_fields=True
         """
         is_all_fields: bool = len(potentially_missing_fields) == len(pydantic_fields)
-        missing_pydantic_fields: Set["PydanticModelField"] = (
+        missing_pydantic_fields: Set[PydanticModelField] = (
             potentially_missing_fields if not is_all_fields else set()
         )
 
@@ -572,10 +587,14 @@ class CustomDataclassTransformer:
             )
             and attributes
         ):
+            args = [info] if MypyVersion.VERSION >= Decimal("1.0") else []
+
             add_method(
                 ctx,
                 "__init__",
-                args=[attr.to_argument() for attr in attributes if attr.is_in_init],
+                args=[
+                    attr.to_argument(*args) for attr in attributes if attr.is_in_init
+                ],
                 return_type=NoneType(),
             )
 
@@ -766,8 +785,10 @@ class CustomDataclassTransformer:
                 params["info"] = cls.info
             if MypyVersion.VERSION >= Decimal("0.920"):
                 params["kw_only"] = True
+            if MypyVersion.VERSION >= Decimal("1.1"):
+                params["alias"] = None
 
-            attribute = DataclassAttribute(**params)  # type: ignore
+            attribute = DataclassAttribute(**params)
             attrs.append(attribute)
 
         # Next, collect attributes belonging to any class in the MRO
@@ -817,8 +838,12 @@ class CustomDataclassTransformer:
                 assert isinstance(var, Var)
                 var.is_property = True
             else:
-                var = attr.to_var()
-                var.info = info
+                if MypyVersion.VERSION >= Decimal("1.0"):
+                    var = attr.to_var(current_info=info)
+                else:
+                    var = attr.to_var()  # type: ignore
+                    var.info = info
+
                 var.is_property = True
                 var._fullname = info.fullname + "." + var.name
                 info.names[var.name] = SymbolTableNode(MDEF, var)
@@ -834,8 +859,12 @@ class CustomDataclassTransformer:
         info = self._ctx.cls.info
         for attr in attributes:
             if isinstance(get_proper_type(attr.type), CallableType):
-                var = attr.to_var()
-                var.info = info
+                if MypyVersion.VERSION >= Decimal("1.0"):
+                    var = attr.to_var(current_info=info)
+                else:
+                    var = attr.to_var()  # type: ignore
+                    var.info = info
+
                 var.is_property = True
                 var.is_settable_property = True
                 var._fullname = info.fullname + "." + var.name
@@ -940,6 +969,8 @@ class StrawberryPlugin(Plugin):
                 "strawberry.federation.interface",
                 "strawberry.federation.object_type.interface",
                 "strawberry.schema_directive.schema_directive",
+                "strawberry.federation.schema_directive",
+                "strawberry.federation.schema_directive.schema_directive",
                 "strawberry.object_type.input",
                 "strawberry.object_type.interface",
             }
@@ -958,6 +989,7 @@ class StrawberryPlugin(Plugin):
                 "strawberry.input",
                 "strawberry.interface",
                 "strawberry.schema_directive",
+                "strawberry.federation.schema_directive",
             }
         )
 

@@ -20,7 +20,8 @@ from typing import Generic, List, TypeVar
 
 import strawberry
 
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 @strawberry.type
 class Page(Generic[T]):
@@ -41,6 +42,39 @@ class User:
 @strawberry.type
 class Query:
     users: Page[User]
+---
+type Query {
+  users: UserPage!
+}
+
+type User {
+  name: String!
+}
+
+type UserPage {
+  number: Int!
+  items: [User!]!
+}
+```
+
+It is also possible to use a specialized generic type directly. For example, the
+same example above could be written like this:
+
+```python+schema
+import strawberry
+
+@strawberry.type
+class User:
+    name: str
+
+
+@strawberry.type
+class UserPage(Page[User]):
+    ...
+
+@strawberry.type
+class Query:
+    users: UserPage
 ---
 type Query {
   users: UserPage!

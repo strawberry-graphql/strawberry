@@ -59,7 +59,7 @@ async def test_upload(http_client: HttpClient):
         files={"textFile": f},
     )
 
-    assert response.json == {"data": {"readText": "strawberry"}}
+    assert response.json["data"] == {"readText": "strawberry"}
 
 
 async def test_file_list_upload(http_client: HttpClient):
@@ -136,15 +136,13 @@ async def test_upload_invalid_query(http_client: HttpClient):
     )
 
     assert response.status_code == 200
-    assert response.json == {
-        "data": None,
-        "errors": [
-            {
-                "locations": [{"column": 5, "line": 4}],
-                "message": "Syntax Error: Expected Name, found <EOF>.",
-            }
-        ],
-    }
+    assert response.json["data"] is None
+    assert response.json["errors"] == [
+        {
+            "locations": [{"column": 5, "line": 4}],
+            "message": "Syntax Error: Expected Name, found <EOF>.",
+        }
+    ]
 
 
 async def test_upload_missing_file(http_client: HttpClient):
@@ -199,7 +197,7 @@ async def test_extra_form_data_fields_are_ignored(http_client: HttpClient):
     buffer = FakeWriter()
     writer = form_data()
 
-    await (writer.write(buffer))  # type: ignore
+    await writer.write(buffer)  # type: ignore
 
     response = await http_client.post(
         url="/graphql",
@@ -239,7 +237,7 @@ async def test_sending_invalid_json_body(http_client: HttpClient):
     buffer = FakeWriter()
     writer = form_data()
 
-    await (writer.write(buffer))  # type: ignore
+    await writer.write(buffer)  # type: ignore
 
     response = await http_client.post(
         "/graphql",

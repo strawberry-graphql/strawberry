@@ -32,7 +32,7 @@ def suppress_output(verbosity_level: int = 0) -> Generator[None, None, None]:
 
         return
 
-    with open(os.devnull, "w") as devnull:
+    with Path(os.devnull).open("w") as devnull:
         with contextlib.redirect_stdout(devnull):
             yield
 
@@ -94,7 +94,7 @@ class StrawberryExceptionsPlugin:
             )
 
             if self.verbosity_level >= 1:
-                print(f"Exception: {exception}")
+                print(f"Exception: {exception}")  # noqa: T201
 
             pytest.fail(failure_message, pytrace=False)
 
@@ -116,8 +116,6 @@ class StrawberryExceptionsPlugin:
                     max_frames=10,
                 )
                 console.print(traceback)
-
-            print(f"\n Exception class: {raised_exception.__class__.__name__}\n")
 
         exception_text = console.export_text()
 
@@ -158,7 +156,7 @@ class StrawberryExceptionsPlugin:
 
             markdown += "\n".join([result.text for result in info])
 
-        with open(summary_path, "w") as f:
+        with Path(summary_path).open("w") as f:
             f.write(markdown)
 
 

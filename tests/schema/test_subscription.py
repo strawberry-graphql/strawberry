@@ -85,7 +85,6 @@ async def test_subscription_return_annotations(return_annotation: str):
 
     @strawberry.type
     class Subscription:
-
         example = strawberry.subscription(resolver=async_resolver)
 
     schema = strawberry.Schema(query=Query, subscription=Subscription)

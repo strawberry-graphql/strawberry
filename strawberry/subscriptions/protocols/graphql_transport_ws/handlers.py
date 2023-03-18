@@ -1,20 +1,19 @@
+from __future__ import annotations
+
 import asyncio
 from abc import ABC, abstractmethod
 from contextlib import suppress
-from datetime import timedelta
-from typing import Any, AsyncGenerator, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Callable, Dict, List, Optional
 
 from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 from graphql.error.graphql_error import format_error as format_graphql_error
 
-from strawberry.schema import BaseSchema
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
     ConnectionInitMessage,
     ErrorMessage,
-    GraphQLTransportMessage,
     NextMessage,
     PingMessage,
     PongMessage,
@@ -22,8 +21,17 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessagePayload,
 )
 from strawberry.types.graphql import OperationType
+from strawberry.unset import UNSET
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.operation import get_operation_type
+
+if TYPE_CHECKING:
+    from datetime import timedelta
+
+    from strawberry.schema import BaseSchema
+    from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
+        GraphQLTransportMessage,
+    )
 
 
 class BaseGraphQLTransportWSHandler(ABC):
@@ -42,6 +50,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         self.subscriptions: Dict[str, AsyncGenerator] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
         self.completed_tasks: List[asyncio.Task] = []
+        self.connection_params: Optional[Dict[str, Any]] = None
 
     @abstractmethod
     async def get_context(self) -> Any:
@@ -117,6 +126,12 @@ class BaseGraphQLTransportWSHandler(ABC):
         await self.reap_completed_tasks()
 
     async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
+        if message.payload is not UNSET and not isinstance(message.payload, dict):
+            await self.close(code=4400, reason="Invalid connection init payload")
+            return
+
+        self.connection_params = message.payload
+
         if self.connection_init_received:
             reason = "Too many initialisation requests"
             await self.close(code=4429, reason=reason)
@@ -164,6 +179,8 @@ class BaseGraphQLTransportWSHandler(ABC):
             )
 
         context = await self.get_context()
+        if isinstance(context, dict):
+            context["connection_params"] = self.connection_params
         root_value = await self.get_root_value()
 
         # Get an AsyncGenerator yielding the results
@@ -188,6 +205,8 @@ class BaseGraphQLTransportWSHandler(ABC):
 
             result_source = get_result_source()
 
+        operation = Operation(self, message.id)
+
         # Handle initial validation errors
         if isinstance(result_source, GraphQLExecutionResult):
             assert result_source.errors
@@ -199,34 +218,30 @@ class BaseGraphQLTransportWSHandler(ABC):
         # Create task to handle this subscription, reserve the operation ID
         self.subscriptions[message.id] = result_source
         self.tasks[message.id] = asyncio.create_task(
-            self.operation_task(result_source, message.id)
+            self.operation_task(result_source, operation)
         )
 
     async def operation_task(
-        self, result_source: AsyncGenerator, operation_id: str
+        self, result_source: AsyncGenerator, operation: Operation
     ) -> None:
         """
         Operation task top level method.  Cleans up and de-registers the operation
         once it is done.
         """
         try:
-            await self.handle_async_results(result_source, operation_id)
+            await self.handle_async_results(result_source, operation)
         except BaseException:  # pragma: no cover
             # cleanup in case of something really unexpected
             # wait for generator to be closed to ensure that any existing
             # 'finally' statement is called
-            result_source = self.subscriptions[operation_id]
+            result_source = self.subscriptions[operation.id]
             with suppress(RuntimeError):
                 await result_source.aclose()
-            del self.subscriptions[operation_id]
-            del self.tasks[operation_id]
+            del self.subscriptions[operation.id]
+            del self.tasks[operation.id]
             raise
         else:
-            # de-register the operation _before_ sending the `Complete` message
-            # to make the `operation_id` immediately available for re-use
-            del self.subscriptions[operation_id]
-            del self.tasks[operation_id]
-            await self.send_message(CompleteMessage(id=operation_id))
+            await operation.send_message(CompleteMessage(id=operation.id))
         finally:
             # add this task to a list to be reaped later
             task = asyncio.current_task()
@@ -236,20 +251,20 @@ class BaseGraphQLTransportWSHandler(ABC):
     async def handle_async_results(
         self,
         result_source: AsyncGenerator,
-        operation_id: str,
+        operation: Operation,
     ) -> None:
         try:
             async for result in result_source:
                 if result.errors:
                     error_payload = [format_graphql_error(err) for err in result.errors]
-                    error_message = ErrorMessage(id=operation_id, payload=error_payload)
-                    await self.send_message(error_message)
+                    error_message = ErrorMessage(id=operation.id, payload=error_payload)
+                    await operation.send_message(error_message)
                     self.schema.process_errors(result.errors)
                     return
                 else:
                     next_payload = {"data": result.data}
-                    next_message = NextMessage(id=operation_id, payload=next_payload)
-                    await self.send_message(next_message)
+                    next_message = NextMessage(id=operation.id, payload=next_payload)
+                    await operation.send_message(next_message)
         except asyncio.CancelledError:
             # CancelledErrors are expected during task cleanup.
             return
@@ -258,10 +273,16 @@ class BaseGraphQLTransportWSHandler(ABC):
             # ExecutionResult
             error = GraphQLError(str(error), original_error=error)
             error_payload = [format_graphql_error(error)]
-            error_message = ErrorMessage(id=operation_id, payload=error_payload)
-            await self.send_message(error_message)
+            error_message = ErrorMessage(id=operation.id, payload=error_payload)
+            await operation.send_message(error_message)
             self.schema.process_errors([error])
             return
+
+    def forget_id(self, id: str) -> None:
+        # de-register the operation id making it immediately available
+        # for re-use
+        del self.subscriptions[id]
+        del self.tasks[id]
 
     async def handle_complete(self, message: CompleteMessage) -> None:
         await self.cleanup_operation(operation_id=message.id)
@@ -293,3 +314,26 @@ class BaseGraphQLTransportWSHandler(ABC):
         for task in tasks:
             with suppress(BaseException):
                 await task
+
+
+class Operation:
+    """
+    A class encapsulating a single operation with its id.
+    Helps enforce protocol state transition.
+    """
+
+    __slots__ = ["handler", "id", "completed"]
+
+    def __init__(self, handler: BaseGraphQLTransportWSHandler, id: str):
+        self.handler = handler
+        self.id = id
+        self.completed = False
+
+    async def send_message(self, message: GraphQLTransportMessage) -> None:
+        if self.completed:
+            return
+        if isinstance(message, (CompleteMessage, ErrorMessage)):
+            self.completed = True
+            # de-register the operation _before_ sending the final message
+            self.handler.forget_id(self.id)
+        await self.handler.send_message(message)

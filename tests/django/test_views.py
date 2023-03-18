@@ -1,16 +1,16 @@
 import json
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 from django.http import JsonResponse
 from django.test.client import RequestFactory
 
 import strawberry
-from strawberry.django.views import GraphQLView as BaseGraphQLView
-from strawberry.django.views import TemporalHttpResponse
+from strawberry.django.views import GraphQLView, TemporalHttpResponse
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.permission import BasePermission
 from strawberry.types import Info
+from tests.views.schema import schema
 
 from .app.models import Example
 
@@ -22,55 +22,17 @@ class AlwaysFailPermission(BasePermission):
         return False
 
 
-@strawberry.type
-class Query:
-    hello: str = "strawberry"
-
-    @strawberry.field
-    def hi(self, name: Optional[str] = None) -> str:
-        return f"Hello {name or 'world'}"
-
-    @strawberry.field(permission_classes=[AlwaysFailPermission])
-    def always_fail(self) -> Optional[str]:
-        return "Hey"
-
-    @strawberry.field
-    def example(self) -> str:
-        return Example.objects.first().name
-
-
-@strawberry.type
-class GetRequestValueWithDotNotationQuery:
-    @strawberry.field
-    def get_request_value(self, info: Info) -> str:
-        return info.context.request
-
-
-@strawberry.type
-class GetRequestValueUsingGetQuery:
-    @strawberry.field
-    def get_request_value(self, info: Info) -> str:
-        return info.context.get("request")
-
-
-@strawberry.type
-class GetRequestValueQuery:
-    @strawberry.field
-    def get_request_value(self, info: Info) -> str:
-        return info.context["request"]
-
-
-schema = strawberry.Schema(query=Query)
-
-
-class GraphQLView(BaseGraphQLView):
-    def get_root_value(self, request):
-        return Query()
-
-
 @pytest.mark.django_db
 def test_graphql_query_model():
     Example.objects.create(name="This is a demo")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self) -> str:
+            return Example.objects.first().name
+
+    custom_schema = strawberry.Schema(query=Query)
 
     query = "{ example }"
 
@@ -79,7 +41,7 @@ def test_graphql_query_model():
         "/graphql/", {"query": query}, content_type="application/json"
     )
 
-    response = GraphQLView.as_view(schema=schema)(request)
+    response = GraphQLView.as_view(schema=custom_schema)(request)
     data = json.loads(response.content.decode())
 
     assert not data.get("errors")
@@ -99,14 +61,14 @@ def test_can_set_cookies():
 
             return "ABC"
 
-    schema = strawberry.Schema(query=Query)
+    custom_schema = strawberry.Schema(query=Query)
 
     query = "{ abc }"
     request = factory.post(
         "/graphql/", {"query": query}, content_type="application/json"
     )
 
-    response = GraphQLView.as_view(schema=schema)(request)
+    response = GraphQLView.as_view(schema=custom_schema)(request)
     data = json.loads(response.content.decode())
 
     assert response.status_code == 200
@@ -125,14 +87,14 @@ def test_can_set_headers():
 
             return "ABC"
 
-    schema = strawberry.Schema(query=Query)
+    custom_schema = strawberry.Schema(query=Query)
 
     query = "{ abc }"
     request = factory.post(
         "/graphql/", {"query": query}, content_type="application/json"
     )
 
-    response = GraphQLView.as_view(schema=schema)(request)
+    response = GraphQLView.as_view(schema=custom_schema)(request)
     data = json.loads(response.content.decode())
 
     assert response.status_code == 200
@@ -151,14 +113,14 @@ def test_can_change_status_code():
 
             return "ABC"
 
-    schema = strawberry.Schema(query=Query)
+    custom_schema = strawberry.Schema(query=Query)
 
     query = "{ abc }"
     request = factory.post(
         "/graphql/", {"query": query}, content_type="application/json"
     )
 
-    response = GraphQLView.as_view(schema=schema)(request)
+    response = GraphQLView.as_view(schema=custom_schema)(request)
     data = json.loads(response.content.decode())
 
     assert response.status_code == 418
@@ -173,7 +135,7 @@ def test_custom_json_encoder():
         "/graphql/", {"query": query}, content_type="application/json"
     )
 
-    class MyGraphQLView(BaseGraphQLView):
+    class MyGraphQLView(GraphQLView):
         def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
             return "fake_encoder"
 
@@ -222,7 +184,8 @@ def test_json_dumps_params_deprecated_via_param():
         response1 = GraphQLView.as_view(schema=schema, json_dumps_params=dumps_params)(
             request
         )
-        assert response1.content.decode() == '{"data":{"hello":"strawberry"}}'
+        data = json.loads(response1.content.decode())
+        assert data["data"] == {"hello": "Hello world"}
 
 
 def test_json_dumps_params_deprecated_via_property():
@@ -241,7 +204,8 @@ def test_json_dumps_params_deprecated_via_property():
             json_dumps_params = dumps_params
 
         response = CustomGraphQLView.as_view(schema=schema)(request)
-        assert response.content.decode() == '{"data":{"hello":"strawberry"}}'
+        data = json.loads(response.content.decode())
+        assert data["data"] == {"hello": "Hello world"}
 
 
 def test_TemporalHttpResponse() -> None:

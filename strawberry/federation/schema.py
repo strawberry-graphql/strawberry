@@ -2,33 +2,52 @@ from collections import defaultdict
 from copy import copy
 from functools import partial
 from itertools import chain
-from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    DefaultDict,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Type,
+    Union,
+    cast,
+)
 
-from graphql import ExecutionContext as GraphQLExecutionContext
 from graphql import (
     GraphQLError,
     GraphQLField,
     GraphQLInterfaceType,
     GraphQLList,
     GraphQLNonNull,
-    GraphQLObjectType,
     GraphQLScalarType,
     GraphQLUnionType,
 )
 from graphql.type.definition import GraphQLArgument
 
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-from strawberry.enum import EnumDefinition
-from strawberry.extensions import Extension
-from strawberry.schema.types.concrete_type import TypeMap
+from strawberry.printer import print_schema
+from strawberry.schema import Schema as BaseSchema
 from strawberry.types.types import TypeDefinition
-from strawberry.union import StrawberryUnion
 from strawberry.utils.cached_property import cached_property
 from strawberry.utils.inspect import get_func_args
 
-from ..printer import print_schema
-from ..schema import Schema as BaseSchema
-from ..schema.config import StrawberryConfig
+from .schema_directive import StrawberryFederationSchemaDirective
+
+if TYPE_CHECKING:
+    from graphql import ExecutionContext as GraphQLExecutionContext
+    from graphql import GraphQLObjectType
+
+    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.enum import EnumDefinition
+    from strawberry.extensions import SchemaExtension
+    from strawberry.federation.schema_directives import ComposeDirective
+    from strawberry.schema.config import StrawberryConfig
+    from strawberry.schema.types.concrete_type import TypeMap
+    from strawberry.schema_directive import StrawberrySchemaDirective
+    from strawberry.union import StrawberryUnion
 
 
 class Schema(BaseSchema):
@@ -40,16 +59,15 @@ class Schema(BaseSchema):
         # TODO: we should update directives' type in the main schema
         directives: Iterable[Type] = (),
         types: Iterable[Type] = (),
-        extensions: Iterable[Union[Type[Extension], Extension]] = (),
-        execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
-        config: Optional[StrawberryConfig] = None,
+        extensions: Iterable[Union[Type["SchemaExtension"], "SchemaExtension"]] = (),
+        execution_context_class: Optional[Type["GraphQLExecutionContext"]] = None,
+        config: Optional["StrawberryConfig"] = None,
         scalar_overrides: Optional[
-            Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]]
+            Dict[object, Union[Type, "ScalarWrapper", "ScalarDefinition"]]
         ] = None,
         schema_directives: Iterable[object] = (),
         enable_federation_2: bool = False,
     ):
-
         query = self._get_federation_query_type(query)
 
         super().__init__(
@@ -65,11 +83,14 @@ class Schema(BaseSchema):
             schema_directives=schema_directives,
         )
 
+        self.schema_directives = list(schema_directives)
+
         self._add_scalars()
         self._add_entities_to_query()
 
         if enable_federation_2:
-            self._add_link_directives()
+            composed_directives = self._add_compose_directives()
+            self._add_link_directives(composed_directives)  # type: ignore
         else:
             self._remove_resolvable_field()
 
@@ -141,7 +162,7 @@ class Schema(BaseSchema):
         fields = {"_entities": self._get_entities_field(entity_type)}
 
         # Copy the query type, update it to use the modified fields
-        query_type = cast(GraphQLObjectType, self._schema.query_type)
+        query_type = cast("GraphQLObjectType", self._schema.query_type)
         fields.update(query_type.fields)
 
         query_type = copy(query_type)
@@ -160,7 +181,6 @@ class Schema(BaseSchema):
             definition = cast(TypeDefinition, type_.definition)
 
             if hasattr(definition.origin, "resolve_reference"):
-
                 resolve_reference = definition.origin.resolve_reference
 
                 func_args = get_func_args(resolve_reference)
@@ -217,7 +237,7 @@ class Schema(BaseSchema):
     def schema_directives_in_use(self) -> List[object]:
         all_graphql_types = self._schema.type_map.values()
 
-        directives = []
+        directives: List[object] = []
 
         for type_ in all_graphql_types:
             strawberry_definition = type_.extensions.get("strawberry-definition")
@@ -235,26 +255,81 @@ class Schema(BaseSchema):
 
         return directives
 
-    def _add_link_directives(self):
+    def _add_link_for_composed_directive(
+        self,
+        directive: "StrawberrySchemaDirective",
+        directive_by_url: Mapping[str, Set[str]],
+    ) -> None:
+        if not isinstance(directive, StrawberryFederationSchemaDirective):
+            return
+
+        if not directive.compose_options:
+            return
+
+        import_url = directive.compose_options.import_url
+        name = self.config.name_converter.from_directive(directive)
+
+        # import url is required by Apollo Federation, this might change in
+        # future to be optional, so for now, when it is not passed we
+        # define a mock one. The URL isn't used for validation anyway.
+        if import_url is None:
+            import_url = f"https://directives.strawberry.rocks/{name}/v0.1"
+
+        directive_by_url[import_url].add(f"@{name}")
+
+    def _add_link_directives(
+        self, additional_directives: Optional[List[object]] = None
+    ):
         from .schema_directives import FederationDirective, Link
 
-        directive_by_url = defaultdict(set)
+        directive_by_url: DefaultDict[str, Set[str]] = defaultdict(set)
 
-        for directive in self.schema_directives_in_use:
+        additional_directives = additional_directives or []
+
+        for directive in self.schema_directives_in_use + additional_directives:
+            definition = directive.__strawberry_directive__  # type: ignore
+
+            self._add_link_for_composed_directive(definition, directive_by_url)
+
             if isinstance(directive, FederationDirective):
                 directive_by_url[directive.imported_from.url].add(
                     f"@{directive.imported_from.name}"
                 )
 
-        link_directives = tuple(
+        link_directives: List[object] = [
             Link(
                 url=url,
                 import_=list(sorted(directives)),
             )
             for url, directives in directive_by_url.items()
-        )
+        ]
 
-        self.schema_directives = tuple(self.schema_directives) + link_directives
+        self.schema_directives = self.schema_directives + link_directives
+
+    def _add_compose_directives(self) -> List["ComposeDirective"]:
+        from .schema_directives import ComposeDirective
+
+        compose_directives: List[ComposeDirective] = []
+
+        for directive in self.schema_directives_in_use:
+            definition = directive.__strawberry_directive__  # type: ignore
+
+            is_federation_schema_directive = isinstance(
+                definition, StrawberryFederationSchemaDirective
+            )
+
+            if is_federation_schema_directive and definition.compose_options:
+                name = self.config.name_converter.from_directive(definition)
+
+                compose_directives.append(
+                    ComposeDirective(
+                        name=f"@{name}",
+                    )
+                )
+
+        self.schema_directives = self.schema_directives + compose_directives
+
+        return compose_directives
 
     def _get_entities_field(self, entity_type: GraphQLUnionType) -> GraphQLField:
         return GraphQLField(
@@ -268,7 +343,7 @@ class Schema(BaseSchema):
         )
 
 
-def _get_entity_type(type_map: TypeMap):
+def _get_entity_type(type_map: "TypeMap"):
     # https://www.apollographql.com/docs/apollo-server/federation/federation-spec/#resolve-requests-for-entities
 
     # To implement the _Entity union, each type annotated with @key
@@ -304,7 +379,9 @@ def _is_key(directive: Any) -> bool:
 
 
 def _has_federation_keys(
-    definition: Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
+    definition: Union[
+        TypeDefinition, "ScalarDefinition", "EnumDefinition", "StrawberryUnion"
+    ]
 ) -> bool:
     if isinstance(definition, TypeDefinition):
         return any(_is_key(directive) for directive in definition.directives or [])

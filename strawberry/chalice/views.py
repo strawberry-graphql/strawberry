@@ -1,21 +1,26 @@
+from __future__ import annotations
+
 import json
 import warnings
-from typing import Dict, Mapping, Optional
+from typing import TYPE_CHECKING, Dict, Mapping, Optional
 
-from chalice.app import BadRequestError, Request, Response
+from chalice.app import BadRequestError, Response
 from strawberry.exceptions import MissingQueryError
 from strawberry.http import (
-    GraphQLHTTPResponse,
     parse_query_params,
     parse_request_data,
     process_result,
 )
 from strawberry.http.temporal_response import TemporalResponse
-from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
-from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 from strawberry.utils.graphiql import get_graphiql_html
+
+if TYPE_CHECKING:
+    from chalice.app import Request
+    from strawberry.http import GraphQLHTTPResponse
+    from strawberry.schema import BaseSchema
+    from strawberry.types import ExecutionResult
 
 
 class GraphQLView:
@@ -24,7 +29,7 @@ class GraphQLView:
         schema: BaseSchema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
-        **kwargs
+        **kwargs,
     ):
         if "render_graphiql" in kwargs:
             self.graphiql = kwargs.pop("render_graphiql")
@@ -160,14 +165,7 @@ class GraphQLView:
                 http_status_code=404,
             )
 
-        try:
-            request_data = parse_request_data(data)
-        except MissingQueryError:
-            return self.error_response(
-                error_code="BadRequestError",
-                message="No GraphQL query found in the request",
-                http_status_code=400,
-            )
+        request_data = parse_request_data(data)
 
         allowed_operation_types = OperationType.from_http(method)
 
@@ -190,6 +188,12 @@ class GraphQLView:
             return self.error_response(
                 error_code="BadRequestError",
                 message=e.as_http_error_reason(method),
+                http_status_code=400,
+            )
+        except MissingQueryError:
+            return self.error_response(
+                error_code="BadRequestError",
+                message="No GraphQL query found in the request",
                 http_status_code=400,
             )
 

@@ -1,12 +1,16 @@
-import datetime
-from typing import Optional, Sequence, Union
+from __future__ import annotations
 
-from strawberry.schema import BaseSchema
+import datetime
+from typing import TYPE_CHECKING, Optional, Sequence, Union
+
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 from .base import ChannelsWSConsumer
 from .graphql_transport_ws_handler import GraphQLTransportWSHandler
 from .graphql_ws_handler import GraphQLWSHandler
+
+if TYPE_CHECKING:
+    from strawberry.schema import BaseSchema
 
 
 class GraphQLWSConsumer(ChannelsWSConsumer):
@@ -92,6 +96,7 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
             return await self.close(code=4406)
 
         await self._handler.handle()
+        return None
 
     async def receive(self, *args, **kwargs):
         # Overriding this so that we can pass the errors to handle_invalid_message

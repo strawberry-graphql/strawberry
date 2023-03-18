@@ -3,6 +3,7 @@ import inspect
 import sys
 import types
 from typing import (
+    Any,
     Callable,
     Dict,
     List,
@@ -27,25 +28,22 @@ from .utils.dataclasses import add_custom_init_fn
 from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__
 
+T = TypeVar("T", bound=Type)
 
-def _get_interfaces(cls: Type) -> List[TypeDefinition]:
-    interfaces = []
 
-    for base in cls.__bases__:
+def _get_interfaces(cls: Type[Any]) -> List[TypeDefinition]:
+    interfaces: List[TypeDefinition] = []
+    for base in cls.__mro__[1:]:  # Exclude current class
         type_definition = cast(
             Optional[TypeDefinition], getattr(base, "_type_definition", None)
         )
-
         if type_definition and type_definition.is_interface:
             interfaces.append(type_definition)
-
-        for inherited_interface in _get_interfaces(base):
-            interfaces.append(inherited_interface)
 
     return interfaces
 
 
-def _check_field_annotations(cls: Type):
+def _check_field_annotations(cls: Type[Any]):
     """Are any of the dataclass Fields missing type annotations?
 
     This is similar to the check that dataclasses do during creation, but allows us to
@@ -65,6 +63,11 @@ def _check_field_annotations(cls: Type):
         # If the field is a StrawberryField we need to do a bit of extra work
         # to make sure dataclasses.dataclass is ready for it
         if isinstance(field_, StrawberryField):
+            # If the field has a type override then use that instead of using
+            # the class annotations or resolver annotation
+            if field_.type_annotation is not None:
+                cls_annotations[field_name] = field_.type_annotation.annotation
+                continue
 
             # Make sure the cls has an annotation
             if field_name not in cls_annotations:
@@ -96,7 +99,7 @@ def _check_field_annotations(cls: Type):
             raise MissingFieldAnnotationError(field_name, cls)
 
 
-def _wrap_dataclass(cls: Type):
+def _wrap_dataclass(cls: Type[Any]):
     """Wrap a strawberry.type class with a dataclass and check for any issues
     before doing so"""
 
@@ -171,9 +174,6 @@ def _process_type(
             setattr(cls, field_.python_name, wrapped_func)
 
     return cls
-
-
-T = TypeVar("T", bound=Type)
 
 
 @overload
@@ -358,9 +358,25 @@ def interface(
     )
 
 
+def asdict(obj: object) -> Dict[str, object]:
+    """Convert a strawberry object into a dictionary.
+    This wraps the dataclasses.asdict function to strawberry.
+
+    Example usage:
+    >>> @strawberry.type
+    >>> class User:
+    >>>     name: str
+    >>>     age: int
+    >>> # should be {"name": "Lorem", "age": 25}
+    >>> user_dict = strawberry.asdict(User(name="Lorem", age=25))
+    """
+    return dataclasses.asdict(obj)  # type: ignore
+
+
 __all__ = [
     "TypeDefinition",
     "input",
     "interface",
     "type",
+    "asdict",
 ]

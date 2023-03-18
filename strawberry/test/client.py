@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Coroutine, Dict, List, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Mapping, Optional, Union
 from typing_extensions import Literal, TypedDict
 
-from graphql import GraphQLFormattedError
+if TYPE_CHECKING:
+    from graphql import GraphQLFormattedError
 
 
 @dataclass
@@ -62,7 +65,6 @@ class BaseGraphQLTestClient(ABC):
         variables: Optional[Dict[str, Mapping]] = None,
         files: Optional[Dict[str, object]] = None,
     ) -> Dict[str, object]:
-
         body: Dict[str, object] = {"query": query}
 
         if variables:
@@ -154,10 +156,10 @@ class BaseGraphQLTestClient(ABC):
         # Variables can be mixed files and other data, we don't want to map non-files
         # vars so we need to remove them, we can't remove them before
         # because they can be part of a list of files or folder
-        map_without_vars = {k: v for k, v in map.items() if k in files.keys()}
+        map_without_vars = {k: v for k, v in map.items() if k in files}
         return map_without_vars
 
-    def _decode(self, response, type: Literal["multipart", "json"]):
+    def _decode(self, response: Any, type: Literal["multipart", "json"]):
         if type == "multipart":
             return json.loads(response.content.decode())
         return response.json()

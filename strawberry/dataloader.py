@@ -3,10 +3,10 @@ from __future__ import annotations
 import dataclasses
 from abc import ABC, abstractmethod
 from asyncio import create_task, gather, get_event_loop
-from asyncio.events import AbstractEventLoop
 from asyncio.futures import Future
 from dataclasses import dataclass
 from typing import (
+    TYPE_CHECKING,
     Any,
     Awaitable,
     Callable,
@@ -24,6 +24,10 @@ from typing import (
 )
 
 from .exceptions import WrongNumberOfResultsReturned
+
+if TYPE_CHECKING:
+    from asyncio.events import AbstractEventLoop
+
 
 T = TypeVar("T")
 K = TypeVar("K")
@@ -196,7 +200,7 @@ class DataLoader(Generic[K, T]):
         if self.batch is not None and not self.batch.dispatched:
             batch_updated = False
             for task in self.batch.tasks:
-                if task.key in data.keys():
+                if task.key in data:
                     batch_updated = True
                     task.future.set_result(data[task.key])
             if batch_updated:

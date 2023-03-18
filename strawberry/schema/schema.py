@@ -1,7 +1,8 @@
-from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
+from __future__ import annotations
 
-from graphql import ExecutionContext as GraphQLExecutionContext
+from functools import lru_cache
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union, cast
+
 from graphql import (
     GraphQLNamedType,
     GraphQLNonNull,
@@ -14,27 +15,32 @@ from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-from strawberry.directive import StrawberryDirective
-from strawberry.enum import EnumDefinition
-from strawberry.extensions import Extension
 from strawberry.extensions.directives import (
     DirectivesExtension,
     DirectivesExtensionSync,
 )
-from strawberry.field import StrawberryField
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
-from strawberry.types import ExecutionContext, ExecutionResult
+from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
 from strawberry.types.types import TypeDefinition
-from strawberry.union import StrawberryUnion
 
 from ..printer import print_schema
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
+
+if TYPE_CHECKING:
+    from graphql import ExecutionContext as GraphQLExecutionContext
+
+    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.directive import StrawberryDirective
+    from strawberry.enum import EnumDefinition
+    from strawberry.extensions import SchemaExtension
+    from strawberry.field import StrawberryField
+    from strawberry.types import ExecutionResult
+    from strawberry.union import StrawberryUnion
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.QUERY,
@@ -53,7 +59,7 @@ class Schema(BaseSchema):
         subscription: Optional[Type] = None,
         directives: Iterable[StrawberryDirective] = (),
         types=(),
-        extensions: Iterable[Union[Type[Extension], Extension]] = (),
+        extensions: Iterable[Union[Type[SchemaExtension], SchemaExtension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
         scalar_overrides: Optional[
@@ -70,7 +76,7 @@ class Schema(BaseSchema):
         self.config = config or StrawberryConfig()
 
         SCALAR_OVERRIDES_DICT_TYPE = Dict[
-            object, Union[ScalarWrapper, ScalarDefinition]
+            object, Union["ScalarWrapper", "ScalarDefinition"]
         ]
 
         scalar_registry: SCALAR_OVERRIDES_DICT_TYPE = {**DEFAULT_SCALAR_REGISTRY}
@@ -80,7 +86,7 @@ class Schema(BaseSchema):
 
         self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
         self.directives = directives
-        self.schema_directives = schema_directives
+        self.schema_directives = list(schema_directives)
 
         query_type = self.schema_converter.from_object(query._type_definition)
         mutation_type = (
@@ -151,7 +157,7 @@ class Schema(BaseSchema):
 
     def get_extensions(
         self, sync: bool = False
-    ) -> List[Union[Type[Extension], Extension]]:
+    ) -> List[Union[Type[SchemaExtension], SchemaExtension]]:
         extensions = list(self.extensions)
 
         if self.directives:
@@ -203,7 +209,7 @@ class Schema(BaseSchema):
 
     async def execute(
         self,
-        query: str,
+        query: Optional[str],
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
@@ -225,7 +231,6 @@ class Schema(BaseSchema):
 
         result = await execute(
             self._schema,
-            query,
             extensions=self.get_extensions(),
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
@@ -237,7 +242,7 @@ class Schema(BaseSchema):
 
     def execute_sync(
         self,
-        query: str,
+        query: Optional[str],
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
@@ -258,7 +263,6 @@ class Schema(BaseSchema):
 
         result = execute_sync(
             self._schema,
-            query,
             extensions=self.get_extensions(sync=True),
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
@@ -270,6 +274,7 @@ class Schema(BaseSchema):
 
     async def subscribe(
         self,
+        # TODO: make this optional when we support extensions
         query: str,
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,

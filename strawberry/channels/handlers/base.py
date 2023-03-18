@@ -13,6 +13,7 @@ from typing import (
     Sequence,
 )
 from typing_extensions import Literal, Protocol, TypedDict
+from weakref import WeakSet
 
 from channels.consumer import AsyncConsumer
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
@@ -69,7 +70,9 @@ class ChannelsConsumer(AsyncConsumer):
     channel_receive: Callable[[], Awaitable[dict]]
 
     def __init__(self, *args, **kwargs):
-        self.listen_queues: DefaultDict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
+        self.listen_queues: DefaultDict[str, WeakSet[asyncio.Queue]] = defaultdict(
+            WeakSet
+        )
         super().__init__(*args, **kwargs)
 
     @property
@@ -85,8 +88,11 @@ class ChannelsConsumer(AsyncConsumer):
     async def get_context(
         self,
         request: Optional["ChannelsConsumer"] = None,
+        connection_params: Optional[Dict[str, Any]] = None,
     ) -> StrawberryChannelsContext:
-        return StrawberryChannelsContext(request=request or self)
+        return StrawberryChannelsContext(
+            request=request or self, connection_params=connection_params
+        )
 
     async def dispatch(self, message: ChannelsMessage):
         # AsyncConsumer will try to get a function for message["type"] to handle
@@ -95,7 +101,8 @@ class ChannelsConsumer(AsyncConsumer):
         # that it can be consumed by self.channel_listen
         type_ = message.get("type", "")
         if type_ and not type_.startswith(("http.", "websocket.")):
-            self.listen_queues[type_].put_nowait(message)
+            for queue in self.listen_queues[type_]:
+                queue.put_nowait(message)
             return
 
         await super().dispatch(message)
@@ -134,11 +141,16 @@ class ChannelsConsumer(AsyncConsumer):
 
         added_groups = []
         try:
+            # This queue will receive incoming messages for this generator instance
+            queue: asyncio.Queue = asyncio.Queue()
+            # Create a weak reference to the queue. Once we leave the current scope, it
+            # will be garbage collected
+            self.listen_queues[type].add(queue)
+
             for group in groups:
                 await self.channel_layer.group_add(group, self.channel_name)
                 added_groups.append(group)
 
-            queue = self.listen_queues[type]
             while True:
                 awaitable = queue.get()
                 if timeout is not None:

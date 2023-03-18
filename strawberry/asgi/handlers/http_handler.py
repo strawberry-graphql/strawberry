@@ -1,19 +1,24 @@
+from __future__ import annotations
+
 import json
-from typing import Any, Callable, Dict, Iterable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Optional
 
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, PlainTextResponse, Response
-from starlette.types import Receive, Scope, Send
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import parse_query_params, parse_request_data
-from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types.graphql import OperationType
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.graphiql import get_graphiql_html
+
+if TYPE_CHECKING:
+    from starlette.types import Receive, Scope, Send
+
+    from strawberry.schema import BaseSchema
 
 
 class HTTPHandler:
@@ -138,11 +143,6 @@ class HTTPHandler:
                 "Unable to parse request body as JSON",
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
-        except MissingQueryError:
-            return PlainTextResponse(
-                "No GraphQL query found in the request",
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
 
         allowed_operation_types = OperationType.from_http(method)
 
@@ -161,6 +161,11 @@ class HTTPHandler:
         except InvalidOperationTypeError as e:
             return PlainTextResponse(
                 e.as_http_error_reason(method),
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        except MissingQueryError:
+            return PlainTextResponse(
+                "No GraphQL query found in the request",
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 

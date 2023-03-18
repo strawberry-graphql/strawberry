@@ -1,7 +1,7 @@
 import pytest
-from tests.fixtures.sample_package.sample_module import sample_instance, schema
 
 from strawberry.utils.importer import import_module_symbol
+from tests.fixtures.sample_package.sample_module import sample_instance, schema
 
 
 def test_symbol_import():

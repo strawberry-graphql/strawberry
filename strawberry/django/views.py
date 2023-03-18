@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import warnings
-from typing import Any, Dict, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, Optional, Type
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
 from django.core.serializers.json import DjangoJSONEncoder
-from django.http import Http404, HttpRequest, HttpResponseNotAllowed, JsonResponse
+from django.http import Http404, HttpResponseNotAllowed, JsonResponse
 from django.http.response import HttpResponse
 from django.template import RequestContext, Template
 from django.template.exceptions import TemplateDoesNotExist
@@ -18,19 +20,23 @@ from django.views.generic import View
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
-    GraphQLHTTPResponse,
-    GraphQLRequestData,
     parse_query_params,
     parse_request_data,
     process_result,
 )
 from strawberry.schema.exceptions import InvalidOperationTypeError
-from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 from strawberry.utils.graphiql import get_graphiql_html
 
-from ..schema import BaseSchema
 from .context import StrawberryDjangoContext
+
+if TYPE_CHECKING:
+    from django.http import HttpRequest
+
+    from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
+    from strawberry.types import ExecutionResult
+
+    from ..schema import BaseSchema
 
 
 class TemporalHttpResponse(JsonResponse):
@@ -131,12 +137,7 @@ class BaseView(View):
         except KeyError:
             raise BadRequest("File(s) missing in form data")
 
-        try:
-            request_data = parse_request_data(data)
-        except MissingQueryError:
-            raise SuspiciousOperation("No GraphQL query found in the request")
-
-        return request_data
+        return parse_request_data(data)
 
     def _render_graphiql(self, request: HttpRequest, context=None):
         if not self.graphiql:
@@ -237,6 +238,8 @@ class GraphQLView(BaseView):
             )
         except InvalidOperationTypeError as e:
             raise BadRequest(e.as_http_error_reason(method)) from e
+        except MissingQueryError:
+            raise SuspiciousOperation("No GraphQL query found in the request")
 
         response_data = self.process_result(request=request, result=result)
 
@@ -291,6 +294,8 @@ class AsyncGraphQLView(BaseView):
             )
         except InvalidOperationTypeError as e:
             raise BadRequest(e.as_http_error_reason(method)) from e
+        except MissingQueryError:
+            raise SuspiciousOperation("No GraphQL query found in the request")
 
         response_data = await self.process_result(request=request, result=result)
 

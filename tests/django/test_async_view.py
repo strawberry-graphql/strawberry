@@ -8,7 +8,8 @@ from django.test.client import RequestFactory
 from django.utils.http import urlencode
 
 import strawberry
-from strawberry.django.views import AsyncGraphQLView as AsyncBaseGraphQLView
+from strawberry.django.views import AsyncGraphQLView
+from tests.views.schema import schema
 
 from .app.models import Example
 
@@ -21,33 +22,8 @@ pytestmark = [
 ]
 
 
-@strawberry.type
-class Query:
-    hello: str = "strawberry"
-
-    @strawberry.field
-    async def hello_async(self) -> str:
-        return "async strawberry"
-
-    @strawberry.field
-    async def example_async(self) -> str:
-        def _get_name():
-            return Example.objects.first().name
-
-        get_name = sync_to_async(_get_name)
-
-        return await get_name()
-
-
-schema = strawberry.Schema(query=Query)
-
-
-class AsyncGraphQLView(AsyncBaseGraphQLView):
-    ...
-
-
 async def test_async_graphql_query():
-    query = "{ helloAsync }"
+    query = "{ asyncHello }"
 
     factory = RequestFactory()
     request = factory.post(
@@ -57,7 +33,7 @@ async def test_async_graphql_query():
     response = await AsyncGraphQLView.as_view(schema=schema)(request)
     data = json.loads(response.content.decode())
 
-    assert data["data"]["helloAsync"] == "async strawberry"
+    assert data["data"]["asyncHello"] == "Hello world"
 
 
 async def test_graphiql_view():
@@ -72,7 +48,7 @@ async def test_graphiql_view():
 
 
 async def test_async_graphql_get_query_using_params():
-    params = {"query": "{ helloAsync }"}
+    params = {"query": "{ asyncHello }"}
 
     factory = RequestFactory()
     request = factory.get(
@@ -83,17 +59,17 @@ async def test_async_graphql_get_query_using_params():
     response = await AsyncGraphQLView.as_view(schema=schema)(request)
     data = json.loads(response.content.decode())
 
-    assert data["data"]["helloAsync"] == "async strawberry"
+    assert data["data"]["asyncHello"] == "Hello world"
 
 
 async def test_async_graphql_post_query_fails_using_params():
-    params = {"query": "{ helloAsync }"}
+    params = {"query": "{ asyncHello }"}
 
     factory = RequestFactory()
     request = factory.post(
         "/graphql",
-        **{"QUERY_STRING": urlencode(params, doseq=True)},
-        content_type="application/x-www-form-urlencoded"
+        content_type="application/x-www-form-urlencoded",
+        QUERY_STRING=urlencode(params, doseq=True),
     )
 
     with pytest.raises(
@@ -116,7 +92,7 @@ async def test_async_graphql_get_does_not_allow_mutation():
 
 
 async def test_async_graphql_get_does_get_when_disabled():
-    params = {"query": "{ helloAsync }"}
+    params = {"query": "{ asyncHello }"}
 
     factory = RequestFactory()
     request = factory.get(
@@ -174,6 +150,19 @@ async def test_async_graphql_query_model():
     )
     await prepare_db()
 
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def example_async(self) -> str:
+            def _get_name():
+                return Example.objects.first().name
+
+            get_name = sync_to_async(_get_name)
+
+            return await get_name()
+
+    custom_schema = strawberry.Schema(query=Query)
+
     query = "{ exampleAsync }"
 
     factory = RequestFactory()
@@ -181,7 +170,7 @@ async def test_async_graphql_query_model():
         "/graphql/", {"query": query}, content_type="application/json"
     )
 
-    response = await AsyncGraphQLView.as_view(schema=schema)(request)
+    response = await AsyncGraphQLView.as_view(schema=custom_schema)(request)
     data = json.loads(response.content.decode())
 
     assert data["data"]["exampleAsync"] == "This is a demo async"

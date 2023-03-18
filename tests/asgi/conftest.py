@@ -2,9 +2,9 @@ import pathlib
 
 import pytest
 from starlette.testclient import TestClient
-from tests.asgi.app import create_app
 
 from strawberry.asgi.test import GraphQLTestClient
+from tests.asgi.app import create_app
 
 
 @pytest.fixture
@@ -33,7 +33,7 @@ def test_client_no_get():
 
 @pytest.fixture
 def graphql_client(test_client):
-    yield GraphQLTestClient(test_client)
+    return GraphQLTestClient(test_client)
 
 
 def pytest_collection_modifyitems(config, items):

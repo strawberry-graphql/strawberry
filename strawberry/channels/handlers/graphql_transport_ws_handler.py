@@ -1,12 +1,17 @@
-from datetime import timedelta
-from typing import Any, Optional
+from __future__ import annotations
 
-from strawberry.channels.handlers.base import ChannelsWSConsumer
-from strawberry.schema import BaseSchema
+from typing import TYPE_CHECKING, Any, Optional
+
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
     BaseGraphQLTransportWSHandler,
 )
+
+if TYPE_CHECKING:
+    from datetime import timedelta
+
+    from strawberry.channels.handlers.base import ChannelsWSConsumer
+    from strawberry.schema import BaseSchema
 
 
 class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
@@ -25,7 +30,9 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         self._ws = ws
 
     async def get_context(self) -> Any:
-        return await self._get_context(request=self._ws)
+        return await self._get_context(
+            request=self._ws, connection_params=self.connection_params
+        )
 
     async def get_root_value(self) -> Any:
         return await self._get_root_value(request=self._ws)

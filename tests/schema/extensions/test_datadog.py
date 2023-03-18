@@ -148,7 +148,7 @@ async def test_uses_operation_type(datadog_extension):
     """
 
     await schema.execute(query, operation_name="MyMutation")
-    mock.tracer.trace().set_tag.assert_any_call("graphql.operation_type", "mutation"),
+    mock.tracer.trace().set_tag.assert_any_call("graphql.operation_type", "mutation")
 
 
 @pytest.mark.asyncio
@@ -166,7 +166,7 @@ async def test_uses_operation_subscription(datadog_extension):
     await schema.execute(query, operation_name="MySubscription")
     mock.tracer.trace().set_tag.assert_any_call(
         "graphql.operation_type", "subscription"
-    ),
+    )
 
 
 def test_datadog_tracer_sync(datadog_extension_sync, mocker):
@@ -247,4 +247,4 @@ def test_uses_operation_type_sync(datadog_extension_sync):
 
     schema.execute_sync(query, operation_name="MyMutation")
 
-    mock.tracer.trace().set_tag.assert_any_call("graphql.operation_type", "mutation"),
+    mock.tracer.trace().set_tag.assert_any_call("graphql.operation_type", "mutation")
