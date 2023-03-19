@@ -5,6 +5,7 @@ import dataclasses
 import inspect
 import sys
 from collections import defaultdict
+from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -28,12 +29,24 @@ from typing import (
     cast,
     overload,
 )
-from typing_extensions import Literal, Self, get_args, get_origin, get_type_hints
+from typing_extensions import (
+    Annotated,
+    Literal,
+    Self,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument
+from strawberry.arguments import StrawberryArgument, argument
 from strawberry.exceptions.missing_return_annotation import MissingReturnAnnotationError
-from strawberry.field import _RESOLVER_TYPE, UNRESOLVED, StrawberryField
+from strawberry.extensions.field_extension import (
+    AsyncExtensionResolver,
+    FieldExtension,
+    SyncExtensionResolver,
+)
+from strawberry.field import _RESOLVER_TYPE, UNRESOLVED, StrawberryField, field
 from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.fields.resolver import StrawberryResolver
@@ -108,88 +121,38 @@ class RelayField(StrawberryField):
         return retval
 
 
-class NodeField(RelayField):
-    """Relay Node field.
+def get_node_resolver(field: StrawberryField):
+    type_ = field.type
+    is_optional = isinstance(type_, StrawberryOptional)
 
-    This field is used to fetch a single object by its ID or multiple
-    objects given a list of IDs.
-
-    """
-
-    def __call__(self, resolver):
-        raise NotImplementedError
-
-    @property
-    def default_arguments(self) -> Dict[str, StrawberryArgument]:
-        default_args = super().default_arguments.copy()
-
-        if not self.base_resolver and self.is_list:
-            default_args.update(
-                {
-                    "ids": StrawberryArgument(
-                        python_name="ids",
-                        graphql_name=None,
-                        type_annotation=StrawberryAnnotation(List[GlobalID]),
-                        description="The IDs of the objects.",
-                    ),
-                }
-            )
-        elif not self.base_resolver:
-            default_args.update(
-                {
-                    "id": StrawberryArgument(
-                        python_name="id",
-                        graphql_name=None,
-                        type_annotation=StrawberryAnnotation(GlobalID),
-                        description="The ID of the object.",
-                    ),
-                }
-            )
-
-        return default_args
-
-    def get_result(
-        self,
-        source: Any,
-        info: Optional[Info],
-        args: List[Any],
-        kwargs: Dict[str, Any],
-    ) -> Union[Awaitable[Any], Any]:
-        assert info is not None
-        resolver = self.resolve_nodes if self.is_list else self.resolve_node
-
-        return resolver(source, info, args, kwargs)
-
-    def resolve_node(
-        self,
-        source: Any,
+    def resolver(
         info: Info,
-        args: List[Any],
-        kwargs: Dict[str, Any],
-    ) -> AwaitableOrValue[Optional[Node]]:
-        gid = kwargs["id"]
-        assert isinstance(gid, GlobalID)
-        return gid.resolve_type(info).resolve_node(
-            gid.node_id,
+        id: Annotated[GlobalID, argument(description="The ID of the object.")],
+    ):
+        return id.resolve_type(info).resolve_node(
+            id.node_id,
             info=info,
-            required=not self.is_optional,
+            required=not is_optional,
         )
 
-    def resolve_nodes(
-        self,
-        source: Any,
-        info: Info,
-        args: List[Any],
-        kwargs: Dict[str, Any],
-    ) -> AwaitableOrValue[List[Node]]:
-        gids: List[GlobalID] = kwargs["ids"]
+    return resolver
 
+
+def get_nodes_resolver(field: StrawberryField):
+    type_ = field.type
+    assert isinstance(type_, StrawberryList)
+    is_optional = isinstance(type_.of_type, StrawberryOptional)
+
+    def resolver(
+        info: Info,
+        ids: Annotated[List[GlobalID], argument(description="The IDs of the objects.")],
+    ):  # type: ignore
         nodes_map: DefaultDict[Type[Node], List[str]] = defaultdict(list)
         # Store the index of the node in the list of nodes of the same type
         # so that we can return them in the same order while also supporting different
         # types
         index_map: Dict[GlobalID, Tuple[Type[Node], int]] = {}
-        for gid in gids:
+        for gid in ids:
             node_t = gid.resolve_type(info)
             nodes_map[node_t].append(gid.node_id)
             index_map[gid] = (node_t, len(nodes_map[node_t]) - 1)
@@ -198,7 +161,7 @@ class NodeField(RelayField):
             node_t: node_t.resolve_nodes(
                 info=info,
                 node_ids=node_ids,
-                required=not self.is_optional,
+                required=not is_optional,
             )
             for node_t, node_ids in nodes_map.items()
         }
@@ -236,7 +199,7 @@ class NodeField(RelayField):
 
                 # Resolve any generator to lists
                 resolved = {node_t: list(nodes) for node_t, nodes in resolved.items()}
-                return [resolved[index_map[gid][0]][index_map[gid][1]] for gid in gids]
+                return [resolved[index_map[gid][0]][index_map[gid][1]] for gid in ids]
 
             return resolve()
 
@@ -245,7 +208,31 @@ class NodeField(RelayField):
             node_t: list(cast(Iterator[Node], nodes))
             for node_t, nodes in resolved_nodes.items()
         }
-        return [resolved[index_map[gid][0]][index_map[gid][1]] for gid in gids]
+        return [resolved[index_map[gid][0]][index_map[gid][1]] for gid in ids]
+
+    return resolver
+
+
+class NodeExtension(FieldExtension):
+    def apply(self, field: StrawberryField) -> None:  # pragma: no cover
+        assert field.base_resolver is None
+
+        if isinstance(field.type, StrawberryList):
+            resolver = get_nodes_resolver(field)
+        else:
+            resolver = get_node_resolver(field)
+
+        field.base_resolver = StrawberryResolver(resolver, type_override=field.type)
+
+    def resolve(
+        self, next_: SyncExtensionResolver, source: Any, info: Info, **kwargs
+    ) -> Any:
+        return next_(source, info, **kwargs)
+
+    async def resolve_async(
+        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs
+    ) -> Any:
+        return await next_(source, info, **kwargs)
 
 
 class ConnectionField(RelayField):
@@ -463,58 +450,7 @@ class ConnectionField(RelayField):
         )
 
 
-def node(
-    *,
-    name: Optional[str] = None,
-    is_subscription: bool = False,
-    description: Optional[str] = None,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
-    default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    node_converter: Optional[Callable[[object], NodeType]] = None,
-    # This init parameter is used by pyright to determine whether this field
-    # is added in the constructor or not. It is not used to change
-    # any behavior at the moment.
-    init: Literal[True, False, None] = None,
-) -> Any:
-    """Annotate a property to create a relay query field.
-
-    Examples:
-        Annotating something like this:
-
-        >>> @strawberry.type
-        >>> class X:
-        ...     some_node: SomeType = relay.node(description="ABC")
-
-        Will produce a query like this that returns `SomeType` given its id.
-
-        ```
-        query {
-            someNode (id: ID) {
-                id
-                ...
-            }
-        }
-        ```
-
-    """
-    return NodeField(
-        python_name=None,
-        graphql_name=name,
-        type_annotation=None,
-        description=description,
-        is_subscription=is_subscription,
-        permission_classes=permission_classes or [],
-        deprecation_reason=deprecation_reason,
-        default=default,
-        default_factory=default_factory,
-        metadata=metadata,
-        directives=directives or (),
-        node_converter=node_converter,
-    )
+node = partial(field, extensions=[NodeExtension()])
 
 
 @overload

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Dict, List, Type, TypeVar
+from typing import TYPE_CHECKING, Dict, List, Type, TypeVar
 from typing_extensions import get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
@@ -16,33 +16,36 @@ from strawberry.private import is_private
 from strawberry.unset import UNSET
 from strawberry.utils.inspect import get_specialized_type_var_map
 
+if TYPE_CHECKING:
+    from strawberry.extensions.field_extension import FieldExtension
 
-def _get_field_for_type(type_: Type) -> Type[StrawberryField]:
+
+def _get_extensions_for_type(type_: Type) -> List[FieldExtension]:
     # Deferred import to avoid import cycles
-    from strawberry.relay import Connection, ConnectionField, Node, NodeField
+    from strawberry.relay import Node, NodeExtension
 
     # Supoort for "foo: Node"
     if isinstance(type_, type) and issubclass(type_, Node):
-        return NodeField
+        return [NodeExtension()]
 
     # Support for "foo: SpecializedConnection"
-    if isinstance(type_, type) and issubclass(type_, Connection):
-        return ConnectionField
+    # if isinstance(type_, type) and issubclass(type_, Connection):
+    #     return ConnectionField
 
     type_origin = get_origin(type_)
 
     # Support for "foo: Connection[Foo]"
-    if isinstance(type_origin, type) and issubclass(
-        type_origin,
-        Connection,
-    ):
-        return ConnectionField
+    # if isinstance(type_origin, type) and issubclass(
+    #     type_origin,
+    #     Connection,
+    # ):
+    #     return ConnectionField
 
     type_args = get_args(type_)
 
     # Support for "foo: Optional[Node]" and "foo: List[Node]"
     if any(isinstance(arg, type) and issubclass(arg, Node) for arg in type_args):
-        return NodeField
+        return [NodeExtension()]
 
     # Support for "foo: List[Optional[Node]]"
     if isinstance(type_origin, type) and issubclass(type_origin, List):
@@ -50,9 +53,9 @@ def _get_field_for_type(type_: Type) -> Type[StrawberryField]:
             isinstance(arg, type) and issubclass(arg, Node)
             for arg in get_args(type_args[0])
         ):
-            return NodeField
+            return [NodeExtension()]
 
-    return StrawberryField
+    return []
 
 
 def _get_fields(cls: Type) -> List[StrawberryField]:
@@ -191,8 +194,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                     )
 
             # Create a StrawberryField, for fields of Types #1 and #2a
-            field_class = _get_field_for_type(field_type)
-            field = field_class(
+            field = StrawberryField(
                 python_name=field.name,
                 graphql_name=None,
                 type_annotation=StrawberryAnnotation(
@@ -201,6 +203,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                 ),
                 origin=origin,
                 default=getattr(cls, field.name, dataclasses.MISSING),
+                extensions=_get_extensions_for_type(field_type),
             )
 
         field_name = field.python_name
