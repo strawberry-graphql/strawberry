@@ -38,6 +38,7 @@ from strawberry.field import field
 from strawberry.lazy_type import LazyType
 from strawberry.object_type import interface, type
 from strawberry.private import StrawberryPrivate
+from strawberry.relay.exceptions import NodeIDAnnotationError
 from strawberry.type import StrawberryContainer
 from strawberry.types.types import TypeDefinition
 from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
@@ -309,11 +310,11 @@ class NodeIDPrivate(StrawberryPrivate):
     """Annotate a type attribute as its id.
 
     The `Node` interface will automatically create and resolve GlobalIDs
-    based on the field annotated with `NodeIDPrivate`. e.g:
+    based on the field annotated with `NodeID`. e.g:
 
       >>> @strawberry.type
       ... class Fruit(Node):
-      ...     code: NodeIDPrivate[str]
+      ...     code: NodeID[str]
 
     In this case, `code` will be used to generate a global ID in the
     format `Fruit:<code>` and will be exposed as `id: GlobalID!` in the
@@ -374,10 +375,16 @@ class Node:
         ]
 
         if len(candidates) == 0:
-            raise TypeError(f"No field annotated with `NodeID` found on {cls!r}")
+            raise NodeIDAnnotationError(
+                f'No field annotated with `nodeid` found in "{cls.__name__}"', cls
+            )
         if len(candidates) > 1:
-            raise TypeError(
-                f"More than one field annotated with `NodeID` found on {cls!r}"
+            raise NodeIDAnnotationError(
+                (
+                    "More than one field annotated with `NodeID` "
+                    f'found in "{cls.__name__}"'
+                ),
+                cls,
             )
 
         cls._id_attr = candidates[0]

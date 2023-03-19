@@ -3,8 +3,10 @@ from typing import Iterable, Iterator, List
 import pytest
 
 import strawberry
+from strawberry import relay
 from strawberry.exceptions.missing_return_annotation import MissingReturnAnnotationError
 from strawberry.relay.exceptions import (
+    NodeIDAnnotationError,
     RelayWrongAnnotationError,
     RelayWrongNodeResolverAnnotationError,
 )
@@ -17,6 +19,27 @@ class NonNodeType:
 
 
 @pytest.mark.raises_strawberry_exception(
+    NodeIDAnnotationError,
+    match='No field annotated with `nodeid` found in "Fruit"',
+)
+def test_raises_error_on_missing_node_id_annotation():
+    @strawberry.type
+    class Fruit(relay.Node):
+        code: str
+
+
+@pytest.mark.raises_strawberry_exception(
+    NodeIDAnnotationError,
+    match='More than one field annotated with `NodeID` found in "Fruit"',
+)
+def test_raises_error_on_multiple_node_id_annotation():
+    @strawberry.type
+    class Fruit(relay.Node):
+        pk: relay.NodeID[str]
+        code: relay.NodeID[str]
+
+
+@pytest.mark.raises_strawberry_exception(
     MissingReturnAnnotationError,
     match=(
         'Return annotation missing for field "custom_resolver", '
@@ -26,7 +49,7 @@ class NonNodeType:
 def test_raises_error_on_connection_missing_annotation():
     @strawberry.type
     class Query:
-        @strawberry.relay.connection  # type: ignore
+        @relay.connection  # type: ignore
         def custom_resolver(self):
             ...
 
@@ -47,7 +70,7 @@ def test_raises_error_on_connection_missing_annotation():
 def test_raises_error_on_connection_with_wrong_annotation(annotation):
     @strawberry.type
     class Query:
-        @strawberry.relay.connection
+        @relay.connection
         def custom_resolver(self) -> annotation:
             ...
 
@@ -67,6 +90,6 @@ def test_raises_error_on_connection_with_wrong_node_resolver_annotation(annotati
 
     @strawberry.type
     class Query:
-        @strawberry.relay.connection(node_converter=node_converter)  # type: ignore
+        @relay.connection(node_converter=node_converter)  # type: ignore
         def custom_resolver(self) -> List[Fruit]:
             ...
