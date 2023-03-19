@@ -392,25 +392,23 @@ class Node:
     @field(name="id", description="The Globally Unique ID of this object")
     @classmethod
     def _id(cls, root: Node, info: Info) -> GlobalID:
-        # FIXME: We want to support both integration objects that doesn't define
-        # a resolve_id and also the ones that does override it. Is there a better
-        # way of handling this?
+        # NOTE: root might not be a Node instance when using integrations which
+        # return an object that is compatible with the type (e.g. the django one).
+        # In that case, we can retrieve the type itself from info
         if isinstance(root, Node):
             resolve_id = root.__class__.resolve_id
+            resolve_typename = root.__class__.resolve_typename
         else:
             parent_type = info._raw_info.parent_type
             type_def = info.schema.get_type_by_name(parent_type.name)
             assert isinstance(type_def, TypeDefinition)
             resolve_id = type_def.origin.resolve_id
+            resolve_typename = type_def.origin.resolve_typename
 
-        node_id = resolve_id(root, info=info)
-        resolve_typename = (
-            root.__class__.resolve_typename
-            if isinstance(root, Node)
-            else cls.resolve_typename
-        )
         type_name = resolve_typename(root, info)
-        assert type_name
+        assert isinstance(type_name, str)
+        node_id = resolve_id(root, info=info)
+        assert node_id is not None
 
         if inspect.isawaitable(node_id):
             return cast(

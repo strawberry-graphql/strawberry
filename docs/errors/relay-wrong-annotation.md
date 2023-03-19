@@ -13,6 +13,7 @@ type annotation. For example, the following code will throw this error:
 from typing import List
 
 import strawberry
+from strawberry import relay
 
 
 @strawberry.type
@@ -22,11 +23,11 @@ class NonNodeSubclassType:
 
 @strawberry.type
 class Query:
-    @strawberry.relay.connection
+    @relay.connection
     def some_connection(self) -> int:
         ...
 
-    @strawberry.relay.connection
+    @relay.connection
     def some_other_connection(self) -> List[NonNodeSubclassType]:
         ...
 ```
@@ -51,20 +52,21 @@ For example:
 from typing import Iterable, List
 
 import strawberry
+from strawberry import relay
 
 
 @strawberry.type
-class NodeSubclassType(strawberry.relay.Node):
+class NodeSubclassType(relay.Node):
     ...
 
 
 @strawberry.type
 class Query:
-    @strawberry.relay.connection
+    @relay.connection
     def some_connection(self) -> List[NodeSubclassType]:
         ...
 
-    @strawberry.relay.connection
+    @relay.connection
     def some_other_connection(self) -> Iterable[NodeSubclassType]:
         ...
 ```

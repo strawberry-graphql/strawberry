@@ -1,8 +1,7 @@
 import pytest
 
 import strawberry
-from strawberry.relay.fields import ConnectionField, NodeField
-from strawberry.relay.types import NodeType
+from strawberry import relay
 from strawberry.relay.utils import to_base64
 
 from .schema import schema
@@ -11,10 +10,10 @@ from .schema import schema
 def test_type_uses_node_field():
     @strawberry.type
     class Query:
-        node: strawberry.relay.Node
+        node: relay.Node
 
     node_field = Query._type_definition.get_field("node")  # type: ignore
-    assert isinstance(node_field, NodeField)
+    assert isinstance(node_field, relay.NodeField)
 
     copied = node_field.copy_with({})
     assert copied.default_args == node_field.default_args
@@ -27,12 +26,12 @@ def test_type_uses_connection_field():
 
     @strawberry.type
     class Query:
-        connection: strawberry.relay.Connection
+        connection: relay.Connection
 
     connection_field = Query._type_definition.get_field("connection")  # type: ignore
-    assert isinstance(connection_field, ConnectionField)
+    assert isinstance(connection_field, relay.ConnectionField)
 
-    copied = connection_field.copy_with({NodeType: Fruit})
+    copied = connection_field.copy_with({relay.NodeType: Fruit})
     assert copied.default_args == connection_field.default_args
 
 
@@ -352,6 +351,7 @@ query TestQuery (
 
 attrs = [
     "fruits",
+    "fruitsConcreteResolver",
     "fruitsCustomResolver",
     "fruitsCustomResolverWithNodeConverter",
     "fruitsCustomResolverWithNodeConverterForwardRef",
@@ -916,6 +916,7 @@ query TestQuery (
 """
 
 custom_attrs = [
+    "fruitsConcreteResolver",
     "fruitsCustomResolver",
     "fruitsCustomResolverWithNodeConverter",
     "fruitsCustomResolverWithNodeConverterForwardRef",

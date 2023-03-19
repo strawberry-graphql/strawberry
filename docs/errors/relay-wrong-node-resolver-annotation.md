@@ -14,6 +14,7 @@ the following code will throw this error:
 from typing import Iterable
 
 import strawberry
+from strawberry import relay
 
 
 @strawberry.type
@@ -27,7 +28,7 @@ def node_converter(node_id: str) -> NonNodeSubclassType:
 
 @strawberry.type
 class Query:
-    @strawberry.relay.connection(NonNodeSubclassType)
+    @relay.connection(NonNodeSubclassType)
     def some_connection(self) -> Iterable[str]:
         ...
 ```
@@ -47,10 +48,11 @@ For example:
 from typing import Iterable
 
 import strawberry
+from strawberry import relay
 
 
 @strawberry.type
-class NodeSubclassType(strawberry.relay.Node):
+class NodeSubclassType(relay.Node):
     ...
 
 
@@ -60,7 +62,7 @@ def node_converter(node_id: str) -> NodeSubclassType:
 
 @strawberry.type
 class Query:
-    @strawberry.relay.connection(node_converter=node_converter)
+    @relay.connection(node_converter=node_converter)
     def some_connection(self) -> Iterable[str]:
         ...
 ```

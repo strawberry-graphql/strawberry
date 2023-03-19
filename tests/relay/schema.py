@@ -1,3 +1,4 @@
+import dataclasses
 from collections import namedtuple
 from typing import (
     Any,
@@ -9,16 +10,18 @@ from typing import (
     Iterator,
     List,
     Optional,
+    cast,
 )
 
 import strawberry
+from strawberry import relay
 from strawberry.relay.utils import to_base64
 from strawberry.types import Info
 
 
 @strawberry.type
-class Fruit(strawberry.relay.Node):
-    id: strawberry.relay.NodeID[int]
+class Fruit(relay.Node):
+    id: relay.NodeID[int]
     name: str
     color: str
 
@@ -35,10 +38,23 @@ class Fruit(strawberry.relay.Node):
 
         return fruits.values()
 
+    @classmethod
+    def is_type_of(cls, obj, _info) -> bool:
+        # This is here to support FruitConcrete, which is mimicing an integration
+        # object which would return an object alike Fruit (e.g. the django integration)
+        return isinstance(obj, (cls, FruitConcrete))
+
+
+@dataclasses.dataclass
+class FruitConcrete:
+    id: int
+    name: str
+    color: str
+
 
 @strawberry.type
-class FruitAsync(strawberry.relay.Node):
-    id: strawberry.relay.NodeID[int]
+class FruitAsync(relay.Node):
+    id: relay.NodeID[int]
     name: str
     color: str
 
@@ -60,7 +76,7 @@ class FruitAsync(strawberry.relay.Node):
 
 
 @strawberry.type
-class FruitCustomPaginationConnection(strawberry.relay.Connection[Fruit]):
+class FruitCustomPaginationConnection(relay.Connection[Fruit]):
     @strawberry.field
     def something(self) -> str:
         return "foobar"
@@ -79,7 +95,7 @@ class FruitCustomPaginationConnection(strawberry.relay.Connection[Fruit]):
         **kwargs: Any,
     ):
         edges_mapping = {
-            to_base64("fruit_name", n.name): strawberry.relay.Edge(
+            to_base64("fruit_name", n.name): relay.Edge(
                 node=n,
                 cursor=to_base64("fruit_name", n.name),
             )
@@ -105,7 +121,7 @@ class FruitCustomPaginationConnection(strawberry.relay.Connection[Fruit]):
 
         return cls(
             edges=edges,
-            page_info=strawberry.relay.PageInfo(
+            page_info=relay.PageInfo(
                 start_cursor=edges[0].cursor if edges else None,
                 end_cursor=edges[-1].cursor if edges else None,
                 has_previous_page=first_edge is not None
@@ -154,15 +170,35 @@ def fruit_converter_forward_ref(fruit_alike: FruitAlike) -> "Fruit":
 
 @strawberry.type
 class Query:
-    node: strawberry.relay.Node
-    nodes: List[strawberry.relay.Node]
-    node_optional: Optional[strawberry.relay.Node]
-    nodes_optional: List[Optional[strawberry.relay.Node]]
-    fruits: strawberry.relay.Connection[Fruit]
-    fruits_async: strawberry.relay.Connection[FruitAsync]
+    node: relay.Node
+    nodes: List[relay.Node]
+    node_optional: Optional[relay.Node]
+    nodes_optional: List[Optional[relay.Node]]
+    fruits: relay.Connection[Fruit]
+    fruits_async: relay.Connection[FruitAsync]
     fruits_custom_pagination: FruitCustomPaginationConnection
 
-    @strawberry.relay.connection
+    @relay.connection
+    def fruits_concrete_resolver(
+        self,
+        info: Info,
+        name_endswith: Optional[str] = None,
+    ) -> List[Fruit]:
+        # This is mimicing integrations, like Django
+        return [
+            cast(
+                Fruit,
+                FruitConcrete(
+                    id=f.id,
+                    name=f.name,
+                    color=f.color,
+                ),
+            )
+            for f in fruits.values()
+            if name_endswith is None or f.name.endswith(name_endswith)
+        ]
+
+    @relay.connection
     def fruits_custom_resolver(
         self,
         info: Info,
@@ -174,7 +210,7 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith)
         ]
 
-    @strawberry.relay.connection(node_converter=fruit_converter)
+    @relay.connection(node_converter=fruit_converter)
     def fruits_custom_resolver_with_node_converter(
         self,
         info: Info,
@@ -186,7 +222,7 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith)
         ]
 
-    @strawberry.relay.connection(node_converter=fruit_converter_forward_ref)
+    @relay.connection(node_converter=fruit_converter_forward_ref)
     def fruits_custom_resolver_with_node_converter_forward_ref(
         self,
         info: Info,
@@ -198,7 +234,7 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith)
         ]
 
-    @strawberry.relay.connection
+    @relay.connection
     def fruits_custom_resolver_iterator(
         self,
         info: Info,
@@ -208,7 +244,7 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith):
                 yield f
 
-    @strawberry.relay.connection
+    @relay.connection
     def fruits_custom_resolver_iterable(
         self,
         info: Info,
@@ -218,7 +254,7 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith):
                 yield f
 
-    @strawberry.relay.connection
+    @relay.connection
     def fruits_custom_resolver_generator(
         self,
         info: Info,
@@ -228,7 +264,7 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith):
                 yield f
 
-    @strawberry.relay.connection
+    @relay.connection
     async def fruits_custom_resolver_async_iterable(
         self,
         info: Info,
@@ -238,7 +274,7 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith):
                 yield f
 
-    @strawberry.relay.connection
+    @relay.connection
     async def fruits_custom_resolver_async_iterator(
         self,
         info: Info,
@@ -248,7 +284,7 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith):
                 yield f
 
-    @strawberry.relay.connection
+    @relay.connection
     async def fruits_custom_resolver_async_generator(
         self,
         info: Info,

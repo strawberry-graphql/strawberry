@@ -222,7 +222,7 @@ class FruitCustomPaginationConnection(relay.Connection[Fruit]):
         # Note that this is a showcase implementation and is far from
         # being optimal performance wise
         edges_mapping = {
-            relay.to_base64("fruit_name", n.name): strawberry.relay.Edge(
+            relay.to_base64("fruit_name", n.name): relay.Edge(
                 node=n,
                 cursor=relay.to_base64("fruit_name", n.name),
             )
@@ -279,7 +279,7 @@ when defining the field.
 
 We can define custom resolvers for the `Connection` as a way to pre-filter
 the results. All that needs to be done is to decorate the resolver with
-`@strawberry.relay.connection` and return an `Iterator`/`AsyncIterator` of that
+`@relay.connection` and return an `Iterator`/`AsyncIterator` of that
 given `Node` type in it. For example, suppose we want to return the pagination
 of all fruits whose name starts with a given string:
 
