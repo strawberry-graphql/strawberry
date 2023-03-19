@@ -38,7 +38,7 @@ from strawberry import relay
 
 @strawberry.type
 class Fruit(relay.Node):
-    code: relay.NodeID[str]
+    code: relay.NodeID[int]
     name: str
     weight: float
 
@@ -51,7 +51,9 @@ class Fruit(relay.Node):
         required: bool = False,
     ):
         if node_ids is not None:
-            return [fruits[nid] if required else fruits.get(nid) for nid in node_ids]
+            return [
+                fruits[int(nid)] if required else fruits.get(nid) for nid in node_ids
+            ]
 
         return fruits.values()
 
