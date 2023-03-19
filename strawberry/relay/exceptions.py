@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Optional, Type, cast
+from typing import TYPE_CHECKING, Callable, Optional, Type, Union, cast
 
 from strawberry.exceptions.exception import StrawberryException
 from strawberry.exceptions.utils.source_finder import SourceFinder
@@ -40,8 +40,14 @@ class NodeIDAnnotationError(StrawberryException):
 
 
 class RelayWrongAnnotationError(StrawberryException):
-    def __init__(self, field_name: str, resolver: StrawberryResolver):
-        self.resolver = resolver.wrapped_func
+    def __init__(self, field_name: str, resolver: Union[StrawberryResolver, Callable]):
+        from strawberry.types.fields.resolver import StrawberryResolver
+
+        self.function = (
+            resolver.wrapped_func
+            if isinstance(resolver, StrawberryResolver)
+            else resolver
+        )
         self.field_name = field_name
 
         self.message = (
@@ -65,16 +71,22 @@ class RelayWrongAnnotationError(StrawberryException):
 
     @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
-        if self.resolver is None:
+        if self.function is None:
             return None  # pragma: no cover
 
         source_finder = SourceFinder()
-        return source_finder.find_function_from_object(cast(Callable, self.resolver))
+        return source_finder.find_function_from_object(cast(Callable, self.function))
 
 
 class RelayWrongNodeResolverAnnotationError(StrawberryException):
-    def __init__(self, field_name: str, resolver: StrawberryResolver):
-        self.resolver = resolver.wrapped_func
+    def __init__(self, field_name: str, resolver: Union[StrawberryResolver, Callable]):
+        from strawberry.types.fields.resolver import StrawberryResolver
+
+        self.function = (
+            resolver.wrapped_func
+            if isinstance(resolver, StrawberryResolver)
+            else resolver
+        )
         self.field_name = field_name
 
         self.message = (
@@ -97,8 +109,8 @@ class RelayWrongNodeResolverAnnotationError(StrawberryException):
 
     @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
-        if self.resolver is None:
+        if self.function is None:
             return None  # pragma: no cover
 
         source_finder = SourceFinder()
-        return source_finder.find_function_from_object(cast(Callable, self.resolver))
+        return source_finder.find_function_from_object(cast(Callable, self.function))

@@ -4,7 +4,7 @@ import strawberry
 from strawberry import relay
 from strawberry.relay.utils import to_base64
 
-from .schema import schema
+from .schema import FruitAsync, schema
 
 
 def test_type_uses_node_field():
@@ -13,10 +13,12 @@ def test_type_uses_node_field():
         node: relay.Node
 
     node_field = Query._type_definition.get_field("node")  # type: ignore
+    sentinel = object()
+    node_field.node_converter = sentinel
     assert isinstance(node_field, relay.NodeField)
 
     copied = node_field.copy_with({})
-    assert copied.default_args == node_field.default_args
+    assert copied.node_converter is sentinel
 
 
 def test_type_uses_connection_field():
@@ -29,10 +31,12 @@ def test_type_uses_connection_field():
         connection: relay.Connection
 
     connection_field = Query._type_definition.get_field("connection")  # type: ignore
+    sentinel = object()
+    connection_field.node_converter = sentinel
     assert isinstance(connection_field, relay.ConnectionField)
 
     copied = connection_field.copy_with({relay.NodeType: Fruit})
-    assert copied.default_args == connection_field.default_args
+    assert copied.node_converter is sentinel
 
 
 def test_query_node():
@@ -351,8 +355,10 @@ query TestQuery (
 
 attrs = [
     "fruits",
+    "fruitsLazy",
     "fruitsConcreteResolver",
     "fruitsCustomResolver",
+    "fruitsCustomResolverLazy",
     "fruitsCustomResolverWithNodeConverter",
     "fruitsCustomResolverWithNodeConverterForwardRef",
     "fruitsCustomResolverIterator",
@@ -361,6 +367,7 @@ attrs = [
 ]
 async_attrs = [
     *attrs,
+    "fruitsAsync",
     "fruitsCustomResolverAsyncIterator",
     "fruitsCustomResolverAsyncIterable",
     "fruitsCustomResolverAsyncGenerator",
@@ -429,7 +436,9 @@ def test_query_connection(query_attr: str):
 
 
 @pytest.mark.parametrize("query_attr", async_attrs)
-async def test_query_connection_async(query_attr: str):
+async def test_query_connection_async(mocker, query_attr: str):
+    mocker.patch.object(FruitAsync, "resolve_typename", return_value="Fruit")
+
     result = await schema.execute(
         fruits_query.format(query_attr),
         variable_values={},
@@ -526,9 +535,89 @@ def test_query_connection_filtering_first(query_attr: str):
     }
 
 
+@pytest.mark.parametrize("query_attr", async_attrs)
+async def test_query_connection_filtering_first_async(mocker, query_attr: str):
+    mocker.patch.object(FruitAsync, "resolve_typename", return_value="Fruit")
+
+    result = await schema.execute(
+        fruits_query.format(query_attr),
+        variable_values={"first": 2},
+    )
+    assert result.errors is None
+    assert result.data == {
+        query_attr: {
+            "edges": [
+                {
+                    "cursor": "YXJyYXljb25uZWN0aW9uOjA=",
+                    "node": {
+                        "id": to_base64("Fruit", 1),
+                        "color": "yellow",
+                        "name": "Banana",
+                    },
+                },
+                {
+                    "cursor": "YXJyYXljb25uZWN0aW9uOjE=",
+                    "node": {
+                        "id": to_base64("Fruit", 2),
+                        "color": "red",
+                        "name": "Apple",
+                    },
+                },
+            ],
+            "pageInfo": {
+                "hasNextPage": True,
+                "hasPreviousPage": False,
+                "startCursor": to_base64("arrayconnection", "0"),
+                "endCursor": to_base64("arrayconnection", "1"),
+            },
+        }
+    }
+
+
 @pytest.mark.parametrize("query_attr", attrs)
 def test_query_connection_filtering_first_with_after(query_attr: str):
     result = schema.execute_sync(
+        fruits_query.format(query_attr),
+        variable_values={"first": 2, "after": to_base64("arrayconnection", "1")},
+    )
+    assert result.errors is None
+    assert result.data == {
+        query_attr: {
+            "edges": [
+                {
+                    "cursor": "YXJyYXljb25uZWN0aW9uOjI=",
+                    "node": {
+                        "id": to_base64("Fruit", 3),
+                        "color": "yellow",
+                        "name": "Pineapple",
+                    },
+                },
+                {
+                    "cursor": "YXJyYXljb25uZWN0aW9uOjM=",
+                    "node": {
+                        "id": to_base64("Fruit", 4),
+                        "color": "purple",
+                        "name": "Grape",
+                    },
+                },
+            ],
+            "pageInfo": {
+                "hasNextPage": True,
+                "hasPreviousPage": True,
+                "startCursor": to_base64("arrayconnection", "2"),
+                "endCursor": to_base64("arrayconnection", "3"),
+            },
+        }
+    }
+
+
+@pytest.mark.parametrize("query_attr", async_attrs)
+async def test_query_connection_filtering_first_with_after_async(
+    mocker, query_attr: str
+):
+    mocker.patch.object(FruitAsync, "resolve_typename", return_value="Fruit")
+
+    result = await schema.execute(
         fruits_query.format(query_attr),
         variable_values={"first": 2, "after": to_base64("arrayconnection", "1")},
     )
@@ -600,9 +689,151 @@ def test_query_connection_filtering_last(query_attr: str):
     }
 
 
+@pytest.mark.parametrize("query_attr", async_attrs)
+async def test_query_connection_filtering_last_async(mocker, query_attr: str):
+    mocker.patch.object(FruitAsync, "resolve_typename", return_value="Fruit")
+
+    result = await schema.execute(
+        fruits_query.format(query_attr),
+        variable_values={"last": 2},
+    )
+    assert result.errors is None
+    assert result.data == {
+        query_attr: {
+            "edges": [
+                {
+                    "cursor": "YXJyYXljb25uZWN0aW9uOjM=",
+                    "node": {
+                        "id": to_base64("Fruit", 4),
+                        "color": "purple",
+                        "name": "Grape",
+                    },
+                },
+                {
+                    "cursor": "YXJyYXljb25uZWN0aW9uOjQ=",
+                    "node": {
+                        "id": to_base64("Fruit", 5),
+                        "color": "orange",
+                        "name": "Orange",
+                    },
+                },
+            ],
+            "pageInfo": {
+                "hasNextPage": False,
+                "hasPreviousPage": True,
+                "startCursor": to_base64("arrayconnection", "3"),
+                "endCursor": to_base64("arrayconnection", "4"),
+            },
+        }
+    }
+
+
+@pytest.mark.parametrize("query_attr", attrs)
+def test_query_connection_filtering_first_with_before(query_attr: str):
+    result = schema.execute_sync(
+        fruits_query.format(query_attr),
+        variable_values={"first": 1, "before": to_base64("arrayconnection", "3")},
+    )
+    assert result.errors is None
+    assert result.data == {
+        query_attr: {
+            "edges": [
+                {
+                    "cursor": "YXJyYXljb25uZWN0aW9uOjI=",
+                    "node": {
+                        "id": to_base64("Fruit", 3),
+                        "color": "yellow",
+                        "name": "Pineapple",
+                    },
+                },
+            ],
+            "pageInfo": {
+                "hasNextPage": True,
+                "hasPreviousPage": True,
+                "startCursor": to_base64("arrayconnection", "2"),
+                "endCursor": to_base64("arrayconnection", "2"),
+            },
+        }
+    }
+
+
+@pytest.mark.parametrize("query_attr", async_attrs)
+async def test_query_connection_filtering_first_with_before_async(
+    mocker, query_attr: str
+):
+    mocker.patch.object(FruitAsync, "resolve_typename", return_value="Fruit")
+
+    result = await schema.execute(
+        fruits_query.format(query_attr),
+        variable_values={"first": 1, "before": to_base64("arrayconnection", "3")},
+    )
+    assert result.errors is None
+    assert result.data == {
+        query_attr: {
+            "edges": [
+                {
+                    "cursor": "YXJyYXljb25uZWN0aW9uOjI=",
+                    "node": {
+                        "id": to_base64("Fruit", 3),
+                        "color": "yellow",
+                        "name": "Pineapple",
+                    },
+                },
+            ],
+            "pageInfo": {
+                "hasNextPage": True,
+                "hasPreviousPage": True,
+                "startCursor": to_base64("arrayconnection", "2"),
+                "endCursor": to_base64("arrayconnection", "2"),
+            },
+        }
+    }
+
+
 @pytest.mark.parametrize("query_attr", attrs)
 def test_query_connection_filtering_last_with_before(query_attr: str):
     result = schema.execute_sync(
+        fruits_query.format(query_attr),
+        variable_values={"last": 2, "before": to_base64("arrayconnection", "4")},
+    )
+    assert result.errors is None
+    assert result.data == {
+        query_attr: {
+            "edges": [
+                {
+                    "cursor": "YXJyYXljb25uZWN0aW9uOjI=",
+                    "node": {
+                        "id": to_base64("Fruit", 3),
+                        "color": "yellow",
+                        "name": "Pineapple",
+                    },
+                },
+                {
+                    "cursor": "YXJyYXljb25uZWN0aW9uOjM=",
+                    "node": {
+                        "id": to_base64("Fruit", 4),
+                        "color": "purple",
+                        "name": "Grape",
+                    },
+                },
+            ],
+            "pageInfo": {
+                "hasNextPage": True,
+                "hasPreviousPage": True,
+                "startCursor": to_base64("arrayconnection", "2"),
+                "endCursor": to_base64("arrayconnection", "3"),
+            },
+        }
+    }
+
+
+@pytest.mark.parametrize("query_attr", async_attrs)
+async def test_query_connection_filtering_last_with_before_async(
+    mocker, query_attr: str
+):
+    mocker.patch.object(FruitAsync, "resolve_typename", return_value="Fruit")
+
+    result = await schema.execute(
         fruits_query.format(query_attr),
         variable_values={"last": 2, "before": to_base64("arrayconnection", "4")},
     )
@@ -842,7 +1073,7 @@ def test_query_custom_connection_filtering_last():
     }
 
 
-def test_query_custom_connection_filtering_first_with_before():
+def test_query_custom_connection_filtering_last_with_before():
     result = schema.execute_sync(
         fruits_custom_query,
         variable_values={

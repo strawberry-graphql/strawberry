@@ -12,6 +12,7 @@ from typing import (
     Optional,
     cast,
 )
+from typing_extensions import Annotated, Self
 
 import strawberry
 from strawberry import relay
@@ -73,6 +74,10 @@ class FruitAsync(relay.Node):
             ]
 
         return fruits_async.values()
+
+    @classmethod
+    async def resolve_id(cls, root: Self, *, info: Info) -> str:
+        return str(root.id)
 
 
 @strawberry.type
@@ -171,10 +176,13 @@ def fruit_converter_forward_ref(fruit_alike: FruitAlike) -> "Fruit":
 @strawberry.type
 class Query:
     node: relay.Node
-    nodes: List[relay.Node]
+    nodes: List[relay.Node] = relay.node()
     node_optional: Optional[relay.Node]
     nodes_optional: List[Optional[relay.Node]]
     fruits: relay.Connection[Fruit]
+    fruits_lazy: relay.Connection[
+        Annotated["Fruit", strawberry.lazy("tests.relay.schema")]
+    ]
     fruits_async: relay.Connection[FruitAsync]
     fruits_custom_pagination: FruitCustomPaginationConnection
 
@@ -204,6 +212,18 @@ class Query:
         info: Info,
         name_endswith: Optional[str] = None,
     ) -> List[Fruit]:
+        return [
+            f
+            for f in fruits.values()
+            if name_endswith is None or f.name.endswith(name_endswith)
+        ]
+
+    @relay.connection
+    def fruits_custom_resolver_lazy(
+        self,
+        info: Info,
+        name_endswith: Optional[str] = None,
+    ) -> List[Annotated["Fruit", strawberry.lazy("tests.relay.schema")]]:
         return [
             f
             for f in fruits.values()

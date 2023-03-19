@@ -84,6 +84,26 @@ def test_raises_error_on_connection_with_wrong_annotation(annotation):
     ),
 )
 @pytest.mark.parametrize("annotation", [int, object, NonNodeType])
+def test_raises_error_on_connection_with_node_resolver_missing_annotation(annotation):
+    def node_converter(n: Fruit):
+        ...
+
+    @strawberry.type
+    class Query:
+        @relay.connection(node_converter=node_converter)  # type: ignore
+        def custom_resolver(self) -> List[Fruit]:
+            ...
+
+
+@pytest.mark.raises_strawberry_exception(
+    RelayWrongNodeResolverAnnotationError,
+    match=(
+        'Unable to determine the connection type of field "custom_resolver". '
+        "The `node_resolver` function should be annotated with a return value "
+        "of `<NodeType>`"
+    ),
+)
+@pytest.mark.parametrize("annotation", [int, object, NonNodeType])
 def test_raises_error_on_connection_with_wrong_node_resolver_annotation(annotation):
     def node_converter(n: Fruit) -> annotation:
         ...

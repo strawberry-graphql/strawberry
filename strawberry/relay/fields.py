@@ -33,7 +33,7 @@ from typing_extensions import Literal, Self, get_args, get_origin, get_type_hint
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions.missing_return_annotation import MissingReturnAnnotationError
-from strawberry.field import _RESOLVER_TYPE, StrawberryField
+from strawberry.field import _RESOLVER_TYPE, UNRESOLVED, StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.fields.resolver import StrawberryResolver
@@ -58,8 +58,6 @@ _T = TypeVar("_T")
 class RelayField(StrawberryField):
     """Base relay field, containing utilities for both Node and Connection fields."""
 
-    default_args: Dict[str, StrawberryArgument]
-
     def __init__(
         self,
         *args,
@@ -70,9 +68,13 @@ class RelayField(StrawberryField):
         super().__init__(*args, **kwargs)
 
     @property
+    def default_arguments(self) -> Dict[str, StrawberryArgument]:
+        return {}
+
+    @property
     def arguments(self) -> List[StrawberryArgument]:
         args = {
-            **self.default_args,
+            **self.default_arguments,
             **{arg.python_name: arg for arg in super().arguments},
         }
         return list(args.values())
@@ -102,7 +104,7 @@ class RelayField(StrawberryField):
         type_var_map: Mapping[TypeVar, Union[StrawberryType, type]],
     ) -> Self:
         retval = super().copy_with(type_var_map)
-        retval.default_args = self.default_args
+        retval.node_converter = self.node_converter
         return retval
 
 
@@ -114,30 +116,37 @@ class NodeField(RelayField):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        if not self.base_resolver and self.is_list:
-            self.default_args = {
-                "ids": StrawberryArgument(
-                    python_name="ids",
-                    graphql_name=None,
-                    type_annotation=StrawberryAnnotation(List[GlobalID]),
-                    description="The IDs of the objects.",
-                ),
-            }
-        elif not self.base_resolver:
-            self.default_args = {
-                "id": StrawberryArgument(
-                    python_name="id",
-                    graphql_name=None,
-                    type_annotation=StrawberryAnnotation(GlobalID),
-                    description="The ID of the object.",
-                ),
-            }
-
     def __call__(self, resolver):
         raise NotImplementedError
+
+    @property
+    def default_arguments(self) -> Dict[str, StrawberryArgument]:
+        default_args = super().default_arguments.copy()
+
+        if not self.base_resolver and self.is_list:
+            default_args.update(
+                {
+                    "ids": StrawberryArgument(
+                        python_name="ids",
+                        graphql_name=None,
+                        type_annotation=StrawberryAnnotation(List[GlobalID]),
+                        description="The IDs of the objects.",
+                    ),
+                }
+            )
+        elif not self.base_resolver:
+            default_args.update(
+                {
+                    "id": StrawberryArgument(
+                        python_name="id",
+                        graphql_name=None,
+                        type_annotation=StrawberryAnnotation(GlobalID),
+                        description="The ID of the object.",
+                    ),
+                }
+            )
+
+        return default_args
 
     def get_result(
         self,
@@ -246,55 +255,64 @@ class ConnectionField(RelayField):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.default_args = {
-            "before": StrawberryArgument(
-                python_name="before",
-                graphql_name=None,
-                type_annotation=StrawberryAnnotation(Optional[str]),
-                description=(
-                    "Returns the items in the list that come before the "
-                    "specified cursor."
+    @cached_property
+    def default_arguments(self) -> Dict[str, StrawberryArgument]:
+        default_args = super().default_arguments.copy()
+        default_args.update(
+            {
+                "before": StrawberryArgument(
+                    python_name="before",
+                    graphql_name=None,
+                    type_annotation=StrawberryAnnotation(Optional[str]),
+                    description=(
+                        "Returns the items in the list that come before the "
+                        "specified cursor."
+                    ),
+                    default=None,
                 ),
-                default=None,
-            ),
-            "after": StrawberryArgument(
-                python_name="after",
-                graphql_name=None,
-                type_annotation=StrawberryAnnotation(Optional[str]),
-                description=(
-                    "Returns the items in the list that come after the "
-                    "specified cursor."
+                "after": StrawberryArgument(
+                    python_name="after",
+                    graphql_name=None,
+                    type_annotation=StrawberryAnnotation(Optional[str]),
+                    description=(
+                        "Returns the items in the list that come after the "
+                        "specified cursor."
+                    ),
+                    default=None,
                 ),
-                default=None,
-            ),
-            "first": StrawberryArgument(
-                python_name="first",
-                graphql_name=None,
-                type_annotation=StrawberryAnnotation(Optional[int]),
-                description="Returns the first n items from the list.",
-                default=None,
-            ),
-            "last": StrawberryArgument(
-                python_name="last",
-                graphql_name=None,
-                type_annotation=StrawberryAnnotation(Optional[int]),
-                description=(
-                    "Returns the items in the list that come after the "
-                    "specified cursor."
+                "first": StrawberryArgument(
+                    python_name="first",
+                    graphql_name=None,
+                    type_annotation=StrawberryAnnotation(Optional[int]),
+                    description="Returns the first n items from the list.",
+                    default=None,
                 ),
-                default=None,
-            ),
-        }
+                "last": StrawberryArgument(
+                    python_name="last",
+                    graphql_name=None,
+                    type_annotation=StrawberryAnnotation(Optional[int]),
+                    description=(
+                        "Returns the items in the list that come after the "
+                        "specified cursor."
+                    ),
+                    default=None,
+                ),
+            }
+        )
+        return default_args
 
-    def __call__(self, resolver: _RESOLVER_TYPE):
-        retval = super().__call__(resolver)
-        assert self.base_resolver
+    @property  # type: ignore
+    def type(self) -> Union[StrawberryType, type, Literal[UNRESOLVED]]:  # type: ignore
+        if self.base_resolver is None:
+            return super().type
 
-        field_name = cast(Callable, self.base_resolver.wrapped_func).__name__
+        if self.type_annotation is not None:
+            return self.type_annotation.resolve()
+
+        resolver = cast(Callable, self.base_resolver.wrapped_func)
+        field_name = resolver.__name__
         namespace = sys.modules[resolver.__module__].__dict__
+
         resolved = get_type_hints(cast(Type, resolver), namespace).get("return")
         if resolved is None:
             raise MissingReturnAnnotationError(
@@ -303,58 +321,60 @@ class ConnectionField(RelayField):
             )
 
         origin = get_origin(resolved)
-
-        is_connection = (
-            origin and isinstance(origin, type) and issubclass(origin, Connection)
-        )
-        is_iterable = (
-            origin
-            and isinstance(origin, type)
-            and issubclass(origin, (Iterator, AsyncIterator, Iterable, AsyncIterable))
-        )
-        if not is_connection and not is_iterable:
+        if (
+            not origin
+            or not isinstance(origin, type)
+            or not issubclass(
+                origin, (Iterator, AsyncIterator, Iterable, AsyncIterable)
+            )
+        ):
             raise RelayWrongAnnotationError(
                 field_name=field_name,
                 resolver=StrawberryResolver(resolver),
             )
 
-        if is_iterable and not is_connection and self.type_annotation is None:
-            if self.node_converter is not None:
-                ntype = get_type_hints(self.node_converter).get("return")
-                if ntype is None:
-                    raise MissingReturnAnnotationError(
-                        field_name,
-                        resolver=self.base_resolver,
-                    )
-                if not isinstance(ntype, type) or not issubclass(ntype, Node):
-                    raise RelayWrongNodeResolverAnnotationError(
-                        field_name,
-                        resolver=self.base_resolver,
-                    )
-            else:
-                ntype = get_args(resolved)[0]
-                if not issubclass(ntype, Node):
-                    raise RelayWrongAnnotationError(
-                        field_name,
-                        resolver=StrawberryResolver(resolver),
-                    )
+        if self.node_converter is not None:
+            ntype = get_type_hints(self.node_converter).get("return")
+            if ntype is None:
+                raise RelayWrongNodeResolverAnnotationError(
+                    field_name,
+                    resolver=self.base_resolver,
+                )
+            if not isinstance(ntype, type) or not issubclass(ntype, Node):
+                raise RelayWrongNodeResolverAnnotationError(
+                    field_name,
+                    resolver=self.base_resolver,
+                )
+        else:
+            ntype = get_args(resolved)[0]
+            if not issubclass(ntype, Node):
+                raise RelayWrongAnnotationError(
+                    field_name,
+                    resolver=resolver,
+                )
 
-            self.type_annotation = StrawberryAnnotation(
-                Connection[ntype],  # type: ignore[valid-type]
-                namespace=namespace,
-            )
+        self.type_annotation = StrawberryAnnotation(
+            Connection[ntype],  # type: ignore[valid-type]
+            namespace=namespace,
+        )
 
-        return retval
+        return self.type_annotation.resolve()
+
+    @type.setter
+    def type(self, type_: Any) -> None:
+        # Only set the type if we don't have a base_resolver. Otherwise we will
+        # retrieve it from there
+        # Also, using hasattr here because the dataclass init will be called
+        # before _base_resolver is set on StrawberryField
+        if (
+            hasattr(self, "_base_resolver") and self.base_resolver is None
+        ):  # pragma: no cover
+            StrawberryField.type.fset(self, type_)
 
     @cached_property
     def resolver_args(self) -> Set[str]:
-        resolver = self.base_resolver
-        if not resolver:
-            return set()
-
-        if isinstance(resolver, StrawberryResolver):
-            resolver = resolver.wrapped_func  # type: ignore[assignment]
-
+        assert self.base_resolver is not None
+        resolver = self.base_resolver.wrapped_func
         return set(inspect.signature(cast(Callable, resolver)).parameters.keys())
 
     def get_result(
@@ -399,14 +419,8 @@ class ConnectionField(RelayField):
         args: List[Any],
         kwargs: Dict[str, Any],
         *,
-        nodes: AwaitableOrValue[
-            Optional[Union[Iterable[Node], Connection[Node]]]
-        ] = None,
+        nodes: AwaitableOrValue[Optional[Iterable[Node]]] = None,
     ):
-        # The base_resolver might have resolved to a Connection directly
-        if isinstance(nodes, Connection):
-            return nodes
-
         return_type = cast(Connection[Node], info.return_type)
         type_def = return_type._type_definition  # type:ignore
         assert isinstance(type_def, TypeDefinition)
