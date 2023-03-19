@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.158.1"
+version = "0.165.0"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -40,10 +40,10 @@ graphql-core = "~3.2.0"
 typing_extensions = ">=3.7.4,<5.0.0"
 python-dateutil = "^2.7.0"
 
-starlette = {version = ">=0.13.6", optional = true}
+starlette = {version = ">=0.18.0", optional = true}
 click = {version = ">=7.0,<9.0", optional = true}
 pygments = {version = "^2.3", optional = true}
-uvicorn = {version = ">=0.11.6,<0.21.0", optional = true}
+uvicorn = {version = ">=0.11.6,<0.22.0", optional = true}
 Django = {version = ">=3.2", optional = true}
 asgiref = {version = "^3.2", optional = true}
 flask = {version = ">=1.1", optional = true}
@@ -57,6 +57,7 @@ aiohttp = {version = "^3.7.4.post0", optional = true}
 fastapi = {version = ">=0.65.2", optional = true}
 channels = {version = ">=3.0.5", optional = true}
 "backports.cached-property" = {version = "^1.0.2", python = "<3.8"}
+astunparse = {version = "^1.6.3", python = "<3.9"}
 libcst = {version = ">=0.4.7", optional = true}
 rich = {version = ">=12.0.0", optional = true}
 
@@ -68,7 +69,7 @@ pytest = "^7.2"
 pytest-emoji = "^0.2.0"
 black = "^22"
 pytest-asyncio = "^0.20.3"
-mypy = "1.0.0"
+mypy = "1.1.1"
 pytest-mypy-plugins = "^1.10"
 pytest-mock = "^3.10"
 pytest-django = {version = "^4.5"}
@@ -314,6 +315,7 @@ src = ["strawberry", "tests"]
 "tests/test_printer/test_schema_directives.py" = ["E501"]
 "tests/*" = ["RSE102", "SLF001", "TCH001", "TCH002", "TCH003"]
 "strawberry/extensions/tracing/__init__.py" = ["TCH004"]
+"tests/http/clients/__init__.py" = ["F401"]
 
 [tool.ruff.isort]
 known-first-party = ["strawberry"]

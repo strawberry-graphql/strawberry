@@ -6,7 +6,7 @@ import pytest
 
 import strawberry
 from strawberry.directive import DirectiveLocation, DirectiveValue
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 from strawberry.schema.config import StrawberryConfig
 from strawberry.types.info import Info
 from strawberry.utils.await_maybe import await_maybe
@@ -329,7 +329,7 @@ def test_runs_directives_with_extensions():
     def uppercase(value: str):
         return value.upper()
 
-    class ExampleExtension(Extension):
+    class ExampleExtension(SchemaExtension):
         def resolve(self, _next, root, info, *args, **kwargs):
             return _next(root, info, *args, **kwargs)
 
@@ -368,7 +368,7 @@ async def test_runs_directives_with_extensions_async():
     def uppercase(value: str):
         return value.upper()
 
-    class ExampleExtension(Extension):
+    class ExampleExtension(SchemaExtension):
         async def resolve(self, _next, root, info, *args, **kwargs):
             return await await_maybe(_next(root, info, *args, **kwargs))
 
@@ -572,9 +572,6 @@ def test_named_based_directive_value_is_deprecated():
         strawberry.Schema(query=Query, directives=[deprecated_value])
 
 
-@pytest.mark.xfail(
-    reason="List arguments are not yet supported", raises=AttributeError, strict=True
-)
 @pytest.mark.asyncio
 async def test_directive_list_argument():
     @strawberry.type
@@ -594,8 +591,8 @@ async def test_directive_list_argument():
         'query { greeting @appendNames(names: ["foo", "bar"])}'
     )
 
-    assert result.errors
-    raise result.errors[0].original_error  # type: ignore
+    assert result.errors is None
+    assert result.data["greeting"] == "Hi foo, bar"
 
 
 def test_directives_with_custom_types():

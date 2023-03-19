@@ -6,7 +6,7 @@ from datetime import datetime
 from inspect import isawaitable
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 from strawberry.extensions.utils import get_path_from_info
 
 from .utils import should_skip_tracing
@@ -76,29 +76,26 @@ class ApolloTracingStats:
         }
 
 
-class ApolloTracingExtension(Extension):
+class ApolloTracingExtension(SchemaExtension):
     def __init__(self, execution_context: ExecutionContext):
         self._resolver_stats: List[ApolloResolverStats] = []
         self.execution_context = execution_context
 
-    def on_request_start(self):
+    def on_operation(self):
         self.start_timestamp = self.now()
         self.start_time = datetime.utcnow()
-
-    def on_request_end(self):
+        yield
         self.end_timestamp = self.now()
         self.end_time = datetime.utcnow()
 
-    def on_parsing_start(self):
+    def on_parse(self):
         self._start_parsing = self.now()
-
-    def on_parsing_end(self):
+        yield
         self._end_parsing = self.now()
 
-    def on_validation_start(self):
+    def on_validate(self):
         self._start_validation = self.now()
-
-    def on_validation_end(self):
+        yield
         self._end_validation = self.now()
 
     def now(self) -> int:
