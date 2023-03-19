@@ -255,7 +255,7 @@ class ConnectionField(RelayField):
 
     """
 
-    @cached_property
+    @property
     def default_arguments(self) -> Dict[str, StrawberryArgument]:
         default_args = super().default_arguments.copy()
         default_args.update(
