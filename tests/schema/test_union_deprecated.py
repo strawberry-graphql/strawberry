@@ -7,8 +7,6 @@ import pytest
 
 import strawberry
 
-# TODO: check for deprecations
-
 
 def test_named_union():
     @strawberry.type
@@ -19,7 +17,8 @@ def test_named_union():
     class B:
         b: int
 
-    Result = strawberry.union("Result", (A, B))
+    with pytest.deprecated_call():
+        Result = strawberry.union("Result", (A, B))
 
     @strawberry.type
     class Query:
@@ -58,7 +57,8 @@ def test_named_union_description():
     class B:
         b: int
 
-    Result = strawberry.union("Result", (A, B), description="Example Result")
+    with pytest.deprecated_call():
+        Result = strawberry.union("Result", (A, B), description="Example Result")
 
     @strawberry.type
     class Query:
@@ -97,7 +97,8 @@ def test_can_use_union_in_optional():
     class B:
         b: int
 
-    Result = strawberry.union("Result", (A, B))
+    with pytest.deprecated_call():
+        Result = strawberry.union("Result", (A, B))
 
     @strawberry.type
     class Query:
@@ -135,7 +136,8 @@ def test_union_used_multiple_times():
     class B:
         b: int
 
-    MyUnion = strawberry.union("MyUnion", types=(A, B))
+    with pytest.deprecated_call():
+        MyUnion = strawberry.union("MyUnion", types=(A, B))
 
     @strawberry.type
     class Query:
@@ -180,7 +182,8 @@ def test_union_explicit_type_resolution():
     class B:
         b: int
 
-    MyUnion = strawberry.union("MyUnion", types=(A, B))
+    with pytest.deprecated_call():
+        MyUnion = strawberry.union("MyUnion", types=(A, B))
 
     @strawberry.type
     class Query:
@@ -215,7 +218,8 @@ def test_union_optional_with_or_operator():
     class Dog:
         name: str
 
-    animal_union = strawberry.union("Animal", (Cat, Dog))
+    with pytest.deprecated_call():
+        animal_union = strawberry.union("Animal", (Cat, Dog))
 
     @strawberry.type
     class Query:

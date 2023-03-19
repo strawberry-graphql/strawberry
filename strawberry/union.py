@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import warnings
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -251,6 +252,15 @@ def union(
         return StrawberryUnion(
             name=name, description=description, directives=directives
         )
+
+    warnings.warn(
+        (
+            "Passing types to `strawberry.union` is deprecated. Please use"
+            'Annotated[Union[A, B], strawberry.union("Name")] instead'
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     # Validate types
     if not types:
