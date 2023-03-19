@@ -12,14 +12,12 @@ from typing import (
     Awaitable,
     Callable,
     ClassVar,
-    Dict,
     Generic,
     Iterable,
     Iterator,
     List,
     Optional,
     Sequence,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -49,7 +47,6 @@ from .utils import from_base64, to_base64
 
 if TYPE_CHECKING:
     from strawberry.scalars import ID
-    from strawberry.schema.schema import Schema
     from strawberry.types.info import Info
     from strawberry.utils.await_maybe import AwaitableOrValue
 
@@ -92,8 +89,6 @@ class GlobalID:
         https://en.wikipedia.org/wiki/Base64
 
     """
-
-    _nodes_cache: ClassVar[Dict[Tuple[Schema, str], Type[Node]]] = {}
 
     type_name: str
     node_id: str
@@ -147,21 +142,15 @@ class GlobalID:
 
         """
         schema = info.schema
-        # Put the schema in the key so that different schemas can have different types
-        key = (schema, self.type_name)
-        origin = self._nodes_cache.get(key)
+        type_def = info.schema.get_type_by_name(self.type_name)
+        assert isinstance(type_def, TypeDefinition)
 
-        if origin is None:
-            type_def = info.schema.get_type_by_name(self.type_name)
-            assert isinstance(type_def, TypeDefinition)
-            origin = (
-                type_def.origin.resolve_type
-                if isinstance(origin, LazyType)
-                else type_def.origin
-            )
-            assert issubclass(origin, Node)
-            self._nodes_cache[key] = origin
-
+        origin = (
+            type_def.origin.resolve_type
+            if isinstance(type_def.origin, LazyType)
+            else type_def.origin
+        )
+        assert issubclass(origin, Node)
         return origin
 
     @overload
