@@ -306,7 +306,19 @@ class GlobalID:
 
 
 class NodeIDPrivate(StrawberryPrivate):
-    ...
+    """Annotate a type attribute as its id.
+
+    The `Node` interface will automatically create and resolve GlobalIDs
+    based on the field annotated with `NodeIDPrivate`. e.g:
+
+      >>> @strawberry.type
+      ... class Fruit(Node):
+      ...     code: NodeIDPrivate[str]
+
+    In this case, `code` will be used to generate a global ID in the
+    format `Fruit:<code>` and will be exposed as `id: GlobalID!` in the
+    `Fruit` type.
+    """
 
 
 NodeID: TypeAlias = Annotated[_T, NodeIDPrivate()]
@@ -332,6 +344,7 @@ class Node:
             single node id.
 
     Example:
+
         >>> @strawberry.type
         ... class Fruit(Node):
         ...     id: NodeID[int]
