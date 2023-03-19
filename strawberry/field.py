@@ -139,7 +139,7 @@ class StrawberryField(dataclasses.Field):
 
         self.deprecation_reason = deprecation_reason
 
-    def __call__(self, resolver: _RESOLVER_TYPE) -> StrawberryField:
+    def __call__(self, resolver: _RESOLVER_TYPE) -> Self:
         """Add a resolver to the field"""
 
         # Allow for StrawberryResolvers or bare functions to be provided

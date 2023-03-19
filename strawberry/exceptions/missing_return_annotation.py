@@ -19,23 +19,24 @@ class MissingReturnAnnotationError(StrawberryException):
     def __init__(self, field_name: str, resolver: Union[StrawberryResolver, Callable]):
         from strawberry.types.fields.resolver import StrawberryResolver
 
-        self.function = (
-            resolver.wrapped_func
-            if isinstance(resolver, StrawberryResolver)
-            else resolver
-        )
+        if isinstance(resolver, StrawberryResolver):
+            self.function = resolver.wrapped_func
+            resolver_name = resolver.name
+        else:
+            self.function = resolver
+            resolver_name = resolver.__name__
 
         self.message = (
             f'Return annotation missing for field "{field_name}", '
             "did you forget to add it?"
         )
         self.rich_message = (
-            "[bold red]Missing annotation for field " f"`[underline]{resolver.name}[/]`"
+            "[bold red]Missing annotation for field " f"`[underline]{resolver_name}[/]`"
         )
 
         self.suggestion = (
             "To fix this error you can add an annotation, "
-            f"like so [italic]`def {resolver.name}(...) -> str:`"
+            f"like so [italic]`def {resolver_name}(...) -> str:`"
         )
         self.annotation_message = "resolver missing annotation"
 

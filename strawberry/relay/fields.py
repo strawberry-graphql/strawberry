@@ -369,7 +369,7 @@ class ConnectionField(RelayField):
         if (
             hasattr(self, "_base_resolver") and self.base_resolver is None
         ):  # pragma: no cover
-            StrawberryField.type.fset(self, type_)
+            StrawberryField.type.fset(self, type_)  # type: ignore[attr-defined]
 
     @cached_property
     def resolver_args(self) -> Set[str]:
