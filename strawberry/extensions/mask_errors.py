@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Iterator
 
 from graphql.error import GraphQLError
 
@@ -32,7 +32,8 @@ class MaskErrors(SchemaExtension):
             original_error=None,
         )
 
-    def on_request_end(self):
+    def on_operation(self) -> Iterator[None]:
+        yield
         result = self.execution_context.result
         if result and result.errors:
             processed_errors = []
