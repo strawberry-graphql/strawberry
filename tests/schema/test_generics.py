@@ -1128,3 +1128,18 @@ def test_generic_interface():
             "repr": "foo",
         }
     }
+
+
+def test_nested_generics():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Wrapper(Generic[T]):
+        value: T
+
+    @strawberry.type
+    class Query:
+        a: Wrapper[Wrapper[int]]
+        b: Wrapper[Wrapper[int]]
+
+    schema = strawberry.Schema(query=Query)
