@@ -47,8 +47,8 @@ _RESOLVER_TYPE = Union[
     # we initially used Awaitable, but that was triggering the following mypy bug:
     # https://github.com/python/mypy/issues/14669
     Callable[..., Coroutine[T, Any, Any]],
-    "staticmethod[Any, T]",
-    "classmethod[Any, Any, T]",
+    "staticmethod[Any, T]",  # type: ignore
+    "classmethod[Any, Any, T]",  # type: ignore
 ]
 
 UNRESOLVED = object()
