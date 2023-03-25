@@ -136,7 +136,7 @@ def test_unset_types_name_with_underscore():
             if first_name is UNSET:
                 return "Name is unset"
 
-            if not first_name:
+            if first_name == "":
                 return "Hello Empty!"
 
             return f"Hello {first_name}!"
@@ -144,7 +144,7 @@ def test_unset_types_name_with_underscore():
         @strawberry.mutation
         def say_age(self, input: InputExample) -> str:
             age = "unset" if input.age is UNSET else input.age
-            age = "empty" if age != "" else age  # noqa: PLC1901
+            age = "empty" if age == "" else age
 
             return f"Hello {input.first_name} of age {age}!"
 
