@@ -85,6 +85,7 @@ class BaseView(View):
             warnings.warn(
                 "json_dumps_params is deprecated, override encode_json instead",
                 DeprecationWarning,
+                stacklevel=2,
             )
 
             self.json_encoder = DjangoJSONEncoder
@@ -95,6 +96,7 @@ class BaseView(View):
             warnings.warn(
                 "json_encoder is deprecated, override encode_json instead",
                 DeprecationWarning,
+                stacklevel=2,
             )
 
     def parse_body(self, request: HttpRequest) -> Dict[str, Any]:

@@ -18,6 +18,7 @@ class StrawberrySanicContext(TypedDict):
             "Accessing context attributes via the dot notation is deprecated, "
             "please use context.get('key') or context['key'] instead",
             DeprecationWarning,
+            stacklevel=2,
         )
 
         return super().__getitem__(key)

@@ -52,7 +52,7 @@ class SanicHttpClient(HttpClient):
         result_override: ResultOverrideFunction = None,
     ):
         self.app = Sanic(
-            f"test_{int(randint(0, 1000))}",
+            f"test_{int(randint(0, 1000))}",  # noqa: S311
         )
         view = GraphQLView.as_view(
             schema=schema,
