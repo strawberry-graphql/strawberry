@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Iterator, Optional
+from typing import TYPE_CHECKING, Any, Generator, Iterator, Optional
 
 from ddtrace import tracer
 
@@ -34,7 +34,7 @@ class DatadogTracingExtension(SchemaExtension):
 
         return query_hash
 
-    def hash_query(self, query: str):
+    def hash_query(self, query: str) -> str:
         return hashlib.md5(query.encode("utf-8")).hexdigest()
 
     def on_operation(self) -> Iterator[None]:
@@ -64,17 +64,17 @@ class DatadogTracingExtension(SchemaExtension):
         yield
         self.request_span.finish()
 
-    def on_validate(self):
+    def on_validate(self) -> Generator[None, None, None]:
         self.validation_span = tracer.trace("Validation", span_type="graphql")
         yield
         self.validation_span.finish()
 
-    def on_parse(self):
+    def on_parse(self) -> Generator[None, None, None]:
         self.parsing_span = tracer.trace("Parsing", span_type="graphql")
         yield
         self.parsing_span.finish()
 
-    async def resolve(self, _next, root, info, *args, **kwargs):
+    async def resolve(self, _next, root, info, *args, **kwargs) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -100,7 +100,7 @@ class DatadogTracingExtension(SchemaExtension):
 
 
 class DatadogTracingExtensionSync(DatadogTracingExtension):
-    def resolve(self, _next, root, info, *args, **kwargs):
+    def resolve(self, _next, root, info, *args, **kwargs) -> Any:
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 

@@ -8,7 +8,7 @@ from strawberry.asgi import GraphQL
 
 
 @pytest.fixture
-def test_client():
+def test_client() -> TestClient:
     @strawberry.type
     class Query:
         @strawberry.field

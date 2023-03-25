@@ -1,6 +1,23 @@
 CHANGELOG
 =========
 
+0.166.0 - 2023-03-25
+--------------------
+
+This release adds a warning when using `@strawberry.federation.type`
+but not using `strawberry.federation.Schema`
+
+Contributed by [Rubens O Leão](https://github.com/rubensoleao) via [PR #2572](https://github.com/strawberry-graphql/strawberry/pull/2572/)
+
+
+0.165.1 - 2023-03-21
+--------------------
+
+Updates the `MaskErrors` extension to the new extension API, which was missed previously.
+
+Contributed by [Nikolai Maas](https://github.com/N-Maas) via [PR #2655](https://github.com/strawberry-graphql/strawberry/pull/2655/)
+
+
 0.165.0 - 2023-03-18
 --------------------
 

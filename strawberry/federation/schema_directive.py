@@ -1,5 +1,5 @@
 import dataclasses
-from typing import List, Optional, Type, TypeVar
+from typing import Callable, List, Optional, Type, TypeVar
 
 from strawberry.directive import directive_field
 from strawberry.field import StrawberryField, field
@@ -36,7 +36,7 @@ def schema_directive(
     print_definition: bool = True,
     compose: bool = False,
     import_url: Optional[str] = None,
-):
+) -> Callable[..., T]:
     def _wrap(cls: T) -> T:
         cls = _wrap_dataclass(cls)
         fields = _get_fields(cls)

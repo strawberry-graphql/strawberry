@@ -1,7 +1,19 @@
 from __future__ import annotations
 
+import warnings
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
 
 from graphql import (
     GraphQLNamedType,
@@ -33,6 +45,7 @@ from .execute import execute, execute_sync
 
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
+    from graphql import ExecutionResult as GraphQLExecutionResult
 
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.directive import StrawberryDirective
@@ -147,6 +160,8 @@ class Schema(BaseSchema):
 
         # attach our schema to the GraphQL schema instance
         self._schema._strawberry_schema = self  # type: ignore
+
+        self._warn_for_federation_directives()
 
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible
@@ -280,7 +295,7 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ):
+    ) -> Union[AsyncIterator[GraphQLExecutionResult], GraphQLExecutionResult]:
         return await subscribe(
             self._schema,
             parse(query),
@@ -289,6 +304,25 @@ class Schema(BaseSchema):
             variable_values=variable_values,
             operation_name=operation_name,
         )
+
+    def _warn_for_federation_directives(self):
+        """Raises a warning if the schema has any federation directives."""
+        from strawberry.federation.schema_directives import FederationDirective
+
+        if any(
+            type_
+            for type_ in self.schema_converter.type_map.values()
+            if any(
+                directive
+                for directive in (type_.definition.directives or [])
+                if isinstance(directive, FederationDirective)
+            )
+        ):
+            warnings.warn(
+                "Federation directive found in schema. "
+                "Should use strawberry.federation.Schema instead.",
+                UserWarning,
+            )
 
     def as_str(self) -> str:
         return print_schema(self)

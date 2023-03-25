@@ -10,7 +10,7 @@ else:
     _T = TypeVar("_T", bound=type)
 
 
-def identity(x):  # pragma: no cover
+def identity(x: _T) -> _T:  # pragma: no cover
     return x
 
 

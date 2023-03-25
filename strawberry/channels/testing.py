@@ -77,7 +77,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.disconnect()
 
-    async def gql_init(self):
+    async def gql_init(self) -> None:
         res = await self.connect()
         if self.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
             assert res == (True, GRAPHQL_TRANSPORT_WS_PROTOCOL)

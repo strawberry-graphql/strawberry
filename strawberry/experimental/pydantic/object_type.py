@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     from pydantic.fields import ModelField
 
 
-def get_type_for_field(field: ModelField, is_input: bool):
+def get_type_for_field(field: ModelField, is_input: bool):  # noqa: ANN201
     outer_type = field.outer_type_
     replaced_type = replace_types_recursively(outer_type, is_input)
 

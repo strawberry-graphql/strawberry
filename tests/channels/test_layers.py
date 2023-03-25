@@ -1,4 +1,5 @@
 import asyncio
+from typing import Generator
 
 import pytest
 
@@ -19,7 +20,7 @@ from tests.views.schema import schema
 
 
 @pytest.fixture
-async def ws():
+async def ws() -> Generator[WebsocketCommunicator, None, None]:
     client = WebsocketCommunicator(
         GraphQLWSConsumer.as_asgi(schema=schema),
         "/graphql",

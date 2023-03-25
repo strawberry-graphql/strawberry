@@ -1,3 +1,5 @@
+from typing import Any, Dict, Union
+
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
@@ -31,7 +33,7 @@ async def get_context(
     request: Request = None,
     ws: WebSocket = None,
     custom_value=Depends(custom_context_dependency),
-):
+) -> Dict[str, Any]:
     return {
         "custom_value": custom_value,
         "request": request or ws,
@@ -39,7 +41,9 @@ async def get_context(
     }
 
 
-async def get_root_value(request: Request = None, ws: WebSocket = None):
+async def get_root_value(
+    request: Request = None, ws: WebSocket = None
+) -> Union[Request, WebSocket]:
     return request or ws
 
 
@@ -48,7 +52,7 @@ class GraphQLRouter(BaseGraphQLRouter):
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
 
-def create_app(schema=schema, **kwargs):
+def create_app(schema=schema, **kwargs) -> FastAPI:
     app = FastAPI()
 
     graphql_app = GraphQLRouter(

@@ -21,7 +21,7 @@ class AlwaysFailPermission(BasePermission):
 
 
 class MyExtension(SchemaExtension):
-    def get_results(self):
+    def get_results(self) -> typing.Dict[str, str]:
         return {"example": "example"}
 
 

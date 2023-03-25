@@ -39,7 +39,7 @@ class MissingArgumentsAnnotationsError(StrawberryException):
         self.annotation_message = f"{first}argument missing annotation"
 
     @property
-    def missing_arguments_str(self):
+    def missing_arguments_str(self) -> str:
         arguments = self.missing_arguments
 
         if len(arguments) == 1:

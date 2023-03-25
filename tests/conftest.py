@@ -1,4 +1,7 @@
-def pytest_emoji_xfailed(config):
+from typing import Tuple
+
+
+def pytest_emoji_xfailed(config) -> Tuple[str, str]:
     return "🤷‍♂️ ", "XFAIL 🤷‍♂️ "
 
 
