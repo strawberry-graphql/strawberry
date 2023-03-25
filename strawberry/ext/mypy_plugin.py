@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import typing
 import warnings
 from decimal import Decimal
 from typing import (
@@ -1030,7 +1031,7 @@ class StrawberryPlugin(Plugin):
         )
 
 
-def plugin(version: str) -> Type[StrawberryPlugin]:
+def plugin(version: str) -> typing.Type[StrawberryPlugin]:
     match = VERSION_RE.match(version)
     if match:
         MypyVersion.VERSION = Decimal(".".join(match.groups()))
