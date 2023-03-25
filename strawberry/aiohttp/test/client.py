@@ -1,4 +1,11 @@
-from typing import Any, Dict, Mapping, Optional
+from __future__ import annotations
+
+from typing import (
+    Any,
+    Dict,
+    Mapping,
+    Optional,
+)
 
 from strawberry.test.client import BaseGraphQLTestClient, Response
 
@@ -39,4 +46,5 @@ class GraphQLTestClient(BaseGraphQLTestClient):
             json=body if not files else None,
             data=body if files else None,
         )
+
         return response
