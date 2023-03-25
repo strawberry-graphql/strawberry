@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.167.0 - 2023-03-25
+--------------------
+
+This releases adds more type annotations for public functions and methods.
+
+No new changes have been added to the API.
+
+Contributed by [Jad Haddad](https://github.com/JadHADDAD92) via [PR #2627](https://github.com/strawberry-graphql/strawberry/pull/2627/)
+
+
 0.166.0 - 2023-03-25
 --------------------
 
