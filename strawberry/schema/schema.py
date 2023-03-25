@@ -126,7 +126,7 @@ class Schema(BaseSchema):
             else:
                 if hasattr(type_, "_type_definition"):
                     if type_._type_definition.is_generic:
-                        type_ = StrawberryAnnotation(type_).resolve()
+                        type_ = StrawberryAnnotation(type_).resolve()  # noqa: PLW2901
                 graphql_type = self.schema_converter.from_maybe_optional(type_)
                 if isinstance(graphql_type, GraphQLNonNull):
                     graphql_type = graphql_type.of_type
@@ -322,6 +322,7 @@ class Schema(BaseSchema):
                 "Federation directive found in schema. "
                 "Should use strawberry.federation.Schema instead.",
                 UserWarning,
+                stacklevel=3,
             )
 
     def as_str(self) -> str:

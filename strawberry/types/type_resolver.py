@@ -157,7 +157,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                     )
 
             # Create a StrawberryField, for fields of Types #1 and #2a
-            field = StrawberryField(
+            field = StrawberryField(  # noqa: PLW2901
                 python_name=field.name,
                 graphql_name=None,
                 type_annotation=StrawberryAnnotation(

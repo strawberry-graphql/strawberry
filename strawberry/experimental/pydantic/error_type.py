@@ -79,6 +79,7 @@ def error_type(
             warnings.warn(
                 "`fields` is deprecated, use `auto` type annotations instead",
                 DeprecationWarning,
+                stacklevel=2,
             )
 
         existing_fields = getattr(cls, "__annotations__", {})

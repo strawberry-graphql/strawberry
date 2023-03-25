@@ -1038,7 +1038,8 @@ def plugin(version: str) -> typing.Type[StrawberryPlugin]:
     else:
         MypyVersion.VERSION = FALLBACK_VERSION
         warnings.warn(
-            f"Mypy version {version} could not be parsed. Reverting to v0.800"
+            f"Mypy version {version} could not be parsed. Reverting to v0.800",
+            stacklevel=1,
         )
 
     return StrawberryPlugin

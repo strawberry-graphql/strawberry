@@ -68,7 +68,7 @@ class ExtensionContextManagerBase:
                 "{self.HOOK_NAME}"
             )
         elif is_legacy:
-            warnings.warn(self.DEPRECATION_MESSAGE, DeprecationWarning)
+            warnings.warn(self.DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=3)
             return self.from_legacy(extension, on_start, on_end)
 
         if hook_fn:
