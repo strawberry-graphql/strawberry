@@ -1,6 +1,8 @@
 import textwrap
 from typing import Generic, List, Optional, TypeVar
 
+import pytest
+
 import strawberry
 
 
@@ -262,4 +264,24 @@ def test_can_create_schema_without_query():
                 }
             """
         ).strip()
+    )
+
+
+def test_federation_schema_warning():
+    @strawberry.federation.type(keys=["upc"])
+    class ProductFed:
+        upc: str
+        name: Optional[str]
+        price: Optional[int]
+        weight: Optional[int]
+
+    with pytest.warns(UserWarning) as record:
+        strawberry.Schema(
+            query=ProductFed,
+        )
+
+    assert (
+        "Federation directive found in schema. "
+        "Should use strawberry.federation.Schema instead."
+        in [str(r.message) for r in record]
     )

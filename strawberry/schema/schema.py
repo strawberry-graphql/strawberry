@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union, cast
 
@@ -148,6 +149,8 @@ class Schema(BaseSchema):
         # attach our schema to the GraphQL schema instance
         self._schema._strawberry_schema = self  # type: ignore
 
+        self._warn_for_federation_directives()
+
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible
         errors = validate_schema(self._schema)
@@ -289,6 +292,25 @@ class Schema(BaseSchema):
             variable_values=variable_values,
             operation_name=operation_name,
         )
+
+    def _warn_for_federation_directives(self):
+        """Raises a warning if the schema has any federation directives."""
+        from strawberry.federation.schema_directives import FederationDirective
+
+        if any(
+            type_
+            for type_ in self.schema_converter.type_map.values()
+            if any(
+                directive
+                for directive in (type_.definition.directives or [])
+                if isinstance(directive, FederationDirective)
+            )
+        ):
+            warnings.warn(
+                "Federation directive found in schema. "
+                "Should use strawberry.federation.Schema instead.",
+                UserWarning,
+            )
 
     def as_str(self) -> str:
         return print_schema(self)
