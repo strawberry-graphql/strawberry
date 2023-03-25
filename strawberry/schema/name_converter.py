@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, Optional, Union, cast
 from typing_extensions import Protocol
 
-from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
@@ -13,6 +12,7 @@ from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
+from strawberry.utils.typing import eval_type
 
 if TYPE_CHECKING:
     from strawberry.arguments import StrawberryArgument
@@ -128,10 +128,7 @@ class NameConverter:
         return "".join(names) + generic_type_name
 
     def get_from_type(self, type_: Union[StrawberryType, type]) -> str:
-        from strawberry.union import StrawberryUnion
-
-        # TODO: maybe we should move parse_annotated somewhere else?
-        type_ = StrawberryAnnotation.parse_annotated(type_)  # type: ignore
+        type_ = eval_type(type_)
 
         if isinstance(type_, LazyType):
             name = type_.type_name
@@ -157,7 +154,7 @@ class NameConverter:
                 strawberry_type.is_generic
                 and not strawberry_type.is_specialized_generic
             ):
-                types = type_.__args__  # type: ignore
+                types = type_.__args__
                 name = self.from_generic(strawberry_type, types)
             elif (
                 strawberry_type.concrete_of
@@ -168,7 +165,7 @@ class NameConverter:
             else:
                 name = strawberry_type.name
         else:
-            name = type_.__name__  # type: ignore
+            name = type_.__name__
 
         return capitalize_first(name)
 
