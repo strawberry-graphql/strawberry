@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -31,16 +31,16 @@ class GraphQL(BaseGraphQL):
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
-    async def get_root_value(self, request):
+    async def get_root_value(self, request) -> Query:
         return Query()
 
     async def get_context(
         self,
         request: Union[Request, WebSocket],
         response: Optional[Response] = None,
-    ):
+    ) -> Dict[str, Union[Request, WebSocket, Response, str, None]]:
         return {"request": request, "response": response, "custom_value": "Hi"}
 
 
-def create_app(**kwargs):
+def create_app(**kwargs) -> GraphQL:
     return GraphQL(schema, **kwargs)

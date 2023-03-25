@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Optional, Type
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, Union
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
 from django.core.serializers.json import DjangoJSONEncoder
@@ -139,7 +139,7 @@ class BaseView(View):
 
         return parse_request_data(data)
 
-    def _render_graphiql(self, request: HttpRequest, context=None):
+    def _render_graphiql(self, request: HttpRequest, context=None) -> TemplateResponse:
         if not self.graphiql:
             raise Http404()
 
@@ -204,7 +204,9 @@ class GraphQLView(BaseView):
         return process_result(result)
 
     @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(
+        self, request, *args, **kwargs
+    ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
         if not self.is_request_allowed(request):
             return HttpResponseNotAllowed(
                 ["GET", "POST"], "GraphQL only supports GET and POST requests."
@@ -250,7 +252,7 @@ class GraphQLView(BaseView):
 
 class AsyncGraphQLView(BaseView):
     @classonlymethod
-    def as_view(cls, **initkwargs):
+    def as_view(cls, **initkwargs) -> Callable[..., HttpResponse]:
         # This code tells django that this view is async, see docs here:
         # https://docs.djangoproject.com/en/3.1/topics/async/#async-views
 
@@ -259,7 +261,9 @@ class AsyncGraphQLView(BaseView):
         return view
 
     @method_decorator(csrf_exempt)
-    async def dispatch(self, request, *args, **kwargs):
+    async def dispatch(
+        self, request, *args, **kwargs
+    ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
         if not self.is_request_allowed(request):
             return HttpResponseNotAllowed(
                 ["GET", "POST"], "GraphQL only supports GET and POST requests."

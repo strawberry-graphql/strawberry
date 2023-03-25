@@ -179,7 +179,6 @@ ignore = [
     "ANN002",
     "ANN003",
     "ANN102",
-    "ANN201",
     "ANN202",
     "ANN204",
     "ANN205",
@@ -313,7 +312,7 @@ src = ["strawberry", "tests"]
 "tests/test_printer/test_basic.py" = ["E501"]
 "tests/pyright/test_federation.py" = ["E501"]
 "tests/test_printer/test_schema_directives.py" = ["E501"]
-"tests/*" = ["RSE102", "SLF001", "TCH001", "TCH002", "TCH003"]
+"tests/*" = ["RSE102", "SLF001", "TCH001", "TCH002", "TCH003", "ANN201"]
 "strawberry/extensions/tracing/__init__.py" = ["TCH004"]
 "tests/http/clients/__init__.py" = ["F401"]
 

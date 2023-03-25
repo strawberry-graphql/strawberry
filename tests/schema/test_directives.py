@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, NoReturn, Optional
 
 import pytest
 
@@ -503,7 +503,7 @@ def test_directive_value():
     locations=[DirectiveLocation.FIELD],
     description="Add frostring with ``flavor`` to a cake.",
 )
-def add_frosting(flavor: str, v: DirectiveValue["Cake"], value: str):
+def add_frosting(flavor: str, v: DirectiveValue["Cake"], value: str) -> "Cake":
     assert isinstance(v, Cake)
     assert value == "foo"
     v.frosting = flavor
@@ -573,7 +573,7 @@ def test_named_based_directive_value_is_deprecated():
 
 
 @pytest.mark.asyncio
-async def test_directive_list_argument():
+async def test_directive_list_argument() -> NoReturn:
     @strawberry.type
     class Query:
         @strawberry.field

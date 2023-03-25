@@ -87,7 +87,7 @@ class ConsolePlugin(QueryCodegenPlugin):
         self.output_dir = output_dir
         self.plugins = plugins
 
-    def on_start(self):
+    def on_start(self) -> None:
         click.echo(
             click.style(
                 "The codegen is experimental. Please submit any bug at "
@@ -107,7 +107,7 @@ class ConsolePlugin(QueryCodegenPlugin):
             )
         )
 
-    def on_end(self, result: CodegenResult):
+    def on_end(self, result: CodegenResult) -> None:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         result.write(self.output_dir)
 
@@ -148,7 +148,7 @@ def codegen(
     output_dir: Path,
     selected_plugins: List[str],
     cli_plugin: Optional[str] = None,
-):
+) -> None:
     schema_symbol = load_schema(schema, app_dir)
 
     console_plugin = _load_plugin(cli_plugin) if cli_plugin else ConsolePlugin

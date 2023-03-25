@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Dict, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional
 
 from strawberry.test import BaseGraphQLTestClient
 
@@ -37,7 +37,7 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         body: Dict[str, object],
         headers: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, object]] = None,
-    ):
+    ) -> Any:
         return self._client.post(
             self.url,
             json=body if not files else None,

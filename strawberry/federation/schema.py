@@ -171,7 +171,7 @@ class Schema(BaseSchema):
         self._schema.query_type = query_type
         self._schema.type_map[query_type.name] = query_type
 
-    def entities_resolver(self, root, info, representations):
+    def entities_resolver(self, root, info, representations) -> List[object]:
         results = []
 
         for representation in representations:

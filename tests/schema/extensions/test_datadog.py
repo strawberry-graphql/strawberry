@@ -1,12 +1,16 @@
-from typing import AsyncGenerator
+import typing
+from typing import Any, AsyncGenerator, Tuple, Type
 
 import pytest
 
 import strawberry
 
+if typing.TYPE_CHECKING:
+    from strawberry.extensions.tracing.datadog import DatadogTracingExtension
+
 
 @pytest.fixture
-def datadog_extension(mocker):
+def datadog_extension(mocker) -> Tuple[Type["DatadogTracingExtension"], Any]:
     datadog_mock = mocker.MagicMock()
 
     mocker.patch.dict("sys.modules", ddtrace=datadog_mock)
@@ -17,7 +21,7 @@ def datadog_extension(mocker):
 
 
 @pytest.fixture
-def datadog_extension_sync(mocker):
+def datadog_extension_sync(mocker) -> Tuple[Type["DatadogTracingExtension"], Any]:
     datadog_mock = mocker.MagicMock()
 
     mocker.patch.dict("sys.modules", ddtrace=datadog_mock)

@@ -5,7 +5,7 @@ from tests.views.schema import Query, schema
 
 
 class GraphQLView(BaseGraphQLView):
-    def get_root_value(self, request):
+    def get_root_value(self, request) -> Query:
         return Query()
 
 

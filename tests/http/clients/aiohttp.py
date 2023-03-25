@@ -42,7 +42,7 @@ class GraphQLView(BaseGraphQLView):
 
         return get_context(context)
 
-    async def get_root_value(self, request: web.Request):
+    async def get_root_value(self, request: web.Request) -> Query:
         return Query()
 
     async def process_result(

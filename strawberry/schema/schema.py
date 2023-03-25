@@ -2,7 +2,18 @@ from __future__ import annotations
 
 import warnings
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
 
 from graphql import (
     GraphQLNamedType,
@@ -34,6 +45,7 @@ from .execute import execute, execute_sync
 
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
+    from graphql import ExecutionResult as GraphQLExecutionResult
 
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.directive import StrawberryDirective
@@ -283,7 +295,7 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ):
+    ) -> Union[AsyncIterator[GraphQLExecutionResult], GraphQLExecutionResult]:
         return await subscribe(
             self._schema,
             parse(query),
