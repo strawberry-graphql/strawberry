@@ -14,7 +14,6 @@ try:
 except ModuleNotFoundError:
     pass
 
-# only 3.8+ supports this
 
 pytestmark = pytest.mark.skipif(
     sys.version_info < (3, 8), reason="requires python3.8 or higher"

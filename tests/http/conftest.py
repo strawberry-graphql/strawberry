@@ -29,7 +29,6 @@ from .clients import (
         pytest.param(FastAPIHttpClient, marks=pytest.mark.fastapi),
         pytest.param(FlaskHttpClient, marks=pytest.mark.flask),
         pytest.param(SanicHttpClient, marks=pytest.mark.sanic),
-        # only 3.8+
         pytest.param(
             StarliteHttpClient,
             marks=[
