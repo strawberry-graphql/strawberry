@@ -1,6 +1,8 @@
+import contextlib
+import sys
+
 import pytest
 
-from starlite.exceptions import WebSocketDisconnect
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_COMPLETE,
@@ -12,6 +14,14 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_ERROR,
     GQL_START,
     GQL_STOP,
+)
+
+with contextlib.suppress(ModuleNotFoundError):
+    from starlite.exceptions import WebSocketDisconnect
+
+
+pytestmark = pytest.mark.skipif(
+    sys.version_info < (3, 8), reason="requires python3.8 or higher"
 )
 
 

@@ -1,24 +1,33 @@
 import asyncio
 import json
+import sys
 from datetime import timedelta
 
 import pytest
 
-from starlite.exceptions import WebSocketDisconnect
-from starlite.testing import TestClient
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
-from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
-    CompleteMessage,
-    ConnectionAckMessage,
-    ConnectionInitMessage,
-    ErrorMessage,
-    NextMessage,
-    PingMessage,
-    PongMessage,
-    SubscribeMessage,
-    SubscribeMessagePayload,
+try:
+    from starlite.exceptions import WebSocketDisconnect
+    from starlite.testing import TestClient
+    from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
+    from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
+        CompleteMessage,
+        ConnectionAckMessage,
+        ConnectionInitMessage,
+        ErrorMessage,
+        NextMessage,
+        PingMessage,
+        PongMessage,
+        SubscribeMessage,
+        SubscribeMessagePayload,
+    )
+    from tests.starlite.app import create_app
+except ModuleNotFoundError:
+    pass
+
+
+pytestmark = pytest.mark.skipif(
+    sys.version_info < (3, 8), reason="requires python3.8 or higher"
 )
-from tests.starlite.app import create_app
 
 
 def test_unknown_message_type(test_client):

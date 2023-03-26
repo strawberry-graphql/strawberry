@@ -1,11 +1,24 @@
+import sys
 from typing import Dict
 
+import pytest
+
 import strawberry
-from starlite import Provide, Starlite
-from starlite.testing import TestClient
-from strawberry.starlite import BaseContext, make_graphql_controller
-from strawberry.types import Info
-from tests.starlite.app import create_app
+
+try:
+    from starlite import Provide, Starlite
+    from starlite.testing import TestClient
+    from strawberry.starlite import BaseContext, make_graphql_controller
+    from strawberry.types import Info
+    from tests.starlite.app import create_app
+except ModuleNotFoundError:
+    pass
+
+# only 3.8+ supports this
+
+pytestmark = pytest.mark.skipif(
+    sys.version_info < (3, 8), reason="requires python3.8 or higher"
+)
 
 
 def test_base_context():

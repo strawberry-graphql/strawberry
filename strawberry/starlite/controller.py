@@ -38,13 +38,11 @@ from strawberry.http import (
     parse_request_data,
     process_result,
 )
-from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws import (
     WS_4406_PROTOCOL_NOT_ACCEPTABLE,
 )
-from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.graphiql import get_graphiql_html
@@ -58,6 +56,8 @@ if TYPE_CHECKING:
     from typing import FrozenSet, Iterable, List, Set, Tuple, Type
 
     from starlite.types import AnyCallable, Dependencies
+    from strawberry.schema import BaseSchema
+    from strawberry.types import ExecutionResult
 
     MergedContext = Union[
         "BaseContext",
