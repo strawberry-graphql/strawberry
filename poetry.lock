@@ -1328,18 +1328,6 @@ files = [
 typing-extensions = {version = "*", markers = "python_version < \"3.8\""}
 
 [[package]]
-name = "html5tagger"
-version = "1.2.1"
-description = "Pythonic HTML generation/templating (no template files)"
-category = "main"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "html5tagger-1.2.1-py3-none-any.whl", hash = "sha256:40f1711ca49475fd9cc67485f548aa4361a1ec0ddb15c4239b1aec3ebdbe9485"},
-    {file = "html5tagger-1.2.1.tar.gz", hash = "sha256:4f514956318375f94fca671e1679f6b3b621a6f4603f86baaec9360b4443fb1b"},
-]
-
-[[package]]
 name = "httpcore"
 version = "0.16.3"
 description = "A minimal low-level HTTP client."
@@ -2855,34 +2843,32 @@ jupyter = ["ipywidgets (>=7.5.1,<8.0.0)"]
 
 [[package]]
 name = "sanic"
-version = "23.3.0"
+version = "22.12.0"
 description = "A web server and web framework that's written to go fast. Build fast. Run fast."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "sanic-23.3.0-py3-none-any.whl", hash = "sha256:7cafbd63da9c6c6d8aeb8cb4304addf8a274352ab812014386c63e55f474fbee"},
-    {file = "sanic-23.3.0.tar.gz", hash = "sha256:b80ebc5c38c983cb45ae5ecc7a669a54c823ec1dff297fbd5f817b1e9e9e49af"},
+    {file = "sanic-22.12.0-py3-none-any.whl", hash = "sha256:84edf46cc17d13264ccec0ae6622e43087498f95644dc336ade74a2d5e6c88cb"},
+    {file = "sanic-22.12.0.tar.gz", hash = "sha256:e5f81115f838956957046b6c52e7a08c1bd6e8ff530ee1376471eaf1579bfffa"},
 ]
 
 [package.dependencies]
 aiofiles = ">=0.6.0"
-html5tagger = ">=1.2.1"
 httptools = ">=0.0.10"
 multidict = ">=5.0,<7.0"
 sanic-routing = ">=22.8.0"
-tracerite = ">=1.0.0"
 ujson = {version = ">=1.35", markers = "sys_platform != \"win32\" and implementation_name == \"cpython\""}
 uvloop = {version = ">=0.15.0", markers = "sys_platform != \"win32\" and implementation_name == \"cpython\""}
 websockets = ">=10.0"
 
 [package.extras]
-all = ["bandit", "beautifulsoup4", "black", "chardet (>=3.0.0,<4.0.0)", "coverage", "cryptography", "docutils", "enum-tools[sphinx]", "flake8", "isort (>=5.0.0)", "m2r2", "mistune (<2.0.0)", "mypy (>=0.901,<0.910)", "pygments", "pytest (>=7.1.0,<7.2.0)", "pytest-benchmark", "pytest-sanic", "sanic-testing (>=23.3.0)", "slotscheck (>=0.8.0,<1)", "sphinx (>=2.1.2)", "sphinx-rtd-theme (>=0.4.3)", "towncrier", "tox", "types-ujson", "uvicorn (<0.15.0)"]
-dev = ["bandit", "beautifulsoup4", "black", "chardet (>=3.0.0,<4.0.0)", "coverage", "cryptography", "docutils", "flake8", "isort (>=5.0.0)", "mypy (>=0.901,<0.910)", "pygments", "pytest (>=7.1.0,<7.2.0)", "pytest-benchmark", "pytest-sanic", "sanic-testing (>=23.3.0)", "slotscheck (>=0.8.0,<1)", "towncrier", "tox", "types-ujson", "uvicorn (<0.15.0)"]
+all = ["bandit", "beautifulsoup4", "black", "chardet (>=3.0.0,<4.0.0)", "coverage", "cryptography", "docutils", "enum-tools[sphinx]", "flake8", "isort (>=5.0.0)", "m2r2", "mistune (<2.0.0)", "mypy (>=0.901,<0.910)", "pygments", "pytest (>=7.1.0,<7.2.0)", "pytest-benchmark", "pytest-sanic", "sanic-testing (>=22.9.0)", "slotscheck (>=0.8.0,<1)", "sphinx (>=2.1.2)", "sphinx-rtd-theme (>=0.4.3)", "towncrier", "tox", "types-ujson", "uvicorn (<0.15.0)"]
+dev = ["bandit", "beautifulsoup4", "black", "chardet (>=3.0.0,<4.0.0)", "coverage", "cryptography", "docutils", "flake8", "isort (>=5.0.0)", "mypy (>=0.901,<0.910)", "pygments", "pytest (>=7.1.0,<7.2.0)", "pytest-benchmark", "pytest-sanic", "sanic-testing (>=22.9.0)", "slotscheck (>=0.8.0,<1)", "towncrier", "tox", "types-ujson", "uvicorn (<0.15.0)"]
 docs = ["docutils", "enum-tools[sphinx]", "m2r2", "mistune (<2.0.0)", "pygments", "sphinx (>=2.1.2)", "sphinx-rtd-theme (>=0.4.3)"]
 ext = ["sanic-ext"]
 http3 = ["aioquic"]
-test = ["bandit", "beautifulsoup4", "black", "chardet (>=3.0.0,<4.0.0)", "coverage", "docutils", "flake8", "isort (>=5.0.0)", "mypy (>=0.901,<0.910)", "pygments", "pytest (>=7.1.0,<7.2.0)", "pytest-benchmark", "pytest-sanic", "sanic-testing (>=23.3.0)", "slotscheck (>=0.8.0,<1)", "types-ujson", "uvicorn (<0.15.0)"]
+test = ["bandit", "beautifulsoup4", "black", "chardet (>=3.0.0,<4.0.0)", "coverage", "docutils", "flake8", "isort (>=5.0.0)", "mypy (>=0.901,<0.910)", "pygments", "pytest (>=7.1.0,<7.2.0)", "pytest-benchmark", "pytest-sanic", "sanic-testing (>=22.9.0)", "slotscheck (>=0.8.0,<1)", "types-ujson", "uvicorn (<0.15.0)"]
 
 [[package]]
 name = "sanic-routing"
@@ -3074,21 +3060,6 @@ files = [
     {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
     {file = "tomli-2.0.1.tar.gz", hash = "sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f"},
 ]
-
-[[package]]
-name = "tracerite"
-version = "1.0.1"
-description = "Human-readable HTML tracebacks for Python exceptions"
-category = "main"
-optional = false
-python-versions = "*"
-files = [
-    {file = "tracerite-1.0.1-py3-none-any.whl", hash = "sha256:6b9a49c45674efab6f3a3b601eb881d2537c2742973caeb8f13916b9d508628c"},
-    {file = "tracerite-1.0.1.tar.gz", hash = "sha256:bf2b2ea4a9c73a578a28ab93c2543b16d8f7b3c9fbb25995e0fb6cb2288cc2f7"},
-]
-
-[package.dependencies]
-html5tagger = ">=1.2.1"
 
 [[package]]
 name = "twisted"
@@ -3317,14 +3288,14 @@ files = [
 
 [[package]]
 name = "types-urllib3"
-version = "1.26.25.9"
+version = "1.26.25.8"
 description = "Typing stubs for urllib3"
 category = "dev"
 optional = false
 python-versions = "*"
 files = [
-    {file = "types-urllib3-1.26.25.9.tar.gz", hash = "sha256:160727879bdbe52f11f5feeca092a473f38d68ed3be88abb461b59cda40fb9bc"},
-    {file = "types_urllib3-1.26.25.9-py3-none-any.whl", hash = "sha256:b327d360ba4a9edd80ea82f5990ba19e76175a20b5b64be4b4813d9a1c424caa"},
+    {file = "types-urllib3-1.26.25.8.tar.gz", hash = "sha256:ecf43c42d8ee439d732a1110b4901e9017a79a38daca26f08e42c8460069392c"},
+    {file = "types_urllib3-1.26.25.8-py3-none-any.whl", hash = "sha256:95ea847fbf0bf675f50c8ae19a665baedcf07e6b4641662c4c3c72e7b2edf1a9"},
 ]
 
 [[package]]
