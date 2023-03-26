@@ -18,7 +18,7 @@ from .sanic import SanicHttpClient
 
 try:
     from .starlite import StarliteHttpClient
-except ImportError:
+except ModuleNotFoundError:
     StarliteHttpClient = None
 
 __all__ = [
