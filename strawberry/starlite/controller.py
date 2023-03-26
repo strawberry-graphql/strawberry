@@ -75,8 +75,8 @@ CustomContext = Union["BaseContext", Dict[str, Any]]
 
 async def _context_getter(
     custom_context: Optional[CustomContext],
-    request: "Request",
-) -> "MergedContext":
+    request: Request,
+) -> MergedContext:
     if isinstance(custom_context, BaseContext):
         custom_context.request = request
         return custom_context
@@ -106,18 +106,18 @@ class EmptyResponseModel:
 
 
 class GraphQLWSHandler(BaseGraphQLWSHandler):
-    async def get_context(self) -> "Any":
+    async def get_context(self) -> Any:
         return await self._get_context()
 
-    async def get_root_value(self) -> "Any":
+    async def get_root_value(self) -> Any:
         return await self._get_root_value()
 
 
 class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
-    async def get_context(self) -> "Any":
+    async def get_context(self) -> Any:
         return await self._get_context()
 
-    async def get_root_value(self) -> "Any":
+    async def get_root_value(self) -> Any:
         return await self._get_root_value()
 
 
@@ -187,12 +187,12 @@ def make_graphql_controller(
 
         async def execute(
             self,
-            query: "Optional[str]",
-            variables: "Optional[Dict[str, Any]]" = None,
-            context: "Optional[CustomContext]" = None,
-            operation_name: "Optional[str]" = None,
-            root_value: "Optional[Any]" = None,
-            allowed_operation_types: "Optional[Iterable[OperationType]]" = None,
+            query: Optional[str],
+            variables: Optional[Dict[str, Any]] = None,
+            context: Optional[CustomContext] = None,
+            operation_name: Optional[str] = None,
+            root_value: Optional[Any] = None,
+            allowed_operation_types: Optional[Iterable[OperationType]] = None,
         ):
             if self._debug:
                 pretty_print_graphql_operation(operation_name, query or "", variables)
@@ -207,17 +207,17 @@ def make_graphql_controller(
             )
 
         async def process_result(
-            self, result: "ExecutionResult"
-        ) -> "GraphQLHTTPResponse":
+            self, result: ExecutionResult
+        ) -> GraphQLHTTPResponse:
             return process_result(result)
 
         async def execute_request(
             self,
-            request: "Request",
+            request: Request,
             data: dict,
-            context: "CustomContext",
-            root_value: "Any",
-        ) -> "Response[Union[GraphQLResource, str]]":
+            context: CustomContext,
+            root_value: Any,
+        ) -> Response[Union[GraphQLResource, str]]:
             request_data = parse_request_data(data or {})
 
             allowed_operation_types = OperationType.from_http(request.method)
@@ -227,7 +227,7 @@ def make_graphql_controller(
                     OperationType.QUERY
                 }
 
-            response: "Union[Response[dict], Response[BaseContext]]" = Response(
+            response: Union[Response[dict], Response[BaseContext]] = Response(
                 {}, background=BackgroundTasks([])
             )
 
@@ -292,10 +292,10 @@ def make_graphql_controller(
         @get(raises=[ValidationException, NotFoundException])
         async def handle_http_get(
             self,
-            request: "Request",
-            context: "CustomContext",
-            root_value: "Any",
-        ) -> "Response[Union[GraphQLResource, str]]":
+            request: Request,
+            context: CustomContext,
+            root_value: Any,
+        ) -> Response[Union[GraphQLResource, str]]:
             if request.query_params:
                 try:
                     query_data = parse_query_params(
@@ -321,10 +321,10 @@ def make_graphql_controller(
         @post(status_code=HTTP_200_OK)
         async def handle_http_post(
             self,
-            request: "Request",
-            context: "CustomContext",
-            root_value: "Any",
-        ) -> "Response[Union[GraphQLResource, str]]":
+            request: Request,
+            context: CustomContext,
+            root_value: Any,
+        ) -> Response[Union[GraphQLResource, str]]:
             actual_response: Response[Union[GraphQLResource, str]]
 
             content_type, _ = request.content_type
@@ -376,9 +376,9 @@ def make_graphql_controller(
         @websocket()
         async def websocket_endpoint(
             self,
-            socket: "WebSocket",
-            context: "CustomContext",
-            root_value: "Any",
+            socket: WebSocket,
+            context: CustomContext,
+            root_value: Any,
         ) -> None:
             async def _get_context():
                 return context
@@ -410,7 +410,7 @@ def make_graphql_controller(
                 await socket.close(code=WS_4406_PROTOCOL_NOT_ACCEPTABLE)
 
         def pick_preferred_protocol(self, socket: WebSocket) -> Optional[str]:
-            protocols: "List[str]" = socket.scope["subprotocols"]
+            protocols: List[str] = socket.scope["subprotocols"]
             intersection = set(protocols) & set(self._protocols)
             return (
                 min(

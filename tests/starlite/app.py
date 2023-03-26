@@ -41,7 +41,6 @@ async def get_context(app_dependency: str, request: Request = None):
 
 
 def create_app(schema=schema, **kwargs):
-
     GraphQLController = make_graphql_controller(
         schema,
         path="/graphql",
