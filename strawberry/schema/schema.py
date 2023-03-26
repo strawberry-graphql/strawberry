@@ -309,18 +309,21 @@ class Schema(BaseSchema):
         """Raises a warning if the schema has any federation directives."""
         from strawberry.federation.schema_directives import FederationDirective
 
+        all_types = self.schema_converter.type_map.values()
+        all_type_defs = (type_.definition for type_ in all_types)
+
+        all_directives = (
+            directive
+            for type_def in all_type_defs
+            for directive in (type_def.directives or [])
+        )
+
         if any(
-            type_
-            for type_ in self.schema_converter.type_map.values()
-            if any(
-                directive
-                for directive in (type_.definition.directives or [])
-                if isinstance(directive, FederationDirective)
-            )
+            isinstance(directive, FederationDirective) for directive in all_directives
         ):
             warnings.warn(
                 "Federation directive found in schema. "
-                "Should use strawberry.federation.Schema instead.",
+                "Use `strawberry.federation.Schema` instead of `strawberry.Schema`.",
                 UserWarning,
                 stacklevel=3,
             )

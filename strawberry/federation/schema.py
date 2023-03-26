@@ -342,6 +342,13 @@ class Schema(BaseSchema):
             resolve=self.entities_resolver,
         )
 
+    def _warn_for_federation_directives(self) -> None:
+        # this is used in the main schema to raise if there's a directive
+        # that's for federation, but in this class we don't want to warn,
+        # since it is expected to have federation directives
+
+        pass
+
 
 def _get_entity_type(type_map: "TypeMap"):
     # https://www.apollographql.com/docs/apollo-server/federation/federation-spec/#resolve-requests-for-entities
