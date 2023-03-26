@@ -27,6 +27,7 @@ class MyExtension(SchemaExtension):
 
 def _read_file(text_file: Upload) -> str:
     from starlette.datastructures import UploadFile
+
     from starlite import UploadFile as StarliteUploadFile
 
     # allow to keep this function synchronous, starlette's files have

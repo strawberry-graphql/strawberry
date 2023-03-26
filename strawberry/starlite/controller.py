@@ -206,9 +206,7 @@ def make_graphql_controller(
                 allowed_operation_types=allowed_operation_types,
             )
 
-        async def process_result(
-            self, result: ExecutionResult
-        ) -> GraphQLHTTPResponse:
+        async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
             return process_result(result)
 
         async def execute_request(
