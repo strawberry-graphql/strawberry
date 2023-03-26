@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import typing
 from enum import Enum
 
@@ -28,15 +29,16 @@ class MyExtension(SchemaExtension):
 def _read_file(text_file: Upload) -> str:
     from starlette.datastructures import UploadFile
 
-    from starlite import UploadFile as StarliteUploadFile
-
     # allow to keep this function synchronous, starlette's files have
     # async methods for reading
     if isinstance(text_file, UploadFile):
         text_file = text_file.file._file  # type: ignore
 
-    if isinstance(text_file, StarliteUploadFile):
-        text_file = text_file.file  # type: ignore
+    with contextlib.suppress(ModuleNotFoundError):
+        from starlite import UploadFile as StarliteUploadFile
+
+        if isinstance(text_file, StarliteUploadFile):
+            text_file = text_file.file  # type: ignore
 
     return text_file.read().decode()
 
