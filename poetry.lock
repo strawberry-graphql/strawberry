@@ -3871,8 +3871,9 @@ flask = ["flask"]
 opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 pydantic = ["pydantic"]
 sanic = ["sanic"]
+starlite = ["starlite"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "9b66f0ed93ed6609b974aff2671690b8041c8a1767b7e3bd94c514fe7fe59537"
+content-hash = "01d50d739af9fbff7c4624f6e2f6daa9c1cfae1e27000e962ea7a3c3ffd6b345"
