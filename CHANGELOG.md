@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.167.1 - 2023-03-26
+--------------------
+
+This release fixes and issue where you'd get a warning
+about using Apollo Federation directives even when using
+`strawberry.federation.Schema`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2661](https://github.com/strawberry-graphql/strawberry/pull/2661/)
+
+
 0.167.0 - 2023-03-25
 --------------------
 
