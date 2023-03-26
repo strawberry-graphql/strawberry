@@ -1,3 +1,4 @@
+import sys
 from typing import Type
 
 import pytest
@@ -28,7 +29,16 @@ from .clients import (
         pytest.param(FastAPIHttpClient, marks=pytest.mark.fastapi),
         pytest.param(FlaskHttpClient, marks=pytest.mark.flask),
         pytest.param(SanicHttpClient, marks=pytest.mark.sanic),
-        pytest.param(StarliteHttpClient, marks=pytest.mark.starlite),
+        # only 3.8+
+        pytest.param(
+            StarliteHttpClient,
+            marks=[
+                pytest.mark.starlite,
+                pytest.mark.skipif(
+                    sys.version_info < (3, 8), reason="Starlite requires Python 3.8+"
+                ),
+            ],
+        ),
     ]
 )
 def http_client_class(request) -> Type[HttpClient]:

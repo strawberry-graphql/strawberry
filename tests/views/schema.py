@@ -11,7 +11,6 @@ from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
 from strawberry.types import Info
-from tests import IS_STARLITE_INSTALLED
 
 
 class AlwaysFailPermission(BasePermission):
@@ -28,16 +27,15 @@ class MyExtension(SchemaExtension):
 
 def _read_file(text_file: Upload) -> str:
     from starlette.datastructures import UploadFile
+    from starlite import UploadFile as StarliteUploadFile
 
     # allow to keep this function synchronous, starlette's files have
     # async methods for reading
     if isinstance(text_file, UploadFile):
         text_file = text_file.file._file  # type: ignore
-    if IS_STARLITE_INSTALLED:
-        from starlite import UploadFile as StarliteUploadFile
 
-        if isinstance(text_file, StarliteUploadFile):
-            text_file = text_file.file  # type: ignore
+    if isinstance(text_file, StarliteUploadFile):
+        text_file = text_file.file  # type: ignore
 
     return text_file.read().decode()
 
