@@ -10,10 +10,10 @@ from starlite.testing import TestClient
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.starlite import make_graphql_controller
 from strawberry.types import ExecutionResult
+from tests.views.schema import Query, schema
 
 from ..context import get_context
-from ..schema import Query, schema
-from . import JSON, HttpClient, Response, ResultOverrideFunction
+from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
 def custom_context_dependency() -> str:
