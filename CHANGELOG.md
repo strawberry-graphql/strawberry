@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.168.1 - 2023-03-26
+--------------------
+
+This releases adds a new `extra` group for Starlite, preventing it from being
+installed by default.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2664](https://github.com/strawberry-graphql/strawberry/pull/2664/)
+
+
 0.168.0 - 2023-03-26
 --------------------
 
