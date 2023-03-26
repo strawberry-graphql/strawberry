@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import dataclasses
 import sys
-from typing import Dict, List, Type, TypeVar
+from typing import TYPE_CHECKING, Dict, List, Type, TypeVar
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -8,10 +10,12 @@ from strawberry.exceptions import (
     FieldWithResolverAndDefaultValueError,
     PrivateStrawberryFieldError,
 )
-from strawberry.field import StrawberryField
 from strawberry.private import is_private
 from strawberry.unset import UNSET
 from strawberry.utils.inspect import get_specialized_type_var_map
+
+if TYPE_CHECKING:
+    from strawberry.field import StrawberryField
 
 
 def _get_fields(cls: Type) -> List[StrawberryField]:
@@ -78,7 +82,6 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
 
     # then we can proceed with finding the fields for the current class
     for field in dataclasses.fields(cls):
-
         if isinstance(field, StrawberryField):
             # Check that the field type is not Private
             if is_private(field.type):
@@ -154,7 +157,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                     )
 
             # Create a StrawberryField, for fields of Types #1 and #2a
-            field = StrawberryField(
+            field = StrawberryField(  # noqa: PLW2901
                 python_name=field.name,
                 graphql_name=None,
                 type_annotation=StrawberryAnnotation(

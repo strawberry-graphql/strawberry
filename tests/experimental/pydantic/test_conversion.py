@@ -203,7 +203,7 @@ def test_can_convert_falsy_values_to_strawberry():
     user = User.from_pydantic(origin_user)
 
     assert user.age == 0
-    assert user.password == ""
+    assert not user.password
 
 
 def test_can_convert_pydantic_type_to_strawberry_with_private_field():

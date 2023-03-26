@@ -1,5 +1,4 @@
 import json
-import sys
 from typing import Any, Dict, Optional
 
 import pytest
@@ -10,15 +9,13 @@ from strawberry.channels.handlers.http_handler import SyncGraphQLHTTPConsumer
 from tests.views.schema import schema
 
 pytestmark = pytest.mark.xfail(
-    sys.platform == "win32",
     reason=(
-        "Some of these tests seems to crash on windows "
-        "due to usage of database_sync_to_async"
+        "Some of these tests seems to crash due to usage of database_sync_to_async"
     ),
 )
 
 
-def generate_body(query: str, variables: Optional[Dict[str, Any]] = None):
+def generate_body(query: str, variables: Optional[Dict[str, Any]] = None) -> bytes:
     body: Dict[str, Any] = {"query": query}
     if variables is not None:
         body["variables"] = variables
@@ -26,7 +23,9 @@ def generate_body(query: str, variables: Optional[Dict[str, Any]] = None):
     return json.dumps(body).encode()
 
 
-def generate_get_path(path, query: str, variables: Optional[Dict[str, Any]] = None):
+def generate_get_path(
+    path, query: str, variables: Optional[Dict[str, Any]] = None
+) -> str:
     body: Dict[str, Any] = {"query": query}
     if variables is not None:
         body["variables"] = json.dumps(variables)
@@ -126,7 +125,6 @@ async def test_fails_on_multipart_body(consumer):
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 @pytest.mark.parametrize("body", [b"{}", b'{"foo": "bar"}'])
 async def test_fails_on_missing_query(consumer, body: bytes):
-
     client = HttpCommunicator(
         consumer.as_asgi(schema=schema),
         "POST",

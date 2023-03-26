@@ -1,13 +1,20 @@
-from datetime import timedelta
-from typing import Any
+from __future__ import annotations
 
-from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
+from typing import TYPE_CHECKING, Any
 
-from strawberry.schema import BaseSchema
+from starlette.websockets import WebSocketDisconnect, WebSocketState
+
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
     BaseGraphQLTransportWSHandler,
 )
+
+if TYPE_CHECKING:
+    from datetime import timedelta
+
+    from starlette.websockets import WebSocket
+
+    from strawberry.schema import BaseSchema
 
 
 class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
@@ -35,8 +42,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         await self._ws.send_json(data)
 
     async def close(self, code: int, reason: str) -> None:
-        # Close messages are not part of the ASGI ref yet
-        await self._ws.close(code=code)
+        await self._ws.close(code=code, reason=reason)
 
     async def handle_request(self) -> None:
         await self._ws.accept(subprotocol=GRAPHQL_TRANSPORT_WS_PROTOCOL)
@@ -53,7 +59,6 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         except WebSocketDisconnect:  # pragma: no cover
             pass
         finally:
-
             for operation_id in list(self.subscriptions.keys()):
                 await self.cleanup_operation(operation_id)
             await self.reap_completed_tasks()

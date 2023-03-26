@@ -1,8 +1,13 @@
-from typing import Optional, cast
+from __future__ import annotations
 
-from graphql.language import DocumentNode, OperationDefinitionNode
+from typing import TYPE_CHECKING, Optional, cast
+
+from graphql.language import OperationDefinitionNode
 
 from strawberry.types.graphql import OperationType
+
+if TYPE_CHECKING:
+    from graphql.language import DocumentNode
 
 
 def get_first_operation(
@@ -22,7 +27,7 @@ def get_operation_type(
 
     if operation_name:
         for d in graphql_document.definitions:
-            d = cast(OperationDefinitionNode, d)
+            d = cast(OperationDefinitionNode, d)  # noqa: PLW2901
             if d.name and d.name.value == operation_name:
                 definition = d
                 break

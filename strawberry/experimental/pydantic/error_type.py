@@ -1,9 +1,21 @@
+from __future__ import annotations
+
 import dataclasses
 import warnings
-from typing import Any, List, Optional, Sequence, Tuple, Type, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from pydantic import BaseModel
-from pydantic.fields import ModelField
 from pydantic.utils import lenient_issubclass
 
 from strawberry.auto import StrawberryAuto
@@ -18,14 +30,17 @@ from strawberry.utils.typing import get_list_annotation, is_list
 
 from .exceptions import MissingFieldsListError
 
+if TYPE_CHECKING:
+    from pydantic.fields import ModelField
 
-def get_type_for_field(field: ModelField):
+
+def get_type_for_field(field: ModelField) -> Union[Any, Type[None], Type[List]]:
     type_ = field.outer_type_
     type_ = normalize_type(type_)
     return field_type_to_type(type_)
 
 
-def field_type_to_type(type_):
+def field_type_to_type(type_) -> Union[Any, List[Any], None]:
     error_class: Any = str
     strawberry_type: Any = error_class
 
@@ -54,8 +69,8 @@ def error_type(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-    all_fields: bool = False
-):
+    all_fields: bool = False,
+) -> Callable[..., Type]:
     def wrap(cls):
         model_fields = model.__fields__
         fields_set = set(fields) if fields else set()
@@ -64,6 +79,7 @@ def error_type(
             warnings.warn(
                 "`fields` is deprecated, use `auto` type annotations instead",
                 DeprecationWarning,
+                stacklevel=2,
             )
 
         existing_fields = getattr(cls, "__annotations__", {})

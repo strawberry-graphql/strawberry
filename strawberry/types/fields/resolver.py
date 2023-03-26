@@ -1,11 +1,11 @@
 from __future__ import annotations as _
 
-import builtins
 import inspect
 import sys
 import warnings
 from inspect import isasyncgenfunction, iscoroutinefunction
-from typing import (  # type: ignore[attr-defined]
+from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -19,7 +19,6 @@ from typing import (  # type: ignore[attr-defined]
     Type,
     TypeVar,
     Union,
-    _eval_type,
     cast,
 )
 from typing_extensions import Annotated, Protocol, get_args, get_origin
@@ -30,6 +29,10 @@ from strawberry.exceptions import MissingArgumentsAnnotationsError
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 from strawberry.utils.cached_property import cached_property
+from strawberry.utils.typing import eval_type
+
+if TYPE_CHECKING:
+    import builtins
 
 
 class Parameter(inspect.Parameter):
@@ -51,7 +54,6 @@ class Parameter(inspect.Parameter):
 
 
 class Signature(inspect.Signature):
-
     _parameter_cls = Parameter
 
 
@@ -100,7 +102,7 @@ class ReservedType(NamedTuple):
         for parameter in parameters:
             annotation = parameter.annotation
             try:
-                resolved_annotation = _eval_type(
+                resolved_annotation = eval_type(
                     ForwardRef(annotation)
                     if isinstance(annotation, str)
                     else annotation,
@@ -123,7 +125,7 @@ class ReservedType(NamedTuple):
                 "their respective types (i.e. use value: 'DirectiveValue[str]' instead "
                 "of 'value: str' and 'info: Info' instead of a plain 'info')."
             )
-            warnings.warn(warning)
+            warnings.warn(warning, stacklevel=3)
             return reserved_name
         else:
             return None
@@ -151,7 +153,6 @@ T = TypeVar("T")
 
 
 class StrawberryResolver(Generic[T]):
-
     RESERVED_PARAMSPEC: Tuple[ReservedParameterSpecification, ...] = (
         SELF_PARAMSPEC,
         CLS_PARAMSPEC,
@@ -326,7 +327,7 @@ class StrawberryResolver(Generic[T]):
 
 
 class UncallableResolverError(Exception):
-    def __init__(self, resolver: "StrawberryResolver"):
+    def __init__(self, resolver: StrawberryResolver):
         message = (
             f"Attempted to call resolver {resolver} with uncallable function "
             f"{resolver.wrapped_func}"

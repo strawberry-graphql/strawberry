@@ -1,11 +1,15 @@
-from contextlib import suppress
-from typing import Any, Optional
+from __future__ import annotations
 
-from strawberry.channels.handlers.base import ChannelsWSConsumer
-from strawberry.schema import BaseSchema
+from contextlib import suppress
+from typing import TYPE_CHECKING, Any, Optional
+
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
-from strawberry.subscriptions.protocols.graphql_ws.types import OperationMessage
+
+if TYPE_CHECKING:
+    from strawberry.channels.handlers.base import ChannelsWSConsumer
+    from strawberry.schema import BaseSchema
+    from strawberry.subscriptions.protocols.graphql_ws.types import OperationMessage
 
 
 class GraphQLWSHandler(BaseGraphQLWSHandler):
@@ -42,7 +46,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
     async def handle_request(self) -> Any:
         await self._ws.accept(subprotocol=GRAPHQL_WS_PROTOCOL)
 
-    async def handle_disconnect(self, code):
+    async def handle_disconnect(self, code) -> None:
         if self.keep_alive_task:
             self.keep_alive_task.cancel()
             with suppress(BaseException):

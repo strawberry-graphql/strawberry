@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from asyncio import ensure_future
 from inspect import isawaitable
 from typing import (
+    TYPE_CHECKING,
     Awaitable,
     Callable,
     Iterable,
@@ -13,20 +16,26 @@ from typing import (
     cast,
 )
 
-from graphql import ExecutionContext as GraphQLExecutionContext
-from graphql import ExecutionResult as GraphQLExecutionResult
-from graphql import GraphQLError, GraphQLSchema, parse
+from graphql import GraphQLError, parse
 from graphql import execute as original_execute
-from graphql.language import DocumentNode
-from graphql.validation import ASTValidationRule, validate
+from graphql.validation import validate
 
 from strawberry.exceptions import MissingQueryError
-from strawberry.extensions import Extension
-from strawberry.extensions.runner import ExtensionsRunner
-from strawberry.types import ExecutionContext, ExecutionResult
-from strawberry.types.graphql import OperationType
+from strawberry.extensions.runner import SchemaExtensionsRunner
+from strawberry.types import ExecutionResult
 
 from .exceptions import InvalidOperationTypeError
+
+if TYPE_CHECKING:
+    from graphql import ExecutionContext as GraphQLExecutionContext
+    from graphql import ExecutionResult as GraphQLExecutionResult
+    from graphql import GraphQLSchema
+    from graphql.language import DocumentNode
+    from graphql.validation import ASTValidationRule
+
+    from strawberry.extensions import SchemaExtension
+    from strawberry.types import ExecutionContext
+    from strawberry.types.graphql import OperationType
 
 
 def parse_document(query: str) -> DocumentNode:
@@ -61,17 +70,17 @@ async def execute(
     schema: GraphQLSchema,
     *,
     allowed_operation_types: Iterable[OperationType],
-    extensions: Sequence[Union[Type[Extension], Extension]],
+    extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
 ) -> ExecutionResult:
-    extensions_runner = ExtensionsRunner(
+    extensions_runner = SchemaExtensionsRunner(
         execution_context=execution_context,
         extensions=list(extensions),
     )
 
-    async with extensions_runner.request():
+    async with extensions_runner.operation():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
         if not execution_context.query:
@@ -128,9 +137,9 @@ async def execute(
                 )
 
                 if isawaitable(result):
-                    result = await cast(Awaitable[GraphQLExecutionResult], result)
+                    result = await cast(Awaitable["GraphQLExecutionResult"], result)
 
-                result = cast(GraphQLExecutionResult, result)
+                result = cast("GraphQLExecutionResult", result)
                 execution_context.result = result
                 # Also set errors on the execution_context so that it's easier
                 # to access in extensions
@@ -154,17 +163,17 @@ def execute_sync(
     schema: GraphQLSchema,
     *,
     allowed_operation_types: Iterable[OperationType],
-    extensions: Sequence[Union[Type[Extension], Extension]],
+    extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
 ) -> ExecutionResult:
-    extensions_runner = ExtensionsRunner(
+    extensions_runner = SchemaExtensionsRunner(
         execution_context=execution_context,
         extensions=list(extensions),
     )
 
-    with extensions_runner.request():
+    with extensions_runner.operation():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
         if not execution_context.query:
@@ -220,13 +229,13 @@ def execute_sync(
                 )
 
                 if isawaitable(result):
-                    result = cast(Awaitable[GraphQLExecutionResult], result)
+                    result = cast(Awaitable["GraphQLExecutionResult"], result)
                     ensure_future(result).cancel()
                     raise RuntimeError(
                         "GraphQL execution failed to complete synchronously."
                     )
 
-                result = cast(GraphQLExecutionResult, result)
+                result = cast("GraphQLExecutionResult", result)
                 execution_context.result = result
                 # Also set errors on the execution_context so that it's easier
                 # to access in extensions

@@ -1,23 +1,27 @@
+from __future__ import annotations
+
 import dataclasses
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
-from graphql import ASTValidationRule, specified_rules
-from graphql import ExecutionResult as GraphQLExecutionResult
-from graphql.error.graphql_error import GraphQLError
-from graphql.language import DocumentNode, OperationDefinitionNode
+from graphql import specified_rules
 
 from strawberry.utils.operation import get_first_operation, get_operation_type
 
-from .graphql import OperationType
-
 if TYPE_CHECKING:
+    from graphql import ASTValidationRule
+    from graphql import ExecutionResult as GraphQLExecutionResult
+    from graphql.error.graphql_error import GraphQLError
+    from graphql.language import DocumentNode, OperationDefinitionNode
+
     from strawberry.schema import Schema
+
+    from .graphql import OperationType
 
 
 @dataclasses.dataclass
 class ExecutionContext:
     query: Optional[str]
-    schema: "Schema"
+    schema: Schema
     context: Any = None
     variables: Optional[Dict[str, Any]] = None
     root_value: Optional[Any] = None
@@ -34,7 +38,7 @@ class ExecutionContext:
     errors: Optional[List[GraphQLError]] = None
     result: Optional[GraphQLExecutionResult] = None
 
-    def __post_init__(self, provided_operation_name):
+    def __post_init__(self, provided_operation_name: str):
         self._provided_operation_name = provided_operation_name
 
     @property

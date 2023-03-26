@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 import strawberry
+from strawberry.schema_directive import Location
 
 # ------- data -------
 
@@ -106,6 +107,16 @@ def get_product_by_sku_and_variation(sku: str, variation: dict) -> Optional["Pro
 
 
 # ------- types -------
+
+
+@strawberry.federation.schema_directive(
+    locations=[Location.OBJECT],
+    name="custom",
+    compose=True,
+    import_url="https://myspecs.dev/myCustomDirective/v1.0",
+)
+class Custom:
+    ...
 
 
 @strawberry.federation.type(extend=True, keys=["email"])
@@ -216,7 +227,9 @@ class DeprecatedProduct:
         return None
 
 
-@strawberry.federation.type(keys=["id", "sku package", "sku variation { id }"])
+@strawberry.federation.type(
+    keys=["id", "sku package", "sku variation { id }"], directives=[Custom()]
+)
 class Product:
     id: strawberry.ID
     sku: Optional[str]
@@ -275,6 +288,18 @@ class Product:
         return None
 
 
+@strawberry.federation.interface_object(keys=["id"])
+class Inventory:
+    id: strawberry.ID
+    deprecated_products: List[DeprecatedProduct]
+
+    @classmethod
+    def resolve_reference(cls, id: strawberry.ID) -> "Inventory":
+        return Inventory(
+            id=id, deprecated_products=[DeprecatedProduct(**deprecated_product)]
+        )
+
+
 @strawberry.federation.type(extend=True)
 class Query:
     product: Optional[Product] = strawberry.field(resolver=get_product_by_id)
@@ -284,4 +309,6 @@ class Query:
         return None
 
 
-schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+schema = strawberry.federation.Schema(
+    query=Query, enable_federation_2=True, types=[Inventory]
+)

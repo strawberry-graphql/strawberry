@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 import json
-from typing import Dict, Mapping, Optional
-from typing_extensions import Literal
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional
 
 from strawberry.test import BaseGraphQLTestClient
+
+if TYPE_CHECKING:
+    from typing_extensions import Literal
 
 
 class GraphQLTestClient(BaseGraphQLTestClient):
@@ -12,7 +16,6 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         variables: Optional[Dict[str, Mapping]] = None,
         files: Optional[Dict[str, object]] = None,
     ) -> Dict[str, object]:
-
         body: Dict[str, object] = {"query": query}
 
         if variables:
@@ -34,7 +37,7 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         body: Dict[str, object],
         headers: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, object]] = None,
-    ):
+    ) -> Any:
         return self._client.post(
             self.url,
             json=body if not files else None,

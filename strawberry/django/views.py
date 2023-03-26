@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import warnings
-from typing import Any, Dict, Optional, Type
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, Union
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
 from django.core.serializers.json import DjangoJSONEncoder
-from django.http import Http404, HttpRequest, HttpResponseNotAllowed, JsonResponse
+from django.http import Http404, HttpResponseNotAllowed, JsonResponse
 from django.http.response import HttpResponse
 from django.template import RequestContext, Template
 from django.template.exceptions import TemplateDoesNotExist
@@ -18,19 +20,23 @@ from django.views.generic import View
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
-    GraphQLHTTPResponse,
-    GraphQLRequestData,
     parse_query_params,
     parse_request_data,
     process_result,
 )
 from strawberry.schema.exceptions import InvalidOperationTypeError
-from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 from strawberry.utils.graphiql import get_graphiql_html
 
-from ..schema import BaseSchema
 from .context import StrawberryDjangoContext
+
+if TYPE_CHECKING:
+    from django.http import HttpRequest
+
+    from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
+    from strawberry.types import ExecutionResult
+
+    from ..schema import BaseSchema
 
 
 class TemporalHttpResponse(JsonResponse):
@@ -79,6 +85,7 @@ class BaseView(View):
             warnings.warn(
                 "json_dumps_params is deprecated, override encode_json instead",
                 DeprecationWarning,
+                stacklevel=2,
             )
 
             self.json_encoder = DjangoJSONEncoder
@@ -89,6 +96,7 @@ class BaseView(View):
             warnings.warn(
                 "json_encoder is deprecated, override encode_json instead",
                 DeprecationWarning,
+                stacklevel=2,
             )
 
     def parse_body(self, request: HttpRequest) -> Dict[str, Any]:
@@ -133,7 +141,7 @@ class BaseView(View):
 
         return parse_request_data(data)
 
-    def _render_graphiql(self, request: HttpRequest, context=None):
+    def _render_graphiql(self, request: HttpRequest, context=None) -> TemplateResponse:
         if not self.graphiql:
             raise Http404()
 
@@ -198,7 +206,9 @@ class GraphQLView(BaseView):
         return process_result(result)
 
     @method_decorator(csrf_exempt)
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(
+        self, request, *args, **kwargs
+    ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
         if not self.is_request_allowed(request):
             return HttpResponseNotAllowed(
                 ["GET", "POST"], "GraphQL only supports GET and POST requests."
@@ -244,7 +254,7 @@ class GraphQLView(BaseView):
 
 class AsyncGraphQLView(BaseView):
     @classonlymethod
-    def as_view(cls, **initkwargs):
+    def as_view(cls, **initkwargs) -> Callable[..., HttpResponse]:
         # This code tells django that this view is async, see docs here:
         # https://docs.djangoproject.com/en/3.1/topics/async/#async-views
 
@@ -253,7 +263,9 @@ class AsyncGraphQLView(BaseView):
         return view
 
     @method_decorator(csrf_exempt)
-    async def dispatch(self, request, *args, **kwargs):
+    async def dispatch(
+        self, request, *args, **kwargs
+    ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
         if not self.is_request_allowed(request):
             return HttpResponseNotAllowed(
                 ["GET", "POST"], "GraphQL only supports GET and POST requests."

@@ -1,7 +1,20 @@
-from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
+from __future__ import annotations
 
-from graphql import ExecutionContext as GraphQLExecutionContext
+import warnings
+from functools import lru_cache
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
+
 from graphql import (
     GraphQLNamedType,
     GraphQLNonNull,
@@ -14,27 +27,33 @@ from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-from strawberry.directive import StrawberryDirective
-from strawberry.enum import EnumDefinition
-from strawberry.extensions import Extension
 from strawberry.extensions.directives import (
     DirectivesExtension,
     DirectivesExtensionSync,
 )
-from strawberry.field import StrawberryField
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
-from strawberry.types import ExecutionContext, ExecutionResult
+from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
 from strawberry.types.types import TypeDefinition
-from strawberry.union import StrawberryUnion
 
 from ..printer import print_schema
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
+
+if TYPE_CHECKING:
+    from graphql import ExecutionContext as GraphQLExecutionContext
+    from graphql import ExecutionResult as GraphQLExecutionResult
+
+    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.directive import StrawberryDirective
+    from strawberry.enum import EnumDefinition
+    from strawberry.extensions import SchemaExtension
+    from strawberry.field import StrawberryField
+    from strawberry.types import ExecutionResult
+    from strawberry.union import StrawberryUnion
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.QUERY,
@@ -53,7 +72,7 @@ class Schema(BaseSchema):
         subscription: Optional[Type] = None,
         directives: Iterable[StrawberryDirective] = (),
         types=(),
-        extensions: Iterable[Union[Type[Extension], Extension]] = (),
+        extensions: Iterable[Union[Type[SchemaExtension], SchemaExtension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
         scalar_overrides: Optional[
@@ -70,7 +89,7 @@ class Schema(BaseSchema):
         self.config = config or StrawberryConfig()
 
         SCALAR_OVERRIDES_DICT_TYPE = Dict[
-            object, Union[ScalarWrapper, ScalarDefinition]
+            object, Union["ScalarWrapper", "ScalarDefinition"]
         ]
 
         scalar_registry: SCALAR_OVERRIDES_DICT_TYPE = {**DEFAULT_SCALAR_REGISTRY}
@@ -80,7 +99,7 @@ class Schema(BaseSchema):
 
         self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
         self.directives = directives
-        self.schema_directives = schema_directives
+        self.schema_directives = list(schema_directives)
 
         query_type = self.schema_converter.from_object(query._type_definition)
         mutation_type = (
@@ -107,7 +126,7 @@ class Schema(BaseSchema):
             else:
                 if hasattr(type_, "_type_definition"):
                     if type_._type_definition.is_generic:
-                        type_ = StrawberryAnnotation(type_).resolve()
+                        type_ = StrawberryAnnotation(type_).resolve()  # noqa: PLW2901
                 graphql_type = self.schema_converter.from_maybe_optional(type_)
                 if isinstance(graphql_type, GraphQLNonNull):
                     graphql_type = graphql_type.of_type
@@ -142,6 +161,8 @@ class Schema(BaseSchema):
         # attach our schema to the GraphQL schema instance
         self._schema._strawberry_schema = self  # type: ignore
 
+        self._warn_for_federation_directives()
+
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible
         errors = validate_schema(self._schema)
@@ -151,7 +172,7 @@ class Schema(BaseSchema):
 
     def get_extensions(
         self, sync: bool = False
-    ) -> List[Union[Type[Extension], Extension]]:
+    ) -> List[Union[Type[SchemaExtension], SchemaExtension]]:
         extensions = list(self.extensions)
 
         if self.directives:
@@ -274,7 +295,7 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ):
+    ) -> Union[AsyncIterator[GraphQLExecutionResult], GraphQLExecutionResult]:
         return await subscribe(
             self._schema,
             parse(query),
@@ -283,6 +304,26 @@ class Schema(BaseSchema):
             variable_values=variable_values,
             operation_name=operation_name,
         )
+
+    def _warn_for_federation_directives(self):
+        """Raises a warning if the schema has any federation directives."""
+        from strawberry.federation.schema_directives import FederationDirective
+
+        if any(
+            type_
+            for type_ in self.schema_converter.type_map.values()
+            if any(
+                directive
+                for directive in (type_.definition.directives or [])
+                if isinstance(directive, FederationDirective)
+            )
+        ):
+            warnings.warn(
+                "Federation directive found in schema. "
+                "Should use strawberry.federation.Schema instead.",
+                UserWarning,
+                stacklevel=3,
+            )
 
     def as_str(self) -> str:
         return print_schema(self)

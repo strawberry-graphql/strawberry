@@ -9,22 +9,23 @@ If a node has only one useful value, it's value is inlined.
 If a list of nodes have unique names, it's transformed into a mapping.
 Note Python dicts maintain ordering (for all supported versions).
 """
+from __future__ import annotations
 
 import dataclasses
-from typing import Any, Collection, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Collection, Dict, Iterable, List, Optional, Union
 
-from graphql import GraphQLResolveInfo
-from graphql.language import ArgumentNode as GQLArgumentNode
-from graphql.language import DirectiveNode as GQLDirectiveNode
 from graphql.language import FieldNode as GQLFieldNode
 from graphql.language import FragmentSpreadNode as GQLFragmentSpreadNode
-from graphql.language import InlineFragmentNode as GQLInlineFragment
 from graphql.language import InlineFragmentNode as GQLInlineFragmentNode
 from graphql.language import ListValueNode as GQLListValueNode
 from graphql.language import ObjectValueNode as GQLObjectValueNode
-from graphql.language import ValueNode as GQLValueNode
 from graphql.language import VariableNode as GQLVariableNode
 
+if TYPE_CHECKING:
+    from graphql import GraphQLResolveInfo
+    from graphql.language import ArgumentNode as GQLArgumentNode
+    from graphql.language import DirectiveNode as GQLDirectiveNode
+    from graphql.language import ValueNode as GQLValueNode
 Arguments = Dict[str, Any]
 Directives = Dict[str, Arguments]
 Selection = Union["SelectedField", "FragmentSpread", "InlineFragment"]
@@ -67,7 +68,7 @@ def convert_selections(
     for node in field_nodes:
         if isinstance(node, GQLFieldNode):
             selections.append(SelectedField.from_node(info, node))
-        elif isinstance(node, GQLInlineFragment):
+        elif isinstance(node, GQLInlineFragmentNode):
             selections.append(InlineFragment.from_node(info, node))
         elif isinstance(node, GQLFragmentSpreadNode):
             selections.append(FragmentSpread.from_node(info, node))

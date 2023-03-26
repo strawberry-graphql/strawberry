@@ -16,19 +16,21 @@ from typing import (
 from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType, StrawberryLazyReference
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
+from strawberry.type import StrawberryList, StrawberryOptional
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
-from .types.types import TypeDefinition
 from .unset import UNSET as _deprecated_UNSET
 from .unset import _deprecated_is_unset  # noqa
 
 if TYPE_CHECKING:
+    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.schema.config import StrawberryConfig
+    from strawberry.type import StrawberryType
+
+    from .types.types import TypeDefinition
 
 DEPRECATED_NAMES: Dict[str, str] = {
     "UNSET": (

@@ -170,7 +170,7 @@ async def test_extra_form_data_fields_are_ignored(http_client: HttpClient):
     buffer = FakeWriter()
     writer = form_data()
 
-    await (writer.write(buffer))  # type: ignore
+    await writer.write(buffer)  # type: ignore
 
     response = await http_client.post(
         url="/graphql",
@@ -210,7 +210,7 @@ async def test_sending_invalid_json_body(http_client: HttpClient):
     buffer = FakeWriter()
     writer = form_data()
 
-    await (writer.write(buffer))  # type: ignore
+    await writer.write(buffer)  # type: ignore
 
     response = await http_client.post(
         "/graphql",

@@ -6,7 +6,7 @@ from graphql import GraphQLError
 
 import strawberry
 from strawberry.channels.context import StrawberryChannelsContext
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
@@ -21,8 +21,8 @@ class AlwaysFailPermission(BasePermission):
         return False
 
 
-class MyExtension(Extension):
-    def get_results(self):
+class MyExtension(SchemaExtension):
+    def get_results(self) -> typing.Dict[str, str]:
         return {"example": "example"}
 
 
