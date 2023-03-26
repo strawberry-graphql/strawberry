@@ -15,7 +15,11 @@ from .django import DjangoHttpClient
 from .fastapi import FastAPIHttpClient
 from .flask import FlaskHttpClient
 from .sanic import SanicHttpClient
-from .starlite import StarliteHttpClient
+
+try:
+    from .starlite import StarliteHttpClient
+except ImportError:
+    StarliteHttpClient = None
 
 __all__ = [
     "AioHttpClient",
