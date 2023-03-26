@@ -41,7 +41,7 @@ jobs:
       - name: pytest
         run:
           poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m "not
-          starlette" -m "not django" --ignore=tests/mypy --ignore=tests/pyright --ignore=tests/starlite
+          starlette" -m "not django" -m "not starlite" --ignore=tests/mypy --ignore=tests/pyright
 
         if: ${{ always() }}
       - uses: codecov/codecov-action@v3
@@ -184,7 +184,7 @@ jobs:
 
       - name: pytest
         run:
-          poetry run coverage run -m pytest --showlocals -vv tests/starlite
+          poetry run coverage run -m pytest --showlocals -vv -m starlite
 
       - name: coverage xml
         run: poetry run coverage xml -i
