@@ -320,7 +320,7 @@ def print_enum(
     )
 
 
-def print_extends(type_, schema: BaseSchema):
+def print_extends(type_, schema: BaseSchema) -> str:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
     strawberry_type = type_.extensions and type_.extensions.get(

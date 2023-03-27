@@ -125,7 +125,7 @@ class ReservedType(NamedTuple):
                 "their respective types (i.e. use value: 'DirectiveValue[str]' instead "
                 "of 'value: str' and 'info: Info' instead of a plain 'info')."
             )
-            warnings.warn(warning)
+            warnings.warn(warning, stacklevel=3)
             return reserved_name
         else:
             return None

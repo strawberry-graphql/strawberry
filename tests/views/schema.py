@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import typing
 from enum import Enum
 
@@ -21,7 +22,7 @@ class AlwaysFailPermission(BasePermission):
 
 
 class MyExtension(SchemaExtension):
-    def get_results(self):
+    def get_results(self) -> typing.Dict[str, str]:
         return {"example": "example"}
 
 
@@ -32,6 +33,12 @@ def _read_file(text_file: Upload) -> str:
     # async methods for reading
     if isinstance(text_file, UploadFile):
         text_file = text_file.file._file  # type: ignore
+
+    with contextlib.suppress(ModuleNotFoundError):
+        from starlite import UploadFile as StarliteUploadFile
+
+        if isinstance(text_file, StarliteUploadFile):
+            text_file = text_file.file  # type: ignore
 
     return text_file.read().decode()
 

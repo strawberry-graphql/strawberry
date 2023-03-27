@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 from copy import deepcopy
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional
 
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
@@ -47,7 +47,7 @@ class OpenTelemetryExtension(SchemaExtension):
         if execution_context:
             self.execution_context = execution_context
 
-    def on_operation(self):
+    def on_operation(self) -> Generator[None, None, None]:
         self._operation_name = self.execution_context.operation_name
         span_name = (
             f"GraphQL Query: {self._operation_name}"
@@ -76,7 +76,7 @@ class OpenTelemetryExtension(SchemaExtension):
             self._span_holder[RequestStage.REQUEST].update_name(span_name)
         self._span_holder[RequestStage.REQUEST].end()
 
-    def on_validate(self):
+    def on_validate(self) -> Generator[None, None, None]:
         ctx = trace.set_span_in_context(self._span_holder[RequestStage.REQUEST])
         self._span_holder[RequestStage.VALIDATION] = self._tracer.start_span(
             "GraphQL Validation",
@@ -85,7 +85,7 @@ class OpenTelemetryExtension(SchemaExtension):
         yield
         self._span_holder[RequestStage.VALIDATION].end()
 
-    def on_parse(self):
+    def on_parse(self) -> Generator[None, None, None]:
         ctx = trace.set_span_in_context(self._span_holder[RequestStage.REQUEST])
         self._span_holder[RequestStage.PARSING] = self._tracer.start_span(
             "GraphQL Parsing", context=ctx
@@ -101,7 +101,9 @@ class OpenTelemetryExtension(SchemaExtension):
             return args
         return self._arg_filter(deepcopy(args), info)
 
-    def add_tags(self, span: Span, info: GraphQLResolveInfo, kwargs: Dict[str, Any]):
+    def add_tags(
+        self, span: Span, info: GraphQLResolveInfo, kwargs: Dict[str, Any]
+    ) -> None:
         graphql_path = ".".join(map(str, get_path_from_info(info)))
 
         span.set_attribute("component", "graphql")
@@ -114,7 +116,7 @@ class OpenTelemetryExtension(SchemaExtension):
             for kwarg, value in filtered_kwargs.items():
                 span.set_attribute(f"graphql.param.{kwarg}", value)
 
-    async def resolve(self, _next, root, info, *args, **kwargs):
+    async def resolve(self, _next, root, info, *args, **kwargs) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -137,7 +139,7 @@ class OpenTelemetryExtension(SchemaExtension):
 
 
 class OpenTelemetryExtensionSync(OpenTelemetryExtension):
-    def resolve(self, _next, root, info, *args, **kwargs):
+    def resolve(self, _next, root, info, *args, **kwargs) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 

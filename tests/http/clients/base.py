@@ -156,9 +156,9 @@ class HttpClient(abc.ABC):
         for key, values in variables.items():
             if isinstance(values, dict):
                 folder_key = list(values.keys())[0]
-                key += f".{folder_key}"
+                key += f".{folder_key}"  # noqa: PLW2901
                 # the list of file is inside the folder keyword
-                values = values[folder_key]
+                values = values[folder_key]  # noqa: PLW2901
 
             # If the variable is an array of files we must number the keys
             if isinstance(values, list):

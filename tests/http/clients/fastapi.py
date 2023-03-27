@@ -33,7 +33,7 @@ async def fastapi_get_context(
     request: Request = None,
     ws: WebSocket = None,
     custom_value=Depends(custom_context_dependency),
-):
+) -> Dict[str, object]:
     return get_context(
         {
             "request": request or ws,
@@ -42,7 +42,7 @@ async def fastapi_get_context(
     )
 
 
-async def get_root_value(request: Request = None, ws: WebSocket = None):
+async def get_root_value(request: Request = None, ws: WebSocket = None) -> Query:
     return Query()
 
 

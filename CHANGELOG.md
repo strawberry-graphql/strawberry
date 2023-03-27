@@ -1,6 +1,92 @@
 CHANGELOG
 =========
 
+0.168.1 - 2023-03-26
+--------------------
+
+This releases adds a new `extra` group for Starlite, preventing it from being
+installed by default.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2664](https://github.com/strawberry-graphql/strawberry/pull/2664/)
+
+
+0.168.0 - 2023-03-26
+--------------------
+
+This release adds support for [starlite](https://starliteproject.dev/).
+
+```python
+import strawberry
+from starlite import Request, Starlite
+from strawberry.starlite import make_graphql_controller
+from strawberry.types.info import Info
+
+
+def custom_context_getter(request: Request):
+    return {"custom": "context"}
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self, info: Info[object, None]) -> str:
+        return info.context["custom"]
+
+
+schema = strawberry.Schema(Query)
+
+
+GraphQLController = make_graphql_controller(
+    schema,
+    path="/graphql",
+    context_getter=custom_context_getter,
+)
+
+app = Starlite(
+    route_handlers=[GraphQLController],
+)
+```
+
+Contributed by [Matthieu MN](https://github.com/gazorby) via [PR #2391](https://github.com/strawberry-graphql/strawberry/pull/2391/)
+
+
+0.167.1 - 2023-03-26
+--------------------
+
+This release fixes and issue where you'd get a warning
+about using Apollo Federation directives even when using
+`strawberry.federation.Schema`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2661](https://github.com/strawberry-graphql/strawberry/pull/2661/)
+
+
+0.167.0 - 2023-03-25
+--------------------
+
+This releases adds more type annotations for public functions and methods.
+
+No new changes have been added to the API.
+
+Contributed by [Jad Haddad](https://github.com/JadHADDAD92) via [PR #2627](https://github.com/strawberry-graphql/strawberry/pull/2627/)
+
+
+0.166.0 - 2023-03-25
+--------------------
+
+This release adds a warning when using `@strawberry.federation.type`
+but not using `strawberry.federation.Schema`
+
+Contributed by [Rubens O Leão](https://github.com/rubensoleao) via [PR #2572](https://github.com/strawberry-graphql/strawberry/pull/2572/)
+
+
+0.165.1 - 2023-03-21
+--------------------
+
+Updates the `MaskErrors` extension to the new extension API, which was missed previously.
+
+Contributed by [Nikolai Maas](https://github.com/N-Maas) via [PR #2655](https://github.com/strawberry-graphql/strawberry/pull/2655/)
+
+
 0.165.0 - 2023-03-18
 --------------------
 

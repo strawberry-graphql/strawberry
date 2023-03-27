@@ -32,7 +32,7 @@ else:
     _T = TypeVar("_T", bound=type)
 
 
-def identity(x):
+def identity(x: _T) -> _T:
     return x
 
 

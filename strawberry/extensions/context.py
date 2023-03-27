@@ -68,7 +68,7 @@ class ExtensionContextManagerBase:
                 "{self.HOOK_NAME}"
             )
         elif is_legacy:
-            warnings.warn(self.DEPRECATION_MESSAGE, DeprecationWarning)
+            warnings.warn(self.DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=3)
             return self.from_legacy(extension, on_start, on_end)
 
         if hook_fn:
@@ -140,7 +140,7 @@ class ExtensionContextManagerBase:
             hook = iterator()
             return WrappedHook(extension, hook, False)
 
-    def run_hooks_sync(self, is_exit: bool = False):
+    def run_hooks_sync(self, is_exit: bool = False) -> None:
         """Run extensions synchronously."""
         ctx = (
             contextlib.suppress(StopIteration, StopAsyncIteration)
@@ -157,7 +157,7 @@ class ExtensionContextManagerBase:
                 else:
                     hook.initialized_hook.__next__()  # type: ignore[union-attr]
 
-    async def run_hooks_async(self, is_exit: bool = False):
+    async def run_hooks_async(self, is_exit: bool = False) -> None:
         """Run extensions asynchronously with support for sync lifecycle hooks.
 
         The ``is_exit`` flag is required as a `StopIteration` cannot be raised from

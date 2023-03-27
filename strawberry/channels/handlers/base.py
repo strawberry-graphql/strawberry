@@ -94,7 +94,7 @@ class ChannelsConsumer(AsyncConsumer):
             request=request or self, connection_params=connection_params
         )
 
-    async def dispatch(self, message: ChannelsMessage):
+    async def dispatch(self, message: ChannelsMessage) -> None:
         # AsyncConsumer will try to get a function for message["type"] to handle
         # for both http/websocket types and also for layers communication.
         # In case the type isn't one of those, pass it to the listen queue so

@@ -22,7 +22,7 @@ from .base import JSON, HttpClient, Response, ResultOverrideFunction
 class GraphQLView(BaseGraphQLView):
     result_override: ResultOverrideFunction = None
 
-    def get_root_value(self, request):
+    def get_root_value(self, request) -> Query:
         return Query()
 
     def get_context(self, request: HttpRequest, response: HttpResponse) -> object:

@@ -192,7 +192,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
 
             # Create a StrawberryField, for fields of Types #1 and #2a
             field_class = _get_field_for_type(field_type)
-            field = field_class(
+            field = field_class(  # noqa: PLW2901
                 python_name=field.name,
                 graphql_name=None,
                 type_annotation=StrawberryAnnotation(
