@@ -50,11 +50,13 @@ class Fruit(relay.Node):
         node_ids: Optional[Iterable[str]] = None,
         required: bool = False,
     ):
+        # nodes_id will be a list when resolving specific nodes
         if node_ids is not None:
             return [
                 fruits[int(nid)] if required else fruits.get(nid) for nid in node_ids
             ]
 
+        # But will be None when resolving a connection without a custom resolver
         return fruits.values()
 
 
