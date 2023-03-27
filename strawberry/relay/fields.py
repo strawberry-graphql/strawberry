@@ -80,11 +80,11 @@ class RelayField(StrawberryField):
         return list(args.values())
 
     @cached_property
-    def is_basic_field(self):
+    def is_basic_field(self) -> bool:
         return False
 
     @cached_property
-    def is_optional(self):
+    def is_optional(self) -> bool:
         type_ = self.type
         if isinstance(type_, StrawberryList):
             type_ = type_.of_type
@@ -92,7 +92,7 @@ class RelayField(StrawberryField):
         return isinstance(type_, StrawberryOptional)
 
     @cached_property
-    def is_list(self):
+    def is_list(self) -> bool:
         type_ = self.type
         if isinstance(type_, StrawberryOptional):
             type_ = type_.of_type
@@ -420,7 +420,7 @@ class ConnectionField(RelayField):
         kwargs: Dict[str, Any],
         *,
         nodes: AwaitableOrValue[Optional[Iterable[Node]]] = None,
-    ):
+    ) -> AwaitableOrValue[Connection[Node]]:
         return_type = cast(Connection[Node], info.return_type)
         type_def = return_type._type_definition  # type:ignore
         assert isinstance(type_def, TypeDefinition)
@@ -433,14 +433,17 @@ class ConnectionField(RelayField):
             nodes = cast(Node, field_type).resolve_nodes(info=info)
 
         if inspect.isawaitable(nodes):
-            return resolve_awaitable(
-                nodes,
-                lambda resolved: self.resolver(
-                    source,
-                    info,
-                    args,
-                    kwargs,
-                    nodes=resolved,
+            return cast(
+                Awaitable[Connection[Node]],
+                resolve_awaitable(
+                    nodes,
+                    lambda resolved: self.resolver(
+                        source,
+                        info,
+                        args,
+                        kwargs,
+                        nodes=resolved,
+                    ),
                 ),
             )
 
@@ -453,7 +456,7 @@ class ConnectionField(RelayField):
         nodes: NodeIterableType[NodeType],
         info: Info,
         **kwargs,
-    ):
+    ) -> Connection[Node]:
         return_type = cast(Connection[Node], info.return_type)
         kwargs.setdefault("info", info)
         return return_type.from_nodes(
