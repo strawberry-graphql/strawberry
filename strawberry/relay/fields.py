@@ -79,7 +79,7 @@ class RelayField(StrawberryField):
         }
         return list(args.values())
 
-    @cached_property
+    @property
     def is_basic_field(self) -> bool:
         return False
 
