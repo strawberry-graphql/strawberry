@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import json
-import warnings
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
-from django.core.serializers.json import DjangoJSONEncoder
-from django.http import Http404, HttpResponseNotAllowed, JsonResponse
+from django.http import HttpRequest, HttpResponseNotAllowed, JsonResponse
 from django.http.response import HttpResponse
 from django.template import RequestContext, Template
 from django.template.exceptions import TemplateDoesNotExist
@@ -18,12 +16,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
 from strawberry.exceptions import MissingQueryError
-from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
-    parse_query_params,
-    parse_request_data,
     process_result,
 )
+from strawberry.http.base_view import BaseHTTPView, Context, HTTPException, RootValue
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types.graphql import OperationType
 from strawberry.utils.graphiql import get_graphiql_html
@@ -33,7 +29,7 @@ from .context import StrawberryDjangoContext
 if TYPE_CHECKING:
     from django.http import HttpRequest
 
-    from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
+    from strawberry.http import GraphQLHTTPResponse
     from strawberry.types import ExecutionResult
 
     from ..schema import BaseSchema
@@ -56,13 +52,13 @@ class TemporalHttpResponse(JsonResponse):
         )
 
 
-class BaseView(View):
+class BaseView(
+    BaseHTTPView[HttpRequest, HttpResponse, Context, RootValue], View  # TODO fix type?
+):
     subscriptions_enabled = False
     graphiql = True
     allow_queries_via_get = True
     schema: Optional[BaseSchema] = None
-    json_encoder: Optional[Type[json.JSONEncoder]] = None
-    json_dumps_params: Optional[Dict[str, Any]] = None
 
     def __init__(
         self,
@@ -79,71 +75,18 @@ class BaseView(View):
 
         super().__init__(**kwargs)
 
-        self.json_dumps_params = kwargs.pop("json_dumps_params", self.json_dumps_params)
+    # def parse_body(self, request: HttpRequest) -> Dict[str, Any]:
 
-        if self.json_dumps_params:
-            warnings.warn(
-                "json_dumps_params is deprecated, override encode_json instead",
-                DeprecationWarning,
-                stacklevel=2,
-            )
+    #     if "application/json" in content_type:
 
-            self.json_encoder = DjangoJSONEncoder
 
-        self.json_encoder = kwargs.pop("json_encoder", self.json_encoder)
 
-        if self.json_encoder is not None:
-            warnings.warn(
-                "json_encoder is deprecated, override encode_json instead",
-                DeprecationWarning,
-                stacklevel=2,
-            )
 
-    def parse_body(self, request: HttpRequest) -> Dict[str, Any]:
-        content_type = request.content_type or ""
+    # def get_request_data(self, request: HttpRequest) -> GraphQLRequestData:
 
-        if "application/json" in content_type:
-            return json.loads(request.body)
-        elif content_type.startswith("multipart/form-data"):
-            data = json.loads(request.POST.get("operations", "{}"))
-            files_map = json.loads(request.POST.get("map", "{}"))
 
-            data = replace_placeholders_with_files(data, files_map, request.FILES)
-
-            return data
-        elif request.method.lower() == "get" and request.META.get("QUERY_STRING"):
-            return parse_query_params(request.GET.copy())
-
-        return json.loads(request.body)
-
-    def is_request_allowed(self, request: HttpRequest) -> bool:
-        return request.method.lower() in ("get", "post")
-
-    def should_render_graphiql(self, request: HttpRequest) -> bool:
-        if request.method.lower() != "get":
-            return False
-
-        if self.allow_queries_via_get and request.META.get("QUERY_STRING"):
-            return False
-
-        return any(
-            supported_header in request.META.get("HTTP_ACCEPT", "")
-            for supported_header in ("text/html", "*/*")
-        )
-
-    def get_request_data(self, request: HttpRequest) -> GraphQLRequestData:
-        try:
-            data = self.parse_body(request)
-        except json.decoder.JSONDecodeError:
-            raise SuspiciousOperation("Unable to parse request body as JSON")
-        except KeyError:
-            raise BadRequest("File(s) missing in form data")
-
-        return parse_request_data(data)
-
-    def _render_graphiql(self, request: HttpRequest, context=None) -> TemplateResponse:
-        if not self.graphiql:
-            raise Http404()
+    def render_graphiql(self, request: HttpRequest) -> TemplateResponse:
+        context = None  # TODO?
 
         try:
             template = Template(render_to_string("graphql/graphiql.html"))
@@ -157,6 +100,9 @@ class BaseView(View):
         response.content = template.render(RequestContext(request, context))
 
         return response
+
+    def get_sub_response(self, request: HttpRequest) -> TemporalHttpResponse:
+        return TemporalHttpResponse()
 
     def _create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: HttpResponse
@@ -179,77 +125,24 @@ class BaseView(View):
 
         return response
 
-    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
-        if self.json_dumps_params:
-            assert self.json_encoder
 
-            return json.dumps(
-                response_data, cls=self.json_encoder, **self.json_dumps_params
-            )
-
-        if self.json_encoder:
-            return json.dumps(response_data, cls=self.json_encoder)
-
-        return json.dumps(response_data)
-
-
-class GraphQLView(BaseView):
-    def get_root_value(self, request: HttpRequest) -> Any:
-        return None
-
+class GraphQLView(BaseView[Context, RootValue]):
     def get_context(self, request: HttpRequest, response: HttpResponse) -> Any:
         return StrawberryDjangoContext(request=request, response=response)
 
-    def process_result(
-        self, request: HttpRequest, result: ExecutionResult
-    ) -> GraphQLHTTPResponse:
-        return process_result(result)
-
     @method_decorator(csrf_exempt)
     def dispatch(
-        self, request, *args, **kwargs
+        self, request: HttpRequest, *args: Any, **kwargs: Any
     ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
-        if not self.is_request_allowed(request):
-            return HttpResponseNotAllowed(
-                ["GET", "POST"], "GraphQL only supports GET and POST requests."
-            )
-
-        if self.should_render_graphiql(request):
-            return self._render_graphiql(request)
-
-        request_data = self.get_request_data(request)
-
-        sub_response = TemporalHttpResponse()
-        context = self.get_context(request, response=sub_response)
-        root_value = self.get_root_value(request)
-
-        method = request.method
-        allowed_operation_types = OperationType.from_http(method)
-
-        if not self.allow_queries_via_get and method == "GET":
-            allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
-
-        assert self.schema
-
         try:
-            result = self.schema.execute_sync(
-                request_data.query,
-                root_value=root_value,
-                variable_values=request_data.variables,
-                context_value=context,
-                operation_name=request_data.operation_name,
-                allowed_operation_types=allowed_operation_types,
+            return self.run(
+                request=request,
             )
-        except InvalidOperationTypeError as e:
-            raise BadRequest(e.as_http_error_reason(method)) from e
-        except MissingQueryError:
-            raise SuspiciousOperation("No GraphQL query found in the request")
-
-        response_data = self.process_result(request=request, result=result)
-
-        return self._create_response(
-            response_data=response_data, sub_response=sub_response
-        )
+        except HTTPException as e:
+            return HttpResponse(
+                content=e.reason,
+                status=e.status_code,
+            )
 
 
 class AsyncGraphQLView(BaseView):

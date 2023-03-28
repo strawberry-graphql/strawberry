@@ -22,7 +22,7 @@ from .clients import (
     params=[
         pytest.param(AioHttpClient, marks=pytest.mark.aiohttp),
         pytest.param(AsgiHttpClient, marks=pytest.mark.asgi),
-        pytest.param(AsyncDjangoHttpClient, marks=pytest.mark.django),
+        pytest.param(AsyncDjangoHttpClient, marks=pytest.mark.django_async),
         pytest.param(AsyncFlaskHttpClient, marks=pytest.mark.flask),
         pytest.param(ChaliceHttpClient, marks=pytest.mark.chalice),
         pytest.param(DjangoHttpClient, marks=pytest.mark.django),
