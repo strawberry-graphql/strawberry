@@ -36,12 +36,20 @@ class HTTPException(Exception):
 
 class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
     schema: BaseSchema
+    graphiql: bool
 
     def is_request_allowed(self, request: Request) -> bool:
         return request.method.lower() in ("get", "post")
 
     def should_render_graphiql(self, request: Request) -> bool:
-        return False
+        return (
+            request.method == "GET"
+            and self.get_query_params(request).get("query") is None
+            and any(
+                supported_header in request.headers.get("accept", "")
+                for supported_header in ("text/html", "*/*")
+            )
+        )
 
     @property
     @abc.abstractmethod
@@ -125,7 +133,7 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
         try:
             return request.args.copy()
         except AttributeError:
-            return dict(request.query_params)
+            return dict(request.query_params) if request.query_params else {}
 
     def parse_http_body(self, request: Request) -> GraphQLRequestData:
         # TODO: use adapters
@@ -172,7 +180,10 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
             raise HTTPException(405, "GraphQL only supports GET and POST requests.")
 
         if self.should_render_graphiql(request):
-            return self.render_graphiql(request)
+            if self.graphiql:
+                return self.render_graphiql(request)
+            else:
+                raise HTTPException(404, "Not Found")
 
         sub_response = self.get_sub_response(request)
 
