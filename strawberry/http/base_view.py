@@ -1,12 +1,12 @@
 import abc
 import json
-from typing import Any, Dict, Generic, Mapping, TypeVar, Union
+from typing import Any, Dict, Generic, Mapping, Optional, TypeVar, Union
 from typing_extensions import Protocol
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData, process_result
-from strawberry.schema import Schema
+from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
@@ -14,7 +14,7 @@ from strawberry.types.graphql import OperationType
 
 class RequestProtocol(Protocol):
     method: str
-    content_type: str
+    content_type: Optional[str]
     # TODO: this is probably going to be different
     # body, content, data, etc, binary or not
     data: Union[str, bytes]
@@ -35,7 +35,7 @@ class HTTPException(Exception):
 
 
 class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
-    schema: Schema
+    schema: BaseSchema
 
     def is_request_allowed(self, request: Request) -> bool:
         return request.method.lower() in ("get", "post")
@@ -57,7 +57,7 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
         ...
 
     @abc.abstractmethod
-    def get_root_value(self, request: Request) -> RootValue:
+    def get_root_value(self, request: Request) -> Optional[RootValue]:
         ...
 
     @abc.abstractmethod
@@ -66,7 +66,7 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
         # maybe add a get template function?
         ...
 
-    def execute_operation(self, request: Request) -> Any:
+    def execute_operation(self, request: Request, sub_response: Response) -> Any:
         try:
             request_data = self.parse_http_body(request)
         except json.decoder.JSONDecodeError as e:
@@ -75,7 +75,6 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
         except KeyError as e:
             raise HTTPException(400, "File(s) missing in form data") from e
 
-        sub_response = self.get_sub_response(request)
         context = self.get_context(request, response=sub_response)
         root_value = self.get_root_value(request)
 
@@ -117,13 +116,41 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
         except KeyError:
             raise HTTPException(400, "File(s) missing in form data")
 
+    def get_query_params(self, request: Request) -> Dict[str, str]:
+        try:
+            return request.GET.copy()
+        except AttributeError:
+            pass
+
+        try:
+            return request.args.copy()
+        except AttributeError:
+            return dict(request.query_params)
+
     def parse_http_body(self, request: Request) -> GraphQLRequestData:
-        if "application/json" in request.content_type:
-            data = self.parse_json(request.body)
-        elif request.content_type.startswith("multipart/form-data"):
+        # TODO: use adapters
+        try:
+            content_type = request.content_type or ""
+        except AttributeError:
+            content_type = request.headers.get("content-type", "")
+
+        if "application/json" in content_type:
+            # TODO: use adapters
+
+            try:
+                body = request.data.decode("utf-8")
+            except AttributeError:
+                try:
+                    body = request.body
+                except AttributeError:
+                    body = request.raw_body
+
+            data = self.parse_json(body)
+        elif content_type.startswith("multipart/form-data"):
             data = self.parse_form(request)
-        elif request.method.lower() == "get" and request.META.get("QUERY_STRING"):
-            data = self.parse_query_params(request.GET.copy())
+        elif request.method.lower() == "get":
+            query_params = self.get_query_params(request)
+            data = self.parse_query_params(query_params)
         else:
             # TODO, is this raise fine?
             raise HTTPException(400, "Unsupported content type")
@@ -147,17 +174,16 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
         if self.should_render_graphiql(request):
             return self.render_graphiql(request)
 
+        sub_response = self.get_sub_response(request)
+
         try:
-            result = self.execute_operation(request)
+            result = self.execute_operation(request=request, sub_response=sub_response)
         except InvalidOperationTypeError as e:
             raise HTTPException(400, e.as_http_error_reason(request.method)) from e
         except MissingQueryError as e:
             raise HTTPException(400, "No GraphQL query found in the request") from e
 
         response_data = self.process_result(request=request, result=result)
-
-        # TODO, reuse the one above
-        sub_response = self.get_sub_response(request)
 
         return self._create_response(
             response_data=response_data, sub_response=sub_response

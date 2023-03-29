@@ -35,8 +35,9 @@ if TYPE_CHECKING:
     from ..schema import BaseSchema
 
 
+# TODO: remove this and unify temporal responses
 class TemporalHttpResponse(JsonResponse):
-    status_code = None
+    status_code: Optional[int] = None  # type: ignore
 
     def __init__(self) -> None:
         super().__init__({})
@@ -45,10 +46,11 @@ class TemporalHttpResponse(JsonResponse):
         """Adopted from Django to handle `status_code=None`."""
         if self.status_code is not None:
             return super().__repr__()
+
         return "<{cls} status_code={status_code}{content_type}>".format(
             cls=self.__class__.__name__,
             status_code=self.status_code,
-            content_type=self._content_type_for_repr,
+            content_type=self._content_type_for_repr,  # type: ignore
         )
 
 
@@ -57,8 +59,8 @@ class BaseView(
 ):
     subscriptions_enabled = False
     graphiql = True
-    allow_queries_via_get = True
-    schema: Optional[BaseSchema] = None
+    allow_queries_via_get = True  # type: ignore
+    schema: BaseSchema = None  # type: ignore
 
     def __init__(
         self,
@@ -74,16 +76,6 @@ class BaseView(
         self.subscriptions_enabled = subscriptions_enabled
 
         super().__init__(**kwargs)
-
-    # def parse_body(self, request: HttpRequest) -> Dict[str, Any]:
-
-    #     if "application/json" in content_type:
-
-
-
-
-    # def get_request_data(self, request: HttpRequest) -> GraphQLRequestData:
-
 
     def render_graphiql(self, request: HttpRequest) -> TemplateResponse:
         context = None  # TODO?
