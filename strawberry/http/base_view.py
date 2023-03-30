@@ -1,6 +1,6 @@
 import abc
 import json
-from typing import Any, Dict, Generic, Mapping, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, Generic, List, Mapping, Optional, TypeVar, Union
 from typing_extensions import Protocol
 
 from strawberry.exceptions import MissingQueryError
@@ -22,7 +22,7 @@ class RequestProtocol(Protocol):
     files: Mapping[str, Any]
 
 
-Request = TypeVar("Request", bound=RequestProtocol)
+Request = TypeVar("Request")
 Response = TypeVar("Response")
 Context = TypeVar("Context")
 RootValue = TypeVar("RootValue")
@@ -34,22 +34,42 @@ class HTTPException(Exception):
         self.reason = reason
 
 
+class HTTPRequestAdapterProtocol(Protocol):
+    @property
+    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+        ...
+
+    @property
+    def body(self) -> str:
+        ...
+
+    @property
+    def method(self) -> str:
+        ...
+
+    @property
+    def headers(self) -> Mapping[str, str]:
+        ...
+
+    @property
+    def post_data(self) -> Mapping[str, Union[str, bytes]]:
+        ...
+
+    @property
+    def files(self) -> Mapping[str, Any]:
+        ...
+
+    @property
+    def content_type(self) -> Optional[str]:
+        ...
+
+
 class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
     schema: BaseSchema
     graphiql: bool
+    request_adapter_class: Callable[[Request], HTTPRequestAdapterProtocol]
 
-    def is_request_allowed(self, request: Request) -> bool:
-        return request.method.lower() in ("get", "post")
-
-    def should_render_graphiql(self, request: Request) -> bool:
-        return (
-            request.method == "GET"
-            and self.get_query_params(request).get("query") is None
-            and any(
-                supported_header in request.headers.get("accept", "")
-                for supported_header in ("text/html", "*/*")
-            )
-        )
+    # Methods that need to be implemented by individual frameworks
 
     @property
     @abc.abstractmethod
@@ -74,9 +94,26 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
         # maybe add a get template function?
         ...
 
+    # Internal methods
+
+    def is_request_allowed(self, request: HTTPRequestAdapterProtocol) -> bool:
+        return request.method.lower() in ("get", "post")
+
+    def should_render_graphiql(self, request: HTTPRequestAdapterProtocol) -> bool:
+        return (
+            request.method.lower() == "get"
+            and request.query_params.get("query") is None
+            and any(
+                supported_header in request.headers.get("accept", "")
+                for supported_header in ("text/html", "*/*")
+            )
+        )
+
     def execute_operation(self, request: Request, sub_response: Response) -> Any:
+        request_adapter = self.request_adapter_class(request)
+
         try:
-            request_data = self.parse_http_body(request)
+            request_data = self.parse_http_body(request_adapter)
         except json.decoder.JSONDecodeError as e:
             raise HTTPException(400, "Unable to parse request body as JSON") from e
             # DO this only when doing files
@@ -86,11 +123,11 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
         context = self.get_context(request, response=sub_response)
         root_value = self.get_root_value(request)
 
-        method: str = request.method
+        method = request_adapter.method.lower()
 
         allowed_operation_types = OperationType.from_http(method)
 
-        if not self.allow_queries_via_get and method == "GET":
+        if not self.allow_queries_via_get and method == "get":
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
 
         assert self.schema
@@ -113,52 +150,28 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
     def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
         return json.dumps(response_data)
 
-    def parse_form(self, request: Request) -> Dict[str, str]:
-        operations = self.parse_json(request.form.get("operations", "{}"))
-        files_map = self.parse_json(request.form.get("map", "{}"))
+    def parse_multipart(self, request: HTTPRequestAdapterProtocol) -> Dict[str, str]:
+        operations = self.parse_json(request.post_data.get("operations", "{}"))
+        files_map = self.parse_json(request.post_data.get("map", "{}"))
 
         # TODO: remove type ignore below
 
         try:
             return replace_placeholders_with_files(operations, files_map, request.files)  # type: ignore
-        except KeyError:
-            raise HTTPException(400, "File(s) missing in form data")
+        except KeyError as e:
+            raise HTTPException(400, "File(s) missing in form data") from e
 
-    def get_query_params(self, request: Request) -> Dict[str, str]:
-        try:
-            return request.GET.copy()
-        except AttributeError:
-            pass
-
-        try:
-            return request.args.copy()
-        except AttributeError:
-            return dict(request.query_params) if request.query_params else {}
-
-    def parse_http_body(self, request: Request) -> GraphQLRequestData:
-        # TODO: use adapters
-        try:
-            content_type = request.content_type or ""
-        except AttributeError:
-            content_type = request.headers.get("content-type", "")
+    def parse_http_body(
+        self, request: HTTPRequestAdapterProtocol
+    ) -> GraphQLRequestData:
+        content_type = request.content_type or ""
 
         if "application/json" in content_type:
-            # TODO: use adapters
-
-            try:
-                body = request.data.decode("utf-8")
-            except AttributeError:
-                try:
-                    body = request.body
-                except AttributeError:
-                    body = request.raw_body
-
-            data = self.parse_json(body)
+            data = self.parse_json(request.body)
         elif content_type.startswith("multipart/form-data"):
-            data = self.parse_form(request)
+            data = self.parse_multipart(request)
         elif request.method.lower() == "get":
-            query_params = self.get_query_params(request)
-            data = self.parse_query_params(query_params)
+            data = self.parse_query_params(request.query_params)
         else:
             # TODO, is this raise fine?
             raise HTTPException(400, "Unsupported content type")
@@ -176,10 +189,12 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
         return params
 
     def run(self, request: Request) -> Response:
-        if not self.is_request_allowed(request):
+        request_adapter = self.request_adapter_class(request)
+
+        if not self.is_request_allowed(request_adapter):
             raise HTTPException(405, "GraphQL only supports GET and POST requests.")
 
-        if self.should_render_graphiql(request):
+        if self.should_render_graphiql(request_adapter):
             if self.graphiql:
                 return self.render_graphiql(request)
             else:
@@ -190,7 +205,9 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
         try:
             result = self.execute_operation(request=request, sub_response=sub_response)
         except InvalidOperationTypeError as e:
-            raise HTTPException(400, e.as_http_error_reason(request.method)) from e
+            raise HTTPException(
+                400, e.as_http_error_reason(request_adapter.method)
+            ) from e
         except MissingQueryError as e:
             raise HTTPException(400, "No GraphQL query found in the request") from e
 

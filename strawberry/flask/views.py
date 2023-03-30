@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union
 
 from flask import Request, Response, render_template_string, request
 from flask.views import View
@@ -25,9 +25,43 @@ if TYPE_CHECKING:
     from strawberry.types import ExecutionResult
 
 
+class FlaskHTTPRequestAdapter:
+    def __init__(self, request: Request):
+        self.request = request
+
+    @property
+    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+        return self.request.args.to_dict()
+
+    @property
+    def body(self) -> str:
+        return self.request.data.decode()
+
+    @property
+    def method(self) -> str:
+        return self.request.method
+
+    @property
+    def headers(self) -> Mapping[str, str]:
+        return self.request.headers
+
+    @property
+    def post_data(self) -> Mapping[str, Union[str, bytes]]:
+        return self.request.form
+
+    @property
+    def files(self) -> Mapping[str, Any]:
+        return self.request.files
+
+    @property
+    def content_type(self) -> Optional[str]:
+        return self.request.content_type
+
+
 class BaseGraphQLView(BaseHTTPView[Request, Response, Context, RootValue], View):
     methods = ["GET", "POST"]
     allow_queries_via_get: bool = True
+    request_adapter_class = FlaskHTTPRequestAdapter
 
     def __init__(
         self,

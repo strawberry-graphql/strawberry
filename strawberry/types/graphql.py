@@ -11,10 +11,10 @@ class OperationType(enum.Enum):
 
     @staticmethod
     def from_http(method: str) -> Set[OperationType]:
-        if method == "GET":
+        if method == "get":
             return {OperationType.QUERY}
 
-        if method == "POST":
+        if method == "post":
             return {
                 OperationType.QUERY,
                 OperationType.MUTATION,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Union
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
 from django.http import HttpRequest, HttpResponseNotAllowed, JsonResponse
@@ -27,8 +27,6 @@ from strawberry.utils.graphiql import get_graphiql_html
 from .context import StrawberryDjangoContext
 
 if TYPE_CHECKING:
-    from django.http import HttpRequest
-
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.types import ExecutionResult
 
@@ -54,6 +52,40 @@ class TemporalHttpResponse(JsonResponse):
         )
 
 
+class DjangoHTTPRequestAdapter:
+    def __init__(self, request: HttpRequest):
+        self.request = request
+
+    @property
+    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+        return self.request.GET.dict()
+
+    @property
+    def body(self) -> str:
+        return self.request.body.decode()
+
+    @property
+    def method(self) -> str:
+        # TODO: when could this be none?
+        return self.request.method or ""
+
+    @property
+    def headers(self) -> Mapping[str, str]:
+        return self.request.headers
+
+    @property
+    def post_data(self) -> Mapping[str, Union[str, bytes]]:
+        return self.request.POST
+
+    @property
+    def files(self) -> Mapping[str, Any]:
+        return self.request.FILES
+
+    @property
+    def content_type(self) -> Optional[str]:
+        return self.request.content_type
+
+
 class BaseView(
     BaseHTTPView[HttpRequest, HttpResponse, Context, RootValue], View  # TODO fix type?
 ):
@@ -61,6 +93,7 @@ class BaseView(
     graphiql = True
     allow_queries_via_get = True  # type: ignore
     schema: BaseSchema = None  # type: ignore
+    request_adapter_class = DjangoHTTPRequestAdapter
 
     def __init__(
         self,
@@ -127,9 +160,7 @@ class GraphQLView(BaseView[Context, RootValue]):
         self, request: HttpRequest, *args: Any, **kwargs: Any
     ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
         try:
-            return self.run(
-                request=request,
-            )
+            return self.run(request=request)
         except HTTPException as e:
             return HttpResponse(
                 content=e.reason,
