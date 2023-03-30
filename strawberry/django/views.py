@@ -197,11 +197,11 @@ class AsyncGraphQLView(
         return TemporalHttpResponse()
 
     @method_decorator(csrf_exempt)
-    def dispatch(
+    async def dispatch(
         self, request: HttpRequest, *args: Any, **kwargs: Any
     ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
         try:
-            return self.run(request=request)
+            return await self.run(request=request)
         except HTTPException as e:
             return HttpResponse(
                 content=e.reason,

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Dict
 
 from flask import Flask
+from flask import Request as FlaskRequest
 from flask import Response as FlaskResponse
 from strawberry.flask.views import AsyncGraphQLView as BaseAsyncGraphQLView
 from strawberry.http import GraphQLHTTPResponse
@@ -26,11 +27,13 @@ class GraphQLView(BaseAsyncGraphQLView):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 
-    async def get_root_value(self) -> Query:
+    async def get_root_value(self, request: FlaskRequest) -> Query:
         return Query()
 
-    async def get_context(self, response: FlaskResponse) -> Dict[str, object]:
-        context = await super().get_context(response)
+    async def get_context(
+        self, request: FlaskRequest, response: FlaskResponse
+    ) -> Dict[str, object]:
+        context = await super().get_context(request, response)
 
         return get_context(context)
 

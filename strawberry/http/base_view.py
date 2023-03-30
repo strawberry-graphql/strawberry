@@ -240,7 +240,7 @@ class AsyncBaseHTTPView(BaseHTTPView[Request, Response, Context, RootValue]):
         request_adapter = self.request_adapter_class(request)
 
         try:
-            request_data = self.parse_http_body(request_adapter)
+            request_data = await self.parse_http_body(request_adapter)
         except json.decoder.JSONDecodeError as e:
             raise HTTPException(400, "Unable to parse request body as JSON") from e
             # DO this only when doing files
@@ -268,6 +268,23 @@ class AsyncBaseHTTPView(BaseHTTPView[Request, Response, Context, RootValue]):
             allowed_operation_types=allowed_operation_types,
         )
 
+    async def parse_multipart(
+        self, request: HTTPRequestAdapterProtocol
+    ) -> Dict[str, str]:
+        try:
+            files, operations, files_map = await request.get_files()
+        except ValueError:
+            raise HTTPException(400, "Unable to parse the multipart body")
+
+
+
+        # TODO: remove type ignore below
+
+        try:
+            return replace_placeholders_with_files(operations, files_map, files)  # type: ignore
+        except KeyError as e:
+            raise HTTPException(400, "File(s) missing in form data") from e
+
     async def run(self, request: Request) -> Response:
         request_adapter = self.request_adapter_class(request)
 
@@ -293,8 +310,34 @@ class AsyncBaseHTTPView(BaseHTTPView[Request, Response, Context, RootValue]):
         except MissingQueryError as e:
             raise HTTPException(400, "No GraphQL query found in the request") from e
 
-        response_data = self.process_result(request=request, result=result)
+        response_data = await self.process_result(request=request, result=result)
 
         return self._create_response(
             response_data=response_data, sub_response=sub_response
         )
+
+    async def parse_http_body(
+        self, request: HTTPRequestAdapterProtocol
+    ) -> GraphQLRequestData:
+        content_type = request.content_type or ""
+
+        if "application/json" in content_type:
+            data = self.parse_json(await request.get_body())
+        elif content_type.startswith("multipart/form-data"):
+            data = await self.parse_multipart(request)
+        elif request.method.lower() == "get":
+            data = self.parse_query_params(request.query_params)
+        else:
+            # TODO, is this raise fine?
+            raise HTTPException(400, "Unsupported content type")
+
+        return GraphQLRequestData(
+            query=data.get("query"),
+            variables=data.get("variables"),
+            operation_name=data.get("operationName"),
+        )
+
+    async def process_result(
+        self, request: Request, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
+        return super().process_result(request, result)
