@@ -26,9 +26,6 @@ from starlite.status_codes import (
     HTTP_200_OK,
 )
 from strawberry.exceptions import InvalidCustomContext
-from strawberry.http import (
-    GraphQLHTTPResponse,
-)
 from strawberry.http.base_view import (
     AsyncBaseHTTPView,
     Context,
@@ -50,6 +47,7 @@ if TYPE_CHECKING:
     from typing import FrozenSet, List, Tuple, Type
 
     from starlite.types import AnyCallable, Dependencies
+    from strawberry.http import GraphQLHTTPResponse
     from strawberry.schema import BaseSchema
 
     MergedContext = Union[

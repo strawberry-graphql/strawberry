@@ -7,9 +7,6 @@ from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Type, Unio
 from sanic.request import Request
 from sanic.response import HTTPResponse, html
 from sanic.views import HTTPMethodView
-from strawberry.http import (
-    process_result,
-)
 from strawberry.http.base_view import (
     AsyncBaseHTTPView,
     Context,
@@ -17,17 +14,12 @@ from strawberry.http.base_view import (
     RootValue,
 )
 from strawberry.http.temporal_response import TemporalResponse
-
-from strawberry.utils.graphiql import get_graphiql_html
-
 from strawberry.sanic.utils import convert_request_to_files_dict
+from strawberry.utils.graphiql import get_graphiql_html
 
 if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.schema import BaseSchema
-    from strawberry.types import ExecutionResult
-
-    from .context import StrawberrySanicContext
 
 
 class SanicHTTPRequestAdapter:

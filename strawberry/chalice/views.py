@@ -8,7 +8,6 @@ from strawberry.http.temporal_response import TemporalResponse
 from strawberry.utils.graphiql import get_graphiql_html
 
 if TYPE_CHECKING:
-    from chalice.app import Request
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.schema import BaseSchema
 

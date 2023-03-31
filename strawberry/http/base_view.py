@@ -195,7 +195,7 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
         # TODO: remove type ignore below
 
         try:
-            return replace_placeholders_with_files(operations, files_map, request.files)  # type: ignore
+            return replace_placeholders_with_files(operations, files_map, request.files)
         except KeyError as e:
             raise HTTPException(400, "File(s) missing in form data") from e
 
@@ -326,10 +326,8 @@ class AsyncBaseHTTPView(BaseHTTPView[Request, Response, Context, RootValue]):
         except ValueError:
             raise HTTPException(400, "Unable to parse the multipart body")
 
-        # TODO: remove type ignore below
-
         try:
-            return replace_placeholders_with_files(operations, files_map, files)  # type: ignore
+            return replace_placeholders_with_files(operations, files_map, files)
         except KeyError as e:
             raise HTTPException(400, "File(s) missing in form data") from e
 

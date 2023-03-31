@@ -10,7 +10,6 @@ from strawberry.aiohttp.handlers import (
     GraphQLTransportWSHandler,
     GraphQLWSHandler,
 )
-from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.base_view import (
     AsyncBaseHTTPView,
     Context,
@@ -21,6 +20,7 @@ from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_P
 from strawberry.utils.graphiql import get_graphiql_html
 
 if TYPE_CHECKING:
+    from strawberry.http import GraphQLHTTPResponse
     from strawberry.schema import BaseSchema
 
 
