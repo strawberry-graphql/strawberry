@@ -118,9 +118,7 @@ class GraphQLView(AsyncBaseHTTPView[web.Request, web.Response, Context, RootValu
 
         if not ws_test.ok:
             try:
-                return await self.run(
-                    request=request,
-                )
+                return await self.run(request=request)
             except HTTPException as e:
                 return web.Response(
                     body=e.reason,

@@ -148,7 +148,9 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
             )
         )
 
-    def execute_operation(self, request: Request, sub_response: Response) -> Any:
+    def execute_operation(
+        self, request: Request, context: Context, root_value: Optional[RootValue]
+    ) -> ExecutionResult:
         request_adapter = self.request_adapter_class(request)
 
         try:
@@ -158,9 +160,6 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
             # DO this only when doing files
         except KeyError as e:
             raise HTTPException(400, "File(s) missing in form data") from e
-
-        context = self.get_context(request, response=sub_response)
-        root_value = self.get_root_value(request)
 
         method = request_adapter.method.lower()
 
@@ -227,7 +226,12 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
 
         return params
 
-    def run(self, request: Request) -> Response:
+    def run(
+        self,
+        request: Request,
+        context: Optional[Context],
+        root_value: Optional[RootValue],
+    ) -> Response:
         request_adapter = self.request_adapter_class(request)
 
         if not self.is_request_allowed(request_adapter):
@@ -240,9 +244,15 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
                 raise HTTPException(404, "Not Found")
 
         sub_response = self.get_sub_response(request)
+        context = context or self.get_context(request, response=sub_response)
+        root_value = root_value or self.get_root_value(request)
 
         try:
-            result = self.execute_operation(request=request, sub_response=sub_response)
+            result = self.execute_operation(
+                request=request,
+                context=context,
+                root_value=root_value,
+            )
         except InvalidOperationTypeError as e:
             raise HTTPException(
                 400, e.as_http_error_reason(request_adapter.method)
@@ -277,7 +287,9 @@ class AsyncBaseHTTPView(BaseHTTPView[Request, Response, Context, RootValue]):
     async def get_root_value(self, request: Request) -> Optional[RootValue]:
         ...
 
-    async def execute_operation(self, request: Request, sub_response: Response) -> Any:
+    async def execute_operation(
+        self, request: Request, context: Context, root_value: Optional[RootValue]
+    ) -> ExecutionResult:
         request_adapter = self.request_adapter_class(request)
 
         try:
@@ -287,9 +299,6 @@ class AsyncBaseHTTPView(BaseHTTPView[Request, Response, Context, RootValue]):
             # DO this only when doing files
         except KeyError as e:
             raise HTTPException(400, "File(s) missing in form data") from e
-
-        context = await self.get_context(request, response=sub_response)
-        root_value = await self.get_root_value(request)
 
         method = request_adapter.method.lower()
 
@@ -324,7 +333,12 @@ class AsyncBaseHTTPView(BaseHTTPView[Request, Response, Context, RootValue]):
         except KeyError as e:
             raise HTTPException(400, "File(s) missing in form data") from e
 
-    async def run(self, request: Request) -> Response:
+    async def run(
+        self,
+        request: Request,
+        context: Optional[Context],
+        root_value: Optional[RootValue],
+    ) -> Response:
         request_adapter = self.request_adapter_class(request)
 
         if not self.is_request_allowed(request_adapter):
@@ -337,10 +351,12 @@ class AsyncBaseHTTPView(BaseHTTPView[Request, Response, Context, RootValue]):
                 raise HTTPException(404, "Not Found")
 
         sub_response = await self.get_sub_response(request)
+        context = context or await self.get_context(request, response=sub_response)
+        root_value = root_value or await self.get_root_value(request)
 
         try:
             result = await self.execute_operation(
-                request=request, sub_response=sub_response
+                request=request, context=context, root_value=root_value
             )
         except InvalidOperationTypeError as e:
             raise HTTPException(

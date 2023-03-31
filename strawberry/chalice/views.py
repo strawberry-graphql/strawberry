@@ -108,9 +108,7 @@ class GraphQLView(BaseHTTPView[Request, Response, Context, RootValue]):
 
     def execute_request(self, request: Request) -> Response:
         try:
-            return self.run(
-                request=request,
-            )
+            return self.run(request=request)
         except HTTPException as e:
             return self.error_response(
                 # TODO: map error codes?

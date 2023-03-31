@@ -94,9 +94,7 @@ class GraphQLView(
 
     def dispatch_request(self) -> ResponseReturnValue:
         try:
-            return self.run(
-                request=request,
-            )
+            return self.run(request=request)
         except HTTPException as e:
             return Response(
                 response=e.reason,
@@ -157,9 +155,7 @@ class AsyncGraphQLView(
 
     async def dispatch_request(self) -> ResponseReturnValue:
         try:
-            return await self.run(
-                request=request,
-            )
+            return await self.run(request=request)
         except HTTPException as e:
             return Response(
                 response=e.reason,
