@@ -159,12 +159,12 @@ class GraphQLView(
 
     async def post(self, request: Request) -> HTTPResponse:
         try:
-            return await self.run(request, context=None, root_value=None)
+            return await self.run(request)
         except HTTPException as e:
             return HTTPResponse(e.reason, status=e.status_code)
 
     async def get(self, request: Request) -> HTTPResponse:
         try:
-            return await self.run(request, context=None, root_value=None)
+            return await self.run(request)
         except HTTPException as e:
             return HTTPResponse(e.reason, status=e.status_code)
