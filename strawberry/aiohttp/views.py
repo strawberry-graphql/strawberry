@@ -9,7 +9,6 @@ from aiohttp import web
 from strawberry.aiohttp.handlers import (
     GraphQLTransportWSHandler,
     GraphQLWSHandler,
-    HTTPHandler,
 )
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.base_view import (
@@ -78,7 +77,6 @@ class GraphQLView(AsyncBaseHTTPView[web.Request, web.Response, Context, RootValu
 
     graphql_transport_ws_handler_class = GraphQLTransportWSHandler
     graphql_ws_handler_class = GraphQLWSHandler
-    http_handler_class = HTTPHandler
     allow_queries_via_get = True
     request_adapter_class = AioHTTPRequestAdapter
 
