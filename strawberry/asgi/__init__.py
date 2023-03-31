@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import json
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Union
 
+from starlette import status
+from starlette.requests import Request
+from starlette.responses import HTMLResponse, PlainTextResponse, Response
 from starlette.websockets import WebSocket
 
 from strawberry.asgi.handlers import (
@@ -11,23 +14,74 @@ from strawberry.asgi.handlers import (
     GraphQLWSHandler,
     HTTPHandler,
 )
-from strawberry.http import process_result
+from strawberry.http.base_view import (
+    AsyncBaseHTTPView,
+    Context,
+    HTTPException,
+    RootValue,
+)
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.utils.graphiql import get_graphiql_html
 
 if TYPE_CHECKING:
-    from starlette.requests import Request
-    from starlette.responses import Response
     from starlette.types import Receive, Scope, Send
 
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.schema import BaseSchema
-    from strawberry.types import ExecutionResult
 
 
-class GraphQL:
+class ASGIRequestAdapter:
+    def __init__(self, request: Request) -> None:
+        self.request = request
+
+    @property
+    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+        return dict(self.request.query_params)
+
+    @property
+    def method(self) -> str:
+        return self.request.method
+
+    @property
+    def headers(self) -> Mapping[str, str]:
+        return self.request.headers
+
+    @property
+    def content_type(self) -> Optional[str]:
+        return self.request.headers.get("content-type")
+
+    async def get_body(self) -> str:
+        # TODO: check if we can return bytes as well, since
+        # we pass this to json.loads
+        return (await self.request.body()).decode()
+
+    async def get_post_data(self) -> Mapping[str, Union[str, bytes]]:
+        return await self.request.json()
+
+    # TODO: this gets everything, not just files
+    async def get_files(self) -> Mapping[str, Any]:
+        multipart_data = await self.request.form()
+
+        operations_text = multipart_data.get("operations", "{}")
+        operations = json.loads(operations_text)  # type: ignore
+        files_map = json.loads(multipart_data.get("map", "{}"))  # type: ignore # noqa: E501
+
+        return multipart_data, operations, files_map
+
+
+class GraphQL(
+    AsyncBaseHTTPView[
+        Request,
+        Response,
+        Context,
+        RootValue,
+    ]
+):
     graphql_transport_ws_handler_class = GraphQLTransportWSHandler
     graphql_ws_handler_class = GraphQLWSHandler
     http_handler_class = HTTPHandler
+    allow_queries_via_get = True
+    request_adapter_class = ASGIRequestAdapter
 
     def __init__(
         self,
@@ -37,7 +91,10 @@ class GraphQL:
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
         debug: bool = False,
-        subscription_protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
+        subscription_protocols: Sequence[str] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     ) -> None:
         self.schema = schema
@@ -51,16 +108,7 @@ class GraphQL:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
         if scope["type"] == "http":
-            await self.http_handler_class(
-                schema=self.schema,
-                graphiql=self.graphiql,
-                allow_queries_via_get=self.allow_queries_via_get,
-                debug=self.debug,
-                get_context=self.get_context,
-                get_root_value=self.get_root_value,
-                process_result=self.process_result,
-                encode_json=self.encode_json,
-            ).handle(scope=scope, receive=receive, send=send)
+            return await self.handle_http(scope, receive, send)
 
         elif scope["type"] == "websocket":
             ws = WebSocket(scope=scope, receive=receive, send=send)
@@ -108,10 +156,51 @@ class GraphQL:
     ) -> Optional[Any]:
         return {"request": request, "response": response}
 
-    async def process_result(
-        self, request: Request, result: ExecutionResult
-    ) -> GraphQLHTTPResponse:
-        return process_result(result)
+    async def get_sub_response(
+        self,
+        request: Union[Request, WebSocket],
+    ) -> Response:
+        sub_response = Response()
+        sub_response.status_code = None  # type: ignore
+        del sub_response.headers["content-length"]
 
-    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
-        return json.dumps(response_data)
+        return sub_response
+
+    async def handle_http(
+        self,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> None:
+        request = Request(scope=scope, receive=receive)
+
+        try:
+            response = await self.run(request)
+        except HTTPException as e:
+            response = PlainTextResponse(e.reason, status_code=e.status_code)
+
+        await response(scope, receive, send)
+
+    def render_graphiql(self, request: Request) -> Response:
+        html = get_graphiql_html()
+
+        return HTMLResponse(html)
+
+    def _create_response(
+        self, response_data: GraphQLHTTPResponse, sub_response: Response
+    ) -> Response:
+        response = Response(
+            self.encode_json(response_data),
+            status_code=status.HTTP_200_OK,
+            media_type="application/json",
+        )
+
+        response.headers.raw.extend(sub_response.headers.raw)
+
+        if sub_response.background:
+            response.background = sub_response.background
+
+        if sub_response.status_code:
+            response.status_code = sub_response.status_code
+
+        return response
