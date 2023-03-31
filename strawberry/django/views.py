@@ -84,6 +84,43 @@ class DjangoHTTPRequestAdapter:
         return self.request.content_type
 
 
+class AsyncDjangoHTTPRequestAdapter:
+    def __init__(self, request: HttpRequest):
+        self.request = request
+
+    @property
+    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+        return self.request.GET.dict()
+
+    @property
+    def method(self) -> str:
+        # TODO: when could this be none?
+        return self.request.method or ""
+
+    @property
+    def headers(self) -> Mapping[str, str]:
+        return self.request.headers
+
+    @property
+    def content_type(self) -> Optional[str]:
+        return self.request.content_type
+
+    async def get_body(self) -> str:
+        return self.request.body.decode()
+
+    async def get_post_data(self) -> Mapping[str, Union[str, bytes]]:
+        return self.request.POST
+
+    async def get_files(self) -> Mapping[str, Any]:
+        # TODO: make this interface better, I shouldn't use json here
+        import json
+
+        operations = json.loads(self.request.POST.get("operations", "{}"))
+        files_map = json.loads(self.request.POST.get("map", "{}"))
+
+        return self.request.FILES, operations, files_map
+
+
 class BaseView:
     def __init__(
         self,
@@ -176,7 +213,7 @@ class AsyncGraphQLView(
     graphiql = True
     allow_queries_via_get = True  # type: ignore
     schema: BaseSchema = None  # type: ignore
-    request_adapter_class = DjangoHTTPRequestAdapter
+    request_adapter_class = AsyncDjangoHTTPRequestAdapter
 
     @classonlymethod
     def as_view(cls, **initkwargs: Any) -> Callable[..., HttpResponse]:

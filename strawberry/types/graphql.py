@@ -11,6 +11,9 @@ class OperationType(enum.Enum):
 
     @staticmethod
     def from_http(method: str) -> Set[OperationType]:
+        # TODO: remove this?
+        method = method.lower()
+
         if method == "get":
             return {OperationType.QUERY}
 

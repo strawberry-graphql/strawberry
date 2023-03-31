@@ -1,6 +1,17 @@
 import abc
 import json
-from typing import Any, Callable, Dict, Generic, List, Mapping, Optional, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Mapping,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 from typing_extensions import Protocol
 
 from strawberry.exceptions import MissingQueryError
@@ -61,6 +72,34 @@ class HTTPRequestAdapterProtocol(Protocol):
 
     @property
     def content_type(self) -> Optional[str]:
+        ...
+
+
+class AsyncHTTPRequestAdapterProtocol(Protocol):
+    @property
+    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+        ...
+
+    @property
+    def method(self) -> str:
+        ...
+
+    @property
+    def headers(self) -> Mapping[str, str]:
+        ...
+
+    @property
+    def content_type(self) -> Optional[str]:
+        ...
+
+    async def get_body(self) -> str:
+        ...
+
+    async def get_post_data(self) -> Mapping[str, Union[str, bytes]]:
+        ...
+
+    # TODO: this gets everything, not just files
+    async def get_files(self) -> Mapping[str, Any]:
         ...
 
 
@@ -224,6 +263,8 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
 
 
 class AsyncBaseHTTPView(BaseHTTPView[Request, Response, Context, RootValue]):
+    request_adapter_class: Type[AsyncHTTPRequestAdapterProtocol]
+
     @abc.abstractmethod
     async def get_sub_response(self, request: Request) -> Response:
         ...
@@ -275,8 +316,6 @@ class AsyncBaseHTTPView(BaseHTTPView[Request, Response, Context, RootValue]):
             files, operations, files_map = await request.get_files()
         except ValueError:
             raise HTTPException(400, "Unable to parse the multipart body")
-
-
 
         # TODO: remove type ignore below
 

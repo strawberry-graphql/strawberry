@@ -104,12 +104,47 @@ class GraphQLView(
             )
 
 
+class AsyncFlaskHTTPRequestAdapter:
+    def __init__(self, request: Request):
+        self.request = request
+
+    @property
+    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+        return self.request.args.to_dict()
+
+    @property
+    def method(self) -> str:
+        return self.request.method
+
+    @property
+    def content_type(self) -> Optional[str]:
+        return self.request.content_type
+
+    @property
+    def headers(self) -> Mapping[str, str]:
+        return self.request.headers
+
+    async def get_body(self) -> str:
+        return self.request.data.decode()
+
+    async def get_post_data(self) -> Mapping[str, Union[str, bytes]]:
+        return self.request.form
+
+    async def get_files(self) -> Mapping[str, Any]:
+        import json
+
+        operation = json.loads(self.request.form.get("operations", "{}"))
+        files_map = json.loads(self.request.form.get("map", "{}"))
+
+        return self.request.files, operation, files_map
+
+
 class AsyncGraphQLView(
     BaseGraphQLView, AsyncBaseHTTPView[Request, Response, Context, RootValue], View
 ):
     methods = ["GET", "POST"]
     allow_queries_via_get: bool = True
-    request_adapter_class = FlaskHTTPRequestAdapter
+    request_adapter_class = AsyncFlaskHTTPRequestAdapter
 
     async def get_context(self, request: Request, response: Response) -> Context:
         return {"request": request, "response": response}
