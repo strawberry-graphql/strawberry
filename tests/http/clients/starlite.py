@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from io import BytesIO
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 from typing_extensions import Literal
 
 from starlite import Request, Starlite
@@ -46,12 +46,12 @@ class StarliteHttpClient(HttpClient):
 
         class GraphQLController(BaseGraphQLController):
             async def process_result(
-                self, result: ExecutionResult
+                self, request: Request, result: ExecutionResult
             ) -> GraphQLHTTPResponse:
                 if result_override:
                     return result_override(result)
 
-                return await super().process_result(result)
+                return await super().process_result(request, result)
 
         self.app = Starlite(route_handlers=[GraphQLController])
 
@@ -64,7 +64,7 @@ class StarliteHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
         body = self._build_body(
             query=query, variables=variables, files=files, method=method

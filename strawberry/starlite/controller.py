@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
 
 from starlite import (
     BackgroundTasks,
     Controller,
-    HttpMethod,
     MediaType,
     Provide,
     Request,
@@ -22,29 +20,25 @@ from starlite import (
 )
 from starlite.exceptions import (
     NotFoundException,
-    SerializationException,
     ValidationException,
 )
 from starlite.status_codes import (
     HTTP_200_OK,
-    HTTP_400_BAD_REQUEST,
-    HTTP_415_UNSUPPORTED_MEDIA_TYPE,
 )
-from strawberry.exceptions import InvalidCustomContext, MissingQueryError
-from strawberry.file_uploads.utils import replace_placeholders_with_files
+from strawberry.exceptions import InvalidCustomContext
 from strawberry.http import (
     GraphQLHTTPResponse,
-    parse_query_params,
-    parse_request_data,
-    process_result,
 )
-from strawberry.schema.exceptions import InvalidOperationTypeError
+from strawberry.http.base_view import (
+    AsyncBaseHTTPView,
+    Context,
+    HTTPException,
+    RootValue,
+)
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws import (
     WS_4406_PROTOCOL_NOT_ACCEPTABLE,
 )
-from strawberry.types.graphql import OperationType
-from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.graphiql import get_graphiql_html
 
 from .handlers.graphql_transport_ws_handler import (
@@ -53,19 +47,18 @@ from .handlers.graphql_transport_ws_handler import (
 from .handlers.graphql_ws_handler import GraphQLWSHandler as BaseGraphQLWSHandler
 
 if TYPE_CHECKING:
-    from typing import FrozenSet, Iterable, List, Set, Tuple, Type
+    from typing import FrozenSet, List, Tuple, Type
 
     from starlite.types import AnyCallable, Dependencies
     from strawberry.schema import BaseSchema
-    from strawberry.types import ExecutionResult
 
     MergedContext = Union[
         "BaseContext",
         Union[
             Dict[str, Any],
             Dict[str, BackgroundTasks],
-            Dict[str, Request],
-            Dict[str, Response],
+            Dict[str, Request[Any, Any]],
+            Dict[str, Response[Any]],
             Dict[str, websocket],
         ],
     ]
@@ -75,21 +68,23 @@ CustomContext = Union["BaseContext", Dict[str, Any]]
 
 async def _context_getter(
     custom_context: Optional[CustomContext],
-    request: Request,
+    request: Request[Any, Any],
 ) -> MergedContext:
     if isinstance(custom_context, BaseContext):
         custom_context.request = request
         return custom_context
-    default_context = {
-        "request": request,
-    }
+
+    default_context = {"request": request}
+
     if isinstance(custom_context, dict):
         return {
             **default_context,
             **custom_context,
         }
+
     if custom_context is None:
         return default_context
+
     raise InvalidCustomContext()
 
 
@@ -119,6 +114,48 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
 
     async def get_root_value(self) -> Any:
         return await self._get_root_value()
+
+
+class StarliteRequestAdapter:
+    def __init__(self, request: Request[Any, Any]):
+        self.request = request
+
+    @property
+    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+        return self.request.query_params
+
+    @property
+    def method(self) -> str:
+        return self.request.method
+
+    @property
+    def headers(self) -> Mapping[str, str]:
+        return self.request.headers
+
+    @property
+    def content_type(self) -> Optional[str]:
+        return self.request.content_type[0]
+
+    async def get_body(self) -> str:
+        return (await self.request.body()).decode()
+
+    async def get_post_data(self) -> Mapping[str, Union[str, bytes]]:
+        return await self.request.json()
+
+    # TODO: this gets everything, not just files
+    async def get_files(self) -> Mapping[str, Any]:
+        multipart_data = await self.request.form()
+
+        operations: Dict[str, Any] = multipart_data.get("operations", {})
+        files_map: Dict[str, List[str]] = multipart_data.get("map", {})
+
+        if isinstance(operations, str):
+            raise ValidationException("operations must be a valid JSON object")
+
+        if isinstance(files_map, str):
+            raise ValidationException("map must be a valid JSON object")
+
+        return multipart_data, operations, files_map
 
 
 class BaseContext:
@@ -163,7 +200,15 @@ def make_graphql_controller(
     else:
         root_value_getter_ = root_value_getter
 
-    class GraphQLController(Controller):
+    schema_ = schema
+    allow_queries_via_get_ = allow_queries_via_get
+    graphiql_ = graphiql
+
+    class GraphQLController(
+        Controller,
+        AsyncBaseHTTPView[Request[Any, Any], Response[Any], Context, RootValue],
+    ):
+        request_adapter_class = StarliteRequestAdapter
         path: str = routes_path
         dependencies: Optional[Dependencies] = {
             "custom_context": Provide(custom_context_getter_),
@@ -175,9 +220,6 @@ def make_graphql_controller(
             GraphQLTransportWSHandler
         ] = GraphQLTransportWSHandler
 
-        _schema: BaseSchema = schema
-        _graphiql: bool = graphiql
-        _allow_queries_via_get: bool = allow_queries_via_get
         _keep_alive: bool = keep_alive
         _keep_alive_interval: float = keep_alive_interval
         _debug: bool = debug
@@ -185,191 +227,96 @@ def make_graphql_controller(
         _connection_init_wait_timeout: timedelta = connection_init_wait_timeout
         _graphiql_allowed_accept: FrozenSet[str] = frozenset({"text/html", "*/*"})
 
-        async def execute(
-            self,
-            query: Optional[str],
-            variables: Optional[Dict[str, Any]] = None,
-            context: Optional[CustomContext] = None,
-            operation_name: Optional[str] = None,
-            root_value: Optional[Any] = None,
-            allowed_operation_types: Optional[Iterable[OperationType]] = None,
-        ):
-            if self._debug:
-                pretty_print_graphql_operation(operation_name, query or "", variables)
-
-            return await self._schema.execute(
-                query,
-                root_value=root_value,
-                variable_values=variables,
-                operation_name=operation_name,
-                context_value=context,
-                allowed_operation_types=allowed_operation_types,
-            )
-
-        async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
-            return process_result(result)
+        schema: BaseSchema = schema_
+        allow_queries_via_get = allow_queries_via_get_
+        graphiql = graphiql_
 
         async def execute_request(
             self,
-            request: Request,
-            data: dict,
+            request: Request[Any, Any],
             context: CustomContext,
             root_value: Any,
         ) -> Response[Union[GraphQLResource, str]]:
-            request_data = parse_request_data(data or {})
-
-            allowed_operation_types = OperationType.from_http(request.method)
-
-            if not self._allow_queries_via_get and request.method == HttpMethod.GET:
-                allowed_operation_types = allowed_operation_types - {
-                    OperationType.QUERY
-                }
-
-            response: Union[Response[dict], Response[BaseContext]] = Response(
-                {}, background=BackgroundTasks([])
-            )
-
-            if isinstance(context, BaseContext):
-                context.response = response
-            elif isinstance(context, dict):
-                context["response"] = response
             try:
-                result = await self.execute(
-                    request_data.query,
-                    variables=request_data.variables,
+                return await self.run(
+                    request,
                     context=context,
-                    operation_name=request_data.operation_name,
                     root_value=root_value,
-                    allowed_operation_types=allowed_operation_types,
                 )
-            except InvalidOperationTypeError as e:
+            except HTTPException as e:
                 return Response(
-                    e.as_http_error_reason(request.method),
-                    status_code=HTTP_400_BAD_REQUEST,
-                    media_type=MediaType.TEXT,
-                )
-            except MissingQueryError:
-                return Response(
-                    "No GraphQL query found in the request",
-                    status_code=HTTP_400_BAD_REQUEST,
+                    e.reason,
+                    status_code=e.status_code,
                     media_type=MediaType.TEXT,
                 )
 
-            response_data = await self.process_result(result)
-
-            actual_response: Response[GraphQLHTTPResponse] = Response(
-                response_data, status_code=HTTP_200_OK, media_type=MediaType.JSON
-            )
-
-            return self._merge_responses(response, actual_response)
-
-        def should_render_graphiql(self, request: Request) -> bool:
-            if not self._graphiql:
-                return False
-            accept: Set[str] = set()
-            for value in request.headers.getall("accept", ""):
-                accept.symmetric_difference_update(set(value.split(",")))
-            return bool(self._graphiql_allowed_accept & accept)
-
-        def get_graphiql_response(self) -> Response[str]:
+        def render_graphiql(self, request: Request[Any, Any]) -> Response[str]:
             html = get_graphiql_html()
             return Response(html, media_type=MediaType.HTML)
 
-        @staticmethod
-        def _merge_responses(
-            response: Response, actual_response: Response
-        ) -> Response[Union[GraphQLResource, str]]:
-            actual_response.headers.update(response.headers)
-            actual_response.cookies.extend(response.cookies)
-            actual_response.background = response.background
-            if response.status_code:
-                actual_response.status_code = response.status_code
+        def _create_response(
+            self, response_data: GraphQLHTTPResponse, sub_response: Response[bytes]
+        ) -> Response[bytes]:
+            response = Response(
+                self.encode_json(response_data).encode(),
+                status_code=HTTP_200_OK,
+                media_type=MediaType.JSON,
+            )
 
-            return actual_response
+            response.headers.update(sub_response.headers)
+            response.cookies.extend(sub_response.cookies)
+            response.background = sub_response.background
+
+            if sub_response.status_code:
+                response.status_code = sub_response.status_code
+
+            return response
 
         @get(raises=[ValidationException, NotFoundException])
         async def handle_http_get(
             self,
-            request: Request,
+            request: Request[Any, Any],
             context: CustomContext,
             root_value: Any,
         ) -> Response[Union[GraphQLResource, str]]:
-            if request.query_params:
-                try:
-                    query_data = parse_query_params(
-                        cast("Dict[str, Any]", request.query_params)
-                    )
-                except json.JSONDecodeError as error:
-                    raise ValidationException(
-                        detail="Unable to parse request body as JSON"
-                    ) from error
-                return await self.execute_request(
-                    request=request,
-                    data=query_data,
-                    context=context,
-                    root_value=root_value,
-                )
-            if self.should_render_graphiql(request):
-                return cast(
-                    "Response[Union[GraphQLResource, str]]",
-                    self.get_graphiql_response(),
-                )
-            raise NotFoundException()
+            self.temporal_response = Response({}, background=BackgroundTasks([]))
+            context["response"] = self.temporal_response
+
+            return await self.execute_request(
+                request=request,
+                context=context,
+                root_value=root_value,
+            )
 
         @post(status_code=HTTP_200_OK)
         async def handle_http_post(
             self,
-            request: Request,
+            request: Request[Any, Any],
             context: CustomContext,
             root_value: Any,
         ) -> Response[Union[GraphQLResource, str]]:
-            actual_response: Response[Union[GraphQLResource, str]]
-
-            content_type, _ = request.content_type
-
-            if "application/json" in content_type:
-                try:
-                    data = await request.json()
-                except SerializationException:
-                    actual_response = Response(
-                        "Unable to parse request body as JSON",
-                        status_code=HTTP_400_BAD_REQUEST,
-                        media_type=MediaType.TEXT,
-                    )
-                    return actual_response
-            elif content_type.startswith("multipart/form-data"):
-                multipart_data = await request.form()
-                operations: Dict[str, Any] = multipart_data.get("operations", "{}")
-                files_map: Dict[str, List[str]] = multipart_data.get("map", "{}")
-                try:
-                    data = replace_placeholders_with_files(
-                        operations, files_map, multipart_data
-                    )
-                except KeyError:
-                    return Response(
-                        "File(s) missing in form data",
-                        status_code=HTTP_400_BAD_REQUEST,
-                        media_type=MediaType.TEXT,
-                    )
-                except (TypeError, AttributeError):
-                    return Response(
-                        "Unable to parse the multipart body",
-                        status_code=HTTP_400_BAD_REQUEST,
-                        media_type=MediaType.TEXT,
-                    )
-            else:
-                return Response(
-                    "Unsupported Media Type",
-                    status_code=HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-                    media_type=MediaType.TEXT,
-                )
+            # TODO: is there a way to pass reponse as a dependency?
+            self.temporal_response = Response({}, background=BackgroundTasks([]))
+            context["response"] = self.temporal_response
 
             return await self.execute_request(
                 request=request,
-                data=data,
                 context=context,
                 root_value=root_value,
             )
+
+        async def get_context(
+            self, request: Request[Any, Any], response: Response[Any]
+        ) -> Context:
+            raise ValueError("`get_context` is not used by Starlite's controller")
+
+        async def get_root_value(
+            self, request: Request[Any, Any]
+        ) -> Optional[RootValue]:
+            raise ValueError("`get_root_value` is not used by Starlite's controller")
+
+        async def get_sub_response(self, request: Request[Any, Any]) -> Response[Any]:
+            return self.temporal_response
 
         @websocket()
         async def websocket_endpoint(

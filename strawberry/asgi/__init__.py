@@ -12,7 +12,6 @@ from starlette.websockets import WebSocket
 from strawberry.asgi.handlers import (
     GraphQLTransportWSHandler,
     GraphQLWSHandler,
-    HTTPHandler,
 )
 from strawberry.http.base_view import (
     AsyncBaseHTTPView,
@@ -79,7 +78,6 @@ class GraphQL(
 ):
     graphql_transport_ws_handler_class = GraphQLTransportWSHandler
     graphql_ws_handler_class = GraphQLWSHandler
-    http_handler_class = HTTPHandler
     allow_queries_via_get = True
     request_adapter_class = ASGIRequestAdapter
 
