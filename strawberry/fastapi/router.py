@@ -162,26 +162,11 @@ class GraphQLRouter(APIRouter):
             context=Depends(self.context_getter),
             root_value=Depends(self.root_value_getter),
         ) -> Response:
-            if request.query_params:
-                try:
-                    query_data = parse_query_params(request.query_params._dict)
-
-                except json.JSONDecodeError:
-                    return PlainTextResponse(
-                        "Unable to parse request body as JSON",
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                    )
-
-                return await self.execute_request(
-                    request=request,
-                    response=response,
-                    data=query_data,
-                    context=context,
-                    root_value=root_value,
-                )
-            elif self.should_render_graphiql(request):
-                return self.get_graphiql_response()
-            return Response(status_code=status.HTTP_404_NOT_FOUND)
+            # In order to create http handlers on an instance, we define these
+            # decorated closures during __init__. But, as closures, they can't easily be
+            # extended by subclasses, only overwritten by defining new handlers on the same
+            # path. So, we farm them off to instance methods.
+            return await self.handle_http_get(request, response, context, root_value)
 
         @self.post(path)
         async def handle_http_post(
@@ -190,60 +175,7 @@ class GraphQLRouter(APIRouter):
             context=Depends(self.context_getter),
             root_value=Depends(self.root_value_getter),
         ) -> Response:
-            actual_response: Response
-
-            content_type = request.headers.get("content-type", "")
-
-            if "application/json" in content_type:
-                try:
-                    data = await request.json()
-                except json.JSONDecodeError:
-                    actual_response = PlainTextResponse(
-                        "Unable to parse request body as JSON",
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                    )
-
-                    return self._merge_responses(response, actual_response)
-            elif content_type.startswith("multipart/form-data"):
-                multipart_data = await request.form()
-                try:
-                    operations_text = multipart_data.get("operations", "{}")
-                    operations = json.loads(operations_text)  # type: ignore
-                    files_map = json.loads(multipart_data.get("map", "{}"))  # type: ignore # noqa: E501
-                except json.JSONDecodeError:
-                    actual_response = PlainTextResponse(
-                        "Unable to parse request body as JSON",
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                    )
-
-                    return self._merge_responses(response, actual_response)
-
-                try:
-                    data = replace_placeholders_with_files(
-                        operations, files_map, multipart_data
-                    )
-                except KeyError:
-                    actual_response = PlainTextResponse(
-                        "File(s) missing in form data",
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                    )
-
-                    return self._merge_responses(response, actual_response)
-            else:
-                actual_response = PlainTextResponse(
-                    "Unsupported Media Type",
-                    status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-                )
-
-                return self._merge_responses(response, actual_response)
-
-            return await self.execute_request(
-                request=request,
-                response=response,
-                data=data,
-                context=context,
-                root_value=root_value,
-            )
+            return await self.handle_http_post(request, response, context, root_value)
 
         @self.websocket(path)
         async def websocket_endpoint(
@@ -280,6 +212,96 @@ class GraphQLRouter(APIRouter):
             else:
                 # Code 4406 is "Subprotocol not acceptable"
                 await websocket.close(code=4406)
+
+    async def handle_http_get(
+        self,
+        request: Request,
+        response: Response,
+        context: Any = None,
+        root_value: Any = None,
+    ) -> Response:
+        if request.query_params:
+            try:
+                query_data = parse_query_params(request.query_params._dict)
+
+            except json.JSONDecodeError:
+                return PlainTextResponse(
+                    "Unable to parse request body as JSON",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
+            return await self.execute_request(
+                request=request,
+                response=response,
+                data=query_data,
+                context=context,
+                root_value=root_value,
+            )
+        elif self.should_render_graphiql(request):
+            return self.get_graphiql_response()
+        return Response(status_code=status.HTTP_404_NOT_FOUND)
+
+    async def handle_http_post(
+        self,
+        request: Request,
+        response: Response,
+        context: Any = None,
+        root_value: Any = None
+    ) -> Response:
+        actual_response: Response
+
+        content_type = request.headers.get("content-type", "")
+
+        if "application/json" in content_type:
+            try:
+                data = await request.json()
+            except json.JSONDecodeError:
+                actual_response = PlainTextResponse(
+                    "Unable to parse request body as JSON",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
+                return self._merge_responses(response, actual_response)
+        elif content_type.startswith("multipart/form-data"):
+            multipart_data = await request.form()
+            try:
+                operations_text = multipart_data.get("operations", "{}")
+                operations = json.loads(operations_text)  # type: ignore
+                files_map = json.loads(multipart_data.get("map", "{}"))  # type: ignore # noqa: E501
+            except json.JSONDecodeError:
+                actual_response = PlainTextResponse(
+                    "Unable to parse request body as JSON",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
+                return self._merge_responses(response, actual_response)
+
+            try:
+                data = replace_placeholders_with_files(
+                    operations, files_map, multipart_data
+                )
+            except KeyError:
+                actual_response = PlainTextResponse(
+                    "File(s) missing in form data",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
+                return self._merge_responses(response, actual_response)
+        else:
+            actual_response = PlainTextResponse(
+                "Unsupported Media Type",
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            )
+
+            return self._merge_responses(response, actual_response)
+
+        return await self.execute_request(
+            request=request,
+            response=response,
+            data=data,
+            context=context,
+            root_value=root_value,
+        )
 
     def pick_preferred_protocol(self, ws: WebSocket) -> Optional[str]:
         protocols = ws["subprotocols"]
