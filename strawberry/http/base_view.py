@@ -14,6 +14,7 @@ from typing import (
 )
 from typing_extensions import Protocol
 
+from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData, process_result
@@ -229,8 +230,8 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
     def run(
         self,
         request: Request,
-        context: Optional[Context] = None,
-        root_value: Optional[RootValue] = None,
+        context: Optional[Context] = UNSET,
+        root_value: Optional[RootValue] = UNSET,
     ) -> Response:
         request_adapter = self.request_adapter_class(request)
 
@@ -244,8 +245,12 @@ class BaseHTTPView(abc.ABC, Generic[Request, Response, Context, RootValue]):
                 raise HTTPException(404, "Not Found")
 
         sub_response = self.get_sub_response(request)
-        context = context or self.get_context(request, response=sub_response)
-        root_value = root_value or self.get_root_value(request)
+        context = (
+            self.get_context(request, response=sub_response)
+            if context is UNSET
+            else context
+        )
+        root_value = self.get_root_value(request) if root_value is UNSET else root_value
 
         try:
             result = self.execute_operation(
@@ -334,8 +339,8 @@ class AsyncBaseHTTPView(BaseHTTPView[Request, Response, Context, RootValue]):
     async def run(
         self,
         request: Request,
-        context: Optional[Context] = None,
-        root_value: Optional[RootValue] = None,
+        context: Optional[Context] = UNSET,
+        root_value: Optional[RootValue] = UNSET,
     ) -> Response:
         request_adapter = self.request_adapter_class(request)
 
@@ -349,8 +354,14 @@ class AsyncBaseHTTPView(BaseHTTPView[Request, Response, Context, RootValue]):
                 raise HTTPException(404, "Not Found")
 
         sub_response = await self.get_sub_response(request)
-        context = context or await self.get_context(request, response=sub_response)
-        root_value = root_value or await self.get_root_value(request)
+        context = (
+            await self.get_context(request, response=sub_response)
+            if context is UNSET
+            else context
+        )
+        root_value = (
+            await self.get_root_value(request) if root_value is UNSET else root_value
+        )
 
         try:
             result = await self.execute_operation(
