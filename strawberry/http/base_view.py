@@ -336,8 +336,8 @@ class AsyncBaseHTTPView(BaseHTTPView[Request, Response, Context, RootValue]):
     async def run(
         self,
         request: Request,
-        context: Optional[Context],
-        root_value: Optional[RootValue],
+        context: Optional[Context] = None,
+        root_value: Optional[RootValue] = None,
     ) -> Response:
         request_adapter = self.request_adapter_class(request)
 
