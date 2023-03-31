@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Optional, TypeVar, Type
+from typing import TYPE_CHECKING, Any, Dict, Optional, Type, TypeVar
 from typing_extensions import Protocol
 
 from pydantic import BaseModel
