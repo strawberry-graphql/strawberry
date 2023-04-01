@@ -176,13 +176,9 @@ def test_json():
     expected_schema = dedent(
         '''
         """
-        The `JSON` scalar type represents JSON values as specified by [ECMA-404]
-        (http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+        The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
         """
-        scalar JSON @specifiedBy(
-            url:
-            "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf"
-        )
+        scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
 
         type Query {
           echoJson(data: JSON!): JSON!
@@ -264,23 +260,17 @@ def test_base16():
         == dedent(
             '''
         """Represents binary data as Base16-encoded (hexadecimal) strings."""
-        scalar Base16 @specifiedBy(
-            url: "https://datatracker.ietf.org/doc/html/rfc4648.html#section-8"
-        )
+        scalar Base16 @specifiedBy(url: "https://datatracker.ietf.org/doc/html/rfc4648.html#section-8")
 
         """
         Represents binary data as Base32-encoded strings, using the standard alphabet.
         """
-        scalar Base32 @specifiedBy(
-            url: "https://datatracker.ietf.org/doc/html/rfc4648.html#section-6"
-        )
+        scalar Base32 @specifiedBy(url: "https://datatracker.ietf.org/doc/html/rfc4648.html#section-6")
 
         """
         Represents binary data as Base64-encoded strings, using the standard alphabet.
         """
-        scalar Base64 @specifiedBy(
-            url: "https://datatracker.ietf.org/doc/html/rfc4648.html#section-4"
-        )
+        scalar Base64 @specifiedBy(url: "https://datatracker.ietf.org/doc/html/rfc4648.html#section-4")
 
         type Query {
           base16Encode(data: String!): Base16!
