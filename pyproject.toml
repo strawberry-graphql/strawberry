@@ -329,6 +329,7 @@ src = ["strawberry", "tests"]
 "strawberry/extensions/tracing/__init__.py" = ["TCH004"]
 "tests/http/clients/__init__.py" = ["F401"]
 "tests/schema/test_scalars.py" = ["E501"]
+"tests/schema/test_basic.py" = ["E501"]
 
 [tool.ruff.isort]
 known-first-party = ["strawberry"]
