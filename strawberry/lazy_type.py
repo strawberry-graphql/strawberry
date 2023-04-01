@@ -4,7 +4,7 @@ import sys
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import ForwardRef, Generic, Iterable, Optional, Type, TypeVar, cast
+from typing import ForwardRef, Generic, Optional, Type, TypeVar, cast
 
 TypeName = TypeVar("TypeName")
 Module = TypeVar("Module")
@@ -16,7 +16,7 @@ class LazyType(Generic[TypeName, Module]):
     module: str
     package: Optional[str] = None
 
-    def __class_getitem__(cls, params: Iterable[str]):
+    def __class_getitem__(cls, params):
         warnings.warn(
             (
                 "LazyType is deprecated, use "

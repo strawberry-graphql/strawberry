@@ -10,14 +10,14 @@ from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
 from ..context import get_context
-from . import Response, ResultOverrideFunction
+from .base import Response, ResultOverrideFunction
 from .django import DjangoHttpClient
 
 
 class AsyncGraphQLView(BaseAsyncGraphQLView):
     result_override: ResultOverrideFunction = None
 
-    async def get_root_value(self, request: HttpRequest):
+    async def get_root_value(self, request: HttpRequest) -> Query:
         return Query()
 
     async def get_context(self, request: HttpRequest, response: HttpResponse) -> object:

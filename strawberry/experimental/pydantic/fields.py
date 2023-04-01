@@ -95,7 +95,7 @@ def get_basic_type(type_) -> Type[Any]:
     return type_
 
 
-def replace_pydantic_types(type_: Any, is_input: bool):
+def replace_pydantic_types(type_: Any, is_input: bool) -> Any:
     if lenient_issubclass(type_, BaseModel):
         attr = "_strawberry_input_type" if is_input else "_strawberry_type"
         if hasattr(type_, attr):

@@ -1,6 +1,371 @@
 CHANGELOG
 =========
 
+0.168.1 - 2023-03-26
+--------------------
+
+This releases adds a new `extra` group for Starlite, preventing it from being
+installed by default.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2664](https://github.com/strawberry-graphql/strawberry/pull/2664/)
+
+
+0.168.0 - 2023-03-26
+--------------------
+
+This release adds support for [starlite](https://starliteproject.dev/).
+
+```python
+import strawberry
+from starlite import Request, Starlite
+from strawberry.starlite import make_graphql_controller
+from strawberry.types.info import Info
+
+
+def custom_context_getter(request: Request):
+    return {"custom": "context"}
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self, info: Info[object, None]) -> str:
+        return info.context["custom"]
+
+
+schema = strawberry.Schema(Query)
+
+
+GraphQLController = make_graphql_controller(
+    schema,
+    path="/graphql",
+    context_getter=custom_context_getter,
+)
+
+app = Starlite(
+    route_handlers=[GraphQLController],
+)
+```
+
+Contributed by [Matthieu MN](https://github.com/gazorby) via [PR #2391](https://github.com/strawberry-graphql/strawberry/pull/2391/)
+
+
+0.167.1 - 2023-03-26
+--------------------
+
+This release fixes and issue where you'd get a warning
+about using Apollo Federation directives even when using
+`strawberry.federation.Schema`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2661](https://github.com/strawberry-graphql/strawberry/pull/2661/)
+
+
+0.167.0 - 2023-03-25
+--------------------
+
+This releases adds more type annotations for public functions and methods.
+
+No new changes have been added to the API.
+
+Contributed by [Jad Haddad](https://github.com/JadHADDAD92) via [PR #2627](https://github.com/strawberry-graphql/strawberry/pull/2627/)
+
+
+0.166.0 - 2023-03-25
+--------------------
+
+This release adds a warning when using `@strawberry.federation.type`
+but not using `strawberry.federation.Schema`
+
+Contributed by [Rubens O Leão](https://github.com/rubensoleao) via [PR #2572](https://github.com/strawberry-graphql/strawberry/pull/2572/)
+
+
+0.165.1 - 2023-03-21
+--------------------
+
+Updates the `MaskErrors` extension to the new extension API, which was missed previously.
+
+Contributed by [Nikolai Maas](https://github.com/N-Maas) via [PR #2655](https://github.com/strawberry-graphql/strawberry/pull/2655/)
+
+
+0.165.0 - 2023-03-18
+--------------------
+
+Add full support for forward references, specially when using
+`from __future__ import annotations`.
+
+Before the following would fail on python versions older than 3.10:
+
+```python
+from __future__ import annotations
+
+import strawberry
+
+
+@strawberry.type
+class Query:
+    foo: str | None
+```
+
+Also, this would fail in any python versions:
+
+```python
+from __future__ import annotations
+
+from typing import Annotated
+
+import strawberry
+
+
+@strawberry.type
+class Query:
+    foo: Annotated[str, "some annotation"]
+```
+
+Now both of these cases are supported.
+Please open an issue if you find any edge cases that are still not supported.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2592](https://github.com/strawberry-graphql/strawberry/pull/2592/)
+
+
+0.164.1 - 2023-03-18
+--------------------
+
+Fix interface duplication leading to schema compilation error in multiple
+inheritance scenarios (i.e. "Diamond Problem" inheritance)
+
+Thank you @mzhu22 for the thorough bug report!
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #2647](https://github.com/strawberry-graphql/strawberry/pull/2647/)
+
+
+0.164.0 - 2023-03-14
+--------------------
+
+This release introduces a breaking change to make pydantic default behavior consistent with normal strawberry types.
+This changes the schema generated for pydantic types, that are required, and have default values.
+Previously pydantic type with a default, would get converted to a strawberry type that is not required.
+This is now fixed, and the schema will now correctly show the type as required.
+
+```python
+import pydantic
+import strawberry
+
+
+class UserPydantic(pydantic.BaseModel):
+    name: str = "James"
+
+
+@strawberry.experimental.pydantic.type(UserPydantic, all_fields=True)
+class User:
+    ...
+
+
+@strawberry.type
+class Query:
+    a: User = strawberry.field()
+
+    @strawberry.field
+    def a(self) -> User:
+        return User()
+```
+The schema is now
+```
+type Query {
+  a: User!
+}
+
+type User {
+  name: String! // String! rather than String previously
+}
+```
+
+Contributed by [James Chua](https://github.com/thejaminator) via [PR #2623](https://github.com/strawberry-graphql/strawberry/pull/2623/)
+
+
+0.163.2 - 2023-03-14
+--------------------
+
+This release covers an edge case where the following would not give a nice error.
+```python
+some_field: "Union[list[str], SomeType]]"
+```
+Fixes [#2591](https://github.com/strawberry-graphql/strawberry/issues/2591)
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #2593](https://github.com/strawberry-graphql/strawberry/pull/2593/)
+
+
+0.163.1 - 2023-03-14
+--------------------
+
+Provide close reason to ASGI websocket as specified by ASGI 2.3
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2639](https://github.com/strawberry-graphql/strawberry/pull/2639/)
+
+
+0.163.0 - 2023-03-13
+--------------------
+
+This release adds support for list arguments in operation directives.
+
+The following is now supported:
+
+```python
+@strawberry.directive(locations=[DirectiveLocation.FIELD])
+def append_names(
+    value: DirectiveValue[str], names: List[str]
+):  # note the usage of List here
+    return f"{value} {', '.join(names)}"
+```
+
+Contributed by [chenyijian](https://github.com/hot123s) via [PR #2632](https://github.com/strawberry-graphql/strawberry/pull/2632/)
+
+
+0.162.0 - 2023-03-10
+--------------------
+
+Adds support for a custom field using the approach specified in issue [#2168](abc).
+Field Extensions may be used to change the way how fields work and what they return.
+Use cases might include pagination, permissions or other behavior modifications.
+
+```python
+from strawberry.extensions import FieldExtension
+
+
+class UpperCaseExtension(FieldExtension):
+    async def resolve_async(
+        self, next: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
+    ):
+        result = await next(source, info, **kwargs)
+        return str(result).upper()
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(extensions=[UpperCaseExtension()])
+    async def string(self) -> str:
+        return "This is a test!!"
+```
+
+```graphql
+query {
+    string
+}
+```
+
+```json
+{
+  "string": "THIS IS A TEST!!"
+}
+```
+
+Contributed by [Erik Wrede](https://github.com/erikwrede) via [PR #2567](https://github.com/strawberry-graphql/strawberry/pull/2567/)
+
+
+0.161.1 - 2023-03-09
+--------------------
+
+Ensure that no other messages follow a "complete" or "error" message
+for an operation in the graphql-transport-ws protocol.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2600](https://github.com/strawberry-graphql/strawberry/pull/2600/)
+
+
+0.161.0 - 2023-03-08
+--------------------
+
+Calling `ChannelsConsumer.channel_listen` multiple times will now pass
+along the messages being listened for to multiple callers, rather than
+only one of the callers, which was the old behaviour.
+
+This resolves an issue where creating multiple GraphQL subscriptions
+using a single websocket connection could result in only one of those
+subscriptions (in a non-deterministic order) being triggered if they
+are listening for channel layer messages of the same type.
+
+Contributed by [James Thorniley](https://github.com/jthorniley) via [PR #2525](https://github.com/strawberry-graphql/strawberry/pull/2525/)
+
+
+0.160.0 - 2023-03-08
+--------------------
+
+Rename `Extension` to `SchemaExtension` to pave the way for FieldExtensions.
+Importing `Extension` from `strawberry.extensions` will now raise a deprecation
+warning.
+
+Before:
+
+```python
+from strawberry.extensions import Extension
+```
+
+After:
+
+```python
+from strawberry.extensions import SchemaExtension
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2574](https://github.com/strawberry-graphql/strawberry/pull/2574/)
+
+
+0.159.1 - 2023-03-07
+--------------------
+
+This releases adds support for Mypy 1.1.1
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2616](https://github.com/strawberry-graphql/strawberry/pull/2616/)
+
+
+0.159.0 - 2023-02-22
+--------------------
+
+This release changes how extension hooks are defined. The new style hooks are
+more flexible and allow to run code before and after the execution.
+
+The old style hooks are still supported but will be removed in future releases.
+
+**Before:**
+
+```python
+def on_executing_start(self):  # Called before the execution start
+    ...
+
+
+def on_executing_end(self):  # Called after the execution ends
+    ...
+```
+
+**After**
+
+```python
+def on_execute(self):
+    #  This part is called before the execution start
+    yield
+    #  This part is called after the execution ends
+```
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #2428](https://github.com/strawberry-graphql/strawberry/pull/2428/)
+
+
+0.158.2 - 2023-02-21
+--------------------
+
+Add a type annotation to `strawberry.fastapi.BaseContext`'s `__init__` method so that
+it can be used without `mypy` raising an error.
+
+Contributed by [Martin Winkel](https://github.com/SaturnFromTitan) via [PR #2581](https://github.com/strawberry-graphql/strawberry/pull/2581/)
+
+
+0.158.1 - 2023-02-19
+--------------------
+
+Version 1.5.10 of GraphiQL disabled introspection for deprecated
+arguments because it wasn't supported by all GraphQL server versions.
+This PR enables it so that deprecated arguments show up again in
+GraphiQL.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2575](https://github.com/strawberry-graphql/strawberry/pull/2575/)
+
+
 0.158.0 - 2023-02-18
 --------------------
 

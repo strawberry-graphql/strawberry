@@ -15,7 +15,7 @@ pytestmark = pytest.mark.xfail(
 )
 
 
-def generate_body(query: str, variables: Optional[Dict[str, Any]] = None):
+def generate_body(query: str, variables: Optional[Dict[str, Any]] = None) -> bytes:
     body: Dict[str, Any] = {"query": query}
     if variables is not None:
         body["variables"] = variables
@@ -23,7 +23,9 @@ def generate_body(query: str, variables: Optional[Dict[str, Any]] = None):
     return json.dumps(body).encode()
 
 
-def generate_get_path(path, query: str, variables: Optional[Dict[str, Any]] = None):
+def generate_get_path(
+    path, query: str, variables: Optional[Dict[str, Any]] = None
+) -> str:
     body: Dict[str, Any] = {"query": query}
     if variables is not None:
         body["variables"] = json.dumps(variables)

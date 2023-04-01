@@ -30,7 +30,7 @@ class TypeDefinition(StrawberryType):
     name: str
     is_input: bool
     is_interface: bool
-    origin: Type
+    origin: Type[Any]
     description: Optional[str]
     interfaces: List[TypeDefinition]
     extend: bool

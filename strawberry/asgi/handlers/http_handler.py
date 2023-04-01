@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from starlette.types import Receive, Scope, Send
 
     from strawberry.schema import BaseSchema
+    from strawberry.types.execution import ExecutionResult
 
 
 class HTTPHandler:
@@ -42,7 +43,7 @@ class HTTPHandler:
         self.process_result = process_result
         self.encode_json = encode_json
 
-    async def handle(self, scope: Scope, receive: Receive, send: Send):
+    async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
         request = Request(scope=scope, receive=receive)
         root_value = await self.get_root_value(request)
 
@@ -199,7 +200,7 @@ class HTTPHandler:
         operation_name: Optional[str] = None,
         root_value: Any = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
-    ):
+    ) -> ExecutionResult:
         if self.debug:
             pretty_print_graphql_operation(operation_name, query, variables)
 

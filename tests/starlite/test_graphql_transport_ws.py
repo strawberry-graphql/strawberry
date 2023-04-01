@@ -1,23 +1,33 @@
 import asyncio
 import json
+import sys
 from datetime import timedelta
 
-from starlette.testclient import TestClient
-from starlette.websockets import WebSocketDisconnect
+import pytest
 
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
-from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
-    CompleteMessage,
-    ConnectionAckMessage,
-    ConnectionInitMessage,
-    ErrorMessage,
-    NextMessage,
-    PingMessage,
-    PongMessage,
-    SubscribeMessage,
-    SubscribeMessagePayload,
+try:
+    from starlite.exceptions import WebSocketDisconnect
+    from starlite.testing import TestClient
+    from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
+    from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
+        CompleteMessage,
+        ConnectionAckMessage,
+        ConnectionInitMessage,
+        ErrorMessage,
+        NextMessage,
+        PingMessage,
+        PongMessage,
+        SubscribeMessage,
+        SubscribeMessagePayload,
+    )
+    from tests.starlite.app import create_app
+except ModuleNotFoundError:
+    pass
+
+
+pytestmark = pytest.mark.skipif(
+    sys.version_info < (3, 8), reason="requires python3.8 or higher"
 )
-from tests.fastapi.app import create_app
 
 
 def test_unknown_message_type(test_client):
@@ -26,9 +36,9 @@ def test_unknown_message_type(test_client):
     ) as ws:
         ws.send_json({"type": "NOT_A_MESSAGE_TYPE"})
 
-        data = ws.receive()
-        assert data["type"] == "websocket.close"
-        assert data["code"] == 4400
+        with pytest.raises(WebSocketDisconnect) as exc:
+            ws.receive()
+        assert exc.value.code == 4400
 
 
 def test_missing_message_type(test_client):
@@ -37,9 +47,9 @@ def test_missing_message_type(test_client):
     ) as ws:
         ws.send_json({"notType": None})
 
-        data = ws.receive()
-        assert data["type"] == "websocket.close"
-        assert data["code"] == 4400
+        with pytest.raises(WebSocketDisconnect) as exc:
+            ws.receive()
+        assert exc.value.code == 4400
 
 
 def test_parsing_an_invalid_message(test_client):
@@ -48,9 +58,9 @@ def test_parsing_an_invalid_message(test_client):
     ) as ws:
         ws.send_json({"type": "subscribe", "notPayload": None})
 
-        data = ws.receive()
-        assert data["type"] == "websocket.close"
-        assert data["code"] == 4400
+        with pytest.raises(WebSocketDisconnect) as exc:
+            ws.receive()
+        assert exc.value.code == 4400
 
 
 def test_parsing_an_invalid_payload(test_client):
@@ -59,9 +69,9 @@ def test_parsing_an_invalid_payload(test_client):
     ) as ws:
         ws.send_json({"type": "subscribe", "payload": {"unexpectedField": 42}})
 
-        data = ws.receive()
-        assert data["type"] == "websocket.close"
-        assert data["code"] == 4400
+        with pytest.raises(WebSocketDisconnect) as exc:
+            ws.receive()
+        assert exc.value.code == 4400
 
 
 def test_ws_messages_must_be_text(test_client):
@@ -70,17 +80,17 @@ def test_ws_messages_must_be_text(test_client):
     ) as ws:
         ws.send_bytes(json.dumps(ConnectionInitMessage().as_dict()).encode())
 
-        data = ws.receive()
-        assert data["type"] == "websocket.close"
-        assert data["code"] == 4400
+        with pytest.raises(WebSocketDisconnect) as exc:
+            ws.receive()
+        assert exc.value.code == 4400
 
 
 async def test_connection_init_timeout():
-    app = create_app(connection_init_wait_timeout=timedelta(seconds=0))
+    app = create_app(connection_init_wait_timeout=timedelta(seconds=0.1))
     test_client = TestClient(app)
 
     # Hope that the connection init timeout expired
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(0.2)
 
     try:
         with test_client.websocket_connect(
@@ -93,7 +103,7 @@ async def test_connection_init_timeout():
         assert exc.code == 4408
 
 
-async def test_connection_init_timeout_cancellation(test_client):
+async def test_connection_init_timeout_cancellation():
     app = create_app(connection_init_wait_timeout=timedelta(milliseconds=500))
     test_client = TestClient(app)
 
@@ -139,9 +149,9 @@ def test_too_many_initialisation_requests(test_client):
 
         ws.send_json(ConnectionInitMessage().as_dict())
 
-        data = ws.receive()
-        assert data["type"] == "websocket.close"
-        assert data["code"] == 4429
+        with pytest.raises(WebSocketDisconnect) as exc:
+            ws.receive()
+        assert exc.value.code == 4429
 
 
 def test_ping_pong(test_client):
@@ -207,9 +217,9 @@ def test_unauthorized_subscriptions(test_client):
             ).as_dict()
         )
 
-        data = ws.receive()
-        assert data["type"] == "websocket.close"
-        assert data["code"] == 4401
+        with pytest.raises(WebSocketDisconnect) as exc:
+            ws.receive()
+        assert exc.value.code == 4401
 
 
 def test_duplicated_operation_ids(test_client):
@@ -239,9 +249,9 @@ def test_duplicated_operation_ids(test_client):
             ).as_dict()
         )
 
-        data = ws.receive()
-        assert data["type"] == "websocket.close"
-        assert data["code"] == 4409
+        with pytest.raises(WebSocketDisconnect) as exc:
+            ws.receive()
+        assert exc.value.code == 4409
 
 
 def test_reused_operation_ids(test_client):
@@ -339,9 +349,9 @@ def test_subscription_syntax_error(test_client):
             ).as_dict()
         )
 
-        data = ws.receive()
-        assert data["type"] == "websocket.close"
-        assert data["code"] == 4400
+        with pytest.raises(WebSocketDisconnect) as exc:
+            ws.receive()
+        assert exc.value.code == 4400
 
 
 def test_subscription_field_errors(test_client):
@@ -692,9 +702,9 @@ def test_single_result_invalid_operation_selection(test_client):
             ).as_dict()
         )
 
-        data = ws.receive()
-        assert data["type"] == "websocket.close"
-        assert data["code"] == 4400
+        with pytest.raises(WebSocketDisconnect) as exc:
+            ws.receive()
+        assert exc.value.code == 4400
 
 
 def test_single_result_operation_error(test_client):
@@ -786,9 +796,9 @@ def test_single_result_duplicate_ids_sub(test_client):
             ).as_dict()
         )
 
-        data = ws.receive()
-        assert data["type"] == "websocket.close"
-        assert data["code"] == 4409
+        with pytest.raises(WebSocketDisconnect) as exc:
+            ws.receive()
+        assert exc.value.code == 4409
 
 
 def test_single_result_duplicate_ids_query(test_client):
@@ -825,59 +835,6 @@ def test_single_result_duplicate_ids_query(test_client):
         )
 
         # We expect the remote to close the socket due to duplicate ID in use
-        data = ws.receive()
-        assert data["type"] == "websocket.close"
-        assert data["code"] == 4409
-
-
-def test_injects_connection_params(test_client):
-    with test_client.websocket_connect(
-        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
-    ) as ws:
-        ws.send_json(ConnectionInitMessage(payload={"strawberry": "rocks"}).as_dict())
-
-        response = ws.receive_json()
-        assert response == ConnectionAckMessage().as_dict()
-
-        ws.send_json(
-            SubscribeMessage(
-                id="sub1",
-                payload=SubscribeMessagePayload(
-                    query="subscription { connectionParams }"
-                ),
-            ).as_dict()
-        )
-
-        response = ws.receive_json()
-        assert (
-            response
-            == NextMessage(
-                id="sub1", payload={"data": {"connectionParams": "rocks"}}
-            ).as_dict()
-        )
-
-        ws.send_json(CompleteMessage(id="sub1").as_dict())
-
-        ws.close()
-
-
-def test_rejects_connection_params_not_dict(test_client):
-    with test_client.websocket_connect(
-        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
-    ) as ws:
-        ws.send_json(ConnectionInitMessage(payload="gonna fail").as_dict())
-
-        data = ws.receive()
-        assert data["type"] == "websocket.close"
-        assert data["code"] == 4400
-
-
-def test_rejects_connection_params_not_unset(test_client):
-    with test_client.websocket_connect(
-        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
-    ) as ws:
-        ws.send_json(ConnectionInitMessage(payload=None).as_dict())
-
-        data = ws.receive()
-        assert data["type"] == "websocket.close"
-        assert data["code"] == 4400
+        with pytest.raises(WebSocketDisconnect) as exc:
+            ws.receive()
+        assert exc.value.code == 4409

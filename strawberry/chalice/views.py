@@ -37,6 +37,7 @@ class GraphQLView:
                 "The `render_graphiql` argument is deprecated. "
                 "Use `graphiql` instead.",
                 DeprecationWarning,
+                stacklevel=2,
             )
         else:
             self.graphiql = graphiql

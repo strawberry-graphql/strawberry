@@ -16,13 +16,13 @@ from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
 from ..context import get_context
-from . import JSON, HttpClient, Response, ResultOverrideFunction
+from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
 class GraphQLView(BaseGraphQLView):
     result_override: ResultOverrideFunction = None
 
-    def get_root_value(self, request):
+    def get_root_value(self, request) -> Query:
         return Query()
 
     def get_context(self, request: HttpRequest, response: HttpResponse) -> object:

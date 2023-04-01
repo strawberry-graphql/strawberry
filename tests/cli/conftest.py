@@ -6,7 +6,7 @@ from starlette.testclient import TestClient
 
 
 @pytest.fixture
-def cli_runner(mocker):
+def cli_runner(mocker) -> CliRunner:
     # Mock of uvicorn.run
     uvicorn_run_patch = mocker.patch("uvicorn.run")
     uvicorn_run_patch.return_value = True
@@ -14,7 +14,7 @@ def cli_runner(mocker):
 
 
 @pytest.fixture
-def debug_server_client(mocker):
+def debug_server_client(mocker) -> TestClient:
     schema_import_path = "tests.fixtures.sample_package.sample_module"
     mocker.patch.object(sys, "argv", ["strawberry", "server", schema_import_path])
 

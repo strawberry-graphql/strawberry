@@ -62,7 +62,7 @@ class BaseSchema(Protocol):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ):
+    ) -> Any:
         raise NotImplementedError
 
     @abstractmethod

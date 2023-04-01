@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import typing
 from enum import Enum
 
@@ -6,7 +7,7 @@ from graphql import GraphQLError
 
 import strawberry
 from strawberry.channels.context import StrawberryChannelsContext
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
@@ -20,8 +21,8 @@ class AlwaysFailPermission(BasePermission):
         return False
 
 
-class MyExtension(Extension):
-    def get_results(self):
+class MyExtension(SchemaExtension):
+    def get_results(self) -> typing.Dict[str, str]:
         return {"example": "example"}
 
 
@@ -32,6 +33,12 @@ def _read_file(text_file: Upload) -> str:
     # async methods for reading
     if isinstance(text_file, UploadFile):
         text_file = text_file.file._file  # type: ignore
+
+    with contextlib.suppress(ModuleNotFoundError):
+        from starlite import UploadFile as StarliteUploadFile
+
+        if isinstance(text_file, StarliteUploadFile):
+            text_file = text_file.file  # type: ignore
 
     return text_file.read().decode()
 

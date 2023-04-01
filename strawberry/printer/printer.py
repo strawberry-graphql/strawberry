@@ -10,6 +10,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    Type,
     TypeVar,
     Union,
     cast,
@@ -39,7 +40,7 @@ from graphql.utilities.print_schema import print_type as original_print_type
 from strawberry.custom_scalar import ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
-from strawberry.type import StrawberryContainer, StrawberryType
+from strawberry.type import StrawberryContainer
 from strawberry.unset import UNSET
 
 from .ast_from_value import ast_from_value
@@ -225,9 +226,7 @@ def print_args(
     )
 
 
-def print_fields(
-    type_: Union[StrawberryType, type], schema: BaseSchema, *, extras: PrintExtras
-) -> str:
+def print_fields(type_: Type, schema: BaseSchema, *, extras: PrintExtras) -> str:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
     fields = []
@@ -322,7 +321,7 @@ def print_enum(
     )
 
 
-def print_extends(type_: Union[StrawberryType, type], schema: BaseSchema):
+def print_extends(type_: Type, schema: BaseSchema) -> str:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
     strawberry_type = type_.extensions and type_.extensions.get(
@@ -336,7 +335,7 @@ def print_extends(type_: Union[StrawberryType, type], schema: BaseSchema):
 
 
 def print_type_directives(
-    type_: Union[StrawberryType, type], schema: BaseSchema, *, extras: PrintExtras
+    type_: Type, schema: BaseSchema, *, extras: PrintExtras
 ) -> str:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
@@ -366,9 +365,7 @@ def print_type_directives(
     )
 
 
-def _print_object(
-    type_: Union[StrawberryType, type], schema: BaseSchema, *, extras: PrintExtras
-) -> str:
+def _print_object(type_: Type, schema: BaseSchema, *, extras: PrintExtras) -> str:
     return (
         print_description(type_)
         + print_extends(type_, schema)
@@ -379,9 +376,7 @@ def _print_object(
     )
 
 
-def _print_interface(
-    type_: Union[StrawberryType, type], schema: BaseSchema, *, extras: PrintExtras
-) -> str:
+def _print_interface(type_: Type, schema: BaseSchema, *, extras: PrintExtras) -> str:
     return (
         print_description(type_)
         + print_extends(type_, schema)
@@ -400,9 +395,7 @@ def print_input_value(name: str, arg: GraphQLArgument) -> str:
     return arg_decl + print_deprecated(arg.deprecation_reason)
 
 
-def _print_input_object(
-    type_: Union[StrawberryType, type], schema: BaseSchema, *, extras: PrintExtras
-) -> str:
+def _print_input_object(type_: Type, schema: BaseSchema, *, extras: PrintExtras) -> str:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
     fields = []
@@ -446,9 +439,7 @@ def print_union(
     )
 
 
-def _print_type(
-    type_: Union[StrawberryType, type], schema: BaseSchema, *, extras: PrintExtras
-) -> str:
+def _print_type(type_: Type, schema: BaseSchema, *, extras: PrintExtras) -> str:
     # prevents us from trying to print a scalar as an input type
     if is_scalar_type(type_):
         return print_scalar(type_, schema=schema, extras=extras)
