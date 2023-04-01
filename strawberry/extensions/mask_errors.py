@@ -1,11 +1,11 @@
-from typing import Callable, Iterator
+from typing import Any, Callable, Iterator
 
 from graphql.error import GraphQLError
 
 from strawberry.extensions.base_extension import SchemaExtension
 
 
-def default_should_mask_error(_) -> bool:
+def default_should_mask_error(_: Any) -> bool:
     # Mask all errors
     return True
 
