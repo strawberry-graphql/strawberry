@@ -171,7 +171,7 @@ class Schema(BaseSchema):
         self._schema.query_type = query_type
         self._schema.type_map[query_type.name] = query_type
 
-    def entities_resolver(self, root, info, representations) -> List[object]:
+    def entities_resolver(self, root, info, representations) -> List[object]:  # noqa
         results = []
 
         for representation in representations:
@@ -371,7 +371,7 @@ def _get_entity_type(type_map: "TypeMap"):
 
     entity_type = GraphQLUnionType("_Entity", federation_key_types)  # type: ignore
 
-    def _resolve_type(self, value, _type):
+    def _resolve_type(self, value, _type):  # noqa
         return self._type_definition.name
 
     entity_type.resolve_type = _resolve_type
