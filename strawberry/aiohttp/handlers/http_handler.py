@@ -13,6 +13,7 @@ from strawberry.types.graphql import OperationType
 from strawberry.utils.graphiql import get_graphiql_html
 
 if TYPE_CHECKING:
+    from typing import Callable
     from typing_extensions import Literal
 
     from strawberry.http import GraphQLRequestData
@@ -25,10 +26,10 @@ class HTTPHandler:
         schema: BaseSchema,
         graphiql: bool,
         allow_queries_via_get: bool,
-        get_context: callable,
-        get_root_value: callable,
-        encode_json: callable,
-        process_result: callable,
+        get_context: Callable,
+        get_root_value: Callable,
+        encode_json: Callable,
+        process_result: Callable,
         request: web.Request,
     ):
         self.schema = schema
