@@ -365,7 +365,7 @@ def print_type_directives(
     )
 
 
-def _print_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:  # noqa
+def _print_object(type_: Any, schema: BaseSchema, *, extras: PrintExtras) -> str:
     return (
         print_description(type_)
         + print_extends(type_, schema)
@@ -376,7 +376,7 @@ def _print_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:  # 
     )
 
 
-def _print_interface(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:  # noqa
+def _print_interface(type_: Any, schema: BaseSchema, *, extras: PrintExtras) -> str:
     return (
         print_description(type_)
         + print_extends(type_, schema)

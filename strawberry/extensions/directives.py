@@ -21,7 +21,7 @@ SPECIFIED_DIRECTIVES = {"include", "skip"}
 
 class DirectivesExtension(SchemaExtension):
     async def resolve(
-        self, _next, root, info: GraphQLResolveInfo, *args, **kwargs  # noqa
+        self, _next, root, info: GraphQLResolveInfo, *args, **kwargs  # noqa: ANN001
     ) -> AwaitableOrValue[Any]:
         value = await await_maybe(_next(root, info, *args, **kwargs))
 
@@ -36,7 +36,7 @@ class DirectivesExtension(SchemaExtension):
 
 class DirectivesExtensionSync(SchemaExtension):
     def resolve(
-        self, _next, root, info: GraphQLResolveInfo, *args, **kwargs  # noqa
+        self, _next, root, info: GraphQLResolveInfo, *args, **kwargs  # noqa: ANN001
     ) -> AwaitableOrValue[Any]:
         value = _next(root, info, *args, **kwargs)
 

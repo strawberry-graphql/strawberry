@@ -23,7 +23,7 @@ class Body(TypedDict, total=False):
 
 
 class BaseGraphQLTestClient(ABC):
-    def __init__(self, client, url: str = "/graphql/"):  # noqa
+    def __init__(self, client, url: str = "/graphql/"):  # noqa: ANN001
         self._client = client
         self.url = url
 
