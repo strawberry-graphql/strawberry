@@ -74,7 +74,7 @@ class DatadogTracingExtension(SchemaExtension):
         yield
         self.parsing_span.finish()
 
-    async def resolve(self, _next, root, info, *args, **kwargs) -> Any:
+    async def resolve(self, _next, root, info, *args, **kwargs) -> Any:  # noqa
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -100,7 +100,7 @@ class DatadogTracingExtension(SchemaExtension):
 
 
 class DatadogTracingExtensionSync(DatadogTracingExtension):
-    def resolve(self, _next, root, info, *args, **kwargs) -> Any:
+    def resolve(self, _next, root, info, *args, **kwargs) -> Any:  # noqa
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 
