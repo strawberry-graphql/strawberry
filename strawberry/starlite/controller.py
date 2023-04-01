@@ -22,9 +22,7 @@ from starlite.exceptions import (
     NotFoundException,
     ValidationException,
 )
-from starlite.status_codes import (
-    HTTP_200_OK,
-)
+from starlite.status_codes import HTTP_200_OK
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.http.base_view import (
     AsyncBaseHTTPView,
@@ -67,12 +65,16 @@ CustomContext = Union["BaseContext", Dict[str, Any]]
 async def _context_getter(
     custom_context: Optional[CustomContext],
     request: Request[Any, Any],
+    response: Response[Any],
 ) -> MergedContext:
     if isinstance(custom_context, BaseContext):
         custom_context.request = request
         return custom_context
 
-    default_context = {"request": request}
+    default_context = {
+        "request": request,
+        "response": response,
+    }
 
     if isinstance(custom_context, dict):
         return {
@@ -198,6 +200,9 @@ def make_graphql_controller(
     else:
         root_value_getter_ = root_value_getter
 
+    def response_getter() -> Response[Any]:
+        return Response({}, background=BackgroundTasks([]))
+
     schema_ = schema
     allow_queries_via_get_ = allow_queries_via_get
     graphiql_ = graphiql
@@ -212,6 +217,7 @@ def make_graphql_controller(
             "custom_context": Provide(custom_context_getter_),
             "context": Provide(_context_getter),
             "root_value": Provide(root_value_getter_),
+            "response": Provide(response_getter),
         }
         graphql_ws_handler_class: Type[GraphQLWSHandler] = GraphQLWSHandler
         graphql_transport_ws_handler_class: Type[
@@ -276,9 +282,9 @@ def make_graphql_controller(
             request: Request[Any, Any],
             context: CustomContext,
             root_value: Any,
+            response: Response[Any],
         ) -> Response[Union[GraphQLResource, str]]:
-            self.temporal_response = Response({}, background=BackgroundTasks([]))
-            context["response"] = self.temporal_response
+            self.temporal_response = response
 
             return await self.execute_request(
                 request=request,
@@ -292,10 +298,9 @@ def make_graphql_controller(
             request: Request[Any, Any],
             context: CustomContext,
             root_value: Any,
+            response: Response[Any],
         ) -> Response[Union[GraphQLResource, str]]:
-            # TODO: is there a way to pass reponse as a dependency?
-            self.temporal_response = Response({}, background=BackgroundTasks([]))
-            context["response"] = self.temporal_response
+            self.temporal_response = response
 
             return await self.execute_request(
                 request=request,
@@ -332,7 +337,7 @@ def make_graphql_controller(
             preferred_protocol = self.pick_preferred_protocol(socket)
             if preferred_protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
                 await self.graphql_transport_ws_handler_class(
-                    schema=self._schema,
+                    schema=self.schema,
                     debug=self._debug,
                     connection_init_wait_timeout=self._connection_init_wait_timeout,
                     get_context=_get_context,
@@ -341,7 +346,7 @@ def make_graphql_controller(
                 ).handle()
             elif preferred_protocol == GRAPHQL_WS_PROTOCOL:
                 await self.graphql_ws_handler_class(
-                    schema=self._schema,
+                    schema=self.schema,
                     debug=self._debug,
                     keep_alive=self._keep_alive,
                     keep_alive_interval=self._keep_alive_interval,
