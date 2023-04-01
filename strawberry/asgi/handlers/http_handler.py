@@ -29,10 +29,10 @@ class HTTPHandler:
         graphiql: bool,
         allow_queries_via_get: bool,
         debug: bool,
-        get_context,
-        get_root_value,
-        process_result,
-        encode_json,
+        get_context: Callable,
+        get_root_value: Callable,
+        process_result: Callable,
+        encode_json: Callable,
     ):
         self.schema = schema
         self.graphiql = graphiql
