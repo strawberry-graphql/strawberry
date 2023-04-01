@@ -151,7 +151,7 @@ markers = [
     "fastapi",
     "chalice",
     "flask",
-    "starlite,"
+    "starlite"
 ]
 asyncio_mode = "auto"
 filterwarnings = [
