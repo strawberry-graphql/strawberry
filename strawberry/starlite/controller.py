@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Union
 
 from starlite import (
     BackgroundTasks,
@@ -42,7 +42,7 @@ from .handlers.graphql_transport_ws_handler import (
 from .handlers.graphql_ws_handler import GraphQLWSHandler as BaseGraphQLWSHandler
 
 if TYPE_CHECKING:
-    from typing import FrozenSet, List, Tuple, Type
+    from typing import FrozenSet, List, Type
 
     from starlite.types import AnyCallable, Dependencies
     from strawberry.http import GraphQLHTTPResponse
@@ -139,23 +139,10 @@ class StarliteRequestAdapter:
     async def get_body(self) -> str:
         return (await self.request.body()).decode()
 
-    async def get_post_data(self) -> Mapping[str, Union[str, bytes]]:
-        return await self.request.json()
-
-    # TODO: this gets everything, not just files
-    async def get_files(self) -> Mapping[str, Any]:
+    async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
         multipart_data = await self.request.form()
 
-        operations: Dict[str, Any] = multipart_data.get("operations", {})
-        files_map: Dict[str, List[str]] = multipart_data.get("map", {})
-
-        if isinstance(operations, str):
-            raise ValidationException("operations must be a valid JSON object")
-
-        if isinstance(files_map, str):
-            raise ValidationException("map must be a valid JSON object")
-
-        return multipart_data, operations, files_map
+        return multipart_data, multipart_data
 
 
 class BaseContext:

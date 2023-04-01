@@ -2,7 +2,17 @@ from __future__ import annotations
 
 import asyncio
 import json
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from django.http import HttpRequest, HttpResponseNotAllowed, JsonResponse
 from django.http.response import HttpResponse
@@ -111,14 +121,8 @@ class AsyncDjangoHTTPRequestAdapter:
     async def get_post_data(self) -> Mapping[str, Union[str, bytes]]:
         return self.request.POST
 
-    async def get_files(self) -> Mapping[str, Any]:
-        # TODO: make this interface better, I shouldn't use json here
-        import json
-
-        operations = json.loads(self.request.POST.get("operations", "{}"))
-        files_map = json.loads(self.request.POST.get("map", "{}"))
-
-        return self.request.FILES, operations, files_map
+    async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
+        return self.request.POST, self.request.FILES
 
 
 class BaseView:

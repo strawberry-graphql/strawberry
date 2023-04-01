@@ -3,7 +3,17 @@ from __future__ import annotations
 import asyncio
 from datetime import timedelta
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Mapping, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from aiohttp import web
 from strawberry.aiohttp.handlers import (
@@ -44,26 +54,21 @@ class AioHTTPRequestAdapter:
     def headers(self) -> Mapping[str, str]:
         return self.request.headers
 
-    async def get_post_data(self) -> Mapping[str, Union[str, bytes]]:
-        return await self.request.post()
-
-    async def get_files(self) -> Mapping[str, Any]:
+    async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
         reader = await self.request.multipart()
-        operations: Dict[str, Any] = {}
-        files_map: Dict[str, Any] = {}
-        files: Dict[str, Any] = {}
+
+        data = {}
+        files = {}
 
         async for field in reader:
-            if field.name == "operations":
-                operations = (await field.json()) or {}
-            elif field.name == "map":
-                files_map = (await field.json()) or {}
-            elif field.filename:
+            if field.filename:
                 assert field.name
 
                 files[field.name] = BytesIO(await field.read(decode=False))
+            else:
+                data[field.name] = await field.text()
 
-        return files, operations, files_map
+        return data, files
 
     @property
     def content_type(self) -> Optional[str]:

@@ -2,7 +2,18 @@ from __future__ import annotations
 
 import json
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from sanic.request import Request
 from sanic.response import HTTPResponse, html
@@ -59,17 +70,12 @@ class SanicHTTPRequestAdapter:
     async def get_post_data(self) -> Mapping[str, Union[str, bytes]]:
         return self.request.json()
 
-    async def get_files(self) -> Mapping[str, Any]:
-        import json
-
+    async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
         assert self.request.form is not None
-
-        operations = json.loads(self.request.form.get("operations") or "{}")
-        files_map = json.loads(self.request.form.get("map") or "{}")
 
         files = convert_request_to_files_dict(self.request)
 
-        return files, operations, files_map
+        return self.request.form, files
 
 
 class GraphQLView(

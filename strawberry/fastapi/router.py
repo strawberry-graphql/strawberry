@@ -12,6 +12,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Tuple,
     Union,
     cast,
 )
@@ -77,16 +78,10 @@ class FastAPIRequestAdapter:
     async def get_post_data(self) -> Mapping[str, Union[str, bytes]]:
         return await self.json()
 
-    async def get_files(self) -> Mapping[str, Any]:
+    async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
         multipart_data = await self.request.form()
 
-        import json
-
-        # TODO: make this interface better, I shouldn't use json here
-        operations = json.loads(multipart_data.get("operations", "{}"))
-        files_map = json.loads(multipart_data.get("map", "{}"))
-
-        return multipart_data, operations, files_map
+        return multipart_data, multipart_data
 
 
 class GraphQLRouter(

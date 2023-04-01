@@ -1,8 +1,17 @@
 from __future__ import annotations
 
-import json
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from starlette import status
 from starlette.requests import Request
@@ -57,15 +66,10 @@ class ASGIRequestAdapter:
     async def get_post_data(self) -> Mapping[str, Union[str, bytes]]:
         return await self.request.json()
 
-    # TODO: this gets everything, not just files
-    async def get_files(self) -> Mapping[str, Any]:
+    async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
         multipart_data = await self.request.form()
 
-        operations_text = multipart_data.get("operations", "{}")
-        operations = json.loads(operations_text)  # type: ignore
-        files_map = json.loads(multipart_data.get("map", "{}"))  # type: ignore # noqa: E501
-
-        return multipart_data, operations, files_map
+        return multipart_data, multipart_data
 
 
 class GraphQL(

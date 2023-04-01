@@ -8,6 +8,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -64,15 +65,15 @@ class HTTPRequestAdapterProtocol(Protocol):
         ...
 
     @property
+    def content_type(self) -> Optional[str]:
+        ...
+
+    @property
     def post_data(self) -> Mapping[str, Union[str, bytes]]:
         ...
 
     @property
     def files(self) -> Mapping[str, Any]:
-        ...
-
-    @property
-    def content_type(self) -> Optional[str]:
         ...
 
 
@@ -96,11 +97,7 @@ class AsyncHTTPRequestAdapterProtocol(Protocol):
     async def get_body(self) -> str:
         ...
 
-    async def get_post_data(self) -> Mapping[str, Union[str, bytes]]:
-        ...
-
-    # TODO: this gets everything, not just files
-    async def get_files(self) -> Mapping[str, Any]:
+    async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
         ...
 
 
@@ -324,12 +321,21 @@ class AsyncBaseHTTPView(BaseHTTPView[Request, Response, Context, RootValue]):
         )
 
     async def parse_multipart(
-        self, request: HTTPRequestAdapterProtocol
+        self, request: AsyncHTTPRequestAdapterProtocol
     ) -> Dict[str, str]:
         try:
-            files, operations, files_map = await request.get_files()
+            form_data, files = await request.get_form_data()
         except ValueError:
             raise HTTPException(400, "Unable to parse the multipart body")
+
+        operations = form_data.get("operations", "{}")
+        files_map = form_data.get("map", "{}")
+
+        if isinstance(operations, (bytes, str)):
+            operations = self.parse_json(operations)
+
+        if isinstance(files_map, (bytes, str)):
+            files_map = self.parse_json(files_map)
 
         try:
             return replace_placeholders_with_files(operations, files_map, files)

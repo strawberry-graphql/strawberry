@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple, Union
 
 from flask import Request, Response, render_template_string, request
 from flask.views import View
@@ -128,13 +128,8 @@ class AsyncFlaskHTTPRequestAdapter:
     async def get_post_data(self) -> Mapping[str, Union[str, bytes]]:
         return self.request.form
 
-    async def get_files(self) -> Mapping[str, Any]:
-        import json
-
-        operation = json.loads(self.request.form.get("operations", "{}"))
-        files_map = json.loads(self.request.form.get("map", "{}"))
-
-        return self.request.files, operation, files_map
+    async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
+        return self.request.form, self.request.files
 
 
 class AsyncGraphQLView(
