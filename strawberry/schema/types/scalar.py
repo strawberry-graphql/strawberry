@@ -1,6 +1,6 @@
 import datetime
 import decimal
-from typing import Dict
+from typing import Dict, Type
 from uuid import UUID
 
 from graphql import (
@@ -44,7 +44,7 @@ def _make_scalar_definition(scalar_type: GraphQLScalarType) -> ScalarDefinition:
     )
 
 
-def _get_scalar_definition(scalar: ScalarDefinition) -> ScalarDefinition:
+def _get_scalar_definition(scalar: Type) -> ScalarDefinition:
     return scalar._scalar_definition
 
 

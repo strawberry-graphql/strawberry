@@ -10,7 +10,6 @@ from typing import (
     Iterable,
     List,
     Optional,
-    Tuple,
     Type,
     Union,
     cast,
@@ -53,6 +52,7 @@ if TYPE_CHECKING:
     from strawberry.enum import EnumDefinition
     from strawberry.extensions import SchemaExtension
     from strawberry.field import StrawberryField
+    from strawberry.type import StrawberryType
     from strawberry.types import ExecutionResult
     from strawberry.union import StrawberryUnion
 
@@ -72,7 +72,7 @@ class Schema(BaseSchema):
         mutation: Optional[Type] = None,
         subscription: Optional[Type] = None,
         directives: Iterable[StrawberryDirective] = (),
-        types: Tuple[Type] = (),
+        types: Iterable[Union[Type, StrawberryType]] = (),
         extensions: Iterable[Union[Type[SchemaExtension], SchemaExtension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,

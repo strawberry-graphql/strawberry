@@ -365,7 +365,7 @@ def print_type_directives(
     )
 
 
-def _print_object(type_: Type, schema: BaseSchema, *, extras: PrintExtras) -> str:
+def _print_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:  # noqa
     return (
         print_description(type_)
         + print_extends(type_, schema)
@@ -376,7 +376,7 @@ def _print_object(type_: Type, schema: BaseSchema, *, extras: PrintExtras) -> st
     )
 
 
-def _print_interface(type_: Type, schema: BaseSchema, *, extras: PrintExtras) -> str:
+def _print_interface(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:  # noqa
     return (
         print_description(type_)
         + print_extends(type_, schema)
@@ -395,7 +395,7 @@ def print_input_value(name: str, arg: GraphQLArgument) -> str:
     return arg_decl + print_deprecated(arg.deprecation_reason)
 
 
-def _print_input_object(type_: Type, schema: BaseSchema, *, extras: PrintExtras) -> str:
+def _print_input_object(type_: Any, schema: BaseSchema, *, extras: PrintExtras) -> str:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
     fields = []
@@ -439,7 +439,7 @@ def print_union(
     )
 
 
-def _print_type(type_: Type, schema: BaseSchema, *, extras: PrintExtras) -> str:
+def _print_type(type_: Any, schema: BaseSchema, *, extras: PrintExtras) -> str:
     # prevents us from trying to print a scalar as an input type
     if is_scalar_type(type_):
         return print_scalar(type_, schema=schema, extras=extras)
