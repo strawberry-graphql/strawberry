@@ -332,7 +332,7 @@ def test_return_type_from_field():
 
 
 def test_field_nodes_deprecation():
-    def resolver(info):
+    def resolver(info) -> int:
         info.field_nodes
         return 0
 
