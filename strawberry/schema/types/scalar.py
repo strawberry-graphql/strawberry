@@ -44,7 +44,7 @@ def _make_scalar_definition(scalar_type: GraphQLScalarType) -> ScalarDefinition:
     )
 
 
-def _get_scalar_definition(scalar) -> ScalarDefinition:
+def _get_scalar_definition(scalar: ScalarDefinition) -> ScalarDefinition:
     return scalar._scalar_definition
 
 

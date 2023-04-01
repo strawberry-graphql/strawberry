@@ -16,8 +16,8 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         schema: BaseSchema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
-        get_context,
-        get_root_value,
+        get_context: callable,
+        get_root_value: callable,
         ws: WebSocket,
     ):
         super().__init__(schema, debug, connection_init_wait_timeout)
