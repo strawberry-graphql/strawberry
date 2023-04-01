@@ -1,3 +1,4 @@
+from typing import Any, Dict
 from unittest.mock import MagicMock
 
 import pytest
@@ -143,7 +144,7 @@ async def test_open_tracing_gets_operation_name(global_tracer_mock, mocker):
 
     tracers = []
 
-    def generate_trace(*args, **kwargs):
+    def generate_trace(*args: str, **kwargs: Dict[str, Any]):
         nonlocal tracers
         tracer = mocker.Mock()
         tracers.append(tracer)

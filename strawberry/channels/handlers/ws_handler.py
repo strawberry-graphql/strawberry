@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Tuple, Union
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
@@ -101,7 +101,7 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
         await self._handler.handle()
         return None
 
-    async def receive(self, *args, **kwargs) -> None:
+    async def receive(self, *args: str, **kwargs: Dict[str, Any]) -> None:
         # Overriding this so that we can pass the errors to handle_invalid_message
         try:
             await super().receive(*args, **kwargs)

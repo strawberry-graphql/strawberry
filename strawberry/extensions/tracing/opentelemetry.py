@@ -116,7 +116,14 @@ class OpenTelemetryExtension(SchemaExtension):
             for kwarg, value in filtered_kwargs.items():
                 span.set_attribute(f"graphql.param.{kwarg}", value)
 
-    async def resolve(self, _next, root, info, *args, **kwargs) -> Any:  # noqa: ANN001
+    async def resolve(
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Dict[str, Any],
+    ) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -139,7 +146,14 @@ class OpenTelemetryExtension(SchemaExtension):
 
 
 class OpenTelemetryExtensionSync(OpenTelemetryExtension):
-    def resolve(self, _next, root, info, *args, **kwargs) -> Any:  # noqa: ANN001
+    def resolve(
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Dict[str, Any],
+    ) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 

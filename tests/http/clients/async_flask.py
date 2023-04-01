@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict
+from typing import Any, Dict
 
 from flask import Flask
 from flask import Response as FlaskResponse
@@ -22,7 +22,7 @@ class GraphQLView(BaseAsyncGraphQLView):
 
     result_override: ResultOverrideFunction = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: str, **kwargs: Dict[str, Any]):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 

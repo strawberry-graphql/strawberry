@@ -85,7 +85,7 @@ if TYPE_CHECKING:
 # subclass the GraphQLEnumType class to enable returning Enum members from
 # resolvers.
 class CustomGraphQLEnumType(GraphQLEnumType):
-    def __init__(self, enum: EnumDefinition, *args, **kwargs):
+    def __init__(self, enum: EnumDefinition, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.wrapped_cls = enum.wrapped_cls
 
@@ -442,7 +442,7 @@ class GraphQLCoreConverter:
 
         if field.is_basic_field:
 
-            def _get_basic_result(_source: Any, *args, **kwargs):
+            def _get_basic_result(_source: Any, *args: str, **kwargs: Dict[str, Any]):
                 # Call `get_result` without an info object or any args or
                 # kwargs because this is a basic field with no resolver.
                 return field.get_result(_source, info=None, args=[], kwargs={})

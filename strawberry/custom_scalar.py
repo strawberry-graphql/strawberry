@@ -6,6 +6,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Iterable,
     Mapping,
     NewType,
@@ -70,7 +71,7 @@ class ScalarWrapper:
     def __init__(self, wrap: Callable[[Any], Any]):
         self.wrap = wrap
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: str, **kwargs: Dict[str, Any]):
         return self.wrap(*args, **kwargs)
 
     def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:

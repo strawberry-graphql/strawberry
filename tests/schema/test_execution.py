@@ -424,7 +424,7 @@ def test_adding_custom_validation_rules():
         another_example: Optional[str] = None
 
     class CustomRule(ValidationRule):
-        def enter_field(self, node, *args) -> None:
+        def enter_field(self, node, *args: str) -> None:
             if node.name.value == "example":
                 self.report_error(GraphQLError("Can't query field 'example'"))
 

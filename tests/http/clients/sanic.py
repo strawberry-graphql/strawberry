@@ -3,7 +3,7 @@ from __future__ import annotations
 from io import BytesIO
 from json import dumps
 from random import randint
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 from typing_extensions import Literal
 
 from sanic import Sanic
@@ -21,7 +21,7 @@ from .base import JSON, HttpClient, Response, ResultOverrideFunction
 class GraphQLView(BaseGraphQLView):
     result_override: ResultOverrideFunction = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: str, **kwargs: Dict[str, Any]):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Generator, Iterator, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Iterator, Optional
 
 from ddtrace import tracer
 
@@ -11,6 +11,8 @@ from strawberry.extensions.tracing.utils import should_skip_tracing
 from strawberry.utils.cached_property import cached_property
 
 if TYPE_CHECKING:
+    from graphql import GraphQLResolveInfo
+
     from strawberry.types.execution import ExecutionContext
 
 
@@ -74,7 +76,14 @@ class DatadogTracingExtension(SchemaExtension):
         yield
         self.parsing_span.finish()
 
-    async def resolve(self, _next, root, info, *args, **kwargs) -> Any:  # noqa: ANN001
+    async def resolve(
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Dict[str, Any],
+    ) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -100,7 +109,14 @@ class DatadogTracingExtension(SchemaExtension):
 
 
 class DatadogTracingExtensionSync(DatadogTracingExtension):
-    def resolve(self, _next, root, info, *args, **kwargs) -> Any:  # noqa: ANN001
+    def resolve(
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Dict[str, Any],
+    ) -> Any:
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 

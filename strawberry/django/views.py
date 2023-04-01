@@ -209,7 +209,7 @@ class GraphQLView(BaseView):
 
     @method_decorator(csrf_exempt)
     def dispatch(
-        self, request: HttpRequest, *args, **kwargs
+        self, request: HttpRequest, *args: str, **kwargs: Dict[str, Any]
     ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
         if not self.is_request_allowed(request):
             return HttpResponseNotAllowed(
@@ -266,7 +266,7 @@ class AsyncGraphQLView(BaseView):
 
     @method_decorator(csrf_exempt)
     async def dispatch(
-        self, request: HttpRequest, *args, **kwargs
+        self, request: HttpRequest, *args: str, **kwargs: Dict[str, Any]
     ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
         if not self.is_request_allowed(request):
             return HttpResponseNotAllowed(
