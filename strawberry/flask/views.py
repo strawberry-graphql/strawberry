@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple, Uni
 
 from flask import Request, Response, render_template_string, request
 from flask.views import View
-from strawberry.http.base_view import (
-    AsyncBaseHTTPView,
-    BaseHTTPView,
+from strawberry.http.async_base_view import AsyncBaseHTTPView
+from strawberry.http.sync_base_view import (
+    BaseSyncHTTPView,
     Context,
     HTTPException,
     RootValue,
@@ -77,7 +77,7 @@ class BaseGraphQLView:
 
 
 class GraphQLView(
-    BaseGraphQLView, BaseHTTPView[Request, Response, Context, RootValue], View
+    BaseGraphQLView, BaseSyncHTTPView[Request, Response, Context, RootValue], View
 ):
     methods = ["GET", "POST"]
     allow_queries_via_get: bool = True

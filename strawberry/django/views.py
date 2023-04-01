@@ -24,9 +24,9 @@ from django.utils.decorators import classonlymethod, method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
-from strawberry.http.base_view import (
-    AsyncBaseHTTPView,
-    BaseHTTPView,
+from strawberry.http.async_base_view import AsyncBaseHTTPView
+from strawberry.http.sync_base_view import (
+    BaseSyncHTTPView,
     Context,
     HTTPException,
     RootValue,
@@ -180,7 +180,7 @@ class BaseView:
 
 
 class GraphQLView(
-    BaseView, BaseHTTPView[HttpRequest, HttpResponse, Context, RootValue], View
+    BaseView, BaseSyncHTTPView[HttpRequest, HttpResponse, Context, RootValue], View
 ):
     subscriptions_enabled = False
     graphiql = True
@@ -238,7 +238,7 @@ class AsyncGraphQLView(
         return TemporalHttpResponse()
 
     @method_decorator(csrf_exempt)
-    async def dispatch(
+    async def dispatch(  # type: ignore[override]
         self, request: HttpRequest, *args: Any, **kwargs: Any
     ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
         try:
