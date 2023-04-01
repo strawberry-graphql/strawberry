@@ -46,5 +46,5 @@ class GraphQLTestClient(BaseGraphQLTestClient):
             headers=headers,
         )
 
-    def _decode(self, response, type: Literal["multipart", "json"]):
+    def _decode(self, response: Any, type: Literal["multipart", "json"]):
         return response.json()
