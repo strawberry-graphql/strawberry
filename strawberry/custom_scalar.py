@@ -196,7 +196,7 @@ def scalar(
     if parse_value is None:
         parse_value = cls
 
-    def wrap(cls):
+    def wrap(cls: Type):
         return _process_scalar(
             cls,
             name=name,
