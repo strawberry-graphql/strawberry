@@ -141,7 +141,9 @@ class BaseView(View):
 
         return parse_request_data(data)
 
-    def _render_graphiql(self, request: HttpRequest, context=None) -> TemplateResponse:
+    def _render_graphiql(
+        self, request: HttpRequest, context: Optional[Dict[Any, Any]] = None
+    ) -> TemplateResponse:
         if not self.graphiql:
             raise Http404()
 
@@ -207,7 +209,7 @@ class GraphQLView(BaseView):
 
     @method_decorator(csrf_exempt)
     def dispatch(
-        self, request, *args, **kwargs
+        self, request: HttpRequest, *args, **kwargs
     ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
         if not self.is_request_allowed(request):
             return HttpResponseNotAllowed(
@@ -264,7 +266,7 @@ class AsyncGraphQLView(BaseView):
 
     @method_decorator(csrf_exempt)
     async def dispatch(
-        self, request, *args, **kwargs
+        self, request: HttpRequest, *args, **kwargs
     ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
         if not self.is_request_allowed(request):
             return HttpResponseNotAllowed(
