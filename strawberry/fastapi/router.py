@@ -12,6 +12,7 @@ from typing import (
     Iterable,
     Optional,
     Sequence,
+    Tuple,
     Union,
     cast,
 )
@@ -119,9 +120,12 @@ class GraphQLRouter(APIRouter):
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
         debug: bool = False,
-        root_value_getter=None,
-        context_getter=None,
-        subscription_protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
+        root_value_getter: Callable = None,
+        context_getter: Callable = None,
+        subscription_protocols: Tuple[Any, Any] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         default: Optional[ASGIApp] = None,
         on_startup: Optional[Sequence[Callable[[], Any]]] = None,
@@ -159,8 +163,8 @@ class GraphQLRouter(APIRouter):
         async def handle_http_get(
             request: Request,
             response: Response,
-            context=Depends(self.context_getter),
-            root_value=Depends(self.root_value_getter),
+            context: Any = Depends(self.context_getter),
+            root_value: Any = Depends(self.root_value_getter),
         ) -> Response:
             if request.query_params:
                 try:
@@ -187,8 +191,8 @@ class GraphQLRouter(APIRouter):
         async def handle_http_post(
             request: Request,
             response: Response,
-            context=Depends(self.context_getter),
-            root_value=Depends(self.root_value_getter),
+            context: Any = Depends(self.context_getter),
+            root_value: Any = Depends(self.root_value_getter),
         ) -> Response:
             actual_response: Response
 
@@ -248,8 +252,8 @@ class GraphQLRouter(APIRouter):
         @self.websocket(path)
         async def websocket_endpoint(
             websocket: WebSocket,
-            context=Depends(self.context_getter),
-            root_value=Depends(self.root_value_getter),
+            context: Any = Depends(self.context_getter),
+            root_value: Any = Depends(self.root_value_getter),
         ):
             async def _get_context():
                 return context
@@ -337,7 +341,12 @@ class GraphQLRouter(APIRouter):
         return process_result(result)
 
     async def execute_request(
-        self, request: Request, response: Response, data: dict, context, root_value
+        self,
+        request: Request,
+        response: Response,
+        data: dict,
+        context: Any,
+        root_value: Any,
     ) -> Response:
         request_data = parse_request_data(data)
 
