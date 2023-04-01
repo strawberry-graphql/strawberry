@@ -198,7 +198,7 @@ class Mutation:
             f"chat_{room.room_name}",
             {
                 "type": "chat.message",
-                "room_id": room.room_name,
+                "room_id": f"chat_{room.room_name}",
                 "message": message,
             },
         )
