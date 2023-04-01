@@ -246,7 +246,7 @@ class GraphQLRouter(APIRouter):
         request: Request,
         response: Response,
         context: Any = None,
-        root_value: Any = None
+        root_value: Any = None,
     ) -> Response:
         actual_response: Response
 
