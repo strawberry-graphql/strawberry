@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import TYPE_CHECKING, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
@@ -48,7 +48,10 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
         debug: bool = False,
-        subscription_protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
+        subscription_protocols: Tuple[str, str] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
         connection_init_wait_timeout: Optional[datetime.timedelta] = None,
     ):
         if connection_init_wait_timeout is None:
@@ -105,8 +108,8 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
         except ValueError as e:
             await self._handler.handle_invalid_message(str(e))
 
-    async def receive_json(self, content, **kwargs) -> None:
+    async def receive_json(self, content: Any, **kwargs) -> None:
         await self._handler.handle_message(content)
 
-    async def disconnect(self, code) -> None:
+    async def disconnect(self, code: Any) -> None:
         await self._handler.handle_disconnect(code)
