@@ -358,7 +358,7 @@ def interface(
     )
 
 
-def asdict(obj: object) -> Dict[str, object]:
+def asdict(obj: Any) -> Dict[str, object]:
     """Convert a strawberry object into a dictionary.
     This wraps the dataclasses.asdict function to strawberry.
 
