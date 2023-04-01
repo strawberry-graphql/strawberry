@@ -527,7 +527,9 @@ def test_with_types():
         """
         Represents binary data as Base64-encoded strings, using the standard alphabet.
         """
-        scalar Base64 @specifiedBy(url: "https://datatracker.ietf.org/doc/html/rfc4648.html#section-4")
+        scalar Base64 @specifiedBy(
+            url: "https://datatracker.ietf.org/doc/html/rfc4648.html#section-4"
+        )
 
         input Input {
           foo: Int!
@@ -544,7 +546,7 @@ def test_with_types():
         type Type {
           foo: Int!
         }
-    '''  # noqa: E501
+    '''
 
     assert str(schema) == textwrap.dedent(expected).strip()
 

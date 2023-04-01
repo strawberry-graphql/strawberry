@@ -25,10 +25,10 @@ class HTTPHandler:
         schema: BaseSchema,
         graphiql: bool,
         allow_queries_via_get: bool,
-        get_context,
-        get_root_value,
-        encode_json,
-        process_result,
+        get_context: callable,
+        get_root_value: callable,
+        encode_json: callable,
+        process_result: callable,
         request: web.Request,
     ):
         self.schema = schema
