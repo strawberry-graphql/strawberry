@@ -120,8 +120,8 @@ class GraphQLRouter(APIRouter):
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
         debug: bool = False,
-        root_value_getter: Callable = None,
-        context_getter: Callable = None,
+        root_value_getter: Optional[Callable] = None,
+        context_getter: Optional[Callable] = None,
         subscription_protocols: Tuple[Any, Any] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
