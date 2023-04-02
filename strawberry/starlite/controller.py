@@ -245,7 +245,7 @@ def make_graphql_controller(
             html = get_graphiql_html()
             return Response(html, media_type=MediaType.HTML)
 
-        def _create_response(
+        def create_response(
             self, response_data: GraphQLHTTPResponse, sub_response: Response[bytes]
         ) -> Response[bytes]:
             response = Response(

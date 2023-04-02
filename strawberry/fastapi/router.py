@@ -302,7 +302,7 @@ class GraphQLRouter(
     async def get_sub_response(self, request: Request) -> Response:
         return self.temporal_response
 
-    def _create_response(
+    def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: Response
     ) -> Response:
         response = Response(

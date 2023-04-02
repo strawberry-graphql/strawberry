@@ -68,7 +68,7 @@ class BaseGraphQLView:
 
         return render_template_string(template)
 
-    def _create_response(
+    def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: Response
     ) -> Response:
         sub_response.set_data(self.encode_json(response_data))

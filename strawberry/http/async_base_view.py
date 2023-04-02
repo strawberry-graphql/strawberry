@@ -176,7 +176,7 @@ class AsyncBaseHTTPView(
 
         response_data = await self.process_result(request=request, result=result)
 
-        return self._create_response(
+        return self.create_response(
             response_data=response_data, sub_response=sub_response
         )
 

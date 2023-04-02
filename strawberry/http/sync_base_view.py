@@ -83,6 +83,10 @@ class BaseSyncHTTPView(
         ...
 
     @abc.abstractmethod
+    def get_response(self, response_data: GraphQLHTTPResponse) -> Response:
+        ...
+
+    @abc.abstractmethod
     def render_graphiql(self, request: Request) -> Response:
         # TODO: this could be non abstract
         # maybe add a get template function?
@@ -190,7 +194,7 @@ class BaseSyncHTTPView(
 
         response_data = self.process_result(request=request, result=result)
 
-        return self._create_response(
+        return self.create_response(
             response_data=response_data, sub_response=sub_response
         )
 

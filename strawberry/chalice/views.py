@@ -100,7 +100,7 @@ class GraphQLView(BaseSyncHTTPView[Request, Response, Context, RootValue]):
     def get_context(self, request: Request, response: TemporalResponse) -> Context:
         return {"request": request, "response": response}
 
-    def _create_response(
+    def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: Response
     ) -> Response:
         status_code = 200

@@ -145,7 +145,7 @@ class GraphQLView(
     async def get_sub_response(self, request: Request) -> TemporalResponse:
         return TemporalResponse()
 
-    def _create_response(
+    def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse
     ) -> HTTPResponse:
         status_code = sub_response.status_code

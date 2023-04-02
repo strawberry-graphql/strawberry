@@ -185,7 +185,7 @@ class GraphQL(
 
         return HTMLResponse(html)
 
-    def _create_response(
+    def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: Response
     ) -> Response:
         response = Response(

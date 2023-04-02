@@ -162,7 +162,7 @@ class GraphQLView(AsyncBaseHTTPView[web.Request, web.Response, Context, RootValu
     ) -> Context:
         return {"request": request, "response": response}
 
-    def _create_response(
+    def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: web.Response
     ) -> web.Response:
         sub_response.text = self.encode_json(response_data)
