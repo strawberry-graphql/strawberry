@@ -70,8 +70,8 @@ class ASGIRequestAdapter:
 
 class GraphQL(
     AsyncBaseHTTPView[
-        Request,
         Union[Request, WebSocket],
+        Response,
         Response,
         Context,
         RootValue,
@@ -80,7 +80,7 @@ class GraphQL(
     graphql_transport_ws_handler_class = GraphQLTransportWSHandler
     graphql_ws_handler_class = GraphQLWSHandler
     allow_queries_via_get = True
-    request_adapter_class = ASGIRequestAdapter
+    request_adapter_class = ASGIRequestAdapter  # pyright: ignore
 
     def __init__(
         self,
@@ -150,8 +150,8 @@ class GraphQL(
 
     async def get_context(
         self, request: Union[Request, WebSocket], response: Response
-    ) -> Optional[Any]:
-        return {"request": request, "response": response}
+    ) -> Context:
+        return {"request": request, "response": response}  # type: ignore
 
     async def get_sub_response(
         self,
@@ -174,11 +174,13 @@ class GraphQL(
         try:
             response = await self.run(request)
         except HTTPException as e:
-            response = PlainTextResponse(e.reason, status_code=e.status_code)
+            response = PlainTextResponse(
+                e.reason, status_code=e.status_code
+            )  # pyright: ignore
 
         await response(scope, receive, send)
 
-    def render_graphiql(self, request: Request) -> Response:
+    def render_graphiql(self, request: Union[Request, WebSocket]) -> Response:
         html = get_graphiql_html()
 
         return HTMLResponse(html)

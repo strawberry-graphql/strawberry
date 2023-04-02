@@ -227,7 +227,7 @@ def make_graphql_controller(
         async def execute_request(
             self,
             request: Request[Any, Any],
-            context: CustomContext,
+            context: Context,
             root_value: Any,
         ) -> Response[Union[GraphQLResource, str]]:
             try:
@@ -269,7 +269,7 @@ def make_graphql_controller(
         async def handle_http_get(
             self,
             request: Request[Any, Any],
-            context: CustomContext,
+            context: Context,
             root_value: Any,
             response: Response[Any],
         ) -> Response[Union[GraphQLResource, str]]:
@@ -285,7 +285,7 @@ def make_graphql_controller(
         async def handle_http_post(
             self,
             request: Request[Any, Any],
-            context: CustomContext,
+            context: Context,
             root_value: Any,
             response: Response[Any],
         ) -> Response[Union[GraphQLResource, str]]:

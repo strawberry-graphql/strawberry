@@ -136,7 +136,7 @@ class GraphQLView(
     async def get_context(
         self, request: Request, response: TemporalResponse
     ) -> Context:
-        return {"request": request, "response": response}
+        return {"request": request, "response": response}  # type: ignore
 
     def render_graphiql(self, request: Request) -> HTTPResponse:
         template = get_graphiql_html()

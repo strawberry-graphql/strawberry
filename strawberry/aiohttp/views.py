@@ -162,7 +162,7 @@ class GraphQLView(
     async def get_context(
         self, request: web.Request, response: web.Response
     ) -> Context:
-        return {"request": request, "response": response}
+        return {"request": request, "response": response}  # type: ignore
 
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: web.Response

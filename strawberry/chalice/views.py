@@ -20,7 +20,7 @@ class ChaliceHTTPRequestAdapter:
 
     @property
     def query_params(self) -> Mapping[str, Union[str, List[str]]]:
-        return self.request.query_params or {}
+        return self.request.query_params or {}  # type: ignore
 
     @property
     def body(self) -> Union[str, bytes]:
@@ -97,7 +97,7 @@ class GraphQLView(
         return Response(body=body, status_code=http_status_code, headers=headers)
 
     def get_context(self, request: Request, response: TemporalResponse) -> Context:
-        return {"request": request, "response": response}
+        return {"request": request, "response": response}  # type: ignore
 
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse

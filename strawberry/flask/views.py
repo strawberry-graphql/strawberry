@@ -85,7 +85,7 @@ class GraphQLView(
     request_adapter_class = FlaskHTTPRequestAdapter
 
     def get_context(self, request: Request, response: Response) -> Context:
-        return {"request": request, "response": response}
+        return {"request": request, "response": response}  # type: ignore
 
     def get_root_value(self, request: Request) -> Optional[RootValue]:
         return None
@@ -140,7 +140,7 @@ class AsyncGraphQLView(
     request_adapter_class = AsyncFlaskHTTPRequestAdapter
 
     async def get_context(self, request: Request, response: Response) -> Context:
-        return {"request": request, "response": response}
+        return {"request": request, "response": response}  # type: ignore
 
     async def get_root_value(self, request: Request) -> Optional[RootValue]:
         return None
@@ -148,7 +148,7 @@ class AsyncGraphQLView(
     async def get_sub_response(self, request: Request) -> Response:
         return Response(status=200, content_type="application/json")
 
-    async def dispatch_request(self) -> ResponseReturnValue:
+    async def dispatch_request(self) -> ResponseReturnValue:  # type: ignore
         try:
             return await self.run(request=request)
         except HTTPException as e:
