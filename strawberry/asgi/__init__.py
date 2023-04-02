@@ -10,6 +10,7 @@ from typing import (
     Sequence,
     Tuple,
     Union,
+    cast,
 )
 
 from starlette import status
@@ -23,6 +24,7 @@ from strawberry.asgi.handlers import (
 )
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.exceptions import HTTPException
+from strawberry.http.types import HttpMethod
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -46,8 +48,8 @@ class ASGIRequestAdapter:
         return dict(self.request.query_params)
 
     @property
-    def method(self) -> str:
-        return self.request.method
+    def method(self) -> HttpMethod:
+        return cast(HttpMethod, self.request.method.upper())
 
     @property
     def headers(self) -> Mapping[str, str]:

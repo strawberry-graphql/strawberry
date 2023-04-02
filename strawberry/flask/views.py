@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Tuple, Union, cast
 
 from flask import Request, Response, render_template_string, request
 from flask.views import View
@@ -9,6 +9,7 @@ from strawberry.http.exceptions import HTTPException
 from strawberry.http.sync_base_view import (
     SyncBaseHTTPView,
 )
+from strawberry.http.types import HttpMethod
 from strawberry.http.typevars import Context, RootValue
 from strawberry.utils.graphiql import get_graphiql_html
 
@@ -31,8 +32,8 @@ class FlaskHTTPRequestAdapter:
         return self.request.data.decode()
 
     @property
-    def method(self) -> str:
-        return self.request.method
+    def method(self) -> HttpMethod:
+        return cast(HttpMethod, self.request.method.upper())
 
     @property
     def headers(self) -> Mapping[str, str]:
@@ -112,8 +113,8 @@ class AsyncFlaskHTTPRequestAdapter:
         return self.request.args.to_dict()
 
     @property
-    def method(self) -> str:
-        return self.request.method
+    def method(self) -> HttpMethod:
+        return cast(HttpMethod, self.request.method.upper())
 
     @property
     def content_type(self) -> Optional[str]:

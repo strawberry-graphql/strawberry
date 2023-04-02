@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Union, cast
 
 from starlite import (
     BackgroundTasks,
@@ -26,6 +26,7 @@ from starlite.status_codes import HTTP_200_OK
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.exceptions import HTTPException
+from strawberry.http.types import HttpMethod
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -125,8 +126,8 @@ class StarliteRequestAdapter:
         return self.request.query_params
 
     @property
-    def method(self) -> str:
-        return self.request.method
+    def method(self) -> HttpMethod:
+        return cast(HttpMethod, self.request.method.upper())
 
     @property
     def headers(self) -> Mapping[str, str]:

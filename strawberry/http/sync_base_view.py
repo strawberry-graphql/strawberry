@@ -16,6 +16,7 @@ from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData, process_result
+from strawberry.http.types import HttpMethod
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
@@ -36,7 +37,7 @@ class HTTPRequestAdapterProtocol(Protocol):
         ...
 
     @property
-    def method(self) -> str:
+    def method(self) -> HttpMethod:
         ...
 
     @property
@@ -109,11 +110,9 @@ class SyncBaseHTTPView(
         except KeyError as e:
             raise HTTPException(400, "File(s) missing in form data") from e
 
-        method = request_adapter.method.lower()
+        allowed_operation_types = OperationType.from_http(request_adapter.method)
 
-        allowed_operation_types = OperationType.from_http(method)
-
-        if not self.allow_queries_via_get and method == "get":
+        if not self.allow_queries_via_get and request_adapter.method == "GET":
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
 
         assert self.schema
@@ -145,7 +144,7 @@ class SyncBaseHTTPView(
             data = self.parse_json(request.body)
         elif content_type.startswith("multipart/form-data"):
             data = self.parse_multipart(request)
-        elif request.method.lower() == "get":
+        elif request.method == "GET":
             data = self.parse_query_params(request.query_params)
         else:
             raise HTTPException(400, "Unsupported content type")

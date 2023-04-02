@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union, cast
 
 from chalice.app import Request, Response
 from strawberry.http.exceptions import HTTPException
 from strawberry.http.sync_base_view import SyncBaseHTTPView
 from strawberry.http.temporal_response import TemporalResponse
+from strawberry.http.types import HttpMethod
 from strawberry.http.typevars import Context, RootValue
 from strawberry.utils.graphiql import get_graphiql_html
 
@@ -27,8 +28,8 @@ class ChaliceHTTPRequestAdapter:
         return self.request.raw_body
 
     @property
-    def method(self) -> str:
-        return self.request.method
+    def method(self) -> HttpMethod:
+        return cast(HttpMethod, self.request.method.upper())
 
     @property
     def headers(self) -> Mapping[str, str]:

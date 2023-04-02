@@ -3,6 +3,7 @@ from typing import Any, Dict, Generic, List, Mapping, Optional, Union
 from typing_extensions import Protocol
 
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.types import HttpMethod
 
 from .exceptions import HTTPException
 from .typevars import Request
@@ -14,7 +15,7 @@ class BaseRequestProtocol(Protocol):
         ...
 
     @property
-    def method(self) -> str:
+    def method(self) -> HttpMethod:
         ...
 
     @property
@@ -25,7 +26,7 @@ class BaseRequestProtocol(Protocol):
 class BaseView(Generic[Request]):
     def should_render_graphiql(self, request: BaseRequestProtocol) -> bool:
         return (
-            request.method.lower() == "get"
+            request.method == "GET"
             and request.query_params.get("query") is None
             and any(
                 supported_header in request.headers.get("accept", "")
@@ -34,7 +35,7 @@ class BaseView(Generic[Request]):
         )
 
     def is_request_allowed(self, request: BaseRequestProtocol) -> bool:
-        return request.method.lower() in ("get", "post")
+        return request.method in ("GET", "POST")
 
     def parse_json(self, data: Union[str, bytes]) -> Dict[str, str]:
         try:

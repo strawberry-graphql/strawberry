@@ -24,6 +24,7 @@ from strawberry.types.graphql import OperationType
 
 from .base import BaseView
 from .exceptions import HTTPException
+from .types import HttpMethod
 from .typevars import Context, Request, Response, RootValue, SubResponse
 
 
@@ -33,7 +34,7 @@ class AsyncHTTPRequestAdapterProtocol(Protocol):
         ...
 
     @property
-    def method(self) -> str:
+    def method(self) -> HttpMethod:
         ...
 
     @property
@@ -102,11 +103,9 @@ class AsyncBaseHTTPView(
         except KeyError as e:
             raise HTTPException(400, "File(s) missing in form data") from e
 
-        method = request_adapter.method.lower()
+        allowed_operation_types = OperationType.from_http(request_adapter.method)
 
-        allowed_operation_types = OperationType.from_http(method)
-
-        if not self.allow_queries_via_get and method == "get":
+        if not self.allow_queries_via_get and request_adapter.method == "GET":
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
 
         assert self.schema
@@ -197,7 +196,7 @@ class AsyncBaseHTTPView(
             data = self.parse_json(await request.get_body())
         elif content_type.startswith("multipart/form-data"):
             data = await self.parse_multipart(request)
-        elif request.method.lower() == "get":
+        elif request.method == "GET":
             data = self.parse_query_params(request.query_params)
         else:
             raise HTTPException(400, "Unsupported content type")

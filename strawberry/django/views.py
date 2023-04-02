@@ -11,6 +11,7 @@ from typing import (
     Optional,
     Tuple,
     Union,
+    cast,
 )
 
 from django.http import HttpRequest, HttpResponseNotAllowed, JsonResponse
@@ -26,6 +27,7 @@ from django.views.generic import View
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.exceptions import HTTPException
 from strawberry.http.sync_base_view import SyncBaseHTTPView
+from strawberry.http.types import HttpMethod
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -72,9 +74,10 @@ class DjangoHTTPRequestAdapter:
         return self.request.body.decode()
 
     @property
-    def method(self) -> str:
-        # TODO: when could this be none?
-        return self.request.method or ""
+    def method(self) -> HttpMethod:
+        assert self.request.method is not None
+
+        return cast(HttpMethod, self.request.method.upper())
 
     @property
     def headers(self) -> Mapping[str, str]:
@@ -102,9 +105,10 @@ class AsyncDjangoHTTPRequestAdapter:
         return self.request.GET.dict()
 
     @property
-    def method(self) -> str:
-        # TODO: when could this be none?
-        return self.request.method or ""
+    def method(self) -> HttpMethod:
+        assert self.request.method is not None
+
+        return cast(HttpMethod, self.request.method.upper())
 
     @property
     def headers(self) -> Mapping[str, str]:
