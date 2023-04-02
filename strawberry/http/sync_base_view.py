@@ -56,7 +56,7 @@ class HTTPRequestAdapterProtocol(Protocol):
         ...
 
 
-class BaseSyncHTTPView(
+class SyncBaseHTTPView(
     abc.ABC, BaseView[Request], Generic[Request, Response, Context, RootValue]
 ):
     schema: BaseSchema
@@ -83,7 +83,9 @@ class BaseSyncHTTPView(
         ...
 
     @abc.abstractmethod
-    def get_response(self, response_data: GraphQLHTTPResponse) -> Response:
+    def create_response(
+        self, response_data: GraphQLHTTPResponse, sub_response: Response
+    ) -> Response:
         ...
 
     @abc.abstractmethod

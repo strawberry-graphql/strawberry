@@ -26,10 +26,10 @@ from django.views.generic import View
 
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.sync_base_view import (
-    BaseSyncHTTPView,
     Context,
     HTTPException,
     RootValue,
+    SyncBaseHTTPView,
 )
 from strawberry.utils.graphiql import get_graphiql_html
 
@@ -177,7 +177,7 @@ class BaseView:
 
 
 class GraphQLView(
-    BaseView, BaseSyncHTTPView[HttpRequest, HttpResponse, Context, RootValue], View
+    BaseView, SyncBaseHTTPView[HttpRequest, HttpResponse, Context, RootValue], View
 ):
     subscriptions_enabled = False
     graphiql = True

@@ -81,6 +81,12 @@ class AsyncBaseHTTPView(
         # maybe add a get template function?
         ...
 
+    @abc.abstractmethod
+    def create_response(
+        self, response_data: GraphQLHTTPResponse, sub_response: Response
+    ) -> Response:
+        ...
+
     async def execute_operation(
         self, request: Request, context: Context, root_value: Optional[RootValue]
     ) -> ExecutionResult:

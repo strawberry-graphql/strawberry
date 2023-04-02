@@ -6,10 +6,10 @@ from flask import Request, Response, render_template_string, request
 from flask.views import View
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.sync_base_view import (
-    BaseSyncHTTPView,
     Context,
     HTTPException,
     RootValue,
+    SyncBaseHTTPView,
 )
 from strawberry.utils.graphiql import get_graphiql_html
 
@@ -77,7 +77,7 @@ class BaseGraphQLView:
 
 
 class GraphQLView(
-    BaseGraphQLView, BaseSyncHTTPView[Request, Response, Context, RootValue], View
+    BaseGraphQLView, SyncBaseHTTPView[Request, Response, Context, RootValue], View
 ):
     methods = ["GET", "POST"]
     allow_queries_via_get: bool = True

@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union
 
 from chalice.app import Request, Response
 from strawberry.http.sync_base_view import (
-    BaseSyncHTTPView,
     Context,
     HTTPException,
     RootValue,
+    SyncBaseHTTPView,
 )
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.utils.graphiql import get_graphiql_html
@@ -50,7 +50,7 @@ class ChaliceHTTPRequestAdapter:
         return self.request.headers.get("Content-Type", None)
 
 
-class GraphQLView(BaseSyncHTTPView[Request, Response, Context, RootValue]):
+class GraphQLView(SyncBaseHTTPView[Request, Response, Context, RootValue]):
     allow_queries_via_get: bool = True
     request_adapter_class = ChaliceHTTPRequestAdapter
 
