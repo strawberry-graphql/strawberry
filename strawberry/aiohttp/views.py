@@ -39,7 +39,7 @@ class AioHTTPRequestAdapter:
         self.request = request
 
     @property
-    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+    def query_params(self) -> Mapping[str, Union[str, List[str]]]:
         return self.request.query.copy()
 
     async def get_body(self) -> str:
@@ -57,13 +57,13 @@ class AioHTTPRequestAdapter:
     async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
         reader = await self.request.multipart()
 
-        data = {}
-        files = {}
+        data: Dict[str, Any] = {}
+        files: Dict[str, Any] = {}
 
         async for field in reader:
-            if field.filename:
-                assert field.name
+            assert field.name
 
+            if field.filename:
                 files[field.name] = BytesIO(await field.read(decode=False))
             else:
                 data[field.name] = await field.text()
@@ -75,7 +75,9 @@ class AioHTTPRequestAdapter:
         return self.request.content_type
 
 
-class GraphQLView(AsyncBaseHTTPView[web.Request, web.Response, Context, RootValue]):
+class GraphQLView(
+    AsyncBaseHTTPView[web.Request, web.Response, web.Response, Context, RootValue]
+):
     # Mark the view as coroutine so that AIOHTTP does not confuse it with a deprecated
     # bare handler function.
     _is_coroutine = asyncio.coroutines._is_coroutine  # type: ignore[attr-defined]

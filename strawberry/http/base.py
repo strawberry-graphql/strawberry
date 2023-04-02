@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Generic, List, Mapping, Union
+from typing import Any, Dict, Generic, List, Mapping, Optional, Union
 from typing_extensions import Protocol
 
 from strawberry.http import GraphQLHTTPResponse
@@ -10,7 +10,7 @@ from .typevars import Request
 
 class BaseRequestProtocol(Protocol):
     @property
-    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+    def query_params(self) -> Mapping[str, Optional[Union[str, List[str]]]]:
         ...
 
     @property
@@ -46,14 +46,17 @@ class BaseView(Generic[Request]):
         return json.dumps(response_data)
 
     def parse_query_params(
-        self, params: Dict[str, Union[str, List[str]]]
+        self, params: Mapping[str, Optional[Union[str, List[str]]]]
     ) -> Dict[str, Any]:
+        params = dict(params)
+
         if "variables" in params:
             variables = params["variables"]
 
             if isinstance(variables, list):
                 variables = variables[0]
 
-            params["variables"] = json.loads(variables)
+            if variables:
+                params["variables"] = json.loads(variables)
 
         return params

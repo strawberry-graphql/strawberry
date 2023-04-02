@@ -121,7 +121,7 @@ class StarliteRequestAdapter:
         self.request = request
 
     @property
-    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+    def query_params(self) -> Mapping[str, Union[str, List[str]]]:
         return self.request.query_params
 
     @property
@@ -196,7 +196,9 @@ def make_graphql_controller(
 
     class GraphQLController(
         Controller,
-        AsyncBaseHTTPView[Request[Any, Any], Response[Any], Context, RootValue],
+        AsyncBaseHTTPView[
+            Request[Any, Any], Response[Any], Response[Any], Context, RootValue
+        ],
     ):
         request_adapter_class = StarliteRequestAdapter
         path: str = routes_path

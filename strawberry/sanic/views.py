@@ -38,7 +38,7 @@ class SanicHTTPRequestAdapter:
         self.request = request
 
     @property
-    def query_params(self) -> Dict[str, Optional[Union[str, List[str]]]]:
+    def query_params(self) -> Mapping[str, Optional[Union[str, List[str]]]]:
         # Just a heads up, Sanic's request.args uses urllib.parse.parse_qs
         # to parse query string parameters. This returns a dictionary where
         # the keys are the unique variable names and the values are lists
@@ -76,7 +76,8 @@ class SanicHTTPRequestAdapter:
 
 
 class GraphQLView(
-    AsyncBaseHTTPView[Request, HTTPResponse, Context, RootValue], HTTPMethodView
+    AsyncBaseHTTPView[Request, HTTPResponse, TemporalResponse, Context, RootValue],
+    HTTPMethodView,
 ):
     """
     Class based view to handle GraphQL HTTP Requests

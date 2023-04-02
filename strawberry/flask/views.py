@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Tuple, Union
 
 from flask import Request, Response, render_template_string, request
 from flask.views import View
 from strawberry.http.async_base_view import AsyncBaseHTTPView
+from strawberry.http.exceptions import HTTPException
 from strawberry.http.sync_base_view import (
-    Context,
-    HTTPException,
-    RootValue,
     SyncBaseHTTPView,
 )
+from strawberry.http.typevars import Context, RootValue
 from strawberry.utils.graphiql import get_graphiql_html
 
 if TYPE_CHECKING:
@@ -24,11 +23,11 @@ class FlaskHTTPRequestAdapter:
         self.request = request
 
     @property
-    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+    def query_params(self) -> Mapping[str, Union[str, Optional[List[str]]]]:
         return self.request.args.to_dict()
 
     @property
-    def body(self) -> str:
+    def body(self) -> Union[str, bytes]:
         return self.request.data.decode()
 
     @property
@@ -66,18 +65,20 @@ class BaseGraphQLView:
     def render_graphiql(self, request: Request) -> Response:
         template = get_graphiql_html(False)
 
-        return render_template_string(template)
+        return render_template_string(template)  # type: ignore
 
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: Response
     ) -> Response:
-        sub_response.set_data(self.encode_json(response_data))
+        sub_response.set_data(self.encode_json(response_data))  # type: ignore
 
         return sub_response
 
 
 class GraphQLView(
-    BaseGraphQLView, SyncBaseHTTPView[Request, Response, Context, RootValue], View
+    BaseGraphQLView,
+    SyncBaseHTTPView[Request, Response, Response, Context, RootValue],
+    View,
 ):
     methods = ["GET", "POST"]
     allow_queries_via_get: bool = True
@@ -107,7 +108,7 @@ class AsyncFlaskHTTPRequestAdapter:
         self.request = request
 
     @property
-    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+    def query_params(self) -> Mapping[str, Union[str, List[str]]]:
         return self.request.args.to_dict()
 
     @property
@@ -130,7 +131,9 @@ class AsyncFlaskHTTPRequestAdapter:
 
 
 class AsyncGraphQLView(
-    BaseGraphQLView, AsyncBaseHTTPView[Request, Response, Context, RootValue], View
+    BaseGraphQLView,
+    AsyncBaseHTTPView[Request, Response, Response, Context, RootValue],
+    View,
 ):
     methods = ["GET", "POST"]
     allow_queries_via_get: bool = True

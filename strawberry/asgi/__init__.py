@@ -4,7 +4,6 @@ from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
     List,
     Mapping,
     Optional,
@@ -43,7 +42,7 @@ class ASGIRequestAdapter:
         self.request = request
 
     @property
-    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+    def query_params(self) -> Mapping[str, Union[str, List[str]]]:
         return dict(self.request.query_params)
 
     @property
@@ -72,6 +71,7 @@ class ASGIRequestAdapter:
 class GraphQL(
     AsyncBaseHTTPView[
         Request,
+        Union[Request, WebSocket],
         Response,
         Context,
         RootValue,
@@ -149,9 +149,7 @@ class GraphQL(
         return None
 
     async def get_context(
-        self,
-        request: Union[Request, WebSocket],
-        response: Optional[Response] = None,
+        self, request: Union[Request, WebSocket], response: Response
     ) -> Optional[Any]:
         return {"request": request, "response": response}
 

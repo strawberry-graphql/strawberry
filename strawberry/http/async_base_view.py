@@ -24,12 +24,12 @@ from strawberry.types.graphql import OperationType
 
 from .base import BaseView
 from .exceptions import HTTPException
-from .typevars import Context, Request, Response, RootValue
+from .typevars import Context, Request, Response, RootValue, SubResponse
 
 
 class AsyncHTTPRequestAdapterProtocol(Protocol):
     @property
-    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+    def query_params(self) -> Mapping[str, Optional[Union[str, List[str]]]]:
         ...
 
     @property
@@ -52,7 +52,9 @@ class AsyncHTTPRequestAdapterProtocol(Protocol):
 
 
 class AsyncBaseHTTPView(
-    abc.ABC, BaseView[Request], Generic[Request, Response, Context, RootValue]
+    abc.ABC,
+    BaseView[Request],
+    Generic[Request, Response, SubResponse, Context, RootValue],
 ):
     schema: BaseSchema
     graphiql: bool
@@ -64,11 +66,11 @@ class AsyncBaseHTTPView(
         ...
 
     @abc.abstractmethod
-    async def get_sub_response(self, request: Request) -> Response:
+    async def get_sub_response(self, request: Request) -> SubResponse:
         ...
 
     @abc.abstractmethod
-    async def get_context(self, request: Request, response: Response) -> Context:
+    async def get_context(self, request: Request, response: SubResponse) -> Context:
         ...
 
     @abc.abstractmethod
@@ -83,7 +85,7 @@ class AsyncBaseHTTPView(
 
     @abc.abstractmethod
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: Response
+        self, response_data: GraphQLHTTPResponse, sub_response: SubResponse
     ) -> Response:
         ...
 

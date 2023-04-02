@@ -7,7 +7,6 @@ from typing import (
     Any,
     Awaitable,
     Callable,
-    Dict,
     List,
     Mapping,
     Optional,
@@ -57,7 +56,7 @@ class FastAPIRequestAdapter:
         self.request = request
 
     @property
-    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+    def query_params(self) -> Mapping[str, Union[str, List[str]]]:
         return dict(self.request.query_params)
 
     @property
@@ -82,7 +81,7 @@ class FastAPIRequestAdapter:
 
 
 class GraphQLRouter(
-    AsyncBaseHTTPView[Request, Response, Context, RootValue], APIRouter
+    AsyncBaseHTTPView[Request, Response, Response, Context, RootValue], APIRouter
 ):
     graphql_ws_handler_class = GraphQLWSHandler
     graphql_transport_ws_handler_class = GraphQLTransportWSHandler
@@ -154,7 +153,7 @@ class GraphQLRouter(
         keep_alive_interval: float = 1,
         debug: bool = False,
         root_value_getter: Optional[Callable[[], RootValue]] = None,
-        context_getter: Optional[Callable[..., Context]] = None,
+        context_getter: Optional[Callable[..., Optional[Context]]] = None,
         subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
@@ -176,8 +175,9 @@ class GraphQLRouter(
         self.keep_alive_interval = keep_alive_interval
         self.debug = debug
         self.root_value_getter = root_value_getter or self.__get_root_value
+        # TODO: clean this type up
         self.context_getter = self.__get_context_getter(
-            context_getter or (lambda: None)
+            context_getter or (lambda: None)  # type: ignore
         )
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout

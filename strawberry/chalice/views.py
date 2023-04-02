@@ -3,13 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union
 
 from chalice.app import Request, Response
-from strawberry.http.sync_base_view import (
-    Context,
-    HTTPException,
-    RootValue,
-    SyncBaseHTTPView,
-)
+from strawberry.http.exceptions import HTTPException
+from strawberry.http.sync_base_view import SyncBaseHTTPView
 from strawberry.http.temporal_response import TemporalResponse
+from strawberry.http.typevars import Context, RootValue
 from strawberry.utils.graphiql import get_graphiql_html
 
 if TYPE_CHECKING:
@@ -22,11 +19,11 @@ class ChaliceHTTPRequestAdapter:
         self.request = request
 
     @property
-    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+    def query_params(self) -> Mapping[str, Union[str, List[str]]]:
         return self.request.query_params or {}
 
     @property
-    def body(self) -> str:
+    def body(self) -> Union[str, bytes]:
         return self.request.raw_body
 
     @property
@@ -50,7 +47,9 @@ class ChaliceHTTPRequestAdapter:
         return self.request.headers.get("Content-Type", None)
 
 
-class GraphQLView(SyncBaseHTTPView[Request, Response, Context, RootValue]):
+class GraphQLView(
+    SyncBaseHTTPView[Request, Response, TemporalResponse, Context, RootValue]
+):
     allow_queries_via_get: bool = True
     request_adapter_class = ChaliceHTTPRequestAdapter
 
@@ -64,7 +63,7 @@ class GraphQLView(SyncBaseHTTPView[Request, Response, Context, RootValue]):
         self.allow_queries_via_get = allow_queries_via_get
         self.schema = schema
 
-    def get_root_value(self, request: Request) -> Optional[object]:
+    def get_root_value(self, request: Request) -> Optional[RootValue]:
         return None
 
     def render_graphiql(self, request: Request) -> Response:
@@ -76,9 +75,9 @@ class GraphQLView(SyncBaseHTTPView[Request, Response, Context, RootValue]):
         Returns:
             The GraphiQL html page as a string
         """
-        return get_graphiql_html(subscription_enabled=False)
+        return get_graphiql_html(subscription_enabled=False)  # type: ignore
 
-    def get_sub_response(self, request: Request) -> Response:
+    def get_sub_response(self, request: Request) -> TemporalResponse:
         return TemporalResponse()
 
     @staticmethod
@@ -101,7 +100,7 @@ class GraphQLView(SyncBaseHTTPView[Request, Response, Context, RootValue]):
         return {"request": request, "response": response}
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: Response
+        self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse
     ) -> Response:
         status_code = 200
 
@@ -116,7 +115,7 @@ class GraphQLView(SyncBaseHTTPView[Request, Response, Context, RootValue]):
         except HTTPException as e:
             return self.error_response(
                 # TODO: map error codes?
-                error_code=e.status_code,
+                error_code=str(e.status_code),
                 message=e.reason,
                 http_status_code=e.status_code,
             )

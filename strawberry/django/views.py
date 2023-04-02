@@ -6,7 +6,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     List,
     Mapping,
     Optional,
@@ -25,11 +24,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
 from strawberry.http.async_base_view import AsyncBaseHTTPView
-from strawberry.http.sync_base_view import (
+from strawberry.http.exceptions import HTTPException
+from strawberry.http.sync_base_view import SyncBaseHTTPView
+from strawberry.http.typevars import (
     Context,
-    HTTPException,
     RootValue,
-    SyncBaseHTTPView,
 )
 from strawberry.utils.graphiql import get_graphiql_html
 
@@ -43,7 +42,7 @@ if TYPE_CHECKING:
 
 # TODO: remove this and unify temporal responses
 class TemporalHttpResponse(JsonResponse):
-    status_code: Optional[int] = None  # type: ignore
+    status_code: Optional[int] = None  # pyright: ignore
 
     def __init__(self) -> None:
         super().__init__({})
@@ -56,7 +55,7 @@ class TemporalHttpResponse(JsonResponse):
         return "<{cls} status_code={status_code}{content_type}>".format(
             cls=self.__class__.__name__,
             status_code=self.status_code,
-            content_type=self._content_type_for_repr,  # type: ignore
+            content_type=self._content_type_for_repr,  # pyright: ignore
         )
 
 
@@ -65,11 +64,11 @@ class DjangoHTTPRequestAdapter:
         self.request = request
 
     @property
-    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+    def query_params(self) -> Mapping[str, Union[str, List[str]]]:
         return self.request.GET.dict()
 
     @property
-    def body(self) -> str:
+    def body(self) -> Union[str, bytes]:
         return self.request.body.decode()
 
     @property
@@ -99,7 +98,7 @@ class AsyncDjangoHTTPRequestAdapter:
         self.request = request
 
     @property
-    def query_params(self) -> Dict[str, Union[str, List[str]]]:
+    def query_params(self) -> Mapping[str, Union[str, List[str]]]:
         return self.request.GET.dict()
 
     @property
@@ -157,7 +156,7 @@ class BaseView:
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: HttpResponse
     ) -> HttpResponse:
-        data = self.encode_json(response_data)
+        data = self.encode_json(response_data)  # type: ignore
 
         response = HttpResponse(
             data,
@@ -167,7 +166,7 @@ class BaseView:
         for name, value in sub_response.items():
             response[name] = value
 
-        if sub_response.status_code is not None:
+        if sub_response.status_code:
             response.status_code = sub_response.status_code
 
         for name, value in sub_response.cookies.items():
@@ -177,11 +176,15 @@ class BaseView:
 
 
 class GraphQLView(
-    BaseView, SyncBaseHTTPView[HttpRequest, HttpResponse, Context, RootValue], View
+    BaseView,
+    SyncBaseHTTPView[
+        HttpRequest, HttpResponse, TemporalHttpResponse, Context, RootValue
+    ],
+    View,
 ):
     subscriptions_enabled = False
     graphiql = True
-    allow_queries_via_get = True  # type: ignore
+    allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = DjangoHTTPRequestAdapter
 
@@ -208,11 +211,15 @@ class GraphQLView(
 
 
 class AsyncGraphQLView(
-    BaseView, AsyncBaseHTTPView[HttpRequest, HttpResponse, Context, RootValue], View
+    BaseView,
+    AsyncBaseHTTPView[
+        HttpRequest, HttpResponse, TemporalHttpResponse, Context, RootValue
+    ],
+    View,
 ):
     subscriptions_enabled = False
     graphiql = True
-    allow_queries_via_get = True  # type: ignore
+    allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = AsyncDjangoHTTPRequestAdapter
 
@@ -235,7 +242,7 @@ class AsyncGraphQLView(
         return TemporalHttpResponse()
 
     @method_decorator(csrf_exempt)
-    async def dispatch(  # type: ignore[override]
+    async def dispatch(  # pyright: ignore
         self, request: HttpRequest, *args: Any, **kwargs: Any
     ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
         try:
