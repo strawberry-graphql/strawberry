@@ -118,9 +118,6 @@ class AsyncDjangoHTTPRequestAdapter:
     async def get_body(self) -> str:
         return self.request.body.decode()
 
-    async def get_post_data(self) -> Mapping[str, Union[str, bytes]]:
-        return self.request.POST
-
     async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
         return self.request.POST, self.request.FILES
 

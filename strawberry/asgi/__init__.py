@@ -63,9 +63,6 @@ class ASGIRequestAdapter:
         # we pass this to json.loads
         return (await self.request.body()).decode()
 
-    async def get_post_data(self) -> Mapping[str, Union[str, bytes]]:
-        return await self.request.json()
-
     async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
         multipart_data = await self.request.form()
 

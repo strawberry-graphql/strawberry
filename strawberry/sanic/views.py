@@ -67,9 +67,6 @@ class SanicHTTPRequestAdapter:
     async def get_body(self) -> str:
         return self.request.body.decode()
 
-    async def get_post_data(self) -> Mapping[str, Union[str, bytes]]:
-        return self.request.json()
-
     async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
         assert self.request.form is not None
 
