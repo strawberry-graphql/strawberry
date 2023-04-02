@@ -227,13 +227,15 @@ def make_graphql_controller(
         async def execute_request(
             self,
             request: Request[Any, Any],
-            context: Context,
+            context: CustomContext,
             root_value: Any,
         ) -> Response[Union[GraphQLResource, str]]:
             try:
                 return await self.run(
                     request,
-                    context=context,
+                    # TODO: check the dependency, above, can we make it so that
+                    # we don't need to type ignore here?
+                    context=context,  # type: ignore
                     root_value=root_value,
                 )
             except HTTPException as e:
@@ -269,7 +271,7 @@ def make_graphql_controller(
         async def handle_http_get(
             self,
             request: Request[Any, Any],
-            context: Context,
+            context: CustomContext,
             root_value: Any,
             response: Response[Any],
         ) -> Response[Union[GraphQLResource, str]]:
@@ -277,7 +279,7 @@ def make_graphql_controller(
 
             return await self.execute_request(
                 request=request,
-                context=context,
+                context=context,  # type: ignore
                 root_value=root_value,
             )
 
@@ -285,7 +287,7 @@ def make_graphql_controller(
         async def handle_http_post(
             self,
             request: Request[Any, Any],
-            context: Context,
+            context: CustomContext,
             root_value: Any,
             response: Response[Any],
         ) -> Response[Union[GraphQLResource, str]]:
