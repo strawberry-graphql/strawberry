@@ -9,7 +9,7 @@ from strawberry.http.exceptions import HTTPException
 from strawberry.http.sync_base_view import (
     SyncBaseHTTPView,
 )
-from strawberry.http.types import HTTPMethod
+from strawberry.http.types import HTTPMethod, QueryParams
 from strawberry.http.typevars import Context, RootValue
 from strawberry.utils.graphiql import get_graphiql_html
 
@@ -109,7 +109,7 @@ class AsyncFlaskHTTPRequestAdapter:
         self.request = request
 
     @property
-    def query_params(self) -> Mapping[str, Union[str, List[str]]]:
+    def query_params(self) -> QueryParams:
         return self.request.args.to_dict()
 
     @property

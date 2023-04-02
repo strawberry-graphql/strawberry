@@ -71,7 +71,7 @@ On top of that we also need a request adapter, here's the protocol for the async
 version:
 
 ```python
-from strawberry.http.types import HTTPMethod
+from strawberry.http.types import HTTPMethod, QueryParams
 
 
 class AsyncHTTPRequestAdapterProtocol(Protocol):

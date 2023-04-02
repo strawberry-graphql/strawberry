@@ -6,7 +6,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    List,
     Mapping,
     Optional,
     Tuple,
@@ -27,7 +26,7 @@ from django.views.generic import View
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.exceptions import HTTPException
 from strawberry.http.sync_base_view import SyncBaseHTTPView
-from strawberry.http.types import HTTPMethod
+from strawberry.http.types import HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -66,7 +65,7 @@ class DjangoHTTPRequestAdapter:
         self.request = request
 
     @property
-    def query_params(self) -> Mapping[str, Union[str, List[str]]]:
+    def query_params(self) -> QueryParams:
         return self.request.GET.dict()
 
     @property
@@ -101,7 +100,7 @@ class AsyncDjangoHTTPRequestAdapter:
         self.request = request
 
     @property
-    def query_params(self) -> Mapping[str, Union[str, List[str]]]:
+    def query_params(self) -> QueryParams:
         return self.request.GET.dict()
 
     @property

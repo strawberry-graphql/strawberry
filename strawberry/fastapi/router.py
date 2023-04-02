@@ -7,7 +7,6 @@ from typing import (
     Any,
     Awaitable,
     Callable,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -35,7 +34,7 @@ from strawberry.http import (
 )
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.exceptions import HTTPException
-from strawberry.http.types import HTTPMethod
+from strawberry.http.types import HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -57,7 +56,7 @@ class FastAPIRequestAdapter:
         self.request = request
 
     @property
-    def query_params(self) -> Mapping[str, Union[str, List[str]]]:
+    def query_params(self) -> QueryParams:
         return dict(self.request.query_params)
 
     @property

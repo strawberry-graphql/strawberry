@@ -4,7 +4,6 @@ from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -24,7 +23,7 @@ from strawberry.asgi.handlers import (
 )
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.exceptions import HTTPException
-from strawberry.http.types import HTTPMethod
+from strawberry.http.types import HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -44,7 +43,7 @@ class ASGIRequestAdapter:
         self.request = request
 
     @property
-    def query_params(self) -> Mapping[str, Union[str, List[str]]]:
+    def query_params(self) -> QueryParams:
         return dict(self.request.query_params)
 
     @property

@@ -8,11 +8,9 @@ from typing import (
     Any,
     Dict,
     Iterable,
-    List,
     Mapping,
     Optional,
     Tuple,
-    Union,
     cast,
 )
 
@@ -23,7 +21,7 @@ from strawberry.aiohttp.handlers import (
 )
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.exceptions import HTTPException
-from strawberry.http.types import HTTPMethod
+from strawberry.http.types import HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -41,7 +39,7 @@ class AioHTTPRequestAdapter:
         self.request = request
 
     @property
-    def query_params(self) -> Mapping[str, Union[str, List[str]]]:
+    def query_params(self) -> QueryParams:
         return self.request.query.copy()
 
     async def get_body(self) -> str:
