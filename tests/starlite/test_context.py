@@ -56,8 +56,11 @@ def test_with_class_context_getter():
     test_client = TestClient(app)
     response = test_client.post("/graphql", json={"query": "{ abc }"})
 
+    json= response.json()
+    print(json)
+
     assert response.status_code == 200
-    assert response.json() == {"data": {"abc": "abc"}}
+    assert json == {"data": {"abc": "abc"}}
 
 
 def test_with_dict_context_getter():
