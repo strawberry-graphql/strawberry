@@ -24,7 +24,7 @@ from strawberry.types.graphql import OperationType
 
 from .base import BaseView
 from .exceptions import HTTPException
-from .types import HttpMethod
+from .types import HTTPMethod
 from .typevars import Context, Request, Response, RootValue, SubResponse
 
 
@@ -34,7 +34,7 @@ class AsyncHTTPRequestAdapterProtocol(Protocol):
         ...
 
     @property
-    def method(self) -> HttpMethod:
+    def method(self) -> HTTPMethod:
         ...
 
     @property

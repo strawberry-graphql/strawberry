@@ -35,7 +35,7 @@ from strawberry.http import (
 )
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.exceptions import HTTPException
-from strawberry.http.types import HttpMethod
+from strawberry.http.types import HTTPMethod
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -61,8 +61,8 @@ class FastAPIRequestAdapter:
         return dict(self.request.query_params)
 
     @property
-    def method(self) -> HttpMethod:
-        return cast(HttpMethod, self.request.method.upper())
+    def method(self) -> HTTPMethod:
+        return cast(HTTPMethod, self.request.method.upper())
 
     @property
     def headers(self) -> Mapping[str, str]:

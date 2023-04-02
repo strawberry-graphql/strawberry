@@ -6,7 +6,7 @@ from chalice.app import Request, Response
 from strawberry.http.exceptions import HTTPException
 from strawberry.http.sync_base_view import SyncBaseHTTPView
 from strawberry.http.temporal_response import TemporalResponse
-from strawberry.http.types import HttpMethod
+from strawberry.http.types import HTTPMethod
 from strawberry.http.typevars import Context, RootValue
 from strawberry.utils.graphiql import get_graphiql_html
 
@@ -28,8 +28,8 @@ class ChaliceHTTPRequestAdapter:
         return self.request.raw_body
 
     @property
-    def method(self) -> HttpMethod:
-        return cast(HttpMethod, self.request.method.upper())
+    def method(self) -> HTTPMethod:
+        return cast(HTTPMethod, self.request.method.upper())
 
     @property
     def headers(self) -> Mapping[str, str]:

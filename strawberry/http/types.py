@@ -1,5 +1,5 @@
 from typing_extensions import Literal
 
-HttpMethod = Literal[
+HTTPMethod = Literal[
     "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "TRACE"
 ]

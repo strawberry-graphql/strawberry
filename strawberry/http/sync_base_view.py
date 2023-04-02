@@ -16,7 +16,7 @@ from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData, process_result
-from strawberry.http.types import HttpMethod
+from strawberry.http.types import HTTPMethod
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
@@ -37,7 +37,7 @@ class HTTPRequestAdapterProtocol(Protocol):
         ...
 
     @property
-    def method(self) -> HttpMethod:
+    def method(self) -> HTTPMethod:
         ...
 
     @property

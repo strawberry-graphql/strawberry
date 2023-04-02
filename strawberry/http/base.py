@@ -3,7 +3,7 @@ from typing import Any, Dict, Generic, List, Mapping, Optional, Union
 from typing_extensions import Protocol
 
 from strawberry.http import GraphQLHTTPResponse
-from strawberry.http.types import HttpMethod
+from strawberry.http.types import HTTPMethod
 
 from .exceptions import HTTPException
 from .typevars import Request
@@ -15,7 +15,7 @@ class BaseRequestProtocol(Protocol):
         ...
 
     @property
-    def method(self) -> HttpMethod:
+    def method(self) -> HTTPMethod:
         ...
 
     @property
