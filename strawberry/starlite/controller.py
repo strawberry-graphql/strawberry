@@ -279,7 +279,7 @@ def make_graphql_controller(
 
             return await self.execute_request(
                 request=request,
-                context=context,  # type: ignore
+                context=context,
                 root_value=root_value,
             )
 
