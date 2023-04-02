@@ -442,7 +442,7 @@ class GraphQLCoreConverter:
 
         if field.is_basic_field:
 
-            def _get_basic_result(_source: Any, *args: str, **kwargs: Dict[str, Any]):
+            def _get_basic_result(_source: Any, *args: str, **kwargs: Any):
                 # Call `get_result` without an info object or any args or
                 # kwargs because this is a basic field with no resolver.
                 return field.get_result(_source, info=None, args=[], kwargs={})
@@ -454,7 +454,7 @@ class GraphQLCoreConverter:
         def _get_arguments(
             source: Any,
             info: Info,
-            kwargs: Dict[str, Any],
+            kwargs: Any,
         ) -> Tuple[List[Any], Dict[str, Any]]:
             kwargs = convert_arguments(
                 kwargs,
@@ -485,7 +485,7 @@ class GraphQLCoreConverter:
 
             return args, kwargs
 
-        def _check_permissions(source: Any, info: Info, kwargs: Dict[str, Any]):
+        def _check_permissions(source: Any, info: Info, kwargs: Any):
             """
             Checks if the permission should be accepted and
             raises an exception if not
@@ -497,9 +497,7 @@ class GraphQLCoreConverter:
                     message = getattr(permission, "message", None)
                     raise PermissionError(message)
 
-        async def _check_permissions_async(
-            source: Any, info: Info, kwargs: Dict[str, Any]
-        ):
+        async def _check_permissions_async(source: Any, info: Info, kwargs: Any):
             for permission_class in field.permission_classes:
                 permission = permission_class()
                 has_permission: bool

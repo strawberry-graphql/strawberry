@@ -6,7 +6,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Collection,
-    Dict,
     Iterable,
     List,
     Mapping,
@@ -149,7 +148,7 @@ class StrawberryUnion(StrawberryType):
             description=self.description,
         )
 
-    def __call__(self, *args: str, **kwargs: Dict[str, Any]) -> NoReturn:
+    def __call__(self, *args: str, **kwargs: Any) -> NoReturn:
         """Do not use.
 
         Used to bypass

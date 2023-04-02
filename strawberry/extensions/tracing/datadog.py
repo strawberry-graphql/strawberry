@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Iterator, Optional
+from typing import TYPE_CHECKING, Any, Callable, Generator, Iterator, Optional
 
 from ddtrace import tracer
 
@@ -82,7 +82,7 @@ class DatadogTracingExtension(SchemaExtension):
         root: Any,
         info: GraphQLResolveInfo,
         *args: str,
-        **kwargs: Dict[str, Any],
+        **kwargs: Any,
     ) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
@@ -115,7 +115,7 @@ class DatadogTracingExtensionSync(DatadogTracingExtension):
         root: Any,
         info: GraphQLResolveInfo,
         *args: str,
-        **kwargs: Dict[str, Any],
+        **kwargs: Any,
     ) -> Any:
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)

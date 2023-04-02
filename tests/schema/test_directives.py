@@ -330,7 +330,7 @@ def test_runs_directives_with_extensions():
         return value.upper()
 
     class ExampleExtension(SchemaExtension):
-        def resolve(self, _next, root, info, *args: str, **kwargs: Dict[str, Any]):
+        def resolve(self, _next, root, info, *args: str, **kwargs: Any):
             return _next(root, info, *args, **kwargs)
 
     schema = strawberry.Schema(
@@ -369,9 +369,7 @@ async def test_runs_directives_with_extensions_async():
         return value.upper()
 
     class ExampleExtension(SchemaExtension):
-        async def resolve(
-            self, _next, root, info, *args: str, **kwargs: Dict[str, Any]
-        ):
+        async def resolve(self, _next, root, info, *args: str, **kwargs: Any):
             return await await_maybe(_next(root, info, *args, **kwargs))
 
     schema = strawberry.Schema(

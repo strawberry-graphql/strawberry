@@ -9,7 +9,6 @@ from typing import (
     Awaitable,
     Callable,
     Coroutine,
-    Dict,
     List,
     Mapping,
     Optional,
@@ -90,7 +89,7 @@ class StrawberryField(dataclasses.Field):
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
 
-        kwargs: Dict[str, Any] = {}
+        kwargs: Any = {}
 
         # kw_only was added to python 3.10 and it is required
         if sys.version_info >= (3, 10):
@@ -166,7 +165,7 @@ class StrawberryField(dataclasses.Field):
         return self
 
     def get_result(
-        self, source: Any, info: Optional[Info], args: List[Any], kwargs: Dict[str, Any]
+        self, source: Any, info: Optional[Info], args: List[Any], kwargs: Any
     ) -> Union[Awaitable[Any], Any]:
         """
         Calls the resolver defined for the StrawberryField.

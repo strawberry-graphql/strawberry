@@ -46,7 +46,7 @@ class SchemaExtension:
         root: Any,
         info: GraphQLResolveInfo,
         *args: str,
-        **kwargs: Dict[str, Any],
+        **kwargs: Any,
     ) -> AwaitableOrValue[object]:
         return _next(root, info, *args, **kwargs)
 

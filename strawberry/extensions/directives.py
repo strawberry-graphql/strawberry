@@ -26,7 +26,7 @@ class DirectivesExtension(SchemaExtension):
         root: Any,
         info: GraphQLResolveInfo,
         *args: str,
-        **kwargs: Dict[str, Any],
+        **kwargs: Any,
     ) -> AwaitableOrValue[Any]:
         value = await await_maybe(_next(root, info, *args, **kwargs))
 
@@ -46,7 +46,7 @@ class DirectivesExtensionSync(SchemaExtension):
         root: Any,
         info: GraphQLResolveInfo,
         *args: str,
-        **kwargs: Dict[str, Any],
+        **kwargs: Any,
     ) -> AwaitableOrValue[Any]:
         value = _next(root, info, *args, **kwargs)
 

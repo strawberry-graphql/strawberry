@@ -130,7 +130,7 @@ class ApolloTracingExtension(SchemaExtension):
         root: Any,
         info: GraphQLResolveInfo,
         *args: str,
-        **kwargs: Dict[str, Any],
+        **kwargs: Any,
     ) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
@@ -170,7 +170,7 @@ class ApolloTracingExtensionSync(ApolloTracingExtension):
         root: Any,
         info: GraphQLResolveInfo,
         *args: str,
-        **kwargs: Dict[str, Any],
+        **kwargs: Any,
     ) -> Any:
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)

@@ -22,7 +22,7 @@ class GraphQLView(BaseAsyncGraphQLView):
 
     result_override: ResultOverrideFunction = None
 
-    def __init__(self, *args: str, **kwargs: Dict[str, Any]):
+    def __init__(self, *args: str, **kwargs: Any):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 
