@@ -3,6 +3,7 @@ import inspect
 import sys
 import types
 from typing import (
+    Any,
     Callable,
     Dict,
     List,
@@ -30,24 +31,19 @@ from .utils.typing import __dataclass_transform__
 T = TypeVar("T", bound=Type)
 
 
-def _get_interfaces(cls: Type) -> List[TypeDefinition]:
-    interfaces = []
-
-    for base in cls.__bases__:
+def _get_interfaces(cls: Type[Any]) -> List[TypeDefinition]:
+    interfaces: List[TypeDefinition] = []
+    for base in cls.__mro__[1:]:  # Exclude current class
         type_definition = cast(
             Optional[TypeDefinition], getattr(base, "_type_definition", None)
         )
-
         if type_definition and type_definition.is_interface:
             interfaces.append(type_definition)
-
-        for inherited_interface in _get_interfaces(base):
-            interfaces.append(inherited_interface)
 
     return interfaces
 
 
-def _check_field_annotations(cls: Type):
+def _check_field_annotations(cls: Type[Any]):
     """Are any of the dataclass Fields missing type annotations?
 
     This is similar to the check that dataclasses do during creation, but allows us to
@@ -103,7 +99,7 @@ def _check_field_annotations(cls: Type):
             raise MissingFieldAnnotationError(field_name, cls)
 
 
-def _wrap_dataclass(cls: Type):
+def _wrap_dataclass(cls: Type[Any]):
     """Wrap a strawberry.type class with a dataclass and check for any issues
     before doing so"""
 

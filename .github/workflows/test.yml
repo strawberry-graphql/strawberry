@@ -41,7 +41,7 @@ jobs:
       - name: pytest
         run:
           poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m "not
-          starlette" -m "not django" --ignore=tests/mypy --ignore=tests/pyright
+          starlette" -m "not django" -m "not starlite" --ignore=tests/mypy --ignore=tests/pyright
 
         if: ${{ always() }}
       - uses: codecov/codecov-action@v3
@@ -158,5 +158,40 @@ jobs:
         if: ${{ always() }}
         with:
           token: c0eec83c-17c8-4e8a-adf9-a34e4c22ef6a
+          fail_ci_if_error: true
+          verbose: true
+
+  starlite-unit-tests:
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v4
+        id: setup-python
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "poetry"
+
+      - run: poetry env use ${{ matrix.python-version }}
+      - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
+
+      - name: pytest
+        run:
+          poetry run coverage run -m pytest --showlocals -vv -m starlite
+
+      - name: coverage xml
+        run: poetry run coverage xml -i
+        if: ${{ always() }}
+      - uses: codecov/codecov-action@v3
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           verbose: true

@@ -19,5 +19,5 @@ def pytest_collection_modifyitems(config, items):
 
 
 @pytest.fixture()
-def graphql_client():
+def graphql_client() -> GraphQLTestClient:
     return GraphQLTestClient(Client())

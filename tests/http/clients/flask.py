@@ -32,7 +32,7 @@ class GraphQLView(BaseGraphQLView):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 
-    def get_root_value(self):
+    def get_root_value(self) -> Query:
         return Query()
 
     def get_context(self, response: FlaskResponse) -> Dict[str, object]:

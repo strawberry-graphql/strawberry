@@ -762,7 +762,7 @@ class GraphQLCoreConverter:
                 # both lazy types are always resolved because two different lazy types
                 # may be referencing the same actual type
                 if isinstance(type1, LazyType):
-                    type1 = type1.resolve_type()
+                    type1 = type1.resolve_type()  # noqa: PLW2901
                 elif isinstance(type1, StrawberryOptional) and isinstance(
                     type1.of_type, LazyType
                 ):

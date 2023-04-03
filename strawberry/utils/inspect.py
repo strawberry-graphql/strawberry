@@ -1,11 +1,11 @@
 import inspect
 from functools import lru_cache
-from typing import Any, Callable, Dict, Optional, TypeVar, Union, overload
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, overload
 from typing_extensions import Literal, get_args
 
 
 @lru_cache(maxsize=250)
-def get_func_args(func: Callable[[Any], Any]):
+def get_func_args(func: Callable[[Any], Any]) -> List[str]:
     """Returns a list of arguments for the function"""
 
     sig = inspect.signature(func)

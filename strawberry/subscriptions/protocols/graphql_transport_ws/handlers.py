@@ -77,7 +77,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         self.connection_init_timeout_task = asyncio.create_task(timeout_handler)
         return await self.handle_request()
 
-    async def handle_connection_init_timeout(self):
+    async def handle_connection_init_timeout(self) -> None:
         delay = self.connection_init_wait_timeout.total_seconds()
         await asyncio.sleep(delay=delay)
 
@@ -87,7 +87,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         reason = "Connection initialisation timeout"
         await self.close(code=4408, reason=reason)
 
-    async def handle_message(self, message: dict):
+    async def handle_message(self, message: dict) -> None:
         handler: Callable
         handler_arg: Any
         try:

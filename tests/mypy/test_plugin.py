@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Generator
 
 import pytest
 
@@ -8,7 +9,7 @@ pytestmark = pytest.mark.usefixtures("maintain_version")
 
 
 @pytest.fixture
-def maintain_version():
+def maintain_version() -> Generator[None, None, None]:
     """Clean-up side-effected version after tests"""
 
     yield

@@ -98,5 +98,5 @@ class Query:
 
 
 @pytest.fixture
-def schema():
+def schema() -> strawberry.Schema:
     return strawberry.Schema(query=Query, types=[BlogPost, Image])

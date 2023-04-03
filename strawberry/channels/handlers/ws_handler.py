@@ -69,7 +69,7 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
         sorted_intersection = sorted(intersection, key=accepted_subprotocols.index)
         return next(iter(sorted_intersection), None)
 
-    async def connect(self):
+    async def connect(self) -> None:
         preferred_protocol = self.pick_preferred_protocol(self.scope["subprotocols"])
 
         if preferred_protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
@@ -98,15 +98,15 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
         await self._handler.handle()
         return None
 
-    async def receive(self, *args, **kwargs):
+    async def receive(self, *args, **kwargs) -> None:
         # Overriding this so that we can pass the errors to handle_invalid_message
         try:
             await super().receive(*args, **kwargs)
         except ValueError as e:
             await self._handler.handle_invalid_message(str(e))
 
-    async def receive_json(self, content, **kwargs):
+    async def receive_json(self, content, **kwargs) -> None:
         await self._handler.handle_message(content)
 
-    async def disconnect(self, code):
+    async def disconnect(self, code) -> None:
         await self._handler.handle_disconnect(code)

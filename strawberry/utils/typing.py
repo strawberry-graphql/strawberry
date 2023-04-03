@@ -1,16 +1,74 @@
+import ast
 import sys
+import typing
 from collections.abc import AsyncGenerator
+from functools import lru_cache
 from typing import (  # type: ignore
+    TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
+    Dict,
+    ForwardRef,
     Generic,
+    Optional,
     Tuple,
     Type,
     TypeVar,
     Union,
+    _eval_type,
     _GenericAlias,
+    _SpecialForm,
+    cast,
+    overload,
 )
+from typing_extensions import Annotated, get_args, get_origin
+
+ast_unparse = getattr(ast, "unparse", None)
+# ast.unparse is only available on python 3.9+. For older versions we will
+# use `astunparse.unparse`.
+# We are also using "not TYPE_CHECKING" here because mypy gives an erorr
+# on tests because "astunparse" is missing stubs, but the mypy action says
+# that the comment is unused.
+if not TYPE_CHECKING and ast_unparse is None:
+    import astunparse
+
+    ast_unparse = astunparse.unparse
+
+
+@lru_cache()
+def get_generic_alias(type_: Type) -> Type:
+    """Get the generic alias for a type.
+
+    Given a type, its generic alias from `typing` module will be returned
+    if it exists. For example:
+
+        >>> get_generic_alias(list)
+        typing.List
+        >>> get_generic_alias(dict)
+        typing.Dict
+
+    This is mostly useful for python versions prior to 3.9, to get a version
+    of a concrete type which supports `__class_getitem__`. In 3.9+ types like
+    `list`/`dict`/etc are subscriptable and can be used directly instead
+    of their generic alias version.
+    """
+    if isinstance(type_, _SpecialForm):
+        return type_
+
+    for attr_name in dir(typing):
+        # ignore private attributes, they are not Generic aliases
+        if attr_name.startswith("_"):  # pragma: no cover
+            continue
+
+        attr = getattr(typing, attr_name)
+        # _GenericAlias overrides all the methods that we can use to know if
+        # this is a subclass of it. But if it has an "_inst" attribute
+        # then it for sure is a _GenericAlias
+        if hasattr(attr, "_inst") and attr.__origin__ is type_:
+            return attr
+
+    raise AssertionError(f"No GenericAlias available for {type_}")  # pragma: no cover
 
 
 def is_list(annotation: object) -> bool:
@@ -51,7 +109,7 @@ def is_optional(annotation: Type) -> bool:
     types = annotation.__args__
 
     # A Union to be optional needs to have at least one None type
-    return any([x == None.__class__ for x in types])
+    return any(x == None.__class__ for x in types)
 
 
 def get_optional_annotation(annotation: Type) -> Type:
@@ -103,7 +161,7 @@ def is_type_var(annotation: Type) -> bool:
     return isinstance(annotation, TypeVar)
 
 
-def get_parameters(annotation: Type):
+def get_parameters(annotation: Type) -> Union[Tuple[object], Tuple[()]]:
     if (
         isinstance(annotation, _GenericAlias)
         or isinstance(annotation, type)
@@ -113,6 +171,138 @@ def get_parameters(annotation: Type):
         return annotation.__parameters__
     else:
         return ()  # pragma: no cover
+
+
+@overload
+def _ast_replace_union_operation(expr: ast.expr) -> ast.expr:
+    ...
+
+
+@overload
+def _ast_replace_union_operation(expr: ast.Expr) -> ast.Expr:
+    ...
+
+
+def _ast_replace_union_operation(
+    expr: Union[ast.Expr, ast.expr]
+) -> Union[ast.Expr, ast.expr]:
+    if isinstance(expr, ast.Expr) and isinstance(
+        expr.value, (ast.BinOp, ast.Subscript)
+    ):
+        expr = ast.Expr(_ast_replace_union_operation(expr.value))
+    elif isinstance(expr, ast.BinOp):
+        left = _ast_replace_union_operation(expr.left)
+        right = _ast_replace_union_operation(expr.right)
+        expr = ast.Subscript(
+            ast.Name(id="Union"),
+            ast.Tuple([left, right], ast.Load()),
+            ast.Load(),
+        )
+    elif isinstance(expr, ast.Tuple):
+        expr = ast.Tuple(
+            [_ast_replace_union_operation(elt) for elt in expr.elts],
+            ast.Load(),
+        )
+    elif isinstance(expr, ast.Subscript):
+        if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
+            expr = ast.Subscript(
+                expr.value,
+                # The cast is required for mypy on python 3.7 and 3.8
+                ast.Index(_ast_replace_union_operation(cast(Any, expr.slice).value)),
+                ast.Load(),
+            )
+        elif isinstance(expr.slice, (ast.BinOp, ast.Tuple)):
+            expr = ast.Subscript(
+                expr.value,
+                _ast_replace_union_operation(expr.slice),
+                ast.Load(),
+            )
+
+    return expr
+
+
+def eval_type(
+    type_: Any,
+    globalns: Optional[Dict] = None,
+    localns: Optional[Dict] = None,
+) -> Type:
+    """Evaluates a type, resolving forward references."""
+    from strawberry.auto import StrawberryAuto
+    from strawberry.lazy_type import StrawberryLazyReference
+    from strawberry.private import StrawberryPrivate
+
+    globalns = globalns or {}
+    # If this is not a string, maybe its args are (e.g. List["Foo"])
+    if isinstance(type_, ForwardRef):
+        # For Python 3.10+, we can use the built-in _eval_type function directly.
+        # It will handle "|" notations properly
+        if sys.version_info < (3, 10):
+            parsed = _ast_replace_union_operation(
+                cast(ast.Expr, ast.parse(type_.__forward_arg__).body[0])
+            )
+
+            # We replaced "a | b" with "Union[a, b], so make sure Union can be resolved
+            # at globalns because it may not be there
+            if "Union" not in globalns:
+                globalns["Union"] = Union
+
+            assert ast_unparse
+            type_ = ForwardRef(ast_unparse(parsed))
+
+        return _eval_type(type_, globalns, localns)
+
+    origin = get_origin(type_)
+    if origin is not None:
+        args = get_args(type_)
+        if origin is Annotated:
+            for arg in args[1:]:
+                if isinstance(arg, StrawberryPrivate):
+                    return type_
+
+                if isinstance(arg, StrawberryLazyReference):
+                    remaining_args = [
+                        a
+                        for a in args[1:]
+                        if not isinstance(arg, StrawberryLazyReference)
+                    ]
+                    args = (arg.resolve_forward_ref(args[0]), *remaining_args)
+                    break
+                if isinstance(arg, StrawberryAuto):
+                    remaining_args = [
+                        a for a in args[1:] if not isinstance(arg, StrawberryAuto)
+                    ]
+                    args = (arg, *remaining_args)
+                    break
+
+            # If we have only a StrawberryLazyReference and no more annotations,
+            # we need to return the argument directly because Annotated
+            # will raise an error if trying to instantiate it with only
+            # one argument.
+            if len(args) == 1:
+                return args[0]
+
+        # python 3.10 will return UnionType for origin, and it cannot be
+        # subscripted like Union[Foo, Bar]
+        if sys.version_info >= (3, 10):
+            from types import UnionType
+
+            if origin is UnionType:
+                origin = Union
+
+        # Future annotations in older versions will eval generic aliases to their
+        # real types (i.e. List[foo] will have its origin set to list instead
+        # of List). If that type is not subscriptable, retrieve its generic
+        # alias version instead.
+        if sys.version_info < (3, 9) and not hasattr(origin, "__class_getitem__"):
+            origin = get_generic_alias(origin)
+
+        type_ = (
+            origin[tuple(eval_type(a, globalns, localns) for a in args)]
+            if args
+            else origin
+        )
+
+    return type_
 
 
 _T = TypeVar("_T")

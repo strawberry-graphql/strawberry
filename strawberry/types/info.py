@@ -41,6 +41,7 @@ class Info(Generic[ContextType, RootValueType]):
         warnings.warn(
             "`info.field_nodes` is deprecated, use `selected_fields` instead",
             DeprecationWarning,
+            stacklevel=2,
         )
 
         return self._raw_info.field_nodes

@@ -25,7 +25,7 @@ class GraphQLView(BaseGraphQLView):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 
-    def get_root_value(self):
+    def get_root_value(self) -> Query:
         return Query()
 
     async def get_context(
@@ -52,7 +52,7 @@ class SanicHttpClient(HttpClient):
         result_override: ResultOverrideFunction = None,
     ):
         self.app = Sanic(
-            f"test_{int(randint(0, 1000))}",
+            f"test_{int(randint(0, 1000))}",  # noqa: S311
         )
         view = GraphQLView.as_view(
             schema=schema,
