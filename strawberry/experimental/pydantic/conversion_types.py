@@ -35,7 +35,3 @@ class StrawberryTypeFromPydantic(Protocol[PydanticModel]):
     @property
     def _pydantic_type(self) -> Type[PydanticModel]:
         ...
-
-    @property
-    def _original_model(self) -> PydanticModel:
-        ...
