@@ -264,9 +264,11 @@ def type(
         def from_pydantic_default(
             instance: PydanticModel, extra: Optional[Dict[str, Any]] = None
         ) -> StrawberryTypeFromPydantic[PydanticModel]:
-            return convert_pydantic_model_to_strawberry_class(
+            ret = convert_pydantic_model_to_strawberry_class(
                 cls=cls, model_instance=instance, extra=extra
             )
+            ret._original_model = instance
+            return ret
 
         def to_pydantic_default(self: Any, **kwargs) -> PydanticModel:
             instance_kwargs = {
