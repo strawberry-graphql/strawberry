@@ -7,7 +7,6 @@ from starlette.websockets import WebSocketDisconnect
 import strawberry
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
-from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi import BaseContext, GraphQLRouter
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
@@ -169,14 +168,52 @@ def test_with_invalid_context_getter():
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
-    with pytest.raises(
-        InvalidCustomContext,
-        match=(
-            "The custom context must be either a class "
-            "that inherits from BaseContext or a dictionary"
-        ),
-    ):
-        test_client.post("/graphql", json={"query": "{ abc }"})
+    data = test_client.post("/graphql", json={"query": "{ abc }"})
+    assert data.json() == {
+        "data": None,
+        "errors": [
+            {
+                "message": "The custom context must be either a class "
+                "that inherits from BaseContext or a dictionary"
+            },
+        ],
+    }
+
+
+def test_context_getter_raises_custom_exception():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def abc(self, info: Info) -> str:
+            assert info.context.get("request") is not None
+            assert "connection_params" not in info.context.keys()
+            assert info.context.get("strawberry") == "rocks"
+            return "abc"
+
+    class CustomException(Exception):
+        ...
+
+    def custom_context_dependency() -> str:
+        raise CustomException("strawberry.rocks")
+
+    def get_context(value: str = Depends(custom_context_dependency)) -> Dict[str, str]:
+        return {"strawberry": value}
+
+    app = FastAPI()
+    schema = strawberry.Schema(query=Query)
+    graphql_app = GraphQLRouter(schema, context_getter=get_context)
+    app.include_router(graphql_app, prefix="/graphql")
+
+    test_client = TestClient(app)
+    response = test_client.post("/graphql", json={"query": "{ abc }"})
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "data": None,
+        "errors": [
+            {"message": "strawberry.rocks"},
+        ],
+    }
 
 
 def test_class_context_injects_connection_params_over_transport_ws():
