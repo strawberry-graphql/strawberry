@@ -5,12 +5,38 @@ from dataclasses import (  # type: ignore
     _FIELD,
     _FIELD_INITVAR,
     _FIELDS,
+    _MISSING_TYPE,
     _POST_INIT_NAME,
     _set_new_attribute,
 )
 from typing import Any
+from typing_extensions import TypedDict
 
 from strawberry.ext.dataclasses.dataclasses import dataclass_init_fn
+
+if sys.version_info >= (3, 10):
+
+    class DataclassArguments(TypedDict, total=False):
+        init: bool
+        repr: bool
+        eq: bool
+        order: bool
+        unsafe_hash: bool
+        frozen: bool
+        match_args: bool
+        kw_only: bool | _MISSING_TYPE
+        slots: bool
+
+else:
+
+    class DataclassArguments(TypedDict, total=False):
+        init: bool
+        repr: bool
+        eq: bool
+        order: bool
+        unsafe_hash: bool
+        frozen: bool
+        slots: bool
 
 
 def add_custom_init_fn(cls: Any) -> None:

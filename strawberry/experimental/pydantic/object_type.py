@@ -33,9 +33,11 @@ from strawberry.experimental.pydantic.utils import (
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
-from strawberry.utils.dataclasses import add_custom_init_fn
+from strawberry.utils.dataclasses import DataclassArguments, add_custom_init_fn
 
 if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
     from graphql import GraphQLResolveInfo
     from pydantic.fields import ModelField
 
@@ -125,6 +127,7 @@ def type(
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
+    **kwargs: Unpack[DataclassArguments],
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
         model_fields = model.__fields__
@@ -171,7 +174,7 @@ def type(
             model=model, auto_fields=auto_fields_set, cls_name=cls.__name__
         )
 
-        wrapped = _wrap_dataclass(cls)
+        wrapped = _wrap_dataclass(cls, **kwargs)
         extra_strawberry_fields = _get_fields(wrapped)
         extra_fields = cast(List[dataclasses.Field], extra_strawberry_fields)
         private_fields = get_private_fields(wrapped)
@@ -223,7 +226,7 @@ def type(
         if hasattr(cls, "resolve_reference"):
             namespace["resolve_reference"] = cls.resolve_reference
 
-        kwargs: Dict[str, object] = {}
+        dclass_kwargs: DataclassArguments = kwargs or {}
 
         # Python 3.10.1 introduces the kw_only param to `make_dataclass`.
         # If we're on an older version then generate our own custom init function
@@ -231,16 +234,16 @@ def type(
         # just missed from the `make_dataclass` function:
         # https://github.com/python/cpython/issues/89961
         if sys.version_info >= (3, 10, 1):
-            kwargs["kw_only"] = dataclasses.MISSING
+            dclass_kwargs["kw_only"] = dataclasses.MISSING
         else:
-            kwargs["init"] = False
+            dclass_kwargs["init"] = False
 
         cls = dataclasses.make_dataclass(
             cls.__name__,
             [field.to_tuple() for field in all_model_fields],
             bases=cls.__bases__,
             namespace=namespace,
-            **kwargs,  # type: ignore
+            **dclass_kwargs,  # type: ignore[arg-type]
         )
 
         if sys.version_info < (3, 10, 1):
@@ -270,14 +273,14 @@ def type(
             ret._original_model = instance
             return ret
 
-        def to_pydantic_default(self, **kwargs) -> PydanticModel:
+        def to_pydantic_default(self, **pydantic_kwargs) -> PydanticModel:
             instance_kwargs = {
                 f.name: convert_strawberry_class_to_pydantic_model(
                     getattr(self, f.name)
                 )
                 for f in dataclasses.fields(self)
             }
-            instance_kwargs.update(kwargs)
+            instance_kwargs.update(pydantic_kwargs)
             return model(**instance_kwargs)
 
         if not has_custom_from_pydantic:
