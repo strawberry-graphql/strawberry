@@ -187,13 +187,11 @@ async def test_sending_invalid_form_data(http_client: HttpClient):
     response = await http_client.post("/graphql", headers=headers)
 
     assert response.status_code == 400
-    # TODO: can we consolidate this?
-    # - aiohttp returns "Unable to parse the multipart body"
-    # - fastapi returns "No valid query was provided for the request"
+    # TODO: consolidate this, it seems only AIOHTTP returns the second error
+    # due to validating the boundary
     assert (
-        "Unable to parse the multipart body" in response.text
-        or "No GraphQL query found in the request" in response.text
-        or "No valid query was provided for the request" in response.text
+        "No GraphQL query found in the request" in response.text
+        or "Unable to parse the multipart body" in response.text
     )
 
 

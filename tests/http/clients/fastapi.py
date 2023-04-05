@@ -30,9 +30,9 @@ def custom_context_dependency() -> str:
 
 async def fastapi_get_context(
     background_tasks: BackgroundTasks,
-    request: Request = None,
-    ws: WebSocket = None,
-    custom_value=Depends(custom_context_dependency),
+    request: Request = None,  # type: ignore
+    ws: WebSocket = None,  # type: ignore
+    custom_value: str = Depends(custom_context_dependency),
 ) -> Dict[str, object]:
     return get_context(
         {
@@ -42,11 +42,14 @@ async def fastapi_get_context(
     )
 
 
-async def get_root_value(request: Request = None, ws: WebSocket = None) -> Query:
+async def get_root_value(
+    request: Request = None,  # type: ignore - FastAPI
+    ws: WebSocket = None,  # type: ignore - FastAPI
+) -> Query:
     return Query()
 
 
-class GraphQLRouter(BaseGraphQLRouter):
+class GraphQLRouter(BaseGraphQLRouter[Any, Any]):
     result_override: ResultOverrideFunction = None
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
@@ -96,7 +99,7 @@ class FastAPIHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
         body = self._build_body(
             query=query, variables=variables, files=files, method=method
@@ -120,7 +123,11 @@ class FastAPIHttpClient(HttpClient):
             **kwargs,
         )
 
-        return Response(status_code=response.status_code, data=response.content)
+        return Response(
+            status_code=response.status_code,
+            data=response.content,
+            headers=response.headers,
+        )
 
     async def request(
         self,
@@ -133,6 +140,7 @@ class FastAPIHttpClient(HttpClient):
         return Response(
             status_code=response.status_code,
             data=response.content,
+            headers=response.headers,
         )
 
     async def get(
@@ -154,6 +162,7 @@ class FastAPIHttpClient(HttpClient):
         return Response(
             status_code=response.status_code,
             data=response.content,
+            headers=response.headers,
         )
 
     @contextlib.asynccontextmanager

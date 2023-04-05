@@ -111,6 +111,7 @@ class AsgiHttpClient(HttpClient):
         return Response(
             status_code=response.status_code,
             data=response.content,
+            headers=response.headers,
         )
 
     async def request(
@@ -124,6 +125,7 @@ class AsgiHttpClient(HttpClient):
         return Response(
             status_code=response.status_code,
             data=response.content,
+            headers=response.headers,
         )
 
     async def get(
@@ -145,6 +147,7 @@ class AsgiHttpClient(HttpClient):
         return Response(
             status_code=response.status_code,
             data=response.content,
+            headers=response.headers,
         )
 
     @contextlib.asynccontextmanager
