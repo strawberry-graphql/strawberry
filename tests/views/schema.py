@@ -1,7 +1,8 @@
 import asyncio
 import contextlib
 from enum import Enum
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, AsyncGenerator, Dict, List, Optional, Union
+from typing_extensions import Literal
 
 from graphql import GraphQLError
 
@@ -225,7 +226,7 @@ class Subscription:
         yield info.context["connection_params"]["strawberry"]
 
     @strawberry.subscription
-    async def connection_params_all(self, info) -> typing.AsyncGenerator[str, None]:
+    async def connection_params_all(self, info) -> AsyncGenerator[str, None]:
         yield str(info.context["connection_params"])
 
 
@@ -236,9 +237,9 @@ class Schema(strawberry.Schema):
     """
 
     async def on_ws_connect(
-        self, connection_params: typing.Optional[typing.Dict[str, typing.Any]]
-    ) -> typing.Union[
-        typing_extensions.Literal[False], None, typing.Dict[str, typing.Any]
+        self, connection_params: Optional[Dict[str, Any]]
+    ) -> Union[
+        Literal[False], None, Dict[str, Any]
     ]:
         # default behaviour
         if not connection_params:
