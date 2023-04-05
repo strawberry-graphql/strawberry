@@ -18,7 +18,7 @@ from typing import (
 from sanic.request import Request
 from sanic.response import HTTPResponse, html
 from sanic.views import HTTPMethodView
-from strawberry.http.async_base_view import AsyncBaseHTTPView
+from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
 from strawberry.http.exceptions import HTTPException
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.types import HTTPMethod
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
 
 
-class SanicHTTPRequestAdapter:
+class SanicHTTPRequestAdapter(AsyncHTTPRequestAdapter):
     def __init__(self, request: Request):
         self.request = request
 

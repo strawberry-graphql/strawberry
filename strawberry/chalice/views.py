@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union, cast
 
 from chalice.app import Request, Response
 from strawberry.http.exceptions import HTTPException
-from strawberry.http.sync_base_view import SyncBaseHTTPView
+from strawberry.http.sync_base_view import SyncBaseHTTPView, SyncHTTPRequestAdapter
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.types import HTTPMethod, QueryParams
 from strawberry.http.typevars import Context, RootValue
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
 
 
-class ChaliceHTTPRequestAdapter:
+class ChaliceHTTPRequestAdapter(SyncHTTPRequestAdapter):
     def __init__(self, request: Request):
         self.request = request
 

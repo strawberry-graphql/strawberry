@@ -24,7 +24,7 @@ from starlite.exceptions import (
 )
 from starlite.status_codes import HTTP_200_OK
 from strawberry.exceptions import InvalidCustomContext
-from strawberry.http.async_base_view import AsyncBaseHTTPView
+from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
 from strawberry.http.exceptions import HTTPException
 from strawberry.http.types import HTTPMethod, QueryParams
 from strawberry.http.typevars import (
@@ -117,7 +117,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         return await self._get_root_value()
 
 
-class StarliteRequestAdapter:
+class StarliteRequestAdapter(AsyncHTTPRequestAdapter):
     def __init__(self, request: Request[Any, Any]):
         self.request = request
 

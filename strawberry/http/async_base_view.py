@@ -5,13 +5,11 @@ from typing import (
     Callable,
     Dict,
     Generic,
-    List,
     Mapping,
     Optional,
     Tuple,
     Union,
 )
-from typing_extensions import Protocol
 
 from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
@@ -24,30 +22,37 @@ from strawberry.types.graphql import OperationType
 
 from .base import BaseView
 from .exceptions import HTTPException
-from .types import HTTPMethod
+from .types import HTTPMethod, QueryParams
 from .typevars import Context, Request, Response, RootValue, SubResponse
 
 
-class AsyncHTTPRequestAdapterProtocol(Protocol):
+class AsyncHTTPRequestAdapter(abc.ABC):
     @property
-    def query_params(self) -> Mapping[str, Optional[Union[str, List[str]]]]:
+    @abc.abstractmethod
+    def query_params(self) -> QueryParams:
         ...
 
     @property
+    @abc.abstractmethod
     def method(self) -> HTTPMethod:
         ...
 
     @property
+    @abc.abstractmethod
     def headers(self) -> Mapping[str, str]:
         ...
 
     @property
+    @abc.abstractmethod
     def content_type(self) -> Optional[str]:
         ...
 
-    async def get_body(self) -> str:
+    @abc.abstractmethod
+    async def get_body(self) -> Union[str, bytes]:
         ...
 
+    @abc.abstractmethod
+    # TODO: type for form data, since the second parameter is files
     async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
         ...
 
@@ -59,7 +64,7 @@ class AsyncBaseHTTPView(
 ):
     schema: BaseSchema
     graphiql: bool
-    request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapterProtocol]
+    request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
 
     @property
     @abc.abstractmethod
@@ -119,9 +124,7 @@ class AsyncBaseHTTPView(
             allowed_operation_types=allowed_operation_types,
         )
 
-    async def parse_multipart(
-        self, request: AsyncHTTPRequestAdapterProtocol
-    ) -> Dict[str, str]:
+    async def parse_multipart(self, request: AsyncHTTPRequestAdapter) -> Dict[str, str]:
         try:
             form_data, files = await request.get_form_data()
         except ValueError as e:
@@ -188,7 +191,7 @@ class AsyncBaseHTTPView(
         )
 
     async def parse_http_body(
-        self, request: AsyncHTTPRequestAdapterProtocol
+        self, request: AsyncHTTPRequestAdapter
     ) -> GraphQLRequestData:
         content_type = request.content_type or ""
 

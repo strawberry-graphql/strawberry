@@ -4,10 +4,11 @@ from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Tuple, Union, ca
 
 from flask import Request, Response, render_template_string, request
 from flask.views import View
-from strawberry.http.async_base_view import AsyncBaseHTTPView
+from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
 from strawberry.http.exceptions import HTTPException
 from strawberry.http.sync_base_view import (
     SyncBaseHTTPView,
+    SyncHTTPRequestAdapter,
 )
 from strawberry.http.types import HTTPMethod, QueryParams
 from strawberry.http.typevars import Context, RootValue
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
     from strawberry.schema.base import BaseSchema
 
 
-class FlaskHTTPRequestAdapter:
+class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
     def __init__(self, request: Request):
         self.request = request
 
@@ -104,7 +105,7 @@ class GraphQLView(
             )
 
 
-class AsyncFlaskHTTPRequestAdapter:
+class AsyncFlaskHTTPRequestAdapter(AsyncHTTPRequestAdapter):
     def __init__(self, request: Request):
         self.request = request
 

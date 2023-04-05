@@ -5,18 +5,15 @@ from typing import (
     Callable,
     Dict,
     Generic,
-    List,
     Mapping,
     Optional,
     Union,
 )
-from typing_extensions import Protocol
 
 from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData, process_result
-from strawberry.http.types import HTTPMethod
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
@@ -24,35 +21,43 @@ from strawberry.types.graphql import OperationType
 
 from .base import BaseView
 from .exceptions import HTTPException
+from .types import HTTPMethod, QueryParams
 from .typevars import Context, Request, Response, RootValue, SubResponse
 
 
-class HTTPRequestAdapterProtocol(Protocol):
+class SyncHTTPRequestAdapter(abc.ABC):
     @property
-    def query_params(self) -> Mapping[str, Optional[Union[str, List[str]]]]:
+    @abc.abstractmethod
+    def query_params(self) -> QueryParams:
         ...
 
     @property
+    @abc.abstractmethod
     def body(self) -> Union[str, bytes]:
         ...
 
     @property
+    @abc.abstractmethod
     def method(self) -> HTTPMethod:
         ...
 
     @property
+    @abc.abstractmethod
     def headers(self) -> Mapping[str, str]:
         ...
 
     @property
+    @abc.abstractmethod
     def content_type(self) -> Optional[str]:
         ...
 
     @property
+    @abc.abstractmethod
     def post_data(self) -> Mapping[str, Union[str, bytes]]:
         ...
 
     @property
+    @abc.abstractmethod
     def files(self) -> Mapping[str, Any]:
         ...
 
@@ -64,7 +69,7 @@ class SyncBaseHTTPView(
 ):
     schema: BaseSchema
     graphiql: bool
-    request_adapter_class: Callable[[Request], HTTPRequestAdapterProtocol]
+    request_adapter_class: Callable[[Request], SyncHTTPRequestAdapter]
 
     # Methods that need to be implemented by individual frameworks
 
@@ -126,7 +131,7 @@ class SyncBaseHTTPView(
             allowed_operation_types=allowed_operation_types,
         )
 
-    def parse_multipart(self, request: HTTPRequestAdapterProtocol) -> Dict[str, str]:
+    def parse_multipart(self, request: SyncHTTPRequestAdapter) -> Dict[str, str]:
         operations = self.parse_json(request.post_data.get("operations", "{}"))
         files_map = self.parse_json(request.post_data.get("map", "{}"))
 
@@ -135,9 +140,7 @@ class SyncBaseHTTPView(
         except KeyError as e:
             raise HTTPException(400, "File(s) missing in form data") from e
 
-    def parse_http_body(
-        self, request: HTTPRequestAdapterProtocol
-    ) -> GraphQLRequestData:
+    def parse_http_body(self, request: SyncHTTPRequestAdapter) -> GraphQLRequestData:
         content_type = request.content_type or ""
 
         if "application/json" in content_type:

@@ -23,9 +23,9 @@ from django.utils.decorators import classonlymethod, method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
-from strawberry.http.async_base_view import AsyncBaseHTTPView
+from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
 from strawberry.http.exceptions import HTTPException
-from strawberry.http.sync_base_view import SyncBaseHTTPView
+from strawberry.http.sync_base_view import SyncBaseHTTPView, SyncHTTPRequestAdapter
 from strawberry.http.types import HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
@@ -60,7 +60,7 @@ class TemporalHttpResponse(JsonResponse):
         )
 
 
-class DjangoHTTPRequestAdapter:
+class DjangoHTTPRequestAdapter(SyncHTTPRequestAdapter):
     def __init__(self, request: HttpRequest):
         self.request = request
 
@@ -95,7 +95,7 @@ class DjangoHTTPRequestAdapter:
         return self.request.content_type
 
 
-class AsyncDjangoHTTPRequestAdapter:
+class AsyncDjangoHTTPRequestAdapter(AsyncHTTPRequestAdapter):
     def __init__(self, request: HttpRequest):
         self.request = request
 

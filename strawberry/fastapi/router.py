@@ -32,7 +32,7 @@ from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHand
 from strawberry.http import (
     process_result,
 )
-from strawberry.http.async_base_view import AsyncBaseHTTPView
+from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
 from strawberry.http.exceptions import HTTPException
 from strawberry.http.types import HTTPMethod, QueryParams
 from strawberry.http.typevars import (
@@ -51,7 +51,7 @@ if TYPE_CHECKING:
     from strawberry.types import ExecutionResult
 
 
-class FastAPIRequestAdapter:
+class FastAPIRequestAdapter(AsyncHTTPRequestAdapter):
     def __init__(self, request: Request):
         self.request = request
 
