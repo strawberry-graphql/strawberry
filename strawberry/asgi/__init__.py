@@ -58,10 +58,8 @@ class ASGIRequestAdapter(AsyncHTTPRequestAdapter):
     def content_type(self) -> Optional[str]:
         return self.request.headers.get("content-type")
 
-    async def get_body(self) -> str:
-        # TODO: check if we can return bytes as well, since
-        # we pass this to json.loads
-        return (await self.request.body()).decode()
+    async def get_body(self) -> bytes:
+        return await self.request.body()
 
     async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
         multipart_data = await self.request.form()

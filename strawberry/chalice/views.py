@@ -114,9 +114,18 @@ class GraphQLView(
         try:
             return self.run(request=request)
         except HTTPException as e:
+            error_code_map = {
+                400: "BadRequestError",
+                401: "UnauthorizedError",
+                403: "ForbiddenError",
+                404: "NotFoundError",
+                409: "ConflictError",
+                429: "TooManyRequestsError",
+                500: "ChaliceViewError",
+            }
+
             return self.error_response(
-                # TODO: map error codes?
-                error_code=str(e.status_code),
+                error_code=error_code_map.get(e.status_code, "ChaliceViewError"),
                 message=e.reason,
                 http_status_code=e.status_code,
             )
