@@ -117,6 +117,7 @@ class AioHttpClient(HttpClient):
             return Response(
                 status_code=response.status,
                 data=(await response.text()).encode(),
+                headers=response.headers,
             )
 
     async def request(
@@ -131,6 +132,7 @@ class AioHttpClient(HttpClient):
             return Response(
                 status_code=response.status,
                 data=(await response.text()).encode(),
+                headers=response.headers,
             )
 
     async def get(
@@ -155,6 +157,7 @@ class AioHttpClient(HttpClient):
             return Response(
                 status_code=response.status,
                 data=(await response.text()).encode(),
+                headers=response.headers,
             )
 
     @contextlib.asynccontextmanager

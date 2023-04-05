@@ -1,5 +1,5 @@
 import sys
-from typing import Dict
+from typing import Any, Dict
 
 import pytest
 
@@ -29,7 +29,7 @@ def test_with_class_context_getter():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info) -> str:
+        def abc(self, info: Info[Any, Any]) -> str:
             assert info.context.request is not None
             assert info.context.strawberry == "rocks"
             return "abc"
@@ -64,7 +64,7 @@ def test_with_dict_context_getter():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info) -> str:
+        def abc(self, info: Info[Any, Any]) -> str:
             assert info.context.get("request") is not None
             assert info.context.get("strawberry") == "rocks"
             return "abc"
@@ -94,7 +94,7 @@ def test_without_context_getter():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info) -> str:
+        def abc(self, info: Info[Any, Any]) -> str:
             assert info.context.get("request") is not None
             assert info.context.get("strawberry") is None
             return "abc"
@@ -115,7 +115,7 @@ def test_with_invalid_context_getter():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info) -> str:
+        def abc(self, info: Info[Any, Any]) -> str:
             assert info.context.get("request") is not None
             assert info.context.get("strawberry") is None
             return "abc"
@@ -154,7 +154,7 @@ def test_custom_context():
     @strawberry.type
     class Query:
         @strawberry.field
-        def custom_context_value(self, info: Info) -> str:
+        def custom_context_value(self, info: Info[Any, Any]) -> str:
             return info.context["custom_value"]
 
     schema = strawberry.Schema(query=Query)
@@ -177,7 +177,7 @@ def test_can_set_background_task():
     @strawberry.type
     class Query:
         @strawberry.field
-        def something(self, info: Info) -> str:
+        def something(self, info: Info[Any, Any]) -> str:
             response = info.context["response"]
             response.background.tasks.append(task)
             return "foo"
