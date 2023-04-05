@@ -302,12 +302,12 @@ def make_graphql_controller(
 
         async def get_context(
             self, request: Request[Any, Any], response: Response[Any]
-        ) -> Context:
+        ) -> Context:  # pragma: no cover
             raise ValueError("`get_context` is not used by Starlite's controller")
 
         async def get_root_value(
             self, request: Request[Any, Any]
-        ) -> Optional[RootValue]:
+        ) -> Optional[RootValue]:  # pragma: no cover
             raise ValueError("`get_root_value` is not used by Starlite's controller")
 
         async def get_sub_response(self, request: Request[Any, Any]) -> Response[Any]:

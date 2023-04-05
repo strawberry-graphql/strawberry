@@ -293,10 +293,14 @@ class GraphQLRouter(
     ) -> GraphQLHTTPResponse:
         return process_result(result)
 
-    async def get_context(self, request: Request, response: Response) -> Context:
+    async def get_context(
+        self, request: Request, response: Response
+    ) -> Context:  # pragma: no cover
         raise ValueError("`get_context` is not used by FastAPI GraphQL Router")
 
-    async def get_root_value(self, request: Request) -> Optional[RootValue]:
+    async def get_root_value(
+        self, request: Request
+    ) -> Optional[RootValue]:  # pragma: no cover
         raise ValueError("`get_root_value` is not used by FastAPI GraphQL Router")
 
     async def get_sub_response(self, request: Request) -> Response:
