@@ -10,7 +10,6 @@ from typing import (
     Iterable,
     Mapping,
     Optional,
-    Tuple,
     cast,
 )
 
@@ -21,7 +20,7 @@ from strawberry.aiohttp.handlers import (
 )
 from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
 from strawberry.http.exceptions import HTTPException
-from strawberry.http.types import HTTPMethod, QueryParams
+from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -53,7 +52,7 @@ class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
     def headers(self) -> Mapping[str, str]:
         return self.request.headers
 
-    async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
+    async def get_form_data(self) -> FormData:
         reader = await self.request.multipart()
 
         data: Dict[str, Any] = {}
@@ -67,7 +66,7 @@ class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
             else:
                 data[field.name] = await field.text()
 
-        return data, files
+        return FormData(files=files, form=data)
 
     @property
     def content_type(self) -> Optional[str]:

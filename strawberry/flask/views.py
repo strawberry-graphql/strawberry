@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Union, cast
 
 from flask import Request, Response, render_template_string, request
 from flask.views import View
@@ -10,7 +10,7 @@ from strawberry.http.sync_base_view import (
     SyncBaseHTTPView,
     SyncHTTPRequestAdapter,
 )
-from strawberry.http.types import HTTPMethod, QueryParams
+from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import Context, RootValue
 from strawberry.utils.graphiql import get_graphiql_html
 
@@ -128,8 +128,11 @@ class AsyncFlaskHTTPRequestAdapter(AsyncHTTPRequestAdapter):
     async def get_body(self) -> str:
         return self.request.data.decode()
 
-    async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
-        return self.request.form, self.request.files
+    async def get_form_data(self) -> FormData:
+        return FormData(
+            files=self.request.files,
+            form=self.request.form,
+        )
 
 
 class AsyncGraphQLView(

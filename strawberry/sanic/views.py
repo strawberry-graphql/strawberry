@@ -9,9 +9,7 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Tuple,
     Type,
-    Union,
     cast,
 )
 
@@ -21,7 +19,7 @@ from sanic.views import HTTPMethodView
 from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
 from strawberry.http.exceptions import HTTPException
 from strawberry.http.temporal_response import TemporalResponse
-from strawberry.http.types import HTTPMethod
+from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -39,7 +37,7 @@ class SanicHTTPRequestAdapter(AsyncHTTPRequestAdapter):
         self.request = request
 
     @property
-    def query_params(self) -> Mapping[str, Optional[Union[str, List[str]]]]:
+    def query_params(self) -> QueryParams:
         # Just a heads up, Sanic's request.args uses urllib.parse.parse_qs
         # to parse query string parameters. This returns a dictionary where
         # the keys are the unique variable names and the values are lists
@@ -68,12 +66,12 @@ class SanicHTTPRequestAdapter(AsyncHTTPRequestAdapter):
     async def get_body(self) -> str:
         return self.request.body.decode()
 
-    async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
+    async def get_form_data(self) -> FormData:
         assert self.request.form is not None
 
         files = convert_request_to_files_dict(self.request)
 
-        return self.request.form, files
+        return FormData(form=self.request.form, files=files)
 
 
 class GraphQLView(

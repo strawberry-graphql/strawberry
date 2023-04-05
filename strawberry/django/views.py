@@ -8,7 +8,6 @@ from typing import (
     Callable,
     Mapping,
     Optional,
-    Tuple,
     Union,
     cast,
 )
@@ -26,7 +25,7 @@ from django.views.generic import View
 from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
 from strawberry.http.exceptions import HTTPException
 from strawberry.http.sync_base_view import SyncBaseHTTPView, SyncHTTPRequestAdapter
-from strawberry.http.types import HTTPMethod, QueryParams
+from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -120,8 +119,11 @@ class AsyncDjangoHTTPRequestAdapter(AsyncHTTPRequestAdapter):
     async def get_body(self) -> str:
         return self.request.body.decode()
 
-    async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
-        return self.request.POST, self.request.FILES
+    async def get_form_data(self) -> FormData:
+        return FormData(
+            files=self.request.FILES,
+            form=self.request.POST,
+        )
 
 
 class BaseView:

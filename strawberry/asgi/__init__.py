@@ -7,7 +7,6 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
-    Tuple,
     Union,
     cast,
 )
@@ -23,7 +22,7 @@ from strawberry.asgi.handlers import (
 )
 from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
 from strawberry.http.exceptions import HTTPException
-from strawberry.http.types import HTTPMethod, QueryParams
+from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
     RootValue,
@@ -61,10 +60,13 @@ class ASGIRequestAdapter(AsyncHTTPRequestAdapter):
     async def get_body(self) -> bytes:
         return await self.request.body()
 
-    async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
+    async def get_form_data(self) -> FormData:
         multipart_data = await self.request.form()
 
-        return multipart_data, multipart_data
+        return FormData(
+            files=multipart_data,
+            form=multipart_data,
+        )
 
 
 class GraphQL(

@@ -129,11 +129,9 @@ async def test_missing_query(http_client: HttpClient):
     )
 
     assert response.status_code == 400
-    # TODO: consolidate this
-    assert (
-        "No GraphQL query found in the request" in response.text
-        or "No valid query was provided for the request" in response.text
-    )
+    assert "No GraphQL query found in the request" in response.text
+    # assert (
+    #     or "No valid query was provided for the request" in response.text
 
 
 @pytest.mark.parametrize("method", ["get", "post"])

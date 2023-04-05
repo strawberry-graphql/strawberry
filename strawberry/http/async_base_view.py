@@ -1,13 +1,11 @@
 import abc
 import json
 from typing import (
-    Any,
     Callable,
     Dict,
     Generic,
     Mapping,
     Optional,
-    Tuple,
     Union,
 )
 
@@ -22,7 +20,7 @@ from strawberry.types.graphql import OperationType
 
 from .base import BaseView
 from .exceptions import HTTPException
-from .types import HTTPMethod, QueryParams
+from .types import FormData, HTTPMethod, QueryParams
 from .typevars import Context, Request, Response, RootValue, SubResponse
 
 
@@ -52,8 +50,7 @@ class AsyncHTTPRequestAdapter(abc.ABC):
         ...
 
     @abc.abstractmethod
-    # TODO: type for form data, since the second parameter is files
-    async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
+    async def get_form_data(self) -> FormData:
         ...
 
 
@@ -126,12 +123,12 @@ class AsyncBaseHTTPView(
 
     async def parse_multipart(self, request: AsyncHTTPRequestAdapter) -> Dict[str, str]:
         try:
-            form_data, files = await request.get_form_data()
+            form_data = await request.get_form_data()
         except ValueError as e:
             raise HTTPException(400, "Unable to parse the multipart body") from e
 
-        operations = form_data.get("operations", "{}")
-        files_map = form_data.get("map", "{}")
+        operations = form_data["form"].get("operations", "{}")
+        files_map = form_data["form"].get("map", "{}")
 
         if isinstance(operations, (bytes, str)):
             operations = self.parse_json(operations)
@@ -140,7 +137,9 @@ class AsyncBaseHTTPView(
             files_map = self.parse_json(files_map)
 
         try:
-            return replace_placeholders_with_files(operations, files_map, files)
+            return replace_placeholders_with_files(
+                operations, files_map, form_data["files"]
+            )
         except KeyError as e:
             raise HTTPException(400, "File(s) missing in form data") from e
 

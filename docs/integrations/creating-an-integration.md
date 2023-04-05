@@ -67,14 +67,14 @@ The methods above are the bare minimum that you need to implement to create a
 view. They are all required, but you can also override other methods to change
 the behaviour of the view.
 
-On top of that we also need a request adapter, here's the protocol for the async
+On top of that we also need a request adapter, here's the base class for the async
 version:
 
 ```python
-from strawberry.http.types import HTTPMethod, QueryParams
+from strawberry.http.types import HTTPMethod, QueryParams, FormData
 
 
-class AsyncHTTPRequestAdapterProtocol(Protocol):
+class AsyncHTTPRequestAdapter:
     @property
     def query_params(self) -> Mapping[str, Optional[Union[str, List[str]]]]:
         ...
@@ -91,10 +91,10 @@ class AsyncHTTPRequestAdapterProtocol(Protocol):
     def content_type(self) -> Optional[str]:
         ...
 
-    async def get_body(self) -> str:
+    async def get_body(self) -> Union[bytes, str]:
         ...
 
-    async def get_form_data(self) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
+    async def get_form_data(self) -> FormData:
         ...
 ```
 
