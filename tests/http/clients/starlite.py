@@ -88,7 +88,11 @@ class StarliteHttpClient(HttpClient):
             **kwargs,
         )
 
-        return Response(status_code=response.status_code, data=response.content)
+        return Response(
+            status_code=response.status_code,
+            data=response.content,
+            headers=response.headers,
+        )
 
     async def request(
         self,
@@ -101,6 +105,7 @@ class StarliteHttpClient(HttpClient):
         return Response(
             status_code=response.status_code,
             data=response.content,
+            headers=response.headers,
         )
 
     async def get(
@@ -122,4 +127,5 @@ class StarliteHttpClient(HttpClient):
         return Response(
             status_code=response.status_code,
             data=response.content,
+            headers=response.headers,
         )

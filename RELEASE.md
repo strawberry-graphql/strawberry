@@ -3,9 +3,14 @@ Release type: minor
 This release updates all\* the HTTP integration to use the same base class,
 which makes it easier to maintain and extend them in future releases.
 
-While this doesn't provide any new features, it does make it easier to extend
-the HTTP integrations in the future. So, expect some new features in the next
-releases!
+While this doesn't provide any new features (other than settings headers in
+Chalice and Sanic), it does make it easier to extend the HTTP integrations in
+the future. So, expect some new features in the next releases!
+
+**New features:**
+
+Now both Chalice and Sanic integrations support setting headers in the response.
+Bringing them to the same level as the other HTTP integrations.
 
 **Breaking changes:**
 

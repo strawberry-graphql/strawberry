@@ -108,6 +108,13 @@ class Query:
 
         return "hey"
 
+    @strawberry.field
+    def set_header(self, info: Info[Any, Any], name: str) -> str:
+        response = info.context["response"]
+        response.headers["X-Name"] = name
+
+        return name
+
 
 @strawberry.type
 class Mutation:

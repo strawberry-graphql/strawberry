@@ -95,7 +95,11 @@ class SanicHttpClient(HttpClient):
             **kwargs,
         )
 
-        return Response(status_code=response.status_code, data=response.content)
+        return Response(
+            status_code=response.status_code,
+            data=response.content,
+            headers=response.headers,
+        )
 
     async def request(
         self,
@@ -109,7 +113,11 @@ class SanicHttpClient(HttpClient):
             headers=headers,
         )
 
-        return Response(status_code=response.status_code, data=response.content)
+        return Response(
+            status_code=response.status_code,
+            data=response.content,
+            headers=response.headers,
+        )
 
     async def get(
         self,
@@ -130,4 +138,8 @@ class SanicHttpClient(HttpClient):
             "post", url, content=body, headers=headers
         )
 
-        return Response(status_code=response.status_code, data=response.content)
+        return Response(
+            status_code=response.status_code,
+            data=response.content,
+            headers=response.headers,
+        )

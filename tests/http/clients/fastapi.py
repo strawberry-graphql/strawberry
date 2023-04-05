@@ -123,7 +123,11 @@ class FastAPIHttpClient(HttpClient):
             **kwargs,
         )
 
-        return Response(status_code=response.status_code, data=response.content)
+        return Response(
+            status_code=response.status_code,
+            data=response.content,
+            headers=response.headers,
+        )
 
     async def request(
         self,
@@ -136,6 +140,7 @@ class FastAPIHttpClient(HttpClient):
         return Response(
             status_code=response.status_code,
             data=response.content,
+            headers=response.headers,
         )
 
     async def get(
@@ -157,6 +162,7 @@ class FastAPIHttpClient(HttpClient):
         return Response(
             status_code=response.status_code,
             data=response.content,
+            headers=response.headers,
         )
 
     @contextlib.asynccontextmanager

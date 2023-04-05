@@ -120,6 +120,7 @@ class FlaskHttpClient(HttpClient):
         return Response(
             status_code=response.status_code,
             data=response.data,
+            headers=response.headers,
         )
 
     async def request(

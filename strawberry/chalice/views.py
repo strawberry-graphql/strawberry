@@ -108,7 +108,11 @@ class GraphQLView(
         if sub_response.status_code != 200:
             status_code = sub_response.status_code
 
-        return Response(body=self.encode_json(response_data), status_code=status_code)
+        return Response(
+            body=self.encode_json(response_data),
+            status_code=status_code,
+            headers=sub_response.headers,
+        )
 
     def execute_request(self, request: Request) -> Response:
         try:
