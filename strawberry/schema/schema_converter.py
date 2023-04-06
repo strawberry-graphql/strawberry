@@ -151,9 +151,9 @@ class GraphQLCoreConverter:
             enum=enum,
             name=enum_name,
             values={
-                self.config.name_converter.from_enum_value(item): self.from_enum_value(
-                    item
-                )
+                self.config.name_converter.from_enum_value(
+                    enum, item
+                ): self.from_enum_value(item)
                 for item in enum.values
             },
             description=enum.description,

@@ -55,8 +55,8 @@ class AppendsNameConverter(NameConverter):
     def from_enum(self, enum: EnumDefinition) -> str:
         return super().from_enum(enum) + self.suffix
 
-    def from_enum_value(self, enum_value: EnumValue) -> str:
-        return super().from_enum_value(enum_value) + self.suffix
+    def from_enum_value(self, enum: EnumDefinition, enum_value: EnumValue) -> str:
+        return super().from_enum_value(enum, enum_value) + self.suffix
 
 
 # TODO: maybe we should have a kitchen sink schema that we can reuse for tests

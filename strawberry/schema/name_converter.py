@@ -76,7 +76,7 @@ class NameConverter:
     def from_enum(self, enum: EnumDefinition) -> str:
         return enum.name
 
-    def from_enum_value(self, enum_value: EnumValue) -> str:
+    def from_enum_value(self, enum: EnumDefinition, enum_value: EnumValue) -> str:
         return enum_value.name
 
     def from_directive(
