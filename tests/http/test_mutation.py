@@ -11,4 +11,4 @@ async def test_mutation(http_client: HttpClient):
     data = response.json["data"]
 
     assert response.status_code == 200
-    assert data["hello"] == "strawberry"  # type: ignore
+    assert data["hello"] == "strawberry"

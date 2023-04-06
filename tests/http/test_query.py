@@ -14,7 +14,7 @@ async def test_graphql_query(method: Literal["get", "post"], http_client: HttpCl
     data = response.json["data"]
 
     assert response.status_code == 200
-    assert data["hello"] == "Hello world"  # type: ignore
+    assert data["hello"] == "Hello world"
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
@@ -29,7 +29,7 @@ async def test_graphql_can_pass_variables(
     data = response.json["data"]
 
     assert response.status_code == 200
-    assert data["hello"] == "Hello Jake"  # type: ignore
+    assert data["hello"] == "Hello Jake"
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
@@ -41,7 +41,7 @@ async def test_root_value(method: Literal["get", "post"], http_client: HttpClien
     data = response.json["data"]
 
     assert response.status_code == 200
-    assert data["rootName"] == "Query"  # type: ignore
+    assert data["rootName"] == "Query"
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
@@ -141,7 +141,7 @@ async def test_query_context(method: Literal["get", "post"], http_client: HttpCl
     data = response.json["data"]
 
     assert response.status_code == 200
-    assert data["valueFromContext"] == "a value from context"  # type: ignore
+    assert data["valueFromContext"] == "a value from context"
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
