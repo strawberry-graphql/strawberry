@@ -28,6 +28,7 @@ from strawberry.utils.operation import get_operation_type
 if TYPE_CHECKING:
     from datetime import timedelta
 
+    from strawberry.http.async_base_view import AsyncBaseHTTPView
     from strawberry.schema import BaseSchema
     from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
         GraphQLTransportMessage,
@@ -37,10 +38,12 @@ if TYPE_CHECKING:
 class BaseGraphQLTransportWSHandler(ABC):
     def __init__(
         self,
+        view: Optional[AsyncBaseHTTPView],
         schema: BaseSchema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
     ):
+        self.view = view
         self.schema = schema
         self.debug = debug
         self.connection_init_wait_timeout = connection_init_wait_timeout

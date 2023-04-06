@@ -24,7 +24,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         get_root_value,
         ws: ChannelsWSConsumer,
     ):
-        super().__init__(schema, debug, connection_init_wait_timeout)
+        super().__init__(None, schema, debug, connection_init_wait_timeout)
         self._get_context = get_context
         self._get_root_value = get_root_value
         self._ws = ws

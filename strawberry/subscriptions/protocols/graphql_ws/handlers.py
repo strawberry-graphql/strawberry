@@ -24,6 +24,7 @@ from strawberry.subscriptions.protocols.graphql_ws import (
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 if TYPE_CHECKING:
+    from strawberry.http.async_base_view import AsyncBaseHTTPView
     from strawberry.schema import BaseSchema
     from strawberry.subscriptions.protocols.graphql_ws.types import (
         ConnectionInitPayload,
@@ -36,11 +37,13 @@ if TYPE_CHECKING:
 class BaseGraphQLWSHandler(ABC):
     def __init__(
         self,
+        view: Optional[AsyncBaseHTTPView],
         schema: BaseSchema,
         debug: bool,
         keep_alive: bool,
         keep_alive_interval: float,
     ):
+        self.view = view
         self.schema = schema
         self.debug = debug
         self.keep_alive = keep_alive

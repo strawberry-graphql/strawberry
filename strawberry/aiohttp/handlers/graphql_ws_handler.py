@@ -8,6 +8,7 @@ from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
 
 if TYPE_CHECKING:
+    from strawberry.http.async_base_view import AsyncBaseHTTPView
     from strawberry.schema import BaseSchema
     from strawberry.subscriptions.protocols.graphql_ws.types import OperationMessage
 
@@ -15,6 +16,7 @@ if TYPE_CHECKING:
 class GraphQLWSHandler(BaseGraphQLWSHandler):
     def __init__(
         self,
+        view: AsyncBaseHTTPView,
         schema: BaseSchema,
         debug: bool,
         keep_alive: bool,
@@ -23,7 +25,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         get_root_value,
         request: web.Request,
     ):
-        super().__init__(schema, debug, keep_alive, keep_alive_interval)
+        super().__init__(view, schema, debug, keep_alive, keep_alive_interval)
         self._get_context = get_context
         self._get_root_value = get_root_value
         self._request = request

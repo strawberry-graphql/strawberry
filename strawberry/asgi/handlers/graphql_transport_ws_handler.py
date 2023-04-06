@@ -14,12 +14,14 @@ if TYPE_CHECKING:
 
     from starlette.websockets import WebSocket
 
+    from strawberry.http.async_base_view import AsyncBaseHTTPView
     from strawberry.schema import BaseSchema
 
 
 class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
     def __init__(
         self,
+        view: AsyncBaseHTTPView,
         schema: BaseSchema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
@@ -27,7 +29,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         get_root_value,
         ws: WebSocket,
     ):
-        super().__init__(schema, debug, connection_init_wait_timeout)
+        super().__init__(view, schema, debug, connection_init_wait_timeout)
         self._get_context = get_context
         self._get_root_value = get_root_value
         self._ws = ws

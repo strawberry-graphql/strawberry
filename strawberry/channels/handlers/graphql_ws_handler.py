@@ -23,7 +23,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         get_root_value,
         ws: ChannelsWSConsumer,
     ):
-        super().__init__(schema, debug, keep_alive, keep_alive_interval)
+        super().__init__(None, schema, debug, keep_alive, keep_alive_interval)
         self._get_context = get_context
         self._get_root_value = get_root_value
         self._ws = ws

@@ -116,6 +116,7 @@ class GraphQL(
 
             if preferred_protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
                 await self.graphql_transport_ws_handler_class(
+                    view=self,
                     schema=self.schema,
                     debug=self.debug,
                     connection_init_wait_timeout=self.connection_init_wait_timeout,
@@ -125,6 +126,7 @@ class GraphQL(
                 ).handle()
             elif preferred_protocol == GRAPHQL_WS_PROTOCOL:
                 await self.graphql_ws_handler_class(
+                    view=self,
                     schema=self.schema,
                     debug=self.debug,
                     keep_alive=self.keep_alive,
