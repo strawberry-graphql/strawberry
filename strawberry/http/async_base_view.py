@@ -218,9 +218,7 @@ class AsyncBaseHTTPView(
 
     async def on_ws_connect(
         self, connection_params: Optional[Dict[str, Any]]
-    ) -> Union[
-        Literal[False], None, Dict[str, Any]
-    ]:
+    ) -> Union[Literal[False], None, Dict[str, Any]]:
         """
         Validate the connection parameters provided with a websocket connection.
         The default implementation leaves them unmodified, and returns no
