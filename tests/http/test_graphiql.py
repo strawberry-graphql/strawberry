@@ -15,14 +15,15 @@ async def test_renders_graphiql(header_value: str, http_client_class: Type[HttpC
     assert "<title>Strawberry GraphiQL</title>" in response.text
 
 
-async def test_does_not_render_graphiql_if_missing_accept(
+async def test_does_not_render_graphiql_if_wrong_accept(
     http_client_class: Type[HttpClient],
 ):
     http_client = http_client_class()
     response = await http_client.get("/graphql", headers={"Accept": "text/xml"})
 
-    # TODO: django returns a 400, but we should be returning a 404
-    assert response.status_code in (404, 400)
+    # THIS might need to be changed to 404
+
+    assert response.status_code == 400
 
 
 async def test_renders_graphiql_disabled(http_client_class: Type[HttpClient]):

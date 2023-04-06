@@ -18,14 +18,14 @@ from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(BaseGraphQLView[object, Query]):
     result_override: ResultOverrideFunction = None
 
-    def __init__(self, *args: str, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 
-    def get_root_value(self) -> Query:
+    async def get_root_value(self, request: SanicRequest) -> Query:
         return Query()
 
     async def get_context(
@@ -95,7 +95,11 @@ class SanicHttpClient(HttpClient):
             **kwargs,
         )
 
-        return Response(status_code=response.status_code, data=response.content)
+        return Response(
+            status_code=response.status_code,
+            data=response.content,
+            headers=response.headers,
+        )
 
     async def request(
         self,
@@ -109,7 +113,11 @@ class SanicHttpClient(HttpClient):
             headers=headers,
         )
 
-        return Response(status_code=response.status_code, data=response.content)
+        return Response(
+            status_code=response.status_code,
+            data=response.content,
+            headers=response.headers,
+        )
 
     async def get(
         self,
@@ -130,4 +138,8 @@ class SanicHttpClient(HttpClient):
             "post", url, content=body, headers=headers
         )
 
-        return Response(status_code=response.status_code, data=response.content)
+        return Response(
+            status_code=response.status_code,
+            data=response.content,
+            headers=response.headers,
+        )

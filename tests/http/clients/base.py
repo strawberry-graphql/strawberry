@@ -9,6 +9,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Mapping,
     Optional,
 )
 from typing_extensions import Literal
@@ -24,7 +25,7 @@ ResultOverrideFunction = Optional[Callable[[ExecutionResult], GraphQLHTTPRespons
 class Response:
     status_code: int
     data: bytes
-    # TODO: headers
+    headers: Mapping[str, str]
 
     @property
     def text(self) -> str:
@@ -53,7 +54,7 @@ class HttpClient(abc.ABC):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
         ...
 
