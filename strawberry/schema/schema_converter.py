@@ -150,7 +150,12 @@ class GraphQLCoreConverter:
         graphql_enum = CustomGraphQLEnumType(
             enum=enum,
             name=enum_name,
-            values={item.name: self.from_enum_value(item) for item in enum.values},
+            values={
+                self.config.name_converter.from_enum_value(item): self.from_enum_value(
+                    item
+                )
+                for item in enum.values
+            },
             description=enum.description,
             extensions={
                 GraphQLCoreConverter.DEFINITION_BACKREF: enum,
