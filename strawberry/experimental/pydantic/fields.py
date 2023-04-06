@@ -18,7 +18,7 @@ try:
     from typing import GenericAlias as TypingGenericAlias  # type: ignore
 except ImportError:
     # python < 3.9 does not have GenericAlias (list[int], tuple[str, ...] and so on)
-    TypingGenericAlias = ()
+    TypingGenericAlias = ()  # type: ignore
 
 
 ATTR_TO_TYPE_MAP = {
