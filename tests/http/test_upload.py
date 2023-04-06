@@ -49,8 +49,8 @@ async def test_file_list_upload(http_client: HttpClient):
     data = response.json["data"]
 
     assert len(data["readFiles"]) == 2
-    assert data["readFiles"][0] == "strawberry1"
-    assert data["readFiles"][1] == "strawberry2"
+    assert data["readFiles"][0] == "strawberry1"  # type: ignore
+    assert data["readFiles"][1] == "strawberry2"  # type: ignore
 
 
 async def test_nested_file_list(http_client: HttpClient):
@@ -66,8 +66,8 @@ async def test_nested_file_list(http_client: HttpClient):
 
     data = response.json["data"]
     assert len(data["readFolder"]) == 2
-    assert data["readFolder"][0] == "strawberry1"
-    assert data["readFolder"][1] == "strawberry2"
+    assert data["readFolder"][0] == "strawberry1"  # type: ignore
+    assert data["readFolder"][1] == "strawberry2"  # type: ignore
 
 
 async def test_upload_single_and_list_file_together(http_client: HttpClient):
@@ -89,9 +89,9 @@ async def test_upload_single_and_list_file_together(http_client: HttpClient):
 
     data = response.json["data"]
     assert len(data["readFiles"]) == 2
-    assert data["readFiles"][0] == "strawberry1"
-    assert data["readFiles"][1] == "strawberry2"
-    assert data["readText"] == "strawberry3"
+    assert data["readFiles"][0] == "strawberry1"  # type: ignore
+    assert data["readFiles"][1] == "strawberry2"  # type: ignore
+    assert data["readText"] == "strawberry3"  # type: ignore
 
 
 async def test_upload_invalid_query(http_client: HttpClient):
