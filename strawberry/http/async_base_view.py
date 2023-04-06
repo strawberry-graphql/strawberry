@@ -1,6 +1,7 @@
 import abc
 import json
 from typing import (
+    Any,
     Callable,
     Dict,
     Generic,
@@ -8,6 +9,7 @@ from typing import (
     Optional,
     Union,
 )
+from typing_extensions import Literal
 
 from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
@@ -213,3 +215,18 @@ class AsyncBaseHTTPView(
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
+
+    async def on_ws_connect(
+        self, connection_params: Optional[Dict[str, Any]]
+    ) -> Union[
+        Literal[False], None, Dict[str, Any]
+    ]:
+        """
+        Validate the connection parameters provided with a websocket connection.
+        The default implementation leaves them unmodified, and returns no
+        response payload.
+        A custom implementation may return False to reject the connection.
+        Otherwise, it may optionally modify the parameters and return
+        a payload to the client.
+        """
+        return None

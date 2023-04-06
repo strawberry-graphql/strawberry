@@ -1,5 +1,5 @@
 import asyncio
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Type
 
 import pytest
 import pytest_asyncio
@@ -18,7 +18,12 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_STOP,
 )
 
-from ..http.clients import AioHttpClient, HttpClient, WebSocketClient
+from ..http.clients import (
+    AioHttpClient,
+    ChannelsHttpClient,
+    HttpClient,
+    WebSocketClient,
+)
 
 
 @pytest_asyncio.fixture
@@ -546,10 +551,14 @@ async def test_rejects_connection_params(aiohttp_app_client: HttpClient):
         assert ws.closed
 
 
-async def test_connection_handler_add(ws_raw: WebSocketClient):
+async def test_connection_handler_add(
+    ws_raw: WebSocketClient, http_client_class: Type[HttpClient]
+):
     """
     Test that custom on_ws_connect() can add to connection_params
     """
+    if http_client_class == ChannelsHttpClient:
+        pytest.skip("View integration not enabled for Channels")
     ws = ws_raw
     payload = {"add": True}
     await ws.send_json(
@@ -581,10 +590,14 @@ async def test_connection_handler_add(ws_raw: WebSocketClient):
     }
 
 
-async def test_connection_handler_reject(ws_raw: WebSocketClient):
+async def test_connection_handler_reject(
+    ws_raw: WebSocketClient, http_client_class: Type[HttpClient]
+):
     """
     Test that custom on_ws_connect() can reject a connection
     """
+    if http_client_class == ChannelsHttpClient:
+        pytest.skip("View integration not enabled for Channels")
     ws = ws_raw
     payload = {"reject-me": True}
     await ws.send_json(
@@ -602,10 +615,14 @@ async def test_connection_handler_reject(ws_raw: WebSocketClient):
     assert ws.closed
 
 
-async def test_connection_handler_response(ws_raw: WebSocketClient):
+async def test_connection_handler_response(
+    ws_raw: WebSocketClient, http_client_class: Type[HttpClient]
+):
     """
     Test that custom on_ws_connect() can return a payload
     """
+    if http_client_class == ChannelsHttpClient:
+        pytest.skip("View integration not enabled for Channels")
     ws = ws_raw
     payload = {"response": {"my-response": "hello"}}
     await ws.send_json(

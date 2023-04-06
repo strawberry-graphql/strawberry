@@ -140,10 +140,15 @@ class BaseGraphQLTransportWSHandler(ABC):
 
         self.connection_init_received = True
         payload = message.payload or {}
-        response = await self.schema.on_ws_connect(payload)
-        if response is False:
-            await self.close(code=4403, reason="Forbidden")
-            return
+        # self.view is still optional until channels integration
+        # is migrated to use views.
+        if self.view:
+            response = await self.view.on_ws_connect(payload)
+            if response is False:
+                await self.close(code=4403, reason="Forbidden")
+                return
+        else:
+            response = None
 
         self.connection_params = payload
         self.connection_acknowledged = True
