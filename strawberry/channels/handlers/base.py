@@ -17,7 +17,6 @@ from weakref import WeakSet
 
 from channels.consumer import AsyncConsumer
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from strawberry.channels.context import StrawberryChannelsContext
 
 
 class ChannelsMessage(TypedDict, total=False):
@@ -81,18 +80,6 @@ class ChannelsConsumer(AsyncConsumer):
             header_name.decode().lower(): header_value.decode()
             for header_name, header_value in self.scope["headers"]
         }
-
-    async def get_root_value(self, request: Optional["ChannelsConsumer"] = None) -> Any:
-        return None
-
-    async def get_context(
-        self,
-        request: Optional["ChannelsConsumer"] = None,
-        connection_params: Optional[Dict[str, Any]] = None,
-    ) -> StrawberryChannelsContext:
-        return StrawberryChannelsContext(
-            request=request or self, connection_params=connection_params
-        )
 
     async def dispatch(self, message: ChannelsMessage) -> None:
         # AsyncConsumer will try to get a function for message["type"] to handle

@@ -6,8 +6,8 @@ from io import BytesIO
 from typing import Any, AsyncGenerator, Dict, List, Optional
 from typing_extensions import Literal
 
-from channels.testing import WebsocketCommunicator
-from strawberry.channels import GraphQLWSConsumer
+from channels.testing import HttpCommunicator, WebsocketCommunicator
+from strawberry.channels import GraphQLHTTPConsumer, GraphQLWSConsumer
 from tests.views.schema import schema
 
 from ..context import get_context
@@ -44,13 +44,20 @@ class ChannelsHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
-        self.app = DebuggableGraphQLTransportWSConsumer.as_asgi(
+        self.ws_app = DebuggableGraphQLTransportWSConsumer.as_asgi(
             schema=schema,
             keep_alive=False,
         )
+        self.http_app = GraphQLHTTPConsumer.as_asgi(
+            schema=schema,
+            graphiql=graphiql,
+            allow_queries_via_get=allow_queries_via_get,
+        )
 
     def create_app(self, **kwargs: Any) -> None:
-        self.app = DebuggableGraphQLTransportWSConsumer.as_asgi(schema=schema, **kwargs)
+        self.ws_app = DebuggableGraphQLTransportWSConsumer.as_asgi(
+            schema=schema, **kwargs
+        )
 
     async def _graphql_request(
         self,
@@ -59,9 +66,37 @@ class ChannelsHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
-        raise NotImplementedError
+        body = self._build_body(
+            query=query, variables=variables, files=files, method=method
+        )
+
+        if method == "get":
+            kwargs["params"] = body
+        elif body:
+            if files:
+                kwargs["data"] = body
+            else:
+                kwargs["content"] = json.dumps(body)
+
+        if files is not None:
+            kwargs["files"] = files
+
+        communicator = HttpCommunicator(
+            self.http_app,
+            method.upper(),
+            "/graphql",
+            self._get_headers(method=method, headers=headers, files=files),
+            **kwargs,
+        )
+        response = await communicator.get_response()
+
+        return Response(
+            status_code=response["status"],
+            data=response["body"].decode(),
+            headers=response["headers"],
+        )
 
     async def request(
         self,
@@ -69,14 +104,26 @@ class ChannelsHttpClient(HttpClient):
         method: Literal["get", "post", "patch", "put", "delete"],
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
-        raise NotImplementedError
+        communicator = HttpCommunicator(
+            self.http_app,
+            method.upper(),
+            url,
+            headers=headers,
+        )
+        response = await communicator.get_response()
+
+        return Response(
+            status_code=response["status"],
+            data=response["body"].decode(),
+            headers=response["headers"],
+        )
 
     async def get(
         self,
         url: str,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
-        raise NotImplementedError
+        return await self.request(url, "get", headers=headers)
 
     async def post(
         self,
@@ -85,7 +132,13 @@ class ChannelsHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
-        raise NotImplementedError
+        response = self.client.post(url, headers=headers, content=data, json=json)
+
+        return Response(
+            status_code=response.status_code,
+            data=response.content,
+            headers=response.headers,
+        )
 
     @contextlib.asynccontextmanager
     async def ws_connect(
@@ -94,7 +147,7 @@ class ChannelsHttpClient(HttpClient):
         *,
         protocols: List[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
-        client = WebsocketCommunicator(self.app, url, subprotocols=protocols)
+        client = WebsocketCommunicator(self.ws_app, url, subprotocols=protocols)
 
         res = await client.connect()
         assert res == (True, protocols[0])
