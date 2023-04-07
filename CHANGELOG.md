@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.171.1 - 2023-04-07
+--------------------
+
+This release fix the return value of enums when using a custom
+name converter for them.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2696](https://github.com/strawberry-graphql/strawberry/pull/2696/)
+
+
 0.171.0 - 2023-04-06
 --------------------
 
