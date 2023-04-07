@@ -170,6 +170,8 @@ class AsyncBaseHTTPView(
         except KeyError as e:
             raise HTTPException(400, "File(s) missing in form data") from e
 
+        response_data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]]
+
         if isinstance(request_data, list):
             # TODO: validation
             tasks = [
@@ -242,7 +244,7 @@ class AsyncBaseHTTPView(
             return [
                 GraphQLRequestData(
                     query=item.get("query"),
-                    variables=item.get("variables"),  # type: ignore
+                    variables=item.get("variables"),
                     operation_name=item.get("operationName"),
                 )
                 for item in data

@@ -4,6 +4,7 @@ from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -187,7 +188,9 @@ class GraphQL(
         return HTMLResponse(html)
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: Response
+        self,
+        response_data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]],
+        sub_response: Response,
     ) -> Response:
         response = Response(
             self.encode_json(response_data),

@@ -297,6 +297,8 @@ we use `json.dumps` but you can override this method to use a different encoder.
 
 ```python
 class MyGraphQLRouter(GraphQLRouter):
-    def encode_json(self, data: GraphQLHTTPResponse) -> str:
+    def encode_json(
+        self, data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]]
+    ) -> str:
         return json.dumps(data, indent=2)
 ```
