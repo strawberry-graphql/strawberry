@@ -95,7 +95,9 @@ class CustomGraphQLEnumType(GraphQLEnumType):
                 if output_value.value == value.value:
                     return name
 
-            raise ValueError(f"Invalid value for enum {self.name}: {output_value}")
+            raise ValueError(
+                f"Invalid value for enum {self.name}: {output_value}"
+            )  # pragma: no cover
 
         return super().serialize(output_value)
 
