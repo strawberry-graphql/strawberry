@@ -8,6 +8,7 @@ from ..http.clients import (
     ChannelsHttpClient,
     FastAPIHttpClient,
     HttpClient,
+    StarliteHttpClient,
 )
 
 
@@ -17,8 +18,9 @@ from ..http.clients import (
         AsgiHttpClient,
         FastAPIHttpClient,
         ChannelsHttpClient,
+        StarliteHttpClient,
     ],
-    ids=["aio", "asgi", "fastapi", "channels"],
+    ids=["aio", "asgi", "fastapi", "channels", "starlite"],
 )
 def http_client_class(request) -> Type[HttpClient]:
     return request.param

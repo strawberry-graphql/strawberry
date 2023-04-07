@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+import contextlib
 from io import BytesIO
 from typing import Any, Dict, Optional
 from typing_extensions import Literal
 
 from starlite import Request, Starlite
+from starlite.exceptions import WebSocketDisconnect
 from starlite.testing import TestClient
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.starlite import make_graphql_controller
@@ -13,7 +15,14 @@ from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
 from ..context import get_context
-from .base import JSON, HttpClient, Response, ResultOverrideFunction
+from .base import (
+    JSON,
+    HttpClient,
+    Message,
+    Response,
+    ResultOverrideFunction,
+    WebSocketClient,
+)
 
 
 def custom_context_dependency() -> str:
@@ -35,13 +44,19 @@ class StarliteHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
+        self.create_app(
+            graphiql=graphiql,
+            allow_queries_via_get=allow_queries_via_get,
+            result_override=result_override,
+        )
+
+    def create_app(self, result_override: ResultOverrideFunction = None, **kwargs: Any):
         BaseGraphQLController = make_graphql_controller(
             schema=schema,
             path="/graphql",
-            graphiql=graphiql,
             context_getter=starlite_get_context,
             root_value_getter=get_root_value,
-            allow_queries_via_get=allow_queries_via_get,
+            **kwargs,
         )
 
         class GraphQLController(BaseGraphQLController):
@@ -54,7 +69,6 @@ class StarliteHttpClient(HttpClient):
                 return await super().process_result(request, result)
 
         self.app = Starlite(route_handlers=[GraphQLController])
-
         self.client = TestClient(self.app)
 
     async def _graphql_request(
@@ -129,3 +143,82 @@ class StarliteHttpClient(HttpClient):
             data=response.content,
             headers=response.headers,
         )
+
+    @contextlib.asynccontextmanager
+    async def ws_connect(
+        self,
+        url: str,
+        *,
+        protocols: List[str],
+    ) -> AsyncGenerator[WebSocketClient, None]:
+        try:
+            with self.client.websocket_connect(url, protocols) as ws:
+                yield StarliteWebSocketClient(ws)
+        except WebSocketDisconnect as error:
+            ws = StarliteWebSocketClient(None)
+            ws.handle_disconnect(error)
+            yield ws
+
+
+class StarliteWebSocketClient(WebSocketClient):
+    def __init__(self, ws: Any):
+        self.ws = ws
+        self._closed: bool = False
+        self._close_code: Optional[int] = None
+        self._close_reason: Optional[str] = None
+
+    def handle_disconnect(self, exc: WebSocketDisconnect) -> None:
+        self._closed = True
+        self._close_code = exc.code
+        self._close_reason = exc.reason
+
+    async def send_json(self, payload: Dict[str, Any]) -> None:
+        self.ws.send_json(payload)
+
+    async def send_bytes(self, payload: bytes) -> None:
+        self.ws.send_bytes(payload)
+
+    async def receive(self, timeout: Optional[float] = None) -> Message:
+        if self._closed:
+            # if close was received via exception, fake it so that recv works
+            return Message(
+                type="websocket.close", data=self._close_code, extra=self._close_reason
+            )
+        try:
+            m = self.ws.receive()
+        except WebSocketDisconnect as exc:
+            self._closed = True
+            self._close_code = exc.code
+            self._close_reason = exc.detail
+            return Message(type="websocket.close", data=exc.code, extra=exc.detail)
+        if m["type"] == "websocket.close":
+            # Probably never happens
+            self._closed = True
+            self._close_code = m["code"]
+            self._close_reason = m["reason"]
+            return Message(type=m["type"], data=m["code"], extra=m["reason"])
+        elif m["type"] == "websocket.send":
+            return Message(type=m["type"], data=m["text"])
+        return Message(type=m["type"], data=m["data"], extra=m["extra"])
+
+    async def receive_json(self, timeout: Optional[float] = None) -> Any:
+        m = self.ws.receive()
+        assert m["type"] == "websocket.send"
+        assert "text" in m
+        return json.loads(m["text"])
+
+    async def close(self) -> None:
+        self.ws.close()
+        self._closed = True
+
+    @property
+    def closed(self) -> bool:
+        return self._closed
+
+    @property
+    def close_code(self) -> int:
+        assert self._close_code is not None
+        return self._close_code
+
+    def assert_reason(self, reason: str) -> None:
+        assert self._close_reason == reason
