@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Generic, List, TypeVar, Union
+from typing import Generic, List, Optional, TypeVar, Union
 
 import strawberry
 from strawberry.arguments import StrawberryArgument
@@ -112,12 +112,17 @@ class Query:
     def user(self, input: UserInput) -> Union[User, Error]:
         return User(name="Patrick")
 
-    field_x: MyGeneric[str]
+    enum: MyEnum = MyEnum.A
+    field: Optional[MyGeneric[str]] = None
+
+    @strawberry.field
+    def print(self, enum: MyEnum) -> str:
+        return enum.value
 
 
 schema = strawberry.Schema(
     query=Query,
-    types=[MyScalar, MyEnum, Node],
+    types=[MyScalar, Node],
     config=StrawberryConfig(name_converter=AppendsNameConverter("X")),
 )
 
@@ -140,8 +145,10 @@ def test_name_converter():
     }
 
     type QueryX {
-      fieldXX: StrMyGenericXX!
+      enumX: MyEnumX!
+      fieldX: StrMyGenericXX
       userX(inputX: UserInputX!): UserXErrorXX! @myDirectiveX(name: "my-directive")
+      printX(enumX: MyEnumX!): String!
     }
 
     scalar SensitiveConfiguration
@@ -162,3 +169,35 @@ def test_name_converter():
     """
 
     assert textwrap.dedent(expected_schema).strip() == str(schema)
+
+
+def test_returns_enum_with_correct_value():
+    query = " { enumX } "
+
+    result = schema.execute_sync(query, root_value=Query())
+
+    assert not result.errors
+
+    assert result.data == {"enumX": "AX"}
+
+
+def test_can_use_enum_value():
+    query = " { printX(enumX: AX) } "
+
+    result = schema.execute_sync(query, root_value=Query())
+
+    assert not result.errors
+
+    assert result.data == {"printX": "a"}
+
+
+def test_can_use_enum_value_with_variable():
+    query = " query ($enum: MyEnumX!) { printX(enumX: $enum) } "
+
+    result = schema.execute_sync(
+        query, root_value=Query(), variable_values={"enum": "AX"}
+    )
+
+    assert not result.errors
+
+    assert result.data == {"printX": "a"}

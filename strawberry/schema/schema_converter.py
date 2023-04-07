@@ -91,7 +91,14 @@ class CustomGraphQLEnumType(GraphQLEnumType):
 
     def serialize(self, output_value: Any) -> str:
         if isinstance(output_value, self.wrapped_cls):
-            return output_value.name
+            for name, value in self.values.items():
+                if output_value.value == value.value:
+                    return name
+
+            raise ValueError(
+                f"Invalid value for enum {self.name}: {output_value}"
+            )  # pragma: no cover
+
         return super().serialize(output_value)
 
     def parse_value(self, input_value: str) -> Any:
