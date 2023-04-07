@@ -58,7 +58,9 @@ class MyView(
         ...
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: SubResponse
+        self,
+        response_data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]],
+        sub_response: SubResponse,
     ) -> Response:
         ...
 ```

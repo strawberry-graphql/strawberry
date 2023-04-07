@@ -6,6 +6,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    List,
     Mapping,
     Optional,
     Union,
@@ -159,7 +160,9 @@ class BaseView:
         return response
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: HttpResponse
+        self,
+        response_data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]],
+        sub_response: HttpResponse,
     ) -> HttpResponse:
         data = self.encode_json(response_data)  # type: ignore
 

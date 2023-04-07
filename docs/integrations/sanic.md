@@ -29,7 +29,7 @@ The `GraphQLView` accepts two options at the moment:
   interface.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
-- `def encode_json(self, data: GraphQLHTTPResponse) -> str`
+- `def encode_json(self, data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]]) -> str`
 
 ## Extending the view
 
@@ -124,6 +124,8 @@ we use `json.dumps` but you can override this method to use a different encoder.
 
 ```python
 class MyGraphQLView(GraphQLView):
-    def encode_json(self, data: GraphQLHTTPResponse) -> str:
+    def encode_json(
+        self, data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]]
+    ) -> str:
         return json.dumps(data, indent=2)
 ```
