@@ -9,6 +9,7 @@ from typing_extensions import Literal
 from starlite import Request, Starlite
 from starlite.exceptions import WebSocketDisconnect
 from starlite.testing import TestClient
+from starlite.testing.websocket_test_session import WebSocketTestSession
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.starlite import make_graphql_controller
 from strawberry.starlite.controller import GraphQLTransportWSHandler, GraphQLWSHandler
@@ -177,7 +178,7 @@ class StarliteHttpClient(HttpClient):
 
 
 class StarliteWebSocketClient(WebSocketClient):
-    def __init__(self, ws: Any):
+    def __init__(self, ws: WebSocketTestSession):
         self.ws = ws
         self._closed: bool = False
         self._close_code: Optional[int] = None
