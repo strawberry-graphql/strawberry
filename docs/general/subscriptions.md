@@ -83,7 +83,7 @@ and [server](https://www.apollographql.com/docs/apollo-server/data/subscriptions
 implementations, by reading the contents of the initial
 websocket connection message into the `info.context` object.
 
-The user can override the `on_ws_connect()` method of `strawberry.Schema` to verify the connection parameters and reject the
+The user can override the `on_ws_connect()` method of the integration's `GraphQLView` class to verify the connection parameters and reject the
 connection if they are incorrect. Individual operations can also examine the `connection_params` for fine grained
 permissions.
 
@@ -106,14 +106,17 @@ const wsLink = new GraphQLWsLink(
 When a websocket connection is made, a handler is given the chance to examine
 and modify this information, optionally rejecting the connection.
 Then, upon the establishment of the Susbcription request
-Strawberry injects this `connectionParams` object as follows:
+Strawberry injects this `connectionParams` object into the context as follows (using the aiohttp
+integration as an example):
 
 ```python
 import asyncio
 from typing import AsyncGenerator
 
 import strawberry
+from aiohttp import web
 from strawberry.types import Info
+from strawberry.aiohttp.views import GraphQLView
 
 from .auth import authenticate_token
 
@@ -141,7 +144,7 @@ class Subscription:
 
 # Subclass the schema so that we can pre-process the
 # connection_params
-class Schema(strawberry.Schema):
+class MyView(GraphQLView):
     async def on_ws_connect(
         self, connection_params: Dict[str, Any]
     ) -> Union[Literal[False], None, Dict[str, Any]]:
@@ -159,6 +162,13 @@ class Schema(strawberry.Schema):
 
 
 schema = Schema(query=Query, subscription=Subscription)
+view = GraphQLView(schema=schema, **kwargs)
+app = web.Application()
+app.router.add_route(
+    "*",
+    "/graphql",
+    view,
+)
 ```
 
 Strawberry expects the `connection_params` object to be a mapping of strings to any type.
@@ -390,7 +400,7 @@ initiated from a _websocket_ connection instead of a http request. A client whic
 may well choose to use the same websocket connection for queries and mutations and not use http at all.
 The server cannot know by which _transport_ an operation will be performed and
 therefore must be able to support **both kinds** of authorization/authentication for a resolver.
-If _autentication_ is needed, perform it in the `on_ws_connect()` handler. If per-operation _authorization_ is
+If _authentication_ is needed, perform it in the `on_ws_connect()` handler. If per-operation _authorization_ is
 needed, check for the existence of a `connection_params` member in the context
 
 A query operation requiring authorization, on a server which supports the `graphql_transport_ws` protocol,
