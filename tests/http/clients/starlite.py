@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import json
 import contextlib
+import json
 from io import BytesIO
-from typing import Any, Dict, Optional
+from typing import Any, AsyncGenerator, Dict, List, Optional
 from typing_extensions import Literal
 
 from starlite import Request, Starlite
@@ -11,12 +11,15 @@ from starlite.exceptions import WebSocketDisconnect
 from starlite.testing import TestClient
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.starlite import make_graphql_controller
+from strawberry.starlite.controller import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
 from ..context import get_context
 from .base import (
     JSON,
+    DebuggableGraphQLTransportWSMixin,
+    DebuggableGraphQLWSMixin,
     HttpClient,
     Message,
     Response,
@@ -35,6 +38,16 @@ async def starlite_get_context(request: Request = None):
 
 async def get_root_value(request: Request = None):
     return Query()
+
+
+class DebuggableGraphQLTransportWSHandler(
+    DebuggableGraphQLTransportWSMixin, GraphQLTransportWSHandler
+):
+    pass
+
+
+class DebuggableGraphQLWSHandler(DebuggableGraphQLWSMixin, GraphQLWSHandler):
+    pass
 
 
 class StarliteHttpClient(HttpClient):
@@ -60,6 +73,9 @@ class StarliteHttpClient(HttpClient):
         )
 
         class GraphQLController(BaseGraphQLController):
+            graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
+            graphql_ws_handler_class = DebuggableGraphQLWSHandler
+
             async def process_result(
                 self, request: Request, result: ExecutionResult
             ) -> GraphQLHTTPResponse:
