@@ -168,6 +168,9 @@ class DjangoHttpClient(HttpClient):
         if headers.get("HTTP_CONTENT_TYPE"):
             additional_arguments["content_type"] = headers["HTTP_CONTENT_TYPE"]
 
+        if headers.get("Content-Type"):
+            additional_arguments["content_type"] = headers["Content-Type"]
+
         factory = RequestFactory()
         request = factory.post(
             url,
