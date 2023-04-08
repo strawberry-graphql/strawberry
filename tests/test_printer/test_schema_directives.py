@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import textwrap
+from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
 from typing_extensions import Annotated
