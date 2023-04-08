@@ -3,7 +3,7 @@ from __future__ import annotations
 import urllib.parse
 from io import BytesIO
 from json import dumps
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 from typing_extensions import Literal
 
 from chalice.app import Chalice
@@ -19,7 +19,7 @@ from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(BaseGraphQLView[object, Dict[str, Any]]):
     result_override: ResultOverrideFunction = None
 
     def get_root_value(self, request: ChaliceRequest) -> Query:
@@ -46,6 +46,7 @@ class ChaliceHttpClient(HttpClient):
         self,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
+        allow_batching: bool = False,
         result_override: ResultOverrideFunction = None,
     ):
         self.app = Chalice(app_name="TheStackBadger")
@@ -54,6 +55,7 @@ class ChaliceHttpClient(HttpClient):
             schema=schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
+            allow_batching=allow_batching,
         )
         view.result_override = result_override
 
@@ -70,7 +72,7 @@ class ChaliceHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
         body = self._build_body(
             query=query, variables=variables, files=files, method=method

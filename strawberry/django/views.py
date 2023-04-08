@@ -133,12 +133,14 @@ class BaseView:
         schema: BaseSchema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
+        allow_batching: bool = False,
         subscriptions_enabled: bool = False,
         **kwargs: Any,
     ):
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
+        self.allow_batching = allow_batching
         self.subscriptions_enabled = subscriptions_enabled
 
         super().__init__(**kwargs)
@@ -193,6 +195,7 @@ class GraphQLView(
     subscriptions_enabled = False
     graphiql = True
     allow_queries_via_get = True
+    allow_batching = False
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = DjangoHTTPRequestAdapter
 
@@ -228,6 +231,7 @@ class AsyncGraphQLView(
     subscriptions_enabled = False
     graphiql = True
     allow_queries_via_get = True
+    allow_batching = False
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = AsyncDjangoHTTPRequestAdapter
 

@@ -30,7 +30,7 @@ from .base import (
 )
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(BaseGraphQLView[object, object]):
     result_override: ResultOverrideFunction = None
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
@@ -60,11 +60,13 @@ class AioHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        allow_batching: bool = False,
     ):
         view = GraphQLView(
             schema=schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
+            allow_batching=allow_batching,
             keep_alive=False,
         )
         view.result_override = result_override

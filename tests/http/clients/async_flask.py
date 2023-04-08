@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict
+from typing import Any, Dict
 
 from flask import Flask
 from flask import Request as FlaskRequest
@@ -15,12 +15,12 @@ from .base import ResultOverrideFunction
 from .flask import FlaskHttpClient
 
 
-class GraphQLView(BaseAsyncGraphQLView):
+class GraphQLView(BaseAsyncGraphQLView[Dict[str, object], Query]):
     methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"]
 
     result_override: ResultOverrideFunction = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 
@@ -48,6 +48,7 @@ class AsyncFlaskHttpClient(FlaskHttpClient):
         self,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
+        allow_batching: bool = False,
         result_override: ResultOverrideFunction = None,
     ):
         self.app = Flask(__name__)
@@ -58,6 +59,7 @@ class AsyncFlaskHttpClient(FlaskHttpClient):
             schema=schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
+            allow_batching=allow_batching,
             result_override=result_override,
         )
 

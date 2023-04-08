@@ -19,10 +19,10 @@ from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(BaseGraphQLView[object, Query]):
     result_override: ResultOverrideFunction = None
 
-    def get_root_value(self, request) -> Query:
+    def get_root_value(self, request: HttpRequest) -> Query:
         return Query()
 
     def get_context(self, request: HttpRequest, response: HttpResponse) -> object:
@@ -44,10 +44,12 @@ class DjangoHttpClient(HttpClient):
         self,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
+        allow_batching: bool = False,
         result_override: ResultOverrideFunction = None,
     ):
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
+        self.allow_batching = allow_batching
         self.result_override = result_override
 
     def _get_header_name(self, key: str) -> str:
@@ -69,6 +71,7 @@ class DjangoHttpClient(HttpClient):
             schema=schema,
             graphiql=self.graphiql,
             allow_queries_via_get=self.allow_queries_via_get,
+            allow_batching=self.allow_batching,
             result_override=self.result_override,
         )
 

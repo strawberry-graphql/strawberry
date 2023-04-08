@@ -40,6 +40,7 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
             schema=schema,
             graphiql=self.graphiql,
             allow_queries_via_get=self.allow_queries_via_get,
+            allow_batching=self.allow_batching,
             result_override=self.result_override,
         )
 

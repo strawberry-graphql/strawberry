@@ -79,6 +79,11 @@ class SyncBaseHTTPView(
     def allow_queries_via_get(self) -> bool:
         ...
 
+    @property
+    @abc.abstractmethod
+    def allow_batching(self) -> bool:
+        ...
+
     @abc.abstractmethod
     def get_sub_response(self, request: Request) -> SubResponse:
         ...
@@ -205,6 +210,8 @@ class SyncBaseHTTPView(
         response_data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]]
 
         if isinstance(request_data, list):
+            self.validate_batch_request(request_data)
+
             response_data = [
                 self.execute_single(
                     request=request,
@@ -230,6 +237,10 @@ class SyncBaseHTTPView(
         return self.create_response(
             response_data=response_data, sub_response=sub_response
         )
+
+    def validate_batch_request(self, request_data: List[GraphQLRequestData]) -> None:
+        if not self.allow_batching:
+            raise HTTPException(400, "Batching is not enabled")
 
     def execute_single(
         self,

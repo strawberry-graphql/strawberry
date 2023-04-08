@@ -49,6 +49,7 @@ class SanicHttpClient(HttpClient):
         self,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
+        allow_batching: bool = False,
         result_override: ResultOverrideFunction = None,
     ):
         self.app = Sanic(
@@ -58,6 +59,7 @@ class SanicHttpClient(HttpClient):
             schema=schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
+            allow_batching=allow_batching,
             result_override=result_override,
         )
         self.app.add_route(

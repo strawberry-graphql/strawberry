@@ -44,6 +44,7 @@ class HttpClient(abc.ABC):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        allow_batching: bool = True,
     ):
         ...
 

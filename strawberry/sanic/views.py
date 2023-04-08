@@ -98,6 +98,7 @@ class GraphQLView(
     """
 
     allow_queries_via_get = True
+    allow_batching = False
     request_adapter_class = SanicHTTPRequestAdapter
 
     def __init__(
@@ -105,12 +106,14 @@ class GraphQLView(
         schema: BaseSchema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
+        allow_batching: bool = False,
         json_encoder: Optional[Type[json.JSONEncoder]] = None,
         json_dumps_params: Optional[Dict[str, Any]] = None,
     ):
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
+        self.allow_batching = allow_batching
         self.json_encoder = json_encoder
         self.json_dumps_params = json_dumps_params
 

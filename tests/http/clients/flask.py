@@ -6,7 +6,7 @@ import functools
 import json
 import urllib.parse
 from io import BytesIO
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 from typing_extensions import Literal
 
 from flask import Flask
@@ -57,6 +57,7 @@ class FlaskHttpClient(HttpClient):
         self,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
+        allow_batching: bool = False,
         result_override: ResultOverrideFunction = None,
     ):
         self.app = Flask(__name__)
@@ -67,6 +68,7 @@ class FlaskHttpClient(HttpClient):
             schema=schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
+            allow_batching=allow_batching,
             result_override=result_override,
         )
 
@@ -82,7 +84,7 @@ class FlaskHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
         body = self._build_body(
             query=query, variables=variables, files=files, method=method
@@ -112,7 +114,7 @@ class FlaskHttpClient(HttpClient):
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ):
         with self.app.test_client() as client:
             response = getattr(client, method)(url, headers=headers, **kwargs)
@@ -128,7 +130,7 @@ class FlaskHttpClient(HttpClient):
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
         loop = asyncio.get_running_loop()
         ctx = contextvars.copy_context()
