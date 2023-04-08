@@ -997,7 +997,6 @@ async def test_long_validation_concurrent_query(ws: WebSocketClient):
     )
 
 
-@pytest.mark.xfail
 async def test_long_validation_concurrent_subscription(ws: WebSocketClient):
     """
     Test that the websocket is not blocked while validating a
