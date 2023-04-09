@@ -12,24 +12,33 @@ from starlette.testclient import TestClient
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from strawberry.asgi import GraphQL as BaseGraphQLView
+from strawberry.asgi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
-from tests.asgi.app import (
-    DebuggableGraphQLTransportWSHandler,
-    DebuggableGraphQLWSHandler,
-)
 from tests.views.schema import Query, schema
 
 from ...websockets.views import WebsocketsMixin
 from ..context import get_context
 from .base import (
     JSON,
+    DebuggableGraphQLTransportWSMixin,
+    DebuggableGraphQLWSMixin,
     HttpClient,
     Message,
     Response,
     ResultOverrideFunction,
     WebSocketClient,
 )
+
+
+class DebuggableGraphQLTransportWSHandler(
+    DebuggableGraphQLTransportWSMixin, GraphQLTransportWSHandler
+):
+    pass
+
+
+class DebuggableGraphQLWSHandler(DebuggableGraphQLWSMixin, GraphQLWSHandler):
+    pass
 
 
 class GraphQLView(WebsocketsMixin, BaseGraphQLView):

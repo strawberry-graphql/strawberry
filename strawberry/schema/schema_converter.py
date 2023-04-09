@@ -91,7 +91,14 @@ class CustomGraphQLEnumType(GraphQLEnumType):
 
     def serialize(self, output_value: Any) -> str:
         if isinstance(output_value, self.wrapped_cls):
-            return output_value.name
+            for name, value in self.values.items():
+                if output_value.value == value.value:
+                    return name
+
+            raise ValueError(
+                f"Invalid value for enum {self.name}: {output_value}"
+            )  # pragma: no cover
+
         return super().serialize(output_value)
 
     def parse_value(self, input_value: str) -> Any:
@@ -150,7 +157,12 @@ class GraphQLCoreConverter:
         graphql_enum = CustomGraphQLEnumType(
             enum=enum,
             name=enum_name,
-            values={item.name: self.from_enum_value(item) for item in enum.values},
+            values={
+                self.config.name_converter.from_enum_value(
+                    enum, item
+                ): self.from_enum_value(item)
+                for item in enum.values
+            },
             description=enum.description,
             extensions={
                 GraphQLCoreConverter.DEFINITION_BACKREF: enum,

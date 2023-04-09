@@ -10,19 +10,18 @@ from aiohttp import web
 from aiohttp.client_ws import ClientWebSocketResponse
 from aiohttp.http_websocket import WSMsgType
 from aiohttp.test_utils import TestClient, TestServer
+from strawberry.aiohttp.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
-from tests.aiohttp.app import (
-    DebuggableGraphQLTransportWSHandler,
-    DebuggableGraphQLWSHandler,
-)
 from tests.views.schema import Query, schema
 
 from ...websockets.views import WebsocketsMixin
 from ..context import get_context
 from .base import (
     JSON,
+    DebuggableGraphQLTransportWSMixin,
+    DebuggableGraphQLWSMixin,
     HttpClient,
     Message,
     Response,
@@ -31,7 +30,17 @@ from .base import (
 )
 
 
-class GraphQLView(WebsocketsMixin, BaseGraphQLView):
+class DebuggableGraphQLTransportWSHandler(
+    DebuggableGraphQLTransportWSMixin, GraphQLTransportWSHandler
+):
+    pass
+
+
+class DebuggableGraphQLWSHandler(DebuggableGraphQLWSMixin, GraphQLWSHandler):
+    pass
+
+
+class GraphQLView(WebSocketsMixin, BaseGraphQLView):
     result_override: ResultOverrideFunction = None
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
