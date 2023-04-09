@@ -40,7 +40,7 @@ class DebuggableGraphQLWSHandler(DebuggableGraphQLWSMixin, GraphQLWSHandler):
     pass
 
 
-class GraphQLView(WebSocketsMixin, BaseGraphQLView):
+class GraphQLView(WebsocketsMixin, BaseGraphQLView):
     result_override: ResultOverrideFunction = None
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
