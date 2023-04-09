@@ -1094,3 +1094,60 @@ async def test_long_validation_concurrent_subscription(ws: WebSocketClient):
             id="sub2", payload={"data": {"conditionalFail": "Hey"}}
         ).as_dict()
     )
+
+
+@pytest.mark.xfail
+async def test_long_custom_context(ws: WebSocketClient):
+    """
+    Test that the websocket is not blocked evaluating the context
+    """
+
+    counter = 0
+
+    async def slow_get_context(ctxt):
+        nonlocal counter
+        old = counter
+        counter += 1
+        if old == 0:
+            await asyncio.sleep(0.1)
+            ctxt["custom_value"] = "slow"
+        else:
+            ctxt["custom_value"] = "fast"
+        return ctxt
+
+    with patch("tests.http.context.get_context_async_inner", slow_get_context):
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query="query { valueFromContext }"),
+            ).as_dict()
+        )
+
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub2",
+                payload=SubscribeMessagePayload(
+                    query="query { valueFromContext }",
+                ),
+            ).as_dict()
+        )
+
+        # we expect the second query to arrive first, because the
+        # first operation is stuck getting context
+        response = await ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub2", payload={"data": {"valueFromContext": "fast"}}
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        if response == CompleteMessage(id="sub2").as_dict():
+            response = await ws.receive_json()  # ignore the complete message
+        assert (
+            response
+            == NextMessage(
+                id="sub1", payload={"data": {"valueFromContext": "slow"}}
+            ).as_dict()
+        )
