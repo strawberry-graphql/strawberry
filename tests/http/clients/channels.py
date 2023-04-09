@@ -19,7 +19,7 @@ from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.typevars import Context, RootValue
 from tests.views.schema import Query, schema
 
-from ..context import get_context
+from ..context import get_context, get_context_async
 from .base import (
     JSON,
     HttpClient,
@@ -76,7 +76,7 @@ class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
         context["connectionInitTimeoutTask"] = getattr(
             self._handler, "connection_init_timeout_task", None
         )
-        for key, val in get_context({}).items():
+        for key, val in (await get_context_async({})).items():
             context[key] = val
         return context
 
@@ -94,7 +94,7 @@ class DebuggableGraphQLHTTPConsumer(GraphQLHTTPConsumer):
     async def get_context(self, request: ChannelsConsumer, response: Any) -> Context:
         context = await super().get_context(request, response)
 
-        return get_context(context)
+        return await get_context_async(context)
 
     async def process_result(
         self, request: ChannelsConsumer, result: Any
