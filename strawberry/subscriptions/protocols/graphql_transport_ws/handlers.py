@@ -240,12 +240,9 @@ class BaseGraphQLTransportWSHandler(ABC):
                 message.payload.variables,
             )
 
-        context = await self.get_context()
-        if isinstance(context, dict):
-            context["connection_params"] = self.connection_params
-        root_value = await self.get_root_value()
-
-        # Get an AsyncGenerator yielding the results
+        # The method to start the operation.  Will be called on worker
+        # thread and so may contain long running async calls without
+        # blocking the main websocket handler.
         async def start_operation() -> Union[AsyncGenerator[Any, None], Any]:
             # there is some type mismatch here which we need to gloss over with
             # the use of Any.
@@ -253,6 +250,12 @@ class BaseGraphQLTransportWSHandler(ABC):
             # Union[AsyncIterator[graphql.ExecutionResult], graphql.ExecutionResult]:
             # whereas execute() returns strawberry.types.ExecutionResult.
             # These execution result types are similar, but not the same.
+
+            context = await self.get_context()
+            if isinstance(context, dict):
+                context["connection_params"] = self.connection_params
+            root_value = await self.get_root_value()
+
             if operation_type == OperationType.SUBSCRIPTION:
                 return await self.schema.subscribe(
                     query=message.payload.query,

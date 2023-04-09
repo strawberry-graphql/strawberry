@@ -32,8 +32,19 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
 from tests.http.clients.base import DebuggableGraphQLTransportWSMixin
 from tests.views.schema import Schema
 
+from ..http.clients.base import WebSocketClient
+
+try:
+    from ..http.clients.fastapi import FastAPIHttpClient
+except ImportError:
+    FastAPIHttpClient = None
+try:
+    from ..http.clients.starlite import StarliteHttpClient
+except ImportError:
+    StarliteHttpClient = None
+
 if TYPE_CHECKING:
-    from ..http.clients.base import HttpClient, WebSocketClient
+    from ..http.clients.base import HttpClient
 
 
 @pytest_asyncio.fixture
@@ -1096,11 +1107,14 @@ async def test_long_validation_concurrent_subscription(ws: WebSocketClient):
     )
 
 
-@pytest.mark.xfail
-async def test_long_custom_context(ws: WebSocketClient):
+async def test_long_custom_context(
+    ws: WebSocketClient, http_client_class: Type[HttpClient]
+):
     """
     Test that the websocket is not blocked evaluating the context
     """
+    if http_client_class in (FastAPIHttpClient, StarliteHttpClient):
+        pytest.skip("Client evaluates the context only once per connection")
 
     counter = 0
 
