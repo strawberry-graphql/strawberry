@@ -407,6 +407,28 @@ async def test_subscription_field_errors(ws: WebSocketClient):
         process_errors.assert_called_once()
 
 
+async def test_query_field_errors(ws: WebSocketClient):
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="query { notASubscriptionField }",
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == ErrorMessage.type
+    assert response["id"] == "sub1"
+    assert len(response["payload"]) == 1
+    assert response["payload"][0].get("path") is None
+    assert response["payload"][0]["locations"] == [{"line": 1, "column": 9}]
+    assert (
+        response["payload"][0]["message"]
+        == "Cannot query field 'notASubscriptionField' on type 'Query'."
+    )
+
+
 async def test_subscription_cancellation(ws: WebSocketClient):
     await ws.send_json(
         SubscribeMessage(
@@ -962,6 +984,50 @@ async def test_subscription_errors_continue(ws: WebSocketClient):
         response = await ws.receive_json()
         assert response["type"] == CompleteMessage.type
         assert response["id"] == "sub1"
+
+
+async def test_validation_query(ws: WebSocketClient):
+    """
+    Test validation for query
+    """
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="query { conditionalFail(fail:true) }"
+            ),
+        ).as_dict()
+    )
+
+    # We expect an error message directly
+    response = await ws.receive_json()
+    assert response["type"] == ErrorMessage.type
+    assert response["id"] == "sub1"
+    assert len(response["payload"]) == 1
+    assert response["payload"][0].get("path") == ["conditionalFail"]
+    assert response["payload"][0]["message"] == "failed after sleep None"
+
+
+async def test_validation_subscription(ws: WebSocketClient):
+    """
+    Test validation for subscription
+    """
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="subscription { conditionalFail(fail:true) }"
+            ),
+        ).as_dict()
+    )
+
+    # We expect an error message directly
+    response = await ws.receive_json()
+    assert response["type"] == ErrorMessage.type
+    assert response["id"] == "sub1"
+    assert len(response["payload"]) == 1
+    assert response["payload"][0].get("path") == ["conditionalFail"]
+    assert response["payload"][0]["message"] == "failed after sleep None"
 
 
 async def test_long_validation_concurrent_query(ws: WebSocketClient):
