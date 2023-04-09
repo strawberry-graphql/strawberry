@@ -14,9 +14,9 @@ from typing import (
     Dict,
     List,
     Optional,
+    Union,
 )
 
-from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
@@ -246,7 +246,13 @@ class BaseGraphQLTransportWSHandler(ABC):
         root_value = await self.get_root_value()
 
         # Get an AsyncGenerator yielding the results
-        async def start_operation() -> AsyncGenerator[ExecutionResult, None]:
+        async def start_operation() -> Union[AsyncGenerator[Any, None], Any]:
+            # there is some type mismatch here which we need to gloss over with
+            # the use of Any.
+            # subscribe() returns
+            # Union[AsyncIterator[graphql.ExecutionResult], graphql.ExecutionResult]:
+            # whereas execute() returns strawberry.types.ExecutionResult.
+            # These execution result types are similar, but not the same.
             if operation_type == OperationType.SUBSCRIPTION:
                 return await self.schema.subscribe(
                     query=message.payload.query,
@@ -257,7 +263,7 @@ class BaseGraphQLTransportWSHandler(ABC):
                 )
             else:
                 # single results behave similarly to subscriptions,
-                # return either a GraphQLExecutionResult or an AsyncGenerator
+                # return either a ExecutionResult or an AsyncGenerator
                 result = await self.schema.execute(
                     query=message.payload.query,
                     variable_values=message.payload.variables,
@@ -265,7 +271,8 @@ class BaseGraphQLTransportWSHandler(ABC):
                     root_value=root_value,
                     operation_name=message.payload.operationName,
                 )
-                if isinstance(result, GraphQLExecutionResult):
+                # Both validation and execution errors are handled the same way.
+                if result.errors:
                     return result
 
                 # create AsyncGenerator returning a single result
@@ -286,28 +293,27 @@ class BaseGraphQLTransportWSHandler(ABC):
         """
         # TODO: Handle errors in this method using self.handle_task_exception()
         try:
-            await self.handle_async_results(operation)
+            await self.handle_operation(operation)
         except BaseException:  # pragma: no cover
             # cleanup in case of something really unexpected
             if operation.id in self.operations:
                 del self.operations[operation.id]
             raise
-        else:
-            await operation.send_message(CompleteMessage(id=operation.id))
         finally:
             # add this task to a list to be reaped later
             task = asyncio.current_task()
             assert task is not None
             self.completed_tasks.append(task)
 
-    async def handle_async_results(
+    async def handle_operation(
         self,
         operation: Operation,
     ) -> None:
         try:
             result_source = await operation.start_operation()
-            # Handle validation errors
-            if isinstance(result_source, GraphQLExecutionResult):
+            # result_source is an ExcutionResult-like object or an AsyncGenerator
+            # Handle validation errors.  Cannot check type directly.
+            if hasattr(result_source, "errors"):
                 assert result_source.errors
                 payload = [err.formatted for err in result_source.errors]
                 await operation.send_message(
@@ -341,6 +347,7 @@ class BaseGraphQLTransportWSHandler(ABC):
                             id=operation.id, payload=next_payload
                         )
                         await operation.send_message(next_message)
+                await operation.send_message(CompleteMessage(id=operation.id))
             finally:
                 # Close the AsyncGenerator in case of errors or cancellation
                 await result_source.aclose()
@@ -405,7 +412,7 @@ class Operation:
         id: str,
         operation_type: OperationType,
         start_operation: Callable[
-            [], Coroutine[Any, Any, AsyncGenerator[ExecutionResult, None]]
+            [], Coroutine[Any, Any, Union[Any, AsyncGenerator[Any, None]]]
         ],
     ) -> None:
         self.handler = handler
