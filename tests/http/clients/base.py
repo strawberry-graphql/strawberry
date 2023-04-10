@@ -240,3 +240,21 @@ class WebSocketClient(abc.ABC):
     async def __aiter__(self) -> AsyncGenerator[Message, None]:
         while not self.closed:
             yield await self.receive()
+
+
+class DebuggableGraphQLTransportWSMixin:
+    async def get_context(self) -> object:
+        context = await super().get_context()
+        context["ws"] = self._ws
+        context["tasks"] = self.tasks
+        context["connectionInitTimeoutTask"] = self.connection_init_timeout_task
+        return context
+
+
+class DebuggableGraphQLWSMixin:
+    async def get_context(self) -> object:
+        context = await super().get_context()
+        context["ws"] = self._ws
+        context["tasks"] = self.tasks
+        context["connectionInitTimeoutTask"] = None
+        return context

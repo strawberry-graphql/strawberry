@@ -788,6 +788,14 @@ class CustomDataclassTransformer:
                 params["kw_only"] = True
             if MypyVersion.VERSION >= Decimal("1.1"):
                 params["alias"] = None
+            if MypyVersion.VERSION >= Decimal("1.2"):
+                from mypy.plugins.dataclasses import (
+                    _has_direct_dataclass_transform_metaclass,
+                )
+
+                params[
+                    "is_neither_frozen_nor_nonfrozen"
+                ] = _has_direct_dataclass_transform_metaclass(cls.info)
 
             attribute = DataclassAttribute(**params)
             attrs.append(attribute)

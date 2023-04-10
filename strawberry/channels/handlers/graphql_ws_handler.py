@@ -40,8 +40,15 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         await self._ws.send_json(data)
 
     async def close(self, code: int = 1000, reason: Optional[str] = None) -> None:
-        # Close messages are not part of the ASGI ref yet
-        await self._ws.close(code=code)
+        # FIXME: We are using `self._ws.base_send` directly instead of `self._ws.close`
+        # because the latler doesn't accept the `reason` argument.
+        await self._ws.base_send(
+            {
+                "type": "websocket.close",
+                "code": code,
+                "reason": reason or "",
+            }
+        )
 
     async def handle_request(self) -> Any:
         await self._ws.accept(subprotocol=GRAPHQL_WS_PROTOCOL)
