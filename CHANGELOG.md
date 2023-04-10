@@ -1,6 +1,13 @@
 CHANGELOG
 =========
 
+0.171.2 - 2023-04-10
+--------------------
+
+This release bumps the version of typing_extensions to >= 4.0.0 to fix the error: "cannot import Self from typing_extensions".
+
+Contributed by [Tien Truong](https://github.com/tienman) via [PR #2704](https://github.com/strawberry-graphql/strawberry/pull/2704)
+
 0.171.1 - 2023-04-07
 --------------------
 
