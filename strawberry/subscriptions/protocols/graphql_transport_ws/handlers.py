@@ -47,6 +47,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         self.connection_init_timeout_task: Optional[asyncio.Task] = None
         self.connection_init_received = False
         self.connection_acknowledged = False
+        self.connection_timed_out = False
         self.subscriptions: Dict[str, AsyncGenerator] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
         self.completed_tasks: List[asyncio.Task] = []
@@ -78,14 +79,30 @@ class BaseGraphQLTransportWSHandler(ABC):
         return await self.handle_request()
 
     async def handle_connection_init_timeout(self) -> None:
-        delay = self.connection_init_wait_timeout.total_seconds()
-        await asyncio.sleep(delay=delay)
+        task = asyncio.current_task()
+        assert task
+        try:
+            delay = self.connection_init_wait_timeout.total_seconds()
+            await asyncio.sleep(delay=delay)
 
-        if self.connection_init_received:
-            return
+            if self.connection_init_received:
+                return
 
-        reason = "Connection initialisation timeout"
-        await self.close(code=4408, reason=reason)
+            self.connection_timed_out = True
+            reason = "Connection initialisation timeout"
+            await self.close(code=4408, reason=reason)
+        except asyncio.CancelledError:
+            raise
+        except Exception as error:
+            await self.handle_task_exception(error)
+        finally:
+            # do not clear self.connection_init_timeout_task
+            # so that unittests can inspect it.
+            self.completed_tasks.append(task)
+
+    async def handle_task_exception(self, _: Exception) -> None:
+        # TODO: Log the error
+        pass
 
     async def handle_message(self, message: dict) -> None:
         handler: Callable
@@ -126,6 +143,11 @@ class BaseGraphQLTransportWSHandler(ABC):
         await self.reap_completed_tasks()
 
     async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
+        if self.connection_timed_out:
+            return
+        if self.connection_init_timeout_task:
+            self.connection_init_timeout_task.cancel()
+
         if message.payload is not UNSET and not isinstance(message.payload, dict):
             await self.close(code=4400, reason="Invalid connection init payload")
             return
@@ -228,6 +250,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         Operation task top level method.  Cleans up and de-registers the operation
         once it is done.
         """
+        # TODO: Handle errors in this method using self.handle_task_exception()
         try:
             await self.handle_async_results(result_source, operation)
         except BaseException:  # pragma: no cover
