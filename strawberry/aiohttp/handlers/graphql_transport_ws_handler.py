@@ -44,6 +44,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
 
     async def handle_request(self) -> web.StreamResponse:
         await self._ws.prepare(self._request)
+        self.on_request_accepted()
 
         try:
             async for ws_message in self._ws:  # type: http.WSMessage

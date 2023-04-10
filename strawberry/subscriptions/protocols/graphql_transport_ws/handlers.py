@@ -74,9 +74,15 @@ class BaseGraphQLTransportWSHandler(ABC):
         """Handle the request this instance was created for"""
 
     async def handle(self) -> Any:
-        timeout_handler = self.handle_connection_init_timeout()
-        self.connection_init_timeout_task = asyncio.create_task(timeout_handler)
         return await self.handle_request()
+
+    def on_request_accepted(self) -> None:
+        #  handle_request should call this once it has sent the
+        # websocket.accept() response to start the timeout.
+        assert not self.connection_init_timeout_task
+        self.connection_init_timeout_task = asyncio.create_task(
+            self.handle_connection_init_timeout()
+        )
 
     async def handle_connection_init_timeout(self) -> None:
         task = asyncio.current_task()
