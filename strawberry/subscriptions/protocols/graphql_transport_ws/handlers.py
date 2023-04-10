@@ -76,6 +76,16 @@ class BaseGraphQLTransportWSHandler(ABC):
     async def handle(self) -> Any:
         return await self.handle_request()
 
+    async def shutdown(self) -> None:
+        if self.connection_init_timeout_task:
+            self.connection_init_timeout_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await self.connection_init_timeout_task
+
+        for operation_id in list(self.subscriptions.keys()):
+            await self.cleanup_operation(operation_id)
+        await self.reap_completed_tasks()
+
     def on_request_accepted(self) -> None:
         #  handle_request should call this once it has sent the
         # websocket.accept() response to start the timeout.
