@@ -102,7 +102,7 @@ class BaseGraphQLTransportWSHandler(ABC):
             await asyncio.sleep(delay=delay)
 
             if self.connection_init_received:
-                return
+                return  # pragma: no cover
 
             self.connection_timed_out = True
             reason = "Connection initialisation timeout"
@@ -110,7 +110,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         except asyncio.CancelledError:
             raise
         except Exception as error:
-            await self.handle_task_exception(error)
+            await self.handle_task_exception(error)  # pragma: no cover
         finally:
             # do not clear self.connection_init_timeout_task
             # so that unittests can inspect it.
@@ -118,7 +118,7 @@ class BaseGraphQLTransportWSHandler(ABC):
 
     async def handle_task_exception(self, _: Exception) -> None:
         # TODO: Log the error
-        pass
+        pass  # pragma: no cover
 
     async def handle_message(self, message: dict) -> None:
         handler: Callable
@@ -160,7 +160,8 @@ class BaseGraphQLTransportWSHandler(ABC):
 
     async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
         if self.connection_timed_out:
-            return
+            # No way to reliably excercise this case during testing
+            return  # pragma: no cover
         if self.connection_init_timeout_task:
             self.connection_init_timeout_task.cancel()
 
