@@ -169,7 +169,7 @@ entity across multiple services. For example, when making this query:
 ```graphql
 {
   # query defined in the books service
-  books {
+  allBooks {
     title
     # field defined in the reviews service
     reviews {
