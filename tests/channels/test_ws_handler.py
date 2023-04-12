@@ -7,7 +7,7 @@ from strawberry.channels.handlers.graphql_transport_ws_handler import (
 from strawberry.channels.handlers.graphql_ws_handler import GraphQLWSHandler
 from strawberry.channels.handlers.ws_handler import GraphQLWSConsumer
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from tests.views.schema import schema
+from tests.http.schema import schema
 
 
 async def test_wrong_protocol():

@@ -3,7 +3,7 @@ from typing import Any, Dict, Union
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
-from tests.views.schema import schema
+from tests.http.schema import schema
 
 
 class DebuggableGraphQLTransportWSHandler(GraphQLTransportWSHandler):

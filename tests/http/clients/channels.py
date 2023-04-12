@@ -8,7 +8,7 @@ from typing_extensions import Literal
 
 from channels.testing import WebsocketCommunicator
 from strawberry.channels import GraphQLWSConsumer
-from tests.views.schema import schema
+from tests.http.schema import schema
 
 from ..context import get_context
 from .base import (

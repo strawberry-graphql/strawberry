@@ -3,7 +3,7 @@ from typing import Dict
 from chalice import Chalice  # type: ignore
 from chalice.app import Response
 from strawberry.chalice.views import GraphQLView
-from tests.views.schema import schema
+from tests.http.schema import schema
 
 app = Chalice(app_name="TheStackBadger")
 

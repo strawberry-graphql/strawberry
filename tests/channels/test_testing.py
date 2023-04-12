@@ -5,7 +5,7 @@ import pytest
 from strawberry.channels.handlers.ws_handler import GraphQLWSConsumer
 from strawberry.channels.testing import GraphQLWebsocketCommunicator
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from tests.views.schema import schema
+from tests.http.schema import schema
 
 application = GraphQLWSConsumer.as_asgi(schema=schema, keep_alive_interval=50)
 

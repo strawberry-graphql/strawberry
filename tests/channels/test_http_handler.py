@@ -6,7 +6,7 @@ import pytest
 from channels.testing import HttpCommunicator
 from strawberry.channels import GraphQLHTTPConsumer
 from strawberry.channels.handlers.http_handler import SyncGraphQLHTTPConsumer
-from tests.views.schema import schema
+from tests.http.schema import schema
 
 pytestmark = pytest.mark.xfail(
     reason=(

@@ -17,7 +17,7 @@ from tests.aiohttp.app import (
     DebuggableGraphQLTransportWSHandler,
     DebuggableGraphQLWSHandler,
 )
-from tests.views.schema import Query, schema
+from tests.http.schema import Query, schema
 
 from ..context import get_context
 from .base import (

@@ -12,7 +12,7 @@ from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.sanic.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult
-from tests.views.schema import Query, schema
+from tests.http.schema import Query, schema
 
 from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction

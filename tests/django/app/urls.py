@@ -1,7 +1,7 @@
 from django.urls import path
 
 from strawberry.django.views import GraphQLView as BaseGraphQLView
-from tests.views.schema import Query, schema
+from tests.http.schema import Query, schema
 
 
 class GraphQLView(BaseGraphQLView):
