@@ -56,10 +56,9 @@ class SanicHttpClient(HttpClient):
             f"test_{int(randint(0, 1000))}",  # noqa: S311
         )
         view = GraphQLView.as_view(
-            schema=get_schema(),
+            schema=get_schema(allow_batching=allow_batching),
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
-            allow_batching=allow_batching,
             result_override=result_override,
         )
         self.app.add_route(

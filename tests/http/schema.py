@@ -10,6 +10,7 @@ from strawberry.channels.context import StrawberryChannelsContext
 from strawberry.extensions import SchemaExtension
 from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
+from strawberry.schema.config import StrawberryConfig
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
 from strawberry.types import Info
 
@@ -225,10 +226,11 @@ class Subscription:
         yield info.context["connection_params"]["strawberry"]
 
 
-def get_schema() -> strawberry.Schema:
+def get_schema(allow_batching: bool = False) -> strawberry.Schema:
     return strawberry.Schema(
         query=Query,
         mutation=Mutation,
         subscription=Subscription,
         extensions=[MyExtension],
+        config=StrawberryConfig(allow_batching=allow_batching),
     )

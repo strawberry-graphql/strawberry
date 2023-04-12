@@ -52,10 +52,9 @@ class ChaliceHttpClient(HttpClient):
         self.app = Chalice(app_name="TheStackBadger")
 
         view = GraphQLView(
-            schema=get_schema(),
+            schema=get_schema(allow_batching=allow_batching),
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
-            allow_batching=allow_batching,
         )
         view.result_override = result_override
 

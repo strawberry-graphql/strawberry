@@ -52,7 +52,6 @@ class GraphQLView(
     SyncBaseHTTPView[Request, Response, TemporalResponse, Context, RootValue]
 ):
     allow_queries_via_get: bool = True
-    allow_batching: bool = False
     request_adapter_class = ChaliceHTTPRequestAdapter
 
     def __init__(
@@ -60,11 +59,9 @@ class GraphQLView(
         schema: BaseSchema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
-        allow_batching: bool = False,
     ):
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
-        self.allow_batching = allow_batching
         self.schema = schema
 
     def get_root_value(self, request: Request) -> Optional[RootValue]:

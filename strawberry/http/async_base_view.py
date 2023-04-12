@@ -62,11 +62,6 @@ class AsyncBaseHTTPView(
     def allow_queries_via_get(self) -> bool:
         ...
 
-    @property
-    @abc.abstractmethod
-    def allow_batching(self) -> bool:
-        ...
-
     @abc.abstractmethod
     async def get_sub_response(self, request: Request) -> SubResponse:
         ...
@@ -210,7 +205,7 @@ class AsyncBaseHTTPView(
     async def validate_batch_request(
         self, request_data: List[GraphQLRequestData]
     ) -> None:
-        if not self.allow_batching:
+        if not self.schema.config.allow_batching:
             raise HTTPException(400, "Batching is not enabled")
 
     async def execute_single(

@@ -79,11 +79,6 @@ class SyncBaseHTTPView(
     def allow_queries_via_get(self) -> bool:
         ...
 
-    @property
-    @abc.abstractmethod
-    def allow_batching(self) -> bool:
-        ...
-
     @abc.abstractmethod
     def get_sub_response(self, request: Request) -> SubResponse:
         ...
@@ -239,7 +234,7 @@ class SyncBaseHTTPView(
         )
 
     def validate_batch_request(self, request_data: List[GraphQLRequestData]) -> None:
-        if not self.allow_batching:
+        if not self.schema.config.allow_batching:
             raise HTTPException(400, "Batching is not enabled")
 
     def execute_single(

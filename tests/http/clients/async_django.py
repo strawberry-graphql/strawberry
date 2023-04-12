@@ -37,10 +37,9 @@ class AsyncGraphQLView(BaseAsyncGraphQLView[object, Query]):
 class AsyncDjangoHttpClient(DjangoHttpClient):
     async def _do_request(self, request: RequestFactory) -> Response:
         view = AsyncGraphQLView.as_view(
-            schema=get_schema(),
+            schema=get_schema(allow_batching=self.allow_batching),
             graphiql=self.graphiql,
             allow_queries_via_get=self.allow_queries_via_get,
-            allow_batching=self.allow_batching,
             result_override=self.result_override,
         )
 

@@ -65,12 +65,11 @@ class AsgiHttpClient(HttpClient):
         allow_batching: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
-        self.schema = get_schema()
+        self.schema = get_schema(allow_batching=allow_batching)
         view = GraphQLView(
             schema=self.schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
-            allow_batching=allow_batching,
             keep_alive=False,
         )
         view.result_override = result_override

@@ -85,7 +85,6 @@ class GraphQLView(
     graphql_transport_ws_handler_class = GraphQLTransportWSHandler
     graphql_ws_handler_class = GraphQLWSHandler
     allow_queries_via_get = True
-    allow_batching = False
     request_adapter_class = AioHTTPRequestAdapter
 
     def __init__(
@@ -93,7 +92,6 @@ class GraphQLView(
         schema: BaseSchema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
-        allow_batching: bool = False,
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
         debug: bool = False,
@@ -106,7 +104,6 @@ class GraphQLView(
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
-        self.allow_batching = allow_batching
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
         self.debug = debug

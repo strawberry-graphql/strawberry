@@ -72,7 +72,7 @@ class FastAPIHttpClient(HttpClient):
         result_override: ResultOverrideFunction = None,
     ):
         self.app = FastAPI()
-        self.schema = get_schema()
+        self.schema = get_schema(allow_batching=allow_batching)
 
         graphql_app = GraphQLRouter(
             schema=self.schema,
@@ -80,7 +80,6 @@ class FastAPIHttpClient(HttpClient):
             context_getter=fastapi_get_context,
             root_value_getter=get_root_value,
             allow_queries_via_get=allow_queries_via_get,
-            allow_batching=allow_batching,
             keep_alive=False,
         )
         graphql_app.result_override = result_override

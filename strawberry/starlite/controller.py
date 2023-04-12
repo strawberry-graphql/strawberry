@@ -194,7 +194,6 @@ def make_graphql_controller(
 
     schema_ = schema
     allow_queries_via_get_ = allow_queries_via_get
-    allow_batching_ = allow_batching
     graphiql_ = graphiql
 
     class GraphQLController(
@@ -225,7 +224,6 @@ def make_graphql_controller(
 
         schema: BaseSchema = schema_
         allow_queries_via_get = allow_queries_via_get_
-        allow_batching = allow_batching_
         graphiql = graphiql_
 
         async def execute_request(

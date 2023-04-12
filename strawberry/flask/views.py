@@ -59,12 +59,10 @@ class BaseGraphQLView:
         schema: BaseSchema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
-        allow_batching: bool = False,
     ):
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
-        self.allow_batching = allow_batching
 
     def render_graphiql(self, request: Request) -> Response:
         template = get_graphiql_html(False)
@@ -88,7 +86,6 @@ class GraphQLView(
 ):
     methods = ["GET", "POST"]
     allow_queries_via_get: bool = True
-    allow_batching: bool = False
     request_adapter_class = FlaskHTTPRequestAdapter
 
     def get_context(self, request: Request, response: Response) -> Context:
@@ -147,7 +144,6 @@ class AsyncGraphQLView(
 ):
     methods = ["GET", "POST"]
     allow_queries_via_get: bool = True
-    allow_batching: bool = False
     request_adapter_class = AsyncFlaskHTTPRequestAdapter
 
     async def get_context(self, request: Request, response: Response) -> Context:

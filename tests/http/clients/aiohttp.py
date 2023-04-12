@@ -62,13 +62,12 @@ class AioHttpClient(HttpClient):
         result_override: ResultOverrideFunction = None,
         allow_batching: bool = False,
     ):
-        self.schema = get_schema()
+        self.schema = get_schema(allow_batching=allow_batching)
 
         view = GraphQLView(
             schema=self.schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
-            allow_batching=allow_batching,
             keep_alive=False,
         )
         view.result_override = result_override

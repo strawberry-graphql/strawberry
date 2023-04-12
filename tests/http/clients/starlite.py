@@ -37,13 +37,12 @@ class StarliteHttpClient(HttpClient):
         result_override: ResultOverrideFunction = None,
     ):
         BaseGraphQLController = make_graphql_controller(
-            schema=get_schema(),
+            schema=get_schema(allow_batching=allow_batching),
             path="/graphql",
             graphiql=graphiql,
             context_getter=starlite_get_context,
             root_value_getter=get_root_value,
             allow_queries_via_get=allow_queries_via_get,
-            allow_batching=allow_batching,
         )
 
         class GraphQLController(BaseGraphQLController):
