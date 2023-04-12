@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import InitVar, dataclass, field
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 from .name_converter import NameConverter
+
+
+@dataclass
+class BatchingConfig:
+    max_operations: int = 3
 
 
 @dataclass
@@ -12,7 +17,9 @@ class StrawberryConfig:
     name_converter: NameConverter = field(default_factory=NameConverter)
     default_resolver: Callable[[Any, str], object] = getattr
 
-    allow_batching: bool = False
+    # Setting this means you are enabling batching
+    # TODO: do I like it this?
+    batching_config: Optional[BatchingConfig] = None
 
     def __post_init__(
         self,

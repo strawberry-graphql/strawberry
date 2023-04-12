@@ -226,11 +226,11 @@ class Subscription:
         yield info.context["connection_params"]["strawberry"]
 
 
-def get_schema(allow_batching: bool = False) -> strawberry.Schema:
+def get_schema(config: Optional[StrawberryConfig] = None) -> strawberry.Schema:
     return strawberry.Schema(
         query=Query,
         mutation=Mutation,
         subscription=Subscription,
         extensions=[MyExtension],
-        config=StrawberryConfig(allow_batching=allow_batching),
+        config=config,
     )

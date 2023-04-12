@@ -16,6 +16,7 @@ from typing import (
 from typing_extensions import Literal
 
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
 
 JSON = Union[Dict[str, "JSON"], List["JSON"], str, int, float, bool, None]
@@ -44,7 +45,7 @@ class HttpClient(abc.ABC):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
-        allow_batching: bool = True,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
         ...
 

@@ -12,6 +12,7 @@ from aiohttp.http_websocket import WSMsgType
 from aiohttp.test_utils import TestClient, TestServer
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
 from tests.aiohttp.app import (
     DebuggableGraphQLTransportWSHandler,
@@ -60,9 +61,9 @@ class AioHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
-        allow_batching: bool = False,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
-        self.schema = get_schema(allow_batching=allow_batching)
+        self.schema = get_schema(config=schema_config)
 
         view = GraphQLView(
             schema=self.schema,

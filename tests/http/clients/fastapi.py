@@ -12,6 +12,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
 from tests.fastapi.app import (
     DebuggableGraphQLTransportWSHandler,
@@ -68,11 +69,11 @@ class FastAPIHttpClient(HttpClient):
         self,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
-        allow_batching: bool = False,
+        schema_config: Optional[StrawberryConfig] = None,
         result_override: ResultOverrideFunction = None,
     ):
         self.app = FastAPI()
-        self.schema = get_schema(allow_batching=allow_batching)
+        self.schema = get_schema(config=schema_config)
 
         graphql_app = GraphQLRouter(
             schema=self.schema,

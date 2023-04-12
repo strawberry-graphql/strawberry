@@ -2,8 +2,9 @@ import json
 from typing import Any, Dict, Generic, List, Mapping, Optional, Union
 from typing_extensions import Protocol
 
-from strawberry.http import GraphQLHTTPResponse
+from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
 from strawberry.http.types import HTTPMethod
+from strawberry.schema.base import BaseSchema
 
 from .exceptions import HTTPException
 from .typevars import Request
@@ -24,6 +25,8 @@ class BaseRequestProtocol(Protocol):
 
 
 class BaseView(Generic[Request]):
+    schema: BaseSchema
+
     def should_render_graphiql(self, request: BaseRequestProtocol) -> bool:
         return (
             request.method == "GET"
@@ -63,3 +66,10 @@ class BaseView(Generic[Request]):
                 params["variables"] = json.loads(variables)
 
         return params
+
+    def _validate_batch_request(self, request_data: List[GraphQLRequestData]) -> None:
+        if self.schema.config.batching_config is None:
+            raise HTTPException(400, "Batching is not enabled")
+
+        if len(request_data) > self.schema.config.batching_config.max_operations:
+            raise HTTPException(400, "Too many operations")

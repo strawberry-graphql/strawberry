@@ -14,6 +14,7 @@ from flask import Request as FlaskRequest
 from flask import Response as FlaskResponse
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
 from tests.http.schema import Query, get_schema
 
@@ -57,7 +58,7 @@ class FlaskHttpClient(HttpClient):
         self,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
-        allow_batching: bool = False,
+        schema_config: Optional[StrawberryConfig] = None,
         result_override: ResultOverrideFunction = None,
     ):
         self.app = Flask(__name__)
@@ -65,7 +66,7 @@ class FlaskHttpClient(HttpClient):
 
         view = GraphQLView.as_view(
             "graphql_view",
-            schema=get_schema(allow_batching=allow_batching),
+            schema=get_schema(config=schema_config),
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,

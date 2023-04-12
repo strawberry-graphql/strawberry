@@ -8,6 +8,7 @@ from typing_extensions import Literal
 from starlite import Request, Starlite
 from starlite.testing import TestClient
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.schema.config import StrawberryConfig
 from strawberry.starlite import make_graphql_controller
 from strawberry.types import ExecutionResult
 from tests.http.schema import Query, get_schema
@@ -33,11 +34,11 @@ class StarliteHttpClient(HttpClient):
         self,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
-        allow_batching: bool = False,
+        schema_config: Optional[StrawberryConfig] = None,
         result_override: ResultOverrideFunction = None,
     ):
         BaseGraphQLController = make_graphql_controller(
-            schema=get_schema(allow_batching=allow_batching),
+            schema=get_schema(config=schema_config),
             path="/graphql",
             graphiql=graphiql,
             context_getter=starlite_get_context,

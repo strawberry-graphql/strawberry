@@ -234,8 +234,7 @@ class SyncBaseHTTPView(
         )
 
     def validate_batch_request(self, request_data: List[GraphQLRequestData]) -> None:
-        if not self.schema.config.allow_batching:
-            raise HTTPException(400, "Batching is not enabled")
+        self._validate_batch_request(request_data=request_data)
 
     def execute_single(
         self,

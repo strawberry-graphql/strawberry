@@ -13,6 +13,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from strawberry.asgi import GraphQL as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
 from tests.asgi.app import (
     DebuggableGraphQLTransportWSHandler,
@@ -62,10 +63,10 @@ class AsgiHttpClient(HttpClient):
         self,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
-        allow_batching: bool = True,
+        schema_config: Optional[StrawberryConfig] = None,
         result_override: ResultOverrideFunction = None,
     ):
-        self.schema = get_schema(allow_batching=allow_batching)
+        self.schema = get_schema(config=schema_config)
         view = GraphQLView(
             schema=self.schema,
             graphiql=graphiql,
