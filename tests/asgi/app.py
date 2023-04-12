@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -6,7 +6,7 @@ from starlette.websockets import WebSocket
 
 from strawberry.asgi import GraphQL as BaseGraphQL
 from strawberry.asgi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
-from tests.http.schema import Query, schema
+from tests.http.schema import Query, get_schema
 
 
 class DebuggableGraphQLTransportWSHandler(GraphQLTransportWSHandler):
@@ -27,11 +27,11 @@ class DebuggableGraphQLWSHandler(GraphQLWSHandler):
         return context
 
 
-class GraphQL(BaseGraphQL):
+class GraphQL(BaseGraphQL[Dict[str, Any], Query]):
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
-    async def get_root_value(self, request) -> Query:
+    async def get_root_value(self, request: Union[Request, WebSocket]) -> Query:
         return Query()
 
     async def get_context(
@@ -42,5 +42,5 @@ class GraphQL(BaseGraphQL):
         return {"request": request, "response": response, "custom_value": "Hi"}
 
 
-def create_app(**kwargs) -> GraphQL:
-    return GraphQL(schema, **kwargs)
+def create_app(**kwargs: Any) -> GraphQL:
+    return GraphQL(get_schema(), **kwargs)

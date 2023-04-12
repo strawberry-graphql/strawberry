@@ -17,7 +17,7 @@ from tests.aiohttp.app import (
     DebuggableGraphQLTransportWSHandler,
     DebuggableGraphQLWSHandler,
 )
-from tests.http.schema import Query, schema
+from tests.http.schema import Query, get_schema
 
 from ..context import get_context
 from .base import (
@@ -30,7 +30,7 @@ from .base import (
 )
 
 
-class GraphQLView(BaseGraphQLView[object, object]):
+class GraphQLView(BaseGraphQLView[object, Query]):
     result_override: ResultOverrideFunction = None
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
@@ -62,8 +62,10 @@ class AioHttpClient(HttpClient):
         result_override: ResultOverrideFunction = None,
         allow_batching: bool = False,
     ):
+        self.schema = get_schema()
+
         view = GraphQLView(
-            schema=schema,
+            schema=self.schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
             allow_batching=allow_batching,
@@ -79,7 +81,7 @@ class AioHttpClient(HttpClient):
         )
 
     def create_app(self, **kwargs: Any) -> None:
-        view = GraphQLView(schema=schema, **kwargs)
+        view = GraphQLView(schema=self.schema, **kwargs)
 
         self.app = web.Application()
         self.app.router.add_route(
@@ -95,7 +97,7 @@ class AioHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
         async with TestClient(TestServer(self.app)) as client:
             body = self._build_body(

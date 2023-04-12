@@ -1,3 +1,5 @@
+from typing import Union
+
 import pytest
 
 from channels.testing.websocket import WebsocketCommunicator
@@ -7,13 +9,13 @@ from strawberry.channels.handlers.graphql_transport_ws_handler import (
 from strawberry.channels.handlers.graphql_ws_handler import GraphQLWSHandler
 from strawberry.channels.handlers.ws_handler import GraphQLWSConsumer
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from tests.http.schema import schema
+from tests.http.schema import get_schema
 
 
 async def test_wrong_protocol():
-    GraphQLWSConsumer.as_asgi(schema=schema)
+    GraphQLWSConsumer.as_asgi(schema=get_schema())
     client = WebsocketCommunicator(
-        GraphQLWSConsumer.as_asgi(schema=schema),
+        GraphQLWSConsumer.as_asgi(schema=get_schema()),
         "/graphql",
         subprotocols=[
             "non-existing",
@@ -30,8 +32,10 @@ async def test_wrong_protocol():
         (GRAPHQL_WS_PROTOCOL, GraphQLWSHandler),
     ],
 )
-async def test_correct_protocol(protocol, handler):
-    consumer = GraphQLWSConsumer(schema=schema)
+async def test_correct_protocol(
+    protocol: str, handler: Union[GraphQLTransportWSHandler, GraphQLWSHandler]
+):
+    consumer = GraphQLWSConsumer(schema=get_schema())
     client = WebsocketCommunicator(
         consumer,
         "/graphql",

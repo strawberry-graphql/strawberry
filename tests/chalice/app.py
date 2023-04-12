@@ -3,14 +3,16 @@ from typing import Dict
 from chalice import Chalice  # type: ignore
 from chalice.app import Response
 from strawberry.chalice.views import GraphQLView
-from tests.http.schema import schema
+from tests.http.schema import get_schema
 
 app = Chalice(app_name="TheStackBadger")
 
 
-view = GraphQLView(schema=schema, graphiql=True, allow_queries_via_get=True)
-view_no_graphiql = GraphQLView(schema=schema, graphiql=False)
-view_not_get = GraphQLView(schema=schema, graphiql=False, allow_queries_via_get=False)
+view = GraphQLView(schema=get_schema(), graphiql=True, allow_queries_via_get=True)
+view_no_graphiql = GraphQLView(schema=get_schema(), graphiql=False)
+view_not_get = GraphQLView(
+    schema=get_schema(), graphiql=False, allow_queries_via_get=False
+)
 
 
 @app.route("/")

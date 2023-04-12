@@ -17,7 +17,7 @@ from tests.fastapi.app import (
     DebuggableGraphQLTransportWSHandler,
     DebuggableGraphQLWSHandler,
 )
-from tests.http.schema import Query, schema
+from tests.http.schema import Query, get_schema
 
 from ..context import get_context
 from .asgi import AsgiWebSocketClient
@@ -72,9 +72,10 @@ class FastAPIHttpClient(HttpClient):
         result_override: ResultOverrideFunction = None,
     ):
         self.app = FastAPI()
+        self.schema = get_schema()
 
         graphql_app = GraphQLRouter(
-            schema,
+            schema=self.schema,
             graphiql=graphiql,
             context_getter=fastapi_get_context,
             root_value_getter=get_root_value,
@@ -89,7 +90,7 @@ class FastAPIHttpClient(HttpClient):
 
     def create_app(self, **kwargs: Any) -> None:
         self.app = FastAPI()
-        graphql_app = GraphQLRouter(schema=schema, **kwargs)
+        graphql_app = GraphQLRouter(schema=self.schema, **kwargs)
         self.app.include_router(graphql_app, prefix="/graphql")
 
         self.client = TestClient(self.app)

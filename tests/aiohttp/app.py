@@ -1,7 +1,9 @@
+from typing import Any
+
 from aiohttp import web
 from strawberry.aiohttp.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.aiohttp.views import GraphQLView
-from tests.http.schema import Query, schema
+from tests.http.schema import Query, get_schema
 
 
 class DebuggableGraphQLTransportWSHandler(GraphQLTransportWSHandler):
@@ -22,7 +24,7 @@ class DebuggableGraphQLWSHandler(GraphQLWSHandler):
         return context
 
 
-class MyGraphQLView(GraphQLView):
+class MyGraphQLView(GraphQLView[object, Query]):
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
@@ -30,8 +32,8 @@ class MyGraphQLView(GraphQLView):
         return Query()
 
 
-def create_app(**kwargs) -> web.Application:
+def create_app(**kwargs: Any) -> web.Application:
     app = web.Application()
-    app.router.add_route("*", "/graphql", MyGraphQLView(schema=schema, **kwargs))
+    app.router.add_route("*", "/graphql", MyGraphQLView(schema=get_schema(), **kwargs))
 
     return app

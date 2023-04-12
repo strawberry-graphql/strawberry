@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 
 from strawberry.channels.router import GraphQLProtocolTypeRouter
-from tests.http.schema import schema
+from tests.http.schema import get_schema
 
 
 def _fake_asgi():
@@ -20,7 +20,7 @@ def test_included_paths(ws_asgi: mock.Mock, http_asgi: mock.Mock, pattern: str):
     ws_ret = _fake_asgi()
     ws_asgi.return_value = ws_ret
 
-    router = GraphQLProtocolTypeRouter(schema, url_pattern=pattern)
+    router = GraphQLProtocolTypeRouter(get_schema(), url_pattern=pattern)
     assert set(router.application_mapping) == {"http", "websocket"}
 
     assert len(router.application_mapping["http"].routes) == 1
@@ -50,7 +50,7 @@ def test_included_paths_with_django_app(
 
     django_app = _fake_asgi()
     router = GraphQLProtocolTypeRouter(
-        schema,
+        get_schema(),
         django_application=django_app,
         url_pattern=pattern,
     )

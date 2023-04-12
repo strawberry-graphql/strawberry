@@ -18,7 +18,7 @@ from tests.asgi.app import (
     DebuggableGraphQLTransportWSHandler,
     DebuggableGraphQLWSHandler,
 )
-from tests.http.schema import Query, schema
+from tests.http.schema import Query, get_schema
 
 from ..context import get_context
 from .base import (
@@ -31,7 +31,7 @@ from .base import (
 )
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(BaseGraphQLView[object, Query]):
     result_override: ResultOverrideFunction = None
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
@@ -49,7 +49,7 @@ class GraphQLView(BaseGraphQLView):
         return get_context(context)
 
     async def process_result(
-        self, request: Request, result: ExecutionResult
+        self, request: Union[WebSocket, Request], result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         if self.result_override:
             return self.result_override(result)
@@ -65,8 +65,9 @@ class AsgiHttpClient(HttpClient):
         allow_batching: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
+        self.schema = get_schema()
         view = GraphQLView(
-            schema,
+            schema=self.schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
             allow_batching=allow_batching,
@@ -77,7 +78,7 @@ class AsgiHttpClient(HttpClient):
         self.client = TestClient(view)
 
     def create_app(self, **kwargs: Any) -> None:
-        view = GraphQLView(schema=schema, **kwargs)
+        view = GraphQLView(schema=self.schema, **kwargs)
         self.client = TestClient(view)
 
     async def _graphql_request(
@@ -87,7 +88,7 @@ class AsgiHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
         body = self._build_body(
             query=query, variables=variables, files=files, method=method

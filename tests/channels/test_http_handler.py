@@ -1,12 +1,12 @@
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import pytest
 
 from channels.testing import HttpCommunicator
 from strawberry.channels import GraphQLHTTPConsumer
 from strawberry.channels.handlers.http_handler import SyncGraphQLHTTPConsumer
-from tests.http.schema import schema
+from tests.http.schema import get_schema
 
 pytestmark = pytest.mark.xfail(
     reason=(
@@ -24,7 +24,7 @@ def generate_body(query: str, variables: Optional[Dict[str, Any]] = None) -> byt
 
 
 def generate_get_path(
-    path, query: str, variables: Optional[Dict[str, Any]] = None
+    path: str, query: str, variables: Optional[Dict[str, Any]] = None
 ) -> str:
     body: Dict[str, Any] = {"query": query}
     if variables is not None:
@@ -44,9 +44,11 @@ def assert_response(
 
 
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
-async def test_graphiql_view(consumer):
+async def test_graphiql_view(
+    consumer: Union[GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer]
+):
     client = HttpCommunicator(
-        consumer.as_asgi(schema=schema),
+        consumer.as_asgi(schema=get_schema()),
         "GET",
         "/graphql",
         headers=[(b"accept", b"text/html")],
@@ -58,9 +60,11 @@ async def test_graphiql_view(consumer):
 
 
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
-async def test_graphiql_view_disabled(consumer):
+async def test_graphiql_view_disabled(
+    consumer: Union[GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer]
+):
     client = HttpCommunicator(
-        consumer.as_asgi(schema=schema, graphiql=False),
+        consumer.as_asgi(schema=get_schema(), graphiql=False),
         "GET",
         "/graphql",
         headers=[(b"accept", b"text/html")],
@@ -76,7 +80,7 @@ async def test_graphiql_view_disabled(consumer):
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 async def test_graphiql_view_not_allowed(consumer):
     client = HttpCommunicator(
-        consumer.as_asgi(schema=schema),
+        consumer.as_asgi(schema=get_schema()),
         "GET",
         "/graphql",
     )
@@ -92,7 +96,7 @@ async def test_graphiql_view_not_allowed(consumer):
 @pytest.mark.parametrize("method", ["DELETE", "HEAD", "PUT", "PATCH"])
 async def test_disabled_methods(consumer, method: str):
     client = HttpCommunicator(
-        consumer.as_asgi(schema=schema),
+        consumer.as_asgi(schema=get_schema()),
         method,
         "/graphql",
         headers=[(b"accept", b"text/html")],
@@ -108,7 +112,7 @@ async def test_disabled_methods(consumer, method: str):
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 async def test_fails_on_multipart_body(consumer):
     client = HttpCommunicator(
-        consumer.as_asgi(schema=schema),
+        consumer.as_asgi(schema=get_schema()),
         "POST",
         "/graphql",
         body=generate_body("{ hello }"),
@@ -126,7 +130,7 @@ async def test_fails_on_multipart_body(consumer):
 @pytest.mark.parametrize("body", [b"{}", b'{"foo": "bar"}'])
 async def test_fails_on_missing_query(consumer, body: bytes):
     client = HttpCommunicator(
-        consumer.as_asgi(schema=schema),
+        consumer.as_asgi(schema=get_schema()),
         "POST",
         "/graphql",
         body=body,
@@ -143,7 +147,7 @@ async def test_fails_on_missing_query(consumer, body: bytes):
 @pytest.mark.parametrize("body", [b"", b"definitely-not-json-string"])
 async def test_fails_on_invalid_query(consumer, body: bytes):
     client = HttpCommunicator(
-        consumer.as_asgi(schema=schema),
+        consumer.as_asgi(schema=get_schema()),
         "POST",
         "/graphql",
         body=body,
@@ -159,7 +163,7 @@ async def test_fails_on_invalid_query(consumer, body: bytes):
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 async def test_graphql_post_query_fails_using_params(consumer):
     client = HttpCommunicator(
-        consumer.as_asgi(schema=schema),
+        consumer.as_asgi(schema=get_schema()),
         "GET",
         "/graphql?foo=bar",
     )
@@ -180,7 +184,7 @@ async def test_graphql_post_query_fails_using_params(consumer):
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 async def test_graphql_query(consumer):
     client = HttpCommunicator(
-        consumer.as_asgi(schema=schema),
+        consumer.as_asgi(schema=get_schema()),
         "POST",
         "/graphql",
         body=generate_body("{ hello }"),
@@ -195,7 +199,7 @@ async def test_graphql_query(consumer):
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 async def test_graphql_can_pass_variables(consumer):
     client = HttpCommunicator(
-        consumer.as_asgi(schema=schema),
+        consumer.as_asgi(schema=get_schema()),
         "POST",
         "/graphql",
         body=generate_body(
@@ -213,7 +217,7 @@ async def test_graphql_can_pass_variables(consumer):
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 async def test_graphql_get_query_using_params(consumer):
     client = HttpCommunicator(
-        consumer.as_asgi(schema=schema),
+        consumer.as_asgi(schema=get_schema()),
         "GET",
         generate_get_path("/graphql", "{ hello }"),
     )
@@ -227,7 +231,7 @@ async def test_graphql_get_query_using_params(consumer):
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 async def test_graphql_can_pass_variables_using_params(consumer):
     client = HttpCommunicator(
-        consumer.as_asgi(schema=schema),
+        consumer.as_asgi(schema=get_schema()),
         "GET",
         generate_get_path(
             "/graphql",
@@ -245,7 +249,7 @@ async def test_graphql_can_pass_variables_using_params(consumer):
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 async def test_returns_errors_and_data(consumer):
     client = HttpCommunicator(
-        consumer.as_asgi(schema=schema),
+        consumer.as_asgi(schema=get_schema()),
         "POST",
         "/graphql",
         body=generate_body("{ hello, alwaysFail }"),
@@ -268,7 +272,7 @@ async def test_returns_errors_and_data(consumer):
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 async def test_graphql_get_does_not_allow_mutation(consumer):
     client = HttpCommunicator(
-        consumer.as_asgi(schema=schema),
+        consumer.as_asgi(schema=get_schema()),
         "GET",
         generate_get_path("/graphql", "mutation { hello }"),
     )
@@ -284,7 +288,7 @@ async def test_graphql_get_does_not_allow_mutation(consumer):
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 async def test_graphql_get_not_allowed(consumer):
     client = HttpCommunicator(
-        consumer.as_asgi(schema=schema, allow_queries_via_get=False),
+        consumer.as_asgi(schema=get_schema(), allow_queries_via_get=False),
         "GET",
         generate_get_path("/graphql", "query { hello }"),
     )

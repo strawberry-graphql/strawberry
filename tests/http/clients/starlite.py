@@ -10,7 +10,7 @@ from starlite.testing import TestClient
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.starlite import make_graphql_controller
 from strawberry.types import ExecutionResult
-from tests.http.schema import Query, schema
+from tests.http.schema import Query, get_schema
 
 from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
@@ -37,7 +37,7 @@ class StarliteHttpClient(HttpClient):
         result_override: ResultOverrideFunction = None,
     ):
         BaseGraphQLController = make_graphql_controller(
-            schema=schema,
+            schema=get_schema(),
             path="/graphql",
             graphiql=graphiql,
             context_getter=starlite_get_context,
@@ -48,7 +48,7 @@ class StarliteHttpClient(HttpClient):
 
         class GraphQLController(BaseGraphQLController):
             async def process_result(
-                self, request: Request, result: ExecutionResult
+                self, request: Request[Any, Any], result: ExecutionResult
             ) -> GraphQLHTTPResponse:
                 if result_override:
                     return result_override(result)

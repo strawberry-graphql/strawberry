@@ -8,7 +8,7 @@ from typing_extensions import Literal
 
 from channels.testing import WebsocketCommunicator
 from strawberry.channels import GraphQLWSConsumer
-from tests.http.schema import schema
+from tests.http.schema import get_schema
 
 from ..context import get_context
 from .base import (
@@ -22,7 +22,7 @@ from .base import (
 
 
 class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
-    async def get_context(self, *args, **kwargs) -> object:
+    async def get_context(self, *args: Any, **kwargs: Any) -> object:
         context = await super().get_context(*args, **kwargs)
         context.tasks = self._handler.tasks
         context.connectionInitTimeoutTask = getattr(
@@ -44,13 +44,16 @@ class ChannelsHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
+        self.schema = get_schema()
         self.app = DebuggableGraphQLTransportWSConsumer.as_asgi(
-            schema=schema,
+            schema=self.schema,
             keep_alive=False,
         )
 
     def create_app(self, **kwargs: Any) -> None:
-        self.app = DebuggableGraphQLTransportWSConsumer.as_asgi(schema=schema, **kwargs)
+        self.app = DebuggableGraphQLTransportWSConsumer.as_asgi(
+            schema=self.schema, **kwargs
+        )
 
     async def _graphql_request(
         self,
@@ -59,7 +62,7 @@ class ChannelsHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
         raise NotImplementedError
 

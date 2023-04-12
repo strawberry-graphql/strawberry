@@ -1,5 +1,5 @@
 import asyncio
-from typing import Generator
+from typing import AsyncGenerator
 
 import pytest
 
@@ -16,13 +16,13 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
-from tests.http.schema import schema
+from tests.http.schema import get_schema
 
 
 @pytest.fixture
-async def ws() -> Generator[WebsocketCommunicator, None, None]:
+async def ws() -> AsyncGenerator[WebsocketCommunicator, None]:
     client = WebsocketCommunicator(
-        GraphQLWSConsumer.as_asgi(schema=schema),
+        GraphQLWSConsumer.as_asgi(schema=get_schema()),
         "/graphql",
         subprotocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
     )

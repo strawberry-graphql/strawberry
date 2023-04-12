@@ -12,7 +12,7 @@ from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.sanic.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult
-from tests.http.schema import Query, schema
+from tests.http.schema import Query, get_schema
 
 from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
@@ -56,7 +56,7 @@ class SanicHttpClient(HttpClient):
             f"test_{int(randint(0, 1000))}",  # noqa: S311
         )
         view = GraphQLView.as_view(
-            schema=schema,
+            schema=get_schema(),
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
             allow_batching=allow_batching,
@@ -74,7 +74,7 @@ class SanicHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
         body = self._build_body(
             query=query, variables=variables, files=files, method=method
@@ -89,7 +89,7 @@ class SanicHttpClient(HttpClient):
                 else:
                     kwargs["content"] = dumps(body)
 
-        request, response = await self.app.asgi_client.request(
+        _, response = await self.app.asgi_client.request(
             method,
             "/graphql",
             headers=self._get_headers(method=method, headers=headers, files=files),
@@ -109,7 +109,7 @@ class SanicHttpClient(HttpClient):
         method: Literal["get", "post", "patch", "put", "delete"],
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
-        request, response = await self.app.asgi_client.request(
+        _, response = await self.app.asgi_client.request(
             method,
             url,
             headers=headers,
@@ -136,7 +136,7 @@ class SanicHttpClient(HttpClient):
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
         body = data or dumps(json)
-        request, response = await self.app.asgi_client.request(
+        _, response = await self.app.asgi_client.request(
             "post", url, content=body, headers=headers
         )
 

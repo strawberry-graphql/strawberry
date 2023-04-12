@@ -1,9 +1,10 @@
 from typing import Any, Dict, Union
 
+import strawberry
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
-from tests.http.schema import schema
+from tests.http.schema import get_schema
 
 
 class DebuggableGraphQLTransportWSHandler(GraphQLTransportWSHandler):
@@ -47,13 +48,15 @@ async def get_root_value(
     return request or ws
 
 
-class GraphQLRouter(BaseGraphQLRouter):
+class GraphQLRouter(BaseGraphQLRouter[Any, Any]):
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
 
-def create_app(schema=schema, **kwargs) -> FastAPI:
+def create_app(schema: strawberry.Schema, **kwargs: Any) -> FastAPI:
     app = FastAPI()
+
+    schema = schema or get_schema()
 
     graphql_app = GraphQLRouter(
         schema, context_getter=get_context, root_value_getter=get_root_value, **kwargs

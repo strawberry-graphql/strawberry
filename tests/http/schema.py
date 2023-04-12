@@ -40,7 +40,7 @@ def _read_file(text_file: Upload) -> str:
         if isinstance(text_file, StarliteUploadFile):
             text_file = text_file.file  # type: ignore
 
-    return text_file.read().decode()
+    return text_file.read().decode()  # type: ignore
 
 
 @strawberry.enum
@@ -140,7 +140,7 @@ class Mutation:
 
     @strawberry.mutation
     def match_text(self, text_file: Upload, pattern: str) -> str:
-        text = text_file.read().decode()
+        text = text_file.read().decode()  # type: ignore
         return pattern if pattern in text else ""
 
 
@@ -225,9 +225,10 @@ class Subscription:
         yield info.context["connection_params"]["strawberry"]
 
 
-schema = strawberry.Schema(
-    query=Query,
-    mutation=Mutation,
-    subscription=Subscription,
-    extensions=[MyExtension],
-)
+def get_schema() -> strawberry.Schema:
+    return strawberry.Schema(
+        query=Query,
+        mutation=Mutation,
+        subscription=Subscription,
+        extensions=[MyExtension],
+    )
