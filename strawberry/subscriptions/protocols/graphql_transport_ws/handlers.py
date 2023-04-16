@@ -9,6 +9,7 @@ from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 from graphql.error.graphql_error import format_error as format_graphql_error
 
+from strawberry.http.async_base_view import WSConnectionParams
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
@@ -33,6 +34,16 @@ if TYPE_CHECKING:
     from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
         GraphQLTransportMessage,
     )
+
+
+class GraphQLTransportWSParam(WSConnectionParams):
+    def __init__(self, connection_params: Dict[str, Any]):
+        self.connection_params = connection_params
+        self.response_params = None
+        self.rejected: bool = False
+
+    async def reject(self) -> None:
+        self.rejected = True
 
 
 class BaseGraphQLTransportWSHandler(ABC):
@@ -142,19 +153,18 @@ class BaseGraphQLTransportWSHandler(ABC):
         payload = message.payload or {}
         # self.view is still optional until channels integration
         # is migrated to use views.
+        params = GraphQLTransportWSParam(connection_params=payload)
         if self.view:
-            response = await self.view.on_ws_connect(payload)
-            if response is False:
+            await self.view.on_ws_connect(params)
+            if params.rejected:
                 await self.close(code=4403, reason="Forbidden")
                 return
-        else:
-            response = None
 
-        self.connection_params = payload
+        self.connection_params = params.connection_params
         self.connection_acknowledged = True
         connection_ack = (
-            ConnectionAckMessage(payload=response)
-            if response
+            ConnectionAckMessage(payload=params.response_params)
+            if params.response_params is not None
             else ConnectionAckMessage()
         )
         await self.send_message(connection_ack)

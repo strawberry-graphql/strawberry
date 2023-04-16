@@ -9,7 +9,6 @@ from typing import (
     Optional,
     Union,
 )
-from typing_extensions import Literal
 
 from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
@@ -216,15 +215,29 @@ class AsyncBaseHTTPView(
     ) -> GraphQLHTTPResponse:
         return process_result(result)
 
-    async def on_ws_connect(
-        self, connection_params: Optional[Dict[str, Any]]
-    ) -> Union[Literal[False], None, Dict[str, Any]]:
+    async def on_ws_connect(self, params: "WSConnectionParams") -> None:
         """
         Validate the connection parameters provided with a websocket connection.
         The default implementation leaves them unmodified, and returns no
         response payload.
-        A custom implementation may return False to reject the connection.
-        Otherwise, it may optionally modify the parameters and return
-        a payload to the client.
+        A custom implementation may modify the parameters and optionally set
+        a response payload to the client.  It may also call `params.reject()`
+        to reject the connection.
         """
         return None
+
+
+class WSConnectionParams(abc.ABC):
+    """
+    This class represents a websocket connection request
+    """
+
+    connection_params: Dict[str, Any]
+    response_params: Optional[Dict[str, Any]]
+
+    @abc.abstractmethod
+    async def reject(self) -> None:
+        """
+        Reject the websocket connection.
+        """
+        ...
