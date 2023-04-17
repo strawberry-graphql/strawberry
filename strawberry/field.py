@@ -431,7 +431,7 @@ def field(
 
     This is normally used inside a type declaration:
 
-    >>> @strawberry.type:
+    >>> @strawberry.type
     >>> class X:
     >>>     field_abc: str = strawberry.field(description="ABC")
 
