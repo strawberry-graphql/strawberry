@@ -871,3 +871,41 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
     args = errorhandler.call_args
     assert isinstance(args[0][0], AttributeError)
     assert "total_seconds" in str(args[0][0])
+
+
+@pytest.mark.xfail
+async def test_subscription_errors_continue(ws: WebSocketClient):
+    """
+    Verify that an ExecutionResult with errors during subscription does not terminate
+    the subscription
+    """
+
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="subscription { flavorsInvalid }",
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == NextMessage.type
+    assert response["id"] == "sub1"
+    assert response["payload"]["data"] == {"flavorsInvalid": "VANILLA"}
+
+    response = await ws.receive_json()
+    assert response["type"] == NextMessage.type
+    assert response["id"] == "sub1"
+    assert response["payload"]["data"] is None
+    errors = response["payload"]["errors"]
+    assert "cannot represent value" in str(errors)
+
+    response = await ws.receive_json()
+    assert response["type"] == NextMessage.type
+    assert response["id"] == "sub1"
+    assert response["payload"]["data"] == {"flavorsInvalid": "CHOCOLATE"}
+
+    response = await ws.receive_json()
+    assert response["type"] == CompleteMessage.type
+    assert response["id"] == "sub1"

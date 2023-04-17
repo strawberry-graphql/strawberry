@@ -184,6 +184,12 @@ class Subscription:
         yield Flavor.CHOCOLATE
 
     @strawberry.subscription
+    async def flavors_invalid(self) -> AsyncGenerator[Flavor, None]:
+        yield Flavor.VANILLA
+        yield "invalid type"  # type: ignore
+        yield Flavor.CHOCOLATE
+
+    @strawberry.subscription
     async def debug(self, info: Info[Any, Any]) -> AsyncGenerator[DebugInfo, None]:
         active_result_handlers = [
             task for task in info.context["get_tasks"]() if not task.done()
