@@ -269,6 +269,8 @@ class BaseGraphQLTransportWSHandler(ABC):
         Operation task top level method.  Cleans up and de-registers the operation
         once it is done.
         """
+        task = asyncio.current_task()
+        assert task is not None
         # TODO: Handle errors in this method using self.handle_task_exception()
         try:
             await self.handle_async_results(result_source, operation)
@@ -287,8 +289,6 @@ class BaseGraphQLTransportWSHandler(ABC):
             await operation.send_message(CompleteMessage(id=operation.id))
         finally:
             # add this task to a list to be reaped later
-            task = asyncio.current_task()
-            assert task is not None
             self.completed_tasks.append(task)
 
     async def handle_async_results(
