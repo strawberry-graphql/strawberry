@@ -873,7 +873,6 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
     assert "total_seconds" in str(args[0][0])
 
 
-@pytest.mark.xfail
 async def test_subscription_errors_continue(ws: WebSocketClient):
     """
     Verify that an ExecutionResult with errors during subscription does not terminate
