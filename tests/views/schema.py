@@ -80,6 +80,10 @@ class Query:
         return "Hey"
 
     @strawberry.field
+    async def error(self, message: str) -> AsyncGenerator[str, None]:
+        yield GraphQLError(message)  # type: ignore
+
+    @strawberry.field
     async def exception(self, message: str) -> str:
         raise ValueError(message)
 
