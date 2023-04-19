@@ -10,6 +10,7 @@ class DebuggableGraphQLTransportWSHandler(GraphQLTransportWSHandler):
         context["ws"] = self._ws
         context["tasks"] = self.tasks
         context["connectionInitTimeoutTask"] = self.connection_init_timeout_task
+        context["handler"] = self
         return context
 
 
@@ -19,6 +20,7 @@ class DebuggableGraphQLWSHandler(GraphQLWSHandler):
         context["ws"] = self._ws
         context["tasks"] = self.tasks
         context["connectionInitTimeoutTask"] = None
+        context["handler"] = self
         return context
 
 

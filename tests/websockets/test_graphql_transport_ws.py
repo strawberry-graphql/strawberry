@@ -831,3 +831,73 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
     args = errorhandler.call_args
     assert isinstance(args[0][0], AttributeError)
     assert "total_seconds" in str(args[0][0])
+async def test_subscription_finializer_called(ws: WebSocketClient):
+    # Test that a subscription is promptly finalized when the client interrupts the
+    # subscription
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(query="subscription { longFinalizer(delay: 0.0) }"),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert (
+        response
+        == NextMessage(
+            id="sub1", payload={"data": {"longFinalizer": "hello"}}
+        ).as_dict()
+    )
+
+    # check that the context is live, finalize hasn't been called yet.
+    # finalizer_state is set True to when subscription is running, then back
+    # to False when the subscription is finalized
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub2",
+            payload=SubscribeMessagePayload(query="query { finalizerState }"),
+        ).as_dict()
+    )
+
+    # wait for the sub2 message
+    while True:
+        response = await ws.receive_json()
+        assert response["type"] in ["next", "complete"]
+        if response["type"] != "next" or response["id"] != "sub2":
+            continue
+        assert response["payload"]["data"]["finalizerState"] is True
+        break
+
+    # cancel the subscription
+    await ws.send_json(CompleteMessage(id="sub1").as_dict())
+
+    # wait until context is dead.
+    # We don't know exactly how many packets will arrive or how long it will take.
+    # Need manual timeout because async timeout doesn't work on async integrations
+    async def wait_for_finalize():
+        counter = 0
+        start = time.time()
+        while True:
+            now = time.time()
+            if now - start > 1:
+                raise TimeoutError("Timeout waiting for finalizer to be called")
+            counter += 1
+            id = f"check{counter}"
+            await ws.send_json(
+                SubscribeMessage(
+                    id=id,
+                    payload=SubscribeMessagePayload(query="query { finalizerState }"),
+                ).as_dict()
+            )
+            # wait for the response showing that finalizer state is back to false
+            while True:
+                response = await ws.receive_json()
+                assert response["type"] in ["next", "complete"]
+                if response["type"] != "next" or response["id"] != id:
+                    continue
+                if response["payload"]["data"]["finalizerState"] is False:
+                    return
+                break
+
+    await asyncio.wait_for(wait_for_finalize(), timeout=1)
+

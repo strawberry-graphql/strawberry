@@ -259,6 +259,7 @@ class DebuggableGraphQLTransportWSMixin:
         context["ws"] = self._ws
         context["tasks"] = self.tasks
         context["connectionInitTimeoutTask"] = self.connection_init_timeout_task
+        context["handler"] = self
         return context
 
 
@@ -268,4 +269,5 @@ class DebuggableGraphQLWSMixin:
         context["ws"] = self._ws
         context["tasks"] = self.tasks
         context["connectionInitTimeoutTask"] = None
+        context["handler"] = self
         return context

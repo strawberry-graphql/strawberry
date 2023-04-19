@@ -25,6 +25,7 @@ class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
     async def get_context(self, *args, **kwargs) -> object:
         context = await super().get_context(*args, **kwargs)
         context.tasks = self._handler.tasks
+        context.handler = self._handler
         context.connectionInitTimeoutTask = getattr(
             self._handler, "connection_init_timeout_task", None
         )
