@@ -210,7 +210,7 @@ class Person:
 @strawberry.type
 class Query:
     @strawberry.field
-    async def get_all_people(self) -> List[User]:
+    async def get_all_people(self) -> List[Person]:
         # Fetch all people from the database, without going through the dataloader abstraction
         people = await database.get_all_people()
 

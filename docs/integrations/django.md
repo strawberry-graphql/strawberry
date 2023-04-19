@@ -183,7 +183,7 @@ methods:
 - `async get_context(self, request: HttpRequest) -> Any`
 - `async get_root_value(self, request: HttpRequest) -> Any`
 - `async process_result(self, request: HttpRequest, result: ExecutionResult) -> GraphQLHTTPResponse`
-- `def encode_json(self, data: GraphQLHTTPResponse) -> str`
+- `def encode_json(self, data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]]) -> str`
 
 ## get_context
 
@@ -269,7 +269,9 @@ we use `json.dumps` but you can override this method to use a different encoder.
 
 ```python
 class MyGraphQLView(AsyncGraphQLView):
-    def encode_json(self, data: GraphQLHTTPResponse) -> str:
+    def encode_json(
+        self, data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]]
+    ) -> str:
         return json.dumps(data, indent=2)
 ```
 

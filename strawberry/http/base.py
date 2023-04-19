@@ -43,7 +43,9 @@ class BaseView(Generic[Request]):
         except json.JSONDecodeError as e:
             raise HTTPException(400, "Unable to parse request body as JSON") from e
 
-    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+    def encode_json(
+        self, response_data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]]
+    ) -> str:
         return json.dumps(response_data)
 
     def parse_query_params(

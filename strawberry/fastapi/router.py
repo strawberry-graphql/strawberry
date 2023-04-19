@@ -7,6 +7,7 @@ from typing import (
     Any,
     Awaitable,
     Callable,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -306,7 +307,9 @@ class GraphQLRouter(
         return self.temporal_response
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: Response
+        self,
+        response_data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]],
+        sub_response: Response,
     ) -> Response:
         response = Response(
             self.encode_json(response_data),
