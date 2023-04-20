@@ -1,5 +1,6 @@
 import asyncio
 import json
+import time
 from datetime import timedelta
 from typing import AsyncGenerator, Type
 
@@ -746,3 +747,46 @@ async def test_rejects_connection_params_not_unset(ws_raw: WebSocketClient):
     assert ws.closed
     assert ws.close_code == 4400
     ws.assert_reason("Invalid connection init payload")
+
+
+@pytest.mark.xfail
+async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
+    # Test that when we cancel a subscription, the websocket isn't blocked
+    # while some complex finalization takes place.
+    delay = 0.1
+
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query=f"subscription {{ longFinalizer(delay: {delay}) }}"
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert (
+        response
+        == NextMessage(
+            id="sub1", payload={"data": {"longFinalizer": "hello"}}
+        ).as_dict()
+    )
+
+    # now cancel the stubscription and send a new query.  We expect the response
+    # to the new query to arrive immediately, without waiting for the finalizer
+    start = time.time()
+    await ws.send_json(CompleteMessage(id="sub1").as_dict())
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub2",
+            payload=SubscribeMessagePayload(query="query { hello }"),
+        ).as_dict()
+    )
+    while True:
+        response = await ws.receive_json()
+        assert response["type"] in ("next", "complete")
+        if response["id"] == "sub2":
+            break
+    end = time.time()
+    elapsed = end - start
+    assert elapsed < delay
