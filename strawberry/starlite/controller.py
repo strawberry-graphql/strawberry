@@ -251,9 +251,7 @@ def make_graphql_controller(
             return Response(html, media_type=MediaType.HTML)
 
         def create_response(
-            self,
-            response_data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]],
-            sub_response: Response[bytes],
+            self, response_data: GraphQLHTTPResponse, sub_response: Response[bytes]
         ) -> Response[bytes]:
             response = Response(
                 self.encode_json(response_data).encode(),
