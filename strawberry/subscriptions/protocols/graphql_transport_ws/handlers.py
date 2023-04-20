@@ -300,11 +300,8 @@ class BaseGraphQLTransportWSHandler(ABC):
         result_source = self.subscriptions.pop(operation_id)
         task = self.tasks.pop(operation_id)
         task.cancel()
-        with suppress(BaseException):
-            await task
-        # since python 3.8, generators cannot be reliably closed
-        with suppress(RuntimeError):
-            await result_source.aclose()
+        # do not await the task here, lest we block the main
+        # websocket handler Task.
 
     async def reap_completed_tasks(self) -> None:
         """
