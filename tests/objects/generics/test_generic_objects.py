@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import datetime
 from typing import Generic, List, Optional, TypeVar, Union
 
@@ -614,3 +615,29 @@ def test_federation():
 
     assert field2_copy.python_name == "node_field"
     assert field2_copy.type is str
+
+
+def test_custom_dataclasses():
+    T = TypeVar("T")
+
+    @dataclass
+    class MyGeneric(Generic[T]):
+        attr: T
+
+    _T = TypeVar("T")
+
+    @strawberry.type
+    class MyGenericChild(MyGeneric[_T], Generic[_T]):
+        attr: _T
+
+    def resolve() -> MyGenericChild[int]:
+        return MyGenericChild(attr=1)
+
+    @strawberry.type
+    class Query:
+        concrete_resolver: MyGenericChild[int] = strawberry.field(resolver=resolve)
+
+    schema = strawberry.Schema(Query)
+    res = schema.execute_sync("query { concreteResolver { attr } }")
+    assert not res.errors
+    assert res.data == {"concreteResolver": {"attr": 1}}
