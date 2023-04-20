@@ -40,6 +40,28 @@ async def ws_raw(http_client: HttpClient) -> AsyncGenerator[WebSocketClient, Non
     await ws.close()
     assert ws.closed
 
+    # loop cleanup code, similar to code from asyncio.run()
+    # disabled, can be enabled for debugging
+    return
+
+    loop = asyncio.get_running_loop()
+    current = asyncio.current_task(loop=loop)
+    to_cancel = [t for t in asyncio.all_tasks(loop=loop) if t is not current]
+    for task in to_cancel:
+        task.cancel()
+    await asyncio.gather(*to_cancel, return_exceptions=True)
+    for task in to_cancel:
+        if task.cancelled():
+            continue
+        if task.exception() is not None:
+            loop.call_exception_handler(
+                {
+                    "message": "unhandled exception during test fixture cleanup",
+                    "exception": task.exception(),
+                    "task": task,
+                }
+            )
+
 
 @pytest_asyncio.fixture
 async def ws(ws_raw: WebSocketClient) -> WebSocketClient:
