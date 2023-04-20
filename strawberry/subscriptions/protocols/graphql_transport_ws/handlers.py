@@ -237,8 +237,9 @@ class BaseGraphQLTransportWSHandler(ABC):
             result_source = self.subscriptions[operation.id]
             with suppress(RuntimeError):
                 await result_source.aclose()
-            del self.subscriptions[operation.id]
-            del self.tasks[operation.id]
+            if operation.id in self.subscriptions:
+                del self.subscriptions[operation.id]
+                del self.tasks[operation.id]
             raise
         else:
             await operation.send_message(CompleteMessage(id=operation.id))
@@ -267,7 +268,7 @@ class BaseGraphQLTransportWSHandler(ABC):
                     await operation.send_message(next_message)
         except asyncio.CancelledError:
             # CancelledErrors are expected during task cleanup.
-            return
+            raise
         except Exception as error:
             # GraphQLErrors are handled by graphql-core and included in the
             # ExecutionResult
