@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import datetime
+from dataclasses import dataclass
 from typing import Generic, List, Optional, TypeVar, Union
 
 import pytest
