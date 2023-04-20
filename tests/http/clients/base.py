@@ -11,14 +11,13 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Union,
 )
 from typing_extensions import Literal
 
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
-JSON = Union[Dict[str, "JSON"], List["JSON"], str, int, float, bool, None]
+JSON = Dict[str, object]
 ResultOverrideFunction = Optional[Callable[[ExecutionResult], GraphQLHTTPResponse]]
 
 

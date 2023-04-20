@@ -1,7 +1,13 @@
 import abc
-import asyncio
 import json
-from typing import Callable, Dict, Generic, List, Mapping, Optional, Union
+from typing import (
+    Callable,
+    Dict,
+    Generic,
+    Mapping,
+    Optional,
+    Union,
+)
 
 from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
@@ -82,19 +88,23 @@ class AsyncBaseHTTPView(
 
     @abc.abstractmethod
     def create_response(
-        self,
-        response_data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]],
-        sub_response: SubResponse,
+        self, response_data: GraphQLHTTPResponse, sub_response: SubResponse
     ) -> Response:
         ...
 
     async def execute_operation(
-        self,
-        request_adapter: AsyncHTTPRequestAdapter,
-        context: Context,
-        root_value: Optional[RootValue],
-        request_data: GraphQLRequestData,
+        self, request: Request, context: Context, root_value: Optional[RootValue]
     ) -> ExecutionResult:
+        request_adapter = self.request_adapter_class(request)
+
+        try:
+            request_data = await self.parse_http_body(request_adapter)
+        except json.decoder.JSONDecodeError as e:
+            raise HTTPException(400, "Unable to parse request body as JSON") from e
+            # DO this only when doing files
+        except KeyError as e:
+            raise HTTPException(400, "File(s) missing in form data") from e
+
         allowed_operation_types = OperationType.from_http(request_adapter.method)
 
         if not self.allow_queries_via_get and request_adapter.method == "GET":
@@ -163,57 +173,8 @@ class AsyncBaseHTTPView(
         assert context
 
         try:
-            request_data = await self.parse_http_body(request_adapter)
-        except json.decoder.JSONDecodeError as e:
-            raise HTTPException(400, "Unable to parse request body as JSON") from e
-            # DO this only when doing files
-        except KeyError as e:
-            raise HTTPException(400, "File(s) missing in form data") from e
-
-        if isinstance(request_data, list):
-            # TODO: validation
-            tasks = [
-                self.execute_single(
-                    request=request,
-                    request_adapter=request_adapter,
-                    sub_response=sub_response,
-                    context=context,
-                    root_value=root_value,
-                    request_data=data,
-                )
-                for data in request_data
-            ]
-
-            response_data = await asyncio.gather(*tasks)
-        else:
-            response_data = await self.execute_single(
-                request=request,
-                request_adapter=request_adapter,
-                sub_response=sub_response,
-                context=context,
-                root_value=root_value,
-                request_data=request_data,
-            )
-
-        return self.create_response(
-            response_data=response_data, sub_response=sub_response
-        )
-
-    async def execute_single(
-        self,
-        request: Request,
-        request_adapter: AsyncHTTPRequestAdapter,
-        sub_response: SubResponse,
-        context: Context,
-        root_value: Optional[RootValue],
-        request_data: GraphQLRequestData,
-    ) -> GraphQLHTTPResponse:
-        try:
             result = await self.execute_operation(
-                request_adapter=request_adapter,
-                context=context,
-                root_value=root_value,
-                request_data=request_data,
+                request=request, context=context, root_value=root_value
             )
         except InvalidOperationTypeError as e:
             raise HTTPException(
@@ -222,11 +183,15 @@ class AsyncBaseHTTPView(
         except MissingQueryError as e:
             raise HTTPException(400, "No GraphQL query found in the request") from e
 
-        return await self.process_result(request=request, result=result)
+        response_data = await self.process_result(request=request, result=result)
+
+        return self.create_response(
+            response_data=response_data, sub_response=sub_response
+        )
 
     async def parse_http_body(
         self, request: AsyncHTTPRequestAdapter
-    ) -> Union[GraphQLRequestData, List[GraphQLRequestData]]:
+    ) -> GraphQLRequestData:
         content_type = request.content_type or ""
 
         if "application/json" in content_type:
@@ -237,16 +202,6 @@ class AsyncBaseHTTPView(
             data = self.parse_query_params(request.query_params)
         else:
             raise HTTPException(400, "Unsupported content type")
-
-        if isinstance(data, list):
-            return [
-                GraphQLRequestData(
-                    query=item.get("query"),
-                    variables=item.get("variables"),  # type: ignore
-                    operation_name=item.get("operationName"),
-                )
-                for item in data
-            ]
 
         return GraphQLRequestData(
             query=data.get("query"),
