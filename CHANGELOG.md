@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.171.3 - 2023-04-21
+--------------------
+
+This release adds missing annotations in class methods, improving
+our type coverage.
+
+Contributed by [Kai Benevento](https://github.com/benesgarage) via [PR #2721](https://github.com/strawberry-graphql/strawberry/pull/2721/)
+
+
 0.171.2 - 2023-04-21
 --------------------
 
