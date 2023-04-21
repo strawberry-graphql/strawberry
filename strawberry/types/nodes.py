@@ -88,7 +88,11 @@ class FragmentSpread:
     selections: List[Selection]
 
     @classmethod
-    def from_node(cls, info: GraphQLResolveInfo, node: GQLFragmentSpreadNode):
+    def from_node(
+        cls,
+        info: GraphQLResolveInfo,
+        node: GQLFragmentSpreadNode,
+    ) -> FragmentSpread:
         # Look up fragment
         name = node.name.value
         fragment = info.fragments[name]
@@ -111,7 +115,11 @@ class InlineFragment:
     directives: Directives
 
     @classmethod
-    def from_node(cls, info: GraphQLResolveInfo, node: GQLInlineFragmentNode):
+    def from_node(
+        cls,
+        info: GraphQLResolveInfo,
+        node: GQLInlineFragmentNode,
+    ) -> InlineFragment:
         return cls(
             type_condition=node.type_condition.name.value,
             selections=convert_selections(
@@ -132,7 +140,7 @@ class SelectedField:
     alias: Optional[str] = None
 
     @classmethod
-    def from_node(cls, info: GraphQLResolveInfo, node: GQLFieldNode):
+    def from_node(cls, info: GraphQLResolveInfo, node: GQLFieldNode) -> SelectedField:
         return cls(
             name=node.name.value,
             directives=convert_directives(info, node.directives),
