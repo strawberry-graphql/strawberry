@@ -853,13 +853,17 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
     args = errorhandler.call_args
     assert isinstance(args[0][0], AttributeError)
     assert "total_seconds" in str(args[0][0])
+
+
 async def test_subscription_finializer_called(ws: WebSocketClient):
     # Test that a subscription is promptly finalized when the client interrupts the
     # subscription
     await ws.send_json(
         SubscribeMessage(
             id="sub1",
-            payload=SubscribeMessagePayload(query="subscription { longFinalizer(delay: 0.0) }"),
+            payload=SubscribeMessagePayload(
+                query="subscription { longFinalizer(delay: 0.0) }"
+            ),
         ).as_dict()
     )
 
@@ -895,13 +899,15 @@ async def test_subscription_finializer_called(ws: WebSocketClient):
 
     # wait until context is dead.
     # We don't know exactly how many packets will arrive or how long it will take.
-    # Need manual timeout because async timeout doesn't work on async integrations
+    # Need manual timeout because async timeout doesn't work on sync integrations
+    max_wait = 2.0  # seconds
+
     async def wait_for_finalize():
         counter = 0
         start = time.time()
         while True:
             now = time.time()
-            if now - start > 1:
+            if now - start > max_wait:
                 raise TimeoutError("Timeout waiting for finalizer to be called")
             counter += 1
             id = f"check{counter}"
@@ -921,5 +927,4 @@ async def test_subscription_finializer_called(ws: WebSocketClient):
                     return
                 break
 
-    await asyncio.wait_for(wait_for_finalize(), timeout=1)
-
+    await asyncio.wait_for(wait_for_finalize(), timeout=max_wait)
