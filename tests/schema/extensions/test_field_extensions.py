@@ -217,3 +217,41 @@ def test_extension_order_respected():
     result = schema.execute_sync(query)
     # The result should be lowercase because that is the last extension in the chain
     assert result.data["string"] == "this is a test!!"
+
+
+def test_extension_argument_parsing():
+    """
+    Check that kwargs passed to field extensions have been converted into
+    Strawberry types
+    """
+
+    @strawberry.input
+    class StringInput:
+        some_input_value: str = strawberry.field(description="foo")
+
+    field_kwargs = {}
+
+    class CustomExtension(FieldExtension):
+        def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+            nonlocal field_kwargs
+            field_kwargs = kwargs
+            result = next_(source, info, **kwargs)
+            return result
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(extensions=[CustomExtension()])
+        def string(self, some_input: StringInput) -> str:
+            return f"This is a test!! {some_input.some_input_value}"
+
+    schema = strawberry.Schema(query=Query)
+    query = 'query { string(someInput: { someInputValue: "foo" }) }'
+
+    result = schema.execute_sync(query)
+    assert result.data, result.errors
+    assert result.data["string"] == "This is a test!! foo"
+
+    assert isinstance(field_kwargs["some_input"], StringInput)
+    input_value = field_kwargs["some_input"]
+    assert input_value.some_input_value == "foo"
+    assert input_value._type_definition.is_input is True
