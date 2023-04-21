@@ -1,3 +1,4 @@
 Release type: patch
 
-Enable Ruff annotation check ANN206.
+This release adds missing annotations in class methods, improving
+our type coverage.
