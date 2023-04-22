@@ -1,4 +1,4 @@
-from .fields import ConnectionField, NodeField, RelayField, connection, node
+from .fields import ConnectionField, NodeExtension, RelayField, connection, node
 from .types import (
     Connection,
     Edge,
@@ -18,7 +18,7 @@ __all__ = [
     "GlobalID",
     "GlobalIDValueError",
     "Node",
-    "NodeField",
+    "NodeExtension",
     "NodeID",
     "NodeType",
     "PageInfo",
