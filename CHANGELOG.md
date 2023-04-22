@@ -1,6 +1,160 @@
 CHANGELOG
 =========
 
+0.171.3 - 2023-04-21
+--------------------
+
+This release adds missing annotations in class methods, improving
+our type coverage.
+
+Contributed by [Kai Benevento](https://github.com/benesgarage) via [PR #2721](https://github.com/strawberry-graphql/strawberry/pull/2721/)
+
+
+0.171.2 - 2023-04-21
+--------------------
+
+`graphql_transport_ws`: Cancelling a subscription no longer blocks the connection
+while any subscription finalizers run.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2718](https://github.com/strawberry-graphql/strawberry/pull/2718/)
+
+
+0.171.1 - 2023-04-07
+--------------------
+
+This release fix the return value of enums when using a custom
+name converter for them.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2696](https://github.com/strawberry-graphql/strawberry/pull/2696/)
+
+
+0.171.0 - 2023-04-06
+--------------------
+
+This release adds support for Mypy 1.2.0
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2693](https://github.com/strawberry-graphql/strawberry/pull/2693/)
+
+
+0.170.0 - 2023-04-06
+--------------------
+
+This release add support for converting the enum value names
+from `NameConverter`. It looks like this:
+
+
+```python
+from enum import Enum
+
+import strawberry
+from strawberry.enum import EnumDefinition, EnumValue
+from strawberry.schema.config import StrawberryConfig
+from strawberry.schema.name_converter import NameConverter
+
+
+class EnumNameConverter(NameConverter):
+    def from_enum_value(self, enum: EnumDefinition, enum_value: EnumValue) -> str:
+        return f"{super().from_enum_value(enum, enum_value)}_enum_value"
+
+
+@strawberry.enum
+class MyEnum(Enum):
+    A = "a"
+    B = "b"
+
+
+@strawberry.type
+class Query:
+    a_enum: MyEnum
+
+
+schema = strawberry.Schema(
+    query=Query,
+    config=StrawberryConfig(name_converter=EnumNameConverter()),
+)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2690](https://github.com/strawberry-graphql/strawberry/pull/2690/)
+
+
+0.169.0 - 2023-04-05
+--------------------
+
+This release updates all\* the HTTP integration to use the same base class,
+which makes it easier to maintain and extend them in future releases.
+
+While this doesn't provide any new features (other than settings headers in
+Chalice and Sanic), it does make it easier to extend the HTTP integrations in
+the future. So, expect some new features in the next releases!
+
+**New features:**
+
+Now both Chalice and Sanic integrations support setting headers in the response.
+Bringing them to the same level as the other HTTP integrations.
+
+**Breaking changes:**
+
+Unfortunately, this release does contain some breaking changes, but they are
+minimal and should be quick to fix.
+
+1. Flask `get_root_value` and `get_context` now receive the request
+2. Sanic `get_root_value` now receives the request and it is async
+
+\* The only exception is the channels http integration, which will be updated in
+a future release.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2681](https://github.com/strawberry-graphql/strawberry/pull/2681/)
+
+
+0.168.2 - 2023-04-03
+--------------------
+
+Fixes type hint for StrawberryTypeFromPydantic._pydantic_type to be a Type instead of an instance of the Pydantic model.
+As it is a private API, we still highly discourage using it, but it's now typed correctly.
+
+```python
+from pydantic import BaseModel
+from typing import Type, List
+
+import strawberry
+from strawberry.experimental.pydantic.conversion_types import StrawberryTypeFromPydantic
+
+
+class User(BaseModel):
+    name: str
+
+    @staticmethod
+    def foo() -> List[str]:
+        return ["Patrick", "Pietro", "Pablo"]
+
+
+@strawberry.experimental.pydantic.type(model=User, all_fields=True)
+class UserType:
+    @strawberry.field
+    def foo(self: StrawberryTypeFromPydantic[User]) -> List[str]:
+        # This is now inferred correctly as Type[User] instead of User
+        # We still highly discourage using this private API, but it's
+        # now typed correctly
+        pydantic_type: Type[User] = self._pydantic_type
+        return pydantic_type.foo()
+
+
+def get_users() -> UserType:
+    user: User = User(name="Patrick")
+    return UserType.from_pydantic(user)
+
+
+@strawberry.type
+class Query:
+    user: UserType = strawberry.field(resolver=get_users)
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Contributed by [James Chua](https://github.com/thejaminator) via [PR #2683](https://github.com/strawberry-graphql/strawberry/pull/2683/)
+
+
 0.168.1 - 2023-03-26
 --------------------
 

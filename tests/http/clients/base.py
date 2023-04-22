@@ -9,6 +9,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Mapping,
     Optional,
 )
 from typing_extensions import Literal
@@ -24,7 +25,7 @@ ResultOverrideFunction = Optional[Callable[[ExecutionResult], GraphQLHTTPRespons
 class Response:
     status_code: int
     data: bytes
-    # TODO: headers
+    headers: Mapping[str, str]
 
     @property
     def text(self) -> str:
@@ -53,7 +54,7 @@ class HttpClient(abc.ABC):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
         ...
 
@@ -239,3 +240,21 @@ class WebSocketClient(abc.ABC):
     async def __aiter__(self) -> AsyncGenerator[Message, None]:
         while not self.closed:
             yield await self.receive()
+
+
+class DebuggableGraphQLTransportWSMixin:
+    async def get_context(self) -> object:
+        context = await super().get_context()
+        context["ws"] = self._ws
+        context["tasks"] = self.tasks
+        context["connectionInitTimeoutTask"] = self.connection_init_timeout_task
+        return context
+
+
+class DebuggableGraphQLWSMixin:
+    async def get_context(self) -> object:
+        context = await super().get_context()
+        context["ws"] = self._ws
+        context["tasks"] = self.tasks
+        context["connectionInitTimeoutTask"] = None
+        return context

@@ -5,7 +5,7 @@ from typing_extensions import Protocol
 
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
-from strawberry.enum import EnumDefinition
+from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.lazy_type import LazyType
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryList, StrawberryOptional
@@ -75,6 +75,9 @@ class NameConverter:
 
     def from_enum(self, enum: EnumDefinition) -> str:
         return enum.name
+
+    def from_enum_value(self, enum: EnumDefinition, enum_value: EnumValue) -> str:
+        return enum_value.name
 
     def from_directive(
         self, directive: Union[StrawberryDirective, StrawberrySchemaDirective]

@@ -237,8 +237,9 @@ class BaseGraphQLTransportWSHandler(ABC):
             result_source = self.subscriptions[operation.id]
             with suppress(RuntimeError):
                 await result_source.aclose()
-            del self.subscriptions[operation.id]
-            del self.tasks[operation.id]
+            if operation.id in self.subscriptions:
+                del self.subscriptions[operation.id]
+                del self.tasks[operation.id]
             raise
         else:
             await operation.send_message(CompleteMessage(id=operation.id))
@@ -267,7 +268,7 @@ class BaseGraphQLTransportWSHandler(ABC):
                     await operation.send_message(next_message)
         except asyncio.CancelledError:
             # CancelledErrors are expected during task cleanup.
-            return
+            raise
         except Exception as error:
             # GraphQLErrors are handled by graphql-core and included in the
             # ExecutionResult
@@ -300,11 +301,8 @@ class BaseGraphQLTransportWSHandler(ABC):
         result_source = self.subscriptions.pop(operation_id)
         task = self.tasks.pop(operation_id)
         task.cancel()
-        with suppress(BaseException):
-            await task
-        # since python 3.8, generators cannot be reliably closed
-        with suppress(RuntimeError):
-            await result_source.aclose()
+        # do not await the task here, lest we block the main
+        # websocket handler Task.
 
     async def reap_completed_tasks(self) -> None:
         """

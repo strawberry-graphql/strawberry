@@ -240,7 +240,7 @@ def type(
 
     Example usage:
 
-    >>> @strawberry.type:
+    >>> @strawberry.type
     >>> class X:
     >>>     field_abc: str = "ABC"
     """
@@ -308,7 +308,7 @@ def input(
 ):
     """Annotates a class as a GraphQL Input type.
     Example usage:
-    >>> @strawberry.input:
+    >>> @strawberry.input
     >>> class X:
     >>>     field_abc: str = "ABC"
     """
@@ -361,7 +361,7 @@ def interface(
 ):
     """Annotates a class as a GraphQL Interface.
     Example usage:
-    >>> @strawberry.interface:
+    >>> @strawberry.interface
     >>> class X:
     >>>     field_abc: str
     """

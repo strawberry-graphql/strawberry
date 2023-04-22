@@ -41,8 +41,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         await self._ws.send_json(data)
 
     async def close(self, code: int = 1000, reason: Optional[str] = None) -> None:
-        # Close messages are not part of the ASGI ref yet
-        await self._ws.close(code=code)
+        await self._ws.close(code=code, reason=reason)
 
     async def handle_request(self) -> Any:
         await self._ws.accept(subprotocol=GRAPHQL_WS_PROTOCOL)
