@@ -119,40 +119,33 @@ async def test_connection_init_timeout(request, http_client_class: Type[HttpClie
 
 
 async def test_connection_init_timeout_cancellation(
-    http_client_class: Type[HttpClient],
+    ws_raw: WebSocketClient,
 ):
-    test_client = http_client_class()
-    test_client.create_app(connection_init_wait_timeout=timedelta(milliseconds=100))
-    async with test_client.ws_connect(
-        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
-    ) as ws:
-        await ws.send_json(ConnectionInitMessage().as_dict())
+    # Verify that the timeout task is cancelled after the connection Init
+    # message is received
+    ws = ws_raw
+    await ws.send_json(ConnectionInitMessage().as_dict())
 
-        response = await ws.receive_json()
-        assert response == ConnectionAckMessage().as_dict()
+    response = await ws.receive_json()
+    assert response == ConnectionAckMessage().as_dict()
 
-        await asyncio.sleep(0.2)
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="subscription { debug { isConnectionInitTimeoutTaskDone } }"
+            ),
+        ).as_dict()
+    )
 
-        await ws.send_json(
-            SubscribeMessage(
-                id="sub1",
-                payload=SubscribeMessagePayload(
-                    query="subscription { debug { isConnectionInitTimeoutTaskDone } }"
-                ),
-            ).as_dict()
-        )
-
-        response = await ws.receive_json()
-        assert (
-            response
-            == NextMessage(
-                id="sub1",
-                payload={"data": {"debug": {"isConnectionInitTimeoutTaskDone": True}}},
-            ).as_dict()
-        )
-
-        await ws.close()
-        assert ws.closed
+    response = await ws.receive_json()
+    assert (
+        response
+        == NextMessage(
+            id="sub1",
+            payload={"data": {"debug": {"isConnectionInitTimeoutTaskDone": True}}},
+        ).as_dict()
+    )
 
 
 async def test_too_many_initialisation_requests(ws: WebSocketClient):
