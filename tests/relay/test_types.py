@@ -47,104 +47,104 @@ def test_global_id_resolve_type():
     assert type_ is Fruit
 
 
-def test_global_id_resolve_node():
+def test_global_id_resolve_node_sync():
     gid = relay.GlobalID(type_name="Fruit", node_id="1")
-    fruit = gid.resolve_node(fake_info)
+    fruit = gid.resolve_node_sync(fake_info)
     assert isinstance(fruit, Fruit)
     assert fruit.id == 1
     assert fruit.name == "Banana"
 
 
-def test_global_id_resolve_node_non_existing():
+def test_global_id_resolve_node_sync_non_existing():
     gid = relay.GlobalID(type_name="Fruit", node_id="999")
-    fruit = gid.resolve_node(fake_info)
+    fruit = gid.resolve_node_sync(fake_info)
     assert_type(fruit, Optional[relay.Node])
     assert fruit is None
 
 
-def test_global_id_resolve_node_non_existing_but_required():
+def test_global_id_resolve_node_sync_non_existing_but_required():
     with pytest.raises(KeyError):
         gid = relay.GlobalID(type_name="Fruit", node_id="999")
-        fruit = gid.resolve_node(fake_info, required=True)
+        fruit = gid.resolve_node_sync(fake_info, required=True)
 
 
-def test_global_id_resolve_node_ensure_type():
+def test_global_id_resolve_node_sync_ensure_type():
     gid = relay.GlobalID(type_name="Fruit", node_id="1")
-    fruit = gid.resolve_node(fake_info, ensure_type=Fruit)
+    fruit = gid.resolve_node_sync(fake_info, ensure_type=Fruit)
     assert_type(fruit, Fruit)
     assert isinstance(fruit, Fruit)
     assert fruit.id == 1
     assert fruit.name == "Banana"
 
 
-def test_global_id_resolve_node_ensure_type_with_union():
+def test_global_id_resolve_node_sync_ensure_type_with_union():
     class Foo:
         ...
 
     gid = relay.GlobalID(type_name="Fruit", node_id="1")
-    fruit = gid.resolve_node(fake_info, ensure_type=Union[Fruit, Foo])
+    fruit = gid.resolve_node_sync(fake_info, ensure_type=Union[Fruit, Foo])
     assert_type(fruit, Union[Fruit, Foo])
     assert isinstance(fruit, Fruit)
     assert fruit.id == 1
     assert fruit.name == "Banana"
 
 
-def test_global_id_resolve_node_ensure_type_wrong_type():
+def test_global_id_resolve_node_sync_ensure_type_wrong_type():
     class Foo:
         ...
 
     gid = relay.GlobalID(type_name="Fruit", node_id="1")
     with pytest.raises(TypeError):
-        fruit = gid.resolve_node(fake_info, ensure_type=Foo)
+        fruit = gid.resolve_node_sync(fake_info, ensure_type=Foo)
 
 
-async def test_global_id_aresolve_node():
+async def test_global_id_resolve_node():
     gid = relay.GlobalID(type_name="FruitAsync", node_id="1")
-    fruit = await gid.aresolve_node(fake_info)
+    fruit = await gid.resolve_node(fake_info)
     assert_type(fruit, Optional[relay.Node])
     assert isinstance(fruit, FruitAsync)
     assert fruit.id == 1
     assert fruit.name == "Banana"
 
 
-async def test_global_id_aresolve_node_non_existing():
+async def test_global_id_resolve_node_non_existing():
     gid = relay.GlobalID(type_name="FruitAsync", node_id="999")
-    fruit = await gid.aresolve_node(fake_info)
+    fruit = await gid.resolve_node(fake_info)
     assert_type(fruit, Optional[relay.Node])
     assert fruit is None
 
 
-async def test_global_id_aresolve_node_non_existing_but_required():
+async def test_global_id_resolve_node_non_existing_but_required():
     with pytest.raises(KeyError):
         gid = relay.GlobalID(type_name="FruitAsync", node_id="999")
-        fruit = await gid.aresolve_node(fake_info, required=True)
+        fruit = await gid.resolve_node(fake_info, required=True)
 
 
-async def test_global_id_aresolve_node_ensure_type():
+async def test_global_id_resolve_node_ensure_type():
     gid = relay.GlobalID(type_name="FruitAsync", node_id="1")
-    fruit = await gid.aresolve_node(fake_info, ensure_type=FruitAsync)
+    fruit = await gid.resolve_node(fake_info, ensure_type=FruitAsync)
     assert_type(fruit, FruitAsync)
     assert isinstance(fruit, FruitAsync)
     assert fruit.id == 1
     assert fruit.name == "Banana"
 
 
-async def test_global_id_aresolve_node_ensure_type_with_union():
+async def test_global_id_resolve_node_ensure_type_with_union():
     class Foo:
         ...
 
     gid = relay.GlobalID(type_name="FruitAsync", node_id="1")
-    fruit = await gid.aresolve_node(fake_info, ensure_type=Union[FruitAsync, Foo])
+    fruit = await gid.resolve_node(fake_info, ensure_type=Union[FruitAsync, Foo])
     assert_type(fruit, Union[FruitAsync, Foo])
     assert isinstance(fruit, FruitAsync)
     assert fruit.id == 1
     assert fruit.name == "Banana"
 
 
-async def test_global_id_aresolve_node_ensure_type_wrong_type():
+async def test_global_id_resolve_node_ensure_type_wrong_type():
     class Foo:
         ...
 
     gid = relay.GlobalID(type_name="FruitAsync", node_id="1")
     with pytest.raises(TypeError):
-        fruit = await gid.aresolve_node(fake_info, ensure_type=Foo)
+        fruit = await gid.resolve_node(fake_info, ensure_type=Foo)

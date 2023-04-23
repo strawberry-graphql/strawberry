@@ -10,7 +10,6 @@ from typing import (
     AsyncIterable,
     AsyncIterator,
     Awaitable,
-    Callable,
     ClassVar,
     Generic,
     Iterable,
@@ -108,7 +107,7 @@ class GlobalID:
         return to_base64(self.type_name, self.node_id)
 
     @classmethod
-    def from_id(cls, value: Union[str, ID]):
+    def from_id(cls, value: Union[str, ID]) -> Self:
         """Create a new GlobalID from parsing the given value.
 
         Args:
@@ -130,6 +129,85 @@ class GlobalID:
             raise GlobalIDValueError(str(e)) from e
 
         return cls(type_name=type_name, node_id=node_id)
+
+    @overload
+    async def resolve_node(
+        self,
+        info: Info,
+        *,
+        required: Literal[True] = ...,
+        ensure_type: Type[_T],
+    ) -> _T:
+        ...
+
+    @overload
+    async def resolve_node(
+        self,
+        info: Info,
+        *,
+        required: Literal[True],
+        ensure_type: None = ...,
+    ) -> Node:
+        ...
+
+    @overload
+    async def resolve_node(
+        self,
+        info: Info,
+        *,
+        required: bool = ...,
+        ensure_type: None = ...,
+    ) -> Optional[Node]:
+        ...
+
+    async def resolve_node(self, info, *, required=False, ensure_type=None) -> Any:
+        """Resolve the type name and node id info to the node itself.
+
+        Tip: When you know the expected type, calling `ensure_type` should help
+        not only to enforce it, but also help with typing since it will know that,
+        if this function returns successfully, the retval should be of that
+        type and not `Node`.
+
+        Args:
+            info:
+                The strawberry execution info resolve the type name from
+            required:
+                If the value is required to exist. Note that asking to ensure
+                the type automatically makes required true.
+            ensure_type:
+                Optionally check if the returned node is really an instance
+                of this type.
+
+        Returns:
+            The resolved node
+
+        Raises:
+            TypeError:
+                If ensure_type was provided and the type is not an instance of it
+
+        """
+        n_type = self.resolve_type(info)
+        node = cast(
+            Awaitable[Node],
+            n_type.resolve_node(
+                self.node_id,
+                info=info,
+                required=required or ensure_type is not None,
+            ),
+        )
+
+        if node is not None and inspect.isawaitable(node):
+            node = await node
+
+        if ensure_type is not None:
+            origin = get_origin(ensure_type)
+            if origin and origin is Union:
+                ensure_type = tuple(get_args(ensure_type))
+
+            if not isinstance(node, ensure_type):
+                raise TypeError(f"{ensure_type} expected, found {repr(node)}")
+
+        return node
 
     def resolve_type(self, info: Info) -> Type[Node]:
         """Resolve the internal type name to its type itself.
@@ -155,7 +233,7 @@ class GlobalID:
         return origin
 
     @overload
-    def resolve_node(
+    def resolve_node_sync(
         self,
         info: Info,
         *,
@@ -165,7 +243,7 @@ class GlobalID:
         ...
 
     @overload
-    def resolve_node(
+    def resolve_node_sync(
         self,
         info: Info,
         *,
@@ -175,7 +253,7 @@ class GlobalID:
         ...
 
     @overload
-    def resolve_node(
+    def resolve_node_sync(
         self,
         info: Info,
         *,
@@ -184,7 +262,7 @@ class GlobalID:
     ) -> Optional[Node]:
         ...
 
-    def resolve_node(self, info, *, required=False, ensure_type=None) -> Any:
+    def resolve_node_sync(self, info, *, required=False, ensure_type=None) -> Any:
         """Resolve the type name and node id info to the node itself.
 
         Tip: When you know the expected type, calling `ensure_type` should help
@@ -226,84 +304,6 @@ class GlobalID:
                 raise TypeError(f"{ensure_type} expected, found {repr(node)}")
 
         return node
-
-    @overload
-    async def aresolve_node(
-        self,
-        info: Info,
-        *,
-        required: Literal[True] = ...,
-        ensure_type: Type[_T],
-    ) -> _T:
-        ...
-
-    @overload
-    async def aresolve_node(
-        self,
-        info: Info,
-        *,
-        required: Literal[True],
-        ensure_type: None = ...,
-    ) -> Node:
-        ...
-
-    @overload
-    async def aresolve_node(
-        self,
-        info: Info,
-        *,
-        required: bool = ...,
-        ensure_type: None = ...,
-    ) -> Optional[Node]:
-        ...
-
-    async def aresolve_node(self, info, *, required=False, ensure_type=None) -> Any:
-        """Resolve the type name and node id info to the node itself.
-
-        Tip: When you know the expected type, calling `ensure_type` should help
-        not only to enforce it, but also help with typing since it will know that,
-        if this function returns successfully, the retval should be of that
-        type and not `Node`.
-
-        Args:
-            info:
-                The strawberry execution info resolve the type name from
-            required:
-                If the value is required to exist. Note that asking to ensure
-                the type automatically makes required true.
-            ensure_type:
-                Optionally check if the returned node is really an instance
-                of this type.
-
-        Returns:
-            The resolved node
-
-        Raises:
-            TypeError:
-                If ensure_type was provided and the type is not an instance of it
-
-        """
-        n_type = self.resolve_type(info)
-        node = cast(
-            Awaitable[Node],
-            n_type.resolve_node(
-                self.node_id,
-                info=info,
-                required=required or ensure_type is not None,
-            ),
-        )
-
-        res = await node if node is not None else None
-
-        if ensure_type is not None:
-            origin = get_origin(ensure_type)
-            if origin and origin is Union:
-                ensure_type = tuple(get_args(ensure_type))
-
-            if not isinstance(res, ensure_type):
-                raise TypeError(f"{ensure_type} expected, found {repr(res)}")
-
-        return res
 
 
 class NodeIDPrivate(StrawberryPrivate):
@@ -402,8 +402,9 @@ class Node:
             parent_type = info._raw_info.parent_type
             type_def = info.schema.get_type_by_name(parent_type.name)
             assert isinstance(type_def, TypeDefinition)
-            resolve_id = type_def.origin.resolve_id
-            resolve_typename = type_def.origin.resolve_typename
+            origin = cast(Type[Node], type_def.origin)
+            resolve_id = origin.resolve_id
+            resolve_typename = origin.resolve_typename
 
         type_name = resolve_typename(root, info)
         assert isinstance(type_name, str)
@@ -452,17 +453,10 @@ class Node:
         return getattr(root, cls._id_attr)
 
     @classmethod
-    def resolve_typename(cls, root: Self, info: Info):
-        return info.path.typename
-
-    @overload
-    @classmethod
-    def resolve_nodes(
-        cls,
-        *,
-        info: Info,
-    ) -> AwaitableOrValue[Iterable[Self]]:
-        ...
+    def resolve_typename(cls, root: Self, info: Info) -> str:
+        typename = info.path.typename
+        assert typename is not None
+        return typename
 
     @overload
     @classmethod
@@ -481,7 +475,7 @@ class Node:
         cls,
         *,
         info: Info,
-        node_ids: Optional[Iterable[str]] = None,
+        node_ids: Iterable[str],
         required: Literal[False] = ...,
     ) -> AwaitableOrValue[Iterable[Optional[Self]]]:
         ...
@@ -492,7 +486,7 @@ class Node:
         cls,
         *,
         info: Info,
-        node_ids: Optional[Iterable[str]] = None,
+        node_ids: Iterable[str],
         required: bool,
     ) -> Union[
         AwaitableOrValue[Iterable[Self]],
@@ -505,20 +499,23 @@ class Node:
         cls,
         *,
         info: Info,
-        node_ids: Optional[Iterable[str]] = None,
+        node_ids: Iterable[str],
         required: bool = False,
     ):
         """Resolve a list of nodes.
 
         This method *should* be defined by anyone implementing the `Node` interface.
 
+        The nodes should be returned in the same order as the provided ids.
+        Also, if `required` is `True`, all ids must be resolved or an error
+        should be raised. If `required` is `False`, missing nodes should be
+        returned as `None`.
+
         Args:
             info:
                 The strawberry execution info resolve the type name from
             node_ids:
-                Optional list of ids that, when provided, should be used to filter
-                the results to only contain the nodes of those ids. When empty,
-                all nodes of this type shall be returned.
+                List of node ids that should be returned
             required:
                 If `True`, all `node_ids` requested must exist. If they don't,
                 an error must be raised. If `False`, missing nodes should be
@@ -649,7 +646,7 @@ class Edge(Generic[NodeType]):
     )
 
     @classmethod
-    def from_node(cls, node: NodeType, *, cursor: Any = None):
+    def resolve_edge(cls, node: NodeType, *, cursor: Any = None) -> Self:
         return cls(cursor=to_base64(PREFIX, cursor), node=node)
 
 
@@ -672,55 +669,95 @@ class Connection(Generic[NodeType]):
         description="Contains the nodes in this connection",
     )
 
-    @overload
     @classmethod
-    def from_nodes(
-        cls,
-        nodes: Union[
-            Iterator[NodeType],
-            AsyncIterator[NodeType],
-            Iterable[NodeType],
-            AsyncIterable[NodeType],
-        ],
-        *,
-        info: Info,
-        before: Optional[str] = None,
-        after: Optional[str] = None,
-        first: Optional[int] = None,
-        last: Optional[int] = None,
-        **kwargs,
-    ) -> Self:
-        ...
+    def resolve_node(cls, node: Any, *, info: Info, **kwargs) -> NodeType:
+        """The identity function for the node.
 
-    @overload
-    @classmethod
-    def from_nodes(
-        cls,
-        nodes: NodeIterableType[_T],
-        *,
-        info: Info,
-        before: Optional[str] = None,
-        after: Optional[str] = None,
-        first: Optional[int] = None,
-        last: Optional[int] = None,
-        node_converter: Callable[[_T], NodeType],
-        **kwargs,
-    ) -> Self:
-        ...
+        This method is used to resolve a node of a different type to the
+        connection's `NodeType`.
+
+        By default it returns the node itself, but subclasses can override
+        this to provide a custom implementation.
+
+        Args:
+            node:
+                The resolved node which should return an instance of this
+                connection's `NodeType`
+            info:
+                The strawberry execution info resolve the type name from
+
+        """
+        return node
 
     @classmethod
-    def from_nodes(
+    def resolve_connection(
         cls,
-        nodes: Union[NodeIterableType[_T], NodeIterableType[NodeType]],
+        nodes: NodeIterableType[NodeType],
         *,
         info: Info,
         before: Optional[str] = None,
         after: Optional[str] = None,
         first: Optional[int] = None,
         last: Optional[int] = None,
-        node_converter: Optional[Callable[[_T], NodeType]] = None,
         **kwargs,
-    ):
+    ) -> AwaitableOrValue[Self]:
+        """Resolve a connection from nodes.
+
+        Subclasses must define this method to paginate nodes based
+        on `first`/`last`/`before`/`after` arguments.
+
+        Args:
+            info:
+                The strawberry execution info resolve the type name from
+            nodes:
+                An iterable/iteretor of nodes to paginate
+            before:
+                Returns the items in the list that come before the specified cursor
+            after:
+                Returns the items in the list that come after the specified cursor
+            first:
+                Returns the first n items from the list
+            last:
+                Returns the items in the list that come after the specified cursor
+
+        Returns:
+            The resolved `Connection`
+
+        """
+        raise NotImplementedError
+
+
+@type(name="Connection", description="A connection to a list of items.")
+class ListConnection(Connection[NodeType]):
+    """A connection to a list of items.
+
+    Attributes:
+        page_info:
+            Pagination data for this connection
+        edges:
+            Contains the nodes in this connection
+
+    """
+
+    page_info: PageInfo = field(
+        description="Pagination data for this connection",
+    )
+    edges: List[Edge[NodeType]] = field(
+        description="Contains the nodes in this connection",
+    )
+
+    @classmethod
+    def resolve_connection(
+        cls,
+        nodes: NodeIterableType[NodeType],
+        *,
+        info: Info,
+        before: Optional[str] = None,
+        after: Optional[str] = None,
+        first: Optional[int] = None,
+        last: Optional[int] = None,
+        **kwargs,
+    ) -> AwaitableOrValue[Self]:
         """Resolve a connection from the list of nodes.
 
         This uses the described Relay Pagination algorithm_
@@ -729,7 +766,7 @@ class Connection(Generic[NodeType]):
             info:
                 The strawberry execution info resolve the type name from
             nodes:
-                An iterable of nodes to transform to a connection
+                An iterable/iteretor of nodes to paginate
             before:
                 Returns the items in the list that come before the specified cursor
             after:
@@ -815,19 +852,15 @@ class Connection(Generic[NodeType]):
                     # FIXME: Why mypy isn't narrowing this based on the if above?
                     assert isinstance(nodes, (AsyncIterator, AsyncIterable))
                     iterator = aislice(
-                        nodes,  # type: ignore[arg-type]
+                        nodes,
                         start,
                         overfetch,
                     )
 
                 assert isinstance(iterator, (AsyncIterator, AsyncIterable))
                 edges: List[Edge] = [
-                    edge_class.from_node(
-                        (
-                            node_converter(cast(_T, v))
-                            if node_converter is not None
-                            else cast(NodeType, v)  # type: ignore[redundant-cast]
-                        ),
+                    edge_class.resolve_edge(
+                        cls.resolve_node(v, info=info, **kwargs),
                         cursor=start + i,
                     )
                     async for i, v in aenumerate(iterator)
@@ -868,18 +901,14 @@ class Connection(Generic[NodeType]):
         except TypeError:
             assert isinstance(nodes, (Iterable, Iterator))
             iterator = itertools.islice(
-                nodes,  # type: ignore[arg-type]
+                nodes,
                 start,
                 overfetch,
             )
 
         edges = [
-            edge_class.from_node(
-                (
-                    node_converter(cast(_T, v))
-                    if node_converter is not None
-                    else cast(NodeType, v)  # type: ignore[redundant-cast]
-                ),
+            edge_class.resolve_edge(
+                cls.resolve_node(v, info=info, **kwargs),
                 cursor=start + i,
             )
             for i, v in enumerate(iterator)

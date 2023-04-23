@@ -179,14 +179,9 @@ def _process_type(
 
 if TYPE_CHECKING:
     # Avoid circular import issues
-    from .relay import ConnectionField, connection
+    from .relay import connection
 
-    field_descriptors = (
-        field,
-        connection,
-        StrawberryField,
-        ConnectionField,
-    )
+    field_descriptors = (field, connection, StrawberryField)
 else:
     field_descriptors = (field, StrawberryField)
 

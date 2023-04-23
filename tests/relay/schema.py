@@ -31,9 +31,9 @@ class Fruit(relay.Node):
         cls,
         *,
         info: Info,
-        node_ids: Optional[Iterable[str]] = None,
+        node_ids: Iterable[str],
         required: bool = False,
-    ):
+    ) -> Iterable[Optional[Self]]:
         if node_ids is not None:
             return [fruits[nid] if required else fruits.get(nid) for nid in node_ids]
 
@@ -64,9 +64,9 @@ class FruitAsync(relay.Node):
         cls,
         *,
         info: Optional[Info] = None,
-        node_ids: Optional[Iterable[str]] = None,
+        node_ids: Iterable[str],
         required: bool = False,
-    ):
+    ) -> Iterable[Optional[Self]]:
         if node_ids is not None:
             return [
                 fruits_async[nid] if required else fruits_async.get(nid)
@@ -87,7 +87,7 @@ class FruitCustomPaginationConnection(relay.Connection[Fruit]):
         return "foobar"
 
     @classmethod
-    def from_nodes(
+    def resolve_connection(
         cls,
         nodes: Iterable[Fruit],
         *,
@@ -98,7 +98,7 @@ class FruitCustomPaginationConnection(relay.Connection[Fruit]):
         first: Optional[int] = None,
         last: Optional[int] = None,
         **kwargs: Any,
-    ):
+    ) -> Self:
         edges_mapping = {
             to_base64("fruit_name", n.name): relay.Edge(
                 node=n,
@@ -157,36 +157,43 @@ fruits_async = {
 FruitAlike = namedtuple("FruitAlike", ["id", "name", "color"])
 
 
-def fruit_converter(fruit_alike: FruitAlike) -> Fruit:
-    return Fruit(
-        id=fruit_alike.id,
-        name=fruit_alike.name,
-        color=fruit_alike.color,
-    )
+@strawberry.type
+class FruitAlikeConnection(relay.ListConnection[Fruit]):
+    @classmethod
+    def resolve_node(cls, node: FruitAlike, *, info: Info, **kwargs) -> Fruit:
+        return Fruit(
+            id=node.id,
+            name=node.name,
+            color=node.color,
+        )
 
 
-def fruit_converter_forward_ref(fruit_alike: FruitAlike) -> "Fruit":
-    return Fruit(
-        id=fruit_alike.id,
-        name=fruit_alike.name,
-        color=fruit_alike.color,
-    )
+def fruits_resolver() -> Iterable[Fruit]:
+    return fruits.values()
+
+
+async def fruits_async_resolver() -> Iterable[FruitAsync]:
+    return fruits_async.values()
 
 
 @strawberry.type
 class Query:
     node: relay.Node
-    nodes: List[relay.Node] = relay.node()
+    nodes: List[relay.Node]
     node_optional: Optional[relay.Node]
     nodes_optional: List[Optional[relay.Node]]
-    fruits: relay.Connection[Fruit]
-    fruits_lazy: relay.Connection[
+    fruits: relay.ListConnection[Fruit] = relay.connection(resolver=fruits_resolver)
+    fruits_lazy: relay.ListConnection[
         Annotated["Fruit", strawberry.lazy("tests.relay.schema")]
-    ]
-    fruits_async: relay.Connection[FruitAsync]
-    fruits_custom_pagination: FruitCustomPaginationConnection
+    ] = relay.connection(resolver=fruits_resolver)
+    fruits_async: relay.ListConnection[FruitAsync] = relay.connection(
+        resolver=fruits_async_resolver
+    )
+    fruits_custom_pagination: FruitCustomPaginationConnection = relay.connection(
+        resolver=fruits_resolver
+    )
 
-    @relay.connection
+    @relay.connection(relay.ListConnection[Fruit])
     def fruits_concrete_resolver(
         self,
         info: Info,
@@ -206,7 +213,7 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith)
         ]
 
-    @relay.connection
+    @relay.connection(relay.ListConnection[Fruit])
     def fruits_custom_resolver(
         self,
         info: Info,
@@ -218,7 +225,7 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith)
         ]
 
-    @relay.connection
+    @relay.connection(relay.ListConnection[Fruit])
     def fruits_custom_resolver_lazy(
         self,
         info: Info,
@@ -230,31 +237,7 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith)
         ]
 
-    @relay.connection(node_converter=fruit_converter)
-    def fruits_custom_resolver_with_node_converter(
-        self,
-        info: Info,
-        name_endswith: Optional[str] = None,
-    ) -> List[FruitAlike]:
-        return [
-            FruitAlike(f.id, f.name, f.color)
-            for f in fruits.values()
-            if name_endswith is None or f.name.endswith(name_endswith)
-        ]
-
-    @relay.connection(node_converter=fruit_converter_forward_ref)
-    def fruits_custom_resolver_with_node_converter_forward_ref(
-        self,
-        info: Info,
-        name_endswith: Optional[str] = None,
-    ) -> List[FruitAlike]:
-        return [
-            FruitAlike(f.id, f.name, f.color)
-            for f in fruits.values()
-            if name_endswith is None or f.name.endswith(name_endswith)
-        ]
-
-    @relay.connection
+    @relay.connection(relay.ListConnection[Fruit])
     def fruits_custom_resolver_iterator(
         self,
         info: Info,
@@ -264,7 +247,7 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith):
                 yield f
 
-    @relay.connection
+    @relay.connection(relay.ListConnection[Fruit])
     def fruits_custom_resolver_iterable(
         self,
         info: Info,
@@ -274,7 +257,7 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith):
                 yield f
 
-    @relay.connection
+    @relay.connection(relay.ListConnection[Fruit])
     def fruits_custom_resolver_generator(
         self,
         info: Info,
@@ -284,7 +267,7 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith):
                 yield f
 
-    @relay.connection
+    @relay.connection(relay.ListConnection[Fruit])
     async def fruits_custom_resolver_async_iterable(
         self,
         info: Info,
@@ -294,7 +277,7 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith):
                 yield f
 
-    @relay.connection
+    @relay.connection(relay.ListConnection[Fruit])
     async def fruits_custom_resolver_async_iterator(
         self,
         info: Info,
@@ -304,7 +287,7 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith):
                 yield f
 
-    @relay.connection
+    @relay.connection(relay.ListConnection[Fruit])
     async def fruits_custom_resolver_async_generator(
         self,
         info: Info,
@@ -313,6 +296,18 @@ class Query:
         for f in fruits.values():
             if name_endswith is None or f.name.endswith(name_endswith):
                 yield f
+
+    @relay.connection(FruitAlikeConnection)
+    def fruit_alike_connection_custom_resolver(
+        self,
+        info: Info,
+        name_endswith: Optional[str] = None,
+    ) -> List[FruitAlike]:
+        return [
+            FruitAlike(f.id, f.name, f.color)
+            for f in fruits.values()
+            if name_endswith is None or f.name.endswith(name_endswith)
+        ]
 
 
 schema = strawberry.Schema(query=Query)

@@ -17,56 +17,62 @@ from strawberry import relay
 
 
 @strawberry.type
-class NonNodeSubclassType:
+class MyType(relay.Node):
     ...
 
 
 @strawberry.type
 class Query:
+    # The annotation is not a subclass of relay.Connection
+    my_type_conn: List[MyType] = relay.connection()
+
+    # Missing the Connection class annotation
     @relay.connection
-    def some_connection(self) -> int:
+    def my_type_conn_with_resolver(self) -> List[MyType]:
         ...
 
-    @relay.connection
-    def some_other_connection(self) -> List[NonNodeSubclassType]:
+    # The connection class is not a subclass of relay.Connection
+    @relay.connection(List[MyType])
+    def my_type_conn_with_resolver2(self) -> List[MyType]:
         ...
 ```
 
-This happens because when defining a custom resolver for the connection,
-it expects the type annotation to be one of: `Iterable[<NodeType>]`,
-`Iterator[<NodeType>]`, `AsyncIterable[<NodeType>]` or `AsyncIterator[<NodeType]`
-
 ## How to fix this error
 
-You can fix this error by annotating the connection custom resolver with
-one of the following possibilities:
-
-- `Iterable[<NodeType>]`
-- `Iterator[<NodeType>]`
-- `AsyncIterable[<NodeType>]`
-- `AsyncIterator[<NodeType]`
+You can fix this error by properly annotating your attribute or resolver
+with `relay.Connection` type subclass.
 
 For example:
 
 ```python
-from typing import Iterable, List
+from typing import List
 
 import strawberry
 from strawberry import relay
 
 
 @strawberry.type
-class NodeSubclassType(relay.Node):
+class MyType(relay.Node):
+    ...
+
+
+def get_my_type_list() -> List[MyType]:
     ...
 
 
 @strawberry.type
 class Query:
-    @relay.connection
-    def some_connection(self) -> List[NodeSubclassType]:
+    my_type_conn: relay.Connection[MyType] = relay.connection(
+        resolver=get_my_type_list,
+    )
+
+    # Missing the Connection class annotation
+    @relay.connection(relay.Connection[MyType])
+    def my_type_conn_with_resolver(self) -> List[MyType]:
         ...
 
-    @relay.connection
-    def some_other_connection(self) -> Iterable[NodeSubclassType]:
+    # The connection class is not a subclass of relay.Connection
+    @relay.connection(relay.Connection[MyType])
+    def my_type_conn_with_resolver2(self) -> List[MyType]:
         ...
 ```

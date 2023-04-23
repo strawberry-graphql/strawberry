@@ -133,6 +133,7 @@ class StrawberryField(dataclasses.Field):
 
         self.is_subscription = is_subscription
 
+        self.default_arguments: List[StrawberryArgument] = []
         self.permission_classes: List[Type[BasePermission]] = list(permission_classes)
         self.directives = list(directives)
         self.extensions: List[FieldExtension] = list(extensions)
@@ -196,10 +197,11 @@ class StrawberryField(dataclasses.Field):
 
     @property
     def arguments(self) -> List[StrawberryArgument]:
-        if not self.base_resolver:
-            return []
+        arguments = self.default_arguments[:]
+        if self.base_resolver:
+            arguments.extend(self.base_resolver.arguments)
 
-        return self.base_resolver.arguments
+        return arguments
 
     def _python_name(self) -> Optional[str]:
         if self.name:

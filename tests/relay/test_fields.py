@@ -2,26 +2,23 @@ import pytest
 
 import strawberry
 from strawberry import relay
+from strawberry.relay.fields import ConnectionExtension, NodeExtension
 from strawberry.relay.utils import to_base64
 
 from .schema import FruitAsync, schema
 
 
-def test_type_uses_node_field():
+def test_type_has_node_extension():
     @strawberry.type
     class Query:
         node: relay.Node
 
     node_field = Query._type_definition.get_field("node")  # type: ignore
-    sentinel = object()
-    node_field.node_converter = sentinel
-    assert isinstance(node_field, relay.NodeField)
-
-    copied = node_field.copy_with({})
-    assert copied.node_converter is sentinel
+    assert len(node_field.extensions) == 1
+    assert isinstance(node_field.extensions[0], NodeExtension)
 
 
-def test_type_uses_connection_field():
+def test_type_has_connection_extension():
     @strawberry.type
     class Fruit:
         ...
@@ -31,12 +28,8 @@ def test_type_uses_connection_field():
         connection: relay.Connection
 
     connection_field = Query._type_definition.get_field("connection")  # type: ignore
-    sentinel = object()
-    connection_field.node_converter = sentinel
-    assert isinstance(connection_field, relay.ConnectionField)
-
-    copied = connection_field.copy_with({relay.NodeType: Fruit})
-    assert copied.node_converter is sentinel
+    assert len(connection_field.extensions) == 1
+    assert isinstance(connection_field.extensions[0], ConnectionExtension)
 
 
 def test_query_node():
@@ -359,11 +352,10 @@ attrs = [
     "fruitsConcreteResolver",
     "fruitsCustomResolver",
     "fruitsCustomResolverLazy",
-    "fruitsCustomResolverWithNodeConverter",
-    "fruitsCustomResolverWithNodeConverterForwardRef",
     "fruitsCustomResolverIterator",
     "fruitsCustomResolverIterable",
     "fruitsCustomResolverGenerator",
+    "fruitAlikeConnectionCustomResolver",
 ]
 async_attrs = [
     *attrs,
@@ -1149,11 +1141,10 @@ query TestQuery (
 custom_attrs = [
     "fruitsConcreteResolver",
     "fruitsCustomResolver",
-    "fruitsCustomResolverWithNodeConverter",
-    "fruitsCustomResolverWithNodeConverterForwardRef",
     "fruitsCustomResolverIterator",
     "fruitsCustomResolverIterable",
     "fruitsCustomResolverGenerator",
+    "fruitAlikeConnectionCustomResolver",
 ]
 custom_async_attrs = [
     *attrs,

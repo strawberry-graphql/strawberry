@@ -18,25 +18,26 @@ from typing import (
 )
 
 import strawberry
+from strawberry import relay
 from strawberry.types import Info
 from typing_extensions import Self
 
 
 @strawberry.type
-class Fruit(strawberry.relay.Node):
-    id: strawberry.relay.NodeID[int]
+class Fruit(relay.Node):
+    id: relay.NodeID[int]
     name: str
     color: str
 
 
 @strawberry.type
-class FruitCustomPaginationConnection(strawberry.relay.Connection[Fruit]):
+class FruitCustomPaginationConnection(relay.Connection[Fruit]):
     @strawberry.field
     def something(self) -> str:
         return "foobar"
 
     @classmethod
-    def from_nodes(
+    def resolve_connection(
         cls,
         nodes: Union[
             Iterator[Fruit],
@@ -46,7 +47,6 @@ class FruitCustomPaginationConnection(strawberry.relay.Connection[Fruit]):
         ],
         *,
         info: Optional[Info[Any, Any]] = None,
-        total_count: Optional[int] = None,
         before: Optional[str] = None,
         after: Optional[str] = None,
         first: Optional[int] = None,
@@ -60,21 +60,25 @@ class FruitAlike:
     ...
 
 
-def fruit_converter(fruit_alike: FruitAlike) -> Fruit:
+def fruits_resolver() -> List[Fruit]:
     ...
 
 
 @strawberry.type
 class Query:
-    node: strawberry.relay.Node
-    nodes: List[strawberry.relay.Node]
-    node_optional: Optional[strawberry.relay.Node]
-    nodes_optional: List[Optional[strawberry.relay.Node]]
-    fruits: strawberry.relay.Connection[Fruit]
-    fruits_conn: strawberry.relay.Connection[Fruit] = strawberry.relay.connection()
+    node: relay.Node
+    nodes: List[relay.Node]
+    node_optional: Optional[relay.Node]
+    nodes_optional: List[Optional[relay.Node]]
+    fruits: relay.Connection[Fruit] = strawberry.relay.connection(
+        resolver=fruits_resolver,
+    )
+    fruits_conn: relay.Connection[Fruit] = relay.connection(
+        resolver=fruits_resolver,
+    )
     fruits_custom_pagination: FruitCustomPaginationConnection
 
-    @strawberry.relay.connection
+    @relay.connection(relay.Connection[Fruit])
     def fruits_custom_resolver(
         self,
         info: Info[Any, Any],
@@ -82,15 +86,7 @@ class Query:
     ) -> List[Fruit]:
         ...
 
-    @strawberry.relay.connection(node_converter=fruit_converter)
-    def fruits_custom_resolver_with_node_converter(
-        self,
-        info: Info[Any, Any],
-        name_endswith: Optional[str] = None,
-    ) -> List[FruitAlike]:
-        ...
-
-    @strawberry.relay.connection
+    @relay.connection(relay.Connection[Fruit])
     def fruits_custom_resolver_iterator(
         self,
         info: Info[Any, Any],
@@ -98,7 +94,7 @@ class Query:
     ) -> Iterator[Fruit]:
         ...
 
-    @strawberry.relay.connection
+    @relay.connection(relay.Connection[Fruit])
     def fruits_custom_resolver_iterable(
         self,
         info: Info[Any, Any],
@@ -106,7 +102,7 @@ class Query:
     ) -> Iterable[Fruit]:
         ...
 
-    @strawberry.relay.connection
+    @relay.connection(relay.Connection[Fruit])
     def fruits_custom_resolver_generator(
         self,
         info: Info[Any, Any],
@@ -114,7 +110,7 @@ class Query:
     ) -> Generator[Fruit, None, None]:
         ...
 
-    @strawberry.relay.connection
+    @relay.connection(relay.Connection[Fruit])
     async def fruits_custom_resolver_async_iterator(
         self,
         info: Info[Any, Any],
@@ -122,7 +118,7 @@ class Query:
     ) -> AsyncIterator[Fruit]:
         ...
 
-    @strawberry.relay.connection
+    @relay.connection(relay.Connection[Fruit])
     async def fruits_custom_resolver_async_iterable(
         self,
         info: Info[Any, Any],
@@ -130,7 +126,7 @@ class Query:
     ) -> AsyncIterable[Fruit]:
         ...
 
-    @strawberry.relay.connection
+    @relay.connection(relay.Connection[Fruit])
     async def fruits_custom_resolver_async_generator(
         self,
         info: Info[Any, Any],
@@ -146,7 +142,6 @@ reveal_type(Query.fruits)
 reveal_type(Query.fruits_conn)
 reveal_type(Query.fruits_custom_pagination)
 reveal_type(Query.fruits_custom_resolver)
-reveal_type(Query.fruits_custom_resolver_with_node_converter)
 reveal_type(Query.fruits_custom_resolver_iterator)
 reveal_type(Query.fruits_custom_resolver_iterable)
 reveal_type(Query.fruits_custom_resolver_generator)
@@ -163,99 +158,87 @@ def test_pyright():
         Result(
             type="information",
             message='Type of "Query.node" is "Node"',
-            line=136,
+            line=132,
             column=13,
         ),
         Result(
             type="information",
             message='Type of "Query.nodes" is "List[Node]"',
-            line=137,
+            line=133,
             column=13,
         ),
         Result(
             type="information",
             message='Type of "Query.node_optional" is "Node | None"',
-            line=138,
+            line=134,
             column=13,
         ),
         Result(
             type="information",
             message='Type of "Query.nodes_optional" is "List[Node | None]"',
-            line=139,
+            line=135,
             column=13,
         ),
         Result(
             type="information",
             message='Type of "Query.fruits" is "Connection[Fruit]"',
-            line=140,
+            line=136,
             column=13,
         ),
         Result(
             type="information",
             message='Type of "Query.fruits_conn" is "Connection[Fruit]"',
-            line=141,
+            line=137,
             column=13,
         ),
         Result(
             type="information",
             message='Type of "Query.fruits_custom_pagination" is '
             '"FruitCustomPaginationConnection"',
+            line=138,
+            column=13,
+        ),
+        Result(
+            type="information",
+            message='Type of "Query.fruits_custom_resolver" is "Any"',
+            line=139,
+            column=13,
+        ),
+        Result(
+            type="information",
+            message='Type of "Query.fruits_custom_resolver_iterator" is "Any"',
+            line=140,
+            column=13,
+        ),
+        Result(
+            type="information",
+            message='Type of "Query.fruits_custom_resolver_iterable" is "Any"',
+            line=141,
+            column=13,
+        ),
+        Result(
+            type="information",
+            message='Type of "Query.fruits_custom_resolver_generator" is "Any"',
             line=142,
             column=13,
         ),
         Result(
             type="information",
-            message='Type of "Query.fruits_custom_resolver" is "ConnectionField"',
+            message='Type of "Query.fruits_custom_resolver_async_iterator" is ' '"Any"',
             line=143,
             column=13,
         ),
         Result(
             type="information",
-            message='Type of "Query.fruits_custom_resolver_with_node_converter" is '
-            '"Any"',
+            message='Type of "Query.fruits_custom_resolver_async_iterable" is ' '"Any"',
             line=144,
             column=13,
         ),
         Result(
             type="information",
-            message='Type of "Query.fruits_custom_resolver_iterator" is '
-            '"ConnectionField"',
-            line=145,
-            column=13,
-        ),
-        Result(
-            type="information",
-            message='Type of "Query.fruits_custom_resolver_iterable" is '
-            '"ConnectionField"',
-            line=146,
-            column=13,
-        ),
-        Result(
-            type="information",
-            message='Type of "Query.fruits_custom_resolver_generator" is '
-            '"ConnectionField"',
-            line=147,
-            column=13,
-        ),
-        Result(
-            type="information",
-            message='Type of "Query.fruits_custom_resolver_async_iterator" is '
-            '"ConnectionField"',
-            line=148,
-            column=13,
-        ),
-        Result(
-            type="information",
-            message='Type of "Query.fruits_custom_resolver_async_iterable" is '
-            '"ConnectionField"',
-            line=149,
-            column=13,
-        ),
-        Result(
-            type="information",
             message='Type of "Query.fruits_custom_resolver_async_generator" is '
-            '"ConnectionField"',
-            line=150,
+            '"Any"',
+            line=145,
             column=13,
         ),
     ]

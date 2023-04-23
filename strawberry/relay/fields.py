@@ -3,15 +3,11 @@ from __future__ import annotations
 import asyncio
 import dataclasses
 import inspect
-import sys
 from collections import defaultdict
 from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterable,
-    AsyncIterator,
-    Awaitable,
     Callable,
     DefaultDict,
     Dict,
@@ -21,7 +17,6 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
-    Set,
     Tuple,
     Type,
     TypeVar,
@@ -29,96 +24,30 @@ from typing import (
     cast,
     overload,
 )
-from typing_extensions import (
-    Annotated,
-    Literal,
-    Self,
-    get_args,
-    get_origin,
-    get_type_hints,
-)
+from typing_extensions import Annotated  # noqa: TCH003
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument, argument
-from strawberry.exceptions.missing_return_annotation import MissingReturnAnnotationError
 from strawberry.extensions.field_extension import (
     AsyncExtensionResolver,
     FieldExtension,
     SyncExtensionResolver,
 )
-from strawberry.field import _RESOLVER_TYPE, UNRESOLVED, StrawberryField, field
-from strawberry.lazy_type import LazyType
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
+from strawberry.field import _RESOLVER_TYPE, StrawberryField, field
+from strawberry.relay.exceptions import RelayWrongAnnotationError
+from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.fields.resolver import StrawberryResolver
-from strawberry.types.types import TypeDefinition
-from strawberry.utils.aio import asyncgen_to_list, resolve_awaitable
-from strawberry.utils.cached_property import cached_property
+from strawberry.utils.aio import asyncgen_to_list
 
-from .exceptions import (
-    RelayWrongAnnotationError,
-    RelayWrongNodeResolverAnnotationError,
-)
 from .types import Connection, GlobalID, Node, NodeIterableType, NodeType
 
 if TYPE_CHECKING:
+    from typing_extensions import Literal
+
     from strawberry.permission import BasePermission
     from strawberry.types.info import Info
-    from strawberry.utils.await_maybe import AwaitableOrValue
 
 _T = TypeVar("_T")
-
-
-class RelayField(StrawberryField):
-    """Base relay field, containing utilities for both Node and Connection fields."""
-
-    def __init__(
-        self,
-        *args,
-        node_converter: Optional[Callable[[object], Node]] = None,
-        **kwargs,
-    ):
-        self.node_converter = node_converter
-        super().__init__(*args, **kwargs)
-
-    @property
-    def default_arguments(self) -> Dict[str, StrawberryArgument]:
-        return {}
-
-    @property
-    def arguments(self) -> List[StrawberryArgument]:
-        args = {
-            **self.default_arguments,
-            **{arg.python_name: arg for arg in super().arguments},
-        }
-        return list(args.values())
-
-    @property
-    def is_basic_field(self) -> bool:
-        return False
-
-    @cached_property
-    def is_optional(self) -> bool:
-        type_ = self.type
-        if isinstance(type_, StrawberryList):
-            type_ = type_.of_type
-
-        return isinstance(type_, StrawberryOptional)
-
-    @cached_property
-    def is_list(self) -> bool:
-        type_ = self.type
-        if isinstance(type_, StrawberryOptional):
-            type_ = type_.of_type
-
-        return isinstance(type_, StrawberryList)
-
-    def copy_with(
-        self,
-        type_var_map: Mapping[TypeVar, Union[StrawberryType, type]],
-    ) -> Self:
-        retval = super().copy_with(type_var_map)
-        retval.node_converter = self.node_converter
-        return retval
 
 
 def get_node_resolver(field: StrawberryField):  # noqa: ANN201
@@ -146,7 +75,7 @@ def get_nodes_resolver(field: StrawberryField):  # noqa: ANN201
     def resolver(
         info: Info,
         ids: Annotated[List[GlobalID], argument(description="The IDs of the objects.")],
-    ):  # type: ignore
+    ):
         nodes_map: DefaultDict[Type[Node], List[str]] = defaultdict(list)
         # Store the index of the node in the list of nodes of the same type
         # so that we can return them in the same order while also supporting different
@@ -235,222 +164,109 @@ class NodeExtension(FieldExtension):
         return await next_(source, info, **kwargs)
 
 
-class ConnectionField(RelayField):
-    """Relay Connection field.
+class ConnectionExtension(FieldExtension):
+    DEFAULT_ARGUMENTS = [
+        StrawberryArgument(
+            python_name="before",
+            graphql_name=None,
+            type_annotation=StrawberryAnnotation(Optional[str]),
+            description=(
+                "Returns the items in the list that come before the "
+                "specified cursor."
+            ),
+            default=None,
+        ),
+        StrawberryArgument(
+            python_name="after",
+            graphql_name=None,
+            type_annotation=StrawberryAnnotation(Optional[str]),
+            description=(
+                "Returns the items in the list that come after the " "specified cursor."
+            ),
+            default=None,
+        ),
+        StrawberryArgument(
+            python_name="first",
+            graphql_name=None,
+            type_annotation=StrawberryAnnotation(Optional[int]),
+            description="Returns the first n items from the list.",
+            default=None,
+        ),
+        StrawberryArgument(
+            python_name="last",
+            graphql_name=None,
+            type_annotation=StrawberryAnnotation(Optional[int]),
+            description=(
+                "Returns the items in the list that come after the " "specified cursor."
+            ),
+            default=None,
+        ),
+    ]
+    connection_type: Type[Connection[Node]]
 
-    Do not instantiate this directly. Instead, use `@relay.connection`
+    def apply(self, field: StrawberryField) -> None:  # pragma: no cover
+        field.default_arguments.extend(self.DEFAULT_ARGUMENTS)
+        f_type = field.type
+        if not (isinstance(f_type, type) and issubclass(f_type, Connection)):
+            raise RelayWrongAnnotationError(field.name, cast(type, field.origin))
 
-    """
+        self.connection_type = cast(Type[Connection[Node]], field.type)
 
-    @property
-    def default_arguments(self) -> Dict[str, StrawberryArgument]:
-        default_args = super().default_arguments.copy()
-        default_args.update(
-            {
-                "before": StrawberryArgument(
-                    python_name="before",
-                    graphql_name=None,
-                    type_annotation=StrawberryAnnotation(Optional[str]),
-                    description=(
-                        "Returns the items in the list that come before the "
-                        "specified cursor."
-                    ),
-                    default=None,
-                ),
-                "after": StrawberryArgument(
-                    python_name="after",
-                    graphql_name=None,
-                    type_annotation=StrawberryAnnotation(Optional[str]),
-                    description=(
-                        "Returns the items in the list that come after the "
-                        "specified cursor."
-                    ),
-                    default=None,
-                ),
-                "first": StrawberryArgument(
-                    python_name="first",
-                    graphql_name=None,
-                    type_annotation=StrawberryAnnotation(Optional[int]),
-                    description="Returns the first n items from the list.",
-                    default=None,
-                ),
-                "last": StrawberryArgument(
-                    python_name="last",
-                    graphql_name=None,
-                    type_annotation=StrawberryAnnotation(Optional[int]),
-                    description=(
-                        "Returns the items in the list that come after the "
-                        "specified cursor."
-                    ),
-                    default=None,
-                ),
-            }
-        )
-        return default_args
-
-    @property  # type: ignore
-    def type(self) -> Union[StrawberryType, type, Literal[UNRESOLVED]]:  # type: ignore
-        if self.base_resolver is None:
-            return super().type
-
-        if self.type_annotation is not None:
-            return self.type_annotation.resolve()
-
-        resolver = cast(Callable, self.base_resolver.wrapped_func)
-        field_name = resolver.__name__
-        namespace = sys.modules[resolver.__module__].__dict__
-
-        resolved = get_type_hints(cast(Type, resolver), namespace).get("return")
-        if resolved is None:
-            raise MissingReturnAnnotationError(
-                field_name,
-                resolver=StrawberryResolver(resolver),
-            )
-
-        origin = get_origin(resolved)
-        if (
-            not origin
-            or not isinstance(origin, type)
-            or not issubclass(
-                origin, (Iterator, AsyncIterator, Iterable, AsyncIterable)
-            )
-        ):
-            raise RelayWrongAnnotationError(
-                field_name=field_name,
-                resolver=StrawberryResolver(resolver),
-            )
-
-        if self.node_converter is not None:
-            ntype = get_type_hints(self.node_converter).get("return")
-            if ntype is None:
-                raise RelayWrongNodeResolverAnnotationError(
-                    field_name,
-                    resolver=self.base_resolver,
-                )
-            if not isinstance(ntype, type) or not issubclass(ntype, Node):
-                raise RelayWrongNodeResolverAnnotationError(
-                    field_name,
-                    resolver=self.base_resolver,
-                )
-        else:
-            ntype = get_args(resolved)[0]
-            if not issubclass(ntype, Node):
-                raise RelayWrongAnnotationError(
-                    field_name,
-                    resolver=resolver,
-                )
-
-        self.type_annotation = StrawberryAnnotation(
-            Connection[ntype],  # type: ignore[valid-type]
-            namespace=namespace,
-        )
-
-        return self.type_annotation.resolve()
-
-    @type.setter
-    def type(self, type_: Any) -> None:
-        # Only set the type if we don't have a base_resolver. Otherwise we will
-        # retrieve it from there
-        # Also, using hasattr here because the dataclass init will be called
-        # before _base_resolver is set on StrawberryField
-        if (
-            hasattr(self, "_base_resolver") and self.base_resolver is None
-        ):  # pragma: no cover
-            StrawberryField.type.fset(self, type_)  # type: ignore[attr-defined]
-
-    @cached_property
-    def resolver_args(self) -> Set[str]:
-        assert self.base_resolver is not None
-        resolver = self.base_resolver.wrapped_func
-        return set(inspect.signature(cast(Callable, resolver)).parameters.keys())
-
-    def get_result(
+    def resolve(
         self,
-        source: Any,
-        info: Optional[Info],
-        args: List[Any],
-        kwargs: Dict[str, Any],
-    ) -> Union[Awaitable[Any], Any]:
-        assert info is not None
-        type_def = info.return_type._type_definition  # type:ignore
-        assert isinstance(type_def, TypeDefinition)
-
-        field_type = type_def.type_var_map[cast(TypeVar, NodeType)]
-        if isinstance(field_type, LazyType):
-            field_type = field_type.resolve_type()
-
-        if self.base_resolver is not None:
-            # If base_resolver is not self.conn_resolver,
-            # then it is defined to something
-            assert self.base_resolver
-
-            resolver_args = self.resolver_args
-            resolver_kwargs = {
-                # Consider both args not in default args and the ones specified
-                # by the resolver, in case they want to check
-                # "first"/"last"/"before"/"after"
-                k: v
-                for k, v in kwargs.items()
-                if k in resolver_args
-            }
-            nodes = self.base_resolver(*args, **resolver_kwargs)
-        else:
-            nodes = None
-
-        return self.resolver(source, info, args, kwargs, nodes=nodes)
-
-    def resolver(
-        self,
+        next_: SyncExtensionResolver,
         source: Any,
         info: Info,
-        args: List[Any],
-        kwargs: Dict[str, Any],
         *,
-        nodes: AwaitableOrValue[Optional[Iterable[Node]]] = None,
-    ) -> AwaitableOrValue[Connection[Node]]:
-        return_type = cast(Connection[Node], info.return_type)
-        type_def = return_type._type_definition  # type:ignore
-        assert isinstance(type_def, TypeDefinition)
-
-        field_type = type_def.type_var_map[cast(TypeVar, NodeType)]
-        if isinstance(field_type, LazyType):
-            field_type = field_type.resolve_type()
-
-        if nodes is None:
-            nodes = cast(Node, field_type).resolve_nodes(info=info)
-
-        if inspect.isawaitable(nodes):
-            return cast(
-                Awaitable[Connection[Node]],
-                resolve_awaitable(
-                    nodes,
-                    lambda resolved: self.resolver(
-                        source,
-                        info,
-                        args,
-                        kwargs,
-                        nodes=resolved,
-                    ),
-                ),
-            )
-
-        # Avoid info being passed twice in case the custom resolver has one
-        kwargs.pop("info", None)
-        return self.resolve_connection(cast(Iterable[Node], nodes), info, **kwargs)
-
-    def resolve_connection(
-        self,
-        nodes: NodeIterableType[NodeType],
-        info: Info,
+        before: Optional[str] = None,
+        after: Optional[str] = None,
+        first: Optional[int] = None,
+        last: Optional[int] = None,
         **kwargs,
-    ) -> Connection[Node]:
-        return_type = cast(Connection[Node], info.return_type)
-        kwargs.setdefault("info", info)
-        return return_type.from_nodes(
-            nodes,
-            node_converter=self.node_converter,
-            **kwargs,
+    ) -> Any:
+        assert self.connection_type is not None
+        return self.connection_type.resolve_connection(
+            cast(Iterable[Node], next_(source, info, **kwargs)),
+            info=info,
+            before=before,
+            after=after,
+            first=first,
+            last=last,
         )
+
+    async def resolve_async(
+        self,
+        next_: AsyncExtensionResolver,
+        source: Any,
+        info: Info,
+        *,
+        before: Optional[str] = None,
+        after: Optional[str] = None,
+        first: Optional[int] = None,
+        last: Optional[int] = None,
+        **kwargs,
+    ) -> Any:
+        assert self.connection_type is not None
+        nodes = next_(source, info, **kwargs)
+        # nodes might be an AsyncIterable/AsyncIterator
+        # In this case we don't await for it
+        if inspect.isawaitable(nodes):
+            nodes = await nodes
+
+        resolved = self.connection_type.resolve_connection(
+            cast(Iterable[Node], nodes),
+            info=info,
+            before=before,
+            after=after,
+            first=first,
+            last=last,
+        )
+
+        # If nodes was an AsyncIterable/AsyncIterator, resolve_connection
+        # will return a coroutine which we need to await
+        if inspect.isawaitable(resolved):
+            resolved = await resolved
+        return resolved
 
 
 node = partial(field, extensions=[NodeExtension()])
@@ -458,26 +274,9 @@ node = partial(field, extensions=[NodeExtension()])
 
 @overload
 def connection(
+    graphql_type: Optional[Type[Connection[NodeType]]] = None,
     *,
-    resolver: _RESOLVER_TYPE[NodeIterableType[NodeType]],
-    name: Optional[str] = None,
-    is_subscription: bool = False,
-    description: Optional[str] = None,
-    init: Literal[False] = False,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
-    default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    graphql_type: Optional[Any] = None,
-) -> Connection[NodeType]:
-    ...
-
-
-@overload
-def connection(
-    *,
+    resolver: Optional[_RESOLVER_TYPE[NodeIterableType[Any]]] = None,
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
@@ -488,15 +287,13 @@ def connection(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    graphql_type: Optional[Any] = None,
-    node_converter: Optional[Callable[[Any], NodeType]] = None,
 ) -> Any:
     ...
 
 
 @overload
 def connection(
-    resolver: _RESOLVER_TYPE[NodeIterableType[NodeType]],
+    graphql_type: Optional[Type[Connection[NodeType]]] = None,
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
@@ -507,33 +304,14 @@ def connection(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    graphql_type: Optional[Any] = None,
-) -> ConnectionField:
+) -> StrawberryField:
     ...
 
 
-@overload
 def connection(
-    resolver: _RESOLVER_TYPE[NodeIterableType[_T]],
+    graphql_type: Optional[Type[Connection[NodeType]]] = None,
     *,
-    name: Optional[str] = None,
-    is_subscription: bool = False,
-    description: Optional[str] = None,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
-    default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    graphql_type: Optional[Any] = None,
-    node_converter: Callable[[_T], NodeType],
-) -> ConnectionField:
-    ...
-
-
-def connection(
     resolver: Optional[_RESOLVER_TYPE[Any]] = None,
-    *,
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
@@ -544,8 +322,6 @@ def connection(
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
     # This init parameter is used by pyright to determine whether this field
-    graphql_type: Optional[Any] = None,
-    node_converter: Optional[Callable[[Any], NodeType]] = None,
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
     init: Literal[True, False, None] = None,
@@ -608,7 +384,7 @@ def connection(
         https://relay.dev/graphql/connections.htm
 
     """
-    f = ConnectionField(
+    f = StrawberryField(
         python_name=None,
         graphql_name=name,
         description=description,
@@ -620,7 +396,7 @@ def connection(
         default_factory=default_factory,
         metadata=metadata,
         directives=directives or (),
-        node_converter=node_converter,
+        extensions=[ConnectionExtension()],
     )
     if resolver is not None:
         f = f(resolver)

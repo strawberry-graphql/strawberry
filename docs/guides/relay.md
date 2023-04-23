@@ -33,6 +33,7 @@ from the `Node` interface, annotate its attribute that will be used for `GlobalI
 generation with `relay.NodeID` and implement its `resolve_nodes` abstract method.
 
 ```python
+import strawberry
 from strawberry import relay
 
 
@@ -47,21 +48,18 @@ class Fruit(relay.Node):
         cls,
         *,
         info: Info,
-        node_ids: Optional[Iterable[str]] = None,
+        node_ids: Iterable[str],
         required: bool = False,
     ):
-        # nodes_id will be a list when resolving specific nodes
-        if node_ids is not None:
-            return [
-                fruits[int(nid)] if required else fruits.get(nid) for nid in node_ids
-            ]
-
-        # But will be None when resolving a connection without a custom resolver
-        return fruits.values()
+        return [
+            all_fruits[int(nid)] if required else all_fruits.get(nid)
+            for nid in node_ids
+        ]
 
 
-# Assume we have a dict mapping the fruits code to the Fruit object itself
-fruits: Dict[int, Fruit]
+# In this example, assume we have a dict mapping the fruits code to the Fruit
+# object itself
+all_fruits: Dict[int, Fruit]
 ```
 
 Explaining what we did here:
@@ -89,7 +87,11 @@ Now we can expose it in the schema for retrieval and pagination like:
 @strawberry.type
 class Query:
     node: relay.Node
-    fruits: relay.Connection[Fruit]
+
+    @relay.connection(relay.ListConnection[Fruit])
+    def fruits(self) -> Iterable[Fruit]:
+        # This can be a database query, a generator, an async generator, etc
+        return all_fruits.values()
 ```
 
 This will generate a schema like this:
@@ -122,7 +124,6 @@ type FruitEdge {
 type FruitConnection {
   pageInfo: PageInfo!
   edges: [FruitEdge!]!
-  totalCount: Int
 }
 
 type Query {
@@ -177,6 +178,16 @@ query {
 }
 ```
 
+The connection resolver for `relay.ListConnection` should return one of those:
+
+- `List[<NodeType>]`
+- `Iterator[<NodeType>]`
+- `Iterable[<NodeType>]`
+- `AsyncIterator[<NodeType>]`
+- `AsyncIterable[<NodeType>]`
+- `Generator[<NodeType>, Any, Any]`
+- `AsyncGenerator[<NodeType>, Any]`
+
 ### The node field
 
 As demonstrated above, the `Node` field can be used to retrieve/refetch any
@@ -195,14 +206,19 @@ It can be defined in in the `Query` objects in 4 ways:
 
 ### Custom connection pagination
 
-The default `Connection` implementation uses a limit/offset approach to paginate
-the results. This is a basic approach and might be enough for most use cases.
+The default `relay.Connection` class don't implement any pagination logic, and
+should be used as a base class to implement your own pagination logic. All you
+need to do is implement the `resolve_connection` classmethod.
+
+The integration provides `relay.ListConnection`, which implements a limit/offset
+approach to paginate the results. This is a basic approach and might be enough
+for most use cases.
 
 <Note>
 
-`Connection` implementes the limit/offset by using slices. That means that you can
-override what the slice does by customizing the `__getitem__` method of the object
-returned by `resolve_nodes`.
+`relay.ListConnection` implementes the limit/offset by using slices. That means
+that you can override what the slice does by customizing the `__getitem__`
+method of the object returned by your nodes resolver.
 
 For example, when working with `Django`, `resolve_nodes` can return a `QuerySet`,
 meaning that the slice on it will translate to a `LIMIT`/`OFFSET` in the SQL
@@ -215,31 +231,28 @@ the worst case scenario being the last results needing to be returned.
 
 </Note>
 
-You may want to use a different approach to paginate your results. For example,
-a cursor-based approach. For that you need to subclass the `Connection` type
-and implement your own `from_nodes` method. For example, suppose that in our
-exaple above, we want to use the fruit's weight as the cursor, we can implement
-it like that:
+Now, suppose we want to implement a custom cursor-based pagination for our
+previous example. We can do something like this:
 
 ```python
+import strawberry
 from strawberry import relay
 
 
 @strawberry.type
 class FruitCustomPaginationConnection(relay.Connection[Fruit]):
     @classmethod
-    def from_nodes(
+    def resolve_connection(
         cls,
         nodes: Iterable[Fruit],
         *,
         info: Optional[Info] = None,
-        total_count: Optional[int] = None,
         before: Optional[str] = None,
         after: Optional[str] = None,
         first: Optional[int] = None,
         last: Optional[int] = None,
     ):
-        # Note that this is a showcase implementation and is far from
+        # NOTE: This is a showcase implementation and is far from
         # being optimal performance wise
         edges_mapping = {
             relay.to_base64("fruit_name", n.name): relay.Edge(
@@ -286,27 +299,30 @@ class Query:
     fruits: FruitCustomPaginationConnection
 ```
 
-<Note>
-
 In the example above we specialized the `FruitCustomPaginationConnection` by
 inheriting it from `relay.Connection[Fruit]`. We could still keep it generic by
 inheriting it from `relay.Connection[relay.NodeType]` and then specialize it
-when defining the field.
+when defining the field, making it possible to use our custom pagination logic
+with more than one type.
 
-</Note>
+### Custom connection arguments
 
-### Custom connection resolver
+By default the connection will automatically insert some arguments for it
+to be able to paginate the results. Those are:
 
-We can define custom resolvers for the `Connection` as a way to pre-filter
-the results. All that needs to be done is to decorate the resolver with
-`@relay.connection` and return an `Iterator`/`AsyncIterator` of that
-given `Node` type in it. For example, suppose we want to return the pagination
-of all fruits whose name starts with a given string:
+- `before`: Returns the items in the list that come before the specified cursor
+- `after`: Returns the items in the list that come after the " "specified cursor
+- `first`: Returns the first n items from the list
+- `last`: Returns the items in the list that come after the " "specified cursor
+
+You can still define extra arguments to be used by your own resolver or
+custom pagination logic. For example, suppose we want to return the pagination
+of all fruits whose name starts with a given string. We could do that like this:
 
 ```python
 @strawberry.type
 class Query:
-    @relay.connection
+    @relay.connection(relay.ListConnection[Fruit])
     def fruits_with_filter(
         self,
         info: Info,
@@ -331,48 +347,60 @@ type Query {
 }
 ```
 
-The custom resolver can to be annotated with any of the following:
+### Convert the node to its proper type when resolving the connection
 
-- `List[<NodeType>]`
-- `Iterator[<NodeType>]`
-- `Iterable[<NodeType>]`
-- `AsyncIterator[<NodeType>]`
-- `AsyncIterable[<NodeType>]`
-- `Generator[<NodeType>, Any, Any]`
-- `AsyncGenerator[<NodeType>, Any]`
+The connection expects that the resolver will return a list of objects that is
+a subclass of its `NodeType`. But there may be situations where you are resolving
+something that needs to be converted to the proper type, like an ORM model.
 
-<Note>
-
-If your custom resolver returns something different than the expected type
-(e.g. a django model, and you are not using the django integration), you can pass
-a `node_converter` function to the `Connection` to convert it properly, like:
+In this case you can subclass the `relay.Connection`/`relay.ListConnection`
+and provide a custom `resolve_node` method to it, which by default returns
+the node as is. For example:
 
 ```python
-def fruit_converter(model: models.Fruit) -> Fruit:
-    return Fruit(id=model.pk, name=model.name, weight=model.weight)
+import strawberry
+from strawberry import relay
+
+from db import models
+
+
+@strawberry.type
+class Fruit(relay.Node):
+    code: relay.NodeID[int]
+    name: str
+    weight: float
+
+
+@strawberry.type
+class FruitDBConnection(relay.ListConnection[Fruit]):
+    @classmethod
+    def resolve_node(cls, node: FruitDB, *, info: Info, **kwargs) -> Fruit:
+        return Fruit(
+            code=node.code,
+            name=node.name,
+            weight=node.weight,
+        )
 
 
 @strawberry.type
 class Query:
-    @relay.connection(node_converter=fruit_converter)
+    @relay.connection(FruitDBConnection)
     def fruits_with_filter(
         self,
         info: Info,
         name_endswith: str,
-    ) -> Iterable[Fruit]:
+    ) -> Iterable[models.Fruit]:
         return models.Fruit.objects.filter(name__endswith=name_endswith)
 ```
 
 The main advantage of this approach instead of converting it inside the custom
 resolver is that the `Connection` will paginate the `QuerySet` first, which in
 case of django will make sure that only the paginated results are fetched from the
-database. After that, the `fruit_converter` function will be called for each result
+database. After that, the `resolve_node` function will be called for each result
 to retrieve the correct object for it.
 
 We used django for this example, but the same applies to any other other
 similar use case, like SQLAlchemy, etc.
-
-</Note>
 
 ### The GlobalID scalar
 
@@ -386,26 +414,26 @@ it in its resolver. For example:
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def update_fruit_weight(
+    async def update_fruit_weight(
+        self,
+        info: Info,
+        id: relay.GlobalID,
+        weight: float,
+    ) -> Fruit:
+        # resolve_node will return an awaitable that returns the Fruit object
+        fruit = await id.resolve_node(info, ensure_type=Fruit)
+        fruit.weight = weight
+        return fruit
+
+    @strawberry.mutation
+    def update_fruit_weight_sync(
         self,
         info: Info,
         id: relay.GlobalID,
         weight: float,
     ) -> Fruit:
         # resolve_node will return the Fruit object
-        fruit = id.resolve_node(info, ensure_type=Fruit)
-        fruit.weight = weight
-        return fruit
-
-    @strawberry.mutation
-    async def update_fruit_weight_async(
-        self,
-        info: Info,
-        id: relay.GlobalID,
-        weight: float,
-    ) -> Fruit:
-        # aresolve_node will return an awaitable that returns the Fruit object
-        fruit = await id.aresolve_node(info, ensure_type=Fruit)
+        fruit = id.resolve_node_sync(info, ensure_type=Fruit)
         fruit.weight = weight
         return fruit
 ```

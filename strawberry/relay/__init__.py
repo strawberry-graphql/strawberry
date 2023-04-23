@@ -1,9 +1,10 @@
-from .fields import ConnectionField, NodeExtension, RelayField, connection, node
+from .fields import ConnectionExtension, NodeExtension, connection, node
 from .types import (
     Connection,
     Edge,
     GlobalID,
     GlobalIDValueError,
+    ListConnection,
     Node,
     NodeID,
     NodeType,
@@ -13,16 +14,16 @@ from .utils import from_base64, to_base64
 
 __all__ = [
     "Connection",
-    "ConnectionField",
+    "ConnectionExtension",
     "Edge",
     "GlobalID",
     "GlobalIDValueError",
+    "ListConnection",
     "Node",
     "NodeExtension",
     "NodeID",
     "NodeType",
     "PageInfo",
-    "RelayField",
     "connection",
     "from_base64",
     "node",

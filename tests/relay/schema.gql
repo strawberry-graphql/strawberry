@@ -5,6 +5,14 @@ type Fruit implements Node {
   color: String!
 }
 
+type FruitAlikeConnection {
+  """Pagination data for this connection"""
+  pageInfo: PageInfo!
+
+  """Contains the nodes in this connection"""
+  edges: [FruitEdge!]!
+}
+
 type FruitAsync implements Node {
   """The Globally Unique ID of this object"""
   id: GlobalID!
@@ -39,6 +47,15 @@ type FruitConnection {
   edges: [FruitEdge!]!
 }
 
+type FruitCustomPaginationConnection {
+  """Pagination data for this connection"""
+  pageInfo: PageInfo!
+
+  """Contains the nodes in this connection"""
+  edges: [FruitEdge!]!
+  something: String!
+}
+
 """An edge in a connection."""
 type FruitEdge {
   """A cursor for use in pagination"""
@@ -46,15 +63,6 @@ type FruitEdge {
 
   """The item at the end of the edge"""
   node: Fruit!
-}
-
-type FruitFruitCustomPaginationConnection {
-  """Pagination data for this connection"""
-  pageInfo: PageInfo!
-
-  """Contains the nodes in this connection"""
-  edges: [FruitEdge!]!
-  something: String!
 }
 
 """
@@ -151,7 +159,7 @@ type Query {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
-  ): FruitFruitCustomPaginationConnection!
+  ): FruitCustomPaginationConnection!
   fruitsConcreteResolver(
     """Returns the items in the list that come before the specified cursor."""
     before: String = null
@@ -181,34 +189,6 @@ type Query {
     nameEndswith: String = null
   ): FruitConnection!
   fruitsCustomResolverLazy(
-    """Returns the items in the list that come before the specified cursor."""
-    before: String = null
-
-    """Returns the items in the list that come after the specified cursor."""
-    after: String = null
-
-    """Returns the first n items from the list."""
-    first: Int = null
-
-    """Returns the items in the list that come after the specified cursor."""
-    last: Int = null
-    nameEndswith: String = null
-  ): FruitConnection!
-  fruitsCustomResolverWithNodeConverter(
-    """Returns the items in the list that come before the specified cursor."""
-    before: String = null
-
-    """Returns the items in the list that come after the specified cursor."""
-    after: String = null
-
-    """Returns the first n items from the list."""
-    first: Int = null
-
-    """Returns the items in the list that come after the specified cursor."""
-    last: Int = null
-    nameEndswith: String = null
-  ): FruitConnection!
-  fruitsCustomResolverWithNodeConverterForwardRef(
     """Returns the items in the list that come before the specified cursor."""
     before: String = null
 
@@ -306,4 +286,18 @@ type Query {
     last: Int = null
     nameEndswith: String = null
   ): FruitConnection!
+  fruitAlikeConnectionCustomResolver(
+    """Returns the items in the list that come before the specified cursor."""
+    before: String = null
+
+    """Returns the items in the list that come after the specified cursor."""
+    after: String = null
+
+    """Returns the first n items from the list."""
+    first: Int = null
+
+    """Returns the items in the list that come after the specified cursor."""
+    last: Int = null
+    nameEndswith: String = null
+  ): FruitAlikeConnection!
 }
