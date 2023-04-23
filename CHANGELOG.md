@@ -1,6 +1,24 @@
 CHANGELOG
 =========
 
+0.171.3 - 2023-04-21
+--------------------
+
+This release adds missing annotations in class methods, improving
+our type coverage.
+
+Contributed by [Kai Benevento](https://github.com/benesgarage) via [PR #2721](https://github.com/strawberry-graphql/strawberry/pull/2721/)
+
+
+0.171.2 - 2023-04-21
+--------------------
+
+`graphql_transport_ws`: Cancelling a subscription no longer blocks the connection
+while any subscription finalizers run.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2718](https://github.com/strawberry-graphql/strawberry/pull/2718/)
+
+
 0.171.1 - 2023-04-07
 --------------------
 
