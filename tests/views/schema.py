@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import inspect
 from enum import Enum
 from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
@@ -20,9 +21,120 @@ class AlwaysFailPermission(BasePermission):
         return False
 
 
+class ConditionalFailPermission(BasePermission):
+    @property
+    def message(self):
+        return f"failed after sleep {self.sleep}"
+
+    async def has_permission(self, source, info, **kwargs: Any) -> bool:
+        self.sleep = kwargs.get("sleep", None)
+        self.fail = kwargs.get("fail", True)
+        if self.sleep is not None:
+            await asyncio.sleep(kwargs["sleep"])
+        return not self.fail
+
+
 class MyExtension(SchemaExtension):
+    # a counter to keep track of how many operations are active
+    active_counter = 0
+
     def get_results(self) -> Dict[str, str]:
         return {"example": "example"}
+
+    def resolve(self, _next, root, info: Info, *args: Any, **kwargs: Any):
+        self.active_counter += 1
+        try:
+            self.resolve_called()
+            return _next(root, info, *args, **kwargs)
+        finally:
+            self.active_counter -= 1
+
+    def resolve_called(self):
+        pass
+
+    def lifecycle_called(self, event, phase):
+        pass
+
+    def on_operation(self):
+        self.lifecycle_called("operation", "before")
+        self.active_counter += 1
+        yield
+        self.lifecycle_called("operation", "after")
+        self.active_counter -= 1
+
+    def on_validate(self):
+        self.lifecycle_called("validate", "before")
+        self.active_counter += 1
+        yield
+        self.lifecycle_called("validate", "after")
+        self.active_counter -= 1
+
+    def on_parse(self):
+        self.lifecycle_called("parse", "before")
+        self.active_counter += 1
+        yield
+        self.lifecycle_called("parse", "after")
+        self.active_counter -= 1
+
+    def on_execute(self):
+        self.lifecycle_called("execute", "before")
+        self.active_counter += 1
+        yield
+        self.lifecycle_called("execute", "after")
+        self.active_counter -= 1
+
+
+class MyAsyncExtension(SchemaExtension):
+    # a counter to keep track of how many operations are active
+    active_counter = 0
+
+    def get_results(self) -> Dict[str, str]:
+        return {"example": "example"}
+
+    async def resolve(self, _next, root, info: Info, *args: Any, **kwargs: Any):
+        self.resolve_called()
+        self.active_counter += 1
+        try:
+            result = _next(root, info, *args, **kwargs)
+            if inspect.isawaitable(result):
+                return await result
+            return result
+        finally:
+            self.active_counter -= 1
+
+    def resolve_called(self):
+        pass
+
+    def lifecycle_called(self, event, phase):
+        pass
+
+    async def on_operation(self):
+        self.lifecycle_called("operation", "before")
+        self.active_counter += 1
+        yield
+        self.lifecycle_called("operation", "after")
+        self.active_counter -= 1
+
+    async def on_validate(self):
+        self.lifecycle_called("validate", "before")
+        self.active_counter += 1
+        yield
+        self.lifecycle_called("validate", "after")
+        self.active_counter -= 1
+
+    async def on_parse(self):
+        self.lifecycle_called("parse", "before")
+        self.active_counter += 1
+        yield
+        self.lifecycle_called("parse", "after")
+        self.active_counter -= 1
+
+    async def on_execute(self):
+        self.lifecycle_called("execute", "before")
+        self.active_counter += 1
+        yield
+        self.lifecycle_called("execute", "after")
+        self.active_counter -= 1
 
 
 def _read_file(text_file: Upload) -> str:
@@ -78,6 +190,12 @@ class Query:
 
     @strawberry.field(permission_classes=[AlwaysFailPermission])
     def always_fail(self) -> Optional[str]:
+        return "Hey"
+
+    @strawberry.field(permission_classes=[ConditionalFailPermission])
+    def conditional_fail(
+        self, sleep: Optional[float] = None, fail: bool = False
+    ) -> str:
         return "Hey"
 
     @strawberry.field
@@ -262,6 +380,12 @@ class Subscription:
         finally:
             await asyncio.sleep(delay)
 
+    @strawberry.subscription(permission_classes=[ConditionalFailPermission])
+    async def conditional_fail(
+        self, sleep: Optional[float] = None, fail: bool = False
+    ) -> AsyncGenerator[str, None]:
+        yield "Hey"
+
 
 class Schema(strawberry.Schema):
     def process_errors(
@@ -278,4 +402,11 @@ schema = Schema(
     mutation=Mutation,
     subscription=Subscription,
     extensions=[MyExtension],
+)
+
+async_schema = strawberry.Schema(
+    query=Query,
+    mutation=Mutation,
+    subscription=Subscription,
+    extensions=[MyAsyncExtension],
 )

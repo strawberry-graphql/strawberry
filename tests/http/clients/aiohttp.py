@@ -14,7 +14,8 @@ from strawberry.aiohttp.handlers import GraphQLTransportWSHandler, GraphQLWSHand
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
-from tests.views.schema import Query, schema
+from tests.views.schema import Query
+from tests.views.schema import async_schema as schema
 
 from ..context import get_context
 from .base import (

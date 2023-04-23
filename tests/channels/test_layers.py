@@ -91,6 +91,7 @@ async def test_channel_listen(ws: WebsocketCommunicator):
     )
 
     response = await ws.receive_json_from()
+    del response["payload"]["extensions"]
     assert (
         response
         == NextMessage(
@@ -315,6 +316,7 @@ async def test_channel_listen_group(ws: WebsocketCommunicator):
         },
     )
     response = await ws.receive_json_from()
+    del response["payload"]["extensions"]
     assert (
         response
         == NextMessage(
@@ -331,6 +333,7 @@ async def test_channel_listen_group(ws: WebsocketCommunicator):
     )
 
     response = await ws.receive_json_from()
+    del response["payload"]["extensions"]
     assert (
         response
         == NextMessage(

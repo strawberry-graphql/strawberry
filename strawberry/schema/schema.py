@@ -5,7 +5,7 @@ from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
+    AsyncGenerator,
     Dict,
     Iterable,
     List,
@@ -20,10 +20,8 @@ from graphql import (
     GraphQLNonNull,
     GraphQLSchema,
     get_introspection_query,
-    parse,
     validate_schema,
 )
-from graphql.execution import subscribe
 from graphql.type.directives import specified_directives
 
 from strawberry import relay
@@ -43,11 +41,10 @@ from ..printer import print_schema
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
-from .execute import execute, execute_sync
+from .execute import execute, execute_sync, subscribe
 
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
-    from graphql import ExecutionResult as GraphQLExecutionResult
 
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.directive import StrawberryDirective
@@ -298,20 +295,26 @@ class Schema(BaseSchema):
 
     async def subscribe(
         self,
-        # TODO: make this optional when we support extensions
-        query: str,
+        query: Optional[str],
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ) -> Union[AsyncIterator[GraphQLExecutionResult], GraphQLExecutionResult]:
+    ) -> Union[ExecutionResult, AsyncGenerator[ExecutionResult, None]]:
+        execution_context = ExecutionContext(
+            query=query,
+            schema=self,
+            context=context_value,
+            root_value=root_value,
+            variables=variable_values,
+            provided_operation_name=operation_name,
+        )
+
         return await subscribe(
             self._schema,
-            parse(query),
-            root_value=root_value,
-            context_value=context_value,
-            variable_values=variable_values,
-            operation_name=operation_name,
+            extensions=self.get_extensions(),
+            execution_context=execution_context,
+            process_errors=self.process_errors,
         )
 
     def _resolve_node_ids(self):

@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional, cast
 
-from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError
 
 from strawberry.subscriptions.protocols.graphql_ws import (
@@ -20,6 +19,7 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
     GQL_STOP,
 )
+from strawberry.types import ExecutionResult
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 if TYPE_CHECKING:
@@ -137,7 +137,7 @@ class BaseGraphQLWSHandler(ABC):
             self.schema.process_errors([error])
             return
 
-        if isinstance(result_source, GraphQLExecutionResult):
+        if isinstance(result_source, ExecutionResult):
             assert result_source.errors
             error_payload = result_source.errors[0].formatted
             await self.send_message(GQL_ERROR, operation_id, error_payload)
@@ -168,6 +168,8 @@ class BaseGraphQLWSHandler(ABC):
                 payload = {"data": result.data}
                 if result.errors:
                     payload["errors"] = [err.formatted for err in result.errors]
+                if result.extensions:
+                    payload["extensions"] = result.extensions
                 await self.send_message(GQL_DATA, operation_id, payload)
                 # log errors after send_message to prevent potential
                 # slowdown of sending result
@@ -186,17 +188,17 @@ class BaseGraphQLWSHandler(ABC):
                 {"data": None, "errors": [error.formatted]},
             )
             self.schema.process_errors([error])
+        finally:
+            await result_source.aclose()
 
         await self.send_message(GQL_COMPLETE, operation_id, None)
 
     async def cleanup_operation(self, operation_id: str) -> None:
-        await self.subscriptions[operation_id].aclose()
-        del self.subscriptions[operation_id]
-
-        self.tasks[operation_id].cancel()
+        self.subscriptions.pop(operation_id)
+        task = self.tasks.pop(operation_id)
+        task.cancel()
         with suppress(BaseException):
-            await self.tasks[operation_id]
-        del self.tasks[operation_id]
+            await task
 
     async def send_message(
         self,

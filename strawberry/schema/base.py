@@ -2,7 +2,17 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Type,
+    Union,
+)
 from typing_extensions import Protocol
 
 from strawberry.utils.logging import StrawberryLogger
@@ -62,7 +72,7 @@ class BaseSchema(Protocol):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ) -> Any:
+    ) -> Union[ExecutionResult, AsyncGenerator[ExecutionResult, None]]:
         raise NotImplementedError
 
     @abstractmethod

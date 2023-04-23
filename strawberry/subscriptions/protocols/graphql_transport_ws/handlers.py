@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Callable, Dict, List, Optional
 
-from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
@@ -20,6 +19,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
+from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 from strawberry.unset import UNSET
 from strawberry.utils.debug import pretty_print_graphql_operation
@@ -251,7 +251,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         operation = Operation(self, message.id, operation_type)
 
         # Handle initial validation errors
-        if isinstance(result_source, GraphQLExecutionResult):
+        if isinstance(result_source, ExecutionResult):
             assert operation_type == OperationType.SUBSCRIPTION
             assert result_source.errors
             payload = [err.formatted for err in result_source.errors]
@@ -316,6 +316,8 @@ class BaseGraphQLTransportWSHandler(ABC):
                         next_payload["errors"] = [
                             err.formatted for err in result.errors
                         ]
+                    if result.extensions:
+                        next_payload["extensions"] = result.extensions
                     next_message = NextMessage(id=operation.id, payload=next_payload)
                     await operation.send_message(next_message)
         except Exception as error:
