@@ -23,6 +23,8 @@ from strawberry.subscriptions.protocols.graphql_ws import (
 )
 from strawberry.utils.debug import pretty_print_graphql_operation
 
+from ..common import transform_subscription_iterator
+
 if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
     from strawberry.subscriptions.protocols.graphql_ws.types import (
@@ -144,6 +146,8 @@ class BaseGraphQLWSHandler(ABC):
             await self.send_message(GQL_ERROR, operation_id, error_payload)
             self.schema.process_errors(result_source.errors)
             return
+
+        result_source = transform_subscription_iterator(result_source)
 
         self.subscriptions[operation_id] = result_source
         result_handler = self.handle_async_results(result_source, operation_id)

@@ -26,6 +26,8 @@ from strawberry.unset import UNSET
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.operation import get_operation_type
 
+from ..common import transform_subscription_iterator
+
 if TYPE_CHECKING:
     from datetime import timedelta
 
@@ -255,6 +257,9 @@ class BaseGraphQLTransportWSHandler(ABC):
             await self.send_message(ErrorMessage(id=message.id, payload=payload))
             self.schema.process_errors(result_source.errors)
             return
+
+        if operation_type == OperationType.SUBSCRIPTION:
+            result_source = transform_subscription_iterator(result_source)
 
         # Create task to handle this subscription, reserve the operation ID
         self.subscriptions[message.id] = result_source
