@@ -1,7 +1,6 @@
 Release type: minor
 
-Extension MaxAliasesLimiter
-Add a validator to limit the maximum number of aliases in a GraphQL document.
+This PR adds a MaxAliasesLimiter extensions which limit the number of aliases in a GraphQL document.
 
 ## Usage example:
 
