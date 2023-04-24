@@ -50,106 +50,14 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 
 
-def get_node_resolver(field: StrawberryField):  # noqa: ANN201
-    type_ = field.type
-    is_optional = isinstance(type_, StrawberryOptional)
-
-    def resolver(
-        info: Info,
-        id: Annotated[GlobalID, argument(description="The ID of the object.")],
-    ):
-        return id.resolve_type(info).resolve_node(
-            id.node_id,
-            info=info,
-            required=not is_optional,
-        )
-
-    return resolver
-
-
-def get_nodes_resolver(field: StrawberryField):  # noqa: ANN201
-    type_ = field.type
-    assert isinstance(type_, StrawberryList)
-    is_optional = isinstance(type_.of_type, StrawberryOptional)
-
-    def resolver(
-        info: Info,
-        ids: Annotated[List[GlobalID], argument(description="The IDs of the objects.")],
-    ):
-        nodes_map: DefaultDict[Type[Node], List[str]] = defaultdict(list)
-        # Store the index of the node in the list of nodes of the same type
-        # so that we can return them in the same order while also supporting different
-        # types
-        index_map: Dict[GlobalID, Tuple[Type[Node], int]] = {}
-        for gid in ids:
-            node_t = gid.resolve_type(info)
-            nodes_map[node_t].append(gid.node_id)
-            index_map[gid] = (node_t, len(nodes_map[node_t]) - 1)
-
-        resolved_nodes = {
-            node_t: node_t.resolve_nodes(
-                info=info,
-                node_ids=node_ids,
-                required=not is_optional,
-            )
-            for node_t, node_ids in nodes_map.items()
-        }
-        awaitable_nodes = {
-            node_t: nodes
-            for node_t, nodes in resolved_nodes.items()
-            if inspect.isawaitable(nodes)
-        }
-        # Async generators are not awaitable, so we need to handle them separately
-        asyncgen_nodes = {
-            node_t: nodes
-            for node_t, nodes in resolved_nodes.items()
-            if inspect.isasyncgen(nodes)
-        }
-
-        if awaitable_nodes or asyncgen_nodes:
-
-            async def resolve(resolved=resolved_nodes):
-                resolved.update(
-                    zip(
-                        [
-                            *awaitable_nodes.keys(),
-                            *asyncgen_nodes.keys(),
-                        ],
-                        # Resolve all awaitable nodes concurrently
-                        await asyncio.gather(
-                            *awaitable_nodes.values(),
-                            *(
-                                asyncgen_to_list(nodes)
-                                for nodes in asyncgen_nodes.values()
-                            ),
-                        ),
-                    )
-                )
-
-                # Resolve any generator to lists
-                resolved = {node_t: list(nodes) for node_t, nodes in resolved.items()}
-                return [resolved[index_map[gid][0]][index_map[gid][1]] for gid in ids]
-
-            return resolve()
-
-        # Resolve any generator to lists
-        resolved = {
-            node_t: list(cast(Iterator[Node], nodes))
-            for node_t, nodes in resolved_nodes.items()
-        }
-        return [resolved[index_map[gid][0]][index_map[gid][1]] for gid in ids]
-
-    return resolver
-
-
 class NodeExtension(FieldExtension):
     def apply(self, field: StrawberryField) -> None:  # pragma: no cover
         assert field.base_resolver is None
 
         if isinstance(field.type, StrawberryList):
-            resolver = get_nodes_resolver(field)
+            resolver = self.get_node_list_resolver(field)
         else:
-            resolver = get_node_resolver(field)
+            resolver = self.get_node_resolver(field)
 
         field.base_resolver = StrawberryResolver(resolver, type_override=field.type)
 
@@ -158,54 +66,149 @@ class NodeExtension(FieldExtension):
     ) -> Any:
         return next_(source, info, **kwargs)
 
-    async def resolve_async(
-        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs
-    ) -> Any:
-        return await next_(source, info, **kwargs)
+    def get_node_resolver(self, field: StrawberryField):  # noqa: ANN201
+        type_ = field.type
+        is_optional = isinstance(type_, StrawberryOptional)
+
+        def resolver(
+            info: Info,
+            id: Annotated[GlobalID, argument(description="The ID of the object.")],
+        ):
+            return id.resolve_type(info).resolve_node(
+                id.node_id,
+                info=info,
+                required=not is_optional,
+            )
+
+        return resolver
+
+    def get_node_list_resolver(self, field: StrawberryField):  # noqa: ANN201
+        type_ = field.type
+        assert isinstance(type_, StrawberryList)
+        is_optional = isinstance(type_.of_type, StrawberryOptional)
+
+        def resolver(
+            info: Info,
+            ids: Annotated[
+                List[GlobalID], argument(description="The IDs of the objects.")
+            ],
+        ):
+            nodes_map: DefaultDict[Type[Node], List[str]] = defaultdict(list)
+            # Store the index of the node in the list of nodes of the same type
+            # so that we can return them in the same order while also supporting
+            # different types
+            index_map: Dict[GlobalID, Tuple[Type[Node], int]] = {}
+            for gid in ids:
+                node_t = gid.resolve_type(info)
+                nodes_map[node_t].append(gid.node_id)
+                index_map[gid] = (node_t, len(nodes_map[node_t]) - 1)
+
+            resolved_nodes = {
+                node_t: node_t.resolve_nodes(
+                    info=info,
+                    node_ids=node_ids,
+                    required=not is_optional,
+                )
+                for node_t, node_ids in nodes_map.items()
+            }
+            awaitable_nodes = {
+                node_t: nodes
+                for node_t, nodes in resolved_nodes.items()
+                if inspect.isawaitable(nodes)
+            }
+            # Async generators are not awaitable, so we need to handle them separately
+            asyncgen_nodes = {
+                node_t: nodes
+                for node_t, nodes in resolved_nodes.items()
+                if inspect.isasyncgen(nodes)
+            }
+
+            if awaitable_nodes or asyncgen_nodes:
+
+                async def resolve(resolved=resolved_nodes):
+                    resolved.update(
+                        zip(
+                            [
+                                *awaitable_nodes.keys(),
+                                *asyncgen_nodes.keys(),
+                            ],
+                            # Resolve all awaitable nodes concurrently
+                            await asyncio.gather(
+                                *awaitable_nodes.values(),
+                                *(
+                                    asyncgen_to_list(nodes)
+                                    for nodes in asyncgen_nodes.values()
+                                ),
+                            ),
+                        )
+                    )
+
+                    # Resolve any generator to lists
+                    resolved = {
+                        node_t: list(nodes) for node_t, nodes in resolved.items()
+                    }
+                    return [
+                        resolved[index_map[gid][0]][index_map[gid][1]] for gid in ids
+                    ]
+
+                return resolve()
+
+            # Resolve any generator to lists
+            resolved = {
+                node_t: list(cast(Iterator[Node], nodes))
+                for node_t, nodes in resolved_nodes.items()
+            }
+            return [resolved[index_map[gid][0]][index_map[gid][1]] for gid in ids]
+
+        return resolver
 
 
 class ConnectionExtension(FieldExtension):
-    DEFAULT_ARGUMENTS = [
-        StrawberryArgument(
-            python_name="before",
-            graphql_name=None,
-            type_annotation=StrawberryAnnotation(Optional[str]),
-            description=(
-                "Returns the items in the list that come before the "
-                "specified cursor."
-            ),
-            default=None,
-        ),
-        StrawberryArgument(
-            python_name="after",
-            graphql_name=None,
-            type_annotation=StrawberryAnnotation(Optional[str]),
-            description=(
-                "Returns the items in the list that come after the " "specified cursor."
-            ),
-            default=None,
-        ),
-        StrawberryArgument(
-            python_name="first",
-            graphql_name=None,
-            type_annotation=StrawberryAnnotation(Optional[int]),
-            description="Returns the first n items from the list.",
-            default=None,
-        ),
-        StrawberryArgument(
-            python_name="last",
-            graphql_name=None,
-            type_annotation=StrawberryAnnotation(Optional[int]),
-            description=(
-                "Returns the items in the list that come after the " "specified cursor."
-            ),
-            default=None,
-        ),
-    ]
     connection_type: Type[Connection[Node]]
 
     def apply(self, field: StrawberryField) -> None:  # pragma: no cover
-        field.default_arguments.extend(self.DEFAULT_ARGUMENTS)
+        field.default_arguments.extend(
+            [
+                StrawberryArgument(
+                    python_name="before",
+                    graphql_name=None,
+                    type_annotation=StrawberryAnnotation(Optional[str]),
+                    description=(
+                        "Returns the items in the list that come before the "
+                        "specified cursor."
+                    ),
+                    default=None,
+                ),
+                StrawberryArgument(
+                    python_name="after",
+                    graphql_name=None,
+                    type_annotation=StrawberryAnnotation(Optional[str]),
+                    description=(
+                        "Returns the items in the list that come after the "
+                        "specified cursor."
+                    ),
+                    default=None,
+                ),
+                StrawberryArgument(
+                    python_name="first",
+                    graphql_name=None,
+                    type_annotation=StrawberryAnnotation(Optional[int]),
+                    description="Returns the first n items from the list.",
+                    default=None,
+                ),
+                StrawberryArgument(
+                    python_name="last",
+                    graphql_name=None,
+                    type_annotation=StrawberryAnnotation(Optional[int]),
+                    description=(
+                        "Returns the items in the list that come after the "
+                        "specified cursor."
+                    ),
+                    default=None,
+                ),
+            ]
+        )
+
         f_type = field.type
         if not (isinstance(f_type, type) and issubclass(f_type, Connection)):
             raise RelayWrongAnnotationError(field.name, cast(type, field.origin))
