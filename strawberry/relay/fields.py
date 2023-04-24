@@ -4,13 +4,16 @@ import asyncio
 import dataclasses
 import inspect
 from collections import defaultdict
+from collections.abc import AsyncIterable
 from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
     Callable,
     DefaultDict,
     Dict,
+    ForwardRef,
     Iterable,
     Iterator,
     List,
@@ -24,7 +27,7 @@ from typing import (
     cast,
     overload,
 )
-from typing_extensions import Annotated  # noqa: TCH003
+from typing_extensions import Annotated, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument, argument
@@ -34,10 +37,14 @@ from strawberry.extensions.field_extension import (
     SyncExtensionResolver,
 )
 from strawberry.field import _RESOLVER_TYPE, StrawberryField, field
-from strawberry.relay.exceptions import RelayWrongAnnotationError
+from strawberry.relay.exceptions import (
+    RelayWrongAnnotationError,
+    RelayWrongResolverAnnotationError,
+)
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.fields.resolver import StrawberryResolver
 from strawberry.utils.aio import asyncgen_to_list
+from strawberry.utils.typing import eval_type
 
 from .types import Connection, GlobalID, Node, NodeIterableType, NodeType
 
@@ -210,8 +217,28 @@ class ConnectionExtension(FieldExtension):
         )
 
         f_type = field.type
-        if not (isinstance(f_type, type) and issubclass(f_type, Connection)):
+        if not isinstance(f_type, type) or not issubclass(f_type, Connection):
             raise RelayWrongAnnotationError(field.name, cast(type, field.origin))
+
+        assert field.base_resolver
+        # FIXME: We are not using resolver_type.type because it will call
+        # StrawberryAnnotation.resolve, which will strip async types from the
+        # type (i.e. AsyncGenerator[Fruit] will become Fruit). This is done there
+        # for subscription support, but we can't use it here. Maybe we can refactor
+        # this in the future.
+        resolver_type = field.base_resolver.signature.return_annotation
+        if isinstance(resolver_type, ForwardRef):
+            resolver_type = eval_type(
+                resolver_type,
+                field.base_resolver._namespace,
+                None,
+            )
+
+        origin = get_origin(resolver_type)
+        if origin is None or not issubclass(
+            origin, (Iterator, Iterable, AsyncIterator, AsyncIterable)
+        ):
+            raise RelayWrongResolverAnnotationError(field.name, field.base_resolver)
 
         self.connection_type = cast(Type[Connection[Node]], field.type)
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Type
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Optional, Type, cast
 
 from strawberry.exceptions.exception import StrawberryException
 from strawberry.exceptions.utils.source_finder import SourceFinder
@@ -8,6 +9,7 @@ from strawberry.utils.cached_property import cached_property
 
 if TYPE_CHECKING:
     from strawberry.exceptions.exception_source import ExceptionSource
+    from strawberry.types.fields.resolver import StrawberryResolver
 
 
 class NodeIDAnnotationError(StrawberryException):
@@ -66,3 +68,37 @@ class RelayWrongAnnotationError(StrawberryException):
 
         source_finder = SourceFinder()
         return source_finder.find_class_attribute_from_object(self.cls, self.field_name)
+
+
+class RelayWrongResolverAnnotationError(StrawberryException):
+    def __init__(self, field_name: str, resolver: StrawberryResolver):
+        self.function = resolver.wrapped_func
+        self.field_name = field_name
+
+        self.message = (
+            f'Wrong annotation used on "{field_name}" resolver. '
+            "It should be return an iterable or async iterable object."
+        )
+        self.rich_message = (
+            f"Wrong annotation used on `{field_name}` resolver. "
+            "It should be return an `iterable` or `async iterable` object."
+        )
+        self.suggestion = (
+            "To fix this error you can annootate your resolver to return "
+            "one of the following options: `List[<NodeType>]`, "
+            "`Iterator[<NodeType>]`, `Iterable[<NodeType>]`, "
+            "`AsyncIterator[<NodeType>]`, `AsyncIterable[<NodeType>]`, "
+            "`Generator[<NodeType>, Any, Any]` and "
+            "`AsyncGenerator[<NodeType>, Any]`."
+        )
+        self.annotation_message = "relay wrong resolver annotation"
+
+        super().__init__(self.message)
+
+    @cached_property
+    def exception_source(self) -> Optional[ExceptionSource]:
+        if self.function is None:
+            return None  # pragma: no cover
+
+        source_finder = SourceFinder()
+        return source_finder.find_function_from_object(cast(Callable, self.function))

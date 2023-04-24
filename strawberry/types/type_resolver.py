@@ -33,14 +33,6 @@ def _get_extensions_for_type(type_: Type) -> List[FieldExtension]:
         return [ConnectionExtension()]
 
     type_origin = get_origin(type_)
-
-    # Support for "foo: Connection[Foo]"
-    if isinstance(type_origin, type) and issubclass(
-        type_origin,
-        Connection,
-    ):
-        return [ConnectionExtension()]
-
     type_args = get_args(type_)
 
     # Support for "foo: Optional[Node]" and "foo: List[Node]"
