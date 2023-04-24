@@ -123,6 +123,7 @@ class GraphQL(
                     get_root_value=self.get_root_value,
                     ws=ws,
                 ).handle()
+                return None
             elif preferred_protocol == GRAPHQL_WS_PROTOCOL:
                 await self.graphql_ws_handler_class(
                     schema=self.schema,
@@ -133,9 +134,11 @@ class GraphQL(
                     get_root_value=self.get_root_value,
                     ws=ws,
                 ).handle()
+                return None
             else:
                 # Subprotocol not acceptable
                 await ws.close(code=4406)
+                return None
 
         else:  # pragma: no cover
             raise ValueError("Unknown scope type: {!r}".format(scope["type"]))
