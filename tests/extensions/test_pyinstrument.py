@@ -22,7 +22,7 @@ def c():
 
 
 def test_basic_pyinstrument():
-    REPORT_PATH = tempfile.TemporaryFile()
+    REPORT_PATH = tempfile.NamedTemporaryFile().name
 
     @strawberry.type
     class Query:
