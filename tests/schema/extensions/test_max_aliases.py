@@ -8,7 +8,7 @@ from graphql import (
 )
 
 import strawberry
-from strawberry.extensions.max_aliases import create_validator
+from strawberry.extensions.max_aliases import MaxAliasesLimiter, create_validator
 
 
 @strawberry.type
@@ -198,3 +198,21 @@ def test_no_error_for_multiple_but_not_too_many_aliases():
     errors, result = run_query(query, 2)
 
     assert len(errors) == 0
+
+
+def test_works_as_extension():
+    query = """{
+      matt: user(name: "matt") {
+        email_address: email
+      }
+      matt_alias: user(name: "matt") {
+        email
+      }
+    }
+    """
+    schema = strawberry.Schema(Query, extensions=[MaxAliasesLimiter(max_alias_count=2)])
+
+    result = schema.execute_sync(query)
+
+    assert len(result.errors) == 1
+    assert result.errors[0].message == "3 aliases found. Allowed: 2"
