@@ -31,7 +31,7 @@ async def test_aslice():
     assert res == ["a", "b"]
 
 
-async def test_aslice_empty_generator():
+async def test_aislice_empty_generator():
     async def gen():
         if False:  # pragma: no cover
             yield "should not be returned"
@@ -44,7 +44,20 @@ async def test_aslice_empty_generator():
     assert res == []
 
 
-async def test_aslice_with_step():
+async def test_aislice_empty_slice():
+    async def gen():
+        if False:  # pragma: no cover
+            yield "should not be returned"
+            raise AssertionError("should never be called")
+
+    res = []
+    async for v in aislice(gen(), 0, 0):
+        res.append(v)
+
+    assert res == []
+
+
+async def test_aislice_with_step():
     async def gen():
         yield "a"
         yield "b"

@@ -37,7 +37,13 @@ async def aislice(
 ) -> AsyncIterator[_T]:
     """Async version of itertools.islice."""
     # This is based on
-    it = iter(range(start or 0, stop or sys.maxsize, step or 1))
+    it = iter(
+        range(
+            start if start is not None else 0,
+            stop if stop is not None else sys.maxsize,
+            step if step is not None else 1,
+        )
+    )
     try:
         nexti = next(it)
     except StopIteration:
