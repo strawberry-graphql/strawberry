@@ -128,6 +128,7 @@ fastapi = ["fastapi", "python-multipart"]
 chalice = ["chalice"]
 cli = ["click", "pygments", "rich", "libcst"]
 starlite = ["starlite"]
+pyinstrument = ["pyinstrument"]
 
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"
