@@ -46,11 +46,11 @@ def create_validator(max_alias_count: int) -> Type[ValidationRule]:
     class MaxAliasesValidator(ValidationRule):
         def __init__(self, validation_context: ValidationContext):
             document = validation_context.document
-            def_that_can_contain_alias = [
+            def_that_can_contain_alias = (
                 def_
                 for def_ in document.definitions
                 if isinstance(def_, (ExecutableDefinitionNode))
-            ]
+            )
             total_aliases = sum(
                 count_fields_with_alias(def_node)
                 for def_node in def_that_can_contain_alias
