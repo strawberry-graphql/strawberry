@@ -7,6 +7,7 @@ You can use it like this:
 ```python
 import strawberry
 from strawberry.extensions import pyinstrument
+
 schema = strawberry.Schema(
     Query,
     extensions=[
