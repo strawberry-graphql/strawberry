@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 from strawberry.utils.cached_property import cached_property
 
@@ -16,27 +16,20 @@ if TYPE_CHECKING:
 class MissingReturnAnnotationError(StrawberryException):
     """The field is missing the return annotation"""
 
-    def __init__(self, field_name: str, resolver: Union[StrawberryResolver, Callable]):
-        from strawberry.types.fields.resolver import StrawberryResolver
-
-        if isinstance(resolver, StrawberryResolver):
-            self.function = resolver.wrapped_func
-            resolver_name = resolver.name
-        else:
-            self.function = resolver
-            resolver_name = resolver.__name__
+    def __init__(self, field_name: str, resolver: StrawberryResolver):
+        self.function = resolver.wrapped_func
 
         self.message = (
             f'Return annotation missing for field "{field_name}", '
             "did you forget to add it?"
         )
         self.rich_message = (
-            "[bold red]Missing annotation for field " f"`[underline]{resolver_name}[/]`"
+            "[bold red]Missing annotation for field " f"`[underline]{resolver.name}[/]`"
         )
 
         self.suggestion = (
             "To fix this error you can add an annotation, "
-            f"like so [italic]`def {resolver_name}(...) -> str:`"
+            f"like so [italic]`def {resolver.name}(...) -> str:`"
         )
         self.annotation_message = "resolver missing annotation"
 
