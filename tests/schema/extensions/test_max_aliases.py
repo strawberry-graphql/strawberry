@@ -131,7 +131,7 @@ def test_multiple_arguments():
     assert not result
 
 
-def test_aliased_argument():
+def test_aliased_in_nested_field():
     query = """
     query read {
       matt: user(name: "matt") {
