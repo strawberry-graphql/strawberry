@@ -1,14 +1,7 @@
-from typing import Dict, List, Optional, Tuple, Union
-
-from graphql import (
-    GraphQLError,
-    parse,
-    specified_rules,
-    validate,
-)
+from typing import Optional
 
 import strawberry
-from strawberry.extensions.max_aliases import MaxAliasesLimiter, create_validator
+from strawberry.extensions.max_aliases import MaxAliasesLimiter
 
 
 @strawberry.type
@@ -20,8 +13,8 @@ class Human:
 @strawberry.type
 class Query:
     @strawberry.field
-    def user(self, name: Optional[str], email: Optional[str]) -> Human:
-        pass
+    def user(self, name: Optional[str] = None, email: Optional[str] = None) -> Human:
+        return Human(name="Jane Doe", email="jane@example.com")
 
     version: str
     user1: Human
@@ -29,30 +22,9 @@ class Query:
     user3: Human
 
 
-schema = strawberry.Schema(Query)
-
-
-def run_query(
-    query: str, max_aliases: int
-) -> Tuple[List[GraphQLError], Union[Dict[str, int], None]]:
-    document = parse(query)
-
-    result = None
-
-    validation_rule = create_validator(max_aliases)
-
-    errors = validate(
-        schema._schema,
-        document,
-        rules=(*specified_rules, validation_rule),
-    )
-
-    return errors, result
-
-
 def test_2_aliases_same_content():
     query = """
-    query read {
+    {
       matt: user(name: "matt") {
         email
       }
@@ -62,11 +34,10 @@ def test_2_aliases_same_content():
     }
     """
 
-    errors, result = run_query(query, 1)
+    result = _execute_with_max_aliases(query, 1)
 
-    assert len(errors) == 1
-    assert errors[0].message == "2 aliases found. Allowed: 1"
-    assert not result
+    assert len(result.errors) == 1
+    assert result.errors[0].message == "2 aliases found. Allowed: 1"
 
 
 def test_2_aliases_different_content():
@@ -81,10 +52,10 @@ def test_2_aliases_different_content():
     }
     """
 
-    errors, result = run_query(query, 1)
+    result = _execute_with_max_aliases(query, 1)
 
-    assert len(errors) == 1
-    assert errors[0].message == "2 aliases found. Allowed: 1"
+    assert len(result.errors) == 1
+    assert result.errors[0].message == "2 aliases found. Allowed: 1"
 
 
 def test_multiple_aliases_some_overlap_in_content():
@@ -102,11 +73,10 @@ def test_multiple_aliases_some_overlap_in_content():
     }
     """
 
-    errors, result = run_query(query, 1)
+    result = _execute_with_max_aliases(query, 1)
 
-    assert len(errors) == 1
-    assert errors[0].message == "3 aliases found. Allowed: 1"
-    assert not result
+    assert len(result.errors) == 1
+    assert result.errors[0].message == "3 aliases found. Allowed: 1"
 
 
 def test_multiple_arguments():
@@ -124,14 +94,13 @@ def test_multiple_arguments():
     }
     """
 
-    errors, result = run_query(query, 1)
+    result = _execute_with_max_aliases(query, 1)
 
-    assert len(errors) == 1
-    assert errors[0].message == "3 aliases found. Allowed: 1"
-    assert not result
+    assert len(result.errors) == 1
+    assert result.errors[0].message == "3 aliases found. Allowed: 1"
 
 
-def test_aliased_in_nested_field():
+def test_alias_in_nested_field():
     query = """
     query read {
       matt: user(name: "matt") {
@@ -140,14 +109,13 @@ def test_aliased_in_nested_field():
     }
     """
 
-    errors, result = run_query(query, 1)
+    result = _execute_with_max_aliases(query, 1)
 
-    assert len(errors) == 1
-    assert errors[0].message == "2 aliases found. Allowed: 1"
-    assert not result
+    assert len(result.errors) == 1
+    assert result.errors[0].message == "2 aliases found. Allowed: 1"
 
 
-def test_aliased_argument_in_fragment():
+def test_alias_in_fragment():
     query = """
     fragment humanInfo on Human {
       email_address: email
@@ -159,48 +127,13 @@ def test_aliased_argument_in_fragment():
     }
     """
 
-    errors, result = run_query(query, 1)
+    result = _execute_with_max_aliases(query, 1)
 
-    assert len(errors) == 1
-    assert errors[0].message == "2 aliases found. Allowed: 1"
-    assert not result
-
-
-def test_no_error_one_aliased_one_without():
-    query = """
-    query read {
-      user(name: "matt") {
-        email
-      }
-      matt_alias: user(name: "matt") {
-        email
-      }
-    }
-    """
-
-    errors, result = run_query(query, 1)
-
-    assert len(errors) == 0
+    assert len(result.errors) == 1
+    assert result.errors[0].message == "2 aliases found. Allowed: 1"
 
 
-def test_no_error_for_multiple_but_not_too_many_aliases():
-    query = """
-    query read {
-      matt: user(name: "matt") {
-        email
-      }
-      matt_alias: user(name: "matt") {
-        email
-      }
-    }
-    """
-
-    errors, result = run_query(query, 2)
-
-    assert len(errors) == 0
-
-
-def test_works_as_extension():
+def test_2_top_level_1_nested():
     query = """{
       matt: user(name: "matt") {
         email_address: email
@@ -210,9 +143,48 @@ def test_works_as_extension():
       }
     }
     """
-    schema = strawberry.Schema(Query, extensions=[MaxAliasesLimiter(max_alias_count=2)])
-
-    result = schema.execute_sync(query)
+    result = _execute_with_max_aliases(query, 2)
 
     assert len(result.errors) == 1
     assert result.errors[0].message == "3 aliases found. Allowed: 2"
+
+
+def test_no_error_one_aliased_one_without():
+    query = """
+    {
+      user(name: "matt") {
+        email
+      }
+      matt_alias: user(name: "matt") {
+        email
+      }
+    }
+    """
+
+    result = _execute_with_max_aliases(query, 1)
+
+    assert not result.errors
+
+
+def test_no_error_for_multiple_but_not_too_many_aliases():
+    query = """{
+      matt: user(name: "matt") {
+        email
+      }
+      matt_alias: user(name: "matt") {
+        email
+      }
+    }
+    """
+
+    result = _execute_with_max_aliases(query, 2)
+
+    assert not result.errors
+
+
+def _execute_with_max_aliases(query: str, max_alias_count: int):
+    schema = strawberry.Schema(
+        Query, extensions=[MaxAliasesLimiter(max_alias_count=max_alias_count)]
+    )
+
+    return schema.execute_sync(query)
