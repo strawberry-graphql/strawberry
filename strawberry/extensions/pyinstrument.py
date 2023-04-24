@@ -34,5 +34,6 @@ class PyInstrument(SchemaExtension):
 
         # Stop the profiler
         profiler.stop()
-        with Path.open(self._report_path, "w", encoding="utf-8") as f:
-            f.write(profiler.output_html())
+        Path.open(self._report_path, encoding="utf-8").write_text(
+            profiler.output_html()
+        )

@@ -41,9 +41,8 @@ def test_basic_pyinstrument():
     assert not result.errors
     assert result.data["theField"] == 4
 
-    with Path.open(REPORT_PATH, encoding="utf-8") as f:
-        content = f.read()
-        assert "a()" in content
-        assert "b()" in content
-        assert "c()" in content
-        assert content.count('"function": "sleep"') == 3
+    content = Path.open(REPORT_PATH, encoding="utf-8").read()
+    assert "a()" in content
+    assert "b()" in content
+    assert "c()" in content
+    assert content.count('"function": "sleep"') == 3
