@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-from typing import Iterator, Union, TextIO, TYPE_CHECKING
 from pathlib import Path
+from typing import Iterator
 
 from pyinstrument import Profiler
 
 from strawberry.extensions.base_extension import SchemaExtension
-
-
-if TYPE_CHECKING:
-    from strawberry.types.execution import ExecutionContext
 
 
 class PyInstrument(SchemaExtension):
@@ -38,5 +34,5 @@ class PyInstrument(SchemaExtension):
 
         # Stop the profiler
         profiler.stop()
-        with open(self._report_path, "w", encoding="utf-8") as f:
+        with Path.open(self._report_path, "w", encoding="utf-8") as f:
             f.write(profiler.output_html())

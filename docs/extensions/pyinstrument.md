@@ -1,7 +1,7 @@
 ---
-title: PyInstrument 
+title: PyInstrument
 summary: Easily Instrument your Schema
-tags: instrumentation,profiling 
+tags: instrumentation,profiling
 ---
 
 # `PyInstrument`
@@ -12,7 +12,7 @@ This extension allows you to instrument your schema and inspect the call stack.
 
 ```python
 import strawberry
-from strawberry.extensions import pyinstrument 
+from strawberry.extensions import pyinstrument
 
 schema = strawberry.Schema(
     Query,
@@ -25,11 +25,10 @@ schema = strawberry.Schema(
 ## API reference:
 
 ```python
-class PyInstrument(report_Path: Path = Path("pyinstrument.html")):
+class PyInstrument(report_Path=Path("pyinstrument.html")):
     ...
 ```
 
 #### `report_path: Path = Path("pyinstrument.html")`
 
 Path to write the HTML PyInstrument report
-

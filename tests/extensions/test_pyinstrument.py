@@ -1,8 +1,9 @@
-#!/usr/bin/env python3
-#
-from strawberry.extensions import pyinstrument
-import strawberry
+import tempfile
 import time
+from pathlib import Path
+
+import strawberry
+from strawberry.extensions import pyinstrument
 
 
 def a():
@@ -21,7 +22,7 @@ def c():
 
 
 def test_basic_pyinstrument():
-    REPORT_PATH = "/tmp/pyinstrument.html"
+    REPORT_PATH = tempfile.TemporaryFile()
 
     @strawberry.type
     class Query:
@@ -40,7 +41,7 @@ def test_basic_pyinstrument():
     assert not result.errors
     assert result.data["theField"] == 4
 
-    with open(REPORT_PATH, "r", encoding="utf-8") as f:
+    with Path.open(REPORT_PATH, encoding="utf-8") as f:
         content = f.read()
         assert "a()" in content
         assert "b()" in content
