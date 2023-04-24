@@ -1,6 +1,6 @@
 Release type: minor
 
-This PR adds a MaxAliasesLimiter extensions which limit the number of aliases in a GraphQL document.
+This PR adds a MaxAliasesLimiter extensions which limits the number of aliases in a GraphQL document.
 
 ## Usage example:
 
