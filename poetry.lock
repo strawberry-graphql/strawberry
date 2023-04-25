@@ -1181,14 +1181,14 @@ test = ["anyio[trio] (>=3.2.1,<4.0.0)", "black (==23.1.0)", "coverage[toml] (>=6
 
 [[package]]
 name = "flask"
-version = "2.2.3"
+version = "2.2.4"
 description = "A simple framework for building complex web applications."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "Flask-2.2.3-py3-none-any.whl", hash = "sha256:c0bec9477df1cb867e5a67c9e1ab758de9cb4a3e52dd70681f59fa40a62b3f2d"},
-    {file = "Flask-2.2.3.tar.gz", hash = "sha256:7eb373984bf1c770023fce9db164ed0c3353cd0b53f130f4693da0ca756a2e6d"},
+    {file = "Flask-2.2.4-py3-none-any.whl", hash = "sha256:13f6329ddbfff11340939cd11919daf150a01358ded4b7e81c03c055dfecb559"},
+    {file = "Flask-2.2.4.tar.gz", hash = "sha256:77504c4c097f56ac5f29b00f9009213010cf9d2923a288c0e0564a5db2bb53d6"},
 ]
 
 [package.dependencies]
@@ -3982,4 +3982,4 @@ starlite = ["starlite"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "856f24bec5f49362c9b96993482043958430fdb16b3ca9d14bf6c5ef94b8faec"
+content-hash = "ecb3d1ce60c28202449020b84388ca235615b6c8fb77f3732dd67a04f5d348d5"
