@@ -24,6 +24,9 @@ class ExecutionContext:
     schema: Schema
     context: Any = None
     variables: Optional[Dict[str, Any]] = None
+    parse_options: Optional[Dict[str, Any]] = dataclasses.field(
+        default_factory=lambda: {}
+    )
     root_value: Optional[Any] = None
     validation_rules: Tuple[Type[ASTValidationRule], ...] = dataclasses.field(
         default_factory=lambda: tuple(specified_rules)
