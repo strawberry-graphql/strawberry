@@ -27,6 +27,8 @@ from strawberry.types import ExecutionResult
 from .exceptions import InvalidOperationTypeError
 
 if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
     from graphql import ExecutionContext as GraphQLExecutionContext
     from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql import GraphQLSchema
@@ -35,10 +37,11 @@ if TYPE_CHECKING:
 
     from strawberry.extensions import SchemaExtension
     from strawberry.types import ExecutionContext
+    from strawberry.types.execution import ParseOptions
     from strawberry.types.graphql import OperationType
 
 
-def parse_document(query: str, **kwargs) -> DocumentNode:
+def parse_document(query: str, **kwargs: Unpack[ParseOptions]) -> DocumentNode:
     return parse(query, **kwargs)
 
 

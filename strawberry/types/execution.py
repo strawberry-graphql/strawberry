@@ -9,14 +9,16 @@ from typing import (
     Optional,
     Tuple,
     Type,
-    TypedDict,
 )
+from typing_extensions import TypedDict
 
 from graphql import specified_rules
 
 from strawberry.utils.operation import get_first_operation, get_operation_type
 
 if TYPE_CHECKING:
+    from typing_extensions import NotRequired
+
     from graphql import ASTValidationRule
     from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql.error.graphql_error import GraphQLError
@@ -90,7 +92,5 @@ class ExecutionResult:
     extensions: Optional[Dict[str, Any]] = None
 
 
-class ParseOptions(TypedDict, total=False):
-    # Change this to typing.NotRequired
-    # when we don't support versions older than 3.11
-    max_tokens: Optional[int]
+class ParseOptions(TypedDict):
+    max_tokens: NotRequired[int]
