@@ -19,7 +19,7 @@ class MaxAliasesLimiter(AddValidationRules):
     Example:
 
     >>> import strawberry
-    >>> from strawberry.extensions import QueryDepthLimiter
+    >>> from strawberry.extensions import MaxAliasesLimiter
     >>>
     >>> schema = strawberry.Schema(
     ...     Query,

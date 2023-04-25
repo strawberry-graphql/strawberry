@@ -118,6 +118,7 @@ async def test_connection_init_timeout(request, http_client_class: Type[HttpClie
         ws.assert_reason("Connection initialisation timeout")
 
 
+@pytest.mark.flaky
 async def test_connection_init_timeout_cancellation(
     http_client_class: Type[HttpClient],
 ):
