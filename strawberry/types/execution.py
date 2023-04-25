@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    NotRequired,
+    Optional,
+    Tuple,
+    Type,
+    TypedDict,
+)
 
 from graphql import specified_rules
 
@@ -24,7 +34,9 @@ class ExecutionContext:
     schema: Schema
     context: Any = None
     variables: Optional[Dict[str, Any]] = None
-    parse_options: Dict[str, Any] = dataclasses.field(default_factory=lambda: {})
+    parse_options: ParseOptions = dataclasses.field(
+        default_factory=lambda: ParseOptions()
+    )
     root_value: Optional[Any] = None
     validation_rules: Tuple[Type[ASTValidationRule], ...] = dataclasses.field(
         default_factory=lambda: tuple(specified_rules)
@@ -77,3 +89,7 @@ class ExecutionResult:
     data: Optional[Dict[str, Any]]
     errors: Optional[List[GraphQLError]]
     extensions: Optional[Dict[str, Any]] = None
+
+
+class ParseOptions(TypedDict):
+    max_tokens: NotRequired[int]
