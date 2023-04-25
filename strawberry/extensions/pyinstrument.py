@@ -25,15 +25,11 @@ class PyInstrument(SchemaExtension):
         in this case we start the profiler and yield
         then we stop the profiler when the operation is done
         """
-        # Start the profiler
         profiler = Profiler()
         profiler.start()
 
-        # Perform the operation
         yield
 
-        # Stop the profiler
         profiler.stop()
-        Path.open(self._report_path, encoding="utf-8").write_text(
-            profiler.output_html()
-        )
+
+        Path(self._report_path, encoding="utf-8").write_text(profiler.output_html())
