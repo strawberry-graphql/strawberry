@@ -41,7 +41,7 @@ def test_basic_pyinstrument():
     assert not result.errors
     assert result.data["theField"] == 4
 
-    content = Path.open(REPORT_PATH, encoding="utf-8").read()
+    content = Path(REPORT_PATH, encoding="utf-8").read_text()
     assert "a()" in content
     assert "b()" in content
     assert "c()" in content
