@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterator
 
-from pyinstrument import Profiler
+from pyinstrument import Profiler  # type: ignore
 
 from strawberry.extensions.base_extension import SchemaExtension
 
