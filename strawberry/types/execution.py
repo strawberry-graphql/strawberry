@@ -6,7 +6,6 @@ from typing import (
     Any,
     Dict,
     List,
-    NotRequired,
     Optional,
     Tuple,
     Type,
@@ -91,5 +90,7 @@ class ExecutionResult:
     extensions: Optional[Dict[str, Any]] = None
 
 
-class ParseOptions(TypedDict):
-    max_tokens: NotRequired[int]
+class ParseOptions(TypedDict, total=False):
+    # Change this to typing.NotRequired
+    # when we don't support versions older than 3.11
+    max_tokens: Optional[int]
