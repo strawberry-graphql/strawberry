@@ -23,7 +23,7 @@ class X:
 
 ### Highlighting lines
 
-```python line=1-4
+```python lines=1-4
 import strawberry
 
 @strawberry.type
@@ -35,11 +35,11 @@ class X:
 
 This is probably not implemented in the best way, but for now it works:
 
-<!-- TODO: passing the original syntax breaks black, find a better way -->
+```python
+import strawberry
 
-```
-import ^[info](strawberry)
-
+#      ^^^^^^^^^^
+#      This is a note about this line
 @strawberry.type
 class X:
     name: str
