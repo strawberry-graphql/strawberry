@@ -544,7 +544,7 @@ def test_with_types():
         type Type {
           foo: Int!
         }
-    '''  # noqa: E501
+    '''
 
     assert str(schema) == textwrap.dedent(expected).strip()
 
