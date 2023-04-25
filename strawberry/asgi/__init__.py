@@ -4,7 +4,6 @@ from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -124,6 +123,7 @@ class GraphQL(
                     get_root_value=self.get_root_value,
                     ws=ws,
                 ).handle()
+
             elif preferred_protocol == GRAPHQL_WS_PROTOCOL:
                 await self.graphql_ws_handler_class(
                     schema=self.schema,
@@ -134,6 +134,7 @@ class GraphQL(
                     get_root_value=self.get_root_value,
                     ws=ws,
                 ).handle()
+
             else:
                 # Subprotocol not acceptable
                 await ws.close(code=4406)
@@ -188,9 +189,7 @@ class GraphQL(
         return HTMLResponse(html)
 
     def create_response(
-        self,
-        response_data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]],
-        sub_response: Response,
+        self, response_data: GraphQLHTTPResponse, sub_response: Response
     ) -> Response:
         response = Response(
             self.encode_json(response_data),

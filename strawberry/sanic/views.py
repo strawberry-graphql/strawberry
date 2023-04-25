@@ -10,7 +10,6 @@ from typing import (
     Mapping,
     Optional,
     Type,
-    Union,
     cast,
 )
 
@@ -147,9 +146,7 @@ class GraphQLView(
         return TemporalResponse()
 
     def create_response(
-        self,
-        response_data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]],
-        sub_response: TemporalResponse,
+        self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse
     ) -> HTTPResponse:
         status_code = sub_response.status_code
 

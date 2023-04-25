@@ -70,10 +70,10 @@ The `GraphQLView` accepts two options at the moment:
 
 We allow to extend the base `GraphQLView`, by overriding the following methods:
 
-- `def get_context(self, request: Request, response: TemporalResponse) -> Any`
-- `def get_root_value(self, request: Request) -> Any`
-- `def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
-- `def encode_json(self, response_data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]]) -> str`
+- `get_context(self, request: Request, response: TemporalResponse) -> Any`
+- `get_root_value(self, request: Request) -> Any`
+- `process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `encode_json(self, response_data: GraphQLHTTPResponse) -> str`
 
 ## get_context
 
@@ -158,8 +158,6 @@ we use `json.dumps` but you can override this method to use a different encoder.
 
 ```python
 class MyGraphQLView(GraphQLView):
-    def encode_json(
-        self, data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]]
-    ) -> str:
+    def encode_json(self, data: GraphQLHTTPResponse) -> str:
         return json.dumps(data, indent=2)
 ```
