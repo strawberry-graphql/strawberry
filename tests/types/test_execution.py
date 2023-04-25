@@ -143,7 +143,7 @@ def test_error_when_accessing_operation_type_before_parsing():
             execution_context = self.execution_context
 
             # This should raise a RuntimeError
-            execution_context.operation_type
+            execution_context.operation_type  # noqa: B018
 
     schema = strawberry.Schema(Query, extensions=[MyExtension])
 
@@ -157,7 +157,7 @@ def test_error_when_accessing_operation_type_with_invalid_operation_name():
             execution_context = self.execution_context
 
             # This should raise a RuntimeError
-            execution_context.operation_type
+            execution_context.operation_type  # noqa: B018
 
     schema = strawberry.Schema(Query, extensions=[MyExtension])
 
