@@ -5,7 +5,11 @@ from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
+    AsyncIterable,
     AsyncIterator,
+    Awaitable,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -15,6 +19,7 @@ from typing import (
     cast,
 )
 
+from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import (
     GraphQLNamedType,
     GraphQLNonNull,
@@ -45,7 +50,6 @@ from .execute import execute, execute_sync
 
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
-    from graphql import ExecutionResult as GraphQLExecutionResult
 
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.directive import StrawberryDirective
@@ -296,8 +300,8 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ) -> Union[AsyncIterator[GraphQLExecutionResult], GraphQLExecutionResult]:
-        return await subscribe(
+    ) -> Union[AsyncGenerator[GraphQLExecutionResult, None], GraphQLExecutionResult]:
+        core_result = await subscribe(
             self._schema,
             parse(query),
             root_value=root_value,
@@ -305,6 +309,8 @@ class Schema(BaseSchema):
             variable_values=variable_values,
             operation_name=operation_name,
         )
+
+        return self.process_subscribe_result(core_result)
 
     def _warn_for_federation_directives(self):
         """Raises a warning if the schema has any federation directives."""
@@ -345,3 +351,62 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors {introspection.errors!r}")
 
         return introspection.data
+
+    def process_subscribe_result(
+        self,
+        core_result: Union[
+            AsyncIterator[GraphQLExecutionResult], GraphQLExecutionResult
+        ],
+    ) -> Union[AsyncGenerator[GraphQLExecutionResult, None], GraphQLExecutionResult]:
+        """Wrap the result of subscription.
+        1. Ensure that any iterator is an AsyncGenerator
+        2. apply any extensions and create strawberry ExecutionResults (TODO),
+        3. Fix problematic inner iterator from graphql-core
+        """
+        if isinstance(core_result, GraphQLExecutionResult):
+            # TODO: turn this into an ExecutionResult
+            return core_result
+
+        if isinstance(core_result, AsyncGenerator):  # pragma: no cover
+            # TODO: Wrap the generator, applying extensions and creating
+            # ExecutionResults
+            return cast(AsyncGenerator[GraphQLExecutionResult, None], core_result)
+
+        if hasattr(core_result, "_close_event"):
+            # This is a legacy MapAsyncIterator from graphql-core.  It is problematic
+            # in many ways, turn it it a proper async generator.
+            # this code is temporary until graphql-core is updated to use async
+            # generators.
+            async def replacement_generator(
+                iterator: AsyncIterator[GraphQLExecutionResult],
+                callback: Callable[[Any], Awaitable[GraphQLExecutionResult]],
+            ) -> AsyncGenerator[GraphQLExecutionResult, None]:
+                try:
+                    async for value in iterator:
+                        # Transform the value using the async callback
+                        yield await callback(value)
+                        # TODO: turn this into an ExecutionResult
+                finally:
+                    # if inner iterator is not async generator, close it if it
+                    # supports it.  This also ensures that an async generator is
+                    # closed on this Task in case of error during callback()
+                    if hasattr(iterator, "aclose"):
+                        await iterator.aclose()
+
+            return replacement_generator(
+                core_result.iterator, core_result.callback  # type: ignore
+            )
+
+        # Otherwise, wrap this non-generator iterable in an async iterator
+        # This is currently not covered until grapqhl-core is updated.
+        async def wrap_iterable(
+            iterable: AsyncIterable[GraphQLExecutionResult],
+        ) -> AsyncGenerator[GraphQLExecutionResult, None]:  # pragma: no cover
+            try:
+                async for value in iterable:
+                    yield value
+            finally:
+                if hasattr(iterable, "aclose"):
+                    await iterable.aclose()
+
+        return wrap_iterable(core_result)  # pragma: no cover
