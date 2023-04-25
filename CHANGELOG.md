@@ -1,6 +1,28 @@
 CHANGELOG
 =========
 
+0.174.0 - 2023-04-25
+--------------------
+
+This PR adds a MaxTokensLimiter extension which limits the number of tokens in a GraphQL document.
+
+## Usage example:
+
+```python
+import strawberry
+from strawberry.extensions import MaxTokensLimiter
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        MaxTokensLimiter(max_token_count=1000),
+    ],
+)
+```
+
+Contributed by [reka](https://github.com/reka) via [PR #2729](https://github.com/strawberry-graphql/strawberry/pull/2729/)
+
+
 0.173.1 - 2023-04-25
 --------------------
 
