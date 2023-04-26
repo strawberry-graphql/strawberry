@@ -255,3 +255,24 @@ def test_extension_argument_parsing():
     input_value = field_kwargs["some_input"]
     assert input_value.some_input_value == "foo"
     assert input_value._type_definition.is_input is True
+
+
+def test_extension_mutate_arguments():
+    class CustomExtension(FieldExtension):
+        def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+            kwargs["some_input"] += 10
+            result = next_(source, info, **kwargs)
+            return result
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(extensions=[CustomExtension()])
+        def string(self, some_input: int) -> str:
+            return f"This is a test!! {some_input}"
+
+    schema = strawberry.Schema(query=Query)
+    query = "query { string(someInput: 3) }"
+
+    result = schema.execute_sync(query)
+    assert result.data, result.errors
+    assert result.data["string"] == "This is a test!! 13"

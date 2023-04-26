@@ -561,12 +561,24 @@ class GraphQLCoreConverter:
                     source=_source, info=info, kwargs=kwargs
                 )
 
+                resolver_requested_info = False
+                if "info" in field_kwargs:
+                    resolver_requested_info = True
+                    # remove info from field_kwargs because we're passing it
+                    # explicitly to the extensions
+                    field_kwargs.pop("info")
+
                 # `_get_result` expects `field_args` and `field_kwargs` as
                 # separate arguments so we have to wrap the function so that we
                 # can pass them in
                 def wrapped_get_result(_source, info, **kwargs):
+                    # if the resolver function requested the info object info
+                    # then put it back in the kwargs dictionary
+                    if resolver_requested_info:
+                        kwargs["info"] = info
+
                     return _get_result(
-                        _source, info, field_args=field_args, field_kwargs=field_kwargs
+                        _source, info, field_args=field_args, field_kwargs=kwargs
                     )
 
                 # combine all the extension resolvers
