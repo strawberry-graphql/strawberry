@@ -23,6 +23,7 @@ class MyFieldExtension(FieldExtension):
 
 @strawberry.type
 class Query:
+    @strawberry.field
     def field(self, my_input: MyInput) -> str:
         return "hi"
 ```
