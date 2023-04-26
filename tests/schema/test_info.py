@@ -1,6 +1,7 @@
 import dataclasses
 import json
-from typing import Annotated, List, Optional
+from typing import List, Optional
+from typing_extensions import Annotated
 
 import pytest
 
@@ -357,6 +358,7 @@ def test_get_argument_defintion_helper():
 
     arg_1_def = None
     arg_2_def = None
+    missing_arg_def = None
 
     @strawberry.type
     class Query:
@@ -367,9 +369,10 @@ def test_get_argument_defintion_helper():
             arg_1: Annotated[str, strawberry.argument(description="Some description")],
             arg_2: Optional[TestInput] = None,
         ) -> str:
-            nonlocal arg_1_def, arg_2_def
+            nonlocal arg_1_def, arg_2_def, missing_arg_def
             arg_1_def = info.get_argument_definition("arg_1")
             arg_2_def = info.get_argument_definition("arg_2")
+            missing_arg_def = info.get_argument_definition("missing_arg_def")
 
             return "bar"
 
@@ -387,3 +390,5 @@ def test_get_argument_defintion_helper():
     assert arg_2_def.default is None
     assert isinstance(arg_2_def.type, StrawberryOptional)
     assert arg_2_def.type.of_type is TestInput
+
+    assert missing_arg_def is None
