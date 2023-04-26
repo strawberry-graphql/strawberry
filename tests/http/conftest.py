@@ -9,6 +9,7 @@ from .clients import (
     AsyncDjangoHttpClient,
     AsyncFlaskHttpClient,
     ChaliceHttpClient,
+    ChannelsHttpClient,
     DjangoHttpClient,
     FastAPIHttpClient,
     FlaskHttpClient,
@@ -29,6 +30,7 @@ from .clients import (
         pytest.param(FastAPIHttpClient, marks=pytest.mark.fastapi),
         pytest.param(FlaskHttpClient, marks=pytest.mark.flask),
         pytest.param(SanicHttpClient, marks=pytest.mark.sanic),
+        pytest.param(ChannelsHttpClient, marks=pytest.mark.channels),
         pytest.param(
             StarliteHttpClient,
             marks=[
