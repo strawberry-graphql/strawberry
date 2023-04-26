@@ -9,6 +9,7 @@ Example:
 ```python
 import strawberry
 
+
 @strawberry.type
 class Query:
     @strawberry.field
@@ -16,8 +17,8 @@ class Query:
         self,
         info,
         my_input: Annotated[
-          str,
-          strawberry.argument(description="Some description"),
+            str,
+            strawberry.argument(description="Some description"),
         ],
     ) -> str:
         my_input_def = info.get_argument_definition("my_input")

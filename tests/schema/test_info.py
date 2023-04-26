@@ -1,14 +1,14 @@
 import dataclasses
 import json
-from typing import List, Optional, Annotated
+from typing import Annotated, List, Optional
 
 import pytest
 
 import strawberry
+from strawberry.type import StrawberryOptional
 from strawberry.types import Info
 from strawberry.types.nodes import FragmentSpread, InlineFragment, SelectedField
 from strawberry.unset import UNSET
-from strawberry.type import StrawberryOptional
 
 
 def test_info_has_the_correct_shape():
