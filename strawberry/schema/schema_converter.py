@@ -59,8 +59,6 @@ from strawberry.utils.await_maybe import await_maybe
 
 from ..extensions.field_extension import (
     build_field_extension_resolvers,
-    SyncExtensionResolver,
-    AsyncExtensionResolver,
 )
 from . import compat
 from .types.concrete_type import ConcreteType

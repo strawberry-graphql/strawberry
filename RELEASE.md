@@ -9,14 +9,17 @@ Example:
 import strawberry
 from strawberry.extensions import FieldExtension
 
+
 @strawberry.input
 class MyInput:
     foo: str
+
 
 class MyFieldExtension(FieldExtension):
     def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
         # kwargs["my_input"] is instance of MyInput
         ...
+
 
 @strawberry.type
 class Query:
