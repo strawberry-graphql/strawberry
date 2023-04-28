@@ -144,6 +144,7 @@ class GraphQLRouter(APIRouter):
                     "description": "Not found if GraphiQL is not enabled.",
                 },
             },
+            include_in_schema=graphiql,
         )
         async def handle_http_get(
             request: Request,
