@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.175.0 - 2023-04-29
+--------------------
+
+Do not display graphiql view in fastapi doc if graphiql parameter is deactivated
+
+Contributed by [yak-toto](https://github.com/yak-toto) via [PR #2736](https://github.com/strawberry-graphql/strawberry/pull/2736/)
+
+
 0.174.0 - 2023-04-25
 --------------------
 
