@@ -5,7 +5,6 @@ import dataclasses
 import inspect
 from collections import defaultdict
 from collections.abc import AsyncIterable
-from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -299,7 +298,13 @@ class ConnectionExtension(FieldExtension):
         return resolved
 
 
-node = partial(field, extensions=[NodeExtension()])
+if TYPE_CHECKING:
+    node = field
+else:
+
+    def node(*args, **kwargs) -> StrawberryField:
+        kwargs["extensions"] = [*kwargs.get("extensions", []), NodeExtension()]
+        return field(*args, **kwargs)
 
 
 @overload
@@ -317,6 +322,7 @@ def connection(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: List[FieldExtension] = (),  # type: ignore
 ) -> Any:
     ...
 
@@ -334,6 +340,7 @@ def connection(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: List[FieldExtension] = (),  # type: ignore
 ) -> StrawberryField:
     ...
 
@@ -351,6 +358,7 @@ def connection(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: List[FieldExtension] = (),  # type: ignore
     # This init parameter is used by pyright to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
@@ -358,7 +366,7 @@ def connection(
 ) -> Any:
     """Annotate a property or a method to create a relay connection field.
 
-    Relay connections_ are mostly used for pagination purposes. This decorator
+    Relay connections are mostly used for pagination purposes. This decorator
     helps creating a complete relay endpoint that provides default arguments
     and has a default implementation for the connection slicing.
 
@@ -374,10 +382,11 @@ def connection(
         >>> @strawberry.type
         >>> class X:
         ...     some_node: relay.Connection[SomeType] = relay.connection(
-        ...         description="ABC"
+                    resolver=get_some_nodes,
+        ...         description="ABC",
         ...     )
         ...
-        ...     @relay.connection(description="ABC")
+        ...     @relay.connection(relay.Connection[SomeType], description="ABC")
         ...     def get_some_nodes(self, age: int) -> Iterable[SomeType]:
         ...         ...
 
@@ -426,7 +435,7 @@ def connection(
         default_factory=default_factory,
         metadata=metadata,
         directives=directives or (),
-        extensions=[ConnectionExtension()],
+        extensions=[*extensions, ConnectionExtension()],
     )
     if resolver is not None:
         f = f(resolver)
