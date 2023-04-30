@@ -1,3 +1,7 @@
+---
+title: Errors
+---
+
 # Errors in strawberry
 
 Strawberry has built-in errors for when something goes wrong with the creation
