@@ -122,6 +122,8 @@ $ poetry run pytest tests -n auto
 $ poetry run mypy
 ```
 
+Some tests are known to be inconsistent. (The fix is in progress.) These tests are marked with the `pytest.mark.flaky` marker.
+
 Strawberry uses the [black](https://github.com/ambv/black) coding style and you
 must ensure that your code follows it. If not, the CI will fail and your Pull Request will not be merged.
 

@@ -1,6 +1,89 @@
 CHANGELOG
 =========
 
+0.175.0 - 2023-04-29
+--------------------
+
+Do not display graphiql view in fastapi doc if graphiql parameter is deactivated
+
+Contributed by [yak-toto](https://github.com/yak-toto) via [PR #2736](https://github.com/strawberry-graphql/strawberry/pull/2736/)
+
+
+0.174.0 - 2023-04-25
+--------------------
+
+This PR adds a MaxTokensLimiter extension which limits the number of tokens in a GraphQL document.
+
+## Usage example:
+
+```python
+import strawberry
+from strawberry.extensions import MaxTokensLimiter
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        MaxTokensLimiter(max_token_count=1000),
+    ],
+)
+```
+
+Contributed by [reka](https://github.com/reka) via [PR #2729](https://github.com/strawberry-graphql/strawberry/pull/2729/)
+
+
+0.173.1 - 2023-04-25
+--------------------
+
+This release bumps the version of typing_extensions to >= `4.0.0` to fix the
+error: `"cannot import Self from typing_extensions"`.
+
+Contributed by [Tien Truong](https://github.com/tienman) via [PR #2704](https://github.com/strawberry-graphql/strawberry/pull/2704/)
+
+
+0.173.0 - 2023-04-25
+--------------------
+
+This releases adds an extension for [PyInstrument](https://github.com/joerick/pyinstrument). It allows to instrument your server and find slow code paths.
+
+You can use it like this:
+
+```python
+import strawberry
+from strawberry.extensions import pyinstrument
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        pyinstrument.PyInstrument(report_path="pyinstrument.html"),
+    ],
+)
+```
+
+Contributed by [Peyton Duncan](https://github.com/Helithumper) via [PR #2727](https://github.com/strawberry-graphql/strawberry/pull/2727/)
+
+
+0.172.0 - 2023-04-24
+--------------------
+
+This PR adds a MaxAliasesLimiter extension which limits the number of aliases in a GraphQL document.
+
+## Usage example:
+
+```python
+import strawberry
+from strawberry.extensions import MaxAliasesLimiter
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        MaxAliasesLimiter(max_alias_count=15),
+    ],
+)
+```
+
+Contributed by [reka](https://github.com/reka) via [PR #2726](https://github.com/strawberry-graphql/strawberry/pull/2726/)
+
+
 0.171.3 - 2023-04-21
 --------------------
 
