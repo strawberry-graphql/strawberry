@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.175.1 - 2023-04-30
+--------------------
+
+This release adds a missing parameter to `get_context`
+when using subscriptions with ASGI.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2739](https://github.com/strawberry-graphql/strawberry/pull/2739/)
+
+
 0.175.0 - 2023-04-29
 --------------------
 
