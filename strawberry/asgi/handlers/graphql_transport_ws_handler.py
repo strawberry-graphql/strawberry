@@ -33,7 +33,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         self._ws = ws
 
     async def get_context(self) -> Any:
-        return await self._get_context(request=self._ws)
+        return await self._get_context(request=self._ws, response=None)
 
     async def get_root_value(self) -> Any:
         return await self._get_root_value(request=self._ws)
