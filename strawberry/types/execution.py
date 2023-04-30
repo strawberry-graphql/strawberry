@@ -1,13 +1,24 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+)
+from typing_extensions import TypedDict
 
 from graphql import specified_rules
 
 from strawberry.utils.operation import get_first_operation, get_operation_type
 
 if TYPE_CHECKING:
+    from typing_extensions import NotRequired
+
     from graphql import ASTValidationRule
     from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql.error.graphql_error import GraphQLError
@@ -24,6 +35,9 @@ class ExecutionContext:
     schema: Schema
     context: Any = None
     variables: Optional[Dict[str, Any]] = None
+    parse_options: ParseOptions = dataclasses.field(
+        default_factory=lambda: ParseOptions()
+    )
     root_value: Optional[Any] = None
     validation_rules: Tuple[Type[ASTValidationRule], ...] = dataclasses.field(
         default_factory=lambda: tuple(specified_rules)
@@ -76,3 +90,7 @@ class ExecutionResult:
     data: Optional[Dict[str, Any]]
     errors: Optional[List[GraphQLError]]
     extensions: Optional[Dict[str, Any]] = None
+
+
+class ParseOptions(TypedDict):
+    max_tokens: NotRequired[int]

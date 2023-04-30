@@ -16,13 +16,13 @@ from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
 from ..context import get_context
-from . import JSON, HttpClient, Response, ResultOverrideFunction
+from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
 class GraphQLView(BaseGraphQLView):
     result_override: ResultOverrideFunction = None
 
-    def get_root_value(self, request):
+    def get_root_value(self, request) -> Query:
         return Query()
 
     def get_context(self, request: HttpRequest, response: HttpResponse) -> object:
@@ -75,11 +75,19 @@ class DjangoHttpClient(HttpClient):
         try:
             response = view(request)
         except Http404:
-            return Response(status_code=404, data=b"Not found")
+            return Response(
+                status_code=404, data=b"Not found", headers=response.headers
+            )
         except (BadRequest, SuspiciousOperation) as e:
-            return Response(status_code=400, data=e.args[0].encode())
+            return Response(
+                status_code=400, data=e.args[0].encode(), headers=response.headers
+            )
         else:
-            return Response(status_code=response.status_code, data=response.content)
+            return Response(
+                status_code=response.status_code,
+                data=response.content,
+                headers=response.headers,
+            )
 
     async def _graphql_request(
         self,

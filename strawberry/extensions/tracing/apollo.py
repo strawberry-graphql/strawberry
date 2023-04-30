@@ -4,9 +4,9 @@ import dataclasses
 import time
 from datetime import datetime
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional
 
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 from strawberry.extensions.utils import get_path_from_info
 
 from .utils import should_skip_tracing
@@ -76,29 +76,26 @@ class ApolloTracingStats:
         }
 
 
-class ApolloTracingExtension(Extension):
+class ApolloTracingExtension(SchemaExtension):
     def __init__(self, execution_context: ExecutionContext):
         self._resolver_stats: List[ApolloResolverStats] = []
         self.execution_context = execution_context
 
-    def on_request_start(self):
+    def on_operation(self) -> Generator[None, None, None]:
         self.start_timestamp = self.now()
         self.start_time = datetime.utcnow()
-
-    def on_request_end(self):
+        yield
         self.end_timestamp = self.now()
         self.end_time = datetime.utcnow()
 
-    def on_parsing_start(self):
+    def on_parse(self) -> Generator[None, None, None]:
         self._start_parsing = self.now()
-
-    def on_parsing_end(self):
+        yield
         self._end_parsing = self.now()
 
-    def on_validation_start(self):
+    def on_validate(self) -> Generator[None, None, None]:
         self._start_validation = self.now()
-
-    def on_validation_end(self):
+        yield
         self._end_validation = self.now()
 
     def now(self) -> int:
@@ -121,10 +118,10 @@ class ApolloTracingExtension(Extension):
             ),
         )
 
-    def get_results(self):
+    def get_results(self) -> Dict[str, Dict[str, Any]]:
         return {"tracing": self.stats.to_json()}
 
-    async def resolve(self, _next, root, info, *args, **kwargs):
+    async def resolve(self, _next, root, info, *args, **kwargs) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -157,7 +154,7 @@ class ApolloTracingExtension(Extension):
 
 
 class ApolloTracingExtensionSync(ApolloTracingExtension):
-    def resolve(self, _next, root, info, *args, **kwargs):
+    def resolve(self, _next, root, info, *args, **kwargs) -> Any:
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 

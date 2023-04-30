@@ -17,9 +17,14 @@ from strawberry.types.types import TypeDefinition
 try:
     from typing import GenericAlias as TypingGenericAlias  # type: ignore
 except ImportError:
-    # python < 3.9 does not have GenericAlias (list[int], tuple[str, ...] and so on)
-    TypingGenericAlias = ()
+    import sys
 
+    # python < 3.9 does not have GenericAlias (list[int], tuple[str, ...] and so on)
+    # we do this under a conditional to avoid a mypy :)
+    if sys.version_info < (3, 9):
+        TypingGenericAlias = ()
+    else:
+        raise
 
 ATTR_TO_TYPE_MAP = {
     "NoneStr": Optional[str],
@@ -95,7 +100,7 @@ def get_basic_type(type_) -> Type[Any]:
     return type_
 
 
-def replace_pydantic_types(type_: Any, is_input: bool):
+def replace_pydantic_types(type_: Any, is_input: bool) -> Any:
     if lenient_issubclass(type_, BaseModel):
         attr = "_strawberry_input_type" if is_input else "_strawberry_type"
         if hasattr(type_, attr):

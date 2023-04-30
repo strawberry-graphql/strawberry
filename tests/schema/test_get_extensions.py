@@ -1,6 +1,6 @@
 import strawberry
 from strawberry.directive import DirectiveLocation
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 from strawberry.extensions.directives import (
     DirectivesExtension,
     DirectivesExtensionSync,
@@ -17,7 +17,7 @@ def uppercase(value: str) -> str:
     return value.upper()
 
 
-class MyExtension(Extension):
+class MyExtension(SchemaExtension):
     ...
 
 

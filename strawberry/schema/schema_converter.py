@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
+from functools import partial, reduce
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -56,6 +57,7 @@ from strawberry.union import StrawberryUnion
 from strawberry.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
 
+from ..extensions.field_extension import build_field_extension_resolvers
 from . import compat
 from .types.concrete_type import ConcreteType
 
@@ -89,7 +91,14 @@ class CustomGraphQLEnumType(GraphQLEnumType):
 
     def serialize(self, output_value: Any) -> str:
         if isinstance(output_value, self.wrapped_cls):
-            return output_value.name
+            for name, value in self.values.items():
+                if output_value.value == value.value:
+                    return name
+
+            raise ValueError(
+                f"Invalid value for enum {self.name}: {output_value}"
+            )  # pragma: no cover
+
         return super().serialize(output_value)
 
     def parse_value(self, input_value: str) -> Any:
@@ -148,7 +157,12 @@ class GraphQLCoreConverter:
         graphql_enum = CustomGraphQLEnumType(
             enum=enum,
             name=enum_name,
-            values={item.name: self.from_enum_value(item) for item in enum.values},
+            values={
+                self.config.name_converter.from_enum_value(
+                    enum, item
+                ): self.from_enum_value(item)
+                for item in enum.values
+            },
             description=enum.description,
             extensions={
                 GraphQLCoreConverter.DEFINITION_BACKREF: enum,
@@ -525,17 +539,37 @@ class GraphQLCoreConverter:
                 _source, info=info, args=field_args, kwargs=field_kwargs
             )
 
+        def wrap_field_extensions() -> Callable[..., Any]:
+            """Wrap the provided field resolver with the middleware."""
+
+            if not field.extensions:
+                return _get_result
+
+            for extension in field.extensions:
+                extension.apply(field)
+
+            extension_functions = build_field_extension_resolvers(field)
+            return reduce(
+                lambda chained_fns, next_fn: partial(next_fn, chained_fns),
+                extension_functions,
+                _get_result,
+            )
+
+        _get_result_with_extensions = wrap_field_extensions()
+
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)
             _check_permissions(_source, strawberry_info, kwargs)
 
-            return _get_result(_source, strawberry_info, **kwargs)
+            return _get_result_with_extensions(_source, strawberry_info, **kwargs)
 
         async def _async_resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)
             await _check_permissions_async(_source, strawberry_info, kwargs)
 
-            return await await_maybe(_get_result(_source, strawberry_info, **kwargs))
+            return await await_maybe(
+                _get_result_with_extensions(_source, strawberry_info, **kwargs)
+            )
 
         if field.is_async:
             _async_resolver._is_default = not field.base_resolver  # type: ignore
@@ -740,7 +774,7 @@ class GraphQLCoreConverter:
                 # both lazy types are always resolved because two different lazy types
                 # may be referencing the same actual type
                 if isinstance(type1, LazyType):
-                    type1 = type1.resolve_type()
+                    type1 = type1.resolve_type()  # noqa: PLW2901
                 elif isinstance(type1, StrawberryOptional) and isinstance(
                     type1.of_type, LazyType
                 ):

@@ -81,7 +81,7 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         self.subscriptions_enabled = subscriptions_enabled
         super().__init__(**kwargs)
 
-    async def handle(self, body: bytes):
+    async def handle(self, body: bytes) -> None:
         try:
             if self.scope["method"] == "GET":
                 result = await self.get(body)
@@ -157,7 +157,7 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
     async def parse_multipart_body(self, body: bytes) -> GraphQLRequestData:
         raise ExecutionError("Unable to parse the multipart body")
 
-    async def execute(self, request_data: GraphQLRequestData):
+    async def execute(self, request_data: GraphQLRequestData) -> GraphQLHTTPResponse:
         context = await self.get_context()
         root_value = await self.get_root_value()
 
@@ -179,11 +179,11 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
     async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
         return process_result(result)
 
-    async def render_graphiql(self, body):
+    async def render_graphiql(self, body) -> Result:
         html = get_graphiql_html(self.subscriptions_enabled)
         return Result(response=html.encode(), content_type="text/html")
 
-    def should_render_graphiql(self):
+    def should_render_graphiql(self) -> bool:
         accept_list = self.headers.get("accept", "").split(",")
         return self.graphiql and any(
             accepted in accept_list for accepted in ["text/html", "*/*"]
@@ -216,7 +216,7 @@ class SyncGraphQLHTTPConsumer(GraphQLHTTPConsumer):
     # handlers in a threadpool. Check SyncConsumer's documentation for more info:
     # https://github.com/django/channels/blob/main/channels/consumer.py#L104
     @database_sync_to_async
-    def execute(self, request_data: GraphQLRequestData):
+    def execute(self, request_data: GraphQLRequestData) -> GraphQLHTTPResponse:
         context = self.get_context(self)
         root_value = self.get_root_value(self)
 

@@ -147,3 +147,29 @@ def test_field_type_override():
         "b": 2,
         "c": 3.4,
     }
+
+
+def test_field_type_default():
+    @strawberry.type
+    class User:
+        name: str = "James"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def a(self) -> User:
+            return User()
+
+    schema = strawberry.Schema(Query)
+
+    expected = """
+    type Query {
+      a: User!
+    }
+
+    type User {
+      name: String!
+    }
+    """
+
+    assert print_schema(schema) == textwrap.dedent(expected).strip()

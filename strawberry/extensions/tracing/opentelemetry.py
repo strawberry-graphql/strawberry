@@ -3,12 +3,12 @@ from __future__ import annotations
 import enum
 from copy import deepcopy
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional
 
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
 
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 from strawberry.extensions.utils import get_path_from_info
 
 from .utils import should_skip_tracing
@@ -31,7 +31,7 @@ class RequestStage(enum.Enum):
     VALIDATION = enum.auto()
 
 
-class OpenTelemetryExtension(Extension):
+class OpenTelemetryExtension(SchemaExtension):
     _arg_filter: Optional[ArgFilter]
     _span_holder: Dict[RequestStage, Span] = dict()
     _tracer: Tracer
@@ -47,7 +47,7 @@ class OpenTelemetryExtension(Extension):
         if execution_context:
             self.execution_context = execution_context
 
-    def on_request_start(self):
+    def on_operation(self) -> Generator[None, None, None]:
         self._operation_name = self.execution_context.operation_name
         span_name = (
             f"GraphQL Query: {self._operation_name}"
@@ -65,7 +65,7 @@ class OpenTelemetryExtension(Extension):
                 "query", self.execution_context.query
             )
 
-    def on_request_end(self):
+        yield
         # If the client doesn't provide an operation name then GraphQL will
         # execute the first operation in the query string. This might be a named
         # operation but we don't know until the parsing stage has finished. If
@@ -76,23 +76,22 @@ class OpenTelemetryExtension(Extension):
             self._span_holder[RequestStage.REQUEST].update_name(span_name)
         self._span_holder[RequestStage.REQUEST].end()
 
-    def on_validation_start(self):
+    def on_validate(self) -> Generator[None, None, None]:
         ctx = trace.set_span_in_context(self._span_holder[RequestStage.REQUEST])
         self._span_holder[RequestStage.VALIDATION] = self._tracer.start_span(
             "GraphQL Validation",
             context=ctx,
         )
-
-    def on_validation_end(self):
+        yield
         self._span_holder[RequestStage.VALIDATION].end()
 
-    def on_parsing_start(self):
+    def on_parse(self) -> Generator[None, None, None]:
         ctx = trace.set_span_in_context(self._span_holder[RequestStage.REQUEST])
         self._span_holder[RequestStage.PARSING] = self._tracer.start_span(
             "GraphQL Parsing", context=ctx
         )
 
-    def on_parsing_end(self):
+        yield
         self._span_holder[RequestStage.PARSING].end()
 
     def filter_resolver_args(
@@ -102,7 +101,9 @@ class OpenTelemetryExtension(Extension):
             return args
         return self._arg_filter(deepcopy(args), info)
 
-    def add_tags(self, span: Span, info: GraphQLResolveInfo, kwargs: Dict[str, Any]):
+    def add_tags(
+        self, span: Span, info: GraphQLResolveInfo, kwargs: Dict[str, Any]
+    ) -> None:
         graphql_path = ".".join(map(str, get_path_from_info(info)))
 
         span.set_attribute("component", "graphql")
@@ -115,7 +116,7 @@ class OpenTelemetryExtension(Extension):
             for kwarg, value in filtered_kwargs.items():
                 span.set_attribute(f"graphql.param.{kwarg}", value)
 
-    async def resolve(self, _next, root, info, *args, **kwargs):
+    async def resolve(self, _next, root, info, *args, **kwargs) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -138,7 +139,7 @@ class OpenTelemetryExtension(Extension):
 
 
 class OpenTelemetryExtensionSync(OpenTelemetryExtension):
-    def resolve(self, _next, root, info, *args, **kwargs):
+    def resolve(self, _next, root, info, *args, **kwargs) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 

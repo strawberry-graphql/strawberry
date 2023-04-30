@@ -21,25 +21,28 @@ from graphql import execute as original_execute
 from graphql.validation import validate
 
 from strawberry.exceptions import MissingQueryError
-from strawberry.extensions.runner import ExtensionsRunner
+from strawberry.extensions.runner import SchemaExtensionsRunner
 from strawberry.types import ExecutionResult
 
 from .exceptions import InvalidOperationTypeError
 
 if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
     from graphql import ExecutionContext as GraphQLExecutionContext
     from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql import GraphQLSchema
     from graphql.language import DocumentNode
     from graphql.validation import ASTValidationRule
 
-    from strawberry.extensions import Extension
+    from strawberry.extensions import SchemaExtension
     from strawberry.types import ExecutionContext
+    from strawberry.types.execution import ParseOptions
     from strawberry.types.graphql import OperationType
 
 
-def parse_document(query: str) -> DocumentNode:
-    return parse(query)
+def parse_document(query: str, **kwargs: Unpack[ParseOptions]) -> DocumentNode:
+    return parse(query, **kwargs)
 
 
 def validate_document(
@@ -70,17 +73,17 @@ async def execute(
     schema: GraphQLSchema,
     *,
     allowed_operation_types: Iterable[OperationType],
-    extensions: Sequence[Union[Type[Extension], Extension]],
+    extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
 ) -> ExecutionResult:
-    extensions_runner = ExtensionsRunner(
+    extensions_runner = SchemaExtensionsRunner(
         execution_context=execution_context,
         extensions=list(extensions),
     )
 
-    async with extensions_runner.request():
+    async with extensions_runner.operation():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
         if not execution_context.query:
@@ -90,7 +93,7 @@ async def execute(
             try:
                 if not execution_context.graphql_document:
                     execution_context.graphql_document = parse_document(
-                        execution_context.query
+                        execution_context.query, **execution_context.parse_options
                     )
 
             except GraphQLError as error:
@@ -163,17 +166,17 @@ def execute_sync(
     schema: GraphQLSchema,
     *,
     allowed_operation_types: Iterable[OperationType],
-    extensions: Sequence[Union[Type[Extension], Extension]],
+    extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
 ) -> ExecutionResult:
-    extensions_runner = ExtensionsRunner(
+    extensions_runner = SchemaExtensionsRunner(
         execution_context=execution_context,
         extensions=list(extensions),
     )
 
-    with extensions_runner.request():
+    with extensions_runner.operation():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
         if not execution_context.query:
@@ -183,7 +186,7 @@ def execute_sync(
             try:
                 if not execution_context.graphql_document:
                     execution_context.graphql_document = parse_document(
-                        execution_context.query
+                        execution_context.query, **execution_context.parse_options
                     )
 
             except GraphQLError as error:

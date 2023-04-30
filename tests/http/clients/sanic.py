@@ -3,7 +3,7 @@ from __future__ import annotations
 from io import BytesIO
 from json import dumps
 from random import randint
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 from typing_extensions import Literal
 
 from sanic import Sanic
@@ -15,17 +15,17 @@ from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
 from ..context import get_context
-from . import JSON, HttpClient, Response, ResultOverrideFunction
+from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(BaseGraphQLView[object, Query]):
     result_override: ResultOverrideFunction = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 
-    def get_root_value(self):
+    async def get_root_value(self, request: SanicRequest) -> Query:
         return Query()
 
     async def get_context(
@@ -52,7 +52,7 @@ class SanicHttpClient(HttpClient):
         result_override: ResultOverrideFunction = None,
     ):
         self.app = Sanic(
-            f"test_{int(randint(0, 1000))}",
+            f"test_{int(randint(0, 1000))}",  # noqa: S311
         )
         view = GraphQLView.as_view(
             schema=schema,
@@ -95,7 +95,11 @@ class SanicHttpClient(HttpClient):
             **kwargs,
         )
 
-        return Response(status_code=response.status_code, data=response.content)
+        return Response(
+            status_code=response.status_code,
+            data=response.content,
+            headers=response.headers,
+        )
 
     async def request(
         self,
@@ -109,7 +113,11 @@ class SanicHttpClient(HttpClient):
             headers=headers,
         )
 
-        return Response(status_code=response.status_code, data=response.content)
+        return Response(
+            status_code=response.status_code,
+            data=response.content,
+            headers=response.headers,
+        )
 
     async def get(
         self,
@@ -130,4 +138,8 @@ class SanicHttpClient(HttpClient):
             "post", url, content=body, headers=headers
         )
 
-        return Response(status_code=response.status_code, data=response.content)
+        return Response(
+            status_code=response.status_code,
+            data=response.content,
+            headers=response.headers,
+        )

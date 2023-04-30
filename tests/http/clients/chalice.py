@@ -16,7 +16,7 @@ from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
 from ..context import get_context
-from . import JSON, HttpClient, Response, ResultOverrideFunction
+from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
 class GraphQLView(BaseGraphQLView):
@@ -101,6 +101,7 @@ class ChaliceHttpClient(HttpClient):
         return Response(
             status_code=response.status_code,
             data=response.body,
+            headers=response.headers,
         )
 
     async def request(
@@ -115,6 +116,7 @@ class ChaliceHttpClient(HttpClient):
         return Response(
             status_code=response.status_code,
             data=response.body,
+            headers=response.headers,
         )
 
     async def get(
@@ -139,4 +141,5 @@ class ChaliceHttpClient(HttpClient):
         return Response(
             status_code=response.status_code,
             data=response.body,
+            headers=response.headers,
         )

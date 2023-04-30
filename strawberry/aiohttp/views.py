@@ -1,33 +1,89 @@
 from __future__ import annotations
 
 import asyncio
-import json
 from datetime import timedelta
-from typing import TYPE_CHECKING, Iterable
+from io import BytesIO
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    Mapping,
+    Optional,
+    cast,
+)
 
 from aiohttp import web
 from strawberry.aiohttp.handlers import (
     GraphQLTransportWSHandler,
     GraphQLWSHandler,
-    HTTPHandler,
 )
-from strawberry.http import process_result
+from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
+from strawberry.http.exceptions import HTTPException
+from strawberry.http.types import FormData, HTTPMethod, QueryParams
+from strawberry.http.typevars import (
+    Context,
+    RootValue,
+)
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.utils.graphiql import get_graphiql_html
 
 if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.schema import BaseSchema
-    from strawberry.types import ExecutionResult
 
 
-class GraphQLView:
+class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
+    def __init__(self, request: web.Request):
+        self.request = request
+
+    @property
+    def query_params(self) -> QueryParams:
+        return self.request.query.copy()
+
+    async def get_body(self) -> str:
+        return (await self.request.content.read()).decode()
+
+    @property
+    def method(self) -> HTTPMethod:
+        return cast(HTTPMethod, self.request.method.upper())
+
+    @property
+    def headers(self) -> Mapping[str, str]:
+        return self.request.headers
+
+    async def get_form_data(self) -> FormData:
+        reader = await self.request.multipart()
+
+        data: Dict[str, Any] = {}
+        files: Dict[str, Any] = {}
+
+        async for field in reader:
+            assert field.name
+
+            if field.filename:
+                files[field.name] = BytesIO(await field.read(decode=False))
+            else:
+                data[field.name] = await field.text()
+
+        return FormData(files=files, form=data)
+
+    @property
+    def content_type(self) -> Optional[str]:
+        return self.request.content_type
+
+
+class GraphQLView(
+    AsyncBaseHTTPView[web.Request, web.Response, web.Response, Context, RootValue]
+):
     # Mark the view as coroutine so that AIOHTTP does not confuse it with a deprecated
     # bare handler function.
     _is_coroutine = asyncio.coroutines._is_coroutine  # type: ignore[attr-defined]
 
     graphql_transport_ws_handler_class = GraphQLTransportWSHandler
     graphql_ws_handler_class = GraphQLWSHandler
-    http_handler_class = HTTPHandler
+    allow_queries_via_get = True
+    request_adapter_class = AioHTTPRequestAdapter
 
     def __init__(
         self,
@@ -52,58 +108,64 @@ class GraphQLView:
         self.subscription_protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
 
+    def render_graphiql(self, request: web.Request) -> web.Response:
+        # TODO: get_graphiql_html should be on self
+        html_string = get_graphiql_html()
+
+        return web.Response(text=html_string, content_type="text/html")
+
+    async def get_sub_response(self, request: web.Request) -> web.Response:
+        return web.Response()
+
     async def __call__(self, request: web.Request) -> web.StreamResponse:
         ws = web.WebSocketResponse(protocols=self.subscription_protocols)
         ws_test = ws.can_prepare(request)
 
-        if ws_test.ok:
-            if ws_test.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
-                return await self.graphql_transport_ws_handler_class(
-                    schema=self.schema,
-                    debug=self.debug,
-                    connection_init_wait_timeout=self.connection_init_wait_timeout,
-                    get_context=self.get_context,  # type: ignore
-                    get_root_value=self.get_root_value,
-                    request=request,
-                ).handle()
-            elif ws_test.protocol == GRAPHQL_WS_PROTOCOL:
-                return await self.graphql_ws_handler_class(
-                    schema=self.schema,
-                    debug=self.debug,
-                    keep_alive=self.keep_alive,
-                    keep_alive_interval=self.keep_alive_interval,
-                    get_context=self.get_context,
-                    get_root_value=self.get_root_value,
-                    request=request,
-                ).handle()
-            else:
-                await ws.prepare(request)
-                await ws.close(code=4406, message=b"Subprotocol not acceptable")
-                return ws
-        else:
-            return await self.http_handler_class(
+        if not ws_test.ok:
+            try:
+                return await self.run(request=request)
+            except HTTPException as e:
+                return web.Response(
+                    body=e.reason,
+                    status=e.status_code,
+                )
+
+        if ws_test.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
+            return await self.graphql_transport_ws_handler_class(
                 schema=self.schema,
-                graphiql=self.graphiql,
-                allow_queries_via_get=self.allow_queries_via_get,
-                get_context=self.get_context,
+                debug=self.debug,
+                connection_init_wait_timeout=self.connection_init_wait_timeout,
+                get_context=self.get_context,  # type: ignore
                 get_root_value=self.get_root_value,
-                encode_json=self.encode_json,
-                process_result=self.process_result,
                 request=request,
             ).handle()
+        elif ws_test.protocol == GRAPHQL_WS_PROTOCOL:
+            return await self.graphql_ws_handler_class(
+                schema=self.schema,
+                debug=self.debug,
+                keep_alive=self.keep_alive,
+                keep_alive_interval=self.keep_alive_interval,
+                get_context=self.get_context,
+                get_root_value=self.get_root_value,
+                request=request,
+            ).handle()
+        else:
+            await ws.prepare(request)
+            await ws.close(code=4406, message=b"Subprotocol not acceptable")
+            return ws
 
-    async def get_root_value(self, request: web.Request) -> object:
+    async def get_root_value(self, request: web.Request) -> Optional[RootValue]:
         return None
 
     async def get_context(
-        self, request: web.Request, response: web.StreamResponse
-    ) -> object:
-        return {"request": request, "response": response}
+        self, request: web.Request, response: web.Response
+    ) -> Context:
+        return {"request": request, "response": response}  # type: ignore
 
-    async def process_result(
-        self, request: web.Request, result: ExecutionResult
-    ) -> GraphQLHTTPResponse:
-        return process_result(result)
+    def create_response(
+        self, response_data: GraphQLHTTPResponse, sub_response: web.Response
+    ) -> web.Response:
+        sub_response.text = self.encode_json(response_data)
+        sub_response.content_type = "application/json"
 
-    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
-        return json.dumps(response_data)
+        return sub_response

@@ -46,8 +46,8 @@ The `GraphQLView` accepts two options at the moment:
 
 We allow to extend the base `GraphQLView`, by overriding the following methods:
 
-- `get_context(self, response: Response) -> Any`
-- `get_root_value(self) -> Any`
+- `get_context(self, request: Request, response: Response) -> Any`
+- `get_root_value(self, request: Request) -> Any`
 - `process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse`
 - `encode_json(self, response_data: GraphQLHTTPResponse) -> str`
 
@@ -68,7 +68,7 @@ parameters.
 
 ```python
 class MyGraphQLView(GraphQLView):
-    def get_context(self, response: Response) -> Any:
+    def get_context(self, request: Request, response: Response) -> Any:
         return {"example": 1}
 
 
@@ -94,7 +94,7 @@ Here's an example:
 
 ```python
 class MyGraphQLView(GraphQLView):
-    def get_root_value(self) -> Any:
+    def get_root_value(self, request: Request) -> Any:
         return Query(name="Patrick")
 
 

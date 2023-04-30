@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.enum import EnumDefinition
-    from strawberry.extensions import Extension
+    from strawberry.extensions import SchemaExtension
     from strawberry.federation.schema_directives import ComposeDirective
     from strawberry.schema.config import StrawberryConfig
     from strawberry.schema.types.concrete_type import TypeMap
@@ -59,7 +59,7 @@ class Schema(BaseSchema):
         # TODO: we should update directives' type in the main schema
         directives: Iterable[Type] = (),
         types: Iterable[Type] = (),
-        extensions: Iterable[Union[Type["Extension"], "Extension"]] = (),
+        extensions: Iterable[Union[Type["SchemaExtension"], "SchemaExtension"]] = (),
         execution_context_class: Optional[Type["GraphQLExecutionContext"]] = None,
         config: Optional["StrawberryConfig"] = None,
         scalar_overrides: Optional[
@@ -171,7 +171,7 @@ class Schema(BaseSchema):
         self._schema.query_type = query_type
         self._schema.type_map[query_type.name] = query_type
 
-    def entities_resolver(self, root, info, representations):
+    def entities_resolver(self, root, info, representations) -> List[object]:
         results = []
 
         for representation in representations:
@@ -341,6 +341,13 @@ class Schema(BaseSchema):
             },
             resolve=self.entities_resolver,
         )
+
+    def _warn_for_federation_directives(self) -> None:
+        # this is used in the main schema to raise if there's a directive
+        # that's for federation, but in this class we don't want to warn,
+        # since it is expected to have federation directives
+
+        pass
 
 
 def _get_entity_type(type_map: "TypeMap"):

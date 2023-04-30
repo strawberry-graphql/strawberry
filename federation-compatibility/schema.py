@@ -256,7 +256,7 @@ class Product:
     research: List[ProductResearch]
 
     @classmethod
-    def from_data(cls, data: dict):
+    def from_data(cls, data: dict) -> "Product":
         research = [
             ProductResearch.from_data(research) for research in data.get("research", [])
         ]

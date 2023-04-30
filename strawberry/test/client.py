@@ -56,7 +56,7 @@ class BaseGraphQLTestClient(ABC):
         body: Dict[str, object],
         headers: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, object]] = None,
-    ):
+    ) -> Any:
         raise NotImplementedError
 
     def _build_body(

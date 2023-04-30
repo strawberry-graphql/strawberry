@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from typing_extensions import Literal
 
     from strawberry.arguments import StrawberryArgument
+    from strawberry.extensions.field_extension import FieldExtension
     from strawberry.types.info import Info
 
     from .object_type import TypeDefinition
@@ -40,17 +41,15 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 
-
 _RESOLVER_TYPE = Union[
     StrawberryResolver[T],
     Callable[..., T],
     # we initially used Awaitable, but that was triggering the following mypy bug:
     # https://github.com/python/mypy/issues/14669
     Callable[..., Coroutine[T, Any, Any]],
-    "staticmethod[T]",
-    "classmethod[T]",
+    "staticmethod[Any, T]",
+    "classmethod[Any, Any, T]",
 ]
-
 
 UNRESOLVED = object()
 
@@ -86,6 +85,7 @@ class StrawberryField(dataclasses.Field):
         metadata: Optional[Mapping[Any, Any]] = None,
         deprecation_reason: Optional[str] = None,
         directives: Sequence[object] = (),
+        extensions: List[FieldExtension] = (),  # type: ignore
     ):
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
@@ -134,7 +134,8 @@ class StrawberryField(dataclasses.Field):
         self.is_subscription = is_subscription
 
         self.permission_classes: List[Type[BasePermission]] = list(permission_classes)
-        self.directives = directives
+        self.directives = list(directives)
+        self.extensions: List[FieldExtension] = list(extensions)
 
         self.deprecation_reason = deprecation_reason
 
@@ -187,7 +188,11 @@ class StrawberryField(dataclasses.Field):
         an `Info` object and running any permission checks in the resolver
         which improves performance.
         """
-        return not self.base_resolver and not self.permission_classes
+        return (
+            not self.base_resolver
+            and not self.permission_classes
+            and not self.extensions
+        )
 
     @property
     def arguments(self) -> List[StrawberryArgument]:
@@ -360,6 +365,7 @@ def field(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> T:
     ...
@@ -379,6 +385,7 @@ def field(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> Any:
     ...
@@ -398,6 +405,7 @@ def field(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> StrawberryField:
     ...
@@ -416,6 +424,7 @@ def field(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
@@ -426,7 +435,7 @@ def field(
 
     This is normally used inside a type declaration:
 
-    >>> @strawberry.type:
+    >>> @strawberry.type
     >>> class X:
     >>>     field_abc: str = strawberry.field(description="ABC")
 
@@ -451,6 +460,7 @@ def field(
         default_factory=default_factory,
         metadata=metadata,
         directives=directives or (),
+        extensions=extensions or [],
     )
 
     if resolver:

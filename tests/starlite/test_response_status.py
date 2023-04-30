@@ -1,10 +1,22 @@
+import sys
+
+import pytest
 from starlette import status
-from starlette.testclient import TestClient
 
 import strawberry
-from fastapi import FastAPI
-from strawberry.fastapi import GraphQLRouter
 from strawberry.types import Info
+
+try:
+    from starlite import Starlite
+    from starlite.testing import TestClient
+    from strawberry.starlite import make_graphql_controller
+except ModuleNotFoundError:
+    pass
+
+
+pytestmark = pytest.mark.skipif(
+    sys.version_info < (3, 8), reason="requires python3.8 or higher"
+)
 
 
 # TODO: move this to common tests
@@ -17,10 +29,9 @@ def test_set_custom_http_response_status():
             info.context["response"].status_code = status.HTTP_418_IM_A_TEAPOT
             return "abc"
 
-    app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter(schema)
-    app.include_router(graphql_app, prefix="/graphql")
+    graphql_controller = make_graphql_controller(path="/graphql", schema=schema)
+    app = Starlite(route_handlers=[graphql_controller])
 
     test_client = TestClient(app)
     response = test_client.post("/graphql", json={"query": "{ abc }"})
@@ -36,10 +47,9 @@ def test_set_without_setting_http_response_status():
         def abc(self) -> str:
             return "abc"
 
-    app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter(schema)
-    app.include_router(graphql_app, prefix="/graphql")
+    graphql_controller = make_graphql_controller(path="/graphql", schema=schema)
+    app = Starlite(route_handlers=[graphql_controller])
 
     test_client = TestClient(app)
     response = test_client.post("/graphql", json={"query": "{ abc }"})
