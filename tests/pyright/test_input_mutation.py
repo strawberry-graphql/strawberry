@@ -47,13 +47,13 @@ def test_input_mutation_no_errors():
     assert results == [
         Result(
             type="information",
-            message='Type of "Query.create_fruit" is "Any"',
+            message='Type of "Query.create_fruit" is "StrawberryField"',
             line=35,
             column=13,
         ),
         Result(
             type="information",
-            message='Type of "Query.create_fruit_async" is "Any"',
+            message='Type of "Query.create_fruit_async" is "StrawberryField"',
             line=36,
             column=13,
         ),

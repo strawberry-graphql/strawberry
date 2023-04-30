@@ -1,26 +1,25 @@
 from __future__ import annotations
 
-import sys
 from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
     Dict,
-    List,
-    Optional,
     TypeVar,
-    Union,
 )
 from typing_extensions import Annotated, get_args, get_origin
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
-from strawberry.types.fields.resolver import StrawberryResolver
+from strawberry.extensions.field_extension import (
+    AsyncExtensionResolver,
+    FieldExtension,
+    SyncExtensionResolver,
+)
 from strawberry.utils.str_converters import to_camel_case
 
-from .field import _RESOLVER_TYPE, StrawberryField, field
+from .field import StrawberryField, field
 
 if TYPE_CHECKING:
     from strawberry.types.info import Info
@@ -28,35 +27,21 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 
 
-class StrawberryInputMutationField(StrawberryField):
-    """Input mutation field.
+class InputMutationExtension(FieldExtension):
+    def apply(self, field: StrawberryField) -> None:
+        resolver = field.base_resolver
+        assert resolver
 
-    This is a mutation field that automatically creates an input type from
-    the resolver arguments and receive it as a single argument named `input`.
-
-    NOTE: Do not instantiate this directly. Instead, use
-    `@strawberry.input_mutation`
-
-    """
-
-    def __init__(self, *args, **kwargs):
-        self._args = {}
-        super().__init__(*args, **kwargs)
-
-    def __call__(self, resolver: _RESOLVER_TYPE):
-        name = to_camel_case(resolver.__name__)  # type: ignore[union-attr]
-        caps_name = name[0].upper() + name[1:]
-        namespace = sys.modules[resolver.__module__].__dict__
-        annotations = resolver.__annotations__
-        resolver = StrawberryResolver(resolver)
-
-        args = resolver.arguments
+        name = field.graphql_name or to_camel_case(resolver.name)
+        name_captalized = name[0].upper() + name[1:]
         type_dict: Dict[str, Any] = {
             "__doc__": f"Input data for `{name}` mutation",
             "__annotations__": {},
         }
-        f_types = {}
-        for arg in args:
+        annotations = resolver.wrapped_func.__annotations__
+
+        for arg in resolver.arguments:
+            # Preserve directives
             annotation = annotations[arg.python_name]
             if get_origin(annotation) is Annotated:
                 directives = tuple(
@@ -67,62 +52,72 @@ class StrawberryInputMutationField(StrawberryField):
             else:
                 directives = ()
 
-            type_dict["__annotations__"][arg.python_name] = annotation
-            arg_field = strawberry.field(
-                name=arg.graphql_name,
-                is_subscription=arg.is_subscription,
+            arg_field = StrawberryField(
+                python_name=arg.python_name,
+                graphql_name=arg.graphql_name,
                 description=arg.description,
                 default=arg.default,
+                type_annotation=arg.type_annotation,
                 directives=directives,
             )
-            arg_field.graphql_name = arg.graphql_name
-            f_types[arg_field] = arg.type_annotation
-            type_dict[arg.python_name] = arg_field
+            type_dict[arg_field.python_name] = arg_field
+            type_dict["__annotations__"][arg_field.python_name] = annotation
 
-        # TODO: We are not creating a type for the output payload, as it is not easy to
-        # do that with the typing system. Is there a way to solve that automatically?
+        caps_name = name[0].upper() + name[1:]
         new_type = strawberry.input(type(f"{caps_name}Input", (), type_dict))
-        self._args["input"] = StrawberryArgument(
-            python_name="input",
-            graphql_name=None,
-            type_annotation=StrawberryAnnotation(new_type, namespace=namespace),
-            description=type_dict["__doc__"],
+        field.default_arguments.append(
+            StrawberryArgument(
+                python_name="input",
+                graphql_name=None,
+                type_annotation=StrawberryAnnotation(
+                    new_type,
+                    namespace=resolver._namespace,
+                ),
+                description=type_dict["__doc__"],
+            )
+        )
+        field.ignore_resolver_arguments = True
+
+    def resolve(
+        self,
+        next_: SyncExtensionResolver,
+        source: Any,
+        info: Info,
+        **kwargs,
+    ) -> Any:
+        input_args = kwargs.pop("input")
+        return next_(
+            source,
+            info,
+            **kwargs,
+            **input_args,
         )
 
-        # FIXME: We need to set this after strawberry.input() or else it
-        # will have problems with Annotated annotations for scalar types.
-        # Find out why...
-        for f, annotation in f_types.items():
-            f.type = annotation
-
-        return super().__call__(resolver)
-
-    @property
-    def arguments(self) -> List[StrawberryArgument]:
-        return list(self._args.values())
-
-    @property
-    def is_basic_field(self):
-        return False
-
-    def get_result(
+    async def resolve_async(
         self,
+        next_: AsyncExtensionResolver,
         source: Any,
-        info: Optional[Info],
-        args: List[Any],
-        kwargs: Dict[str, Any],
-    ) -> Union[Awaitable[Any], Any]:
-        assert self.base_resolver
-        input_obj = kwargs.pop("input")
-        return self.base_resolver(
-            *args,
+        info: Info,
+        **kwargs,
+    ) -> Any:
+        input_args = kwargs.pop("input")
+        return await next_(
+            source,
+            info,
             **kwargs,
-            **vars(input_obj),
+            **input_args,
         )
 
 
 # Mutations and subscriptions are field, we might want to separate
 # things in the long run for example to provide better errors
 mutation = field
-input_mutation = partial(field, field_class=StrawberryInputMutationField)
 subscription = partial(field, is_subscription=True)
+
+if TYPE_CHECKING:
+    input_mutation = field
+else:
+
+    def input_mutation(*args, **kwargs) -> StrawberryField:
+        kwargs["extensions"] = [*kwargs.get("extensions", []), InputMutationExtension()]
+        return field(*args, **kwargs)
