@@ -57,7 +57,7 @@ _T = TypeVar("_T")
 
 
 class NodeExtension(FieldExtension):
-    def apply(self, field: StrawberryField) -> None:  # pragma: no cover
+    def apply(self, field: StrawberryField) -> None:
         assert field.base_resolver is None
 
         if isinstance(field.type, StrawberryList):
@@ -172,7 +172,7 @@ class NodeExtension(FieldExtension):
 class ConnectionExtension(FieldExtension):
     connection_type: Type[Connection[Node]]
 
-    def apply(self, field: StrawberryField) -> None:  # pragma: no cover
+    def apply(self, field: StrawberryField) -> None:
         field.default_arguments.extend(
             [
                 StrawberryArgument(
