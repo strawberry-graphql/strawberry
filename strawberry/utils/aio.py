@@ -1,4 +1,3 @@
-import itertools
 import sys
 from typing import (
     Any,
@@ -14,7 +13,6 @@ from typing import (
     Union,
 )
 
-itertools.islice
 _T = TypeVar("_T")
 _R = TypeVar("_R")
 
