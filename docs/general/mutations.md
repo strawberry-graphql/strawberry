@@ -91,7 +91,7 @@ It is usually useful to use a pattern of defining a mutation that receives a sin
 [input type](./input-types) argument called `input`.
 
 That pattern makes it easier to include/remove arguments without breaking the
-whole API, which could happen when using positional arguments.
+whole API, which could happen when using positional arguments. Additionally, fields in an input type can be marked as deprecated, while field can't be deprecated.
 
 Strawberry provides a helper to create a mutation that automatically
 creates an input type for you, whose attributes are the same as the args in the resolver.
