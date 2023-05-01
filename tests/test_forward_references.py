@@ -11,6 +11,7 @@ import pytest
 import strawberry
 from strawberry.printer import print_schema
 from strawberry.type import StrawberryList, StrawberryOptional
+from tests.a import A
 
 
 def test_forward_reference():
@@ -39,6 +40,33 @@ def test_forward_reference():
     assert print_schema(schema) == textwrap.dedent(expected_representation).strip()
 
     del MyType
+
+
+def test_lazy_forward_reference():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def a(self) -> A:
+            return A(id=strawberry.ID("1"))
+
+    expected_representation = """
+    type A {
+      id: ID!
+      b: B!
+    }
+
+    type B {
+      id: ID!
+      a: A!
+    }
+
+    type Query {
+      a: A!
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+    assert print_schema(schema) == textwrap.dedent(expected_representation).strip()
 
 
 def test_with_resolver():

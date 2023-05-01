@@ -1,4 +1,5 @@
 import ast
+import re
 import sys
 import typing
 from collections.abc import AsyncGenerator
@@ -221,6 +222,11 @@ def _ast_replace_union_operation(
     return expr
 
 
+_annotated_re = re.compile(
+    r"(typing\.Annotated|Annotated\[)(?P<type>\w*),(?P<args>.*)(\])",
+)
+
+
 def eval_type(
     type_: Any,
     globalns: Optional[Dict] = None,
@@ -248,6 +254,36 @@ def eval_type(
 
             assert ast_unparse
             type_ = ForwardRef(ast_unparse(parsed))
+
+        # When using forward refs, the whole
+        # Annotated[SomeType, strabwerry.lazy("type.module")] is a forward ref,
+        # and trying to _eval_type on it will fail. Take a different approach
+        # here to resolve lazy types by execing the annotated args and resolving
+        # the type directly.
+        annotated_match = _annotated_re.match(type_.__forward_arg__)
+        if annotated_match:
+            gdict = annotated_match.groupdict()
+            ldict = (localns or {}).copy()
+            # Exec the remaining annotated args to get their real values and
+            # put the result in ldict["args"]
+            exec(f'args = ({gdict["args"]}, )', globalns, ldict)
+            args = ldict["args"]
+
+            for arg in args:
+                if isinstance(arg, StrawberryLazyReference):
+                    remaining = [
+                        a for a in args if not isinstance(a, StrawberryLazyReference)
+                    ]
+                    type_ = arg.resolve_forward_ref(ForwardRef(gdict["type"]))
+                    # If we only had a StrawberryLazyReference, we can return the type
+                    # directly. It already did its job!
+                    if not remaining:
+                        return type_
+
+                    # Otherwise return the type annotated with the remaining annotations
+                    return Annotated.__class_getitem__(  # type: ignore
+                        (type_, *remaining),
+                    )
 
         return _eval_type(type_, globalns, localns)
 
