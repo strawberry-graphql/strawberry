@@ -356,7 +356,6 @@ class StrawberryField(dataclasses.Field):
 @overload
 def field(
     *,
-    field_class: Type[StrawberryField] = StrawberryField,
     resolver: _RESOLVER_TYPE[T],
     name: Optional[str] = None,
     is_subscription: bool = False,
@@ -377,7 +376,6 @@ def field(
 @overload
 def field(
     *,
-    field_class: Type[StrawberryField] = StrawberryField,
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
@@ -398,7 +396,6 @@ def field(
 def field(
     resolver: _RESOLVER_TYPE[T],
     *,
-    field_class: Type[StrawberryField] = StrawberryField,
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
@@ -417,7 +414,6 @@ def field(
 def field(
     resolver: Optional[_RESOLVER_TYPE[Any]] = None,
     *,
-    field_class: Type[StrawberryField] = StrawberryField,
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
@@ -451,7 +447,7 @@ def field(
 
     type_annotation = StrawberryAnnotation.from_annotation(graphql_type)
 
-    field_ = field_class(
+    field_ = StrawberryField(
         python_name=None,
         graphql_name=name,
         type_annotation=type_annotation,
