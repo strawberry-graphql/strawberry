@@ -51,17 +51,11 @@ class BaseGraphQLTransportWSHandler(ABC):
         self.tasks: Dict[str, asyncio.Task] = {}
         self.completed_tasks: List[asyncio.Task] = []
         self.connection_params: Optional[Dict[str, Any]] = None
-        self.close_lock = asyncio.Lock()
         self.closed: bool = False
 
     async def _close(self, code: int, reason: str):
-        # Make sure we don't try to close the websocket twice
-        async with self.close_lock:
-            if self.closed:
-                return
-
-            await self.close(code, reason)
-            self.closed = True
+        self.closed = True
+        await self.close(code, reason)
 
     @abstractmethod
     async def get_context(self) -> Any:
@@ -92,7 +86,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         delay = self.connection_init_wait_timeout.total_seconds()
         await asyncio.sleep(delay=delay)
 
-        if self.connection_init_received:
+        if self.connection_init_received or self.closed:
             return
 
         reason = "Connection initialisation timeout"
@@ -138,7 +132,7 @@ class BaseGraphQLTransportWSHandler(ABC):
 
     async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
         if message.payload is not UNSET and not isinstance(message.payload, dict):
-            await self.close(code=4400, reason="Invalid connection init payload")
+            await self._close(code=4400, reason="Invalid connection init payload")
             return
 
         self.connection_params = message.payload
