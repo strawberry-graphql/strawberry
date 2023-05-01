@@ -2,17 +2,14 @@ import datetime
 import decimal
 import enum
 from typing import TYPE_CHECKING, List, NewType, Optional
+from typing_extensions import Annotated
 from uuid import UUID
 
 import pytest
 
-from typing_extensions import Annotated
-
 import strawberry
 
-
 if TYPE_CHECKING:
-
     from .lazy_type import LaziestType
 
 JSON = strawberry.scalar(NewType("JSON", str))
@@ -101,5 +98,5 @@ class Query:
 
 
 @pytest.fixture
-def schema():
+def schema() -> strawberry.Schema:
     return strawberry.Schema(query=Query, types=[BlogPost, Image])

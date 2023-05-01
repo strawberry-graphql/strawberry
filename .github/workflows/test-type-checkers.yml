@@ -1,7 +1,7 @@
 name: 🦺 Type checkers tests
 
 concurrency:
-  group: type-checkers-${{ github.head_ref || github.run_id }}
+  group: type-checkers-${{ github.head_ref || github.run_id }}-type-checkers
   cancel-in-progress: true
 
 on:
@@ -36,7 +36,6 @@ jobs:
           cache: "poetry"
 
       - run: poetry env use ${{ matrix.python-version }}
-      - run: poetry run python --version
       - run: poetry install
         if: steps.setup-python.outputs.cache-hit != 'true'
 
@@ -65,7 +64,6 @@ jobs:
       - run: npm install -g --no-package-lock --no-save pyright
 
       - run: poetry env use ${{ matrix.python-version }}
-      - run: poetry run python --version
       - run: poetry install
         if: steps.setup-python.outputs.cache-hit != 'true'
 

@@ -38,7 +38,7 @@ from strawberry.cli.utils import load_schema
     show_default=True,
     help="Log GraphQL operations",
 )
-def server(schema, host, port, log_level, app_dir, log_operations):
+def server(schema, host, port, log_level, app_dir, log_operations) -> None:
     sys.path.insert(0, app_dir)
 
     try:
@@ -59,7 +59,7 @@ def server(schema, host, port, log_level, app_dir, log_operations):
 
     # Windows doesn't support UTF-8 by default
     endl = " 🍓\n" if sys.platform != "win32" else "\n"
-    print(f"Running strawberry on http://{host}:{port}/graphql", end=endl)
+    print(f"Running strawberry on http://{host}:{port}/graphql", end=endl)  # noqa: T201
 
     uvicorn.run(
         app,

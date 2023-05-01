@@ -1,29 +1,43 @@
-import dataclasses
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
+from __future__ import annotations
 
-from graphql import (
-    ASTValidationRule,
-    ExecutionResult as GraphQLExecutionResult,
-    specified_rules,
+import dataclasses
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
 )
-from graphql.error.graphql_error import GraphQLError
-from graphql.language import DocumentNode, OperationDefinitionNode
+from typing_extensions import TypedDict
+
+from graphql import specified_rules
 
 from strawberry.utils.operation import get_first_operation, get_operation_type
 
-from .graphql import OperationType
-
-
 if TYPE_CHECKING:
+    from typing_extensions import NotRequired
+
+    from graphql import ASTValidationRule
+    from graphql import ExecutionResult as GraphQLExecutionResult
+    from graphql.error.graphql_error import GraphQLError
+    from graphql.language import DocumentNode, OperationDefinitionNode
+
     from strawberry.schema import Schema
+
+    from .graphql import OperationType
 
 
 @dataclasses.dataclass
 class ExecutionContext:
-    query: str
-    schema: "Schema"
+    query: Optional[str]
+    schema: Schema
     context: Any = None
     variables: Optional[Dict[str, Any]] = None
+    parse_options: ParseOptions = dataclasses.field(
+        default_factory=lambda: ParseOptions()
+    )
     root_value: Optional[Any] = None
     validation_rules: Tuple[Type[ASTValidationRule], ...] = dataclasses.field(
         default_factory=lambda: tuple(specified_rules)
@@ -38,7 +52,7 @@ class ExecutionContext:
     errors: Optional[List[GraphQLError]] = None
     result: Optional[GraphQLExecutionResult] = None
 
-    def __post_init__(self, provided_operation_name):
+    def __post_init__(self, provided_operation_name: str):
         self._provided_operation_name = provided_operation_name
 
     @property
@@ -76,3 +90,7 @@ class ExecutionResult:
     data: Optional[Dict[str, Any]]
     errors: Optional[List[GraphQLError]]
     extensions: Optional[Dict[str, Any]] = None
+
+
+class ParseOptions(TypedDict):
+    max_tokens: NotRequired[int]

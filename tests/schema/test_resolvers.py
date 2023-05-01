@@ -1,6 +1,6 @@
 # type: ignore
 import typing
-from typing import Any, List, Type, TypeVar
+from typing import Any, Generic, List, Optional, Type, TypeVar, Union
 
 import pytest
 
@@ -352,7 +352,7 @@ def test_can_use_source_as_argument_name():
     assert result.data["hello"] == "I'm a resolver for 🍓"
 
 
-def test_typed_resolver_factory():
+def test_generic_resolver_factory():
     @strawberry.type
     class AType:
         some: int
@@ -379,6 +379,118 @@ def test_typed_resolver_factory():
 
     assert not result.errors
     assert result.data == {"aType": {"some": 1}}
+
+
+def test_generic_resolver_optional():
+    @strawberry.type
+    class AType:
+        some: int
+
+    T = TypeVar("T")
+
+    def resolver() -> Optional[T]:
+        return AType(some=1)
+
+    @strawberry.type
+    class Query:
+        a_type: Optional[AType] = strawberry.field(resolver)
+
+    strawberry.Schema(query=Query)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ aType { some } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"aType": {"some": 1}}
+
+
+def test_generic_resolver_container():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Container(Generic[T]):
+        item: T
+
+    @strawberry.type
+    class AType:
+        some: int
+
+    def resolver() -> Container[T]:
+        return Container(item=AType(some=1))
+
+    @strawberry.type
+    class Query:
+        a_type_in_container: Container[AType] = strawberry.field(resolver)
+
+    strawberry.Schema(query=Query)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ aTypeInContainer { item { some } } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"aTypeInContainer": {"item": {"some": 1}}}
+
+
+def test_generic_resolver_union():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class AType:
+        some: int
+
+    @strawberry.type
+    class OtherType:
+        other: int
+
+    def resolver() -> Union[T, OtherType]:
+        return AType(some=1)
+
+    @strawberry.type
+    class Query:
+        union_type: Union[AType, OtherType] = strawberry.field(resolver)
+
+    strawberry.Schema(query=Query)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ unionType { ... on AType { some } } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"unionType": {"some": 1}}
+
+
+def test_generic_resolver_list():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class AType:
+        some: int
+
+    def resolver() -> List[T]:
+        return [AType(some=1)]
+
+    @strawberry.type
+    class Query:
+        list_type: List[AType] = strawberry.field(resolver)
+
+    strawberry.Schema(query=Query)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ listType { some } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"listType": [{"some": 1}]}
 
 
 def name_based_info(info, icon: str) -> str:
@@ -419,7 +531,6 @@ def test_info_argument(resolver):
 
 
 def test_name_based_info_is_deprecated():
-
     with pytest.deprecated_call(match=r"Argument name-based matching of 'info'"):
 
         @strawberry.type

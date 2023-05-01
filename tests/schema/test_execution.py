@@ -4,7 +4,6 @@ from typing import Optional
 from unittest.mock import patch
 
 import pytest
-
 from graphql import GraphQLError, ValidationRule, validate
 
 import strawberry
@@ -183,6 +182,7 @@ async def test_logging_exceptions(caplog):
         root_value=Query(),
     )
 
+    assert result.errors
     assert len(result.errors) == 1
 
     # Exception was logged

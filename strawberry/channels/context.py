@@ -1,6 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
-
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
     from strawberry.channels.handlers.base import ChannelsConsumer
@@ -13,7 +12,11 @@ class StrawberryChannelsContext:
     """
 
     request: "ChannelsConsumer"
+    connection_params: Optional[Dict[str, Any]] = None
 
     @property
-    def ws(self):
+    def ws(self) -> "ChannelsConsumer":
         return self.request
+
+    def __getitem__(self, item: str) -> Any:
+        return getattr(self, item)

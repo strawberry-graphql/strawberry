@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 import dataclasses
-import inspect
-from typing import Any, Callable, List, Optional, TypeVar
-
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, TypeVar
 from typing_extensions import Annotated
 
 from graphql import DirectiveLocation
 
-from strawberry.arguments import StrawberryArgument
 from strawberry.field import StrawberryField
 from strawberry.types.fields.resolver import (
     INFO_PARAMSPEC,
@@ -17,6 +14,11 @@ from strawberry.types.fields.resolver import (
 )
 from strawberry.unset import UNSET
 from strawberry.utils.cached_property import cached_property
+
+if TYPE_CHECKING:
+    import inspect
+
+    from strawberry.arguments import StrawberryArgument
 
 
 def directive_field(name: str, default: object = UNSET) -> Any:
@@ -44,7 +46,6 @@ VALUE_PARAMSPEC = ReservedType(name="value", type=StrawberryDirectiveValue)
 
 
 class StrawberryDirectiveResolver(StrawberryResolver[T]):
-
     RESERVED_PARAMSPEC = (
         INFO_PARAMSPEC,
         VALUE_PARAMSPEC,

@@ -1,5 +1,4 @@
 from typing import Any, cast
-
 from typing_extensions import Annotated, get_args
 
 import strawberry
@@ -9,7 +8,7 @@ from strawberry.type import StrawberryList
 
 
 @strawberry.type
-class TestType:
+class ExampleType:
     some_var: str
 
 
@@ -52,5 +51,5 @@ def test_isinstance_with_annotated():
 
 
 def test_isinstance_with_unresolvable_annotation():
-    type_ = StrawberryList(of_type=TestType)
+    type_ = StrawberryList(of_type=ExampleType)
     assert not isinstance(type_, StrawberryAuto)

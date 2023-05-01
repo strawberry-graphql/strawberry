@@ -1,3 +1,6 @@
+import asyncio
+from typing import Generator
+
 import pytest
 
 from channels.layers import get_channel_layer
@@ -13,11 +16,11 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
-from tests.channels.schema import schema
+from tests.views.schema import schema
 
 
 @pytest.fixture
-async def ws():
+async def ws() -> Generator[WebsocketCommunicator, None, None]:
     client = WebsocketCommunicator(
         GraphQLWSConsumer.as_asgi(schema=schema),
         "/graphql",
@@ -200,3 +203,91 @@ async def test_channel_listen_group(ws: WebsocketCommunicator):
     )
 
     await ws.send_json_to(CompleteMessage(id="sub1").as_dict())
+
+
+async def test_channel_listen_group_twice(ws: WebsocketCommunicator):
+    await ws.send_json_to(ConnectionInitMessage().as_dict())
+
+    response = await ws.receive_json_from()
+    assert response == ConnectionAckMessage().as_dict()
+
+    await ws.send_json_to(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query='subscription { listener(group: "group1") }',
+            ),
+        ).as_dict()
+    )
+
+    await ws.send_json_to(
+        SubscribeMessage(
+            id="sub2",
+            payload=SubscribeMessagePayload(
+                query='subscription { listener(group: "group2") }',
+            ),
+        ).as_dict()
+    )
+
+    channel_layer = get_channel_layer()
+    assert channel_layer
+
+    # Wait for channel subscriptions to start
+    response1, response2 = await asyncio.gather(
+        ws.receive_json_from(), ws.receive_json_from()
+    )
+    assert {"sub1", "sub2"} == {response1["id"], response2["id"]}
+    channel_name = response1["payload"]["data"]["listener"]
+
+    # Sent at least once to the consumer to make sure the groups were registered
+    await channel_layer.send(
+        channel_name,
+        {
+            "type": "test.message",
+            "text": "Hello there!",
+        },
+    )
+    response1, response2 = await asyncio.gather(
+        ws.receive_json_from(), ws.receive_json_from()
+    )
+    assert {"sub1", "sub2"} == {response1["id"], response2["id"]}
+    assert response1["payload"]["data"]["listener"] == "Hello there!"
+    assert response2["payload"]["data"]["listener"] == "Hello there!"
+
+    # We now have two channel_listen AsyncGenerators waiting, one for id="sub1"
+    # and one for id="sub2". This group message will be received by both of them
+    # as they are both running on the same ChannelsConsumer instance so even
+    # though "sub2" was initialised with "group2" as the argument, it will receive
+    # this message for "group1"
+    await channel_layer.group_send(
+        "group1",
+        {
+            "type": "test.message",
+            "text": "Hello group 1!",
+        },
+    )
+
+    response1, response2 = await asyncio.gather(
+        ws.receive_json_from(), ws.receive_json_from()
+    )
+    assert {"sub1", "sub2"} == {response1["id"], response2["id"]}
+    assert response1["payload"]["data"]["listener"] == "Hello group 1!"
+    assert response2["payload"]["data"]["listener"] == "Hello group 1!"
+
+    await channel_layer.group_send(
+        "group2",
+        {
+            "type": "test.message",
+            "text": "Hello group 2!",
+        },
+    )
+
+    response1, response2 = await asyncio.gather(
+        ws.receive_json_from(), ws.receive_json_from()
+    )
+    assert {"sub1", "sub2"} == {response1["id"], response2["id"]}
+    assert response1["payload"]["data"]["listener"] == "Hello group 2!"
+    assert response2["payload"]["data"]["listener"] == "Hello group 2!"
+
+    await ws.send_json_to(CompleteMessage(id="sub1").as_dict())
+    await ws.send_json_to(CompleteMessage(id="sub2").as_dict())

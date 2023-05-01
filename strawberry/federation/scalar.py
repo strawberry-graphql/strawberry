@@ -3,7 +3,6 @@ from typing import Any, Callable, Iterable, NewType, Optional, TypeVar, Union, o
 
 from strawberry.custom_scalar import _process_scalar
 
-
 # in python 3.10+ NewType is a class
 if sys.version_info >= (3, 10):
     _T = TypeVar("_T", bound=Union[type, NewType])
@@ -11,7 +10,7 @@ else:
     _T = TypeVar("_T", bound=type)
 
 
-def identity(x):  # pragma: no cover
+def identity(x: _T) -> _T:  # pragma: no cover
     return x
 
 

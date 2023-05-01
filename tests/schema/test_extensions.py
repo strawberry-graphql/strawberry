@@ -14,7 +14,6 @@ from strawberry.scalars import JSON
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema_directive import Location
 
-
 DEFINITION_BACKREF = GraphQLCoreConverter.DEFINITION_BACKREF
 
 
@@ -175,7 +174,7 @@ def test_object_types():
         is Query._type_definition
     )
 
-    graphql_query = cast(GraphQLObjectType, graphql_schema.get_type("Query"))
+    graphql_query = cast("GraphQLObjectType", graphql_schema.get_type("Query"))
     assert graphql_query.fields["hello"].extensions[
         DEFINITION_BACKREF
     ] is Query._type_definition.get_field("hello")

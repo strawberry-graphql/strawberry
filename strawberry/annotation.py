@@ -1,46 +1,38 @@
+from __future__ import annotations
+
 import sys
 import typing
 from collections import abc
 from enum import Enum
-from typing import (  # type: ignore[attr-defined]
+from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
-    List,
+    ForwardRef,
     Optional,
     TypeVar,
     Union,
-    _eval_type,
+    cast,
 )
-
 from typing_extensions import Annotated, Self, get_args, get_origin
-
-from strawberry.exceptions import StrawberryException
-from strawberry.private import is_private
-
-
-try:
-    from typing import ForwardRef
-except ImportError:  # pragma: no cover
-    # ForwardRef is private in python 3.6 and 3.7
-    from typing import _ForwardRef as ForwardRef  # type: ignore
 
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
-from strawberry.lazy_type import LazyType, StrawberryLazyReference
-from strawberry.type import (
-    StrawberryList,
-    StrawberryOptional,
-    StrawberryType,
-    StrawberryTypeVar,
-)
+from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
+from strawberry.lazy_type import LazyType
+from strawberry.private import is_private
+from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
 from strawberry.types.types import TypeDefinition
 from strawberry.unset import UNSET
-from strawberry.utils.typing import is_generic, is_list, is_type_var, is_union
-
+from strawberry.utils.typing import (
+    eval_type,
+    is_generic,
+    is_type_var,
+)
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
+    from strawberry.type import StrawberryType
     from strawberry.union import StrawberryUnion
 
 
@@ -71,7 +63,7 @@ class StrawberryAnnotation:
     @staticmethod
     def from_annotation(
         annotation: object, namespace: Optional[Dict] = None
-    ) -> Optional["StrawberryAnnotation"]:
+    ) -> Optional[StrawberryAnnotation]:
         if annotation is None:
             return None
 
@@ -79,60 +71,19 @@ class StrawberryAnnotation:
             return StrawberryAnnotation(annotation, namespace=namespace)
         return annotation
 
-    @staticmethod
-    def parse_annotated(annotation: object) -> object:
-        from strawberry.auto import StrawberryAuto
-
-        if is_private(annotation):
-            return annotation
-
-        annotation_origin = get_origin(annotation)
-
-        if annotation_origin is Annotated:
-            annotated_args = get_args(annotation)
-            annotation_type = annotated_args[0]
-
-            for arg in annotated_args[1:]:
-                if isinstance(arg, StrawberryLazyReference):
-                    assert isinstance(annotation_type, ForwardRef)
-
-                    return arg.resolve_forward_ref(annotation_type)
-
-                if isinstance(arg, StrawberryAuto):
-                    return arg
-
-            return StrawberryAnnotation.parse_annotated(annotation_type)
-
-        elif is_union(annotation):
-            return Union[
-                tuple(
-                    StrawberryAnnotation.parse_annotated(arg)
-                    for arg in get_args(annotation)
-                )  # pyright: ignore
-            ]  # pyright: ignore
-
-        elif is_list(annotation):
-            return List[StrawberryAnnotation.parse_annotated(get_args(annotation)[0])]  # type: ignore  # noqa: E501
-
-        elif annotation_origin and is_generic(annotation_origin):
-            args = get_args(annotation)
-
-            return annotation_origin[
-                tuple(StrawberryAnnotation.parse_annotated(arg) for arg in args)
-            ]
-
-        return annotation
-
     def resolve(self) -> Union[StrawberryType, type]:
-        annotation = self.parse_annotated(self.annotation)
+        annotation = self.annotation
+        if isinstance(annotation, str):
+            annotation = ForwardRef(annotation)
 
-        if isinstance(self.annotation, str):
-            annotation = ForwardRef(self.annotation)
-
-        evaled_type = _eval_type(annotation, self.namespace, None)
+        evaled_type = eval_type(annotation, self.namespace, None)
 
         if is_private(evaled_type):
             return evaled_type
+
+        if get_origin(evaled_type) is Annotated:
+            evaled_type = get_args(evaled_type)[0]
+
         if self._is_async_type(evaled_type):
             evaled_type = self._strip_async_type(evaled_type)
         if self._is_lazy_type(evaled_type):
@@ -158,13 +109,13 @@ class StrawberryAnnotation:
         elif self._is_union(evaled_type):
             return self.create_union(evaled_type)
         elif is_type_var(evaled_type) or evaled_type is Self:
-            return self.create_type_var(evaled_type)
+            return self.create_type_var(cast(TypeVar, evaled_type))
 
         # TODO: Raise exception now, or later?
         # ... raise NotImplementedError(f"Unknown type {evaled_type}")
         return evaled_type
 
-    def set_namespace_from_field(self, field: "StrawberryField"):
+    def set_namespace_from_field(self, field: StrawberryField) -> None:
         module = sys.modules[field.origin.__module__]
         self.namespace = module.__dict__
 
@@ -180,7 +131,7 @@ class StrawberryAnnotation:
         try:
             return evaled_type._enum_definition
         except AttributeError:
-            raise StrawberryException(f"{evaled_type} fields cannot be resolved.")
+            raise NotAStrawberryEnumError(evaled_type)
 
     def create_list(self, evaled_type: Any) -> StrawberryList:
         of_type = StrawberryAnnotation(
@@ -194,7 +145,7 @@ class StrawberryAnnotation:
         types = evaled_type.__args__
         non_optional_types = tuple(
             filter(
-                lambda x: x is not type(None) and x is not type(UNSET),  # noqa: E721
+                lambda x: x is not type(None) and x is not type(UNSET),
                 types,
             )
         )
@@ -216,7 +167,7 @@ class StrawberryAnnotation:
     def create_type_var(self, evaled_type: TypeVar) -> StrawberryTypeVar:
         return StrawberryTypeVar(evaled_type)
 
-    def create_union(self, evaled_type) -> "StrawberryUnion":
+    def create_union(self, evaled_type) -> StrawberryUnion:
         # Prevent import cycles
         from strawberry.union import StrawberryUnion
 
@@ -265,7 +216,7 @@ class StrawberryAnnotation:
         types = annotation.__args__
 
         # A Union to be optional needs to have at least one None type
-        return any(x is type(None) for x in types)  # noqa: E721
+        return any(x is type(None) for x in types)
 
     @classmethod
     def _is_list(cls, annotation: Any) -> bool:
@@ -273,11 +224,7 @@ class StrawberryAnnotation:
 
         annotation_origin = getattr(annotation, "__origin__", None)
 
-        return (
-            annotation_origin == list
-            or annotation_origin == tuple
-            or annotation_origin is abc.Sequence
-        )
+        return (annotation_origin in (list, tuple)) or annotation_origin is abc.Sequence
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:
@@ -319,7 +266,8 @@ class StrawberryAnnotation:
             if isinstance(annotation, UnionType):
                 return True
 
-        # unions declared as Union[A, B] fall through to this check, even on python 3.10+
+        # unions declared as Union[A, B] fall through to this check
+        # even on python 3.10+
 
         annotation_origin = getattr(annotation, "__origin__", None)
 
@@ -347,5 +295,4 @@ def _is_input_type(type_: Any) -> bool:
 
 
 def _is_object_type(type_: Any) -> bool:
-    # isinstance(type_, StrawberryObjectType)  # noqa: E800
     return hasattr(type_, "_type_definition")

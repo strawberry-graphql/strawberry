@@ -2,11 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Dict, Union
 
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.scalars import is_scalar as is_strawberry_scalar
 from strawberry.type import StrawberryType
-from strawberry.types.types import TypeDefinition
-
 
 # TypeGuard is only available in typing_extensions => 3.10, we don't want
 # to force updates to the typing_extensions package so we only use it when
@@ -14,6 +11,9 @@ from strawberry.types.types import TypeDefinition
 
 if TYPE_CHECKING:
     from typing_extensions import TypeGuard
+
+    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.types.types import TypeDefinition
 
 
 def is_input_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
@@ -36,17 +36,14 @@ def is_scalar(
     type_: Union[StrawberryType, type],
     scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
 ) -> TypeGuard[type]:
-    # isinstance(type_, StrawberryScalar)  # noqa: E800
     return is_strawberry_scalar(type_, scalar_registry)
 
 
 def is_object_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
-    # isinstance(type_, StrawberryObjectType)  # noqa: E800
     return hasattr(type_, "_type_definition")
 
 
 def is_enum(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
-    # isinstance(type_, StrawberryEnumType)  # noqa: E800
     return hasattr(type_, "_enum_definition")
 
 

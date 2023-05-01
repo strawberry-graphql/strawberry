@@ -5,7 +5,6 @@ import pytest
 from strawberry.codegen import QueryCodegen
 from strawberry.codegen.plugins.print_operation import PrintOperationPlugin
 
-
 HERE = Path(__file__).parent
 QUERIES = list(HERE.glob("queries/*.graphql"))
 

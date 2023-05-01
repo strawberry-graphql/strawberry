@@ -25,23 +25,27 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from __future__ import annotations
+
 import re
-from typing import Callable, Dict, Iterable, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Callable, Dict, Iterable, List, Optional, Type, Union
 
 from graphql import GraphQLError
 from graphql.language import (
-    DefinitionNode,
     FieldNode,
     FragmentDefinitionNode,
     FragmentSpreadNode,
     InlineFragmentNode,
-    Node,
     OperationDefinitionNode,
 )
-from graphql.validation import ValidationContext, ValidationRule
+from graphql.validation import ValidationRule
 
 from strawberry.extensions import AddValidationRules
 from strawberry.extensions.utils import is_introspection_key
+
+if TYPE_CHECKING:
+    from graphql.language import DefinitionNode, Node
+    from graphql.validation import ValidationContext
 
 
 IgnoreType = Union[Callable[[str], bool], re.Pattern, str]
@@ -163,7 +167,8 @@ def determine_depth(
         return depth_so_far
 
     if isinstance(node, FieldNode):
-        # by default, ignore the introspection fields which begin with double underscores
+        # by default, ignore the introspection fields which begin
+        # with double underscores
         should_ignore = is_introspection_key(node.name.value) or is_ignored(
             node, ignore
         )
@@ -213,7 +218,7 @@ def determine_depth(
             )
         )
     else:
-        raise Exception(f"Depth crawler cannot handle: {node.kind}")  # pragma: no cover
+        raise TypeError(f"Depth crawler cannot handle: {node.kind}")  # pragma: no cover
 
 
 def is_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -> bool:
@@ -232,6 +237,6 @@ def is_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -> bo
             if rule(field_name):
                 return True
         else:
-            raise ValueError(f"Invalid ignore option: {rule}")
+            raise TypeError(f"Invalid ignore option: {rule}")
 
     return False

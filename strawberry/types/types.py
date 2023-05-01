@@ -13,12 +13,11 @@ from typing import (
     TypeVar,
     Union,
 )
-
 from typing_extensions import Self
 
 from strawberry.type import StrawberryType, StrawberryTypeVar
+from strawberry.utils.inspect import get_specialized_type_var_map
 from strawberry.utils.typing import is_generic as is_type_generic
-
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
@@ -31,7 +30,7 @@ class TypeDefinition(StrawberryType):
     name: str
     is_input: bool
     is_interface: bool
-    origin: Type
+    origin: Type[Any]
     description: Optional[str]
     interfaces: List[TypeDefinition]
     extend: bool
@@ -49,8 +48,8 @@ class TypeDefinition(StrawberryType):
     def __post_init__(self):
         # resolve `Self` annotation with the origin type
         for index, field in enumerate(self.fields):
-            if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):
-                self.fields[index] = field.copy_with({Self: self.origin})  # type: ignore
+            if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):  # type: ignore  # noqa: E501
+                self.fields[index] = field.copy_with({Self: self.origin})  # type: ignore  # noqa: E501
 
     # TODO: remove wrapped cls when we "merge" this with `StrawberryObject`
     def resolve_generic(self, wrapped_cls: type) -> type:
@@ -73,38 +72,8 @@ class TypeDefinition(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> type:
-        from strawberry.annotation import StrawberryAnnotation
-
-        fields = []
-        for field in self.fields:
-            # TODO: Logic unnecessary with StrawberryObject
-            field_type = field.type
-            if hasattr(field_type, "_type_definition"):
-                field_type = field_type._type_definition
-
-            # TODO: All types should end up being StrawberryTypes
-            #       The first check is here as a symptom of strawberry.ID being a
-            #       Scalar, but not a StrawberryType
-            if isinstance(field_type, StrawberryType) and field_type.is_generic:
-                field = field.copy_with(type_var_map)
-
-            # Resolve generic arguments
-            generic_arguments = (
-                argument
-                for argument in field.arguments
-                if isinstance(argument.type, StrawberryType)
-                and argument.type.is_generic
-            )
-
-            for argument in generic_arguments:
-                assert isinstance(argument.type, StrawberryType)
-
-                argument.type_annotation = StrawberryAnnotation(
-                    annotation=argument.type.copy_with(type_var_map),
-                    namespace=argument.type_annotation.namespace,
-                )
-
-            fields.append(field)
+        # TODO: Logic unnecessary with StrawberryObject
+        fields = [field.copy_with(type_var_map) for field in self.fields]
 
         new_type_definition = TypeDefinition(
             name=self.name,
@@ -146,6 +115,16 @@ class TypeDefinition(StrawberryType):
         return is_type_generic(self.origin)
 
     @property
+    def is_specialized_generic(self) -> bool:
+        if not self.is_generic:
+            return False
+
+        type_var_map = get_specialized_type_var_map(self.origin, include_type_vars=True)
+        return type_var_map is None or not any(
+            isinstance(arg, TypeVar) for arg in type_var_map.values()
+        )
+
+    @property
     def type_params(self) -> List[TypeVar]:
         type_params: List[TypeVar] = []
         for field in self.fields:
@@ -157,7 +136,7 @@ class TypeDefinition(StrawberryType):
         # TODO: Accept StrawberryObject instead
         # TODO: Support dicts
         if isinstance(root, dict):
-            raise NotImplementedError()
+            raise NotImplementedError
 
         type_definition = root._type_definition  # type: ignore
 

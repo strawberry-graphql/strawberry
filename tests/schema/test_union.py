@@ -2,12 +2,12 @@ import sys
 from dataclasses import dataclass
 from textwrap import dedent
 from typing import Generic, List, Optional, TypeVar, Union
+from typing_extensions import Annotated
 
 import pytest
 
-from typing_extensions import Annotated
-
 import strawberry
+from strawberry.exceptions import InvalidUnionTypeError
 from strawberry.lazy_type import lazy
 
 
@@ -645,3 +645,54 @@ def test_lazy_union():
 
     assert result.data["a"]["__typename"] == "TypeA"
     assert result.data["b"]["__typename"] == "TypeB"
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidUnionTypeError, match="Type `int` cannot be used in a GraphQL Union"
+)
+def test_error_with_invalid_annotated_type():
+    @strawberry.type
+    class Something:
+        h: str
+
+    AnnotatedInt = Annotated[int, "something_else"]
+
+    @strawberry.type
+    class Query:
+        union: Union[Something, AnnotatedInt]
+
+    strawberry.Schema(query=Query)
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidUnionTypeError, match="Type `(.*)` cannot be used in a GraphQL Union"
+)
+@pytest.mark.parametrize(
+    "annotation",
+    (
+        "int",
+        "str",
+        "float",
+        pytest.param(
+            "list[str]",
+            marks=pytest.mark.skipif(
+                sys.version_info < (3, 9, 0),
+                reason="list[str] is only available on python 3.9+",
+            ),
+        ),
+        "List[str]",
+    ),
+)
+def test_raises_on_union_of_scalars(annotation: str, monkeypatch):
+    @strawberry.type
+    class ICanBeInUnion:
+        foo: str
+
+    monkeypatch.setitem(globals(), ICanBeInUnion.__name__, ICanBeInUnion)
+    annotation = f"Union[{ICanBeInUnion.__name__}, {annotation}]"
+
+    @strawberry.type
+    class Query:
+        union: annotation  # type: ignore
+
+    strawberry.Schema(query=Query)

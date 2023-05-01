@@ -1,16 +1,20 @@
+from __future__ import annotations
+
 import hashlib
 from inspect import isawaitable
-from typing import Optional
+from typing import TYPE_CHECKING, Any, Generator, Iterator, Optional
 
 from ddtrace import tracer
 
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 from strawberry.extensions.tracing.utils import should_skip_tracing
-from strawberry.types.execution import ExecutionContext
 from strawberry.utils.cached_property import cached_property
 
+if TYPE_CHECKING:
+    from strawberry.types.execution import ExecutionContext
 
-class DatadogTracingExtension(Extension):
+
+class DatadogTracingExtension(SchemaExtension):
     def __init__(
         self,
         *,
@@ -21,6 +25,8 @@ class DatadogTracingExtension(Extension):
 
     @cached_property
     def _resource_name(self):
+        assert self.execution_context.query
+
         query_hash = self.hash_query(self.execution_context.query)
 
         if self.execution_context.operation_name:
@@ -28,10 +34,10 @@ class DatadogTracingExtension(Extension):
 
         return query_hash
 
-    def hash_query(self, query: str):
+    def hash_query(self, query: str) -> str:
         return hashlib.md5(query.encode("utf-8")).hexdigest()
 
-    def on_request_start(self) -> None:
+    def on_operation(self) -> Iterator[None]:
         self._operation_name = self.execution_context.operation_name
         span_name = (
             f"{self._operation_name}" if self._operation_name else "Anonymous Query"
@@ -47,29 +53,28 @@ class DatadogTracingExtension(Extension):
 
         operation_type = "query"
 
+        assert self.execution_context.query
+
         if self.execution_context.query.strip().startswith("mutation"):
             operation_type = "mutation"
         if self.execution_context.query.strip().startswith("subscription"):
             operation_type = "subscription"
 
         self.request_span.set_tag("graphql.operation_type", operation_type)
-
-    def on_request_end(self) -> None:
+        yield
         self.request_span.finish()
 
-    def on_validation_start(self):
+    def on_validate(self) -> Generator[None, None, None]:
         self.validation_span = tracer.trace("Validation", span_type="graphql")
-
-    def on_validation_end(self):
+        yield
         self.validation_span.finish()
 
-    def on_parsing_start(self):
+    def on_parse(self) -> Generator[None, None, None]:
         self.parsing_span = tracer.trace("Parsing", span_type="graphql")
-
-    def on_parsing_end(self):
+        yield
         self.parsing_span.finish()
 
-    async def resolve(self, _next, root, info, *args, **kwargs):
+    async def resolve(self, _next, root, info, *args, **kwargs) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -95,7 +100,7 @@ class DatadogTracingExtension(Extension):
 
 
 class DatadogTracingExtensionSync(DatadogTracingExtension):
-    def resolve(self, _next, root, info, *args, **kwargs):
+    def resolve(self, _next, root, info, *args, **kwargs) -> Any:
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 

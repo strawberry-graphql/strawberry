@@ -1,12 +1,12 @@
 import textwrap
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, NoReturn, Optional
 
 import pytest
 
 import strawberry
 from strawberry.directive import DirectiveLocation, DirectiveValue
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 from strawberry.schema.config import StrawberryConfig
 from strawberry.types.info import Info
 from strawberry.utils.await_maybe import await_maybe
@@ -329,7 +329,7 @@ def test_runs_directives_with_extensions():
     def uppercase(value: str):
         return value.upper()
 
-    class ExampleExtension(Extension):
+    class ExampleExtension(SchemaExtension):
         def resolve(self, _next, root, info, *args, **kwargs):
             return _next(root, info, *args, **kwargs)
 
@@ -368,7 +368,7 @@ async def test_runs_directives_with_extensions_async():
     def uppercase(value: str):
         return value.upper()
 
-    class ExampleExtension(Extension):
+    class ExampleExtension(SchemaExtension):
         async def resolve(self, _next, root, info, *args, **kwargs):
             return await await_maybe(_next(root, info, *args, **kwargs))
 
@@ -427,7 +427,6 @@ def info_directive_schema() -> strawberry.Schema:
 
 
 def test_info_directive_schema(info_directive_schema: strawberry.Schema):
-
     expected_schema = '''
     """Interpolate string on the server from context data"""
     directive @interpolate on FIELD
@@ -504,7 +503,7 @@ def test_directive_value():
     locations=[DirectiveLocation.FIELD],
     description="Add frostring with ``flavor`` to a cake.",
 )
-def add_frosting(flavor: str, v: DirectiveValue["Cake"], value: str):
+def add_frosting(flavor: str, v: DirectiveValue["Cake"], value: str) -> "Cake":
     assert isinstance(v, Cake)
     assert value == "foo"
     v.frosting = flavor
@@ -560,7 +559,6 @@ def test_name_first_directive_value():
 
 
 def test_named_based_directive_value_is_deprecated():
-
     with pytest.deprecated_call(match=r"Argument name-based matching of 'value'"):
 
         @strawberry.type
@@ -574,11 +572,8 @@ def test_named_based_directive_value_is_deprecated():
         strawberry.Schema(query=Query, directives=[deprecated_value])
 
 
-@pytest.mark.xfail(
-    reason="List arguments are not yet supported", raises=AttributeError, strict=True
-)
 @pytest.mark.asyncio
-async def test_directive_list_argument():
+async def test_directive_list_argument() -> NoReturn:
     @strawberry.type
     class Query:
         @strawberry.field
@@ -596,8 +591,8 @@ async def test_directive_list_argument():
         'query { greeting @appendNames(names: ["foo", "bar"])}'
     )
 
-    assert result.errors
-    raise result.errors[0].original_error  # type: ignore
+    assert result.errors is None
+    assert result.data["greeting"] == "Hi foo, bar"
 
 
 def test_directives_with_custom_types():

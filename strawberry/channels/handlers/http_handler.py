@@ -2,10 +2,11 @@
 
 A consumer to provide a graphql endpoint, and optionally graphiql.
 """
+from __future__ import annotations
 
 import dataclasses
 import json
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import parse_qs
 
 from channels.db import database_sync_to_async
@@ -13,19 +14,20 @@ from channels.generic.http import AsyncHttpConsumer
 from strawberry.channels.context import StrawberryChannelsContext
 from strawberry.exceptions import MissingQueryError
 from strawberry.http import (
-    GraphQLHTTPResponse,
-    GraphQLRequestData,
     parse_query_params,
     parse_request_data,
     process_result,
 )
-from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
-from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 from strawberry.utils.graphiql import get_graphiql_html
 
 from .base import ChannelsConsumer
+
+if TYPE_CHECKING:
+    from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
+    from strawberry.schema import BaseSchema
+    from strawberry.types import ExecutionResult
 
 
 class MethodNotAllowed(Exception):
@@ -79,7 +81,7 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         self.subscriptions_enabled = subscriptions_enabled
         super().__init__(**kwargs)
 
-    async def handle(self, body: bytes):
+    async def handle(self, body: bytes) -> None:
         try:
             if self.scope["method"] == "GET":
                 result = await self.get(body)
@@ -121,17 +123,24 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
                     for k, v in parse_qs(self.scope["query_string"].decode()).items()
                 }
             )
-            if "query" not in params:
-                raise ExecutionError("No GraphQL query found in the request")
 
-            result = await self.execute(parse_request_data(params))
+            try:
+                result = await self.execute(parse_request_data(params))
+            except MissingQueryError as e:
+                raise ExecutionError("No GraphQL query found in the request") from e
+
             return Result(response=json.dumps(result).encode())
         else:
             raise MethodNotAllowed()
 
     async def post(self, body: bytes) -> Result:
         request_data = await self.parse_body(body)
-        result = await self.execute(request_data)
+
+        try:
+            result = await self.execute(request_data)
+        except MissingQueryError as e:
+            raise ExecutionError("No GraphQL query found in the request") from e
+
         return Result(response=json.dumps(result).encode())
 
     async def parse_body(self, body: bytes) -> GraphQLRequestData:
@@ -143,15 +152,12 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         except json.JSONDecodeError as e:
             raise ExecutionError("Unable to parse request body as JSON") from e
 
-        try:
-            return parse_request_data(data)
-        except MissingQueryError as e:
-            raise ExecutionError("No GraphQL query found in the request") from e
+        return parse_request_data(data)
 
     async def parse_multipart_body(self, body: bytes) -> GraphQLRequestData:
         raise ExecutionError("Unable to parse the multipart body")
 
-    async def execute(self, request_data: GraphQLRequestData):
+    async def execute(self, request_data: GraphQLRequestData) -> GraphQLHTTPResponse:
         context = await self.get_context()
         root_value = await self.get_root_value()
 
@@ -173,11 +179,11 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
     async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
         return process_result(result)
 
-    async def render_graphiql(self, body):
+    async def render_graphiql(self, body) -> Result:
         html = get_graphiql_html(self.subscriptions_enabled)
         return Result(response=html.encode(), content_type="text/html")
 
-    def should_render_graphiql(self):
+    def should_render_graphiql(self) -> bool:
         accept_list = self.headers.get("accept", "").split(",")
         return self.graphiql and any(
             accepted in accept_list for accepted in ["text/html", "*/*"]
@@ -192,12 +198,12 @@ class SyncGraphQLHTTPConsumer(GraphQLHTTPConsumer):
     synchronous and not asynchronous).
     """
 
-    def get_root_value(self, request: Optional["ChannelsConsumer"] = None) -> Any:
+    def get_root_value(self, request: Optional[ChannelsConsumer] = None) -> Any:
         return None
 
     def get_context(  # type: ignore[override]
         self,
-        request: Optional["ChannelsConsumer"] = None,
+        request: Optional[ChannelsConsumer] = None,
     ) -> StrawberryChannelsContext:
         return StrawberryChannelsContext(request=request or self)
 
@@ -210,7 +216,7 @@ class SyncGraphQLHTTPConsumer(GraphQLHTTPConsumer):
     # handlers in a threadpool. Check SyncConsumer's documentation for more info:
     # https://github.com/django/channels/blob/main/channels/consumer.py#L104
     @database_sync_to_async
-    def execute(self, request_data: GraphQLRequestData):
+    def execute(self, request_data: GraphQLRequestData) -> GraphQLHTTPResponse:
         context = self.get_context(self)
         root_value = self.get_root_value(self)
 

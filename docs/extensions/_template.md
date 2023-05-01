@@ -18,14 +18,15 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         ExtensionName(),
-    ]
+    ],
 )
 ```
 
 ## API reference:
 
 ```python
-class ExtensionName(an_argument=None)`
+class ExtensionName(an_argument=None):
+    ...
 ```
 
 #### `an_argument: Optional[str] = None`
@@ -45,7 +46,7 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         ExtensionName(an_argument="something"),
-    ]
+    ],
 )
 ```
 

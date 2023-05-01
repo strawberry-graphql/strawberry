@@ -62,7 +62,7 @@
     reveal_type(Flavour)
     reveal_type(a)
   out: |
-    main:14: note: Revealed type is "builtins.object"
+    main:14: note: Revealed type is "typing._SpecialForm"
     main:15: note: Revealed type is "Type[enum.Enum]"
 
 - case: test_enum_with_decorator

@@ -1,24 +1,23 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional, Union, cast
-
 from typing_extensions import Protocol
 
-from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
-from strawberry.enum import EnumDefinition
+from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.lazy_type import LazyType
 from strawberry.schema_directive import StrawberrySchemaDirective
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
+from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
-
+from strawberry.utils.typing import eval_type
 
 if TYPE_CHECKING:
     from strawberry.arguments import StrawberryArgument
     from strawberry.field import StrawberryField
+    from strawberry.type import StrawberryType
 
 
 class HasGraphQLName(Protocol):
@@ -29,6 +28,12 @@ class HasGraphQLName(Protocol):
 class NameConverter:
     def __init__(self, auto_camel_case: bool = True) -> None:
         self.auto_camel_case = auto_camel_case
+
+    def apply_naming_config(self, name: str) -> str:
+        if self.auto_camel_case:
+            name = to_camel_case(name)
+
+        return name
 
     def from_type(
         self,
@@ -48,8 +53,8 @@ class NameConverter:
             return self.from_union(type_)
         elif isinstance(type_, ScalarDefinition):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
-
-        raise TypeError(f"Unexpected type '{type_}'")
+        else:
+            return str(type_)
 
     def from_argument(self, argument: StrawberryArgument) -> str:
         return self.get_graphql_name(argument)
@@ -70,6 +75,9 @@ class NameConverter:
 
     def from_enum(self, enum: EnumDefinition) -> str:
         return enum.name
+
+    def from_enum_value(self, enum: EnumDefinition, enum_value: EnumValue) -> str:
+        return enum_value.name
 
     def from_directive(
         self, directive: Union[StrawberryDirective, StrawberrySchemaDirective]
@@ -96,10 +104,16 @@ class NameConverter:
 
         for type_ in union.types:
             if isinstance(type_, LazyType):
-                type_ = cast(StrawberryType, type_.resolve_type())
+                type_ = cast("StrawberryType", type_.resolve_type())  # noqa: PLW2901
 
-            assert hasattr(type_, "_type_definition")
-            name += self.from_type(type_._type_definition)
+            if hasattr(type_, "_type_definition"):
+                type_name = self.from_type(type_._type_definition)
+            else:
+                # This should only be hit when generating names for type-related
+                # exceptions
+                type_name = self.from_type(type_)
+
+            name += type_name
 
         return name
 
@@ -117,10 +131,7 @@ class NameConverter:
         return "".join(names) + generic_type_name
 
     def get_from_type(self, type_: Union[StrawberryType, type]) -> str:
-        from strawberry.union import StrawberryUnion
-
-        # TODO: maybe we should move parse_annotated somewhere else?
-        type_ = StrawberryAnnotation.parse_annotated(type_)  # type: ignore
+        type_ = eval_type(type_)
 
         if isinstance(type_, LazyType):
             name = type_.type_name
@@ -142,16 +153,22 @@ class NameConverter:
         elif hasattr(type_, "_type_definition"):
             strawberry_type = type_._type_definition
 
-            if strawberry_type.is_generic:
-                types = type_.__args__  # type: ignore
+            if (
+                strawberry_type.is_generic
+                and not strawberry_type.is_specialized_generic
+            ):
+                types = type_.__args__
                 name = self.from_generic(strawberry_type, types)
-            elif strawberry_type.concrete_of:
+            elif (
+                strawberry_type.concrete_of
+                and not strawberry_type.is_specialized_generic
+            ):
                 types = list(strawberry_type.type_var_map.values())
                 name = self.from_generic(strawberry_type, types)
             else:
                 name = strawberry_type.name
         else:
-            name = type_.__name__  # type: ignore
+            name = type_.__name__
 
         return capitalize_first(name)
 
@@ -161,7 +178,4 @@ class NameConverter:
 
         assert obj.python_name
 
-        if self.auto_camel_case:
-            return to_camel_case(obj.python_name)
-
-        return obj.python_name
+        return self.apply_naming_config(obj.python_name)

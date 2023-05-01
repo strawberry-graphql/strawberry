@@ -1,8 +1,7 @@
 from typing import List, Optional
 
-import pytest
-
 import pydantic
+import pytest
 
 import strawberry
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError

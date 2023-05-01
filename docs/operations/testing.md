@@ -106,6 +106,7 @@ import asyncio
 import pytest
 import strawberry
 
+
 @strawberry.type
 class Subscription:
     @strawberry.subscription
@@ -114,13 +115,16 @@ class Subscription:
             yield i
             await asyncio.sleep(0.5)
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def hello() -> str:
         return "world"
 
+
 schema = strawberry.Schema(query=Query, subscription=Subscription)
+
 
 @pytest.mark.asyncio
 async def test_subscription():

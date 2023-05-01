@@ -1,11 +1,15 @@
-from contextlib import suppress
-from typing import Any, Optional
+from __future__ import annotations
 
-from strawberry.channels.handlers.base import ChannelsWSConsumer
-from strawberry.schema import BaseSchema
+from contextlib import suppress
+from typing import TYPE_CHECKING, Any, Optional
+
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
-from strawberry.subscriptions.protocols.graphql_ws.types import OperationMessage
+
+if TYPE_CHECKING:
+    from strawberry.channels.handlers.base import ChannelsWSConsumer
+    from strawberry.schema import BaseSchema
+    from strawberry.subscriptions.protocols.graphql_ws.types import OperationMessage
 
 
 class GraphQLWSHandler(BaseGraphQLWSHandler):
@@ -25,7 +29,9 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         self._ws = ws
 
     async def get_context(self) -> Any:
-        return await self._get_context(request=self._ws)
+        return await self._get_context(
+            request=self._ws, connection_params=self.connection_params
+        )
 
     async def get_root_value(self) -> Any:
         return await self._get_root_value(request=self._ws)
@@ -34,13 +40,20 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         await self._ws.send_json(data)
 
     async def close(self, code: int = 1000, reason: Optional[str] = None) -> None:
-        # Close messages are not part of the ASGI ref yet
-        await self._ws.close(code=code)
+        # FIXME: We are using `self._ws.base_send` directly instead of `self._ws.close`
+        # because the latler doesn't accept the `reason` argument.
+        await self._ws.base_send(
+            {
+                "type": "websocket.close",
+                "code": code,
+                "reason": reason or "",
+            }
+        )
 
     async def handle_request(self) -> Any:
         await self._ws.accept(subprotocol=GRAPHQL_WS_PROTOCOL)
 
-    async def handle_disconnect(self, code):
+    async def handle_disconnect(self, code) -> None:
         if self.keep_alive_task:
             self.keep_alive_task.cancel()
             with suppress(BaseException):

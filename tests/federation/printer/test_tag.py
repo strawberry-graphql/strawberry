@@ -1,7 +1,6 @@
 import textwrap
 from enum import Enum
 from typing import List
-
 from typing_extensions import Annotated
 
 import strawberry
@@ -29,7 +28,7 @@ def test_field_tag_printed_correctly():
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@external", "@tag"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@external", "@tag"]) {
           query: Query
         }
 
@@ -69,7 +68,7 @@ def test_field_tag_printed_correctly_on_scalar():
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@tag"]) {
           query: Query
         }
 
@@ -102,7 +101,7 @@ def test_field_tag_printed_correctly_on_enum():
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@tag"]) {
           query: Query
         }
 
@@ -137,7 +136,7 @@ def test_field_tag_printed_correctly_on_enum_value():
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@tag"]) {
           query: Query
         }
 
@@ -178,7 +177,7 @@ def test_field_tag_printed_correctly_on_union():
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@tag"]) {
           query: Query
         }
 
@@ -221,7 +220,7 @@ def test_tag_printed_correctly_on_inputs():
     )
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@tag"]) {
           query: Query
         }
 

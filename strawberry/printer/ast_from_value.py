@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import dataclasses
 import re
 from math import isfinite
-from typing import Any, Mapping, Optional, cast
+from typing import TYPE_CHECKING, Any, Mapping, Optional, cast
 
 from graphql.language import (
     BooleanValueNode,
@@ -14,15 +16,10 @@ from graphql.language import (
     ObjectFieldNode,
     ObjectValueNode,
     StringValueNode,
-    ValueNode,
 )
 from graphql.pyutils import Undefined, inspect, is_iterable
 from graphql.type import (
     GraphQLID,
-    GraphQLInputObjectType,
-    GraphQLInputType,
-    GraphQLList,
-    GraphQLNonNull,
     is_enum_type,
     is_input_object_type,
     is_leaf_type,
@@ -30,6 +27,14 @@ from graphql.type import (
     is_non_null_type,
 )
 
+if TYPE_CHECKING:
+    from graphql.language import ValueNode
+    from graphql.type import (
+        GraphQLInputObjectType,
+        GraphQLInputType,
+        GraphQLList,
+        GraphQLNonNull,
+    )
 
 __all__ = ["ast_from_value"]
 
@@ -84,7 +89,7 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> Optional[ValueNode]:
     # basic types, namely JSON scalar types
 
     if is_non_null_type(type_):
-        type_ = cast(GraphQLNonNull, type_)
+        type_ = cast("GraphQLNonNull", type_)
         ast_value = ast_from_value(value, type_.of_type)
         if isinstance(ast_value, NullValueNode):
             return None
@@ -101,7 +106,7 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> Optional[ValueNode]:
     # Convert Python list to GraphQL list. If the GraphQLType is a list, but the value
     # is not a list, convert the value using the list's item type.
     if is_list_type(type_):
-        type_ = cast(GraphQLList, type_)
+        type_ = cast("GraphQLList", type_)
         item_type = type_.of_type
         if is_iterable(value):
             maybe_value_nodes = (ast_from_value(item, item_type) for item in value)
@@ -119,7 +124,7 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> Optional[ValueNode]:
         if value is None or not isinstance(value, Mapping):
             return None
 
-        type_ = cast(GraphQLInputObjectType, type_)
+        type_ = cast("GraphQLInputObjectType", type_)
         field_items = (
             (field_name, ast_from_value(value[field_name], field.type))
             for field_name, field in type_.fields.items()

@@ -1,9 +1,14 @@
 import re
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple, Union
 
 import pytest
-
-from graphql import get_introspection_query, parse, specified_rules, validate
+from graphql import (
+    GraphQLError,
+    get_introspection_query,
+    parse,
+    specified_rules,
+    validate,
+)
 
 import strawberry
 from strawberry.extensions import QueryDepthLimiter
@@ -57,7 +62,9 @@ class Query:
 schema = strawberry.Schema(Query)
 
 
-def run_query(query: str, max_depth: int, ignore=None):
+def run_query(
+    query: str, max_depth: int, ignore=None
+) -> Tuple[List[GraphQLError], Union[Dict[str, int], None]]:
     document = parse(query)
 
     result = None
@@ -71,7 +78,7 @@ def run_query(query: str, max_depth: int, ignore=None):
     errors = validate(
         schema._schema,
         document,
-        rules=specified_rules + (validation_rule,),
+        rules=(*specified_rules, validation_rule),
     )
 
     return errors, result
@@ -247,7 +254,7 @@ def test_should_raise_invalid_ignore():
       user { address { city } }
     }
     """
-    with pytest.raises(ValueError, match="Invalid ignore option:"):
+    with pytest.raises(TypeError, match="Invalid ignore option:"):
         run_query(
             query,
             10,

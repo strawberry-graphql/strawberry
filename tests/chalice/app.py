@@ -1,51 +1,25 @@
-from typing import Any, Optional
+from typing import Dict
 
-import strawberry
 from chalice import Chalice  # type: ignore
+from chalice.app import Response
 from strawberry.chalice.views import GraphQLView
-from strawberry.types.info import Info
-
+from tests.views.schema import schema
 
 app = Chalice(app_name="TheStackBadger")
 
 
-@strawberry.type
-class Query:
-    @strawberry.field
-    def greetings(self) -> str:
-        return "hello"
-
-    @strawberry.field
-    def hello(self, name: Optional[str] = None) -> str:
-        return f"Hello {name or 'world'}"
-
-    @strawberry.field
-    def teapot(self, info: Info[Any, None]) -> str:
-        info.context["response"].status_code = 418
-
-        return "🫖"
-
-
-@strawberry.type
-class Mutation:
-    @strawberry.mutation
-    def echo(self, string_to_echo: str) -> str:
-        return string_to_echo
-
-
-schema = strawberry.Schema(query=Query, mutation=Mutation)
 view = GraphQLView(schema=schema, graphiql=True, allow_queries_via_get=True)
 view_no_graphiql = GraphQLView(schema=schema, graphiql=False)
 view_not_get = GraphQLView(schema=schema, graphiql=False, allow_queries_via_get=False)
 
 
 @app.route("/")
-def index():
+def index() -> Dict[str, str]:
     return {"strawberry": "cake"}
 
 
 @app.route("/graphql", methods=["GET", "POST"], content_types=["application/json"])
-def handle_graphql():
+def handle_graphql() -> Response:
     return view.execute_request(app.current_request)
 
 
@@ -54,7 +28,7 @@ def handle_graphql():
     methods=["GET", "POST", "PUT"],
     content_types=["application/json"],
 )
-def handle_graphql_without_graphiql():
+def handle_graphql_without_graphiql() -> Response:
     return view_no_graphiql.execute_request(app.current_request)
 
 
@@ -63,5 +37,5 @@ def handle_graphql_without_graphiql():
     methods=["GET", "POST", "PUT"],
     content_types=["application/json"],
 )
-def handle_graphql_without_queries_via_get():
+def handle_graphql_without_queries_via_get() -> Response:
     return view_not_get.execute_request(app.current_request)

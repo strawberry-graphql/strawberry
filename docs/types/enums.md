@@ -4,7 +4,8 @@ title: Enums
 
 # Enums
 
-Enums are a special kind of type that is restricted to a particular set of values.
+Enums are a special kind of type that is restricted to a particular set of
+values.
 
 For example, we have a few options of ice cream available, and we want to allow
 user to choose only from those options.
@@ -17,7 +18,9 @@ First, create a new class for the new type, which extends class Enum:
 ```python
 from enum import Enum
 
+
 class IceCreamFlavour(Enum):
+    ...
 ```
 
 Then, list options as variables in that class:
@@ -87,6 +90,7 @@ class Cone:
     flavour: IceCreamFlavour
     num_scoops: int
 
+
 @strawberry.type
 class Query:
     @strawberry.field
@@ -120,9 +124,8 @@ Here is result of executed query:
 
 <Note>
 
-GraphQL types are not a map of name: value, like in python enums.
-Strawberry uses the name of the members of the enum to create the GraphQL
-type.
+GraphQL types are not a map of name: value, like in python enums. Strawberry
+uses the name of the members of the enum to create the GraphQL type.
 
 </Note>
 
@@ -134,14 +137,6 @@ and verbose syntax.
 @strawberry.enum
 class IceCreamFlavour(Enum):
     VANILLA = strawberry.enum_value("vanilla")
-    STRAWBERRY = strawberry.enum_value(
-        "strawberry", deprecation_reason="We ran out"
-    )
+    STRAWBERRY = strawberry.enum_value("strawberry", deprecation_reason="We ran out")
     CHOCOLATE = "chocolate"
 ```
-
-<AdditionalResources
-  title="Enums"
-  spec="https://spec.graphql.org/June2018/#sec-Enums"
-  graphqlDocs="https://graphql.org/learn/schema/#enumeration-types"
-/>

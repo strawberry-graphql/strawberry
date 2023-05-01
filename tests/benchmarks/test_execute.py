@@ -4,7 +4,6 @@ from datetime import date
 from typing import List
 
 import pytest
-
 from asgiref.sync import async_to_sync
 
 import strawberry
@@ -36,7 +35,7 @@ def test_execute(benchmark, items):
             return [
                 Pet(
                     id=i,
-                    name=random.choice(pets),
+                    name=random.choice(pets),  # noqa: S311
                 )
                 for i in range(5)
             ]

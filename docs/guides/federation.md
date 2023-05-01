@@ -116,11 +116,13 @@ class Review:
     id: int
     body: str
 
+
 def get_reviews(root: "Book") -> List[Review]:
     return [
-      Review(id=id_, body=f"A review for {root.id}")
-      for id_ in range(root.reviews_count)
+        Review(id=id_, body=f"A review for {root.id}")
+        for id_ in range(root.reviews_count)
     ]
+
 
 @strawberry.federation.type(keys=["id"])
 class Book:
@@ -134,11 +136,15 @@ class Book:
         # or even from an API
         return Book(id=id, reviews_count=3)
 
+
 @strawberry.type
 class Query:
     _hi: str = strawberry.field(resolver=lambda: "Hello World!")
 
-schema = strawberry.federation.Schema(query=Query, types=[Book, Review], enable_federation_2=True)
+
+schema = strawberry.federation.Schema(
+    query=Query, types=[Book, Review], enable_federation_2=True
+)
 ```
 
 Now things are looking more interesting; the `Review` type is a GraphQL type
@@ -163,7 +169,7 @@ entity across multiple services. For example, when making this query:
 ```graphql
 {
   # query defined in the books service
-  books {
+  allBooks {
     title
     # field defined in the reviews service
     reviews {

@@ -1,7 +1,6 @@
 import warnings
 from typing import Any, Dict, Optional, Type
 
-
 DEPRECATED_NAMES: Dict[str, str] = {
     "is_unset": "`is_unset` is deprecated use `value is UNSET` instead",
 }

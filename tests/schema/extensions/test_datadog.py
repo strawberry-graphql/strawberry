@@ -1,12 +1,16 @@
-from typing import AsyncGenerator
+import typing
+from typing import Any, AsyncGenerator, Tuple, Type
 
 import pytest
 
 import strawberry
 
+if typing.TYPE_CHECKING:
+    from strawberry.extensions.tracing.datadog import DatadogTracingExtension
+
 
 @pytest.fixture
-def datadog_extension(mocker):
+def datadog_extension(mocker) -> Tuple[Type["DatadogTracingExtension"], Any]:
     datadog_mock = mocker.MagicMock()
 
     mocker.patch.dict("sys.modules", ddtrace=datadog_mock)
@@ -17,7 +21,7 @@ def datadog_extension(mocker):
 
 
 @pytest.fixture
-def datadog_extension_sync(mocker):
+def datadog_extension_sync(mocker) -> Tuple[Type["DatadogTracingExtension"], Any]:
     datadog_mock = mocker.MagicMock()
 
     mocker.patch.dict("sys.modules", ddtrace=datadog_mock)
@@ -148,7 +152,7 @@ async def test_uses_operation_type(datadog_extension):
     """
 
     await schema.execute(query, operation_name="MyMutation")
-    mock.tracer.trace().set_tag.assert_any_call("graphql.operation_type", "mutation"),
+    mock.tracer.trace().set_tag.assert_any_call("graphql.operation_type", "mutation")
 
 
 @pytest.mark.asyncio
@@ -166,7 +170,7 @@ async def test_uses_operation_subscription(datadog_extension):
     await schema.execute(query, operation_name="MySubscription")
     mock.tracer.trace().set_tag.assert_any_call(
         "graphql.operation_type", "subscription"
-    ),
+    )
 
 
 def test_datadog_tracer_sync(datadog_extension_sync, mocker):
@@ -247,4 +251,4 @@ def test_uses_operation_type_sync(datadog_extension_sync):
 
     schema.execute_sync(query, operation_name="MyMutation")
 
-    mock.tracer.trace().set_tag.assert_any_call("graphql.operation_type", "mutation"),
+    mock.tracer.trace().set_tag.assert_any_call("graphql.operation_type", "mutation")

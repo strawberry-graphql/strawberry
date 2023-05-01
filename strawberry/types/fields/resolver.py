@@ -1,11 +1,11 @@
 from __future__ import annotations as _
 
-import builtins
 import inspect
 import sys
 import warnings
 from inspect import isasyncgenfunction, iscoroutinefunction
-from typing import (  # type: ignore[attr-defined]
+from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -19,10 +19,8 @@ from typing import (  # type: ignore[attr-defined]
     Type,
     TypeVar,
     Union,
-    _eval_type,
     cast,
 )
-
 from typing_extensions import Annotated, Protocol, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
@@ -31,6 +29,10 @@ from strawberry.exceptions import MissingArgumentsAnnotationsError
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 from strawberry.utils.cached_property import cached_property
+from strawberry.utils.typing import eval_type
+
+if TYPE_CHECKING:
+    import builtins
 
 
 class Parameter(inspect.Parameter):
@@ -52,7 +54,6 @@ class Parameter(inspect.Parameter):
 
 
 class Signature(inspect.Signature):
-
     _parameter_cls = Parameter
 
 
@@ -101,7 +102,7 @@ class ReservedType(NamedTuple):
         for parameter in parameters:
             annotation = parameter.annotation
             try:
-                resolved_annotation = _eval_type(
+                resolved_annotation = eval_type(
                     ForwardRef(annotation)
                     if isinstance(annotation, str)
                     else annotation,
@@ -124,7 +125,7 @@ class ReservedType(NamedTuple):
                 "their respective types (i.e. use value: 'DirectiveValue[str]' instead "
                 "of 'value: str' and 'info: Info' instead of a plain 'info')."
             )
-            warnings.warn(warning)
+            warnings.warn(warning, stacklevel=3)
             return reserved_name
         else:
             return None
@@ -152,7 +153,6 @@ T = TypeVar("T")
 
 
 class StrawberryResolver(Generic[T]):
-
     RESERVED_PARAMSPEC: Tuple[ReservedParameterSpecification, ...] = (
         SELF_PARAMSPEC,
         CLS_PARAMSPEC,
@@ -204,13 +204,14 @@ class StrawberryResolver(Generic[T]):
         parameters = self.signature.parameters.values()
         reserved_parameters = set(self.reserved_parameters.values())
 
-        missing_annotations = set()
+        missing_annotations = []
         arguments = []
         user_parameters = (p for p in parameters if p not in reserved_parameters)
+
         for param in user_parameters:
             annotation = self._resolved_annotations.get(param, param.annotation)
             if annotation is inspect.Signature.empty:
-                missing_annotations.add(param.name)
+                missing_annotations.append(param.name)
             else:
                 argument = StrawberryArgument(
                     python_name=param.name,
@@ -222,7 +223,7 @@ class StrawberryResolver(Generic[T]):
                 )
                 arguments.append(argument)
         if missing_annotations:
-            raise MissingArgumentsAnnotationsError(self.name, missing_annotations)
+            raise MissingArgumentsAnnotationsError(self, missing_annotations)
         return arguments
 
     @cached_property
@@ -294,16 +295,24 @@ class StrawberryResolver(Generic[T]):
         if self.type:
             if isinstance(self.type, StrawberryType):
                 type_override = self.type.copy_with(type_var_map)
-            else:
-                type_override = self.type._type_definition.copy_with(  # type: ignore
+            elif hasattr(self.type, "_type_definition"):
+                type_override = self.type._type_definition.copy_with(
                     type_var_map,
                 )
 
-        return type(self)(
+        other = type(self)(
             func=self.wrapped_func,
             description=self._description,
             type_override=type_override,
         )
+        # Resolve generic arguments
+        for argument in other.arguments:
+            if isinstance(argument.type, StrawberryType) and argument.type.is_generic:
+                argument.type_annotation = StrawberryAnnotation(
+                    annotation=argument.type.copy_with(type_var_map),
+                    namespace=argument.type_annotation.namespace,
+                )
+        return other
 
     @cached_property
     def _namespace(self) -> Dict[str, Any]:
@@ -318,7 +327,7 @@ class StrawberryResolver(Generic[T]):
 
 
 class UncallableResolverError(Exception):
-    def __init__(self, resolver: "StrawberryResolver"):
+    def __init__(self, resolver: StrawberryResolver):
         message = (
             f"Attempted to call resolver {resolver} with uncallable function "
             f"{resolver.wrapped_func}"

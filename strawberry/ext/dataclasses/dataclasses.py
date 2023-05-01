@@ -11,9 +11,10 @@ from dataclasses import (  # type: ignore
     _field_init,
     _init_param,
 )
+from typing import Any
 
 
-def dataclass_init_fn(fields, frozen, has_post_init, self_name, globals_):
+def dataclass_init_fn(fields, frozen, has_post_init, self_name, globals_) -> Any:
     """
     We create a custom __init__ function for the dataclasses that back
     Strawberry object types to only accept keyword arguments. This allows us to
@@ -58,11 +59,11 @@ def dataclass_init_fn(fields, frozen, has_post_init, self_name, globals_):
 
     _init_params = [_init_param(f) for f in fields if f.init]
     if len(_init_params) > 0:
-        _init_params = ["*"] + _init_params
+        _init_params = ["*", *_init_params]
 
     return _create_fn(
         "__init__",
-        [self_name] + _init_params,
+        [self_name, *_init_params],
         body_lines,
         locals=locals_,
         globals=globals_,

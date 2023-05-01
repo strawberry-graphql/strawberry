@@ -3,7 +3,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, List, Mapping, TypeVar, Union
 
-
 if TYPE_CHECKING:
     from .types.types import TypeDefinition
 
@@ -24,7 +23,7 @@ class StrawberryType(ABC):
     def is_generic(self) -> bool:
         raise NotImplementedError()
 
-    def has_generic(self, type_var) -> bool:
+    def has_generic(self, type_var: TypeVar) -> bool:
         return False
 
     def __eq__(self, other: object) -> bool:
@@ -82,7 +81,7 @@ class StrawberryContainer(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> StrawberryType:
-        of_type_copy: Union[StrawberryType, type]
+        of_type_copy: Union[StrawberryType, type] = self.of_type
 
         # TODO: Obsolete with StrawberryObject
         if hasattr(self.of_type, "_type_definition"):
@@ -93,8 +92,6 @@ class StrawberryContainer(StrawberryType):
 
         elif isinstance(self.of_type, StrawberryType) and self.of_type.is_generic:
             of_type_copy = self.of_type.copy_with(type_var_map)
-
-        assert of_type_copy
 
         return type(self)(of_type_copy)
 
@@ -110,7 +107,7 @@ class StrawberryContainer(StrawberryType):
 
         return False
 
-    def has_generic(self, type_var) -> bool:
+    def has_generic(self, type_var: TypeVar) -> bool:
         if isinstance(self.of_type, StrawberryType):
             return self.of_type.has_generic(type_var)
         return False
@@ -137,14 +134,14 @@ class StrawberryTypeVar(StrawberryType):
     def is_generic(self) -> bool:
         return True
 
-    def has_generic(self, type_var) -> bool:
+    def has_generic(self, type_var: TypeVar) -> bool:
         return self.type_var == type_var
 
     @property
     def type_params(self) -> List[TypeVar]:
         return [self.type_var]
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryTypeVar):
             return self.type_var == other.type_var
         if isinstance(other, TypeVar):

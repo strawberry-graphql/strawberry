@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import dataclasses
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Iterable,
@@ -12,11 +15,14 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Literal
-
-from strawberry.field import _RESOLVER_TYPE, StrawberryField, field as base_field
-from strawberry.permission import BasePermission
+from strawberry.field import field as base_field
 from strawberry.unset import UNSET
+
+if TYPE_CHECKING:
+    from typing_extensions import Literal
+
+    from strawberry.field import _RESOLVER_TYPE, StrawberryField
+    from strawberry.permission import BasePermission
 
 
 T = TypeVar("T")
@@ -42,6 +48,7 @@ def field(
     default: Any = UNSET,
     default_factory: Union[Callable[..., object], object] = UNSET,
     directives: Sequence[object] = (),
+    graphql_type: Optional[Any] = None,
 ) -> T:
     ...
 
@@ -65,6 +72,7 @@ def field(
     default: Any = UNSET,
     default_factory: Union[Callable[..., object], object] = UNSET,
     directives: Sequence[object] = (),
+    graphql_type: Optional[Any] = None,
 ) -> Any:
     ...
 
@@ -88,6 +96,7 @@ def field(
     default: Any = UNSET,
     default_factory: Union[Callable[..., object], object] = UNSET,
     directives: Sequence[object] = (),
+    graphql_type: Optional[Any] = None,
 ) -> StrawberryField:
     ...
 
@@ -110,6 +119,7 @@ def field(
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     directives: Sequence[object] = (),
+    graphql_type: Optional[Any] = None,
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
@@ -159,4 +169,5 @@ def field(
         default_factory=default_factory,
         init=init,  # type: ignore
         directives=directives,
+        graphql_type=graphql_type,
     )

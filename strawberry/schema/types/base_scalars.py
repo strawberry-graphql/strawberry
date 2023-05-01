@@ -5,7 +5,6 @@ from operator import methodcaller
 from typing import Callable
 
 import dateutil.parser
-
 from graphql import GraphQLError
 
 from strawberry.custom_scalar import scalar

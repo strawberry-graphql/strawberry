@@ -1,12 +1,13 @@
 import copy
-from typing import Any, Dict, List, Mapping
+from typing import Any, Dict, Mapping
 
 
 def replace_placeholders_with_files(
     operations_with_placeholders: Dict[str, Any],
-    files_map: Mapping[str, List[str]],
+    files_map: Mapping[str, Any],
     files: Mapping[str, Any],
 ) -> Dict[str, Any]:
+    # TODO: test this with missing variables in operations_with_placeholders
     operations = copy.deepcopy(operations_with_placeholders)
 
     for multipart_form_field_name, operations_paths in files_map.items():

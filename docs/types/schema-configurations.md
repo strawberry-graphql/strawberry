@@ -21,9 +21,7 @@ class Query:
     example_field: str
 
 
-schema = strawberry.Schema(
-    query=Query, config=StrawberryConfig(auto_camel_case=False)
-)
+schema = strawberry.Schema(query=Query, config=StrawberryConfig(auto_camel_case=False))
 ```
 
 In this case we are disabling the auto camel casing feature, so your output schema
