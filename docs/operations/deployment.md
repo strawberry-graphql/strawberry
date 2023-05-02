@@ -39,11 +39,13 @@ Introspection should primarily be used as a discovery and diagnostic tool for te
 
 You can disable introspection by [adding a validation rule extension](../extensions/add-validation-rules.md#more-examples).
 
-## Other considerations
+## Security extensions
 
-### Query depth
+Strawberry provides some security extensions to limit various aspects of the GraphQL document. These are recommended in production.
 
-You may also want to limit the query depth of GraphQL operations, which can be done via an [extension](../extensions/query-depth-limiter.md)
+- [query depth](../extensions/query-depth-limiter.md)
+- [max number of aliases](../extensions/max-aliases-limiter.md)
+- [max number of tokens](../extensions/max-tokens-limiter.md)
 
 # More resources
 

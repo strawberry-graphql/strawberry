@@ -1,6 +1,149 @@
 CHANGELOG
 =========
 
+0.176.1 - 2023-05-02
+--------------------
+
+This release improves the `graphql-transport-ws` implementation by starting the sub-protocol timeout only when the connection handshake is completed.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2703](https://github.com/strawberry-graphql/strawberry/pull/2703/)
+
+
+0.176.0 - 2023-05-01
+--------------------
+
+This release parses the input arguments to a field earlier so that Field
+Extensions recieve instances of Input types rather than plain dictionaries.
+
+Example:
+
+```python
+import strawberry
+from strawberry.extensions import FieldExtension
+
+
+@strawberry.input
+class MyInput:
+    foo: str
+
+
+class MyFieldExtension(FieldExtension):
+    def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+        # kwargs["my_input"] is instance of MyInput
+        ...
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def field(self, my_input: MyInput) -> str:
+        return "hi"
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2731](https://github.com/strawberry-graphql/strawberry/pull/2731/)
+
+
+0.175.1 - 2023-04-30
+--------------------
+
+This release adds a missing parameter to `get_context`
+when using subscriptions with ASGI.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2739](https://github.com/strawberry-graphql/strawberry/pull/2739/)
+
+
+0.175.0 - 2023-04-29
+--------------------
+
+Do not display graphiql view in fastapi doc if graphiql parameter is deactivated
+
+Contributed by [yak-toto](https://github.com/yak-toto) via [PR #2736](https://github.com/strawberry-graphql/strawberry/pull/2736/)
+
+
+0.174.0 - 2023-04-25
+--------------------
+
+This PR adds a MaxTokensLimiter extension which limits the number of tokens in a GraphQL document.
+
+## Usage example:
+
+```python
+import strawberry
+from strawberry.extensions import MaxTokensLimiter
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        MaxTokensLimiter(max_token_count=1000),
+    ],
+)
+```
+
+Contributed by [reka](https://github.com/reka) via [PR #2729](https://github.com/strawberry-graphql/strawberry/pull/2729/)
+
+
+0.173.1 - 2023-04-25
+--------------------
+
+This release bumps the version of typing_extensions to >= `4.0.0` to fix the
+error: `"cannot import Self from typing_extensions"`.
+
+Contributed by [Tien Truong](https://github.com/tienman) via [PR #2704](https://github.com/strawberry-graphql/strawberry/pull/2704/)
+
+
+0.173.0 - 2023-04-25
+--------------------
+
+This releases adds an extension for [PyInstrument](https://github.com/joerick/pyinstrument). It allows to instrument your server and find slow code paths.
+
+You can use it like this:
+
+```python
+import strawberry
+from strawberry.extensions import pyinstrument
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        pyinstrument.PyInstrument(report_path="pyinstrument.html"),
+    ],
+)
+```
+
+Contributed by [Peyton Duncan](https://github.com/Helithumper) via [PR #2727](https://github.com/strawberry-graphql/strawberry/pull/2727/)
+
+
+0.172.0 - 2023-04-24
+--------------------
+
+This PR adds a MaxAliasesLimiter extension which limits the number of aliases in a GraphQL document.
+
+## Usage example:
+
+```python
+import strawberry
+from strawberry.extensions import MaxAliasesLimiter
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        MaxAliasesLimiter(max_alias_count=15),
+    ],
+)
+```
+
+Contributed by [reka](https://github.com/reka) via [PR #2726](https://github.com/strawberry-graphql/strawberry/pull/2726/)
+
+
+0.171.3 - 2023-04-21
+--------------------
+
+This release adds missing annotations in class methods, improving
+our type coverage.
+
+Contributed by [Kai Benevento](https://github.com/benesgarage) via [PR #2721](https://github.com/strawberry-graphql/strawberry/pull/2721/)
+
+
 0.171.2 - 2023-04-21
 --------------------
 

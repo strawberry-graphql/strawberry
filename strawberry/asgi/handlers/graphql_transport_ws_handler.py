@@ -35,7 +35,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         self._ws = ws
 
     async def get_context(self) -> Any:
-        return await self._get_context(request=self._ws)
+        return await self._get_context(request=self._ws, response=None)
 
     async def get_root_value(self) -> Any:
         return await self._get_root_value(request=self._ws)
@@ -48,6 +48,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
 
     async def handle_request(self) -> None:
         await self._ws.accept(subprotocol=GRAPHQL_TRANSPORT_WS_PROTOCOL)
+        self.on_request_accepted()
 
         try:
             while self._ws.application_state != WebSocketState.DISCONNECTED:
@@ -61,6 +62,4 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         except WebSocketDisconnect:  # pragma: no cover
             pass
         finally:
-            for operation_id in list(self.subscriptions.keys()):
-                await self.cleanup_operation(operation_id)
-            await self.reap_completed_tasks()
+            await self.shutdown()

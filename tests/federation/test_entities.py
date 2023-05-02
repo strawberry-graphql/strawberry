@@ -9,7 +9,7 @@ def test_fetch_entities():
         upc: str
 
         @classmethod
-        def resolve_reference(cls, upc):
+        def resolve_reference(cls, upc) -> "Product":
             return Product(upc=upc)
 
     @strawberry.federation.type(extend=True)
@@ -49,7 +49,7 @@ def test_info_param_in_resolve_reference():
         info: str
 
         @classmethod
-        def resolve_reference(cls, info, upc):
+        def resolve_reference(cls, info, upc) -> "Product":
             return Product(upc=upc, info=info)
 
     @strawberry.federation.type(extend=True)
@@ -223,7 +223,7 @@ async def test_can_use_async_resolve_reference():
         upc: str
 
         @classmethod
-        async def resolve_reference(cls, upc: str):
+        async def resolve_reference(cls, upc: str) -> "Product":
             return Product(upc=upc)
 
     @strawberry.federation.type(extend=True)
@@ -262,7 +262,7 @@ async def test_can_use_async_resolve_reference_multiple_representations():
         upc: str
 
         @classmethod
-        async def resolve_reference(cls, upc: str):
+        async def resolve_reference(cls, upc: str) -> "Product":
             return Product(upc=upc)
 
     @strawberry.federation.type(extend=True)
