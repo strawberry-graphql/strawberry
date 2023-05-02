@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.176.1 - 2023-05-02
+--------------------
+
+This release improves the `graphql-transport-ws` implementation by starting the sub-protocol timeout only when the connection handshake is completed.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2703](https://github.com/strawberry-graphql/strawberry/pull/2703/)
+
+
 0.176.0 - 2023-05-01
 --------------------
 
