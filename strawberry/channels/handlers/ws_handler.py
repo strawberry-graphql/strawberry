@@ -111,5 +111,5 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
     async def receive_json(self, content: Any, **kwargs) -> None:
         await self._handler.handle_message(content)
 
-    async def disconnect(self, code: Any) -> None:
+    async def disconnect(self, code: int) -> None:
         await self._handler.handle_disconnect(code)
