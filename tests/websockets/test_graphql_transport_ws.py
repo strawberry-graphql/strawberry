@@ -16,9 +16,6 @@ import pytest_asyncio
 from pytest_mock import MockerFixture
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
-from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
-    BaseGraphQLTransportWSHandler,
-)
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
@@ -161,47 +158,39 @@ async def test_connection_init_timeout_cancellation(
     )
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 8),
+    reason="Task name was introduced in 3.8 and we need it for this test",
+)
 async def test_close_twice(
     mocker: MockerFixture, request, http_client_class: Type[HttpClient]
 ):
-    if sys.version_info < (3, 8):
-        pytest.skip("Task name was introduced in 3.8 and we need it for this test")
-
-    if http_client_class == AioHttpClient:
-        pytest.skip(
-            "Closing a AIOHTTP WebSocket from a task currently doesnt work as expected"
-        )
-
-    original_close = BaseGraphQLTransportWSHandler._close
-    transport_close = mocker.patch.object(
-        BaseGraphQLTransportWSHandler,
-        "_close",
-        side_effect=original_close,
-        autospec=True,
-    )
-
     test_client = http_client_class()
     test_client.create_app(connection_init_wait_timeout=timedelta(seconds=0.25))
 
     async with test_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
+        transport_close = mocker.patch.object(ws, "close")
+
         await ws.send_json(ConnectionInitMessage(payload=None).as_dict())
         # Yield control so that ._close can be called
         await asyncio.sleep(0)
+
         for t in asyncio.all_tasks():
             if (
                 t.get_coro().__qualname__
                 == "BaseGraphQLTransportWSHandler.handle_connection_init_timeout"
             ):
-                await t
+                # The init timeout task should be cancelled
+                with pytest.raises(asyncio.CancelledError):
+                    await t
 
         await ws.receive(timeout=0.5)
         assert ws.closed
         assert ws.close_code == 4400
         ws.assert_reason("Invalid connection init payload")
-
-    transport_close.assert_called_once()
+        transport_close.assert_not_called()
 
 
 async def test_too_many_initialisation_requests(ws: WebSocketClient):

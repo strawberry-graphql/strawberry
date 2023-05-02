@@ -55,11 +55,6 @@ class BaseGraphQLTransportWSHandler(ABC):
         self.tasks: Dict[str, asyncio.Task] = {}
         self.completed_tasks: List[asyncio.Task] = []
         self.connection_params: Optional[Dict[str, Any]] = None
-        self.closed: bool = False
-
-    async def _close(self, code: int, reason: str):
-        self.closed = True
-        await self.close(code, reason)
 
     @abstractmethod
     async def get_context(self) -> Any:
@@ -114,7 +109,7 @@ class BaseGraphQLTransportWSHandler(ABC):
 
             self.connection_timed_out = True
             reason = "Connection initialisation timeout"
-            await self._close(code=4408, reason=reason)
+            await self.close(code=4408, reason=reason)
         except asyncio.CancelledError:
             raise
         except Exception as error:
@@ -173,14 +168,14 @@ class BaseGraphQLTransportWSHandler(ABC):
             self.connection_init_timeout_task.cancel()
 
         if message.payload is not UNSET and not isinstance(message.payload, dict):
-            await self._close(code=4400, reason="Invalid connection init payload")
+            await self.close(code=4400, reason="Invalid connection init payload")
             return
 
         self.connection_params = message.payload
 
         if self.connection_init_received:
             reason = "Too many initialisation requests"
-            await self._close(code=4429, reason=reason)
+            await self.close(code=4429, reason=reason)
             return
 
         self.connection_init_received = True
@@ -195,13 +190,13 @@ class BaseGraphQLTransportWSHandler(ABC):
 
     async def handle_subscribe(self, message: SubscribeMessage) -> None:
         if not self.connection_acknowledged:
-            await self._close(code=4401, reason="Unauthorized")
+            await self.close(code=4401, reason="Unauthorized")
             return
 
         try:
             graphql_document = parse(message.payload.query)
         except GraphQLSyntaxError as exc:
-            await self._close(code=4400, reason=exc.message)
+            await self.close(code=4400, reason=exc.message)
             return
 
         try:
@@ -209,12 +204,12 @@ class BaseGraphQLTransportWSHandler(ABC):
                 graphql_document, message.payload.operationName
             )
         except RuntimeError:
-            await self._close(code=4400, reason="Can't get GraphQL operation type")
+            await self.close(code=4400, reason="Can't get GraphQL operation type")
             return
 
         if message.id in self.subscriptions:
             reason = f"Subscriber for {message.id} already exists"
-            await self._close(code=4409, reason=reason)
+            await self.close(code=4409, reason=reason)
             return
 
         if self.debug:  # pragma: no cover
@@ -336,7 +331,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         await self.cleanup_operation(operation_id=message.id)
 
     async def handle_invalid_message(self, error_message: str) -> None:
-        await self._close(code=4400, reason=error_message)
+        await self.close(code=4400, reason=error_message)
 
     async def send_message(self, message: GraphQLTransportMessage) -> None:
         data = message.as_dict()
