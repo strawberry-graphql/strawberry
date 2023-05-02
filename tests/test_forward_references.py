@@ -42,10 +42,11 @@ def test_forward_reference():
     del MyType
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 9),
+    reason="Python 3.8 and previous can't properly resolve this.",
+)
 def test_lazy_forward_reference():
-    if sys.version_info < (3, 9):
-        pytest.skip("Python 3.8 and previous can't properly resolve this. ")
-
     @strawberry.type
     class Query:
         @strawberry.field
