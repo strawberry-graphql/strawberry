@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Callable, Dict, List, Optional
@@ -35,6 +36,8 @@ if TYPE_CHECKING:
 
 
 class BaseGraphQLTransportWSHandler(ABC):
+    task_logger: logging.Logger = logging.getLogger("strawberry.ws.task")
+
     def __init__(
         self,
         schema: BaseSchema,
@@ -116,9 +119,8 @@ class BaseGraphQLTransportWSHandler(ABC):
             # so that unittests can inspect it.
             self.completed_tasks.append(task)
 
-    async def handle_task_exception(self, _: Exception) -> None:
-        # TODO: Log the error
-        pass  # pragma: no cover
+    async def handle_task_exception(self, error: Exception) -> None:
+        self.task_logger.exception("Exception in worker task", exc_info=error)
 
     async def handle_message(self, message: dict) -> None:
         handler: Callable
