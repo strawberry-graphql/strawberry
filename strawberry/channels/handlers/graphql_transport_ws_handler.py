@@ -56,8 +56,4 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         self.on_request_accepted()
 
     async def handle_disconnect(self, code: int) -> None:
-        for operation_id in list(self.subscriptions.keys()):
-            await self.cleanup_operation(operation_id)
-
-        await self.reap_completed_tasks()
         await self.shutdown()
