@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Any
+from typing import Any, Callable
 
 from starlite import WebSocket
 from starlite.exceptions import SerializationException, WebSocketDisconnect
@@ -16,8 +16,8 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         schema: BaseSchema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
-        get_context,
-        get_root_value,
+        get_context: Callable,
+        get_root_value: Callable,
         ws: WebSocket,
     ):
         super().__init__(schema, debug, connection_init_wait_timeout)

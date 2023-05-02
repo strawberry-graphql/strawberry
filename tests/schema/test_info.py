@@ -333,7 +333,7 @@ def test_return_type_from_field():
 
 def test_field_nodes_deprecation():
     def resolver(info):
-        info.field_nodes  # noqa: B018
+        info.field_nodes
         return 0
 
     @strawberry.type

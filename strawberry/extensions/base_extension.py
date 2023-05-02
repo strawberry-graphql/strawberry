@@ -41,7 +41,12 @@ class SchemaExtension:
         yield None
 
     def resolve(
-        self, _next, root, info: GraphQLResolveInfo, *args, **kwargs
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Any,
     ) -> AwaitableOrValue[object]:
         return _next(root, info, *args, **kwargs)
 

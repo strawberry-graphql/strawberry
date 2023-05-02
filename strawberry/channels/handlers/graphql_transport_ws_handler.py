@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
@@ -20,8 +20,8 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         schema: BaseSchema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
-        get_context,
-        get_root_value,
+        get_context: Callable,
+        get_root_value: Callable,
         ws: ChannelsWSConsumer,
     ):
         super().__init__(schema, debug, connection_init_wait_timeout)
@@ -55,5 +55,5 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         await self._ws.accept(subprotocol=GRAPHQL_TRANSPORT_WS_PROTOCOL)
         self.on_request_accepted()
 
-    async def handle_disconnect(self, code) -> None:
+    async def handle_disconnect(self, code: int) -> None:
         await self.shutdown()
