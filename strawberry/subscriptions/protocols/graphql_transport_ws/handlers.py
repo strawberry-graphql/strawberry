@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Callable, Dict, List, Optional
@@ -35,6 +36,8 @@ if TYPE_CHECKING:
 
 
 class BaseGraphQLTransportWSHandler(ABC):
+    task_logger: logging.Logger = logging.getLogger("strawberry.ws.task")
+
     def __init__(
         self,
         schema: BaseSchema,
@@ -47,6 +50,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         self.connection_init_timeout_task: Optional[asyncio.Task] = None
         self.connection_init_received = False
         self.connection_acknowledged = False
+        self.connection_timed_out = False
         self.subscriptions: Dict[str, AsyncGenerator] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
         self.completed_tasks: List[asyncio.Task] = []
@@ -78,19 +82,50 @@ class BaseGraphQLTransportWSHandler(ABC):
         """Handle the request this instance was created for"""
 
     async def handle(self) -> Any:
-        timeout_handler = self.handle_connection_init_timeout()
-        self.connection_init_timeout_task = asyncio.create_task(timeout_handler)
         return await self.handle_request()
 
+    async def shutdown(self) -> None:
+        if self.connection_init_timeout_task:
+            self.connection_init_timeout_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await self.connection_init_timeout_task
+
+        for operation_id in list(self.subscriptions.keys()):
+            await self.cleanup_operation(operation_id)
+        await self.reap_completed_tasks()
+
+    def on_request_accepted(self) -> None:
+        # handle_request should call this once it has sent the
+        # websocket.accept() response to start the timeout.
+        assert not self.connection_init_timeout_task
+        self.connection_init_timeout_task = asyncio.create_task(
+            self.handle_connection_init_timeout()
+        )
+
     async def handle_connection_init_timeout(self) -> None:
-        delay = self.connection_init_wait_timeout.total_seconds()
-        await asyncio.sleep(delay=delay)
+        task = asyncio.current_task()
+        assert task
+        try:
+            delay = self.connection_init_wait_timeout.total_seconds()
+            await asyncio.sleep(delay=delay)
 
-        if self.connection_init_received or self.closed:
-            return
+            if self.connection_init_received:
+                return  # pragma: no cover
 
-        reason = "Connection initialisation timeout"
-        await self._close(code=4408, reason=reason)
+            self.connection_timed_out = True
+            reason = "Connection initialisation timeout"
+            await self._close(code=4408, reason=reason)
+        except asyncio.CancelledError:
+            raise
+        except Exception as error:
+            await self.handle_task_exception(error)  # pragma: no cover
+        finally:
+            # do not clear self.connection_init_timeout_task
+            # so that unittests can inspect it.
+            self.completed_tasks.append(task)
+
+    async def handle_task_exception(self, error: Exception) -> None:
+        self.task_logger.exception("Exception in worker task", exc_info=error)
 
     async def handle_message(self, message: dict) -> None:
         handler: Callable
@@ -131,6 +166,12 @@ class BaseGraphQLTransportWSHandler(ABC):
         await self.reap_completed_tasks()
 
     async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
+        if self.connection_timed_out:
+            # No way to reliably excercise this case during testing
+            return  # pragma: no cover
+        if self.connection_init_timeout_task:
+            self.connection_init_timeout_task.cancel()
+
         if message.payload is not UNSET and not isinstance(message.payload, dict):
             await self._close(code=4400, reason="Invalid connection init payload")
             return
@@ -233,6 +274,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         Operation task top level method.  Cleans up and de-registers the operation
         once it is done.
         """
+        # TODO: Handle errors in this method using self.handle_task_exception()
         try:
             await self.handle_async_results(result_source, operation)
         except BaseException:  # pragma: no cover
