@@ -250,7 +250,7 @@ class DebuggableGraphQLTransportWSMixin:
         transport handler when it is initialized
         """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         DebuggableGraphQLTransportWSMixin.on_init(self)
 
