@@ -1,6 +1,48 @@
 CHANGELOG
 =========
 
+0.176.1 - 2023-05-02
+--------------------
+
+This release improves the `graphql-transport-ws` implementation by starting the sub-protocol timeout only when the connection handshake is completed.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2703](https://github.com/strawberry-graphql/strawberry/pull/2703/)
+
+
+0.176.0 - 2023-05-01
+--------------------
+
+This release parses the input arguments to a field earlier so that Field
+Extensions recieve instances of Input types rather than plain dictionaries.
+
+Example:
+
+```python
+import strawberry
+from strawberry.extensions import FieldExtension
+
+
+@strawberry.input
+class MyInput:
+    foo: str
+
+
+class MyFieldExtension(FieldExtension):
+    def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+        # kwargs["my_input"] is instance of MyInput
+        ...
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def field(self, my_input: MyInput) -> str:
+        return "hi"
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2731](https://github.com/strawberry-graphql/strawberry/pull/2731/)
+
+
 0.175.1 - 2023-04-30
 --------------------
 
