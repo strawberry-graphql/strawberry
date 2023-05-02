@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.176.2 - 2023-05-02
+--------------------
+
+This release adds more type hints to internal APIs and public APIs.
+
+Contributed by [Alex Auritt](https://github.com/alexauritt) via [PR #2568](https://github.com/strawberry-graphql/strawberry/pull/2568/)
+
+
 0.176.1 - 2023-05-02
 --------------------
 
