@@ -15,6 +15,7 @@ from typing import (
     cast,
     overload,
 )
+from typing_extensions import Unpack
 
 from .exceptions import (
     MissingFieldAnnotationError,
@@ -24,7 +25,7 @@ from .exceptions import (
 from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
 from .types.types import TypeDefinition
-from .utils.dataclasses import add_custom_init_fn
+from .utils.dataclasses import DataclassArguments, add_custom_init_fn
 from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__
 
@@ -99,14 +100,14 @@ def _check_field_annotations(cls: Type[Any]):
             raise MissingFieldAnnotationError(field_name, cls)
 
 
-def _wrap_dataclass(cls: Type[Any]):
+def _wrap_dataclass(cls: Type[Any], **kwargs: Unpack[DataclassArguments]):
     """Wrap a strawberry.type class with a dataclass and check for any issues
     before doing so"""
 
     # Ensure all Fields have been properly type-annotated
     _check_field_annotations(cls)
 
-    dclass_kwargs: Dict[str, bool] = {}
+    dclass_kwargs: DataclassArguments = kwargs or {}
 
     # Python 3.10 introduces the kw_only param. If we're on an older version
     # then generate our own custom init function
@@ -115,7 +116,7 @@ def _wrap_dataclass(cls: Type[Any]):
     else:
         dclass_kwargs["init"] = False
 
-    dclass = dataclasses.dataclass(cls, **dclass_kwargs)
+    dclass = dataclasses.dataclass(**dclass_kwargs)(cls)  # type: ignore[arg-type]
 
     if sys.version_info < (3, 10):
         add_custom_init_fn(dclass)
@@ -189,6 +190,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
+    **kwargs: Unpack[DataclassArguments],
 ) -> T:
     ...
 
@@ -198,6 +200,7 @@ def type(
     order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
 )
 def type(
+    cls: None = None,
     *,
     name: Optional[str] = None,
     is_input: bool = False,
@@ -205,6 +208,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
+    **kwargs: Unpack[DataclassArguments],
 ) -> Callable[[T], T]:
     ...
 
@@ -218,6 +222,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
+    **kwargs: Unpack[DataclassArguments],
 ) -> Union[T, Callable[[T], T]]:
     """Annotates a class as a GraphQL type.
 
@@ -238,7 +243,7 @@ def type(
                 exc = ObjectIsNotClassError.type
             raise exc(cls)
 
-        wrapped = _wrap_dataclass(cls)
+        wrapped = _wrap_dataclass(cls, **kwargs)
         return _process_type(
             wrapped,
             name=name,
@@ -265,6 +270,7 @@ def input(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    **kwargs: Unpack[DataclassArguments],
 ) -> T:
     ...
 
@@ -274,10 +280,12 @@ def input(
     order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
 )
 def input(
+    cls: None = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    **kwargs: Unpack[DataclassArguments],
 ) -> Callable[[T], T]:
     ...
 
@@ -288,6 +296,7 @@ def input(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    **kwargs: Unpack[DataclassArguments],
 ):
     """Annotates a class as a GraphQL Input type.
     Example usage:
@@ -296,12 +305,13 @@ def input(
     >>>     field_abc: str = "ABC"
     """
 
-    return type(  # type: ignore # not sure why mypy complains here
+    return type(
         cls,
         name=name,
         description=description,
         directives=directives,
         is_input=True,
+        **kwargs,
     )
 
 
@@ -315,6 +325,7 @@ def interface(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    **kwargs: Unpack[DataclassArguments],
 ) -> T:
     ...
 
@@ -324,10 +335,12 @@ def interface(
     order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
 )
 def interface(
+    cls: None = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    **kwargs: Unpack[DataclassArguments],
 ) -> Callable[[T], T]:
     ...
 
@@ -341,6 +354,7 @@ def interface(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    **kwargs: Unpack[DataclassArguments],
 ):
     """Annotates a class as a GraphQL Interface.
     Example usage:
@@ -349,12 +363,13 @@ def interface(
     >>>     field_abc: str
     """
 
-    return type(  # type: ignore # not sure why mypy complains here
+    return type(
         cls,
         name=name,
         description=description,
         directives=directives,
         is_interface=True,
+        **kwargs,
     )
 
 

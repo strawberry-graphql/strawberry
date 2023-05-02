@@ -41,3 +41,30 @@ def test_raises_error_when_using_interface_with_a_not_class_object():
     @strawberry.interface
     def not_a_class():
         pass
+
+
+def test_type_with_kwargs():
+    @strawberry.type(repr=False)
+    class ClassWithNoRepr:
+        number: int
+
+    instance = ClassWithNoRepr(number=5)
+    assert "ClassWithNoRepr object at" in repr(instance)
+
+
+def test_input_with_kwargs():
+    @strawberry.input(repr=False)
+    class InputWithNoRepr:
+        number: int
+
+    instance = InputWithNoRepr(number=5)
+    assert "InputWithNoRepr object at" in repr(instance)
+
+
+def test_interface_with_kwargs():
+    @strawberry.interface(repr=False)
+    class InterfaceWithNoRepr:
+        number: int
+
+    instance = InterfaceWithNoRepr(number=5)
+    assert "InterfaceWithNoRepr object at" in repr(instance)

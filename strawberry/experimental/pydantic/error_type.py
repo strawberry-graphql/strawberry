@@ -31,7 +31,11 @@ from strawberry.utils.typing import get_list_annotation, is_list
 from .exceptions import MissingFieldsListError
 
 if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
     from pydantic.fields import ModelField
+
+    from strawberry.utils.dataclasses import DataclassArguments
 
 
 def get_type_for_field(field: ModelField) -> Union[Any, Type[None], Type[List]]:
@@ -70,6 +74,7 @@ def error_type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
+    **kwargs: Unpack[DataclassArguments],
 ) -> Callable[..., Type]:
     def wrap(cls):
         model_fields = model.__fields__
@@ -113,7 +118,7 @@ def error_type(
             if name in fields_set
         ]
 
-        wrapped = _wrap_dataclass(cls)
+        wrapped = _wrap_dataclass(cls, **kwargs)
         extra_fields = cast(List[dataclasses.Field], _get_fields(wrapped))
         private_fields = get_private_fields(wrapped)
 

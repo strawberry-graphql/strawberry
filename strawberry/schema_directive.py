@@ -1,9 +1,11 @@
 import dataclasses
 from enum import Enum
 from typing import Callable, List, Optional, Type, TypeVar
+from typing_extensions import Unpack
 
 from strawberry.object_type import _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
+from strawberry.utils.dataclasses import DataclassArguments
 
 from .directive import directive_field
 from .field import StrawberryField, field
@@ -51,9 +53,10 @@ def schema_directive(
     name: Optional[str] = None,
     repeatable: bool = False,
     print_definition: bool = True,
+    **kwargs: Unpack[DataclassArguments],
 ) -> Callable[..., T]:
     def _wrap(cls: T) -> T:
-        cls = _wrap_dataclass(cls)
+        cls = _wrap_dataclass(cls, **kwargs)
         fields = _get_fields(cls)
 
         cls.__strawberry_directive__ = StrawberrySchemaDirective(
