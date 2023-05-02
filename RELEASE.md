@@ -1,3 +1,3 @@
 Release type: patch
 
-`grapql-transport-ws`: Don't start the sub-protocol timeout until the `websockets` connection handshake is complete.
+This release improves the `graphql-transport-ws` implementation by starting the sub-protocol timeout only when the connection handshake is completed.
