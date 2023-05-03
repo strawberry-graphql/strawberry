@@ -304,7 +304,9 @@ class BaseGraphQLTransportWSHandler(ABC):
                     next_message = NextMessage(id=operation.id, payload=next_payload)
                     await operation.send_message(next_message)
         except asyncio.CancelledError:
-            # Not a BaseException until 3.8.
+            # Need to catch and raise this separately because in versions <= 3.7
+            # asyncio.CancelledError is an Exception, not a direct subclass of
+            # BaseException
             raise
         except Exception as error:
             # GraphQLErrors are handled by graphql-core and included in the

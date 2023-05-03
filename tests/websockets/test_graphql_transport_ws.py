@@ -41,26 +41,28 @@ async def ws_raw(http_client: HttpClient) -> AsyncGenerator[WebSocketClient, Non
     assert ws.closed
 
     # loop cleanup code, similar to code from asyncio.run()
-    # disabled, can be enabled for debugging
+    # disabled, can be enabled for debugging the unit tests to help
+    # find rogue tasks
     return
 
-    loop = asyncio.get_running_loop()
-    current = asyncio.current_task(loop=loop)
-    to_cancel = [t for t in asyncio.all_tasks(loop=loop) if t is not current]
-    for task in to_cancel:
-        task.cancel()
-    await asyncio.gather(*to_cancel, return_exceptions=True)
-    for task in to_cancel:
-        if task.cancelled():
-            continue
-        if task.exception() is not None:
-            loop.call_exception_handler(
-                {
-                    "message": "unhandled exception during test fixture cleanup",
-                    "exception": task.exception(),
-                    "task": task,
-                }
-            )
+    if __debug__:
+        loop = asyncio.get_running_loop()
+        current = asyncio.current_task(loop=loop)
+        to_cancel = [t for t in asyncio.all_tasks(loop=loop) if t is not current]
+        for task in to_cancel:
+            task.cancel()
+        await asyncio.gather(*to_cancel, return_exceptions=True)
+        for task in to_cancel:
+            if task.cancelled():
+                continue
+            if task.exception() is not None:
+                loop.call_exception_handler(
+                    {
+                        "message": "unhandled exception during test fixture cleanup",
+                        "exception": task.exception(),
+                        "task": task,
+                    }
+                )
 
 
 @pytest_asyncio.fixture
@@ -772,7 +774,7 @@ async def test_rejects_connection_params_not_unset(ws_raw: WebSocketClient):
     ws.assert_reason("Invalid connection init payload")
 
 
-async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
+async def test_subscription_cancel_finalization_delay(ws: WebSocketClient):
     # Test that when we cancel a subscription, the websocket isn't blocked
     # while some complex finalization takes place.
     delay = 0.1
@@ -794,7 +796,7 @@ async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
         ).as_dict()
     )
 
-    # now cancel the stubscription and send a new query.  We expect the response
+    # now cancel the subscription and send a new query.  We expect the response
     # to the new query to arrive immediately, without waiting for the finalizer
     start = time.time()
     await ws.send_json(CompleteMessage(id="sub1").as_dict())
@@ -899,7 +901,9 @@ async def test_subscription_finializer_called(ws: WebSocketClient):
 
     # wait until context is dead.
     # We don't know exactly how many packets will arrive or how long it will take.
-    # Need manual timeout because async timeout doesn't work on sync integrations
+    # Need manual timeout because async timeout doesn't work on _syncronous_
+    # integrations.
+    # (they actually block the current thread and async events/timeouts don't fire)
     max_wait = 2.0  # seconds
 
     async def wait_for_finalize():
