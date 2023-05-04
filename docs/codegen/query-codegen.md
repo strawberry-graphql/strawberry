@@ -69,7 +69,7 @@ query MyQuery {
 
 With the following command:
 
-```bash
+```shell
 strawberry codegen --schema schema --output-dir ./output -p python query.graphql
 ```
 
@@ -103,7 +103,7 @@ Strawberry's codegen supports plugins, in the example above for example, we are
 using the `python` plugin. To pass more plugins to the codegen tool, you can use
 the `-p` flag, for example:
 
-```bash
+```shell
 strawberry codegen --schema schema --output-dir ./output -p python -p typescript query.graphql
 ```
 

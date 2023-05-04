@@ -51,7 +51,7 @@ In addition to Datadog and Apollo Tracing we also support
 
 You also need to install the extras for opentelemetry by doing:
 
-```
+```shell
 pip install 'strawberry-graphql[opentelemetry]'
 ```
 
@@ -222,7 +222,7 @@ service:
 
 Spin this docker-compose up with (this will take a while, give it a minute):
 
-```
+```shell
 docker-compose up --force-recreate --build
 ```
 
