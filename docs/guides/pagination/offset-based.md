@@ -232,7 +232,7 @@ ordered by name:
 
 The result should look like this:
 
-```graphql
+```json
 {
   "data": {
     "users": {
@@ -287,7 +287,7 @@ contains the substring "ie".
 
 This is the result:
 
-```
+```json
 {
   "data": {
     "users": {
