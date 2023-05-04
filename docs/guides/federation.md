@@ -218,12 +218,12 @@ services.
 
 In two terminal windows, run the following commands:
 
-```bash
+```shell
 cd books
 strawberry server --port 3500 app
 ```
 
-```bash
+```shell
 cd reviews
 strawberry server --port 3000 app
 ```
@@ -266,14 +266,14 @@ subgraphs:
 This file will be used by rover to compose the schema, which can be done with
 the following command:
 
-```bash
+```shell
 # Creates prod-schema.graphql or overwrites if it already exists
 rover supergraph compose --config ./supergraph.yaml > supergraph-schema.graphql
 ```
 
 Now that we have the composed schema, we can start the router.
 
-```bash
+```shell
 ./router --supergraph supergraph-schema.graphql
 ```
 

@@ -203,13 +203,13 @@ Django pagination API. You can check it out [here](https://docs.djangoproject.co
 
 Now, let us start the server and see offset-based pagination in action!
 
-```
+```shell
 strawberry server example:schema
 ```
 
 You will get the following message:
 
-```
+```shell
 Running strawberry on http://0.0.0.0:8000/graphql 🍓
 ```
 
