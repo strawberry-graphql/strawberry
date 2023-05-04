@@ -209,7 +209,7 @@ strawberry server example:schema
 
 You will get the following message:
 
-```shell
+```text
 Running strawberry on http://0.0.0.0:8000/graphql 🍓
 ```
 

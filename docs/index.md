@@ -131,7 +131,7 @@ strawberry server schema
 
 This will start a debug server, you should see the following output:
 
-```shell
+```text
 Running strawberry on http://0.0.0.0:8000/graphql 🍓
 ```
 
