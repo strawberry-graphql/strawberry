@@ -6,7 +6,7 @@ import functools
 import json
 import urllib.parse
 from io import BytesIO
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 from typing_extensions import Literal
 
 from flask import Flask
@@ -29,7 +29,7 @@ class GraphQLView(BaseGraphQLView):
 
     result_override: ResultOverrideFunction = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: str, **kwargs: Any):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 

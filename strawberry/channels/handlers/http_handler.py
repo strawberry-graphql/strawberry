@@ -179,7 +179,7 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
     async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
         return process_result(result)
 
-    async def render_graphiql(self, body) -> Result:
+    async def render_graphiql(self, body: bytes) -> Result:
         html = get_graphiql_html(self.subscriptions_enabled)
         return Result(response=html.encode(), content_type="text/html")
 

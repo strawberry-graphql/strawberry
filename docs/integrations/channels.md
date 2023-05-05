@@ -453,7 +453,7 @@ Implementation.
 
 Example usage:
 
-```
+```python
 from strawberry.channels import GraphQLProtocolTypeRouter
 from django.core.asgi import get_asgi_application
 

@@ -1,5 +1,15 @@
 import sys
-from typing import Any, Callable, Iterable, NewType, Optional, TypeVar, Union, overload
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    NewType,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from strawberry.custom_scalar import _process_scalar
 
@@ -98,7 +108,7 @@ def scalar(
     if tags:
         directives.extend(Tag(name=tag) for tag in tags)
 
-    def wrap(cls):
+    def wrap(cls: Type):
         return _process_scalar(
             cls,
             name=name,

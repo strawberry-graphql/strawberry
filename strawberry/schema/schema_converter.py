@@ -57,7 +57,9 @@ from strawberry.union import StrawberryUnion
 from strawberry.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
 
-from ..extensions.field_extension import build_field_extension_resolvers
+from ..extensions.field_extension import (
+    build_field_extension_resolvers,
+)
 from . import compat
 from .types.concrete_type import ConcreteType
 
@@ -85,7 +87,7 @@ if TYPE_CHECKING:
 # subclass the GraphQLEnumType class to enable returning Enum members from
 # resolvers.
 class CustomGraphQLEnumType(GraphQLEnumType):
-    def __init__(self, enum: EnumDefinition, *args, **kwargs):
+    def __init__(self, enum: EnumDefinition, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.wrapped_cls = enum.wrapped_cls
 
@@ -455,7 +457,7 @@ class GraphQLCoreConverter:
 
         if field.is_basic_field:
 
-            def _get_basic_result(_source: Any, *args, **kwargs):
+            def _get_basic_result(_source: Any, *args: str, **kwargs: Any):
                 # Call `get_result` without an info object or any args or
                 # kwargs because this is a basic field with no resolver.
                 return field.get_result(_source, info=None, args=[], kwargs={})
@@ -467,7 +469,7 @@ class GraphQLCoreConverter:
         def _get_arguments(
             source: Any,
             info: Info,
-            kwargs: Dict[str, Any],
+            kwargs: Any,
         ) -> Tuple[List[Any], Dict[str, Any]]:
             kwargs = convert_arguments(
                 kwargs,
@@ -498,7 +500,7 @@ class GraphQLCoreConverter:
 
             return args, kwargs
 
-        def _check_permissions(source: Any, info: Info, kwargs: Dict[str, Any]):
+        def _check_permissions(source: Any, info: Info, kwargs: Any):
             """
             Checks if the permission should be accepted and
             raises an exception if not
@@ -510,9 +512,7 @@ class GraphQLCoreConverter:
                     message = getattr(permission, "message", None)
                     raise PermissionError(message)
 
-        async def _check_permissions_async(
-            source: Any, info: Info, kwargs: Dict[str, Any]
-        ):
+        async def _check_permissions_async(source: Any, info: Info, kwargs: Any):
             for permission_class in field.permission_classes:
                 permission = permission_class()
                 has_permission: bool
@@ -531,11 +531,12 @@ class GraphQLCoreConverter:
                 _field=field,
             )
 
-        def _get_result(_source: Any, info: Info, **kwargs):
-            field_args, field_kwargs = _get_arguments(
-                source=_source, info=info, kwargs=kwargs
-            )
-
+        def _get_result(
+            _source: Any,
+            info: Info,
+            field_args: List[Any],
+            field_kwargs: Dict[str, Any],
+        ):
             return field.get_result(
                 _source, info=info, args=field_args, kwargs=field_kwargs
             )
@@ -543,18 +544,50 @@ class GraphQLCoreConverter:
         def wrap_field_extensions() -> Callable[..., Any]:
             """Wrap the provided field resolver with the middleware."""
 
-            if not field.extensions:
-                return _get_result
-
             for extension in field.extensions:
                 extension.apply(field)
 
             extension_functions = build_field_extension_resolvers(field)
-            return reduce(
-                lambda chained_fns, next_fn: partial(next_fn, chained_fns),
-                extension_functions,
-                _get_result,
-            )
+
+            def extension_resolver(
+                _source: Any,
+                info: Info,
+                **kwargs,
+            ):
+                # parse field arguments into Strawberry input types and convert
+                # field names to Python equivalents
+                field_args, field_kwargs = _get_arguments(
+                    source=_source, info=info, kwargs=kwargs
+                )
+
+                resolver_requested_info = False
+                if "info" in field_kwargs:
+                    resolver_requested_info = True
+                    # remove info from field_kwargs because we're passing it
+                    # explicitly to the extensions
+                    field_kwargs.pop("info")
+
+                # `_get_result` expects `field_args` and `field_kwargs` as
+                # separate arguments so we have to wrap the function so that we
+                # can pass them in
+                def wrapped_get_result(_source: Any, info: Info, **kwargs: Any):
+                    # if the resolver function requested the info object info
+                    # then put it back in the kwargs dictionary
+                    if resolver_requested_info:
+                        kwargs["info"] = info
+
+                    return _get_result(
+                        _source, info, field_args=field_args, field_kwargs=kwargs
+                    )
+
+                # combine all the extension resolvers
+                return reduce(
+                    lambda chained_fn, next_fn: partial(next_fn, chained_fn),
+                    extension_functions,
+                    wrapped_get_result,
+                )(_source, info, **field_kwargs)
+
+            return extension_resolver
 
         _get_result_with_extensions = wrap_field_extensions()
 
@@ -562,14 +595,22 @@ class GraphQLCoreConverter:
             strawberry_info = _strawberry_info_from_graphql(info)
             _check_permissions(_source, strawberry_info, kwargs)
 
-            return _get_result_with_extensions(_source, strawberry_info, **kwargs)
+            return _get_result_with_extensions(
+                _source,
+                strawberry_info,
+                **kwargs,
+            )
 
         async def _async_resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)
             await _check_permissions_async(_source, strawberry_info, kwargs)
 
             return await await_maybe(
-                _get_result_with_extensions(_source, strawberry_info, **kwargs)
+                _get_result_with_extensions(
+                    _source,
+                    strawberry_info,
+                    **kwargs,
+                )
             )
 
         if field.is_async:

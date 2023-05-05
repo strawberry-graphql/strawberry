@@ -19,9 +19,11 @@ def test_basic_type_field_list():
         age: int
         password: Optional[str]
 
-    @strawberry.experimental.pydantic.type(User, fields=["age", "password"])
-    class UserType:
-        pass
+    with pytest.deprecated_call():
+
+        @strawberry.experimental.pydantic.type(User, fields=["age", "password"])
+        class UserType:
+            pass
 
     definition: TypeDefinition = UserType._type_definition
     assert definition.name == "UserType"
