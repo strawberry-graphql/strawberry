@@ -2,6 +2,7 @@ import textwrap
 from typing_extensions import Annotated
 
 import strawberry
+from strawberry.field_extensions import InputMutationExtension
 from strawberry.schema_directive import Location, schema_directive
 from strawberry.types import Info
 
@@ -23,7 +24,7 @@ class Fruit:
 
 @strawberry.type
 class Query:
-    @strawberry.input_mutation
+    @strawberry.mutation(extensions=[InputMutationExtension()])
     def create_fruit(
         self,
         info: Info,
@@ -41,7 +42,7 @@ class Query:
             color=color,
         )
 
-    @strawberry.input_mutation
+    @strawberry.mutation(extensions=[InputMutationExtension()])
     async def create_fruit_async(
         self,
         info: Info,

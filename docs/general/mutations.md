@@ -85,30 +85,36 @@ Mutations with void-result go against [GQL best practices](https://graphql-rules
 
 </Note>
 
-### The Input Mutation
+### The Input Mutation Extension
 
 It is usually useful to use a pattern of defining a mutation that receives a single
 [input type](./input-types) argument called `input`.
 
 That pattern makes it easier to include/remove arguments without breaking the
-whole API, which could happen when using positional arguments. Additionally, fields in an input type can be marked as deprecated, while field can't be deprecated.
+whole API, which could happen when using positional arguments. Additionally,
+fields in an input type can be marked as deprecated, while field can't be deprecated.
 
 Strawberry provides a helper to create a mutation that automatically
 creates an input type for you, whose attributes are the same as the args in the resolver.
 
 For example, suppose we want the mutation defined in the section above to be an
-input mutation. We need to replace `@strawberry.mutation` by
-`@strawberry.input_mutation`, like this:
+input mutation. We can add the `InputMutationExtension` to the field like this:
 
 ```python
+from strawberry.field_extensions import InputMutationExtension
+
+
 @strawberry.type
 class Mutation:
-    @strawberry.input_mutation
+    @strawberry.mutation(extensions=[InputMutationExtension()])
     def update_fruit_weight(
         self,
         info: Info,
         id: strawberry.ID,
-        weight: float,
+        weight: Annotated[
+            float,
+            strawberry.argument(description="The fruit's new weight in grams"),
+        ],
     ) -> Fruit:
         fruit = ...  # retrieve the fruit with the given ID
         fruit.weight = weight
@@ -121,6 +127,10 @@ That would generate a schema like this:
 ```graphql
 input UpdateFruitInput {
   id: ID!
+
+  """
+  The fruit's new weight in grams
+  """
   weight: Float!
 }
 
