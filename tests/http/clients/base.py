@@ -243,6 +243,17 @@ class WebSocketClient(abc.ABC):
 
 
 class DebuggableGraphQLTransportWSMixin:
+    @staticmethod
+    def on_init(self):
+        """
+        This method can be patched by unittests to get the instance of the
+        transport handler when it is initialized
+        """
+
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        DebuggableGraphQLTransportWSMixin.on_init(self)
+
     async def get_context(self) -> object:
         context = await super().get_context()
         context["ws"] = self._ws

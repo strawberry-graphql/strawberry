@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Any
+from typing import Any, Callable
 
 from starlite import WebSocket
 from starlite.exceptions import SerializationException, WebSocketDisconnect
@@ -16,8 +16,8 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         schema: BaseSchema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
-        get_context,
-        get_root_value,
+        get_context: Callable,
+        get_root_value: Callable,
         ws: WebSocket,
     ):
         super().__init__(schema, debug, connection_init_wait_timeout)
@@ -39,6 +39,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
 
     async def handle_request(self) -> None:
         await self._ws.accept(subprotocols=GRAPHQL_TRANSPORT_WS_PROTOCOL)
+        self.on_request_accepted()
 
         try:
             while self._ws.connection_state != "disconnect":
@@ -52,6 +53,4 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         except WebSocketDisconnect:  # pragma: no cover
             pass
         finally:
-            for operation_id in list(self.subscriptions.keys()):
-                await self.cleanup_operation(operation_id)
-            await self.reap_completed_tasks()
+            await self.shutdown()

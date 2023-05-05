@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from starlette.websockets import WebSocketDisconnect, WebSocketState
 
@@ -22,8 +22,8 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         debug: bool,
         keep_alive: bool,
         keep_alive_interval: float,
-        get_context,
-        get_root_value,
+        get_context: Callable,
+        get_root_value: Callable,
         ws: WebSocket,
     ):
         super().__init__(schema, debug, keep_alive, keep_alive_interval)
@@ -32,7 +32,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         self._ws = ws
 
     async def get_context(self) -> Any:
-        return await self._get_context(request=self._ws)
+        return await self._get_context(request=self._ws, response=None)
 
     async def get_root_value(self) -> Any:
         return await self._get_root_value(request=self._ws)

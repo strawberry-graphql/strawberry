@@ -148,7 +148,7 @@ class StrawberryUnion(StrawberryType):
             description=self.description,
         )
 
-    def __call__(self, *_args, **_kwargs) -> NoReturn:
+    def __call__(self, *args: str, **kwargs: Any) -> NoReturn:
         """Do not use.
 
         Used to bypass

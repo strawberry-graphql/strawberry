@@ -117,7 +117,7 @@ Assuming you have your schema up and running, here there are some requests examp
 
 ### Sending one file
 
-```bash
+```shell
 curl localhost:8000/graphql \
   -F operations='{ "query": "mutation($file: Upload!){ readFile(file: $file) }", "variables": { "file": null } }' \
   -F map='{ "file": ["variables.file"] }' \
@@ -126,7 +126,7 @@ curl localhost:8000/graphql \
 
 ### Sending a list of files
 
-```bash
+```shell
 curl localhost:8000/graphql \
   -F operations='{ "query": "mutation($files: [Upload!]!) { readFiles(files: $files) }", "variables": { "files": [null, null] } }' \
   -F map='{"file1": ["variables.files.0"], "file2": ["variables.files.1"]}' \
@@ -136,7 +136,7 @@ curl localhost:8000/graphql \
 
 ### Sending nested files
 
-```bash
+```shell
 curl localhost:8000/graphql \
   -F operations='{ "query": "mutation($folder: FolderInput!) { readFolder(folder: $folder) }", "variables": {"folder": {"files": [null, null]}} }' \
   -F map='{"file1": ["variables.folder.files.0"], "file2": ["variables.folder.files.1"]}' \

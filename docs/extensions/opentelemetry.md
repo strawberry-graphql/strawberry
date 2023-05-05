@@ -13,7 +13,7 @@ This extension adds tracing information that is compatible with
 
 This extension requires additional requirements:
 
-```
+```shell
 pip install 'strawberry-graphql[opentelemetry]'
 ```
 
