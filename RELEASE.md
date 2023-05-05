@@ -32,7 +32,7 @@ class Mutation:
 Would generate a schema like this:
 
 ```graphql
-input CreateFruitInput {
+input UpdateFruitInput {
   id: ID!
   weight: Float!
 }
@@ -44,7 +44,7 @@ type Fruit {
 }
 
 type Mutation {
-  updateFruitWeight(input: CreateFruitInput!): Fruit!
+  updateFruitWeight(input: UpdateFruitInput!): Fruit!
 }
 ```
 

@@ -103,7 +103,7 @@ input mutation. We need to replace `@strawberry.mutation` by
 ```python
 @strawberry.type
 class Mutation:
-    @relay.input_mutation
+    @strawberry.input_mutation
     def update_fruit_weight(
         self,
         info: Info,
@@ -119,12 +119,12 @@ class Mutation:
 That would generate a schema like this:
 
 ```graphql
-input CreateFruitInput {
+input UpdateFruitInput {
   id: ID!
   weight: Float!
 }
 
 type Mutation {
-  updateFruitWeight(input: CreateFruitInput!): Fruit!
+  updateFruitWeight(input: UpdateFruitInput!): Fruit!
 }
 ```
