@@ -101,9 +101,7 @@ class OpenTelemetryExtension(SchemaExtension):
             return args
         return self._arg_filter(deepcopy(args), info)
 
-    def add_tags(
-        self, span: Span, info: GraphQLResolveInfo, kwargs: Dict[str, Any]
-    ) -> None:
+    def add_tags(self, span: Span, info: GraphQLResolveInfo, kwargs: Any) -> None:
         graphql_path = ".".join(map(str, get_path_from_info(info)))
 
         span.set_attribute("component", "graphql")
@@ -116,7 +114,14 @@ class OpenTelemetryExtension(SchemaExtension):
             for kwarg, value in filtered_kwargs.items():
                 span.set_attribute(f"graphql.param.{kwarg}", value)
 
-    async def resolve(self, _next, root, info, *args, **kwargs) -> Any:
+    async def resolve(
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Any,
+    ) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -139,7 +144,14 @@ class OpenTelemetryExtension(SchemaExtension):
 
 
 class OpenTelemetryExtensionSync(OpenTelemetryExtension):
-    def resolve(self, _next, root, info, *args, **kwargs) -> Any:
+    def resolve(
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Any,
+    ) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 

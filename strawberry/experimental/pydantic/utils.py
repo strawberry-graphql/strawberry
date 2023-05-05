@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from pydantic.typing import NoArgAnyCallable
 
 
-def normalize_type(type_) -> Any:
+def normalize_type(type_: Type) -> Any:
     if is_list(type_):
         return List[normalize_type(get_list_annotation(type_))]  # type: ignore
 

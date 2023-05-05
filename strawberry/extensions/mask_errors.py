@@ -1,11 +1,11 @@
-from typing import Callable, Iterator
+from typing import Callable, Iterator, List
 
 from graphql.error import GraphQLError
 
 from strawberry.extensions.base_extension import SchemaExtension
 
 
-def default_should_mask_error(_) -> bool:
+def default_should_mask_error(_: GraphQLError) -> bool:
     # Mask all errors
     return True
 
@@ -36,7 +36,7 @@ class MaskErrors(SchemaExtension):
         yield
         result = self.execution_context.result
         if result and result.errors:
-            processed_errors = []
+            processed_errors: List[GraphQLError] = []
             for error in result.errors:
                 if self.should_mask_error(error):
                     processed_errors.append(self.anonymise_error(error))

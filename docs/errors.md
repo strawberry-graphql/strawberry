@@ -48,7 +48,7 @@ will show the following exception on the command line:
 These errors are only enabled when `rich` and `libcst` are installed. You can
 install Strawberry with errors enabled by running:
 
-```bash
+```shell
 pip install "strawberry-graphql[cli]"
 ```
 

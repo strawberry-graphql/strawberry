@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Type, Union
 
 from graphql import (
     ExecutableDefinitionNode,
@@ -64,11 +64,21 @@ def create_validator(max_alias_count: int) -> Type[ValidationRule]:
     return MaxAliasesValidator
 
 
-def count_fields_with_alias(selection_set_owner) -> int:
+def count_fields_with_alias(
+    selection_set_owner: Union[ExecutableDefinitionNode, FieldNode, InlineFragmentNode]
+) -> int:
+    if selection_set_owner.selection_set is None:
+        return 0
+
     result = 0
-    for sel in selection_set_owner.selection_set.selections:
-        if isinstance(sel, FieldNode) and sel.alias:
+
+    for selection in selection_set_owner.selection_set.selections:
+        if isinstance(selection, FieldNode) and selection.alias:
             result += 1
-        if isinstance(sel, (FieldNode, InlineFragmentNode)) and sel.selection_set:
-            result += count_fields_with_alias(sel)
+        if (
+            isinstance(selection, (FieldNode, InlineFragmentNode))
+            and selection.selection_set
+        ):
+            result += count_fields_with_alias(selection)
+
     return result
