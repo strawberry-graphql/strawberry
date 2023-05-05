@@ -7,7 +7,6 @@ from typing import (
     Dict,
     TypeVar,
 )
-from typing_extensions import Annotated, get_args, get_origin
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
@@ -41,27 +40,18 @@ class InputMutationExtension(FieldExtension):
         annotations = resolver.wrapped_func.__annotations__
 
         for arg in resolver.arguments:
-            # Preserve directives
-            annotation = annotations[arg.python_name]
-            if get_origin(annotation) is Annotated:
-                directives = tuple(
-                    d
-                    for d in get_args(annotation)[1:]
-                    if hasattr(d, "__strawberry_directive__")
-                )
-            else:
-                directives = ()
-
             arg_field = StrawberryField(
                 python_name=arg.python_name,
                 graphql_name=arg.graphql_name,
                 description=arg.description,
                 default=arg.default,
                 type_annotation=arg.type_annotation,
-                directives=directives,
+                directives=tuple(arg.directives),
             )
             type_dict[arg_field.python_name] = arg_field
-            type_dict["__annotations__"][arg_field.python_name] = annotation
+            type_dict["__annotations__"][arg_field.python_name] = annotations[
+                arg.python_name
+            ]
 
         caps_name = name[0].upper() + name[1:]
         new_type = strawberry.input(type(f"{caps_name}Input", (), type_dict))

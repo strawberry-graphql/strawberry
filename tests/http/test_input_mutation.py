@@ -2,7 +2,17 @@ import textwrap
 from typing_extensions import Annotated
 
 import strawberry
+from strawberry.schema_directive import Location, schema_directive
 from strawberry.types import Info
+
+
+@schema_directive(
+    locations=[Location.FIELD_DEFINITION],
+    name="some_directive",
+)
+class SomeDirective:
+    some: str
+    directive: str
 
 
 @strawberry.type
@@ -18,7 +28,13 @@ class Query:
         self,
         info: Info,
         name: str,
-        color: str,
+        color: Annotated[
+            str,
+            strawberry.argument(
+                description="The color of the fruit",
+                directives=[SomeDirective(some="foo", directive="bar")],
+            ),
+        ],
     ) -> Fruit:
         return Fruit(
             name=name,
@@ -43,6 +59,8 @@ schema = strawberry.Schema(query=Query)
 
 def test_schema():
     expected = '''
+    directive @some_directive(some: String!, directive: String!) on FIELD_DEFINITION
+
     input CreateFruitAsyncInput {
       name: String!
       color: String!
@@ -50,7 +68,9 @@ def test_schema():
 
     input CreateFruitInput {
       name: String!
-      color: String!
+
+      """The color of the fruit"""
+      color: String! @some_directive(some: "foo", directive: "bar")
     }
 
     type Fruit {
