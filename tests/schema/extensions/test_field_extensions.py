@@ -288,7 +288,7 @@ def test_extension_access_argument_metadata():
             nonlocal field_kwargs
             field_kwargs = kwargs
 
-            for key in kwargs.keys():
+            for key in kwargs:
                 argument_def = info.get_argument_definition(key)
                 assert argument_def is not None
                 argument_metadata[key] = argument_def.metadata
