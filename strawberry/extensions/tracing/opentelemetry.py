@@ -101,6 +101,17 @@ class OpenTelemetryExtension(SchemaExtension):
             return args
         return self._arg_filter(deepcopy(args), info)
 
+    def convert_to_allowed_types(self, value: Any) -> Any:
+        if isinstance(value, (bool, str, bytes, int, float)):
+            return value
+        elif isinstance(value, (list, tuple)):
+            return self.convert_list_or_tuple_to_allowed_types(value)
+        else:
+            return str(value)
+
+    def convert_list_or_tuple_to_allowed_types(self, value: list or tuple) -> str:
+        return ', '.join(map(self.convert_to_allowed_types, value))
+
     def add_tags(self, span: Span, info: GraphQLResolveInfo, kwargs: Any) -> None:
         graphql_path = ".".join(map(str, get_path_from_info(info)))
 
@@ -112,7 +123,8 @@ class OpenTelemetryExtension(SchemaExtension):
             filtered_kwargs = self.filter_resolver_args(kwargs, info)
 
             for kwarg, value in filtered_kwargs.items():
-                span.set_attribute(f"graphql.param.{kwarg}", value)
+                converted_value = self.convert_to_allowed_types(value)
+                span.set_attribute(f"graphql.param.{kwarg}", converted_value)
 
     async def resolve(
         self,
