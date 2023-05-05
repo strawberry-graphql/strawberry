@@ -65,7 +65,7 @@ class InputMutationExtension(FieldExtension):
 
         caps_name = name[0].upper() + name[1:]
         new_type = strawberry.input(type(f"{caps_name}Input", (), type_dict))
-        field.default_arguments.append(
+        field.arguments = [
             StrawberryArgument(
                 python_name="input",
                 graphql_name=None,
@@ -75,8 +75,7 @@ class InputMutationExtension(FieldExtension):
                 ),
                 description=type_dict["__doc__"],
             )
-        )
-        field.ignore_resolver_arguments = True
+        ]
 
     def resolve(
         self,
@@ -90,7 +89,7 @@ class InputMutationExtension(FieldExtension):
             source,
             info,
             **kwargs,
-            **input_args,
+            **vars(input_args),
         )
 
     async def resolve_async(
@@ -105,7 +104,7 @@ class InputMutationExtension(FieldExtension):
             source,
             info,
             **kwargs,
-            **input_args,
+            **vars(input_args),
         )
 
 
@@ -118,6 +117,6 @@ if TYPE_CHECKING:
     input_mutation = field
 else:
 
-    def input_mutation(*args, **kwargs) -> StrawberryField:
+    def input_mutation(*args: Any, **kwargs) -> StrawberryField:
         kwargs["extensions"] = [*kwargs.get("extensions", []), InputMutationExtension()]
         return field(*args, **kwargs)
