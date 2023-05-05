@@ -161,6 +161,8 @@ type Query {
     last: Int = null
   ): FruitCustomPaginationConnection!
   fruitsConcreteResolver(
+    nameEndswith: String = null
+
     """Returns the items in the list that come before the specified cursor."""
     before: String = null
 
@@ -172,9 +174,10 @@ type Query {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
-    nameEndswith: String = null
   ): FruitConnection!
   fruitsCustomResolver(
+    nameEndswith: String = null
+
     """Returns the items in the list that come before the specified cursor."""
     before: String = null
 
@@ -186,9 +189,10 @@ type Query {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
-    nameEndswith: String = null
   ): FruitConnection!
   fruitsCustomResolverLazy(
+    nameEndswith: String = null
+
     """Returns the items in the list that come before the specified cursor."""
     before: String = null
 
@@ -200,9 +204,10 @@ type Query {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
-    nameEndswith: String = null
   ): FruitConnection!
   fruitsCustomResolverIterator(
+    nameEndswith: String = null
+
     """Returns the items in the list that come before the specified cursor."""
     before: String = null
 
@@ -214,9 +219,10 @@ type Query {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
-    nameEndswith: String = null
   ): FruitConnection!
   fruitsCustomResolverIterable(
+    nameEndswith: String = null
+
     """Returns the items in the list that come before the specified cursor."""
     before: String = null
 
@@ -228,9 +234,10 @@ type Query {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
-    nameEndswith: String = null
   ): FruitConnection!
   fruitsCustomResolverGenerator(
+    nameEndswith: String = null
+
     """Returns the items in the list that come before the specified cursor."""
     before: String = null
 
@@ -242,9 +249,10 @@ type Query {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
-    nameEndswith: String = null
   ): FruitConnection!
   fruitsCustomResolverAsyncIterable(
+    nameEndswith: String = null
+
     """Returns the items in the list that come before the specified cursor."""
     before: String = null
 
@@ -256,9 +264,10 @@ type Query {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
-    nameEndswith: String = null
   ): FruitConnection!
   fruitsCustomResolverAsyncIterator(
+    nameEndswith: String = null
+
     """Returns the items in the list that come before the specified cursor."""
     before: String = null
 
@@ -270,9 +279,10 @@ type Query {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
-    nameEndswith: String = null
   ): FruitConnection!
   fruitsCustomResolverAsyncGenerator(
+    nameEndswith: String = null
+
     """Returns the items in the list that come before the specified cursor."""
     before: String = null
 
@@ -284,9 +294,10 @@ type Query {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
-    nameEndswith: String = null
   ): FruitConnection!
   fruitAlikeConnectionCustomResolver(
+    nameEndswith: String = null
+
     """Returns the items in the list that come before the specified cursor."""
     before: String = null
 
@@ -298,6 +309,5 @@ type Query {
 
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
-    nameEndswith: String = null
   ): FruitAlikeConnection!
 }

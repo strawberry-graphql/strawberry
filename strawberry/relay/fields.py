@@ -131,7 +131,7 @@ class NodeExtension(FieldExtension):
 
             if awaitable_nodes or asyncgen_nodes:
 
-                async def resolve(resolved=resolved_nodes):
+                async def resolve(resolved=resolved_nodes):  # noqa: ANN001
                     resolved.update(
                         zip(
                             [
@@ -173,7 +173,7 @@ class ConnectionExtension(FieldExtension):
     connection_type: Type[Connection[Node]]
 
     def apply(self, field: StrawberryField) -> None:
-        field.default_arguments.extend(
+        field.arguments.extend(
             [
                 StrawberryArgument(
                     python_name="before",
@@ -302,7 +302,7 @@ if TYPE_CHECKING:
     node = field
 else:
 
-    def node(*args, **kwargs) -> StrawberryField:
+    def node(*args: Any, **kwargs) -> StrawberryField:
         kwargs["extensions"] = [*kwargs.get("extensions", []), NodeExtension()]
         return field(*args, **kwargs)
 
