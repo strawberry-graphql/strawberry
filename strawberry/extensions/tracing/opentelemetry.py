@@ -110,7 +110,7 @@ class OpenTelemetryExtension(SchemaExtension):
             return str(value)
 
     def convert_list_or_tuple_to_allowed_types(self, value: list or tuple) -> str:
-        return ', '.join(map(self.convert_to_allowed_types, value))
+        return ", ".join(map(str, map(self.convert_to_allowed_types, value)))
 
     def add_tags(self, span: Span, info: GraphQLResolveInfo, kwargs: Any) -> None:
         graphql_path = ".".join(map(str, get_path_from_info(info)))
