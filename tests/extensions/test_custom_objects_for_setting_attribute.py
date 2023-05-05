@@ -34,6 +34,30 @@ def test_convert_complex_object_with_simple_object(otel_ext):
     )
 
 
+def test_convert_dictionary(otel_ext):
+    value = {
+        "int": 1,
+        "float": 3.14,
+        "bool": True,
+        "str": "hello",
+        "list": [1, 2, 3],
+        "tuple": (4, 5, 6),
+        "simple_object": SimpleObject(42),
+    }
+
+    expected = (
+        "{int: 1, "
+        "float: 3.14, "
+        "bool: True, "
+        "str: hello, "
+        "list: 1, 2, 3, "
+        "tuple: 4, 5, 6, "
+        "simple_object: SimpleObject(42)}"
+    )
+
+    assert otel_ext.convert_to_allowed_types(value) == expected
+
+
 def test_convert_bool(otel_ext):
     assert otel_ext.convert_to_allowed_types(True) is True
     assert otel_ext.convert_to_allowed_types(False) is False

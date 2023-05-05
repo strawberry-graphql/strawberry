@@ -101,11 +101,22 @@ class OpenTelemetryExtension(SchemaExtension):
             return args
         return self._arg_filter(deepcopy(args), info)
 
+    def convert_dict_to_allowed_types(self, value: dict) -> str:
+        return (
+            "{"
+            + ", ".join(
+                f"{k}: {self.convert_to_allowed_types(v)}" for k, v in value.items()
+            )
+            + "}"
+        )
+
     def convert_to_allowed_types(self, value: Any) -> Any:
         if isinstance(value, (bool, str, bytes, int, float)):
             return value
         elif isinstance(value, (list, tuple)):
             return self.convert_list_or_tuple_to_allowed_types(value)
+        elif isinstance(value, dict):
+            return self.convert_dict_to_allowed_types(value)
         else:
             return str(value)
 
