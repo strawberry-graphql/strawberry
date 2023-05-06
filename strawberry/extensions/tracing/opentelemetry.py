@@ -111,16 +111,17 @@ class OpenTelemetryExtension(SchemaExtension):
         )
 
     def convert_to_allowed_types(self, value: Any) -> Any:
+        # Put these in decreasing order of use-cases to exit as soon as possible
         if isinstance(value, (bool, str, bytes, int, float)):
             return value
-        elif isinstance(value, complex):
-            return str(value)  # Convert complex numbers to strings
         elif isinstance(value, (list, tuple, range)):
             return self.convert_list_or_tuple_to_allowed_types(value)
         elif isinstance(value, dict):
             return self.convert_dict_to_allowed_types(value)
         elif isinstance(value, (set, frozenset)):
             return self.convert_set_to_allowed_types(value)
+        elif isinstance(value, complex):
+            return str(value)  # Convert complex numbers to strings
         elif isinstance(value, (bytearray, memoryview)):
             return bytes(value)  # Convert bytearray and memoryview to bytes
         else:
