@@ -25,6 +25,38 @@ class ComplexObject:
         return f"ComplexObject({str(self.simple_object)}, {self.value})"
 
 
+def test_convert_complex_number(otel_ext):
+    value = 3 + 4j
+    assert otel_ext.convert_to_allowed_types(value) == "(3+4j)"
+
+
+def test_convert_range(otel_ext):
+    value = range(3)
+    assert otel_ext.convert_to_allowed_types(value) == "0, 1, 2"
+
+
+def test_convert_bytearray(otel_ext):
+    value = bytearray(b"hello world")
+    assert otel_ext.convert_to_allowed_types(value) == b"hello world"
+
+
+def test_convert_memoryview(otel_ext):
+    value = memoryview(b"hello world")
+    assert otel_ext.convert_to_allowed_types(value) == b"hello world"
+
+
+def test_convert_set(otel_ext):
+    value = {1, 2, 3, 4}
+    converted_value = otel_ext.convert_to_allowed_types(value)
+    assert set(converted_value.strip("{}").split(", ")) == {"1", "2", "3", "4"}
+
+
+def test_convert_frozenset(otel_ext):
+    value = frozenset([1, 2, 3, 4])
+    converted_value = otel_ext.convert_to_allowed_types(value)
+    assert set(converted_value.strip("{}").split(", ")) == {"1", "2", "3", "4"}
+
+
 def test_convert_complex_object_with_simple_object(otel_ext):
     simple_obj = SimpleObject(42)
     complex_obj = ComplexObject(simple_obj, 99)
