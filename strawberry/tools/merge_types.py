@@ -29,6 +29,8 @@ def merge_types(name: str, types: Tuple[type, ...]) -> type:
     counter = Counter(f.name for f in fields)
     dupes = [f for f, c in counter.most_common() if c > 1]
     if dupes:
-        warnings.warn("{} has overridden fields: {}".format(name, ", ".join(dupes)))
+        warnings.warn(
+            "{} has overridden fields: {}".format(name, ", ".join(dupes)), stacklevel=2
+        )
 
     return strawberry.type(type(name, types, {}))

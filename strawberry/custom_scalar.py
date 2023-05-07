@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import sys
 from dataclasses import dataclass
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Iterable,
@@ -13,12 +16,14 @@ from typing import (
     overload,
 )
 
-from graphql import GraphQLScalarType
-
 from strawberry.exceptions import InvalidUnionTypeError
 from strawberry.type import StrawberryOptional, StrawberryType
 
 from .utils.str_converters import to_camel_case
+
+if TYPE_CHECKING:
+    from graphql import GraphQLScalarType
+
 
 # in python 3.10+ NewType is a class
 if sys.version_info >= (3, 10):
@@ -27,7 +32,7 @@ else:
     _T = TypeVar("_T", bound=type)
 
 
-def identity(x):
+def identity(x: _T) -> _T:
     return x
 
 
@@ -65,7 +70,7 @@ class ScalarWrapper:
     def __init__(self, wrap: Callable[[Any], Any]):
         self.wrap = wrap
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: str, **kwargs: Any):
         return self.wrap(*args, **kwargs)
 
     def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
@@ -191,7 +196,7 @@ def scalar(
     if parse_value is None:
         parse_value = cls
 
-    def wrap(cls):
+    def wrap(cls: Type):
         return _process_scalar(
             cls,
             name=name,

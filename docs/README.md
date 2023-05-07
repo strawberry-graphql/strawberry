@@ -15,6 +15,7 @@
 ## Types
 
 - [Schema](./types/schema.md)
+- [Operation Directives](./types/operation-directives.md)
 - [Schema Directives](./types/schema-directives.md)
 - [Schema configurations](./types/schema-configurations.md)
 - [Scalars](./types/scalars.md)
@@ -34,6 +35,8 @@
 - [Query codegen](./codegen/query-codegen.md)
 
 ## [Extensions](./extensions)
+
+## [Errors](./errors/)
 
 ## Guides
 
@@ -75,7 +78,15 @@
 - [Sanic](./integrations/sanic.md)
 - [Chalice](./integrations/chalice.md)
 - [Starlette](./integrations/starlette.md)
+- [Creating an integration](./integrations/creating-an-integration.md)
 - [Pydantic **experimental**](./integrations/pydantic.md)
+
+## Federation
+
+- [Introduction](./federation/introduction.md)
+- [Entities](./federation/entities.md)
+- [Entity interfaces](./federation/entity-interfaces.md)
+- [Custom directives](./federation/custom_directives.md)
 
 ## Operations
 

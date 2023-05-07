@@ -6,18 +6,19 @@ import functools
 import json
 import urllib.parse
 from io import BytesIO
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 from typing_extensions import Literal
 
 from flask import Flask
+from flask import Request as FlaskRequest
 from flask import Response as FlaskResponse
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
+from tests.views.schema import Query, schema
 
 from ..context import get_context
-from ..schema import Query, schema
-from . import JSON, HttpClient, Response, ResultOverrideFunction
+from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
 class GraphQLView(BaseGraphQLView):
@@ -28,23 +29,27 @@ class GraphQLView(BaseGraphQLView):
 
     result_override: ResultOverrideFunction = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: str, **kwargs: Any):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 
-    def get_root_value(self):
+    def get_root_value(self, request: FlaskRequest) -> object:
         return Query()
 
-    def get_context(self, response: FlaskResponse) -> Dict[str, object]:
-        context = super().get_context(response)
+    def get_context(
+        self, request: FlaskRequest, response: FlaskResponse
+    ) -> Dict[str, object]:
+        context = super().get_context(request, response)
 
         return get_context(context)
 
-    def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
+    def process_result(
+        self, request: FlaskRequest, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
         if self.result_override:
             return self.result_override(result)
 
-        return super().process_result(result)
+        return super().process_result(request, result)
 
 
 class FlaskHttpClient(HttpClient):
@@ -115,6 +120,7 @@ class FlaskHttpClient(HttpClient):
         return Response(
             status_code=response.status_code,
             data=response.data,
+            headers=response.headers,
         )
 
     async def request(

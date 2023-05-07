@@ -4,7 +4,7 @@ import sys
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import ForwardRef, Generic, Optional, Type, TypeVar, cast
+from typing import ForwardRef, Generic, Optional, Tuple, Type, TypeVar, cast
 
 TypeName = TypeVar("TypeName")
 Module = TypeVar("Module")
@@ -16,7 +16,7 @@ class LazyType(Generic[TypeName, Module]):
     module: str
     package: Optional[str] = None
 
-    def __class_getitem__(cls, params):
+    def __class_getitem__(cls, params: Tuple[str, str]):
         warnings.warn(
             (
                 "LazyType is deprecated, use "
@@ -48,12 +48,16 @@ class LazyType(Generic[TypeName, Module]):
             if main_module.__spec__ and main_module.__spec__.name == self.module:
                 module = main_module
             elif hasattr(main_module, "__file__") and hasattr(module, "__file__"):
-                if (
-                    main_module.__file__
-                    and module.__file__
-                    and Path(main_module.__file__).samefile(module.__file__)
-                ):
-                    module = main_module
+                main_file = main_module.__file__
+                module_file = module.__file__
+                if main_file and module_file:
+                    try:
+                        is_samefile = Path(main_file).samefile(module_file)
+                    except FileNotFoundError:
+                        # Can be raised when run through the CLI as the __main__ file
+                        # path contains `strawberry.exe`
+                        is_samefile = False
+                    module = main_module if is_samefile else module
         return module.__dict__[self.type_name]
 
     # this empty call method allows LazyTypes to be used in generic types

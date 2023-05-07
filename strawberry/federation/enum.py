@@ -1,7 +1,12 @@
-from typing import Any, Callable, Iterable, Optional, Union, overload
+from __future__ import annotations
 
-from strawberry.enum import EnumType, EnumValueDefinition, _process_enum
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, Union, overload
+
+from strawberry.enum import _process_enum
 from strawberry.enum import enum_value as base_enum_value
+
+if TYPE_CHECKING:
+    from strawberry.enum import EnumType, EnumValueDefinition
 
 
 def enum_value(
@@ -28,8 +33,8 @@ def enum_value(
 def enum(
     _cls: EnumType,
     *,
-    name=None,
-    description=None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     directives: Iterable[object] = (),
     inaccessible: bool = False,
     tags: Optional[Iterable[str]] = (),
@@ -41,8 +46,8 @@ def enum(
 def enum(
     _cls: None = None,
     *,
-    name=None,
-    description=None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     directives: Iterable[object] = (),
     inaccessible: bool = False,
     tags: Optional[Iterable[str]] = (),

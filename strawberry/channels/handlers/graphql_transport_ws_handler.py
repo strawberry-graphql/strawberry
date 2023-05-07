@@ -1,12 +1,17 @@
-from datetime import timedelta
-from typing import Any, Optional
+from __future__ import annotations
 
-from strawberry.channels.handlers.base import ChannelsWSConsumer
-from strawberry.schema import BaseSchema
+from typing import TYPE_CHECKING, Any, Callable, Optional
+
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
     BaseGraphQLTransportWSHandler,
 )
+
+if TYPE_CHECKING:
+    from datetime import timedelta
+
+    from strawberry.channels.handlers.base import ChannelsWSConsumer
+    from strawberry.schema import BaseSchema
 
 
 class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
@@ -15,8 +20,8 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         schema: BaseSchema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
-        get_context,
-        get_root_value,
+        get_context: Callable,
+        get_root_value: Callable,
         ws: ChannelsWSConsumer,
     ):
         super().__init__(schema, debug, connection_init_wait_timeout)
@@ -48,9 +53,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
 
     async def handle_request(self) -> Any:
         await self._ws.accept(subprotocol=GRAPHQL_TRANSPORT_WS_PROTOCOL)
+        self.on_request_accepted()
 
-    async def handle_disconnect(self, code):
-        for operation_id in list(self.subscriptions.keys()):
-            await self.cleanup_operation(operation_id)
-
-        await self.reap_completed_tasks()
+    async def handle_disconnect(self, code: int) -> None:
+        await self.shutdown()

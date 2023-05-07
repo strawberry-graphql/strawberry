@@ -12,7 +12,7 @@ called `GraphQLRouter`.
 Before using Strawberry's FastAPI support make sure you install all the required
 dependencies by running:
 
-```
+```shell
 pip install 'strawberry-graphql[fastapi]'
 ```
 

@@ -211,7 +211,7 @@ the value of the parent:
 import strawberry
 
 
-def full_name(root: User) -> str:
+def full_name(root: "User") -> str:
     return f"{root.first_name} {root.last_name}"
 
 
@@ -234,7 +234,7 @@ import strawberry
 from strawberry.types import Info
 
 
-def full_name(root: User, info: Info) -> str:
+def full_name(root: "User", info: Info) -> str:
     return f"{root.first_name} {root.last_name} {info.field_name}"
 
 

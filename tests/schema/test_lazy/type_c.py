@@ -1,3 +1,4 @@
+import sys
 from typing import Generic, TypeVar
 from typing_extensions import Annotated
 
@@ -20,10 +21,10 @@ class Edge(Generic[T]):
 
 @strawberry.type
 class Query:
-
     type_a: Edge[TypeC]
     type_b: Edge[Annotated["TypeC", strawberry.lazy("tests.schema.test_lazy.type_c")]]
 
 
 if __name__ == "__main__":
     schema = strawberry.Schema(query=Query)
+    sys.stdout.write(f"{schema.as_str()}\n")

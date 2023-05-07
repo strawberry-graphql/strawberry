@@ -16,9 +16,6 @@ from typing import (
     cast,
 )
 
-from graphql import GraphQLResolveInfo
-from pydantic.fields import ModelField
-
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic.conversion import (
@@ -38,12 +35,20 @@ from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.dataclasses import add_custom_init_fn
 
+if TYPE_CHECKING:
+    from graphql import GraphQLResolveInfo
+    from pydantic.fields import ModelField
 
-def get_type_for_field(field: ModelField, is_input: bool):
+
+def get_type_for_field(field: ModelField, is_input: bool):  # noqa: ANN201
     outer_type = field.outer_type_
     replaced_type = replace_types_recursively(outer_type, is_input)
 
-    if not field.required:
+    default_defined: bool = (
+        field.default_factory is not None or field.default is not None
+    )
+    should_add_optional: bool = not (field.required or default_defined)
+    if should_add_optional:
         return Optional[replaced_type]
     else:
         return replaced_type
@@ -129,6 +134,7 @@ def type(
             warnings.warn(
                 "`fields` is deprecated, use `auto` type annotations instead",
                 DeprecationWarning,
+                stacklevel=2,
             )
 
         existing_fields = getattr(cls, "__annotations__", {})
@@ -214,6 +220,9 @@ def type(
         if has_custom_to_pydantic:
             namespace["to_pydantic"] = cls.to_pydantic
 
+        if hasattr(cls, "resolve_reference"):
+            namespace["resolve_reference"] = cls.resolve_reference
+
         kwargs: Dict[str, object] = {}
 
         # Python 3.10.1 introduces the kw_only param to `make_dataclass`.
@@ -255,11 +264,13 @@ def type(
         def from_pydantic_default(
             instance: PydanticModel, extra: Optional[Dict[str, Any]] = None
         ) -> StrawberryTypeFromPydantic[PydanticModel]:
-            return convert_pydantic_model_to_strawberry_class(
+            ret = convert_pydantic_model_to_strawberry_class(
                 cls=cls, model_instance=instance, extra=extra
             )
+            ret._original_model = instance
+            return ret
 
-        def to_pydantic_default(self, **kwargs) -> PydanticModel:
+        def to_pydantic_default(self: Any, **kwargs) -> PydanticModel:
             instance_kwargs = {
                 f.name: convert_strawberry_class_to_pydantic_model(
                     getattr(self, f.name)

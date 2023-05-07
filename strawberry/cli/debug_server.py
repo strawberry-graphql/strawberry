@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
@@ -21,7 +22,7 @@ schema_symbol = import_module_symbol(schema_import_string, default_symbol_name="
 log_operations = os.environ[DEBUG_SERVER_LOG_OPERATIONS] == "True"
 
 assert isinstance(schema_symbol, Schema)
-graphql_app = GraphQL(schema_symbol, debug=log_operations)
+graphql_app = GraphQL[Any, Any](schema_symbol, debug=log_operations)
 
 paths = ["/", "/graphql"]
 for path in paths:

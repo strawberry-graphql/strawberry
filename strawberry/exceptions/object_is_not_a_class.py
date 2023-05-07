@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from strawberry.utils.cached_property import cached_property
 
 from .exception import StrawberryException
-from .exception_source import ExceptionSource
 from .utils.source_finder import SourceFinder
+
+if TYPE_CHECKING:
+    from .exception_source import ExceptionSource
 
 
 class ObjectIsNotClassError(StrawberryException):

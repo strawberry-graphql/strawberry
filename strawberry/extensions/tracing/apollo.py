@@ -1,16 +1,23 @@
+from __future__ import annotations
+
 import dataclasses
 import time
-import typing
 from datetime import datetime
 from inspect import isawaitable
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, List, Optional
 
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 from strawberry.extensions.utils import get_path_from_info
-from strawberry.types.execution import ExecutionContext
 
 from .utils import should_skip_tracing
 
+if TYPE_CHECKING:
+    from graphql import GraphQLResolveInfo
+
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+
+if TYPE_CHECKING:
+    from strawberry.types.execution import ExecutionContext
 
 
 @dataclasses.dataclass
@@ -18,20 +25,20 @@ class ApolloStepStats:
     start_offset: int
     duration: int
 
-    def to_json(self) -> typing.Dict[str, typing.Any]:
+    def to_json(self) -> Dict[str, Any]:
         return {"startOffset": self.start_offset, "duration": self.duration}
 
 
 @dataclasses.dataclass
 class ApolloResolverStats:
-    path: typing.List[str]
-    parent_type: typing.Any
+    path: List[str]
+    parent_type: Any
     field_name: str
-    return_type: typing.Any
+    return_type: Any
     start_offset: int
-    duration: typing.Optional[int] = None
+    duration: Optional[int] = None
 
-    def to_json(self) -> typing.Dict[str, typing.Any]:
+    def to_json(self) -> Dict[str, Any]:
         return {
             "path": self.path,
             "field_name": self.field_name,
@@ -44,9 +51,9 @@ class ApolloResolverStats:
 
 @dataclasses.dataclass
 class ApolloExecutionStats:
-    resolvers: typing.List[ApolloResolverStats]
+    resolvers: List[ApolloResolverStats]
 
-    def to_json(self) -> typing.Dict[str, typing.Any]:
+    def to_json(self) -> Dict[str, Any]:
         return {"resolvers": [resolver.to_json() for resolver in self.resolvers]}
 
 
@@ -60,7 +67,7 @@ class ApolloTracingStats:
     parsing: ApolloStepStats
     version: int = 1
 
-    def to_json(self) -> typing.Dict[str, typing.Any]:
+    def to_json(self) -> Dict[str, Any]:
         return {
             "version": self.version,
             "startTime": self.start_time.strftime(DATETIME_FORMAT),
@@ -72,29 +79,26 @@ class ApolloTracingStats:
         }
 
 
-class ApolloTracingExtension(Extension):
+class ApolloTracingExtension(SchemaExtension):
     def __init__(self, execution_context: ExecutionContext):
-        self._resolver_stats: typing.List[ApolloResolverStats] = []
+        self._resolver_stats: List[ApolloResolverStats] = []
         self.execution_context = execution_context
 
-    def on_request_start(self):
+    def on_operation(self) -> Generator[None, None, None]:
         self.start_timestamp = self.now()
         self.start_time = datetime.utcnow()
-
-    def on_request_end(self):
+        yield
         self.end_timestamp = self.now()
         self.end_time = datetime.utcnow()
 
-    def on_parsing_start(self):
+    def on_parse(self) -> Generator[None, None, None]:
         self._start_parsing = self.now()
-
-    def on_parsing_end(self):
+        yield
         self._end_parsing = self.now()
 
-    def on_validation_start(self):
+    def on_validate(self) -> Generator[None, None, None]:
         self._start_validation = self.now()
-
-    def on_validation_end(self):
+        yield
         self._end_validation = self.now()
 
     def now(self) -> int:
@@ -117,10 +121,17 @@ class ApolloTracingExtension(Extension):
             ),
         )
 
-    def get_results(self):
+    def get_results(self) -> Dict[str, Dict[str, Any]]:
         return {"tracing": self.stats.to_json()}
 
-    async def resolve(self, _next, root, info, *args, **kwargs):
+    async def resolve(
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Any,
+    ) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -153,7 +164,14 @@ class ApolloTracingExtension(Extension):
 
 
 class ApolloTracingExtensionSync(ApolloTracingExtension):
-    def resolve(self, _next, root, info, *args, **kwargs):
+    def resolve(
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Any,
+    ) -> Any:
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 

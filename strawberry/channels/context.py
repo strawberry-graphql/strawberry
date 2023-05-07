@@ -15,5 +15,8 @@ class StrawberryChannelsContext:
     connection_params: Optional[Dict[str, Any]] = None
 
     @property
-    def ws(self):
+    def ws(self) -> "ChannelsConsumer":
         return self.request
+
+    def __getitem__(self, item: str) -> Any:
+        return getattr(self, item)

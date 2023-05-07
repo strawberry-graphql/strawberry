@@ -7,10 +7,11 @@ from strawberry.exceptions.utils.source_finder import SourceFinder
 from strawberry.utils.cached_property import cached_property
 
 from .exception import StrawberryException
-from .exception_source import ExceptionSource
 
 if TYPE_CHECKING:
     from strawberry.custom_scalar import ScalarDefinition
+
+    from .exception_source import ExceptionSource
 
 
 class ScalarAlreadyRegisteredError(StrawberryException):

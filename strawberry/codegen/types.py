@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import EnumMeta
-from typing import List, Optional, Type, Union
-from typing_extensions import Literal
+from typing import TYPE_CHECKING, List, Optional, Type, Union
+
+if TYPE_CHECKING:
+    from enum import EnumMeta
+    from typing_extensions import Literal
 
 
 @dataclass

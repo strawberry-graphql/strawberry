@@ -10,7 +10,6 @@ import pytest
 import strawberry
 
 if TYPE_CHECKING:
-
     from .lazy_type import LaziestType
 
 JSON = strawberry.scalar(NewType("JSON", str))
@@ -99,5 +98,5 @@ class Query:
 
 
 @pytest.fixture
-def schema():
+def schema() -> strawberry.Schema:
     return strawberry.Schema(query=Query, types=[BlogPost, Image])

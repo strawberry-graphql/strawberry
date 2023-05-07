@@ -1,9 +1,13 @@
-from typing import Dict, Optional, Set, Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Dict, Optional, Set, Tuple
 
 from pygments.lexers import PythonLexer
-from rich.console import Console, ConsoleOptions, RenderResult
 from rich.segment import Segment
 from rich.syntax import Syntax as RichSyntax
+
+if TYPE_CHECKING:
+    from rich.console import Console, ConsoleOptions, RenderResult
 
 
 class Syntax(RichSyntax):
@@ -38,7 +42,6 @@ class Syntax(RichSyntax):
         current_line = self.line_range[0] or 0
 
         for segment in segments:
-
             if segment.text == "\n":
                 # 3 = | + space + space
                 prefix = " " * (self._numbers_column_width + 3)

@@ -105,7 +105,7 @@ schema = strawberry.Schema(Query, types=[Individual, Company])
 
 </details>
 
-#### `extensions: List[Type[Extension]] = []`
+#### `extensions: List[Type[SchemaExtension]] = []`
 
 List of [extensions](/docs/extensions) to add to your Schema.
 
@@ -205,7 +205,8 @@ class BaseSchema:
         errors: List[GraphQLError],
         execution_context: Optional[ExecutionContext] = None,
     ) -> None:
-        StrawberryLogger.error(error, execution_context)
+        for error in errors:
+            StrawberryLogger.error(error, execution_context)
 ```
 
 ```python

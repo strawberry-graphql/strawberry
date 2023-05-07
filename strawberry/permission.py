@@ -1,6 +1,9 @@
-from typing import Any, Awaitable, Optional, Union
+from __future__ import annotations
 
-from strawberry.types.info import Info
+from typing import TYPE_CHECKING, Any, Awaitable, Optional, Union
+
+if TYPE_CHECKING:
+    from strawberry.types.info import Info
 
 
 class BasePermission:

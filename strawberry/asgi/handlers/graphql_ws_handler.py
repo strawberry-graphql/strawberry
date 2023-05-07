@@ -1,12 +1,18 @@
+from __future__ import annotations
+
 from contextlib import suppress
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
+from starlette.websockets import WebSocketDisconnect, WebSocketState
 
-from strawberry.schema import BaseSchema
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
-from strawberry.subscriptions.protocols.graphql_ws.types import OperationMessage
+
+if TYPE_CHECKING:
+    from starlette.websockets import WebSocket
+
+    from strawberry.schema import BaseSchema
+    from strawberry.subscriptions.protocols.graphql_ws.types import OperationMessage
 
 
 class GraphQLWSHandler(BaseGraphQLWSHandler):
@@ -16,8 +22,8 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         debug: bool,
         keep_alive: bool,
         keep_alive_interval: float,
-        get_context,
-        get_root_value,
+        get_context: Callable,
+        get_root_value: Callable,
         ws: WebSocket,
     ):
         super().__init__(schema, debug, keep_alive, keep_alive_interval)
@@ -26,7 +32,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         self._ws = ws
 
     async def get_context(self) -> Any:
-        return await self._get_context(request=self._ws)
+        return await self._get_context(request=self._ws, response=None)
 
     async def get_root_value(self) -> Any:
         return await self._get_root_value(request=self._ws)
@@ -35,8 +41,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         await self._ws.send_json(data)
 
     async def close(self, code: int = 1000, reason: Optional[str] = None) -> None:
-        # Close messages are not part of the ASGI ref yet
-        await self._ws.close(code=code)
+        await self._ws.close(code=code, reason=reason)
 
     async def handle_request(self) -> Any:
         await self._ws.accept(subprotocol=GRAPHQL_WS_PROTOCOL)

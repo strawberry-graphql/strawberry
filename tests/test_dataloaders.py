@@ -1,18 +1,22 @@
 import asyncio
-from typing import cast
+from asyncio.futures import Future
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Union, cast
 
 import pytest
+from pytest_mock import MockerFixture
 
 from strawberry.dataloader import AbstractCache, DataLoader
 from strawberry.exceptions import WrongNumberOfResultsReturned
 
-pytestmark = pytest.mark.asyncio
+IDXType = Callable[[List[int]], Awaitable[List[int]]]
 
 
+async def idx(keys: List[int]) -> List[int]:
+    return keys
+
+
+@pytest.mark.asyncio
 async def test_loading():
-    async def idx(keys):
-        return keys
-
     loader = DataLoader(load_fn=idx)
 
     value_a = await loader.load(1)
@@ -28,13 +32,11 @@ async def test_loading():
     assert values == [1, 2, 3, 4, 5, 6]
 
 
-async def test_gathering(mocker):
-    async def idx(keys):
-        return keys
-
+@pytest.mark.asyncio
+async def test_gathering(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=mock_loader)
+    loader = DataLoader(load_fn=cast(IDXType, mock_loader))
 
     [value_a, value_b, value_c] = await asyncio.gather(
         loader.load(1),
@@ -49,13 +51,11 @@ async def test_gathering(mocker):
     assert value_c == 3
 
 
-async def test_max_batch_size(mocker):
-    async def idx(keys):
-        return keys
-
+@pytest.mark.asyncio
+async def test_max_batch_size(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=mock_loader, max_batch_size=2)
+    loader = DataLoader(load_fn=cast(IDXType, mock_loader), max_batch_size=2)
 
     [value_a, value_b, value_c] = await asyncio.gather(
         loader.load(1),
@@ -63,15 +63,16 @@ async def test_max_batch_size(mocker):
         loader.load(3),
     )
 
-    mock_loader.assert_has_calls([mocker.call([1, 2]), mocker.call([3])])
+    mock_loader.assert_has_calls([mocker.call([1, 2]), mocker.call([3])])  # type: ignore  # noqa: E501
 
     assert value_a == 1
     assert value_b == 2
     assert value_c == 3
 
 
+@pytest.mark.asyncio
 async def test_error():
-    async def idx(keys):
+    async def idx(keys: List[int]) -> List[Union[int, ValueError]]:
         return [ValueError()]
 
     loader = DataLoader(load_fn=idx)
@@ -80,12 +81,10 @@ async def test_error():
         await loader.load(1)
 
 
+@pytest.mark.asyncio
 async def test_error_and_values():
-    async def idx(keys):
-        if keys == [2]:
-            return [2]
-
-        return [ValueError()]
+    async def idx(keys: List[int]) -> List[Union[int, ValueError]]:
+        return [2] if keys == [2] else [ValueError()]
 
     loader = DataLoader(load_fn=idx)
 
@@ -95,9 +94,10 @@ async def test_error_and_values():
     assert await loader.load(2) == 2
 
 
+@pytest.mark.asyncio
 async def test_when_raising_error_in_loader():
-    async def idx(keys):
-        raise ValueError()
+    async def idx(keys: List[int]) -> List[Union[int, ValueError]]:
+        raise ValueError
 
     loader = DataLoader(load_fn=idx)
 
@@ -112,8 +112,9 @@ async def test_when_raising_error_in_loader():
         )
 
 
+@pytest.mark.asyncio
 async def test_returning_wrong_number_of_results():
-    async def idx(keys):
+    async def idx(keys: List[int]) -> List[int]:
         return [1, 2]
 
     loader = DataLoader(load_fn=idx)
@@ -128,13 +129,11 @@ async def test_returning_wrong_number_of_results():
         await loader.load(1)
 
 
-async def test_caches_by_id(mocker):
-    async def idx(keys):
-        return keys
-
+@pytest.mark.asyncio
+async def test_caches_by_id(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=mock_loader, cache=True)
+    loader = DataLoader(load_fn=cast(IDXType, mock_loader), cache=True)
 
     a = loader.load(1)
     b = loader.load(1)
@@ -147,13 +146,11 @@ async def test_caches_by_id(mocker):
     mock_loader.assert_called_once_with([1])
 
 
-async def test_caches_by_id_when_loading_many(mocker):
-    async def idx(keys):
-        return keys
-
+@pytest.mark.asyncio
+async def test_caches_by_id_when_loading_many(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=mock_loader, cache=True)
+    loader = DataLoader(load_fn=cast(IDXType, mock_loader), cache=True)
 
     a = loader.load(1)
     b = loader.load(1)
@@ -165,13 +162,11 @@ async def test_caches_by_id_when_loading_many(mocker):
     mock_loader.assert_called_once_with([1])
 
 
-async def test_cache_disabled(mocker):
-    async def idx(keys):
-        return keys
-
+@pytest.mark.asyncio
+async def test_cache_disabled(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=mock_loader, cache=False)
+    loader = DataLoader(load_fn=cast(IDXType, mock_loader), cache=False)
 
     a = loader.load(1)
     b = loader.load(1)
@@ -181,46 +176,26 @@ async def test_cache_disabled(mocker):
     assert await a == 1
     assert await b == 1
 
-    mock_loader.assert_has_calls([mocker.call([1, 1])])
+    mock_loader.assert_has_calls([mocker.call([1, 1])])  # type: ignore
 
 
-async def test_cache_disabled_immediate_await(mocker):
-    async def idx(keys):
-        return keys
-
+@pytest.mark.asyncio
+async def test_cache_disabled_immediate_await(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=mock_loader, cache=False)
+    loader = DataLoader(load_fn=cast(IDXType, mock_loader), cache=False)
 
     a = await loader.load(1)
     b = await loader.load(1)
 
     assert a == b
 
-    mock_loader.assert_has_calls([mocker.call([1]), mocker.call([1])])
+    mock_loader.assert_has_calls([mocker.call([1]), mocker.call([1])])  # type: ignore
 
 
-def test_works_when_created_in_a_different_loop(mocker):
-    async def idx(keys):
-        return keys
-
-    mock_loader = mocker.Mock(side_effect=idx)
-    loader = DataLoader(load_fn=mock_loader, cache=False)
-
-    loop = asyncio.new_event_loop()
-
-    async def run():
-        return await loader.load(1)
-
-    data = loop.run_until_complete(run())
-
-    assert data == 1
-
-    mock_loader.assert_called_once_with([1])
-
-
+@pytest.mark.asyncio
 async def test_prime():
-    async def idx(keys):
+    async def idx(keys: List[Union[int, float]]) -> List[Union[int, float]]:
         assert keys, "At least one key must be specified"
         return keys
 
@@ -264,8 +239,9 @@ async def test_prime():
     await asyncio.sleep(0)
 
 
+@pytest.mark.asyncio
 async def test_prime_nocache():
-    async def idx(keys):
+    async def idx(keys: List[Union[int, float]]) -> List[Union[int, float]]:
         assert keys, "At least one key must be specified"
         return keys
 
@@ -286,10 +262,11 @@ async def test_prime_nocache():
     await asyncio.sleep(0)
 
 
+@pytest.mark.asyncio
 async def test_clear():
     batch_num = 0
 
-    async def idx(keys):
+    async def idx(keys: List[int]) -> List[Tuple[int, int]]:
         """Maps key => (key, batch_num)"""
         nonlocal batch_num
         batch_num += 1
@@ -312,10 +289,11 @@ async def test_clear():
     assert await loader.load_many([1, 2, 3]) == [(1, 4), (2, 4), (3, 4)]
 
 
+@pytest.mark.asyncio
 async def test_clear_nocache():
     batch_num = 0
 
-    async def idx(keys):
+    async def idx(keys: List[int]) -> List[Tuple[int, int]]:
         """Maps key => (key, batch_num)"""
         nonlocal batch_num
         batch_num += 1
@@ -338,8 +316,9 @@ async def test_clear_nocache():
     assert await loader.load_many([1, 2, 3]) == [(1, 4), (2, 4), (3, 4)]
 
 
+@pytest.mark.asyncio
 async def test_dont_dispatch_cancelled():
-    async def idx(keys):
+    async def idx(keys: List[int]) -> List[int]:
         await asyncio.sleep(0.2)
         return keys
 
@@ -347,11 +326,11 @@ async def test_dont_dispatch_cancelled():
 
     value_a = await loader.load(1)
     # value_b will be cancelled by hand
-    value_b = cast(asyncio.Future, loader.load(2))
+    value_b = cast("Future[Any]", loader.load(2))
     value_b.cancel()
     # value_c will be cancelled by the timeout
     with pytest.raises(asyncio.TimeoutError):
-        value_c = cast(asyncio.Future, loader.load(3))
+        value_c = cast("Future[Any]", loader.load(3))
         await asyncio.wait_for(value_c, 0.1)
     value_d = await loader.load(4)
 
@@ -365,7 +344,7 @@ async def test_dont_dispatch_cancelled():
     with pytest.raises(asyncio.CancelledError):
         value_b.result()
     with pytest.raises(asyncio.CancelledError):
-        value_c.result()
+        value_c.result()  # pyright: ignore
 
     # Try single loading results again to make sure the cancelled
     # futures are not being reused
@@ -380,18 +359,16 @@ async def test_dont_dispatch_cancelled():
     assert value_d == 4
 
 
+@pytest.mark.asyncio
 async def test_cache_override():
-    async def idx(keys):
-        return keys
-
-    class TestCache(AbstractCache):
+    class TestCache(AbstractCache[int, int]):
         def __init__(self):
-            self.cache = {}
+            self.cache: Dict[int, "Future[int]"] = {}
 
-        def get(self, key: int) -> int:
+        def get(self, key: int) -> Optional["Future[int]"]:
             return self.cache.get(key)
 
-        def set(self, key: int, value: int) -> None:
+        def set(self, key: int, value: "Future[int]") -> None:
             self.cache[key] = value
 
         def delete(self, key: int) -> None:
@@ -418,7 +395,7 @@ async def test_cache_override():
 
     loader.clear_all()
     assert len(custom_cache.cache) == 0
-    assert list(custom_cache.cache.keys()) == []
+    assert not list(custom_cache.cache.keys())
 
     await loader.load(1)
     await loader.load(2)
@@ -437,18 +414,16 @@ async def test_cache_override():
     loader.prime(3, 4, True)
     assert await custom_cache.cache[3] == 4
 
-    with pytest.raises(TypeError):
-        await loader.load([1, 2, 3])
+    with pytest.raises(TypeError, match="unhashable type: 'list'"):
+        await loader.load([1, 2, 3])  # type: ignore
 
-    data = await loader.load((1, 2, 3))
-    assert await custom_cache.get((1, 2, 3)) == data
+    data = await loader.load((1, 2, 3))  # type: ignore
+    assert await custom_cache.get((1, 2, 3)) == data  # type: ignore
 
 
+@pytest.mark.asyncio
 async def test_custom_cache_key_fn():
-    async def idx(keys):
-        return keys
-
-    def custom_cache_key(key):
+    def custom_cache_key(key: List[int]) -> str:
         return ",".join(str(k) for k in key)
 
     loader = DataLoader(load_fn=idx, cache_key_fn=custom_cache_key)
@@ -456,17 +431,15 @@ async def test_custom_cache_key_fn():
     assert [1, 2, "test"] == data
 
 
+@pytest.mark.asyncio
 async def test_user_class_custom_cache_key_fn():
-    async def idx(keys):
-        return keys
-
-    def custom_cache_key(key):
-        return key.id
-
     class CustomData:
         def __init__(self, custom_id: int, name: str):
             self.id: int = custom_id
             self.name: str = name
+
+    def custom_cache_key(key: CustomData) -> int:
+        return key.id
 
     loader = DataLoader(load_fn=idx, cache_key_fn=custom_cache_key)
     data1 = await loader.load(CustomData(1, "Nick"))
@@ -475,3 +448,19 @@ async def test_user_class_custom_cache_key_fn():
 
     data2 = await loader.load(CustomData(2, "Jane"))
     assert data1 != data2
+
+
+def test_works_when_created_in_a_different_loop(mocker: MockerFixture):
+    mock_loader = mocker.Mock(side_effect=idx)
+    loader = DataLoader(load_fn=cast(IDXType, mock_loader), cache=False)
+
+    loop = asyncio.new_event_loop()
+
+    async def run():
+        return await loader.load(1)
+
+    data = loop.run_until_complete(run())
+
+    assert data == 1
+
+    mock_loader.assert_called_once_with([1])
