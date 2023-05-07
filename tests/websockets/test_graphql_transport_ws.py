@@ -831,6 +831,8 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
     args = errorhandler.call_args
     assert isinstance(args[0][0], AttributeError)
     assert "total_seconds" in str(args[0][0])
+
+
 async def test_connection_handler_add(
     ws_raw: WebSocketClient, http_client_class: Type[HttpClient]
 ):
