@@ -90,7 +90,7 @@ class SentryTracingExtension(SchemaExtension):
         self.parsing_span.finish()
 
     def should_skip_tracing(self, _next: Callable, info: GraphQLResolveInfo) -> bool:
-        return should_skip_tracing(self.execution_context, info)
+        return should_skip_tracing(_next, info)
 
     async def resolve(
         self,
