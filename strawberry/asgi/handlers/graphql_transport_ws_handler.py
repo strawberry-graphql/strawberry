@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
 from starlette.websockets import WebSocketDisconnect, WebSocketState
 
@@ -25,8 +25,8 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         schema: BaseSchema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
-        get_context,
-        get_root_value,
+        get_context: Callable,
+        get_root_value: Callable,
         ws: WebSocket,
     ):
         super().__init__(view, schema, debug, connection_init_wait_timeout)

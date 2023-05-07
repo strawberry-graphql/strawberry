@@ -1,10 +1,12 @@
 import dataclasses
 import json
 from typing import List, Optional
+from typing_extensions import Annotated
 
 import pytest
 
 import strawberry
+from strawberry.type import StrawberryOptional
 from strawberry.types import Info
 from strawberry.types.nodes import FragmentSpread, InlineFragment, SelectedField
 from strawberry.unset import UNSET
@@ -333,7 +335,7 @@ def test_return_type_from_field():
 
 def test_field_nodes_deprecation():
     def resolver(info):
-        info.field_nodes  # noqa: B018
+        info.field_nodes
         return 0
 
     @strawberry.type
@@ -347,3 +349,46 @@ def test_field_nodes_deprecation():
 
     assert not result.errors
     assert result.data["field"] == 0
+
+
+def test_get_argument_defintion_helper():
+    @strawberry.input
+    class TestInput:
+        foo: str
+
+    arg_1_def = None
+    arg_2_def = None
+    missing_arg_def = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def field(
+            self,
+            info,
+            arg_1: Annotated[str, strawberry.argument(description="Some description")],
+            arg_2: Optional[TestInput] = None,
+        ) -> str:
+            nonlocal arg_1_def, arg_2_def, missing_arg_def
+            arg_1_def = info.get_argument_definition("arg_1")
+            arg_2_def = info.get_argument_definition("arg_2")
+            missing_arg_def = info.get_argument_definition("missing_arg_def")
+
+            return "bar"
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync('{ field(arg1: "hi") }')
+
+    assert not result.errors
+    assert arg_1_def
+    assert arg_1_def.type is str
+    assert arg_1_def.python_name == "arg_1"
+    assert arg_1_def.description == "Some description"
+
+    assert arg_2_def
+    assert arg_2_def.python_name == "arg_2"
+    assert arg_2_def.default is None
+    assert isinstance(arg_2_def.type, StrawberryOptional)
+    assert arg_2_def.type.of_type is TestInput
+
+    assert missing_arg_def is None

@@ -1,6 +1,48 @@
 CHANGELOG
 =========
 
+0.176.3 - 2023-05-03
+--------------------
+
+Add `get_argument_definition` helper function on the Info object to get
+a StrawberryArgument definition by argument name from inside a resolver or
+Field Extension.
+
+Example:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def field(
+        self,
+        info,
+        my_input: Annotated[
+            str,
+            strawberry.argument(description="Some description"),
+        ],
+    ) -> str:
+        my_input_def = info.get_argument_definition("my_input")
+        assert my_input_def.type is str
+        assert my_input_def.description == "Some description"
+
+        return my_input
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2732](https://github.com/strawberry-graphql/strawberry/pull/2732/)
+
+
+0.176.2 - 2023-05-02
+--------------------
+
+This release adds more type hints to internal APIs and public APIs.
+
+Contributed by [Alex Auritt](https://github.com/alexauritt) via [PR #2568](https://github.com/strawberry-graphql/strawberry/pull/2568/)
+
+
 0.176.1 - 2023-05-02
 --------------------
 

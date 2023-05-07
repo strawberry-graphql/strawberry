@@ -23,8 +23,7 @@ internal and not for GraphQL.
 Consider the following type, which can accept any Python object and handle
 converting it to string, representation, or templated output:
 
-```
-
+```python
 @strawberry.type
 class Stringable:
     value: strawberry.Private[object]
@@ -40,21 +39,18 @@ class Stringable:
     @strawberry.field
     def format(self, template: str) -> str:
         return template.format(my=self.value)
-
 ```
 
 The `Private[...]` type lets Strawberry know that this field is not
 a GraphQL field. "value" is a regular field on the class, but it is not
 exposed on the GraphQL API.
 
-```
-
+```python
 @strawberry.type
 class Query:
     @strawberry.field
     def now(self) -> Stringable:
         return Stringable(value=datetime.datetime.now())
-
 ```
 
 Queries can then select the fields and formats desired, but formatting only

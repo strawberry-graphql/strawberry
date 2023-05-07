@@ -24,11 +24,11 @@ class StrawberryAutoMeta(type):
 
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: str, **kwargs: Any):
         self._instance: Optional[StrawberryAuto] = None
         super().__init__(*args, **kwargs)
 
-    def __call__(cls, *args, **kwargs):
+    def __call__(cls, *args: str, **kwargs: Any):
         if cls._instance is None:
             cls._instance = super().__call__(*args, **kwargs)
 

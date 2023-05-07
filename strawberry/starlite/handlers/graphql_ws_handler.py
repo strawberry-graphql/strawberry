@@ -1,5 +1,5 @@
 from contextlib import suppress
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from starlite import WebSocket
 from starlite.exceptions import SerializationException, WebSocketDisconnect
@@ -18,8 +18,8 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         debug: bool,
         keep_alive: bool,
         keep_alive_interval: float,
-        get_context,
-        get_root_value,
+        get_context: Callable,
+        get_root_value: Callable,
         ws: WebSocket,
     ):
         super().__init__(view, schema, debug, keep_alive, keep_alive_interval)

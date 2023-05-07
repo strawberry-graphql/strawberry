@@ -70,7 +70,7 @@ class ScalarWrapper:
     def __init__(self, wrap: Callable[[Any], Any]):
         self.wrap = wrap
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: str, **kwargs: Any):
         return self.wrap(*args, **kwargs)
 
     def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
@@ -196,7 +196,7 @@ def scalar(
     if parse_value is None:
         parse_value = cls
 
-    def wrap(cls):
+    def wrap(cls: Type):
         return _process_scalar(
             cls,
             name=name,

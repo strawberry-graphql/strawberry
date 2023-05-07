@@ -40,7 +40,7 @@ def get_type_for_field(field: ModelField) -> Union[Any, Type[None], Type[List]]:
     return field_type_to_type(type_)
 
 
-def field_type_to_type(type_) -> Union[Any, List[Any], None]:
+def field_type_to_type(type_: Type) -> Union[Any, List[Any], None]:
     error_class: Any = str
     strawberry_type: Any = error_class
 
@@ -71,7 +71,7 @@ def error_type(
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
 ) -> Callable[..., Type]:
-    def wrap(cls):
+    def wrap(cls: Type) -> Type:
         model_fields = model.__fields__
         fields_set = set(fields) if fields else set()
 

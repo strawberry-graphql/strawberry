@@ -124,7 +124,7 @@ def _wrap_dataclass(cls: Type[Any]):
 
 
 def _process_type(
-    cls,
+    cls: Type,
     *,
     name: Optional[str] = None,
     is_input: bool = False,
@@ -228,7 +228,7 @@ def type(
     >>>     field_abc: str = "ABC"
     """
 
-    def wrap(cls):
+    def wrap(cls: Type):
         if not inspect.isclass(cls):
             if is_input:
                 exc = ObjectIsNotClassError.input
@@ -358,7 +358,7 @@ def interface(
     )
 
 
-def asdict(obj: object) -> Dict[str, object]:
+def asdict(obj: Any) -> Dict[str, object]:
     """Convert a strawberry object into a dictionary.
     This wraps the dataclasses.asdict function to strawberry.
 
@@ -370,7 +370,7 @@ def asdict(obj: object) -> Dict[str, object]:
     >>> # should be {"name": "Lorem", "age": 25}
     >>> user_dict = strawberry.asdict(User(name="Lorem", age=25))
     """
-    return dataclasses.asdict(obj)  # type: ignore
+    return dataclasses.asdict(obj)
 
 
 __all__ = [
