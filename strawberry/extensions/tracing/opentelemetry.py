@@ -3,7 +3,18 @@ from __future__ import annotations
 import enum
 from copy import deepcopy
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    Generator,
+    Iterable,
+    Optional,
+    Set,
+    Union,
+)
 
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
@@ -127,12 +138,12 @@ class OpenTelemetryExtension(SchemaExtension):
         else:
             return str(value)
 
-    def convert_set_to_allowed_types(self, value: set or frozenset) -> str:
+    def convert_set_to_allowed_types(self, value: Union[Set, FrozenSet]) -> str:
         return (
             "{" + ", ".join(str(self.convert_to_allowed_types(x)) for x in value) + "}"
         )
 
-    def convert_list_or_tuple_to_allowed_types(self, value: list or tuple) -> str:
+    def convert_list_or_tuple_to_allowed_types(self, value: Iterable) -> str:
         return ", ".join(map(str, map(self.convert_to_allowed_types, value)))
 
     def add_tags(self, span: Span, info: GraphQLResolveInfo, kwargs: Any) -> None:
