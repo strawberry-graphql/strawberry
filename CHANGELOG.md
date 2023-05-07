@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.177.0 - 2023-05-07
+--------------------
+
+This release adds a SentryTracingExtension that you can use to automatically add
+tracing information to your GraphQL queries.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2495](https://github.com/strawberry-graphql/strawberry/pull/2495/)
+
+
 0.176.4 - 2023-05-07
 --------------------
 
