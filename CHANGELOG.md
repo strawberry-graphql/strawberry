@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.176.4 - 2023-05-07
+--------------------
+
+This release adds support for custom classes inside the OpenTelemetry integration.
+With this, we shouldn't see errors like this anymore:
+
+```Invalid type dict for attribute 'graphql.param.paginator' value. Expected one of ['bool', 'str', 'bytes', 'int', 'float'] or a sequence of those types.```
+
+Contributed by [Budida Abhinav Ramana](https://github.com/abhinavramana) via [PR #2753](https://github.com/strawberry-graphql/strawberry/pull/2753/)
+
+
 0.176.3 - 2023-05-03
 --------------------
 
