@@ -1,16 +1,22 @@
+from __future__ import annotations
+
 import hashlib
 from inspect import isawaitable
-from typing import Optional
+from typing import TYPE_CHECKING, Any, Callable, Generator, Optional
 
 from sentry_sdk import configure_scope, start_span
 
-from strawberry.extensions import Extension
+from strawberry.extensions import SchemaExtension
 from strawberry.extensions.tracing.utils import should_skip_tracing
-from strawberry.types.execution import ExecutionContext
 from strawberry.utils.cached_property import cached_property
 
+if TYPE_CHECKING:
+    from graphql import GraphQLResolveInfo
 
-class SentryTracingExtension(Extension):
+    from strawberry.types.execution import ExecutionContext
+
+
+class SentryTracingExtension(SchemaExtension):
     def __init__(
         self,
         *,
@@ -30,10 +36,10 @@ class SentryTracingExtension(Extension):
 
         return query_hash
 
-    def hash_query(self, query: str):
+    def hash_query(self, query: str) -> str:
         return hashlib.md5(query.encode("utf-8")).hexdigest()
 
-    def on_request_start(self) -> None:
+    def on_operation(self) -> Generator[None, None, None]:
         self._operation_name = self.execution_context.operation_name
         name = f"{self._operation_name}" if self._operation_name else "Anonymous Query"
 
@@ -61,27 +67,40 @@ class SentryTracingExtension(Extension):
         self.gql_span.set_tag("graphql.resource_name", self._resource_name)
         self.gql_span.set_data("graphql.query", self.execution_context.query)
 
-    def on_request_end(self) -> None:
+        yield
+
         self.gql_span.finish()
 
-    def on_validation_start(self):
+    def on_validate(self) -> Generator[None, None, None]:
         self.validation_span = self.gql_span.start_child(
             op="validation", description="Validation"
         )
 
-    def on_validation_end(self):
+        yield
+
         self.validation_span.finish()
 
-    def on_parsing_start(self):
+    def on_parse(self) -> Generator[None, None, None]:
         self.parsing_span = self.gql_span.start_child(
             op="parsing", description="Parsing"
         )
 
-    def on_parsing_end(self):
+        yield
+
         self.parsing_span.finish()
 
-    async def resolve(self, _next, root, info, *args, **kwargs):
-        if should_skip_tracing(_next, info):
+    def should_skip_tracing(self, _next: Callable, info: GraphQLResolveInfo) -> bool:
+        return should_skip_tracing(self.execution_context, info)
+
+    async def resolve(
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Any,
+    ) -> Any:
+        if self.should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
             if isawaitable(result):  # pragma: no cover
@@ -108,8 +127,15 @@ class SentryTracingExtension(Extension):
 
 
 class SentryTracingExtensionSync(SentryTracingExtension):
-    def resolve(self, _next, root, info, *args, **kwargs):
-        if should_skip_tracing(_next, info):
+    def resolve(
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Any,
+    ) -> Any:
+        if self.should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 
         field_path = f"{info.parent_type}.{info.field_name}"
