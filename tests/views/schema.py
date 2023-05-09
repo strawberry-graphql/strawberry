@@ -116,6 +116,10 @@ class Query:
         return name
 
 
+finalizer_cond: Optional[asyncio.Condition] = None
+finalizer_state: str = ""
+
+
 @strawberry.type
 class Mutation:
     @strawberry.mutation
@@ -142,6 +146,19 @@ class Mutation:
     def match_text(self, text_file: Upload, pattern: str) -> str:
         text = text_file.read().decode()
         return pattern if pattern in text else ""
+
+    @strawberry.mutation
+    async def release_finalizer(self) -> str:
+        """
+        Release a finalizer which is waiting to finish.
+        """
+        global finalizer_state
+        async with finalizer_cond:
+            await finalizer_cond.wait_for(lambda: finalizer_state == "waiting")
+            finalizer_state = "released"
+            finalizer_cond.notify_all()
+            await finalizer_cond.wait_for(lambda: finalizer_state == "")
+        return "ok"
 
 
 @strawberry.type
@@ -226,14 +243,24 @@ class Subscription:
 
     @strawberry.subscription
     async def long_finalizer(
-        self, info: Info[Any, Any], delay: float = 0
+        self, info: Info[Any, Any], delay: float = 0, sync: bool = False
     ) -> AsyncGenerator[str, None]:
+        global finalizer_cond, finalizer_state
+        finalizer_cond = asyncio.Condition()
         try:
             for _i in range(100):
                 yield "hello"
                 await asyncio.sleep(0.01)
         finally:
             await asyncio.sleep(delay)
+            if sync:
+                async with finalizer_cond:
+                    assert finalizer_state == ""
+                    finalizer_state = "waiting"
+                    finalizer_cond.notify_all()
+                    await finalizer_cond.wait_for(lambda: finalizer_state == "released")
+                    finalizer_state = ""
+                    finalizer_cond.notify_all()
 
 
 schema = strawberry.Schema(

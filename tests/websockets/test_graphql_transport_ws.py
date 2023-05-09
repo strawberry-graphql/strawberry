@@ -1,7 +1,6 @@
 import asyncio
 import json
 import sys
-import time
 from datetime import timedelta
 from typing import AsyncGenerator, Type
 from unittest.mock import patch
@@ -790,17 +789,18 @@ async def test_rejects_connection_params_not_unset(ws_raw: WebSocketClient):
 async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
     # Test that when we cancel a subscription, the websocket isn't blocked
     # while some complex finalization takes place.
-    delay = 0.1
+    delay = 0.01
 
     await ws.send_json(
         SubscribeMessage(
             id="sub1",
             payload=SubscribeMessagePayload(
-                query=f"subscription {{ longFinalizer(delay: {delay}) }}"
+                query=f"subscription {{ longFinalizer(delay: {delay}, sync:true) }}"
             ),
         ).as_dict()
     )
 
+    # wait for the subscription to start
     response = await ws.receive_json()
     assert (
         response
@@ -809,24 +809,24 @@ async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
         ).as_dict()
     )
 
-    # now cancel the stubscription and send a new query.  We expect the response
-    # to the new query to arrive immediately, without waiting for the finalizer
-    start = time.time()
+    # now cancel the subscription.  It will block in the finalizer, waiting for
+    # the mutation to release it.  This proves that the mutation can go through
+    # even if the finalizer hasn't finished.
     await ws.send_json(CompleteMessage(id="sub1").as_dict())
     await ws.send_json(
         SubscribeMessage(
             id="sub2",
-            payload=SubscribeMessagePayload(query="query { hello }"),
+            payload=SubscribeMessagePayload(query="mutation { releaseFinalizer }"),
         ).as_dict()
     )
+    # wait for mutation to finish, which it does once it has successfully released
+    # the finalizer.
     while True:
         response = await ws.receive_json()
         assert response["type"] in ("next", "complete")
         if response["id"] == "sub2":
             break
-    end = time.time()
-    elapsed = end - start
-    assert elapsed < delay
+    # finalizer / mutation sync dance is complete.
 
 
 async def test_error_handler_for_timeout(http_client: HttpClient):
