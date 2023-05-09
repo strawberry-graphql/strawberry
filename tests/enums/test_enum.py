@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, IntEnum
 
 import pytest
 
@@ -153,3 +153,19 @@ def test_can_use_enum_values():
         "B",
         "Coconut",
     ]
+
+
+def test_int_enums():
+    @strawberry.enum
+    class TestEnum(IntEnum):
+        A = 1
+        B = 2
+        C = 3
+        D = strawberry.enum_value(4, description="D")
+
+    assert TestEnum.A.value == 1
+    assert TestEnum.B.value == 2
+    assert TestEnum.C.value == 3
+    assert TestEnum.D.value == 4
+
+    assert [x.value for x in TestEnum.__members__.values()] == [1, 2, 3, 4]
