@@ -1,6 +1,30 @@
 CHANGELOG
 =========
 
+0.177.1 - 2023-05-09
+--------------------
+
+This release adds support for using `enum_value` with `IntEnum`s, like this:
+
+```python
+import strawberry
+
+from enum import IntEnum
+
+
+@strawberry.enum
+class Color(IntEnum):
+    OTHER = strawberry.enum_value(
+        -1, description="Other: The color is not red, blue, or green."
+    )
+    RED = strawberry.enum_value(0, description="Red: The color red.")
+    BLUE = strawberry.enum_value(1, description="Blue: The color blue.")
+    GREEN = strawberry.enum_value(2, description="Green: The color green.")
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2761](https://github.com/strawberry-graphql/strawberry/pull/2761/)
+
+
 0.177.0 - 2023-05-07
 --------------------
 
