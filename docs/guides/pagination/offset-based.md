@@ -203,13 +203,13 @@ Django pagination API. You can check it out [here](https://docs.djangoproject.co
 
 Now, let us start the server and see offset-based pagination in action!
 
-```
+```shell
 strawberry server example:schema
 ```
 
 You will get the following message:
 
-```
+```text
 Running strawberry on http://0.0.0.0:8000/graphql 🍓
 ```
 
@@ -232,7 +232,7 @@ ordered by name:
 
 The result should look like this:
 
-```graphql
+```json
 {
   "data": {
     "users": {
@@ -287,7 +287,7 @@ contains the substring "ie".
 
 This is the result:
 
-```
+```json
 {
   "data": {
     "users": {

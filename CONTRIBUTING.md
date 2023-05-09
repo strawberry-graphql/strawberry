@@ -108,7 +108,7 @@ Poetry.
 You will first need to clone the repository using `git` and place yourself in
 its directory:
 
-```bash
+```shell
 $ git clone git@github.com:strawberry-graphql/strawberry.git
 $ cd strawberry
 ```
@@ -116,7 +116,7 @@ $ cd strawberry
 Now, you will need to install the required dependencies for Strawberry and be sure
 that the current tests are passing on your machine:
 
-```bash
+```shell
 $ poetry install
 $ poetry run pytest tests -n auto
 $ poetry run mypy
@@ -131,7 +131,7 @@ To make sure that you don't accidentally commit code that does not follow the
 coding style, you can install a pre-commit hook that will check that everything
 is in order:
 
-```bash
+```shell
 $ poetry run pre-commit install
 ```
 
@@ -153,7 +153,7 @@ So as soon as your PR is merged, a release will be made.
 
 Here's an example of RELEASE.md:
 
-```
+```text
 Release type: patch
 
 Description of the changes, ideally with some examples, if adding a new feature.

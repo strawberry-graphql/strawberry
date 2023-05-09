@@ -1,6 +1,60 @@
 CHANGELOG
 =========
 
+0.177.0 - 2023-05-07
+--------------------
+
+This release adds a SentryTracingExtension that you can use to automatically add
+tracing information to your GraphQL queries.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2495](https://github.com/strawberry-graphql/strawberry/pull/2495/)
+
+
+0.176.4 - 2023-05-07
+--------------------
+
+This release adds support for custom classes inside the OpenTelemetry integration.
+With this, we shouldn't see errors like this anymore:
+
+```Invalid type dict for attribute 'graphql.param.paginator' value. Expected one of ['bool', 'str', 'bytes', 'int', 'float'] or a sequence of those types.```
+
+Contributed by [Budida Abhinav Ramana](https://github.com/abhinavramana) via [PR #2753](https://github.com/strawberry-graphql/strawberry/pull/2753/)
+
+
+0.176.3 - 2023-05-03
+--------------------
+
+Add `get_argument_definition` helper function on the Info object to get
+a StrawberryArgument definition by argument name from inside a resolver or
+Field Extension.
+
+Example:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def field(
+        self,
+        info,
+        my_input: Annotated[
+            str,
+            strawberry.argument(description="Some description"),
+        ],
+    ) -> str:
+        my_input_def = info.get_argument_definition("my_input")
+        assert my_input_def.type is str
+        assert my_input_def.description == "Some description"
+
+        return my_input
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2732](https://github.com/strawberry-graphql/strawberry/pull/2732/)
+
+
 0.176.2 - 2023-05-02
 --------------------
 

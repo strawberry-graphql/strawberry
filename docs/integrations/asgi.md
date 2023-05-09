@@ -8,7 +8,7 @@ Strawberry comes with a basic ASGI integration. It provides an app that you can
 use to serve your GraphQL schema. Before using Strawberry's ASGI support make
 sure you install all the required dependencies by running:
 
-```
+```shell
 pip install 'strawberry-graphql[asgi]'
 ```
 
