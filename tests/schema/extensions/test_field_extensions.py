@@ -13,20 +13,24 @@ from strawberry.types import Info
 
 
 class UpperCaseExtension(FieldExtension):
-    def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+    def resolve(
+        self, next_: Callable[..., Any], source: Any, info: Info, **kwargs: Any
+    ):
         result = next_(source, info, **kwargs)
         return str(result).upper()
 
 
 class LowerCaseExtension(FieldExtension):
-    def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+    def resolve(
+        self, next_: Callable[..., Any], source: Any, info: Info, **kwargs: Any
+    ):
         result = next_(source, info, **kwargs)
         return str(result).lower()
 
 
 class AsyncUpperCaseExtension(FieldExtension):
     async def resolve_async(
-        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs
+        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs: Any
     ):
         result = await next_(source, info, **kwargs)
         return str(result).upper()
@@ -34,12 +38,12 @@ class AsyncUpperCaseExtension(FieldExtension):
 
 class IdentityExtension(FieldExtension):
     def resolve(
-        self, next_: SyncExtensionResolver, source: Any, info: Info, **kwargs
+        self, next_: SyncExtensionResolver, source: Any, info: Info, **kwargs: Any
     ) -> Any:
         return next_(source, info, **kwargs)
 
     async def resolve_async(
-        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs
+        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs: Any
     ) -> Any:
         return await next_(source, info, **kwargs)
 
@@ -167,13 +171,15 @@ async def test_can_use_sync_only_and_sync_before_async_extensions():
 
 def test_fail_on_missing_async_extensions():
     class LowerCaseExtension(FieldExtension):
-        def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+        def resolve(
+            self, next_: Callable[..., Any], source: Any, info: Info, **kwargs: Any
+        ):
             result = next_(source, info, **kwargs)
             return str(result).lower()
 
     class UpperCaseExtension(FieldExtension):
         async def resolve_async(
-            self, next_: Callable[..., Any], source: Any, info: Info, **kwargs
+            self, next_: Callable[..., Any], source: Any, info: Info, **kwargs: Any
         ):
             result = await next_(source, info, **kwargs)
             return str(result).upper()
@@ -196,12 +202,16 @@ def test_fail_on_missing_async_extensions():
 
 def test_extension_order_respected():
     class LowerCaseExtension(FieldExtension):
-        def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+        def resolve(
+            self, next_: Callable[..., Any], source: Any, info: Info, **kwargs: Any
+        ):
             result = next_(source, info, **kwargs)
             return str(result).lower()
 
     class UpperCaseExtension(FieldExtension):
-        def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+        def resolve(
+            self, next_: Callable[..., Any], source: Any, info: Info, **kwargs: Any
+        ):
             result = next_(source, info, **kwargs)
             return str(result).upper()
 
@@ -232,7 +242,9 @@ def test_extension_argument_parsing():
     field_kwargs = {}
 
     class CustomExtension(FieldExtension):
-        def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+        def resolve(
+            self, next_: Callable[..., Any], source: Any, info: Info, **kwargs: Any
+        ):
             nonlocal field_kwargs
             field_kwargs = kwargs
             result = next_(source, info, **kwargs)
@@ -259,7 +271,9 @@ def test_extension_argument_parsing():
 
 def test_extension_mutate_arguments():
     class CustomExtension(FieldExtension):
-        def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+        def resolve(
+            self, next_: Callable[..., Any], source: Any, info: Info, **kwargs: Any
+        ):
             kwargs["some_input"] += 10
             result = next_(source, info, **kwargs)
             return result

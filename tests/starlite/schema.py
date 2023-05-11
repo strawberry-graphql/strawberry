@@ -1,7 +1,7 @@
 import asyncio
 import typing
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 from graphql import GraphQLError
 
@@ -15,7 +15,7 @@ from strawberry.types import Info
 class AlwaysFailPermission(BasePermission):
     message = "You are not authorized"
 
-    def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+    def has_permission(self, source: Any, info: Info, **kwargs: typing.Any) -> bool:
         return False
 
 

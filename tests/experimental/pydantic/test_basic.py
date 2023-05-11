@@ -738,7 +738,7 @@ def test_permission_classes():
         message = "User is not authenticated"
 
         def has_permission(
-            self, source: Any, info: strawberry.types.Info, **kwargs
+            self, source: Any, info: strawberry.types.Info, **kwargs: Any
         ) -> bool:
             return False
 

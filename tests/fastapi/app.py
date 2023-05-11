@@ -28,7 +28,7 @@ async def get_root_value(
     return request or ws
 
 
-def create_app(schema=schema, **kwargs) -> FastAPI:
+def create_app(schema=schema, **kwargs: Any) -> FastAPI:
     app = FastAPI()
 
     graphql_app = GraphQLRouter(
