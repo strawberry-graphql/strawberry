@@ -7,8 +7,9 @@ from strawberry.subscriptions.protocols.graphql_ws.types import (
 
 def test_dataclass_start_payload_total_behavior():
     """
-    The TypeDict class used for the graphql_ws setup utilized a total=False argument. This argument means that
-    a class can be instantiated without all the values needing to be included
+    The TypeDict class used for the graphql_ws setup utilized a total=False argument.
+    This argument means that a class can be instantiated without all the values needing
+    to be included
     """
     start_payload = StartPayload(query="")
 
@@ -20,8 +21,9 @@ def test_dataclass_start_payload_total_behavior():
 
 def test_dataclass_data_payload_total_behavior():
     """
-    The TypeDict class used for the graphql_ws setup utilized a total=False argument. This argument means that
-    a class can be instantiated without all the values needing to be included
+    The TypeDict class used for the graphql_ws setup utilized a total=False argument.
+    This argument means that a class can be instantiated without all the values needing
+    to be included
     """
     data_payload = DataPayload(data="")
 
