@@ -5,7 +5,7 @@ CHANGELOG
 
 This release updates the types used for the graphql_ws types to use dataclasses
 
-Contributed by [Matthew Jones](https://github.com/plyte) via [PR #2767](https://github.com/strawberry-graphql/strawberry/pull/2767/)
+Contributed by [Matthew Jones](https://github.com/plyte) via [PR #2771](https://github.com/strawberry-graphql/strawberry/pull/2771/)
 
 0.177.1 - 2023-05-09
 --------------------
