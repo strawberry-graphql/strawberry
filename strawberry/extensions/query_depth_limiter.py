@@ -133,6 +133,7 @@ class QueryDepthLimiter(AddValidationRules):
                 "The `ignore` argument to `QueryDepthLimiter` is deprecated. "
                 "Please use `should_ignore` instead.",
                 DeprecationWarning,
+                stacklevel=1,
             )
             validator = create_validator_deprecated(max_depth, ignore, callback)
         super().__init__([validator])
