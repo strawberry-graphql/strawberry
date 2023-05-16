@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     from pydantic.fields import ModelField
 
 
-def get_type_for_field(field: ModelField, is_input: bool):
+def get_type_for_field(field: ModelField, is_input: bool):  # noqa: ANN201
     outer_type = field.outer_type_
     replaced_type = replace_types_recursively(outer_type, is_input)
 
@@ -134,6 +134,7 @@ def type(
             warnings.warn(
                 "`fields` is deprecated, use `auto` type annotations instead",
                 DeprecationWarning,
+                stacklevel=2,
             )
 
         existing_fields = getattr(cls, "__annotations__", {})
@@ -263,11 +264,13 @@ def type(
         def from_pydantic_default(
             instance: PydanticModel, extra: Optional[Dict[str, Any]] = None
         ) -> StrawberryTypeFromPydantic[PydanticModel]:
-            return convert_pydantic_model_to_strawberry_class(
+            ret = convert_pydantic_model_to_strawberry_class(
                 cls=cls, model_instance=instance, extra=extra
             )
+            ret._original_model = instance
+            return ret
 
-        def to_pydantic_default(self, **kwargs) -> PydanticModel:
+        def to_pydantic_default(self: Any, **kwargs) -> PydanticModel:
             instance_kwargs = {
                 f.name: convert_strawberry_class_to_pydantic_model(
                     getattr(self, f.name)

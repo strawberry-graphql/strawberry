@@ -1,7 +1,13 @@
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple, Union
 
 import pytest
-from graphql import get_introspection_query, parse, specified_rules, validate
+from graphql import (
+    GraphQLError,
+    get_introspection_query,
+    parse,
+    specified_rules,
+    validate,
+)
 
 import strawberry
 from strawberry.extensions import QueryDepthLimiter
@@ -79,7 +85,9 @@ class Query:
 schema = strawberry.Schema(Query)
 
 
-def run_query(query: str, max_depth: int, should_ignore: ShouldIgnoreType = None):
+def run_query(
+    query: str, max_depth: int, should_ignore: ShouldIgnoreType = None
+) -> Tuple[List[GraphQLError], Union[Dict[str, int], None]]:
     document = parse(query)
 
     result = None

@@ -1,6 +1,6 @@
 import dataclasses
 from enum import Enum
-from typing import List, Optional, Type, TypeVar
+from typing import Callable, List, Optional, Type, TypeVar
 
 from strawberry.object_type import _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
@@ -51,7 +51,7 @@ def schema_directive(
     name: Optional[str] = None,
     repeatable: bool = False,
     print_definition: bool = True,
-):
+) -> Callable[..., T]:
     def _wrap(cls: T) -> T:
         cls = _wrap_dataclass(cls)
         fields = _get_fields(cls)

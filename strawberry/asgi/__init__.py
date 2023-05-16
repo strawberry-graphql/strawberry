@@ -1,33 +1,87 @@
 from __future__ import annotations
 
-import json
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
+from starlette import status
+from starlette.requests import Request
+from starlette.responses import HTMLResponse, PlainTextResponse, Response
 from starlette.websockets import WebSocket
 
 from strawberry.asgi.handlers import (
     GraphQLTransportWSHandler,
     GraphQLWSHandler,
-    HTTPHandler,
 )
-from strawberry.http import process_result
+from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
+from strawberry.http.exceptions import HTTPException
+from strawberry.http.types import FormData, HTTPMethod, QueryParams
+from strawberry.http.typevars import (
+    Context,
+    RootValue,
+)
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.utils.graphiql import get_graphiql_html
 
 if TYPE_CHECKING:
-    from starlette.requests import Request
-    from starlette.responses import Response
     from starlette.types import Receive, Scope, Send
 
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.schema import BaseSchema
-    from strawberry.types import ExecutionResult
 
 
-class GraphQL:
+class ASGIRequestAdapter(AsyncHTTPRequestAdapter):
+    def __init__(self, request: Request) -> None:
+        self.request = request
+
+    @property
+    def query_params(self) -> QueryParams:
+        return dict(self.request.query_params)
+
+    @property
+    def method(self) -> HTTPMethod:
+        return cast(HTTPMethod, self.request.method.upper())
+
+    @property
+    def headers(self) -> Mapping[str, str]:
+        return self.request.headers
+
+    @property
+    def content_type(self) -> Optional[str]:
+        return self.request.headers.get("content-type")
+
+    async def get_body(self) -> bytes:
+        return await self.request.body()
+
+    async def get_form_data(self) -> FormData:
+        multipart_data = await self.request.form()
+
+        return FormData(
+            files=multipart_data,
+            form=multipart_data,
+        )
+
+
+class GraphQL(
+    AsyncBaseHTTPView[
+        Union[Request, WebSocket],
+        Response,
+        Response,
+        Context,
+        RootValue,
+    ]
+):
     graphql_transport_ws_handler_class = GraphQLTransportWSHandler
     graphql_ws_handler_class = GraphQLWSHandler
-    http_handler_class = HTTPHandler
+    allow_queries_via_get = True
+    request_adapter_class = ASGIRequestAdapter  # pyright: ignore
 
     def __init__(
         self,
@@ -37,7 +91,10 @@ class GraphQL:
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
         debug: bool = False,
-        subscription_protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
+        subscription_protocols: Sequence[str] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     ) -> None:
         self.schema = schema
@@ -51,16 +108,7 @@ class GraphQL:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
         if scope["type"] == "http":
-            await self.http_handler_class(
-                schema=self.schema,
-                graphiql=self.graphiql,
-                allow_queries_via_get=self.allow_queries_via_get,
-                debug=self.debug,
-                get_context=self.get_context,
-                get_root_value=self.get_root_value,
-                process_result=self.process_result,
-                encode_json=self.encode_json,
-            ).handle(scope=scope, receive=receive, send=send)
+            return await self.handle_http(scope, receive, send)
 
         elif scope["type"] == "websocket":
             ws = WebSocket(scope=scope, receive=receive, send=send)
@@ -75,6 +123,7 @@ class GraphQL:
                     get_root_value=self.get_root_value,
                     ws=ws,
                 ).handle()
+
             elif preferred_protocol == GRAPHQL_WS_PROTOCOL:
                 await self.graphql_ws_handler_class(
                     schema=self.schema,
@@ -85,6 +134,7 @@ class GraphQL:
                     get_root_value=self.get_root_value,
                     ws=ws,
                 ).handle()
+
             else:
                 # Subprotocol not acceptable
                 await ws.close(code=4406)
@@ -102,16 +152,57 @@ class GraphQL:
         return None
 
     async def get_context(
+        self, request: Union[Request, WebSocket], response: Response
+    ) -> Context:
+        return {"request": request, "response": response}  # type: ignore
+
+    async def get_sub_response(
         self,
         request: Union[Request, WebSocket],
-        response: Optional[Response] = None,
-    ) -> Optional[Any]:
-        return {"request": request, "response": response}
+    ) -> Response:
+        sub_response = Response()
+        sub_response.status_code = None  # type: ignore
+        del sub_response.headers["content-length"]
 
-    async def process_result(
-        self, request: Request, result: ExecutionResult
-    ) -> GraphQLHTTPResponse:
-        return process_result(result)
+        return sub_response
 
-    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
-        return json.dumps(response_data)
+    async def handle_http(
+        self,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> None:
+        request = Request(scope=scope, receive=receive)
+
+        try:
+            response = await self.run(request)
+        except HTTPException as e:
+            response = PlainTextResponse(
+                e.reason, status_code=e.status_code
+            )  # pyright: ignore
+
+        await response(scope, receive, send)
+
+    def render_graphiql(self, request: Union[Request, WebSocket]) -> Response:
+        html = get_graphiql_html()
+
+        return HTMLResponse(html)
+
+    def create_response(
+        self, response_data: GraphQLHTTPResponse, sub_response: Response
+    ) -> Response:
+        response = Response(
+            self.encode_json(response_data),
+            status_code=status.HTTP_200_OK,
+            media_type="application/json",
+        )
+
+        response.headers.raw.extend(sub_response.headers.raw)
+
+        if sub_response.background:
+            response.background = sub_response.background
+
+        if sub_response.status_code:
+            response.status_code = sub_response.status_code
+
+        return response

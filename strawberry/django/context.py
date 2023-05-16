@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from django.http import HttpRequest, HttpResponse
@@ -17,6 +17,6 @@ class StrawberryDjangoContext:
         # using info.context["request"]
         return super().__getattribute__(key)
 
-    def get(self, key: str):
+    def get(self, key: str) -> Any:
         """Enable .get notation for accessing the request"""
         return super().__getattribute__(key)

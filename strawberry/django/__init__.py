@@ -5,7 +5,7 @@ try:
 except ModuleNotFoundError:
     import importlib
 
-    def __getattr__(name):
+    def __getattr__(name: str):
         # try to import submodule and raise exception only if it does not exist
         import_symbol = f"{__name__}.{name}"
         try:

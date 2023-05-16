@@ -23,7 +23,7 @@ class Body(TypedDict, total=False):
 
 
 class BaseGraphQLTestClient(ABC):
-    def __init__(self, client, url: str = "/graphql/"):
+    def __init__(self, client, url: str = "/graphql/"):  # noqa: ANN001
         self._client = client
         self.url = url
 
@@ -56,7 +56,7 @@ class BaseGraphQLTestClient(ABC):
         body: Dict[str, object],
         headers: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, object]] = None,
-    ):
+    ) -> Any:
         raise NotImplementedError
 
     def _build_body(

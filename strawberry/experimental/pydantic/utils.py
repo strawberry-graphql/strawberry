@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from pydantic.typing import NoArgAnyCallable
 
 
-def normalize_type(type_) -> Any:
+def normalize_type(type_: Type) -> Any:
     if is_list(type_):
         return List[normalize_type(get_list_annotation(type_))]  # type: ignore
 
@@ -46,7 +46,7 @@ def normalize_type(type_) -> Any:
     return type_
 
 
-def get_strawberry_type_from_model(type_: Any):
+def get_strawberry_type_from_model(type_: Any) -> Any:
     if hasattr(type_, "_strawberry_type"):
         return type_._strawberry_type
     else:

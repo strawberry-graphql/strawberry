@@ -1,4 +1,11 @@
-from typing import Dict, Mapping, Optional
+from __future__ import annotations
+
+from typing import (
+    Any,
+    Dict,
+    Mapping,
+    Optional,
+)
 
 from strawberry.test.client import BaseGraphQLTestClient, Response
 
@@ -33,10 +40,11 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         body: Dict[str, object],
         headers: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, object]] = None,
-    ):
+    ) -> Any:
         response = await self._client.post(
             self.url,
             json=body if not files else None,
             data=body if files else None,
         )
+
         return response

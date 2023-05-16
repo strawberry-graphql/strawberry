@@ -15,6 +15,7 @@
 ## Types
 
 - [Schema](./types/schema.md)
+- [Operation Directives](./types/operation-directives.md)
 - [Schema Directives](./types/schema-directives.md)
 - [Schema configurations](./types/schema-configurations.md)
 - [Scalars](./types/scalars.md)
@@ -77,6 +78,7 @@
 - [Sanic](./integrations/sanic.md)
 - [Chalice](./integrations/chalice.md)
 - [Starlette](./integrations/starlette.md)
+- [Creating an integration](./integrations/creating-an-integration.md)
 - [Pydantic **experimental**](./integrations/pydantic.md)
 
 ## Federation

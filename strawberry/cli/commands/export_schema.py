@@ -17,7 +17,7 @@ from strawberry.printer import print_schema
         "Works the same as `--app-dir` in uvicorn."
     ),
 )
-def export_schema(schema: str, app_dir: str):
+def export_schema(schema: str, app_dir: str) -> None:
     schema_symbol = load_schema(schema, app_dir)
 
     print(print_schema(schema_symbol))  # noqa: T201

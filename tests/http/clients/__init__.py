@@ -15,3 +15,24 @@ from .django import DjangoHttpClient
 from .fastapi import FastAPIHttpClient
 from .flask import FlaskHttpClient
 from .sanic import SanicHttpClient
+
+try:
+    from .starlite import StarliteHttpClient
+except ModuleNotFoundError:
+    StarliteHttpClient = None
+
+__all__ = [
+    "AioHttpClient",
+    "AsgiHttpClient",
+    "AsyncDjangoHttpClient",
+    "AsyncFlaskHttpClient",
+    "ChannelsHttpClient",
+    "ChaliceHttpClient",
+    "DjangoHttpClient",
+    "FastAPIHttpClient",
+    "FlaskHttpClient",
+    "HttpClient",
+    "SanicHttpClient",
+    "StarliteHttpClient",
+    "WebSocketClient",
+]

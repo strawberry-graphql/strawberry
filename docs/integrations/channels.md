@@ -198,7 +198,7 @@ class Mutation:
             f"chat_{room.room_name}",
             {
                 "type": "chat.message",
-                "room_id": room.room_name,
+                "room_id": f"chat_{room.room_name}",
                 "message": message,
             },
         )
@@ -453,7 +453,7 @@ Implementation.
 
 Example usage:
 
-```
+```python
 from strawberry.channels import GraphQLProtocolTypeRouter
 from django.core.asgi import get_asgi_application
 

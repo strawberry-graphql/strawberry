@@ -2,7 +2,7 @@ import contextlib
 import dataclasses
 import json
 import warnings
-from typing import List, Optional, Set, Type
+from typing import Any, List, Optional, Set, Type
 from unittest.mock import patch
 
 import pytest
@@ -200,7 +200,7 @@ class ExampleExtension(SchemaExtension):
     called_hooks: Set[int]
 
     @classmethod
-    def perform_test(cls):
+    def perform_test(cls) -> None:
         assert cls.called_hooks == cls.expected
 
 
@@ -267,7 +267,7 @@ def async_extension() -> Type[ExampleExtension]:
             self.called_hooks.add(9)
             return {"example": "example"}
 
-        async def resolve(self, _next, root, info, *args, **kwargs):
+        async def resolve(self, _next, root, info, *args: str, **kwargs: Any):
             self.called_hooks.add(10)
             return _next(root, info, *args, **kwargs)
 
@@ -301,7 +301,7 @@ def sync_extension() -> Type[ExampleExtension]:
             self.called_hooks.add(9)
             return {"example": "example"}
 
-        def resolve(self, _next, root, info, *args, **kwargs):
+        def resolve(self, _next, root, info, *args: str, **kwargs: Any):
             self.called_hooks.add(10)
             return _next(root, info, *args, **kwargs)
 

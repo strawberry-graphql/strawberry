@@ -171,7 +171,9 @@ class Schema(BaseSchema):
         self._schema.query_type = query_type
         self._schema.type_map[query_type.name] = query_type
 
-    def entities_resolver(self, root, info, representations):
+    def entities_resolver(
+        self, root, info, representations  # noqa: ANN001
+    ) -> List[object]:
         results = []
 
         for representation in representations:
@@ -342,6 +344,13 @@ class Schema(BaseSchema):
             resolve=self.entities_resolver,
         )
 
+    def _warn_for_federation_directives(self) -> None:
+        # this is used in the main schema to raise if there's a directive
+        # that's for federation, but in this class we don't want to warn,
+        # since it is expected to have federation directives
+
+        pass
+
 
 def _get_entity_type(type_map: "TypeMap"):
     # https://www.apollographql.com/docs/apollo-server/federation/federation-spec/#resolve-requests-for-entities
@@ -364,7 +373,7 @@ def _get_entity_type(type_map: "TypeMap"):
 
     entity_type = GraphQLUnionType("_Entity", federation_key_types)  # type: ignore
 
-    def _resolve_type(self, value, _type):
+    def _resolve_type(self, value, _type):  # noqa: ANN001
         return self._type_definition.name
 
     entity_type.resolve_type = _resolve_type

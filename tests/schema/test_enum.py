@@ -144,7 +144,7 @@ def test_enum_falsy_values():
     result = schema.execute_sync(query)
 
     assert not result.errors
-    assert result.data["printFlavour"] == ""
+    assert not result.data["printFlavour"]
 
     query = "{ printFlavour(input: { flavour: STRAWBERRY }) }"
     result = schema.execute_sync(query)

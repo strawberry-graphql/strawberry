@@ -17,7 +17,7 @@ from .django import DjangoHttpClient
 class AsyncGraphQLView(BaseAsyncGraphQLView):
     result_override: ResultOverrideFunction = None
 
-    async def get_root_value(self, request: HttpRequest):
+    async def get_root_value(self, request: HttpRequest) -> Query:
         return Query()
 
     async def get_context(self, request: HttpRequest, response: HttpResponse) -> object:
@@ -46,8 +46,16 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
         try:
             response = await view(request)
         except Http404:
-            return Response(status_code=404, data=b"Not found")
+            return Response(
+                status_code=404, data=b"Not found", headers=response.headers
+            )
         except (BadRequest, SuspiciousOperation) as e:
-            return Response(status_code=400, data=e.args[0].encode())
+            return Response(
+                status_code=400, data=e.args[0].encode(), headers=response.headers
+            )
         else:
-            return Response(status_code=response.status_code, data=response.content)
+            return Response(
+                status_code=response.status_code,
+                data=response.content,
+                headers=response.headers,
+            )

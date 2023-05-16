@@ -9,6 +9,7 @@ from typing import (
     Callable,
     Dict,
     List,
+    Mapping,
     Optional,
 )
 from typing_extensions import Literal
@@ -24,7 +25,7 @@ ResultOverrideFunction = Optional[Callable[[ExecutionResult], GraphQLHTTPRespons
 class Response:
     status_code: int
     data: bytes
-    # TODO: headers
+    headers: Mapping[str, str]
 
     @property
     def text(self) -> str:
@@ -53,7 +54,7 @@ class HttpClient(abc.ABC):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
         ...
 
@@ -156,9 +157,9 @@ class HttpClient(abc.ABC):
         for key, values in variables.items():
             if isinstance(values, dict):
                 folder_key = list(values.keys())[0]
-                key += f".{folder_key}"
+                key += f".{folder_key}"  # noqa: PLW2901
                 # the list of file is inside the folder keyword
-                values = values[folder_key]
+                values = values[folder_key]  # noqa: PLW2901
 
             # If the variable is an array of files we must number the keys
             if isinstance(values, list):
@@ -239,3 +240,32 @@ class WebSocketClient(abc.ABC):
     async def __aiter__(self) -> AsyncGenerator[Message, None]:
         while not self.closed:
             yield await self.receive()
+
+
+class DebuggableGraphQLTransportWSMixin:
+    @staticmethod
+    def on_init(self):
+        """
+        This method can be patched by unittests to get the instance of the
+        transport handler when it is initialized
+        """
+
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        DebuggableGraphQLTransportWSMixin.on_init(self)
+
+    async def get_context(self) -> object:
+        context = await super().get_context()
+        context["ws"] = self._ws
+        context["tasks"] = self.tasks
+        context["connectionInitTimeoutTask"] = self.connection_init_timeout_task
+        return context
+
+
+class DebuggableGraphQLWSMixin:
+    async def get_context(self) -> object:
+        context = await super().get_context()
+        context["ws"] = self._ws
+        context["tasks"] = self.tasks
+        context["connectionInitTimeoutTask"] = None
+        return context

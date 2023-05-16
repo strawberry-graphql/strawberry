@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import typing
 import warnings
 from decimal import Decimal
 from typing import (
@@ -787,6 +788,14 @@ class CustomDataclassTransformer:
                 params["kw_only"] = True
             if MypyVersion.VERSION >= Decimal("1.1"):
                 params["alias"] = None
+            if MypyVersion.VERSION >= Decimal("1.2"):
+                from mypy.plugins.dataclasses import (
+                    _has_direct_dataclass_transform_metaclass,
+                )
+
+                params[
+                    "is_neither_frozen_nor_nonfrozen"
+                ] = _has_direct_dataclass_transform_metaclass(cls.info)
 
             attribute = DataclassAttribute(**params)
             attrs.append(attribute)
@@ -905,7 +914,7 @@ class StrawberryPlugin(Plugin):
 
         return None
 
-    def get_type_analyze_hook(self, fullname: str):
+    def get_type_analyze_hook(self, fullname: str) -> Union[Callable[..., Type], None]:
         if self._is_strawberry_lazy_type(fullname):
             return lazy_type_analyze_callback
 
@@ -1030,14 +1039,15 @@ class StrawberryPlugin(Plugin):
         )
 
 
-def plugin(version: str):
+def plugin(version: str) -> typing.Type[StrawberryPlugin]:
     match = VERSION_RE.match(version)
     if match:
         MypyVersion.VERSION = Decimal(".".join(match.groups()))
     else:
         MypyVersion.VERSION = FALLBACK_VERSION
         warnings.warn(
-            f"Mypy version {version} could not be parsed. Reverting to v0.800"
+            f"Mypy version {version} could not be parsed. Reverting to v0.800",
+            stacklevel=1,
         )
 
     return StrawberryPlugin

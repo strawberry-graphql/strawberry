@@ -503,7 +503,7 @@ the cursor initially, when it makes the first request.
 
 Now, let us start a debug server with our schema!
 
-```text
+```shell
 strawberry server example:schema
 ```
 

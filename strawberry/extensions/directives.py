@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple
 
 from strawberry.extensions import SchemaExtension
 from strawberry.types import Info
@@ -21,7 +21,12 @@ SPECIFIED_DIRECTIVES = {"include", "skip"}
 
 class DirectivesExtension(SchemaExtension):
     async def resolve(
-        self, _next, root, info: GraphQLResolveInfo, *args, **kwargs
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Any,
     ) -> AwaitableOrValue[Any]:
         value = await await_maybe(_next(root, info, *args, **kwargs))
 
@@ -36,7 +41,12 @@ class DirectivesExtension(SchemaExtension):
 
 class DirectivesExtensionSync(SchemaExtension):
     def resolve(
-        self, _next, root, info: GraphQLResolveInfo, *args, **kwargs
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Any,
     ) -> AwaitableOrValue[Any]:
         value = _next(root, info, *args, **kwargs)
 
