@@ -50,3 +50,34 @@ schema = strawberry.Schema(
 ```
 
 </Note>
+
+## API reference:
+
+_No arguments_
+
+## Extending the extension
+
+### Overriding the `create_span` method
+
+You can customize any of the spans or add tags to them by overriding the `create_span` method.
+
+Example:
+
+```python
+from ddtrace import Span
+
+from strawberry.extensions.tracing import DatadogTracingExtension, LifeCycleStep
+
+
+class DataDogExtension(DatadogTracingExtension):
+    def create_span(
+        self,
+        lifecycle_step: LifeCycleStep,
+        name: str,
+        **kwargs,
+    ) -> Span:
+        span = super().create_span(lifecycle_step, name, **kwargs)
+        if lifecycle_step == LifeCycleStep.OPERATION:
+            span.set_tag("graphql.query", self.execution_context.query)
+        return span
+```

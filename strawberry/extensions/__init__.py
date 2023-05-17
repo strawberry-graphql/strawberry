@@ -1,7 +1,7 @@
 import warnings
 
 from .add_validation_rules import AddValidationRules
-from .base_extension import SchemaExtension
+from .base_extension import LifecycleStep, SchemaExtension
 from .disable_validation import DisableValidation
 from .field_extension import FieldExtension
 from .mask_errors import MaskErrors
@@ -30,6 +30,7 @@ def __getattr__(name: str):
 __all__ = [
     "FieldExtension",
     "SchemaExtension",
+    "LifecycleStep",
     "AddValidationRules",
     "DisableValidation",
     "ParserCache",
