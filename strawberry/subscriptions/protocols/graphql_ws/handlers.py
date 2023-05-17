@@ -91,7 +91,9 @@ class BaseGraphQLWSHandler(ABC):
     async def handle_connection_init(self, message: dict) -> None:
         payload = message.get("payload")
         if payload is not None and not isinstance(payload, dict):
-            error_message: OperationMessage = OperationMessage(type=GQL_CONNECTION_ERROR)
+            error_message: OperationMessage = OperationMessage(
+                type=GQL_CONNECTION_ERROR
+            )
             await self.send_json(error_message.as_dict())
             await self.close()
             return
@@ -99,7 +101,9 @@ class BaseGraphQLWSHandler(ABC):
         payload = cast(Optional["ConnectionInitPayload"], payload)
         self.connection_params = payload
 
-        acknowledge_message: OperationMessage = OperationMessage(type=GQL_CONNECTION_ACK)
+        acknowledge_message: OperationMessage = OperationMessage(
+            type=GQL_CONNECTION_ACK
+        )
         await self.send_json(acknowledge_message.as_dict())
 
         if self.keep_alive:
@@ -119,9 +123,7 @@ class BaseGraphQLWSHandler(ABC):
 
         if self.debug:
             pretty_print_graphql_operation(
-                payload.operationName,
-                payload.query,
-                payload.variables
+                payload.operationName, payload.query, payload.variables
             )
 
         try:
