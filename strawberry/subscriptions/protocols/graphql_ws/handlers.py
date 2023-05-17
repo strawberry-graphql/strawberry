@@ -22,15 +22,15 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_STOP,
 )
 from strawberry.utils.debug import pretty_print_graphql_operation
+from strawberry.subscriptions.protocols.graphql_ws.types import (
+    ConnectionInitPayload,
+    OperationMessage,
+    OperationMessagePayload,
+    StartPayload,
+)
 
 if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
-    from strawberry.subscriptions.protocols.graphql_ws.types import (
-        ConnectionInitPayload,
-        OperationMessage,
-        OperationMessagePayload,
-        StartPayload,
-    )
 
 
 class BaseGraphQLWSHandler(ABC):
@@ -59,7 +59,7 @@ class BaseGraphQLWSHandler(ABC):
         """Return the schemas root value"""
 
     @abstractmethod
-    async def send_json(self, data: OperationMessage) -> None:
+    async def send_json(self, data: dict) -> None:
         """Send the data JSON encoded to the WebSocket client"""
 
     @abstractmethod
@@ -75,7 +75,7 @@ class BaseGraphQLWSHandler(ABC):
 
     async def handle_message(
         self,
-        message: OperationMessage,
+        message: dict,
     ) -> None:
         message_type = message["type"]
 
@@ -88,19 +88,19 @@ class BaseGraphQLWSHandler(ABC):
         elif message_type == GQL_STOP:
             await self.handle_stop(message)
 
-    async def handle_connection_init(self, message: OperationMessage) -> None:
+    async def handle_connection_init(self, message: dict) -> None:
         payload = message.get("payload")
         if payload is not None and not isinstance(payload, dict):
-            error_message: OperationMessage = {"type": GQL_CONNECTION_ERROR}
-            await self.send_json(error_message)
+            error_message: OperationMessage = OperationMessage(type=GQL_CONNECTION_ERROR)
+            await self.send_json(error_message.as_dict())
             await self.close()
             return
 
         payload = cast(Optional["ConnectionInitPayload"], payload)
         self.connection_params = payload
 
-        acknowledge_message: OperationMessage = {"type": GQL_CONNECTION_ACK}
-        await self.send_json(acknowledge_message)
+        acknowledge_message: OperationMessage = OperationMessage(type=GQL_CONNECTION_ACK)
+        await self.send_json(acknowledge_message.as_dict())
 
         if self.keep_alive:
             keep_alive_handler = self.handle_keep_alive()
@@ -109,13 +109,12 @@ class BaseGraphQLWSHandler(ABC):
     async def handle_connection_terminate(self, message: OperationMessage) -> None:
         await self.close()
 
-    async def handle_start(self, message: OperationMessage) -> None:
+    async def handle_start(self, message: dict) -> None:
         operation_id = message["id"]
-        payload = cast("StartPayload", message["payload"])
-        query = payload["query"]
-        operation_name = payload.get("operationName")
-        variables = payload.get("variables")
-
+        payload = StartPayload(**message["payload"])
+        query = payload.query
+        operation_name = payload.operationName
+        variables = payload.variables
         context = await self.get_context()
         if isinstance(context, dict):
             context["connection_params"] = self.connection_params
