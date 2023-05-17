@@ -4,9 +4,6 @@ from typing import Any, Dict, List, Optional, Union
 from graphql import GraphQLFormattedError
 
 from strawberry import UNSET
-from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
-    GraphQLTransportMessage,
-)
 
 ConnectionInitPayload = Dict[str, Any]
 
@@ -27,8 +24,9 @@ class GraphQLTransportMessage:
 @dataclass
 class StartPayload(GraphQLTransportMessage):
     query: str
-    variables: Optional[Dict[str, Any]] = field(default_factory=dict[str, Any])
+    variables: Optional[Dict[str, Any]] = None
     operationName: Optional[str] = None
+    extensions: Optional[Any] = None
 
 
 @dataclass
