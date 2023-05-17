@@ -110,7 +110,7 @@ class BaseGraphQLWSHandler(ABC):
         await self.close()
 
     async def handle_start(self, message: dict) -> None:
-        operation_id = message.get("id")
+        operation_id = message["id"]
         payload = StartPayload(**message["payload"])
         context = await self.get_context()
         if isinstance(context, dict):
