@@ -207,7 +207,7 @@ class BaseGraphQLWSHandler(ABC):
         operation_id: str,
         payload: Optional[OperationMessagePayload] = None,
     ) -> None:
-        data: OperationMessage = {"type": type_, "id": operation_id}
+        data: OperationMessage = OperationMessage(type=type_, id=operation_id)
         if payload is not None:
-            data["payload"] = payload
-        await self.send_json(data)
+            data.payload = payload
+        await self.send_json(data.as_dict())
