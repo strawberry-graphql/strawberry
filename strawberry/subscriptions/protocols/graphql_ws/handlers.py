@@ -106,7 +106,7 @@ class BaseGraphQLWSHandler(ABC):
             keep_alive_handler = self.handle_keep_alive()
             self.keep_alive_task = asyncio.create_task(keep_alive_handler)
 
-    async def handle_connection_terminate(self, message: OperationMessage) -> None:
+    async def handle_connection_terminate(self, message: dict) -> None:
         await self.close()
 
     async def handle_start(self, message: dict) -> None:
@@ -149,14 +149,14 @@ class BaseGraphQLWSHandler(ABC):
         result_handler = self.handle_async_results(result_source, operation_id)
         self.tasks[operation_id] = asyncio.create_task(result_handler)
 
-    async def handle_stop(self, message: OperationMessage) -> None:
+    async def handle_stop(self, message: dict) -> None:
         operation_id = message["id"]
         await self.cleanup_operation(operation_id)
 
     async def handle_keep_alive(self) -> None:
         while True:
-            data: OperationMessage = {"type": GQL_CONNECTION_KEEP_ALIVE}
-            await self.send_json(data)
+            data: OperationMessage = OperationMessage(type=GQL_CONNECTION_KEEP_ALIVE)
+            await self.send_json(data.as_dict())
             await asyncio.sleep(self.keep_alive_interval)
 
     async def handle_async_results(
