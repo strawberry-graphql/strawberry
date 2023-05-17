@@ -110,24 +110,25 @@ class BaseGraphQLWSHandler(ABC):
         await self.close()
 
     async def handle_start(self, message: dict) -> None:
-        operation_id = message["id"]
+        operation_id = message.get("id")
         payload = StartPayload(**message["payload"])
-        query = payload.query
-        operation_name = payload.operationName
-        variables = payload.variables
         context = await self.get_context()
         if isinstance(context, dict):
             context["connection_params"] = self.connection_params
         root_value = await self.get_root_value()
 
         if self.debug:
-            pretty_print_graphql_operation(operation_name, query, variables)
+            pretty_print_graphql_operation(
+                payload.operationName,
+                payload.query,
+                payload.variables
+            )
 
         try:
             result_source = await self.schema.subscribe(
-                query=query,
-                variable_values=variables,
-                operation_name=operation_name,
+                query=payload.query,
+                variable_values=payload.variables,
+                operation_name=payload.operationName,
                 context_value=context,
                 root_value=root_value,
             )
