@@ -21,13 +21,13 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
     GQL_STOP,
 )
-from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.subscriptions.protocols.graphql_ws.types import (
     ConnectionInitPayload,
     OperationMessage,
     OperationMessagePayload,
     StartPayload,
 )
+from strawberry.utils.debug import pretty_print_graphql_operation
 
 if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
