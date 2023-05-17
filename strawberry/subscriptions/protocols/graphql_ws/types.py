@@ -1,10 +1,12 @@
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Union
-from typing_extensions import TypedDict
 
 from graphql import GraphQLFormattedError
 
 from strawberry import UNSET
+from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
+    GraphQLTransportMessage,
+)
 
 ConnectionInitPayload = Dict[str, Any]
 
