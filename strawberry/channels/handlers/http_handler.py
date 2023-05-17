@@ -73,7 +73,7 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         subscriptions_enabled: bool = True,
-        **kwargs,
+        **kwargs: Any,
     ):
         self.schema = schema
         self.graphiql = graphiql

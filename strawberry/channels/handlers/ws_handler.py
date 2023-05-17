@@ -108,7 +108,7 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
         except ValueError as e:
             await self._handler.handle_invalid_message(str(e))
 
-    async def receive_json(self, content: Any, **kwargs) -> None:
+    async def receive_json(self, content: Any, **kwargs: Any) -> None:
         await self._handler.handle_message(content)
 
     async def disconnect(self, code: int) -> None:

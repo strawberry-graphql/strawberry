@@ -194,7 +194,6 @@ ignore = [
     "D",
     "ANN101", # missing annotation for self?
     # definitely enable these, maybe not in tests
-    "ANN003",
     "ANN102",
     "ANN202",
     "ANN204",
