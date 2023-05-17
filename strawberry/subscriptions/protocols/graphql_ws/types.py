@@ -25,15 +25,18 @@ class GraphQLTransportMessage:
 @dataclass
 class StartPayload(GraphQLTransportMessage):
     query: str
-    variables: Optional[Dict[str, Any]] = field(default_factory=dict)
+    variables: Optional[Dict[str, Any]] = field(default_factory=dict[str, Any])
     operationName: Optional[str] = None
 
 
-class DataPayload(TypedDict, total=False):
+@dataclass
+class DataPayload:
     data: Any
 
     # Optional list of formatted graphql.GraphQLError objects
-    errors: Optional[List[GraphQLFormattedError]]
+    errors: Optional[List[GraphQLFormattedError]] = field(
+        default_factory=list[GraphQLFormattedError]
+    )
 
 
 ErrorPayload = GraphQLFormattedError
@@ -52,4 +55,4 @@ OperationMessagePayload = Union[
 class OperationMessage(GraphQLTransportMessage):
     type: str
     id: Optional[str] = ""
-    payload: Optional[OperationMessagePayload] = field(default_factory=dict)
+    payload: Optional[OperationMessagePayload] = None
