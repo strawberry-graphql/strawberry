@@ -1,3 +1,5 @@
+from typing import Any
+
 from aiohttp import web
 from strawberry.aiohttp.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.aiohttp.views import GraphQLView
@@ -30,7 +32,7 @@ class MyGraphQLView(GraphQLView):
         return Query()
 
 
-def create_app(**kwargs) -> web.Application:
+def create_app(**kwargs: Any) -> web.Application:
     app = web.Application()
     app.router.add_route("*", "/graphql", MyGraphQLView(schema=schema, **kwargs))
 

@@ -18,14 +18,14 @@ class FieldExtension:
         pass
 
     def resolve(
-        self, next_: SyncExtensionResolver, source: Any, info: Info, **kwargs
+        self, next_: SyncExtensionResolver, source: Any, info: Info, **kwargs: Any
     ) -> Any:  # pragma: no cover
         raise NotImplementedError(
             "Sync Resolve is not supported for this Field Extension"
         )
 
     async def resolve_async(
-        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs
+        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs: Any
     ) -> Any:  # pragma: no cover
         raise NotImplementedError(
             "Async Resolve is not supported for this Field Extension"
@@ -45,7 +45,7 @@ class SyncToAsyncExtension(FieldExtension):
     Applied automatically"""
 
     async def resolve_async(
-        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs
+        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs: Any
     ) -> Any:
         return next_(source, info, **kwargs)
 

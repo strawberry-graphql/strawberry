@@ -12,7 +12,7 @@ This extension adds support for tracing with Datadog.
 
 Make sure you have `ddtrace` installed before using this extension.
 
-```
+```shell
 pip install ddtrace
 ```
 

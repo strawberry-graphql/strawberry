@@ -205,7 +205,8 @@ class BaseSchema:
         errors: List[GraphQLError],
         execution_context: Optional[ExecutionContext] = None,
     ) -> None:
-        StrawberryLogger.error(error, execution_context)
+        for error in errors:
+            StrawberryLogger.error(error, execution_context)
 ```
 
 ```python

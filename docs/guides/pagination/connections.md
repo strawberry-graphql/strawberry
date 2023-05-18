@@ -603,7 +603,7 @@ schema = strawberry.Schema(query=Query)
 
 you can start the debug server with the following command:
 
-```
+```shell
 strawberry server example:schema
 ```
 

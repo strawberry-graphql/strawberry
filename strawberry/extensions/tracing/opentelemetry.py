@@ -3,7 +3,18 @@ from __future__ import annotations
 import enum
 from copy import deepcopy
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    Generator,
+    Iterable,
+    Optional,
+    Set,
+    Union,
+)
 
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
@@ -101,9 +112,41 @@ class OpenTelemetryExtension(SchemaExtension):
             return args
         return self._arg_filter(deepcopy(args), info)
 
-    def add_tags(
-        self, span: Span, info: GraphQLResolveInfo, kwargs: Dict[str, Any]
-    ) -> None:
+    def convert_dict_to_allowed_types(self, value: dict) -> str:
+        return (
+            "{"
+            + ", ".join(
+                f"{k}: {self.convert_to_allowed_types(v)}" for k, v in value.items()
+            )
+            + "}"
+        )
+
+    def convert_to_allowed_types(self, value: Any) -> Any:
+        # Put these in decreasing order of use-cases to exit as soon as possible
+        if isinstance(value, (bool, str, bytes, int, float)):
+            return value
+        elif isinstance(value, (list, tuple, range)):
+            return self.convert_list_or_tuple_to_allowed_types(value)
+        elif isinstance(value, dict):
+            return self.convert_dict_to_allowed_types(value)
+        elif isinstance(value, (set, frozenset)):
+            return self.convert_set_to_allowed_types(value)
+        elif isinstance(value, complex):
+            return str(value)  # Convert complex numbers to strings
+        elif isinstance(value, (bytearray, memoryview)):
+            return bytes(value)  # Convert bytearray and memoryview to bytes
+        else:
+            return str(value)
+
+    def convert_set_to_allowed_types(self, value: Union[Set, FrozenSet]) -> str:
+        return (
+            "{" + ", ".join(str(self.convert_to_allowed_types(x)) for x in value) + "}"
+        )
+
+    def convert_list_or_tuple_to_allowed_types(self, value: Iterable) -> str:
+        return ", ".join(map(str, map(self.convert_to_allowed_types, value)))
+
+    def add_tags(self, span: Span, info: GraphQLResolveInfo, kwargs: Any) -> None:
         graphql_path = ".".join(map(str, get_path_from_info(info)))
 
         span.set_attribute("component", "graphql")
@@ -114,9 +157,17 @@ class OpenTelemetryExtension(SchemaExtension):
             filtered_kwargs = self.filter_resolver_args(kwargs, info)
 
             for kwarg, value in filtered_kwargs.items():
-                span.set_attribute(f"graphql.param.{kwarg}", value)
+                converted_value = self.convert_to_allowed_types(value)
+                span.set_attribute(f"graphql.param.{kwarg}", converted_value)
 
-    async def resolve(self, _next, root, info, *args, **kwargs) -> Any:
+    async def resolve(
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Any,
+    ) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -139,7 +190,14 @@ class OpenTelemetryExtension(SchemaExtension):
 
 
 class OpenTelemetryExtensionSync(OpenTelemetryExtension):
-    def resolve(self, _next, root, info, *args, **kwargs) -> Any:
+    def resolve(
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Any,
+    ) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 

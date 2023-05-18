@@ -9,7 +9,6 @@ from typing import (
     Awaitable,
     Callable,
     Coroutine,
-    Dict,
     List,
     Mapping,
     Optional,
@@ -47,8 +46,8 @@ _RESOLVER_TYPE = Union[
     # we initially used Awaitable, but that was triggering the following mypy bug:
     # https://github.com/python/mypy/issues/14669
     Callable[..., Coroutine[T, Any, Any]],
-    "staticmethod[Any, T]",  # type: ignore
-    "classmethod[Any, Any, T]",  # type: ignore
+    "staticmethod[Any, T]",
+    "classmethod[Any, Any, T]",
 ]
 
 UNRESOLVED = object()
@@ -90,7 +89,7 @@ class StrawberryField(dataclasses.Field):
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
 
-        kwargs: Dict[str, Any] = {}
+        kwargs: Any = {}
 
         # kw_only was added to python 3.10 and it is required
         if sys.version_info >= (3, 10):
@@ -166,7 +165,7 @@ class StrawberryField(dataclasses.Field):
         return self
 
     def get_result(
-        self, source: Any, info: Optional[Info], args: List[Any], kwargs: Dict[str, Any]
+        self, source: Any, info: Optional[Info], args: List[Any], kwargs: Any
     ) -> Union[Awaitable[Any], Any]:
         """
         Calls the resolver defined for the StrawberryField.
@@ -431,7 +430,7 @@ def field(
 
     This is normally used inside a type declaration:
 
-    >>> @strawberry.type:
+    >>> @strawberry.type
     >>> class X:
     >>>     field_abc: str = strawberry.field(description="ABC")
 

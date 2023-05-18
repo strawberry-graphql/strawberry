@@ -1,10 +1,19 @@
 import asyncio
 import json
+import sys
+import time
 from datetime import timedelta
 from typing import AsyncGenerator, Type
+from unittest.mock import patch
+
+try:
+    from unittest.mock import AsyncMock
+except ImportError:
+    AsyncMock = None
 
 import pytest
 import pytest_asyncio
+from pytest_mock import MockerFixture
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
@@ -18,7 +27,8 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
-from tests.http.clients import AioHttpClient
+from tests.http.clients import AioHttpClient, ChannelsHttpClient
+from tests.http.clients.base import DebuggableGraphQLTransportWSMixin
 
 from ..http.clients import HttpClient, WebSocketClient
 
@@ -117,41 +127,70 @@ async def test_connection_init_timeout(request, http_client_class: Type[HttpClie
         ws.assert_reason("Connection initialisation timeout")
 
 
+@pytest.mark.flaky
 async def test_connection_init_timeout_cancellation(
-    http_client_class: Type[HttpClient],
+    ws_raw: WebSocketClient,
+):
+    # Verify that the timeout task is cancelled after the connection Init
+    # message is received
+    ws = ws_raw
+    await ws.send_json(ConnectionInitMessage().as_dict())
+
+    response = await ws.receive_json()
+    assert response == ConnectionAckMessage().as_dict()
+
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="subscription { debug { isConnectionInitTimeoutTaskDone } }"
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert (
+        response
+        == NextMessage(
+            id="sub1",
+            payload={"data": {"debug": {"isConnectionInitTimeoutTaskDone": True}}},
+        ).as_dict()
+    )
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 8),
+    reason="Task name was introduced in 3.8 and we need it for this test",
+)
+async def test_close_twice(
+    mocker: MockerFixture, request, http_client_class: Type[HttpClient]
 ):
     test_client = http_client_class()
-    test_client.create_app(connection_init_wait_timeout=timedelta(milliseconds=100))
+    test_client.create_app(connection_init_wait_timeout=timedelta(seconds=0.25))
+
     async with test_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
-        await ws.send_json(ConnectionInitMessage().as_dict())
+        transport_close = mocker.patch.object(ws, "close")
 
-        response = await ws.receive_json()
-        assert response == ConnectionAckMessage().as_dict()
+        await ws.send_json(ConnectionInitMessage(payload=None).as_dict())
+        # Yield control so that ._close can be called
+        await asyncio.sleep(0)
 
-        await asyncio.sleep(0.2)
+        for t in asyncio.all_tasks():
+            if (
+                t.get_coro().__qualname__
+                == "BaseGraphQLTransportWSHandler.handle_connection_init_timeout"
+            ):
+                # The init timeout task should be cancelled
+                with pytest.raises(asyncio.CancelledError):
+                    await t
 
-        await ws.send_json(
-            SubscribeMessage(
-                id="sub1",
-                payload=SubscribeMessagePayload(
-                    query="subscription { debug { isConnectionInitTimeoutTaskDone } }"
-                ),
-            ).as_dict()
-        )
-
-        response = await ws.receive_json()
-        assert (
-            response
-            == NextMessage(
-                id="sub1",
-                payload={"data": {"debug": {"isConnectionInitTimeoutTaskDone": True}}},
-            ).as_dict()
-        )
-
-        await ws.close()
+        await ws.receive(timeout=0.5)
         assert ws.closed
+        assert ws.close_code == 4400
+        ws.assert_reason("Invalid connection init payload")
+        transport_close.assert_not_called()
 
 
 async def test_too_many_initialisation_requests(ws: WebSocketClient):
@@ -746,3 +785,86 @@ async def test_rejects_connection_params_not_unset(ws_raw: WebSocketClient):
     assert ws.closed
     assert ws.close_code == 4400
     ws.assert_reason("Invalid connection init payload")
+
+
+async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
+    # Test that when we cancel a subscription, the websocket isn't blocked
+    # while some complex finalization takes place.
+    delay = 0.1
+
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query=f"subscription {{ longFinalizer(delay: {delay}) }}"
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert (
+        response
+        == NextMessage(
+            id="sub1", payload={"data": {"longFinalizer": "hello"}}
+        ).as_dict()
+    )
+
+    # now cancel the stubscription and send a new query.  We expect the response
+    # to the new query to arrive immediately, without waiting for the finalizer
+    start = time.time()
+    await ws.send_json(CompleteMessage(id="sub1").as_dict())
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub2",
+            payload=SubscribeMessagePayload(query="query { hello }"),
+        ).as_dict()
+    )
+    while True:
+        response = await ws.receive_json()
+        assert response["type"] in ("next", "complete")
+        if response["id"] == "sub2":
+            break
+    end = time.time()
+    elapsed = end - start
+    assert elapsed < delay
+
+
+async def test_error_handler_for_timeout(http_client: HttpClient):
+    """
+    Test that the error handler is called when the timeout
+    task encounters an error
+    """
+    if isinstance(http_client, ChannelsHttpClient):
+        pytest.skip("Can't patch on_init for this client")
+    if not AsyncMock:
+        pytest.skip("Don't have AsyncMock")
+    ws = ws_raw
+    handler = None
+    errorhandler = AsyncMock()
+
+    def on_init(_handler):
+        nonlocal handler
+        if handler:
+            return
+        handler = _handler
+        # patch the object
+        handler.handle_task_exception = errorhandler
+        # cause an attribute error in the timeout task
+        handler.connection_init_wait_timeout = None
+
+    with patch.object(DebuggableGraphQLTransportWSMixin, "on_init", on_init):
+        async with http_client.ws_connect(
+            "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        ) as ws:
+            await asyncio.sleep(0.01)  # wait for the timeout task to start
+            await ws.send_json(ConnectionInitMessage().as_dict())
+            response = await ws.receive_json()
+            assert response == ConnectionAckMessage().as_dict()
+            await ws.close()
+
+    # the error hander should have been called
+    assert handler
+    errorhandler.assert_called_once()
+    args = errorhandler.call_args
+    assert isinstance(args[0][0], AttributeError)
+    assert "total_seconds" in str(args[0][0])

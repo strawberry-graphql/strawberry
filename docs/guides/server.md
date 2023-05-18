@@ -10,7 +10,7 @@ framework like Flask or Django.
 Strawberry’s built in server helps with this use case. It allows to quickly have
 a development server by running the following command:
 
-```bash
+```shell
 strawberry server package.module:schema
 ```
 
@@ -36,6 +36,6 @@ prototyping.
 To disable operation logging you can use the `--log-operations` configuration
 flag:
 
-```bash
+```shell
 strawberry server package.module:schema --log-operations False
 ```

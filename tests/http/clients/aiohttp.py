@@ -10,24 +10,33 @@ from aiohttp import web
 from aiohttp.client_ws import ClientWebSocketResponse
 from aiohttp.http_websocket import WSMsgType
 from aiohttp.test_utils import TestClient, TestServer
+from strawberry.aiohttp.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
-from tests.aiohttp.app import (
-    DebuggableGraphQLTransportWSHandler,
-    DebuggableGraphQLWSHandler,
-)
 from tests.views.schema import Query, schema
 
 from ..context import get_context
 from .base import (
     JSON,
+    DebuggableGraphQLTransportWSMixin,
+    DebuggableGraphQLWSMixin,
     HttpClient,
     Message,
     Response,
     ResultOverrideFunction,
     WebSocketClient,
 )
+
+
+class DebuggableGraphQLTransportWSHandler(
+    DebuggableGraphQLTransportWSMixin, GraphQLTransportWSHandler
+):
+    pass
+
+
+class DebuggableGraphQLWSHandler(DebuggableGraphQLWSMixin, GraphQLWSHandler):
+    pass
 
 
 class GraphQLView(BaseGraphQLView):
@@ -93,7 +102,7 @@ class AioHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
         async with TestClient(TestServer(self.app)) as client:
             body = self._build_body(

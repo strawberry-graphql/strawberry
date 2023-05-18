@@ -10,6 +10,7 @@ from typing import (
     Dict,
     ForwardRef,
     Optional,
+    Type,
     TypeVar,
     Union,
     cast,
@@ -167,7 +168,7 @@ class StrawberryAnnotation:
     def create_type_var(self, evaled_type: TypeVar) -> StrawberryTypeVar:
         return StrawberryTypeVar(evaled_type)
 
-    def create_union(self, evaled_type) -> StrawberryUnion:
+    def create_union(self, evaled_type: Type) -> StrawberryUnion:
         # Prevent import cycles
         from strawberry.union import StrawberryUnion
 
@@ -274,7 +275,7 @@ class StrawberryAnnotation:
         return annotation_origin is typing.Union
 
     @classmethod
-    def _strip_async_type(cls, annotation) -> type:
+    def _strip_async_type(cls, annotation: Type) -> type:
         return annotation.__args__[0]
 
     @classmethod

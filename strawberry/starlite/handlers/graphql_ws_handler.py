@@ -1,5 +1,5 @@
 from contextlib import suppress
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from starlite import WebSocket
 from starlite.exceptions import SerializationException, WebSocketDisconnect
@@ -16,8 +16,8 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         debug: bool,
         keep_alive: bool,
         keep_alive_interval: float,
-        get_context,
-        get_root_value,
+        get_context: Callable,
+        get_root_value: Callable,
         ws: WebSocket,
     ):
         super().__init__(schema, debug, keep_alive, keep_alive_interval)
@@ -35,8 +35,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         await self._ws.send_json(data)
 
     async def close(self, code: int = 1000, reason: Optional[str] = None) -> None:
-        # Close messages are not part of the ASGI ref yet
-        await self._ws.close(code=code)
+        await self._ws.close(code=code, reason=reason)
 
     async def handle_request(self) -> Any:
         await self._ws.accept(subprotocols=GRAPHQL_WS_PROTOCOL)

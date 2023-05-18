@@ -33,8 +33,8 @@ def enum_value(
 def enum(
     _cls: EnumType,
     *,
-    name=None,
-    description=None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     directives: Iterable[object] = (),
     inaccessible: bool = False,
     tags: Optional[Iterable[str]] = (),
@@ -46,8 +46,8 @@ def enum(
 def enum(
     _cls: None = None,
     *,
-    name=None,
-    description=None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     directives: Iterable[object] = (),
     inaccessible: bool = False,
     tags: Optional[Iterable[str]] = (),

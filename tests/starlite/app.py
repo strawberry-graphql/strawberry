@@ -1,28 +1,8 @@
+from typing import Any
+
 from starlite import Provide, Request, Starlite
 from strawberry.starlite import make_graphql_controller
-from strawberry.starlite.handlers.graphql_transport_ws_handler import (
-    GraphQLTransportWSHandler,
-)
-from strawberry.starlite.handlers.graphql_ws_handler import GraphQLWSHandler
 from tests.starlite.schema import schema
-
-
-class DebuggableGraphQLTransportWSHandler(GraphQLTransportWSHandler):
-    async def get_context(self) -> object:
-        context = await super().get_context()
-        context["ws"] = self._ws
-        context["tasks"] = self.tasks
-        context["connectionInitTimeoutTask"] = self.connection_init_timeout_task
-        return context
-
-
-class DebuggableGraphQLWSHandler(GraphQLWSHandler):
-    async def get_context(self) -> object:
-        context = await super().get_context()
-        context["ws"] = self._ws
-        context["tasks"] = self.tasks
-        context["connectionInitTimeoutTask"] = None
-        return context
 
 
 def custom_context_dependency() -> str:
@@ -40,7 +20,7 @@ async def get_context(app_dependency: str, request: Request = None):
     }
 
 
-def create_app(schema=schema, **kwargs):
+def create_app(schema=schema, **kwargs: Any):
     GraphQLController = make_graphql_controller(
         schema,
         path="/graphql",
@@ -49,12 +29,8 @@ def create_app(schema=schema, **kwargs):
         **kwargs
     )
 
-    class DebuggableGraphQLController(GraphQLController):
-        graphql_ws_handler_class = DebuggableGraphQLWSHandler
-        graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
-
     app = Starlite(
-        route_handlers=[DebuggableGraphQLController],
+        route_handlers=[GraphQLController],
         dependencies={"app_dependency": Provide(custom_context_dependency)},
     )
 

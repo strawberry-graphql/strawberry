@@ -15,6 +15,7 @@
 ## Types
 
 - [Schema](./types/schema.md)
+- [Operation Directives](./types/operation-directives.md)
 - [Schema Directives](./types/schema-directives.md)
 - [Schema configurations](./types/schema-configurations.md)
 - [Scalars](./types/scalars.md)

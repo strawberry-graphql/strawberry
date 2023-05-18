@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from aiohttp import http, web
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
@@ -19,8 +19,8 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         debug: bool,
         keep_alive: bool,
         keep_alive_interval: float,
-        get_context,
-        get_root_value,
+        get_context: Callable,
+        get_root_value: Callable,
         request: web.Request,
     ):
         super().__init__(schema, debug, keep_alive, keep_alive_interval)

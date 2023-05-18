@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Dict, List, NoReturn, Optional
+from typing import Any, Dict, List, NoReturn, Optional
 
 import pytest
 
@@ -330,7 +330,7 @@ def test_runs_directives_with_extensions():
         return value.upper()
 
     class ExampleExtension(SchemaExtension):
-        def resolve(self, _next, root, info, *args, **kwargs):
+        def resolve(self, _next, root, info, *args: str, **kwargs: Any):
             return _next(root, info, *args, **kwargs)
 
     schema = strawberry.Schema(
@@ -369,7 +369,7 @@ async def test_runs_directives_with_extensions_async():
         return value.upper()
 
     class ExampleExtension(SchemaExtension):
-        async def resolve(self, _next, root, info, *args, **kwargs):
+        async def resolve(self, _next, root, info, *args: str, **kwargs: Any):
             return await await_maybe(_next(root, info, *args, **kwargs))
 
     schema = strawberry.Schema(

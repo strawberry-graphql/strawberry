@@ -224,6 +224,17 @@ class Subscription:
     ) -> AsyncGenerator[str, None]:
         yield info.context["connection_params"]["strawberry"]
 
+    @strawberry.subscription
+    async def long_finalizer(
+        self, info: Info[Any, Any], delay: float = 0
+    ) -> AsyncGenerator[str, None]:
+        try:
+            for _i in range(100):
+                yield "hello"
+                await asyncio.sleep(0.01)
+        finally:
+            await asyncio.sleep(delay)
+
 
 schema = strawberry.Schema(
     query=Query,

@@ -19,9 +19,11 @@ def test_basic_type_field_list():
         age: int
         password: Optional[str]
 
-    @strawberry.experimental.pydantic.type(User, fields=["age", "password"])
-    class UserType:
-        pass
+    with pytest.deprecated_call():
+
+        @strawberry.experimental.pydantic.type(User, fields=["age", "password"])
+        class UserType:
+            pass
 
     definition: TypeDefinition = UserType._type_definition
     assert definition.name == "UserType"
@@ -736,7 +738,7 @@ def test_permission_classes():
         message = "User is not authenticated"
 
         def has_permission(
-            self, source: Any, info: strawberry.types.Info, **kwargs
+            self, source: Any, info: strawberry.types.Info, **kwargs: Any
         ) -> bool:
             return False
 

@@ -33,7 +33,7 @@ def generate_get_path(
 
 
 class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
-    async def get_context(self, *args, **kwargs) -> object:
+    async def get_context(self, *args: str, **kwargs: Any) -> object:
         context = await super().get_context(*args, **kwargs)
         context.tasks = self._handler.tasks
         context.connectionInitTimeoutTask = getattr(

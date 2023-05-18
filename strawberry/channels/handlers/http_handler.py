@@ -164,7 +164,7 @@ class GraphQLHTTPConsumer(
     async def parse_multipart_body(self, body: bytes) -> GraphQLRequestData:
         raise ExecutionError("Unable to parse the multipart body")
 
-    async def render_graphiql(self, body) -> Result:
+    async def render_graphiql(self, body: bytes) -> Result:
         html = get_graphiql_html(self.subscriptions_enabled)
         return Result(response=html.encode(), content_type="text/html")
 
