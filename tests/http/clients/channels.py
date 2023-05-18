@@ -79,6 +79,7 @@ class ChannelsHttpClient(HttpClient):
         headers: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response:
+        # FIXME: Use self.request?
         body = self._build_body(
             query=query, variables=variables, files=files, method=method
         )
@@ -120,19 +121,23 @@ class ChannelsHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
+        body: str | None = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
+        # HttpCommunicator expects tuples of bytestrings
+        headers = [(k.encode(), v.encode()) for k, v in headers.items()]
         communicator = HttpCommunicator(
             self.http_app,
             method.upper(),
             url,
+            body=body,
             headers=headers,
         )
         response = await communicator.get_response()
 
         return Response(
             status_code=response["status"],
-            data=response["body"].decode(),
+            data=response["body"],
             headers=response["headers"],
         )
 
@@ -150,13 +155,11 @@ class ChannelsHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
-        response = self.client.post(url, headers=headers, content=data, json=json)
-
-        return Response(
-            status_code=response.status_code,
-            data=response.content,
-            headers=response.headers,
-        )
+        if data:
+            body = data
+        elif json:
+            body = json.dumps(json)
+        return await self.request(url, "get", body=body, headers=headers)
 
     @contextlib.asynccontextmanager
     async def ws_connect(
