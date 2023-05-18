@@ -99,7 +99,7 @@ class ChannelsHttpClient(HttpClient):
             endpoint_url = "/graphql"
         else:
             body = b""
-            endpoint_url = generate_get_path("/graphql", query)
+            endpoint_url = generate_get_path("/graphql", query, variables)
 
         communicator = HttpCommunicator(
             self.http_app,
