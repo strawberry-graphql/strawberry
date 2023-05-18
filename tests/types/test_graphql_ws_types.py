@@ -1,4 +1,3 @@
-from strawberry import UNSET
 from strawberry.subscriptions.protocols.graphql_ws.types import (
     DataPayload,
     StartPayload,
