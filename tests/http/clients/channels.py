@@ -121,11 +121,13 @@ class ChannelsHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        body: str | None = None,
+        body: bytes = b"",
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
         # HttpCommunicator expects tuples of bytestrings
-        headers = [(k.encode(), v.encode()) for k, v in headers.items()]
+        if headers:
+            headers = [(k.encode(), v.encode()) for k, v in headers.items()]
+
         communicator = HttpCommunicator(
             self.http_app,
             method.upper(),
@@ -158,7 +160,7 @@ class ChannelsHttpClient(HttpClient):
         if data:
             body = data
         elif json:
-            body = json.dumps(json)
+            body = json.dumps(json).encode()
         return await self.request(url, "get", body=body, headers=headers)
 
     @contextlib.asynccontextmanager
