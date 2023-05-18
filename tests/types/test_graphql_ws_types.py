@@ -15,8 +15,8 @@ def test_dataclass_start_payload_total_behavior():
 
     assert isinstance(start_payload, StartPayload)
     assert start_payload.query == ""
-    assert start_payload.variables == UNSET
-    assert start_payload.operationName == UNSET
+    assert start_payload.variables is None
+    assert start_payload.operationName is None
 
 
 def test_dataclass_data_payload_total_behavior():
@@ -29,4 +29,4 @@ def test_dataclass_data_payload_total_behavior():
 
     assert isinstance(data_payload, DataPayload)
     assert data_payload.data == ""
-    assert data_payload.errors == UNSET
+    assert data_payload.errors == []
