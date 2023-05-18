@@ -145,9 +145,14 @@ class GraphQLHTTPConsumer(
             await self.send_response(e.status_code, e.reason.encode())
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: Any
+        self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse
     ) -> Any:
-        return Result(response=json.dumps(response_data))
+        result = Result(response=json.dumps(response_data))
+
+        if sub_response.status_code:
+            result.status = sub_response.status_code
+
+        return result
 
     async def get_root_value(self, request: ChannelsConsumer) -> Optional[RootValue]:
         return None
