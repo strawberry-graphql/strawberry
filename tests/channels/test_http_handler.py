@@ -8,11 +8,8 @@ from strawberry.channels import GraphQLHTTPConsumer
 from strawberry.channels.handlers.http_handler import SyncGraphQLHTTPConsumer
 from tests.views.schema import schema
 
-pytestmark = pytest.mark.xfail(
-    reason=(
-        "Some of these tests seems to crash due to usage of database_sync_to_async"
-    ),
-)
+#         "Some of these tests seems to crash due to usage of database_sync_to_async"
+#     ),
 
 
 def generate_body(query: str, variables: Optional[Dict[str, Any]] = None) -> bytes:
@@ -67,9 +64,9 @@ async def test_graphiql_view_disabled(consumer):
     )
     response = await client.get_response()
     assert response == {
-        "headers": [(b"Allow", b"GET, POST")],
-        "status": 405,
-        "body": b"Method not allowed",
+        "headers": [],
+        "status": 404,
+        "body": b"Not Found",
     }
 
 
@@ -99,9 +96,9 @@ async def test_disabled_methods(consumer, method: str):
     )
     response = await client.get_response()
     assert response == {
-        "headers": [(b"Allow", b"GET, POST")],
+        "headers": [],
         "status": 405,
-        "body": b"Method not allowed",
+        "body": b"GraphQL only supports GET and POST requests.",
     }
 
 
@@ -130,10 +127,11 @@ async def test_fails_on_missing_query(consumer, body: bytes):
         "POST",
         "/graphql",
         body=body,
+        headers=[(b"content-type", b"application/json")],
     )
     response = await client.get_response()
     assert response == {
-        "status": 500,
+        "status": 400,
         "headers": [],
         "body": b"No GraphQL query found in the request",
     }
@@ -147,10 +145,11 @@ async def test_fails_on_invalid_query(consumer, body: bytes):
         "POST",
         "/graphql",
         body=body,
+        headers=[(b"content-type", b"application/json")],
     )
     response = await client.get_response()
     assert response == {
-        "status": 500,
+        "status": 400,
         "headers": [],
         "body": b"Unable to parse request body as JSON",
     }
@@ -165,7 +164,7 @@ async def test_graphql_post_query_fails_using_params(consumer):
     )
     response = await client.get_response()
     assert response == {
-        "status": 500,
+        "status": 400,
         "headers": [],
         "body": b"No GraphQL query found in the request",
     }
@@ -184,6 +183,7 @@ async def test_graphql_query(consumer):
         "POST",
         "/graphql",
         body=generate_body("{ hello }"),
+        headers=[(b"content-type", b"application/json")],
     )
     assert_response(
         await client.get_response(),
@@ -202,6 +202,7 @@ async def test_graphql_can_pass_variables(consumer):
             "query Hello($name: String!) { hello(name: $name) }",
             variables={"name": "James"},
         ),
+        headers=[(b"content-type", b"application/json")],
     )
     assert_response(
         await client.get_response(),
@@ -249,6 +250,7 @@ async def test_returns_errors_and_data(consumer):
         "POST",
         "/graphql",
         body=generate_body("{ hello, alwaysFail }"),
+        headers=[(b"content-type", b"application/json")],
     )
     response = await client.get_response()
     assert response["status"] == 200
@@ -274,7 +276,7 @@ async def test_graphql_get_does_not_allow_mutation(consumer):
     )
     response = await client.get_response()
     assert response == {
-        "status": 406,
+        "status": 400,
         "headers": [],
         "body": b"mutations are not allowed when using GET",
     }
@@ -290,7 +292,7 @@ async def test_graphql_get_not_allowed(consumer):
     )
     response = await client.get_response()
     assert response == {
-        "status": 406,
+        "status": 400,
         "headers": [],
         "body": b"queries are not allowed when using GET",
     }

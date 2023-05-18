@@ -5,17 +5,15 @@ A consumer to provide a graphql endpoint, and optionally graphiql.
 from __future__ import annotations
 
 import dataclasses
+import json
 from typing import TYPE_CHECKING, Any, Mapping, Optional
+from urllib.parse import parse_qs
 
 from channels.db import database_sync_to_async
 from channels.generic.http import AsyncHttpConsumer
-from strawberry.channels.context import StrawberryChannelsContext
-from strawberry.http import (
-    process_result,
-)
 from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
 from strawberry.http.exceptions import HTTPException
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
+from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.typevars import Context, RootValue
 from strawberry.types.graphql import OperationType
 from strawberry.utils.graphiql import get_graphiql_html
@@ -24,8 +22,8 @@ from .base import ChannelsConsumer
 
 if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
+    from strawberry.http.types import FormData, HTTPMethod, QueryParams
     from strawberry.schema import BaseSchema
-    from strawberry.types import ExecutionResult
 
 
 class MethodNotAllowed(Exception):
@@ -43,28 +41,43 @@ class Result:
     content_type: str = "application/json"
 
 
+@dataclasses.dataclass
+class Request:
+    consumer: ChannelsConsumer
+    body: bytes
+
+
 class ChannelsRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: ChannelsConsumer):
+    def __init__(self, request: Request):
         self.request = request
 
     @property
     def query_params(self) -> QueryParams:
-        return {}
+        query_params_str = self.request.consumer["query_string"].decode()
+
+        query_params: QueryParams = {}
+        for key, value in parse_qs(query_params_str, keep_blank_values=True).items():
+            query_params[key] = value[0]
+
+        return query_params
 
     @property
     def method(self) -> HTTPMethod:
-        return self.request["method"].upper()
+        return self.request.consumer["method"].upper()
 
     @property
     def headers(self) -> Mapping[str, str]:
-        return {}
+        return {
+            header_name.decode().lower(): header_value.decode()
+            for header_name, header_value in self.request.consumer["headers"]
+        }
 
     @property
     def content_type(self) -> Optional[str]:
-        return None
+        return self.headers.get("content-type", None)
 
     async def get_body(self) -> bytes:
-        ...
+        return self.request.body
 
     async def get_form_data(self) -> FormData:
         ...
@@ -120,12 +133,13 @@ class GraphQLHTTPConsumer(
         super().__init__(**kwargs)
 
     async def handle(self, body: bytes) -> None:
+        request = Request(consumer=self.scope, body=body)
         try:
-            response = await self.run(self.scope)
+            response = await self.run(request)
             await self.send_response(
-                405,
-                b"Method not allowed",
-                headers=[(b"Allow", b"GET, POST")],
+                response.status,
+                response.response.encode(),
+                headers=[(b"Content-Type", response.content_type.encode())],
             )
         except HTTPException as e:
             await self.send_response(e.status_code, e.reason.encode())
@@ -133,9 +147,9 @@ class GraphQLHTTPConsumer(
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: Any
     ) -> Any:
-        return None
+        return Result(response=json.dumps(response_data))
 
-    async def get_root_value(self, request: ChannelsConsumer) -> RootValue:
+    async def get_root_value(self, request: ChannelsConsumer) -> Optional[RootValue]:
         return None
 
     async def get_context(self, request: ChannelsConsumer, response: Any) -> Context:
@@ -144,30 +158,11 @@ class GraphQLHTTPConsumer(
             "response": response,
         }
 
-    async def get_sub_response(self, request: ChannelsConsumer) -> Any:
-        return {}
+    async def get_sub_response(self, request: ChannelsConsumer) -> TemporalResponse:
+        return TemporalResponse()
 
     async def parse_multipart_body(self, body: bytes) -> GraphQLRequestData:
         raise ExecutionError("Unable to parse the multipart body")
-
-    async def execute(self, request_data: GraphQLRequestData) -> GraphQLHTTPResponse:
-        context = await self.get_context()
-        root_value = await self.get_root_value()
-
-        method = self.scope["method"]
-        allowed_operation_types = OperationType.from_http(method)
-        if not self.allow_queries_via_get and method == "GET":
-            allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
-
-        result = await self.schema.execute(
-            query=request_data.query,
-            root_value=root_value,
-            variable_values=request_data.variables,
-            context_value=context,
-            operation_name=request_data.operation_name,
-            allowed_operation_types=allowed_operation_types,
-        )
-        return await self.process_result(result)
 
     async def render_graphiql(self, body) -> Result:
         html = get_graphiql_html(self.subscriptions_enabled)
@@ -178,23 +173,9 @@ class SyncGraphQLHTTPConsumer(GraphQLHTTPConsumer):
     """Synchronous version of the HTTPConsumer.
 
     This is the same as `GraphQLHTTPConsumer`, but it can be used with
-    synchronous schemas (i.e. the schema's resolvers are espected to be
+    synchronous schemas (i.e. the schema's resolvers are expected to be
     synchronous and not asynchronous).
     """
-
-    def get_root_value(self, request: Optional[ChannelsConsumer] = None) -> Any:
-        return None
-
-    def get_context(  # type: ignore[override]
-        self,
-        request: Optional[ChannelsConsumer] = None,
-    ) -> StrawberryChannelsContext:
-        return StrawberryChannelsContext(request=request or self)
-
-    def process_result(  # type:ignore [override]
-        self, result: ExecutionResult
-    ) -> GraphQLHTTPResponse:
-        return process_result(result)
 
     # Sync channels is actually async, but it uses database_sync_to_async to call
     # handlers in a threadpool. Check SyncConsumer's documentation for more info:

@@ -21,6 +21,17 @@ from .base import (
 )
 
 
+def generate_get_path(
+    path, query: str, variables: Optional[Dict[str, Any]] = None
+) -> str:
+    body: Dict[str, Any] = {"query": query}
+    if variables is not None:
+        body["variables"] = json.dumps(variables)
+
+    parts = [f"{k}={v}" for k, v in body.items()]
+    return f"{path}?{'&'.join(parts)}"
+
+
 class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
     async def get_context(self, *args, **kwargs) -> object:
         context = await super().get_context(*args, **kwargs)
@@ -72,29 +83,36 @@ class ChannelsHttpClient(HttpClient):
             query=query, variables=variables, files=files, method=method
         )
 
-        if method == "get":
-            kwargs["params"] = body
-        elif body:
-            if files:
-                kwargs["data"] = body
-            else:
-                kwargs["content"] = json.dumps(body)
+        # if method == "get":
+        #     if files:
 
         if files is not None:
             kwargs["files"] = files
 
+        headers = self._get_headers(method=method, headers=headers, files=files)
+        headers = [
+            (k.encode(), v.encode()) for k, v in headers.items()
+        ]  # HttpCommunicator expects tuples of bytestrings
+
+        if method == "post":
+            body = json.dumps(body).encode()
+            endpoint_url = "/graphql"
+        else:
+            body = b""
+            endpoint_url = generate_get_path("/graphql", query)
+
         communicator = HttpCommunicator(
             self.http_app,
             method.upper(),
-            "/graphql",
-            self._get_headers(method=method, headers=headers, files=files),
-            **kwargs,
+            endpoint_url,
+            body=body,
+            headers=headers,
         )
         response = await communicator.get_response()
 
         return Response(
             status_code=response["status"],
-            data=response["body"].decode(),
+            data=response["body"],
             headers=response["headers"],
         )
 

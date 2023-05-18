@@ -7,7 +7,6 @@ from typing import (
     Awaitable,
     Callable,
     DefaultDict,
-    Dict,
     List,
     Optional,
     Sequence,
@@ -73,13 +72,6 @@ class ChannelsConsumer(AsyncConsumer):
             WeakSet
         )
         super().__init__(*args, **kwargs)
-
-    @property
-    def headers(self) -> Dict[str, str]:
-        return {
-            header_name.decode().lower(): header_value.decode()
-            for header_name, header_value in self.scope["headers"]
-        }
 
     async def dispatch(self, message: ChannelsMessage) -> None:
         # AsyncConsumer will try to get a function for message["type"] to handle
