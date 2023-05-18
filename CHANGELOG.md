@@ -1,6 +1,29 @@
 CHANGELOG
 =========
 
+0.177.2 - 2023-05-18
+--------------------
+
+This release fixes an issue with optional scalars using the `or`
+notation with forward references on python 3.10.
+
+The following code would previously raise `TypeError` on python 3.10:
+
+```python
+from __future__ import annotations
+
+import strawberry
+from strawberry.scalars import JSON
+
+
+@strawberry.type
+class SomeType:
+    an_optional_json: JSON | None
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2774](https://github.com/strawberry-graphql/strawberry/pull/2774/)
+
+
 0.177.1 - 2023-05-09
 --------------------
 
