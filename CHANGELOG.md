@@ -1,6 +1,34 @@
 CHANGELOG
 =========
 
+0.177.3 - 2023-05-19
+--------------------
+
+This release adds a method on the DatadogTracingExtension class called `create_span` that can be overridden to create a custom span or add additional tags to the span.
+
+```python
+from ddtrace import Span
+
+from strawberry.extensions import LifecycleStep
+from strawberry.extensions.tracing import DatadogTracingExtension
+
+
+class DataDogExtension(DatadogTracingExtension):
+    def create_span(
+        self,
+        lifecycle_step: LifecycleStep,
+        name: str,
+        **kwargs,
+    ) -> Span:
+        span = super().create_span(lifecycle_step, name, **kwargs)
+        if lifecycle_step == LifeCycleStep.OPERATION:
+            span.set_tag("graphql.query", self.execution_context.query)
+        return span
+```
+
+Contributed by [Ronald Williams](https://github.com/ronaldnwilliams) via [PR #2773](https://github.com/strawberry-graphql/strawberry/pull/2773/)
+
+
 0.177.2 - 2023-05-18
 --------------------
 
