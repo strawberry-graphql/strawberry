@@ -8,7 +8,9 @@ from typing_extensions import Literal
 
 from channels.testing import HttpCommunicator, WebsocketCommunicator
 from strawberry.channels import GraphQLHTTPConsumer, GraphQLWSConsumer
-from tests.views.schema import schema
+from strawberry.channels.handlers.base import ChannelsConsumer
+from strawberry.http.typevars import Context, RootValue
+from tests.views.schema import Query, schema
 
 from ..context import get_context
 from .base import (
@@ -44,6 +46,16 @@ class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
         return context
 
 
+class TestGraphQLHTTPConsumer(GraphQLHTTPConsumer):
+    async def get_root_value(self, request: ChannelsConsumer) -> Optional[RootValue]:
+        return Query()
+
+    async def get_context(self, request: ChannelsConsumer, response: Any) -> Context:
+        context = await super().get_context(request, response)
+
+        return get_context(context)
+
+
 class ChannelsHttpClient(HttpClient):
     """
     A client to test websockets over channels
@@ -59,7 +71,7 @@ class ChannelsHttpClient(HttpClient):
             schema=schema,
             keep_alive=False,
         )
-        self.http_app = GraphQLHTTPConsumer.as_asgi(
+        self.http_app = TestGraphQLHTTPConsumer.as_asgi(
             schema=schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
