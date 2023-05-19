@@ -265,7 +265,7 @@ async def test_create_span_override(datadog_extension):
             self,
             lifecycle_step: LifecycleStep,
             name: str,
-            **kwargs,
+            **kwargs,  # type: ignore
         ):
             span = super().create_span(lifecycle_step, name, **kwargs)
             if lifecycle_step == LifecycleStep.OPERATION:

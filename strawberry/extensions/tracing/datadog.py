@@ -40,7 +40,7 @@ class DatadogTracingExtension(SchemaExtension):
         self,
         lifecycle_step: LifecycleStep,
         name: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> Span:
         """
         Create a span with the given name and kwargs.
