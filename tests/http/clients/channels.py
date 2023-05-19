@@ -126,7 +126,7 @@ class ChannelsHttpClient(HttpClient):
         return Response(
             status_code=response["status"],
             data=response["body"],
-            headers=response["headers"],
+            headers={k.decode(): v.decode() for k, v in response["headers"]},
         )
 
     async def request(

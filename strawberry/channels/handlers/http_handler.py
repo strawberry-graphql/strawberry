@@ -39,6 +39,7 @@ class Result:
     response: bytes
     status: int = 200
     content_type: str = "application/json"
+    headers: Mapping[bytes, bytes] | None = None
 
 
 @dataclasses.dataclass
@@ -136,21 +137,33 @@ class GraphQLHTTPConsumer(
         request = Request(consumer=self.scope, body=body)
         try:
             response = await self.run(request)
+
+            if response.headers is None:
+                response.headers = {}
+
+            if b"Content-Type" not in response.headers:
+                response.headers[b"Content-Type"] = response.content_type.encode()
+
             await self.send_response(
                 response.status,
                 response.response.encode(),
-                headers=[(b"Content-Type", response.content_type.encode())],
+                headers=response.headers,
             )
         except HTTPException as e:
             await self.send_response(e.status_code, e.reason.encode())
 
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse
-    ) -> Any:
+    ) -> Result:
         result = Result(response=json.dumps(response_data))
 
         if sub_response.status_code:
             result.status = sub_response.status_code
+
+        if sub_response.headers:
+            result.headers = {
+                k.encode(): v.encode() for k, v in sub_response.headers.items()
+            }
 
         return result
 
