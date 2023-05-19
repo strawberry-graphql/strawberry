@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import contextlib
-import json
+import json as json_module
 from io import BytesIO
 from typing import Any, AsyncGenerator, Dict, List, Optional
 from typing_extensions import Literal
@@ -26,7 +26,7 @@ def generate_get_path(
 ) -> str:
     body: Dict[str, Any] = {"query": query}
     if variables is not None:
-        body["variables"] = json.dumps(variables)
+        body["variables"] = json_module.dumps(variables)
 
     parts = [f"{k}={v}" for k, v in body.items()]
     return f"{path}?{'&'.join(parts)}"
@@ -96,7 +96,7 @@ class ChannelsHttpClient(HttpClient):
         ]  # HttpCommunicator expects tuples of bytestrings
 
         if method == "post":
-            body = json.dumps(body).encode()
+            body = json_module.dumps(body).encode()
             endpoint_url = "/graphql"
         else:
             body = b""
@@ -157,10 +157,10 @@ class ChannelsHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
-        if data:
+        if data is not None:
             body = data
-        elif json:
-            body = json.dumps(json).encode()
+        elif json is not None:
+            body = json_module.dumps(json).encode()
         return await self.request(url, "get", body=body, headers=headers)
 
     @contextlib.asynccontextmanager
@@ -211,7 +211,7 @@ class ChannelsWebSocketClient(WebSocketClient):
         m = await self.ws.receive_output(timeout=timeout)
         assert m["type"] == "websocket.send"
         assert "text" in m
-        return json.loads(m["text"])
+        return json_module.loads(m["text"])
 
     async def close(self) -> None:
         await self.ws.disconnect()
