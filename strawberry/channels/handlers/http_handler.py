@@ -146,7 +146,7 @@ class GraphQLHTTPConsumer(
 
             await self.send_response(
                 response.status,
-                response.response.encode(),
+                response.response,
                 headers=response.headers,
             )
         except HTTPException as e:
@@ -155,7 +155,7 @@ class GraphQLHTTPConsumer(
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse
     ) -> Result:
-        result = Result(response=json.dumps(response_data))
+        result = Result(response=json.dumps(response_data).encode())
 
         if sub_response.status_code:
             result.status = sub_response.status_code
@@ -182,7 +182,7 @@ class GraphQLHTTPConsumer(
     async def parse_multipart_body(self, body: bytes) -> GraphQLRequestData:
         raise ExecutionError("Unable to parse the multipart body")
 
-    async def render_graphiql(self, body: bytes) -> Result:
+    def render_graphiql(self, body: bytes) -> Result:
         html = get_graphiql_html(self.subscriptions_enabled)
         return Result(response=html.encode(), content_type="text/html")
 
