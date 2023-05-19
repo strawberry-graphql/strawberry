@@ -9,6 +9,7 @@ from typing_extensions import Literal
 from channels.testing import HttpCommunicator, WebsocketCommunicator
 from strawberry.channels import GraphQLHTTPConsumer, GraphQLWSConsumer
 from strawberry.channels.handlers.base import ChannelsConsumer
+from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.typevars import Context, RootValue
 from tests.views.schema import Query, schema
 
@@ -47,6 +48,12 @@ class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
 
 
 class TestGraphQLHTTPConsumer(GraphQLHTTPConsumer):
+    result_override: ResultOverrideFunction = None
+
+    def __init__(self, *args: Any, **kwargs: Any):
+        self.result_override = kwargs.pop("result_override")
+        super().__init__(*args, **kwargs)
+
     async def get_root_value(self, request: ChannelsConsumer) -> Optional[RootValue]:
         return Query()
 
@@ -54,6 +61,14 @@ class TestGraphQLHTTPConsumer(GraphQLHTTPConsumer):
         context = await super().get_context(request, response)
 
         return get_context(context)
+
+    async def process_result(
+        self, request: ChannelsConsumer, result: Any
+    ) -> GraphQLHTTPResponse:
+        if self.result_override:
+            return self.result_override(result)
+
+        return await super().process_result(request, result)
 
 
 class ChannelsHttpClient(HttpClient):
@@ -71,10 +86,12 @@ class ChannelsHttpClient(HttpClient):
             schema=schema,
             keep_alive=False,
         )
+
         self.http_app = TestGraphQLHTTPConsumer.as_asgi(
             schema=schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
+            result_override=result_override,
         )
 
     def create_app(self, **kwargs: Any) -> None:
