@@ -5,13 +5,14 @@ This release adds a method on the DatadogTracingExtension class called `create_s
 ```python
 from ddtrace import Span
 
-from strawberry.extensions.tracing import DatadogTracingExtension, LifeCycleStep
+from strawberry.extensions import LifecycleStep
+from strawberry.extensions.tracing import DatadogTracingExtension
 
 
 class DataDogExtension(DatadogTracingExtension):
     def create_span(
         self,
-        lifecycle_step: LifeCycleStep,
+        lifecycle_step: LifecycleStep,
         name: str,
         **kwargs,
     ) -> Span:
