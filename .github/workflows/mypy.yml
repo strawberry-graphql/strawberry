@@ -24,7 +24,6 @@ jobs:
       - uses: actions/checkout@v2
 
       - run: pip install poetry
-      - run: poetry config experimental.new-installer false
 
       - name: "Python dependencies cache"
         id: cache-poetry-dependencies
