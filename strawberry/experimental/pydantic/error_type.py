@@ -16,7 +16,6 @@ from typing import (
 )
 
 from pydantic import BaseModel
-from pydantic.utils import lenient_issubclass
 
 from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic.utils import (
@@ -24,9 +23,12 @@ from strawberry.experimental.pydantic.utils import (
     get_strawberry_type_from_model,
     normalize_type,
 )
+from strawberry.experimental.pydantic.v2_compat import lenient_issubclass
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.typing import get_list_annotation, is_list
+
+
 
 from .exceptions import MissingFieldsListError
 
@@ -38,6 +40,8 @@ def get_type_for_field(field: ModelField) -> Union[Any, Type[None], Type[List]]:
     type_ = field.outer_type_
     type_ = normalize_type(type_)
     return field_type_to_type(type_)
+
+
 
 
 def field_type_to_type(type_: Type) -> Union[Any, List[Any], None]:
@@ -63,13 +67,13 @@ def field_type_to_type(type_: Type) -> Union[Any, List[Any], None]:
 
 
 def error_type(
-    model: Type[BaseModel],
-    *,
-    fields: Optional[List[str]] = None,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
-    all_fields: bool = False,
+        model: Type[BaseModel],
+        *,
+        fields: Optional[List[str]] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        directives: Optional[Sequence[object]] = (),
+        all_fields: bool = False,
 ) -> Callable[..., Type]:
     def wrap(cls: Type) -> Type:
         model_fields = model.__fields__
