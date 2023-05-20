@@ -175,7 +175,10 @@ async def test_extra_form_data_fields_are_ignored(http_client: HttpClient):
     response = await http_client.post(
         url="/graphql",
         data=buffer.value,
-        headers={"content-type": writer.content_type},
+        headers={
+            "content-type": writer.content_type,
+            "content-length": f"{len(buffer.value)}",
+        },
     )
 
     assert response.status_code == 200

@@ -6,14 +6,20 @@ from __future__ import annotations
 
 import dataclasses
 import json
+from io import BytesIO
 from typing import TYPE_CHECKING, Any, Mapping, Optional
 from urllib.parse import parse_qs
+
+from django.conf import settings
+from django.core.files import uploadhandler
+from django.http.multipartparser import MultiPartParser
 
 from channels.db import database_sync_to_async
 from channels.generic.http import AsyncHttpConsumer
 from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
 from strawberry.http.exceptions import HTTPException
 from strawberry.http.temporal_response import TemporalResponse
+from strawberry.http.types import FormData
 from strawberry.http.typevars import Context, RootValue
 from strawberry.types.graphql import OperationType
 from strawberry.utils.graphiql import get_graphiql_html
@@ -22,7 +28,7 @@ from .base import ChannelsConsumer
 
 if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
-    from strawberry.http.types import FormData, HTTPMethod, QueryParams
+    from strawberry.http.types import HTTPMethod, QueryParams
     from strawberry.schema import BaseSchema
 
 
@@ -81,7 +87,28 @@ class ChannelsRequestAdapter(AsyncHTTPRequestAdapter):
         return self.request.body
 
     async def get_form_data(self) -> FormData:
-        ...
+        upload_handlers = [
+            uploadhandler.load_handler(handler)
+            for handler in settings.FILE_UPLOAD_HANDLERS
+        ]
+
+        parser = MultiPartParser(
+            {
+                "CONTENT_TYPE": self.headers.get("content-type"),
+                "CONTENT_LENGTH": self.headers.get("content-length", "0"),
+            },
+            BytesIO(self.request.body),
+            upload_handlers,
+        )
+
+        querydict, files = parser.parse()
+
+        form = {
+            "operations": json.loads(querydict.get("operations", "")),
+            "map": json.loads(querydict.get("map", "")),
+        }
+
+        return FormData(files=files, form=form)
 
 
 class GraphQLHTTPConsumer(

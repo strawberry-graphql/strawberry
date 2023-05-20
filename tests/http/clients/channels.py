@@ -35,6 +35,29 @@ def generate_get_path(
     return f"{path}?{'&'.join(parts)}"
 
 
+def create_multipart_request_body(
+    body: Dict[str, object], files: Dict[str, BytesIO]
+) -> tuple[list[tuple[bytes, bytes]], bytes]:
+    from urllib3 import encode_multipart_formdata
+
+    fields = {
+        "operations": body["operations"],
+        "map": body["map"],
+    }
+
+    for filename, data in files.items():
+        fields[filename] = (filename, data.read().decode(), "text/plain")
+
+    request_body, content_type_header = encode_multipart_formdata(fields)
+
+    headers = [
+        (b"Content-Type", content_type_header.encode()),
+        (b"Content-Length", f"{len(request_body)}".encode()),
+    ]
+
+    return headers, request_body
+
+
 class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
     async def get_context(self, *args: str, **kwargs: Any) -> object:
         context = await super().get_context(*args, **kwargs)
@@ -113,19 +136,16 @@ class ChannelsHttpClient(HttpClient):
             query=query, variables=variables, files=files, method=method
         )
 
-        # if method == "get":
-        #     if files:
-
-        if files is not None:
-            kwargs["files"] = files
-
         headers = self._get_headers(method=method, headers=headers, files=files)
-        headers = [
-            (k.encode(), v.encode()) for k, v in headers.items()
-        ]  # HttpCommunicator expects tuples of bytestrings
+        # HttpCommunicator expects tuples of bytestrings
+        headers = [(k.encode(), v.encode()) for k, v in headers.items()]
 
         if method == "post":
-            body = json_module.dumps(body).encode()
+            if files:
+                new_headers, body = create_multipart_request_body(body, files)
+                headers += new_headers
+            else:
+                body = json_module.dumps(body).encode()
             endpoint_url = "/graphql"
         else:
             body = b""
@@ -186,11 +206,12 @@ class ChannelsHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
+        body = b""
         if data is not None:
             body = data
         elif json is not None:
             body = json_module.dumps(json).encode()
-        return await self.request(url, "get", body=body, headers=headers)
+        return await self.request(url, "post", body=body, headers=headers)
 
     @contextlib.asynccontextmanager
     async def ws_connect(
