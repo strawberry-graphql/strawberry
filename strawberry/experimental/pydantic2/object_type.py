@@ -294,7 +294,6 @@ def type(
 def input(
     model: Type[PydanticModel],
     *,
-    fields: Optional[List[str]] = None,
     name: Optional[str] = None,
     is_interface: bool = False,
     description: Optional[str] = None,
@@ -308,7 +307,6 @@ def input(
     """
     return type(
         model=model,
-        fields=fields,
         name=name,
         is_input=True,
         is_interface=is_interface,
@@ -322,7 +320,6 @@ def input(
 def interface(
     model: Type[PydanticModel],
     *,
-    fields: Optional[List[str]] = None,
     name: Optional[str] = None,
     is_input: bool = False,
     description: Optional[str] = None,
@@ -336,7 +333,6 @@ def interface(
     """
     return type(
         model=model,
-        fields=fields,
         name=name,
         is_input=is_input,
         is_interface=True,
