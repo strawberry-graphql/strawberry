@@ -37,10 +37,10 @@ from strawberry.utils.dataclasses import add_custom_init_fn
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
-    from pydantic.fields import ModelField
+    from pydantic.fields import FieldInfo, FieldInfo
 
 
-def get_type_for_field(field: ModelField, is_input: bool):  # noqa: ANN201
+def get_type_for_field(field: FieldInfo, is_input: bool):  # noqa: ANN201
     outer_type = field.outer_type_
     replaced_type = replace_types_recursively(outer_type, is_input)
 
@@ -55,7 +55,8 @@ def get_type_for_field(field: ModelField, is_input: bool):  # noqa: ANN201
 
 
 def _build_dataclass_creation_fields(
-    field: ModelField,
+    field_name: str,
+    field: FieldInfo,
     is_input: bool,
     existing_fields: Dict[str, StrawberryField],
     auto_fields_set: Set[str],
@@ -63,33 +64,33 @@ def _build_dataclass_creation_fields(
 ) -> DataclassCreationFields:
     field_type = (
         get_type_for_field(field, is_input)
-        if field.name in auto_fields_set
-        else existing_fields[field.name].type
+        if field_name in auto_fields_set
+        else existing_fields[field_name].type
     )
 
     if (
-        field.name in existing_fields
-        and existing_fields[field.name].base_resolver is not None
+        field_name in existing_fields
+        and existing_fields[field_name].base_resolver is not None
     ):
         # if the user has defined a resolver for this field, always use it
-        strawberry_field = existing_fields[field.name]
+        strawberry_field = existing_fields[field_name]
     else:
         # otherwise we build an appropriate strawberry field that resolves it
-        existing_field = existing_fields.get(field.name)
+        existing_field = existing_fields.get(field_name)
         graphql_name = None
         if existing_field and existing_field.graphql_name:
             graphql_name = existing_field.graphql_name
-        elif field.has_alias and use_pydantic_alias:
+        elif field.alias and use_pydantic_alias:
             graphql_name = field.alias
 
         strawberry_field = StrawberryField(
-            python_name=field.name,
+            python_name=field_name,
             graphql_name=graphql_name,
             # always unset because we use default_factory instead
             default=dataclasses.MISSING,
             default_factory=get_default_factory_for_field(field),
             type_annotation=StrawberryAnnotation.from_annotation(field_type),
-            description=field.field_info.description,
+            description=field.description,
             deprecation_reason=(
                 existing_field.deprecation_reason if existing_field else None
             ),
@@ -101,7 +102,7 @@ def _build_dataclass_creation_fields(
         )
 
     return DataclassCreationFields(
-        name=field.name,
+        name=field_name,
         field_type=field_type,
         field=strawberry_field,
     )
@@ -117,7 +118,6 @@ if TYPE_CHECKING:
 def type(
     model: Type[PydanticModel],
     *,
-    fields: Optional[List[str]] = None,
     name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
@@ -127,32 +127,22 @@ def type(
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
-        model_fields = model.__fields__
-        original_fields_set = set(fields) if fields else set()
-
-        if fields:
-            warnings.warn(
-                "`fields` is deprecated, use `auto` type annotations instead",
-                DeprecationWarning,
-                stacklevel=2,
-            )
+        model_fields: Dict[str, FieldInfo] = model.model_fields
 
         existing_fields = getattr(cls, "__annotations__", {})
 
         # these are the fields that matched a field name in the pydantic model
         # and should copy their alias from the pydantic model
-        fields_set = original_fields_set.union(
-            {name for name, _ in existing_fields.items() if name in model_fields}
-        )
+        fields_set = {
+            name for name, _ in existing_fields.items() if name in model_fields
+        }
         # these are the fields that were marked with strawberry.auto and
         # should copy their type from the pydantic model
-        auto_fields_set = original_fields_set.union(
-            {
-                name
-                for name, type_ in existing_fields.items()
-                if isinstance(type_, StrawberryAuto)
-            }
-        )
+        auto_fields_set = {
+            name
+            for name, type_ in existing_fields.items()
+            if isinstance(type_, StrawberryAuto)
+        }
 
         if all_fields:
             if fields_set:
@@ -176,11 +166,16 @@ def type(
         extra_fields = cast(List[dataclasses.Field], extra_strawberry_fields)
         private_fields = get_private_fields(wrapped)
 
-        extra_fields_dict = {field.name: field for field in extra_strawberry_fields}
+        extra_fields_dict = {field_name: field for field in extra_strawberry_fields}
 
         all_model_fields: List[DataclassCreationFields] = [
             _build_dataclass_creation_fields(
-                field, is_input, extra_fields_dict, auto_fields_set, use_pydantic_alias
+                field_name=field_name,
+                field=field,
+                is_input=is_input,
+                existing_fields=extra_fields_dict,
+                auto_fields_set=auto_fields_set,
+                use_pydantic_alias=use_pydantic_alias,
             )
             for field_name, field in model_fields.items()
             if field_name in fields_set
@@ -188,12 +183,12 @@ def type(
 
         all_model_fields = [
             DataclassCreationFields(
-                name=field.name,
+                name=field_name,
                 field_type=field.type,
                 field=field,
             )
             for field in extra_fields + private_fields
-            if field.name not in fields_set
+            if field_name not in fields_set
         ] + all_model_fields
 
         # Implicitly define `is_type_of` to support interfaces/unions that use

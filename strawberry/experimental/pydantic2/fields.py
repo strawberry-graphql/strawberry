@@ -5,8 +5,13 @@ from uuid import UUID
 
 import pydantic
 from pydantic import BaseModel
-from strawberry.experimental.pydantic2.v2_compat import lenient_issubclass, get_args, get_origin, is_new_type, \
-    new_type_supertype
+from strawberry.experimental.pydantic2.v2_compat import (
+    lenient_issubclass,
+    get_args,
+    get_origin,
+    is_new_type,
+    new_type_supertype,
+)
 from strawberry.experimental.pydantic2.exceptions import (
     UnregisteredTypeException,
     UnsupportedTypeError,
@@ -25,48 +30,8 @@ except ImportError:
     else:
         raise
 
-ATTR_TO_TYPE_MAP = {
-    "NoneBytes": Optional[bytes],
-    "StrBytes": None,
-    "NoneStrBytes": None,
-    "StrictStr": str,
-    "ConstrainedBytes": bytes,
-    "conbytes": bytes,
-    "ConstrainedStr": str,
-    "constr": str,
-    "EmailStr": str,
-    "PyObject": None,
-    "ConstrainedInt": int,
-    "conint": int,
-    "PositiveInt": int,
-    "NegativeInt": int,
-    "ConstrainedFloat": float,
-    "confloat": float,
-    "PositiveFloat": float,
-    "NegativeFloat": float,
-    "ConstrainedDecimal": Decimal,
-    "condecimal": Decimal,
-    "UUID1": UUID,
-    "UUID3": UUID,
-    "UUID4": UUID,
-    "UUID5": UUID,
-    "FilePath": None,
-    "DirectoryPath": None,
-    "Json": None,
-    "JsonWrapper": None,
-    "SecretStr": str,
-    "SecretBytes": bytes,
-    "StrictBool": bool,
-    "StrictInt": int,
-    "StrictFloat": float,
-    "PaymentCardNumber": None,
-    "ByteSize": None,
-    "AnyUrl": str,
-    "AnyHttpUrl": str,
-    "HttpUrl": str,
-    "PostgresDsn": str,
-    "RedisDsn": str,
-}
+# NOTE: To investigate the annotated types
+ATTR_TO_TYPE_MAP = {}
 
 FIELDS_MAP = {
     getattr(pydantic, field_name): type

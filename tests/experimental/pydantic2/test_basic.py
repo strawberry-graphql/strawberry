@@ -14,31 +14,6 @@ from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
 
-def test_basic_type_field_list():
-    class User(pydantic.BaseModel):
-        age: int
-        password: Optional[str]
-
-    with pytest.deprecated_call():
-        @strawberry.experimental.pydantic2.type(User, fields=["age", "password"])
-        class UserType:
-            pass
-
-    definition: TypeDefinition = UserType._type_definition
-    assert definition.name == "UserType"
-
-    [field1, field2] = definition.fields
-
-    assert field1.python_name == "age"
-    assert field1.graphql_name is None
-    assert field1.type is int
-
-    assert field2.python_name == "password"
-    assert field2.graphql_name is None
-    assert isinstance(field2.type, StrawberryOptional)
-    assert field2.type.of_type is str
-
-
 def test_basic_type_all_fields():
     class User(pydantic.BaseModel):
         age: int
@@ -70,9 +45,10 @@ def test_basic_type_all_fields_warn():
         password: Optional[str]
 
     with pytest.raises(
-            UserWarning,
-            match=("Using all_fields overrides any explicitly defined fields"),
+        UserWarning,
+        match=("Using all_fields overrides any explicitly defined fields"),
     ):
+
         @strawberry.experimental.pydantic2.type(User, all_fields=True)
         class UserType:
             age: strawberry.auto
@@ -148,9 +124,10 @@ def test_referencing_other_models_fails_when_not_registered():
         group: Group
 
     with pytest.raises(
-            strawberry.experimental.pydantic2.UnregisteredTypeException,
-            match=("Cannot find a Strawberry Type for (.*) did you forget to register it?"),
+        strawberry.experimental.pydantic2.UnregisteredTypeException,
+        match=("Cannot find a Strawberry Type for (.*) did you forget to register it?"),
     ):
+
         @strawberry.experimental.pydantic2.type(User)
         class UserType:
             age: strawberry.auto
@@ -172,9 +149,10 @@ def test_referencing_other_input_models_fails_when_not_registered():
         name: strawberry.auto
 
     with pytest.raises(
-            strawberry.experimental.pydantic2.UnregisteredTypeException,
-            match=("Cannot find a Strawberry Type for (.*) did you forget to register it?"),
+        strawberry.experimental.pydantic2.UnregisteredTypeException,
+        match=("Cannot find a Strawberry Type for (.*) did you forget to register it?"),
     ):
+
         @strawberry.experimental.pydantic2.input(User)
         class UserInputType:
             age: strawberry.auto
@@ -262,6 +240,7 @@ def test_basic_type_without_fields_throws_an_error():
         password: Optional[str]
 
     with pytest.raises(MissingFieldsListError):
+
         @strawberry.experimental.pydantic2.type(User)
         class UserType:
             pass
@@ -368,8 +347,8 @@ def test_type_with_fields_mutable_default():
 
 @pytest.mark.xfail(
     reason=(
-            "passing default values when extending types from pydantic is not"
-            "supported. https://github.com/strawberry-graphql/strawberry/issues/829"
+        "passing default values when extending types from pydantic is not"
+        "supported. https://github.com/strawberry-graphql/strawberry/issues/829"
     )
 )
 def test_type_with_fields_coming_from_strawberry_and_pydantic_with_default():
@@ -733,7 +712,7 @@ def test_permission_classes():
         message = "User is not authenticated"
 
         def has_permission(
-                self, source: Any, info: strawberry.types.Info, **kwargs
+            self, source: Any, info: strawberry.types.Info, **kwargs
         ) -> bool:
             return False
 

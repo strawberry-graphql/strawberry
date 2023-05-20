@@ -29,7 +29,6 @@ from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.typing import get_list_annotation, is_list
 
 
-
 from .exceptions import MissingFieldsListError
 
 if TYPE_CHECKING:
@@ -40,8 +39,6 @@ def get_type_for_field(field: ModelField) -> Union[Any, Type[None], Type[List]]:
     type_ = field.outer_type_
     type_ = normalize_type(type_)
     return field_type_to_type(type_)
-
-
 
 
 def field_type_to_type(type_: Type) -> Union[Any, List[Any], None]:
@@ -67,13 +64,13 @@ def field_type_to_type(type_: Type) -> Union[Any, List[Any], None]:
 
 
 def error_type(
-        model: Type[BaseModel],
-        *,
-        fields: Optional[List[str]] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        directives: Optional[Sequence[object]] = (),
-        all_fields: bool = False,
+    model: Type[BaseModel],
+    *,
+    fields: Optional[List[str]] = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+    all_fields: bool = False,
 ) -> Callable[..., Type]:
     def wrap(cls: Type) -> Type:
         model_fields = model.__fields__

@@ -5,8 +5,13 @@ from uuid import UUID
 
 import pydantic
 from pydantic import BaseModel
-from strawberry.experimental.pydantic.v2_compat import lenient_issubclass, get_args, get_origin, is_new_type, \
-    new_type_supertype
+from strawberry.experimental.pydantic.v2_compat import (
+    lenient_issubclass,
+    get_args,
+    get_origin,
+    is_new_type,
+    new_type_supertype,
+)
 from strawberry.experimental.pydantic.exceptions import (
     UnregisteredTypeException,
     UnsupportedTypeError,

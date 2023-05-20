@@ -75,7 +75,7 @@ class DataclassCreationFields(NamedTuple):
 
 
 def get_default_factory_for_field(
-        field: ModelField,
+    field: ModelField,
 ) -> Union[NoArgAnyCallable, dataclasses._MISSING_TYPE]:
     """
     Gets the default factory for a pydantic field.
@@ -127,10 +127,10 @@ def get_default_factory_for_field(
 
 
 def ensure_all_auto_fields_in_pydantic(
-        model: Type[BaseModel], auto_fields: Set[str], cls_name: str
+    model: Type[BaseModel], auto_fields: Set[str], cls_name: str
 ) -> Union[NoReturn, None]:
     # Raise error if user defined a strawberry.auto field not present in the model
-    non_existing_fields = list(auto_fields - model.__fields__.keys())
+    non_existing_fields = list(auto_fields - model.model_fields.keys())
 
     if non_existing_fields:
         raise AutoFieldsNotInBaseModelError(
