@@ -41,14 +41,14 @@ FIELDS_MAP = {
 
 
 def get_basic_type(type_: Any) -> Type[Any]:
-    if lenient_issubclass(type_, pydantic.ConstrainedInt):
-        return int
-    if lenient_issubclass(type_, pydantic.ConstrainedFloat):
-        return float
-    if lenient_issubclass(type_, pydantic.ConstrainedStr):
-        return str
-    if lenient_issubclass(type_, pydantic.ConstrainedList):
-        return List[get_basic_type(type_.item_type)]  # type: ignore
+    # if lenient_issubclass(type_, pydantic.ConstrainedInt):
+    #     return int
+    # if lenient_issubclass(type_, pydantic.ConstrainedFloat):
+    #     return float
+    # if lenient_issubclass(type_, pydantic.ConstrainedStr):
+    #     return str
+    # if lenient_issubclass(type_, pydantic.ConstrainedList):
+    #     return List[get_basic_type(type_.item_type)]  # type: ignore
 
     if type_ in FIELDS_MAP:
         type_ = FIELDS_MAP.get(type_)
