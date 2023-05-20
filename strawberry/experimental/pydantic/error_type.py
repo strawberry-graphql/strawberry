@@ -16,6 +16,7 @@ from typing import (
 )
 
 from pydantic import BaseModel
+from pydantic.utils import lenient_issubclass
 
 from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic.utils import (
@@ -23,11 +24,9 @@ from strawberry.experimental.pydantic.utils import (
     get_strawberry_type_from_model,
     normalize_type,
 )
-from strawberry.experimental.pydantic.v2_compat import lenient_issubclass
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.typing import get_list_annotation, is_list
-
 
 from .exceptions import MissingFieldsListError
 

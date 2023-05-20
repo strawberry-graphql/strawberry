@@ -9,6 +9,7 @@ from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.union import StrawberryUnion
 
 if TYPE_CHECKING:
+    from strawberry.field import StrawberryField
     from strawberry.type import StrawberryType
 
 

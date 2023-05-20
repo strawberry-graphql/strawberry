@@ -5,13 +5,9 @@ from uuid import UUID
 
 import pydantic
 from pydantic import BaseModel
-from strawberry.experimental.pydantic.v2_compat import (
-    lenient_issubclass,
-    get_args,
-    get_origin,
-    is_new_type,
-    new_type_supertype,
-)
+from pydantic.typing import get_args, get_origin, is_new_type, new_type_supertype
+from pydantic.utils import lenient_issubclass
+
 from strawberry.experimental.pydantic.exceptions import (
     UnregisteredTypeException,
     UnsupportedTypeError,
@@ -73,6 +69,7 @@ ATTR_TO_TYPE_MAP = {
     "PostgresDsn": str,
     "RedisDsn": str,
 }
+
 
 FIELDS_MAP = {
     getattr(pydantic, field_name): type
