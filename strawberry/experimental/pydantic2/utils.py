@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 
-from pydantic._internal._fields import Undefined
+from pydantic._internal._fields import Undefined, _UndefinedType
 from pydantic._internal._utils import smart_deepcopy
 
 from strawberry.experimental.pydantic2.exceptions import (
@@ -93,14 +93,12 @@ def get_default_factory_for_field(
     """
     # replace dataclasses.MISSING with our own UNSET to make comparisons easier
     default_factory = (
-        field.default_factory
-        if field.default_factory is not dataclasses.MISSING
-        else UNSET
+        field.default_factory if field.default_factory is not None else UNSET
     )
-    default = field.default if field.default is not dataclasses.MISSING else UNSET
+    default = field.default if not isinstance(field.default, _UndefinedType) else UNSET
 
-    has_factory = default_factory is not None and default_factory is not UNSET
-    has_default = default is not None and default is not UNSET
+    has_factory = default_factory is not UNSET
+    has_default = default is not UNSET
 
     # defining both default and default_factory is not supported
 

@@ -613,7 +613,7 @@ type Query {
 
 input UserInput {
   name: String!
-  work: WorkInput = null
+  work: WorkInput
 }
 
 type UserOutput {
