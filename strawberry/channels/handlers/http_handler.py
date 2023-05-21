@@ -62,7 +62,7 @@ class ChannelsRequestAdapter(AsyncHTTPRequestAdapter):
     def query_params(self) -> QueryParams:
         query_params_str = self.request.consumer["query_string"].decode()
 
-        query_params: QueryParams = {}
+        query_params = {}
         for key, value in parse_qs(query_params_str, keep_blank_values=True).items():
             query_params[key] = value[0]
 
@@ -113,7 +113,7 @@ class ChannelsRequestAdapter(AsyncHTTPRequestAdapter):
 
 class GraphQLHTTPConsumer(
     AsyncBaseHTTPView[
-        ChannelsConsumer,
+        Request,
         Any,
         Any,
         Context,
@@ -194,22 +194,19 @@ class GraphQLHTTPConsumer(
 
         return result
 
-    async def get_root_value(self, request: ChannelsConsumer) -> Optional[RootValue]:
+    async def get_root_value(self, request: Request) -> Optional[RootValue]:
         return None
 
-    async def get_context(self, request: ChannelsConsumer, response: Any) -> Context:
+    async def get_context(self, request: Request, response: Any) -> Context:
         return {
             "request": request,
             "response": response,
-        }
+        }  # type: ignore
 
-    async def get_sub_response(self, request: ChannelsConsumer) -> TemporalResponse:
+    async def get_sub_response(self, request: Request) -> TemporalResponse:
         return TemporalResponse()
 
-    async def parse_multipart_body(self, body: bytes) -> GraphQLRequestData:
-        raise ExecutionError("Unable to parse the multipart body")
-
-    def render_graphiql(self, body: bytes) -> Result:
+    def render_graphiql(self, request: Request) -> Result:
         html = get_graphiql_html(self.subscriptions_enabled)
         return Result(response=html.encode(), content_type="text/html")
 

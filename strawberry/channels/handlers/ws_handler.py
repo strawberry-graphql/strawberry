@@ -125,4 +125,4 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
         return {
             "request": request,
             "connection_params": connection_params,
-        }
+        }  # type: ignore
