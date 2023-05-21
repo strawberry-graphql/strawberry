@@ -71,7 +71,7 @@ class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
         return context
 
 
-class TestGraphQLHTTPConsumer(GraphQLHTTPConsumer):
+class DebuggableGraphQLHTTPConsumer(GraphQLHTTPConsumer):
     result_override: ResultOverrideFunction = None
 
     def __init__(self, *args: Any, **kwargs: Any):
@@ -111,7 +111,7 @@ class ChannelsHttpClient(HttpClient):
             keep_alive=False,
         )
 
-        self.http_app = TestGraphQLHTTPConsumer.as_asgi(
+        self.http_app = DebuggableGraphQLHTTPConsumer.as_asgi(
             schema=schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
