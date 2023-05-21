@@ -37,7 +37,7 @@ class Result:
     response: bytes
     status: int = 200
     content_type: str = "application/json"
-    headers: Mapping[bytes, bytes] | None = None
+    headers: Mapping[bytes, bytes] = dataclasses.field(default_factory=dict)
 
 
 @dataclasses.dataclass
@@ -158,9 +158,6 @@ class GraphQLHTTPConsumer(
         try:
             response = await self.run(request)
 
-            if response.headers is None:
-                response.headers = {}
-
             if b"Content-Type" not in response.headers:
                 response.headers[b"Content-Type"] = response.content_type.encode()
 
@@ -180,10 +177,8 @@ class GraphQLHTTPConsumer(
         if sub_response.status_code:
             result.status = sub_response.status_code
 
-        if sub_response.headers:
-            result.headers = {
-                k.encode(): v.encode() for k, v in sub_response.headers.items()
-            }
+        for k, v in sub_response.headers.items():
+            result.headers[k.encode()] = v.encode()
 
         return result
 
