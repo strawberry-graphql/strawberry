@@ -64,6 +64,7 @@ class ChannelsRequestAdapter(AsyncHTTPRequestAdapter):
 
         query_params = {}
         for key, value in parse_qs(query_params_str, keep_blank_values=True).items():
+            # Only one argument per key is expected here
             query_params[key] = value[0]
 
         return query_params
@@ -114,8 +115,8 @@ class ChannelsRequestAdapter(AsyncHTTPRequestAdapter):
 class GraphQLHTTPConsumer(
     AsyncBaseHTTPView[
         Request,
-        Any,
-        Any,
+        Result,
+        TemporalResponse,
         Context,
         RootValue,
     ],
@@ -197,7 +198,9 @@ class GraphQLHTTPConsumer(
     async def get_root_value(self, request: Request) -> Optional[RootValue]:
         return None
 
-    async def get_context(self, request: Request, response: Any) -> Context:
+    async def get_context(
+        self, request: Request, response: TemporalResponse
+    ) -> Context:
         return {
             "request": request,
             "response": response,
