@@ -10,6 +10,8 @@ from .graphql_transport_ws_handler import GraphQLTransportWSHandler
 from .graphql_ws_handler import GraphQLWSHandler
 
 if TYPE_CHECKING:
+    from strawberry.channels.handlers.base import ChannelsConsumer
+    from strawberry.http.typevars import Context, RootValue
     from strawberry.schema import BaseSchema
 
 
@@ -113,3 +115,14 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
 
     async def disconnect(self, code: int) -> None:
         await self._handler.handle_disconnect(code)
+
+    async def get_root_value(self, request: ChannelsConsumer) -> Optional[RootValue]:
+        return None
+
+    async def get_context(
+        self, request: ChannelsConsumer, connection_params: Any
+    ) -> Context:
+        return {
+            "request": request,
+            "connection_params": connection_params,
+        }

@@ -61,12 +61,13 @@ def create_multipart_request_body(
 class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
     async def get_context(self, *args: str, **kwargs: Any) -> object:
         context = await super().get_context(*args, **kwargs)
-        context.tasks = self._handler.tasks
-        context.connectionInitTimeoutTask = getattr(
+        context["ws"] = self._handler._ws
+        context["tasks"] = self._handler.tasks
+        context["connectionInitTimeoutTask"] = getattr(
             self._handler, "connection_init_timeout_task", None
         )
         for key, val in get_context({}).items():
-            setattr(context, key, val)
+            context[key] = val
         return context
 
 
