@@ -32,14 +32,6 @@ if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
 
 
-class MethodNotAllowed(Exception):
-    ...
-
-
-class ExecutionError(Exception):
-    ...
-
-
 @dataclasses.dataclass
 class Result:
     response: bytes
