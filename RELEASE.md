@@ -1,6 +1,6 @@
-Release type: patch
+Release type: minor
 
-This patch introduces the new `should_ignore` argument to the `QueryDepthLimiter` extension that provides
+This release introduces the new `should_ignore` argument to the `QueryDepthLimiter` extension that provides
 a more general and more verbose way of specifying the rules by which a query's depth should be limited.
 
 The `should_ignore` argument should be a function that accepts a single argument of type `IgnoreContext`.
