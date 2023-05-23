@@ -164,15 +164,11 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse
     ) -> Result:
-        result = Result(response=json.dumps(response_data).encode())
-
-        if sub_response.status_code:
-            result.status = sub_response.status_code
-
-        for k, v in sub_response.headers.items():
-            result.headers[k.encode()] = v.encode()
-
-        return result
+        return Result(
+            response=json.dumps(response_data).encode(),
+            status=sub_response.status_code,
+            headers={k.encode(): v.encode() for k, v in sub_response.headers.items()},
+        )
 
     async def handle(self, body: bytes) -> None:
         request = Request(consumer=self.scope, body=body)
