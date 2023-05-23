@@ -32,7 +32,12 @@ from .clients import (
         pytest.param(FlaskHttpClient, marks=pytest.mark.flask),
         pytest.param(SanicHttpClient, marks=pytest.mark.sanic),
         pytest.param(ChannelsHttpClient, marks=pytest.mark.channels),
-        pytest.param(SyncChannelsHttpClient, marks=pytest.mark.channels),
+        pytest.param(
+            # SyncChannelsHttpClient uses @database_sync_to_async and therefore
+            # needs pytest.mark.django_db
+            SyncChannelsHttpClient,
+            marks=[pytest.mark.channels, pytest.mark.django_db],
+        ),
         pytest.param(
             StarliteHttpClient,
             marks=[
