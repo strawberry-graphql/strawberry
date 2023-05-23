@@ -1,7 +1,7 @@
 import json
 import pathlib
 
-DEFAULT_EXAMPLE_QUERY = '''# Welcome to GraphiQL 🍓
+DEFAULT_EXAMPLE_QUERY = """# Welcome to GraphiQL 🍓
 #
 # GraphiQL is an in-browser tool for writing, validating, and
 # testing GraphQL queries.
@@ -27,10 +27,13 @@ DEFAULT_EXAMPLE_QUERY = '''# Welcome to GraphiQL 🍓
 #
 #   Auto Complete:  Ctrl-Space (or just start typing)
 #
-'''
+"""
+
 
 def get_graphiql_html(
-    subscription_enabled: bool = True, replace_variables: bool = True, example_query: str = DEFAULT_EXAMPLE_QUERY
+    subscription_enabled: bool = True,
+    replace_variables: bool = True,
+    example_query: str = DEFAULT_EXAMPLE_QUERY,
 ) -> str:
     here = pathlib.Path(__file__).parents[1]
     path = here / "static/graphiql.html"

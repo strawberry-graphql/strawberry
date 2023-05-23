@@ -59,7 +59,7 @@ class GraphQLView(
         schema: BaseSchema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
-        graphiql_example_query: Optional[str] = None
+        graphiql_example_query: Optional[str] = None,
     ):
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get

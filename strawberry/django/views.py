@@ -30,7 +30,7 @@ from strawberry.http.typevars import (
     Context,
     RootValue,
 )
-from strawberry.utils.graphiql import get_graphiql_html, DEFAULT_EXAMPLE_QUERY
+from strawberry.utils.graphiql import DEFAULT_EXAMPLE_QUERY, get_graphiql_html
 
 from .context import StrawberryDjangoContext
 
@@ -154,7 +154,15 @@ class BaseView:
 
         context = context or {}
         context.update({"SUBSCRIPTION_ENABLED": json.dumps(self.subscriptions_enabled)})
-        context.update({"EXAMPLE_QUERY": json.dumps(self.graphiql_example_query if self.graphiql_example_query else DEFAULT_EXAMPLE_QUERY)})
+        context.update(
+            {
+                "EXAMPLE_QUERY": json.dumps(
+                    self.graphiql_example_query
+                    if self.graphiql_example_query
+                    else DEFAULT_EXAMPLE_QUERY
+                )
+            }
+        )
 
         response = TemplateResponse(request=request, template=None, context=context)
         response.content = template.render(RequestContext(request, context))

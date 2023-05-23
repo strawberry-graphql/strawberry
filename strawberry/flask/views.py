@@ -59,7 +59,7 @@ class BaseGraphQLView:
         schema: BaseSchema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
-        graphiql_example_query: Optional[str] = None
+        graphiql_example_query: Optional[str] = None,
     ):
         self.schema = schema
         self.graphiql = graphiql
@@ -67,7 +67,9 @@ class BaseGraphQLView:
         self.graphiql_example_query = graphiql_example_query
 
     def render_graphiql(self, request: Request) -> Response:
-        template = get_graphiql_html(subscription_enabled=False, example_query=self.graphiql_example_query)
+        template = get_graphiql_html(
+            subscription_enabled=False, example_query=self.graphiql_example_query
+        )
 
         return render_template_string(template)  # type: ignore
 

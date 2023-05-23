@@ -169,7 +169,7 @@ def make_graphql_controller(
         GRAPHQL_WS_PROTOCOL,
     ),
     connection_init_wait_timeout: timedelta = timedelta(minutes=1),
-    graphiql_example_query: Optional[str] = None
+    graphiql_example_query: Optional[str] = None,
 ) -> Type[Controller]:
     routes_path = path
 

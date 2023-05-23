@@ -182,7 +182,10 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         return process_result(result)
 
     async def render_graphiql(self, body: bytes) -> Result:
-        html = get_graphiql_html(subscription_enabled=self.subscriptions_enabled, example_query=self.graphiql_example_query)
+        html = get_graphiql_html(
+            subscription_enabled=self.subscriptions_enabled,
+            example_query=self.graphiql_example_query,
+        )
         return Result(response=html.encode(), content_type="text/html")
 
     def should_render_graphiql(self) -> bool:

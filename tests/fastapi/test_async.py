@@ -25,6 +25,7 @@ def test_simple_query(test_client):
 
     assert response.json() == {"data": {"hello": "Hello world"}}
 
+
 def test_graphiql_example_query_is_updated(test_client):
     response = test_client.get("/graphql")
     assert 'React.useState("Hello from Pytest")' in response.text
