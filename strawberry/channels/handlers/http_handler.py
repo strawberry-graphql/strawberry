@@ -73,12 +73,14 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         subscriptions_enabled: bool = True,
+        graphiql_example_query: Optional[str] = None,
         **kwargs: Any,
     ):
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.subscriptions_enabled = subscriptions_enabled
+        self.graphiql_example_query = graphiql_example_query
         super().__init__(**kwargs)
 
     async def handle(self, body: bytes) -> None:
@@ -180,7 +182,7 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         return process_result(result)
 
     async def render_graphiql(self, body: bytes) -> Result:
-        html = get_graphiql_html(self.subscriptions_enabled)
+        html = get_graphiql_html(subscription_enabled=self.subscriptions_enabled, example_query=self.graphiql_example_query)
         return Result(response=html.encode(), content_type="text/html")
 
     def should_render_graphiql(self) -> bool:

@@ -30,7 +30,7 @@ from strawberry.http.typevars import (
     Context,
     RootValue,
 )
-from strawberry.utils.graphiql import get_graphiql_html
+from strawberry.utils.graphiql import get_graphiql_html, DEFAULT_EXAMPLE_QUERY
 
 from .context import StrawberryDjangoContext
 
@@ -133,12 +133,14 @@ class BaseView:
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         subscriptions_enabled: bool = False,
+        graphiql_example_query: Optional[str] = None,
         **kwargs: Any,
     ):
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.subscriptions_enabled = subscriptions_enabled
+        self.graphiql_example_query: graphiql_example_query
 
         super().__init__(**kwargs)
 
@@ -152,6 +154,7 @@ class BaseView:
 
         context = context or {}
         context.update({"SUBSCRIPTION_ENABLED": json.dumps(self.subscriptions_enabled)})
+        context.update({"EXAMPLE_QUERY": json.dumps(self.graphiql_example_query if self.graphiql_example_query else DEFAULT_EXAMPLE_QUERY)})
 
         response = TemplateResponse(request=request, template=None, context=context)
         response.content = template.render(RequestContext(request, context))
@@ -192,6 +195,7 @@ class GraphQLView(
     allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = DjangoHTTPRequestAdapter
+    graphiql_example_query: Optional[str] = None
 
     def get_root_value(self, request: HttpRequest) -> Optional[RootValue]:
         return None
@@ -227,6 +231,7 @@ class AsyncGraphQLView(
     allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = AsyncDjangoHTTPRequestAdapter
+    graphiql_example_query: Optional[str] = None
 
     @classonlymethod
     def as_view(cls, **initkwargs: Any) -> Callable[..., HttpResponse]:

@@ -106,12 +106,14 @@ class GraphQLView(
         allow_queries_via_get: bool = True,
         json_encoder: Optional[Type[json.JSONEncoder]] = None,
         json_dumps_params: Optional[Dict[str, Any]] = None,
+        graphiql_example_query: Optional[str] = None,
     ):
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.json_encoder = json_encoder
         self.json_dumps_params = json_dumps_params
+        self.graphiql_example_query = graphiql_example_query
 
         if self.json_encoder is not None:
             warnings.warn(
@@ -138,7 +140,7 @@ class GraphQLView(
         return {"request": request, "response": response}  # type: ignore
 
     def render_graphiql(self, request: Request) -> HTTPResponse:
-        template = get_graphiql_html()
+        template = get_graphiql_html(example_query=self.graphiql_example_query)
 
         return html(template)
 

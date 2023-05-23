@@ -98,6 +98,7 @@ class GraphQLView(
             GRAPHQL_WS_PROTOCOL,
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
+        graphiql_example_query: Optional[str] = None
     ):
         self.schema = schema
         self.graphiql = graphiql
@@ -107,10 +108,11 @@ class GraphQLView(
         self.debug = debug
         self.subscription_protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
+        self.graphiql_example_query = graphiql_example_query
 
     def render_graphiql(self, request: web.Request) -> web.Response:
         # TODO: get_graphiql_html should be on self
-        html_string = get_graphiql_html()
+        html_string = get_graphiql_html(example_query=self.graphiql_example_query)
 
         return web.Response(text=html_string, content_type="text/html")
 

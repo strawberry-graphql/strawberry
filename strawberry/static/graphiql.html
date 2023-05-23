@@ -79,34 +79,6 @@
       integrity="sha384-XyAmNqmxnLsRHkMhQYTqC0ub7uXpNbwdkhjn70ZF3J3XSb7bouSdRVfzDojimcMd"
     ></script>
     <script>
-      const EXAMPLE_QUERY = `# Welcome to GraphiQL 🍓
-#
-# GraphiQL is an in-browser tool for writing, validating, and
-# testing GraphQL queries.
-#
-# Type queries into this side of the screen, and you will see intelligent
-# typeaheads aware of the current GraphQL type schema and live syntax and
-# validation errors highlighted within the text.
-#
-# GraphQL queries typically start with a "{" character. Lines that starts
-# with a # are ignored.
-#
-# An example GraphQL query might look like:
-#
-#     {
-#       field(arg: "value") {
-#         subField
-#       }
-#     }
-#
-# Keyboard shortcuts:
-#
-#       Run Query:  Ctrl-Enter (or press the play button above)
-#
-#   Auto Complete:  Ctrl-Space (or just start typing)
-#
-`;
-
       const fetchURL = window.location.href;
 
       function httpUrlToWebSockeUrl(url) {
@@ -136,7 +108,7 @@
       });
 
       function GraphiQLWithExplorer() {
-        const [query, setQuery] = React.useState(EXAMPLE_QUERY);
+        const [query, setQuery] = React.useState("{{ EXAMPLE_QUERY }}");
         const explorerPlugin = GraphiQLPluginExplorer.useExplorerPlugin({
           query: query,
           onEdit: setQuery,
