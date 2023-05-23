@@ -7,7 +7,7 @@ from __future__ import annotations
 import dataclasses
 import json
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
 from urllib.parse import parse_qs
 
 from django.conf import settings
@@ -21,7 +21,7 @@ from strawberry.http.exceptions import HTTPException
 from strawberry.http.sync_base_view import SyncBaseHTTPView, SyncHTTPRequestAdapter
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.types import FormData
-from strawberry.http.typevars import Context, Response, RootValue
+from strawberry.http.typevars import Context, RootValue
 from strawberry.unset import UNSET
 from strawberry.utils.cached_property import cached_property
 from strawberry.utils.graphiql import get_graphiql_html
@@ -39,7 +39,7 @@ class Result:
     response: bytes
     status: int = 200
     content_type: str = "application/json"
-    headers: Mapping[bytes, bytes] = dataclasses.field(default_factory=dict)
+    headers: Dict[bytes, bytes] = dataclasses.field(default_factory=dict)
 
 
 @dataclasses.dataclass
@@ -74,7 +74,7 @@ class Request:
         return self.headers.get("content-type", None)
 
     @cached_property
-    def form_data(self) -> Mapping[str, str]:
+    def form_data(self) -> FormData:
         upload_handlers = [
             uploadhandler.load_handler(handler)
             for handler in settings.FILE_UPLOAD_HANDLERS
@@ -142,7 +142,7 @@ class SyncChannelsRequestAdapter(BaseChannelsRequestAdapter, SyncHTTPRequestAdap
         return self.request.form_data["files"]
 
 
-class BaseGraphQLHTTPConsumer:
+class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
     def __init__(
         self,
         schema: BaseSchema,
@@ -200,8 +200,6 @@ class GraphQLHTTPConsumer(
         Context,
         RootValue,
     ],
-    ChannelsConsumer,
-    AsyncHttpConsumer,
 ):
     """A consumer to provide a view for GraphQL over HTTP.
 
@@ -285,5 +283,5 @@ class SyncGraphQLHTTPConsumer(
         request: Request,
         context: Optional[Context] = UNSET,
         root_value: Optional[RootValue] = UNSET,
-    ) -> Response:
+    ) -> Result:
         return super().run(request, context, root_value)
