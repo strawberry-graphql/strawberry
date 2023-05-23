@@ -16,6 +16,7 @@ from .clients import (
     HttpClient,
     SanicHttpClient,
     StarliteHttpClient,
+    SyncChannelsHttpClient,
 )
 
 
@@ -31,6 +32,7 @@ from .clients import (
         pytest.param(FlaskHttpClient, marks=pytest.mark.flask),
         pytest.param(SanicHttpClient, marks=pytest.mark.sanic),
         pytest.param(ChannelsHttpClient, marks=pytest.mark.channels),
+        pytest.param(SyncChannelsHttpClient, marks=pytest.mark.channels),
         pytest.param(
             StarliteHttpClient,
             marks=[

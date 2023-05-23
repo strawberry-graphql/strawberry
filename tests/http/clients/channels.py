@@ -7,7 +7,11 @@ from typing import Any, AsyncGenerator, Dict, List, Optional
 from typing_extensions import Literal
 
 from channels.testing import HttpCommunicator, WebsocketCommunicator
-from strawberry.channels import GraphQLHTTPConsumer, GraphQLWSConsumer
+from strawberry.channels import (
+    GraphQLHTTPConsumer,
+    GraphQLWSConsumer,
+    SyncGraphQLHTTPConsumer,
+)
 from strawberry.channels.handlers.base import ChannelsConsumer
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.typevars import Context, RootValue
@@ -95,6 +99,30 @@ class DebuggableGraphQLHTTPConsumer(GraphQLHTTPConsumer):
         return await super().process_result(request, result)
 
 
+class DebuggableSyncGraphQLHTTPConsumer(SyncGraphQLHTTPConsumer):
+    result_override: ResultOverrideFunction = None
+
+    def __init__(self, *args: Any, **kwargs: Any):
+        self.result_override = kwargs.pop("result_override")
+        super().__init__(*args, **kwargs)
+
+    def get_root_value(self, request: ChannelsConsumer) -> Optional[RootValue]:
+        return Query()
+
+    def get_context(self, request: ChannelsConsumer, response: Any) -> Context:
+        context = super().get_context(request, response)
+
+        return get_context(context)
+
+    def process_result(
+        self, request: ChannelsConsumer, result: Any
+    ) -> GraphQLHTTPResponse:
+        if self.result_override:
+            return self.result_override(result)
+
+        return super().process_result(request, result)
+
+
 class ChannelsHttpClient(HttpClient):
     """
     A client to test websockets over channels
@@ -159,7 +187,7 @@ class ChannelsHttpClient(HttpClient):
             body=body,
             headers=headers,
         )
-        response = await communicator.get_response()
+        response = await communicator.get_response(timeout=2)
 
         return Response(
             status_code=response["status"],
@@ -185,7 +213,7 @@ class ChannelsHttpClient(HttpClient):
             body=body,
             headers=headers,
         )
-        response = await communicator.get_response()
+        response = await communicator.get_response(timeout=2)
 
         return Response(
             status_code=response["status"],
@@ -229,6 +257,21 @@ class ChannelsHttpClient(HttpClient):
             yield ChannelsWebSocketClient(client)
         finally:
             await client.disconnect()
+
+
+class SyncChannelsHttpClient(ChannelsHttpClient):
+    def __init__(
+        self,
+        graphiql: bool = True,
+        allow_queries_via_get: bool = True,
+        result_override: ResultOverrideFunction = None,
+    ):
+        self.http_app = DebuggableSyncGraphQLHTTPConsumer.as_asgi(
+            schema=schema,
+            graphiql=graphiql,
+            allow_queries_via_get=allow_queries_via_get,
+            result_override=result_override,
+        )
 
 
 class ChannelsWebSocketClient(WebSocketClient):
