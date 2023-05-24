@@ -96,7 +96,7 @@ class GraphQL(
             GRAPHQL_WS_PROTOCOL,
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
-        graphiql_example_query: Optional[str] = None,
+        example_query: Optional[str] = None,
     ) -> None:
         self.schema = schema
         self.graphiql = graphiql
@@ -106,7 +106,7 @@ class GraphQL(
         self.debug = debug
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
-        self.graphiql_example_query = graphiql_example_query
+        self.example_query = example_query
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
         if scope["type"] == "http":
@@ -186,7 +186,7 @@ class GraphQL(
         await response(scope, receive, send)
 
     def render_graphiql(self, request: Union[Request, WebSocket]) -> Response:
-        html = get_graphiql_html(example_query=self.graphiql_example_query)
+        html = get_graphiql_html(example_query=self.example_query)
 
         return HTMLResponse(html)
 

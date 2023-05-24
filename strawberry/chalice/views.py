@@ -59,12 +59,12 @@ class GraphQLView(
         schema: BaseSchema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
-        graphiql_example_query: Optional[str] = None,
+        example_query: Optional[str] = None,
     ):
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.schema = schema
-        self.graphiql_example_query = graphiql_example_query
+        self.example_query = example_query
 
     def get_root_value(self, request: Request) -> Optional[RootValue]:
         return None
@@ -78,7 +78,9 @@ class GraphQLView(
         Returns:
             The GraphiQL html page as a string
         """
-        return get_graphiql_html(subscription_enabled=False, example_query=self.graphiql_example_query)  # type: ignore
+        return get_graphiql_html(
+            subscription_enabled=False, example_query=self.example_query
+        )  # type: ignore
 
     def get_sub_response(self, request: Request) -> TemporalResponse:
         return TemporalResponse()

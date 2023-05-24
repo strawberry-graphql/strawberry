@@ -16,7 +16,7 @@ def test_client() -> TestClient:
             return f"Hello {name or 'world'}"
 
     async_schema = strawberry.Schema(Query)
-    app = create_app(schema=async_schema, graphiql_example_query="Hello from Pytest")
+    app = create_app(schema=async_schema, example_query="Hello from Pytest")
     return TestClient(app)
 
 
@@ -26,6 +26,6 @@ def test_simple_query(test_client):
     assert response.json() == {"data": {"hello": "Hello world"}}
 
 
-def test_graphiql_example_query_is_updated(test_client):
+def test_example_query_is_updated(test_client):
     response = test_client.get("/graphql")
     assert 'React.useState("Hello from Pytest")' in response.text

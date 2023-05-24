@@ -169,7 +169,7 @@ def make_graphql_controller(
         GRAPHQL_WS_PROTOCOL,
     ),
     connection_init_wait_timeout: timedelta = timedelta(minutes=1),
-    graphiql_example_query: Optional[str] = None,
+    example_query: Optional[str] = None,
 ) -> Type[Controller]:
     routes_path = path
 
@@ -195,7 +195,7 @@ def make_graphql_controller(
     schema_ = schema
     allow_queries_via_get_ = allow_queries_via_get
     graphiql_ = graphiql
-    graphiql_example_query_ = graphiql_example_query
+    example_query_ = example_query
 
     class GraphQLController(
         Controller,
@@ -226,7 +226,7 @@ def make_graphql_controller(
         schema: BaseSchema = schema_
         allow_queries_via_get = allow_queries_via_get_
         graphiql = graphiql_
-        graphiql_example_query = graphiql_example_query_
+        example_query = example_query_
 
         async def execute_request(
             self,
@@ -250,7 +250,7 @@ def make_graphql_controller(
                 )
 
         def render_graphiql(self, request: Request[Any, Any]) -> Response[str]:
-            html = get_graphiql_html(example_query=self.graphiql_example_query)
+            html = get_graphiql_html(example_query=self.example_query)
             return Response(html, media_type=MediaType.HTML)
 
         def create_response(

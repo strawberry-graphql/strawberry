@@ -161,7 +161,7 @@ class GraphQLRouter(
         default: Optional[ASGIApp] = None,
         on_startup: Optional[Sequence[Callable[[], Any]]] = None,
         on_shutdown: Optional[Sequence[Callable[[], Any]]] = None,
-        graphiql_example_query: Optional[str] = None,
+        example_query: Optional[str] = None,
     ):
         super().__init__(
             default=default,
@@ -181,7 +181,7 @@ class GraphQLRouter(
         )
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
-        self.graphiql_example_query = graphiql_example_query
+        self.example_query = example_query
 
         @self.get(
             path,
@@ -279,7 +279,7 @@ class GraphQLRouter(
         )
 
     def render_graphiql(self, request: Request) -> HTMLResponse:
-        html = get_graphiql_html(example_query=self.graphiql_example_query)
+        html = get_graphiql_html(example_query=self.example_query)
         return HTMLResponse(html)
 
     @staticmethod
