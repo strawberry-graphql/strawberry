@@ -158,7 +158,10 @@ class MyView(GraphQLView):
         # Augment connection_params with retrieved information
         params.connection_params["app_username"] = username
         # Return a payload back to the client
-        prarms.response_params = {"message": "Welcome to the application!", "username": username}
+        prarms.response_params = {
+            "message": "Welcome to the application!",
+            "username": username,
+        }
 
 
 schema = Schema(query=Query, subscription=Subscription)
