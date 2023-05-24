@@ -245,8 +245,6 @@ class SyncGraphQLHTTPConsumer(
         Context,
         RootValue,
     ],
-    ChannelsConsumer,
-    AsyncHttpConsumer,
 ):
     """Synchronous version of the HTTPConsumer.
 
