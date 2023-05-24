@@ -551,7 +551,7 @@ class GraphQLCoreConverter:
             def extension_resolver(
                 _source: Any,
                 info: Info,
-                **kwargs,
+                **kwargs: Any,
             ):
                 # parse field arguments into Strawberry input types and convert
                 # field names to Python equivalents
@@ -590,7 +590,7 @@ class GraphQLCoreConverter:
 
         _get_result_with_extensions = wrap_field_extensions()
 
-        def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
+        def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs: Any):
             strawberry_info = _strawberry_info_from_graphql(info)
             _check_permissions(_source, strawberry_info, kwargs)
 
@@ -600,7 +600,9 @@ class GraphQLCoreConverter:
                 **kwargs,
             )
 
-        async def _async_resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
+        async def _async_resolver(
+            _source: Any, info: GraphQLResolveInfo, **kwargs: Any
+        ):
             strawberry_info = _strawberry_info_from_graphql(info)
             await _check_permissions_async(_source, strawberry_info, kwargs)
 

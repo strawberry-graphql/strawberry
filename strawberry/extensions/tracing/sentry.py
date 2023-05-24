@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import hashlib
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Callable, Generator, Iterator, Optional
+from typing import TYPE_CHECKING, Any, Callable, Generator, Optional
 
-from ddtrace import Span, tracer
+from sentry_sdk import configure_scope, start_span
 
-from strawberry.extensions import LifecycleStep, SchemaExtension
+from strawberry.extensions import SchemaExtension
 from strawberry.extensions.tracing.utils import should_skip_tracing
 from strawberry.utils.cached_property import cached_property
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from strawberry.types.execution import ExecutionContext
 
 
-class DatadogTracingExtension(SchemaExtension):
+class SentryTracingExtension(SchemaExtension):
     def __init__(
         self,
         *,
@@ -36,74 +36,61 @@ class DatadogTracingExtension(SchemaExtension):
 
         return query_hash
 
-    def create_span(
-        self,
-        lifecycle_step: LifecycleStep,
-        name: str,
-        **kwargs: Any,
-    ) -> Span:
-        """
-        Create a span with the given name and kwargs.
-        You can  override this if you want to add more tags to the span.
-
-        Example:
-
-        class CustomExtension(DatadogTracingExtension):
-            def create_span(self, lifecycle_step, name, **kwargs):
-                span = super().create_span(lifecycle_step, name, **kwargs)
-                if lifecycle_step == LifeCycleStep.OPERATION:
-                    span.set_tag("graphql.query", self.execution_context.query)
-                return span
-        """
-        return tracer.trace(
-            name,
-            span_type="graphql",
-            **kwargs,
-        )
-
     def hash_query(self, query: str) -> str:
         return hashlib.md5(query.encode("utf-8")).hexdigest()
 
-    def on_operation(self) -> Iterator[None]:
+    def on_operation(self) -> Generator[None, None, None]:
         self._operation_name = self.execution_context.operation_name
-        span_name = (
-            f"{self._operation_name}" if self._operation_name else "Anonymous Query"
-        )
+        name = f"{self._operation_name}" if self._operation_name else "Anonymous Query"
 
-        self.request_span = self.create_span(
-            LifecycleStep.OPERATION,
-            span_name,
-            resource=self._resource_name,
-            service="strawberry",
-        )
-        self.request_span.set_tag("graphql.operation_name", self._operation_name)
+        with configure_scope() as scope:
+            if scope.span:
+                self.gql_span = scope.span.start_child(
+                    op="gql",
+                    description=name,
+                )
+            else:
+                self.gql_span = start_span(
+                    op="gql",
+                )
+
+        operation_type = "query"
 
         assert self.execution_context.query
 
-        operation_type = "query"
         if self.execution_context.query.strip().startswith("mutation"):
             operation_type = "mutation"
-        elif self.execution_context.query.strip().startswith("subscription"):
+        if self.execution_context.query.strip().startswith("subscription"):
             operation_type = "subscription"
-        self.request_span.set_tag("graphql.operation_type", operation_type)
+
+        self.gql_span.set_tag("graphql.operation_type", operation_type)
+        self.gql_span.set_tag("graphql.resource_name", self._resource_name)
+        self.gql_span.set_data("graphql.query", self.execution_context.query)
+
         yield
-        self.request_span.finish()
+
+        self.gql_span.finish()
 
     def on_validate(self) -> Generator[None, None, None]:
-        self.validation_span = self.create_span(
-            lifecycle_step=LifecycleStep.VALIDATION,
-            name="Validation",
+        self.validation_span = self.gql_span.start_child(
+            op="validation", description="Validation"
         )
+
         yield
+
         self.validation_span.finish()
 
     def on_parse(self) -> Generator[None, None, None]:
-        self.parsing_span = self.create_span(
-            lifecycle_step=LifecycleStep.PARSE,
-            name="Parsing",
+        self.parsing_span = self.gql_span.start_child(
+            op="parsing", description="Parsing"
         )
+
         yield
+
         self.parsing_span.finish()
+
+    def should_skip_tracing(self, _next: Callable, info: GraphQLResolveInfo) -> bool:
+        return should_skip_tracing(_next, info)
 
     async def resolve(
         self,
@@ -113,7 +100,7 @@ class DatadogTracingExtension(SchemaExtension):
         *args: str,
         **kwargs: Any,
     ) -> Any:
-        if should_skip_tracing(_next, info):
+        if self.should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
             if isawaitable(result):  # pragma: no cover
@@ -123,9 +110,8 @@ class DatadogTracingExtension(SchemaExtension):
 
         field_path = f"{info.parent_type}.{info.field_name}"
 
-        with self.create_span(
-            lifecycle_step=LifecycleStep.RESOLVE,
-            name=f"Resolving: {field_path}",
+        with self.gql_span.start_child(
+            op="resolve", description=f"Resolving: {field_path}"
         ) as span:
             span.set_tag("graphql.field_name", info.field_name)
             span.set_tag("graphql.parent_type", info.parent_type.name)
@@ -140,7 +126,7 @@ class DatadogTracingExtension(SchemaExtension):
             return result
 
 
-class DatadogTracingExtensionSync(DatadogTracingExtension):
+class SentryTracingExtensionSync(SentryTracingExtension):
     def resolve(
         self,
         _next: Callable,
@@ -149,14 +135,13 @@ class DatadogTracingExtensionSync(DatadogTracingExtension):
         *args: str,
         **kwargs: Any,
     ) -> Any:
-        if should_skip_tracing(_next, info):
+        if self.should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 
         field_path = f"{info.parent_type}.{info.field_name}"
 
-        with self.create_span(
-            lifecycle_step=LifecycleStep.RESOLVE,
-            name=f"Resolving: {field_path}",
+        with self.gql_span.start_child(
+            op="resolve", description=f"Resolving: {field_path}"
         ) as span:
             span.set_tag("graphql.field_name", info.field_name)
             span.set_tag("graphql.parent_type", info.parent_type.name)

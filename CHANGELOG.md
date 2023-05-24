@@ -1,6 +1,172 @@
 CHANGELOG
 =========
 
+0.178.0 - 2023-05-22
+--------------------
+
+This release introduces the new `should_ignore` argument to the `QueryDepthLimiter` extension that provides
+a more general and more verbose way of specifying the rules by which a query's depth should be limited.
+
+The `should_ignore` argument should be a function that accepts a single argument of type `IgnoreContext`.
+The `IgnoreContext` class has the following attributes:
+- `field_name` of type `str`: the name of the field to be compared against
+- `field_args` of type `strawberry.extensions.query_depth_limiter.FieldArgumentsType`: the arguments of the field to be compared against
+- `query` of type `graphql.language.Node`: the query string
+- `context` of type `graphql.validation.ValidationContext`: the context passed to the query
+and returns `True` if the field should be ignored and `False` otherwise.
+This argument is injected, regardless of name, by the `QueryDepthLimiter` class and should not be passed by the user.
+
+Instead, the user should write business logic to determine whether a field should be ignored or not by
+the attributes of the `IgnoreContext` class.
+
+For example, the following query:
+```python
+"""
+    query {
+      matt: user(name: "matt") {
+        email
+      }
+      andy: user(name: "andy") {
+        email
+        address {
+          city
+        }
+        pets {
+          name
+          owner {
+            name
+          }
+        }
+      }
+    }
+"""
+```
+can have its depth limited by the following `should_ignore`:
+```python
+from strawberry.extensions import IgnoreContext
+
+
+def should_ignore(ignore: IgnoreContext):
+    return ignore.field_args.get("name") == "matt"
+
+
+query_depth_limiter = QueryDepthLimiter(should_ignore=should_ignore)
+```
+so that it *effectively* becomes:
+```python
+"""
+    query {
+      andy: user(name: "andy") {
+        email
+        pets {
+          name
+          owner {
+            name
+          }
+        }
+      }
+    }
+"""
+```
+
+Contributed by [Tommy Smith](https://github.com/tsmith023) via [PR #2505](https://github.com/strawberry-graphql/strawberry/pull/2505/)
+
+
+0.177.3 - 2023-05-19
+--------------------
+
+This release adds a method on the DatadogTracingExtension class called `create_span` that can be overridden to create a custom span or add additional tags to the span.
+
+```python
+from ddtrace import Span
+
+from strawberry.extensions import LifecycleStep
+from strawberry.extensions.tracing import DatadogTracingExtension
+
+
+class DataDogExtension(DatadogTracingExtension):
+    def create_span(
+        self,
+        lifecycle_step: LifecycleStep,
+        name: str,
+        **kwargs,
+    ) -> Span:
+        span = super().create_span(lifecycle_step, name, **kwargs)
+        if lifecycle_step == LifeCycleStep.OPERATION:
+            span.set_tag("graphql.query", self.execution_context.query)
+        return span
+```
+
+Contributed by [Ronald Williams](https://github.com/ronaldnwilliams) via [PR #2773](https://github.com/strawberry-graphql/strawberry/pull/2773/)
+
+
+0.177.2 - 2023-05-18
+--------------------
+
+This release fixes an issue with optional scalars using the `or`
+notation with forward references on python 3.10.
+
+The following code would previously raise `TypeError` on python 3.10:
+
+```python
+from __future__ import annotations
+
+import strawberry
+from strawberry.scalars import JSON
+
+
+@strawberry.type
+class SomeType:
+    an_optional_json: JSON | None
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2774](https://github.com/strawberry-graphql/strawberry/pull/2774/)
+
+
+0.177.1 - 2023-05-09
+--------------------
+
+This release adds support for using `enum_value` with `IntEnum`s, like this:
+
+```python
+import strawberry
+
+from enum import IntEnum
+
+
+@strawberry.enum
+class Color(IntEnum):
+    OTHER = strawberry.enum_value(
+        -1, description="Other: The color is not red, blue, or green."
+    )
+    RED = strawberry.enum_value(0, description="Red: The color red.")
+    BLUE = strawberry.enum_value(1, description="Blue: The color blue.")
+    GREEN = strawberry.enum_value(2, description="Green: The color green.")
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2761](https://github.com/strawberry-graphql/strawberry/pull/2761/)
+
+
+0.177.0 - 2023-05-07
+--------------------
+
+This release adds a SentryTracingExtension that you can use to automatically add
+tracing information to your GraphQL queries.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2495](https://github.com/strawberry-graphql/strawberry/pull/2495/)
+
+
+0.176.4 - 2023-05-07
+--------------------
+
+This release adds support for custom classes inside the OpenTelemetry integration.
+With this, we shouldn't see errors like this anymore:
+
+```Invalid type dict for attribute 'graphql.param.paginator' value. Expected one of ['bool', 'str', 'bytes', 'int', 'float'] or a sequence of those types.```
+
+Contributed by [Budida Abhinav Ramana](https://github.com/abhinavramana) via [PR #2753](https://github.com/strawberry-graphql/strawberry/pull/2753/)
+
+
 0.176.3 - 2023-05-03
 --------------------
 
