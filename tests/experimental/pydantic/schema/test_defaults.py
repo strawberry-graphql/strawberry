@@ -10,6 +10,7 @@ from strawberry.printer import print_schema
 def test_field_type_default():
     class User(pydantic.BaseModel):
         name: str = "James"
+        nickname: Optional[str] = 'Jim'
 
     @strawberry.experimental.pydantic.type(User, all_fields=True)
     class PydanticUser:
@@ -35,6 +36,7 @@ def test_field_type_default():
     expected = """
     type PydanticUser {
       name: String!
+      nickname: String
     }
 
     type Query {
