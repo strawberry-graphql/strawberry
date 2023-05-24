@@ -117,6 +117,7 @@ import strawberry
 from aiohttp import web
 from strawberry.types import Info
 from strawberry.aiohttp.views import GraphQLView
+from strawberry.http.async_base_view import WSConnectionParams
 
 from .auth import authenticate_token
 
@@ -145,20 +146,19 @@ class Subscription:
 # Subclass the schema so that we can pre-process the
 # connection_params
 class MyView(GraphQLView):
-    async def on_ws_connect(
-        self, connection_params: Dict[str, Any]
-    ) -> Union[Literal[False], None, Dict[str, Any]]:
+    async def on_ws_connect(self, params: WSConnectionParams) -> None:
         # perform _authentication_ for this connection
-        token: str = connection_params.get(
+        token: str = params.connection_params.get(
             "authToken"
         )  # equal to "Bearer I_AM_A_VALID_AUTH_TOKEN"
         username = await authenticate_token(token)
         if not username:
-            return False  # Reject connection
+            await params.reject()  # Reject connection
+            return
         # Augment connection_params with retrieved information
-        connection_params["app_username"] = username
+        params.connection_params["app_username"] = username
         # Return a payload back to the client
-        return {"message": "Welcome to the application!", "username": username}
+        prarms.response_params = {"message": "Welcome to the application!", "username": username}
 
 
 schema = Schema(query=Query, subscription=Subscription)
