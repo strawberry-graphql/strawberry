@@ -3,33 +3,19 @@ from __future__ import annotations
 import dataclasses
 import sys
 import warnings
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Type,
-    cast,
-)
+from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional,
+                    Sequence, Set, Type, cast)
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
-    convert_strawberry_class_to_pydantic_model,
-)
+    convert_strawberry_class_to_pydantic_model)
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.experimental.pydantic.fields import replace_types_recursively
 from strawberry.experimental.pydantic.utils import (
-    DataclassCreationFields,
-    ensure_all_auto_fields_in_pydantic,
-    get_default_factory_for_field,
-    get_private_fields,
-)
+    DataclassCreationFields, ensure_all_auto_fields_in_pydantic,
+    get_default_factory_for_field, get_private_fields)
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
@@ -43,11 +29,7 @@ if TYPE_CHECKING:
 def get_type_for_field(field: ModelField, is_input: bool):  # noqa: ANN201
     outer_type = field.outer_type_
     replaced_type = replace_types_recursively(outer_type, is_input)
-
-    default_defined: bool = (
-        field.default_factory is not None or field.default is not None
-    )
-    should_add_optional: bool = not (field.required or default_defined)
+    should_add_optional: bool = field.allow_none
     if should_add_optional:
         return Optional[replaced_type]
     else:
@@ -109,9 +91,7 @@ def _build_dataclass_creation_fields(
 
 if TYPE_CHECKING:
     from strawberry.experimental.pydantic.conversion_types import (
-        PydanticModel,
-        StrawberryTypeFromPydantic,
-    )
+        PydanticModel, StrawberryTypeFromPydantic)
 
 
 def type(
