@@ -503,8 +503,7 @@ def test_basic_type_with_optional_and_default():
 
     assert not result.errors
     assert result.data["user"]["age"] == 1
-    assert result.data["user"]["password"] == 'ABC'
-
+    assert result.data["user"]["password"] == "ABC"
 
     @strawberry.type
     class QueryNone:
@@ -520,4 +519,4 @@ def test_basic_type_with_optional_and_default():
 
     assert not result.errors
     assert result.data["user"]["age"] == 1
-    assert result.data["user"]["password"] == None
+    assert result.data["user"]["password"] is None

@@ -352,7 +352,6 @@ def test_optional_and_default():
         some_list: Optional[List[str]] = pydantic.Field(default_factory=list)
         check: Optional[bool] = False
 
-
     @strawberry.experimental.pydantic.type(UserModel, all_fields=True)
     class User:
         pass
@@ -391,9 +390,6 @@ def test_optional_and_default():
     assert check_field.python_name == "check"
     assert isinstance(check_field.type, StrawberryOptional)
     assert check_field.type.of_type is bool
-
-
-
 
 
 def test_type_with_fields_mutable_default():
