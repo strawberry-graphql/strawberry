@@ -265,7 +265,6 @@ class SyncGraphQLHTTPConsumer(
         return {
             "request": request,
             "response": response,
-            "ws": request.consumer,
         }  # type: ignore
 
     def get_sub_response(self, request: ChannelsRequest) -> TemporalResponse:
