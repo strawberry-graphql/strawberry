@@ -25,10 +25,10 @@ functionality which is exposed through the Strawberry integration.
 
 Make sure you have read the following Channels documentation:
 
-- [Introduction](https://channels.readthedocs.io/en/stable/introduction.html#)
-- [Tutorial](https://channels.readthedocs.io/en/stable/tutorial/index.html)
-- [Consumers](https://channels.readthedocs.io/en/stable/topics/consumers.html)
-- And our [Subscriptions](../general/subscriptions) documentation.
+-   [Introduction](https://channels.readthedocs.io/en/stable/introduction.html#)
+-   [Tutorial](https://channels.readthedocs.io/en/stable/tutorial/index.html)
+-   [Consumers](https://channels.readthedocs.io/en/stable/topics/consumers.html)
+-   And our [Subscriptions](../general/subscriptions) documentation.
 
 If you have read the Channels documentation, You should know by now that:
 
@@ -56,7 +56,7 @@ pip install 'strawberry-graphql[channels]'
 
 _The following example will pick up where the Channels tutorials left off._
 
-By the end of This tutorial, You will have a graphql chat subscription that will
+By the end of this tutorial, You will have a graphql chat subscription that will
 be able to talk with the channels chat consumer from the tutorial.
 
 ### Types setup
@@ -116,7 +116,7 @@ class Subscription:
         user: str,
     ) -> AsyncGenerator[ChatRoomMessage, None]:
         """Join and subscribe to message sent to the given rooms."""
-        ws = info.context.ws
+        ws = info.context["ws"]
         channel_layer = ws.channel_layer
 
         room_ids = [f"chat_{room.room_name}" for room in rooms]
@@ -145,7 +145,7 @@ class Subscription:
                 )
 ```
 
-Explanation: `Info.context.ws` or `Info.context.request` is a pointer to the
+Explanation: `Info.context["ws"]` or `Info.context["request"]` is a pointer to the
 [`ChannelsConsumer`](#channelsconsumer) instance. Here we have first sent a
 message to all the channel_layer groups (specified in the subscription argument
 `rooms`) that we have joined the chat.
@@ -191,7 +191,7 @@ class Mutation:
         room: ChatRoom,
         message: str,
     ) -> None:
-        ws = info.context.ws
+        ws = info.context["ws"]
         channel_layer = ws.channel_layer
 
         await channel_layer.group_send(
@@ -310,14 +310,11 @@ On tab #1 start the subscription:
 
 ```graphql
 subscription SubscribeToChatRooms {
-  joinChatRooms(
-    rooms: [{ roomName: "room1" }, { roomName: "room2" }]
-    user: "foo"
-  ) {
-    roomName
-    message
-    currentUser
-  }
+    joinChatRooms(rooms: [{ roomName: "room1" }, { roomName: "room2" }], user: "foo") {
+        roomName
+        message
+        currentUser
+    }
 }
 ```
 
@@ -325,7 +322,7 @@ On tab #2 we will run `sendChatMessage` mutation:
 
 ```graphql
 mutation echo {
-  sendChatMessage(message: "hello room 1", room: { roomName: "room1" })
+    sendChatMessage(message: "hello room 1", room: { roomName: "room1" })
 }
 ```
 
@@ -443,6 +440,75 @@ def test_send_message_via_channels_chat_joinChatRooms_recieves(self):
 
 ---
 
+The HTTP and WebSockets both are handled by different base classes. HTTP uses
+`GraphQLHTTPConsumer` and WebSockets uses `GraphQLWSConsumer`. Both of them can
+be extended:
+
+## GraphQLHTTPConsumer
+
+### Options
+
+`GraphQLHTTPConsumer` supports the same options as all other integrations:
+
+-   `schema`: mandatory, the schema created by `strawberry.Schema`.
+-   `graphiql`: optional, defaults to `True`, whether to enable the GraphiQL
+    interface.
+-   `allow_queries_via_get`: optional, defaults to `True`, whether to enable
+    queries via `GET` requests
+-   `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
+    the GraphiQL interface, defaults to `True
+
+### Extending the consumer
+
+We allow to extend `GraphQLHTTPConsumer`, by overriding the following methods:
+
+-   `async def get_context(self, request: ChannelsRequest, response: TemporalResponse) -> Context`
+-   `async def get_root_value(self, request: ChannelsRequest) -> Optional[RootValue]`
+-   `async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse:`.
+
+### Context
+
+The default context returned by `get_context()` is a `dict` and it includes the following keys by default:
+
+-   `request`: A `ChannelsRequest` object with the following fields and methods:
+    -   `consumer`: The `GraphQLHTTPConsumer` instance for this connection
+    -   `body`: The request body
+    -   `headers`: A dict containing the headers of the request
+    -   `method`: The requests HTTP method
+    -   `content_type`: The content type of the request
+-   `response` A `TemporalResponse` object, that can be used to influence the HTTP response:
+    -   `status_code`: The status code of the response, if there are no execution errors (defaults to `200`)
+    -   `headers`: Any additional headers that should be send with the response
+
+## GraphQLWSConsumer
+
+### Options
+
+-   `schema`: mandatory, the schema created by `strawberry.Schema`.
+-   `debug`: optional, defaults to `False`, whether to enable debug mode.
+-   `keep_alive`: optional, defaults to `False`, whether to enable keep alive mode
+    for websockets.
+-   `keep_alive_interval`: optional, defaults to `1`, the interval in seconds for
+    keep alive messages.
+
+### Extending the consumer
+
+We allow to extend `GraphQLWSConsumer`, by overriding the following methods:
+
+-   `async def get_context(self, request: ChannelsConsumer, connection_params: Any) -> Context`
+-   `async def get_root_value(self, request: ChannelsConsumer) -> Optional[RootValue]`
+
+### Context
+
+The default context returned by `get_context()` is a `dict` and it includes the following keys by default:
+
+-   `request`: The `GraphQLWSConsumer` of the current connection. It can be used to access the connection's
+    scope, e.g. `info.context["ws"].headers` allows access to any headers.
+-   `ws`: The same as `request`
+-   `connection_params`: Any `connection_params`, see [Authenticating Subscriptions](/docs/general/subscriptions#authenticating-subscriptions)
+
+---
+
 ## API
 
 ### GraphQLProtocolTypeRouter
@@ -472,16 +538,11 @@ everything else to the Django application.
 
 ### ChannelsConsumer
 
-Strawberries extended
-[`AsyncConsumer`](https://channels.readthedocs.io/en/stable/topics/consumers.html#consumers).
+Strawberries extended [`AsyncConsumer`](https://channels.readthedocs.io/en/stable/topics/consumers.html#consumers).
 
-#### \*\*Every graphql session will have an instance of this class inside
-
-`info.ws` which is actually the `info.context.request`.\*\*
+Every graphql session will have an instance of this class inside `info.context["ws"]` (WebSockets) or `info.context["request"].consumer` (HTTP).
 
 #### properties
-
-- `ws.headers: dict` returns a map of the headers from `scope['headers']`.
 
 ```python
 async def channel_listen(
@@ -494,6 +555,6 @@ async def channel_listen(
     ...
 ```
 
-- `type` - The type of the message to wait for, equivalent to `scope['type']`
-- `timeout` - An optional timeout to wait for each subsequent message.
-- `groups` - list of groups to yield messages from threw channel layer.
+-   `type` - The type of the message to wait for, equivalent to `scope['type']`
+-   `timeout` - An optional timeout to wait for each subsequent message.
+-   `groups` - list of groups to yield messages from threw channel layer.
