@@ -35,21 +35,21 @@ if TYPE_CHECKING:
 
 
 @dataclasses.dataclass
-class Result:
-    response: bytes
+class ChannelsResponse:
+    content: bytes
     status: int = 200
     content_type: str = "application/json"
     headers: Dict[bytes, bytes] = dataclasses.field(default_factory=dict)
 
 
 @dataclasses.dataclass
-class Request:
+class ChannelsRequest:
     consumer: ChannelsConsumer
     body: bytes
 
     @property
     def query_params(self) -> QueryParams:
-        query_params_str = self.consumer["query_string"].decode()
+        query_params_str = self.consumer.scope["query_string"].decode()
 
         query_params = {}
         for key, value in parse_qs(query_params_str, keep_blank_values=True).items():
@@ -62,12 +62,12 @@ class Request:
     def headers(self) -> Mapping[str, str]:
         return {
             header_name.decode().lower(): header_value.decode()
-            for header_name, header_value in self.consumer["headers"]
+            for header_name, header_value in self.consumer.scope["headers"]
         }
 
     @property
     def method(self) -> HTTPMethod:
-        return self.consumer["method"].upper()
+        return self.consumer.scope["method"].upper()
 
     @property
     def content_type(self) -> Optional[str]:
@@ -100,7 +100,7 @@ class Request:
 
 
 class BaseChannelsRequestAdapter:
-    def __init__(self, request: Request):
+    def __init__(self, request: ChannelsRequest):
         self.request = request
 
     @property
@@ -157,30 +157,30 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         self.subscriptions_enabled = subscriptions_enabled
         super().__init__(**kwargs)
 
-    def render_graphiql(self, request: Request) -> Result:
+    def render_graphiql(self, request: ChannelsRequest) -> ChannelsResponse:
         html = get_graphiql_html(self.subscriptions_enabled)
-        return Result(response=html.encode(), content_type="text/html")
+        return ChannelsResponse(content=html.encode(), content_type="text/html")
 
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse
-    ) -> Result:
-        return Result(
-            response=json.dumps(response_data).encode(),
+    ) -> ChannelsResponse:
+        return ChannelsResponse(
+            content=json.dumps(response_data).encode(),
             status=sub_response.status_code,
             headers={k.encode(): v.encode() for k, v in sub_response.headers.items()},
         )
 
     async def handle(self, body: bytes) -> None:
-        request = Request(consumer=self.scope, body=body)
+        request = ChannelsRequest(consumer=self, body=body)
         try:
-            response = await self.run(request)
+            response: ChannelsResponse = await self.run(request)
 
             if b"Content-Type" not in response.headers:
                 response.headers[b"Content-Type"] = response.content_type.encode()
 
             await self.send_response(
                 response.status,
-                response.response,
+                response.content,
                 headers=response.headers,
             )
         except HTTPException as e:
@@ -190,8 +190,8 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
 class GraphQLHTTPConsumer(
     BaseGraphQLHTTPConsumer,
     AsyncBaseHTTPView[
-        Request,
-        Result,
+        ChannelsRequest,
+        ChannelsResponse,
         TemporalResponse,
         Context,
         RootValue,
@@ -221,26 +221,26 @@ class GraphQLHTTPConsumer(
     allow_queries_via_get: bool = True
     request_adapter_class = ChannelsRequestAdapter
 
-    async def get_root_value(self, request: Request) -> Optional[RootValue]:
+    async def get_root_value(self, request: ChannelsRequest) -> Optional[RootValue]:
         return None
 
     async def get_context(
-        self, request: Request, response: TemporalResponse
+        self, request: ChannelsRequest, response: TemporalResponse
     ) -> Context:
         return {
             "request": request,
             "response": response,
         }  # type: ignore
 
-    async def get_sub_response(self, request: Request) -> TemporalResponse:
+    async def get_sub_response(self, request: ChannelsRequest) -> TemporalResponse:
         return TemporalResponse()
 
 
 class SyncGraphQLHTTPConsumer(
     BaseGraphQLHTTPConsumer,
     SyncBaseHTTPView[
-        Request,
-        Result,
+        ChannelsRequest,
+        ChannelsResponse,
         TemporalResponse,
         Context,
         RootValue,
@@ -256,16 +256,19 @@ class SyncGraphQLHTTPConsumer(
     allow_queries_via_get: bool = True
     request_adapter_class = SyncChannelsRequestAdapter
 
-    def get_root_value(self, request: Request) -> Optional[RootValue]:
+    def get_root_value(self, request: ChannelsRequest) -> Optional[RootValue]:
         return None
 
-    def get_context(self, request: Request, response: TemporalResponse) -> Context:
+    def get_context(
+        self, request: ChannelsRequest, response: TemporalResponse
+    ) -> Context:
         return {
             "request": request,
             "response": response,
+            "ws": request.consumer,
         }  # type: ignore
 
-    def get_sub_response(self, request: Request) -> TemporalResponse:
+    def get_sub_response(self, request: ChannelsRequest) -> TemporalResponse:
         return TemporalResponse()
 
     # Sync channels is actually async, but it uses database_sync_to_async to call
@@ -274,8 +277,8 @@ class SyncGraphQLHTTPConsumer(
     @database_sync_to_async
     def run(
         self,
-        request: Request,
+        request: ChannelsRequest,
         context: Optional[Context] = UNSET,
         root_value: Optional[RootValue] = UNSET,
-    ) -> Result:
+    ) -> ChannelsResponse:
         return super().run(request, context, root_value)

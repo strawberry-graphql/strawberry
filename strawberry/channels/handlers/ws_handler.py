@@ -5,12 +5,11 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
-from .base import ChannelsWSConsumer
+from .base import ChannelsConsumer, ChannelsWSConsumer
 from .graphql_transport_ws_handler import GraphQLTransportWSHandler
 from .graphql_ws_handler import GraphQLWSHandler
 
 if TYPE_CHECKING:
-    from strawberry.channels.handlers.base import ChannelsConsumer
     from strawberry.http.typevars import Context, RootValue
     from strawberry.schema import BaseSchema
 
@@ -125,4 +124,5 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
         return {
             "request": request,
             "connection_params": connection_params,
+            "ws": request,
         }  # type: ignore
