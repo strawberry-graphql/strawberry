@@ -122,19 +122,13 @@ class BaseGraphQLWSHandler(ABC):
         if self.debug:
             pretty_print_graphql_operation(operation_name, query, variables)
 
-        try:
-            result_source = self.schema.subscribe(
-                query=query,
-                variable_values=variables,
-                operation_name=operation_name,
-                context_value=context,
-                root_value=root_value,
-            )
-        except GraphQLError as error:
-            error_payload = error.formatted
-            await self.send_message(GQL_ERROR, operation_id, error_payload)
-            self.schema.process_errors([error])
-            return
+        result_source = self.schema.subscribe(
+            query=query,
+            variable_values=variables,
+            operation_name=operation_name,
+            context_value=context,
+            root_value=root_value,
+        )
 
         self.subscriptions[operation_id] = result_source
         result_handler = self.handle_async_results(result_source, operation_id)
