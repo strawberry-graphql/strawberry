@@ -222,7 +222,7 @@ class GraphQLHTTPConsumer(
     request_adapter_class = ChannelsRequestAdapter
 
     async def get_root_value(self, request: ChannelsRequest) -> Optional[RootValue]:
-        return None
+        return None  # pragma: no cover
 
     async def get_context(
         self, request: ChannelsRequest, response: TemporalResponse
@@ -257,7 +257,7 @@ class SyncGraphQLHTTPConsumer(
     request_adapter_class = SyncChannelsRequestAdapter
 
     def get_root_value(self, request: ChannelsRequest) -> Optional[RootValue]:
-        return None
+        return None  # pragma: no cover
 
     def get_context(
         self, request: ChannelsRequest, response: TemporalResponse
