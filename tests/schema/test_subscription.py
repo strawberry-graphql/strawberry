@@ -33,11 +33,10 @@ async def test_subscription():
 
     query = "subscription { example }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
-
-    assert not result.errors
-    assert result.data["example"] == "Hi"
+    async for ok, result in schema.subscribe(query):
+        assert ok
+        assert not result.errors
+        assert result.data["example"] == "Hi"
 
 
 @pytest.mark.asyncio
@@ -89,11 +88,10 @@ async def test_subscription_with_arguments():
 
     query = 'subscription { example(name: "Nina") }'
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
-
-    assert not result.errors
-    assert result.data["example"] == "Hi Nina"
+    async for ok, result in schema.subscribe(query):
+        assert ok
+        assert not result.errors
+        assert result.data["example"] == "Hi Nina"
 
 
 requires_builtin_generics = pytest.mark.skipif(
@@ -132,11 +130,10 @@ async def test_subscription_return_annotations(return_annotation: str):
 
     query = "subscription { example }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
-
-    assert not result.errors
-    assert result.data["example"] == "Hi"
+    async for ok, result in schema.subscribe(query):
+        assert ok
+        assert not result.errors
+        assert result.data["example"] == "Hi"
 
 
 @pytest.mark.asyncio
@@ -165,11 +162,10 @@ async def test_subscription_with_unions():
 
     query = "subscription { exampleWithUnion { ... on A { a } } }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
-
-    assert not result.errors
-    assert result.data["exampleWithUnion"]["a"] == "Hi"
+    async for ok, result in schema.subscribe(query):
+        assert ok
+        assert not result.errors
+        assert result.data["exampleWithUnion"]["a"] == "Hi"
 
     del A, B
 
@@ -204,11 +200,10 @@ async def test_subscription_with_unions_and_annotated():
 
     query = "subscription { exampleWithAnnotatedUnion { ... on C { c } } }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
-
-    assert not result.errors
-    assert result.data["exampleWithAnnotatedUnion"]["c"] == "Hi"
+    async for ok, result in schema.subscribe(query):
+        assert ok
+        assert not result.errors
+        assert result.data["exampleWithAnnotatedUnion"]["c"] == "Hi"
 
     del C, D
 
@@ -231,8 +226,7 @@ async def test_subscription_with_annotated():
 
     query = "subscription { example }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
-
-    assert not result.errors
-    assert result.data["example"] == "Hi"
+    async for ok, result in schema.subscribe(query):
+        assert ok
+        assert not result.errors
+        assert result.data["example"] == "Hi"

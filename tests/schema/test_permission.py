@@ -80,9 +80,9 @@ async def test_raises_permission_error_for_subscription():
 
     query = "subscription { user }"
 
-    result = await schema.subscribe(query)
-
-    assert result.errors[0].message == "You are not authorized"
+    async for ok, result in schema.subscribe(query):
+        assert not ok
+        assert result.errors[0].message == "You are not authorized"
 
 
 @pytest.mark.asyncio
