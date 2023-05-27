@@ -25,10 +25,10 @@ functionality which is exposed through the Strawberry integration.
 
 Make sure you have read the following Channels documentation:
 
--   [Introduction](https://channels.readthedocs.io/en/stable/introduction.html#)
--   [Tutorial](https://channels.readthedocs.io/en/stable/tutorial/index.html)
--   [Consumers](https://channels.readthedocs.io/en/stable/topics/consumers.html)
--   And our [Subscriptions](../general/subscriptions) documentation.
+- [Introduction](https://channels.readthedocs.io/en/stable/introduction.html#)
+- [Tutorial](https://channels.readthedocs.io/en/stable/tutorial/index.html)
+- [Consumers](https://channels.readthedocs.io/en/stable/topics/consumers.html)
+- And our [Subscriptions](../general/subscriptions) documentation.
 
 If you have read the Channels documentation, You should know by now that:
 
@@ -310,11 +310,14 @@ On tab #1 start the subscription:
 
 ```graphql
 subscription SubscribeToChatRooms {
-    joinChatRooms(rooms: [{ roomName: "room1" }, { roomName: "room2" }], user: "foo") {
-        roomName
-        message
-        currentUser
-    }
+  joinChatRooms(
+    rooms: [{ roomName: "room1" }, { roomName: "room2" }]
+    user: "foo"
+  ) {
+    roomName
+    message
+    currentUser
+  }
 }
 ```
 
@@ -322,7 +325,7 @@ On tab #2 we will run `sendChatMessage` mutation:
 
 ```graphql
 mutation echo {
-    sendChatMessage(message: "hello room 1", room: { roomName: "room1" })
+  sendChatMessage(message: "hello room 1", room: { roomName: "room1" })
 }
 ```
 
@@ -450,62 +453,62 @@ be extended:
 
 `GraphQLHTTPConsumer` supports the same options as all other integrations:
 
--   `schema`: mandatory, the schema created by `strawberry.Schema`.
--   `graphiql`: optional, defaults to `True`, whether to enable the GraphiQL
-    interface.
--   `allow_queries_via_get`: optional, defaults to `True`, whether to enable
-    queries via `GET` requests
--   `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
-    the GraphiQL interface, defaults to `True
+- `schema`: mandatory, the schema created by `strawberry.Schema`.
+- `graphiql`: optional, defaults to `True`, whether to enable the GraphiQL
+  interface.
+- `allow_queries_via_get`: optional, defaults to `True`, whether to enable
+  queries via `GET` requests
+- `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
+  the GraphiQL interface, defaults to `True
 
 ### Extending the consumer
 
 We allow to extend `GraphQLHTTPConsumer`, by overriding the following methods:
 
--   `async def get_context(self, request: ChannelsRequest, response: TemporalResponse) -> Context`
--   `async def get_root_value(self, request: ChannelsRequest) -> Optional[RootValue]`
--   `async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse:`.
+- `async def get_context(self, request: ChannelsRequest, response: TemporalResponse) -> Context`
+- `async def get_root_value(self, request: ChannelsRequest) -> Optional[RootValue]`
+- `async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse:`.
 
 ### Context
 
 The default context returned by `get_context()` is a `dict` and it includes the following keys by default:
 
--   `request`: A `ChannelsRequest` object with the following fields and methods:
-    -   `consumer`: The `GraphQLHTTPConsumer` instance for this connection
-    -   `body`: The request body
-    -   `headers`: A dict containing the headers of the request
-    -   `method`: The requests HTTP method
-    -   `content_type`: The content type of the request
--   `response` A `TemporalResponse` object, that can be used to influence the HTTP response:
-    -   `status_code`: The status code of the response, if there are no execution errors (defaults to `200`)
-    -   `headers`: Any additional headers that should be send with the response
+- `request`: A `ChannelsRequest` object with the following fields and methods:
+  - `consumer`: The `GraphQLHTTPConsumer` instance for this connection
+  - `body`: The request body
+  - `headers`: A dict containing the headers of the request
+  - `method`: The requests HTTP method
+  - `content_type`: The content type of the request
+- `response` A `TemporalResponse` object, that can be used to influence the HTTP response:
+  - `status_code`: The status code of the response, if there are no execution errors (defaults to `200`)
+  - `headers`: Any additional headers that should be send with the response
 
 ## GraphQLWSConsumer
 
 ### Options
 
--   `schema`: mandatory, the schema created by `strawberry.Schema`.
--   `debug`: optional, defaults to `False`, whether to enable debug mode.
--   `keep_alive`: optional, defaults to `False`, whether to enable keep alive mode
-    for websockets.
--   `keep_alive_interval`: optional, defaults to `1`, the interval in seconds for
-    keep alive messages.
+- `schema`: mandatory, the schema created by `strawberry.Schema`.
+- `debug`: optional, defaults to `False`, whether to enable debug mode.
+- `keep_alive`: optional, defaults to `False`, whether to enable keep alive mode
+  for websockets.
+- `keep_alive_interval`: optional, defaults to `1`, the interval in seconds for
+  keep alive messages.
 
 ### Extending the consumer
 
 We allow to extend `GraphQLWSConsumer`, by overriding the following methods:
 
--   `async def get_context(self, request: ChannelsConsumer, connection_params: Any) -> Context`
--   `async def get_root_value(self, request: ChannelsConsumer) -> Optional[RootValue]`
+- `async def get_context(self, request: ChannelsConsumer, connection_params: Any) -> Context`
+- `async def get_root_value(self, request: ChannelsConsumer) -> Optional[RootValue]`
 
 ### Context
 
 The default context returned by `get_context()` is a `dict` and it includes the following keys by default:
 
--   `request`: The `GraphQLWSConsumer` of the current connection. It can be used to access the connection's
-    scope, e.g. `info.context["ws"].headers` allows access to any headers.
--   `ws`: The same as `request`
--   `connection_params`: Any `connection_params`, see [Authenticating Subscriptions](/docs/general/subscriptions#authenticating-subscriptions)
+- `request`: The `GraphQLWSConsumer` of the current connection. It can be used to access the connection's
+  scope, e.g. `info.context["ws"].headers` allows access to any headers.
+- `ws`: The same as `request`
+- `connection_params`: Any `connection_params`, see [Authenticating Subscriptions](/docs/general/subscriptions#authenticating-subscriptions)
 
 ---
 
@@ -555,6 +558,6 @@ async def channel_listen(
     ...
 ```
 
--   `type` - The type of the message to wait for, equivalent to `scope['type']`
--   `timeout` - An optional timeout to wait for each subsequent message.
--   `groups` - list of groups to yield messages from threw channel layer.
+- `type` - The type of the message to wait for, equivalent to `scope['type']`
+- `timeout` - An optional timeout to wait for each subsequent message.
+- `groups` - list of groups to yield messages from threw channel layer.
