@@ -471,13 +471,13 @@ We allow to extend `GraphQLHTTPConsumer`, by overriding the following methods:
 
 ### Context
 
-The default context returned by `get_context()` is a `dict` and it includes the following keys by default:
+The default context returned by `get_context()` is a `dict` that includes the following keys by default:
 
 - `request`: A `ChannelsRequest` object with the following fields and methods:
   - `consumer`: The `GraphQLHTTPConsumer` instance for this connection
   - `body`: The request body
   - `headers`: A dict containing the headers of the request
-  - `method`: The requests HTTP method
+  - `method`: The request's HTTP method
   - `content_type`: The content type of the request
 - `response` A `TemporalResponse` object, that can be used to influence the HTTP response:
   - `status_code`: The status code of the response, if there are no execution errors (defaults to `200`)
@@ -509,6 +509,79 @@ The default context returned by `get_context()` is a `dict` and it includes the 
   scope, e.g. `info.context["ws"].headers` allows access to any headers.
 - `ws`: The same as `request`
 - `connection_params`: Any `connection_params`, see [Authenticating Subscriptions](/docs/general/subscriptions#authenticating-subscriptions)
+
+
+## Example for defining a custom context
+
+Here is an example for extending the base classes to offer a different context object in your resolvers.
+For the HTTP integration, you can also have properties to access the current user and the
+session. Both properties depend on the `AuthMiddlewareStack` wrapper.
+
+```python
+from django.contrib.auth.models import AnonymousUser
+
+from strawberry.channels import ChannelsConsumer, ChannelsRequest
+from strawberry.channels import GraphQLHTTPConsumer as BaseGraphQLHTTPConsumer
+from strawberry.channels import GraphQLWSConsumer as BaseGraphQLWSConsumer
+from strawberry.http.temporal_response import TemporalResponse
+
+
+@dataclass
+class ChannelsContext:
+    request: ChannelsRequest
+    response: TemporalResponse
+
+    @property
+    def user(self):
+        # Depends on Channels' AuthMiddlewareStack
+        if "user" in self.request.consumer.scope:
+            return self.request.consumer.scope["user"]
+
+        return AnonymousUser()
+
+    @property
+    def session(self):
+        # Depends on Channels' SessionMiddleware / AuthMiddlewareStack
+        if "session" in self.request.consumer.scope:
+            return self.request.consumer.scope["session"]
+
+        return None
+
+
+@dataclass
+class ChannelsWSContext:
+    request: ChannelsConsumer
+    connection_params: Optional[Dict[str, Any]] = None
+
+    @property
+    def ws(self) -> ChannelsConsumer:
+        return self.request
+
+
+class GraphQLHTTPConsumer(BaseGraphQLHTTPConsumer):
+    @override
+    async def get_context(
+        self, request: ChannelsRequest, response: TemporalResponse
+    ) -> ChannelsContext:
+        return ChannelsContext(
+            request=request,
+            response=response,
+        )
+
+
+class GraphQLWSConsumer(BaseGraphQLWSConsumer):
+    @override
+    async def get_context(
+        self, request: ChannelsConsumer, connection_params: Any
+    ) -> ChannelsWSContext:
+        return ChannelsWSContext(
+            request=request,
+            connection_params=connection_params,
+        )
+```
+
+You can import and use the extended `GraphQLHTTPConsumer` and `GraphQLWSConsumer` classes in your
+`myproject.asgi.py` file as shown before.
 
 ---
 
