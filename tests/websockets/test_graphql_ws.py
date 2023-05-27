@@ -558,3 +558,26 @@ async def test_rejects_connection_params(aiohttp_app_client: HttpClient):
         # make sure the WebSocket is disconnected now
         await ws.receive(timeout=2)  # receive close
         assert ws.closed
+
+
+async def test_extensions(ws: WebSocketClient):
+    await ws.send_json(
+        {
+            "type": GQL_START,
+            "id": "demo",
+            "payload": {
+                "query": 'subscription { echo(message: "Hi") }',
+            },
+        }
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == GQL_DATA
+    assert response["id"] == "demo"
+    assert response["payload"]["data"] == {"echo": "Hi"}
+    assert response["payload"]["extensions"] == {"example": "example"}
+
+    await ws.send_json({"type": GQL_STOP, "id": "demo"})
+    response = await ws.receive_json()
+    assert response["type"] == GQL_COMPLETE
+    assert response["id"] == "demo"

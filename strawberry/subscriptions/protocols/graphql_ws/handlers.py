@@ -160,6 +160,8 @@ class BaseGraphQLWSHandler(ABC):
                 payload = {"data": result.data}
                 if result.errors:
                     payload["errors"] = [err.formatted for err in result.errors]
+                if result.extensions:
+                    payload["extensions"] = result.extensions
                 await self.send_message(GQL_DATA, operation_id, payload)
                 # log errors after send_message to prevent potential
                 # slowdown of sending result

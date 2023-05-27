@@ -318,6 +318,8 @@ class BaseGraphQLTransportWSHandler(ABC):
                         next_payload["errors"] = [
                             err.formatted for err in result.errors
                         ]
+                    if result.extensions:
+                        next_payload["extensions"] = result.extensions
                     next_message = NextMessage(id=operation.id, payload=next_payload)
                     await operation.send_message(next_message)
         except Exception as error:
