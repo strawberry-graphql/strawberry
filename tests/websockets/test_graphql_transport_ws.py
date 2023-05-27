@@ -403,7 +403,7 @@ async def test_subscription_field_errors(ws: WebSocketClient):
         assert response["payload"][0]["locations"] == [{"line": 1, "column": 16}]
         assert (
             response["payload"][0]["message"]
-            == "The subscription field 'notASubscriptionField' is not defined."
+            == "Cannot query field 'notASubscriptionField' on type 'Subscription'."
         )
         process_errors.assert_called_once()
 
