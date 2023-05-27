@@ -510,7 +510,6 @@ The default context returned by `get_context()` is a `dict` and it includes the 
 - `ws`: The same as `request`
 - `connection_params`: Any `connection_params`, see [Authenticating Subscriptions](/docs/general/subscriptions#authenticating-subscriptions)
 
-
 ## Example for defining a custom context
 
 Here is an example for extending the base classes to offer a different context object in your resolvers.
