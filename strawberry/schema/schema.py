@@ -320,7 +320,6 @@ class Schema(BaseSchema):
         async for result in subscribe(
             self._schema,
             extensions=self.get_extensions(),
-            execution_context_class=self.execution_context_class,
             execution_context=execution_context,
             process_errors=self.process_errors,
         ):

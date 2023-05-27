@@ -282,7 +282,6 @@ async def subscribe(
     *,
     extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]],
     execution_context: ExecutionContext,
-    execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
 ) -> AsyncGenerator[Tuple[bool, ExecutionResult], None]:
     """
@@ -308,8 +307,7 @@ async def subscribe(
     async with extensions_runner.operation():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
-        if not execution_context.query:
-            raise MissingQueryError()
+        assert execution_context.query is not None
 
         async with extensions_runner.parsing():
             try:
