@@ -443,11 +443,11 @@ def test_send_message_via_channels_chat_joinChatRooms_recieves(self):
 
 ---
 
-The HTTP and WebSockets both are handled by different base classes. HTTP uses
+The HTTP and WebSockets protocol are handled by different base classes. HTTP uses
 `GraphQLHTTPConsumer` and WebSockets uses `GraphQLWSConsumer`. Both of them can
 be extended:
 
-## GraphQLHTTPConsumer
+## GraphQLHTTPConsumer (HTTP)
 
 ### Options
 
@@ -459,7 +459,7 @@ be extended:
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
 - `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
-  the GraphiQL interface, defaults to `True
+  the GraphiQL interface, defaults to `True`
 
 ### Extending the consumer
 
@@ -477,13 +477,13 @@ The default context returned by `get_context()` is a `dict` that includes the fo
   - `consumer`: The `GraphQLHTTPConsumer` instance for this connection
   - `body`: The request body
   - `headers`: A dict containing the headers of the request
-  - `method`: The request's HTTP method
+  - `method`: The HTTP method of the request
   - `content_type`: The content type of the request
 - `response` A `TemporalResponse` object, that can be used to influence the HTTP response:
   - `status_code`: The status code of the response, if there are no execution errors (defaults to `200`)
   - `headers`: Any additional headers that should be send with the response
 
-## GraphQLWSConsumer
+## GraphQLWSConsumer (WebSockets / Subscriptions)
 
 ### Options
 
@@ -505,7 +505,7 @@ We allow to extend `GraphQLWSConsumer`, by overriding the following methods:
 
 The default context returned by `get_context()` is a `dict` and it includes the following keys by default:
 
-- `request`: The `GraphQLWSConsumer` of the current connection. It can be used to access the connection's
+- `request`: The `GraphQLWSConsumer` instance of the current connection. It can be used to access the connection
   scope, e.g. `info.context["ws"].headers` allows access to any headers.
 - `ws`: The same as `request`
 - `connection_params`: Any `connection_params`, see [Authenticating Subscriptions](/docs/general/subscriptions#authenticating-subscriptions)

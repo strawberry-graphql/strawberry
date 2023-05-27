@@ -7,7 +7,7 @@ classes used by all other integrations.
 
 The Django Channels integration supports two new features:
 
-* Setting headers in the response
+* Setting headers in a response
 * File uploads via `multipart/form-data` POST requests
 
 **Breaking changes:**
@@ -17,7 +17,7 @@ object is now a `dict` and it contains different keys depending on the connectio
 protocol:
 
 1. HTTP: `request` and `response`. The `request` object contains the full
-   request (including the body). Previously, `request` was a `GraphQLHTTPConsumer`
+   request (including the body). Previously, `request` was the `GraphQLHTTPConsumer`
    instance of the current connection. The consumer is now available via
    `request.consumer`.
 2. WebSockets: `request`, `ws` and `response`. `request` and `ws` are the same
