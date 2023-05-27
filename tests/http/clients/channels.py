@@ -6,6 +6,8 @@ from io import BytesIO
 from typing import Any, AsyncGenerator, Dict, List, Optional
 from typing_extensions import Literal
 
+from urllib3 import encode_multipart_formdata
+
 from channels.testing import HttpCommunicator, WebsocketCommunicator
 from strawberry.channels import (
     GraphQLHTTPConsumer,
@@ -41,9 +43,7 @@ def generate_get_path(
 
 def create_multipart_request_body(
     body: Dict[str, object], files: Dict[str, BytesIO]
-) -> tuple[list[tuple[bytes, bytes]], bytes]:
-    from urllib3 import encode_multipart_formdata
-
+) -> tuple[list[tuple[str, str]], bytes]:
     fields = {
         "operations": body["operations"],
         "map": body["map"],
@@ -55,8 +55,8 @@ def create_multipart_request_body(
     request_body, content_type_header = encode_multipart_formdata(fields)
 
     headers = [
-        (b"Content-Type", content_type_header.encode()),
-        (b"Content-Length", f"{len(request_body)}".encode()),
+        ("Content-Type", content_type_header),
+        ("Content-Length", f"{len(request_body)}"),
     ]
 
     return headers, request_body
@@ -160,19 +160,17 @@ class ChannelsHttpClient(HttpClient):
         headers: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response:
-        # FIXME: Use self.request?
         body = self._build_body(
             query=query, variables=variables, files=files, method=method
         )
 
         headers = self._get_headers(method=method, headers=headers, files=files)
-        # HttpCommunicator expects tuples of bytestrings
-        headers = [(k.encode(), v.encode()) for k, v in headers.items()]
 
         if method == "post":
             if files:
                 new_headers, body = create_multipart_request_body(body, files)
-                headers += new_headers
+                for k, v in new_headers:
+                    headers[k] = v
             else:
                 body = json_module.dumps(body).encode()
             endpoint_url = "/graphql"
@@ -180,19 +178,8 @@ class ChannelsHttpClient(HttpClient):
             body = b""
             endpoint_url = generate_get_path("/graphql", query, variables)
 
-        communicator = HttpCommunicator(
-            self.http_app,
-            method.upper(),
-            endpoint_url,
-            body=body,
-            headers=headers,
-        )
-        response = await communicator.get_response(timeout=2)
-
-        return Response(
-            status_code=response["status"],
-            data=response["body"],
-            headers={k.decode(): v.decode() for k, v in response["headers"]},
+        return await self.request(
+            url=endpoint_url, method=method, body=body, headers=headers
         )
 
     async def request(
@@ -213,12 +200,12 @@ class ChannelsHttpClient(HttpClient):
             body=body,
             headers=headers,
         )
-        response = await communicator.get_response(timeout=2)
+        response = await communicator.get_response()
 
         return Response(
             status_code=response["status"],
             data=response["body"],
-            headers=response["headers"],
+            headers={k.decode(): v.decode() for k, v in response["headers"]},
         )
 
     async def get(
