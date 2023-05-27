@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional, cast
 
-from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError
 from graphql.error.graphql_error import format_error as format_graphql_error
 
@@ -125,7 +124,7 @@ class BaseGraphQLWSHandler(ABC):
             pretty_print_graphql_operation(operation_name, query, variables)
 
         try:
-            result_source = await self.schema.subscribe(
+            result_source = self.schema.subscribe(
                 query=query,
                 variable_values=variables,
                 operation_name=operation_name,
@@ -136,13 +135,6 @@ class BaseGraphQLWSHandler(ABC):
             error_payload = format_graphql_error(error)
             await self.send_message(GQL_ERROR, operation_id, error_payload)
             self.schema.process_errors([error])
-            return
-
-        if isinstance(result_source, GraphQLExecutionResult):
-            assert result_source.errors
-            error_payload = format_graphql_error(result_source.errors[0])
-            await self.send_message(GQL_ERROR, operation_id, error_payload)
-            self.schema.process_errors(result_source.errors)
             return
 
         self.subscriptions[operation_id] = result_source
@@ -165,7 +157,13 @@ class BaseGraphQLWSHandler(ABC):
         operation_id: str,
     ) -> None:
         try:
-            async for result in result_source:
+            async for success, result in result_source:
+                if not success:
+                    assert result.errors
+                    error_payload = format_graphql_error(result.errors[0])
+                    await self.send_message(GQL_ERROR, operation_id, error_payload)
+                    self.schema.process_errors(result.errors)
+                    return
                 payload = {"data": result.data}
                 if result.errors:
                     payload["errors"] = [
@@ -189,6 +187,8 @@ class BaseGraphQLWSHandler(ABC):
                 {"data": None, "errors": [format_graphql_error(error)]},
             )
             self.schema.process_errors([error])
+        finally:
+            await result_source.aclose()
 
         await self.send_message(GQL_COMPLETE, operation_id, None)
 
