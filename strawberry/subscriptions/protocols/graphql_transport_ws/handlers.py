@@ -297,6 +297,8 @@ class BaseGraphQLTransportWSHandler(ABC):
                     return
                 else:
                     next_payload = {"data": result.data}
+                    if result.extensions:
+                        next_payload["extensions"] = result.extensions
                     next_message = NextMessage(id=operation.id, payload=next_payload)
                     await operation.send_message(next_message)
         except asyncio.CancelledError:

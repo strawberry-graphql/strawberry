@@ -21,7 +21,6 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     ConnectionAckMessage,
     ConnectionInitMessage,
     ErrorMessage,
-    NextMessage,
     PingMessage,
     PongMessage,
     SubscribeMessage,
@@ -49,6 +48,20 @@ async def ws(ws_raw: WebSocketClient) -> WebSocketClient:
     response = await ws_raw.receive_json()
     assert response == ConnectionAckMessage().as_dict()
     return ws_raw
+
+
+def assert_next(response, id, data, extensions=None):
+    """
+    Assert that the NextMessage payload contains the provided data.
+    If extensions is provided, it will also assert that the
+    extensions are present
+    """
+    assert response["type"] == "next"
+    assert response["id"] == id
+    assert set(response["payload"].keys()) <= {"data", "errors", "extensions"}
+    assert response["payload"]["data"] == data
+    if extensions is not None:
+        assert response["payload"]["extensions"] == extensions
 
 
 async def test_unknown_message_type(ws_raw: WebSocketClient):
@@ -149,13 +162,7 @@ async def test_connection_init_timeout_cancellation(
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(
-            id="sub1",
-            payload={"data": {"debug": {"isConnectionInitTimeoutTaskDone": True}}},
-        ).as_dict()
-    )
+    assert_next(response, "sub1", {"debug": {"isConnectionInitTimeoutTaskDone": True}})
 
 
 @pytest.mark.skipif(
@@ -221,10 +228,7 @@ async def test_server_sent_ping(ws: WebSocketClient):
     await ws.send_json(PongMessage().as_dict())
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(id="sub1", payload={"data": {"requestPing": True}}).as_dict()
-    )
+    assert_next(response, "sub1", {"requestPing": True})
 
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub1").as_dict()
@@ -288,9 +292,7 @@ async def test_reused_operation_ids(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
-    )
+    assert_next(response, "sub1", {"echo": "Hi"})
 
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub1").as_dict()
@@ -307,9 +309,7 @@ async def test_reused_operation_ids(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
-    )
+    assert_next(response, "sub1", {"echo": "Hi"})
 
 
 async def test_simple_subscription(ws: WebSocketClient):
@@ -323,9 +323,7 @@ async def test_simple_subscription(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
-    )
+    assert_next(response, "sub1", {"echo": "Hi"})
 
     await ws.send_json(CompleteMessage(id="sub1").as_dict())
 
@@ -386,12 +384,7 @@ async def test_subscription_cancellation(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(
-            id="sub2", payload={"data": {"debug": {"numActiveResultHandlers": 2}}}
-        ).as_dict()
-    )
+    assert_next(response, "sub2", {"debug": {"numActiveResultHandlers": 2}})
 
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub2").as_dict()
@@ -408,12 +401,7 @@ async def test_subscription_cancellation(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(
-            id="sub3", payload={"data": {"debug": {"numActiveResultHandlers": 1}}}
-        ).as_dict()
-    )
+    assert_next(response, "sub3", {"debug": {"numActiveResultHandlers": 1}})
 
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub3").as_dict()
@@ -498,10 +486,7 @@ async def test_single_result_query_operation(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(id="sub1", payload={"data": {"hello": "Hello world"}}).as_dict()
-    )
+    assert_next(response, "sub1", {"hello": "Hello world"})
 
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub1").as_dict()
@@ -523,12 +508,7 @@ async def test_single_result_query_operation_async(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(
-            id="sub1", payload={"data": {"asyncHello": "Hello Dolly"}}
-        ).as_dict()
-    )
+    assert_next(response, "sub1", {"asyncHello": "Hello Dolly"})
 
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub1").as_dict()
@@ -562,12 +542,7 @@ async def test_single_result_query_operation_overlapped(ws: WebSocketClient):
 
     # we expect the response to the second query to arrive first
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(
-            id="sub2", payload={"data": {"asyncHello": "Hello Dolly"}}
-        ).as_dict()
-    )
+    assert_next(response, "sub2", {"asyncHello": "Hello Dolly"})
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub2").as_dict()
 
@@ -581,10 +556,7 @@ async def test_single_result_mutation_operation(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(id="sub1", payload={"data": {"hello": "strawberry"}}).as_dict()
-    )
+    assert_next(response, "sub1", {"hello": "strawberry"})
 
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub1").as_dict()
@@ -608,12 +580,7 @@ async def test_single_result_operation_selection(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(
-            id="sub1", payload={"data": {"hello": "Hello Strawberry"}}
-        ).as_dict()
-    )
+    assert_next(response, "sub1", {"hello": "Hello Strawberry"})
 
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub1").as_dict()
@@ -757,12 +724,7 @@ async def test_injects_connection_params(ws_raw: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(
-            id="sub1", payload={"data": {"connectionParams": "rocks"}}
-        ).as_dict()
-    )
+    assert_next(response, "sub1", {"connectionParams": "rocks"})
 
     await ws.send_json(CompleteMessage(id="sub1").as_dict())
 
@@ -805,12 +767,7 @@ async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(
-            id="sub1", payload={"data": {"longFinalizer": "hello"}}
-        ).as_dict()
-    )
+    assert_next(response, "sub1", {"longFinalizer": "hello"})
 
     # now cancel the stubscription and send a new query.  We expect the response
     # to the new query to arrive immediately, without waiting for the finalizer
@@ -871,3 +828,19 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
     args = errorhandler.call_args
     assert isinstance(args[0][0], AttributeError)
     assert "total_seconds" in str(args[0][0])
+
+
+async def test_extensions(ws: WebSocketClient):
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query='subscription { echo(message: "Hi") }'
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert_next(response, "sub1", {"echo": "Hi"}, extensions={"example": "example"})
+
+    await ws.send_json(CompleteMessage(id="sub1").as_dict())
