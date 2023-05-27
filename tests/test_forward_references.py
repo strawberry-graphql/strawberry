@@ -10,6 +10,7 @@ import pytest
 
 import strawberry
 from strawberry.printer import print_schema
+from strawberry.scalars import JSON
 from strawberry.type import StrawberryList, StrawberryOptional
 
 
@@ -23,16 +24,25 @@ def test_forward_reference():
     @strawberry.type
     class MyType:
         id: strawberry.ID
+        scalar: JSON
+        optional_scalar: JSON | None
 
-    expected_representation = """
+    expected_representation = '''
+    """
+    The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+    """
+    scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
+
     type MyType {
       id: ID!
+      scalar: JSON!
+      optionalScalar: JSON
     }
 
     type Query {
       myself: MyType!
     }
-    """
+    '''
 
     schema = strawberry.Schema(Query)
 

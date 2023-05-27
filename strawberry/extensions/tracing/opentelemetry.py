@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import enum
 from copy import deepcopy
 from inspect import isawaitable
 from typing import (
@@ -19,7 +18,7 @@ from typing import (
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
 
-from strawberry.extensions import SchemaExtension
+from strawberry.extensions import LifecycleStep, SchemaExtension
 from strawberry.extensions.utils import get_path_from_info
 
 from .utils import should_skip_tracing
@@ -36,15 +35,9 @@ DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 ArgFilter = Callable[[Dict[str, Any], "GraphQLResolveInfo"], Dict[str, Any]]
 
 
-class RequestStage(enum.Enum):
-    REQUEST = enum.auto()
-    PARSING = enum.auto()
-    VALIDATION = enum.auto()
-
-
 class OpenTelemetryExtension(SchemaExtension):
     _arg_filter: Optional[ArgFilter]
-    _span_holder: Dict[RequestStage, Span] = dict()
+    _span_holder: Dict[LifecycleStep, Span] = dict()
     _tracer: Tracer
 
     def __init__(
@@ -66,13 +59,13 @@ class OpenTelemetryExtension(SchemaExtension):
             else "GraphQL Query"
         )
 
-        self._span_holder[RequestStage.REQUEST] = self._tracer.start_span(
+        self._span_holder[LifecycleStep.OPERATION] = self._tracer.start_span(
             span_name, kind=SpanKind.SERVER
         )
-        self._span_holder[RequestStage.REQUEST].set_attribute("component", "graphql")
+        self._span_holder[LifecycleStep.OPERATION].set_attribute("component", "graphql")
 
         if self.execution_context.query:
-            self._span_holder[RequestStage.REQUEST].set_attribute(
+            self._span_holder[LifecycleStep.OPERATION].set_attribute(
                 "query", self.execution_context.query
             )
 
@@ -84,26 +77,26 @@ class OpenTelemetryExtension(SchemaExtension):
         # useful name in our trace.
         if not self._operation_name and self.execution_context.operation_name:
             span_name = f"GraphQL Query: {self.execution_context.operation_name}"
-            self._span_holder[RequestStage.REQUEST].update_name(span_name)
-        self._span_holder[RequestStage.REQUEST].end()
+            self._span_holder[LifecycleStep.OPERATION].update_name(span_name)
+        self._span_holder[LifecycleStep.OPERATION].end()
 
     def on_validate(self) -> Generator[None, None, None]:
-        ctx = trace.set_span_in_context(self._span_holder[RequestStage.REQUEST])
-        self._span_holder[RequestStage.VALIDATION] = self._tracer.start_span(
+        ctx = trace.set_span_in_context(self._span_holder[LifecycleStep.OPERATION])
+        self._span_holder[LifecycleStep.VALIDATION] = self._tracer.start_span(
             "GraphQL Validation",
             context=ctx,
         )
         yield
-        self._span_holder[RequestStage.VALIDATION].end()
+        self._span_holder[LifecycleStep.VALIDATION].end()
 
     def on_parse(self) -> Generator[None, None, None]:
-        ctx = trace.set_span_in_context(self._span_holder[RequestStage.REQUEST])
-        self._span_holder[RequestStage.PARSING] = self._tracer.start_span(
+        ctx = trace.set_span_in_context(self._span_holder[LifecycleStep.OPERATION])
+        self._span_holder[LifecycleStep.PARSE] = self._tracer.start_span(
             "GraphQL Parsing", context=ctx
         )
 
         yield
-        self._span_holder[RequestStage.PARSING].end()
+        self._span_holder[LifecycleStep.PARSE].end()
 
     def filter_resolver_args(
         self, args: Dict[str, Any], info: GraphQLResolveInfo
@@ -178,7 +171,9 @@ class OpenTelemetryExtension(SchemaExtension):
 
         with self._tracer.start_as_current_span(
             f"GraphQL Resolving: {info.field_name}",
-            context=trace.set_span_in_context(self._span_holder[RequestStage.REQUEST]),
+            context=trace.set_span_in_context(
+                self._span_holder[LifecycleStep.OPERATION]
+            ),
         ) as span:
             self.add_tags(span, info, kwargs)
             result = _next(root, info, *args, **kwargs)
@@ -205,7 +200,9 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
 
         with self._tracer.start_as_current_span(
             f"GraphQL Resolving: {info.field_name}",
-            context=trace.set_span_in_context(self._span_holder[RequestStage.REQUEST]),
+            context=trace.set_span_in_context(
+                self._span_holder[LifecycleStep.OPERATION]
+            ),
         ) as span:
             self.add_tags(span, info, kwargs)
             result = _next(root, info, *args, **kwargs)

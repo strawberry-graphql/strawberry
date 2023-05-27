@@ -5,6 +5,7 @@ from typing import ForwardRef, List, Optional, Union
 
 import pytest
 
+from strawberry.scalars import JSON
 from strawberry.utils.typing import eval_type
 
 
@@ -26,6 +27,7 @@ def test_eval_type():
         eval_type(ForwardRef("List[Foo | str] | None | int"), globals(), locals())
         == Union[List[Union[Foo, str]], int, None]
     )
+    assert eval_type(ForwardRef("JSON | None"), globals(), locals()) == Optional[JSON]
 
 
 @pytest.mark.skipif(
