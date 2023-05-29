@@ -119,7 +119,7 @@ that the current tests are passing on your machine:
 ```shell
 $ poetry install
 $ poetry run pytest tests -n auto
-$ poetry run mypy
+$ poetry run mypy --config-file mypy.ini
 ```
 
 Some tests are known to be inconsistent. (The fix is in progress.) These tests are marked with the `pytest.mark.flaky` marker.
