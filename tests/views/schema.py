@@ -115,6 +115,10 @@ class Query:
 
         return name
 
+    @strawberry.field
+    def finalizer_state(self, info: Info[Any, Any]) -> bool:
+        return getattr(info.context["handler"], "_debug_finalizer", False)
+
 
 @strawberry.type
 class Mutation:
@@ -228,12 +232,14 @@ class Subscription:
     async def long_finalizer(
         self, info: Info[Any, Any], delay: float = 0
     ) -> AsyncGenerator[str, None]:
+        info.context["handler"]._debug_finalizer = True
         try:
             for _i in range(100):
                 yield "hello"
                 await asyncio.sleep(0.01)
         finally:
             await asyncio.sleep(delay)
+            info.context["handler"]._debug_finalizer = False
 
 
 schema = strawberry.Schema(

@@ -42,6 +42,30 @@ async def ws_raw(http_client: HttpClient) -> AsyncGenerator[WebSocketClient, Non
     await ws.close()
     assert ws.closed
 
+    # loop cleanup code, similar to code from asyncio.run()
+    # disabled, can be enabled for debugging the unit tests to help
+    # find rogue tasks
+    return
+
+    if __debug__:
+        loop = asyncio.get_running_loop()
+        current = asyncio.current_task(loop=loop)
+        to_cancel = [t for t in asyncio.all_tasks(loop=loop) if t is not current]
+        for task in to_cancel:
+            task.cancel()
+        await asyncio.gather(*to_cancel, return_exceptions=True)
+        for task in to_cancel:
+            if task.cancelled():
+                continue
+            if task.exception() is not None:
+                loop.call_exception_handler(
+                    {
+                        "message": "unhandled exception during test fixture cleanup",
+                        "exception": task.exception(),
+                        "task": task,
+                    }
+                )
+
 
 @pytest_asyncio.fixture
 async def ws(ws_raw: WebSocketClient) -> WebSocketClient:
@@ -787,7 +811,7 @@ async def test_rejects_connection_params_not_unset(ws_raw: WebSocketClient):
     ws.assert_reason("Invalid connection init payload")
 
 
-async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
+async def test_subscription_cancel_finalization_delay(ws: WebSocketClient):
     # Test that when we cancel a subscription, the websocket isn't blocked
     # while some complex finalization takes place.
     delay = 0.1
@@ -809,7 +833,7 @@ async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
         ).as_dict()
     )
 
-    # now cancel the stubscription and send a new query.  We expect the response
+    # now cancel the subscription and send a new query.  We expect the response
     # to the new query to arrive immediately, without waiting for the finalizer
     start = time.time()
     await ws.send_json(CompleteMessage(id="sub1").as_dict())
@@ -868,3 +892,80 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
     args = errorhandler.call_args
     assert isinstance(args[0][0], AttributeError)
     assert "total_seconds" in str(args[0][0])
+
+
+async def test_subscription_finializer_called(ws: WebSocketClient):
+    # Test that a subscription is promptly finalized when the client interrupts the
+    # subscription
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="subscription { longFinalizer(delay: 0.0) }"
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert (
+        response
+        == NextMessage(
+            id="sub1", payload={"data": {"longFinalizer": "hello"}}
+        ).as_dict()
+    )
+
+    # check that the context is live, finalize hasn't been called yet.
+    # finalizer_state is set True to when subscription is running, then back
+    # to False when the subscription is finalized
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub2",
+            payload=SubscribeMessagePayload(query="query { finalizerState }"),
+        ).as_dict()
+    )
+
+    # wait for the sub2 message
+    while True:
+        response = await ws.receive_json()
+        assert response["type"] in ["next", "complete"]
+        if response["type"] != "next" or response["id"] != "sub2":
+            continue
+        assert response["payload"]["data"]["finalizerState"] is True
+        break
+
+    # cancel the subscription
+    await ws.send_json(CompleteMessage(id="sub1").as_dict())
+
+    # wait until context is dead.
+    # We don't know exactly how many packets will arrive or how long it will take.
+    # Need manual timeout because async timeout doesn't work on _syncronous_
+    # integrations.
+    # (they actually block the current thread and async events/timeouts don't fire)
+    max_wait = 2.0  # seconds
+
+    async def wait_for_finalize():
+        counter = 0
+        start = time.time()
+        while True:
+            now = time.time()
+            if now - start > max_wait:
+                raise TimeoutError("Timeout waiting for finalizer to be called")
+            counter += 1
+            id = f"check{counter}"
+            await ws.send_json(
+                SubscribeMessage(
+                    id=id,
+                    payload=SubscribeMessagePayload(query="query { finalizerState }"),
+                ).as_dict()
+            )
+            # wait for the response showing that finalizer state is back to false
+            while True:
+                response = await ws.receive_json()
+                assert response["type"] in ["next", "complete"]
+                if response["type"] != "next" or response["id"] != id:
+                    continue
+                if response["payload"]["data"]["finalizerState"] is False:
+                    return
+                break
+
+    await asyncio.wait_for(wait_for_finalize(), timeout=max_wait)

@@ -269,16 +269,13 @@ class BaseGraphQLTransportWSHandler(ABC):
         Operation task top level method.  Cleans up and de-registers the operation
         once it is done.
         """
+        task = asyncio.current_task()
+        assert task is not None
         # TODO: Handle errors in this method using self.handle_task_exception()
         try:
             await self.handle_async_results(result_source, operation)
         except BaseException:  # pragma: no cover
             # cleanup in case of something really unexpected
-            # wait for generator to be closed to ensure that any existing
-            # 'finally' statement is called
-            result_source = self.subscriptions[operation.id]
-            with suppress(RuntimeError):
-                await result_source.aclose()
             if operation.id in self.subscriptions:
                 del self.subscriptions[operation.id]
                 del self.tasks[operation.id]
@@ -287,8 +284,6 @@ class BaseGraphQLTransportWSHandler(ABC):
             await operation.send_message(CompleteMessage(id=operation.id))
         finally:
             # add this task to a list to be reaped later
-            task = asyncio.current_task()
-            assert task is not None
             self.completed_tasks.append(task)
 
     async def handle_async_results(
@@ -309,7 +304,9 @@ class BaseGraphQLTransportWSHandler(ABC):
                     next_message = NextMessage(id=operation.id, payload=next_payload)
                     await operation.send_message(next_message)
         except asyncio.CancelledError:
-            # CancelledErrors are expected during task cleanup.
+            # Need to catch and raise this separately because in versions <= 3.7
+            # asyncio.CancelledError is an Exception, not a direct subclass of
+            # BaseException
             raise
         except Exception as error:
             # GraphQLErrors are handled by graphql-core and included in the
@@ -320,6 +317,12 @@ class BaseGraphQLTransportWSHandler(ABC):
             await operation.send_message(error_message)
             self.schema.process_errors([error])
             return
+        finally:
+            # Make sure the AsyncGenerator is closed promptly, not as part
+            # of the garbage collection process
+            with suppress(RuntimeError):
+                # Guard us against an asynchronous shutdown
+                await result_source.aclose()
 
     def forget_id(self, id: str) -> None:
         # de-register the operation id making it immediately available
@@ -340,7 +343,7 @@ class BaseGraphQLTransportWSHandler(ABC):
     async def cleanup_operation(self, operation_id: str) -> None:
         if operation_id not in self.subscriptions:
             return
-        result_source = self.subscriptions.pop(operation_id)
+        del self.subscriptions[operation_id]
         task = self.tasks.pop(operation_id)
         task.cancel()
         # do not await the task here, lest we block the main
