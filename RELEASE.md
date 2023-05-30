@@ -1,6 +1,6 @@
 Release type: patch
 
-Fixing a bug in experimental.pydantic whereby Optional type annotations weren't exactly aligned between strawberry type and pydantic model.
+This release fixes a bug in experimental.pydantic whereby `Optional` type annotations weren't exactly aligned between strawberry type and pydantic model.
 
 Previously this would have caused the series field to be non-nullable in graphql.
 ```python
