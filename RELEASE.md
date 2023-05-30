@@ -10,11 +10,10 @@ import strawberry
 
 
 class VehicleModel(BaseModel):
-    series: Optional[str] = Field(default='')
+    series: Optional[str] = Field(default="")
 
 
 @strawberry.experimental.pydantic.type(model=VehicleModel, all_fields=True)
 class VehicleModelType:
     pass
-
 ```
