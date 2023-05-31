@@ -416,6 +416,8 @@ class QueryCodegen:
     def _field_from_selection(
         self, selection: FieldNode, parent_type: TypeDefinition
     ) -> GraphQLField:
+        if selection.name.value == "__typename":
+            return GraphQLField("__typename", None, GraphQLScalar("String", None))
         field = self.schema.get_field_for_type(selection.name.value, parent_type.name)
         assert field
 
