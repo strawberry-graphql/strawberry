@@ -17,7 +17,7 @@ from strawberry.channels import (
 from strawberry.channels.handlers.base import ChannelsConsumer
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.typevars import Context, RootValue
-from tests.views.schema import Query, schema
+from tests.views.schema import Query, async_schema as schema
 
 from ..context import get_context
 from .base import (
