@@ -298,7 +298,9 @@ def test_extension_access_argument_metadata():
     argument_metadata = {}
 
     class CustomExtension(FieldExtension):
-        def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+        def resolve(
+            self, next_: Callable[..., Any], source: Any, info: Info, **kwargs: Any
+        ):
             nonlocal field_kwargs
             field_kwargs = kwargs
 
