@@ -1,6 +1,34 @@
 CHANGELOG
 =========
 
+0.179.0 - 2023-05-31
+--------------------
+
+This PR allows passing metadata to Strawberry arguments.
+
+Example:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(
+        self,
+        info,
+        input: Annotated[str, strawberry.argument(metadata={"test": "foo"})],
+    ) -> str:
+        argument_definition = info.get_argument_definition("input")
+        assert argument_definition.metadata["test"] == "foo"
+
+        return f"Hi {input}"
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2755](https://github.com/strawberry-graphql/strawberry/pull/2755/)
+
+
 0.178.3 - 2023-05-31
 --------------------
 
