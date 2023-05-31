@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.178.2 - 2023-05-31
+--------------------
+
+Prevent AssertionError when using `strawberry codegen` on a query file that contains a mutation.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2795](https://github.com/strawberry-graphql/strawberry/pull/2795/)
+
+
 0.178.1 - 2023-05-30
 --------------------
 
