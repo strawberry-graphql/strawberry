@@ -36,8 +36,6 @@ resolvers.
 If you need to wrap only certain field resolvers with additional logic, please
 check out [field extensions](field-extensions.md).
 
-Note that `resolve` can also be implemented asynchronously.
-
 ```python
 from strawberry.types import Info
 from strawberry.extensions import SchemaExtension
@@ -46,6 +44,21 @@ from strawberry.extensions import SchemaExtension
 class MyExtension(SchemaExtension):
     def resolve(self, _next, root, info: Info, *args, **kwargs):
         return _next(root, info, *args, **kwargs)
+```
+
+Note that `resolve` can also be implemented asynchronously, in which
+case the result from `_next` must be optionally awaited:
+
+```python
+from inspect import isawaitable
+from strawberry.types import Info
+from strawberry.extensions import SchemaExtension
+
+
+class MyExtension(SchemaExtension):
+    async def resolve(self, _next, root, info: Info, *args, **kwargs):
+        result = _next(root, info, *args, **kwargs)
+        return await result if isawaitable(result) else result
 ```
 
 ### Get results
