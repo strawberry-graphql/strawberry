@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.178.3 - 2023-05-31
+--------------------
+
+In this release codegen no longer chokes on queries that have a `__typename` in them.
+Python generated types will not have the `__typename` included in the fields.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2797](https://github.com/strawberry-graphql/strawberry/pull/2797/)
+
+
 0.178.2 - 2023-05-31
 --------------------
 
