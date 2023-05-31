@@ -255,7 +255,9 @@ class QueryCodegen:
     def _convert_operation(
         self, operation_definition: OperationDefinitionNode
     ) -> GraphQLOperation:
-        query_type = self.schema.get_type_by_name("Query")
+        query_type = self.schema.get_type_by_name(
+            operation_definition.operation.value.title()
+        )
         assert isinstance(query_type, TypeDefinition)
 
         assert operation_definition.name is not None
