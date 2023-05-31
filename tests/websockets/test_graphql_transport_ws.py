@@ -957,6 +957,11 @@ async def test_extensions(ws: WebSocketClient):
     resolve_called = Mock()
     lifecycle_called = Mock()
 
+    # we must make sure that earlier requests and drained before we start
+    # so that their execution events don't interfere with our events
+    while MyAsyncExtension.active_counter > 0:
+        await asyncio.sleep(0.01)
+
     with patch.object(MyAsyncExtension, "resolve_called", resolve_called):
         with patch.object(MyAsyncExtension, "lifecycle_called", lifecycle_called):
             await ws.send_json(

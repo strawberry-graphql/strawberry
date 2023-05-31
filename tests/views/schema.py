@@ -35,12 +35,19 @@ class ConditionalFailPermission(BasePermission):
 
 
 class MyExtension(SchemaExtension):
+    # a counter to keep track of how many operations are active
+    active_counter = 0
+
     def get_results(self) -> Dict[str, str]:
         return {"example": "example"}
 
     def resolve(self, _next, root, info: Info, *args: Any, **kwargs: Any):
-        self.resolve_called()
-        return _next(root, info, *args, **kwargs)
+        self.active_counter += 1
+        try:
+            self.resolve_called()
+            return _next(root, info, *args, **kwargs)
+        finally:
+            self.active_counter -= 1
 
     def resolve_called(self):
         pass
@@ -50,35 +57,50 @@ class MyExtension(SchemaExtension):
 
     def on_operation(self):
         self.lifecycle_called("operation", "before")
+        self.active_counter += 1
         yield
         self.lifecycle_called("operation", "after")
+        self.active_counter -= 1
 
     def on_validate(self):
         self.lifecycle_called("validate", "before")
+        self.active_counter += 1
         yield
         self.lifecycle_called("validate", "after")
+        self.active_counter -= 1
 
     def on_parse(self):
         self.lifecycle_called("parse", "before")
+        self.active_counter += 1
         yield
         self.lifecycle_called("parse", "after")
+        self.active_counter -= 1
 
     def on_execute(self):
         self.lifecycle_called("execute", "before")
+        self.active_counter += 1
         yield
         self.lifecycle_called("execute", "after")
+        self.active_counter -= 1
 
 
 class MyAsyncExtension(SchemaExtension):
+    # a counter to keep track of how many operations are active
+    active_counter = 0
+
     def get_results(self) -> Dict[str, str]:
         return {"example": "example"}
 
     async def resolve(self, _next, root, info: Info, *args: Any, **kwargs: Any):
         self.resolve_called()
-        result = _next(root, info, *args, **kwargs)
-        if inspect.isawaitable(result):
-            return await result
-        return result
+        self.active_counter += 1
+        try:
+            result = _next(root, info, *args, **kwargs)
+            if inspect.isawaitable(result):
+                return await result
+            return result
+        finally:
+            self.active_counter -= 1
 
     def resolve_called(self):
         pass
@@ -88,23 +110,31 @@ class MyAsyncExtension(SchemaExtension):
 
     async def on_operation(self):
         self.lifecycle_called("operation", "before")
+        self.active_counter += 1
         yield
         self.lifecycle_called("operation", "after")
+        self.active_counter -= 1
 
     async def on_validate(self):
         self.lifecycle_called("validate", "before")
+        self.active_counter += 1
         yield
         self.lifecycle_called("validate", "after")
+        self.active_counter -= 1
 
     async def on_parse(self):
         self.lifecycle_called("parse", "before")
+        self.active_counter += 1
         yield
         self.lifecycle_called("parse", "after")
+        self.active_counter -= 1
 
     async def on_execute(self):
         self.lifecycle_called("execute", "before")
+        self.active_counter += 1
         yield
         self.lifecycle_called("execute", "after")
+        self.active_counter -= 1
 
 
 def _read_file(text_file: Upload) -> str:
