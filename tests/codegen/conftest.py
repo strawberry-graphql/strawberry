@@ -46,6 +46,10 @@ class Node:
 class BlogPost(Node):
     title: str
 
+    def __init__(self, id: str, title: str) -> None:
+        self.id = id
+        self.title = title
+
 
 @strawberry.type
 class Image(Node):
@@ -97,6 +101,13 @@ class Query:
         return True
 
 
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def add_book(self, name: str) -> BlogPost:
+        return BlogPost(id="c6f1c3ce-5249-4570-9182-c2836b836d14", name=name)
+
+
 @pytest.fixture
 def schema() -> strawberry.Schema:
-    return strawberry.Schema(query=Query, types=[BlogPost, Image])
+    return strawberry.Schema(query=Query, mutation=Mutation, types=[BlogPost, Image])
