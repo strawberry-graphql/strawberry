@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import inspect
 from enum import Enum
 from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
@@ -36,6 +37,74 @@ class ConditionalFailPermission(BasePermission):
 class MyExtension(SchemaExtension):
     def get_results(self) -> Dict[str, str]:
         return {"example": "example"}
+
+    def resolve(self, _next, root, info: Info, *args: Any, **kwargs: Any):
+        self.resolve_called()
+        return _next(root, info, *args, **kwargs)
+
+    def resolve_called(self):
+        pass
+
+    def lifecycle_called(self, event, phase):
+        pass
+
+    def on_operation(self):
+        self.lifecycle_called("operation", "before")
+        yield
+        self.lifecycle_called("operation", "after")
+
+    def on_validate(self):
+        self.lifecycle_called("validate", "before")
+        yield
+        self.lifecycle_called("validate", "after")
+
+    def on_parse(self):
+        self.lifecycle_called("parse", "before")
+        yield
+        self.lifecycle_called("parse", "after")
+
+    def on_execute(self):
+        self.lifecycle_called("execute", "before")
+        yield
+        self.lifecycle_called("execute", "after")
+
+
+class MyAsyncExtension(SchemaExtension):
+    def get_results(self) -> Dict[str, str]:
+        return {"example": "example"}
+
+    async def resolve(self, _next, root, info: Info, *args: Any, **kwargs: Any):
+        self.resolve_called()
+        result = _next(root, info, *args, **kwargs)
+        if inspect.isawaitable(result):
+            return await result
+        return result
+
+    def resolve_called(self):
+        pass
+
+    def lifecycle_called(self, event, phase):
+        pass
+
+    async def on_operation(self):
+        self.lifecycle_called("operation", "before")
+        yield
+        self.lifecycle_called("operation", "after")
+
+    async def on_validate(self):
+        self.lifecycle_called("validate", "before")
+        yield
+        self.lifecycle_called("validate", "after")
+
+    async def on_parse(self):
+        self.lifecycle_called("parse", "before")
+        yield
+        self.lifecycle_called("parse", "after")
+
+    async def on_execute(self):
+        self.lifecycle_called("execute", "before")
+        yield
+        self.lifecycle_called("execute", "after")
 
 
 def _read_file(text_file: Upload) -> str:
@@ -309,4 +378,11 @@ schema = Schema(
     mutation=Mutation,
     subscription=Subscription,
     extensions=[MyExtension],
+)
+
+async_schema = Schema(
+    query=Query,
+    mutation=Mutation,
+    subscription=Subscription,
+    extensions=[MyAsyncExtension],
 )

@@ -7,6 +7,7 @@ import time
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Type
 from unittest.mock import Mock, patch
+from unittest.mock import call as mock_call
 
 try:
     from unittest.mock import AsyncMock
@@ -31,6 +32,8 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
 )
 from tests.http.clients.base import DebuggableGraphQLTransportWSMixin
 from tests.views.schema import Schema
+
+from ..views.schema import MyAsyncExtension
 
 if TYPE_CHECKING:
     from ..http.clients.base import HttpClient, WebSocketClient
@@ -951,19 +954,41 @@ async def test_subscription_errors_continue(ws: WebSocketClient):
 
 
 async def test_extensions(ws: WebSocketClient):
-    await ws.send_json(
-        SubscribeMessage(
-            id="sub1",
-            payload=SubscribeMessagePayload(
-                query='subscription { echo(message: "Hi") }'
-            ),
-        ).as_dict()
-    )
+    resolve_called = Mock()
+    lifecycle_called = Mock()
 
-    response = await ws.receive_json()
-    assert_next(response, "sub1", {"echo": "Hi"}, extensions={"example": "example"})
+    with patch.object(MyAsyncExtension, "resolve_called", resolve_called):
+        with patch.object(MyAsyncExtension, "lifecycle_called", lifecycle_called):
+            await ws.send_json(
+                SubscribeMessage(
+                    id="sub1",
+                    payload=SubscribeMessagePayload(
+                        query='subscription { echo(message: "Hi") }'
+                    ),
+                ).as_dict()
+            )
 
-    await ws.send_json(CompleteMessage(id="sub1").as_dict())
+            response = await ws.receive_json()
+            assert_next(
+                response, "sub1", {"echo": "Hi"}, extensions={"example": "example"}
+            )
+            response = await ws.receive_json()
+            assert response == CompleteMessage(id="sub1").as_dict()
+
+    # no resolvers called
+    assert resolve_called.call_count == 0
+
+    lifecycle_calls = lifecycle_called.call_args_list
+    assert lifecycle_calls == [
+        mock_call("operation", "before"),
+        mock_call("parse", "before"),
+        mock_call("parse", "after"),
+        mock_call("validate", "before"),
+        mock_call("validate", "after"),
+        mock_call("execute", "before"),
+        mock_call("execute", "after"),
+        mock_call("operation", "after"),
+    ]
 
 
 async def test_validation_query(ws: WebSocketClient):
