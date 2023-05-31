@@ -18,7 +18,8 @@ from strawberry.channels.handlers.base import ChannelsConsumer
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.typevars import Context, RootValue
-from tests.views.schema import Query, async_schema as schema
+from tests.views.schema import Query, async_schema
+from tests.views.schema import schema as sync_schema
 
 from ..context import get_context
 from .base import (
@@ -143,12 +144,12 @@ class ChannelsHttpClient(HttpClient):
         result_override: ResultOverrideFunction = None,
     ):
         self.ws_app = DebuggableGraphQLTransportWSConsumer.as_asgi(
-            schema=schema,
+            schema=async_schema,
             keep_alive=False,
         )
 
         self.http_app = DebuggableGraphQLHTTPConsumer.as_asgi(
-            schema=schema,
+            schema=async_schema,
             graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
@@ -157,7 +158,7 @@ class ChannelsHttpClient(HttpClient):
 
     def create_app(self, **kwargs: Any) -> None:
         self.ws_app = DebuggableGraphQLTransportWSConsumer.as_asgi(
-            schema=schema, **kwargs
+            schema=async_schema, **kwargs
         )
 
     async def _graphql_request(
@@ -264,7 +265,7 @@ class SyncChannelsHttpClient(ChannelsHttpClient):
         result_override: ResultOverrideFunction = None,
     ):
         self.http_app = DebuggableSyncGraphQLHTTPConsumer.as_asgi(
-            schema=schema,
+            schema=sync_schema,
             graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
