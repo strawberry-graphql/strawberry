@@ -1,0 +1,5 @@
+mutation addBook($input: String!) {
+  addBook(input: $input) {
+    id
+  }
+}
