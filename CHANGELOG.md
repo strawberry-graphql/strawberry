@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.180.1 - 2023-06-01
+--------------------
+
+Make StrawberryAnnotation hashable, to make it compatible to newer versions of dacite.
+
+Contributed by [Jaime Coello de Portugal](https://github.com/jaimecp89) via [PR #2790](https://github.com/strawberry-graphql/strawberry/pull/2790/)
+
+
 0.180.0 - 2023-05-31
 --------------------
 
