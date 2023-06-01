@@ -18,6 +18,8 @@ from graphql import (
     BooleanValueNode,
     EnumValueNode,
     FieldNode,
+    FragmentDefinitionNode,
+    FragmentSpreadNode,
     InlineFragmentNode,
     IntValueNode,
     ListTypeNode,
@@ -51,6 +53,8 @@ from .types import (
     GraphQLEnumValue,
     GraphQLField,
     GraphQLFieldSelection,
+    GraphQLFragmentSpread,
+    GraphQLFragmentType,
     GraphQLInlineFragment,
     GraphQLIntValue,
     GraphQLList,
@@ -169,6 +173,10 @@ class QueryCodegen:
         if operation.name is None:
             raise NoOperationNameProvidedError()
 
+        # Look for any free-floating fragments and create types out of them
+        # These types can then be referenced and included later via the
+        # fragment spread operator.
+        self._populate_fragment_types(ast)
         self.operation = self._convert_operation(operation)
 
         result = self.generate_code()
@@ -181,6 +189,26 @@ class QueryCodegen:
             return
 
         self.types.append(type_)
+
+    def _populate_fragment_types(self, ast: DocumentNode) -> None:
+        fragment_definitions = (
+            definition
+            for definition in ast.definitions
+            if isinstance(definition, FragmentDefinitionNode)
+        )
+        for fd in fragment_definitions:
+            query_type = self.schema.get_type_by_name("Query")
+            assert isinstance(query_type, TypeDefinition)
+            self._collect_types(
+                # The FragmentDefinitionNode has a non-Optional `SelectionSetNode` but the Protocol
+                # wants an `Optional[SelectionSetNode]` so this doesn't quite conform.
+                cast(HasSelectionSet, fd),
+                parent_type=query_type,
+                class_name=fd.name.value,
+                graph_ql_object_type_factory=lambda name: GraphQLFragmentType(
+                    name, on=fd.type_condition.name.value
+                ),
+            )
 
     def _convert_selection(self, selection: SelectionNode) -> GraphQLSelection:
         if isinstance(selection, FieldNode):
@@ -197,6 +225,9 @@ class QueryCodegen:
                 selection.type_condition.name.value,
                 self._convert_selection_set(selection.selection_set),
             )
+
+        if isinstance(selection, FragmentSpreadNode):
+            return GraphQLFragmentSpread(selection.name.value)
 
         raise ValueError(f"Unsupported type: {type(selection)}")  # pragma: no cover
 
@@ -525,6 +556,9 @@ class QueryCodegen:
         selection: HasSelectionSet,
         parent_type: TypeDefinition,
         class_name: str,
+        graph_ql_object_type_factory: Callable[
+            [str], GraphQLObjectType
+        ] = GraphQLObjectType,
     ) -> GraphQLType:
         assert selection.selection_set is not None
         selection_set = selection.selection_set
@@ -537,14 +571,32 @@ class QueryCodegen:
                 selection, parent_type, class_name
             )
 
-        current_type = GraphQLObjectType(class_name, [])
+        current_type = graph_ql_object_type_factory(class_name)
+        fields: List[Union[GraphQLFragmentSpread, GraphQLField]] = []
 
         for sub_selection in selection_set.selections:
+            if isinstance(sub_selection, FragmentSpreadNode):
+                fields.append(GraphQLFragmentSpread(sub_selection.name.value))
+                continue
             assert isinstance(sub_selection, FieldNode)
-
             field = self._get_field(sub_selection, class_name, parent_type)
 
-            current_type.fields.append(field)
+            fields.append(field)
+
+        if any(isinstance(f, GraphQLFragmentSpread) for f in fields):
+            if len(fields) > 1:
+                raise ValueError(
+                    "Queries with Fragments cannot currently include separate fields."
+                )
+            spread_field = fields[0]
+            assert isinstance(spread_field, GraphQLFragmentSpread)
+            return next(
+                t
+                for t in self.types
+                if isinstance(t, GraphQLObjectType) and t.name == spread_field.name
+            )
+
+        current_type.fields = cast(List[GraphQLField], fields)
 
         self._collect_type(current_type)
 
