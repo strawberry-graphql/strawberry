@@ -13,6 +13,7 @@ from .private import Private
 from .scalars import ID
 from .schema import Schema
 from .schema_directive import schema_directive
+from .subscriptions.types import subscription_result
 from .union import union
 from .unset import UNSET
 
@@ -38,6 +39,7 @@ __all__ = [
     "mutation",
     "scalar",
     "subscription",
+    "subscription_result",
     "type",
     "union",
     "auto",

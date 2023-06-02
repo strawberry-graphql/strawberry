@@ -114,7 +114,7 @@ class Subscription:
         info: Info,
         rooms: List[ChatRoom],
         user: str,
-    ) -> AsyncGenerator[ChatRoomMessage, None]:
+    ) -> strawberry.subscription_result(ChatRoomMessage):
         """Join and subscribe to message sent to the given rooms."""
         ws = info.context["ws"]
         channel_layer = ws.channel_layer
@@ -626,7 +626,7 @@ async def channel_listen(
     *,
     timeout: float | None = None,
     groups: Sequence[str] | None = None
-):  # AsyncGenerator
+):  # AsyncGenerator or subscription_result(...)
     ...
 ```
 
