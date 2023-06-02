@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.180.3 - 2023-06-02
+--------------------
+
+This release updates the built-in GraphiQL to the current latest version 2.4.7 and improves styling for the GraphiQL Explorer Plugin.
+
+Contributed by [Kien Dang](https://github.com/kiendang) via [PR #2804](https://github.com/strawberry-graphql/strawberry/pull/2804/)
+
+
 0.180.2 - 2023-06-02
 --------------------
 
