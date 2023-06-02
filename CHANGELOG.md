@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.180.4 - 2023-06-02
+--------------------
+
+Custom codegen plugins will fail to write files if the plugin is trying to put the
+file anywhere other than the root output directory (since the child directories do
+not yet exist).  This change will create the child directory if necessary before
+attempting to write the file.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2806](https://github.com/strawberry-graphql/strawberry/pull/2806/)
+
+
 0.180.3 - 2023-06-02
 --------------------
 
