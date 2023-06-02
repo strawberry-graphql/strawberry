@@ -53,7 +53,9 @@ class GraphQLFragmentType(GraphQLObjectType):
 
     def __post_init__(self) -> None:
         if not self.on:
-            raise ValueError("GraphQLFragmentType must be constructed with a valid 'on'")
+            raise ValueError(
+                "GraphQLFragmentType must be constructed with a valid 'on'"
+            )
 
 
 @dataclass
