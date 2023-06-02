@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.180.5 - 2023-06-02
+--------------------
+
+This release fixes a bug in fragment codegen to pick up type definitions from the proper place
+in the schema.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2805](https://github.com/strawberry-graphql/strawberry/pull/2805/)
+
+
 0.180.4 - 2023-06-02
 --------------------
 
