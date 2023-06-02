@@ -105,6 +105,7 @@ class CodegenResult:
     def write(self, folder: Path) -> None:
         for file in self.files:
             destination = folder / file.path
+            destination.parent.mkdir(exist_ok=True, parents=True)
             destination.write_text(file.content)
 
 
