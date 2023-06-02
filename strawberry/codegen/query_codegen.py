@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import partial
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -199,15 +200,22 @@ class QueryCodegen:
         for fd in fragment_definitions:
             query_type = self.schema.get_type_by_name("Query")
             assert isinstance(query_type, TypeDefinition)
+
+            def graph_ql_object_type_factory(name: str, on: str):
+                return GraphQLFragmentType(name, on=on)
+
+            graph_ql_object_type_factory = partial(
+                graph_ql_object_type_factory, on=fd.type_condition.name.value
+            )
+
             self._collect_types(
-                # The FragmentDefinitionNode has a non-Optional `SelectionSetNode` but the Protocol
-                # wants an `Optional[SelectionSetNode]` so this doesn't quite conform.
+                # The FragmentDefinitionNode has a non-Optional `SelectionSetNode` but
+                # the Protocol wants an `Optional[SelectionSetNode]` so this doesn't
+                # quite conform.
                 cast(HasSelectionSet, fd),
                 parent_type=query_type,
                 class_name=fd.name.value,
-                graph_ql_object_type_factory=lambda name: GraphQLFragmentType(
-                    name, on=fd.type_condition.name.value
-                ),
+                graph_ql_object_type_factory=graph_ql_object_type_factory,
             )
 
     def _convert_selection(self, selection: SelectionNode) -> GraphQLSelection:
