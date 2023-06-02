@@ -1,16 +1,7 @@
-type FieldsLazy = {
-    something: boolean
+type PersonName = {
+    name: string
 }
 
-type Fields = {
-    id: string
-    integer: number
-    float: number
-    boolean: boolean
-    uuid: string
-    date: string
-    datetime: string
-    time: string
-    decimal: string
-    lazy: FieldsLazy
+type OperationNameResult = {
+    person: PersonName
 }

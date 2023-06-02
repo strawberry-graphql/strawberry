@@ -199,14 +199,13 @@ class QueryCodegen:
             if isinstance(definition, FragmentDefinitionNode)
         )
         for fd in fragment_definitions:
-            query_type = self.schema.get_type_by_name("Query")
-            assert isinstance(query_type, TypeDefinition)
-
-            def graph_ql_object_type_factory(name: str, on: str):
-                return GraphQLFragmentType(name, on=on)
+            query_type = self.schema.get_type_by_name(fd.type_condition.name.value)
+            assert isinstance(
+                query_type, TypeDefinition
+            ), f"{fd.type_condition.name.value!r} is not a type in the graphql schema!"
 
             graph_ql_object_type_factory = partial(
-                graph_ql_object_type_factory, on=fd.type_condition.name.value
+                GraphQLFragmentType, on=fd.type_condition.name.value
             )
 
             self._collect_types(

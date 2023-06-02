@@ -1,18 +1,9 @@
-fragment Fields on Query {
-  id
-  integer
-  float
-  boolean
-  uuid
-  date
-  datetime
-  time
-  decimal
-  lazy {
-    something
-  }
+fragment PersonName on Person {
+  name
 }
 
 query OperationName {
-  ...Fields
+  person {
+    ...PersonName
+  }
 }
