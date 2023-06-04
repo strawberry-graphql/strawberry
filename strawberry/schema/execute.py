@@ -16,6 +16,7 @@ from typing import (
     cast,
 )
 
+from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError, parse
 from graphql import execute as original_execute
 from graphql.validation import validate
@@ -25,7 +26,6 @@ from strawberry.extensions.runner import SchemaExtensionsRunner
 from strawberry.types import ExecutionResult
 
 from .exceptions import InvalidOperationTypeError
-from graphql import ExecutionResult as GraphQLExecutionResult
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
     from strawberry.extensions import SchemaExtension
     from strawberry.types import ExecutionContext
-    from strawberry.types.execution import ParseOptions, ExecutionResultError
+    from strawberry.types.execution import ExecutionResultError, ParseOptions
     from strawberry.types.graphql import OperationType
 
 
