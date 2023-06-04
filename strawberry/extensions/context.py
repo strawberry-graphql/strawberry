@@ -198,6 +198,8 @@ class ExtensionContextManagerBase:
     ):
         await self.run_hooks_async(is_exit=True)
 
+    async def exit(self, exc: Exception) -> None:
+        await self.__aexit__(type(exc), exc.args, exc.__traceback__)
 
 class OperationContextManager(ExtensionContextManagerBase):
     HOOK_NAME = SchemaExtension.on_operation.__name__

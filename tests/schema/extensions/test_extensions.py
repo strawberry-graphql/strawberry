@@ -2,7 +2,7 @@ import contextlib
 import dataclasses
 import json
 import warnings
-from typing import Any, List, Optional, Set, Type
+from typing import Any, List, Optional, Set, Type, AsyncGenerator
 from unittest.mock import patch
 
 import pytest
@@ -186,12 +186,14 @@ def test_extension_access_to_root_value():
 
 
 @dataclasses.dataclass
-class DefaultSchemaQuery:
+class SchemaHelper:
     query_type: type
+    subscription_type: type
     query: str
+    subscription: str
 
 
-class ExampleExtension(SchemaExtension):
+class TestAbleExtension(SchemaExtension):
     def __init_subclass__(cls, **kwargs: Any):
         super().__init_subclass__(**kwargs)
         cls.called_hooks = set()
@@ -205,7 +207,7 @@ class ExampleExtension(SchemaExtension):
 
 
 @pytest.fixture()
-def default_query_types_and_query() -> DefaultSchemaQuery:
+def default_query_types_and_query() -> SchemaHelper:
     @strawberry.type
     class Person:
         name: str = "Jess"
@@ -216,8 +218,21 @@ def default_query_types_and_query() -> DefaultSchemaQuery:
         def person(self) -> Person:
             return Person()
 
+    @strawberry.type
+    class Subscription:
+        @strawberry.subscription
+        async def count(self) -> AsyncGenerator[int, None]:
+            for i in range(5):
+                yield i
+
+    subscription = "subscription TestSubscribe { count }"
     query = "query TestQuery { person { name } }"
-    return DefaultSchemaQuery(query_type=Query, query=query)
+    return SchemaHelper(
+        query_type=Query,
+        query=query,
+        subscription_type=Subscription,
+        subscription=subscription,
+    )
 
 
 def test_can_initialize_extension(default_query_types_and_query):
@@ -241,8 +256,8 @@ def test_can_initialize_extension(default_query_types_and_query):
 
 
 @pytest.fixture()
-def async_extension() -> Type[ExampleExtension]:
-    class MyExtension(ExampleExtension):
+def async_extension() -> Type[TestAbleExtension]:
+    class MyExtension(TestAbleExtension):
         async def on_operation(self):
             self.called_hooks.add(1)
             yield
@@ -275,8 +290,8 @@ def async_extension() -> Type[ExampleExtension]:
 
 
 @pytest.fixture()
-def sync_extension() -> Type[ExampleExtension]:
-    class MyExtension(ExampleExtension):
+def sync_extension() -> Type[TestAbleExtension]:
+    class MyExtension(TestAbleExtension):
         def on_operation(self):
             self.called_hooks.add(1)
             yield
@@ -362,7 +377,7 @@ async def test_execution_order(default_query_types_and_query):
         yield
         called_hooks.append(f"{klass.__name__}, {hook_name} Exited")
 
-    class ExtensionA(ExampleExtension):
+    class ExtensionA(TestAbleExtension):
         async def on_operation(self):
             with register_hook(SchemaExtension.on_operation.__name__, ExtensionA):
                 yield
@@ -379,7 +394,7 @@ async def test_execution_order(default_query_types_and_query):
             with register_hook(SchemaExtension.on_execute.__name__, ExtensionA):
                 yield
 
-    class ExtensionB(ExampleExtension):
+    class ExtensionB(TestAbleExtension):
         async def on_operation(self):
             with register_hook(SchemaExtension.on_operation.__name__, ExtensionB):
                 yield
@@ -437,7 +452,7 @@ async def test_sync_extension_hooks(default_query_types_and_query, sync_extensio
 
 
 async def test_extension_no_yield(default_query_types_and_query):
-    class SyncExt(ExampleExtension):
+    class SyncExt(TestAbleExtension):
         expected = {1, 2}
 
         def on_operation(self):
@@ -474,7 +489,7 @@ def test_raise_if_defined_both_legacy_and_new_style(default_query_types_and_quer
 async def test_legacy_extension_supported():
     with warnings.catch_warnings(record=True) as w:
 
-        class CompatExtension(ExampleExtension):
+        class CompatExtension(TestAbleExtension):
             async def on_request_start(self):
                 self.called_hooks.add(1)
 
@@ -522,7 +537,7 @@ async def test_legacy_extension_supported():
 async def test_legacy_only_start():
     with warnings.catch_warnings(record=True) as w:
 
-        class CompatExtension(ExampleExtension):
+        class CompatExtension(TestAbleExtension):
             expected = {1, 2, 3, 4}
 
             async def on_request_start(self):
@@ -560,7 +575,7 @@ async def test_legacy_only_start():
 async def test_legacy_only_end():
     with warnings.catch_warnings(record=True) as w:
 
-        class CompatExtension(ExampleExtension):
+        class CompatExtension(TestAbleExtension):
             async def on_request_end(self):
                 self.called_hooks.add(1)
 
@@ -990,22 +1005,28 @@ async def test_extension_can_set_query_async():
     assert result.data == {"hi": "👋"}
 
 
-def test_raise_if_hook_is_not_callable():
+def test_raise_if_hook_is_not_callable(default_query_types_and_query):
     class MyExtension(SchemaExtension):
         on_operation = "ABC"  # type: ignore
 
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def hi(self) -> str:
-            return "👋"
-
-    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
-
-    # Query not set on input
-    query = "{ hi }"
-
+    schema = strawberry.Schema(query=default_query_types_and_query.query_type, extensions=[MyExtension])
     with pytest.raises(
         ValueError, match="Hook on_operation on <(.*)> must be callable, received 'ABC'"
     ):
-        schema.execute_sync(query)
+        schema.execute_sync(default_query_types_and_query.query)
+
+
+async def test_subscription(default_query_types_and_query, async_extension):
+    # `resolve` extension is not supported yet see https://github.com/graphql-python/graphql-core/issues/188
+    async_extension.expected = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+    schema = strawberry.Schema(
+        query=default_query_types_and_query.query_type,
+        subscription=default_query_types_and_query.subscription_type,
+        extensions=[async_extension],
+    )
+
+    async for res in await schema.subscribe(default_query_types_and_query.subscription):
+        assert res.data
+        assert not res.errors
+
+    async_extension.perform_test()

@@ -91,6 +91,10 @@ class ExecutionResult:
     errors: Optional[List[GraphQLError]]
     extensions: Optional[Dict[str, Any]] = None
 
+# TODO: should errors field live here?
+class ExecutionResultError(ExecutionResult):
+    ...
+
 
 class ParseOptions(TypedDict):
     max_tokens: NotRequired[int]

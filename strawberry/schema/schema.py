@@ -36,16 +36,16 @@ from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
 from strawberry.types.types import TypeDefinition
+from .subscribe import Subscription
 
 from ..printer import print_schema
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
-from .execute import execute, execute_sync
+from .execute import execute_sync, AsyncExecution
 
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
-    from graphql import ExecutionResult as GraphQLExecutionResult
 
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.directive import StrawberryDirective
@@ -54,6 +54,7 @@ if TYPE_CHECKING:
     from strawberry.field import StrawberryField
     from strawberry.type import StrawberryType
     from strawberry.types import ExecutionResult
+    from strawberry.types.execution import ExecutionResultError
     from strawberry.union import StrawberryUnion
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
@@ -222,90 +223,6 @@ class Schema(BaseSchema):
             ),
             None,
         )
-
-    async def execute(
-        self,
-        query: Optional[str],
-        variable_values: Optional[Dict[str, Any]] = None,
-        context_value: Optional[Any] = None,
-        root_value: Optional[Any] = None,
-        operation_name: Optional[str] = None,
-        allowed_operation_types: Optional[Iterable[OperationType]] = None,
-    ) -> ExecutionResult:
-        if allowed_operation_types is None:
-            allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
-
-        # Create execution context
-        execution_context = ExecutionContext(
-            query=query,
-            schema=self,
-            context=context_value,
-            root_value=root_value,
-            variables=variable_values,
-            provided_operation_name=operation_name,
-        )
-
-        result = await execute(
-            self._schema,
-            extensions=self.get_extensions(),
-            execution_context_class=self.execution_context_class,
-            execution_context=execution_context,
-            allowed_operation_types=allowed_operation_types,
-            process_errors=self.process_errors,
-        )
-
-        return result
-
-    def execute_sync(
-        self,
-        query: Optional[str],
-        variable_values: Optional[Dict[str, Any]] = None,
-        context_value: Optional[Any] = None,
-        root_value: Optional[Any] = None,
-        operation_name: Optional[str] = None,
-        allowed_operation_types: Optional[Iterable[OperationType]] = None,
-    ) -> ExecutionResult:
-        if allowed_operation_types is None:
-            allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
-
-        execution_context = ExecutionContext(
-            query=query,
-            schema=self,
-            context=context_value,
-            root_value=root_value,
-            variables=variable_values,
-            provided_operation_name=operation_name,
-        )
-
-        result = execute_sync(
-            self._schema,
-            extensions=self.get_extensions(sync=True),
-            execution_context_class=self.execution_context_class,
-            execution_context=execution_context,
-            allowed_operation_types=allowed_operation_types,
-            process_errors=self.process_errors,
-        )
-
-        return result
-
-    async def subscribe(
-        self,
-        # TODO: make this optional when we support extensions
-        query: str,
-        variable_values: Optional[Dict[str, Any]] = None,
-        context_value: Optional[Any] = None,
-        root_value: Optional[Any] = None,
-        operation_name: Optional[str] = None,
-    ) -> Union[AsyncIterator[GraphQLExecutionResult], GraphQLExecutionResult]:
-        return await subscribe(
-            self._schema,
-            parse(query),
-            root_value=root_value,
-            context_value=context_value,
-            variable_values=variable_values,
-            operation_name=operation_name,
-        )
-
     def _warn_for_federation_directives(self):
         """Raises a warning if the schema has any federation directives."""
         from strawberry.federation.schema_directives import FederationDirective
@@ -320,7 +237,7 @@ class Schema(BaseSchema):
         )
 
         if any(
-            isinstance(directive, FederationDirective) for directive in all_directives
+                isinstance(directive, FederationDirective) for directive in all_directives
         ):
             warnings.warn(
                 "Federation directive found in schema. "
@@ -328,6 +245,96 @@ class Schema(BaseSchema):
                 UserWarning,
                 stacklevel=3,
             )
+
+
+    def _create_execution_context(
+            self,
+            query: Optional[str],
+            variable_values: Optional[Dict[str, Any]] = None,
+            context_value: Optional[Any] = None,
+            root_value: Optional[Any] = None,
+            operation_name: Optional[str] = None,
+    ):
+        return ExecutionContext(
+            query=query,
+            schema=self,
+            context=context_value,
+            root_value=root_value,
+            variables=variable_values,
+            provided_operation_name=operation_name,
+        )
+
+    async def execute_sync(
+        self,
+        query: Optional[str],
+        variable_values: Optional[Dict[str, Any]] = None,
+        context_value: Optional[Any] = None,
+        root_value: Optional[Any] = None,
+        operation_name: Optional[str] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
+    ) -> ExecutionResult:
+        if allowed_operation_types is None:
+            allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
+
+        execution_context = self._create_execution_context(
+            query, variable_values, context_value, root_value, operation_name
+        )
+
+        result = execute_sync(
+            self._schema,
+            extensions=self.get_extensions(sync=True),
+            execution_context_class=self.execution_context_class,
+            execution_context=execution_context,
+            allowed_operation_types=allowed_operation_types,
+            process_errors=self.process_errors,
+        )
+
+        return result
+
+    async def execute(
+        self,
+        query: Optional[str],
+        variable_values: Optional[Dict[str, Any]] = None,
+        context_value: Optional[Any] = None,
+        root_value: Optional[Any] = None,
+        operation_name: Optional[str] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
+    ) -> ExecutionResult:
+        if allowed_operation_types is None:
+            allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
+
+        execution_context = self._create_execution_context(
+            query, variable_values, context_value, root_value, operation_name
+        )
+
+        return await AsyncExecution(
+            schema=self._schema,
+            extensions=self.get_extensions(),
+            execution_context_class=self.execution_context_class,
+            execution_context=execution_context,
+            allowed_operation_types=allowed_operation_types,
+            process_errors=self.process_errors,
+        ).execute()
+
+    async def subscribe(
+        self,
+        query: Optional[str],
+        variable_values: Optional[Dict[str, Any]] = None,
+        context_value: Optional[Any] = None,
+        root_value: Optional[Any] = None,
+        operation_name: Optional[str] = None,
+    ) -> Union[ExecutionResultError, Subscription]:
+        execution_context = self._create_execution_context(
+            query, variable_values, context_value, root_value, operation_name
+        )
+
+        return await Subscription(
+            schema=self._schema,
+            extensions=self.get_extensions(),
+            execution_context=execution_context,
+            allowed_operation_types=[OperationType.SUBSCRIPTION],
+            process_errors=self.process_errors,
+        ).subscribe()
 
     def as_str(self) -> str:
         return print_schema(self)
