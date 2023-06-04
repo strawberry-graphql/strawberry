@@ -2,7 +2,7 @@ import contextlib
 import dataclasses
 import json
 import warnings
-from typing import Any, List, Optional, Set, Type, AsyncGenerator
+from typing import Any, AsyncGenerator, List, Optional, Set, Type
 from unittest.mock import patch
 
 import pytest
@@ -1009,7 +1009,9 @@ def test_raise_if_hook_is_not_callable(default_query_types_and_query):
     class MyExtension(SchemaExtension):
         on_operation = "ABC"  # type: ignore
 
-    schema = strawberry.Schema(query=default_query_types_and_query.query_type, extensions=[MyExtension])
+    schema = strawberry.Schema(
+        query=default_query_types_and_query.query_type, extensions=[MyExtension]
+    )
     with pytest.raises(
         ValueError, match="Hook on_operation on <(.*)> must be callable, received 'ABC'"
     ):

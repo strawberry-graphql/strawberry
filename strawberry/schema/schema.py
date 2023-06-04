@@ -5,7 +5,6 @@ from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
     Dict,
     Iterable,
     List,
@@ -20,10 +19,8 @@ from graphql import (
     GraphQLNonNull,
     GraphQLSchema,
     get_introspection_query,
-    parse,
     validate_schema,
 )
-from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
 from strawberry.annotation import StrawberryAnnotation
@@ -36,13 +33,13 @@ from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
 from strawberry.types.types import TypeDefinition
-from .subscribe import Subscription
 
 from ..printer import print_schema
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
-from .execute import execute_sync, AsyncExecution
+from .execute import AsyncExecution, execute_sync
+from .subscribe import Subscription
 
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
@@ -223,6 +220,7 @@ class Schema(BaseSchema):
             ),
             None,
         )
+
     def _warn_for_federation_directives(self):
         """Raises a warning if the schema has any federation directives."""
         from strawberry.federation.schema_directives import FederationDirective
@@ -237,7 +235,7 @@ class Schema(BaseSchema):
         )
 
         if any(
-                isinstance(directive, FederationDirective) for directive in all_directives
+            isinstance(directive, FederationDirective) for directive in all_directives
         ):
             warnings.warn(
                 "Federation directive found in schema. "
@@ -246,14 +244,13 @@ class Schema(BaseSchema):
                 stacklevel=3,
             )
 
-
     def _create_execution_context(
-            self,
-            query: Optional[str],
-            variable_values: Optional[Dict[str, Any]] = None,
-            context_value: Optional[Any] = None,
-            root_value: Optional[Any] = None,
-            operation_name: Optional[str] = None,
+        self,
+        query: Optional[str],
+        variable_values: Optional[Dict[str, Any]] = None,
+        context_value: Optional[Any] = None,
+        root_value: Optional[Any] = None,
+        operation_name: Optional[str] = None,
     ):
         return ExecutionContext(
             query=query,

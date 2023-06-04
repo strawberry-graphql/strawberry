@@ -201,6 +201,7 @@ class ExtensionContextManagerBase:
     async def exit(self, exc: Exception) -> None:
         await self.__aexit__(type(exc), exc.args, exc.__traceback__)
 
+
 class OperationContextManager(ExtensionContextManagerBase):
     HOOK_NAME = SchemaExtension.on_operation.__name__
     LEGACY_ENTER = "on_request_start"
