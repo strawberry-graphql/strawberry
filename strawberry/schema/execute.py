@@ -349,25 +349,6 @@ async def subscribe(
                     ExecutionResult(data=None, errors=execution_context.errors)
                 )
 
-        async def process_result(result: GraphQLExecutionResult):
-            execution_context.result = result
-            # Also set errors on the execution_context so that it's easier
-            # to access in extensions
-            if result.errors:
-                execution_context.errors = result.errors
-
-                # Run the `Schema.process_errors` function here before
-                # extensions have a chance to modify them (see the MaskErrors
-                # extension). That way we can log the original errors but
-                # only return a sanitised version to the client.
-                process_errors(result.errors, execution_context)
-
-            return ExecutionResult(
-                data=execution_context.result.data,
-                errors=execution_context.result.errors,
-                extensions=await extensions_runner.get_extensions_results(),
-            )
-
         async with extensions_runner.executing():
             # currently original_subscribe is an async function.  A future release
             # of graphql-core will make it optionally awaitable
@@ -400,13 +381,44 @@ async def subscribe(
                 )
 
             if isinstance(result, GraphQLExecutionResult):
-                raise SubscribeSingleResult(await process_result(result))
+                raise SubscribeSingleResult(
+                    await process_subscribe_result(
+                        execution_context, process_errors, extensions_runner, result
+                    )
+                )
 
             aiterator = result.__aiter__()
             try:
                 async for result in aiterator:
-                    yield await process_result(result)
+                    yield await process_subscribe_result(
+                        execution_context, process_errors, extensions_runner, result
+                    )
             finally:
                 # grapql-core's iterator may or may not have an aclose() method
                 if hasattr(aiterator, "aclose"):
                     await aiterator.aclose()
+
+
+async def process_subscribe_result(
+    execution_context: ExecutionContext,
+    process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
+    extensions_runner: SchemaExtensionsRunner,
+    result: GraphQLExecutionResult,
+) -> ExecutionResult:
+    execution_context.result = result
+    # Also set errors on the execution_context so that it's easier
+    # to access in extensions
+    if result.errors:
+        execution_context.errors = result.errors
+
+        # Run the `Schema.process_errors` function here before
+        # extensions have a chance to modify them (see the MaskErrors
+        # extension). That way we can log the original errors but
+        # only return a sanitised version to the client.
+        process_errors(result.errors, execution_context)
+
+    return ExecutionResult(
+        data=execution_context.result.data,
+        errors=execution_context.result.errors,
+        extensions=await extensions_runner.get_extensions_results(),
+    )
