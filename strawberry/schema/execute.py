@@ -29,6 +29,7 @@ from strawberry.exceptions import MissingQueryError
 from strawberry.extensions.runner import SchemaExtensionsRunner
 from strawberry.types import ExecutionResult
 
+from .base import SubscribeSingleResult
 from .exceptions import InvalidOperationTypeError
 
 if TYPE_CHECKING:
@@ -283,7 +284,7 @@ async def subscribe(
     extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]],
     execution_context: ExecutionContext,
     process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
-) -> AsyncGenerator[Tuple[bool, ExecutionResult], None]:
+) -> AsyncGenerator[ExecutionResult, None]:
     """
     The graphql-core subscribe function returns either an ExecutionResult or an
     AsyncGenerator[ExecutionResult, None].  The former is returned in case of an error
@@ -319,32 +320,34 @@ async def subscribe(
             except GraphQLError as error:
                 execution_context.errors = [error]
                 process_errors([error], execution_context)
-                yield False, ExecutionResult(
-                    data=None,
-                    errors=[error],
-                    extensions=await extensions_runner.get_extensions_results(),
+                raise SubscribeSingleResult(
+                    ExecutionResult(
+                        data=None,
+                        errors=[error],
+                        extensions=await extensions_runner.get_extensions_results(),
+                    )
                 )
-                # the generator is usually closed here, so the following is not
-                # reached
-                return  # pragma: no cover
 
             except Exception as error:  # pragma: no cover
                 error = GraphQLError(str(error), original_error=error)
                 execution_context.errors = [error]
                 process_errors([error], execution_context)
-                yield False, ExecutionResult(
-                    data=None,
-                    errors=[error],
-                    extensions=await extensions_runner.get_extensions_results(),
+
+                raise SubscribeSingleResult(
+                    ExecutionResult(
+                        data=None,
+                        errors=[error],
+                        extensions=await extensions_runner.get_extensions_results(),
+                    )
                 )
-                return  # pragma: no cover
 
         async with extensions_runner.validation():
             _run_validation(execution_context)
             if execution_context.errors:
                 process_errors(execution_context.errors, execution_context)
-                yield False, ExecutionResult(data=None, errors=execution_context.errors)
-                return  # pragma: no cover
+                raise SubscribeSingleResult(
+                    ExecutionResult(data=None, errors=execution_context.errors)
+                )
 
         async def process_result(result: GraphQLExecutionResult):
             execution_context.result = result
@@ -397,13 +400,13 @@ async def subscribe(
                 )
 
             if isinstance(result, GraphQLExecutionResult):
-                yield False, await process_result(result)
-                return
+                raise SubscribeSingleResult(await process_result(result))
 
             aiterator = result.__aiter__()
             try:
                 async for result in aiterator:
-                    yield True, await process_result(result)
+                    yield await process_result(result)
             finally:
+                # grapql-core's iterator may or may not have an aclose() method
                 if hasattr(aiterator, "aclose"):
                     await aiterator.aclose()

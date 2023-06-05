@@ -307,7 +307,7 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ) -> AsyncGenerator[tuple[bool, ExecutionResult], None]:
+    ) -> AsyncGenerator[ExecutionResult, None]:
         execution_context = ExecutionContext(
             query=query,
             schema=self,

@@ -12,6 +12,7 @@ from strawberry.exceptions.permission_fail_silently_requires_optional import (
 )
 from strawberry.permission import BasePermission, PermissionExtension
 from strawberry.printer import print_schema
+from strawberry.schema import SubscribeSingleResult
 
 
 def test_raises_graphql_error_when_permission_method_is_missing():
@@ -80,9 +81,11 @@ async def test_raises_permission_error_for_subscription():
 
     query = "subscription { user }"
 
-    async for ok, result in schema.subscribe(query):
-        assert not ok
-        assert result.errors[0].message == "You are not authorized"
+    with pytest.raises(SubscribeSingleResult) as err:
+        async for result in schema.subscribe(query):
+            pass
+    result = err.value.value
+    assert result.errors[0].message == "You are not authorized"
 
 
 @pytest.mark.asyncio

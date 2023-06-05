@@ -17,6 +17,7 @@ from typing import (
 
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 
+from strawberry.schema import SubscribeSingleResult
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
@@ -255,13 +256,17 @@ class BaseGraphQLTransportWSHandler(ABC):
         else:
             # create AsyncGenerator returning a single result
             async def get_result_source() -> AsyncIterator[ExecutionResult]:
-                yield False, await self.schema.execute(
-                    query=message.payload.query,
-                    variable_values=message.payload.variables,
-                    context_value=context,
-                    root_value=root_value,
-                    operation_name=message.payload.operationName,
+                raise SubscribeSingleResult(
+                    await self.schema.execute(
+                        query=message.payload.query,
+                        variable_values=message.payload.variables,
+                        context_value=context,
+                        root_value=root_value,
+                        operation_name=message.payload.operationName,
+                    )
                 )
+                # need a yield here to turn this into an async generator
+                yield None  # pragma: no cover
 
             result_source = get_result_source()
 
@@ -306,22 +311,16 @@ class BaseGraphQLTransportWSHandler(ABC):
         operation: Operation,
     ) -> None:
         try:
-            async for multiple, result in result_source:
-                if result.errors and not multiple:
-                    error_payload = [err.formatted for err in result.errors]
-                    error_message = ErrorMessage(id=operation.id, payload=error_payload)
-                    await operation.send_message(error_message)
-                    return
-                else:
-                    next_payload = {"data": result.data}
-                    if result.errors:
-                        next_payload["errors"] = [
-                            err.formatted for err in result.errors
-                        ]
-                    if result.extensions:
-                        next_payload["extensions"] = result.extensions
-                    next_message = NextMessage(id=operation.id, payload=next_payload)
-                    await operation.send_message(next_message)
+            try:
+                async for result in result_source:
+                    await self.send_result(operation, result, False)
+            except SubscribeSingleResult as single_result:
+                await self.send_result(operation, single_result.value, True)
+            finally:
+                await result_source.aclose()
+        except asyncio.CancelledError:
+            # CancelledErrors are expected during task cleanup.
+            raise
         except Exception as error:
             # GraphQLErrors are handled by graphql-core and included in the
             # ExecutionResult
@@ -331,8 +330,22 @@ class BaseGraphQLTransportWSHandler(ABC):
             await operation.send_message(error_message)
             self.schema.process_errors([error])
             return
-        finally:
-            await result_source.aclose()
+
+    async def send_result(
+        self, operation: Operation, result: ExecutionResult, single: bool
+    ) -> None:
+        if result.errors and single:
+            error_payload = [err.formatted for err in result.errors]
+            error_message = ErrorMessage(id=operation.id, payload=error_payload)
+            await operation.send_message(error_message)
+        else:
+            next_payload: Dict[str, Any] = {"data": result.data}
+            if result.errors:
+                next_payload["errors"] = [err.formatted for err in result.errors]
+            if result.extensions:
+                next_payload["extensions"] = result.extensions
+            next_message = NextMessage(id=operation.id, payload=next_payload)
+            await operation.send_message(next_message)
 
     def forget_id(self, id: str) -> None:
         # de-register the operation id making it immediately available

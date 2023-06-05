@@ -1,4 +1,4 @@
-from .base import BaseSchema
+from .base import BaseSchema, SubscribeSingleResult
 from .schema import Schema
 
-__all__ = ["BaseSchema", "Schema"]
+__all__ = ["BaseSchema", "Schema", "SubscribeSingleResult"]
