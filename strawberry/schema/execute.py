@@ -15,6 +15,7 @@ from typing import (
     Union,
     cast,
 )
+from typing_extensions import NamedTuple
 
 from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError, parse
@@ -24,6 +25,7 @@ from graphql.validation import validate
 from strawberry.exceptions import MissingQueryError
 from strawberry.extensions.runner import SchemaExtensionsRunner
 from strawberry.types import ExecutionResult
+from strawberry.types.execution import ExecutionResultError
 
 from .exceptions import InvalidOperationTypeError
 
@@ -37,7 +39,7 @@ if TYPE_CHECKING:
 
     from strawberry.extensions import SchemaExtension
     from strawberry.types import ExecutionContext
-    from strawberry.types.execution import ExecutionResultError, ParseOptions
+    from strawberry.types.execution import ParseOptions
     from strawberry.types.graphql import OperationType
 
 
@@ -166,24 +168,23 @@ def execute_sync(
     )
 
 
+class AsyncExecutionKwargs(NamedTuple):
+    schema: GraphQLSchema
+    allowed_operation_types: Iterable[OperationType]
+    extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]]
+    execution_context: ExecutionContext
+    process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None]
+    execution_context_class: Optional[Type[GraphQLExecutionContext]] = None
+
+
 class AsyncExecutionBase:
-    def __init__(
-        self,
-        schema: GraphQLSchema,
-        allowed_operation_types: Iterable[OperationType],
-        extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]],
-        execution_context: ExecutionContext,
-        process_errors: Callable[
-            [List[GraphQLError], Optional[ExecutionContext]], None
-        ],
-        execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
-    ):
-        self.schema = schema
-        self.execution_context = execution_context
-        self.extensions = extensions
-        self.execution_context_class = execution_context_class
-        self.process_errors = process_errors
-        self.allowed_operation_types = allowed_operation_types
+    def __init__(self, kwargs: AsyncExecutionKwargs, /):
+        self.schema = kwargs.schema
+        self.execution_context = kwargs.execution_context
+        self.extensions = kwargs.extensions
+        self.execution_context_class = kwargs.execution_context_class
+        self.process_errors = kwargs.process_errors
+        self.allowed_operation_types = kwargs.allowed_operation_types
         self.extensions_runner = SchemaExtensionsRunner(
             execution_context=self.execution_context,
             extensions=list(self.extensions),
@@ -191,6 +192,8 @@ class AsyncExecutionBase:
 
     async def _parse_and_validate_runner(self) -> Optional[ExecutionResultError]:
         async with self.extensions_runner.parsing():
+            if not self.execution_context.query:
+                raise MissingQueryError()
             try:
                 if not self.execution_context.graphql_document:
                     self.execution_context.graphql_document = parse_document(

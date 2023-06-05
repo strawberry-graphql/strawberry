@@ -38,7 +38,7 @@ from ..printer import print_schema
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
-from .execute import AsyncExecution, execute_sync
+from .execute import AsyncExecution, AsyncExecutionKwargs, execute_sync
 from .subscribe import Subscription
 
 if TYPE_CHECKING:
@@ -261,7 +261,7 @@ class Schema(BaseSchema):
             provided_operation_name=operation_name,
         )
 
-    async def execute_sync(
+    def execute_sync(
         self,
         query: Optional[str],
         variable_values: Optional[Dict[str, Any]] = None,
@@ -305,12 +305,14 @@ class Schema(BaseSchema):
         )
 
         return await AsyncExecution(
-            schema=self._schema,
-            extensions=self.get_extensions(),
-            execution_context_class=self.execution_context_class,
-            execution_context=execution_context,
-            allowed_operation_types=allowed_operation_types,
-            process_errors=self.process_errors,
+            AsyncExecutionKwargs(
+                schema=self._schema,
+                extensions=self.get_extensions(),
+                execution_context_class=self.execution_context_class,
+                execution_context=execution_context,
+                allowed_operation_types=allowed_operation_types,
+                process_errors=self.process_errors,
+            )
         ).execute()
 
     async def subscribe(
@@ -326,11 +328,13 @@ class Schema(BaseSchema):
         )
 
         return await Subscription(
-            schema=self._schema,
-            extensions=self.get_extensions(),
-            execution_context=execution_context,
-            allowed_operation_types=[OperationType.SUBSCRIPTION],
-            process_errors=self.process_errors,
+            AsyncExecutionKwargs(
+                schema=self._schema,
+                extensions=self.get_extensions(),
+                execution_context=execution_context,
+                allowed_operation_types=[OperationType.SUBSCRIPTION],
+                process_errors=self.process_errors,
+            )
         ).subscribe()
 
     def as_str(self) -> str:

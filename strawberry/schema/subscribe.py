@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, AsyncGenerator, Optional, Union
 from graphql import ExecutionResult as OriginalExecutionResult
 from graphql import subscribe as original_subscribe
 
-from strawberry.schema.execute import AsyncExecutionBase
+from strawberry.schema.execute import AsyncExecutionBase, AsyncExecutionKwargs
 from strawberry.types.execution import ExecutionResultError
 
 if TYPE_CHECKING:
@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 
 class Subscription(AsyncExecutionBase):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, kwargs: AsyncExecutionKwargs):
+        super().__init__(kwargs)
         self._operation_cm = self.extensions_runner.operation()
         self._original_generator: Optional[
             AsyncGenerator[OriginalExecutionResult, None]
