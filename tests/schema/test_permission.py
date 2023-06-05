@@ -4,8 +4,8 @@ import pytest
 
 import strawberry
 from strawberry.permission import BasePermission
-from strawberry.types import Info
 from strawberry.schema import SubscribeSingleResult
+from strawberry.types import Info
 
 
 def test_raises_graphql_error_when_permission_method_is_missing():
