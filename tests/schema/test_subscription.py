@@ -25,8 +25,7 @@ async def test_subscription():
 
     query = "subscription { example }"
 
-    async for ok, result in schema.subscribe(query):
-        assert ok
+    async for result in schema.subscribe(query):
         assert not result.errors
         assert result.data["example"] == "Hi"
 
@@ -47,8 +46,7 @@ async def test_subscription_with_arguments():
 
     query = 'subscription { example(name: "Nina") }'
 
-    async for ok, result in schema.subscribe(query):
-        assert ok
+    async for result in schema.subscribe(query):
         assert not result.errors
         assert result.data["example"] == "Hi Nina"
 
@@ -89,7 +87,6 @@ async def test_subscription_return_annotations(return_annotation: str):
 
     query = "subscription { example }"
 
-    async for ok, result in schema.subscribe(query):
-        assert ok
+    async for result in schema.subscribe(query):
         assert not result.errors
         assert result.data["example"] == "Hi"

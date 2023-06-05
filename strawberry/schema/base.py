@@ -32,6 +32,15 @@ if TYPE_CHECKING:
     from .config import StrawberryConfig
 
 
+class SubscribeSingleResult(RuntimeError):
+    """Raised when Schema.subscribe() returns a single execution result, instead of a
+    subscription generator, typically as a result of validation errors.
+    """
+
+    def __init__(self, value: ExecutionResult) -> None:
+        self.value = value
+
+
 class BaseSchema(Protocol):
     config: StrawberryConfig
     schema_converter: GraphQLCoreConverter
@@ -72,7 +81,7 @@ class BaseSchema(Protocol):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ) -> AsyncGenerator[Any, None]:
+    ) -> AsyncGenerator[ExecutionResult, None]:
         raise NotImplementedError
 
     @abstractmethod

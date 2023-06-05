@@ -60,6 +60,15 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 }
 
 
+class SubscribeSingleResult(RuntimeError):
+    """Raised when Schema.subscribe() returns a single execution result, instead of a
+    subscription generator, typically as a result of validation errors.
+    """
+
+    def __init__(self, value: ExecutionResult) -> None:
+        self.value = value
+
+
 class Schema(BaseSchema):
     def __init__(
         self,
@@ -292,7 +301,7 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ) -> AsyncGenerator[tuple[bool, ExecutionResult], None]:
+    ) -> AsyncGenerator[ExecutionResult, None]:
         execution_context = ExecutionContext(
             query=query,
             schema=self,

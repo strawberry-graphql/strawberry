@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, AsyncGenerator, Callable, Dict, List, Opt
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 from graphql.error.graphql_error import format_error as format_graphql_error
 
+from strawberry.schema import SubscribeSingleResult
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
@@ -32,6 +33,7 @@ if TYPE_CHECKING:
     from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
         GraphQLTransportMessage,
     )
+    from strawberry.types import ExecutionResult
 
 
 class BaseGraphQLTransportWSHandler(ABC):
@@ -235,13 +237,17 @@ class BaseGraphQLTransportWSHandler(ABC):
         else:
             # create AsyncGenerator returning a single result
             async def get_result_source():
-                yield False, await self.schema.execute(
-                    query=message.payload.query,
-                    variable_values=message.payload.variables,
-                    context_value=context,
-                    root_value=root_value,
-                    operation_name=message.payload.operationName,
+                raise SubscribeSingleResult(
+                    await self.schema.execute(
+                        query=message.payload.query,
+                        variable_values=message.payload.variables,
+                        context_value=context,
+                        root_value=root_value,
+                        operation_name=message.payload.operationName,
+                    )
                 )
+                # need a yield here to turn this into an async generator
+                yield None  # pragma: no cover
 
             result_source = get_result_source()
 
@@ -288,19 +294,15 @@ class BaseGraphQLTransportWSHandler(ABC):
         operation: Operation,
     ) -> None:
         try:
-            async for _, result in result_source:
-                if result.errors:
-                    error_payload = [format_graphql_error(err) for err in result.errors]
-                    error_message = ErrorMessage(id=operation.id, payload=error_payload)
-                    await operation.send_message(error_message)
-                    self.schema.process_errors(result.errors)
-                    return
-                else:
-                    next_payload = {"data": result.data}
-                    if result.extensions:
-                        next_payload["extensions"] = result.extensions
-                    next_message = NextMessage(id=operation.id, payload=next_payload)
-                    await operation.send_message(next_message)
+            try:
+                async for result in result_source:
+                    await self.send_result(operation, result)
+                    if result.errors:
+                        return  # terminate subscription
+            except SubscribeSingleResult as single_result:
+                await self.send_result(operation, single_result.value)
+            finally:
+                await result_source.aclose()
         except asyncio.CancelledError:
             # CancelledErrors are expected during task cleanup.
             raise
@@ -313,8 +315,19 @@ class BaseGraphQLTransportWSHandler(ABC):
             await operation.send_message(error_message)
             self.schema.process_errors([error])
             return
-        finally:
-            await result_source.aclose()
+
+    async def send_result(self, operation: Operation, result: ExecutionResult) -> None:
+        if result.errors:
+            error_payload = [format_graphql_error(err) for err in result.errors]
+            error_message = ErrorMessage(id=operation.id, payload=error_payload)
+            await operation.send_message(error_message)
+            self.schema.process_errors(result.errors)
+        else:
+            next_payload = {"data": result.data}
+            if result.extensions:
+                next_payload["extensions"] = result.extensions
+            next_message = NextMessage(id=operation.id, payload=next_payload)
+            await operation.send_message(next_message)
 
     def forget_id(self, id: str) -> None:
         # de-register the operation id making it immediately available

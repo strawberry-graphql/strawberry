@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional, cast
 from graphql import GraphQLError
 from graphql.error.graphql_error import format_error as format_graphql_error
 
+from strawberry.schema import SubscribeSingleResult
 from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_COMPLETE,
     GQL_CONNECTION_ACK,
@@ -151,25 +152,29 @@ class BaseGraphQLWSHandler(ABC):
         operation_id: str,
     ) -> None:
         try:
-            async for success, result in result_source:
-                if not success:
-                    assert result.errors
-                    error_payload = format_graphql_error(result.errors[0])
-                    await self.send_message(GQL_ERROR, operation_id, error_payload)
-                    self.schema.process_errors(result.errors)
-                    return
-                payload = {"data": result.data}
-                if result.errors:
-                    payload["errors"] = [
-                        format_graphql_error(err) for err in result.errors
-                    ]
-                if result.extensions:
-                    payload["extensions"] = result.extensions
-                await self.send_message(GQL_DATA, operation_id, payload)
-                # log errors after send_message to prevent potential
-                # slowdown of sending result
-                if result.errors:
-                    self.schema.process_errors(result.errors)
+            try:
+                async for result in result_source:
+                    payload = {"data": result.data}
+                    if result.errors:
+                        payload["errors"] = [
+                            format_graphql_error(err) for err in result.errors
+                        ]
+                    if result.extensions:
+                        payload["extensions"] = result.extensions
+                    await self.send_message(GQL_DATA, operation_id, payload)
+                    # log errors after send_message to prevent potential
+                    # slowdown of sending result
+                    if result.errors:
+                        self.schema.process_errors(result.errors)
+            except SubscribeSingleResult as single_result:
+                result = single_result.value
+                assert result.errors
+                error_payload = format_graphql_error(result.errors[0])
+                await self.send_message(GQL_ERROR, operation_id, error_payload)
+                self.schema.process_errors(result.errors)
+                return
+            finally:
+                await result_source.aclose()
         except asyncio.CancelledError:
             # CancelledErrors are expected during task cleanup.
             pass
@@ -183,8 +188,6 @@ class BaseGraphQLWSHandler(ABC):
                 {"data": None, "errors": [format_graphql_error(error)]},
             )
             self.schema.process_errors([error])
-        finally:
-            await result_source.aclose()
 
         await self.send_message(GQL_COMPLETE, operation_id, None)
 
