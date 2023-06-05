@@ -13,6 +13,7 @@ from strawberry.exceptions.permission_fail_silently_requires_optional import (
 from strawberry.permission import BasePermission, PermissionExtension
 from strawberry.printer import print_schema
 from strawberry.schema import SubscribeSingleResult
+from strawberry.types import Info
 
 
 def test_raises_graphql_error_when_permission_method_is_missing():
