@@ -178,7 +178,7 @@ class AsyncExecutionKwargs(NamedTuple):
 
 
 class AsyncExecutionBase:
-    def __init__(self, kwargs: AsyncExecutionKwargs, /):
+    def __init__(self, kwargs: AsyncExecutionKwargs):
         self.schema = kwargs.schema
         self.execution_context = kwargs.execution_context
         self.extensions = kwargs.extensions
