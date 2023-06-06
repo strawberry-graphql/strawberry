@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.182.0 - 2023-06-06
+--------------------
+
+Initial relay spec implementation. For information on how to use
+it, check out the docs in here: https://strawberry.rocks/docs/guides/relay
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2511](https://github.com/strawberry-graphql/strawberry/pull/2511/)
+
+
 0.181.0 - 2023-06-06
 --------------------
 
