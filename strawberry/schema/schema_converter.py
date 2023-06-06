@@ -245,9 +245,10 @@ class GraphQLCoreConverter:
         )
 
     def from_field(self, field: StrawberryField) -> GraphQLField:
-        field_type = cast("GraphQLOutputType", self.from_maybe_optional(field.type))
-
+        # self.from_resolver needs to be called before accessing field.type because
+        # in there a field extension might want to change the type during its apply
         resolver = self.from_resolver(field)
+        field_type = cast("GraphQLOutputType", self.from_maybe_optional(field.type))
         subscribe = None
 
         if field.is_subscription:

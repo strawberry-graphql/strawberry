@@ -156,7 +156,8 @@ markers = [
     "chalice",
     "flask",
     "starlite",
-    "flaky"
+    "flaky",
+    "relay",
 ]
 asyncio_mode = "auto"
 filterwarnings = [

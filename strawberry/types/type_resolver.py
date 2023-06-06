@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import TYPE_CHECKING, Dict, List, Type, TypeVar
+from typing import TYPE_CHECKING, Dict, List, Type, TypeVar, cast
+from typing_extensions import get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -10,12 +11,59 @@ from strawberry.exceptions import (
     FieldWithResolverAndDefaultValueError,
     PrivateStrawberryFieldError,
 )
+from strawberry.field import StrawberryField
 from strawberry.private import is_private
 from strawberry.unset import UNSET
 from strawberry.utils.inspect import get_specialized_type_var_map
 
 if TYPE_CHECKING:
-    from strawberry.field import StrawberryField
+    from strawberry.extensions.field_extension import FieldExtension
+
+
+def _get_extensions_for_type(type_: Type) -> List[FieldExtension]:
+    # Deferred import to avoid import cycles
+    from strawberry.relay import Connection, ConnectionExtension, Node, NodeExtension
+
+    # Supoort for "foo: Node"
+    if isinstance(type_, type) and issubclass(type_, Node):
+        return [NodeExtension()]
+
+    # Support for "foo: SpecializedConnection"
+    if isinstance(type_, type) and issubclass(type_, Connection):
+        return [ConnectionExtension()]
+
+    type_origin = get_origin(type_)
+    type_args = get_args(type_)
+
+    # Support for "foo: Optional[Node]" and "foo: List[Node]"
+    if any(isinstance(arg, type) and issubclass(arg, Node) for arg in type_args):
+        return [NodeExtension()]
+
+    # Support for "foo: List[Optional[Node]]"
+    if isinstance(type_origin, type) and issubclass(type_origin, List):
+        if any(
+            isinstance(arg, type) and issubclass(arg, Node)
+            for arg in get_args(type_args[0])
+        ):
+            return [NodeExtension()]
+
+    return []
+
+
+def _resolve_specialized_type_var(cls: Type, type_: Type) -> Type:
+    if isinstance(type_, TypeVar):
+        specialized_type_var_map = get_specialized_type_var_map(cls)
+        # If type_ is specialized and a TypeVar, replace it with its
+        # mapped type
+        if specialized_type_var_map and type_ in specialized_type_var_map:
+            return specialized_type_var_map[type_]
+    else:
+        specialized_type_var_map = get_specialized_type_var_map(type_)
+        # If type_ is specialized, copy its type_var_map to the definition
+        if specialized_type_var_map:
+            return type_._type_definition.copy_with(specialized_type_var_map)
+
+    return type_
 
 
 def _get_fields(cls: Type) -> List[StrawberryField]:
@@ -51,9 +99,6 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     passing a named function (i.e. not an anonymous lambda) to strawberry.field
     (typically as a decorator).
     """
-    # Deferred import to avoid import cycles
-    from strawberry.field import StrawberryField
-
     fields: Dict[str, StrawberryField] = {}
 
     # before trying to find any fields, let's first add the fields defined in
@@ -128,6 +173,10 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # type that the field as attached to.
             if isinstance(field.type_annotation, StrawberryAnnotation):
                 type_annotation = field.type_annotation
+                type_annotation.annotation = _resolve_specialized_type_var(
+                    cls,
+                    cast(type, type_annotation.annotation),
+                )
                 if type_annotation.namespace is None:
                     type_annotation.set_namespace_from_field(field)
 
@@ -137,24 +186,10 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             if is_private(field.type):
                 continue
 
-            field_type = field.type
+            field_type = _resolve_specialized_type_var(cls, field.type)
 
             origin = origins.get(field.name, cls)
             module = sys.modules[origin.__module__]
-
-            if isinstance(field_type, TypeVar):
-                specialized_type_var_map = get_specialized_type_var_map(cls)
-                # If field_type is specialized and a TypeVar, replace it with its
-                # mapped type
-                if specialized_type_var_map and field_type in specialized_type_var_map:
-                    field_type = specialized_type_var_map[field_type]
-            else:
-                specialized_type_var_map = get_specialized_type_var_map(field_type)
-                # If field_type is specialized, copy its type_var_map to the definition
-                if specialized_type_var_map:
-                    field_type = field_type._type_definition.copy_with(
-                        specialized_type_var_map
-                    )
 
             # Create a StrawberryField, for fields of Types #1 and #2a
             field = StrawberryField(  # noqa: PLW2901
@@ -166,6 +201,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                 ),
                 origin=origin,
                 default=getattr(cls, field.name, dataclasses.MISSING),
+                extensions=_get_extensions_for_type(field_type),
             )
 
         field_name = field.python_name

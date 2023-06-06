@@ -11,6 +11,7 @@ class StrawberryConfig:
     auto_camel_case: InitVar[bool] = None  # pyright: reportGeneralTypeIssues=false
     name_converter: NameConverter = field(default_factory=NameConverter)
     default_resolver: Callable[[Any, str], object] = getattr
+    relay_max_results: int = 100
 
     def __post_init__(
         self,

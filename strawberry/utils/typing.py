@@ -2,11 +2,11 @@ import ast
 import re
 import sys
 import typing
-from collections.abc import AsyncGenerator
 from functools import lru_cache
 from typing import (  # type: ignore
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     Callable,
     ClassVar,
     Dict,

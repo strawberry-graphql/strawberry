@@ -29,7 +29,7 @@ from .types.fields.resolver import StrawberryResolver
 
 if TYPE_CHECKING:
     import builtins
-    from typing_extensions import Literal
+    from typing_extensions import Literal, Self
 
     from strawberry.arguments import StrawberryArgument
     from strawberry.extensions.field_extension import FieldExtension
@@ -115,6 +115,7 @@ class StrawberryField(dataclasses.Field):
         self.description: Optional[str] = description
         self.origin = origin
 
+        self._arguments: Optional[List[StrawberryArgument]] = None
         self._base_resolver: Optional[StrawberryResolver] = None
         if base_resolver is not None:
             self.base_resolver = base_resolver
@@ -128,7 +129,7 @@ class StrawberryField(dataclasses.Field):
             try:
                 self.default_value = default_factory()
             except TypeError as exc:
-                raise InvalidDefaultFactoryError() from exc
+                raise InvalidDefaultFactoryError from exc
 
         self.is_subscription = is_subscription
 
@@ -138,7 +139,7 @@ class StrawberryField(dataclasses.Field):
 
         self.deprecation_reason = deprecation_reason
 
-    def __call__(self, resolver: _RESOLVER_TYPE) -> StrawberryField:
+    def __call__(self, resolver: _RESOLVER_TYPE) -> Self:
         """Add a resolver to the field"""
 
         # Allow for StrawberryResolvers or bare functions to be provided
@@ -195,10 +196,14 @@ class StrawberryField(dataclasses.Field):
 
     @property
     def arguments(self) -> List[StrawberryArgument]:
-        if not self.base_resolver:
-            return []
+        if self._arguments is None:
+            self._arguments = self.base_resolver.arguments if self.base_resolver else []
 
-        return self.base_resolver.arguments
+        return self._arguments
+
+    @arguments.setter
+    def arguments(self, value: List[StrawberryArgument]):
+        self._arguments = value
 
     def _python_name(self) -> Optional[str]:
         if self.name:
@@ -296,7 +301,7 @@ class StrawberryField(dataclasses.Field):
 
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
-    ) -> StrawberryField:
+    ) -> Self:
         new_type: Union[StrawberryType, type] = self.type
 
         # TODO: Remove with creation of StrawberryObject. Will act same as other
@@ -316,7 +321,7 @@ class StrawberryField(dataclasses.Field):
             else None
         )
 
-        return StrawberryField(
+        return type(self)(
             python_name=self.python_name,
             graphql_name=self.graphql_name,
             # TODO: do we need to wrap this in `StrawberryAnnotation`?
