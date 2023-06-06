@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, Set
 
 from strawberry.utils.await_maybe import AsyncIteratorOrIterator, AwaitableOrValue
@@ -8,6 +9,13 @@ if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
 
     from strawberry.types import ExecutionContext
+
+
+class LifecycleStep(Enum):
+    OPERATION = "operation"
+    VALIDATION = "validation"
+    PARSE = "parse"
+    RESOLVE = "resolve"
 
 
 class SchemaExtension:

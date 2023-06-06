@@ -17,7 +17,7 @@ from typing import (
 )
 
 from strawberry.exceptions import InvalidUnionTypeError
-from strawberry.type import StrawberryOptional, StrawberryType
+from strawberry.type import StrawberryType
 
 from .utils.str_converters import to_camel_case
 
@@ -76,7 +76,7 @@ class ScalarWrapper:
     def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
         if other is None:
             # Return the correct notation when using `StrawberryUnion | None`.
-            return StrawberryOptional(of_type=self)
+            return Optional[self]
 
         # Raise an error in any other case.
         # There is Work in progress to deal with more merging cases, see:

@@ -57,6 +57,9 @@ class EnumValueDefinition:
     directives: Iterable[object] = ()
     description: Optional[str] = None
 
+    def __int__(self) -> int:
+        return self.value
+
 
 def enum_value(
     value: Any,

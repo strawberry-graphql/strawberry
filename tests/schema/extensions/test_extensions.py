@@ -192,7 +192,7 @@ class DefaultSchemaQuery:
 
 
 class ExampleExtension(SchemaExtension):
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any):
         super().__init_subclass__(**kwargs)
         cls.called_hooks = set()
 

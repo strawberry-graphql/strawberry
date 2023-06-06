@@ -10,7 +10,7 @@ from .async_django import AsyncDjangoHttpClient
 from .async_flask import AsyncFlaskHttpClient
 from .base import HttpClient, WebSocketClient
 from .chalice import ChaliceHttpClient
-from .channels import ChannelsHttpClient
+from .channels import ChannelsHttpClient, SyncChannelsHttpClient
 from .django import DjangoHttpClient
 from .fastapi import FastAPIHttpClient
 from .flask import FlaskHttpClient
@@ -34,5 +34,6 @@ __all__ = [
     "HttpClient",
     "SanicHttpClient",
     "StarliteHttpClient",
+    "SyncChannelsHttpClient",
     "WebSocketClient",
 ]

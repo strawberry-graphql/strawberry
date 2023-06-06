@@ -166,3 +166,36 @@ def test_optional_input_field_unset():
     )
     assert not result.errors
     assert result.data == {"hello": "Hi there"}
+
+
+def test_setting_metadata_on_argument():
+    field_definition = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(
+            self,
+            info,
+            input: Annotated[str, strawberry.argument(metadata={"test": "foo"})],
+        ) -> str:
+            nonlocal field_definition
+            field_definition = info._field
+            return f"Hi {input}"
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync(
+        """
+        query {
+            hello(input: "there")
+        }
+    """
+    )
+    assert not result.errors
+    assert result.data == {"hello": "Hi there"}
+
+    assert field_definition
+    assert field_definition.arguments[0].metadata == {
+        "test": "foo",
+    }

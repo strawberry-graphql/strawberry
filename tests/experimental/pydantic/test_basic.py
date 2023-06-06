@@ -343,6 +343,55 @@ def test_default_and_default_factory():
     assert UserType4().to_pydantic().friend is None
 
 
+def test_optional_and_default():
+    class UserModel(pydantic.BaseModel):
+        age: int
+        name: str = pydantic.Field("Michael", description="The user name")
+        password: Optional[str] = pydantic.Field(default="ABC")
+        passwordtwo: Optional[str] = None
+        some_list: Optional[List[str]] = pydantic.Field(default_factory=list)
+        check: Optional[bool] = False
+
+    @strawberry.experimental.pydantic.type(UserModel, all_fields=True)
+    class User:
+        pass
+
+    definition: TypeDefinition = User._type_definition
+    assert definition.name == "User"
+
+    [
+        age_field,
+        name_field,
+        password_field,
+        passwordtwo_field,
+        some_list_field,
+        check_field,
+    ] = definition.fields
+
+    assert age_field.python_name == "age"
+    assert age_field.type is int
+
+    assert name_field.python_name == "name"
+    assert name_field.type is str
+
+    assert password_field.python_name == "password"
+    assert isinstance(password_field.type, StrawberryOptional)
+    assert password_field.type.of_type is str
+
+    assert passwordtwo_field.python_name == "passwordtwo"
+    assert isinstance(passwordtwo_field.type, StrawberryOptional)
+    assert passwordtwo_field.type.of_type is str
+
+    assert some_list_field.python_name == "some_list"
+    assert isinstance(some_list_field.type, StrawberryOptional)
+    assert isinstance(some_list_field.type.of_type, StrawberryList)
+    assert some_list_field.type.of_type.of_type is str
+
+    assert check_field.python_name == "check"
+    assert isinstance(check_field.type, StrawberryOptional)
+    assert check_field.type.of_type is bool
+
+
 def test_type_with_fields_mutable_default():
     empty_list = []
 
@@ -738,7 +787,7 @@ def test_permission_classes():
         message = "User is not authenticated"
 
         def has_permission(
-            self, source: Any, info: strawberry.types.Info, **kwargs
+            self, source: Any, info: strawberry.types.Info, **kwargs: Any
         ) -> bool:
             return False
 
