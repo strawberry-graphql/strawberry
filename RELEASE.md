@@ -58,7 +58,3 @@ type Mutation {
   updateFruitWeight(input: UpdateFruitInput!): Fruit!
 }
 ```
-
-This pattern makes it easier to include/remove arguments without breaking the
-whole API, which could happen when using positional arguments. Additionally,
-fields in an input type can be marked as deprecated, while field can't be deprecated.
