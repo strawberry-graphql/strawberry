@@ -160,7 +160,7 @@ FruitAlike = namedtuple("FruitAlike", ["id", "name", "color"])
 @strawberry.type
 class FruitAlikeConnection(relay.ListConnection[Fruit]):
     @classmethod
-    def resolve_node(cls, node: FruitAlike, *, info: Info, **kwargs) -> Fruit:
+    def resolve_node(cls, node: FruitAlike, *, info: Info, **kwargs: Any) -> Fruit:
         return Fruit(
             id=node.id,
             name=node.name,

@@ -360,7 +360,7 @@ class Node:
 
     _id_attr: ClassVar[str]
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any):
         annotations = get_type_hints(cls, include_extras=True)
         candidates = [
             attr
@@ -670,7 +670,7 @@ class Connection(Generic[NodeType]):
     )
 
     @classmethod
-    def resolve_node(cls, node: Any, *, info: Info, **kwargs) -> NodeType:
+    def resolve_node(cls, node: Any, *, info: Info, **kwargs: Any) -> NodeType:
         """The identity function for the node.
 
         This method is used to resolve a node of a different type to the
@@ -699,7 +699,7 @@ class Connection(Generic[NodeType]):
         after: Optional[str] = None,
         first: Optional[int] = None,
         last: Optional[int] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> AwaitableOrValue[Self]:
         """Resolve a connection from nodes.
 
@@ -756,7 +756,7 @@ class ListConnection(Connection[NodeType]):
         after: Optional[str] = None,
         first: Optional[int] = None,
         last: Optional[int] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> AwaitableOrValue[Self]:
         """Resolve a connection from the list of nodes.
 

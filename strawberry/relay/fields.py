@@ -68,7 +68,7 @@ class NodeExtension(FieldExtension):
         field.base_resolver = StrawberryResolver(resolver, type_override=field.type)
 
     def resolve(
-        self, next_: SyncExtensionResolver, source: Any, info: Info, **kwargs
+        self, next_: SyncExtensionResolver, source: Any, info: Info, **kwargs: Any
     ) -> Any:
         return next_(source, info, **kwargs)
 
@@ -251,7 +251,7 @@ class ConnectionExtension(FieldExtension):
         after: Optional[str] = None,
         first: Optional[int] = None,
         last: Optional[int] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Any:
         assert self.connection_type is not None
         return self.connection_type.resolve_connection(
@@ -273,7 +273,7 @@ class ConnectionExtension(FieldExtension):
         after: Optional[str] = None,
         first: Optional[int] = None,
         last: Optional[int] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Any:
         assert self.connection_type is not None
         nodes = next_(source, info, **kwargs)
@@ -302,7 +302,7 @@ if TYPE_CHECKING:
     node = field
 else:
 
-    def node(*args: Any, **kwargs) -> StrawberryField:
+    def node(*args: Any, **kwargs: Any) -> StrawberryField:
         kwargs["extensions"] = [*kwargs.get("extensions", []), NodeExtension()]
         return field(*args, **kwargs)
 
