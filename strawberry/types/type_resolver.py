@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import TYPE_CHECKING, Dict, List, Type, TypeVar, cast
-from typing_extensions import get_args, get_origin
+from typing import Dict, List, Type, TypeVar, cast
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -15,39 +14,6 @@ from strawberry.field import StrawberryField
 from strawberry.private import is_private
 from strawberry.unset import UNSET
 from strawberry.utils.inspect import get_specialized_type_var_map
-
-if TYPE_CHECKING:
-    from strawberry.extensions.field_extension import FieldExtension
-
-
-def _get_extensions_for_type(type_: Type) -> List[FieldExtension]:
-    # Deferred import to avoid import cycles
-    from strawberry.relay import Connection, ConnectionExtension, Node, NodeExtension
-
-    # Supoort for "foo: Node"
-    if isinstance(type_, type) and issubclass(type_, Node):
-        return [NodeExtension()]
-
-    # Support for "foo: SpecializedConnection"
-    if isinstance(type_, type) and issubclass(type_, Connection):
-        return [ConnectionExtension()]
-
-    type_origin = get_origin(type_)
-    type_args = get_args(type_)
-
-    # Support for "foo: Optional[Node]" and "foo: List[Node]"
-    if any(isinstance(arg, type) and issubclass(arg, Node) for arg in type_args):
-        return [NodeExtension()]
-
-    # Support for "foo: List[Optional[Node]]"
-    if isinstance(type_origin, type) and issubclass(type_origin, List):
-        if any(
-            isinstance(arg, type) and issubclass(arg, Node)
-            for arg in get_args(type_args[0])
-        ):
-            return [NodeExtension()]
-
-    return []
 
 
 def _resolve_specialized_type_var(cls: Type, type_: Type) -> Type:
@@ -201,7 +167,6 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                 ),
                 origin=origin,
                 default=getattr(cls, field.name, dataclasses.MISSING),
-                extensions=_get_extensions_for_type(field_type),
             )
 
         field_name = field.python_name

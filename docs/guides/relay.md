@@ -86,7 +86,7 @@ Now we can expose it in the schema for retrieval and pagination like:
 ```python
 @strawberry.type
 class Query:
-    node: relay.Node
+    node: relay.Node = relay.node()
 
     @relay.connection(relay.ListConnection[Fruit])
     def fruits(self) -> Iterable[Fruit]:
@@ -159,7 +159,7 @@ Or to retrieve the first 10 fruits available:
 
 ```graphql
 query {
-  fruitConnection(first: 10) {
+  fruits(first: 10) {
     pageInfo {
       firstCursor
       endCursor
