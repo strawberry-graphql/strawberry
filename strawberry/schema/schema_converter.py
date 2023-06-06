@@ -471,9 +471,24 @@ class GraphQLCoreConverter:
             info: Info,
             kwargs: Any,
         ) -> Tuple[List[Any], Dict[str, Any]]:
+            # FIXME: An extension might have changed the resolver arguments,
+            # but we need them here since we are calling it.
+            # This is a bit of a hack, but it's the easiest way to get the arguments
+            # This happens in mutation.InputMutationExtension
+            field_arguments = field.arguments[:]
+            if field.base_resolver:
+                existing = {arg.python_name for arg in field_arguments}
+                field_arguments.extend(
+                    [
+                        arg
+                        for arg in field.base_resolver.arguments
+                        if arg.python_name not in existing
+                    ]
+                )
+
             kwargs = convert_arguments(
                 kwargs,
-                field.arguments,
+                field_arguments,
                 scalar_registry=self.scalar_registry,
                 config=self.config,
             )
