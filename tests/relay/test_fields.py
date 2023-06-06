@@ -1,35 +1,8 @@
 import pytest
 
-import strawberry
-from strawberry import relay
-from strawberry.relay.fields import ConnectionExtension, NodeExtension
 from strawberry.relay.utils import to_base64
 
 from .schema import FruitAsync, schema
-
-
-def test_type_has_node_extension():
-    @strawberry.type
-    class Query:
-        node: relay.Node
-
-    node_field = Query._type_definition.get_field("node")  # type: ignore
-    assert len(node_field.extensions) == 1
-    assert isinstance(node_field.extensions[0], NodeExtension)
-
-
-def test_type_has_connection_extension():
-    @strawberry.type
-    class Fruit:
-        ...
-
-    @strawberry.type
-    class Query:
-        connection: relay.Connection
-
-    connection_field = Query._type_definition.get_field("connection")  # type: ignore
-    assert len(connection_field.extensions) == 1
-    assert isinstance(connection_field.extensions[0], ConnectionExtension)
 
 
 def test_query_node():

@@ -178,10 +178,10 @@ async def fruits_async_resolver() -> Iterable[FruitAsync]:
 
 @strawberry.type
 class Query:
-    node: relay.Node
-    nodes: List[relay.Node]
-    node_optional: Optional[relay.Node]
-    nodes_optional: List[Optional[relay.Node]]
+    node: relay.Node = relay.node()
+    nodes: List[relay.Node] = relay.node()
+    node_optional: Optional[relay.Node] = relay.node()
+    nodes_optional: List[Optional[relay.Node]] = relay.node()
     fruits: relay.ListConnection[Fruit] = relay.connection(resolver=fruits_resolver)
     fruits_lazy: relay.ListConnection[
         Annotated["Fruit", strawberry.lazy("tests.relay.schema")]
@@ -310,4 +310,21 @@ class Query:
         ]
 
 
-schema = strawberry.Schema(query=Query)
+@strawberry.type
+class CreateFruitPayload:
+    fruit: Fruit
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def create_fruit(
+        self,
+        info: Info,
+        name: str,
+        color: str,
+    ) -> CreateFruitPayload:
+        ...
+
+
+schema = strawberry.Schema(query=Query, mutation=Mutation)
