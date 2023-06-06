@@ -5,11 +5,12 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
-from .base import ChannelsWSConsumer
+from .base import ChannelsConsumer, ChannelsWSConsumer
 from .graphql_transport_ws_handler import GraphQLTransportWSHandler
 from .graphql_ws_handler import GraphQLWSHandler
 
 if TYPE_CHECKING:
+    from strawberry.http.typevars import Context, RootValue
     from strawberry.schema import BaseSchema
 
 
@@ -108,8 +109,20 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
         except ValueError as e:
             await self._handler.handle_invalid_message(str(e))
 
-    async def receive_json(self, content: Any, **kwargs) -> None:
+    async def receive_json(self, content: Any, **kwargs: Any) -> None:
         await self._handler.handle_message(content)
 
     async def disconnect(self, code: int) -> None:
         await self._handler.handle_disconnect(code)
+
+    async def get_root_value(self, request: ChannelsConsumer) -> Optional[RootValue]:
+        return None
+
+    async def get_context(
+        self, request: ChannelsConsumer, connection_params: Any
+    ) -> Context:
+        return {
+            "request": request,
+            "connection_params": connection_params,
+            "ws": request,
+        }  # type: ignore

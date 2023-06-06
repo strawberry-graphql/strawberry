@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.176.3"
+version = "0.182.0"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -112,6 +112,7 @@ libcst = {version = "^0.4.7", optional = false}
 ddtrace = "^1.6.4"
 python-multipart = ">=0.0.5,<0.0.7"
 pygments = "^2.3"
+sentry-sdk = "^1.14.0"
 pyinstrument = {version = ">=4.0.0", optional = false}
 
 [tool.poetry.extras]
@@ -155,7 +156,8 @@ markers = [
     "chalice",
     "flask",
     "starlite",
-    "flaky"
+    "flaky",
+    "relay",
 ]
 asyncio_mode = "auto"
 filterwarnings = [
@@ -193,7 +195,6 @@ ignore = [
     "D",
     "ANN101", # missing annotation for self?
     # definitely enable these, maybe not in tests
-    "ANN003",
     "ANN102",
     "ANN202",
     "ANN204",

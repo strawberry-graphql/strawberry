@@ -43,11 +43,7 @@ if TYPE_CHECKING:
 def get_type_for_field(field: ModelField, is_input: bool):  # noqa: ANN201
     outer_type = field.outer_type_
     replaced_type = replace_types_recursively(outer_type, is_input)
-
-    default_defined: bool = (
-        field.default_factory is not None or field.default is not None
-    )
-    should_add_optional: bool = not (field.required or default_defined)
+    should_add_optional: bool = field.allow_none
     if should_add_optional:
         return Optional[replaced_type]
     else:
@@ -270,7 +266,7 @@ def type(
             ret._original_model = instance
             return ret
 
-        def to_pydantic_default(self: Any, **kwargs) -> PydanticModel:
+        def to_pydantic_default(self: Any, **kwargs: Any) -> PydanticModel:
             instance_kwargs = {
                 f.name: convert_strawberry_class_to_pydantic_model(
                     getattr(self, f.name)

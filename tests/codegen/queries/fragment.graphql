@@ -1,0 +1,9 @@
+fragment PersonName on Person {
+  name
+}
+
+query OperationName {
+  person {
+    ...PersonName
+  }
+}

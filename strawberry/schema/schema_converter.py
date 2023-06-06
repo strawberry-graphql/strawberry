@@ -245,9 +245,10 @@ class GraphQLCoreConverter:
         )
 
     def from_field(self, field: StrawberryField) -> GraphQLField:
-        field_type = cast("GraphQLOutputType", self.from_maybe_optional(field.type))
-
+        # self.from_resolver needs to be called before accessing field.type because
+        # in there a field extension might want to change the type during its apply
         resolver = self.from_resolver(field)
+        field_type = cast("GraphQLOutputType", self.from_maybe_optional(field.type))
         subscribe = None
 
         if field.is_subscription:
@@ -566,7 +567,7 @@ class GraphQLCoreConverter:
             def extension_resolver(
                 _source: Any,
                 info: Info,
-                **kwargs,
+                **kwargs: Any,
             ):
                 # parse field arguments into Strawberry input types and convert
                 # field names to Python equivalents
@@ -605,7 +606,7 @@ class GraphQLCoreConverter:
 
         _get_result_with_extensions = wrap_field_extensions()
 
-        def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
+        def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs: Any):
             strawberry_info = _strawberry_info_from_graphql(info)
             _check_permissions(_source, strawberry_info, kwargs)
 
@@ -615,7 +616,9 @@ class GraphQLCoreConverter:
                 **kwargs,
             )
 
-        async def _async_resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
+        async def _async_resolver(
+            _source: Any, info: GraphQLResolveInfo, **kwargs: Any
+        ):
             strawberry_info = _strawberry_info_from_graphql(info)
             await _check_permissions_async(_source, strawberry_info, kwargs)
 

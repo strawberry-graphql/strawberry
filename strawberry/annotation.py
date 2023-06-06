@@ -61,6 +61,9 @@ class StrawberryAnnotation:
 
         return self.resolve() == other.resolve()
 
+    def __hash__(self) -> int:
+        return hash(self.resolve())
+
     @staticmethod
     def from_annotation(
         annotation: object, namespace: Optional[Dict] = None

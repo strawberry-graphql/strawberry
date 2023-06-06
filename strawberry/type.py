@@ -148,3 +148,6 @@ class StrawberryTypeVar(StrawberryType):
             return self.type_var == other
 
         return super().__eq__(other)
+
+    def __hash__(self):
+        return hash(self.type_var)
