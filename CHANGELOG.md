@@ -1,6 +1,33 @@
 CHANGELOG
 =========
 
+0.181.0 - 2023-06-06
+--------------------
+
+This release adds support for properly resolving lazy references
+when using forward refs.
+
+For example, this code should now work without any issues:
+
+```python
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Annotated
+
+if TYPE_CHECKING:
+    from some.module import OtherType
+
+
+@strawberry.type
+class MyType:
+    @strawberry.field
+    async def other_type(self) -> Annotated[OtherType, strawberry.lazy("some.module")]:
+        ...
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2744](https://github.com/strawberry-graphql/strawberry/pull/2744/)
+
+
 0.180.5 - 2023-06-02
 --------------------
 
