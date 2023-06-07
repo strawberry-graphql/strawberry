@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, AsyncGenerator, Callable, Dict, List, Opt
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 from graphql.error.graphql_error import format_error as format_graphql_error
 
-from strawberry.schema import SubscribeSingleResult
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
@@ -236,15 +235,13 @@ class BaseGraphQLTransportWSHandler(ABC):
             )
         else:
             # create AsyncGenerator returning a single result
-            async def get_result_source():
-                raise SubscribeSingleResult(
-                    await self.schema.execute(
+            def get_result_source():
+                yield await self.schema.execute(
                         query=message.payload.query,
                         variable_values=message.payload.variables,
                         context_value=context,
                         root_value=root_value,
                         operation_name=message.payload.operationName,
-                    )
                 )
                 # need a yield here to turn this into an async generator
                 yield None  # pragma: no cover

@@ -28,7 +28,6 @@ from strawberry.exceptions import MissingQueryError
 from strawberry.extensions.runner import SchemaExtensionsRunner
 from strawberry.types import ExecutionResult
 
-from .base import SubscribeSingleResult
 from .exceptions import InvalidOperationTypeError
 
 if TYPE_CHECKING:
@@ -309,7 +308,7 @@ async def subscribe(
     extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]],
     execution_context: ExecutionContext,
     process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
-) -> AsyncGenerator[ExecutionResult, None]:
+) -> Union[ExecutionResult, AsyncGenerator[ExecutionResult, None]]:
     """
     The graphql-core subscribe function returns either an ExecutionResult or an
     AsyncGenerator[ExecutionResult, None].  The former is returned in case of an error
@@ -322,6 +321,35 @@ async def subscribe(
     failure (and no more values will be yielded) whereas a True value indicates a
     successful subscription, and more values may be yielded.
     """
+
+    asyncgen = _subscribe(
+        schema,
+        extensions=extensions,
+        execution_context=execution_context,
+        process_errors=process_errors,
+    )
+    # start the generator
+    first = await asyncgen.__anext__()
+    if first is not None:
+        # Single result.  Close the generator to exit any context managers
+        await asyncgen.aclose()
+        return first
+    else:
+        # return the started generator. Cast away the Optional[] type
+        return cast(AsyncGenerator[ExecutionResult, None], asyncgen)
+
+
+async def _subscribe(
+    schema: GraphQLSchema,
+    *,
+    extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]],
+    execution_context: ExecutionContext,
+    process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
+) -> AsyncGenerator[Optional[ExecutionResult], None]:
+    # This Async generator first yields either a single ExecutionResult or None.
+    # If None is yielded, then the subscription has failed and the generator should
+    # be closed.
+    # Otherwise, if None is yielded, the subscription can continue.
 
     extensions_runner = SchemaExtensionsRunner(
         execution_context=execution_context,
@@ -338,7 +366,8 @@ async def subscribe(
             execution_context, process_errors, extensions_runner
         )
         if error_result is not None:
-            raise SubscribeSingleResult(error_result)
+            yield error_result
+            return  # pragma: no cover
 
         async with extensions_runner.executing():
             # currently original_subscribe is an async function.  A future release
@@ -373,12 +402,12 @@ async def subscribe(
                 )
 
             if isinstance(result, GraphQLExecutionResult):
-                raise SubscribeSingleResult(
-                    await process_subscribe_result(
-                        execution_context, process_errors, extensions_runner, result
-                    )
+                yield await process_subscribe_result(
+                    execution_context, process_errors, extensions_runner, result
                 )
+                return  # pragma: no cover
 
+            yield None  # signal that we are returning an async generator
             aiterator = result.__aiter__()
             try:
                 async for result in aiterator:
