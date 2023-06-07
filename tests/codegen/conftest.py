@@ -104,7 +104,7 @@ class Query:
     @strawberry.field
     def get_person_or_animal(self) -> Union[Person, Animal]:
         """Randomly get a person or an animal."""
-        p_or_a = random.choice([Person, Animal])()
+        p_or_a = random.choice([Person, Animal])()  # noqa: S311
         p_or_a.name = "Howard"
         p_or_a.age = 7
         return p_or_a
