@@ -67,11 +67,15 @@ def test_lazy_forward_reference():
     type A {
       id: ID!
       b: B!
+      optionalB: B
+      optionalB2: B
     }
 
     type B {
       id: ID!
       a: A!
+      optionalA: A
+      optionalA2: A
     }
 
     type Query {
