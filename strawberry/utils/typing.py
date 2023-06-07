@@ -243,7 +243,13 @@ def _ast_extra_ns(
         and isinstance(expr.value, ast.Name)
         and expr.value.id == "Union"
     ):
-        for elt in cast(ast.Tuple, expr.slice).elts:
+        if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
+            # The cast is required for mypy on python 3.7 and 3.8
+            expr_slice = cast(Any, expr.slice).value
+        else:
+            expr_slice = expr.slice
+
+        for elt in cast(ast.Tuple, expr_slice).elts:
             extra.update(_ast_extra_ns(elt, globalns, localns))
     elif (
         isinstance(expr, ast.Subscript)
@@ -252,8 +258,14 @@ def _ast_extra_ns(
     ):
         assert ast_unparse
 
+        if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
+            # The cast is required for mypy on python 3.7 and 3.8
+            expr_slice = cast(Any, expr.slice).value
+        else:
+            expr_slice = expr.slice
+
         args: List[str] = []
-        for elt in cast(ast.Tuple, expr.slice).elts:
+        for elt in cast(ast.Tuple, expr_slice).elts:
             extra.update(_ast_extra_ns(elt, globalns, localns))
             args.append(ast_unparse(elt))
 
