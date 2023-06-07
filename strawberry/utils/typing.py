@@ -270,7 +270,7 @@ def _ast_extra_ns(
             args.append(ast_unparse(elt))
 
         # When using forward refs, the whole
-        # Annotated[SomeType, strabwerry.lazy("type.module")] is a forward ref,
+        # Annotated[SomeType, strawberry.lazy("type.module")] is a forward ref,
         # and trying to _eval_type on it will fail. Take a different approach
         # here to resolve lazy types by execing the annotated args, resolving the
         # type directly and then adding it to extra namespace, so that _eval_type
