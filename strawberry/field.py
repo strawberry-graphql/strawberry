@@ -336,6 +336,7 @@ class StrawberryField(dataclasses.Field):
             # ignored because of https://github.com/python/mypy/issues/6910
             default_factory=self.default_factory,
             deprecation_reason=self.deprecation_reason,
+            directives=self.directives,
         )
 
     @property
