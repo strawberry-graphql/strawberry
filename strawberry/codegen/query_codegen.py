@@ -504,7 +504,9 @@ class QueryCodegen:
         selected_field = self.schema.get_field_for_type(
             selection.name.value, parent_type.name
         )
-        assert selected_field
+        assert (
+            selected_field
+        ), f"Couldn't find {parent_type.name}.{selection.name.value}"
 
         selected_field_type, wrapper = self._unwrap_type(selected_field.type)
         name = capitalize_first(to_camel_case(selection.name.value))
@@ -638,13 +640,12 @@ class QueryCodegen:
 
         for fragment in fragments:
             fragment_class_name = class_name + fragment.type_condition.name.value
-            current_type = GraphQLObjectType(fragment_class_name, [])
+
+            current_type = GraphQLObjectType(fragment_class_name, list(common_fields))
 
             for sub_selection in fragment.selection_set.selections:
                 # TODO: recurse, use existing method ?
                 assert isinstance(sub_selection, FieldNode)
-
-                current_type.fields = list(common_fields)
 
                 parent_type = cast(
                     TypeDefinition,
