@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.183.3 - 2023-06-07
+--------------------
+
+This release fixes a codegen bug.  Prior to this fix,
+inline fragments would only include the last field defined
+within its scope and all fields common with its siblings.
+
+After this fix, all fields will be included in the
+generated types.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2819](https://github.com/strawberry-graphql/strawberry/pull/2819/)
+
+
 0.183.2 - 2023-06-07
 --------------------
 
