@@ -1,4 +1,5 @@
 type OperationNameResultUnionAnimal = {
+    age: number
     name: string
 }
 

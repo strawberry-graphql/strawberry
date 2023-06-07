@@ -640,13 +640,12 @@ class QueryCodegen:
 
         for fragment in fragments:
             fragment_class_name = class_name + fragment.type_condition.name.value
-            current_type = GraphQLObjectType(fragment_class_name, [])
+
+            current_type = GraphQLObjectType(fragment_class_name, list(common_fields))
 
             for sub_selection in fragment.selection_set.selections:
                 # TODO: recurse, use existing method ?
                 assert isinstance(sub_selection, FieldNode)
-
-                current_type.fields = list(common_fields)
 
                 parent_type = cast(
                     TypeDefinition,

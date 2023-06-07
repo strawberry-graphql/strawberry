@@ -1,4 +1,5 @@
 class OperationNameResultGetPersonOrAnimalPerson:
+    name: str
     age: int
 
 class OperationNameResult:

@@ -1,4 +1,5 @@
 type OperationNameResultGetPersonOrAnimalPerson = {
+    name: string
     age: number
 }
 
