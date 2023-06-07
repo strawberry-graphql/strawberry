@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.183.2 - 2023-06-07
+--------------------
+
+Fields with generics support directives.
+
+Contributed by [A. Coady](https://github.com/coady) via [PR #2811](https://github.com/strawberry-graphql/strawberry/pull/2811/)
+
+
 0.183.1 - 2023-06-06
 --------------------
 
