@@ -504,7 +504,9 @@ class QueryCodegen:
         selected_field = self.schema.get_field_for_type(
             selection.name.value, parent_type.name
         )
-        assert selected_field
+        assert (
+            selected_field
+        ), f"Couldn't find {parent_type.name}.{selection.name.value}"
 
         selected_field_type, wrapper = self._unwrap_type(selected_field.type)
         name = capitalize_first(to_camel_case(selection.name.value))

@@ -1,7 +1,8 @@
 import datetime
 import decimal
 import enum
-from typing import TYPE_CHECKING, List, NewType, Optional
+import random
+from typing import TYPE_CHECKING, List, NewType, Optional, Union
 from typing_extensions import Annotated
 from uuid import UUID
 
@@ -99,6 +100,14 @@ class Query:
     @strawberry.field
     def with_inputs(self, id: Optional[strawberry.ID], input: ExampleInput) -> bool:
         return True
+
+    @strawberry.field
+    def get_person_or_animal(self) -> Union[Person, Animal]:
+        """Randomly get a person or an animal."""
+        p_or_a = random.choice([Person, Animal])()
+        p_or_a.name = "Howard"
+        p_or_a.age = 7
+        return p_or_a
 
 
 @strawberry.type
