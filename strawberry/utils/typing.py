@@ -222,7 +222,7 @@ def _ast_replace_union_operation(
     return expr
 
 
-def _ast_extra_ns(
+def _get_namespace_from_ast(
     expr: Union[ast.Expr, ast.expr],
     globalns: Optional[Dict] = None,
     localns: Optional[Dict] = None,
@@ -234,10 +234,10 @@ def _ast_extra_ns(
     if isinstance(expr, ast.Expr) and isinstance(
         expr.value, (ast.BinOp, ast.Subscript)
     ):
-        extra.update(_ast_extra_ns(expr.value, globalns, localns))
+        extra.update(_get_namespace_from_ast(expr.value, globalns, localns))
     elif isinstance(expr, ast.BinOp):
         for elt in (expr.left, expr.right):
-            extra.update(_ast_extra_ns(elt, globalns, localns))
+            extra.update(_get_namespace_from_ast(elt, globalns, localns))
     elif (
         isinstance(expr, ast.Subscript)
         and isinstance(expr.value, ast.Name)
@@ -250,7 +250,7 @@ def _ast_extra_ns(
             expr_slice = expr.slice
 
         for elt in cast(ast.Tuple, expr_slice).elts:
-            extra.update(_ast_extra_ns(elt, globalns, localns))
+            extra.update(_get_namespace_from_ast(elt, globalns, localns))
     elif (
         isinstance(expr, ast.Subscript)
         and isinstance(expr.value, ast.Name)
@@ -266,7 +266,7 @@ def _ast_extra_ns(
 
         args: List[str] = []
         for elt in cast(ast.Tuple, expr_slice).elts:
-            extra.update(_ast_extra_ns(elt, globalns, localns))
+            extra.update(_get_namespace_from_ast(elt, globalns, localns))
             args.append(ast_unparse(elt))
 
         # When using forward refs, the whole
@@ -309,7 +309,7 @@ def eval_type(
             if "Union" not in globalns:
                 globalns["Union"] = Union
 
-        globalns.update(_ast_extra_ns(ast_obj, globalns, localns))
+        globalns.update(_get_namespace_from_ast(ast_obj, globalns, localns))
 
         assert ast_unparse
         type_ = ForwardRef(ast_unparse(ast_obj))
