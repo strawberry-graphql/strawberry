@@ -2,6 +2,7 @@ from typing import Generic, TypeVar
 
 import pytest
 
+import strawberry
 from strawberry.utils.inspect import get_specialized_type_var_map
 
 _T = TypeVar("_T")
@@ -14,6 +15,7 @@ def test_get_specialized_type_var_map_non_generic(value: type):
 
 
 def test_get_specialized_type_var_map_generic_not_specialized():
+    @strawberry.type
     class Foo(Generic[_T]):
         ...
 
@@ -23,9 +25,11 @@ def test_get_specialized_type_var_map_generic_not_specialized():
 
 @pytest.mark.parametrize("include_type_vars", [True, False])
 def test_get_specialized_type_var_map_generic(include_type_vars: bool):
+    @strawberry.type
     class Foo(Generic[_T]):
         ...
 
+    @strawberry.type
     class Bar(Foo[int]):
         ...
 
@@ -36,12 +40,15 @@ def test_get_specialized_type_var_map_generic(include_type_vars: bool):
 
 @pytest.mark.parametrize("include_type_vars", [True, False])
 def test_get_specialized_type_var_map_generic_subclass(include_type_vars: bool):
+    @strawberry.type
     class Foo(Generic[_T]):
         ...
 
+    @strawberry.type
     class Bar(Foo[int]):
         ...
 
+    @strawberry.type
     class BarSubclass(Bar):
         ...
 
@@ -52,12 +59,15 @@ def test_get_specialized_type_var_map_generic_subclass(include_type_vars: bool):
 
 @pytest.mark.parametrize("include_type_vars", [True, False])
 def test_get_specialized_type_var_map_double_generic(include_type_vars: bool):
+    @strawberry.type
     class Foo(Generic[_T]):
         ...
 
+    @strawberry.type
     class Bar(Foo[_T]):
         ...
 
+    @strawberry.type
     class Bin(Bar[int]):
         ...
 
@@ -68,15 +78,19 @@ def test_get_specialized_type_var_map_double_generic(include_type_vars: bool):
 
 @pytest.mark.parametrize("include_type_vars", [True, False])
 def test_get_specialized_type_var_map_double_generic_subclass(include_type_vars: bool):
+    @strawberry.type
     class Foo(Generic[_T]):
         ...
 
+    @strawberry.type
     class Bar(Foo[_T]):
         ...
 
+    @strawberry.type
     class Bin(Bar[int]):
         ...
 
+    @strawberry.type
     class BinSubclass(Bin):
         ...
 
@@ -87,15 +101,19 @@ def test_get_specialized_type_var_map_double_generic_subclass(include_type_vars:
 
 @pytest.mark.parametrize("include_type_vars", [True, False])
 def test_get_specialized_type_var_map_multiple_inheritance(include_type_vars: bool):
+    @strawberry.type
     class Foo(Generic[_T]):
         ...
 
+    @strawberry.type
     class Bar(Generic[_K]):
         ...
 
+    @strawberry.type
     class Bin(Foo[int]):
         ...
 
+    @strawberry.type
     class Baz(Bin, Bar[str]):
         ...
 
@@ -109,18 +127,23 @@ def test_get_specialized_type_var_map_multiple_inheritance(include_type_vars: bo
 def test_get_specialized_type_var_map_multiple_inheritance_subclass(
     include_type_vars: bool,
 ):
+    @strawberry.type
     class Foo(Generic[_T]):
         ...
 
+    @strawberry.type
     class Bar(Generic[_K]):
         ...
 
+    @strawberry.type
     class Bin(Foo[int]):
         ...
 
+    @strawberry.type
     class Baz(Bin, Bar[str]):
         ...
 
+    @strawberry.type
     class BazSubclass(Baz):
         ...
 

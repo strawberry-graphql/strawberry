@@ -1,7 +1,17 @@
 import asyncio
 import inspect
 from functools import lru_cache
-from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, overload
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    TypeVar,
+    Union,
+    _GenericAlias,
+    overload,
+)
 from typing_extensions import Literal, get_args
 
 
@@ -104,7 +114,13 @@ def get_specialized_type_var_map(cls: type, *, include_type_vars: bool = False):
 
     type_var_map = {}
 
-    orig_bases = [b for b in orig_bases if hasattr(b, "_type_definition")]
+    # only get type vars for base generics (ie. Generic[T]) and for strawberry types
+
+    orig_bases = [
+        b
+        for b in orig_bases
+        if hasattr(b, "_type_definition") or type(b) is _GenericAlias
+    ]
 
     for base in orig_bases:
         # Recursively get type var map from base classes
