@@ -1,7 +1,7 @@
 import asyncio
 import inspect
 from functools import lru_cache
-from typing import (  # type: ignore
+from typing import (
     Any,
     Callable,
     Dict,
