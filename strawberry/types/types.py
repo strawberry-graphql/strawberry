@@ -16,7 +16,6 @@ from typing import (
 from typing_extensions import Self
 
 from strawberry.type import StrawberryType, StrawberryTypeVar
-from strawberry.utils.inspect import get_specialized_type_var_map
 from strawberry.utils.typing import is_generic as is_type_generic
 
 if TYPE_CHECKING:
@@ -116,12 +115,7 @@ class TypeDefinition(StrawberryType):
 
     @property
     def is_specialized_generic(self) -> bool:
-        if not self.is_generic:
-            return False
-
-        type_var_map = get_specialized_type_var_map(self.origin)
-
-        return not type_var_map and not getattr(self.origin, "__parameters__", None)
+        return self.is_generic and not getattr(self.origin, "__parameters__", None)
 
     @property
     def type_params(self) -> List[TypeVar]:
