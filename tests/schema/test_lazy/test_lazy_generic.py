@@ -162,3 +162,27 @@ def test_lazy_types_declared_within_optional():
     ).strip()
 
     assert str(schema) == expected_schema
+
+
+def test_lazy_with_already_specialized_generic():
+    from tests.schema.test_lazy.type_d import Query
+
+    schema = strawberry.Schema(query=Query)
+    expected_schema = textwrap.dedent(
+        """
+        type Query {
+          normalEdges: [TypeCOptionalEdge!]!
+          lazyEdges: [TypeCOptionalEdge!]!
+        }
+
+        type TypeC {
+          name: String!
+        }
+
+        type TypeCOptionalEdge {
+          node: TypeC
+        }
+        """
+    ).strip()
+
+    assert str(schema) == expected_schema
