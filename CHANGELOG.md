@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.183.5 - 2023-06-08
+--------------------
+
+This release fixes an issue where Strawberry would make copies
+of types that were using specialized generics that were not
+Strawerry types.
+
+This issue combined with the use of lazy types was resulting
+in duplicated type errors.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2824](https://github.com/strawberry-graphql/strawberry/pull/2824/)
+
+
 0.183.4 - 2023-06-07
 --------------------
 
