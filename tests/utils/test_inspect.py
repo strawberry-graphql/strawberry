@@ -20,11 +20,9 @@ def test_get_specialized_type_var_map_generic_not_specialized():
         ...
 
     assert get_specialized_type_var_map(Foo) == {}
-    assert get_specialized_type_var_map(Foo, include_type_vars=True) == {_T: _T}
 
 
-@pytest.mark.parametrize("include_type_vars", [True, False])
-def test_get_specialized_type_var_map_generic(include_type_vars: bool):
+def test_get_specialized_type_var_map_generic():
     @strawberry.type
     class Foo(Generic[_T]):
         ...
@@ -33,13 +31,10 @@ def test_get_specialized_type_var_map_generic(include_type_vars: bool):
     class Bar(Foo[int]):
         ...
 
-    assert get_specialized_type_var_map(Bar, include_type_vars=include_type_vars) == {
-        _T: int
-    }
+    assert get_specialized_type_var_map(Bar) == {_T: int}
 
 
-@pytest.mark.parametrize("include_type_vars", [True, False])
-def test_get_specialized_type_var_map_generic_subclass(include_type_vars: bool):
+def test_get_specialized_type_var_map_generic_subclass():
     @strawberry.type
     class Foo(Generic[_T]):
         ...
@@ -52,13 +47,10 @@ def test_get_specialized_type_var_map_generic_subclass(include_type_vars: bool):
     class BarSubclass(Bar):
         ...
 
-    assert get_specialized_type_var_map(
-        BarSubclass, include_type_vars=include_type_vars
-    ) == {_T: int}
+    assert get_specialized_type_var_map(BarSubclass) == {_T: int}
 
 
-@pytest.mark.parametrize("include_type_vars", [True, False])
-def test_get_specialized_type_var_map_double_generic(include_type_vars: bool):
+def test_get_specialized_type_var_map_double_generic():
     @strawberry.type
     class Foo(Generic[_T]):
         ...
@@ -71,13 +63,10 @@ def test_get_specialized_type_var_map_double_generic(include_type_vars: bool):
     class Bin(Bar[int]):
         ...
 
-    assert get_specialized_type_var_map(Bin, include_type_vars=include_type_vars) == {
-        _T: int
-    }
+    assert get_specialized_type_var_map(Bin) == {_T: int}
 
 
-@pytest.mark.parametrize("include_type_vars", [True, False])
-def test_get_specialized_type_var_map_double_generic_subclass(include_type_vars: bool):
+def test_get_specialized_type_var_map_double_generic_subclass():
     @strawberry.type
     class Foo(Generic[_T]):
         ...
@@ -94,13 +83,10 @@ def test_get_specialized_type_var_map_double_generic_subclass(include_type_vars:
     class BinSubclass(Bin):
         ...
 
-    assert get_specialized_type_var_map(Bin, include_type_vars=include_type_vars) == {
-        _T: int
-    }
+    assert get_specialized_type_var_map(Bin) == {_T: int}
 
 
-@pytest.mark.parametrize("include_type_vars", [True, False])
-def test_get_specialized_type_var_map_multiple_inheritance(include_type_vars: bool):
+def test_get_specialized_type_var_map_multiple_inheritance():
     @strawberry.type
     class Foo(Generic[_T]):
         ...
@@ -117,16 +103,13 @@ def test_get_specialized_type_var_map_multiple_inheritance(include_type_vars: bo
     class Baz(Bin, Bar[str]):
         ...
 
-    assert get_specialized_type_var_map(Baz, include_type_vars=include_type_vars) == {
+    assert get_specialized_type_var_map(Baz) == {
         _T: int,
         _K: str,
     }
 
 
-@pytest.mark.parametrize("include_type_vars", [True, False])
-def test_get_specialized_type_var_map_multiple_inheritance_subclass(
-    include_type_vars: bool,
-):
+def test_get_specialized_type_var_map_multiple_inheritance_subclass():
     @strawberry.type
     class Foo(Generic[_T]):
         ...
@@ -147,9 +130,7 @@ def test_get_specialized_type_var_map_multiple_inheritance_subclass(
     class BazSubclass(Baz):
         ...
 
-    assert get_specialized_type_var_map(
-        BazSubclass, include_type_vars=include_type_vars
-    ) == {
+    assert get_specialized_type_var_map(BazSubclass) == {
         _T: int,
         _K: str,
     }

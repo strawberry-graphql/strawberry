@@ -119,10 +119,9 @@ class TypeDefinition(StrawberryType):
         if not self.is_generic:
             return False
 
-        type_var_map = get_specialized_type_var_map(self.origin, include_type_vars=True)
-        return type_var_map is None or not any(
-            isinstance(arg, TypeVar) for arg in type_var_map.values()
-        )
+        type_var_map = get_specialized_type_var_map(self.origin)
+
+        return not type_var_map and not getattr(self.origin, "__parameters__", None)
 
     @property
     def type_params(self) -> List[TypeVar]:
