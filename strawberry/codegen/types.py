@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Optional, Type, Union
+from typing import TYPE_CHECKING, List, Mapping, Optional, Type, Union
 
 if TYPE_CHECKING:
     from enum import EnumMeta
@@ -127,6 +127,11 @@ class GraphQLListValue:
 
 
 @dataclass
+class GraphQLObjectValue:
+    values: Mapping[str, GraphQLArgumentValue]
+
+
+@dataclass
 class GraphQLVariableReference:
     value: str
 
@@ -138,6 +143,7 @@ GraphQLArgumentValue = Union[
     GraphQLListValue,
     GraphQLEnumValue,
     GraphQLBoolValue,
+    GraphQLObjectValue,
 ]
 
 

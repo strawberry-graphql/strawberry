@@ -27,6 +27,7 @@ from graphql import (
     ListValueNode,
     NamedTypeNode,
     NonNullTypeNode,
+    ObjectValueNode,
     OperationDefinitionNode,
     StringValueNode,
     VariableNode,
@@ -61,6 +62,7 @@ from .types import (
     GraphQLList,
     GraphQLListValue,
     GraphQLObjectType,
+    GraphQLObjectValue,
     GraphQLOperation,
     GraphQLOptional,
     GraphQLScalar,
@@ -270,6 +272,14 @@ class QueryCodegen:
         if isinstance(value, BooleanValueNode):
             return GraphQLBoolValue(value.value)
 
+        if isinstance(value, ObjectValueNode):
+            return GraphQLObjectValue(
+                {
+                    field.name.value: self._convert_value(field.value)
+                    for field in value.fields
+                }
+            )
+
         raise ValueError(f"Unsupported type: {type(value)}")  # pragma: no cover
 
     def _convert_arguments(
@@ -460,7 +470,7 @@ class QueryCodegen:
         if selection.name.value == "__typename":
             return GraphQLField("__typename", None, GraphQLScalar("String", None))
         field = self.schema.get_field_for_type(selection.name.value, parent_type.name)
-        assert field
+        assert field, f"{parent_type.name},{selection.name.value}"
 
         field_type = self._get_field_type(field.type)
 

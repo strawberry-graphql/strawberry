@@ -16,6 +16,7 @@ from strawberry.codegen.types import (
     GraphQLList,
     GraphQLListValue,
     GraphQLObjectType,
+    GraphQLObjectValue,
     GraphQLOptional,
     GraphQLStringValue,
     GraphQLVariableReference,
@@ -123,6 +124,16 @@ class PrintOperationPlugin(QueryCodegenPlugin):
 
         if isinstance(value, GraphQLBoolValue):
             return str(value.value).lower()
+
+        if isinstance(value, GraphQLObjectValue):
+            return (
+                "{"
+                + ", ".join(
+                    f"{name}: {self._print_argument_value(v)}"
+                    for name, v in value.values.items()
+                )
+                + "}"
+            )
 
         raise ValueError(f"not supported: {type(value)}")  # pragma: no cover
 
