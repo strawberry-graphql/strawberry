@@ -108,7 +108,7 @@ class BaseGraphQLTransportWSHandler(ABC):
 
     async def handle_connection_init_timeout(self) -> None:
         task = asyncio.current_task()
-        assert task
+        assert task is not None  # for typecheckers
         try:
             delay = self.connection_init_wait_timeout.total_seconds()
             await asyncio.sleep(delay=delay)
@@ -294,18 +294,20 @@ class BaseGraphQLTransportWSHandler(ABC):
         The operation task's top level method. Cleans-up and de-registers the operation
         once it is done.
         """
-        # TODO: Handle errors in this method using self.handle_task_exception()
+        task = asyncio.current_task()
+        assert task is not None  # for type checkers
         try:
             await self.handle_operation(operation)
-        except BaseException:  # pragma: no cover
-            # cleanup in case of something really unexpected
-            if operation.id in self.operations:
-                del self.operations[operation.id]
+        except asyncio.CancelledError:
             raise
+        except Exception as error:
+            await self.handle_task_exception(error)
+            # cleanup in case of something really unexpected
         finally:
             # add this task to a list to be reaped later
-            task = asyncio.current_task()
-            assert task is not None
+            if operation.id in self.operations:
+                del self.operations[operation.id]
+            # TODO: Stop collecting background tasks, not necessary.
             self.completed_tasks.append(task)
 
     async def handle_operation(
