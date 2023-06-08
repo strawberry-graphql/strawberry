@@ -104,6 +104,8 @@ def get_specialized_type_var_map(cls: type, *, include_type_vars: bool = False):
 
     type_var_map = {}
 
+    orig_bases = [b for b in orig_bases if hasattr(b, "_type_definition")]
+
     for base in orig_bases:
         # Recursively get type var map from base classes
         base_type_var_map = get_specialized_type_var_map(base)
