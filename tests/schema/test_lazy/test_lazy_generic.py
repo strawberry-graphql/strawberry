@@ -171,16 +171,12 @@ def test_lazy_with_already_specialized_generic():
     expected_schema = textwrap.dedent(
         """
         type Query {
-          normalEdges: [TypeCOptionalEdge!]!
-          lazyEdges: [TypeCOptionalEdge!]!
+          typeD1: TypeD!
+          typeD: TypeD!
         }
 
-        type TypeC {
+        type TypeD {
           name: String!
-        }
-
-        type TypeCOptionalEdge {
-          node: TypeC
         }
         """
     ).strip()
