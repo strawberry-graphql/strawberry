@@ -9,8 +9,8 @@ class addBlogPostsResultAddBlogPosts:
 class addBlogPostsResult:
     add_blog_posts: addBlogPostsResultAddBlogPosts
 
-class addBlogPostsVariables:
-    input: List[BlogPostInput]
-
 class BlogPostInput:
     title: str
+
+class addBlogPostsVariables:
+    input: List[BlogPostInput]

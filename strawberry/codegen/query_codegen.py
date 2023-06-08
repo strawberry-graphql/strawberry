@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import partial
+from functools import cmp_to_key, lru_cache, partial
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -128,14 +128,63 @@ class QueryCodegenPlugin:
         return []
 
 
+def _get_deps(t: GraphQLType) -> Iterable[GraphQLType]:
+    """Get all the types that `t` depends on.
+
+    To keep things simple, `t` depends on itself.
+    """
+    yield t
+
+    if isinstance(t, GraphQLObjectType):
+        for fld in t.fields:
+            yield from _get_deps(fld.type)
+
+    elif isinstance(t, (GraphQLEnum, GraphQLScalar)):
+        # enums and scalars have no dependent types
+        pass
+
+    elif isinstance(t, (GraphQLOptional, GraphQLList)):
+        yield from _get_deps(t.of_type)
+
+    elif isinstance(t, GraphQLUnion):
+        for gql_type in t.types:
+            yield from _get_deps(gql_type)
+    else:
+        # Want to make sure that all types are covered.
+        raise ValueError(f"Unknown GraphQLType: {t}")
+
+
 class QueryCodegenPluginManager:
     def __init__(self, plugins: List[QueryCodegenPlugin]) -> None:
         self.plugins = plugins
+
+    def _sort_types(self, types: List[GraphQLType]) -> List[GraphQLType]:
+        """Sort the types.
+
+        t1 < t2 iff t2 has a dependency on t1.
+        t1 == t2 iff neither type has a dependency on the other.
+        """
+
+        def type_cmp(t1: GraphQLType, t2: GraphQLType) -> int:
+            """Compare the types."""
+            if t1 is t2:
+                return 0
+
+            if t1 in _get_deps(t2):
+                return -1
+            elif t2 in _get_deps(t1):
+                return 1
+            else:
+                return 0
+
+        return sorted(types, key=cmp_to_key(type_cmp))
 
     def generate_code(
         self, types: List[GraphQLType], operation: GraphQLOperation
     ) -> CodegenResult:
         result = CodegenResult(files=[])
+
+        types = self._sort_types(types)
 
         for plugin in self.plugins:
             files = plugin.generate_code(types, operation)
