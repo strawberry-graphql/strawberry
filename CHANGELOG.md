@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.183.6 - 2023-06-09
+--------------------
+
+This release fixes a bug where codegen would fail on mutations that have object arguments in the query.
+
+Additionally, it does a topological sort of the types before passing it to the plugins to ensure that
+dependent types are defined after their dependencies.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2831](https://github.com/strawberry-graphql/strawberry/pull/2831/)
+
+
 0.183.5 - 2023-06-08
 --------------------
 
