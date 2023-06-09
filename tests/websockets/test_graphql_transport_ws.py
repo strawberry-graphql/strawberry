@@ -18,6 +18,9 @@ import pytest_asyncio
 from pytest_mock import MockerFixture
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
+from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
+    BaseGraphQLTransportWSHandler,
+)
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
@@ -1165,3 +1168,37 @@ async def test_long_custom_context(
                 id="sub1", payload={"data": {"valueFromContext": "slow"}}
             ).as_dict()
         )
+
+
+async def test_task_error_handler(ws: WebSocketClient):
+    """
+    Test that error handling works
+    """
+    # can't use a simple Event here, because the handler may run
+    # on a different thread
+    wakeup = False
+
+    # a replacement method which causes an error in th eTask
+    async def op(*args: Any, **kwargs: Any):
+        nonlocal wakeup
+        wakeup = True
+        raise ZeroDivisionError("test")
+
+    with patch.object(BaseGraphQLTransportWSHandler, "task_logger") as logger:
+        with patch.object(BaseGraphQLTransportWSHandler, "handle_operation", op):
+            # send any old subscription request.  It will raise an error
+            await ws.send_json(
+                SubscribeMessage(
+                    id="sub1",
+                    payload=SubscribeMessagePayload(
+                        query="subscription { conditionalFail(sleep:0) }"
+                    ),
+                ).as_dict()
+            )
+
+            # wait for the error to be logged
+            while not wakeup:
+                await asyncio.sleep(0.01)
+            # and another little bit, for the thread to finish
+            await asyncio.sleep(0.01)
+            assert logger.exception.called

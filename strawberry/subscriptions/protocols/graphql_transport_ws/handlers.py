@@ -301,13 +301,14 @@ class BaseGraphQLTransportWSHandler(ABC):
         except asyncio.CancelledError:
             raise
         except Exception as error:
+            # Log any unhandled exceptions in the operation task
             await self.handle_task_exception(error)
-            # cleanup in case of something really unexpected
         finally:
-            # add this task to a list to be reaped later
+            # Clenaup.  Remove the operation from the list of active operations
             if operation.id in self.operations:
                 del self.operations[operation.id]
             # TODO: Stop collecting background tasks, not necessary.
+            # Add this task to a list to be reaped later
             self.completed_tasks.append(task)
 
     async def handle_operation(
