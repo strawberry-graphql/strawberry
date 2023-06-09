@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import cmp_to_key, lru_cache, partial
+from functools import cmp_to_key, partial
 from typing import (
     TYPE_CHECKING,
     Callable,
