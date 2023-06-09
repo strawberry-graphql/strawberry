@@ -1,19 +1,19 @@
-type addBlogPostsResultAddBlogPostsPosts = {
+type AddBlogPostsResultAddBlogPostsPosts = {
     title: string
 }
 
-type addBlogPostsResultAddBlogPosts = {
-    posts: addBlogPostsResultAddBlogPostsPosts[]
+type AddBlogPostsResultAddBlogPosts = {
+    posts: AddBlogPostsResultAddBlogPostsPosts[]
 }
 
-type addBlogPostsResult = {
-    add_blog_posts: addBlogPostsResultAddBlogPosts
+type AddBlogPostsResult = {
+    add_blog_posts: AddBlogPostsResultAddBlogPosts
 }
 
 type BlogPostInput = {
     title: string
 }
 
-type addBlogPostsVariables = {
+type AddBlogPostsVariables = {
     input: BlogPostInput[]
 }

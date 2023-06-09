@@ -1,4 +1,4 @@
-mutation addBlogPosts($input: [BlogPostInput!]!) {
+mutation AddBlogPosts($input: [BlogPostInput!]!) {
   addBlogPosts(input: {posts: $input}) {
     posts {
       title

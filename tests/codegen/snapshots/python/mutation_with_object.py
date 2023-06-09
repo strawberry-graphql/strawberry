@@ -1,16 +1,16 @@
 from typing import List
 
-class addBlogPostsResultAddBlogPostsPosts:
+class AddBlogPostsResultAddBlogPostsPosts:
     title: str
 
-class addBlogPostsResultAddBlogPosts:
-    posts: List[addBlogPostsResultAddBlogPostsPosts]
+class AddBlogPostsResultAddBlogPosts:
+    posts: List[AddBlogPostsResultAddBlogPostsPosts]
 
-class addBlogPostsResult:
-    add_blog_posts: addBlogPostsResultAddBlogPosts
+class AddBlogPostsResult:
+    add_blog_posts: AddBlogPostsResultAddBlogPosts
 
 class BlogPostInput:
     title: str
 
-class addBlogPostsVariables:
+class AddBlogPostsVariables:
     input: List[BlogPostInput]
