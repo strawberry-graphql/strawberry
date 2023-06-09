@@ -110,11 +110,34 @@ class Query:
         return p_or_a
 
 
+@strawberry.input
+class BlogPostInput:
+    title: str
+
+
+@strawberry.input
+class AddBlogPostsInput:
+    posts: List[BlogPostInput]
+
+
+@strawberry.type
+class AddBlogPostsOutput:
+    posts: List[BlogPost]
+
+
 @strawberry.type
 class Mutation:
     @strawberry.mutation
     def add_book(self, name: str) -> BlogPost:
         return BlogPost(id="c6f1c3ce-5249-4570-9182-c2836b836d14", name=name)
+
+    @strawberry.mutation
+    def add_blog_posts(self, input: AddBlogPostsInput) -> AddBlogPostsOutput:
+        output = AddBlogPostsOutput()
+        output.posts = []
+        for i, title in enumerate(input.posts):
+            output.posts.append(BlogPost(str(i), title))
+        return output
 
 
 @pytest.fixture
