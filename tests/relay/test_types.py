@@ -3,6 +3,7 @@ from typing_extensions import assert_type
 
 import pytest
 
+import strawberry
 from strawberry import relay
 from strawberry.types.info import Info
 
@@ -148,3 +149,13 @@ async def test_global_id_resolve_node_ensure_type_wrong_type():
     gid = relay.GlobalID(type_name="FruitAsync", node_id="1")
     with pytest.raises(TypeError):
         fruit = await gid.resolve_node(fake_info, ensure_type=Foo)
+
+
+def test_not_raises_error_on_missing_node_id_annotation_but_resolve_id():
+    @strawberry.type
+    class Fruit(relay.Node):
+        code: str
+
+        @classmethod
+        def resolve_id(cls, root) -> str:
+            return "test"

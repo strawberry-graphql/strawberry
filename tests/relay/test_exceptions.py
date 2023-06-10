@@ -26,16 +26,6 @@ def test_raises_error_on_missing_node_id_annotation():
         code: str
 
 
-def test_not_raises_error_on_missing_node_id_annotation_but_resolve_id():
-    @strawberry.type
-    class Fruit(relay.Node):
-        code: str
-
-        @classmethod
-        def resolve_id(cls, root) -> str:
-            return "test"
-
-
 @pytest.mark.raises_strawberry_exception(
     NodeIDAnnotationError,
     match='More than one field annotated with `NodeID` found in "Fruit"',
