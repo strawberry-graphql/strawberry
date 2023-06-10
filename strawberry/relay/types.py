@@ -376,7 +376,10 @@ class Node:
         if len(candidates) == 0:
             # resolve_id is overwritten, allow unset _id_attr
             for mro_cls in cls.__mro__:
-                if mro_cls is not Node and "resolve_id" in cls.__dict__:
+                # stop when Node is reached
+                if mro_cls is Node:
+                    break
+                if "resolve_id" in cls.__dict__:
                     return
             raise NodeIDAnnotationError(
                 f'No field annotated with `nodeid` found in "{cls.__name__}"', cls
