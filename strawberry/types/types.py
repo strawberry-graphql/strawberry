@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import dataclasses
-import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -31,20 +30,20 @@ if TYPE_CHECKING:
 
 
 @dataclasses.dataclass(eq=False)
-class TypeDefinition(StrawberryType):
+class StrawberryObjectType(StrawberryType):
     name: str
     is_input: bool
     is_interface: bool
     origin: Type[Any]
     description: Optional[str]
-    interfaces: List[TypeDefinition]
+    interfaces: List[StrawberryObjectType]
     extend: bool
     directives: Optional[Sequence[object]]
     is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
 
     _fields: List[StrawberryField]
 
-    concrete_of: Optional[TypeDefinition] = None
+    concrete_of: Optional[StrawberryObjectType] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
     type_var_map: Mapping[TypeVar, Union[StrawberryType, type]] = dataclasses.field(
         default_factory=dict
@@ -80,7 +79,7 @@ class TypeDefinition(StrawberryType):
         # TODO: Logic unnecessary with StrawberryObject
         fields = [field.copy_with(type_var_map) for field in self.fields]
 
-        new_type_definition = TypeDefinition(
+        new_type_definition = StrawberryObjectType(
             name=self.name,
             is_input=self.is_input,
             origin=self.origin,
@@ -178,7 +177,7 @@ class TypeDefinition(StrawberryType):
 
 
 class WithTypeDefinition(Protocol):
-    __strawberry_object__: TypeDefinition
+    __strawberry_object__: StrawberryObjectType
 
 
 def has_type_definition(klass: Any) -> TypeGuard[Type[WithTypeDefinition]]:
@@ -195,9 +194,5 @@ def has_type_definition(klass: Any) -> TypeGuard[Type[WithTypeDefinition]]:
     return False
 
 
-def _type_definition_deprecation_msg(ret: TypeDefinition) -> TypeDefinition:
-    warnings.warn(
-        "`_type_definition` is deprecated. Use `__strawberry_object__` instead.",
-        stacklevel=2,
-    )
-    return ret
+# TODO: remove when deprecating _type_definition
+TypeDefinition = StrawberryObjectType

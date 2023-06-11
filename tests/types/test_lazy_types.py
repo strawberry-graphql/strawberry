@@ -8,7 +8,7 @@ from strawberry.annotation import StrawberryAnnotation
 from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.types.fields.resolver import StrawberryResolver
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import StrawberryObjectType
 from strawberry.union import StrawberryUnion, union
 
 
@@ -107,7 +107,7 @@ def test_lazy_type_generic():
     # TODO: Simplify with StrawberryObject
     assert isinstance(resolved, type)
     assert hasattr(resolved, "__strawberry_object__")
-    assert isinstance(resolved.__strawberry_object__, TypeDefinition)
+    assert isinstance(resolved.__strawberry_object__, StrawberryObjectType)
 
     items_field: StrawberryField = resolved.__strawberry_object__.fields[0]
     assert items_field.type is LazierType
