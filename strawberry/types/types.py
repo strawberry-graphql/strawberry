@@ -13,10 +13,15 @@ from typing import (
     TypeVar,
     Union,
 )
-from typing_extensions import Self
+from typing_extensions import Self, TypeGuard
 
 from strawberry.type import StrawberryType, StrawberryTypeVar
-from strawberry.utils.typing import is_generic as is_type_generic
+from strawberry.utils.typing import (
+    is_concrete_generic,
+)
+from strawberry.utils.typing import (
+    is_generic as is_type_generic,
+)
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
@@ -167,3 +172,23 @@ class TypeDefinition(StrawberryType):
 
         # All field mappings succeeded. This is a match
         return True
+
+
+if TYPE_CHECKING:
+
+    class WithTypeDefinition:
+        __strawberry_definition__: TypeDefinition
+
+
+def has_type_definition(klass: Type) -> TypeGuard[Type[WithTypeDefinition]]:
+    if hasattr(klass, "__strawberry_definition__"):
+        return True
+    # Generics remove dunder members here
+    # https://github.com/python/cpython/blob/3a314f7c3df0dd7c37da7d12b827f169ee60e1ea/Lib/typing.py#L1104
+    if is_concrete_generic(klass):
+        concrete = klass.__args__[0]
+        if hasattr(concrete, "__strawberry_definition__"):
+            klass.__strawberry_definition__ = concrete.__strawberry_definition__
+            return True
+
+    return False

@@ -23,7 +23,7 @@ from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import TypeDefinition, has_type_definition
 from strawberry.unset import UNSET
 from strawberry.utils.typing import (
     eval_type,
@@ -124,11 +124,8 @@ class StrawberryAnnotation:
         self.namespace = module.__dict__
 
     def create_concrete_type(self, evaled_type: type) -> type:
-        if _is_object_type(evaled_type):
-            type_definition: TypeDefinition
-            type_definition = evaled_type.__strawberry_definition__  # type: ignore
-            return type_definition.resolve_generic(evaled_type)
-
+        if has_type_definition(evaled_type):
+            return evaled_type.__strawberry_definition__.resolve_generic(evaled_type)
         raise ValueError(f"Not supported {evaled_type}")
 
     def create_enum(self, evaled_type: Any) -> EnumDefinition:
@@ -205,8 +202,9 @@ class StrawberryAnnotation:
 
         return False
 
-    @classmethod
-    def _is_lazy_type(cls, annotation: Any) -> bool:
+    def _is_lazy_type(self, annotation: Any) -> bool:
+        if self._is_generic(annotation):
+            annotation = annotation.__args__[0]
         return isinstance(annotation, LazyType)
 
     @classmethod
@@ -242,7 +240,7 @@ class StrawberryAnnotation:
         # TODO: add support for StrawberryInterface when implemented
         elif isinstance(evaled_type, StrawberryList):
             return True
-        elif _is_object_type(evaled_type):  # TODO: Replace with StrawberryObject
+        elif has_type_definition(evaled_type):  # TODO: Replace with StrawberryObject
             return True
         elif isinstance(evaled_type, TypeDefinition):
             return True
@@ -292,11 +290,7 @@ class StrawberryAnnotation:
 
 
 def _is_input_type(type_: Any) -> bool:
-    if not _is_object_type(type_):
+    if not has_type_definition(type_):
         return False
 
     return type_.__strawberry_definition__.is_input
-
-
-def _is_object_type(type_: Any) -> bool:
-    return hasattr(type_, "__strawberry_definition__")

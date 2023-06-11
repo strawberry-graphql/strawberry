@@ -26,6 +26,7 @@ from strawberry.union import StrawberryUnion
 from strawberry.utils.cached_property import cached_property
 
 from .types.fields.resolver import StrawberryResolver
+from .types.types import has_type_definition
 
 if TYPE_CHECKING:
     import builtins
@@ -59,7 +60,7 @@ def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
         return resolver_type.is_generic
 
     # solves the Generic subclass case
-    if hasattr(resolver_type, "__strawberry_definition__"):
+    if has_type_definition(resolver_type):
         return resolver_type.__strawberry_definition__.is_generic
 
     return False
