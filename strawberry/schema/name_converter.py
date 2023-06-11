@@ -9,7 +9,7 @@ from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.lazy_type import LazyType
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryList, StrawberryOptional
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import TypeDefinition, has_type_definition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 from strawberry.utils.typing import eval_type
@@ -152,7 +152,7 @@ class NameConverter:
             strawberry_type = type_._scalar_definition
 
             name = strawberry_type.name
-        elif hasattr(type_, "__strawberry_definition__"):
+        elif has_type_definition(type_):
             strawberry_type = type_.__strawberry_definition__
 
             if (
