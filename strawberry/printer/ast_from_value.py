@@ -119,7 +119,6 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> Optional[ValueNode]:
     # Populate the fields of the input object by creating ASTs from each value in the
     # Python dict according to the fields in the input type.
     if is_input_object_type(type_):
-        # TODO: is this the right place?
         if has_strawberry_object(value):
             value = strawberry.asdict(value)
 
