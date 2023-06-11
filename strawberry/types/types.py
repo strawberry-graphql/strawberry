@@ -100,9 +100,7 @@ class TypeDefinition(StrawberryType):
             (self.origin,),
             {"__strawberry_definition__": new_type_definition},
         )
-        new_type._type_definition = property(
-            lambda: _type_definition_deprecation_msg(new_type_definition)
-        )
+        new_type._type_definition = new_type_definition
         new_type_definition.origin = new_type
 
         return new_type
