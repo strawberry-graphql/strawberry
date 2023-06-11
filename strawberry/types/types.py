@@ -186,7 +186,7 @@ def has_type_definition(klass: Type) -> TypeGuard[Type[WithTypeDefinition]]:
     # Generics remove dunder members here
     # https://github.com/python/cpython/blob/3a314f7c3df0dd7c37da7d12b827f169ee60e1ea/Lib/typing.py#L1104
     if is_concrete_generic(klass):
-        concrete = klass.__args__[0]
+        concrete = klass.__origin__
         if hasattr(concrete, "__strawberry_definition__"):
             klass.__strawberry_definition__ = concrete.__strawberry_definition__
             return True

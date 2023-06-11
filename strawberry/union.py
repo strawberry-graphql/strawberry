@@ -40,7 +40,6 @@ if TYPE_CHECKING:
     )
 
     from strawberry.schema.types.concrete_type import TypeMap
-    from strawberry.types.types import TypeDefinition
 
 
 class StrawberryUnion(StrawberryType):
@@ -94,7 +93,7 @@ class StrawberryUnion(StrawberryType):
             if isinstance(type_, LazyType):
                 type_ = cast("StrawberryType", type_.resolve_type())
 
-            if hasattr(type_, "__strawberry_definition__"):
+            if self.has_type_definition(type_):
                 parameters = getattr(type_, "__parameters__", None)
 
                 return list(parameters) if parameters else []
@@ -110,7 +109,7 @@ class StrawberryUnion(StrawberryType):
     @property
     def is_generic(self) -> bool:
         def _is_generic(type_: object) -> bool:
-            if hasattr(type_, "__strawberry_definition__"):
+            if self.has_type_definition(type_):
                 type_ = type_.__strawberry_definition__
 
             if isinstance(type_, StrawberryType):
@@ -130,8 +129,8 @@ class StrawberryUnion(StrawberryType):
         for type_ in self.types:
             new_type: Union[StrawberryType, type]
 
-            if hasattr(type_, "__strawberry_definition__"):
-                type_definition: TypeDefinition = type_.__strawberry_definition__
+            if self.has_type_definition(type_):
+                type_definition = type_.__strawberry_definition__
 
                 if type_definition.is_generic:
                     new_type = type_definition.copy_with(type_var_map)
@@ -165,7 +164,7 @@ class StrawberryUnion(StrawberryType):
 
             # If the type given is not an Object type, try resolving using `is_type_of`
             # defined on the union's inner types
-            if not hasattr(root, "__strawberry_definition__"):
+            if not self.has_type_definition(root):
                 for inner_type in type_.types:
                     if inner_type.is_type_of is not None and inner_type.is_type_of(
                         root, info

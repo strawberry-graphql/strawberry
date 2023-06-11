@@ -202,9 +202,8 @@ class StrawberryAnnotation:
 
         return False
 
-    def _is_lazy_type(self, annotation: Any) -> bool:
-        if self._is_generic(annotation):
-            annotation = annotation.__args__[0]
+    @classmethod
+    def _is_lazy_type(cls, annotation: Any) -> bool:
         return isinstance(annotation, LazyType)
 
     @classmethod

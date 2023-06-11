@@ -11,6 +11,8 @@ from typing import (
 )
 from typing_extensions import get_args
 
+from strawberry.types.types import has_type_definition
+
 
 def in_async_context() -> bool:
     # Based on the way django checks if there's an event loop in the current thread
@@ -82,7 +84,7 @@ def get_specialized_type_var_map(cls: type) -> Optional[Dict[TypeVar, type]]:
 
     # only get type vars for base generics (ie. Generic[T]) and for strawberry types
 
-    orig_bases = [b for b in orig_bases if hasattr(b, "__strawberry_definition__")]
+    orig_bases = [b for b in orig_bases if has_type_definition(b)]
 
     for base in orig_bases:
         # Recursively get type var map from base classes

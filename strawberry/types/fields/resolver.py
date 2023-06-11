@@ -28,6 +28,7 @@ from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import MissingArgumentsAnnotationsError
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
+from strawberry.types.types import has_type_definition
 from strawberry.utils.cached_property import cached_property
 from strawberry.utils.typing import eval_type
 
@@ -295,7 +296,7 @@ class StrawberryResolver(Generic[T]):
         if self.type:
             if isinstance(self.type, StrawberryType):
                 type_override = self.type.copy_with(type_var_map)
-            elif hasattr(self.type, "__strawberry_definition__"):
+            elif has_type_definition(self.type):
                 type_override = self.type.__strawberry_definition__.copy_with(
                     type_var_map,
                 )

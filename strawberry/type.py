@@ -1,13 +1,31 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, List, Mapping, TypeVar, Union
+from functools import cached_property
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    List,
+    Mapping,
+    Type,
+    TypeGuard,
+    TypeVar,
+    Union,
+)
 
 if TYPE_CHECKING:
-    from .types.types import TypeDefinition
+    from strawberry.types.types import WithTypeDefinition
 
 
 class StrawberryType(ABC):
+    @cached_property
+    def has_type_definition(
+        self,
+    ) -> Callable[[Type], TypeGuard[Type[WithTypeDefinition]]]:
+        from .types.types import has_type_definition
+
+        return has_type_definition
+
     @property
     def type_params(self) -> List[TypeVar]:
         return []
@@ -67,7 +85,7 @@ class StrawberryContainer(StrawberryType):
 
     @property
     def type_params(self) -> List[TypeVar]:
-        if hasattr(self.of_type, "__strawberry_definition__"):
+        if self.has_type_definition(self.of_type):
             parameters = getattr(self.of_type, "__parameters__", None)
 
             return list(parameters) if parameters else []
@@ -84,8 +102,8 @@ class StrawberryContainer(StrawberryType):
         of_type_copy: Union[StrawberryType, type] = self.of_type
 
         # TODO: Obsolete with StrawberryObject
-        if hasattr(self.of_type, "__strawberry_definition__"):
-            type_definition: TypeDefinition = self.of_type.__strawberry_definition__
+        if self.has_type_definition(self.of_type):
+            type_definition = self.of_type.__strawberry_definition__
 
             if type_definition.is_generic:
                 of_type_copy = type_definition.copy_with(type_var_map)
@@ -99,7 +117,7 @@ class StrawberryContainer(StrawberryType):
     def is_generic(self) -> bool:
         # TODO: Obsolete with StrawberryObject
         type_ = self.of_type
-        if hasattr(self.of_type, "__strawberry_definition__"):
+        if self.has_type_definition(self.of_type):
             type_ = self.of_type.__strawberry_definition__
 
         if isinstance(type_, StrawberryType):

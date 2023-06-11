@@ -36,7 +36,6 @@ if TYPE_CHECKING:
     from strawberry.extensions.field_extension import FieldExtension
     from strawberry.types.info import Info
 
-    from .object_type import TypeDefinition
     from .permission import BasePermission
 
 T = TypeVar("T")
@@ -155,8 +154,8 @@ class StrawberryField(dataclasses.Field):
                     resolver,
                     argument,
                 )
-            elif getattr(argument.type, "__strawberry_definition__", False):
-                if argument.type.__strawberry_definition__.is_interface:  # type: ignore
+            elif has_type_definition(argument.type):
+                if argument.type.__strawberry_definition__.is_interface:
                     raise InvalidArgumentTypeError(
                         resolver,
                         argument,
@@ -289,7 +288,7 @@ class StrawberryField(dataclasses.Field):
     # TODO: add this to arguments (and/or move it to StrawberryType)
     @property
     def type_params(self) -> List[TypeVar]:
-        if hasattr(self.type, "__strawberry_definition__"):
+        if has_type_definition():
             parameters = getattr(self.type, "__parameters__", None)
 
             return list(parameters) if parameters else []
@@ -307,8 +306,8 @@ class StrawberryField(dataclasses.Field):
 
         # TODO: Remove with creation of StrawberryObject. Will act same as other
         #       StrawberryTypes
-        if hasattr(self.type, "__strawberry_definition__"):
-            type_definition: TypeDefinition = self.type.__strawberry_definition__
+        if has_type_definition(self.type):
+            type_definition = self.type.__strawberry_definition__
 
             if type_definition.is_generic:
                 type_ = type_definition
