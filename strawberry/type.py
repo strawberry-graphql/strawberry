@@ -8,12 +8,13 @@ from typing import (
     List,
     Mapping,
     Type,
-    TypeGuard,
     TypeVar,
     Union,
 )
 
 if TYPE_CHECKING:
+    from typing_extensions import TypeGuard
+
     from strawberry.types.types import WithTypeDefinition
 
 
