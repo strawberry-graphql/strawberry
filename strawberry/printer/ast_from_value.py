@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import dataclasses
 import re
 from math import isfinite
 from typing import TYPE_CHECKING, Any, Mapping, Optional, cast
@@ -27,6 +26,7 @@ from graphql.type import (
     is_non_null_type,
 )
 
+import strawberry
 from strawberry.types.types import has_strawberry_object
 
 if TYPE_CHECKING:
@@ -120,8 +120,8 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> Optional[ValueNode]:
     # Python dict according to the fields in the input type.
     if is_input_object_type(type_):
         # TODO: is this the right place?
-        if has_strawberry_object(type_):
-            value = dataclasses.asdict(value)
+        if has_strawberry_object(value):
+            value = strawberry.asdict(value)
 
         if value is None or not isinstance(value, Mapping):
             return None
