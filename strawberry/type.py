@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -12,6 +11,8 @@ from typing import (
     TypeVar,
     Union,
 )
+
+from strawberry.utils.cached_property import cached_property
 
 if TYPE_CHECKING:
     from typing_extensions import TypeGuard
