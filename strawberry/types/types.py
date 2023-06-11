@@ -14,7 +14,7 @@ from typing import (
     TypeVar,
     Union,
 )
-from typing_extensions import Self, TypeGuard
+from typing_extensions import Protocol, Self, TypeGuard
 
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.utils.typing import (
@@ -177,10 +177,8 @@ class TypeDefinition(StrawberryType):
         return True
 
 
-if TYPE_CHECKING:
-
-    class WithTypeDefinition:
-        __strawberry_definition__: TypeDefinition
+class WithTypeDefinition(Protocol):
+    __strawberry_definition__: TypeDefinition
 
 
 def has_type_definition(klass: Any) -> TypeGuard[Type[WithTypeDefinition]]:

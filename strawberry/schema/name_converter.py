@@ -159,7 +159,7 @@ class NameConverter:
                 strawberry_type.is_generic
                 and not strawberry_type.is_specialized_generic
             ):
-                types = type_.__args__
+                types = type_.__args__  # type: ignore
                 name = self.from_generic(strawberry_type, types)
             elif (
                 strawberry_type.concrete_of
