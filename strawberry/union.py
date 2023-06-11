@@ -30,6 +30,7 @@ from strawberry.exceptions import (
 )
 from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryOptional, StrawberryType
+from strawberry.types.types import has_type_definition
 
 if TYPE_CHECKING:
     from graphql import (
@@ -213,7 +214,7 @@ class StrawberryUnion(StrawberryType):
     @staticmethod
     def is_valid_union_type(type_: object) -> bool:
         # Usual case: Union made of @strawberry.types
-        if hasattr(type_, "__strawberry_definition__"):
+        if has_type_definition(type_):
             return True
 
         # Can't confidently assert that these types are valid/invalid within Unions
