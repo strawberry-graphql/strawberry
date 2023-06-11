@@ -102,14 +102,14 @@ class Schema(BaseSchema):
         self.directives = directives
         self.schema_directives = list(schema_directives)
 
-        query_type = self.schema_converter.from_object(query.__strawberry_definition__)
+        query_type = self.schema_converter.from_object(query.__strawberry_object__)
         mutation_type = (
-            self.schema_converter.from_object(mutation.__strawberry_definition__)
+            self.schema_converter.from_object(mutation.__strawberry_object__)
             if mutation
             else None
         )
         subscription_type = (
-            self.schema_converter.from_object(subscription.__strawberry_definition__)
+            self.schema_converter.from_object(subscription.__strawberry_object__)
             if subscription
             else None
         )
@@ -126,7 +126,7 @@ class Schema(BaseSchema):
                 )
             else:
                 if has_type_definition(type_):
-                    if type_.__strawberry_definition__.is_generic:
+                    if type_.__strawberry_object__.is_generic:
                         type_ = StrawberryAnnotation(type_).resolve()  # noqa: PLW2901
                 graphql_type = self.schema_converter.from_maybe_optional(type_)
                 if isinstance(graphql_type, GraphQLNonNull):

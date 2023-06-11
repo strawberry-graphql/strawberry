@@ -35,7 +35,7 @@ def _get_interfaces(cls: Type[Any]) -> List[TypeDefinition]:
     interfaces: List[TypeDefinition] = []
     for base in cls.__mro__[1:]:  # Exclude current class
         type_definition = cast(
-            Optional[TypeDefinition], getattr(base, "__strawberry_definition__", None)
+            Optional[TypeDefinition], getattr(base, "__strawberry_object__", None)
         )
         if type_definition and type_definition.is_interface:
             interfaces.append(type_definition)
@@ -139,7 +139,7 @@ def _process_type(
     fields = _get_fields(cls)
     is_type_of = getattr(cls, "is_type_of", None)
 
-    cls.__strawberry_definition__ = TypeDefinition(
+    cls.__strawberry_object__ = TypeDefinition(
         name=name,
         is_input=is_input,
         is_interface=is_interface,
@@ -151,7 +151,7 @@ def _process_type(
         _fields=fields,
         is_type_of=is_type_of,
     )
-    cls._type_definition = cls.__strawberry_definition__
+    cls._type_definition = cls.__strawberry_object__
 
     # dataclasses removes attributes from the class here:
     # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880

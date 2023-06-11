@@ -234,9 +234,7 @@ def test_duplicated_interface_in_multi_inheritance():
     class Query:
         my_type: MyType
 
-    type_definition = cast(
-        TypeDefinition, MyType.__strawberry_definition__
-    )  # type: ignore
+    type_definition = cast(TypeDefinition, MyType.__strawberry_object__)  # type: ignore
     origins = [i.origin for i in type_definition.interfaces]
     assert origins == [InterfaceA, InterfaceB, Base]
 

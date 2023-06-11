@@ -98,7 +98,7 @@ class TypeDefinition(StrawberryType):
         new_type = type(
             new_type_definition.name,
             (self.origin,),
-            {"__strawberry_definition__": new_type_definition},
+            {"__strawberry_object__": new_type_definition},
         )
         # alias for backward compat
         new_type._type_definition = new_type_definition  # type: ignore
@@ -139,7 +139,7 @@ class TypeDefinition(StrawberryType):
         if isinstance(root, dict):
             raise NotImplementedError
 
-        type_definition = root.__strawberry_definition__  # type: ignore
+        type_definition = root.__strawberry_object__  # type: ignore
 
         if type_definition is self:
             # No generics involved. Exact type match
@@ -178,18 +178,18 @@ class TypeDefinition(StrawberryType):
 
 
 class WithTypeDefinition(Protocol):
-    __strawberry_definition__: TypeDefinition
+    __strawberry_object__: TypeDefinition
 
 
 def has_type_definition(klass: Any) -> TypeGuard[Type[WithTypeDefinition]]:
-    if hasattr(klass, "__strawberry_definition__"):
+    if hasattr(klass, "__strawberry_object__"):
         return True
     # Generics remove dunder members here
     # https://github.com/python/cpython/blob/3a314f7c3df0dd7c37da7d12b827f169ee60e1ea/Lib/typing.py#L1104
     if is_concrete_generic(klass):
         concrete = klass.__origin__
-        if hasattr(concrete, "__strawberry_definition__"):
-            klass.__strawberry_definition__ = concrete.__strawberry_definition__
+        if hasattr(concrete, "__strawberry_object__"):
+            klass.__strawberry_object__ = concrete.__strawberry_object__
             return True
 
     return False
@@ -197,7 +197,7 @@ def has_type_definition(klass: Any) -> TypeGuard[Type[WithTypeDefinition]]:
 
 def _type_definition_deprecation_msg(ret: TypeDefinition) -> TypeDefinition:
     warnings.warn(
-        "`_type_definition` is deprecated. Use `__strawberry_definition__` instead.",
+        "`_type_definition` is deprecated. Use `__strawberry_object__` instead.",
         stacklevel=2,
     )
     return ret

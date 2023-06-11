@@ -54,7 +54,7 @@ def to_base64(type_: Union[str, type, TypeDefinition], node_id: Any) -> str:
         elif isinstance(type_, TypeDefinition):
             type_name = type_.name
         elif isinstance(type_, type):
-            type_name = type_.__strawberry_definition__.name  # type:ignore
+            type_name = type_.__strawberry_object__.name  # type:ignore
         else:  # pragma: no cover
             assert_never(type_)
     except Exception as e:

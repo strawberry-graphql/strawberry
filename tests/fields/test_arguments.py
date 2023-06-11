@@ -20,7 +20,7 @@ def test_basic_arguments():
         def name(self, argument: str, optional_argument: Optional[str]) -> str:
             return "Name"
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
 
     assert definition.name == "Query"
 
@@ -47,7 +47,7 @@ def test_input_type_as_argument():
         def name(self, input: Input, optional_input: Optional[Input]) -> str:
             return input.name
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
 
     assert definition.name == "Query"
 
@@ -74,7 +74,7 @@ def test_arguments_lists():
         def names(self, inputs: List[Input]) -> List[str]:
             return [input.name for input in inputs]
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
 
     assert definition.name == "Query"
 
@@ -97,7 +97,7 @@ def test_arguments_lists_of_optionals():
         def names(self, inputs: List[Optional[Input]]) -> List[str]:
             return [input_.name for input_ in inputs if input_ is not None]
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
 
     assert definition.name == "Query"
 
@@ -120,7 +120,7 @@ def test_basic_arguments_on_resolver():
     class Query:
         name: str = strawberry.field(resolver=name_resolver)
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
 
     assert definition.name == "Query"
 
@@ -151,7 +151,7 @@ def test_arguments_when_extending_a_type():
     class Query(NameQuery):
         pass
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
 
     assert definition.name == "Query"
 
@@ -189,7 +189,7 @@ def test_arguments_when_extending_multiple_types():
     class RootQuery(NameQuery, ExampleQuery):
         pass
 
-    definition = RootQuery.__strawberry_definition__
+    definition = RootQuery.__strawberry_object__
 
     assert definition.name == "RootQuery"
 
@@ -215,7 +215,7 @@ def test_argument_with_default_value_none():
         def name(self, argument: Optional[str] = None) -> str:
             return "Name"
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
 
     assert definition.name == "Query"
 
@@ -236,7 +236,7 @@ def test_argument_with_default_value_undefined():
         def name(self, argument: Optional[str]) -> str:
             return "Name"
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
 
     assert definition.name == "Query"
 
@@ -262,7 +262,7 @@ def test_annotated_argument_on_resolver():
         ) -> str:
             return "Name"
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
 
     assert definition.name == "Query"
 
@@ -286,7 +286,7 @@ def test_annotated_optional_arguments_on_resolver():
         ) -> str:
             return "Name"
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
 
     assert definition.name == "Query"
 
@@ -312,7 +312,7 @@ def test_annotated_argument_with_default_value():
         ) -> str:
             return "Name"
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
 
     assert definition.name == "Query"
 
@@ -338,7 +338,7 @@ def test_annotated_argument_with_rename():
         ) -> str:
             return "Name"
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
 
     assert definition.name == "Query"
 
@@ -381,7 +381,7 @@ def test_annotated_with_other_information():
         def name(self, argument: Annotated[str, "Some other info"]) -> str:
             return "Name"
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
 
     assert definition.name == "Query"
 
@@ -412,7 +412,7 @@ def test_annotated_python_39():
         ) -> str:
             return "Name"
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
 
     assert definition.name == "Query"
 

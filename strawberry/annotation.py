@@ -125,7 +125,7 @@ class StrawberryAnnotation:
 
     def create_concrete_type(self, evaled_type: type) -> type:
         if has_type_definition(evaled_type):
-            return evaled_type.__strawberry_definition__.resolve_generic(evaled_type)
+            return evaled_type.__strawberry_object__.resolve_generic(evaled_type)
         raise ValueError(f"Not supported {evaled_type}")
 
     def create_enum(self, evaled_type: Any) -> EnumDefinition:
@@ -292,4 +292,4 @@ def _is_input_type(type_: Any) -> bool:
     if not has_type_definition(type_):
         return False
 
-    return type_.__strawberry_definition__.is_input
+    return type_.__strawberry_object__.is_input

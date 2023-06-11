@@ -7,7 +7,7 @@ def test_type_add_type_definition_with_fields():
         name: str
         age: int
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
 
     assert definition.name == "Query"
     assert len(definition.fields) == 2
@@ -25,7 +25,7 @@ def test_passing_nothing_to_fields():
         name: str = strawberry.field()
         age: int = strawberry.field()
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
 
     assert definition.name == "Query"
     assert len(definition.fields) == 2

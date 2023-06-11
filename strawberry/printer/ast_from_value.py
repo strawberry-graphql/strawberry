@@ -118,7 +118,7 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> Optional[ValueNode]:
     # Python dict according to the fields in the input type.
     if is_input_object_type(type_):
         # TODO: is this the right place?
-        if hasattr(value, "__strawberry_definition__"):
+        if hasattr(value, "__strawberry_object__"):
             value = dataclasses.asdict(value)
 
         if value is None or not isinstance(value, Mapping):

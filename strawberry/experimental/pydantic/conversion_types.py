@@ -29,7 +29,7 @@ class StrawberryTypeFromPydantic(Protocol[PydanticModel]):
         ...
 
     @property
-    def __strawberry_definition__(self) -> TypeDefinition:
+    def __strawberry_object__(self) -> TypeDefinition:
         ...
 
     @property

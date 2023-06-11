@@ -100,7 +100,7 @@ def test_type_add_type_definition_with_fields():
         name: Optional[str]
         age: Optional[int]
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
     assert definition.name == "Query"
 
     [field1, field2] = definition.fields
@@ -123,7 +123,7 @@ def test_passing_custom_names_to_fields():
         x: Optional[str] = strawberry.field(name="name")
         y: Optional[int] = strawberry.field(name="age")
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
     assert definition.name == "Query"
 
     [field1, field2] = definition.fields
@@ -146,7 +146,7 @@ def test_passing_nothing_to_fields():
         name: Optional[str] = strawberry.field()
         age: Optional[int] = strawberry.field()
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
     assert definition.name == "Query"
 
     [field1, field2] = definition.fields
@@ -170,7 +170,7 @@ def test_resolver_fields():
         def name(self) -> Optional[str]:
             return "Name"
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
     assert definition.name == "Query"
 
     [field] = definition.fields
@@ -189,7 +189,7 @@ def test_resolver_fields_arguments():
         def name(self, argument: Optional[str]) -> Optional[str]:
             return "Name"
 
-    definition = Query.__strawberry_definition__
+    definition = Query.__strawberry_object__
 
     assert definition.name == "Query"
 

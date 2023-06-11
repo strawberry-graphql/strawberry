@@ -28,7 +28,7 @@ def _resolve_specialized_type_var(cls: Type, type_: Type) -> Type:
         specialized_type_var_map = get_specialized_type_var_map(type_)
         # If type_ is specialized, copy its type_var_map to the definition
         if specialized_type_var_map:
-            return type_.__strawberry_definition__.copy_with(specialized_type_var_map)
+            return type_.__strawberry_object__.copy_with(specialized_type_var_map)
 
     return type_
 
@@ -75,7 +75,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             base_fields = {
                 field.python_name: field
                 # TODO: we need to rename _fields to something else
-                for field in base.__strawberry_definition__._fields
+                for field in base.__strawberry_object__._fields
             }
 
             # Add base's fields to cls' fields
@@ -88,7 +88,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
 
     for base in cls.__mro__:
         if has_type_definition(base):
-            for field in base.__strawberry_definition__._fields:
+            for field in base.__strawberry_object__._fields:
                 if field.python_name in base.__annotations__:
                     origins.setdefault(field.name, base)
 

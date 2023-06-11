@@ -340,7 +340,7 @@ class GraphQLCoreConverter:
         )
 
     def from_input_object(self, object_type: type) -> GraphQLInputObjectType:
-        type_definition = object_type.__strawberry_definition__  # type: ignore
+        type_definition = object_type.__strawberry_object__  # type: ignore
 
         type_name = self.config.name_converter.from_type(type_definition)
 
@@ -424,8 +424,8 @@ class GraphQLCoreConverter:
 
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
                 if object_type.concrete_of and (
-                    hasattr(obj, "__strawberry_definition__")
-                    and obj.__strawberry_definition__.origin
+                    hasattr(obj, "__strawberry_object__")
+                    and obj.__strawberry_object__.origin
                     is object_type.concrete_of.origin
                 ):
                     return True
@@ -703,11 +703,11 @@ class GraphQLCoreConverter:
             return self.from_list(type_)
         elif compat.is_interface_type(type_):  # TODO: Replace with StrawberryInterface
             type_definition: TypeDefinition = (
-                type_.__strawberry_definition__  # type: ignore
+                type_.__strawberry_object__  # type: ignore
             )
             return self.from_interface(type_definition)
         elif compat.is_object_type(type_):  # TODO: Replace with StrawberryObject
-            return self.from_object(type_.__strawberry_definition__)  # type: ignore
+            return self.from_object(type_.__strawberry_object__)  # type: ignore
         elif compat.is_enum(type_):  # TODO: Replace with StrawberryEnum
             enum_definition: EnumDefinition = type_._enum_definition  # type: ignore
             return self.from_enum(enum_definition)
@@ -777,8 +777,8 @@ class GraphQLCoreConverter:
 
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
                 if object_type.concrete_of and (
-                    hasattr(obj, "__strawberry_definition__")
-                    and obj.__strawberry_definition__.origin
+                    hasattr(obj, "__strawberry_object__")
+                    and obj.__strawberry_object__.origin
                     is object_type.concrete_of.origin
                 ):
                     return True

@@ -6,4 +6,4 @@ def test_type_definition_is_aliased():
     class A:
         a: int
 
-    assert A.__strawberry_definition__ is A._type_definition
+    assert A.__strawberry_object__ is A._type_definition

@@ -111,7 +111,7 @@ class StrawberryUnion(StrawberryType):
     def is_generic(self) -> bool:
         def _is_generic(type_: object) -> bool:
             if self.has_type_definition(type_):
-                type_ = type_.__strawberry_definition__
+                type_ = type_.__strawberry_object__
 
             if isinstance(type_, StrawberryType):
                 return type_.is_generic
@@ -131,7 +131,7 @@ class StrawberryUnion(StrawberryType):
             new_type: Union[StrawberryType, type]
 
             if self.has_type_definition(type_):
-                type_definition = type_.__strawberry_definition__
+                type_definition = type_.__strawberry_object__
 
                 if type_definition.is_generic:
                     new_type = type_definition.copy_with(type_var_map)

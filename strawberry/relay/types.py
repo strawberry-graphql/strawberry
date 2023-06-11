@@ -830,7 +830,7 @@ class ListConnection(Connection[NodeType]):
         # Overfetch by 1 to check if we have a next result
         overfetch = end + 1 if end != sys.maxsize else end
 
-        type_def = cast(TypeDefinition, cls.__strawberry_definition__)  # type:ignore
+        type_def = cast(TypeDefinition, cls.__strawberry_object__)  # type:ignore
         field_def = type_def.get_field("edges")
         assert field_def
 

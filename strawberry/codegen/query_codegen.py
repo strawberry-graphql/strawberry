@@ -467,8 +467,8 @@ class QueryCodegen:
                 self._collect_type_from_strawberry_type(strawberry_type.of_type)
             )
 
-        if hasattr(strawberry_type, "__strawberry_definition__"):
-            strawberry_type = strawberry_type.__strawberry_definition__
+        if hasattr(strawberry_type, "__strawberry_object__"):
+            strawberry_type = strawberry_type.__strawberry_object__
 
         if isinstance(strawberry_type, TypeDefinition):
             type_ = GraphQLObjectType(
@@ -580,7 +580,7 @@ class QueryCodegen:
         else:
             parent_type = cast(
                 TypeDefinition,
-                selected_field_type.__strawberry_definition__,  # type: ignore
+                selected_field_type.__strawberry_object__,  # type: ignore
             )
 
             field_type = self._collect_types(selection, parent_type, class_name)

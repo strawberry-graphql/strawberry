@@ -23,7 +23,7 @@ def merge_types(name: str, types: Tuple[type, ...]) -> type:
     if not types:
         raise ValueError("Can't merge types if none are supplied")
 
-    fields = chain(*(t.__strawberry_definition__.fields for t in types))  # type: ignore
+    fields = chain(*(t.__strawberry_object__.fields for t in types))  # type: ignore
     counter = Counter(f.name for f in fields)
     dupes = [f for f, c in counter.most_common() if c > 1]
     if dupes:

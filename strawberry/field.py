@@ -60,7 +60,7 @@ def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
 
     # solves the Generic subclass case
     if has_type_definition(resolver_type):
-        return resolver_type.__strawberry_definition__.is_generic
+        return resolver_type.__strawberry_object__.is_generic
 
     return False
 
@@ -155,7 +155,7 @@ class StrawberryField(dataclasses.Field):
                     argument,
                 )
             elif has_type_definition(argument.type):
-                if argument.type.__strawberry_definition__.is_interface:
+                if argument.type.__strawberry_object__.is_interface:
                     raise InvalidArgumentTypeError(
                         resolver,
                         argument,
@@ -307,7 +307,7 @@ class StrawberryField(dataclasses.Field):
         # TODO: Remove with creation of StrawberryObject. Will act same as other
         #       StrawberryTypes
         if has_type_definition(self.type):
-            type_definition = self.type.__strawberry_definition__
+            type_definition = self.type.__strawberry_object__
 
             if type_definition.is_generic:
                 type_ = type_definition

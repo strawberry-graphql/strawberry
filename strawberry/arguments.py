@@ -172,9 +172,9 @@ def convert_argument(
         return convert_argument(value, enum_definition, scalar_registry, config)
 
     if hasattr(
-        type_, "__strawberry_definition__"
+        type_, "__strawberry_object__"
     ):  # TODO: Replace with StrawberryInputObject
-        type_definition: TypeDefinition = type_.__strawberry_definition__
+        type_definition: TypeDefinition = type_.__strawberry_object__
 
         kwargs = {}
 
