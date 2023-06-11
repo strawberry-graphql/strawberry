@@ -189,6 +189,8 @@ def has_strawberry_object(klass: Any) -> TypeGuard[Type[WithTypeDefinition]]:
         concrete = klass.__origin__
         if hasattr(concrete, "__strawberry_object__"):
             klass.__strawberry_object__ = concrete.__strawberry_object__
+            # TODO: Remove when deprecating _type_definition
+            klass._type_definition = concrete.__strawberry_object__
             return True
 
     return False
