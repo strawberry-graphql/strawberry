@@ -92,7 +92,7 @@ class TypeDefinition(StrawberryType):
         new_type = type(
             new_type_definition.name,
             (self.origin,),
-            {"_type_definition": new_type_definition},
+            {"__strawberry_definition__": new_type_definition},
         )
 
         new_type_definition.origin = new_type
@@ -131,7 +131,7 @@ class TypeDefinition(StrawberryType):
         if isinstance(root, dict):
             raise NotImplementedError
 
-        type_definition = root._type_definition  # type: ignore
+        type_definition = root.__strawberry_definition__  # type: ignore
 
         if type_definition is self:
             # No generics involved. Exact type match

@@ -82,7 +82,7 @@ def get_specialized_type_var_map(cls: type) -> Optional[Dict[TypeVar, type]]:
 
     # only get type vars for base generics (ie. Generic[T]) and for strawberry types
 
-    orig_bases = [b for b in orig_bases if hasattr(b, "_type_definition")]
+    orig_bases = [b for b in orig_bases if hasattr(b, "__strawberry_definition__")]
 
     for base in orig_bases:
         # Recursively get type var map from base classes

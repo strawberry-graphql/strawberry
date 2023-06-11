@@ -43,7 +43,7 @@ def test_to_base64_with_type():
 
 def test_to_base64_with_typedef():
     value = to_base64(
-        Fruit._type_definition,  # type: ignore
+        Fruit.__strawberry_definition__,  # type: ignore
         "1",
     )
     assert value == "RnJ1aXQ6MQ=="

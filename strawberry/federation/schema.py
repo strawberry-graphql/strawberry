@@ -147,8 +147,8 @@ class Schema(BaseSchema):
         )
 
         # TODO: this should be probably done in merge_types
-        if query._type_definition.extend:
-            query_type._type_definition.extend = True  # type: ignore
+        if query.__strawberry_definition__.extend:
+            query_type.__strawberry_definition__.extend = True  # type: ignore
 
         return query_type
 
@@ -374,7 +374,7 @@ def _get_entity_type(type_map: "TypeMap"):
     entity_type = GraphQLUnionType("_Entity", federation_key_types)  # type: ignore
 
     def _resolve_type(self, value, _type):  # noqa: ANN001
-        return self._type_definition.name
+        return self.__strawberry_definition__.name
 
     entity_type.resolve_type = _resolve_type
 

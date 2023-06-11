@@ -12,7 +12,7 @@ def test_create_decorator_type():
         return "foo"
 
     MyType = create_type("MyType", [name])
-    definition = MyType._type_definition
+    definition = MyType.__strawberry_definition__
 
     assert len(definition.fields) == 1
 
@@ -28,7 +28,7 @@ def test_create_variable_type():
     name = strawberry.field(name="name", resolver=get_name)
 
     MyType = create_type("MyType", [name])
-    definition = MyType._type_definition
+    definition = MyType.__strawberry_definition__
 
     assert len(definition.fields) == 1
 
@@ -64,7 +64,7 @@ def test_create_mutation_type():
         return User(username=username)
 
     Mutation = create_type("Mutation", [make_user])
-    definition = Mutation._type_definition
+    definition = Mutation.__strawberry_definition__
 
     assert len(definition.fields) == 1
 
@@ -83,7 +83,7 @@ def test_create_mutation_type_with_params():
         return User(username=username)
 
     Mutation = create_type("Mutation", [make_user])
-    definition = Mutation._type_definition
+    definition = Mutation.__strawberry_definition__
 
     assert len(definition.fields) == 1
 

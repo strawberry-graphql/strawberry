@@ -27,7 +27,7 @@ def _resolve_specialized_type_var(cls: Type, type_: Type) -> Type:
         specialized_type_var_map = get_specialized_type_var_map(type_)
         # If type_ is specialized, copy its type_var_map to the definition
         if specialized_type_var_map:
-            return type_._type_definition.copy_with(specialized_type_var_map)
+            return type_.__strawberry_definition__.copy_with(specialized_type_var_map)
 
     return type_
 
@@ -70,11 +70,11 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     # before trying to find any fields, let's first add the fields defined in
     # parent classes, we do this by checking if parents have a type definition
     for base in cls.__bases__:
-        if hasattr(base, "_type_definition"):
+        if hasattr(base, "__strawberry_definition__"):
             base_fields = {
                 field.python_name: field
                 # TODO: we need to rename _fields to something else
-                for field in base._type_definition._fields
+                for field in base.__strawberry_definition__._fields
             }
 
             # Add base's fields to cls' fields
@@ -86,8 +86,8 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     origins: Dict[str, type] = {field_name: cls for field_name in cls.__annotations__}
 
     for base in cls.__mro__:
-        if hasattr(base, "_type_definition"):
-            for field in base._type_definition._fields:
+        if hasattr(base, "__strawberry_definition__"):
+            for field in base.__strawberry_definition__._fields:
                 if field.python_name in base.__annotations__:
                     origins.setdefault(field.name, base)
 

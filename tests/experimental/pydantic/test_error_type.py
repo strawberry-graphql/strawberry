@@ -18,7 +18,7 @@ def test_basic_error_type_fields():
     class UserError:
         pass
 
-    definition: TypeDefinition = UserError._type_definition
+    definition: TypeDefinition = UserError.__strawberry_definition__
     assert definition.name == "UserError"
 
     [field1, field2] = definition.fields
@@ -44,7 +44,7 @@ def test_basic_error_type():
         name: strawberry.auto
         age: strawberry.auto
 
-    definition: TypeDefinition = UserError._type_definition
+    definition: TypeDefinition = UserError.__strawberry_definition__
     assert definition.name == "UserError"
 
     [field1, field2] = definition.fields
@@ -69,7 +69,7 @@ def test_basic_error_type_all_fields():
     class UserError:
         pass
 
-    definition: TypeDefinition = UserError._type_definition
+    definition: TypeDefinition = UserError.__strawberry_definition__
     assert definition.name == "UserError"
 
     [field1, field2] = definition.fields
@@ -123,7 +123,7 @@ def test_error_type_with_default_value():
         name: strawberry.auto
         age: strawberry.auto
 
-    definition: TypeDefinition = UserError._type_definition
+    definition: TypeDefinition = UserError.__strawberry_definition__
     assert definition.name == "UserError"
 
     [field1, field2] = definition.fields
@@ -156,7 +156,7 @@ def test_error_type_with_nested_model():
     class UserError:
         friend: strawberry.auto
 
-    definition: TypeDefinition = UserError._type_definition
+    definition: TypeDefinition = UserError.__strawberry_definition__
     assert definition.name == "UserError"
 
     [field] = definition.fields
@@ -181,7 +181,7 @@ def test_error_type_with_list_nested_model():
     class UserError:
         friends: strawberry.auto
 
-    definition: TypeDefinition = UserError._type_definition
+    definition: TypeDefinition = UserError.__strawberry_definition__
     assert definition.name == "UserError"
 
     [field] = definition.fields
@@ -201,7 +201,7 @@ def test_error_type_with_list_of_scalar():
     class UserError:
         friends: strawberry.auto
 
-    definition: TypeDefinition = UserError._type_definition
+    definition: TypeDefinition = UserError.__strawberry_definition__
     assert definition.name == "UserError"
 
     [field] = definition.fields
@@ -222,7 +222,7 @@ def test_error_type_with_optional_field():
     class UserError:
         age: strawberry.auto
 
-    definition: TypeDefinition = UserError._type_definition
+    definition: TypeDefinition = UserError.__strawberry_definition__
     assert definition.name == "UserError"
 
     [field] = definition.fields
@@ -241,7 +241,7 @@ def test_error_type_with_list_of_optional_scalar():
     class UserError:
         age: strawberry.auto
 
-    definition: TypeDefinition = UserError._type_definition
+    definition: TypeDefinition = UserError.__strawberry_definition__
 
     assert definition.name == "UserError"
     [field] = definition.fields
@@ -262,7 +262,7 @@ def test_error_type_with_optional_list_scalar():
     class UserError:
         age: strawberry.auto
 
-    definition: TypeDefinition = UserError._type_definition
+    definition: TypeDefinition = UserError.__strawberry_definition__
 
     assert definition.name == "UserError"
     [field] = definition.fields
@@ -283,7 +283,7 @@ def test_error_type_with_optional_list_of_optional_scalar():
     class UserError:
         age: strawberry.auto
 
-    definition: TypeDefinition = UserError._type_definition
+    definition: TypeDefinition = UserError.__strawberry_definition__
 
     assert definition.name == "UserError"
     [field] = definition.fields
@@ -311,7 +311,7 @@ def test_error_type_with_optional_list_of_nested_model():
     class UserError:
         friends: strawberry.auto
 
-    definition: TypeDefinition = UserError._type_definition
+    definition: TypeDefinition = UserError.__strawberry_definition__
 
     assert definition.name == "UserError"
     [field] = definition.fields
@@ -331,7 +331,7 @@ def test_error_type_with_matrix_list_of_scalar():
     class UserError:
         age: strawberry.auto
 
-    definition: TypeDefinition = UserError._type_definition
+    definition: TypeDefinition = UserError.__strawberry_definition__
 
     assert definition.name == "UserError"
     [field] = definition.fields

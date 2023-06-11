@@ -35,7 +35,7 @@ def _get_interfaces(cls: Type[Any]) -> List[TypeDefinition]:
     interfaces: List[TypeDefinition] = []
     for base in cls.__mro__[1:]:  # Exclude current class
         type_definition = cast(
-            Optional[TypeDefinition], getattr(base, "_type_definition", None)
+            Optional[TypeDefinition], getattr(base, "__strawberry_definition__", None)
         )
         if type_definition and type_definition.is_interface:
             interfaces.append(type_definition)
@@ -139,7 +139,7 @@ def _process_type(
     fields = _get_fields(cls)
     is_type_of = getattr(cls, "is_type_of", None)
 
-    cls._type_definition = TypeDefinition(
+    cls.__strawberry_definition__ = TypeDefinition(
         name=name,
         is_input=is_input,
         is_interface=is_interface,

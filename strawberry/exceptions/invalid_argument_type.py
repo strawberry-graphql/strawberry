@@ -33,7 +33,7 @@ class InvalidArgumentTypeError(StrawberryException):
             argument_type = "union"
         else:
             type_definition: Optional[TypeDefinition] = getattr(
-                argument.type, "_type_definition", None
+                argument.type, "__strawberry_definition__", None
             )
 
             if type_definition and type_definition.is_interface:

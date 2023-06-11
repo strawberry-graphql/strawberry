@@ -108,8 +108,8 @@ class NameConverter:
             if isinstance(type_, LazyType):
                 type_ = cast("StrawberryType", type_.resolve_type())  # noqa: PLW2901
 
-            if hasattr(type_, "_type_definition"):
-                type_name = self.from_type(type_._type_definition)
+            if hasattr(type_, "__strawberry_definition__"):
+                type_name = self.from_type(type_.__strawberry_definition__)
             else:
                 # This should only be hit when generating names for type-related
                 # exceptions
@@ -152,8 +152,8 @@ class NameConverter:
             strawberry_type = type_._scalar_definition
 
             name = strawberry_type.name
-        elif hasattr(type_, "_type_definition"):
-            strawberry_type = type_._type_definition
+        elif hasattr(type_, "__strawberry_definition__"):
+            strawberry_type = type_.__strawberry_definition__
 
             if (
                 strawberry_type.is_generic

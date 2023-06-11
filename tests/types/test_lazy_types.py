@@ -106,10 +106,10 @@ def test_lazy_type_generic():
 
     # TODO: Simplify with StrawberryObject
     assert isinstance(resolved, type)
-    assert hasattr(resolved, "_type_definition")
-    assert isinstance(resolved._type_definition, TypeDefinition)
+    assert hasattr(resolved, "__strawberry_definition__")
+    assert isinstance(resolved.__strawberry_definition__, TypeDefinition)
 
-    items_field: StrawberryField = resolved._type_definition.fields[0]
+    items_field: StrawberryField = resolved.__strawberry_definition__.fields[0]
     assert items_field.type is LazierType
     assert items_field.type.resolve_type() is LaziestType
 
@@ -122,8 +122,8 @@ def test_lazy_type_object():
     class WaterParkFeature:
         river: LazierType
 
-    # TODO: Remove reference to ._type_definition with StrawberryObject
-    field: StrawberryField = WaterParkFeature._type_definition.fields[0]
+    # TODO: Remove reference to .__strawberry_definition__ with StrawberryObject
+    field: StrawberryField = WaterParkFeature.__strawberry_definition__.fields[0]
 
     assert isinstance(field.type, LazyType)
     assert field.type is LazierType

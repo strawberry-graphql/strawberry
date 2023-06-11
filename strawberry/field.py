@@ -59,8 +59,8 @@ def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
         return resolver_type.is_generic
 
     # solves the Generic subclass case
-    if hasattr(resolver_type, "_type_definition"):
-        return resolver_type._type_definition.is_generic
+    if hasattr(resolver_type, "__strawberry_definition__"):
+        return resolver_type.__strawberry_definition__.is_generic
 
     return False
 
@@ -154,8 +154,8 @@ class StrawberryField(dataclasses.Field):
                     resolver,
                     argument,
                 )
-            elif getattr(argument.type, "_type_definition", False):
-                if argument.type._type_definition.is_interface:  # type: ignore
+            elif getattr(argument.type, "__strawberry_definition__", False):
+                if argument.type.__strawberry_definition__.is_interface:  # type: ignore
                     raise InvalidArgumentTypeError(
                         resolver,
                         argument,
@@ -288,7 +288,7 @@ class StrawberryField(dataclasses.Field):
     # TODO: add this to arguments (and/or move it to StrawberryType)
     @property
     def type_params(self) -> List[TypeVar]:
-        if hasattr(self.type, "_type_definition"):
+        if hasattr(self.type, "__strawberry_definition__"):
             parameters = getattr(self.type, "__parameters__", None)
 
             return list(parameters) if parameters else []
@@ -306,8 +306,8 @@ class StrawberryField(dataclasses.Field):
 
         # TODO: Remove with creation of StrawberryObject. Will act same as other
         #       StrawberryTypes
-        if hasattr(self.type, "_type_definition"):
-            type_definition: TypeDefinition = self.type._type_definition
+        if hasattr(self.type, "__strawberry_definition__"):
+            type_definition: TypeDefinition = self.type.__strawberry_definition__
 
             if type_definition.is_generic:
                 type_ = type_definition
