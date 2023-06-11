@@ -8,7 +8,7 @@ from pydantic import BaseModel, ValidationError, conlist
 
 import strawberry
 from strawberry.type import StrawberryOptional
-from strawberry.types.types import StrawberryObjectType
+from strawberry.types.types import StrawberryObject
 
 
 @pytest.mark.parametrize(
@@ -40,7 +40,7 @@ def test_types(pydantic_type, field_type):
     class Type:
         field: strawberry.auto
 
-    definition: StrawberryObjectType = Type.__strawberry_object__
+    definition: StrawberryObject = Type.__strawberry_object__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -61,7 +61,7 @@ def test_types_optional(pydantic_type, field_type):
     class Type:
         field: strawberry.auto
 
-    definition: StrawberryObjectType = Type.__strawberry_object__
+    definition: StrawberryObject = Type.__strawberry_object__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -79,7 +79,7 @@ def test_conint():
     class Type:
         field: strawberry.auto
 
-    definition: StrawberryObjectType = Type.__strawberry_object__
+    definition: StrawberryObject = Type.__strawberry_object__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -96,7 +96,7 @@ def test_confloat():
     class Type:
         field: strawberry.auto
 
-    definition: StrawberryObjectType = Type.__strawberry_object__
+    definition: StrawberryObject = Type.__strawberry_object__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -113,7 +113,7 @@ def test_constr():
     class Type:
         field: strawberry.auto
 
-    definition: StrawberryObjectType = Type.__strawberry_object__
+    definition: StrawberryObject = Type.__strawberry_object__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -198,7 +198,7 @@ def test_literal_types():
     class Type:
         field: strawberry.auto
 
-    definition: StrawberryObjectType = Type.__strawberry_object__
+    definition: StrawberryObject = Type.__strawberry_object__
     assert definition.name == "Type"
 
     [field] = definition.fields

@@ -30,20 +30,20 @@ if TYPE_CHECKING:
 
 
 @dataclasses.dataclass(eq=False)
-class StrawberryObjectType(StrawberryType):
+class StrawberryObject(StrawberryType):
     name: str
     is_input: bool
     is_interface: bool
     origin: Type[Any]
     description: Optional[str]
-    interfaces: List[StrawberryObjectType]
+    interfaces: List[StrawberryObject]
     extend: bool
     directives: Optional[Sequence[object]]
     is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
 
     _fields: List[StrawberryField]
 
-    concrete_of: Optional[StrawberryObjectType] = None
+    concrete_of: Optional[StrawberryObject] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
     type_var_map: Mapping[TypeVar, Union[StrawberryType, type]] = dataclasses.field(
         default_factory=dict
@@ -79,7 +79,7 @@ class StrawberryObjectType(StrawberryType):
         # TODO: Logic unnecessary with StrawberryObject
         fields = [field.copy_with(type_var_map) for field in self.fields]
 
-        new_type_definition = StrawberryObjectType(
+        new_type_definition = StrawberryObject(
             name=self.name,
             is_input=self.is_input,
             origin=self.origin,
@@ -177,10 +177,10 @@ class StrawberryObjectType(StrawberryType):
 
 
 class WithTypeDefinition(Protocol):
-    __strawberry_object__: StrawberryObjectType
+    __strawberry_object__: StrawberryObject
 
 
-def has_type_definition(klass: Any) -> TypeGuard[Type[WithTypeDefinition]]:
+def has_strawberry_object(klass: Any) -> TypeGuard[Type[WithTypeDefinition]]:
     if hasattr(klass, "__strawberry_object__"):
         return True
     # Generics remove dunder members here
@@ -194,5 +194,10 @@ def has_type_definition(klass: Any) -> TypeGuard[Type[WithTypeDefinition]]:
     return False
 
 
+def get_strawberry_object(klass: Any) -> StrawberryObject:
+    if has_strawberry_object(klass):
+        return klass.__strawberry_object__
+
+
 # TODO: remove when deprecating _type_definition
-TypeDefinition = StrawberryObjectType
+TypeDefinition = StrawberryObject

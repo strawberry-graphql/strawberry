@@ -23,7 +23,7 @@ from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
-from strawberry.types.types import StrawberryObjectType, has_type_definition
+from strawberry.types.types import StrawberryObject, has_strawberry_object
 from strawberry.unset import UNSET
 from strawberry.utils.typing import (
     eval_type,
@@ -124,7 +124,7 @@ class StrawberryAnnotation:
         self.namespace = module.__dict__
 
     def create_concrete_type(self, evaled_type: type) -> type:
-        if has_type_definition(evaled_type):
+        if has_strawberry_object(evaled_type):
             return evaled_type.__strawberry_object__.resolve_generic(evaled_type)
         raise ValueError(f"Not supported {evaled_type}")
 
@@ -239,9 +239,9 @@ class StrawberryAnnotation:
         # TODO: add support for StrawberryInterface when implemented
         elif isinstance(evaled_type, StrawberryList):
             return True
-        elif has_type_definition(evaled_type):  # TODO: Replace with StrawberryObject
+        elif has_strawberry_object(evaled_type):  # TODO: Replace with StrawberryObject
             return True
-        elif isinstance(evaled_type, StrawberryObjectType):
+        elif isinstance(evaled_type, StrawberryObject):
             return True
         elif isinstance(evaled_type, StrawberryOptional):
             return True
@@ -289,7 +289,7 @@ class StrawberryAnnotation:
 
 
 def _is_input_type(type_: Any) -> bool:
-    if not has_type_definition(type_):
+    if not has_strawberry_object(type_):
         return False
 
     return type_.__strawberry_object__.is_input

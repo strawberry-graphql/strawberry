@@ -26,7 +26,7 @@ from strawberry.union import StrawberryUnion
 from strawberry.utils.cached_property import cached_property
 
 from .types.fields.resolver import StrawberryResolver
-from .types.types import has_type_definition
+from .types.types import has_strawberry_object
 
 if TYPE_CHECKING:
     import builtins
@@ -59,7 +59,7 @@ def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
         return resolver_type.is_generic
 
     # solves the Generic subclass case
-    if has_type_definition(resolver_type):
+    if has_strawberry_object(resolver_type):
         return resolver_type.__strawberry_object__.is_generic
 
     return False
@@ -154,7 +154,7 @@ class StrawberryField(dataclasses.Field):
                     resolver,
                     argument,
                 )
-            elif has_type_definition(argument.type):
+            elif has_strawberry_object(argument.type):
                 if argument.type.__strawberry_object__.is_interface:
                     raise InvalidArgumentTypeError(
                         resolver,
@@ -288,7 +288,7 @@ class StrawberryField(dataclasses.Field):
     # TODO: add this to arguments (and/or move it to StrawberryType)
     @property
     def type_params(self) -> List[TypeVar]:
-        if has_type_definition(self.type):
+        if has_strawberry_object(self.type):
             parameters = getattr(self.type, "__parameters__", None)
 
             return list(parameters) if parameters else []
@@ -306,7 +306,7 @@ class StrawberryField(dataclasses.Field):
 
         # TODO: Remove with creation of StrawberryObject. Will act same as other
         #       StrawberryTypes
-        if has_type_definition(self.type):
+        if has_strawberry_object(self.type):
             type_definition = self.type.__strawberry_object__
 
             if type_definition.is_generic:

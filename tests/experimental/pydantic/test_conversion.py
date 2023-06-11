@@ -17,7 +17,7 @@ from strawberry.experimental.pydantic.exceptions import (
 )
 from strawberry.experimental.pydantic.utils import get_default_factory_for_field
 from strawberry.type import StrawberryList, StrawberryOptional
-from strawberry.types.types import StrawberryObjectType
+from strawberry.types.types import StrawberryObject
 
 
 def test_can_use_type_standalone():
@@ -783,7 +783,7 @@ def test_can_convert_input_types_to_pydantic_default_values_defaults_declared_fi
     assert user.age == 1
     assert user.password is None
 
-    definition: StrawberryObjectType = UserInput.__strawberry_object__
+    definition: StrawberryObject = UserInput.__strawberry_object__
     assert definition.name == "UserInput"
 
     [

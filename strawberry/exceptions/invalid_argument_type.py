@@ -10,7 +10,7 @@ from .utils.source_finder import SourceFinder
 if TYPE_CHECKING:
     from strawberry.arguments import StrawberryArgument
     from strawberry.types.fields.resolver import StrawberryResolver
-    from strawberry.types.types import StrawberryObjectType
+    from strawberry.types.types import StrawberryObject
 
     from .exception_source import ExceptionSource
 
@@ -32,7 +32,7 @@ class InvalidArgumentTypeError(StrawberryException):
         if isinstance(argument.type, StrawberryUnion):
             argument_type = "union"
         else:
-            type_definition: Optional[StrawberryObjectType] = getattr(
+            type_definition: Optional[StrawberryObject] = getattr(
                 argument.type, "__strawberry_object__", None
             )
 

@@ -12,7 +12,7 @@ from strawberry.experimental.pydantic.exceptions import (
     UnregisteredTypeException,
     UnsupportedTypeError,
 )
-from strawberry.types.types import StrawberryObjectType
+from strawberry.types.types import StrawberryObject
 
 try:
     from typing import GenericAlias as TypingGenericAlias  # type: ignore
@@ -128,7 +128,7 @@ def replace_types_recursively(type_: Any, is_input: bool) -> Any:
 
     replaced_type = replaced_type.copy_with(converted)
 
-    if isinstance(replaced_type, StrawberryObjectType):
+    if isinstance(replaced_type, StrawberryObject):
         # TODO: Not sure if this is necessary. No coverage in tests
         # TODO: Unnecessary with StrawberryObject
         replaced_type = builtins.type(

@@ -13,14 +13,14 @@ if TYPE_CHECKING:
     from typing_extensions import TypeGuard
 
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-    from strawberry.types.types import StrawberryObjectType
+    from strawberry.types.types import StrawberryObject
 
 
 def is_input_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     if not is_object_type(type_):
         return False
 
-    type_definition: StrawberryObjectType = type_.__strawberry_object__  # type: ignore
+    type_definition: StrawberryObject = type_.__strawberry_object__  # type: ignore
     return type_definition.is_input
 
 
@@ -28,7 +28,7 @@ def is_interface_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     if not is_object_type(type_):
         return False
 
-    type_definition: StrawberryObjectType = type_.__strawberry_object__  # type: ignore
+    type_definition: StrawberryObject = type_.__strawberry_object__  # type: ignore
     return type_definition.is_interface
 
 
@@ -53,7 +53,7 @@ def is_schema_directive(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
 
 def is_generic(type_: Union[StrawberryType, type]) -> bool:
     if hasattr(type_, "__strawberry_object__"):
-        type_definition: StrawberryObjectType = type_.__strawberry_object__
+        type_definition: StrawberryObject = type_.__strawberry_object__
 
         return type_definition.is_generic
 

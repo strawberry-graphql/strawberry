@@ -25,9 +25,9 @@ class StrawberryType(ABC):
     def has_type_definition(
         self,
     ) -> Callable[[Any], TypeGuard[Type[WithTypeDefinition]]]:
-        from .types.types import has_type_definition
+        from .types.types import has_strawberry_object
 
-        return has_type_definition
+        return has_strawberry_object
 
     @property
     def type_params(self) -> List[TypeVar]:

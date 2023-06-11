@@ -30,7 +30,7 @@ from strawberry.exceptions import (
 )
 from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryOptional, StrawberryType
-from strawberry.types.types import has_type_definition
+from strawberry.types.types import has_strawberry_object
 
 if TYPE_CHECKING:
     from graphql import (
@@ -161,7 +161,7 @@ class StrawberryUnion(StrawberryType):
         ) -> str:
             assert isinstance(type_, GraphQLUnionType)
 
-            from strawberry.types.types import StrawberryObjectType
+            from strawberry.types.types import StrawberryObject
 
             # If the type given is not an Object type, try resolving using `is_type_of`
             # defined on the union's inner types
@@ -187,7 +187,7 @@ class StrawberryUnion(StrawberryType):
                 concrete_types_for_union, type_map.values()
             ):
                 possible_type = possible_concrete_type.definition
-                if not isinstance(possible_type, StrawberryObjectType):
+                if not isinstance(possible_type, StrawberryObject):
                     continue
                 if possible_type.is_implemented_by(root):
                     return_type = possible_concrete_type.implementation
@@ -214,7 +214,7 @@ class StrawberryUnion(StrawberryType):
     @staticmethod
     def is_valid_union_type(type_: object) -> bool:
         # Usual case: Union made of @strawberry.types
-        if has_type_definition(type_):
+        if has_strawberry_object(type_):
             return True
 
         # Can't confidently assert that these types are valid/invalid within Unions
