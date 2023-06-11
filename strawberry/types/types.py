@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -99,7 +100,9 @@ class TypeDefinition(StrawberryType):
             (self.origin,),
             {"__strawberry_definition__": new_type_definition},
         )
-
+        new_type._type_definition = property(
+            lambda: _type_definition_deprecation_msg(new_type_definition)
+        )
         new_type_definition.origin = new_type
 
         return new_type
@@ -192,3 +195,11 @@ def has_type_definition(klass: Type) -> TypeGuard[Type[WithTypeDefinition]]:
             return True
 
     return False
+
+
+def _type_definition_deprecation_msg(ret: TypeDefinition) -> TypeDefinition:
+    warnings.warn(
+        "`_type_definition` is deprecated. Use `__strawberry_definition__` instead.",
+        stacklevel=2,
+    )
+    return ret
