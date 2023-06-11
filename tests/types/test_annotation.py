@@ -51,6 +51,5 @@ def test_annotation_hash(type1: Union[object, str], type2: Union[object, str]):
 
 
 def test_eq_on_non_annotation():
-    a = StrawberryAnnotation(int)
     with pytest.raises(NotImplementedError):
-        a == 2  # noqa: B015
+        StrawberryAnnotation(int) == 2  # noqa: B015
