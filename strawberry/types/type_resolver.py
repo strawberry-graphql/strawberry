@@ -93,7 +93,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                     origins.setdefault(field.name, base)
 
     # then we can proceed with finding the fields for the current class
-    for field in dataclasses.fields(cls):
+    for field in dataclasses.fields(cls):  # type: ignore
         if isinstance(field, StrawberryField):
             # Check that the field type is not Private
             if is_private(field.type):

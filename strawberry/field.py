@@ -288,7 +288,7 @@ class StrawberryField(dataclasses.Field):
     # TODO: add this to arguments (and/or move it to StrawberryType)
     @property
     def type_params(self) -> List[TypeVar]:
-        if has_type_definition():
+        if has_type_definition(self.type):
             parameters = getattr(self.type, "__parameters__", None)
 
             return list(parameters) if parameters else []

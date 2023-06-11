@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     List,
     Mapping,
@@ -22,7 +23,7 @@ class StrawberryType(ABC):
     @cached_property
     def has_type_definition(
         self,
-    ) -> Callable[[Type], TypeGuard[Type[WithTypeDefinition]]]:
+    ) -> Callable[[Any], TypeGuard[Type[WithTypeDefinition]]]:
         from .types.types import has_type_definition
 
         return has_type_definition

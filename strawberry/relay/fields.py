@@ -217,7 +217,6 @@ class ConnectionExtension(FieldExtension):
 
         f_type = field.type
         if not isinstance(f_type, type) or not issubclass(f_type, Connection):
-            field.type_annotation.resolve()
             raise RelayWrongAnnotationError(field.name, cast(type, field.origin))
 
         assert field.base_resolver

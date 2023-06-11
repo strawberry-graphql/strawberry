@@ -100,7 +100,9 @@ class TypeDefinition(StrawberryType):
             (self.origin,),
             {"__strawberry_definition__": new_type_definition},
         )
-        new_type._type_definition = new_type_definition
+        # alias for backward compat
+        new_type._type_definition = new_type_definition  # type: ignore
+
         new_type_definition.origin = new_type
 
         return new_type
@@ -181,7 +183,7 @@ if TYPE_CHECKING:
         __strawberry_definition__: TypeDefinition
 
 
-def has_type_definition(klass: Type) -> TypeGuard[Type[WithTypeDefinition]]:
+def has_type_definition(klass: Any) -> TypeGuard[Type[WithTypeDefinition]]:
     if hasattr(klass, "__strawberry_definition__"):
         return True
     # Generics remove dunder members here
