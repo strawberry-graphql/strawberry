@@ -334,6 +334,7 @@ src = ["strawberry", "tests"]
 "tests/http/clients/__init__.py" = ["F401"]
 "tests/schema/test_scalars.py" = ["E501"]
 "tests/schema/test_basic.py" = ["E501"]
+"tests/relay/test_schema.py" = ["E501"]
 
 [tool.ruff.isort]
 known-first-party = ["strawberry"]

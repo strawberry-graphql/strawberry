@@ -26,6 +26,7 @@ from graphql import (
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
+from strawberry import relay
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.extensions.directives import (
     DirectivesExtension,
@@ -163,6 +164,17 @@ class Schema(BaseSchema):
         self._schema._strawberry_schema = self  # type: ignore
 
         self._warn_for_federation_directives()
+
+        for concrete_type in self.schema_converter.type_map.values():
+            type_def = concrete_type.definition
+            if (
+                isinstance(type_def, TypeDefinition)
+                and issubclass(type_def.origin, relay.Node)
+                and type_def.origin is not relay.Node
+            ):
+                # Call resolve_id_attr in here to make sure we raise provide
+                # early feedback for missing NodeID annotations
+                type_def.origin.resolve_id_attr()
 
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible
