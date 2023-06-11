@@ -52,7 +52,7 @@ from strawberry.private import is_private
 from strawberry.schema.types.scalar import _make_scalar_type
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.info import Info
-from strawberry.types.types import StrawberryObject
+from strawberry.types.types import StrawberryObject, has_strawberry_object
 from strawberry.union import StrawberryUnion
 from strawberry.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
@@ -424,7 +424,7 @@ class GraphQLCoreConverter:
 
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
                 if object_type.concrete_of and (
-                    hasattr(obj, "__strawberry_object__")
+                    has_strawberry_object(obj)
                     and obj.__strawberry_object__.origin
                     is object_type.concrete_of.origin
                 ):
@@ -777,7 +777,7 @@ class GraphQLCoreConverter:
 
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
                 if object_type.concrete_of and (
-                    hasattr(obj, "__strawberry_object__")
+                    has_strawberry_object(obj)
                     and obj.__strawberry_object__.origin
                     is object_type.concrete_of.origin
                 ):

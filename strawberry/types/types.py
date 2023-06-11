@@ -194,9 +194,10 @@ def has_strawberry_object(klass: Any) -> TypeGuard[Type[WithTypeDefinition]]:
     return False
 
 
-def get_strawberry_object(klass: Any) -> StrawberryObject:
+def get_strawberry_object(klass: Any) -> Optional[StrawberryObject]:
     if has_strawberry_object(klass):
         return klass.__strawberry_object__
+    return None
 
 
 # TODO: remove when deprecating _type_definition

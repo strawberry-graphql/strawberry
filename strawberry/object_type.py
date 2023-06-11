@@ -12,7 +12,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
     overload,
 )
 
@@ -23,7 +22,7 @@ from .exceptions import (
 )
 from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
-from .types.types import StrawberryObject
+from .types.types import StrawberryObject, get_strawberry_object
 from .utils.dataclasses import add_custom_init_fn
 from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__
@@ -34,9 +33,7 @@ T = TypeVar("T", bound=Type)
 def _get_interfaces(cls: Type[Any]) -> List[StrawberryObject]:
     interfaces: List[StrawberryObject] = []
     for base in cls.__mro__[1:]:  # Exclude current class
-        type_definition = cast(
-            Optional[StrawberryObject], getattr(base, "__strawberry_object__", None)
-        )
+        type_definition = get_strawberry_object(base)
         if type_definition and type_definition.is_interface:
             interfaces.append(type_definition)
 

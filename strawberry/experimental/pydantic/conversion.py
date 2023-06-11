@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Type, Union, cast
 
 from strawberry.enum import EnumDefinition
 from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.types.types import has_strawberry_object
 from strawberry.union import StrawberryUnion
 
 if TYPE_CHECKING:
@@ -49,7 +50,7 @@ def _convert_from_pydantic_to_strawberry_type(
 
         return items
 
-    if hasattr(type_, "__strawberry_object__"):
+    if has_strawberry_object(type_):
         # in the case of an interface, the concrete type may be more specific
         # than the type in the field definition
         # don't check _strawberry_input_type because inputs can't be interfaces
