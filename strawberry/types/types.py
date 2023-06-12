@@ -31,6 +31,18 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass(eq=False)
 class StrawberryDefinition(StrawberryType):
+    """
+    Every type that is decorated by strawberry should have a dunder
+    `__strawberry_definition__` with instance of a StrawberryType that contains
+    the parsed information that strawberry created.
+
+    In order get the strawberry definition from a decorated object you can use
+    `has_strawberry_definition` or `get_strawberry_definition` as a shortcut.
+
+    NOTE: ATM this is only true for @type @interface @input follow https://github.com/strawberry-graphql/strawberry/issues/2841
+    to see progress.
+    """
+
     name: str
     is_input: bool
     is_interface: bool
