@@ -463,7 +463,7 @@ class QueryCodegen:
             )
 
         if isinstance(strawberry_type, StrawberryList):
-            return GraphQLOptional(
+            return GraphQLList(
                 self._collect_type_from_strawberry_type(strawberry_type.of_type)
             )
 
