@@ -173,47 +173,46 @@ class ConnectionExtension(FieldExtension):
     connection_type: Type[Connection[Node]]
 
     def apply(self, field: StrawberryField) -> None:
-        field.arguments.extend(
-            [
-                StrawberryArgument(
-                    python_name="before",
-                    graphql_name=None,
-                    type_annotation=StrawberryAnnotation(Optional[str]),
-                    description=(
-                        "Returns the items in the list that come before the "
-                        "specified cursor."
-                    ),
-                    default=None,
+        field.arguments = [
+            *field.arguments,
+            StrawberryArgument(
+                python_name="before",
+                graphql_name=None,
+                type_annotation=StrawberryAnnotation(Optional[str]),
+                description=(
+                    "Returns the items in the list that come before the "
+                    "specified cursor."
                 ),
-                StrawberryArgument(
-                    python_name="after",
-                    graphql_name=None,
-                    type_annotation=StrawberryAnnotation(Optional[str]),
-                    description=(
-                        "Returns the items in the list that come after the "
-                        "specified cursor."
-                    ),
-                    default=None,
+                default=None,
+            ),
+            StrawberryArgument(
+                python_name="after",
+                graphql_name=None,
+                type_annotation=StrawberryAnnotation(Optional[str]),
+                description=(
+                    "Returns the items in the list that come after the "
+                    "specified cursor."
                 ),
-                StrawberryArgument(
-                    python_name="first",
-                    graphql_name=None,
-                    type_annotation=StrawberryAnnotation(Optional[int]),
-                    description="Returns the first n items from the list.",
-                    default=None,
+                default=None,
+            ),
+            StrawberryArgument(
+                python_name="first",
+                graphql_name=None,
+                type_annotation=StrawberryAnnotation(Optional[int]),
+                description="Returns the first n items from the list.",
+                default=None,
+            ),
+            StrawberryArgument(
+                python_name="last",
+                graphql_name=None,
+                type_annotation=StrawberryAnnotation(Optional[int]),
+                description=(
+                    "Returns the items in the list that come after the "
+                    "specified cursor."
                 ),
-                StrawberryArgument(
-                    python_name="last",
-                    graphql_name=None,
-                    type_annotation=StrawberryAnnotation(Optional[int]),
-                    description=(
-                        "Returns the items in the list that come after the "
-                        "specified cursor."
-                    ),
-                    default=None,
-                ),
-            ]
-        )
+                default=None,
+            ),
+        ]
 
         f_type = field.type
         if not isinstance(f_type, type) or not issubclass(f_type, Connection):
