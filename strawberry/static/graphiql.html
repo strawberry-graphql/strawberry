@@ -114,7 +114,38 @@
 #
 `;
 
-      const fetchURL = window.location.href;
+      // Parse URL parameters for sharing queries
+      const parameters = {};
+
+      for (const entry of window.location.search.slice(1).split("&")) {
+        const eq = entry.indexOf("=");
+        if (eq >= 0) {
+          parameters[decodeURIComponent(entry.slice(0, eq))] =
+            decodeURIComponent(entry.slice(eq + 1));
+        }
+      }
+
+      function updateURL(data) {
+        Object.assign(parameters, data);
+
+        const newSearch =
+          "?" +
+          Object.keys(parameters)
+            .filter(function (key) {
+              return Boolean(parameters[key]);
+            })
+            .map(function (key) {
+              return (
+                encodeURIComponent(key) +
+                "=" +
+                encodeURIComponent(parameters[key])
+              );
+            })
+            .join("&");
+        history.replaceState(null, null, newSearch);
+      }
+
+      const fetchURL = window.location.href.split("?")[0];
 
       function httpUrlToWebSockeUrl(url) {
         const parsedURL = new URL(url);
@@ -124,33 +155,65 @@
         return parsedURL.toString();
       }
 
-      const headers = {};
+      const defaultHeaders = {};
       const csrfToken = Cookies.get("csrftoken");
 
       if (csrfToken) {
-        headers["x-csrftoken"] = csrfToken;
+        defaultHeaders["x-csrftoken"] = csrfToken;
       }
 
       const subscriptionUrl = httpUrlToWebSockeUrl(fetchURL);
 
       const fetcher = GraphiQL.createFetcher({
         url: fetchURL,
-        headers: headers,
+        headers: defaultHeaders,
         subscriptionUrl,
       });
 
-      const explorerPlugin = GraphiQLPluginExplorer.explorerPlugin();
+      function GraphiQLWithExplorer() {
+        const [query, setQuery] = React.useState(
+          parameters.query || EXAMPLE_QUERY,
+        );
+        const [variables, setVariables] = React.useState(
+          parameters.variables || "",
+        );
+        const [headers, setHeaders] = React.useState(parameters.headers || "");
 
-      const root = ReactDOM.createRoot(document.getElementById("graphiql"));
+        function onEditQuery(newQuery) {
+          setQuery(newQuery);
+          updateURL({ query: newQuery });
+        }
 
-      root.render(
-        React.createElement(GraphiQL, {
+        function onEditVariables(newVariables) {
+          setVariables(newVariables);
+          updateURL({ variables: newVariables });
+        }
+
+        function onEditHeaders(newHeaders) {
+          setHeaders(newHeaders);
+          updateURL({ headers: newHeaders });
+        }
+
+        const explorerPlugin = GraphiQLPluginExplorer.explorerPlugin();
+
+        return React.createElement(GraphiQL, {
           fetcher: fetcher,
           defaultEditorToolsVisibility: true,
           plugins: [explorerPlugin],
+          query: query,
+          variables: variables,
+          headers: headers,
+          onEditQuery: onEditQuery,
+          onEditVariables: onEditVariables,
+          onEditHeaders: onEditHeaders,
           inputValueDeprecation: true,
-        }),
-      );
+          isHeadersEditorEnabled: true,
+          shouldPersistHeaders: true,
+        });
+      }
+
+      const root = ReactDOM.createRoot(document.getElementById("graphiql"));
+      root.render(React.createElement(GraphiQLWithExplorer));
     </script>
   </body>
 </html>
