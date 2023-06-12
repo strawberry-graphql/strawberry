@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.184.0 - 2023-06-12
+--------------------
+
+This release improves the ﻿`relay.NodeID` annotation check by delaying it until after class initialization. This resolves issues with evaluating type annotations before they are fully defined and enables integrations to inject code for it in the type.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2838](https://github.com/strawberry-graphql/strawberry/pull/2838/)
+
+
 0.183.8 - 2023-06-12
 --------------------
 
