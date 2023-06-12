@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.183.7 - 2023-06-12
+--------------------
+
+Refactor `ConnectionExtension` to copy arguments instead of extending them.
+This should fix some issues with integrations which override `arguments`,
+like the django one, where the inserted arguments were vanishing.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2839](https://github.com/strawberry-graphql/strawberry/pull/2839/)
+
+
 0.183.6 - 2023-06-09
 --------------------
 
