@@ -23,8 +23,8 @@ from .exceptions import (
 from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
 from .types.types import (
-    StrawberryObjectDefinition,
-    get_object_definition,
+    StrawberryDefinition,
+    get_strawberry_definition,
 )
 from .utils.dataclasses import add_custom_init_fn
 from .utils.str_converters import to_camel_case
@@ -33,10 +33,10 @@ from .utils.typing import __dataclass_transform__
 T = TypeVar("T", bound=Type)
 
 
-def _get_interfaces(cls: Type[Any]) -> List[StrawberryObjectDefinition]:
-    interfaces: List[StrawberryObjectDefinition] = []
+def _get_interfaces(cls: Type[Any]) -> List[StrawberryDefinition]:
+    interfaces: List[StrawberryDefinition] = []
     for base in cls.__mro__[1:]:  # Exclude current class
-        type_definition = get_object_definition(base)
+        type_definition = get_strawberry_definition(base)
         if type_definition and type_definition.is_interface:
             interfaces.append(type_definition)
 
@@ -139,7 +139,7 @@ def _process_type(
     fields = _get_fields(cls)
     is_type_of = getattr(cls, "is_type_of", None)
 
-    cls.__strawberry_object__ = StrawberryObjectDefinition(
+    cls.__strawberry_definition__ = StrawberryDefinition(
         name=name,
         is_input=is_input,
         is_interface=is_interface,
@@ -151,7 +151,7 @@ def _process_type(
         _fields=fields,
         is_type_of=is_type_of,
     )
-    cls._type_definition = cls.__strawberry_object__
+    cls._type_definition = cls.__strawberry_definition__
 
     # dataclasses removes attributes from the class here:
     # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
@@ -375,7 +375,7 @@ def asdict(obj: Any) -> Dict[str, object]:
 
 
 __all__ = [
-    "StrawberryObjectDefinition",
+    "StrawberryDefinition",
     "input",
     "interface",
     "type",

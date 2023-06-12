@@ -48,7 +48,7 @@ def test_inheritance():
 
     ComboQuery = merge_types("SuperType", (ComplexGreeter, Person))
 
-    definition = ComboQuery.__strawberry_object__
+    definition = ComboQuery.__strawberry_definition__
     assert len(definition.fields) == 4
 
     actuals = [(field.python_name, field.type) for field in definition.fields]

@@ -9,7 +9,7 @@ from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.lazy_type import LazyType
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryList, StrawberryOptional
-from strawberry.types.types import StrawberryObjectDefinition, is_strawberry_object
+from strawberry.types.types import StrawberryDefinition, has_strawberry_definition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 from strawberry.utils.typing import eval_type
@@ -43,7 +43,7 @@ class NameConverter:
             return self.from_directive(type_)
         if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
             return self.from_enum(type_)
-        elif isinstance(type_, StrawberryObjectDefinition):
+        elif isinstance(type_, StrawberryDefinition):
             if type_.is_input:
                 return self.from_input_object(type_)
             if type_.is_interface:
@@ -59,7 +59,7 @@ class NameConverter:
     def from_argument(self, argument: StrawberryArgument) -> str:
         return self.get_graphql_name(argument)
 
-    def from_object(self, object_type: StrawberryObjectDefinition) -> str:
+    def from_object(self, object_type: StrawberryDefinition) -> str:
         # if concrete_of is not generic, than this is a subclass of an already
         # especialized type.
         if object_type.concrete_of and object_type.concrete_of.is_generic:
@@ -69,10 +69,10 @@ class NameConverter:
 
         return object_type.name
 
-    def from_input_object(self, input_type: StrawberryObjectDefinition) -> str:
+    def from_input_object(self, input_type: StrawberryDefinition) -> str:
         return self.from_object(input_type)
 
-    def from_interface(self, interface: StrawberryObjectDefinition) -> str:
+    def from_interface(self, interface: StrawberryDefinition) -> str:
         return self.from_object(interface)
 
     def from_enum(self, enum: EnumDefinition) -> str:
@@ -108,8 +108,8 @@ class NameConverter:
             if isinstance(type_, LazyType):
                 type_ = cast("StrawberryType", type_.resolve_type())  # noqa: PLW2901
 
-            if is_strawberry_object(type_):
-                type_name = self.from_type(type_.__strawberry_object__)
+            if has_strawberry_definition(type_):
+                type_name = self.from_type(type_.__strawberry_definition__)
             else:
                 # This should only be hit when generating names for type-related
                 # exceptions
@@ -121,7 +121,7 @@ class NameConverter:
 
     def from_generic(
         self,
-        generic_type: StrawberryObjectDefinition,
+        generic_type: StrawberryDefinition,
         types: List[Union[StrawberryType, type]],
     ) -> str:
         generic_type_name = generic_type.name
@@ -154,8 +154,8 @@ class NameConverter:
             strawberry_type = type_._scalar_definition
 
             name = strawberry_type.name
-        elif is_strawberry_object(type_):
-            strawberry_type = type_.__strawberry_object__
+        elif has_strawberry_definition(type_):
+            strawberry_type = type_.__strawberry_definition__
 
             if (
                 strawberry_type.is_generic

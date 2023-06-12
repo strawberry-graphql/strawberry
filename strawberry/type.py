@@ -17,17 +17,17 @@ from strawberry.utils.cached_property import cached_property
 if TYPE_CHECKING:
     from typing_extensions import TypeGuard
 
-    from strawberry.types.types import StrawberryObject
+    from strawberry.types.types import WithStrawberryDefinition
 
 
 class StrawberryType(ABC):
     @cached_property
-    def is_strawberry_object(
+    def has_strawberry_definition(
         self,
-    ) -> Callable[[Any], TypeGuard[Type[StrawberryObject]]]:
-        from .types.types import is_strawberry_object
+    ) -> Callable[[Any], TypeGuard[Type[WithStrawberryDefinition]]]:
+        from .types.types import has_strawberry_definition
 
-        return is_strawberry_object
+        return has_strawberry_definition
 
     @property
     def type_params(self) -> List[TypeVar]:
@@ -36,8 +36,10 @@ class StrawberryType(ABC):
     @abstractmethod
     def copy_with(
         self,
-        type_var_map: Mapping[TypeVar, Union[StrawberryType, Type[StrawberryObject]]],
-    ) -> Union[StrawberryType, Type[StrawberryObject]]:
+        type_var_map: Mapping[
+            TypeVar, Union[StrawberryType, Type[WithStrawberryDefinition]]
+        ],
+    ) -> Union[StrawberryType, Type[WithStrawberryDefinition]]:
         raise NotImplementedError()
 
     @property
@@ -72,7 +74,7 @@ class StrawberryType(ABC):
 
 
 class StrawberryContainer(StrawberryType):
-    def __init__(self, of_type: Union[StrawberryType, Type[StrawberryObject]]):
+    def __init__(self, of_type: Union[StrawberryType, Type[WithStrawberryDefinition]]):
         self.of_type = of_type
 
     def __hash__(self) -> int:
@@ -89,7 +91,7 @@ class StrawberryContainer(StrawberryType):
 
     @property
     def type_params(self) -> List[TypeVar]:
-        if self.is_strawberry_object(self.of_type):
+        if self.has_strawberry_definition(self.of_type):
             parameters = getattr(self.of_type, "__parameters__", None)
 
             return list(parameters) if parameters else []
@@ -102,12 +104,14 @@ class StrawberryContainer(StrawberryType):
 
     def copy_with(
         self,
-        type_var_map: Mapping[TypeVar, Union[StrawberryType, Type[StrawberryObject]]],
+        type_var_map: Mapping[
+            TypeVar, Union[StrawberryType, Type[WithStrawberryDefinition]]
+        ],
     ) -> StrawberryType:
         of_type_copy = self.of_type
 
-        if self.is_strawberry_object(self.of_type):
-            type_definition = self.of_type.__strawberry_object__
+        if self.has_strawberry_definition(self.of_type):
+            type_definition = self.of_type.__strawberry_definition__
 
             if type_definition.is_generic:
                 of_type_copy = type_definition.copy_with(type_var_map)
@@ -122,8 +126,8 @@ class StrawberryContainer(StrawberryType):
         type_ = self.of_type
         if isinstance(type_, StrawberryType):
             return type_.is_generic
-        if self.is_strawberry_object(type_):
-            return type_.__strawberry_object__.is_generic
+        if self.has_strawberry_definition(type_):
+            return type_.__strawberry_definition__.is_generic
         return False
 
     def has_generic(self, type_var: TypeVar) -> bool:

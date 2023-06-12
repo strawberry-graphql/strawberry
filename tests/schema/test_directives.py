@@ -409,7 +409,7 @@ def info_directive_schema() -> strawberry.Schema:
         def greetingTemplate(self, locale: Locale = Locale.EN) -> str:
             return greetings[locale]
 
-    field = Query.__strawberry_object__.fields[0]  # type: ignore
+    field = Query.__strawberry_definition__.fields[0]  # type: ignore
 
     @strawberry.directive(
         locations=[DirectiveLocation.FIELD],

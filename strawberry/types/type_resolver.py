@@ -12,7 +12,7 @@ from strawberry.exceptions import (
 )
 from strawberry.field import StrawberryField
 from strawberry.private import is_private
-from strawberry.types.types import is_strawberry_object
+from strawberry.types.types import has_strawberry_definition
 from strawberry.unset import UNSET
 from strawberry.utils.inspect import get_specialized_type_var_map
 
@@ -28,7 +28,7 @@ def _resolve_specialized_type_var(cls: Type, type_: Type) -> Type:
         specialized_type_var_map = get_specialized_type_var_map(type_)
         # If type_ is specialized, copy its type_var_map to the definition
         if specialized_type_var_map:
-            return type_.__strawberry_object__.copy_with(specialized_type_var_map)
+            return type_.__strawberry_definition__.copy_with(specialized_type_var_map)
 
     return type_
 
@@ -71,11 +71,11 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     # before trying to find any fields, let's first add the fields defined in
     # parent classes, we do this by checking if parents have a type definition
     for base in cls.__bases__:
-        if is_strawberry_object(base):
+        if has_strawberry_definition(base):
             base_fields = {
                 field.python_name: field
                 # TODO: we need to rename _fields to something else
-                for field in base.__strawberry_object__._fields
+                for field in base.__strawberry_definition__._fields
             }
 
             # Add base's fields to cls' fields
@@ -87,8 +87,8 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     origins: Dict[str, type] = {field_name: cls for field_name in cls.__annotations__}
 
     for base in cls.__mro__:
-        if is_strawberry_object(base):
-            for field in base.__strawberry_object__._fields:
+        if has_strawberry_definition(base):
+            for field in base.__strawberry_definition__._fields:
                 if field.python_name in base.__annotations__:
                     origins.setdefault(field.name, base)
 

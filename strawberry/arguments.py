@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from strawberry.schema.config import StrawberryConfig
     from strawberry.type import StrawberryType
 
-    from .types.types import StrawberryObjectDefinition
+    from .types.types import StrawberryDefinition
 
 DEPRECATED_NAMES: Dict[str, str] = {
     "UNSET": (
@@ -172,9 +172,9 @@ def convert_argument(
         return convert_argument(value, enum_definition, scalar_registry, config)
 
     if hasattr(
-        type_, "__strawberry_object__"
+        type_, "__strawberry_definition__"
     ):  # TODO: Replace with StrawberryInputObject
-        type_definition: StrawberryObjectDefinition = type_.__strawberry_object__
+        type_definition: StrawberryDefinition = type_.__strawberry_definition__
 
         kwargs = {}
 

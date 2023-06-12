@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from strawberry.type import StrawberryType
 
     from .nodes import Selection
-    from .types import StrawberryObject
+    from .types import WithStrawberryDefinition
 
 ContextType = TypeVar("ContextType")
 RootValueType = TypeVar("RootValueType")
@@ -76,7 +76,9 @@ class Info(Generic[ContextType, RootValueType]):
         return self._raw_info.variable_values
 
     @property
-    def return_type(self) -> Optional[Union[Type[StrawberryObject], StrawberryType]]:
+    def return_type(
+        self,
+    ) -> Optional[Union[Type[WithStrawberryDefinition], StrawberryType]]:
         return self._field.type
 
     @property

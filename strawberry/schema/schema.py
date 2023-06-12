@@ -35,7 +35,7 @@ from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
-from strawberry.types.types import StrawberryObjectDefinition, is_strawberry_object
+from strawberry.types.types import StrawberryDefinition, has_strawberry_definition
 
 from ..printer import print_schema
 from . import compat
@@ -102,14 +102,14 @@ class Schema(BaseSchema):
         self.directives = directives
         self.schema_directives = list(schema_directives)
 
-        query_type = self.schema_converter.from_object(query.__strawberry_object__)
+        query_type = self.schema_converter.from_object(query.__strawberry_definition__)
         mutation_type = (
-            self.schema_converter.from_object(mutation.__strawberry_object__)
+            self.schema_converter.from_object(mutation.__strawberry_definition__)
             if mutation
             else None
         )
         subscription_type = (
-            self.schema_converter.from_object(subscription.__strawberry_object__)
+            self.schema_converter.from_object(subscription.__strawberry_definition__)
             if subscription
             else None
         )
@@ -125,8 +125,8 @@ class Schema(BaseSchema):
                     self.schema_converter.from_schema_directive(type_)
                 )
             else:
-                if is_strawberry_object(type_):
-                    if type_.__strawberry_object__.is_generic:
+                if has_strawberry_definition(type_):
+                    if type_.__strawberry_definition__.is_generic:
                         type_ = StrawberryAnnotation(type_).resolve()  # noqa: PLW2901
                 graphql_type = self.schema_converter.from_maybe_optional(type_)
                 if isinstance(graphql_type, GraphQLNonNull):
@@ -186,7 +186,7 @@ class Schema(BaseSchema):
         self, name: str
     ) -> Optional[
         Union[
-            StrawberryObjectDefinition,
+            StrawberryDefinition,
             ScalarDefinition,
             EnumDefinition,
             StrawberryUnion,
@@ -206,7 +206,7 @@ class Schema(BaseSchema):
         if not type_:
             return None  # pragma: no cover
 
-        assert isinstance(type_, StrawberryObjectDefinition)
+        assert isinstance(type_, StrawberryDefinition)
 
         return next(
             (

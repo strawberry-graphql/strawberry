@@ -26,7 +26,7 @@ from strawberry.union import StrawberryUnion
 from strawberry.utils.cached_property import cached_property
 
 from .types.fields.resolver import StrawberryResolver
-from .types.types import is_strawberry_object
+from .types.types import has_strawberry_definition
 
 if TYPE_CHECKING:
     import builtins
@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from strawberry.types.info import Info
 
     from .permission import BasePermission
-    from .types.types import StrawberryObject
+    from .types.types import WithStrawberryDefinition
 
 T = TypeVar("T")
 
@@ -60,8 +60,8 @@ def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
         return resolver_type.is_generic
 
     # solves the Generic subclass case
-    if is_strawberry_object(resolver_type):
-        return resolver_type.__strawberry_object__.is_generic
+    if has_strawberry_definition(resolver_type):
+        return resolver_type.__strawberry_definition__.is_generic
 
     return False
 
@@ -155,8 +155,8 @@ class StrawberryField(dataclasses.Field):
                     resolver,
                     argument,
                 )
-            elif is_strawberry_object(argument.type):
-                if argument.type.__strawberry_object__.is_interface:
+            elif has_strawberry_definition(argument.type):
+                if argument.type.__strawberry_definition__.is_interface:
                     raise InvalidArgumentTypeError(
                         resolver,
                         argument,
@@ -249,7 +249,7 @@ class StrawberryField(dataclasses.Field):
         self,
     ) -> Union[  # type: ignore [valid-type]
         StrawberryType,
-        Type[StrawberryObject],
+        Type[WithStrawberryDefinition],
         Literal[UNRESOLVED],
     ]:
         # We are catching NameError because dataclasses tries to fetch the type
@@ -295,7 +295,7 @@ class StrawberryField(dataclasses.Field):
     # TODO: add this to arguments (and/or move it to StrawberryType)
     @property
     def type_params(self) -> List[TypeVar]:
-        if is_strawberry_object(self.type):
+        if has_strawberry_definition(self.type):
             parameters = getattr(self.type, "__parameters__", None)
 
             return list(parameters) if parameters else []
@@ -311,8 +311,8 @@ class StrawberryField(dataclasses.Field):
     ) -> Self:
         new_type: Union[StrawberryType, type] = self.type
 
-        if is_strawberry_object(self.type):
-            type_definition = self.type.__strawberry_object__
+        if has_strawberry_definition(self.type):
+            type_definition = self.type.__strawberry_definition__
 
             if type_definition.is_generic:
                 type_ = type_definition

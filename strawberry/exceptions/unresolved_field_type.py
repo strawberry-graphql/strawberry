@@ -9,7 +9,7 @@ from .exception import StrawberryException
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
-    from strawberry.object_type import StrawberryObjectDefinition
+    from strawberry.object_type import StrawberryDefinition
 
     from .exception_source import ExceptionSource
 
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class UnresolvedFieldTypeError(StrawberryException):
     def __init__(
         self,
-        type_definition: StrawberryObjectDefinition,
+        type_definition: StrawberryDefinition,
         field: StrawberryField,
     ):
         self.type_definition = type_definition

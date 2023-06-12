@@ -101,7 +101,7 @@ def test_with_resolver():
     class Query:
         users: List[User] = strawberry.field(resolver=get_users)
 
-    definition = Query.__strawberry_object__
+    definition = Query.__strawberry_definition__
     assert definition.name == "Query"
 
     [field] = definition.fields
@@ -127,7 +127,7 @@ def test_union_or_notation():
     class Query:
         users: List[User] | None = strawberry.field(resolver=get_users)
 
-    definition = Query.__strawberry_object__
+    definition = Query.__strawberry_definition__
     assert definition.name == "Query"
 
     [field] = definition.fields
@@ -158,7 +158,7 @@ def test_union_or_notation_generic_type_alias():
     class Query:
         users: list[User] | None = strawberry.field(resolver=get_users)
 
-    definition = Query.__strawberry_object__
+    definition = Query.__strawberry_definition__
     assert definition.name == "Query"
 
     [field] = definition.fields
@@ -185,7 +185,7 @@ def test_annotated():
     class Query:
         users: Annotated[List[User], object()] = strawberry.field(resolver=get_users)
 
-    definition = Query.__strawberry_object__
+    definition = Query.__strawberry_definition__
     assert definition.name == "Query"
 
     [field] = definition.fields
@@ -213,7 +213,7 @@ def test_annotated_or_notation():
             resolver=get_users
         )
 
-    definition = Query.__strawberry_object__
+    definition = Query.__strawberry_definition__
     assert definition.name == "Query"
 
     [field] = definition.fields
@@ -246,7 +246,7 @@ def test_annotated_or_notation_generic_type_alias():
             resolver=get_users
         )
 
-    definition = Query.__strawberry_object__
+    definition = Query.__strawberry_definition__
     assert definition.name == "Query"
 
     [field] = definition.fields

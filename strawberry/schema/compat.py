@@ -8,7 +8,7 @@ from strawberry.type import StrawberryType
 # TypeGuard is only available in typing_extensions => 3.10, we don't want
 # to force updates to the typing_extensions package so we only use it when
 # TYPE_CHECKING is enabled.
-from strawberry.types.types import is_strawberry_object
+from strawberry.types.types import has_strawberry_definition
 
 if TYPE_CHECKING:
     from typing_extensions import TypeGuard
@@ -17,15 +17,15 @@ if TYPE_CHECKING:
 
 
 def is_input_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
-    if not is_strawberry_object(type_):
+    if not has_strawberry_definition(type_):
         return False
-    return type_.__strawberry_object__.is_input
+    return type_.__strawberry_definition__.is_input
 
 
 def is_interface_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
-    if not is_strawberry_object(type_):
+    if not has_strawberry_definition(type_):
         return False
-    return type_.__strawberry_object__.is_interface
+    return type_.__strawberry_definition__.is_interface
 
 
 def is_scalar(
@@ -44,8 +44,8 @@ def is_schema_directive(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
 
 
 def is_generic(type_: Union[StrawberryType, type]) -> bool:
-    if is_strawberry_object(type_):
-        return type_.__strawberry_object__.is_generic
+    if has_strawberry_definition(type_):
+        return type_.__strawberry_definition__.is_generic
 
     if isinstance(type_, StrawberryType):
         return type_.is_generic
