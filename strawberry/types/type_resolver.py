@@ -12,7 +12,7 @@ from strawberry.exceptions import (
 )
 from strawberry.field import StrawberryField
 from strawberry.private import is_private
-from strawberry.types.types import has_strawberry_object
+from strawberry.types.types import is_strawberry_object
 from strawberry.unset import UNSET
 from strawberry.utils.inspect import get_specialized_type_var_map
 
@@ -71,7 +71,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     # before trying to find any fields, let's first add the fields defined in
     # parent classes, we do this by checking if parents have a type definition
     for base in cls.__bases__:
-        if has_strawberry_object(base):
+        if is_strawberry_object(base):
             base_fields = {
                 field.python_name: field
                 # TODO: we need to rename _fields to something else
@@ -87,7 +87,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     origins: Dict[str, type] = {field_name: cls for field_name in cls.__annotations__}
 
     for base in cls.__mro__:
-        if has_strawberry_object(base):
+        if is_strawberry_object(base):
             for field in base.__strawberry_object__._fields:
                 if field.python_name in base.__annotations__:
                     origins.setdefault(field.name, base)

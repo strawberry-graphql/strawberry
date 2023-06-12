@@ -22,12 +22,12 @@ if TYPE_CHECKING:
 
 class StrawberryType(ABC):
     @cached_property
-    def has_strawberry_object(
+    def is_strawberry_object(
         self,
     ) -> Callable[[Any], TypeGuard[Type[StrawberryObject]]]:
-        from .types.types import has_strawberry_object
+        from .types.types import is_strawberry_object
 
-        return has_strawberry_object
+        return is_strawberry_object
 
     @property
     def type_params(self) -> List[TypeVar]:
@@ -89,7 +89,7 @@ class StrawberryContainer(StrawberryType):
 
     @property
     def type_params(self) -> List[TypeVar]:
-        if self.has_strawberry_object(self.of_type):
+        if self.is_strawberry_object(self.of_type):
             parameters = getattr(self.of_type, "__parameters__", None)
 
             return list(parameters) if parameters else []
@@ -106,7 +106,7 @@ class StrawberryContainer(StrawberryType):
     ) -> StrawberryType:
         of_type_copy = self.of_type
 
-        if self.has_strawberry_object(self.of_type):
+        if self.is_strawberry_object(self.of_type):
             type_definition = self.of_type.__strawberry_object__
 
             if type_definition.is_generic:
@@ -122,7 +122,7 @@ class StrawberryContainer(StrawberryType):
         type_ = self.of_type
         if isinstance(type_, StrawberryType):
             return type_.is_generic
-        if self.has_strawberry_object(type_):
+        if self.is_strawberry_object(type_):
             return type_.__strawberry_object__.is_generic
         return False
 

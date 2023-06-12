@@ -43,7 +43,7 @@ from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.type import StrawberryContainer
 from strawberry.unset import UNSET
 
-from ..types.types import has_strawberry_object
+from ..types.types import is_strawberry_object
 from .ast_from_value import ast_from_value
 
 if TYPE_CHECKING:
@@ -145,7 +145,7 @@ def print_schema_directive(
             while isinstance(f_type, StrawberryContainer):
                 f_type = f_type.of_type
 
-            if has_strawberry_object(f_type):
+            if is_strawberry_object(f_type):
                 extras.types.add(cast(type, f_type))
 
             if hasattr(f_type, "_scalar_definition"):

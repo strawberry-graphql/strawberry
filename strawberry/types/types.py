@@ -176,7 +176,7 @@ class StrawberryObject(Protocol):
     __strawberry_object__: StrawberryObjectDefinition
 
 
-def has_strawberry_object(klass: Any) -> TypeGuard[Type[StrawberryObject]]:
+def is_strawberry_object(klass: Any) -> TypeGuard[Type[StrawberryObject]]:
     if hasattr(klass, "__strawberry_object__"):
         return True
     # Generics remove dunder members here
@@ -190,7 +190,7 @@ def has_strawberry_object(klass: Any) -> TypeGuard[Type[StrawberryObject]]:
 
 
 def get_object_definition(klass: Any) -> Optional[StrawberryObjectDefinition]:
-    if has_strawberry_object(klass):
+    if is_strawberry_object(klass):
         return klass.__strawberry_object__
     return None
 

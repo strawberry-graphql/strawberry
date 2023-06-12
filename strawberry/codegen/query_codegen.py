@@ -38,7 +38,7 @@ from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
-from strawberry.types.types import StrawberryObjectDefinition, has_strawberry_object
+from strawberry.types.types import StrawberryObjectDefinition, is_strawberry_object
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
@@ -467,7 +467,7 @@ class QueryCodegen:
                 self._collect_type_from_strawberry_type(strawberry_type.of_type)
             )
 
-        if has_strawberry_object(strawberry_type):
+        if is_strawberry_object(strawberry_type):
             strawberry_type = strawberry_type.__strawberry_object__
 
         if isinstance(strawberry_type, StrawberryObjectDefinition):

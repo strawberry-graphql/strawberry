@@ -35,7 +35,7 @@ from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
-from strawberry.types.types import StrawberryObjectDefinition, has_strawberry_object
+from strawberry.types.types import StrawberryObjectDefinition, is_strawberry_object
 
 from ..printer import print_schema
 from . import compat
@@ -125,7 +125,7 @@ class Schema(BaseSchema):
                     self.schema_converter.from_schema_directive(type_)
                 )
             else:
-                if has_strawberry_object(type_):
+                if is_strawberry_object(type_):
                     if type_.__strawberry_object__.is_generic:
                         type_ = StrawberryAnnotation(type_).resolve()  # noqa: PLW2901
                 graphql_type = self.schema_converter.from_maybe_optional(type_)

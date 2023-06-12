@@ -9,7 +9,7 @@ from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.lazy_type import LazyType
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryList, StrawberryOptional
-from strawberry.types.types import StrawberryObjectDefinition, has_strawberry_object
+from strawberry.types.types import StrawberryObjectDefinition, is_strawberry_object
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 from strawberry.utils.typing import eval_type
@@ -108,7 +108,7 @@ class NameConverter:
             if isinstance(type_, LazyType):
                 type_ = cast("StrawberryType", type_.resolve_type())  # noqa: PLW2901
 
-            if has_strawberry_object(type_):
+            if is_strawberry_object(type_):
                 type_name = self.from_type(type_.__strawberry_object__)
             else:
                 # This should only be hit when generating names for type-related
@@ -154,7 +154,7 @@ class NameConverter:
             strawberry_type = type_._scalar_definition
 
             name = strawberry_type.name
-        elif has_strawberry_object(type_):
+        elif is_strawberry_object(type_):
             strawberry_type = type_.__strawberry_object__
 
             if (
