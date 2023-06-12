@@ -8,7 +8,7 @@ from strawberry.annotation import StrawberryAnnotation
 from strawberry.enum import EnumDefinition
 from strawberry.field import StrawberryField
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
-from strawberry.types.types import StrawberryDefinition, has_strawberry_definition
+from strawberry.types.types import StrawberryObjectDefinition, has_strawberry_definition
 from strawberry.union import StrawberryUnion
 
 
@@ -51,7 +51,7 @@ def test_generic_objects():
     # TODO: Simplify with StrawberryObject
     assert isinstance(resolved, type)
     assert has_strawberry_definition(resolved)
-    assert isinstance(resolved.__strawberry_definition__, StrawberryDefinition)
+    assert isinstance(resolved.__strawberry_definition__, StrawberryObjectDefinition)
     assert resolved.__strawberry_definition__.is_generic
 
     field: StrawberryField = resolved.__strawberry_definition__.fields[0]
@@ -105,7 +105,7 @@ def test_generic_with_enums():
     # TODO: Simplify with StrawberryObject
     assert isinstance(resolved, type)
     assert has_strawberry_definition(resolved)
-    assert isinstance(resolved.__strawberry_definition__, StrawberryDefinition)
+    assert isinstance(resolved.__strawberry_definition__, StrawberryObjectDefinition)
 
     generic_slot_field: StrawberryField = resolved.__strawberry_definition__.fields[0]
     assert isinstance(generic_slot_field.type, EnumDefinition)

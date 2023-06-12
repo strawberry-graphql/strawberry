@@ -23,7 +23,7 @@ from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
-from strawberry.types.types import StrawberryDefinition, has_strawberry_definition
+from strawberry.types.types import StrawberryObjectDefinition, has_strawberry_definition
 from strawberry.unset import UNSET
 from strawberry.utils.typing import (
     eval_type,
@@ -244,7 +244,7 @@ class StrawberryAnnotation:
             return True
         elif has_strawberry_definition(evaled_type):
             return True
-        elif isinstance(evaled_type, StrawberryDefinition):
+        elif isinstance(evaled_type, StrawberryObjectDefinition):
             return True
         elif isinstance(evaled_type, StrawberryOptional):
             return True

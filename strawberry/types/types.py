@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
 
 @dataclasses.dataclass(eq=False)
-class StrawberryDefinition(StrawberryType):
+class StrawberryObjectDefinition(StrawberryType):
     """
     Every type that is decorated by strawberry should have a dunder
     `__strawberry_definition__` with instance of a StrawberryType that contains
@@ -48,14 +48,14 @@ class StrawberryDefinition(StrawberryType):
     is_interface: bool
     origin: Type[Any]
     description: Optional[str]
-    interfaces: List[StrawberryDefinition]
+    interfaces: List[StrawberryObjectDefinition]
     extend: bool
     directives: Optional[Sequence[object]]
     is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
 
     _fields: List[StrawberryField]
 
-    concrete_of: Optional[StrawberryDefinition] = None
+    concrete_of: Optional[StrawberryObjectDefinition] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
     type_var_map: Mapping[TypeVar, Union[StrawberryType, type]] = dataclasses.field(
         default_factory=dict
@@ -88,7 +88,7 @@ class StrawberryDefinition(StrawberryType):
     ) -> Type[WithStrawberryDefinition]:
         fields = [field.copy_with(type_var_map) for field in self.fields]
 
-        new_type_definition = StrawberryDefinition(
+        new_type_definition = StrawberryObjectDefinition(
             name=self.name,
             is_input=self.is_input,
             origin=self.origin,
@@ -185,7 +185,7 @@ class StrawberryDefinition(StrawberryType):
 
 
 class WithStrawberryDefinition(Protocol):
-    __strawberry_definition__: StrawberryDefinition
+    __strawberry_definition__: StrawberryObjectDefinition
 
 
 def has_strawberry_definition(klass: Any) -> TypeGuard[Type[WithStrawberryDefinition]]:
@@ -201,11 +201,11 @@ def has_strawberry_definition(klass: Any) -> TypeGuard[Type[WithStrawberryDefini
     return False
 
 
-def get_strawberry_definition(klass: Any) -> Optional[StrawberryDefinition]:
+def get_strawberry_definition(klass: Any) -> Optional[StrawberryObjectDefinition]:
     if has_strawberry_definition(klass):
         return klass.__strawberry_definition__
     return None
 
 
 # TODO: remove when deprecating _type_definition
-TypeDefinition = StrawberryDefinition
+TypeDefinition = StrawberryObjectDefinition

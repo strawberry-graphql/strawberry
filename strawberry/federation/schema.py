@@ -30,7 +30,7 @@ from graphql.type.definition import GraphQLArgument
 
 from strawberry.printer import print_schema
 from strawberry.schema import Schema as BaseSchema
-from strawberry.types.types import StrawberryDefinition
+from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.utils.cached_property import cached_property
 from strawberry.utils.inspect import get_func_args
 
@@ -180,7 +180,7 @@ class Schema(BaseSchema):
             type_name = representation.pop("__typename")
             type_ = self.schema_converter.type_map[type_name]
 
-            definition = cast(StrawberryDefinition, type_.definition)
+            definition = cast(StrawberryObjectDefinition, type_.definition)
 
             if hasattr(definition.origin, "resolve_reference"):
                 resolve_reference = definition.origin.resolve_reference
@@ -389,13 +389,13 @@ def _is_key(directive: Any) -> bool:
 
 def _has_federation_keys(
     definition: Union[
-        StrawberryDefinition,
+        StrawberryObjectDefinition,
         "ScalarDefinition",
         "EnumDefinition",
         "StrawberryUnion",
     ]
 ) -> bool:
-    if isinstance(definition, StrawberryDefinition):
+    if isinstance(definition, StrawberryObjectDefinition):
         return any(_is_key(directive) for directive in definition.directives or [])
 
     return False

@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
     from strawberry.types import ExecutionContext, ExecutionResult
     from strawberry.types.graphql import OperationType
-    from strawberry.types.types import StrawberryDefinition
+    from strawberry.types.types import StrawberryObjectDefinition
     from strawberry.union import StrawberryUnion
 
     from .config import StrawberryConfig
@@ -70,7 +70,7 @@ class BaseSchema(Protocol):
         self, name: str
     ) -> Optional[
         Union[
-            StrawberryDefinition,
+            StrawberryObjectDefinition,
             ScalarDefinition,
             EnumDefinition,
             StrawberryUnion,

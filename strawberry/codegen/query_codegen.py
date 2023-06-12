@@ -38,7 +38,7 @@ from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
-from strawberry.types.types import StrawberryDefinition, has_strawberry_definition
+from strawberry.types.types import StrawberryObjectDefinition, has_strawberry_definition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
@@ -252,7 +252,7 @@ class QueryCodegen:
         for fd in fragment_definitions:
             query_type = self.schema.get_type_by_name(fd.type_condition.name.value)
             assert isinstance(
-                query_type, StrawberryDefinition
+                query_type, StrawberryObjectDefinition
             ), f"{fd.type_condition.name.value!r} is not a type in the graphql schema!"
 
             graph_ql_object_type_factory = partial(
@@ -356,7 +356,7 @@ class QueryCodegen:
         query_type = self.schema.get_type_by_name(
             operation_definition.operation.value.title()
         )
-        assert isinstance(query_type, StrawberryDefinition)
+        assert isinstance(query_type, StrawberryObjectDefinition)
 
         assert operation_definition.name is not None
         operation_name = operation_definition.name.value
@@ -470,7 +470,7 @@ class QueryCodegen:
         if has_strawberry_definition(strawberry_type):
             strawberry_type = strawberry_type.__strawberry_definition__
 
-        if isinstance(strawberry_type, StrawberryDefinition):
+        if isinstance(strawberry_type, StrawberryObjectDefinition):
             type_ = GraphQLObjectType(
                 strawberry_type.name,
                 [],
@@ -514,7 +514,7 @@ class QueryCodegen:
         return GraphQLOptional(type_)
 
     def _field_from_selection(
-        self, selection: FieldNode, parent_type: StrawberryDefinition
+        self, selection: FieldNode, parent_type: StrawberryObjectDefinition
     ) -> GraphQLField:
         if selection.name.value == "__typename":
             return GraphQLField("__typename", None, GraphQLScalar("String", None))
@@ -559,7 +559,7 @@ class QueryCodegen:
         self,
         selection: FieldNode,
         class_name: str,
-        parent_type: StrawberryDefinition,
+        parent_type: StrawberryObjectDefinition,
     ) -> GraphQLField:
         assert selection.selection_set is not None
 
@@ -582,7 +582,7 @@ class QueryCodegen:
             )
         else:
             parent_type = cast(
-                StrawberryDefinition,
+                StrawberryObjectDefinition,
                 selected_field_type.__strawberry_definition__,  # type: ignore
             )
 
@@ -601,7 +601,7 @@ class QueryCodegen:
         self,
         selection: FieldNode,
         class_name: str,
-        parent_type: StrawberryDefinition,
+        parent_type: StrawberryObjectDefinition,
     ) -> GraphQLField:
         if selection.selection_set:
             return self._field_from_selection_set(selection, class_name, parent_type)
@@ -611,7 +611,7 @@ class QueryCodegen:
     def _collect_types_with_inline_fragments(
         self,
         selection: HasSelectionSet,
-        parent_type: StrawberryDefinition,
+        parent_type: StrawberryObjectDefinition,
         class_name: str,
     ) -> Union[GraphQLObjectType, GraphQLUnion]:
         sub_types = self._collect_types_using_fragments(
@@ -630,7 +630,7 @@ class QueryCodegen:
     def _collect_types(
         self,
         selection: HasSelectionSet,
-        parent_type: StrawberryDefinition,
+        parent_type: StrawberryObjectDefinition,
         class_name: str,
         graph_ql_object_type_factory: Callable[
             [str], GraphQLObjectType
@@ -686,7 +686,7 @@ class QueryCodegen:
     def _collect_types_using_fragments(
         self,
         selection: HasSelectionSet,
-        parent_type: StrawberryDefinition,
+        parent_type: StrawberryObjectDefinition,
         class_name: str,
     ) -> List[GraphQLObjectType]:
         assert selection.selection_set
@@ -714,7 +714,7 @@ class QueryCodegen:
                 assert isinstance(sub_selection, FieldNode)
 
                 parent_type = cast(
-                    StrawberryDefinition,
+                    StrawberryObjectDefinition,
                     self.schema.get_type_by_name(fragment.type_condition.name.value),
                 )
 

@@ -23,7 +23,7 @@ from .exceptions import (
 from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
 from .types.types import (
-    StrawberryDefinition,
+    StrawberryObjectDefinition,
     get_strawberry_definition,
 )
 from .utils.dataclasses import add_custom_init_fn
@@ -33,8 +33,8 @@ from .utils.typing import __dataclass_transform__
 T = TypeVar("T", bound=Type)
 
 
-def _get_interfaces(cls: Type[Any]) -> List[StrawberryDefinition]:
-    interfaces: List[StrawberryDefinition] = []
+def _get_interfaces(cls: Type[Any]) -> List[StrawberryObjectDefinition]:
+    interfaces: List[StrawberryObjectDefinition] = []
     for base in cls.__mro__[1:]:  # Exclude current class
         type_definition = get_strawberry_definition(base)
         if type_definition and type_definition.is_interface:
@@ -139,7 +139,7 @@ def _process_type(
     fields = _get_fields(cls)
     is_type_of = getattr(cls, "is_type_of", None)
 
-    cls.__strawberry_definition__ = StrawberryDefinition(
+    cls.__strawberry_definition__ = StrawberryObjectDefinition(
         name=name,
         is_input=is_input,
         is_interface=is_interface,
@@ -375,7 +375,7 @@ def asdict(obj: Any) -> Dict[str, object]:
 
 
 __all__ = [
-    "StrawberryDefinition",
+    "StrawberryObjectDefinition",
     "input",
     "interface",
     "type",

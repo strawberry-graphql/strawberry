@@ -8,7 +8,7 @@ from pydantic import BaseModel, ValidationError, conlist
 
 import strawberry
 from strawberry.type import StrawberryOptional
-from strawberry.types.types import StrawberryDefinition
+from strawberry.types.types import StrawberryObjectDefinition
 
 
 @pytest.mark.parametrize(
@@ -40,7 +40,7 @@ def test_types(pydantic_type, field_type):
     class Type:
         field: strawberry.auto
 
-    definition: StrawberryDefinition = Type.__strawberry_definition__
+    definition: StrawberryObjectDefinition = Type.__strawberry_definition__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -61,7 +61,7 @@ def test_types_optional(pydantic_type, field_type):
     class Type:
         field: strawberry.auto
 
-    definition: StrawberryDefinition = Type.__strawberry_definition__
+    definition: StrawberryObjectDefinition = Type.__strawberry_definition__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -79,7 +79,7 @@ def test_conint():
     class Type:
         field: strawberry.auto
 
-    definition: StrawberryDefinition = Type.__strawberry_definition__
+    definition: StrawberryObjectDefinition = Type.__strawberry_definition__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -96,7 +96,7 @@ def test_confloat():
     class Type:
         field: strawberry.auto
 
-    definition: StrawberryDefinition = Type.__strawberry_definition__
+    definition: StrawberryObjectDefinition = Type.__strawberry_definition__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -113,7 +113,7 @@ def test_constr():
     class Type:
         field: strawberry.auto
 
-    definition: StrawberryDefinition = Type.__strawberry_definition__
+    definition: StrawberryObjectDefinition = Type.__strawberry_definition__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -199,7 +199,7 @@ def test_literal_types():
     class Type:
         field: strawberry.auto
 
-    definition: StrawberryDefinition = Type.__strawberry_definition__
+    definition: StrawberryObjectDefinition = Type.__strawberry_definition__
     assert definition.name == "Type"
 
     [field] = definition.fields
