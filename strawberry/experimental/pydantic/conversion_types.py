@@ -6,7 +6,7 @@ from typing_extensions import Protocol
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from strawberry.types.types import StrawberryObject
+    from strawberry.types.types import StrawberryObjectDefinition
 
 
 PydanticModel = TypeVar("PydanticModel", bound=BaseModel)
@@ -29,7 +29,7 @@ class StrawberryTypeFromPydantic(Protocol[PydanticModel]):
         ...
 
     @property
-    def __strawberry_object__(self) -> StrawberryObject:
+    def __strawberry_object__(self) -> StrawberryObjectDefinition:
         ...
 
     @property

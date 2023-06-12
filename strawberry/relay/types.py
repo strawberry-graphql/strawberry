@@ -39,7 +39,7 @@ from strawberry.object_type import interface, type
 from strawberry.private import StrawberryPrivate
 from strawberry.relay.exceptions import NodeIDAnnotationError
 from strawberry.type import StrawberryContainer
-from strawberry.types.types import StrawberryObject
+from strawberry.types.types import StrawberryObjectDefinition, get_object_definition
 from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
 from strawberry.utils.inspect import in_async_context
 
@@ -222,7 +222,7 @@ class GlobalID:
         """
         schema = info.schema
         type_def = info.schema.get_type_by_name(self.type_name)
-        assert isinstance(type_def, StrawberryObject)
+        assert isinstance(type_def, StrawberryObjectDefinition)
 
         origin = (
             type_def.origin.resolve_type
@@ -401,7 +401,7 @@ class Node:
         else:
             parent_type = info._raw_info.parent_type
             type_def = info.schema.get_type_by_name(parent_type.name)
-            assert isinstance(type_def, StrawberryObject)
+            assert isinstance(type_def, StrawberryObjectDefinition)
             origin = cast(Type[Node], type_def.origin)
             resolve_id = origin.resolve_id
             resolve_typename = origin.resolve_typename
@@ -830,7 +830,8 @@ class ListConnection(Connection[NodeType]):
         # Overfetch by 1 to check if we have a next result
         overfetch = end + 1 if end != sys.maxsize else end
 
-        type_def = cast(StrawberryObject, cls.__strawberry_object__)  # type:ignore
+        type_def = get_object_definition(cls)
+        assert type_def
         field_def = type_def.get_field("edges")
         assert field_def
 

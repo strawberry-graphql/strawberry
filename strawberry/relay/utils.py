@@ -2,7 +2,7 @@ import base64
 from typing import Any, Tuple, Union
 from typing_extensions import assert_never
 
-from strawberry.types.types import StrawberryObject
+from strawberry.types.types import StrawberryObjectDefinition
 
 
 def from_base64(value: str) -> Tuple[str, str]:
@@ -31,7 +31,7 @@ def from_base64(value: str) -> Tuple[str, str]:
     return res[0], res[1]
 
 
-def to_base64(type_: Union[str, type, StrawberryObject], node_id: Any) -> str:
+def to_base64(type_: Union[str, type, StrawberryObjectDefinition], node_id: Any) -> str:
     """Encode the type name and node id to a base64 string.
 
     Args:
@@ -51,7 +51,7 @@ def to_base64(type_: Union[str, type, StrawberryObject], node_id: Any) -> str:
     try:
         if isinstance(type_, str):
             type_name = type_
-        elif isinstance(type_, StrawberryObject):
+        elif isinstance(type_, StrawberryObjectDefinition):
             type_name = type_.name
         elif isinstance(type_, type):
             type_name = type_.__strawberry_object__.name  # type:ignore

@@ -17,14 +17,14 @@ from strawberry.utils.cached_property import cached_property
 if TYPE_CHECKING:
     from typing_extensions import TypeGuard
 
-    from strawberry.types.types import WithStrawberryObject
+    from strawberry.types.types import StrawberryObject
 
 
 class StrawberryType(ABC):
     @cached_property
     def has_strawberry_object(
         self,
-    ) -> Callable[[Any], TypeGuard[Type[WithStrawberryObject]]]:
+    ) -> Callable[[Any], TypeGuard[Type[StrawberryObject]]]:
         from .types.types import has_strawberry_object
 
         return has_strawberry_object
@@ -35,8 +35,9 @@ class StrawberryType(ABC):
 
     @abstractmethod
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
-    ) -> Union[StrawberryType, type]:
+        self,
+        type_var_map: Mapping[TypeVar, Union[StrawberryType, Type[StrawberryObject]]],
+    ) -> Union[StrawberryType, Type[StrawberryObject]]:
         raise NotImplementedError()
 
     @property
@@ -71,7 +72,7 @@ class StrawberryType(ABC):
 
 
 class StrawberryContainer(StrawberryType):
-    def __init__(self, of_type: Union[StrawberryType, type]):
+    def __init__(self, of_type: Union[StrawberryType, Type[StrawberryObject]]):
         self.of_type = of_type
 
     def __hash__(self) -> int:
@@ -100,11 +101,11 @@ class StrawberryContainer(StrawberryType):
             return []
 
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+        self,
+        type_var_map: Mapping[TypeVar, Union[StrawberryType, Type[StrawberryObject]]],
     ) -> StrawberryType:
-        of_type_copy: Union[StrawberryType, type] = self.of_type
+        of_type_copy = self.of_type
 
-        # TODO: Obsolete with StrawberryObject
         if self.has_strawberry_object(self.of_type):
             type_definition = self.of_type.__strawberry_object__
 

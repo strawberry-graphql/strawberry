@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from strawberry.types.info import Info
 
     from .permission import BasePermission
+    from .types.types import StrawberryObject
 
 T = TypeVar("T")
 
@@ -244,7 +245,13 @@ class StrawberryField(dataclasses.Field):
         _ = resolver.arguments
 
     @property  # type: ignore
-    def type(self) -> Union[StrawberryType, type, Literal[UNRESOLVED]]:  # type: ignore
+    def type(
+        self,
+    ) -> Union[  # type: ignore [valid-type]
+        StrawberryType,
+        Type[StrawberryObject],
+        Literal[UNRESOLVED],
+    ]:
         # We are catching NameError because dataclasses tries to fetch the type
         # of the field from the class before the class is fully defined.
         # This triggers a NameError error when using forward references because
@@ -304,8 +311,6 @@ class StrawberryField(dataclasses.Field):
     ) -> Self:
         new_type: Union[StrawberryType, type] = self.type
 
-        # TODO: Remove with creation of StrawberryObject. Will act same as other
-        #       StrawberryTypes
         if has_strawberry_object(self.type):
             type_definition = self.type.__strawberry_object__
 

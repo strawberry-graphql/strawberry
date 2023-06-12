@@ -30,20 +30,20 @@ if TYPE_CHECKING:
 
 
 @dataclasses.dataclass(eq=False)
-class StrawberryObject(StrawberryType):
+class StrawberryObjectDefinition(StrawberryType):
     name: str
     is_input: bool
     is_interface: bool
     origin: Type[Any]
     description: Optional[str]
-    interfaces: List[StrawberryObject]
+    interfaces: List[StrawberryObjectDefinition]
     extend: bool
     directives: Optional[Sequence[object]]
     is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
 
     _fields: List[StrawberryField]
 
-    concrete_of: Optional[StrawberryObject] = None
+    concrete_of: Optional[StrawberryObjectDefinition] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
     type_var_map: Mapping[TypeVar, Union[StrawberryType, type]] = dataclasses.field(
         default_factory=dict
@@ -55,7 +55,6 @@ class StrawberryObject(StrawberryType):
             if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):  # type: ignore  # noqa: E501
                 self.fields[index] = field.copy_with({Self: self.origin})  # type: ignore  # noqa: E501
 
-    # TODO: remove wrapped cls when we "merge" this with `StrawberryObject`
     def resolve_generic(self, wrapped_cls: type) -> type:
         from strawberry.annotation import StrawberryAnnotation
 
@@ -72,14 +71,12 @@ class StrawberryObject(StrawberryType):
 
         return self.copy_with(type_var_map)
 
-    # TODO: Return a StrawberryObject
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
-    ) -> type:
-        # TODO: Logic unnecessary with StrawberryObject
+    ) -> Type[StrawberryObject]:
         fields = [field.copy_with(type_var_map) for field in self.fields]
 
-        new_type_definition = StrawberryObject(
+        new_type_definition = StrawberryObjectDefinition(
             name=self.name,
             is_input=self.is_input,
             origin=self.origin,
@@ -99,7 +96,7 @@ class StrawberryObject(StrawberryType):
             (self.origin,),
             {"__strawberry_object__": new_type_definition},
         )
-        # alias for backward compat
+        # TODO: remove when deprecating _type_definition
         new_type._type_definition = new_type_definition  # type: ignore
 
         new_type_definition.origin = new_type
@@ -132,13 +129,12 @@ class StrawberryObject(StrawberryType):
 
         return type_params
 
-    def is_implemented_by(self, root: Union[type, dict]) -> bool:
-        # TODO: Accept StrawberryObject instead
+    def is_implemented_by(self, root: Type[StrawberryObject]) -> bool:
         # TODO: Support dicts
         if isinstance(root, dict):
             raise NotImplementedError
 
-        type_definition = root.__strawberry_object__  # type: ignore
+        type_definition = root.__strawberry_object__
 
         if type_definition is self:
             # No generics involved. Exact type match
@@ -176,11 +172,11 @@ class StrawberryObject(StrawberryType):
         return True
 
 
-class WithStrawberryObject(Protocol):
-    __strawberry_object__: StrawberryObject
+class StrawberryObject(Protocol):
+    __strawberry_object__: StrawberryObjectDefinition
 
 
-def has_strawberry_object(klass: Any) -> TypeGuard[Type[WithStrawberryObject]]:
+def has_strawberry_object(klass: Any) -> TypeGuard[Type[StrawberryObject]]:
     if hasattr(klass, "__strawberry_object__"):
         return True
     # Generics remove dunder members here
@@ -193,11 +189,11 @@ def has_strawberry_object(klass: Any) -> TypeGuard[Type[WithStrawberryObject]]:
     return False
 
 
-def get_strawberry_object(klass: Any) -> Optional[StrawberryObject]:
+def get_object_definition(klass: Any) -> Optional[StrawberryObjectDefinition]:
     if has_strawberry_object(klass):
         return klass.__strawberry_object__
     return None
 
 
 # TODO: remove when deprecating _type_definition
-TypeDefinition = StrawberryObject
+TypeDefinition = StrawberryObjectDefinition

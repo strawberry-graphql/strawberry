@@ -52,7 +52,7 @@ from strawberry.private import is_private
 from strawberry.schema.types.scalar import _make_scalar_type
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.info import Info
-from strawberry.types.types import StrawberryObject, has_strawberry_object
+from strawberry.types.types import StrawberryObjectDefinition, has_strawberry_object
 from strawberry.union import StrawberryUnion
 from strawberry.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
@@ -295,7 +295,7 @@ class GraphQLCoreConverter:
 
     @staticmethod
     def _get_thunk_mapping(
-        type_definition: StrawberryObject,
+        type_definition: StrawberryObjectDefinition,
         name_converter: Callable[[StrawberryField], str],
         field_converter: Callable[[StrawberryField], FieldType],
     ) -> Dict[str, FieldType]:
@@ -322,7 +322,7 @@ class GraphQLCoreConverter:
         return thunk_mapping
 
     def get_graphql_fields(
-        self, type_definition: StrawberryObject
+        self, type_definition: StrawberryObjectDefinition
     ) -> Dict[str, GraphQLField]:
         return self._get_thunk_mapping(
             type_definition=type_definition,
@@ -331,7 +331,7 @@ class GraphQLCoreConverter:
         )
 
     def get_graphql_input_fields(
-        self, type_definition: StrawberryObject
+        self, type_definition: StrawberryObjectDefinition
     ) -> Dict[str, GraphQLInputField]:
         return self._get_thunk_mapping(
             type_definition=type_definition,
@@ -367,7 +367,9 @@ class GraphQLCoreConverter:
 
         return graphql_object_type
 
-    def from_interface(self, interface: StrawberryObject) -> GraphQLInterfaceType:
+    def from_interface(
+        self, interface: StrawberryObjectDefinition
+    ) -> GraphQLInterfaceType:
         # TODO: Use StrawberryInterface when it's implemented in another PR
 
         interface_name = self.config.name_converter.from_type(interface)
@@ -401,7 +403,7 @@ class GraphQLCoreConverter:
 
         return GraphQLList(of_type)
 
-    def from_object(self, object_type: StrawberryObject) -> GraphQLObjectType:
+    def from_object(self, object_type: StrawberryObjectDefinition) -> GraphQLObjectType:
         # TODO: Use StrawberryObjectType when it's implemented in another PR
         object_type_name = self.config.name_converter.from_type(object_type)
 
@@ -702,7 +704,7 @@ class GraphQLCoreConverter:
         elif isinstance(type_, StrawberryList):
             return self.from_list(type_)
         elif compat.is_interface_type(type_):  # TODO: Replace with StrawberryInterface
-            type_definition: StrawberryObject = (
+            type_definition: StrawberryObjectDefinition = (
                 type_.__strawberry_object__  # type: ignore
             )
             return self.from_interface(type_definition)
@@ -711,7 +713,7 @@ class GraphQLCoreConverter:
         elif compat.is_enum(type_):  # TODO: Replace with StrawberryEnum
             enum_definition: EnumDefinition = type_._enum_definition  # type: ignore
             return self.from_enum(enum_definition)
-        elif isinstance(type_, StrawberryObject):
+        elif isinstance(type_, StrawberryObjectDefinition):
             return self.from_object(type_)
         elif isinstance(type_, StrawberryUnion):
             return self.from_union(type_)
@@ -768,7 +770,7 @@ class GraphQLCoreConverter:
 
     def _get_is_type_of(
         self,
-        object_type: StrawberryObject,
+        object_type: StrawberryObjectDefinition,
     ) -> Optional[Callable[[Any, GraphQLResolveInfo], bool]]:
         if object_type.is_type_of:
             return object_type.is_type_of
@@ -819,8 +821,8 @@ class GraphQLCoreConverter:
         # var map is the same, in that case we can return
 
         if (
-            isinstance(type_definition, StrawberryObject)
-            and isinstance(cached_type.definition, StrawberryObject)
+            isinstance(type_definition, StrawberryObjectDefinition)
+            and isinstance(cached_type.definition, StrawberryObjectDefinition)
             and cached_type.definition.concrete_of is not None
             and cached_type.definition.concrete_of == type_definition.concrete_of
             and (
@@ -855,14 +857,14 @@ class GraphQLCoreConverter:
             if equal:
                 return
 
-        if isinstance(type_definition, StrawberryObject):
+        if isinstance(type_definition, StrawberryObjectDefinition):
             first_origin = type_definition.origin
         elif isinstance(type_definition, EnumDefinition):
             first_origin = type_definition.wrapped_cls
         else:
             first_origin = None
 
-        if isinstance(cached_type.definition, StrawberryObject):
+        if isinstance(cached_type.definition, StrawberryObjectDefinition):
             second_origin = cached_type.definition.origin
         elif isinstance(cached_type.definition, EnumDefinition):
             second_origin = cached_type.definition.wrapped_cls
