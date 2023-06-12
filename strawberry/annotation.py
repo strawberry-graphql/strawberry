@@ -59,7 +59,7 @@ class StrawberryAnnotation:
         if not isinstance(other, StrawberryAnnotation):
             raise NotImplementedError(
                 f"Comparing {StrawberryAnnotation.__name__} "
-                f"with {type(other)} is ambiguous."
+                f"with {type(other)} is not supported."
             )
 
         return self.resolve() == other.resolve()
