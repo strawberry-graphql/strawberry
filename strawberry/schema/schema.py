@@ -164,17 +164,7 @@ class Schema(BaseSchema):
         self._schema._strawberry_schema = self  # type: ignore
 
         self._warn_for_federation_directives()
-
-        for concrete_type in self.schema_converter.type_map.values():
-            type_def = concrete_type.definition
-            if (
-                isinstance(type_def, TypeDefinition)
-                and issubclass(type_def.origin, relay.Node)
-                and type_def.origin is not relay.Node
-            ):
-                # Call resolve_id_attr in here to make sure we raise provide
-                # early feedback for missing NodeID annotations
-                type_def.origin.resolve_id_attr()
+        self._validate_types_node_id_attr()
 
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible
@@ -317,6 +307,28 @@ class Schema(BaseSchema):
             variable_values=variable_values,
             operation_name=operation_name,
         )
+
+    def _validate_types_node_id_attr(self):
+        for concrete_type in self.schema_converter.type_map.values():
+            type_def = concrete_type.definition
+
+            # This can be a TypeDefinition, EnumDefinition, ScalarDefinition
+            # or UnionDefinition
+            if not isinstance(type_def, TypeDefinition):
+                continue
+
+            # Do not validate id_attr for interfaces. relay.Node itself and
+            # any other interfdace that implements it are not required to
+            # provide a NodeID annotation, only the concrete type implementing
+            # them needs to do that.
+            if type_def.is_interface:
+                continue
+
+            # Call resolve_id_attr in here to make sure we raise provide
+            # early feedback for missing NodeID annotations
+            origin = type_def.origin
+            if issubclass(origin, relay.Node):
+                origin.resolve_id_attr()
 
     def _warn_for_federation_directives(self):
         """Raises a warning if the schema has any federation directives."""

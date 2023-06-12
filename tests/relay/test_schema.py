@@ -2,9 +2,12 @@ import pathlib
 import textwrap
 from typing import List
 
+from pytest_mock import MockerFixture
+
 import strawberry
 from strawberry import relay
 from strawberry.relay.utils import to_base64
+from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 
 from .schema import schema
 
@@ -22,7 +25,14 @@ def test_schema():
     assert schema_output == expected
 
 
-def test_node_id_annotation():
+def test_node_id_annotation(mocker: MockerFixture):
+    # Avoid E501 errors
+    mocker.patch.object(
+        DEFAULT_SCALAR_REGISTRY[relay.GlobalID],
+        "description",
+        "__GLOBAL_ID_DESC__",
+    )
+
     @strawberry.type
     class Fruit(relay.Node):
         code: relay.NodeID[int]
@@ -59,9 +69,7 @@ def test_node_id_annotation():
           node: Fruit!
         }
 
-        """
-        The `ID` scalar type represents a unique identifier, often used to refetch an object or as key for a cache. The ID type appears in a JSON response as a String; however, it is not intended to be human-readable. When expected as an input type, any string (such as `"4"`) or integer (such as `4`) input value will be accepted as an ID.
-        """
+        """__GLOBAL_ID_DESC__"""
         scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
 
         """An object with a Globally Unique ID"""
@@ -124,7 +132,14 @@ def test_node_id_annotation():
     }
 
 
-def test_node_id_annotation_in_superclass():
+def test_node_id_annotation_in_superclass(mocker: MockerFixture):
+    # Avoid E501 errors
+    mocker.patch.object(
+        DEFAULT_SCALAR_REGISTRY[relay.GlobalID],
+        "description",
+        "__GLOBAL_ID_DESC__",
+    )
+
     @strawberry.type
     class BaseFruit(relay.Node):
         code: relay.NodeID[int]
@@ -165,9 +180,7 @@ def test_node_id_annotation_in_superclass():
           node: Fruit!
         }
 
-        """
-        The `ID` scalar type represents a unique identifier, often used to refetch an object or as key for a cache. The ID type appears in a JSON response as a String; however, it is not intended to be human-readable. When expected as an input type, any string (such as `"4"`) or integer (such as `4`) input value will be accepted as an ID.
-        """
+        """__GLOBAL_ID_DESC__"""
         scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
 
         """An object with a Globally Unique ID"""
@@ -230,7 +243,14 @@ def test_node_id_annotation_in_superclass():
     }
 
 
-def test_node_id_annotation_in_superclass_and_subclass():
+def test_node_id_annotation_in_superclass_and_subclass(mocker: MockerFixture):
+    # Avoid E501 errors
+    mocker.patch.object(
+        DEFAULT_SCALAR_REGISTRY[relay.GlobalID],
+        "description",
+        "__GLOBAL_ID_DESC__",
+    )
+
     @strawberry.type
     class BaseFruit(relay.Node):
         code: relay.NodeID[int]
@@ -271,9 +291,7 @@ def test_node_id_annotation_in_superclass_and_subclass():
           node: Fruit!
         }
 
-        """
-        The `ID` scalar type represents a unique identifier, often used to refetch an object or as key for a cache. The ID type appears in a JSON response as a String; however, it is not intended to be human-readable. When expected as an input type, any string (such as `"4"`) or integer (such as `4`) input value will be accepted as an ID.
-        """
+        """__GLOBAL_ID_DESC__"""
         scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
 
         """An object with a Globally Unique ID"""
