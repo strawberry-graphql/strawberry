@@ -399,40 +399,41 @@ class Node:
 
     @classmethod
     def resolve_id_attr(cls) -> str:
-        if cls._id_attr is None:
-            candidates: list[str] = []
-            for base in cls.__mro__:
-                base_namespace = sys.modules[base.__module__].__dict__
+        if cls._id_attr is not None:
+            return cls._id_attr
 
-                for attr_name, attr in getattr(base, "__annotations__", {}).items():
-                    evaled = eval_type(attr, globalns=base_namespace)
+        candidates: list[str] = []
+        for base in cls.__mro__:
+            base_namespace = sys.modules[base.__module__].__dict__
 
-                    if get_origin(evaled) is Annotated and any(
-                        isinstance(a, NodeIDPrivate) for a in get_args(evaled)
-                    ):
-                        candidates.append(attr_name)
+            for attr_name, attr in getattr(base, "__annotations__", {}).items():
+                evaled = eval_type(attr, globalns=base_namespace)
 
-                # If we found candidates in this base, stop looking for more
-                # This is to support subclasses to define something else than
-                # its superclass as a NodeID
-                if candidates:
-                    break
+                if get_origin(evaled) is Annotated and any(
+                    isinstance(a, NodeIDPrivate) for a in get_args(evaled)
+                ):
+                    candidates.append(attr_name)
 
-            if len(candidates) == 0:
-                raise NodeIDAnnotationError(
-                    f'No field annotated with `NodeID` found in "{cls.__name__}"', cls
-                )
-            if len(candidates) > 1:
-                raise NodeIDAnnotationError(
-                    (
-                        "More than one field annotated with `NodeID` "
-                        f'found in "{cls.__name__}"'
-                    ),
-                    cls,
-                )
+            # If we found candidates in this base, stop looking for more
+            # This is to support subclasses to define something else than
+            # its superclass as a NodeID
+            if candidates:
+                break
 
-            cls._id_attr = candidates[0]
+        if len(candidates) == 0:
+            raise NodeIDAnnotationError(
+                f'No field annotated with `NodeID` found in "{cls.__name__}"', cls
+            )
+        if len(candidates) > 1:
+            raise NodeIDAnnotationError(
+                (
+                    "More than one field annotated with `NodeID` "
+                    f'found in "{cls.__name__}"'
+                ),
+                cls,
+            )
 
+        cls._id_attr = candidates[0]
         return cls._id_attr
 
     @classmethod
