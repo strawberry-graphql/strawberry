@@ -17,14 +17,14 @@ from strawberry.utils.cached_property import cached_property
 if TYPE_CHECKING:
     from typing_extensions import TypeGuard
 
-    from strawberry.types.types import WithTypeDefinition
+    from strawberry.types.types import WithStrawberryObject
 
 
 class StrawberryType(ABC):
     @cached_property
-    def has_type_definition(
+    def has_strawberry_object(
         self,
-    ) -> Callable[[Any], TypeGuard[Type[WithTypeDefinition]]]:
+    ) -> Callable[[Any], TypeGuard[Type[WithStrawberryObject]]]:
         from .types.types import has_strawberry_object
 
         return has_strawberry_object
@@ -88,7 +88,7 @@ class StrawberryContainer(StrawberryType):
 
     @property
     def type_params(self) -> List[TypeVar]:
-        if self.has_type_definition(self.of_type):
+        if self.has_strawberry_object(self.of_type):
             parameters = getattr(self.of_type, "__parameters__", None)
 
             return list(parameters) if parameters else []
@@ -105,7 +105,7 @@ class StrawberryContainer(StrawberryType):
         of_type_copy: Union[StrawberryType, type] = self.of_type
 
         # TODO: Obsolete with StrawberryObject
-        if self.has_type_definition(self.of_type):
+        if self.has_strawberry_object(self.of_type):
             type_definition = self.of_type.__strawberry_object__
 
             if type_definition.is_generic:
@@ -118,14 +118,11 @@ class StrawberryContainer(StrawberryType):
 
     @property
     def is_generic(self) -> bool:
-        # TODO: Obsolete with StrawberryObject
         type_ = self.of_type
-        if self.has_type_definition(self.of_type):
-            type_ = self.of_type.__strawberry_object__
-
         if isinstance(type_, StrawberryType):
             return type_.is_generic
-
+        if self.has_strawberry_object(type_):
+            return type_.__strawberry_object__.is_generic
         return False
 
     def has_generic(self, type_var: TypeVar) -> bool:

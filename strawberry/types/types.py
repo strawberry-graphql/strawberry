@@ -176,23 +176,20 @@ class StrawberryObject(StrawberryType):
         return True
 
 
-class WithTypeDefinition(Protocol):
+class WithStrawberryObject(Protocol):
     __strawberry_object__: StrawberryObject
 
 
-def has_strawberry_object(klass: Any) -> TypeGuard[Type[WithTypeDefinition]]:
+def has_strawberry_object(klass: Any) -> TypeGuard[Type[WithStrawberryObject]]:
     if hasattr(klass, "__strawberry_object__"):
         return True
     # Generics remove dunder members here
-    # https://github.com/python/cpython/blob/3a314f7c3df0dd7c37da7d12b827f169ee60e1ea/Lib/typing.py#L1104
+    # https://github.com/python/cpython/blob/3a314f7c3df0dd7c37da7d12b827f169ee60e1ea/Lib/typing.py#L1152
     if is_concrete_generic(klass):
         concrete = klass.__origin__
         if hasattr(concrete, "__strawberry_object__"):
             klass.__strawberry_object__ = concrete.__strawberry_object__
-            # TODO: Remove when deprecating _type_definition
-            klass._type_definition = concrete.__strawberry_object__
             return True
-
     return False
 
 

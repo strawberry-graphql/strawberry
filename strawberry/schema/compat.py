@@ -14,23 +14,18 @@ if TYPE_CHECKING:
     from typing_extensions import TypeGuard
 
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-    from strawberry.types.types import StrawberryObject
 
 
 def is_input_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
-    if not is_object_type(type_):
+    if not has_strawberry_object(type_):
         return False
-
-    type_definition: StrawberryObject = type_.__strawberry_object__  # type: ignore
-    return type_definition.is_input
+    return type_.__strawberry_object__.is_input
 
 
 def is_interface_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
-    if not is_object_type(type_):
+    if not has_strawberry_object(type_):
         return False
-
-    type_definition: StrawberryObject = type_.__strawberry_object__  # type: ignore
-    return type_definition.is_interface
+    return type_.__strawberry_object__.is_interface
 
 
 def is_scalar(
@@ -38,10 +33,6 @@ def is_scalar(
     scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
 ) -> TypeGuard[type]:
     return is_strawberry_scalar(type_, scalar_registry)
-
-
-def is_object_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
-    return has_strawberry_object(type_)
 
 
 def is_enum(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
@@ -54,9 +45,7 @@ def is_schema_directive(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
 
 def is_generic(type_: Union[StrawberryType, type]) -> bool:
     if has_strawberry_object(type_):
-        type_definition: StrawberryObject = type_.__strawberry_object__
-
-        return type_definition.is_generic
+        return type_.__strawberry_object__.is_generic
 
     if isinstance(type_, StrawberryType):
         return type_.is_generic

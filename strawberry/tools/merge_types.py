@@ -4,6 +4,7 @@ from itertools import chain
 from typing import Tuple
 
 import strawberry
+from strawberry.types.types import has_strawberry_object
 
 
 def merge_types(name: str, types: Tuple[type, ...]) -> type:
@@ -23,7 +24,9 @@ def merge_types(name: str, types: Tuple[type, ...]) -> type:
     if not types:
         raise ValueError("Can't merge types if none are supplied")
 
-    fields = chain(*(t.__strawberry_object__.fields for t in types))  # type: ignore
+    fields = chain(
+        *(t.__strawberry_object__.fields for t in types if has_strawberry_object(t))
+    )
     counter = Counter(f.name for f in fields)
     dupes = [f for f, c in counter.most_common() if c > 1]
     if dupes:

@@ -242,7 +242,7 @@ class StrawberryAnnotation:
         # TODO: add support for StrawberryInterface when implemented
         elif isinstance(evaled_type, StrawberryList):
             return True
-        elif has_strawberry_object(evaled_type):  # TODO: Replace with StrawberryObject
+        elif has_strawberry_object(evaled_type):
             return True
         elif isinstance(evaled_type, StrawberryObject):
             return True
