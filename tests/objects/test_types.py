@@ -41,11 +41,3 @@ def test_raises_error_when_using_interface_with_a_not_class_object():
     @strawberry.interface
     def not_a_class():
         pass
-
-
-@strawberry.type
-class A:
-    a: int
-
-
-A.__strawebrry_object__

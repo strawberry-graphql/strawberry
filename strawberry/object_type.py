@@ -23,7 +23,6 @@ from .exceptions import (
 from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
 from .types.types import (
-    StrawberryObject,
     StrawberryObjectDefinition,
     get_object_definition,
 )
@@ -31,7 +30,7 @@ from .utils.dataclasses import add_custom_init_fn
 from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__
 
-T = TypeVar("T", bound=Type[StrawberryObject])
+T = TypeVar("T", bound=Type)
 
 
 def _get_interfaces(cls: Type[Any]) -> List[StrawberryObjectDefinition]:
