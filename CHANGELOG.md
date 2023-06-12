@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.183.8 - 2023-06-12
+--------------------
+
+This release fixes a bug in the codegen where `List` objects are currently emitted
+as `Optional` objects.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2843](https://github.com/strawberry-graphql/strawberry/pull/2843/)
+
+
 0.183.7 - 2023-06-12
 --------------------
 
