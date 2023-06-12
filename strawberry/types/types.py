@@ -32,6 +32,8 @@ if TYPE_CHECKING:
 @dataclasses.dataclass(eq=False)
 class StrawberryObjectDefinition(StrawberryType):
     """
+    Encapsulates definitions for Input / Object / interface Types.
+
     Every type that is decorated by strawberry should have a dunder
     `__strawberry_definition__` with instance of a StrawberryType that contains
     the parsed information that strawberry created.
