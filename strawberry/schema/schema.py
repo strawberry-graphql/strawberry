@@ -164,7 +164,7 @@ class Schema(BaseSchema):
         self._schema._strawberry_schema = self  # type: ignore
 
         self._warn_for_federation_directives()
-        self._validate_types_node_id_attr()
+        self._resolve_node_ids()
 
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible
@@ -308,7 +308,7 @@ class Schema(BaseSchema):
             operation_name=operation_name,
         )
 
-    def _validate_types_node_id_attr(self):
+    def _resolve_node_ids(self):
         for concrete_type in self.schema_converter.type_map.values():
             type_def = concrete_type.definition
 
