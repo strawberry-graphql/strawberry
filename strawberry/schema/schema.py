@@ -334,7 +334,16 @@ class Schema(BaseSchema):
             # early feedback for missing NodeID annotations
             origin = type_def.origin
             if issubclass(origin, relay.Node):
-                origin.resolve_id_attr()
+                has_custom_resolve_id = False
+                for base in origin.__mro__:
+                    if base is relay.Node:
+                        break
+                    if "resolve_id" in base.__dict__:
+                        has_custom_resolve_id = True
+                        break
+
+                if not has_custom_resolve_id:
+                    origin.resolve_id_attr()
 
     def _warn_for_federation_directives(self):
         """Raises a warning if the schema has any federation directives."""
