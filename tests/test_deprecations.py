@@ -10,4 +10,4 @@ def test_type_definition_is_aliased():
 
 
 def test_can_import_type_definition():
-    pass
+    from strawberry.types.types import TypeDefinition  # noqa
