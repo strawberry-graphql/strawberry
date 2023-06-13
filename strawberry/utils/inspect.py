@@ -11,7 +11,7 @@ from typing import (
 )
 from typing_extensions import get_args
 
-from strawberry.type import has_strawberry_object_definition
+from strawberry.type import has_object_definition
 
 
 def in_async_context() -> bool:
@@ -84,7 +84,7 @@ def get_specialized_type_var_map(cls: type) -> Optional[Dict[TypeVar, type]]:
 
     # only get type vars for base generics (ie. Generic[T]) and for strawberry types
 
-    orig_bases = [b for b in orig_bases if has_strawberry_object_definition(b)]
+    orig_bases = [b for b in orig_bases if has_object_definition(b)]
 
     for base in orig_bases:
         # Recursively get type var map from base classes

@@ -8,7 +8,7 @@ from strawberry.enum import EnumDefinition
 from strawberry.type import (
     StrawberryList,
     StrawberryOptional,
-    has_strawberry_object_definition,
+    has_object_definition,
 )
 from strawberry.union import StrawberryUnion
 
@@ -53,7 +53,7 @@ def _convert_from_pydantic_to_strawberry_type(
 
         return items
 
-    if has_strawberry_object_definition(type_):
+    if has_object_definition(type_):
         # in the case of an interface, the concrete type may be more specific
         # than the type in the field definition
         # don't check _strawberry_input_type because inputs can't be interfaces

@@ -15,7 +15,11 @@ from typing import (
 )
 from typing_extensions import Self
 
-from strawberry.type import StrawberryType, StrawberryTypeVar, WithStrawberryDefinition
+from strawberry.type import (
+    StrawberryType,
+    StrawberryTypeVar,
+    WithStrawberryObjectDefinition,
+)
 from strawberry.utils.typing import (
     is_generic as is_type_generic,
 )
@@ -29,17 +33,10 @@ if TYPE_CHECKING:
 @dataclasses.dataclass(eq=False)
 class StrawberryObjectDefinition(StrawberryType):
     """
-    Encapsulates definitions for Input / Object / interface Types.
+    Encapsulates definitions for Input / Object / interface GraphQL Types.
 
-    Every type that is decorated by strawberry should have a dunder
-    `__strawberry_definition__` with instance of a StrawberryType that contains
-    the parsed information that strawberry created.
-
-    In order get the strawberry definition from a decorated object you can use
-    `has_strawberry_definition` or `get_strawberry_definition` as a shortcut.
-
-    NOTE: ATM this is only true for @type @interface @input follow https://github.com/strawberry-graphql/strawberry/issues/2841
-    to see progress.
+    In order get the definition from a decorated object you can use
+    `has_object_definition` or `get_object_definition` as a shortcut.
     """
 
     name: str
@@ -84,7 +81,7 @@ class StrawberryObjectDefinition(StrawberryType):
 
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
-    ) -> Type[WithStrawberryDefinition]:
+    ) -> Type[WithStrawberryObjectDefinition]:
         fields = [field.copy_with(type_var_map) for field in self.fields]
 
         new_type_definition = StrawberryObjectDefinition(
@@ -140,7 +137,7 @@ class StrawberryObjectDefinition(StrawberryType):
 
         return type_params
 
-    def is_implemented_by(self, root: Type[WithStrawberryDefinition]) -> bool:
+    def is_implemented_by(self, root: Type[WithStrawberryObjectDefinition]) -> bool:
         # TODO: Support dicts
         if isinstance(root, dict):
             raise NotImplementedError

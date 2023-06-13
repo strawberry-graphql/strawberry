@@ -41,7 +41,7 @@ from strawberry.type import (
     StrawberryList,
     StrawberryOptional,
     StrawberryType,
-    has_strawberry_object_definition,
+    has_object_definition,
 )
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.union import StrawberryUnion
@@ -472,7 +472,7 @@ class QueryCodegen:
                 self._collect_type_from_strawberry_type(strawberry_type.of_type)
             )
 
-        if has_strawberry_object_definition(strawberry_type):
+        if has_object_definition(strawberry_type):
             strawberry_type = strawberry_type.__strawberry_definition__
 
         if isinstance(strawberry_type, StrawberryObjectDefinition):

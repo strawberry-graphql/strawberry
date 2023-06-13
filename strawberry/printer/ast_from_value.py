@@ -27,7 +27,7 @@ from graphql.type import (
 )
 
 import strawberry
-from strawberry.type import has_strawberry_object_definition
+from strawberry.type import has_object_definition
 
 if TYPE_CHECKING:
     from graphql.language import ValueNode
@@ -119,7 +119,7 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> Optional[ValueNode]:
     # Populate the fields of the input object by creating ASTs from each value in the
     # Python dict according to the fields in the input type.
     if is_input_object_type(type_):
-        if has_strawberry_object_definition(value):
+        if has_object_definition(value):
             value = strawberry.asdict(value)
 
         if value is None or not isinstance(value, Mapping):

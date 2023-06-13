@@ -13,6 +13,15 @@ if TYPE_CHECKING:
 
 
 class StrawberryType(ABC):
+    """
+    Every type that is decorated by strawberry should have a dunder
+    `__strawberry_definition__` with instance of a StrawberryType that contains
+    the parsed information that strawberry created.
+
+    NOTE: ATM this is only true for @type @interface @input follow https://github.com/strawberry-graphql/strawberry/issues/2841
+    to see progress.
+    """
+
     @property
     def type_params(self) -> List[TypeVar]:
         return []
@@ -21,9 +30,9 @@ class StrawberryType(ABC):
     def copy_with(
         self,
         type_var_map: Mapping[
-            TypeVar, Union[StrawberryType, Type[WithStrawberryDefinition]]
+            TypeVar, Union[StrawberryType, Type[WithStrawberryObjectDefinition]]
         ],
-    ) -> Union[StrawberryType, Type[WithStrawberryDefinition]]:
+    ) -> Union[StrawberryType, Type[WithStrawberryObjectDefinition]]:
         raise NotImplementedError()
 
     @property
@@ -58,7 +67,9 @@ class StrawberryType(ABC):
 
 
 class StrawberryContainer(StrawberryType):
-    def __init__(self, of_type: Union[StrawberryType, Type[WithStrawberryDefinition]]):
+    def __init__(
+        self, of_type: Union[StrawberryType, Type[WithStrawberryObjectDefinition]]
+    ):
         self.of_type = of_type
 
     def __hash__(self) -> int:
@@ -75,7 +86,7 @@ class StrawberryContainer(StrawberryType):
 
     @property
     def type_params(self) -> List[TypeVar]:
-        if has_strawberry_object_definition(self.of_type):
+        if has_object_definition(self.of_type):
             parameters = getattr(self.of_type, "__parameters__", None)
 
             return list(parameters) if parameters else []
@@ -89,12 +100,12 @@ class StrawberryContainer(StrawberryType):
     def copy_with(
         self,
         type_var_map: Mapping[
-            TypeVar, Union[StrawberryType, Type[WithStrawberryDefinition]]
+            TypeVar, Union[StrawberryType, Type[WithStrawberryObjectDefinition]]
         ],
     ) -> StrawberryType:
         of_type_copy = self.of_type
 
-        if has_strawberry_object_definition(self.of_type):
+        if has_object_definition(self.of_type):
             type_definition = self.of_type.__strawberry_definition__
 
             if type_definition.is_generic:
@@ -110,7 +121,7 @@ class StrawberryContainer(StrawberryType):
         type_ = self.of_type
         if isinstance(type_, StrawberryType):
             return type_.is_generic
-        if has_strawberry_object_definition(type_):
+        if has_object_definition(type_):
             return type_.__strawberry_definition__.is_generic
         return False
 
@@ -160,13 +171,13 @@ class StrawberryTypeVar(StrawberryType):
         return hash(self.type_var)
 
 
-class WithStrawberryDefinition(Protocol):
+class WithStrawberryObjectDefinition(Protocol):
     __strawberry_definition__: StrawberryObjectDefinition
 
 
-def has_strawberry_object_definition(
+def has_object_definition(
     obj: Any,
-) -> TypeGuard[Type[WithStrawberryDefinition]]:
+) -> TypeGuard[Type[WithStrawberryObjectDefinition]]:
     if hasattr(obj, "__strawberry_definition__"):
         return True
     # Generics remove dunder members here
@@ -179,9 +190,9 @@ def has_strawberry_object_definition(
     return False
 
 
-def get_strawberry_object_definition(
+def get_object_definition(
     obj: Any,
 ) -> Optional[StrawberryObjectDefinition]:
-    if has_strawberry_object_definition(obj):
+    if has_object_definition(obj):
         return obj.__strawberry_definition__
     return None

@@ -40,7 +40,7 @@ from graphql.utilities.print_schema import print_type as original_print_type
 from strawberry.custom_scalar import ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
-from strawberry.type import StrawberryContainer, has_strawberry_object_definition
+from strawberry.type import StrawberryContainer, has_object_definition
 from strawberry.unset import UNSET
 
 from .ast_from_value import ast_from_value
@@ -144,7 +144,7 @@ def print_schema_directive(
             while isinstance(f_type, StrawberryContainer):
                 f_type = f_type.of_type
 
-            if has_strawberry_object_definition(f_type):
+            if has_object_definition(f_type):
                 extras.types.add(cast(type, f_type))
 
             if hasattr(f_type, "_scalar_definition"):

@@ -26,7 +26,7 @@ from typing_extensions import Annotated, Protocol, get_args, get_origin
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import MissingArgumentsAnnotationsError
-from strawberry.type import StrawberryType, has_strawberry_object_definition
+from strawberry.type import StrawberryType, has_object_definition
 from strawberry.types.info import Info
 from strawberry.utils.cached_property import cached_property
 from strawberry.utils.typing import eval_type
@@ -295,7 +295,7 @@ class StrawberryResolver(Generic[T]):
         if self.type:
             if isinstance(self.type, StrawberryType):
                 type_override = self.type.copy_with(type_var_map)
-            elif has_strawberry_object_definition(self.type):
+            elif has_object_definition(self.type):
                 type_override = self.type.__strawberry_definition__.copy_with(
                     type_var_map,
                 )

@@ -21,7 +21,7 @@ from .exceptions import (
     ObjectIsNotClassError,
 )
 from .field import StrawberryField, field
-from .type import get_strawberry_object_definition
+from .type import get_object_definition
 from .types.type_resolver import _get_fields
 from .types.types import (
     StrawberryObjectDefinition,
@@ -36,7 +36,7 @@ T = TypeVar("T", bound=Type)
 def _get_interfaces(cls: Type[Any]) -> List[StrawberryObjectDefinition]:
     interfaces: List[StrawberryObjectDefinition] = []
     for base in cls.__mro__[1:]:  # Exclude current class
-        type_definition = get_strawberry_object_definition(base)
+        type_definition = get_object_definition(base)
         if type_definition and type_definition.is_interface:
             interfaces.append(type_definition)
 
