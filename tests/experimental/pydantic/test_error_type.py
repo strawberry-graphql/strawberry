@@ -14,9 +14,10 @@ def test_basic_error_type_fields():
         name: str
         age: int
 
-    @strawberry.experimental.pydantic.error_type(UserModel, fields=["name", "age"])
+    @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        pass
+        name: strawberry.auto
+        age: strawberry.auto
 
     definition: TypeDefinition = UserError._type_definition
     assert definition.name == "UserError"
