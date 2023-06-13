@@ -1,12 +1,14 @@
-from strawberry.cli.commands.export_schema import export_schema as cmd_export_schema
+from typer.testing import CliRunner
+
+from strawberry.cli.app import app
 
 
-def test_schema_export(cli_runner):
+def test_schema_export(cli_runner: CliRunner):
     selector = "tests.fixtures.sample_package.sample_module:schema"
-    result = cli_runner.invoke(cmd_export_schema, [selector])
+    result = cli_runner.invoke(app, ["export-schema", selector])
 
     assert result.exit_code == 0
-    assert result.output == (
+    assert result.stdout == (
         "type Query {\n"
         "  user: User!\n"
         "}\n"
@@ -18,35 +20,35 @@ def test_schema_export(cli_runner):
     )
 
 
-def test_default_schema_symbol_name(cli_runner):
+def test_default_schema_symbol_name(cli_runner: CliRunner):
     selector = "tests.fixtures.sample_package.sample_module"
-    result = cli_runner.invoke(cmd_export_schema, [selector])
+    result = cli_runner.invoke(app, ["export-schema", selector])
 
     assert result.exit_code == 0
 
 
-def test_app_dir_option(cli_runner):
+def test_app_dir_option(cli_runner: CliRunner):
     selector = "sample_module"
     result = cli_runner.invoke(
-        cmd_export_schema, ["--app-dir=./tests/fixtures/sample_package", selector]
+        app, ["export-schema", "--app-dir=./tests/fixtures/sample_package", selector]
     )
 
     assert result.exit_code == 0
 
 
-def test_invalid_module(cli_runner):
+def test_invalid_module(cli_runner: CliRunner):
     selector = "not.existing.module"
-    result = cli_runner.invoke(cmd_export_schema, [selector])
+    result = cli_runner.invoke(app, ["export-schema", selector])
 
     expected_error = "Error: No module named 'not'"
 
     assert result.exit_code == 2
-    assert expected_error in result.output
+    assert expected_error in result.stdout.replace("\n", "")
 
 
-def test_invalid_symbol(cli_runner):
+def test_invalid_symbol(cli_runner: CliRunner):
     selector = "tests.fixtures.sample_package.sample_module:not.existing.symbol"
-    result = cli_runner.invoke(cmd_export_schema, [selector])
+    result = cli_runner.invoke(app, ["export-schema", selector])
 
     expected_error = (
         "Error: module 'tests.fixtures.sample_package.sample_module' "
@@ -54,14 +56,14 @@ def test_invalid_symbol(cli_runner):
     )
 
     assert result.exit_code == 2
-    assert expected_error in result.output
+    assert expected_error in result.stdout.replace("\n", "")
 
 
-def test_invalid_schema_instance(cli_runner):
+def test_invalid_schema_instance(cli_runner: CliRunner):
     selector = "tests.fixtures.sample_package.sample_module:not_a_schema"
-    result = cli_runner.invoke(cmd_export_schema, [selector])
+    result = cli_runner.invoke(app, ["export-schema", selector])
 
     expected_error = "Error: The `schema` must be an instance of strawberry.Schema"
 
     assert result.exit_code == 2
-    assert expected_error in result.output
+    assert expected_error in result.stdout.replace("\n", "")
