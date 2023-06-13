@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.184.1 - 2023-06-13
+--------------------
+
+This release migrates our CLI to typer, all commands
+should work the same as before.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2569](https://github.com/strawberry-graphql/strawberry/pull/2569/)
+
+
 0.184.0 - 2023-06-12
 --------------------
 
