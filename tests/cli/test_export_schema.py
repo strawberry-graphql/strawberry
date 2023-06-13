@@ -8,7 +8,7 @@ def test_schema_export(cli_runner: CliRunner):
     result = cli_runner.invoke(app, ["export-schema", selector])
 
     assert result.exit_code == 0
-    assert result.output == (
+    assert result.stdout == (
         "type Query {\n"
         "  user: User!\n"
         "}\n"
@@ -43,7 +43,7 @@ def test_invalid_module(cli_runner: CliRunner):
     expected_error = "Error: No module named 'not'"
 
     assert result.exit_code == 2
-    assert expected_error in result.output
+    assert expected_error in result.stdout
 
 
 def test_invalid_symbol(cli_runner: CliRunner):
@@ -56,7 +56,7 @@ def test_invalid_symbol(cli_runner: CliRunner):
     )
 
     assert result.exit_code == 2
-    assert expected_error in result.output
+    assert expected_error in result.stdout
 
 
 def test_invalid_schema_instance(cli_runner: CliRunner):
@@ -66,4 +66,4 @@ def test_invalid_schema_instance(cli_runner: CliRunner):
     expected_error = "Error: The `schema` must be an instance of strawberry.Schema"
 
     assert result.exit_code == 2
-    assert expected_error in result.output
+    assert expected_error in result.stdout
