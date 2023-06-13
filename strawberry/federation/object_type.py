@@ -257,7 +257,7 @@ def interface(
 
 
 @overload
-@__dataclass_transform__(
+@dataclass_transform(
     order_default=True,
     kw_only_default=True,
     field_descriptors=(base_field, field, StrawberryField),
@@ -276,7 +276,7 @@ def interface_object(
 
 
 @overload
-@__dataclass_transform__(
+@dataclass_transform(
     order_default=True,
     kw_only_default=True,
     field_descriptors=(base_field, field, StrawberryField),
