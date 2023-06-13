@@ -42,7 +42,7 @@ T = TypeVar("T", bound=Type)
 @dataclass_transform(
     order_default=True,
     kw_only_default=True,
-    field_descriptors=(directive_field, field, StrawberryField),
+    field_specifiers=(directive_field, field, StrawberryField),
 )
 def schema_directive(
     *,

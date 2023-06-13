@@ -260,7 +260,7 @@ def interface(
 @dataclass_transform(
     order_default=True,
     kw_only_default=True,
-    field_descriptors=(base_field, field, StrawberryField),
+    field_specifiers=(base_field, field, StrawberryField),
 )
 def interface_object(
     cls: T,
@@ -279,7 +279,7 @@ def interface_object(
 @dataclass_transform(
     order_default=True,
     kw_only_default=True,
-    field_descriptors=(base_field, field, StrawberryField),
+    field_specifiers=(base_field, field, StrawberryField),
 )
 def interface_object(
     *,

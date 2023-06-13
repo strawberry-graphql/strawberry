@@ -1,7 +1,6 @@
 import ast
 import sys
 import typing
-from collections.abc import AsyncGenerator
 from functools import lru_cache
 from typing import (  # type: ignore
     TYPE_CHECKING,
@@ -18,7 +17,7 @@ from typing import (  # type: ignore
     TypeVar,
     Union,
     _eval_type,
-    _GenericAlias,  # type: ignore
+    _GenericAlias,
     _SpecialForm,
     cast,
     overload,
@@ -70,6 +69,7 @@ def get_generic_alias(type_: Type) -> Type:
             return attr
 
     raise AssertionError(f"No GenericAlias available for {type_}")  # pragma: no cover
+
 
 def is_list(annotation: object) -> bool:
     """Returns True if annotation is a List"""
