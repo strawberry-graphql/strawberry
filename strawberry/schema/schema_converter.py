@@ -53,7 +53,7 @@ from strawberry.schema.types.scalar import _make_scalar_type
 from strawberry.type import (
     StrawberryList,
     StrawberryOptional,
-    has_strawberry_definition,
+    has_strawberry_object_definition,
 )
 from strawberry.types.info import Info
 from strawberry.types.types import StrawberryObjectDefinition
@@ -430,7 +430,7 @@ class GraphQLCoreConverter:
 
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
                 if object_type.concrete_of and (
-                    has_strawberry_definition(obj)
+                    has_strawberry_object_definition(obj)
                     and obj.__strawberry_definition__.origin
                     is object_type.concrete_of.origin
                 ):
@@ -712,7 +712,7 @@ class GraphQLCoreConverter:
                 type_.__strawberry_definition__  # type: ignore
             )
             return self.from_interface(type_definition)
-        elif has_strawberry_definition(type_):
+        elif has_strawberry_object_definition(type_):
             return self.from_object(type_.__strawberry_definition__)
         elif compat.is_enum(type_):  # TODO: Replace with StrawberryEnum
             enum_definition: EnumDefinition = type_._enum_definition  # type: ignore
@@ -783,7 +783,7 @@ class GraphQLCoreConverter:
 
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
                 if object_type.concrete_of and (
-                    has_strawberry_definition(obj)
+                    has_strawberry_object_definition(obj)
                     and obj.__strawberry_definition__.origin
                     is object_type.concrete_of.origin
                 ):

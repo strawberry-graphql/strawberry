@@ -4,7 +4,7 @@ from itertools import chain
 from typing import Tuple
 
 import strawberry
-from strawberry.type import has_strawberry_definition
+from strawberry.type import has_strawberry_object_definition
 
 
 def merge_types(name: str, types: Tuple[type, ...]) -> type:
@@ -28,7 +28,7 @@ def merge_types(name: str, types: Tuple[type, ...]) -> type:
         *(
             t.__strawberry_definition__.fields
             for t in types
-            if has_strawberry_definition(t)
+            if has_strawberry_object_definition(t)
         )
     )
     counter = Counter(f.name for f in fields)

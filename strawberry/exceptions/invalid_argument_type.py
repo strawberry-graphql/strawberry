@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional
 
 from strawberry.utils.cached_property import cached_property
 
-from ..type import get_strawberry_definition
+from ..type import get_strawberry_object_definition
 from .exception import StrawberryException
 from .utils.source_finder import SourceFinder
 
@@ -32,7 +32,7 @@ class InvalidArgumentTypeError(StrawberryException):
         if isinstance(argument.type, StrawberryUnion):
             argument_type = "union"
         else:
-            type_definition = get_strawberry_definition(argument.type)
+            type_definition = get_strawberry_object_definition(argument.type)
             if type_definition and type_definition.is_interface:
                 argument_type = "interface"
 

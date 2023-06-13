@@ -38,7 +38,7 @@ from strawberry.lazy_type import LazyType
 from strawberry.object_type import interface, type
 from strawberry.private import StrawberryPrivate
 from strawberry.relay.exceptions import NodeIDAnnotationError
-from strawberry.type import StrawberryContainer, get_strawberry_definition
+from strawberry.type import StrawberryContainer, get_strawberry_object_definition
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
 from strawberry.utils.inspect import in_async_context
@@ -830,7 +830,7 @@ class ListConnection(Connection[NodeType]):
         # Overfetch by 1 to check if we have a next result
         overfetch = end + 1 if end != sys.maxsize else end
 
-        type_def = get_strawberry_definition(cls)
+        type_def = get_strawberry_object_definition(cls)
         assert type_def
         field_def = type_def.get_field("edges")
         assert field_def

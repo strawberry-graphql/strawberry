@@ -75,7 +75,7 @@ class StrawberryContainer(StrawberryType):
 
     @property
     def type_params(self) -> List[TypeVar]:
-        if has_strawberry_definition(self.of_type):
+        if has_strawberry_object_definition(self.of_type):
             parameters = getattr(self.of_type, "__parameters__", None)
 
             return list(parameters) if parameters else []
@@ -94,7 +94,7 @@ class StrawberryContainer(StrawberryType):
     ) -> StrawberryType:
         of_type_copy = self.of_type
 
-        if has_strawberry_definition(self.of_type):
+        if has_strawberry_object_definition(self.of_type):
             type_definition = self.of_type.__strawberry_definition__
 
             if type_definition.is_generic:
@@ -110,7 +110,7 @@ class StrawberryContainer(StrawberryType):
         type_ = self.of_type
         if isinstance(type_, StrawberryType):
             return type_.is_generic
-        if has_strawberry_definition(type_):
+        if has_strawberry_object_definition(type_):
             return type_.__strawberry_definition__.is_generic
         return False
 
@@ -164,7 +164,9 @@ class WithStrawberryDefinition(Protocol):
     __strawberry_definition__: StrawberryObjectDefinition
 
 
-def has_strawberry_definition(obj: Any) -> TypeGuard[Type[WithStrawberryDefinition]]:
+def has_strawberry_object_definition(
+    obj: Any,
+) -> TypeGuard[Type[WithStrawberryDefinition]]:
     if hasattr(obj, "__strawberry_definition__"):
         return True
     # Generics remove dunder members here
@@ -177,7 +179,9 @@ def has_strawberry_definition(obj: Any) -> TypeGuard[Type[WithStrawberryDefiniti
     return False
 
 
-def get_strawberry_definition(klass: Any) -> Optional[StrawberryObjectDefinition]:
-    if has_strawberry_definition(klass):
+def get_strawberry_object_definition(
+    klass: Any,
+) -> Optional[StrawberryObjectDefinition]:
+    if has_strawberry_object_definition(klass):
         return klass.__strawberry_definition__
     return None

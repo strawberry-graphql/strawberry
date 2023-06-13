@@ -26,7 +26,7 @@ from strawberry.type import (
     StrawberryList,
     StrawberryOptional,
     StrawberryTypeVar,
-    has_strawberry_definition,
+    has_strawberry_object_definition,
 )
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.unset import UNSET
@@ -132,7 +132,7 @@ class StrawberryAnnotation:
         self.namespace = module.__dict__
 
     def create_concrete_type(self, evaled_type: type) -> type:
-        if has_strawberry_definition(evaled_type):
+        if has_strawberry_object_definition(evaled_type):
             return evaled_type.__strawberry_definition__.resolve_generic(evaled_type)
         raise ValueError(f"Not supported {evaled_type}")
 
@@ -247,7 +247,7 @@ class StrawberryAnnotation:
         # TODO: add support for StrawberryInterface when implemented
         elif isinstance(evaled_type, StrawberryList):
             return True
-        elif has_strawberry_definition(evaled_type):
+        elif has_strawberry_object_definition(evaled_type):
             return True
         elif isinstance(evaled_type, StrawberryObjectDefinition):
             return True
@@ -297,7 +297,7 @@ class StrawberryAnnotation:
 
 
 def _is_input_type(type_: Any) -> bool:
-    if not has_strawberry_definition(type_):
+    if not has_strawberry_object_definition(type_):
         return False
 
     return type_.__strawberry_definition__.is_input

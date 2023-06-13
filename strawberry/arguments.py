@@ -21,7 +21,7 @@ from strawberry.lazy_type import LazyType, StrawberryLazyReference
 from strawberry.type import (
     StrawberryList,
     StrawberryOptional,
-    has_strawberry_definition,
+    has_strawberry_object_definition,
 )
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
@@ -174,7 +174,7 @@ def convert_argument(
         enum_definition: EnumDefinition = type_._enum_definition
         return convert_argument(value, enum_definition, scalar_registry, config)
 
-    if has_strawberry_definition(type_):
+    if has_strawberry_object_definition(type_):
         kwargs = {}
 
         for field in type_.__strawberry_definition__.fields:

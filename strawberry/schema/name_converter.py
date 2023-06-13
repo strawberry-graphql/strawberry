@@ -11,7 +11,7 @@ from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import (
     StrawberryList,
     StrawberryOptional,
-    has_strawberry_definition,
+    has_strawberry_object_definition,
 )
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.union import StrawberryUnion
@@ -112,7 +112,7 @@ class NameConverter:
             if isinstance(type_, LazyType):
                 type_ = cast("StrawberryType", type_.resolve_type())  # noqa: PLW2901
 
-            if has_strawberry_definition(type_):
+            if has_strawberry_object_definition(type_):
                 type_name = self.from_type(type_.__strawberry_definition__)
             else:
                 # This should only be hit when generating names for type-related
@@ -158,7 +158,7 @@ class NameConverter:
             strawberry_type = type_._scalar_definition
 
             name = strawberry_type.name
-        elif has_strawberry_definition(type_):
+        elif has_strawberry_object_definition(type_):
             strawberry_type = type_.__strawberry_definition__
 
             if (
