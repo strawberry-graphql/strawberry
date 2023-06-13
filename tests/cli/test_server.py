@@ -21,7 +21,7 @@ def test_cli_cmd_server(cli_runner: CliRunner):
 
     assert result.exit_code == 0
     assert uvicorn.run.call_count == 1
-    assert re.match(BOOT_MSG, result.output)
+    assert re.match(BOOT_MSG, result.stdout)
 
 
 def test_cli_cmd_server_app_dir_option(cli_runner: CliRunner):
@@ -31,7 +31,7 @@ def test_cli_cmd_server_app_dir_option(cli_runner: CliRunner):
 
     assert result.exit_code == 0
     assert uvicorn.run.call_count == 1
-    assert re.match(BOOT_MSG, result.output)
+    assert re.match(BOOT_MSG, result.stdout)
 
 
 def test_default_schema_symbol_name(cli_runner: CliRunner):
@@ -48,7 +48,7 @@ def test_invalid_module(cli_runner: CliRunner):
     expected_error = "Error: No module named 'not'"
 
     assert result.exit_code == 2
-    assert expected_error in result.output
+    assert expected_error in result.stdout
 
 
 def test_invalid_symbol(cli_runner: CliRunner):
@@ -61,7 +61,7 @@ def test_invalid_symbol(cli_runner: CliRunner):
     )
 
     assert result.exit_code == 2
-    assert expected_error in result.output
+    assert expected_error in result.stdout.replace("\n", "")
 
 
 def test_invalid_schema_instance(cli_runner: CliRunner):
@@ -71,7 +71,7 @@ def test_invalid_schema_instance(cli_runner: CliRunner):
     expected_error = "Error: The `schema` must be an instance of strawberry.Schema"
 
     assert result.exit_code == 2
-    assert expected_error in result.output
+    assert expected_error in result.stdout
 
 
 @pytest.mark.parametrize("dependency", ["uvicorn", "starlette"])
@@ -82,7 +82,7 @@ def test_missing_debug_server_dependencies(cli_runner: CliRunner, mocker, depend
     result = cli_runner.invoke(app, ["server", schema])
 
     assert result.exit_code == 1
-    assert result.output == (
+    assert result.stdout == (
         "Error: "
         "The debug server requires additional packages, install them by running:\n"
         "pip install 'strawberry-graphql[debug-server]'\n"
