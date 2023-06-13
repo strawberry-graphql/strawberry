@@ -18,12 +18,20 @@ class NonNodeType:
 
 @pytest.mark.raises_strawberry_exception(
     NodeIDAnnotationError,
-    match='No field annotated with `nodeid` found in "Fruit"',
+    match='No field annotated with `NodeID` found in "Fruit"',
 )
 def test_raises_error_on_missing_node_id_annotation():
     @strawberry.type
     class Fruit(relay.Node):
         code: str
+
+    @strawberry.type
+    class Query:
+        @relay.connection(relay.ListConnection[Fruit])
+        def fruits(self) -> List[Fruit]:
+            ...
+
+    strawberry.Schema(query=Query)
 
 
 @pytest.mark.raises_strawberry_exception(
@@ -35,6 +43,14 @@ def test_raises_error_on_multiple_node_id_annotation():
     class Fruit(relay.Node):
         pk: relay.NodeID[str]
         code: relay.NodeID[str]
+
+    @strawberry.type
+    class Query:
+        @relay.connection(relay.ListConnection[Fruit])
+        def fruits(self) -> List[Fruit]:
+            ...
+
+    strawberry.Schema(query=Query)
 
 
 @pytest.mark.raises_strawberry_exception(

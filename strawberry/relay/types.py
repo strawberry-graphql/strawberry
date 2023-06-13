@@ -30,7 +30,6 @@ from typing_extensions import (
     TypeAlias,
     get_args,
     get_origin,
-    get_type_hints,
 )
 
 from strawberry.field import field
@@ -42,6 +41,7 @@ from strawberry.type import StrawberryContainer, get_object_definition
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
 from strawberry.utils.inspect import in_async_context
+from strawberry.utils.typing import eval_type
 
 from .utils import from_base64, to_base64
 
@@ -358,36 +358,7 @@ class Node:
 
     """
 
-    _id_attr: ClassVar[str]
-
-    def __init_subclass__(cls, **kwargs: Any):
-        annotations = get_type_hints(cls, include_extras=True)
-        candidates = [
-            attr
-            for attr, annotation in annotations.items()
-            if (
-                get_origin(annotation) is Annotated
-                and any(
-                    isinstance(argument, NodeIDPrivate)
-                    for argument in get_args(annotation)
-                )
-            )
-        ]
-
-        if len(candidates) == 0:
-            raise NodeIDAnnotationError(
-                f'No field annotated with `nodeid` found in "{cls.__name__}"', cls
-            )
-        if len(candidates) > 1:
-            raise NodeIDAnnotationError(
-                (
-                    "More than one field annotated with `NodeID` "
-                    f'found in "{cls.__name__}"'
-                ),
-                cls,
-            )
-
-        cls._id_attr = candidates[0]
+    _id_attr: ClassVar[Optional[str]] = None
 
     @field(name="id", description="The Globally Unique ID of this object")
     @classmethod
@@ -427,6 +398,45 @@ class Node:
         return GlobalID(type_name=type_name, node_id=str(node_id))
 
     @classmethod
+    def resolve_id_attr(cls) -> str:
+        if cls._id_attr is not None:
+            return cls._id_attr
+
+        candidates: list[str] = []
+        for base in cls.__mro__:
+            base_namespace = sys.modules[base.__module__].__dict__
+
+            for attr_name, attr in getattr(base, "__annotations__", {}).items():
+                evaled = eval_type(attr, globalns=base_namespace)
+
+                if get_origin(evaled) is Annotated and any(
+                    isinstance(a, NodeIDPrivate) for a in get_args(evaled)
+                ):
+                    candidates.append(attr_name)
+
+            # If we found candidates in this base, stop looking for more
+            # This is to support subclasses to define something else than
+            # its superclass as a NodeID
+            if candidates:
+                break
+
+        if len(candidates) == 0:
+            raise NodeIDAnnotationError(
+                f'No field annotated with `NodeID` found in "{cls.__name__}"', cls
+            )
+        if len(candidates) > 1:
+            raise NodeIDAnnotationError(
+                (
+                    "More than one field annotated with `NodeID` "
+                    f'found in "{cls.__name__}"'
+                ),
+                cls,
+            )
+
+        cls._id_attr = candidates[0]
+        return cls._id_attr
+
+    @classmethod
     def resolve_id(
         cls,
         root: Self,
@@ -450,7 +460,7 @@ class Node:
             The resolved id (which is expected to be str)
 
         """
-        return getattr(root, cls._id_attr)
+        return getattr(root, cls.resolve_id_attr())
 
     @classmethod
     def resolve_typename(cls, root: Self, info: Info) -> str:
