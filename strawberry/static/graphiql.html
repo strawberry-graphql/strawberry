@@ -54,15 +54,22 @@
 
     <script
       crossorigin
-      src="https://unpkg.com/js-cookie@3.0.1/dist/js.cookie.min.js"
-      integrity="sha384-ETDm/j6COkRSUfVFsGNM5WYE4WjyRgfDhy4Pf4Fsc8eNw/eYEMqYZWuxTzMX6FBa"
+      src="https://unpkg.com/js-cookie@3.0.5/dist/js.cookie.min.js"
+      integrity="sha384-/vxhYfM1LENRhdpZ8dwEsQn/X4VhpbEZSiU4m/FwR+PVpzar4fkEOw8FP9Y+OfQN"
     ></script>
 
     <link
       crossorigin
       rel="stylesheet"
-      href="https://unpkg.com/graphiql@2.2.0/graphiql.min.css"
-      integrity="sha384-4a2fCKkum7OnFcO9Qae5NAO7bYHTeolCix2FOnzhz8L42NP6+2Q1cTH7p/xr4Pfg"
+      href="https://unpkg.com/graphiql@2.4.7/graphiql.min.css"
+      integrity="sha384-486GcFFVcFN0yj7LIp/vn7DVsuf2CTytJlNuqjHg0zF2g72zra2gWCNV2HBxJgC6"
+    />
+
+    <link
+      crossorigin
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@graphiql/plugin-explorer@0.1.15/dist/style.css"
+      integrity="sha384-kOrlMT58B3t0hTVIPFqWyg1oL4DKvxHNcC1X2qugv4fXd9ehKULhhjDLvBi3HoEK"
     />
   </head>
 
@@ -70,13 +77,13 @@
     <div id="graphiql" class="graphiql-container">Loading...</div>
     <script
       crossorigin
-      src="https://unpkg.com/graphiql@2.2.0/graphiql.min.js"
-      integrity="sha384-JHFGCFTH/jUGV6uL38eHuw/3kb0aUiF0EzWPP68NQxvz7ldZXEoCv9RBGtsFHM86"
+      src="https://unpkg.com/graphiql@2.4.7/graphiql.min.js"
+      integrity="sha384-8da92RVD56z/pbOOnJ4Ud5qlhqEzDtJI6qVZjN88SCbOatpo4xVDeP3T0nmfTf+9"
     ></script>
     <script
       crossorigin
-      src="https://unpkg.com/@graphiql/plugin-explorer@0.1.0/dist/graphiql-plugin-explorer.umd.js"
-      integrity="sha384-XyAmNqmxnLsRHkMhQYTqC0ub7uXpNbwdkhjn70ZF3J3XSb7bouSdRVfzDojimcMd"
+      src="https://unpkg.com/@graphiql/plugin-explorer@0.1.15/dist/graphiql-plugin-explorer.umd.js"
+      integrity="sha384-730PslzMVMN3EMJOKuh/WVRaRwhaBbWE43IOXyR+DMDlQiYx0BjiPmoPZ+6qEa0C"
     ></script>
     <script>
       const EXAMPLE_QUERY = `# Welcome to GraphiQL 🍓
@@ -147,6 +154,7 @@
           plugins: [explorerPlugin],
           query: query,
           onEditQuery: setQuery,
+          inputValueDeprecation: true,
         });
       }
 

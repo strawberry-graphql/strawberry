@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from io import BytesIO
 from json import dumps
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 from typing_extensions import Literal
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
@@ -16,13 +16,13 @@ from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
 from ..context import get_context
-from . import JSON, HttpClient, Response, ResultOverrideFunction
+from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
 class GraphQLView(BaseGraphQLView):
     result_override: ResultOverrideFunction = None
 
-    def get_root_value(self, request):
+    def get_root_value(self, request) -> Query:
         return Query()
 
     def get_context(self, request: HttpRequest, response: HttpResponse) -> object:
@@ -75,11 +75,19 @@ class DjangoHttpClient(HttpClient):
         try:
             response = view(request)
         except Http404:
-            return Response(status_code=404, data=b"Not found")
+            return Response(
+                status_code=404, data=b"Not found", headers=response.headers
+            )
         except (BadRequest, SuspiciousOperation) as e:
-            return Response(status_code=400, data=e.args[0].encode())
+            return Response(
+                status_code=400, data=e.args[0].encode(), headers=response.headers
+            )
         else:
-            return Response(status_code=response.status_code, data=response.content)
+            return Response(
+                status_code=response.status_code,
+                data=response.content,
+                headers=response.headers,
+            )
 
     async def _graphql_request(
         self,
@@ -88,7 +96,7 @@ class DjangoHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
         headers = self._get_headers(method=method, headers=headers, files=files)
         additional_arguments = {**kwargs, **headers}

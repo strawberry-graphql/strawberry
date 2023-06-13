@@ -29,6 +29,9 @@ exclude_lines =
 
     @overload
 
+    # Those are not supposed to be hit
+    assert_never\(\w+\)
+
 ignore_errors = True
 
 omit =

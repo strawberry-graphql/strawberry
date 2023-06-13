@@ -465,3 +465,58 @@ def test_basic_type_with_interface():
     assert not result.errors
     assert result.data["user"]["interfaceField"]["baseField"] == "abc"
     assert result.data["user"]["interfaceField"]["fieldB"] == 10
+
+
+def test_basic_type_with_optional_and_default():
+    class UserModel(pydantic.BaseModel):
+        age: int
+        password: Optional[str] = pydantic.Field(default="ABC")
+
+    @strawberry.experimental.pydantic.type(UserModel, all_fields=True)
+    class User:
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return User(age=1)
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = """
+    type Query {
+      user: User!
+    }
+
+    type User {
+      age: Int!
+      password: String
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+    query = "{ user { age password } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["user"]["age"] == 1
+    assert result.data["user"]["password"] == "ABC"
+
+    @strawberry.type
+    class QueryNone:
+        @strawberry.field
+        def user(self) -> User:
+            return User(age=1, password=None)
+
+    schema = strawberry.Schema(query=QueryNone)
+
+    query = "{ user { age password } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["user"]["age"] == 1
+    assert result.data["user"]["password"] is None

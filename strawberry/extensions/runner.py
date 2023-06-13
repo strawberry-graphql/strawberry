@@ -7,37 +7,39 @@ from graphql import MiddlewareManager
 
 from strawberry.extensions.context import (
     ExecutingContextManager,
+    OperationContextManager,
     ParsingContextManager,
-    RequestContextManager,
     ValidationContextManager,
 )
 from strawberry.utils.await_maybe import await_maybe
 
-from . import Extension
+from . import SchemaExtension
 
 if TYPE_CHECKING:
     from strawberry.types import ExecutionContext
 
 
-class ExtensionsRunner:
-    extensions: List[Extension]
+class SchemaExtensionsRunner:
+    extensions: List[SchemaExtension]
 
     def __init__(
         self,
         execution_context: ExecutionContext,
-        extensions: Optional[List[Union[Type[Extension], Extension]]] = None,
+        extensions: Optional[
+            List[Union[Type[SchemaExtension], SchemaExtension]]
+        ] = None,
     ):
         self.execution_context = execution_context
 
         if not extensions:
             extensions = []
 
-        init_extensions: List[Extension] = []
+        init_extensions: List[SchemaExtension] = []
 
         for extension in extensions:
             # If the extension has already been instantiated then set the
             # `execution_context` attribute
-            if isinstance(extension, Extension):
+            if isinstance(extension, SchemaExtension):
                 extension.execution_context = execution_context
                 init_extensions.append(extension)
             else:
@@ -45,8 +47,8 @@ class ExtensionsRunner:
 
         self.extensions = init_extensions
 
-    def request(self) -> RequestContextManager:
-        return RequestContextManager(self.extensions)
+    def operation(self) -> OperationContextManager:
+        return OperationContextManager(self.extensions)
 
     def validation(self) -> ValidationContextManager:
         return ValidationContextManager(self.extensions)
@@ -78,7 +80,7 @@ class ExtensionsRunner:
 
         return data
 
-    def as_middleware_manager(self, *additional_middlewares) -> MiddlewareManager:
+    def as_middleware_manager(self, *additional_middlewares: Any) -> MiddlewareManager:
         middlewares = tuple(self.extensions) + additional_middlewares
 
         return MiddlewareManager(*middlewares)

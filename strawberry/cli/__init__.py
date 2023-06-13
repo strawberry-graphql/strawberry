@@ -6,5 +6,5 @@ from .commands.server import server  # noqa
 from .app import app
 
 
-def run():
+def run() -> None:
     app()

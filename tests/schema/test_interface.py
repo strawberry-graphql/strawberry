@@ -1,9 +1,10 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, cast
 
 import pytest
 
 import strawberry
+from strawberry.types.types import TypeDefinition
 
 
 def test_query_interface():
@@ -198,3 +199,43 @@ def test_interface_duck_typing_returning_dict():
 
     assert not result.errors
     assert result.data == {"anime": {"name": "One Piece"}}
+
+
+def test_duplicated_interface_in_multi_inheritance():
+    """Test that interfaces are gathered properly via CPython's MRO.
+
+    Previously interfaces were duplicated within a "Diamond Problem" inheritance
+    scenario which is tested here. Using the MRO instead of the `__bases__` attribute of
+    a class in :py:func:`strawberry.object_type._get_interfaces` allows Python's C3
+    linearization algorithm to create a consistent precedents graph without duplicates.
+    """
+
+    @strawberry.interface
+    class Base:
+        id: str
+
+    @strawberry.interface
+    class InterfaceA(Base):
+        id: str
+        field_a: str
+
+    @strawberry.interface
+    class InterfaceB(Base):
+        id: str
+        field_b: str
+
+    @strawberry.type
+    class MyType(InterfaceA, InterfaceB):
+        id: str
+        field_a: str
+        field_b: str
+
+    @strawberry.type
+    class Query:
+        my_type: MyType
+
+    type_definition = cast(TypeDefinition, MyType._type_definition)  # type: ignore
+    origins = [i.origin for i in type_definition.interfaces]
+    assert origins == [InterfaceA, InterfaceB, Base]
+
+    strawberry.Schema(Query)  # Final sanity check to ensure schema compiles

@@ -1,0 +1,19 @@
+query OperationName {
+  __typename
+  union {
+    ... on Animal {
+      age
+    }
+    ... on Person {
+      name
+    }
+  }
+  optionalUnion {
+    ... on Animal {
+      age
+    }
+    ... on Person {
+      name
+    }
+  }
+}

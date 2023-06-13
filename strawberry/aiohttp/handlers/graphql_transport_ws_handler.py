@@ -44,6 +44,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
 
     async def handle_request(self) -> web.StreamResponse:
         await self._ws.prepare(self._request)
+        self.on_request_accepted()
 
         try:
             async for ws_message in self._ws:  # type: http.WSMessage
@@ -53,8 +54,6 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
                     error_message = "WebSocket message type must be text"
                     await self.handle_invalid_message(error_message)
         finally:
-            for operation_id in list(self.subscriptions.keys()):
-                await self.cleanup_operation(operation_id)
-            await self.reap_completed_tasks()
+            await self.shutdown()
 
         return self._ws

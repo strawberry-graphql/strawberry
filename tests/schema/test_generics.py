@@ -162,6 +162,58 @@ def test_supports_generic_specialized_with_type():
     }
 
 
+def test_supports_generic_specialized_with_list_type():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Fruit:
+        name: str
+
+    @strawberry.type
+    class Edge(Generic[T]):
+        cursor: strawberry.ID
+        nodes: List[T]
+
+    @strawberry.type
+    class FruitEdge(Edge[Fruit]):
+        ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self) -> FruitEdge:
+            return FruitEdge(
+                cursor=strawberry.ID("1"),
+                nodes=[Fruit(name="Banana"), Fruit(name="Apple")],
+            )
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        example {
+            __typename
+            cursor
+            nodes {
+                name
+            }
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {
+        "example": {
+            "__typename": "FruitEdge",
+            "cursor": "1",
+            "nodes": [
+                {"name": "Banana"},
+                {"name": "Apple"},
+            ],
+        }
+    }
+
+
 def test_supports_generic():
     T = TypeVar("T")
 

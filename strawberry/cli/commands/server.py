@@ -46,7 +46,7 @@ def server(
         show_default=True,
         help="Log GraphQL operations",
     ),
-):
+) -> None:
     sys.path.insert(0, app_dir)
 
     try:

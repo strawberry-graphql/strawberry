@@ -210,7 +210,7 @@ class Person:
 @strawberry.type
 class Query:
     @strawberry.field
-    async def get_all_people(self) -> List[User]:
+    async def get_all_people(self) -> List[Person]:
         # Fetch all people from the database, without going through the dataloader abstraction
         people = await database.get_all_people()
 
@@ -423,12 +423,12 @@ You can now run the example above with any ASGI server, you can read
 [ASGI](../integrations/asgi.md)) to get more details on how to run the app. In
 case you choose uvicorn you can install it wih
 
-```bash
+```shell
 pip install uvicorn
 ```
 
 and then, assuming we named our file above `schema.py` we start the app with
 
-```
+```shell
 uvicorn schema:app
 ```

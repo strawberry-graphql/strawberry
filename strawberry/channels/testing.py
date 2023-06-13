@@ -2,7 +2,17 @@ from __future__ import annotations
 
 import dataclasses
 import uuid
-from typing import TYPE_CHECKING, AsyncIterator, Dict, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 from graphql import GraphQLError
 
@@ -56,7 +66,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         path: str,
         headers: Optional[List[Tuple[bytes, bytes]]] = None,
         protocol: str = GRAPHQL_TRANSPORT_WS_PROTOCOL,
-        **kwargs,
+        **kwargs: Any,
     ):
         """
 
@@ -74,10 +84,10 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         await self.gql_init()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+    async def __aexit__(self, exc_type: Type, exc_val: Any, exc_tb: Any) -> None:
         await self.disconnect()
 
-    async def gql_init(self):
+    async def gql_init(self) -> None:
         res = await self.connect()
         if self.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
             assert res == (True, GRAPHQL_TRANSPORT_WS_PROTOCOL)
@@ -131,5 +141,6 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
                         for message in error_payload
                     ],
                 )
+                return  # an error message is the last message for a subscription
             else:
                 return

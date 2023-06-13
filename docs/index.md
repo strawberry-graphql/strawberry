@@ -21,20 +21,20 @@ Strawberry is built on top of Python’s
 
 Let’s create a new folder:
 
-```bash
+```shell
 mkdir strawberry-demo
 cd strawberry-demo
 ```
 
 After that we need a new virtualenv:
 
-```bash
+```shell
 python -m venv virtualenv
 ```
 
 Activate the virtualenv and then install strawberry plus the debug server.
 
-```bash
+```shell
 source virtualenv/bin/activate
 pip install 'strawberry-graphql[debug-server]'
 ```
@@ -125,13 +125,13 @@ schema = strawberry.Schema(query=Query)
 
 Then run the following command
 
-```bash
+```shell
 strawberry server schema
 ```
 
 This will start a debug server, you should see the following output:
 
-```bash
+```text
 Running strawberry on http://0.0.0.0:8000/graphql 🍓
 ```
 

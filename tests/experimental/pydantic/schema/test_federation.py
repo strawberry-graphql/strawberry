@@ -20,7 +20,7 @@ def test_fetch_entities_pydantic():
         name: str
 
         @classmethod
-        def resolve_reference(cls, upc):
+        def resolve_reference(cls, upc) -> "Product":
             return Product(upc=upc, name="")
 
     @strawberry.federation.type(extend=True)

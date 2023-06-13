@@ -46,6 +46,7 @@ class StrawberryArgumentAnnotation:
     name: Optional[str]
     deprecation_reason: Optional[str]
     directives: Iterable[object]
+    metadata: Mapping[Any, Any]
 
     def __init__(
         self,
@@ -53,11 +54,13 @@ class StrawberryArgumentAnnotation:
         name: Optional[str] = None,
         deprecation_reason: Optional[str] = None,
         directives: Iterable[object] = (),
+        metadata: Optional[Mapping[Any, Any]] = None,
     ):
         self.description = description
         self.name = name
         self.deprecation_reason = deprecation_reason
         self.directives = directives
+        self.metadata = metadata or {}
 
 
 class StrawberryArgument:
@@ -71,6 +74,7 @@ class StrawberryArgument:
         default: object = _deprecated_UNSET,
         deprecation_reason: Optional[str] = None,
         directives: Iterable[object] = (),
+        metadata: Optional[Mapping[Any, Any]] = None,
     ) -> None:
         self.python_name = python_name
         self.graphql_name = graphql_name
@@ -80,6 +84,7 @@ class StrawberryArgument:
         self.type_annotation = type_annotation
         self.deprecation_reason = deprecation_reason
         self.directives = directives
+        self.metadata = metadata or {}
 
         # TODO: Consider moving this logic to a function
         self.default = (
@@ -121,6 +126,7 @@ class StrawberryArgument:
                 self.graphql_name = arg.name
                 self.deprecation_reason = arg.deprecation_reason
                 self.directives = arg.directives
+                self.metadata = arg.metadata
 
             if isinstance(arg, StrawberryLazyReference):
                 self.type_annotation = StrawberryAnnotation(
@@ -224,12 +230,14 @@ def argument(
     name: Optional[str] = None,
     deprecation_reason: Optional[str] = None,
     directives: Iterable[object] = (),
+    metadata: Optional[Mapping[Any, Any]] = None,
 ) -> StrawberryArgumentAnnotation:
     return StrawberryArgumentAnnotation(
         description=description,
         name=name,
         deprecation_reason=deprecation_reason,
         directives=directives,
+        metadata=metadata,
     )
 
 

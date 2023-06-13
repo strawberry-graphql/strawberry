@@ -4,7 +4,7 @@ title: Object types
 
 # Object types
 
-Object types are the fundamentals of any GraphQL schema, the are used to defined the kind of objects that exist in a schema. Object types are created by defining a name and a list of fields, here’s an example object type defined using the GraphQL schema language:
+Object types are the fundamentals of any GraphQL schema, they are used to define the kind of objects that exist in a schema. Object types are created by defining a name and a list of fields, here’s an example object type defined using the GraphQL schema language:
 
 ```graphql
 type Character {
@@ -15,7 +15,7 @@ type Character {
 
 ## A note on Query, Mutation and Subscription
 
-While reading about GraphQL you might have encountered 3 special object types: `Query`, `Mutation` and `Subscription`. They are defined as standard object types, with the difference that they are also used as entry point for your schema (also referred as root types).
+While reading about GraphQL you might have encountered 3 special object types: `Query`, `Mutation` and `Subscription`. They are defined as standard object types, with the difference that they are also used as entry points for your schema (also referred as root types).
 
 - `Query` is the entry point for all the query operations
 - `Mutation` is the entry point for all the mutations

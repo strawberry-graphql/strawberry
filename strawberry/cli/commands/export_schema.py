@@ -18,7 +18,7 @@ def export_schema(
             "Works the same as `--app-dir` in uvicorn."
         ),
     ),
-):
+) -> None:
     schema_symbol = load_schema(schema, app_dir)
 
     print(print_schema(schema_symbol))  # noqa: T201
