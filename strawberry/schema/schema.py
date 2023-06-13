@@ -320,7 +320,7 @@ class Schema(BaseSchema):
 
             # This can be a TypeDefinition, EnumDefinition, ScalarDefinition
             # or UnionDefinition
-            if not isinstance(type_def, TypeDefinition):
+            if not isinstance(type_def, StrawberryObjectDefinition):
                 continue
 
             # Do not validate id_attr for interfaces. relay.Node itself and
