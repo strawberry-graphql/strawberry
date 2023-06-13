@@ -180,8 +180,8 @@ def has_strawberry_object_definition(
 
 
 def get_strawberry_object_definition(
-    klass: Any,
+    obj: Any,
 ) -> Optional[StrawberryObjectDefinition]:
-    if has_strawberry_object_definition(klass):
-        return klass.__strawberry_definition__
+    if has_strawberry_object_definition(obj):
+        return obj.__strawberry_definition__
     return None
