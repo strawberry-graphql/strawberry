@@ -33,9 +33,10 @@ from strawberry.extensions.directives import (
 )
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
+from strawberry.type import has_strawberry_definition
 from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
-from strawberry.types.types import StrawberryObjectDefinition, has_strawberry_definition
+from strawberry.types.types import StrawberryObjectDefinition
 
 from ..printer import print_schema
 from . import compat

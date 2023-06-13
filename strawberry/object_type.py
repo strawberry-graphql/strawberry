@@ -21,10 +21,10 @@ from .exceptions import (
     ObjectIsNotClassError,
 )
 from .field import StrawberryField, field
+from .type import get_strawberry_definition
 from .types.type_resolver import _get_fields
 from .types.types import (
     StrawberryObjectDefinition,
-    get_strawberry_definition,
 )
 from .utils.dataclasses import add_custom_init_fn
 from .utils.str_converters import to_camel_case

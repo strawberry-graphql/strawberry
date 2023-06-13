@@ -27,7 +27,7 @@ from graphql.type import (
 )
 
 import strawberry
-from strawberry.types.types import has_strawberry_definition
+from strawberry.type import has_strawberry_definition
 
 if TYPE_CHECKING:
     from graphql.language import ValueNode

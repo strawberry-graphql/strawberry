@@ -21,12 +21,15 @@ from typing import (
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidArgumentTypeError, InvalidDefaultFactoryError
-from strawberry.type import StrawberryType
+from strawberry.type import (
+    StrawberryType,
+    WithStrawberryDefinition,
+    has_strawberry_definition,
+)
 from strawberry.union import StrawberryUnion
 from strawberry.utils.cached_property import cached_property
 
 from .types.fields.resolver import StrawberryResolver
-from .types.types import has_strawberry_definition
 
 if TYPE_CHECKING:
     import builtins
@@ -37,7 +40,6 @@ if TYPE_CHECKING:
     from strawberry.types.info import Info
 
     from .permission import BasePermission
-    from .types.types import WithStrawberryDefinition
 
 T = TypeVar("T")
 

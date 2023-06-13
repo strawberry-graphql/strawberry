@@ -12,7 +12,7 @@ from strawberry.exceptions import (
 )
 from strawberry.field import StrawberryField
 from strawberry.private import is_private
-from strawberry.types.types import has_strawberry_definition
+from strawberry.type import has_strawberry_definition
 from strawberry.unset import UNSET
 from strawberry.utils.inspect import get_specialized_type_var_map
 

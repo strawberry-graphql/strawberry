@@ -1,34 +1,18 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    List,
-    Mapping,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Type, TypeVar, Union
+from typing_extensions import Protocol
 
-from strawberry.utils.cached_property import cached_property
+from strawberry.utils.typing import is_concrete_generic
 
 if TYPE_CHECKING:
     from typing_extensions import TypeGuard
 
-    from strawberry.types.types import WithStrawberryDefinition
+    from strawberry.types.types import StrawberryObjectDefinition
 
 
 class StrawberryType(ABC):
-    @cached_property
-    def has_strawberry_definition(
-        self,
-    ) -> Callable[[Any], TypeGuard[Type[WithStrawberryDefinition]]]:
-        from .types.types import has_strawberry_definition
-
-        return has_strawberry_definition
-
     @property
     def type_params(self) -> List[TypeVar]:
         return []
@@ -91,7 +75,7 @@ class StrawberryContainer(StrawberryType):
 
     @property
     def type_params(self) -> List[TypeVar]:
-        if self.has_strawberry_definition(self.of_type):
+        if has_strawberry_definition(self.of_type):
             parameters = getattr(self.of_type, "__parameters__", None)
 
             return list(parameters) if parameters else []
@@ -110,7 +94,7 @@ class StrawberryContainer(StrawberryType):
     ) -> StrawberryType:
         of_type_copy = self.of_type
 
-        if self.has_strawberry_definition(self.of_type):
+        if has_strawberry_definition(self.of_type):
             type_definition = self.of_type.__strawberry_definition__
 
             if type_definition.is_generic:
@@ -126,7 +110,7 @@ class StrawberryContainer(StrawberryType):
         type_ = self.of_type
         if isinstance(type_, StrawberryType):
             return type_.is_generic
-        if self.has_strawberry_definition(type_):
+        if has_strawberry_definition(type_):
             return type_.__strawberry_definition__.is_generic
         return False
 
@@ -174,3 +158,26 @@ class StrawberryTypeVar(StrawberryType):
 
     def __hash__(self):
         return hash(self.type_var)
+
+
+class WithStrawberryDefinition(Protocol):
+    __strawberry_definition__: StrawberryObjectDefinition
+
+
+def has_strawberry_definition(obj: Any) -> TypeGuard[Type[WithStrawberryDefinition]]:
+    if hasattr(obj, "__strawberry_definition__"):
+        return True
+    # Generics remove dunder members here
+    # https://github.com/python/cpython/blob/3a314f7c3df0dd7c37da7d12b827f169ee60e1ea/Lib/typing.py#L1152
+    if is_concrete_generic(obj):
+        concrete = obj.__origin__
+        if hasattr(concrete, "__strawberry_definition__"):
+            obj.__strawberry_definition__ = concrete.__strawberry_definition__
+            return True
+    return False
+
+
+def get_strawberry_definition(klass: Any) -> Optional[StrawberryObjectDefinition]:
+    if has_strawberry_definition(klass):
+        return klass.__strawberry_definition__
+    return None

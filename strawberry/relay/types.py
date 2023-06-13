@@ -38,8 +38,8 @@ from strawberry.lazy_type import LazyType
 from strawberry.object_type import interface, type
 from strawberry.private import StrawberryPrivate
 from strawberry.relay.exceptions import NodeIDAnnotationError
-from strawberry.type import StrawberryContainer
-from strawberry.types.types import StrawberryObjectDefinition, get_strawberry_definition
+from strawberry.type import StrawberryContainer, get_strawberry_definition
+from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
 from strawberry.utils.inspect import in_async_context
 

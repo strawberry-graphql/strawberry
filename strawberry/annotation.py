@@ -22,8 +22,13 @@ from strawberry.enum import EnumDefinition
 from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
-from strawberry.types.types import StrawberryObjectDefinition, has_strawberry_definition
+from strawberry.type import (
+    StrawberryList,
+    StrawberryOptional,
+    StrawberryTypeVar,
+    has_strawberry_definition,
+)
+from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.unset import UNSET
 from strawberry.utils.typing import (
     eval_type,

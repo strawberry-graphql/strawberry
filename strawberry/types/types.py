@@ -13,12 +13,9 @@ from typing import (
     TypeVar,
     Union,
 )
-from typing_extensions import Protocol, Self, TypeGuard
+from typing_extensions import Self
 
-from strawberry.type import StrawberryType, StrawberryTypeVar
-from strawberry.utils.typing import (
-    is_concrete_generic,
-)
+from strawberry.type import StrawberryType, StrawberryTypeVar, WithStrawberryDefinition
 from strawberry.utils.typing import (
     is_generic as is_type_generic,
 )
@@ -184,29 +181,6 @@ class StrawberryObjectDefinition(StrawberryType):
 
         # All field mappings succeeded. This is a match
         return True
-
-
-class WithStrawberryDefinition(Protocol):
-    __strawberry_definition__: StrawberryObjectDefinition
-
-
-def has_strawberry_definition(klass: Any) -> TypeGuard[Type[WithStrawberryDefinition]]:
-    if hasattr(klass, "__strawberry_definition__"):
-        return True
-    # Generics remove dunder members here
-    # https://github.com/python/cpython/blob/3a314f7c3df0dd7c37da7d12b827f169ee60e1ea/Lib/typing.py#L1152
-    if is_concrete_generic(klass):
-        concrete = klass.__origin__
-        if hasattr(concrete, "__strawberry_definition__"):
-            klass.__strawberry_definition__ = concrete.__strawberry_definition__
-            return True
-    return False
-
-
-def get_strawberry_definition(klass: Any) -> Optional[StrawberryObjectDefinition]:
-    if has_strawberry_definition(klass):
-        return klass.__strawberry_definition__
-    return None
 
 
 # TODO: remove when deprecating _type_definition

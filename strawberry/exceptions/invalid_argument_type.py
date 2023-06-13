@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
-from strawberry.types.types import get_strawberry_definition
 from strawberry.utils.cached_property import cached_property
 
+from ..type import get_strawberry_definition
 from .exception import StrawberryException
 from .utils.source_finder import SourceFinder
 

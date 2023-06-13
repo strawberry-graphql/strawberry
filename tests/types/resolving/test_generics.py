@@ -7,8 +7,13 @@ import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.enum import EnumDefinition
 from strawberry.field import StrawberryField
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
-from strawberry.types.types import StrawberryObjectDefinition, has_strawberry_definition
+from strawberry.type import (
+    StrawberryList,
+    StrawberryOptional,
+    StrawberryTypeVar,
+    has_strawberry_definition,
+)
+from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.union import StrawberryUnion
 
 

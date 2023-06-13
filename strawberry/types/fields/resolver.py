@@ -26,9 +26,8 @@ from typing_extensions import Annotated, Protocol, get_args, get_origin
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import MissingArgumentsAnnotationsError
-from strawberry.type import StrawberryType
+from strawberry.type import StrawberryType, has_strawberry_definition
 from strawberry.types.info import Info
-from strawberry.types.types import has_strawberry_definition
 from strawberry.utils.cached_property import cached_property
 from strawberry.utils.typing import eval_type
 

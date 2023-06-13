@@ -5,8 +5,11 @@ import dataclasses
 from typing import TYPE_CHECKING, Any, Type, Union, cast
 
 from strawberry.enum import EnumDefinition
-from strawberry.type import StrawberryList, StrawberryOptional
-from strawberry.types.types import has_strawberry_definition
+from strawberry.type import (
+    StrawberryList,
+    StrawberryOptional,
+    has_strawberry_definition,
+)
 from strawberry.union import StrawberryUnion
 
 if TYPE_CHECKING:

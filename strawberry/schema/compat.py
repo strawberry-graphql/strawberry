@@ -3,12 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, Union
 
 from strawberry.scalars import is_scalar as is_strawberry_scalar
-from strawberry.type import StrawberryType
+from strawberry.type import StrawberryType, has_strawberry_definition
 
 # TypeGuard is only available in typing_extensions => 3.10, we don't want
 # to force updates to the typing_extensions package so we only use it when
 # TYPE_CHECKING is enabled.
-from strawberry.types.types import has_strawberry_definition
 
 if TYPE_CHECKING:
     from typing_extensions import TypeGuard

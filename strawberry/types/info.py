@@ -26,10 +26,9 @@ if TYPE_CHECKING:
     from strawberry.arguments import StrawberryArgument
     from strawberry.field import StrawberryField
     from strawberry.schema import Schema
-    from strawberry.type import StrawberryType
+    from strawberry.type import StrawberryType, WithStrawberryDefinition
 
     from .nodes import Selection
-    from .types import WithStrawberryDefinition
 
 ContextType = TypeVar("ContextType")
 RootValueType = TypeVar("RootValueType")

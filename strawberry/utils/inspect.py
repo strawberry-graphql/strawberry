@@ -11,7 +11,7 @@ from typing import (
 )
 from typing_extensions import get_args
 
-from strawberry.types.types import has_strawberry_definition
+from strawberry.type import has_strawberry_definition
 
 
 def in_async_context() -> bool:
