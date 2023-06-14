@@ -193,7 +193,7 @@ class StrawberryAnnotation:
             type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
         )
         # Assert types does not contain a scalar
-        self.validate_not_scalar_union_members(types, union)
+        self.validate_union_members(types, union)
 
         union_args = [arg for arg in args if isinstance(arg, StrawberryUnion)]
         if len(union_args) > 1:
