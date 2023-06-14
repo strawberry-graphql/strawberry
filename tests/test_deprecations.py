@@ -20,4 +20,5 @@ def test_get_warns():
 
 def test_can_import_type_definition():
     from strawberry.types.types import TypeDefinition
+
     assert TypeDefinition
