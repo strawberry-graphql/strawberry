@@ -8,6 +8,7 @@ import strawberry
 from strawberry.directive import DirectiveLocation, DirectiveValue
 from strawberry.extensions import SchemaExtension
 from strawberry.schema.config import StrawberryConfig
+from strawberry.type import get_object_definition_strict
 from strawberry.types.info import Info
 from strawberry.utils.await_maybe import await_maybe
 
@@ -409,7 +410,7 @@ def info_directive_schema() -> strawberry.Schema:
         def greetingTemplate(self, locale: Locale = Locale.EN) -> str:
             return greetings[locale]
 
-    field = Query.__strawberry_definition__.fields[0]  # type: ignore
+    field = get_object_definition_strict(Query).fields[0]
 
     @strawberry.directive(
         locations=[DirectiveLocation.FIELD],

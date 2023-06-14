@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Type, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    List,
+    Mapping,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from typing_extensions import Protocol
 
 from strawberry.utils.typing import is_concrete_generic
@@ -196,3 +206,7 @@ def get_object_definition(
     if has_object_definition(obj):
         return obj.__strawberry_definition__
     return None
+
+
+def get_object_definition_strict(obj: Any) -> StrawberryObjectDefinition:
+    return cast(WithStrawberryObjectDefinition, obj).__strawberry_definition__
