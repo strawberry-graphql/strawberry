@@ -210,9 +210,7 @@ class StrawberryAnnotation:
 
         return union
 
-    def validate_union_members(
-        self, types: Tuple, union: StrawberryUnion
-    ) -> None:
+    def validate_union_members(self, types: Tuple, union: StrawberryUnion) -> None:
         scalars = (int, str, float)
         for type_ in types:
             # Handle case: x = Annotated[Union[X, Y], strawberry.union("X")]
