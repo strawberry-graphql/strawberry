@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.185.1 - 2023-06-14
+--------------------
+
+Correct a type-hinting bug with `strawberry.directive`.
+This may cause some consumers to have to remove a `# type: ignore` comment
+or unnecessary `typing.cast` in order to get `mypy` to pass.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2847](https://github.com/strawberry-graphql/strawberry/pull/2847/)
+
+
 0.185.0 - 2023-06-14
 --------------------
 
