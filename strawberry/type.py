@@ -180,7 +180,7 @@ def has_object_definition(
 ) -> TypeGuard[Type[WithStrawberryObjectDefinition]]:
     if hasattr(obj, "__strawberry_definition__"):
         return True
-    # Generics remove dunder members here
+    # FIXME: Generics remove dunder members here, so we inject it here.
     # https://github.com/python/cpython/blob/3a314f7c3df0dd7c37da7d12b827f169ee60e1ea/Lib/typing.py#L1152
     if is_concrete_generic(obj):
         concrete = obj.__origin__

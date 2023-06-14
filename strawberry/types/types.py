@@ -13,7 +13,7 @@ from typing import (
     TypeVar,
     Union,
 )
-from typing_extensions import Self
+from typing_extensions import Self, deprecated
 
 from strawberry.type import (
     StrawberryType,
@@ -181,4 +181,11 @@ class StrawberryObjectDefinition(StrawberryType):
 
 
 # TODO: remove when deprecating _type_definition
-TypeDefinition = StrawberryObjectDefinition
+if TYPE_CHECKING:
+
+    @deprecated("Use StrawberryObjectDefinition instead")
+    class TypeDefinition(StrawberryObjectDefinition):
+        ...
+
+else:
+    TypeDefinition = StrawberryObjectDefinition
