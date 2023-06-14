@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.185.0 - 2023-06-14
+--------------------
+
+This release removes our custom `__dataclass_transform__` decorator and replaces
+it with typing-extension's one. It also removes parts of the mypy plugin, since
+most of it is not needed anymore 🙌
+
+This update requires typing_extensions>=4.1.0
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2227](https://github.com/strawberry-graphql/strawberry/pull/2227/)
+
+
 0.184.1 - 2023-06-13
 --------------------
 
