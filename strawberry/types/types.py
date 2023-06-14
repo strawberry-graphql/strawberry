@@ -20,6 +20,7 @@ from strawberry.type import (
     StrawberryTypeVar,
     WithStrawberryObjectDefinition,
 )
+from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.typing import (
     is_generic as is_type_generic,
 )
@@ -105,7 +106,11 @@ class StrawberryObjectDefinition(StrawberryType):
             {"__strawberry_definition__": new_type_definition},
         )
         # TODO: remove when deprecating _type_definition
-        new_type._type_definition = new_type_definition  # type: ignore
+        DeprecatedDescriptor(
+            DEPRECATION_MESSAGES._TYPE_DEFINITION,
+            new_type.__strawberry_definition__,  # type: ignore
+            "_type_definition",
+        ).inject(new_type)
 
         new_type_definition.origin = new_type
 
