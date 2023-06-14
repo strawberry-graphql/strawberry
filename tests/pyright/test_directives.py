@@ -21,6 +21,7 @@ def make_int(value: str) -> int:
 reveal_type(make_int)
 """
 
+
 def test_pyright():
     results = run_pyright(CODE)
     assert results == [
