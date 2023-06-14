@@ -6,7 +6,7 @@ from typing import Any, Optional, Type
 
 class DEPRECATION_MESSAGES:
     _TYPE_DEFINITION = (
-        "_type_definition is deprecated use __strawberry_definition__ instead"
+        "_type_definition is deprecated, use __strawberry_definition__ instead"
     )
 
 
