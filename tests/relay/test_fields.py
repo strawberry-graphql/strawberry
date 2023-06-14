@@ -1,6 +1,19 @@
-import pytest
+import textwrap
+from typing import List
 
+import pytest
+from pytest_mock import MockerFixture
+
+import strawberry
+from strawberry import relay
+from strawberry.annotation import StrawberryAnnotation
+from strawberry.arguments import StrawberryArgument
+from strawberry.field import StrawberryField
+from strawberry.relay.fields import ConnectionExtension
 from strawberry.relay.utils import to_base64
+from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
+from strawberry.types.fields.resolver import StrawberryResolver
+from strawberry.types.info import Info
 
 from .schema import FruitAsync, schema
 
@@ -1376,3 +1389,130 @@ def test_query_last_higher_than_max_results(query_attr: str):
     )
     assert result.errors is not None
     assert result.errors[0].message == "Argument 'last' cannot be higher than 100."
+
+
+def test_parameters(mocker: MockerFixture):
+    # Avoid E501 errors
+    mocker.patch.object(
+        DEFAULT_SCALAR_REGISTRY[relay.GlobalID],
+        "description",
+        "__GLOBAL_ID_DESC__",
+    )
+
+    class CustomField(StrawberryField):
+        @property
+        def arguments(self) -> List[StrawberryArgument]:
+            return [
+                *super().arguments,
+                StrawberryArgument(
+                    python_name="foo",
+                    graphql_name=None,
+                    type_annotation=StrawberryAnnotation(str),
+                    default=None,
+                ),
+            ]
+
+        @arguments.setter
+        def arguments(self, value: List[StrawberryArgument]):
+            cls = self.__class__
+            return super(cls, cls).arguments.fset(self, value)
+
+    @strawberry.type
+    class Fruit(relay.Node):
+        code: relay.NodeID[str]
+
+    def resolver(info: Info) -> List[Fruit]:
+        ...
+
+    @strawberry.type
+    class Query:
+        fruit: relay.ListConnection[Fruit] = relay.connection(
+            resolver=resolver,
+            extensions=[ConnectionExtension()],
+        )
+        fruit_custom_field: relay.ListConnection[Fruit] = CustomField(
+            base_resolver=StrawberryResolver(resolver),
+            extensions=[ConnectionExtension()],
+        )
+
+    schema = strawberry.Schema(query=Query)
+    expected = '''
+    type Fruit implements Node {
+      """The Globally Unique ID of this object"""
+      id: GlobalID!
+    }
+
+    """A connection to a list of items."""
+    type FruitConnection {
+      """Pagination data for this connection"""
+      pageInfo: PageInfo!
+
+      """Contains the nodes in this connection"""
+      edges: [FruitEdge!]!
+    }
+
+    """An edge in a connection."""
+    type FruitEdge {
+      """A cursor for use in pagination"""
+      cursor: String!
+
+      """The item at the end of the edge"""
+      node: Fruit!
+    }
+
+    """__GLOBAL_ID_DESC__"""
+    scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
+
+    """An object with a Globally Unique ID"""
+    interface Node {
+      """The Globally Unique ID of this object"""
+      id: GlobalID!
+    }
+
+    """Information to aid in pagination."""
+    type PageInfo {
+      """When paginating forwards, are there more items?"""
+      hasNextPage: Boolean!
+
+      """When paginating backwards, are there more items?"""
+      hasPreviousPage: Boolean!
+
+      """When paginating backwards, the cursor to continue."""
+      startCursor: String
+
+      """When paginating forwards, the cursor to continue."""
+      endCursor: String
+    }
+
+    type Query {
+      fruit(
+        """Returns the items in the list that come before the specified cursor."""
+        before: String = null
+
+        """Returns the items in the list that come after the specified cursor."""
+        after: String = null
+
+        """Returns the first n items from the list."""
+        first: Int = null
+
+        """Returns the items in the list that come after the specified cursor."""
+        last: Int = null
+      ): FruitConnection!
+      fruitCustomField(
+        foo: String!
+
+        """Returns the items in the list that come before the specified cursor."""
+        before: String = null
+
+        """Returns the items in the list that come after the specified cursor."""
+        after: String = null
+
+        """Returns the first n items from the list."""
+        first: Int = null
+
+        """Returns the items in the list that come after the specified cursor."""
+        last: Int = null
+      ): FruitConnection!
+    }
+    '''
+    assert str(schema) == textwrap.dedent(expected).strip()

@@ -9,6 +9,8 @@ from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidUnionTypeError
 from strawberry.union import StrawberryUnion, union
 
+# TODO: Add equivalent tests with new style union API
+
 
 def test_python_union():
     @strawberry.type
@@ -81,7 +83,7 @@ def test_strawberry_union():
     assert resolved != Union[User, Error]  # Name will be different
 
 
-def test_named_union():
+def test_named_union_with_deprecated_api_using_types_parameter():
     @strawberry.type
     class A:
         a: int
@@ -90,7 +92,7 @@ def test_named_union():
     class B:
         b: int
 
-    Result = strawberry.union("Result", (A, B))
+    Result = strawberry.union("Result", types=(A, B))
 
     strawberry_union = Result
     assert isinstance(strawberry_union, StrawberryUnion)
@@ -98,7 +100,7 @@ def test_named_union():
     assert strawberry_union.types == (A, B)
 
 
-def test_union_with_generic():
+def test_union_with_generic_with_deprecated_api_using_types_parameter():
     T = TypeVar("T")
 
     @strawberry.type
@@ -109,7 +111,7 @@ def test_union_with_generic():
     class Edge(Generic[T]):
         node: T
 
-    Result = strawberry.union("Result", (Error, Edge[str]))
+    Result = strawberry.union("Result", types=(Error, Edge[str]))
 
     strawberry_union = Result
     assert isinstance(strawberry_union, StrawberryUnion)

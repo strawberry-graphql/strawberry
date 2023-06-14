@@ -1,5 +1,6 @@
 import sys
-from typing import List, Optional
+import warnings
+from typing import List, Optional, Union
 from typing_extensions import Annotated
 
 import pytest
@@ -438,7 +439,7 @@ def test_union_as_an_argument_type():
     class Verb:
         text: str
 
-    Word = strawberry.union("Word", types=(Noun, Verb))
+    Word = Annotated[Union[Noun, Verb], strawberry.argument("Word")]
 
     @strawberry.field
     def add_word(word: Word) -> bool:
@@ -489,7 +490,9 @@ def test_unset_deprecation_warning():
 def test_deprecated_unset():
     with pytest.deprecated_call():
         from strawberry.unset import is_unset
-    assert is_unset(UNSET)
-    assert not is_unset(None)
-    assert not is_unset(False)
-    assert not is_unset("hello world")
+
+    with warnings.catch_warnings(record=False):
+        assert is_unset(UNSET)
+        assert not is_unset(None)
+        assert not is_unset(False)
+        assert not is_unset("hello world")

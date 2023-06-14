@@ -11,8 +11,8 @@ type ExampleInput = {
     name: string
     age: number
     person: PersonInput | undefined
-    people: PersonInput | undefined
-    optional_people: PersonInput | undefined | undefined
+    people: PersonInput[]
+    optional_people: PersonInput[] | undefined
 }
 
 type OperationNameVariables = {

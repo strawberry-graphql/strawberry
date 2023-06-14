@@ -29,7 +29,6 @@ types = [
     None,
     Optional[str],
     UnsetType,
-    Union[int, str],
     "int",
     T,
     Bleh,

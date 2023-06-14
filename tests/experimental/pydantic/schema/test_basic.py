@@ -12,9 +12,10 @@ def test_basic_type_field_list():
         age: int
         password: Optional[str]
 
-    @strawberry.experimental.pydantic.type(UserModel, fields=["age", "password"])
+    @strawberry.experimental.pydantic.type(UserModel)
     class User:
-        pass
+        age: strawberry.auto
+        password: strawberry.auto
 
     @strawberry.type
     class Query:
@@ -128,9 +129,10 @@ def test_basic_alias_type():
         age_: int = pydantic.Field(..., alias="age")
         password: Optional[str]
 
-    @strawberry.experimental.pydantic.type(UserModel, fields=["age_", "password"])
+    @strawberry.experimental.pydantic.type(UserModel)
     class User:
-        pass
+        age_: strawberry.auto
+        password: strawberry.auto
 
     @strawberry.type
     class Query:
@@ -159,9 +161,10 @@ def test_basic_type_with_list():
         age: int
         friend_names: List[str]
 
-    @strawberry.experimental.pydantic.type(UserModel, fields=["age", "friend_names"])
+    @strawberry.experimental.pydantic.type(UserModel)
     class User:
-        pass
+        age: strawberry.auto
+        friend_names: strawberry.auto
 
     @strawberry.type
     class Query:
@@ -183,16 +186,16 @@ def test_basic_type_with_nested_model():
     class Hobby(pydantic.BaseModel):
         name: str
 
-    @strawberry.experimental.pydantic.type(Hobby, fields=["name"])
+    @strawberry.experimental.pydantic.type(Hobby)
     class HobbyType:
-        pass
+        name: strawberry.auto
 
     class User(pydantic.BaseModel):
         hobby: Hobby
 
-    @strawberry.experimental.pydantic.type(User, fields=["hobby"])
+    @strawberry.experimental.pydantic.type(User)
     class UserType:
-        pass
+        hobby: strawberry.auto
 
     @strawberry.type
     class Query:
@@ -214,16 +217,16 @@ def test_basic_type_with_list_of_nested_model():
     class Hobby(pydantic.BaseModel):
         name: str
 
-    @strawberry.experimental.pydantic.type(Hobby, fields=["name"])
+    @strawberry.experimental.pydantic.type(Hobby)
     class HobbyType:
-        pass
+        name: strawberry.auto
 
     class User(pydantic.BaseModel):
         hobbies: List[Hobby]
 
-    @strawberry.experimental.pydantic.type(User, fields=["hobbies"])
+    @strawberry.experimental.pydantic.type(User)
     class UserType:
-        pass
+        hobbies: strawberry.auto
 
     @strawberry.type
     class Query:
@@ -253,9 +256,10 @@ def test_basic_type_with_extended_fields():
     class UserModel(pydantic.BaseModel):
         age: int
 
-    @strawberry.experimental.pydantic.type(UserModel, fields=["age"])
+    @strawberry.experimental.pydantic.type(UserModel)
     class User:
         name: str
+        age: strawberry.auto
 
     @strawberry.type
     class Query:
@@ -293,9 +297,10 @@ def test_type_with_custom_resolver():
     def get_age_in_months(root):
         return root.age * 12
 
-    @strawberry.experimental.pydantic.type(UserModel, fields=["age"])
+    @strawberry.experimental.pydantic.type(UserModel)
     class User:
         age_in_months: int = strawberry.field(resolver=get_age_in_months)
+        age: strawberry.auto
 
     @strawberry.type
     class Query:
@@ -324,17 +329,17 @@ def test_basic_type_with_union():
     class User(pydantic.BaseModel):
         union_field: Union[BranchA, BranchB]
 
-    @strawberry.experimental.pydantic.type(BranchA, fields=["field_a"])
+    @strawberry.experimental.pydantic.type(BranchA)
     class BranchAType:
-        pass
+        field_a: strawberry.auto
 
-    @strawberry.experimental.pydantic.type(BranchB, fields=["field_b"])
+    @strawberry.experimental.pydantic.type(BranchB)
     class BranchBType:
-        pass
+        field_b: strawberry.auto
 
-    @strawberry.experimental.pydantic.type(User, fields=["union_field"])
+    @strawberry.experimental.pydantic.type(User)
     class UserType:
-        pass
+        union_field: strawberry.auto
 
     @strawberry.type
     class Query:
@@ -362,17 +367,17 @@ def test_basic_type_with_union_pydantic_types():
     class User(pydantic.BaseModel):
         union_field: Union[BranchA, BranchB]
 
-    @strawberry.experimental.pydantic.type(BranchA, fields=["field_a"])
+    @strawberry.experimental.pydantic.type(BranchA)
     class BranchAType:
-        pass
+        field_a: strawberry.auto
 
-    @strawberry.experimental.pydantic.type(BranchB, fields=["field_b"])
+    @strawberry.experimental.pydantic.type(BranchB)
     class BranchBType:
-        pass
+        field_b: strawberry.auto
 
-    @strawberry.experimental.pydantic.type(User, fields=["union_field"])
+    @strawberry.experimental.pydantic.type(User)
     class UserType:
-        pass
+        union_field: strawberry.auto
 
     @strawberry.type
     class Query:
@@ -401,9 +406,10 @@ def test_basic_type_with_enum():
         age: int
         kind: UserKind
 
-    @strawberry.experimental.pydantic.type(User, fields=["age", "kind"])
+    @strawberry.experimental.pydantic.type(User)
     class UserType:
-        pass
+        age: strawberry.auto
+        kind: strawberry.auto
 
     @strawberry.type
     class Query:
@@ -434,21 +440,21 @@ def test_basic_type_with_interface():
     class User(pydantic.BaseModel):
         interface_field: Base
 
-    @strawberry.experimental.pydantic.interface(Base, fields=["base_field"])
+    @strawberry.experimental.pydantic.interface(Base)
     class BaseType:
-        pass
+        base_field: strawberry.auto
 
-    @strawberry.experimental.pydantic.type(BranchA, fields=["field_a"])
+    @strawberry.experimental.pydantic.type(BranchA)
     class BranchAType(BaseType):
-        pass
+        field_a: strawberry.auto
 
-    @strawberry.experimental.pydantic.type(BranchB, fields=["field_b"])
+    @strawberry.experimental.pydantic.type(BranchB)
     class BranchBType(BaseType):
-        pass
+        field_b: strawberry.auto
 
-    @strawberry.experimental.pydantic.type(User, fields=["interface_field"])
+    @strawberry.experimental.pydantic.type(User)
     class UserType:
-        pass
+        interface_field: strawberry.auto
 
     @strawberry.type
     class Query:

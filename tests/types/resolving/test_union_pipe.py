@@ -1,4 +1,5 @@
 import sys
+import typing
 from typing import Union
 
 import pytest
@@ -65,7 +66,7 @@ def test_strawberry_union_and_none():
     class Error:
         name: str
 
-    UserOrError = strawberry.union("UserOrError", (User, Error))
+    UserOrError = typing.Annotated[User | Error, strawberry.union(name="UserOrError")]
     annotation = StrawberryAnnotation(UserOrError | None)
     resolved = annotation.resolve()
 
@@ -92,9 +93,10 @@ def test_raises_error_when_piping_with_scalar():
     class Error:
         name: str
 
-    UserOrError = strawberry.union("UserOrError", (User, Error))
+    UserOrError = typing.Annotated[User | Error, strawberry.union("UserOrError")]
 
-    StrawberryAnnotation(UserOrError | int)
+    a = StrawberryAnnotation(UserOrError | int)
+    a.resolve()
 
 
 @pytest.mark.raises_strawberry_exception(

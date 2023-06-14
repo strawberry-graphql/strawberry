@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import sys
 import typing
 from collections import abc
@@ -10,6 +11,7 @@ from typing import (
     Dict,
     ForwardRef,
     Optional,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -19,10 +21,15 @@ from typing_extensions import Annotated, Self, get_args, get_origin
 
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
+from strawberry.exceptions import InvalidUnionTypeError
 from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
+from strawberry.type import (
+    StrawberryList,
+    StrawberryOptional,
+    StrawberryTypeVar,
+)
 from strawberry.types.types import TypeDefinition
 from strawberry.unset import UNSET
 from strawberry.utils.typing import (
@@ -80,13 +87,15 @@ class StrawberryAnnotation:
         if isinstance(annotation, str):
             annotation = ForwardRef(annotation)
 
+        args = []
+
         evaled_type = eval_type(annotation, self.namespace, None)
 
         if is_private(evaled_type):
             return evaled_type
 
         if get_origin(evaled_type) is Annotated:
-            evaled_type = get_args(evaled_type)[0]
+            evaled_type, *args = get_args(evaled_type)
 
         if self._is_async_type(evaled_type):
             evaled_type = self._strip_async_type(evaled_type)
@@ -111,7 +120,7 @@ class StrawberryAnnotation:
         elif self._is_optional(evaled_type):
             return self.create_optional(evaled_type)
         elif self._is_union(evaled_type):
-            return self.create_union(evaled_type)
+            return self.create_union(evaled_type, args)
         elif is_type_var(evaled_type) or evaled_type is Self:
             return self.create_type_var(cast(TypeVar, evaled_type))
 
@@ -171,7 +180,7 @@ class StrawberryAnnotation:
     def create_type_var(self, evaled_type: TypeVar) -> StrawberryTypeVar:
         return StrawberryTypeVar(evaled_type)
 
-    def create_union(self, evaled_type: Type) -> StrawberryUnion:
+    def create_union(self, evaled_type: Type, args: list) -> StrawberryUnion:
         # Prevent import cycles
         from strawberry.union import StrawberryUnion
 
@@ -183,7 +192,41 @@ class StrawberryAnnotation:
         union = StrawberryUnion(
             type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
         )
+        # Assert types does not contain a scalar
+        self.validate_not_scalar_union_members(types, union)
+
+        union_args = [arg for arg in args if isinstance(arg, StrawberryUnion)]
+        if len(union_args) > 1:
+            logging.warning(
+                "Duplicate union definition detected. "
+                "Only the first definition will be considered"
+            )
+
+        if union_args:
+            arg = union_args[0]
+            union.graphql_name = arg.graphql_name
+            union.description = arg.description
+            union.directives = arg.directives
+
         return union
+
+    def validate_not_scalar_union_members(
+        self, types: Tuple, union: StrawberryUnion
+    ) -> None:
+        scalars = (int, str, float)
+        for type_ in types:
+            # Handle case: x = Annotated[Union[X, Y], strawberry.union("X")]
+            if get_origin(type_) is Annotated:
+                # Unwrap annotated type into the proper type hints
+                # and our strawberry type metadata
+                inner_type, *sw_metadata = get_args(type_)
+                union_members = get_args(inner_type)
+                for member in union_members:
+                    if isinstance(member, scalars):
+                        raise InvalidUnionTypeError(union.graphql_name, member)
+
+            elif type_ in scalars:
+                raise InvalidUnionTypeError(union.graphql_name, type_)
 
     @classmethod
     def _is_async_type(cls, annotation: type) -> bool:
