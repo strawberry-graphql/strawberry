@@ -210,7 +210,7 @@ class StrawberryAnnotation:
 
         return union
 
-    def validate_not_scalar_union_members(
+    def validate_union_members(
         self, types: Tuple, union: StrawberryUnion
     ) -> None:
         scalars = (int, str, float)
