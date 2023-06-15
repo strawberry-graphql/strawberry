@@ -1,5 +1,6 @@
 import re
-from typing import Any, Callable
+from typing import Any, Callable, Optional
+from typing_extensions import Annotated
 
 import pytest
 
@@ -290,3 +291,48 @@ def test_extension_mutate_arguments():
     result = schema.execute_sync(query)
     assert result.data, result.errors
     assert result.data["string"] == "This is a test!! 13"
+
+
+def test_extension_access_argument_metadata():
+    field_kwargs = {}
+    argument_metadata = {}
+
+    class CustomExtension(FieldExtension):
+        def resolve(
+            self, next_: Callable[..., Any], source: Any, info: Info, **kwargs: Any
+        ):
+            nonlocal field_kwargs
+            field_kwargs = kwargs
+
+            for key in kwargs:
+                argument_def = info.get_argument_definition(key)
+                assert argument_def is not None
+                argument_metadata[key] = argument_def.metadata
+
+            result = next_(source, info, **kwargs)
+            return result
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(extensions=[CustomExtension()])
+        def string(
+            self,
+            some_input: Annotated[str, strawberry.argument(metadata={"test": "foo"})],
+            another_input: Optional[str] = None,
+        ) -> str:
+            return f"This is a test!! {some_input}"
+
+    schema = strawberry.Schema(query=Query)
+    query = 'query { string(someInput: "foo") }'
+
+    result = schema.execute_sync(query)
+    assert result.data, result.errors
+    assert result.data["string"] == "This is a test!! foo"
+
+    assert isinstance(field_kwargs["some_input"], str)
+    assert argument_metadata == {
+        "some_input": {
+            "test": "foo",
+        },
+        "another_input": {},
+    }

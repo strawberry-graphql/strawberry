@@ -1,7 +1,8 @@
 import datetime
 import decimal
 import enum
-from typing import TYPE_CHECKING, List, NewType, Optional
+import random
+from typing import TYPE_CHECKING, List, NewType, Optional, Union
 from typing_extensions import Annotated
 from uuid import UUID
 
@@ -45,6 +46,10 @@ class Node:
 @strawberry.type
 class BlogPost(Node):
     title: str
+
+    def __init__(self, id: str, title: str) -> None:
+        self.id = id
+        self.title = title
 
 
 @strawberry.type
@@ -96,7 +101,45 @@ class Query:
     def with_inputs(self, id: Optional[strawberry.ID], input: ExampleInput) -> bool:
         return True
 
+    @strawberry.field
+    def get_person_or_animal(self) -> Union[Person, Animal]:
+        """Randomly get a person or an animal."""
+        p_or_a = random.choice([Person, Animal])()  # noqa: S311
+        p_or_a.name = "Howard"
+        p_or_a.age = 7
+        return p_or_a
+
+
+@strawberry.input
+class BlogPostInput:
+    title: str
+
+
+@strawberry.input
+class AddBlogPostsInput:
+    posts: List[BlogPostInput]
+
+
+@strawberry.type
+class AddBlogPostsOutput:
+    posts: List[BlogPost]
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def add_book(self, name: str) -> BlogPost:
+        return BlogPost(id="c6f1c3ce-5249-4570-9182-c2836b836d14", name=name)
+
+    @strawberry.mutation
+    def add_blog_posts(self, input: AddBlogPostsInput) -> AddBlogPostsOutput:
+        output = AddBlogPostsOutput()
+        output.posts = []
+        for i, title in enumerate(input.posts):
+            output.posts.append(BlogPost(str(i), title))
+        return output
+
 
 @pytest.fixture
 def schema() -> strawberry.Schema:
-    return strawberry.Schema(query=Query, types=[BlogPost, Image])
+    return strawberry.Schema(query=Query, mutation=Mutation, types=[BlogPost, Image])

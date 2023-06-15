@@ -2,9 +2,10 @@ from pathlib import Path
 from typing import List
 
 import pytest
+from typer.testing import CliRunner
 
+from strawberry.cli.app import app
 from strawberry.cli.commands.codegen import ConsolePlugin
-from strawberry.cli.commands.codegen import codegen as cmd_codegen
 from strawberry.codegen import CodegenFile, CodegenResult, QueryCodegenPlugin
 from strawberry.codegen.types import GraphQLOperation, GraphQLType
 
@@ -55,11 +56,12 @@ def query_file_path(tmp_path: Path) -> Path:
     return output_path
 
 
-def test_codegen(cli_runner, query_file_path: Path, tmp_path: Path):
+def test_codegen(cli_runner: CliRunner, query_file_path: Path, tmp_path: Path):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
-        cmd_codegen,
+        app,
         [
+            "codegen",
             "-p",
             "tests.cli.test_codegen:QueryCodegenTestPlugin",
             "-o",
@@ -79,12 +81,13 @@ def test_codegen(cli_runner, query_file_path: Path, tmp_path: Path):
 
 
 def test_codegen_passing_plugin_symbol(
-    cli_runner, query_file_path: Path, tmp_path: Path
+    cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
-        cmd_codegen,
+        app,
         [
+            "codegen",
             "-p",
             "tests.cli.test_codegen:EmptyPlugin",
             "-o",
@@ -104,16 +107,19 @@ def test_codegen_passing_plugin_symbol(
 
 
 def test_codegen_returns_error_when_symbol_does_not_exist(
-    cli_runner, query_file_path: Path
+    cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
-        cmd_codegen,
+        app,
         [
+            "codegen",
             "-p",
             "tests.cli.test_codegen:SomePlugin",
             "--schema",
             selector,
+            "-o",
+            str(tmp_path),
             str(query_file_path),
         ],
     )
@@ -125,12 +131,21 @@ def test_codegen_returns_error_when_symbol_does_not_exist(
 
 
 def test_codegen_returns_error_when_module_does_not_exist(
-    cli_runner, query_file_path: Path
+    cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
-        cmd_codegen,
-        ["-p", "fake_module_plugin", "--schema", selector, str(query_file_path)],
+        app,
+        [
+            "codegen",
+            "-p",
+            "fake_module_plugin",
+            "--schema",
+            selector,
+            "-o",
+            str(tmp_path),
+            str(query_file_path),
+        ],
     )
 
     assert result.exit_code == 1
@@ -138,23 +153,43 @@ def test_codegen_returns_error_when_module_does_not_exist(
 
 
 def test_codegen_returns_error_when_does_not_find_plugin(
-    cli_runner, query_file_path: Path
+    cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
-        cmd_codegen,
-        ["-p", "tests.cli.test_server", "--schema", selector, str(query_file_path)],
+        app,
+        [
+            "codegen",
+            "-p",
+            "tests.cli.test_server",
+            "--schema",
+            selector,
+            "-o",
+            str(tmp_path),
+            str(query_file_path),
+        ],
     )
 
     assert result.exit_code == 1
     assert "Error: Plugin tests.cli.test_server not found" in result.output
 
 
-def test_codegen_finds_our_plugins(cli_runner, query_file_path: Path, tmp_path: Path):
+def test_codegen_finds_our_plugins(
+    cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
+):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
-        cmd_codegen,
-        ["-p", "python", "--schema", selector, "-o", tmp_path, str(query_file_path)],
+        app,
+        [
+            "codegen",
+            "-p",
+            "python",
+            "--schema",
+            selector,
+            "-o",
+            str(tmp_path),
+            str(query_file_path),
+        ],
     )
 
     assert result.exit_code == 0
@@ -165,11 +200,14 @@ def test_codegen_finds_our_plugins(cli_runner, query_file_path: Path, tmp_path: 
     assert "class GetUserResult" in code_path.read_text()
 
 
-def test_can_use_custom_cli_plugin(cli_runner, query_file_path: Path, tmp_path: Path):
+def test_can_use_custom_cli_plugin(
+    cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
+):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
-        cmd_codegen,
+        app,
         [
+            "codegen",
             "--cli-plugin",
             "tests.cli.test_codegen:ConsoleTestPlugin",
             "-p",
@@ -177,7 +215,7 @@ def test_can_use_custom_cli_plugin(cli_runner, query_file_path: Path, tmp_path: 
             "--schema",
             selector,
             "-o",
-            tmp_path,
+            str(tmp_path),
             str(query_file_path),
         ],
     )

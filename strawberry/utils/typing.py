@@ -1,16 +1,16 @@
 import ast
 import sys
 import typing
-from collections.abc import AsyncGenerator
 from functools import lru_cache
 from typing import (  # type: ignore
     TYPE_CHECKING,
     Any,
-    Callable,
+    AsyncGenerator,
     ClassVar,
     Dict,
     ForwardRef,
     Generic,
+    List,
     Optional,
     Tuple,
     Type,
@@ -221,6 +221,68 @@ def _ast_replace_union_operation(
     return expr
 
 
+def _get_namespace_from_ast(
+    expr: Union[ast.Expr, ast.expr],
+    globalns: Optional[Dict] = None,
+    localns: Optional[Dict] = None,
+) -> Dict[str, Type]:
+    from strawberry.lazy_type import StrawberryLazyReference
+
+    extra = {}
+
+    if isinstance(expr, ast.Expr) and isinstance(
+        expr.value, (ast.BinOp, ast.Subscript)
+    ):
+        extra.update(_get_namespace_from_ast(expr.value, globalns, localns))
+    elif isinstance(expr, ast.BinOp):
+        for elt in (expr.left, expr.right):
+            extra.update(_get_namespace_from_ast(elt, globalns, localns))
+    elif (
+        isinstance(expr, ast.Subscript)
+        and isinstance(expr.value, ast.Name)
+        and expr.value.id == "Union"
+    ):
+        if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
+            # The cast is required for mypy on python 3.7 and 3.8
+            expr_slice = cast(Any, expr.slice).value
+        else:
+            expr_slice = expr.slice
+
+        for elt in cast(ast.Tuple, expr_slice).elts:
+            extra.update(_get_namespace_from_ast(elt, globalns, localns))
+    elif (
+        isinstance(expr, ast.Subscript)
+        and isinstance(expr.value, ast.Name)
+        and expr.value.id == "Annotated"
+    ):
+        assert ast_unparse
+
+        if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
+            # The cast is required for mypy on python 3.7 and 3.8
+            expr_slice = cast(Any, expr.slice).value
+        else:
+            expr_slice = expr.slice
+
+        args: List[str] = []
+        for elt in cast(ast.Tuple, expr_slice).elts:
+            extra.update(_get_namespace_from_ast(elt, globalns, localns))
+            args.append(ast_unparse(elt))
+
+        # When using forward refs, the whole
+        # Annotated[SomeType, strawberry.lazy("type.module")] is a forward ref,
+        # and trying to _eval_type on it will fail. Take a different approach
+        # here to resolve lazy types by execing the annotated args, resolving the
+        # type directly and then adding it to extra namespace, so that _eval_type
+        # can properly resolve it later
+        type_name = args[0]
+        for arg in args[1:]:
+            evaled_arg = eval(arg, globalns, localns)  # noqa: PGH001
+            if isinstance(evaled_arg, StrawberryLazyReference):
+                extra[type_name] = evaled_arg.resolve_forward_ref(ForwardRef(type_name))
+
+    return extra
+
+
 def eval_type(
     type_: Any,
     globalns: Optional[Dict] = None,
@@ -234,20 +296,22 @@ def eval_type(
     globalns = globalns or {}
     # If this is not a string, maybe its args are (e.g. List["Foo"])
     if isinstance(type_, ForwardRef):
+        ast_obj = cast(ast.Expr, ast.parse(type_.__forward_arg__).body[0])
+
         # For Python 3.10+, we can use the built-in _eval_type function directly.
         # It will handle "|" notations properly
         if sys.version_info < (3, 10):
-            parsed = _ast_replace_union_operation(
-                cast(ast.Expr, ast.parse(type_.__forward_arg__).body[0])
-            )
+            ast_obj = _ast_replace_union_operation(ast_obj)
 
             # We replaced "a | b" with "Union[a, b], so make sure Union can be resolved
             # at globalns because it may not be there
             if "Union" not in globalns:
                 globalns["Union"] = Union
 
-            assert ast_unparse
-            type_ = ForwardRef(ast_unparse(parsed))
+        globalns.update(_get_namespace_from_ast(ast_obj, globalns, localns))
+
+        assert ast_unparse
+        type_ = ForwardRef(ast_unparse(ast_obj))
 
         return _eval_type(type_, globalns, localns)
 
@@ -265,7 +329,12 @@ def eval_type(
                         for a in args[1:]
                         if not isinstance(arg, StrawberryLazyReference)
                     ]
-                    args = (arg.resolve_forward_ref(args[0]), *remaining_args)
+                    type_arg = (
+                        arg.resolve_forward_ref(args[0])
+                        if isinstance(args[0], ForwardRef)
+                        else args[0]
+                    )
+                    args = (type_arg, *remaining_args)
                     break
                 if isinstance(arg, StrawberryAuto):
                     remaining_args = [
@@ -303,16 +372,3 @@ def eval_type(
         )
 
     return type_
-
-
-_T = TypeVar("_T")
-
-
-def __dataclass_transform__(
-    *,
-    eq_default: bool = True,
-    order_default: bool = False,
-    kw_only_default: bool = False,
-    field_descriptors: Tuple[Union[type, Callable[..., Any]], ...] = (()),
-) -> Callable[[_T], _T]:
-    return lambda a: a

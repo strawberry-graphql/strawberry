@@ -1,7 +1,26 @@
+import asyncio
 import inspect
 from functools import lru_cache
-from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, overload
-from typing_extensions import Literal, get_args
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    TypeVar,
+)
+from typing_extensions import get_args
+
+
+def in_async_context() -> bool:
+    # Based on the way django checks if there's an event loop in the current thread
+    # https://github.com/django/django/blob/main/django/utils/asyncio.py
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return False
+    else:
+        return True
 
 
 @lru_cache(maxsize=250)
@@ -17,36 +36,7 @@ def get_func_args(func: Callable[[Any], Any]) -> List[str]:
     ]
 
 
-@overload
-def get_specialized_type_var_map(
-    cls: type,
-    *,
-    include_type_vars: Literal[True],
-) -> Optional[Dict[TypeVar, Union[TypeVar, type]]]:
-    ...
-
-
-@overload
-def get_specialized_type_var_map(
-    cls: type,
-    *,
-    include_type_vars: Literal[False] = ...,
-) -> Optional[Dict[TypeVar, type]]:
-    ...
-
-
-@overload
-def get_specialized_type_var_map(
-    cls: type,
-    *,
-    include_type_vars: bool,
-) -> Optional[
-    Union[Optional[Dict[TypeVar, type]], Dict[TypeVar, Union[TypeVar, type]]]
-]:
-    ...
-
-
-def get_specialized_type_var_map(cls: type, *, include_type_vars: bool = False):
+def get_specialized_type_var_map(cls: type) -> Optional[Dict[TypeVar, type]]:
     """Get a type var map for specialized types.
 
     Consider the following:
@@ -73,8 +63,6 @@ def get_specialized_type_var_map(cls: type, *, include_type_vars: bool = False):
         None
         >>> get_specialized_type_var_map(Foo)
         {}
-        >>> get_specialized_type_var_map(Foo, include_type_vars=True)
-        {~T: ~T}
         >>> get_specialized_type_var_map(Bar)
         {~T: ~T}
         >>> get_specialized_type_var_map(IntBar)
@@ -91,6 +79,10 @@ def get_specialized_type_var_map(cls: type, *, include_type_vars: bool = False):
         return None
 
     type_var_map = {}
+
+    # only get type vars for base generics (ie. Generic[T]) and for strawberry types
+
+    orig_bases = [b for b in orig_bases if hasattr(b, "_type_definition")]
 
     for base in orig_bases:
         # Recursively get type var map from base classes
@@ -109,11 +101,7 @@ def get_specialized_type_var_map(cls: type, *, include_type_vars: bool = False):
             continue
 
         type_var_map.update(
-            {
-                p: a
-                for p, a in zip(params, args)
-                if include_type_vars or not isinstance(a, TypeVar)
-            }
+            {p: a for p, a in zip(params, args) if not isinstance(a, TypeVar)}
         )
 
     return type_var_map

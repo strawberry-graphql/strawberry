@@ -6,46 +6,197 @@ from __future__ import annotations
 
 import dataclasses
 import json
-from typing import TYPE_CHECKING, Any, Optional
+from io import BytesIO
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
 from urllib.parse import parse_qs
+
+from django.conf import settings
+from django.core.files import uploadhandler
+from django.http.multipartparser import MultiPartParser
 
 from channels.db import database_sync_to_async
 from channels.generic.http import AsyncHttpConsumer
-from strawberry.channels.context import StrawberryChannelsContext
-from strawberry.exceptions import MissingQueryError
-from strawberry.http import (
-    parse_query_params,
-    parse_request_data,
-    process_result,
-)
-from strawberry.schema.exceptions import InvalidOperationTypeError
-from strawberry.types.graphql import OperationType
+from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
+from strawberry.http.exceptions import HTTPException
+from strawberry.http.sync_base_view import SyncBaseHTTPView, SyncHTTPRequestAdapter
+from strawberry.http.temporal_response import TemporalResponse
+from strawberry.http.types import FormData
+from strawberry.http.typevars import Context, RootValue
+from strawberry.unset import UNSET
+from strawberry.utils.cached_property import cached_property
 from strawberry.utils.graphiql import get_graphiql_html
 
 from .base import ChannelsConsumer
 
 if TYPE_CHECKING:
-    from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData
+    from strawberry.http import GraphQLHTTPResponse
+    from strawberry.http.types import HTTPMethod, QueryParams
     from strawberry.schema import BaseSchema
-    from strawberry.types import ExecutionResult
-
-
-class MethodNotAllowed(Exception):
-    ...
-
-
-class ExecutionError(Exception):
-    ...
 
 
 @dataclasses.dataclass
-class Result:
-    response: bytes
+class ChannelsResponse:
+    content: bytes
     status: int = 200
     content_type: str = "application/json"
+    headers: Dict[bytes, bytes] = dataclasses.field(default_factory=dict)
 
 
-class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
+@dataclasses.dataclass
+class ChannelsRequest:
+    consumer: ChannelsConsumer
+    body: bytes
+
+    @property
+    def query_params(self) -> QueryParams:
+        query_params_str = self.consumer.scope["query_string"].decode()
+
+        query_params = {}
+        for key, value in parse_qs(query_params_str, keep_blank_values=True).items():
+            # Only one argument per key is expected here
+            query_params[key] = value[0]
+
+        return query_params
+
+    @property
+    def headers(self) -> Mapping[str, str]:
+        return {
+            header_name.decode().lower(): header_value.decode()
+            for header_name, header_value in self.consumer.scope["headers"]
+        }
+
+    @property
+    def method(self) -> HTTPMethod:
+        return self.consumer.scope["method"].upper()
+
+    @property
+    def content_type(self) -> Optional[str]:
+        return self.headers.get("content-type", None)
+
+    @cached_property
+    def form_data(self) -> FormData:
+        upload_handlers = [
+            uploadhandler.load_handler(handler)
+            for handler in settings.FILE_UPLOAD_HANDLERS
+        ]
+
+        parser = MultiPartParser(
+            {
+                "CONTENT_TYPE": self.headers.get("content-type"),
+                "CONTENT_LENGTH": self.headers.get("content-length", "0"),
+            },
+            BytesIO(self.body),
+            upload_handlers,
+        )
+
+        querydict, files = parser.parse()
+
+        form = {
+            "operations": querydict.get("operations", "{}"),
+            "map": querydict.get("map", "{}"),
+        }
+
+        return FormData(files=files, form=form)
+
+
+class BaseChannelsRequestAdapter:
+    def __init__(self, request: ChannelsRequest):
+        self.request = request
+
+    @property
+    def query_params(self) -> QueryParams:
+        return self.request.query_params
+
+    @property
+    def method(self) -> HTTPMethod:
+        return self.request.method
+
+    @property
+    def headers(self) -> Mapping[str, str]:
+        return self.request.headers
+
+    @property
+    def content_type(self) -> Optional[str]:
+        return self.request.content_type
+
+
+class ChannelsRequestAdapter(BaseChannelsRequestAdapter, AsyncHTTPRequestAdapter):
+    async def get_body(self) -> bytes:
+        return self.request.body
+
+    async def get_form_data(self) -> FormData:
+        return self.request.form_data
+
+
+class SyncChannelsRequestAdapter(BaseChannelsRequestAdapter, SyncHTTPRequestAdapter):
+    @property
+    def body(self) -> bytes:
+        return self.request.body
+
+    @property
+    def post_data(self) -> Mapping[str, Union[str, bytes]]:
+        return self.request.form_data["form"]
+
+    @property
+    def files(self) -> Mapping[str, Any]:
+        return self.request.form_data["files"]
+
+
+class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
+    def __init__(
+        self,
+        schema: BaseSchema,
+        graphiql: bool = True,
+        allow_queries_via_get: bool = True,
+        subscriptions_enabled: bool = True,
+        **kwargs: Any,
+    ):
+        self.schema = schema
+        self.graphiql = graphiql
+        self.allow_queries_via_get = allow_queries_via_get
+        self.subscriptions_enabled = subscriptions_enabled
+        super().__init__(**kwargs)
+
+    def render_graphiql(self, request: ChannelsRequest) -> ChannelsResponse:
+        html = get_graphiql_html(self.subscriptions_enabled)
+        return ChannelsResponse(content=html.encode(), content_type="text/html")
+
+    def create_response(
+        self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse
+    ) -> ChannelsResponse:
+        return ChannelsResponse(
+            content=json.dumps(response_data).encode(),
+            status=sub_response.status_code,
+            headers={k.encode(): v.encode() for k, v in sub_response.headers.items()},
+        )
+
+    async def handle(self, body: bytes) -> None:
+        request = ChannelsRequest(consumer=self, body=body)
+        try:
+            response: ChannelsResponse = await self.run(request)
+
+            if b"Content-Type" not in response.headers:
+                response.headers[b"Content-Type"] = response.content_type.encode()
+
+            await self.send_response(
+                response.status,
+                response.content,
+                headers=response.headers,
+            )
+        except HTTPException as e:
+            await self.send_response(e.status_code, e.reason.encode())
+
+
+class GraphQLHTTPConsumer(
+    BaseGraphQLHTTPConsumer,
+    AsyncBaseHTTPView[
+        ChannelsRequest,
+        ChannelsResponse,
+        TemporalResponse,
+        Context,
+        RootValue,
+    ],
+):
     """A consumer to provide a view for GraphQL over HTTP.
 
     To use this, place it in your ProtocolTypeRouter for your channels project:
@@ -67,170 +218,66 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
     ```
     """
 
-    def __init__(
-        self,
-        schema: BaseSchema,
-        graphiql: bool = True,
-        allow_queries_via_get: bool = True,
-        subscriptions_enabled: bool = True,
-        **kwargs: Any,
-    ):
-        self.schema = schema
-        self.graphiql = graphiql
-        self.allow_queries_via_get = allow_queries_via_get
-        self.subscriptions_enabled = subscriptions_enabled
-        super().__init__(**kwargs)
+    allow_queries_via_get: bool = True
+    request_adapter_class = ChannelsRequestAdapter
 
-    async def handle(self, body: bytes) -> None:
-        try:
-            if self.scope["method"] == "GET":
-                result = await self.get(body)
-            elif self.scope["method"] == "POST":
-                result = await self.post(body)
-            else:
-                raise MethodNotAllowed()
-        except MethodNotAllowed:
-            await self.send_response(
-                405,
-                b"Method not allowed",
-                headers=[(b"Allow", b"GET, POST")],
-            )
-        except InvalidOperationTypeError as e:
-            error_str = e.as_http_error_reason(self.scope["method"])
-            await self.send_response(
-                406,
-                error_str.encode(),
-            )
-        except ExecutionError as e:
-            await self.send_response(
-                500,
-                str(e).encode(),
-            )
-        else:
-            await self.send_response(
-                result.status,
-                result.response,
-                headers=[(b"Content-Type", result.content_type.encode())],
-            )
+    async def get_root_value(self, request: ChannelsRequest) -> Optional[RootValue]:
+        return None  # pragma: no cover
 
-    async def get(self, body: bytes) -> Result:
-        if self.should_render_graphiql():
-            return await self.render_graphiql(body)
-        elif self.scope.get("query_string"):
-            params = parse_query_params(
-                {
-                    k: v[0]
-                    for k, v in parse_qs(self.scope["query_string"].decode()).items()
-                }
-            )
+    async def get_context(
+        self, request: ChannelsRequest, response: TemporalResponse
+    ) -> Context:
+        return {
+            "request": request,
+            "response": response,
+        }  # type: ignore
 
-            try:
-                result = await self.execute(parse_request_data(params))
-            except MissingQueryError as e:
-                raise ExecutionError("No GraphQL query found in the request") from e
-
-            return Result(response=json.dumps(result).encode())
-        else:
-            raise MethodNotAllowed()
-
-    async def post(self, body: bytes) -> Result:
-        request_data = await self.parse_body(body)
-
-        try:
-            result = await self.execute(request_data)
-        except MissingQueryError as e:
-            raise ExecutionError("No GraphQL query found in the request") from e
-
-        return Result(response=json.dumps(result).encode())
-
-    async def parse_body(self, body: bytes) -> GraphQLRequestData:
-        if self.headers.get("content-type", "").startswith("multipart/form-data"):
-            return await self.parse_multipart_body(body)
-
-        try:
-            data = json.loads(body)
-        except json.JSONDecodeError as e:
-            raise ExecutionError("Unable to parse request body as JSON") from e
-
-        return parse_request_data(data)
-
-    async def parse_multipart_body(self, body: bytes) -> GraphQLRequestData:
-        raise ExecutionError("Unable to parse the multipart body")
-
-    async def execute(self, request_data: GraphQLRequestData) -> GraphQLHTTPResponse:
-        context = await self.get_context()
-        root_value = await self.get_root_value()
-
-        method = self.scope["method"]
-        allowed_operation_types = OperationType.from_http(method)
-        if not self.allow_queries_via_get and method == "GET":
-            allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
-
-        result = await self.schema.execute(
-            query=request_data.query,
-            root_value=root_value,
-            variable_values=request_data.variables,
-            context_value=context,
-            operation_name=request_data.operation_name,
-            allowed_operation_types=allowed_operation_types,
-        )
-        return await self.process_result(result)
-
-    async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
-        return process_result(result)
-
-    async def render_graphiql(self, body: bytes) -> Result:
-        html = get_graphiql_html(self.subscriptions_enabled)
-        return Result(response=html.encode(), content_type="text/html")
-
-    def should_render_graphiql(self) -> bool:
-        accept_list = self.headers.get("accept", "").split(",")
-        return self.graphiql and any(
-            accepted in accept_list for accepted in ["text/html", "*/*"]
-        )
+    async def get_sub_response(self, request: ChannelsRequest) -> TemporalResponse:
+        return TemporalResponse()
 
 
-class SyncGraphQLHTTPConsumer(GraphQLHTTPConsumer):
+class SyncGraphQLHTTPConsumer(
+    BaseGraphQLHTTPConsumer,
+    SyncBaseHTTPView[
+        ChannelsRequest,
+        ChannelsResponse,
+        TemporalResponse,
+        Context,
+        RootValue,
+    ],
+):
     """Synchronous version of the HTTPConsumer.
 
     This is the same as `GraphQLHTTPConsumer`, but it can be used with
-    synchronous schemas (i.e. the schema's resolvers are espected to be
+    synchronous schemas (i.e. the schema's resolvers are expected to be
     synchronous and not asynchronous).
     """
 
-    def get_root_value(self, request: Optional[ChannelsConsumer] = None) -> Any:
-        return None
+    allow_queries_via_get: bool = True
+    request_adapter_class = SyncChannelsRequestAdapter
 
-    def get_context(  # type: ignore[override]
-        self,
-        request: Optional[ChannelsConsumer] = None,
-    ) -> StrawberryChannelsContext:
-        return StrawberryChannelsContext(request=request or self)
+    def get_root_value(self, request: ChannelsRequest) -> Optional[RootValue]:
+        return None  # pragma: no cover
 
-    def process_result(  # type:ignore [override]
-        self, result: ExecutionResult
-    ) -> GraphQLHTTPResponse:
-        return process_result(result)
+    def get_context(
+        self, request: ChannelsRequest, response: TemporalResponse
+    ) -> Context:
+        return {
+            "request": request,
+            "response": response,
+        }  # type: ignore
+
+    def get_sub_response(self, request: ChannelsRequest) -> TemporalResponse:
+        return TemporalResponse()
 
     # Sync channels is actually async, but it uses database_sync_to_async to call
     # handlers in a threadpool. Check SyncConsumer's documentation for more info:
     # https://github.com/django/channels/blob/main/channels/consumer.py#L104
     @database_sync_to_async
-    def execute(self, request_data: GraphQLRequestData) -> GraphQLHTTPResponse:
-        context = self.get_context(self)
-        root_value = self.get_root_value(self)
-
-        method = self.scope["method"]
-        allowed_operation_types = OperationType.from_http(method)
-        if not self.allow_queries_via_get and method == "GET":
-            allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
-
-        result = self.schema.execute_sync(
-            query=request_data.query,
-            root_value=root_value,
-            variable_values=request_data.variables,
-            context_value=context,
-            operation_name=request_data.operation_name,
-            allowed_operation_types=allowed_operation_types,
-        )
-        return self.process_result(result)
+    def run(
+        self,
+        request: ChannelsRequest,
+        context: Optional[Context] = UNSET,
+        root_value: Optional[RootValue] = UNSET,
+    ) -> ChannelsResponse:
+        return super().run(request, context, root_value)
