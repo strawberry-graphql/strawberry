@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.186.0 - 2023-06-15
+--------------------
+
+This release removes more parts of the Mypy plugin, since they are
+not needed anymore.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2852](https://github.com/strawberry-graphql/strawberry/pull/2852/)
+
+
 0.185.2 - 2023-06-15
 --------------------
 
