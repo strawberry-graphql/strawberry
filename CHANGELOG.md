@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.185.2 - 2023-06-15
+--------------------
+
+This release fixes a bug causing a KeyError exception to be thrown during subscription cleanup.
+
+Contributed by [rjwills28](https://github.com/rjwills28) via [PR #2794](https://github.com/strawberry-graphql/strawberry/pull/2794/)
+
+
 0.185.1 - 2023-06-14
 --------------------
 
