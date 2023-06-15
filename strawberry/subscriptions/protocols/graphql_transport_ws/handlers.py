@@ -276,10 +276,10 @@ class BaseGraphQLTransportWSHandler(ABC):
             # cleanup in case of something really unexpected
             # wait for generator to be closed to ensure that any existing
             # 'finally' statement is called
-            result_source = self.subscriptions[operation.id]
-            with suppress(RuntimeError):
-                await result_source.aclose()
             if operation.id in self.subscriptions:
+                result_source = self.subscriptions[operation.id]
+                with suppress(RuntimeError):
+                    await result_source.aclose()
                 del self.subscriptions[operation.id]
                 del self.tasks[operation.id]
             raise

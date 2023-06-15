@@ -1,6 +1,62 @@
 CHANGELOG
 =========
 
+0.185.2 - 2023-06-15
+--------------------
+
+This release fixes a bug causing a KeyError exception to be thrown during subscription cleanup.
+
+Contributed by [rjwills28](https://github.com/rjwills28) via [PR #2794](https://github.com/strawberry-graphql/strawberry/pull/2794/)
+
+
+0.185.1 - 2023-06-14
+--------------------
+
+Correct a type-hinting bug with `strawberry.directive`.
+This may cause some consumers to have to remove a `# type: ignore` comment
+or unnecessary `typing.cast` in order to get `mypy` to pass.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2847](https://github.com/strawberry-graphql/strawberry/pull/2847/)
+
+
+0.185.0 - 2023-06-14
+--------------------
+
+This release removes our custom `__dataclass_transform__` decorator and replaces
+it with typing-extension's one. It also removes parts of the mypy plugin, since
+most of it is not needed anymore 🙌
+
+This update requires typing_extensions>=4.1.0
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2227](https://github.com/strawberry-graphql/strawberry/pull/2227/)
+
+
+0.184.1 - 2023-06-13
+--------------------
+
+This release migrates our CLI to typer, all commands
+should work the same as before.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2569](https://github.com/strawberry-graphql/strawberry/pull/2569/)
+
+
+0.184.0 - 2023-06-12
+--------------------
+
+This release improves the ﻿`relay.NodeID` annotation check by delaying it until after class initialization. This resolves issues with evaluating type annotations before they are fully defined and enables integrations to inject code for it in the type.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2838](https://github.com/strawberry-graphql/strawberry/pull/2838/)
+
+
+0.183.8 - 2023-06-12
+--------------------
+
+This release fixes a bug in the codegen where `List` objects are currently emitted
+as `Optional` objects.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2843](https://github.com/strawberry-graphql/strawberry/pull/2843/)
+
+
 0.183.7 - 2023-06-12
 --------------------
 
