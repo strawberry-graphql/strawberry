@@ -471,7 +471,7 @@ class GraphQLCoreConverter:
             info: Info,
             kwargs: Any,
         ) -> Tuple[List[Any], Dict[str, Any]]:
-            # FIXME: An extension might have changed the resolver arguments,
+            # TODO: An extension might have changed the resolver arguments,
             # but we need them here since we are calling it.
             # This is a bit of a hack, but it's the easiest way to get the arguments
             # This happens in mutation.InputMutationExtension

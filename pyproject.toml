@@ -184,6 +184,11 @@ line-length = 88
 select = ["ALL"]
 target-version = "py37"
 ignore = [
+    # https://github.com/astral-sh/ruff/pull/4427
+    # equivalent to keep-runtime-typing
+    "UP006",
+    "UP007",
+
     "TID252",
     # we use asserts in tests and to hint mypy
     "S101",
@@ -297,6 +302,11 @@ ignore = [
     "SIM114",
 
     "DJ008",
+    "TD002",
+    "TD003",
+    "FIX001",
+    "FIX002",
+    "FA100",
 ]
 fix = true
 exclude = [
@@ -339,7 +349,3 @@ src = ["strawberry", "tests"]
 known-first-party = ["strawberry"]
 known-third-party = ["django", "graphql"]
 extra-standard-library = ["typing_extensions"]
-
-[tool.ruff.pyupgrade]
-# Preserve types, even if a file imports `from __future__ import annotations`.
-keep-runtime-typing = true
