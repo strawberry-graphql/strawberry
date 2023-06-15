@@ -219,7 +219,7 @@ class ConnectionExtension(FieldExtension):
             raise RelayWrongAnnotationError(field.name, cast(type, field.origin))
 
         assert field.base_resolver
-        # FIXME: We are not using resolver_type.type because it will call
+        # TODO: We are not using resolver_type.type because it will call
         # StrawberryAnnotation.resolve, which will strip async types from the
         # type (i.e. AsyncGenerator[Fruit] will become Fruit). This is done there
         # for subscription support, but we can't use it here. Maybe we can refactor

@@ -96,11 +96,11 @@ class GlobalID:
     def __post_init__(self):
         if not isinstance(self.type_name, str):
             raise GlobalIDValueError(
-                f"type_name is expected to be a string, found {repr(self.type_name)}"
+                f"type_name is expected to be a string, found {self.type_name!r}"
             )
         if not isinstance(self.node_id, str):
             raise GlobalIDValueError(
-                f"node_id is expected to be a string, found {repr(self.node_id)}"
+                f"node_id is expected to be a string, found {self.node_id!r}"
             )
 
     def __str__(self):
@@ -205,7 +205,7 @@ class GlobalID:
                 ensure_type = tuple(get_args(ensure_type))
 
             if not isinstance(node, ensure_type):
-                raise TypeError(f"{ensure_type} expected, found {repr(node)}")
+                raise TypeError(f"{ensure_type} expected, found {node!r}")
 
         return node
 
@@ -301,7 +301,7 @@ class GlobalID:
                 ensure_type = tuple(get_args(ensure_type))
 
             if not isinstance(node, ensure_type):
-                raise TypeError(f"{ensure_type} expected, found {repr(node)}")
+                raise TypeError(f"{ensure_type} expected, found {node!r}")
 
         return node
 
@@ -849,7 +849,7 @@ class ListConnection(Connection[NodeType]):
                         cast(Sequence, nodes)[start:overfetch],
                     )
                 except TypeError:
-                    # FIXME: Why mypy isn't narrowing this based on the if above?
+                    # TODO: Why mypy isn't narrowing this based on the if above?
                     assert isinstance(nodes, (AsyncIterator, AsyncIterable))
                     iterator = aislice(
                         nodes,

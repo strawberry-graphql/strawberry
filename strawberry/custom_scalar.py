@@ -153,7 +153,7 @@ def scalar(
     ...
 
 
-# FIXME: We are tricking pyright into thinking that we are returning the given type
+# TODO: We are tricking pyright into thinking that we are returning the given type
 # here or else it won't let us use any custom scalar to annotate attributes in
 # dataclasses/types. This should be properly solved when implementing StrawberryScalar
 def scalar(

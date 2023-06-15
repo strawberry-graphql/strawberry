@@ -206,7 +206,7 @@ class StrawberryUnion(StrawberryType):
                 # TODO: Can return_type ever _not_ be a GraphQLNamedType?
                 return return_type.name
             else:
-                # todo: check if this is correct
+                # TODO: check if this is correct
                 return return_type.__name__  # type: ignore
 
         return _resolve_union_type

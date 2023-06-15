@@ -103,7 +103,7 @@ class MypyVersion:
 
 class InvalidNodeTypeException(Exception):
     def __init__(self, node: Any) -> None:
-        self.message = f"Invalid node type: {str(node)}"
+        self.message = f"Invalid node type: {node!s}"
 
         super().__init__()
 
