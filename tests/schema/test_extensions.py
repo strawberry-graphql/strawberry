@@ -35,7 +35,7 @@ def test_extensions_schema_directive():
     # TODO: Apparently I stumbled on a bug:
     #        SchemaDirective are used on schema.__str__(),
     #        but aren't added to graphql_schema.directives
-    # maybe do graphql_schema_directive = graphql_schema.get_directive("schemaDirective")
+    # maybe graphql_schema_directive = graphql_schema.get_directive("schemaDirective")
 
     graphql_schema_directive = schema.schema_converter.from_schema_directive(
         Query._type_definition.directives[0]

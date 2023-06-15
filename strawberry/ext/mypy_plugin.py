@@ -529,20 +529,20 @@ class StrawberryPlugin(Plugin):
         )
 
     def _is_strawberry_field(self, fullname: str) -> bool:
-        if fullname in {
+        if fullname in (
             "strawberry.field.field",
             "strawberry.mutation.mutation",
             "strawberry.federation.field",
-        }:
+        ):
             return True
 
         return any(
             fullname.endswith(decorator)
-            for decorator in {
+            for decorator in (
                 "strawberry.field",
                 "strawberry.mutation",
                 "strawberry.federation.field",
-            }
+            )
         )
 
     def _is_strawberry_enum(self, fullname: str) -> bool:
@@ -561,7 +561,7 @@ class StrawberryPlugin(Plugin):
     def _is_strawberry_decorator(self, fullname: str) -> bool:
         if any(
             strawberry_decorator in fullname
-            for strawberry_decorator in {
+            for strawberry_decorator in (
                 "strawberry.object_type.type",
                 "strawberry.federation.type",
                 "strawberry.federation.object_type.type",
@@ -574,7 +574,7 @@ class StrawberryPlugin(Plugin):
                 "strawberry.federation.schema_directive.schema_directive",
                 "strawberry.object_type.input",
                 "strawberry.object_type.interface",
-            }
+            )
         ):
             return True
 
@@ -584,14 +584,14 @@ class StrawberryPlugin(Plugin):
 
         return any(
             fullname.endswith(decorator)
-            for decorator in {
+            for decorator in (
                 "strawberry.type",
                 "strawberry.federation.type",
                 "strawberry.input",
                 "strawberry.interface",
                 "strawberry.schema_directive",
                 "strawberry.federation.schema_directive",
-            }
+            )
         )
 
     def _is_strawberry_create_type(self, fullname: str) -> bool:
@@ -608,12 +608,12 @@ class StrawberryPlugin(Plugin):
     def _is_strawberry_pydantic_decorator(self, fullname: str) -> bool:
         if any(
             strawberry_decorator in fullname
-            for strawberry_decorator in {
+            for strawberry_decorator in (
                 "strawberry.experimental.pydantic.object_type.type",
                 "strawberry.experimental.pydantic.object_type.input",
                 "strawberry.experimental.pydantic.object_type.interface",
                 "strawberry.experimental.pydantic.error_type",
-            }
+            )
         ):
             return True
 
@@ -623,11 +623,11 @@ class StrawberryPlugin(Plugin):
 
         return any(
             fullname.endswith(decorator)
-            for decorator in {
+            for decorator in (
                 "strawberry.experimental.pydantic.type",
                 "strawberry.experimental.pydantic.input",
                 "strawberry.experimental.pydantic.error_type",
-            }
+            )
         )
 
 
