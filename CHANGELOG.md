@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.186.1 - 2023-06-16
+--------------------
+
+In this release, we pass the default values from the strawberry.Schema through to the codegen plugins.
+The default python plugin now adds these default values to the objects it generates.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2860](https://github.com/strawberry-graphql/strawberry/pull/2860/)
+
+
 0.186.0 - 2023-06-15
 --------------------
 
