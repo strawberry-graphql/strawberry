@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Union, TypeAlias
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, TypeAlias, Union
 
 from strawberry.utils.cached_property import cached_property
 
