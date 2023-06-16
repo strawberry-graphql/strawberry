@@ -17,7 +17,12 @@ from strawberry.codegen.types import (
 )
 
 if TYPE_CHECKING:
-    from strawberry.codegen.types import GraphQLField, GraphQLOperation, GraphQLType, GraphQLArgumentValue
+    from strawberry.codegen.types import (
+        GraphQLArgumentValue,
+        GraphQLField,
+        GraphQLOperation,
+        GraphQLType,
+    )
 
 
 @dataclass
@@ -132,7 +137,9 @@ class PythonPlugin(QueryCodegenPlugin):
         if isinstance(argval, GraphQLEnumValue):
             # This is an enum.  It needs the namespace alongside the name.
             if argval.enum_type is None:
-                raise ValueError("GraphQLEnumValue must have a type for python code gen. {argval}")
+                raise ValueError(
+                    "GraphQLEnumValue must have a type for python code gen. {argval}"
+                )
             return f"{argval.enum_type}.{argval.name}"
         if not hasattr(argval, "value"):
             raise TypeError(f"Unrecognized values type: {argval}")
