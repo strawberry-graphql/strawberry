@@ -92,7 +92,7 @@ class ChannelsConsumer(AsyncConsumer):
         *,
         timeout: Optional[float] = None,
         groups: Sequence[str] = (),
-    ) -> AsyncGenerator[Any, None]:
+    ) -> Awaitable[AsyncGenerator[Any, None]]:
         """Listen for messages sent to this consumer.
 
         Utility to listen for channels messages for this consumer inside
@@ -119,17 +119,31 @@ class ChannelsConsumer(AsyncConsumer):
             )
 
         added_groups = []
+        # This queue will receive incoming messages for this generator instance
+        queue: asyncio.Queue = asyncio.Queue()
+        # Create a weak reference to the queue. Once we leave the current scope, it
+        # will be garbage collected
+        self.listen_queues[type].add(queue)
+
+        # Subscribe to all groups but return generator object to allow user
+        # code to run before blocking on incoming messages
+        for group in groups:
+            await self.channel_layer.group_add(group, self.channel_name)
+            added_groups.append(group)
+        return self._channel_listen_generator(queue, added_groups, timeout)
+
+    async def _channel_listen_generator(
+        self,
+        queue: asyncio.Queue,
+        added_groups: Sequence[str],
+        timeout: Optional[float],
+    ) -> AsyncGenerator[Any, None]:
+        """Generator for channel_listen method.
+
+        Seperated to allow user code to be run after subscribing to channels
+        and before blocking to wait for incoming channel messages.
+        """
         try:
-            # This queue will receive incoming messages for this generator instance
-            queue: asyncio.Queue = asyncio.Queue()
-            # Create a weak reference to the queue. Once we leave the current scope, it
-            # will be garbage collected
-            self.listen_queues[type].add(queue)
-
-            for group in groups:
-                await self.channel_layer.group_add(group, self.channel_name)
-                added_groups.append(group)
-
             while True:
                 awaitable = queue.get()
                 if timeout is not None:
