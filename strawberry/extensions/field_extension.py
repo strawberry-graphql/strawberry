@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Union
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Union, TypeAlias
 
 from strawberry.utils.cached_property import cached_property
 
@@ -9,8 +9,8 @@ if TYPE_CHECKING:
     from strawberry.field import StrawberryField
     from strawberry.types import Info
 
-SyncExtensionResolver = Callable[..., Any]
-AsyncExtensionResolver = Callable[..., Awaitable[Any]]
+SyncExtensionResolver: TypeAlias = Callable[..., Any]
+AsyncExtensionResolver: TypeAlias = Callable[..., Awaitable[Any]]
 
 
 class FieldExtension:
