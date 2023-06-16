@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set
 from strawberry.codegen import CodegenFile, QueryCodegenPlugin
 from strawberry.codegen.types import (
     GraphQLEnum,
+    GraphQLEnumValue,
     GraphQLList,
     GraphQLObjectType,
     GraphQLOptional,
@@ -16,7 +17,7 @@ from strawberry.codegen.types import (
 )
 
 if TYPE_CHECKING:
-    from strawberry.codegen.types import GraphQLField, GraphQLOperation, GraphQLType
+    from strawberry.codegen.types import GraphQLField, GraphQLOperation, GraphQLType, GraphQLArgumentValue
 
 
 @dataclass
@@ -104,7 +105,38 @@ class PythonPlugin(QueryCodegenPlugin):
         if field.alias:
             name = f"# alias for {field.name}\n{field.alias}"
 
-        return f"{name}: {self._get_type_name(field.type)}"
+        default_value = ""
+        if field.default_value is not None:
+            default_value = f" = {self._print_argument_value(field.default_value)}"
+        return f"{name}: {self._get_type_name(field.type)}{default_value}"
+
+    def _print_argument_value(self, argval: GraphQLArgumentValue) -> str:
+        if hasattr(argval, "values"):
+            if isinstance(argval.values, list):
+                return (
+                    "["
+                    + ", ".join(self._print_argument_value(v) for v in argval.values)
+                    + "]"
+                )
+            elif isinstance(argval.values, dict):
+                return (
+                    "{"
+                    + ", ".join(
+                        f"{k!r}: {self._print_argument_value(v)}"
+                        for k, v in argval.values.items()
+                    )
+                    + "}"
+                )
+            else:
+                raise TypeError(f"Unrecognized values type: {argval}")
+        if isinstance(argval, GraphQLEnumValue):
+            # This is an enum.  It needs the namespace alongside the name.
+            if argval.enum_type is None:
+                raise ValueError("GraphQLEnumValue must have a type for python code gen. {argval}")
+            return f"{argval.enum_type}.{argval.name}"
+        if not hasattr(argval, "value"):
+            raise TypeError(f"Unrecognized values type: {argval}")
+        return repr(argval.value)
 
     def _print_enum_value(self, value: str) -> str:
         return f'{value} = "{value}"'

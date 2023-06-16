@@ -1,13 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import MISSING, dataclass
+from enum import Enum
 from functools import cmp_to_key, partial
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Iterable,
     List,
+    Mapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -19,6 +23,7 @@ from graphql import (
     BooleanValueNode,
     EnumValueNode,
     FieldNode,
+    FloatValueNode,
     FragmentDefinitionNode,
     FragmentSpreadNode,
     InlineFragmentNode,
@@ -27,6 +32,7 @@ from graphql import (
     ListValueNode,
     NamedTypeNode,
     NonNullTypeNode,
+    NullValueNode,
     ObjectValueNode,
     OperationDefinitionNode,
     StringValueNode,
@@ -55,12 +61,14 @@ from .types import (
     GraphQLEnumValue,
     GraphQLField,
     GraphQLFieldSelection,
+    GraphQLFloatValue,
     GraphQLFragmentSpread,
     GraphQLFragmentType,
     GraphQLInlineFragment,
     GraphQLIntValue,
     GraphQLList,
     GraphQLListValue,
+    GraphQLNullValue,
     GraphQLObjectType,
     GraphQLObjectValue,
     GraphQLOperation,
@@ -152,6 +160,30 @@ def _get_deps(t: GraphQLType) -> Iterable[GraphQLType]:
     else:
         # Want to make sure that all types are covered.
         raise ValueError(f"Unknown GraphQLType: {t}")
+
+
+_TYPE_TO_GRAPHQL_TYPE = {
+    int: GraphQLIntValue,
+    float: GraphQLFloatValue,
+    str: GraphQLStringValue,
+    bool: GraphQLBoolValue,
+}
+
+
+def _py_to_graphql_value(obj: Any) -> GraphQLArgumentValue:
+    """Convert a python object to a GraphQLArgumentValue."""
+    if obj is None:
+        return GraphQLNullValue()
+    obj_type = type(obj)
+    if obj_type in _TYPE_TO_GRAPHQL_TYPE:
+        return _TYPE_TO_GRAPHQL_TYPE[obj_type](obj)
+    if issubclass(obj_type, Enum):
+        return GraphQLEnumValue(obj.name, enum_type=obj_type.__name__)
+    if issubclass(obj_type, Sequence):
+        return GraphQLListValue([_py_to_graphql_value(v) for v in obj])
+    if issubclass(obj_type, Mapping):
+        return GraphQLObjectValue({k: _py_to_graphql_value(v) for k, v in obj.items()})
+    raise ValueError(f"Cannot convet {obj!r} into a GraphQLArgumentValue")
 
 
 class QueryCodegenPluginManager:
@@ -307,6 +339,12 @@ class QueryCodegen:
         if isinstance(value, IntValueNode):
             return GraphQLIntValue(int(value.value))
 
+        if isinstance(value, FloatValueNode):
+            return GraphQLFloatValue(float(value.value))
+
+        if isinstance(value, NullValueNode):
+            return GraphQLNullValue()
+
         if isinstance(value, VariableNode):
             return GraphQLVariableReference(value.name.value)
 
@@ -409,7 +447,6 @@ class QueryCodegen:
             )
 
             type_.fields.append(GraphQLField(variable.name, None, variable_type))
-
             variables.append(variable)
 
         return variables, type_
@@ -478,7 +515,12 @@ class QueryCodegen:
 
             for field in strawberry_type.fields:
                 field_type = self._collect_type_from_strawberry_type(field.type)
-                type_.fields.append(GraphQLField(field.name, None, field_type))
+                default = None
+                if field.default is not MISSING:
+                    default = _py_to_graphql_value(field.default)
+                type_.fields.append(
+                    GraphQLField(field.name, None, field_type, default_value=default)
+                )
 
             self._collect_type(type_)
         else:
