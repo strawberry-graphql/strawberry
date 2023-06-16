@@ -7,40 +7,13 @@ import pytest
 import aiohttp
 
 from .clients import HttpClient
-from .clients.aiohttp import AioHttpClient
-from .clients.asgi import AsgiHttpClient
-from .clients.async_django import AsyncDjangoHttpClient
-from .clients.async_flask import AsyncFlaskHttpClient
 from .clients.chalice import ChaliceHttpClient
-from .clients.django import DjangoHttpClient
-from .clients.fastapi import FastAPIHttpClient
-from .clients.flask import FlaskHttpClient
-from .clients.sanic import SanicHttpClient
-
-
-# redefining the fixtures to mark chalice tests as failing
-@pytest.fixture(
-    params=[
-        AioHttpClient,
-        AsgiHttpClient,
-        AsyncDjangoHttpClient,
-        AsyncFlaskHttpClient,
-        DjangoHttpClient,
-        FastAPIHttpClient,
-        FlaskHttpClient,
-        SanicHttpClient,
-        pytest.param(
-            ChaliceHttpClient,
-            marks=pytest.mark.xfail(reason="Chalice does not support uploads"),
-        ),
-    ]
-)
-def http_client_class(request) -> Type[HttpClient]:
-    return request.param
 
 
 @pytest.fixture()
-def http_client(http_client_class) -> HttpClient:
+def http_client(http_client_class: Type[HttpClient]) -> HttpClient:
+    if http_client_class is ChaliceHttpClient:
+        pytest.xfail(reason="Chalice does not support uploads")
     return http_client_class()
 
 
@@ -202,7 +175,10 @@ async def test_extra_form_data_fields_are_ignored(http_client: HttpClient):
     response = await http_client.post(
         url="/graphql",
         data=buffer.value,
-        headers={"content-type": writer.content_type},
+        headers={
+            "content-type": writer.content_type,
+            "content-length": f"{len(buffer.value)}",
+        },
     )
 
     assert response.status_code == 200
@@ -214,13 +190,11 @@ async def test_sending_invalid_form_data(http_client: HttpClient):
     response = await http_client.post("/graphql", headers=headers)
 
     assert response.status_code == 400
-    # TODO: can we consolidate this?
-    # - aiohttp returns "Unable to parse the multipart body"
-    # - fastapi returns "No valid query was provided for the request"
+    # TODO: consolidate this, it seems only AIOHTTP returns the second error
+    # due to validating the boundary
     assert (
-        "Unable to parse the multipart body" in response.text
-        or "No GraphQL query found in the request" in response.text
-        or "No valid query was provided for the request" in response.text
+        "No GraphQL query found in the request" in response.text
+        or "Unable to parse the multipart body" in response.text
     )
 
 
@@ -242,7 +216,10 @@ async def test_sending_invalid_json_body(http_client: HttpClient):
     response = await http_client.post(
         "/graphql",
         data=buffer.value,
-        headers={"content-type": writer.content_type},
+        headers={
+            "content-type": writer.content_type,
+            "content-length": f"{len(buffer.value)}",
+        },
     )
 
     assert response.status_code == 400

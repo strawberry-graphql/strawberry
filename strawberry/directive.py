@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Generic, List, Optional, TypeVar
 from typing_extensions import Annotated
 
 from graphql import DirectiveLocation
@@ -57,10 +57,10 @@ class StrawberryDirectiveResolver(StrawberryResolver[T]):
 
 
 @dataclasses.dataclass
-class StrawberryDirective:
+class StrawberryDirective(Generic[T]):
     python_name: str
     graphql_name: Optional[str]
-    resolver: StrawberryDirectiveResolver
+    resolver: StrawberryDirectiveResolver[T]
     locations: List[DirectiveLocation]
     description: Optional[str] = None
 
@@ -74,9 +74,9 @@ def directive(
     locations: List[DirectiveLocation],
     description: Optional[str] = None,
     name: Optional[str] = None,
-) -> Callable[[Callable[..., T]], T]:
-    def _wrap(f: Callable[..., T]) -> T:
-        return StrawberryDirective(  # type: ignore
+) -> Callable[[Callable[..., T]], StrawberryDirective[T]]:
+    def _wrap(f: Callable[..., T]) -> StrawberryDirective[T]:
+        return StrawberryDirective(
             python_name=f.__name__,
             graphql_name=name,
             locations=locations,

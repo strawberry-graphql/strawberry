@@ -5,6 +5,7 @@ import pytest
 from graphql import GraphQLError
 
 import strawberry
+from strawberry.types.execution import ExecutionResult
 
 
 @pytest.mark.parametrize(
@@ -107,7 +108,7 @@ def test_deserialization_with_parse_literal(typing, instance, serialized):
     assert Query.deserialized == instance
 
 
-def execute_mutation(value):
+def execute_mutation(value) -> ExecutionResult:
     @strawberry.type
     class Query:
         ok: bool

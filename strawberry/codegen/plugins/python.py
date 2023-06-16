@@ -110,7 +110,11 @@ class PythonPlugin(QueryCodegenPlugin):
         return f'{value} = "{value}"'
 
     def _print_object_type(self, type_: GraphQLObjectType) -> str:
-        fields = "\n".join(self._print_field(field) for field in type_.fields)
+        fields = "\n".join(
+            self._print_field(field)
+            for field in type_.fields
+            if field.name != "__typename"
+        )
 
         return "\n".join(
             [

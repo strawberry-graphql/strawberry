@@ -57,7 +57,9 @@ from strawberry.union import StrawberryUnion
 from strawberry.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
 
-from ..extensions.field_extension import build_field_extension_resolvers
+from ..extensions.field_extension import (
+    build_field_extension_resolvers,
+)
 from . import compat
 from .types.concrete_type import ConcreteType
 
@@ -85,13 +87,20 @@ if TYPE_CHECKING:
 # subclass the GraphQLEnumType class to enable returning Enum members from
 # resolvers.
 class CustomGraphQLEnumType(GraphQLEnumType):
-    def __init__(self, enum: EnumDefinition, *args, **kwargs):
+    def __init__(self, enum: EnumDefinition, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.wrapped_cls = enum.wrapped_cls
 
     def serialize(self, output_value: Any) -> str:
         if isinstance(output_value, self.wrapped_cls):
-            return output_value.name
+            for name, value in self.values.items():
+                if output_value.value == value.value:
+                    return name
+
+            raise ValueError(
+                f"Invalid value for enum {self.name}: {output_value}"
+            )  # pragma: no cover
+
         return super().serialize(output_value)
 
     def parse_value(self, input_value: str) -> Any:
@@ -150,7 +159,12 @@ class GraphQLCoreConverter:
         graphql_enum = CustomGraphQLEnumType(
             enum=enum,
             name=enum_name,
-            values={item.name: self.from_enum_value(item) for item in enum.values},
+            values={
+                self.config.name_converter.from_enum_value(
+                    enum, item
+                ): self.from_enum_value(item)
+                for item in enum.values
+            },
             description=enum.description,
             extensions={
                 GraphQLCoreConverter.DEFINITION_BACKREF: enum,
@@ -231,9 +245,10 @@ class GraphQLCoreConverter:
         )
 
     def from_field(self, field: StrawberryField) -> GraphQLField:
-        field_type = cast("GraphQLOutputType", self.from_maybe_optional(field.type))
-
+        # self.from_resolver needs to be called before accessing field.type because
+        # in there a field extension might want to change the type during its apply
         resolver = self.from_resolver(field)
+        field_type = cast("GraphQLOutputType", self.from_maybe_optional(field.type))
         subscribe = None
 
         if field.is_subscription:
@@ -442,7 +457,7 @@ class GraphQLCoreConverter:
 
         if field.is_basic_field:
 
-            def _get_basic_result(_source: Any, *args, **kwargs):
+            def _get_basic_result(_source: Any, *args: str, **kwargs: Any):
                 # Call `get_result` without an info object or any args or
                 # kwargs because this is a basic field with no resolver.
                 return field.get_result(_source, info=None, args=[], kwargs={})
@@ -454,11 +469,26 @@ class GraphQLCoreConverter:
         def _get_arguments(
             source: Any,
             info: Info,
-            kwargs: Dict[str, Any],
+            kwargs: Any,
         ) -> Tuple[List[Any], Dict[str, Any]]:
+            # TODO: An extension might have changed the resolver arguments,
+            # but we need them here since we are calling it.
+            # This is a bit of a hack, but it's the easiest way to get the arguments
+            # This happens in mutation.InputMutationExtension
+            field_arguments = field.arguments[:]
+            if field.base_resolver:
+                existing = {arg.python_name for arg in field_arguments}
+                field_arguments.extend(
+                    [
+                        arg
+                        for arg in field.base_resolver.arguments
+                        if arg.python_name not in existing
+                    ]
+                )
+
             kwargs = convert_arguments(
                 kwargs,
-                field.arguments,
+                field_arguments,
                 scalar_registry=self.scalar_registry,
                 config=self.config,
             )
@@ -491,11 +521,12 @@ class GraphQLCoreConverter:
                 _field=field,
             )
 
-        def _get_result(_source: Any, info: Info, **kwargs):
-            field_args, field_kwargs = _get_arguments(
-                source=_source, info=info, kwargs=kwargs
-            )
-
+        def _get_result(
+            _source: Any,
+            info: Info,
+            field_args: List[Any],
+            field_kwargs: Dict[str, Any],
+        ):
             return field.get_result(
                 _source, info=info, args=field_args, kwargs=field_kwargs
             )
@@ -503,31 +534,73 @@ class GraphQLCoreConverter:
         def wrap_field_extensions() -> Callable[..., Any]:
             """Wrap the provided field resolver with the middleware."""
 
-            if not field.extensions:
-                return _get_result
-
             for extension in field.extensions:
                 extension.apply(field)
 
             extension_functions = build_field_extension_resolvers(field)
-            return reduce(
-                lambda chained_fns, next_fn: partial(next_fn, chained_fns),
-                extension_functions,
-                _get_result,
-            )
+
+            def extension_resolver(
+                _source: Any,
+                info: Info,
+                **kwargs: Any,
+            ):
+                # parse field arguments into Strawberry input types and convert
+                # field names to Python equivalents
+                field_args, field_kwargs = _get_arguments(
+                    source=_source, info=info, kwargs=kwargs
+                )
+
+                resolver_requested_info = False
+                if "info" in field_kwargs:
+                    resolver_requested_info = True
+                    # remove info from field_kwargs because we're passing it
+                    # explicitly to the extensions
+                    field_kwargs.pop("info")
+
+                # `_get_result` expects `field_args` and `field_kwargs` as
+                # separate arguments so we have to wrap the function so that we
+                # can pass them in
+                def wrapped_get_result(_source: Any, info: Info, **kwargs: Any):
+                    # if the resolver function requested the info object info
+                    # then put it back in the kwargs dictionary
+                    if resolver_requested_info:
+                        kwargs["info"] = info
+
+                    return _get_result(
+                        _source, info, field_args=field_args, field_kwargs=kwargs
+                    )
+
+                # combine all the extension resolvers
+                return reduce(
+                    lambda chained_fn, next_fn: partial(next_fn, chained_fn),
+                    extension_functions,
+                    wrapped_get_result,
+                )(_source, info, **field_kwargs)
+
+            return extension_resolver
 
         _get_result_with_extensions = wrap_field_extensions()
 
-        def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
+        def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs: Any):
             strawberry_info = _strawberry_info_from_graphql(info)
 
-            return _get_result_with_extensions(_source, strawberry_info, **kwargs)
+            return _get_result_with_extensions(
+                _source,
+                strawberry_info,
+                **kwargs,
+            )
 
-        async def _async_resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
+        async def _async_resolver(
+            _source: Any, info: GraphQLResolveInfo, **kwargs: Any
+        ):
             strawberry_info = _strawberry_info_from_graphql(info)
 
             return await await_maybe(
-                _get_result_with_extensions(_source, strawberry_info, **kwargs)
+                _get_result_with_extensions(
+                    _source,
+                    strawberry_info,
+                    **kwargs,
+                )
             )
 
         if field.is_async:
@@ -733,7 +806,7 @@ class GraphQLCoreConverter:
                 # both lazy types are always resolved because two different lazy types
                 # may be referencing the same actual type
                 if isinstance(type1, LazyType):
-                    type1 = type1.resolve_type()
+                    type1 = type1.resolve_type()  # noqa: PLW2901
                 elif isinstance(type1, StrawberryOptional) and isinstance(
                     type1.of_type, LazyType
                 ):

@@ -1,4 +1,4 @@
-from . import experimental, federation
+from . import experimental, federation, relay
 from .arguments import argument
 from .auto import auto
 from .custom_scalar import scalar
@@ -42,4 +42,5 @@ __all__ = [
     "union",
     "auto",
     "asdict",
+    "relay",
 ]

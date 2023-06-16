@@ -15,6 +15,7 @@
 ## Types
 
 - [Schema](./types/schema.md)
+- [Operation Directives](./types/operation-directives.md)
 - [Schema Directives](./types/schema-directives.md)
 - [Schema configurations](./types/schema-configurations.md)
 - [Scalars](./types/scalars.md)
@@ -44,6 +45,7 @@
 - [Dealing with errors](./guides/errors.md)
 - [Federation](./guides/federation.md)
 - [Federation V1](./guides/federation-v1.md)
+- [Relay](./guides/relay.md)
 - [Custom extensions](./guides/custom-extensions.md)
 - [File upload](./guides/file-upload.md)
 - [Pagination](./guides/pagination/overview.md)
@@ -77,6 +79,7 @@
 - [Sanic](./integrations/sanic.md)
 - [Chalice](./integrations/chalice.md)
 - [Starlette](./integrations/starlette.md)
+- [Creating an integration](./integrations/creating-an-integration.md)
 - [Pydantic **experimental**](./integrations/pydantic.md)
 
 ## Federation

@@ -7,7 +7,6 @@ from typing import (
     Awaitable,
     Callable,
     DefaultDict,
-    Dict,
     List,
     Optional,
     Sequence,
@@ -17,7 +16,6 @@ from weakref import WeakSet
 
 from channels.consumer import AsyncConsumer
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from strawberry.channels.context import StrawberryChannelsContext
 
 
 class ChannelsMessage(TypedDict, total=False):
@@ -69,32 +67,13 @@ class ChannelsConsumer(AsyncConsumer):
     channel_layer: Optional[ChannelsLayer]
     channel_receive: Callable[[], Awaitable[dict]]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: str, **kwargs: Any):
         self.listen_queues: DefaultDict[str, WeakSet[asyncio.Queue]] = defaultdict(
             WeakSet
         )
         super().__init__(*args, **kwargs)
 
-    @property
-    def headers(self) -> Dict[str, str]:
-        return {
-            header_name.decode().lower(): header_value.decode()
-            for header_name, header_value in self.scope["headers"]
-        }
-
-    async def get_root_value(self, request: Optional["ChannelsConsumer"] = None) -> Any:
-        return None
-
-    async def get_context(
-        self,
-        request: Optional["ChannelsConsumer"] = None,
-        connection_params: Optional[Dict[str, Any]] = None,
-    ) -> StrawberryChannelsContext:
-        return StrawberryChannelsContext(
-            request=request or self, connection_params=connection_params
-        )
-
-    async def dispatch(self, message: ChannelsMessage):
+    async def dispatch(self, message: ChannelsMessage) -> None:
         # AsyncConsumer will try to get a function for message["type"] to handle
         # for both http/websocket types and also for layers communication.
         # In case the type isn't one of those, pass it to the listen queue so

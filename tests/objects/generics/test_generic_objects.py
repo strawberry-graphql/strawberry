@@ -11,9 +11,11 @@ T = TypeVar("T")
 
 
 def test_basic_generic():
+    directive = object()
+
     @strawberry.type
     class Edge(Generic[T]):
-        node_field: T
+        node_field: T = strawberry.field(directives=[directive])
 
     definition = Edge._type_definition
     assert definition.is_generic
@@ -35,6 +37,7 @@ def test_basic_generic():
     [field_copy] = definition_copy.fields
     assert field_copy.python_name == "node_field"
     assert field_copy.type is str
+    assert field_copy.directives == [directive]
 
 
 def test_generics_nested():
@@ -327,7 +330,7 @@ def test_using_generics_raises_when_missing_annotation():
         name: str
 
     error_message = (
-        f'Query fields cannot be resolved. The type "{repr(Edge)}" '
+        f'Query fields cannot be resolved. The type "{Edge!r}" '
         "is generic, but no type has been passed"
     )
 
@@ -353,7 +356,7 @@ def test_using_generics_raises_when_missing_annotation_nested():
         name: str
 
     error_message = (
-        f'Query fields cannot be resolved. The type "{repr(Connection)}" '
+        f'Query fields cannot be resolved. The type "{Connection!r}" '
         "is generic, but no type has been passed"
     )
 

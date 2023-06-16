@@ -13,7 +13,7 @@ from typing import Any
 from strawberry.ext.dataclasses.dataclasses import dataclass_init_fn
 
 
-def add_custom_init_fn(cls: Any):
+def add_custom_init_fn(cls: Any) -> None:
     fields = [
         f
         for f in getattr(cls, _FIELDS).values()

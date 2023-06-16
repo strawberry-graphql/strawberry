@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import dataclasses
-from typing import TYPE_CHECKING, Union, cast
+from typing import TYPE_CHECKING, Any, Type, Union, cast
 
 from strawberry.enum import EnumDefinition
 from strawberry.type import StrawberryList, StrawberryOptional
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 def _convert_from_pydantic_to_strawberry_type(
-    type_: Union[StrawberryType, type], data_from_model=None, extra=None
+    type_: Union[StrawberryType, type], data_from_model=None, extra=None  # noqa: ANN001
 ):
     data = data_from_model if data_from_model is not None else extra
 
@@ -64,12 +64,14 @@ def _convert_from_pydantic_to_strawberry_type(
     return data
 
 
-def convert_pydantic_model_to_strawberry_class(cls, *, model_instance=None, extra=None):
+def convert_pydantic_model_to_strawberry_class(
+    cls, *, model_instance=None, extra=None  # noqa: ANN001
+) -> Any:
     extra = extra or {}
     kwargs = {}
 
-    for field in cls._type_definition.fields:
-        field = cast("StrawberryField", field)
+    for field_ in cls._type_definition.fields:
+        field = cast("StrawberryField", field_)
         python_name = field.python_name
 
         data_from_extra = extra.get(python_name, None)
@@ -87,7 +89,7 @@ def convert_pydantic_model_to_strawberry_class(cls, *, model_instance=None, extr
     return cls(**kwargs)
 
 
-def convert_strawberry_class_to_pydantic_model(obj):
+def convert_strawberry_class_to_pydantic_model(obj: Type) -> Any:
     if hasattr(obj, "to_pydantic"):
         return obj.to_pydantic()
     elif dataclasses.is_dataclass(obj):

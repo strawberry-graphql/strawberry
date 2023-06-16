@@ -1,3 +1,5 @@
+from typing import Generator
+
 import pytest
 
 from strawberry.channels.handlers.ws_handler import GraphQLWSConsumer
@@ -9,7 +11,7 @@ application = GraphQLWSConsumer.as_asgi(schema=schema, keep_alive_interval=50)
 
 
 @pytest.fixture(params=[GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL])
-async def communicator(request):
+async def communicator(request) -> Generator[GraphQLWebsocketCommunicator, None, None]:
     async with GraphQLWebsocketCommunicator(
         protocol=request.param, application=application, path="/graphql"
     ) as client:

@@ -184,7 +184,7 @@ def test_json():
           echoJson(data: JSON!): JSON!
           echoJsonNullable(data: JSON): JSON
         }
-        '''  # noqa: E501
+        '''
     ).strip()
 
     assert str(schema) == expected_schema
@@ -280,7 +280,7 @@ def test_base16():
           base64Encode(data: String!): Base64!
           base64Decode(data: Base64!): String!
         }
-    '''  # noqa: E501
+    '''
         ).strip()
     )
 

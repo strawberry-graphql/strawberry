@@ -1,7 +1,19 @@
 from __future__ import annotations
 
+import warnings
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Type,
+    Union,
+    cast,
+)
 
 from graphql import (
     GraphQLNamedType,
@@ -14,6 +26,7 @@ from graphql import (
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
+from strawberry import relay
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.extensions.directives import (
     DirectivesExtension,
@@ -33,12 +46,14 @@ from .execute import execute, execute_sync
 
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
+    from graphql import ExecutionResult as GraphQLExecutionResult
 
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.directive import StrawberryDirective
     from strawberry.enum import EnumDefinition
     from strawberry.extensions import SchemaExtension
     from strawberry.field import StrawberryField
+    from strawberry.type import StrawberryType
     from strawberry.types import ExecutionResult
     from strawberry.union import StrawberryUnion
 
@@ -58,7 +73,7 @@ class Schema(BaseSchema):
         mutation: Optional[Type] = None,
         subscription: Optional[Type] = None,
         directives: Iterable[StrawberryDirective] = (),
-        types=(),
+        types: Iterable[Union[Type, StrawberryType]] = (),
         extensions: Iterable[Union[Type[SchemaExtension], SchemaExtension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
@@ -113,7 +128,7 @@ class Schema(BaseSchema):
             else:
                 if hasattr(type_, "_type_definition"):
                     if type_._type_definition.is_generic:
-                        type_ = StrawberryAnnotation(type_).resolve()
+                        type_ = StrawberryAnnotation(type_).resolve()  # noqa: PLW2901
                 graphql_type = self.schema_converter.from_maybe_optional(type_)
                 if isinstance(graphql_type, GraphQLNonNull):
                     graphql_type = graphql_type.of_type
@@ -147,6 +162,9 @@ class Schema(BaseSchema):
 
         # attach our schema to the GraphQL schema instance
         self._schema._strawberry_schema = self  # type: ignore
+
+        self._warn_for_federation_directives()
+        self._resolve_node_ids()
 
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible
@@ -280,7 +298,7 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ):
+    ) -> Union[AsyncIterator[GraphQLExecutionResult], GraphQLExecutionResult]:
         return await subscribe(
             self._schema,
             parse(query),
@@ -289,6 +307,51 @@ class Schema(BaseSchema):
             variable_values=variable_values,
             operation_name=operation_name,
         )
+
+    def _resolve_node_ids(self):
+        for concrete_type in self.schema_converter.type_map.values():
+            type_def = concrete_type.definition
+
+            # This can be a TypeDefinition, EnumDefinition, ScalarDefinition
+            # or UnionDefinition
+            if not isinstance(type_def, TypeDefinition):
+                continue
+
+            # Do not validate id_attr for interfaces. relay.Node itself and
+            # any other interfdace that implements it are not required to
+            # provide a NodeID annotation, only the concrete type implementing
+            # them needs to do that.
+            if type_def.is_interface:
+                continue
+
+            # Call resolve_id_attr in here to make sure we raise provide
+            # early feedback for missing NodeID annotations
+            origin = type_def.origin
+            if issubclass(origin, relay.Node):
+                origin.resolve_id_attr()
+
+    def _warn_for_federation_directives(self):
+        """Raises a warning if the schema has any federation directives."""
+        from strawberry.federation.schema_directives import FederationDirective
+
+        all_types = self.schema_converter.type_map.values()
+        all_type_defs = (type_.definition for type_ in all_types)
+
+        all_directives = (
+            directive
+            for type_def in all_type_defs
+            for directive in (type_def.directives or [])
+        )
+
+        if any(
+            isinstance(directive, FederationDirective) for directive in all_directives
+        ):
+            warnings.warn(
+                "Federation directive found in schema. "
+                "Use `strawberry.federation.Schema` instead of `strawberry.Schema`.",
+                UserWarning,
+                stacklevel=3,
+            )
 
     def as_str(self) -> str:
         return print_schema(self)

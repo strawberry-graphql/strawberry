@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from strawberry.test import BaseGraphQLTestClient
 
@@ -9,7 +9,7 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         body: Dict[str, object],
         headers: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, object]] = None,
-    ):
+    ) -> Any:
         if files:
             return self._client.post(
                 self.url, data=body, format="multipart", headers=headers

@@ -44,7 +44,7 @@ class Batch(Generic[K, T]):
     tasks: List[LoaderTask] = dataclasses.field(default_factory=list)
     dispatched: bool = False
 
-    def add_task(self, key: Any, future: Future):
+    def add_task(self, key: Any, future: Future) -> None:
         task = LoaderTask[K, T](key, future)
         self.tasks.append(task)
 
@@ -71,7 +71,7 @@ class AbstractCache(Generic[K, T], ABC):
 
 
 class DefaultCache(AbstractCache[K, T]):
-    def __init__(self, cache_key_fn: Optional[Callable[[K], Hashable]] = None):
+    def __init__(self, cache_key_fn: Optional[Callable[[K], Hashable]] = None) -> None:
         self.cache_key_fn: Callable[[K], Hashable] = (
             cache_key_fn if cache_key_fn is not None else lambda x: x
         )
@@ -86,7 +86,7 @@ class DefaultCache(AbstractCache[K, T]):
     def delete(self, key: K) -> None:
         del self.cache_map[self.cache_key_fn(key)]
 
-    def clear(self):
+    def clear(self) -> None:
         self.cache_map.clear()
 
 
@@ -169,23 +169,23 @@ class DataLoader(Generic[K, T]):
     def load_many(self, keys: Iterable[K]) -> Awaitable[List[T]]:
         return gather(*map(self.load, keys))
 
-    def clear(self, key: K):
+    def clear(self, key: K) -> None:
         if self.cache:
             self.cache_map.delete(key)
 
-    def clear_many(self, keys: Iterable[K]):
+    def clear_many(self, keys: Iterable[K]) -> None:
         if self.cache:
             for key in keys:
                 self.cache_map.delete(key)
 
-    def clear_all(self):
+    def clear_all(self) -> None:
         if self.cache:
             self.cache_map.clear()
 
-    def prime(self, key: K, value: T, force: bool = False):
+    def prime(self, key: K, value: T, force: bool = False) -> None:
         self.prime_many({key: value}, force)
 
-    def prime_many(self, data: Mapping[K, T], force: bool = False):
+    def prime_many(self, data: Mapping[K, T], force: bool = False) -> None:
         # Populate the cache with the specified values
         if self.cache:
             for key, value in data.items():
@@ -231,7 +231,7 @@ def get_current_batch(loader: DataLoader) -> Batch:
     return loader.batch
 
 
-def dispatch(loader: DataLoader, batch: Batch):
+def dispatch(loader: DataLoader, batch: Batch) -> None:
     loader.loop.call_soon(create_task, dispatch_batch(loader, batch))
 
 

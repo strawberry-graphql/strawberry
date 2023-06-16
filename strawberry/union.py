@@ -69,8 +69,7 @@ class StrawberryUnion(StrawberryType):
         return super().__eq__(other)
 
     def __hash__(self) -> int:
-        # TODO: Is this a bad idea? __eq__ objects are supposed to have the same hash
-        return id(self)
+        return hash((self.graphql_name, self.type_annotations, self.description))
 
     def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
         if other is None:
@@ -148,7 +147,7 @@ class StrawberryUnion(StrawberryType):
             description=self.description,
         )
 
-    def __call__(self, *_args, **_kwargs) -> NoReturn:
+    def __call__(self, *args: str, **kwargs: Any) -> NoReturn:
         """Do not use.
 
         Used to bypass
@@ -207,7 +206,7 @@ class StrawberryUnion(StrawberryType):
                 # TODO: Can return_type ever _not_ be a GraphQLNamedType?
                 return return_type.name
             else:
-                # todo: check if this is correct
+                # TODO: check if this is correct
                 return return_type.__name__  # type: ignore
 
         return _resolve_union_type

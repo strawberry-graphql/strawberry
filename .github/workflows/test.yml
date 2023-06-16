@@ -41,7 +41,7 @@ jobs:
       - name: pytest
         run:
           poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m "not
-          starlette" -m "not django" --ignore=tests/mypy --ignore=tests/pyright
+          starlette" -m "not django" -m "not starlite" --ignore=tests/mypy --ignore=tests/pyright
 
         if: ${{ always() }}
       - uses: codecov/codecov-action@v3
@@ -119,7 +119,7 @@ jobs:
   starlette-unit-tests:
     strategy:
       matrix:
-        starlette: ["0.20.4", "0.21.0", "0.22.0", "0.23.0"]
+        starlette: ["0.23.1", "0.24.0", "0.25.0", "0.26.1"]
 
     name: Starlette ${{ matrix.starlette }}
     runs-on: ubuntu-latest
@@ -140,9 +140,13 @@ jobs:
       - name: Install starlette ${{ matrix.starlette }}
         run: poetry run pip install starlette==${{ matrix.starlette }}
 
-      - name: Install fastapi 0.88.0
-        run: poetry run pip install "fastapi<0.88.0"
-        if: matrix.starlette == '0.20.4'
+      - name: Install fastapi less than 0.92.0
+        run: poetry run pip install "fastapi<0.92.0"
+        if: ${{ matrix.starlette == '0.23.1' || matrix.starlette == '0.24.0' }}
+
+      - name: Install fastapi 0.92.0
+        run: poetry run pip install "fastapi==0.92.0"
+        if: ${{ matrix.starlette == '0.25.0' }}
 
       - name: pytest
         run:
@@ -154,5 +158,40 @@ jobs:
         if: ${{ always() }}
         with:
           token: c0eec83c-17c8-4e8a-adf9-a34e4c22ef6a
+          fail_ci_if_error: true
+          verbose: true
+
+  starlite-unit-tests:
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v4
+        id: setup-python
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "poetry"
+
+      - run: poetry env use ${{ matrix.python-version }}
+      - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
+
+      - name: pytest
+        run:
+          poetry run coverage run -m pytest --showlocals -vv -m starlite
+
+      - name: coverage xml
+        run: poetry run coverage xml -i
+        if: ${{ always() }}
+      - uses: codecov/codecov-action@v3
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           verbose: true

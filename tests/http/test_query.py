@@ -129,11 +129,7 @@ async def test_missing_query(http_client: HttpClient):
     )
 
     assert response.status_code == 400
-    # TODO: consolidate this
-    assert (
-        "No GraphQL query found in the request" in response.text
-        or "No valid query was provided for the request" in response.text
-    )
+    assert "No GraphQL query found in the request" in response.text
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
@@ -159,3 +155,18 @@ async def test_returning_status_code(
 
     assert response.status_code == 401
     assert response.json["data"] == {"returns401": "hey"}
+
+
+@pytest.mark.parametrize("method", ["get", "post"])
+async def test_updating_headers(
+    method: Literal["get", "post"], http_client: HttpClient
+):
+    response = await http_client.query(
+        method=method,
+        variables={"name": "Jake"},
+        query="query ($name: String!) { setHeader(name: $name) }",
+    )
+
+    assert response.status_code == 200
+    assert response.json["data"] == {"setHeader": "Jake"}
+    assert response.headers["X-Name"] == "Jake"
