@@ -6,6 +6,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Awaitable,
+    Dict,
     List,
     Optional,
     Type,
@@ -13,6 +14,9 @@ from typing import (
 )
 
 from strawberry.exceptions import StrawberryGraphQLError
+from strawberry.exceptions.permission_fail_silently_requires_optional import (
+    PermissionFailSilentlyRequiresOptionalError,
+)
 from strawberry.extensions import FieldExtension
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.type import StrawberryList, StrawberryOptional
@@ -127,10 +131,7 @@ class PermissionExtension(FieldExtension):
             elif isinstance(field.type, StrawberryList):
                 self.return_empty_list = True
             else:
-                raise Exception(
-                    "Cannot use fail_silently=True with a non-optional "
-                    "or non-list field"
-                )
+                raise PermissionFailSilentlyRequiresOptionalError(field)
 
     def _handle_no_permission(self, permission: BasePermission) -> Any:
         if self.fail_silently:
@@ -141,7 +142,11 @@ class PermissionExtension(FieldExtension):
         return permission.handle_no_permission()
 
     def resolve(
-        self, next_: SyncExtensionResolver, source: Any, info: Info, **kwargs
+        self,
+        next_: SyncExtensionResolver,
+        source: Any,
+        info: Info,
+        **kwargs: Dict[str, Any],
     ) -> Any:
         """
         Checks if the permission should be accepted and
@@ -153,7 +158,11 @@ class PermissionExtension(FieldExtension):
         return next_(source, info, **kwargs)
 
     async def resolve_async(
-        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs
+        self,
+        next_: AsyncExtensionResolver,
+        source: Any,
+        info: Info,
+        **kwargs: Dict[str, Any],
     ) -> Any:
         for permission in self.permissions:
             has_permission = await await_maybe(

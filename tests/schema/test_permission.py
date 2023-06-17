@@ -7,6 +7,9 @@ import pytest
 
 import strawberry
 from strawberry.exceptions import StrawberryGraphQLError
+from strawberry.exceptions.permission_fail_silently_requires_optional import (
+    PermissionFailSilentlyRequiresOptionalError,
+)
 from strawberry.permission import BasePermission, PermissionExtension
 from strawberry.printer import print_schema
 from strawberry.types import Info
@@ -356,7 +359,7 @@ def test_permissions_with_custom_extensions():
         message = "User is not authorized"
         error_extensions = {"code": "UNAUTHORIZED"}
 
-        def has_permission(self, source, info, **kwargs) -> bool:
+        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
             return False
 
     @strawberry.type
@@ -384,7 +387,7 @@ def test_permissions_with_custom_extensions_on_custom_error():
         error_class = CustomError
         error_extensions = {"code": "UNAUTHORIZED"}
 
-        def has_permission(self, source, info, **kwargs) -> bool:
+        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
             return False
 
     @strawberry.type
@@ -408,7 +411,7 @@ def test_silent_permissions_optional():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"
 
-        def has_permission(self, source, info, **kwargs) -> bool:
+        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
             return False
 
     @strawberry.type
@@ -431,7 +434,7 @@ def test_silent_permissions_optional_list():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"
 
-        def has_permission(self, source, info, **kwargs) -> bool:
+        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
             return False
 
     @strawberry.type
@@ -454,7 +457,7 @@ def test_silent_permissions_list():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"
 
-        def has_permission(self, source, info, **kwargs) -> bool:
+        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
             return False
 
     @strawberry.type
@@ -477,7 +480,7 @@ def test_silent_permissions_incompatible_types():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"
 
-        def has_permission(self, source, info, **kwargs) -> bool:
+        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
             return False
 
     @strawberry.type
@@ -492,12 +495,16 @@ def test_silent_permissions_incompatible_types():
         "Cannot use fail_silently=True with a non-optional " "or non-list field"
     )
 
+    # expect pytest error with message saved in variable error
+    with pytest.raises(PermissionFailSilentlyRequiresOptionalError):
+        schema = strawberry.Schema(query=Query)
+
 
 def test_permission_directives_added():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"
 
-        def has_permission(self, source, info, **kwargs) -> bool:
+        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
             return False
 
     @strawberry.type
@@ -522,7 +529,7 @@ def test_permission_directives_not_added_on_field():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"
 
-        def has_permission(self, source, info, **kwargs) -> bool:
+        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
             return False
 
     @strawberry.type
