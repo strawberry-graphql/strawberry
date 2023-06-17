@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, TypeAlias, Union
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Union
 
 from strawberry.utils.cached_property import cached_property
 
 if TYPE_CHECKING:
+    from typing_extensions import TypeAlias
+
     from strawberry.field import StrawberryField
     from strawberry.types import Info
+
 
 SyncExtensionResolver: TypeAlias = Callable[..., Any]
 AsyncExtensionResolver: TypeAlias = Callable[..., Awaitable[Any]]
