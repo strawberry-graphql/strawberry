@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Optional
 from strawberry.utils.cached_property import cached_property
 
 from .exception import StrawberryException
+from .utils.source_finder import SourceFinder
 
 if TYPE_CHECKING:
     from ..field import StrawberryField
@@ -13,6 +14,7 @@ if TYPE_CHECKING:
 
 class PermissionFailSilentlyRequiresOptionalError(StrawberryException):
     def __init__(self, field: StrawberryField):
+        self.field = field
         self.message = (
             "Cannot use fail_silently=True with a non-optional " "or non-list field"
         )
@@ -31,7 +33,20 @@ class PermissionFailSilentlyRequiresOptionalError(StrawberryException):
 
     @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
-        # we can't return an exception source as currently, permission
-        # extensions are only linked
-        # to strawberryfields. these aren't linked to the source code.
-        return None
+        origin = self.field.origin
+        source_finder = SourceFinder()
+
+        source = None
+        if origin is not None:
+            source = source_finder.find_class_attribute_from_object(
+                origin,
+                self.field.python_name,
+            )
+
+        # in case it is a function
+        if source is None and self.field.base_resolver is not None:
+            source = source_finder.find_function_from_object(
+                self.field.base_resolver.wrapped_func
+            )
+
+        return source

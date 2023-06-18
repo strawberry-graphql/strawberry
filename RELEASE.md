@@ -32,8 +32,7 @@ Using the new `PermissionExtension` API, permissions support even more features:
 #### Silent errors
 
 To return `None` or `[]` instead of raising an error, the `silent_errors` keyword
-argument on `PermissionExtension` can be set to `True`
-system.
+argument on `PermissionExtension` can be set to `True`.
 
 #### Custom Error Extensions & classes
 

@@ -120,9 +120,9 @@ class PermissionExtension(FieldExtension):
         and sets up silent permissions
         """
         if self.use_directives:
-            for permission in self.permissions:
-                if permission.schema_directive:
-                    field.directives.append(permission.schema_directive)
+            field.directives.extend(
+                p.schema_directive for p in self.permissions if p.schema_directive
+            )
         # We can only fail silently if the field is optional or a list
         if self.fail_silently:
             if isinstance(field.type, StrawberryOptional):
@@ -131,14 +131,13 @@ class PermissionExtension(FieldExtension):
             elif isinstance(field.type, StrawberryList):
                 self.return_empty_list = True
             else:
-                raise PermissionFailSilentlyRequiresOptionalError(field)
+                errror = PermissionFailSilentlyRequiresOptionalError(field)
+                a = errror.exception_source
+                raise errror
 
     def _handle_no_permission(self, permission: BasePermission) -> Any:
         if self.fail_silently:
-            if self.return_empty_list:
-                return []
-            else:
-                return None
+            return [] if self.return_empty_list else None
         return permission.handle_no_permission()
 
     def resolve(
