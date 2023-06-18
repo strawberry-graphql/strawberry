@@ -46,9 +46,8 @@ T = TypeVar("T")
 _RESOLVER_TYPE = Union[
     StrawberryResolver[T],
     Callable[..., T],
-    # we initially used Awaitable, but that was triggering the following mypy bug:
-    # https://github.com/python/mypy/issues/14669
     Callable[..., Coroutine[T, Any, Any]],
+    Callable[..., Awaitable[T]],
     "staticmethod[Any, T]",
     "classmethod[Any, Any, T]",
 ]

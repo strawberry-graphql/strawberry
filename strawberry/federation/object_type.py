@@ -9,12 +9,12 @@ from typing import (
     Union,
     overload,
 )
+from typing_extensions import dataclass_transform
 
 from strawberry.field import StrawberryField
 from strawberry.field import field as base_field
 from strawberry.object_type import type as base_type
 from strawberry.unset import UNSET
-from strawberry.utils.typing import __dataclass_transform__
 
 from .field import field
 
@@ -79,10 +79,10 @@ def _impl_type(
 
 
 @overload
-@__dataclass_transform__(
+@dataclass_transform(
     order_default=True,
     kw_only_default=True,
-    field_descriptors=(base_field, field, StrawberryField),
+    field_specifiers=(base_field, field, StrawberryField),
 )
 def type(
     cls: T,
@@ -98,10 +98,10 @@ def type(
 
 
 @overload
-@__dataclass_transform__(
+@dataclass_transform(
     order_default=True,
     kw_only_default=True,
-    field_descriptors=(base_field, field, StrawberryField),
+    field_specifiers=(base_field, field, StrawberryField),
 )
 def type(
     *,
@@ -143,10 +143,10 @@ def type(
 
 
 @overload
-@__dataclass_transform__(
+@dataclass_transform(
     order_default=True,
     kw_only_default=True,
-    field_descriptors=(base_field, field, StrawberryField),
+    field_specifiers=(base_field, field, StrawberryField),
 )
 def input(
     cls: T,
@@ -161,10 +161,10 @@ def input(
 
 
 @overload
-@__dataclass_transform__(
+@dataclass_transform(
     order_default=True,
     kw_only_default=True,
-    field_descriptors=(base_field, field, StrawberryField),
+    field_specifiers=(base_field, field, StrawberryField),
 )
 def input(
     *,
@@ -198,10 +198,10 @@ def input(
 
 
 @overload
-@__dataclass_transform__(
+@dataclass_transform(
     order_default=True,
     kw_only_default=True,
-    field_descriptors=(base_field, field, StrawberryField),
+    field_specifiers=(base_field, field, StrawberryField),
 )
 def interface(
     cls: T,
@@ -217,10 +217,10 @@ def interface(
 
 
 @overload
-@__dataclass_transform__(
+@dataclass_transform(
     order_default=True,
     kw_only_default=True,
-    field_descriptors=(base_field, field, StrawberryField),
+    field_specifiers=(base_field, field, StrawberryField),
 )
 def interface(
     *,
@@ -257,10 +257,10 @@ def interface(
 
 
 @overload
-@__dataclass_transform__(
+@dataclass_transform(
     order_default=True,
     kw_only_default=True,
-    field_descriptors=(base_field, field, StrawberryField),
+    field_specifiers=(base_field, field, StrawberryField),
 )
 def interface_object(
     cls: T,
@@ -276,10 +276,10 @@ def interface_object(
 
 
 @overload
-@__dataclass_transform__(
+@dataclass_transform(
     order_default=True,
     kw_only_default=True,
-    field_descriptors=(base_field, field, StrawberryField),
+    field_specifiers=(base_field, field, StrawberryField),
 )
 def interface_object(
     *,

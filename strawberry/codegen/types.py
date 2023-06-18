@@ -29,6 +29,7 @@ class GraphQLField:
     name: str
     alias: Optional[str]
     type: GraphQLType
+    default_value: Optional[GraphQLArgumentValue] = None
 
 
 @dataclass
@@ -112,13 +113,26 @@ class GraphQLIntValue:
 
 
 @dataclass
+class GraphQLFloatValue:
+    value: float
+
+
+@dataclass
 class GraphQLEnumValue:
     name: str
+    enum_type: Optional[str] = None
 
 
 @dataclass
 class GraphQLBoolValue:
     value: bool
+
+
+@dataclass
+class GraphQLNullValue:
+    """A class that represents a GraphQLNull value."""
+
+    value: None = None
 
 
 @dataclass
@@ -138,8 +152,10 @@ class GraphQLVariableReference:
 
 GraphQLArgumentValue = Union[
     GraphQLStringValue,
+    GraphQLNullValue,
     GraphQLIntValue,
     GraphQLVariableReference,
+    GraphQLFloatValue,
     GraphQLListValue,
     GraphQLEnumValue,
     GraphQLBoolValue,

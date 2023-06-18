@@ -1,12 +1,12 @@
 import dataclasses
 from typing import Callable, List, Optional, Type, TypeVar
+from typing_extensions import dataclass_transform
 
 from strawberry.directive import directive_field
 from strawberry.field import StrawberryField, field
 from strawberry.object_type import _wrap_dataclass
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.types.type_resolver import _get_fields
-from strawberry.utils.typing import __dataclass_transform__
 
 
 @dataclasses.dataclass
@@ -22,10 +22,10 @@ class StrawberryFederationSchemaDirective(StrawberrySchemaDirective):
 T = TypeVar("T", bound=Type)
 
 
-@__dataclass_transform__(
+@dataclass_transform(
     order_default=True,
     kw_only_default=True,
-    field_descriptors=(directive_field, field, StrawberryField),
+    field_specifiers=(directive_field, field, StrawberryField),
 )
 def schema_directive(
     *,

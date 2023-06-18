@@ -342,7 +342,7 @@ def test_using_generics_raises_when_missing_annotation():
         name: str
 
     error_message = (
-        f'Query fields cannot be resolved. The type "{repr(Edge)}" '
+        f'Query fields cannot be resolved. The type "{Edge!r}" '
         "is generic, but no type has been passed"
     )
 
@@ -368,7 +368,7 @@ def test_using_generics_raises_when_missing_annotation_nested():
         name: str
 
     error_message = (
-        f'Query fields cannot be resolved. The type "{repr(Connection)}" '
+        f'Query fields cannot be resolved. The type "{Connection!r}" '
         "is generic, but no type has been passed"
     )
 

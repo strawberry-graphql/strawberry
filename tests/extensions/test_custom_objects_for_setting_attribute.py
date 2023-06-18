@@ -22,7 +22,7 @@ class ComplexObject:
         self.value = value
 
     def __str__(self):
-        return f"ComplexObject({str(self.simple_object)}, {self.value})"
+        return f"ComplexObject({self.simple_object!s}, {self.value})"
 
 
 def test_convert_complex_number(otel_ext):
