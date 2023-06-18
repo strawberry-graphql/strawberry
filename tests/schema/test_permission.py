@@ -465,7 +465,7 @@ def test_silent_permissions_list():
         @strawberry.field(
             extensions=[PermissionExtension([IsAuthorized()], fail_silently=True)]
         )
-        def names(self) -> Optional[List[str]]:
+        def names(self) -> List[str]:
             return ["ABC"]
 
     schema = strawberry.Schema(query=Query)
