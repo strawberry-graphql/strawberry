@@ -182,7 +182,7 @@ class StrawberryTypeVar(StrawberryType):
 
 
 class WithStrawberryObjectDefinition(Protocol):
-    __strawberry_definition__: StrawberryObjectDefinition
+    __strawberry_definition__: ClassVar[StrawberryObjectDefinition]
 
 
 def has_object_definition(
