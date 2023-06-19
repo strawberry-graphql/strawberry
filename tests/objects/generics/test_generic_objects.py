@@ -38,6 +38,7 @@ def test_basic_generic():
     assert field_copy.python_name == "node_field"
     assert field_copy.type is str
     assert field_copy.directives == [directive]
+    assert id(field_copy.directives) != id(field.directives)
 
 
 def test_generics_nested():
@@ -609,6 +610,7 @@ def test_federation():
     assert not definition_copy.is_generic
     assert definition_copy.type_params == []
     assert definition_copy.directives == Edge._type_definition.directives
+    assert id(definition_copy.directives) != (Edge._type_definition.directives)
 
     [field1_copy, field2_copy] = definition_copy.fields
 
