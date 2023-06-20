@@ -1,6 +1,27 @@
 CHANGELOG
 =========
 
+0.186.3 - 2023-06-20
+--------------------
+
+This release adds resolve_async to NodeExtension to allow it to
+be used together with other field async extensions/permissions.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2863](https://github.com/strawberry-graphql/strawberry/pull/2863/)
+
+
+0.186.2 - 2023-06-19
+--------------------
+
+This release fixes an issue on StrawberryField.copy_with method
+not copying its extensions and overwritten `_arguments`.
+
+Also make sure that all lists/tuples in those types are copied as
+new lists/tuples to avoid unexpected behavior.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2865](https://github.com/strawberry-graphql/strawberry/pull/2865/)
+
+
 0.186.1 - 2023-06-16
 --------------------
 

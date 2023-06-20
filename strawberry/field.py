@@ -327,7 +327,7 @@ class StrawberryField(dataclasses.Field):
             else None
         )
 
-        return type(self)(
+        new_field = type(self)(
             python_name=self.python_name,
             graphql_name=self.graphql_name,
             # TODO: do we need to wrap this in `StrawberryAnnotation`?
@@ -337,13 +337,16 @@ class StrawberryField(dataclasses.Field):
             is_subscription=self.is_subscription,
             description=self.description,
             base_resolver=new_resolver,
-            permission_classes=self.permission_classes,
+            permission_classes=self.permission_classes and self.permission_classes[:],
             default=self.default_value,
             # ignored because of https://github.com/python/mypy/issues/6910
             default_factory=self.default_factory,
             deprecation_reason=self.deprecation_reason,
-            directives=self.directives,
+            directives=self.directives and self.directives[:],
+            extensions=self.extensions and self.extensions[:],
         )
+        new_field._arguments = self._arguments and self._arguments[:]
+        return new_field
 
     @property
     def _has_async_permission_classes(self) -> bool:
