@@ -1,7 +1,4 @@
 Release type: minor
 
-**BREAKING CHANGES:**
 
-This release renames `_type_definition` to `__strawberry_definition__`
-if you don't know what `_type_definition` is, there is no need to worry 🙃.
-However, if you have used it, it would be aliased for now until deprecation.
+This release renames `_type_definition` to `__strawberry_definition__`. This doesn't change the public API of Strawberry, but if you were using `_type_definition` you can still access it, but it will be removed in future.
