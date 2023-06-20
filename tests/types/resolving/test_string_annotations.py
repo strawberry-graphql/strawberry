@@ -122,7 +122,7 @@ def test_basic_types():
         name: "str"
         age: "int"
 
-    definition = Query._type_definition
+    definition = Query.__strawberry_definition__
     assert definition.name == "Query"
 
     [field1, field2] = definition.fields
@@ -141,7 +141,7 @@ def test_optional():
         name: "Optional[str]"
         age: "Optional[int]"
 
-    definition = Query._type_definition
+    definition = Query.__strawberry_definition__
     assert definition.name == "Query"
 
     [field1, field2] = definition.fields
@@ -161,7 +161,7 @@ def test_basic_list():
     class Query:
         names: "List[str]"
 
-    definition = Query._type_definition
+    definition = Query.__strawberry_definition__
     assert definition.name == "Query"
 
     [field] = definition.fields
@@ -183,7 +183,7 @@ def test_list_of_types():
     class Query:
         users: "List[User]"
 
-    definition = Query._type_definition
+    definition = Query.__strawberry_definition__
     assert definition.name == "Query"
 
     [field] = definition.fields

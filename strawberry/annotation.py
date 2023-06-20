@@ -22,8 +22,13 @@ from strawberry.enum import EnumDefinition
 from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
-from strawberry.types.types import TypeDefinition
+from strawberry.type import (
+    StrawberryList,
+    StrawberryOptional,
+    StrawberryTypeVar,
+    has_object_definition,
+)
+from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.unset import UNSET
 from strawberry.utils.typing import (
     eval_type,
@@ -57,7 +62,10 @@ class StrawberryAnnotation:
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, StrawberryAnnotation):
-            return NotImplemented
+            raise NotImplementedError(
+                f"Comparing {StrawberryAnnotation.__name__} "
+                f"with {type(other)} is not supported."
+            )
 
         return self.resolve() == other.resolve()
 
@@ -124,11 +132,8 @@ class StrawberryAnnotation:
         self.namespace = module.__dict__
 
     def create_concrete_type(self, evaled_type: type) -> type:
-        if _is_object_type(evaled_type):
-            type_definition: TypeDefinition
-            type_definition = evaled_type._type_definition  # type: ignore
-            return type_definition.resolve_generic(evaled_type)
-
+        if has_object_definition(evaled_type):
+            return evaled_type.__strawberry_definition__.resolve_generic(evaled_type)
         raise ValueError(f"Not supported {evaled_type}")
 
     def create_enum(self, evaled_type: Any) -> EnumDefinition:
@@ -242,9 +247,9 @@ class StrawberryAnnotation:
         # TODO: add support for StrawberryInterface when implemented
         elif isinstance(evaled_type, StrawberryList):
             return True
-        elif _is_object_type(evaled_type):  # TODO: Replace with StrawberryObject
+        elif has_object_definition(evaled_type):
             return True
-        elif isinstance(evaled_type, TypeDefinition):
+        elif isinstance(evaled_type, StrawberryObjectDefinition):
             return True
         elif isinstance(evaled_type, StrawberryOptional):
             return True
@@ -292,11 +297,7 @@ class StrawberryAnnotation:
 
 
 def _is_input_type(type_: Any) -> bool:
-    if not _is_object_type(type_):
+    if not has_object_definition(type_):
         return False
 
-    return type_._type_definition.is_input
-
-
-def _is_object_type(type_: Any) -> bool:
-    return hasattr(type_, "_type_definition")
+    return type_.__strawberry_definition__.is_input

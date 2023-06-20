@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from typing import List, cast
+from typing import List
 
 import pytest
 
 import strawberry
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import StrawberryObjectDefinition
 
 
 def test_query_interface():
@@ -234,7 +234,7 @@ def test_duplicated_interface_in_multi_inheritance():
     class Query:
         my_type: MyType
 
-    type_definition = cast(TypeDefinition, MyType._type_definition)  # type: ignore
+    type_definition: StrawberryObjectDefinition = MyType.__strawberry_definition__
     origins = [i.origin for i in type_definition.interfaces]
     assert origins == [InterfaceA, InterfaceB, Base]
 

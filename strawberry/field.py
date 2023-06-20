@@ -21,7 +21,11 @@ from typing import (
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidArgumentTypeError, InvalidDefaultFactoryError
-from strawberry.type import StrawberryType
+from strawberry.type import (
+    StrawberryType,
+    WithStrawberryObjectDefinition,
+    has_object_definition,
+)
 from strawberry.union import StrawberryUnion
 from strawberry.utils.cached_property import cached_property
 
@@ -35,7 +39,6 @@ if TYPE_CHECKING:
     from strawberry.extensions.field_extension import FieldExtension
     from strawberry.types.info import Info
 
-    from .object_type import TypeDefinition
     from .permission import BasePermission
 
 T = TypeVar("T")
@@ -58,8 +61,8 @@ def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
         return resolver_type.is_generic
 
     # solves the Generic subclass case
-    if hasattr(resolver_type, "_type_definition"):
-        return resolver_type._type_definition.is_generic
+    if has_object_definition(resolver_type):
+        return resolver_type.__strawberry_definition__.is_generic
 
     return False
 
@@ -153,8 +156,8 @@ class StrawberryField(dataclasses.Field):
                     resolver,
                     argument,
                 )
-            elif getattr(argument.type, "_type_definition", False):
-                if argument.type._type_definition.is_interface:  # type: ignore
+            elif has_object_definition(argument.type):
+                if argument.type.__strawberry_definition__.is_interface:
                     raise InvalidArgumentTypeError(
                         resolver,
                         argument,
@@ -243,7 +246,13 @@ class StrawberryField(dataclasses.Field):
         _ = resolver.arguments
 
     @property  # type: ignore
-    def type(self) -> Union[StrawberryType, type, Literal[UNRESOLVED]]:  # type: ignore
+    def type(
+        self,
+    ) -> Union[  # type: ignore [valid-type]
+        StrawberryType,
+        Type[WithStrawberryObjectDefinition],
+        Literal[UNRESOLVED],
+    ]:
         # We are catching NameError because dataclasses tries to fetch the type
         # of the field from the class before the class is fully defined.
         # This triggers a NameError error when using forward references because
@@ -287,7 +296,7 @@ class StrawberryField(dataclasses.Field):
     # TODO: add this to arguments (and/or move it to StrawberryType)
     @property
     def type_params(self) -> List[TypeVar]:
-        if hasattr(self.type, "_type_definition"):
+        if has_object_definition(self.type):
             parameters = getattr(self.type, "__parameters__", None)
 
             return list(parameters) if parameters else []
@@ -303,10 +312,8 @@ class StrawberryField(dataclasses.Field):
     ) -> Self:
         new_type: Union[StrawberryType, type] = self.type
 
-        # TODO: Remove with creation of StrawberryObject. Will act same as other
-        #       StrawberryTypes
-        if hasattr(self.type, "_type_definition"):
-            type_definition: TypeDefinition = self.type._type_definition
+        if has_object_definition(self.type):
+            type_definition = self.type.__strawberry_definition__
 
             if type_definition.is_generic:
                 type_ = type_definition

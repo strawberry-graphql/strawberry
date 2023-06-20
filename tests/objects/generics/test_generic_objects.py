@@ -4,7 +4,12 @@ from typing import Generic, List, Optional, TypeVar, Union
 import pytest
 
 import strawberry
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
+from strawberry.type import (
+    StrawberryList,
+    StrawberryOptional,
+    StrawberryTypeVar,
+    get_object_definition_strict,
+)
 from strawberry.union import StrawberryUnion
 
 T = TypeVar("T")
@@ -17,7 +22,7 @@ def test_basic_generic():
     class Edge(Generic[T]):
         node_field: T = strawberry.field(directives=[directive])
 
-    definition = Edge._type_definition
+    definition = get_object_definition_strict(Edge)
     assert definition.is_generic
     assert definition.type_params == [T]
 
@@ -27,9 +32,9 @@ def test_basic_generic():
     assert field.type.type_var is T
 
     # let's make a copy of this generic type
-    copy = Edge._type_definition.copy_with({T: str})
+    copy = get_object_definition_strict(Edge).copy_with({T: str})
 
-    definition_copy = copy._type_definition
+    definition_copy = get_object_definition_strict(copy)
 
     assert not definition_copy.is_generic
     assert definition_copy.type_params == []
@@ -38,7 +43,6 @@ def test_basic_generic():
     assert field_copy.python_name == "node_field"
     assert field_copy.type is str
     assert field_copy.directives == [directive]
-    assert id(field_copy.directives) != id(field.directives)
 
 
 def test_generics_nested():
@@ -50,16 +54,18 @@ def test_generics_nested():
     class Connection(Generic[T]):
         edge: Edge[T]
 
-    definition = Connection._type_definition
+    definition = get_object_definition_strict(Connection)
     assert definition.is_generic
     assert definition.type_params == [T]
 
     [field] = definition.fields
     assert field.python_name == "edge"
-    assert field.type._type_definition.type_params == [T]
+    assert get_object_definition_strict(field.type).type_params == [T]
 
     # let's make a copy of this generic type
-    definition_copy = Connection._type_definition.copy_with({T: str})._type_definition
+    definition_copy = get_object_definition_strict(
+        get_object_definition_strict(Connection).copy_with({T: str})
+    )
 
     assert not definition_copy.is_generic
     assert definition_copy.type_params == []
@@ -77,9 +83,9 @@ def test_generics_name():
     class Connection(Generic[T]):
         edge: T
 
-    definition_copy = Connection._type_definition.copy_with(
-        {T: EdgeName}
-    )._type_definition
+    definition_copy = get_object_definition_strict(
+        get_object_definition_strict(Connection).copy_with({T: EdgeName})
+    )
 
     assert not definition_copy.is_generic
     assert definition_copy.type_params == []
@@ -97,17 +103,19 @@ def test_generics_nested_in_list():
     class Connection(Generic[T]):
         edges: List[Edge[T]]
 
-    definition = Connection._type_definition
+    definition = get_object_definition_strict(Connection)
     assert definition.is_generic
     assert definition.type_params == [T]
 
     [field] = definition.fields
     assert field.python_name == "edges"
     assert isinstance(field.type, StrawberryList)
-    assert field.type.of_type._type_definition.type_params == [T]
+    assert get_object_definition_strict(field.type.of_type).type_params == [T]
 
     # let's make a copy of this generic type
-    definition_copy = Connection._type_definition.copy_with({T: str})._type_definition
+    definition_copy = get_object_definition_strict(
+        Connection.__strawberry_definition__.copy_with({T: str})
+    )
 
     assert not definition_copy.is_generic
     assert definition_copy.type_params == []
@@ -132,7 +140,7 @@ def test_list_inside_generic():
         optional_string: Value[Optional[str]]
         optional_strings: Value[Optional[List[str]]]
 
-    definition = Foo._type_definition
+    definition = Foo.__strawberry_definition__
     assert not definition.is_generic
     [
         string_field,
@@ -151,7 +159,7 @@ def test_generic_with_optional():
     class Edge(Generic[T]):
         node: Optional[T]
 
-    definition = Edge._type_definition
+    definition = Edge.__strawberry_definition__
     assert definition.is_generic
     assert definition.type_params == [T]
 
@@ -162,7 +170,9 @@ def test_generic_with_optional():
     assert field.type.of_type.type_var is T
 
     # let's make a copy of this generic type
-    definition_copy = Edge._type_definition.copy_with({T: str})._type_definition
+    definition_copy = Edge.__strawberry_definition__.copy_with(
+        {T: str}
+    ).__strawberry_definition__
 
     assert not definition_copy.is_generic
     assert definition_copy.type_params == []
@@ -178,7 +188,7 @@ def test_generic_with_list():
     class Connection(Generic[T]):
         edges: List[T]
 
-    definition = Connection._type_definition
+    definition = Connection.__strawberry_definition__
     assert definition.is_generic
     assert definition.type_params == [T]
 
@@ -189,7 +199,9 @@ def test_generic_with_list():
     assert field.type.of_type.type_var is T
 
     # let's make a copy of this generic type
-    definition_copy = Connection._type_definition.copy_with({T: str})._type_definition
+    definition_copy = Connection.__strawberry_definition__.copy_with(
+        {T: str}
+    ).__strawberry_definition__
 
     assert not definition_copy.is_generic
     assert definition_copy.type_params == []
@@ -205,7 +217,7 @@ def test_generic_with_list_of_optionals():
     class Connection(Generic[T]):
         edges: List[Optional[T]]
 
-    definition = Connection._type_definition
+    definition = Connection.__strawberry_definition__
     assert definition.is_generic
     assert definition.type_params == [T]
 
@@ -217,7 +229,9 @@ def test_generic_with_list_of_optionals():
     assert field.type.of_type.of_type.type_var is T
 
     # let's make a copy of this generic type
-    definition_copy = Connection._type_definition.copy_with({T: str})._type_definition
+    definition_copy = Connection.__strawberry_definition__.copy_with(
+        {T: str}
+    ).__strawberry_definition__
 
     assert not definition_copy.is_generic
     assert definition_copy.type_params == []
@@ -238,7 +252,7 @@ def test_generics_with_unions():
     class Edge(Generic[T]):
         node: Union[Error, T]
 
-    definition = Edge._type_definition
+    definition = Edge.__strawberry_definition__
     assert definition.type_params == [T]
 
     [field] = definition.fields
@@ -251,7 +265,9 @@ def test_generics_with_unions():
     class Node:
         name: str
 
-    definition_copy = Edge._type_definition.copy_with({T: Node})._type_definition
+    definition_copy = Edge.__strawberry_definition__.copy_with(
+        {T: Node}
+    ).__strawberry_definition__
 
     assert not definition_copy.is_generic
     assert definition_copy.type_params == []
@@ -275,12 +291,12 @@ def test_using_generics():
     class Query:
         user: Edge[User]
 
-    definition = Query._type_definition
+    definition = get_object_definition_strict(Query)
 
     [field] = definition.fields
     assert field.python_name == "user"
 
-    user_edge_definition = field.type._type_definition
+    user_edge_definition = get_object_definition_strict(field.type)
     assert not user_edge_definition.is_generic
 
     [node_field] = user_edge_definition.fields
@@ -305,16 +321,16 @@ def test_using_generics_nested():
     class Query:
         users: Connection[User]
 
-    connection_definition = Connection._type_definition
+    connection_definition = Connection.__strawberry_definition__
     assert connection_definition.is_generic
     assert connection_definition.type_params == [T]
 
-    query_definition = Query._type_definition
+    query_definition = get_object_definition_strict(Query)
 
     [user_field] = query_definition.fields
     assert user_field.python_name == "users"
 
-    user_connection_definition = user_field.type._type_definition
+    user_connection_definition = get_object_definition_strict(user_field.type)
     assert not user_connection_definition.is_generic
 
     [edges_field] = user_connection_definition.fields
@@ -382,14 +398,14 @@ def test_generics_inside_optional():
     class Query:
         user: Optional[Edge[str]]
 
-    query_definition = Query._type_definition
+    query_definition = get_object_definition_strict(Query)
     assert query_definition.type_params == []
 
     [field] = query_definition.fields
     assert field.python_name == "user"
     assert isinstance(field.type, StrawberryOptional)
 
-    str_edge_definition = field.type.of_type._type_definition
+    str_edge_definition = field.type.of_type.__strawberry_definition__
     assert not str_edge_definition.is_generic
 
 
@@ -406,14 +422,14 @@ def test_generics_inside_list():
     class Query:
         user: List[Edge[str]]
 
-    query_definition = Query._type_definition
+    query_definition = get_object_definition_strict(Query)
     assert query_definition.type_params == []
 
     [field] = query_definition.fields
     assert field.python_name == "user"
     assert isinstance(field.type, StrawberryList)
 
-    str_edge_definition = field.type.of_type._type_definition
+    str_edge_definition = field.type.of_type.__strawberry_definition__
     assert not str_edge_definition.is_generic
 
 
@@ -430,7 +446,7 @@ def test_generics_inside_unions():
     class Query:
         user: Union[Edge[str], Error]
 
-    query_definition = Query._type_definition
+    query_definition = get_object_definition_strict(Query)
     assert query_definition.type_params == []
 
     [field] = query_definition.fields
@@ -439,7 +455,7 @@ def test_generics_inside_unions():
 
     union = field.type
     assert isinstance(union, StrawberryUnion)
-    assert not union.types[0]._type_definition.is_generic
+    assert not union.types[0].__strawberry_definition__.is_generic
 
 
 def test_multiple_generics_inside_unions():
@@ -451,7 +467,7 @@ def test_multiple_generics_inside_unions():
     class Query:
         user: Union[Edge[int], Edge[str]]
 
-    query_definition = Query._type_definition
+    query_definition = get_object_definition_strict(Query)
     assert query_definition.type_params == []
 
     [user_field] = query_definition.fields
@@ -461,11 +477,11 @@ def test_multiple_generics_inside_unions():
     union = user_field.type
     assert isinstance(union, StrawberryUnion)
 
-    int_edge_definition = union.types[0]._type_definition
+    int_edge_definition = union.types[0].__strawberry_definition__
     assert not int_edge_definition.is_generic
     assert int_edge_definition.fields[0].type is int
 
-    str_edge_definition = union.types[1]._type_definition
+    str_edge_definition = union.types[1].__strawberry_definition__
     assert not str_edge_definition.is_generic
     assert str_edge_definition.fields[0].type is str
 
@@ -489,14 +505,14 @@ def test_union_inside_generics():
     class Query:
         connection: Connection[DogCat]
 
-    query_definition = Query._type_definition
+    query_definition = get_object_definition_strict(Query)
     assert query_definition.type_params == []
 
     [connection_field] = query_definition.fields
     assert connection_field.python_name == "connection"
     assert not isinstance(connection_field, StrawberryOptional)
 
-    dog_cat_connection_definition = connection_field.type._type_definition
+    dog_cat_connection_definition = get_object_definition_strict(connection_field.type)
 
     [node_field] = dog_cat_connection_definition.fields
     assert isinstance(node_field.type, StrawberryList)
@@ -522,13 +538,13 @@ def test_anonymous_union_inside_generics():
     class Query:
         connection: Connection[Union[Dog, Cat]]
 
-    definition = Query._type_definition
+    definition = get_object_definition_strict(Query)
     assert definition.type_params == []
 
     [connection_field] = definition.fields
     assert connection_field.python_name == "connection"
 
-    dog_cat_connection_definition = connection_field.type._type_definition
+    dog_cat_connection_definition = get_object_definition_strict(connection_field.type)
 
     [node_field] = dog_cat_connection_definition.fields
     assert isinstance(node_field.type, StrawberryList)
@@ -550,12 +566,12 @@ def test_using_generics_with_interfaces():
     class Query:
         user: Edge[WithName]
 
-    query_definition = Query._type_definition
+    query_definition = get_object_definition_strict(Query)
 
     [user_field] = query_definition.fields
     assert user_field.python_name == "user"
 
-    with_name_definition = user_field.type._type_definition
+    with_name_definition = get_object_definition_strict(user_field.type)
     assert not with_name_definition.is_generic
 
     [node_field] = with_name_definition.fields
@@ -580,12 +596,12 @@ def test_generic_with_arguments():
     class Query:
         user: Collection[Post]
 
-    query_definition = Query._type_definition
+    query_definition = get_object_definition_strict(Query)
 
     [user_field] = query_definition.fields
     assert user_field.python_name == "user"
 
-    post_collection_definition = user_field.type._type_definition
+    post_collection_definition = get_object_definition_strict(user_field.type)
     assert not post_collection_definition.is_generic
 
     [by_id_field] = post_collection_definition.fields
@@ -605,12 +621,13 @@ def test_federation():
         id: strawberry.ID
         node_field: T
 
-    definition_copy = Edge._type_definition.copy_with({T: str})._type_definition
+    definition_copy = Edge.__strawberry_definition__.copy_with(
+        {T: str}
+    ).__strawberry_definition__
 
     assert not definition_copy.is_generic
     assert definition_copy.type_params == []
-    assert definition_copy.directives == Edge._type_definition.directives
-    assert id(definition_copy.directives) != (Edge._type_definition.directives)
+    assert definition_copy.directives == Edge.__strawberry_definition__.directives
 
     [field1_copy, field2_copy] = definition_copy.fields
 

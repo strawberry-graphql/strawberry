@@ -12,7 +12,6 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
     overload,
 )
 from typing_extensions import dataclass_transform
@@ -23,20 +22,22 @@ from .exceptions import (
     ObjectIsNotClassError,
 )
 from .field import StrawberryField, field
+from .type import get_object_definition
 from .types.type_resolver import _get_fields
-from .types.types import TypeDefinition
+from .types.types import (
+    StrawberryObjectDefinition,
+)
 from .utils.dataclasses import add_custom_init_fn
+from .utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from .utils.str_converters import to_camel_case
 
 T = TypeVar("T", bound=Type)
 
 
-def _get_interfaces(cls: Type[Any]) -> List[TypeDefinition]:
-    interfaces: List[TypeDefinition] = []
+def _get_interfaces(cls: Type[Any]) -> List[StrawberryObjectDefinition]:
+    interfaces: List[StrawberryObjectDefinition] = []
     for base in cls.__mro__[1:]:  # Exclude current class
-        type_definition = cast(
-            Optional[TypeDefinition], getattr(base, "_type_definition", None)
-        )
+        type_definition = get_object_definition(base)
         if type_definition and type_definition.is_interface:
             interfaces.append(type_definition)
 
@@ -139,7 +140,7 @@ def _process_type(
     fields = _get_fields(cls)
     is_type_of = getattr(cls, "is_type_of", None)
 
-    cls._type_definition = TypeDefinition(
+    cls.__strawberry_definition__ = StrawberryObjectDefinition(
         name=name,
         is_input=is_input,
         is_interface=is_interface,
@@ -151,6 +152,12 @@ def _process_type(
         _fields=fields,
         is_type_of=is_type_of,
     )
+    # TODO: remove when deprecating _type_definition
+    DeprecatedDescriptor(
+        DEPRECATION_MESSAGES._TYPE_DEFINITION,
+        cls.__strawberry_definition__,
+        "_type_definition",
+    ).inject(cls)
 
     # dataclasses removes attributes from the class here:
     # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
@@ -374,7 +381,7 @@ def asdict(obj: Any) -> Dict[str, object]:
 
 
 __all__ = [
-    "TypeDefinition",
+    "StrawberryObjectDefinition",
     "input",
     "interface",
     "type",
