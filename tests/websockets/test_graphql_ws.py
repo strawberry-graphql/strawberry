@@ -124,13 +124,17 @@ async def test_sends_keep_alive(aiohttp_app_client: HttpClient):
         response = await ws.receive_json()
         assert response["type"] == GQL_CONNECTION_ACK
 
-        response = await ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_KEEP_ALIVE
+        # we can't be sure how many keep-alives exactly we
+        # get but they should be more than one.
+        keepalive_count = 0
+        while True:
+            response = await ws.receive_json()
+            if response["type"] == GQL_CONNECTION_KEEP_ALIVE:
+                keepalive_count += 1
+            else:
+                break
+        assert keepalive_count >= 1
 
-        response = await ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_KEEP_ALIVE
-
-        response = await ws.receive_json()
         assert response["type"] == GQL_DATA
         assert response["id"] == "demo"
         assert response["payload"]["data"] == {"echo": "Hi"}

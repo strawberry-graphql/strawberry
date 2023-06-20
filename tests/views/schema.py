@@ -6,7 +6,6 @@ from typing import Any, AsyncGenerator, Dict, List, Optional
 from graphql import GraphQLError
 
 import strawberry
-from strawberry.channels.context import StrawberryChannelsContext
 from strawberry.extensions import SchemaExtension
 from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
@@ -205,13 +204,13 @@ class Subscription:
     @strawberry.subscription
     async def listener(
         self,
-        info: Info[StrawberryChannelsContext, Any],
+        info: Info[Any, Any],
         timeout: Optional[float] = None,
         group: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
-        yield info.context.request.channel_name
+        yield info.context["request"].channel_name
 
-        async for message in info.context.request.channel_listen(
+        async for message in info.context["request"].channel_listen(
             type="test.message",
             timeout=timeout,
             groups=[group] if group is not None else [],

@@ -29,7 +29,7 @@ from .types.fields.resolver import StrawberryResolver
 
 if TYPE_CHECKING:
     import builtins
-    from typing_extensions import Literal
+    from typing_extensions import Literal, Self
 
     from strawberry.arguments import StrawberryArgument
     from strawberry.extensions.field_extension import FieldExtension
@@ -43,9 +43,8 @@ T = TypeVar("T")
 _RESOLVER_TYPE = Union[
     StrawberryResolver[T],
     Callable[..., T],
-    # we initially used Awaitable, but that was triggering the following mypy bug:
-    # https://github.com/python/mypy/issues/14669
     Callable[..., Coroutine[T, Any, Any]],
+    Callable[..., Awaitable[T]],
     "staticmethod[Any, T]",
     "classmethod[Any, Any, T]",
 ]
@@ -115,6 +114,7 @@ class StrawberryField(dataclasses.Field):
         self.description: Optional[str] = description
         self.origin = origin
 
+        self._arguments: Optional[List[StrawberryArgument]] = None
         self._base_resolver: Optional[StrawberryResolver] = None
         if base_resolver is not None:
             self.base_resolver = base_resolver
@@ -128,7 +128,7 @@ class StrawberryField(dataclasses.Field):
             try:
                 self.default_value = default_factory()
             except TypeError as exc:
-                raise InvalidDefaultFactoryError() from exc
+                raise InvalidDefaultFactoryError from exc
 
         self.is_subscription = is_subscription
 
@@ -138,7 +138,7 @@ class StrawberryField(dataclasses.Field):
 
         self.deprecation_reason = deprecation_reason
 
-    def __call__(self, resolver: _RESOLVER_TYPE) -> StrawberryField:
+    def __call__(self, resolver: _RESOLVER_TYPE) -> Self:
         """Add a resolver to the field"""
 
         # Allow for StrawberryResolvers or bare functions to be provided
@@ -195,10 +195,14 @@ class StrawberryField(dataclasses.Field):
 
     @property
     def arguments(self) -> List[StrawberryArgument]:
-        if not self.base_resolver:
-            return []
+        if self._arguments is None:
+            self._arguments = self.base_resolver.arguments if self.base_resolver else []
 
-        return self.base_resolver.arguments
+        return self._arguments
+
+    @arguments.setter
+    def arguments(self, value: List[StrawberryArgument]):
+        self._arguments = value
 
     def _python_name(self) -> Optional[str]:
         if self.name:
@@ -296,7 +300,7 @@ class StrawberryField(dataclasses.Field):
 
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
-    ) -> StrawberryField:
+    ) -> Self:
         new_type: Union[StrawberryType, type] = self.type
 
         # TODO: Remove with creation of StrawberryObject. Will act same as other
@@ -316,7 +320,7 @@ class StrawberryField(dataclasses.Field):
             else None
         )
 
-        return StrawberryField(
+        new_field = type(self)(
             python_name=self.python_name,
             graphql_name=self.graphql_name,
             # TODO: do we need to wrap this in `StrawberryAnnotation`?
@@ -326,12 +330,16 @@ class StrawberryField(dataclasses.Field):
             is_subscription=self.is_subscription,
             description=self.description,
             base_resolver=new_resolver,
-            permission_classes=self.permission_classes,
+            permission_classes=self.permission_classes and self.permission_classes[:],
             default=self.default_value,
             # ignored because of https://github.com/python/mypy/issues/6910
             default_factory=self.default_factory,
             deprecation_reason=self.deprecation_reason,
+            directives=self.directives and self.directives[:],
+            extensions=self.extensions and self.extensions[:],
         )
+        new_field._arguments = self._arguments and self._arguments[:]
+        return new_field
 
     @property
     def _has_async_permission_classes(self) -> bool:

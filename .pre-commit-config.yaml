@@ -6,7 +6,7 @@ repos:
         exclude: ^tests/codegen/snapshots/python/
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.264
+    rev: v0.0.272
     hooks:
       - id: ruff
         exclude: ^tests/codegen/snapshots/python/
@@ -32,6 +32,6 @@ repos:
       - id: check-toml
 
   - repo: https://github.com/adamchainz/blacken-docs
-    rev: 1.13.0
+    rev: 1.14.0
     hooks:
       - id: blacken-docs

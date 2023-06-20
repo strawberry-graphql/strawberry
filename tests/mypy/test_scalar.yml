@@ -90,4 +90,4 @@
     reveal_type(EpochDateTime)
 
   out: |
-    main:16: note: Revealed type is "def (year: builtins.int, month: builtins.int, day: builtins.int, hour: builtins.int =, minute: builtins.int =, second: builtins.int =, microsecond: builtins.int =, tzinfo: Union[datetime.tzinfo, None] =, *, fold: builtins.int =) -> datetime.datetime"
+    main:16: note: Revealed type is "def (year: typing_extensions.SupportsIndex, month: typing_extensions.SupportsIndex, day: typing_extensions.SupportsIndex, hour: typing_extensions.SupportsIndex =, minute: typing_extensions.SupportsIndex =, second: typing_extensions.SupportsIndex =, microsecond: typing_extensions.SupportsIndex =, tzinfo: Union[datetime.tzinfo, None] =, *, fold: builtins.int =) -> datetime.datetime"

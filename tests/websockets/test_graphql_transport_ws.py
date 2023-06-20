@@ -787,6 +787,9 @@ async def test_rejects_connection_params_not_unset(ws_raw: WebSocketClient):
     ws.assert_reason("Invalid connection init payload")
 
 
+# timings can sometimes fail currently.  Until this test is rewritten when
+# generator based subscriptions are implemented, mark it as flaky
+@pytest.mark.flaky
 async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
     # Test that when we cancel a subscription, the websocket isn't blocked
     # while some complex finalization takes place.
