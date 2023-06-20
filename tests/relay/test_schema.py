@@ -25,6 +25,21 @@ def test_schema():
     assert schema_output == expected
 
 
+def test_schema_future_annotations():
+    from .schema_future_annotations import schema
+
+    schema_output = str(schema).strip("\n").strip(" ")
+    output = pathlib.Path(__file__).parent / "schema.gql"
+    if not output.exists():
+        with output.open("w") as f:
+            f.write(schema_output + "\n")
+
+    with output.open() as f:
+        expected = f.read().strip("\n").strip(" ")
+
+    assert schema_output == expected
+
+
 def test_node_id_annotation(mocker: MockerFixture):
     # Avoid E501 errors
     mocker.patch.object(
