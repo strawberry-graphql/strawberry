@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.186.3 - 2023-06-20
+--------------------
+
+This release adds resolve_async to NodeExtension to allow it to
+be used together with other field async extensions/permissions.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2863](https://github.com/strawberry-graphql/strawberry/pull/2863/)
+
+
 0.186.2 - 2023-06-19
 --------------------
 
