@@ -236,7 +236,7 @@ class WSConnectionParams(abc.ABC):
     response_params: Optional[Dict[str, Any]]
 
     @abc.abstractmethod
-    async def reject(self) -> None:
+    def reject(self) -> None:
         """
         Reject the websocket connection.
         """

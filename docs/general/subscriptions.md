@@ -153,7 +153,7 @@ class MyView(GraphQLView):
         )  # equal to "Bearer I_AM_A_VALID_AUTH_TOKEN"
         username = await authenticate_token(token)
         if not username:
-            await params.reject()  # Reject connection
+            params.reject()  # Reject connection
             return
         # Augment connection_params with retrieved information
         params.connection_params["app_username"] = username

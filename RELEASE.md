@@ -8,7 +8,8 @@ class MyView(GraphQLView):
     async def on_ws_connect(self, params: WSConnectionParams) -> None:
         user = await authenticate(params.request_params.get("authorization"), "")
         if not user:
-            await params.reject()  # reject connection
+            params.reject()  # reject connection
+            return
         params.request_params["user"] = user  # for use by resolvers
         # return custom connection response payload to user
         params.response_params = {"username": user.name, "karma": user.karma}

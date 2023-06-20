@@ -17,7 +17,8 @@ class WebsocketsMixin:
             params.connection_params["added"] = True
         # 2. Reject if payload contains "reject-me"
         if "reject-me" in params.connection_params:
-            return await params.reject()
+            params.reject()
+            return None
         # 3. spend time evaluating
         if "sleep" in params.connection_params:
             await asyncio.sleep(float(params.connection_params["sleep"]))

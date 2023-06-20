@@ -43,7 +43,7 @@ class GraphQLTransportWSParam(WSConnectionParams):
         self.response_params = None
         self.rejected: bool = False
 
-    async def reject(self) -> None:
+    def reject(self) -> None:
         self.rejected = True
 
 
