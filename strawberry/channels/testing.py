@@ -14,7 +14,7 @@ from typing import (
     Union,
 )
 
-from graphql import GraphQLError
+from graphql import GraphQLError, GraphQLFormattedError
 
 from channels.testing.websocket import WebsocketCommunicator
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
@@ -125,22 +125,24 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
             message_type = response["type"]
             if message_type == NextMessage.type:
                 payload = NextMessage(**response).payload
-                ret = ExecutionResult(None, None)
-                for field in dataclasses.fields(ExecutionResult):
-                    setattr(ret, field.name, payload.get(field.name, None))
-                    yield ret
+                ret = ExecutionResult(payload["data"], None)
+                if "errors" in payload:
+                    ret.errors = process_errors(payload["errors"])
+                ret.extensions = payload.get("extensions", None)
+                yield ret
             elif message_type == ErrorMessage.type:
                 error_payload = ErrorMessage(**response).payload
-                yield ExecutionResult(
-                    data=None,
-                    errors=[
-                        GraphQLError(
-                            message=message["message"],
-                            extensions=message.get("extensions", None),
-                        )
-                        for message in error_payload
-                    ],
-                )
+                yield ExecutionResult(data=None, errors=process_errors(error_payload))
                 return  # an error message is the last message for a subscription
             else:
                 return
+
+
+def process_errors(errors: List[GraphQLFormattedError]) -> List[GraphQLError]:
+    return [
+        GraphQLError(
+            message=error["message"],
+            extensions=error.get("extensions", None),
+        )
+        for error in errors
+    ]
