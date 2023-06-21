@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.187.4 - 2023-06-21
+--------------------
+
+`graphql-transport-ws` handler now uses a single dict to manage active operations.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2699](https://github.com/strawberry-graphql/strawberry/pull/2699/)
+
+
 0.187.3 - 2023-06-21
 --------------------
 
