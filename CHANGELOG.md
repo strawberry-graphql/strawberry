@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.187.1 - 2023-06-21
+--------------------
+
+This release bumps the minimum requirement of
+`typing-extensions` to 4.5
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2872](https://github.com/strawberry-graphql/strawberry/pull/2872/)
+
+
 0.187.0 - 2023-06-20
 --------------------
 
