@@ -13,7 +13,7 @@ import strawberry
 from strawberry.scalars import JSON
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema_directive import Location
-from strawberry.type import get_object_definition_strict
+from strawberry.type import get_object_definition
 
 DEFINITION_BACKREF = GraphQLCoreConverter.DEFINITION_BACKREF
 
@@ -38,8 +38,10 @@ def test_extensions_schema_directive():
     #        but aren't added to graphql_schema.directives
     # maybe graphql_schema_directive = graphql_schema.get_directive("schemaDirective")
 
+    directives = get_object_definition(Query, strict=True).directives
+    assert directives is not None
     graphql_schema_directive = schema.schema_converter.from_schema_directive(
-        get_object_definition_strict(Query).directives[0]
+        directives[0]
     )
     assert (
         graphql_schema_directive.extensions[DEFINITION_BACKREF]
