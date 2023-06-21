@@ -69,7 +69,7 @@ def test_pyright():
         ),
         Result(
             type="information",
-            message='Type of "User" is "Type[User]"',
+            message='Type of "User" is "type[User]"',
             line=29,
             column=13,
         ),
@@ -82,7 +82,7 @@ def test_pyright():
         ),
         Result(
             type="information",
-            message='Type of "UserInput" is "Type[UserInput]"',
+            message='Type of "UserInput" is "type[UserInput]"',
             line=32,
             column=13,
         ),
