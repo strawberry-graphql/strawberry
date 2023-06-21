@@ -79,7 +79,7 @@ class StrawberryType(ABC):
 
 class StrawberryContainer(StrawberryType):
     def __init__(
-        self, of_type: Union[StrawberryType, Type[WithStrawberryObjectDefinition]]
+        self, of_type: Union[StrawberryType, Type[WithStrawberryObjectDefinition], type]
     ):
         self.of_type = of_type
 
