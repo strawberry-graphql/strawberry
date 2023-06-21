@@ -11,9 +11,9 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
+    overload,
 )
-from typing_extensions import Protocol
+from typing_extensions import Literal, Protocol
 
 from strawberry.utils.typing import is_concrete_generic
 
@@ -202,13 +202,30 @@ def has_object_definition(
     return False
 
 
+@overload
 def get_object_definition(
     obj: Any,
+    *,
+    strict: Literal[True],
+) -> StrawberryObjectDefinition:
+    ...
+
+
+@overload
+def get_object_definition(
+    obj: Any,
+    *,
+    strict: bool = False,
 ) -> Optional[StrawberryObjectDefinition]:
-    if has_object_definition(obj):
-        return obj.__strawberry_definition__
-    return None
+    ...
 
 
-def get_object_definition_strict(obj: Any) -> StrawberryObjectDefinition:
-    return cast(WithStrawberryObjectDefinition, obj).__strawberry_definition__
+def get_object_definition(
+    obj: Any,
+    *,
+    strict: bool = False,
+) -> Optional[StrawberryObjectDefinition]:
+    definition = obj.__strawberry_definition__ if has_object_definition(obj) else None
+    if strict and definition is None:
+        raise TypeError(f"{obj!r} does not have a StrawberryObjectDefinition")
+    return definition

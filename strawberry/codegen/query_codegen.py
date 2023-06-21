@@ -47,7 +47,7 @@ from strawberry.type import (
     StrawberryList,
     StrawberryOptional,
     StrawberryType,
-    get_object_definition_strict,
+    get_object_definition,
     has_object_definition,
 )
 from strawberry.types.types import StrawberryObjectDefinition
@@ -629,7 +629,7 @@ class QueryCodegen:
                 selection, parent_type, class_name
             )
         else:
-            parent_type = get_object_definition_strict(selected_field_type)
+            parent_type = get_object_definition(selected_field_type, strict=True)
             field_type = self._collect_types(selection, parent_type, class_name)
 
         if wrapper:
