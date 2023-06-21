@@ -50,6 +50,20 @@ def test_annotation_hash(type1: Union[object, str], type2: Union[object, str]):
     ), "Equal type must imply equal hash"
 
 
+def test_eq_on_other_type():
+    class Foo:
+        def __eq__(self, other):
+            # Anything that is a strawberry annotation is equal to Foo
+            return isinstance(other, StrawberryAnnotation)
+
+    assert Foo() != object()
+    assert object() != Foo()
+    assert Foo() != 123 != Foo()
+    assert 123 != Foo()
+    assert Foo() == StrawberryAnnotation(int)
+    assert StrawberryAnnotation(int) == Foo()
+
+
 def test_eq_on_non_annotation():
-    with pytest.raises(NotImplementedError):
-        StrawberryAnnotation(int) == 2  # noqa: B015
+    assert StrawberryAnnotation(int) != int
+    assert StrawberryAnnotation(int) != 123
