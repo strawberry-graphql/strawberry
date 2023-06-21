@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.187.3 - 2023-06-21
+--------------------
+
+This release fixes a typing regression on `StraberryContainer` subclasses
+where type checkers would not allow non `WithStrawberryObjectDefinition` types
+to be passed for its `of_type` argument (e.g. `StrawberryOptional(str)`)
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2878](https://github.com/strawberry-graphql/strawberry/pull/2878/)
+
+
 0.187.2 - 2023-06-21
 --------------------
 
