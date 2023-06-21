@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.187.2 - 2023-06-21
+--------------------
+
+This release removes `get_object_definition_strict` and instead
+overloads `get_object_definition` to accept an extra `strct` keyword.
+
+This is a new feature so it is unlikely to break anything.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2877](https://github.com/strawberry-graphql/strawberry/pull/2877/)
+
+
 0.187.1 - 2023-06-21
 --------------------
 
