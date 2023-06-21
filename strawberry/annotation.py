@@ -62,10 +62,7 @@ class StrawberryAnnotation:
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, StrawberryAnnotation):
-            raise NotImplementedError(
-                f"Comparing {StrawberryAnnotation.__name__} "
-                f"with {type(other)} is not supported."
-            )
+            return NotImplemented
 
         return self.resolve() == other.resolve()
 
