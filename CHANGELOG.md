@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.189.0 - 2023-06-22
+--------------------
+
+This release updates `create_type` to add support for all arguments
+that `strawberry.type` supports. This includes: `description`, `extend`,
+`directives`, `is_input` and `is_interface`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2880](https://github.com/strawberry-graphql/strawberry/pull/2880/)
+
+
 0.188.0 - 2023-06-22
 --------------------
 
