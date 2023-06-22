@@ -35,7 +35,7 @@ def test_pyright():
     assert results == [
         Result(
             type="information",
-            message='Type of "UserOrError" is "Type[User] | Type[Error]"',
+            message='Type of "UserOrError" is "type[User] | type[Error]"',
             line=19,
             column=13,
         ),
