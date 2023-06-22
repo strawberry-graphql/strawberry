@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.188.0 - 2023-06-22
+--------------------
+
+This release gives codegen clients the ability to inquire about the `__typename`
+of a `GraphQLObjectType`.  This information can be used to automatically select
+the proper type to hydrate when working with a union type in the response.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2875](https://github.com/strawberry-graphql/strawberry/pull/2875/)
+
+
 0.187.5 - 2023-06-21
 --------------------
 
