@@ -208,21 +208,25 @@ class StrawberryAnnotation:
 
         return union
 
-    def validate_union_members(self, types: Tuple, union: StrawberryUnion) -> None:
+    def validate_union_members(
+        self, types: Tuple[type], union: StrawberryUnion
+    ) -> None:
         scalars = (int, str, float)
+
         for type_ in types:
             # Handle case: x = Annotated[Union[X, Y], strawberry.union("X")]
             if get_origin(type_) is Annotated:
                 # Unwrap annotated type into the proper type hints
                 # and our strawberry type metadata
-                inner_type, *sw_metadata = get_args(type_)
+                inner_type, *_ = get_args(type_)
                 union_members = get_args(inner_type)
+
                 for member in union_members:
                     if isinstance(member, scalars):
-                        raise InvalidUnionTypeError(union.graphql_name, member)
+                        raise InvalidUnionTypeError(str(member), member)
 
             elif type_ in scalars:
-                raise InvalidUnionTypeError(union.graphql_name, type_)
+                raise InvalidUnionTypeError(str(type_), type_)
 
     @classmethod
     def _is_async_type(cls, annotation: type) -> bool:
