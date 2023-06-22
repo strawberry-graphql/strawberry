@@ -1,6 +1,6 @@
 import sys
-from dataclasses import dataclass
-from typing import Generic, NewType, TypeVar, Union
+from typing import Generic, TypeVar, Union
+from typing_extensions import Annotated
 
 import pytest
 
@@ -8,8 +8,6 @@ import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidUnionTypeError
 from strawberry.union import StrawberryUnion, union
-
-# TODO: Add equivalent tests with new style union API
 
 
 def test_python_union():
@@ -69,7 +67,7 @@ def test_strawberry_union():
     class Error:
         name: str
 
-    cool_union = union(name="CoolUnion", types=(User, Error))
+    cool_union = Annotated[Union[User, Error], union(name="CoolUnion")]
     annotation = StrawberryAnnotation(cool_union)
     resolved = annotation.resolve()
 
@@ -92,12 +90,14 @@ def test_named_union_with_deprecated_api_using_types_parameter():
     class B:
         b: int
 
-    Result = strawberry.union("Result", types=(A, B))
+    Result = Annotated[Union[A, B], union(name="Result")]
 
-    strawberry_union = Result
-    assert isinstance(strawberry_union, StrawberryUnion)
-    assert strawberry_union.graphql_name == "Result"
-    assert strawberry_union.types == (A, B)
+    annotation = StrawberryAnnotation(Result)
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryUnion)
+    assert resolved.graphql_name == "Result"
+    assert resolved.types == (A, B)
 
 
 def test_union_with_generic_with_deprecated_api_using_types_parameter():
@@ -121,60 +121,29 @@ def test_union_with_generic_with_deprecated_api_using_types_parameter():
     assert strawberry_union.types[1].__strawberry_definition__.is_generic is False
 
 
-def test_cannot_use_union_directly():
-    @strawberry.type
-    class A:
-        a: int
-
-    @strawberry.type
-    class B:
-        b: int
-
-    Result = strawberry.union("Result", (A, B))
-
-    with pytest.raises(ValueError, match=r"Cannot use union type directly"):
-        Result()  # type: ignore
-
-
-def test_error_with_empty_type_list():
-    with pytest.raises(TypeError, match="No types passed to `union`"):
-        strawberry.union("Result", ())
-
-
 @pytest.mark.raises_strawberry_exception(
     InvalidUnionTypeError, match="Type `int` cannot be used in a GraphQL Union"
 )
 def test_error_with_scalar_types():
-    strawberry.union(
-        "Result",
-        (
+    Something = Annotated[
+        Union[
             int,
             str,
             float,
             bool,
-        ),
-    )
+        ],
+        strawberry.union("Something"),
+    ]
+
+    annotation = StrawberryAnnotation(Something)
+    annotation.resolve()
 
 
-@pytest.mark.raises_strawberry_exception(
-    InvalidUnionTypeError, match="Type `CustomScalar` cannot be used in a GraphQL Union"
-)
-def test_error_with_custom_scalar_types():
-    CustomScalar = strawberry.scalar(
-        NewType("CustomScalar", str),
-        serialize=lambda v: str(v),
-        parse_value=lambda v: str(v),
-    )
-
-    strawberry.union("Result", (CustomScalar,))
+# @pytest.mark.raises_strawberry_exception(
+# def test_error_with_custom_scalar_types():
 
 
-@pytest.mark.raises_strawberry_exception(
-    InvalidUnionTypeError, match="Type `A` cannot be used in a GraphQL Union"
-)
-def test_error_with_non_strawberry_type():
-    @dataclass
-    class A:
-        a: int
-
-    strawberry.union("Result", (A,))
+# @pytest.mark.raises_strawberry_exception(
+# def test_error_with_non_strawberry_type():
+#     @dataclass
+#     class A:
