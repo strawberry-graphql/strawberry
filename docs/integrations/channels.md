@@ -136,13 +136,15 @@ class Subscription:
                 },
             )
 
-        async for message in ws.channel_listen("chat.message", groups=room_ids):
-            if message["room_id"] in room_ids:
-                yield ChatRoomMessage(
-                    room_name=message["room_id"],
-                    message=message["message"],
-                    current_user=user,
-                )
+        async with ws.channel_listen("chat.message", groups=room_ids) as cm:
+            # Optionally: Confirm subscription with `yield None`
+            async for message in cm:
+                if message["room_id"] in room_ids:
+                    yield ChatRoomMessage(
+                        room_name=message["room_id"],
+                        message=message["message"],
+                        current_user=user,
+                    )
 ```
 
 Explanation: `Info.context["ws"]` or `Info.context["request"]` is a pointer to the
@@ -153,7 +155,8 @@ message to all the channel_layer groups (specified in the subscription argument
 <Note>
 
 The `ChannelsConsumer` instance is shared between all subscriptions created in
-a single websocket connection. The `ws.channel_listen` function will yield all
+a single websocket connection. The `ws.channel_listen` context manager will return
+a function to yield all
 messages sent using the given message `type` (`chat.message` in the above example)
 but does not ensure that the message was sent to the same group or groups that
 it was called with - if another subscription using the same `ChannelsConsumer`
@@ -626,7 +629,7 @@ async def channel_listen(
     *,
     timeout: float | None = None,
     groups: Sequence[str] | None = None
-):  # AsyncGenerator
+) -> Awaitable[AsyncGenerator[Any, None]]:
     ...
 ```
 
