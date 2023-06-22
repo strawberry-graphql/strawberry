@@ -14,7 +14,15 @@ server. All tools can be imported from `strawberry.tools`
 Create a Strawberry type from a list of fields.
 
 ```python
-def create_type(name: str, fields: List[StrawberryField]) -> Type:
+def create_type(
+    name: str,
+    fields: List[StrawberryField],
+    is_input: bool = False,
+    is_interface: bool = False,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+    extend: bool = False,
+) -> Type:
     ...
 ```
 

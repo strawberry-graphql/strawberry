@@ -47,6 +47,35 @@ def test_query_node():
     }
 
 
+async def test_query_node_with_async_permissions():
+    result = await schema.execute(
+        """
+        query TestQuery ($id: GlobalID!) {
+            nodeWithAsyncPermissions (id: $id) {
+                ... on Node {
+                    id
+                }
+                ... on Fruit {
+                    name
+                    color
+                }
+            }
+        }
+        """,
+        variable_values={
+            "id": to_base64("Fruit", 2),
+        },
+    )
+    assert result.errors is None
+    assert result.data == {
+        "nodeWithAsyncPermissions": {
+            "id": to_base64("Fruit", 2),
+            "color": "red",
+            "name": "Apple",
+        },
+    }
+
+
 def test_query_node_optional():
     result = schema.execute_sync(
         """

@@ -112,7 +112,12 @@ class Query:
 
 @strawberry.input
 class BlogPostInput:
-    title: str
+    title: str = "I replaced my doorbell.  You wouldn't believe what happened next!"
+    color: Color = Color.RED
+    pi: float = 3.14159
+    a_bool: bool = True
+    an_int: int = 42
+    an_optional_int: Optional[int] = None
 
 
 @strawberry.input

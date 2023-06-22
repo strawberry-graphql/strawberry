@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.186.0"
+version = "0.189.0"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -36,7 +36,7 @@ build-backend = "poetry.masonry.api"
 [tool.poetry.dependencies]
 python = "^3.7"
 graphql-core = "~3.2.0"
-typing_extensions = ">=4.1.0"
+typing-extensions = ">=4.5.0"
 python-dateutil = "^2.7.0"
 starlette = {version = ">=0.18.0", optional = true}
 typer = {version = ">=0.7.0", optional = true}
