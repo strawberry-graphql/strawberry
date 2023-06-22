@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import sys
 import warnings
 from itertools import chain
 from typing import (
@@ -29,6 +30,7 @@ from strawberry.exceptions import (
     UnallowedReturnTypeForUnion,
     WrongReturnTypeForUnion,
 )
+from strawberry.exceptions.handler import should_use_rich_exceptions
 from strawberry.lazy_type import LazyType
 from strawberry.type import (
     StrawberryOptional,
@@ -54,11 +56,16 @@ class StrawberryUnion(StrawberryType):
         type_annotations: Tuple[StrawberryAnnotation, ...] = tuple(),
         description: Optional[str] = None,
         directives: Iterable[object] = (),
+        # used for better error messages
+        _source_file: Optional[str] = None,
+        _source_line: Optional[int] = None,
     ):
         self.graphql_name = name
         self.type_annotations = type_annotations
         self.description = description
         self.directives = directives
+        self._source_file = _source_file
+        self._source_line = _source_line
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryType):
@@ -76,13 +83,13 @@ class StrawberryUnion(StrawberryType):
         return hash((self.graphql_name, self.type_annotations, self.description))
 
     def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
+        # TODO: this will be removed in future versions, you should
+        # use Annotated[Union[...], strawberry.union(...)] instead
+
         if other is None:
             # Return the correct notation when using `StrawberryUnion | None`.
             return StrawberryOptional(of_type=self)
 
-        # Raise an error in any other case.
-        # There is Work in progress to deal with more merging cases, see:
-        # https://github.com/strawberry-graphql/strawberry/pull/1455
         raise InvalidTypeForUnionMergeError(self, other)
 
     @property
@@ -251,8 +258,21 @@ def union(
     """
 
     if types is None:
+        _source_file = None
+        _source_line = None
+
+        if should_use_rich_exceptions():
+            frame = sys._getframe(3)
+
+            _source_file = frame.f_code.co_filename
+            _source_line = frame.f_lineno
+
         return StrawberryUnion(
-            name=name, description=description, directives=directives
+            name=name,
+            description=description,
+            directives=directives,
+            _source_file=_source_file,
+            _source_line=_source_line,
         )
 
     warnings.warn(

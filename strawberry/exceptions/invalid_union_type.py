@@ -20,11 +20,17 @@ class InvalidUnionTypeError(StrawberryException):
 
     invalid_type: object
 
-    def __init__(self, union_name: str, invalid_type: object) -> None:
+    def __init__(
+        self,
+        union_name: str,
+        invalid_type: object,
+        union_definition: Optional[StrawberryUnion] = None,
+    ) -> None:
         from strawberry.custom_scalar import ScalarWrapper
 
         self.union_name = union_name
         self.invalid_type = invalid_type
+        self.union_definition = union_definition
 
         # assuming that the exception happens two stack frames above the current one.
         # one is our code checking for invalid types, the other is the caller
@@ -50,6 +56,13 @@ class InvalidUnionTypeError(StrawberryException):
 
     @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
+        if self.union_definition and self.union_definition._source_file:
+            ...
+            # TODO: implement this
+
+        if not self.frame:
+            return None
+
         path = Path(self.frame.filename)
 
         source_finder = SourceFinder()
