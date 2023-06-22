@@ -141,7 +141,7 @@ def test_create_mutation_type():
         return User(username=username)
 
     Mutation = create_type("Mutation", [make_user])
-    definition = Mutation.__strawberry_definition__
+    definition = get_object_definition(Mutation, strict=True)
 
     assert len(definition.fields) == 1
 
@@ -160,7 +160,7 @@ def test_create_mutation_type_with_params():
         return User(username=username)
 
     Mutation = create_type("Mutation", [make_user])
-    definition = Mutation.__strawberry_definition__
+    definition = get_object_definition(Mutation, strict=True)
 
     assert len(definition.fields) == 1
 
