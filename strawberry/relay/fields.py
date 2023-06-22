@@ -72,6 +72,16 @@ class NodeExtension(FieldExtension):
     ) -> Any:
         return next_(source, info, **kwargs)
 
+    async def resolve_async(
+        self, next_: SyncExtensionResolver, source: Any, info: Info, **kwargs: Any
+    ) -> Any:
+        retval = next_(source, info, **kwargs)
+        # If the resolve_nodes method is not async, retval will not actually
+        # be awaitable. We still need the `resolve_async` in here because
+        # otherwise this extension can't be used together with other
+        # async extensions.
+        return await retval if inspect.isawaitable(retval) else retval
+
     def get_node_resolver(self, field: StrawberryField):  # noqa: ANN201
         type_ = field.type
         is_optional = isinstance(type_, StrawberryOptional)
@@ -219,7 +229,7 @@ class ConnectionExtension(FieldExtension):
             raise RelayWrongAnnotationError(field.name, cast(type, field.origin))
 
         assert field.base_resolver
-        # FIXME: We are not using resolver_type.type because it will call
+        # TODO: We are not using resolver_type.type because it will call
         # StrawberryAnnotation.resolve, which will strip async types from the
         # type (i.e. AsyncGenerator[Fruit] will become Fruit). This is done there
         # for subscription support, but we can't use it here. Maybe we can refactor

@@ -1,6 +1,134 @@
 CHANGELOG
 =========
 
+0.189.0 - 2023-06-22
+--------------------
+
+This release updates `create_type` to add support for all arguments
+that `strawberry.type` supports. This includes: `description`, `extend`,
+`directives`, `is_input` and `is_interface`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2880](https://github.com/strawberry-graphql/strawberry/pull/2880/)
+
+
+0.188.0 - 2023-06-22
+--------------------
+
+This release gives codegen clients the ability to inquire about the `__typename`
+of a `GraphQLObjectType`.  This information can be used to automatically select
+the proper type to hydrate when working with a union type in the response.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2875](https://github.com/strawberry-graphql/strawberry/pull/2875/)
+
+
+0.187.5 - 2023-06-21
+--------------------
+
+This release fixes a regression when comparing a `StrawberryAnnotation`
+instance with anything that is not also a `StrawberryAnnotation` instance,
+which caused it to raise a `NotImplementedError`.
+
+This reverts its behavior back to how it worked before, where it returns
+`NotImplemented` instead, meaning that the comparison can be delegated to
+the type being compared against or return `False` in case it doesn't define
+an `__eq__` method.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2879](https://github.com/strawberry-graphql/strawberry/pull/2879/)
+
+
+0.187.4 - 2023-06-21
+--------------------
+
+`graphql-transport-ws` handler now uses a single dict to manage active operations.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2699](https://github.com/strawberry-graphql/strawberry/pull/2699/)
+
+
+0.187.3 - 2023-06-21
+--------------------
+
+This release fixes a typing regression on `StraberryContainer` subclasses
+where type checkers would not allow non `WithStrawberryObjectDefinition` types
+to be passed for its `of_type` argument (e.g. `StrawberryOptional(str)`)
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2878](https://github.com/strawberry-graphql/strawberry/pull/2878/)
+
+
+0.187.2 - 2023-06-21
+--------------------
+
+This release removes `get_object_definition_strict` and instead
+overloads `get_object_definition` to accept an extra `strct` keyword.
+
+This is a new feature so it is unlikely to break anything.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2877](https://github.com/strawberry-graphql/strawberry/pull/2877/)
+
+
+0.187.1 - 2023-06-21
+--------------------
+
+This release bumps the minimum requirement of
+`typing-extensions` to 4.5
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2872](https://github.com/strawberry-graphql/strawberry/pull/2872/)
+
+
+0.187.0 - 2023-06-20
+--------------------
+
+This release renames `_type_definition` to `__strawberry_definition__`. This doesn't change the public API of Strawberry, but if you were using `_type_definition` you can still access it, but it will be removed in future.
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #2836](https://github.com/strawberry-graphql/strawberry/pull/2836/)
+
+
+0.186.3 - 2023-06-20
+--------------------
+
+This release adds resolve_async to NodeExtension to allow it to
+be used together with other field async extensions/permissions.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2863](https://github.com/strawberry-graphql/strawberry/pull/2863/)
+
+
+0.186.2 - 2023-06-19
+--------------------
+
+This release fixes an issue on StrawberryField.copy_with method
+not copying its extensions and overwritten `_arguments`.
+
+Also make sure that all lists/tuples in those types are copied as
+new lists/tuples to avoid unexpected behavior.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2865](https://github.com/strawberry-graphql/strawberry/pull/2865/)
+
+
+0.186.1 - 2023-06-16
+--------------------
+
+In this release, we pass the default values from the strawberry.Schema through to the codegen plugins.
+The default python plugin now adds these default values to the objects it generates.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2860](https://github.com/strawberry-graphql/strawberry/pull/2860/)
+
+
+0.186.0 - 2023-06-15
+--------------------
+
+This release removes more parts of the Mypy plugin, since they are
+not needed anymore.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2852](https://github.com/strawberry-graphql/strawberry/pull/2852/)
+
+
+0.185.2 - 2023-06-15
+--------------------
+
+This release fixes a bug causing a KeyError exception to be thrown during subscription cleanup.
+
+Contributed by [rjwills28](https://github.com/rjwills28) via [PR #2794](https://github.com/strawberry-graphql/strawberry/pull/2794/)
+
+
 0.185.1 - 2023-06-14
 --------------------
 

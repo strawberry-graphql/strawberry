@@ -56,7 +56,7 @@ def test_can_use_enum_as_arguments():
         def flavour_available(self, flavour: IceCreamFlavour) -> bool:
             return flavour == IceCreamFlavour.STRAWBERRY
 
-    field = Query._type_definition.fields[0]
+    field = Query.__strawberry_definition__.fields[0]
 
     assert isinstance(field.arguments[0].type, EnumDefinition)
 

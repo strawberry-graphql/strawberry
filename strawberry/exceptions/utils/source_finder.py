@@ -31,7 +31,7 @@ class LibCSTSourceFinder:
         self.cst = importlib.import_module("libcst")
 
     def find_source(self, module: str) -> Optional[SourcePath]:
-        # todo: support for pyodide
+        # TODO: support for pyodide
 
         source_module = sys.modules.get(module)
 

@@ -51,8 +51,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         self.connection_init_received = False
         self.connection_acknowledged = False
         self.connection_timed_out = False
-        self.subscriptions: Dict[str, AsyncGenerator] = {}
-        self.tasks: Dict[str, asyncio.Task] = {}
+        self.operations: Dict[str, Operation] = {}
         self.completed_tasks: List[asyncio.Task] = []
         self.connection_params: Optional[Dict[str, Any]] = None
 
@@ -85,7 +84,7 @@ class BaseGraphQLTransportWSHandler(ABC):
             with suppress(asyncio.CancelledError):
                 await self.connection_init_timeout_task
 
-        for operation_id in list(self.subscriptions.keys()):
+        for operation_id in list(self.operations.keys()):
             await self.cleanup_operation(operation_id)
         await self.reap_completed_tasks()
 
@@ -207,7 +206,7 @@ class BaseGraphQLTransportWSHandler(ABC):
             await self.close(code=4400, reason="Can't get GraphQL operation type")
             return
 
-        if message.id in self.subscriptions:
+        if message.id in self.operations:
             reason = f"Subscriber for {message.id} already exists"
             await self.close(code=4409, reason=reason)
             return
@@ -257,10 +256,10 @@ class BaseGraphQLTransportWSHandler(ABC):
             return
 
         # Create task to handle this subscription, reserve the operation ID
-        self.subscriptions[message.id] = result_source
-        self.tasks[message.id] = asyncio.create_task(
+        operation.task = asyncio.create_task(
             self.operation_task(result_source, operation)
         )
+        self.operations[message.id] = operation
 
     async def operation_task(
         self, result_source: AsyncGenerator, operation: Operation
@@ -276,12 +275,10 @@ class BaseGraphQLTransportWSHandler(ABC):
             # cleanup in case of something really unexpected
             # wait for generator to be closed to ensure that any existing
             # 'finally' statement is called
-            result_source = self.subscriptions[operation.id]
             with suppress(RuntimeError):
                 await result_source.aclose()
-            if operation.id in self.subscriptions:
-                del self.subscriptions[operation.id]
-                del self.tasks[operation.id]
+            if operation.id in self.operations:
+                del self.operations[operation.id]
             raise
         else:
             await operation.send_message(CompleteMessage(id=operation.id))
@@ -324,8 +321,7 @@ class BaseGraphQLTransportWSHandler(ABC):
     def forget_id(self, id: str) -> None:
         # de-register the operation id making it immediately available
         # for re-use
-        del self.subscriptions[id]
-        del self.tasks[id]
+        del self.operations[id]
 
     async def handle_complete(self, message: CompleteMessage) -> None:
         await self.cleanup_operation(operation_id=message.id)
@@ -338,11 +334,11 @@ class BaseGraphQLTransportWSHandler(ABC):
         await self.send_json(data)
 
     async def cleanup_operation(self, operation_id: str) -> None:
-        if operation_id not in self.subscriptions:
+        if operation_id not in self.operations:
             return
-        result_source = self.subscriptions.pop(operation_id)
-        task = self.tasks.pop(operation_id)
-        task.cancel()
+        operation = self.operations.pop(operation_id)
+        assert operation.task
+        operation.task.cancel()
         # do not await the task here, lest we block the main
         # websocket handler Task.
 
@@ -362,12 +358,13 @@ class Operation:
     Helps enforce protocol state transition.
     """
 
-    __slots__ = ["handler", "id", "completed"]
+    __slots__ = ["handler", "id", "completed", "task"]
 
     def __init__(self, handler: BaseGraphQLTransportWSHandler, id: str):
         self.handler = handler
         self.id = id
         self.completed = False
+        self.task: Optional[asyncio.Task] = None
 
     async def send_message(self, message: GraphQLTransportMessage) -> None:
         if self.completed:

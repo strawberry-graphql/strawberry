@@ -74,7 +74,6 @@ if TYPE_CHECKING:
         CheckerPluginInterface,
         ClassDefContext,
         DynamicClassDefContext,
-        FunctionContext,
     )
     from mypy.types import Type
 
@@ -91,7 +90,7 @@ class MypyVersion:
 
 class InvalidNodeTypeException(Exception):
     def __init__(self, node: Any) -> None:
-        self.message = f"Invalid node type: {str(node)}"
+        self.message = f"Invalid node type: {node!s}"
 
         super().__init__()
 
@@ -109,13 +108,6 @@ def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
     type_ = ctx.api.analyze_type(type_name)
 
     return type_
-
-
-def strawberry_field_hook(ctx: FunctionContext) -> Type:
-    # TODO: check when used as decorator, check type of the caller
-    # TODO: check type of resolver if any
-
-    return AnyType(TypeOfAny.special_form)
 
 
 def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface):
@@ -501,14 +493,6 @@ class StrawberryPlugin(Plugin):
 
         return None
 
-    def get_function_hook(
-        self, fullname: str
-    ) -> Optional[Callable[[FunctionContext], Type]]:
-        if self._is_strawberry_field(fullname):
-            return strawberry_field_hook
-
-        return None
-
     def get_type_analyze_hook(self, fullname: str) -> Union[Callable[..., Type], None]:
         if self._is_strawberry_lazy_type(fullname):
             return lazy_type_analyze_callback
@@ -528,23 +512,6 @@ class StrawberryPlugin(Plugin):
             "strawberry.union"
         )
 
-    def _is_strawberry_field(self, fullname: str) -> bool:
-        if fullname in {
-            "strawberry.field.field",
-            "strawberry.mutation.mutation",
-            "strawberry.federation.field",
-        }:
-            return True
-
-        return any(
-            fullname.endswith(decorator)
-            for decorator in {
-                "strawberry.field",
-                "strawberry.mutation",
-                "strawberry.federation.field",
-            }
-        )
-
     def _is_strawberry_enum(self, fullname: str) -> bool:
         return fullname == "strawberry.enum.enum" or fullname.endswith(
             "strawberry.enum"
@@ -557,42 +524,6 @@ class StrawberryPlugin(Plugin):
 
     def _is_strawberry_lazy_type(self, fullname: str) -> bool:
         return fullname == "strawberry.lazy_type.LazyType"
-
-    def _is_strawberry_decorator(self, fullname: str) -> bool:
-        if any(
-            strawberry_decorator in fullname
-            for strawberry_decorator in {
-                "strawberry.object_type.type",
-                "strawberry.federation.type",
-                "strawberry.federation.object_type.type",
-                "strawberry.federation.input",
-                "strawberry.federation.object_type.input",
-                "strawberry.federation.interface",
-                "strawberry.federation.object_type.interface",
-                "strawberry.schema_directive.schema_directive",
-                "strawberry.federation.schema_directive",
-                "strawberry.federation.schema_directive.schema_directive",
-                "strawberry.object_type.input",
-                "strawberry.object_type.interface",
-            }
-        ):
-            return True
-
-        # in some cases `fullpath` is not what we would expect, this usually
-        # happens when `follow_imports` are disabled in mypy when you get a path
-        # that looks likes `some_module.types.strawberry.type`
-
-        return any(
-            fullname.endswith(decorator)
-            for decorator in {
-                "strawberry.type",
-                "strawberry.federation.type",
-                "strawberry.input",
-                "strawberry.interface",
-                "strawberry.schema_directive",
-                "strawberry.federation.schema_directive",
-            }
-        )
 
     def _is_strawberry_create_type(self, fullname: str) -> bool:
         # using endswith(.create_type) is not ideal as there might be
@@ -608,12 +539,12 @@ class StrawberryPlugin(Plugin):
     def _is_strawberry_pydantic_decorator(self, fullname: str) -> bool:
         if any(
             strawberry_decorator in fullname
-            for strawberry_decorator in {
+            for strawberry_decorator in (
                 "strawberry.experimental.pydantic.object_type.type",
                 "strawberry.experimental.pydantic.object_type.input",
                 "strawberry.experimental.pydantic.object_type.interface",
                 "strawberry.experimental.pydantic.error_type",
-            }
+            )
         ):
             return True
 
@@ -623,11 +554,11 @@ class StrawberryPlugin(Plugin):
 
         return any(
             fullname.endswith(decorator)
-            for decorator in {
+            for decorator in (
                 "strawberry.experimental.pydantic.type",
                 "strawberry.experimental.pydantic.input",
                 "strawberry.experimental.pydantic.error_type",
-            }
+            )
         )
 
 

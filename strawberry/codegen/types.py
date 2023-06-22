@@ -29,6 +29,7 @@ class GraphQLField:
     name: str
     alias: Optional[str]
     type: GraphQLType
+    default_value: Optional[GraphQLArgumentValue] = None
 
 
 @dataclass
@@ -40,6 +41,7 @@ class GraphQLFragmentSpread:
 class GraphQLObjectType:
     name: str
     fields: List[GraphQLField] = field(default_factory=list)
+    graphql_typename: Optional[str] = None
 
 
 # Subtype of GraphQLObjectType.
@@ -49,6 +51,7 @@ class GraphQLObjectType:
 class GraphQLFragmentType(GraphQLObjectType):
     name: str
     fields: List[GraphQLField] = field(default_factory=list)
+    graphql_typename: Optional[str] = None
     on: str = ""
 
     def __post_init__(self) -> None:
@@ -112,13 +115,26 @@ class GraphQLIntValue:
 
 
 @dataclass
+class GraphQLFloatValue:
+    value: float
+
+
+@dataclass
 class GraphQLEnumValue:
     name: str
+    enum_type: Optional[str] = None
 
 
 @dataclass
 class GraphQLBoolValue:
     value: bool
+
+
+@dataclass
+class GraphQLNullValue:
+    """A class that represents a GraphQLNull value."""
+
+    value: None = None
 
 
 @dataclass
@@ -138,8 +154,10 @@ class GraphQLVariableReference:
 
 GraphQLArgumentValue = Union[
     GraphQLStringValue,
+    GraphQLNullValue,
     GraphQLIntValue,
     GraphQLVariableReference,
+    GraphQLFloatValue,
     GraphQLListValue,
     GraphQLEnumValue,
     GraphQLBoolValue,

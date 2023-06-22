@@ -13,7 +13,7 @@ def test_field_name_standard_on_schema():
     class Query:
         normal_field: int
 
-    [field] = Query._type_definition.fields
+    [field] = Query.__strawberry_definition__.fields
 
     assert field.python_name == "normal_field"
     assert field.graphql_name is None
@@ -35,7 +35,7 @@ def test_field_name_override_with_schema():
     class Query:
         override_field: bool = strawberry.field(name=field_name)
 
-    [field] = Query._type_definition.fields
+    [field] = Query.__strawberry_definition__.fields
 
     assert field.python_name == "override_field"
     assert field.graphql_name == field_name

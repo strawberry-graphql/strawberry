@@ -18,7 +18,11 @@ from typing_extensions import Annotated, get_args, get_origin
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType, StrawberryLazyReference
-from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.type import (
+    StrawberryList,
+    StrawberryOptional,
+    has_object_definition,
+)
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
@@ -30,7 +34,6 @@ if TYPE_CHECKING:
     from strawberry.schema.config import StrawberryConfig
     from strawberry.type import StrawberryType
 
-    from .types.types import TypeDefinition
 
 DEPRECATED_NAMES: Dict[str, str] = {
     "UNSET": (
@@ -171,12 +174,10 @@ def convert_argument(
         enum_definition: EnumDefinition = type_._enum_definition
         return convert_argument(value, enum_definition, scalar_registry, config)
 
-    if hasattr(type_, "_type_definition"):  # TODO: Replace with StrawberryInputObject
-        type_definition: TypeDefinition = type_._type_definition
-
+    if has_object_definition(type_):
         kwargs = {}
 
-        for field in type_definition.fields:
+        for field in type_.__strawberry_definition__.fields:
             value = cast(Mapping, value)
             graphql_name = config.name_converter.from_field(field)
 

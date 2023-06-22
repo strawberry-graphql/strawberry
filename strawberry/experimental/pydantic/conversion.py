@@ -5,7 +5,11 @@ import dataclasses
 from typing import TYPE_CHECKING, Any, Type, Union, cast
 
 from strawberry.enum import EnumDefinition
-from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.type import (
+    StrawberryList,
+    StrawberryOptional,
+    has_object_definition,
+)
 from strawberry.union import StrawberryUnion
 
 if TYPE_CHECKING:
@@ -49,7 +53,7 @@ def _convert_from_pydantic_to_strawberry_type(
 
         return items
 
-    if hasattr(type_, "_type_definition"):
+    if has_object_definition(type_):
         # in the case of an interface, the concrete type may be more specific
         # than the type in the field definition
         # don't check _strawberry_input_type because inputs can't be interfaces
@@ -70,7 +74,7 @@ def convert_pydantic_model_to_strawberry_class(
     extra = extra or {}
     kwargs = {}
 
-    for field_ in cls._type_definition.fields:
+    for field_ in cls.__strawberry_definition__.fields:
         field = cast("StrawberryField", field_)
         python_name = field.python_name
 

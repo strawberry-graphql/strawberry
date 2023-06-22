@@ -20,7 +20,7 @@ def test_a():
     class Query:
         a_list: List[a_mod.AObject]
 
-    [field] = Query._type_definition.fields
+    [field] = Query.__strawberry_definition__.fields
     assert field.type == List[a_mod.AObject]
 
 
@@ -29,7 +29,7 @@ def test_a_resolver():
     class Query:
         a_list: List[a_mod.AObject] = strawberry.field(resolver=a_mod.a_resolver)
 
-    [field] = Query._type_definition.fields
+    [field] = Query.__strawberry_definition__.fields
     assert field.type == List[a_mod.AObject]
 
 
@@ -38,7 +38,7 @@ def test_a_only_resolver():
     class Query:
         a_list = strawberry.field(resolver=a_mod.a_resolver)
 
-    [field] = Query._type_definition.fields
+    [field] = Query.__strawberry_definition__.fields
     assert field.type == List[a_mod.AObject]
 
 
@@ -47,7 +47,7 @@ def test_a_typeless_resolver():
     class Query:
         a_list: List[a_mod.AObject] = strawberry.field(resolver=x_mod.typeless_resolver)
 
-    [field] = Query._type_definition.fields
+    [field] = Query.__strawberry_definition__.fields
     assert field.type == List[a_mod.AObject]
 
 
@@ -57,7 +57,7 @@ def test_c_composition_by_name():
         b_field,
         a_method,
         b_method,
-    ] = c_mod.CCompositionByName._type_definition.fields
+    ] = c_mod.CCompositionByName.__strawberry_definition__.fields
     assert a_field.type == List[a_mod.AObject]
     assert b_field.type == List[b_mod.BObject]
     assert a_method.type == List[a_mod.AObject]
@@ -72,7 +72,7 @@ def test_c_inheritance():
         b_name,
         b_age,
         b_is_of_full_age,
-    ] = c_mod.CInheritance._type_definition.fields
+    ] = c_mod.CInheritance.__strawberry_definition__.fields
     assert a_name.origin == a_mod.ABase
     assert a_age.origin == a_mod.AObject
     assert a_is_of_full_age.origin == a_mod.AObject
@@ -88,7 +88,7 @@ def test_c_inheritance_resolver():
             resolver=c_mod.c_inheritance_resolver
         )
 
-    [field] = Query._type_definition.fields
+    [field] = Query.__strawberry_definition__.fields
     assert field.type == List[c_mod.CInheritance]
 
 
@@ -97,7 +97,7 @@ def test_c_inheritance_typeless_resolver():
     class Query:
         c: List[c_mod.CInheritance] = strawberry.field(resolver=x_mod.typeless_resolver)
 
-    [field] = Query._type_definition.fields
+    [field] = Query.__strawberry_definition__.fields
     assert field.type == List[c_mod.CInheritance]
 
 
@@ -106,7 +106,7 @@ def test_c_inheritance_resolver_only():
     class Query:
         c = strawberry.field(resolver=c_mod.c_inheritance_resolver)
 
-    [field] = Query._type_definition.fields
+    [field] = Query.__strawberry_definition__.fields
     assert field.type == List[c_mod.CInheritance]
 
 
@@ -117,15 +117,18 @@ def test_c_composition_resolver():
             resolver=c_mod.c_composition_resolver
         )
 
-    [field] = Query._type_definition.fields
+    [field] = Query.__strawberry_definition__.fields
     assert field.type == List[c_mod.CComposition]
-    [a_field, b_field] = field.type.of_type._type_definition.fields
+    [a_field, b_field] = field.type.of_type.__strawberry_definition__.fields
     assert a_field.type == List[a_mod.AObject]
     assert b_field.type == List[b_mod.BObject]
 
 
 def test_c_composition_by_name_with_resolvers():
-    [a_field, b_field] = c_mod.CCompositionByNameWithResolvers._type_definition.fields
+    [
+        a_field,
+        b_field,
+    ] = c_mod.CCompositionByNameWithResolvers.__strawberry_definition__.fields
     assert a_field.type == List[a_mod.AObject]
     assert b_field.type == List[b_mod.BObject]
 
@@ -134,13 +137,16 @@ def test_c_composition_by_name_with_typeless_resolvers():
     [
         a_field,
         b_field,
-    ] = c_mod.CCompositionByNameWithTypelessResolvers._type_definition.fields
+    ] = c_mod.CCompositionByNameWithTypelessResolvers.__strawberry_definition__.fields
     assert a_field.type == List[a_mod.AObject]
     assert b_field.type == List[b_mod.BObject]
 
 
 def test_c_composition_only_resolvers():
-    [a_field, b_field] = c_mod.CCompositionOnlyResolvers._type_definition.fields
+    [
+        a_field,
+        b_field,
+    ] = c_mod.CCompositionOnlyResolvers.__strawberry_definition__.fields
     assert a_field.type == List[a_mod.AObject]
     assert b_field.type == List[b_mod.BObject]
 
@@ -150,5 +156,5 @@ def test_x_resolver():
     class Query:
         c: List[a_mod.AObject] = strawberry.field(resolver=x_mod.typeless_resolver)
 
-    [c_field] = Query._type_definition.fields
+    [c_field] = Query.__strawberry_definition__.fields
     assert c_field.type == List[a_mod.AObject]
