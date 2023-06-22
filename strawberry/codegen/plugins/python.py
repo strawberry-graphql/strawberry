@@ -155,12 +155,17 @@ class PythonPlugin(QueryCodegenPlugin):
             if field.name != "__typename"
         )
 
-        return "\n".join(
-            [
-                f"class {type_.name}:",
-                textwrap.indent(fields, " " * 4),
-            ]
-        )
+        indent = 4 * " "
+        lines = [
+            f"class {type_.name}:",
+        ]
+        if type_.graphql_typename:
+            lines.append(
+                textwrap.indent(f"# typename: {type_.graphql_typename}", indent)
+            )
+        lines.append(textwrap.indent(fields, indent))
+
+        return "\n".join(lines)
 
     def _print_enum_type(self, type_: GraphQLEnum) -> str:
         values = "\n".join(self._print_enum_value(value) for value in type_.values)

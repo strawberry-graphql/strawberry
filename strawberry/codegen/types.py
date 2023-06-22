@@ -41,6 +41,7 @@ class GraphQLFragmentSpread:
 class GraphQLObjectType:
     name: str
     fields: List[GraphQLField] = field(default_factory=list)
+    graphql_typename: Optional[str] = None
 
 
 # Subtype of GraphQLObjectType.
@@ -50,6 +51,7 @@ class GraphQLObjectType:
 class GraphQLFragmentType(GraphQLObjectType):
     name: str
     fields: List[GraphQLField] = field(default_factory=list)
+    graphql_typename: Optional[str] = None
     on: str = ""
 
     def __post_init__(self) -> None:

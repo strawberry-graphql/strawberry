@@ -293,8 +293,11 @@ class QueryCodegen:
                 query_type, StrawberryObjectDefinition
             ), f"{fd.type_condition.name.value!r} is not a type in the graphql schema!"
 
+            typename = fd.type_condition.name.value
             graph_ql_object_type_factory = partial(
-                GraphQLFragmentType, on=fd.type_condition.name.value
+                GraphQLFragmentType,
+                on=typename,
+                graphql_typename=typename,
             )
 
             self._collect_types(
@@ -749,9 +752,13 @@ class QueryCodegen:
                 fragments.append(sub_selection)
 
         for fragment in fragments:
-            fragment_class_name = class_name + fragment.type_condition.name.value
-
-            current_type = GraphQLObjectType(fragment_class_name, list(common_fields))
+            type_condition_name = fragment.type_condition.name.value
+            fragment_class_name = class_name + type_condition_name
+            current_type = GraphQLObjectType(
+                fragment_class_name,
+                list(common_fields),
+                graphql_typename=type_condition_name,
+            )
 
             for sub_selection in fragment.selection_set.selections:
                 # TODO: recurse, use existing method ?
@@ -759,7 +766,7 @@ class QueryCodegen:
 
                 parent_type = cast(
                     StrawberryObjectDefinition,
-                    self.schema.get_type_by_name(fragment.type_condition.name.value),
+                    self.schema.get_type_by_name(type_condition_name),
                 )
 
                 assert parent_type
