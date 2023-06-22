@@ -87,59 +87,6 @@ class ChannelsConsumer(AsyncConsumer):
         await super().dispatch(message)
 
     @contextlib.asynccontextmanager
-    async def channel_listen_ctx(
-        self,
-        type: str,
-        *,
-        timeout: Optional[float] = None,
-        groups: Sequence[str] = (),
-    ) -> Awaitable[AsyncGenerator[Any, None]]:
-        # Code to acquire resource, e.g.:
-        if self.channel_layer is None:
-            raise RuntimeError(
-                "Layers integration is required listening for channels.\n"
-                "Check https://channels.readthedocs.io/en/stable/topics/channel_layers.html "  # noqa:E501
-                "for more information"
-            )
-
-        added_groups = []
-        # This queue will receive incoming messages for this generator instance
-        queue: asyncio.Queue = asyncio.Queue()
-        # Create a weak reference to the queue. Once we leave the current scope, it
-        # will be garbage collected
-        self.listen_queues[type].add(queue)
-
-        # Subscribe to all groups but return generator object to allow user
-        # code to run before blocking on incoming messages
-        for group in groups:
-            await self.channel_layer.group_add(group, self.channel_name)
-            added_groups.append(group)
-        try:
-            yield self._channel_listen_generator_ctx(queue, timeout)
-        finally:
-            # Code to release resource, e.g.:
-            for group in added_groups:
-                with contextlib.suppress(Exception):
-                    await self.channel_layer.group_discard(group, self.channel_name)
-
-    async def _channel_listen_generator_ctx(
-        self, queue: asyncio.Queue, timeout: Optional[float]
-    ) -> AsyncGenerator[Any, None]:
-        """Generator for channel_listen method.
-
-        Seperated to allow user code to be run after subscribing to channels
-        and before blocking to wait for incoming channel messages.
-        """
-        while True:
-            awaitable = queue.get()
-            if timeout is not None:
-                awaitable = asyncio.wait_for(awaitable, timeout)
-            try:
-                yield await awaitable
-            except asyncio.TimeoutError:
-                # TODO: shall we add log here and maybe in the suppress below?
-                return
-
     async def channel_listen(
         self,
         type: str,
@@ -165,6 +112,8 @@ class ChannelsConsumer(AsyncConsumer):
                 at the end of the execution.
 
         """
+
+        # Code to acquire resource (Channels subscriptions)
         if self.channel_layer is None:
             raise RuntimeError(
                 "Layers integration is required listening for channels.\n"
@@ -184,33 +133,31 @@ class ChannelsConsumer(AsyncConsumer):
         for group in groups:
             await self.channel_layer.group_add(group, self.channel_name)
             added_groups.append(group)
-        return self._channel_listen_generator(queue, added_groups, timeout)
+        try:
+            yield self._channel_listen_generator(queue, timeout)
+        finally:
+            # Code to release resource (Channels subscriptions)
+            for group in added_groups:
+                with contextlib.suppress(Exception):
+                    await self.channel_layer.group_discard(group, self.channel_name)
 
     async def _channel_listen_generator(
-        self,
-        queue: asyncio.Queue,
-        added_groups: Sequence[str],
-        timeout: Optional[float],
+        self, queue: asyncio.Queue, timeout: Optional[float]
     ) -> AsyncGenerator[Any, None]:
         """Generator for channel_listen method.
 
         Seperated to allow user code to be run after subscribing to channels
         and before blocking to wait for incoming channel messages.
         """
-        try:
-            while True:
-                awaitable = queue.get()
-                if timeout is not None:
-                    awaitable = asyncio.wait_for(awaitable, timeout)
-                try:
-                    yield await awaitable
-                except asyncio.TimeoutError:
-                    # TODO: shall we add log here and maybe in the suppress below?
-                    return
-        finally:
-            for group in added_groups:
-                with contextlib.suppress(Exception):
-                    await self.channel_layer.group_discard(group, self.channel_name)
+        while True:
+            awaitable = queue.get()
+            if timeout is not None:
+                awaitable = asyncio.wait_for(awaitable, timeout)
+            try:
+                yield await awaitable
+            except asyncio.TimeoutError:
+                # TODO: shall we add log here and maybe in the suppress below?
+                return
 
 
 class ChannelsWSConsumer(ChannelsConsumer, AsyncJsonWebsocketConsumer):
