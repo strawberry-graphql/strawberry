@@ -29,9 +29,7 @@ def _find_positional_argument(
 
 class ConvertUnionToAnnotatedUnion(VisitorBasedCodemodCommand):
     # TODO: support Union and | syntax, also in errors? ugh
-    DESCRIPTION: str = (
-        "Converts strawberry.union(..., types=(...)) to Annotated[Union[...], strawberry.union(...)]"
-    )
+    DESCRIPTION: str = "Converts strawberry.union(..., types=(...)) to Annotated[Union[...], strawberry.union(...)]"
 
     def __init__(self, context: CodemodContext) -> None:
         super().__init__(context)
