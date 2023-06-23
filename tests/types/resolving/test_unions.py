@@ -122,13 +122,3 @@ def test_error_with_scalar_types():
 
     annotation = StrawberryAnnotation(Something)
     annotation.resolve()
-
-
-# @pytest.mark.raises_strawberry_exception(
-# def test_error_with_custom_scalar_types():
-
-
-# @pytest.mark.raises_strawberry_exception(
-# def test_error_with_non_strawberry_type():
-#     @dataclass
-#     class A:
