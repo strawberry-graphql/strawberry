@@ -186,7 +186,7 @@ class StrawberryAnnotation:
         if isinstance(evaled_type, StrawberryUnion):
             return evaled_type
 
-        types = evaled_type.__args__  # type: ignore
+        types = evaled_type.__args__
 
         union = StrawberryUnion(
             type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),

@@ -397,7 +397,7 @@ class LibCSTSourceFinder:
                 ),
                 m.SubscriptElement(
                     slice=m.Index(
-                        value=m.Call(  # type: ignore
+                        value=m.Call(
                             func=m.Attribute(
                                 value=m.Name(value="strawberry"),
                                 attr=m.Name(value="union"),
