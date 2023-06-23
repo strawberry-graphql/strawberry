@@ -22,6 +22,18 @@ class TestConvertConstantCommand(CodemodTest):
         """
 
         self.assertCodemod(before, after)
+    
+    def test_update_union_positional_name(self) -> None:
+        before = """
+            AUnion = strawberry.union("ABC", types=(Foo, Bar))
+        """
+
+        after = """
+            from typing_extensions import Annotated
+            AUnion = Annotated[Union[Foo, Bar], strawberry.union("ABC")]
+        """
+
+        self.assertCodemod(before, after)
 
     def test_update_swapped_kwargs(self) -> None:
         before = """
