@@ -56,16 +56,20 @@ class InvalidUnionTypeError(StrawberryException):
 
     @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
-        if self.union_definition and self.union_definition._source_file:
-            ...
-            # TODO: implement this
+        source_finder = SourceFinder()
+
+        if self.union_definition:
+            source = source_finder.find_annotated_union(
+                self.union_definition, self.invalid_type
+            )
+
+            if source:
+                return source
 
         if not self.frame:
             return None
 
         path = Path(self.frame.filename)
-
-        source_finder = SourceFinder()
 
         return source_finder.find_union_call(path, self.union_name, self.invalid_type)
 

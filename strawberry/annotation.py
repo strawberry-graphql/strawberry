@@ -178,7 +178,7 @@ class StrawberryAnnotation:
     def create_type_var(self, evaled_type: TypeVar) -> StrawberryTypeVar:
         return StrawberryTypeVar(evaled_type)
 
-    def create_union(self, evaled_type: Type, args: list) -> StrawberryUnion:
+    def create_union(self, evaled_type: Type[Any], args: list[Any]) -> StrawberryUnion:
         # Prevent import cycles
         from strawberry.union import StrawberryUnion
 
@@ -186,12 +186,11 @@ class StrawberryAnnotation:
         if isinstance(evaled_type, StrawberryUnion):
             return evaled_type
 
-        types = evaled_type.__args__
+        types = evaled_type.__args__  # type: ignore
+
         union = StrawberryUnion(
             type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
         )
-        # Assert types does not contain a scalar
-        self.validate_union_members(types, union)
 
         union_args = [arg for arg in args if isinstance(arg, StrawberryUnion)]
         if len(union_args) > 1:
@@ -205,6 +204,11 @@ class StrawberryAnnotation:
             union.graphql_name = arg.graphql_name
             union.description = arg.description
             union.directives = arg.directives
+
+            union._source_file = arg._source_file
+            union._source_line = arg._source_line
+
+        self.validate_union_members(types, union)
 
         return union
 

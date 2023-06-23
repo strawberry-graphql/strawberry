@@ -7,6 +7,7 @@ import pytest
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidUnionTypeError
+from strawberry.type import get_object_definition
 from strawberry.union import StrawberryUnion, union
 
 
@@ -78,29 +79,9 @@ def test_strawberry_union():
         name="CoolUnion",
         type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
     )
-    assert resolved != Union[User, Error]  # Name will be different
 
 
-def test_named_union_with_deprecated_api_using_types_parameter():
-    @strawberry.type
-    class A:
-        a: int
-
-    @strawberry.type
-    class B:
-        b: int
-
-    Result = Annotated[Union[A, B], union(name="Result")]
-
-    annotation = StrawberryAnnotation(Result)
-    resolved = annotation.resolve()
-
-    assert isinstance(resolved, StrawberryUnion)
-    assert resolved.graphql_name == "Result"
-    assert resolved.types == (A, B)
-
-
-def test_union_with_generic_with_deprecated_api_using_types_parameter():
+def test_union_with_generic():
     T = TypeVar("T")
 
     @strawberry.type
@@ -111,14 +92,18 @@ def test_union_with_generic_with_deprecated_api_using_types_parameter():
     class Edge(Generic[T]):
         node: T
 
-    Result = strawberry.union("Result", types=(Error, Edge[str]))
+    Result = Annotated[Union[Error, Edge[str]], strawberry.union("Result")]
 
-    strawberry_union = Result
+    strawberry_union = StrawberryAnnotation(Result).resolve()
+
     assert isinstance(strawberry_union, StrawberryUnion)
     assert strawberry_union.graphql_name == "Result"
     assert strawberry_union.types[0] == Error
 
-    assert strawberry_union.types[1].__strawberry_definition__.is_generic is False
+    assert (
+        get_object_definition(strawberry_union.types[1], strict=True).is_generic
+        is False
+    )
 
 
 @pytest.mark.raises_strawberry_exception(

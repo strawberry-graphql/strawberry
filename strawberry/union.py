@@ -262,7 +262,7 @@ def union(
         _source_line = None
 
         if should_use_rich_exceptions():
-            frame = sys._getframe(3)
+            frame = sys._getframe(1)
 
             _source_file = frame.f_code.co_filename
             _source_line = frame.f_lineno
