@@ -1,4 +1,5 @@
 import glob
+import pathlib
 
 import rich
 import typer
@@ -23,6 +24,7 @@ def upgrade(
         autocompletion=lambda: list(codemods.keys()),
         help="Name of the upgrade to run",
     ),
+    path: pathlib.Path = typer.Argument(default=".", file_okay=True, dir_okay=True),
 ) -> None:
     if codemod not in codemods:
         rich.print(f'[red]Upgrade named "{codemod}" does not exist')
@@ -31,7 +33,11 @@ def upgrade(
 
     transformer = ConvertUnionToAnnotatedUnion(CodemodContext())
 
-    files = list(set(glob.glob("**/*.py", recursive=True)))
+    if path.is_dir():
+        glob_path = str(path / "**/*.py")
+        files = list(set(glob.glob(glob_path, recursive=True)))
+    else:
+        files = [str(path)]
 
     results = list(run_codemod(transformer, files))
     changed = [result for result in results if result.changed]

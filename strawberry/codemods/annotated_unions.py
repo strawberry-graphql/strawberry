@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence
+from typing import Sequence
 
 import libcst as cst
 import libcst.matchers as m
+from libcst._nodes.expression import BaseExpression, Call  # noqa: TCH002
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.codemod.visitors import AddImportsVisitor
-
-if TYPE_CHECKING:
-    from libcst._nodes.expression import BaseExpression, Call
 
 
 def _find_named_argument(args: Sequence[cst.Arg], name: str) -> cst.Arg | None:
