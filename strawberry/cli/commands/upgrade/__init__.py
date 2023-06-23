@@ -15,9 +15,14 @@ codemods = {
 
 
 # TODO: add support for running all of them
+# TODO: add support for passing a list of files
 @app.command(help="Upgrades a Strawberry project to the latest version")
 def upgrade(
-    codemod: str = typer.Argument(..., help="Name of the upgrade to run"),
+    codemod: str = typer.Argument(
+        ...,
+        autocompletion=lambda: list(codemods.keys()),
+        help="Name of the upgrade to run",
+    ),
 ) -> None:
     if codemod not in codemods:
         rich.print(f'[red]Upgrade named "{codemod}" does not exist')
