@@ -1,7 +1,7 @@
 import asyncio
 import contextlib
 from enum import Enum
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 from graphql import GraphQLError
 
@@ -210,12 +210,30 @@ class Subscription:
     ) -> AsyncGenerator[str, None]:
         yield info.context["request"].channel_name
 
-        async for message in info.context["request"].channel_listen(
+        async with info.context["request"].channel_listen(
             type="test.message",
             timeout=timeout,
             groups=[group] if group is not None else [],
-        ):
-            yield message["text"]
+        ) as cm:
+            async for message in cm:
+                yield message["text"]
+
+    @strawberry.subscription
+    async def listener_with_confirmation(
+        self,
+        info: Info[Any, Any],
+        timeout: Optional[float] = None,
+        group: Optional[str] = None,
+    ) -> AsyncGenerator[Union[str, None], None]:
+        async with info.context["request"].channel_listen(
+            type="test.message",
+            timeout=timeout,
+            groups=[group] if group is not None else [],
+        ) as cm:
+            yield None
+            yield info.context["request"].channel_name
+            async for message in cm:
+                yield message["text"]
 
     @strawberry.subscription
     async def connection_params(

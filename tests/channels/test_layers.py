@@ -46,7 +46,8 @@ async def test_no_layers():
         "for more information"
     )
     with pytest.raises(RuntimeError, match=msg):
-        await consumer.channel_listen("foobar").__anext__()
+        async with consumer.channel_listen("foobar") as cm:
+            await consumer.channel_listen("foobar")
 
 
 async def test_channel_listen(ws: WebsocketCommunicator):
@@ -83,6 +84,50 @@ async def test_channel_listen(ws: WebsocketCommunicator):
         response
         == NextMessage(
             id="sub1", payload={"data": {"listener": "Hello there!"}}
+        ).as_dict()
+    )
+
+    await ws.send_json_to(CompleteMessage(id="sub1").as_dict())
+
+
+async def test_channel_listen_with_confirmation(ws: WebsocketCommunicator):
+    await ws.send_json_to(ConnectionInitMessage().as_dict())
+
+    response = await ws.receive_json_from()
+    assert response == ConnectionAckMessage().as_dict()
+
+    await ws.send_json_to(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="subscription { listenerWithConfirmation }",
+            ),
+        ).as_dict()
+    )
+
+    channel_layer = get_channel_layer()
+    assert channel_layer
+
+    response = await ws.receive_json_from()
+    confirmation = response["payload"]["data"]["listenerWithConfirmation"]
+    assert confirmation is None
+
+    response = await ws.receive_json_from()
+    channel_name = response["payload"]["data"]["listenerWithConfirmation"]
+
+    await channel_layer.send(
+        channel_name,
+        {
+            "type": "test.message",
+            "text": "Hello there!",
+        },
+    )
+
+    response = await ws.receive_json_from()
+    assert (
+        response
+        == NextMessage(
+            id="sub1", payload={"data": {"listenerWithConfirmation": "Hello there!"}}
         ).as_dict()
     )
 
