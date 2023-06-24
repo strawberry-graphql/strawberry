@@ -93,7 +93,7 @@ class ChannelsConsumer(AsyncConsumer):
         *,
         timeout: Optional[float] = None,
         groups: Sequence[str] = (),
-    ) -> Awaitable[AsyncGenerator[Any, None]]:
+    ) -> AsyncGenerator[Any, None]:
         """Listen for messages sent to this consumer.
 
         Utility to listen for channels messages for this consumer inside
