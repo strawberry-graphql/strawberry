@@ -49,7 +49,7 @@ class ConvertUnionToAnnotatedUnion(VisitorBasedCodemodCommand):
             m.Name("strawberry"),
             [
                 m.ZeroOrMore(),
-                m.ImportAlias(cst.Name("union")),  # type: ignore
+                m.ImportAlias(m.Name("union")),
                 m.ZeroOrMore(),
             ],
         )
