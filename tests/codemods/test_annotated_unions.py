@@ -38,6 +38,21 @@ class TestConvertConstantCommand(CodemodTest):
 
         self.assertCodemod(before, after)
 
+    def test_noop_other_union(self) -> None:
+        before = """
+            from potato import union
+
+            union("A", "B")
+        """
+
+        after = """
+            from potato import union
+
+            union("A", "B")
+        """
+
+        self.assertCodemod(before, after)
+
     def test_update_union_positional_name(self) -> None:
         before = """
             AUnion = strawberry.union("ABC", types=(Foo, Bar))

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Optional, Sequence
 
 import libcst as cst
 import libcst.matchers as m
@@ -35,7 +35,27 @@ class ConvertUnionToAnnotatedUnion(VisitorBasedCodemodCommand):
     )
 
     def __init__(self, context: CodemodContext) -> None:
+        self._is_using_named_import = False
+
         super().__init__(context)
+
+    def visit_Module(self, node: cst.Module) -> Optional[bool]:
+        self._is_using_named_import = False
+
+        return super().visit_Module(node)
+
+    @m.visit(
+        m.ImportFrom(
+            m.Name("strawberry"),
+            [
+                m.ZeroOrMore(),
+                m.ImportAlias(cst.Name("union")),  # type: ignore
+                m.ZeroOrMore(),
+            ],
+        )
+    )
+    def visit_import_from(self, original_node: cst.ImportFrom) -> None:
+        self._is_using_named_import = True
 
     @m.leave(
         m.Call(
@@ -46,6 +66,9 @@ class ConvertUnionToAnnotatedUnion(VisitorBasedCodemodCommand):
     def leave_union_call(
         self, original_node: Call, updated_node: Call
     ) -> BaseExpression:
+        if not self._is_using_named_import and isinstance(original_node.func, cst.Name):
+            return original_node
+
         types = _find_named_argument(original_node.args, "types")
         union_name = _find_named_argument(original_node.args, "name")
 
