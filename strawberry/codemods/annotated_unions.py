@@ -6,7 +6,7 @@ import libcst as cst
 import libcst.matchers as m
 from libcst._nodes.expression import BaseExpression, Call  # noqa: TCH002
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
-from libcst.codemod.visitors import AddImportsVisitor
+from libcst.codemod.visitors import AddImportsVisitor, RemoveImportsVisitor
 
 
 def _find_named_argument(args: Sequence[cst.Arg], name: str) -> cst.Arg | None:
@@ -29,12 +29,20 @@ def _find_positional_argument(
 
 class ConvertUnionToAnnotatedUnion(VisitorBasedCodemodCommand):
     # TODO: support Union and | syntax, also in errors? ugh
-    DESCRIPTION: str = "Converts strawberry.union(..., types=(...)) to Annotated[Union[...], strawberry.union(...)]"
+    DESCRIPTION: str = (
+        "Converts strawberry.union(..., types=(...)) to "
+        "Annotated[Union[...], strawberry.union(...)]"
+    )
 
     def __init__(self, context: CodemodContext) -> None:
         super().__init__(context)
 
-    @m.leave(m.Call(func=m.Attribute(value=m.Name("strawberry"), attr=m.Name("union"))))
+    @m.leave(
+        m.Call(
+            func=m.Attribute(value=m.Name("strawberry"), attr=m.Name("union"))
+            | m.Name("union")
+        )
+    )
     def leave_union_call(
         self, original_node: Call, updated_node: Call
     ) -> BaseExpression:
@@ -53,6 +61,8 @@ class ConvertUnionToAnnotatedUnion(VisitorBasedCodemodCommand):
         AddImportsVisitor.add_needed_import(
             self.context, "typing_extensions", "Annotated"
         )
+
+        RemoveImportsVisitor.remove_unused_import(self.context, "strawberry", "union")
 
         if union_name is None:
             union_name = _find_positional_argument(original_node.args, 0)
