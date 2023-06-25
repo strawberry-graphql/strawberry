@@ -1,7 +1,6 @@
 import pydantic
 
 if pydantic.VERSION[0] == "2":
-
     from pydantic._internal._utils import lenient_issubclass, smart_deepcopy
 
     def new_type_supertype(type_):

@@ -3,17 +3,13 @@ from typing import Any, Type
 
 import pydantic
 from pydantic import BaseModel
+from pydantic._internal._typing_extra import is_new_type
+from pydantic._internal._utils import lenient_issubclass
+from typing_extensions import get_args, get_origin
 
 from strawberry.experimental.pydantic2.exceptions import (
     UnregisteredTypeException,
     UnsupportedTypeError,
-)
-from strawberry.experimental.pydantic2.v2_compat import (
-    get_args,
-    get_origin,
-    is_new_type,
-    lenient_issubclass,
-    new_type_supertype,
 )
 from strawberry.types.types import TypeDefinition
 
@@ -37,6 +33,10 @@ FIELDS_MAP = {
     for field_name, type in ATTR_TO_TYPE_MAP.items()
     if hasattr(pydantic, field_name)
 }
+
+
+def new_type_supertype(type_):
+    return type_.__supertype__
 
 
 def get_basic_type(type_: Any) -> Type[Any]:
