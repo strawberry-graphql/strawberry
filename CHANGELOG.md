@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.189.1 - 2023-06-25
+--------------------
+
+This release fixes a depreaction warning being triggered
+by the relay integration.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2858](https://github.com/strawberry-graphql/strawberry/pull/2858/)
+
+
 0.189.0 - 2023-06-22
 --------------------
 
