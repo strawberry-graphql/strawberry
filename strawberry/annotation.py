@@ -11,7 +11,6 @@ from typing import (
     Dict,
     ForwardRef,
     Optional,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -21,7 +20,6 @@ from typing_extensions import Annotated, Self, get_args, get_origin
 
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
-from strawberry.exceptions import InvalidUnionTypeError
 from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
@@ -208,39 +206,9 @@ class StrawberryAnnotation:
             union._source_file = arg._source_file
             union._source_line = arg._source_line
 
-        self.validate_union_members(types, union)
+        union.validate_types(types)
 
         return union
-
-    def validate_union_members(
-        self, types: Tuple[type], union: StrawberryUnion
-    ) -> None:
-        from strawberry.union import StrawberryUnion
-
-        scalars = (int, str, float)
-
-        for type_ in types:
-            # Handle case: x = Annotated[Union[X, Y], strawberry.union("X")]
-            if get_origin(type_) is Annotated:
-                # Unwrap annotated type into the proper type hints
-                # and our strawberry type metadata
-                inner_type, *metadata = get_args(type_)
-                union_members = get_args(inner_type)
-
-                union_definition = (
-                    metadata[0]
-                    if metadata and isinstance(metadata[0], StrawberryUnion)
-                    else None
-                )
-
-                for member in union_members:
-                    if isinstance(member, scalars):
-                        raise InvalidUnionTypeError(
-                            str(member), member, union_definition
-                        )
-
-            elif type_ in scalars:
-                raise InvalidUnionTypeError(str(type_), type_, union)
 
     @classmethod
     def _is_async_type(cls, annotation: type) -> bool:
