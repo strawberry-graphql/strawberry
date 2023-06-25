@@ -13,14 +13,13 @@ from typing import (
     Mapping,
     NoReturn,
     Optional,
-    Sequence,
     Tuple,
     Type,
     TypeVar,
     Union,
     cast,
 )
-from typing_extensions import Annotated, get_args, get_origin
+from typing_extensions import Annotated, get_origin
 
 from graphql import GraphQLNamedType, GraphQLUnionType
 
@@ -239,25 +238,6 @@ class StrawberryUnion(StrawberryType):
             return True
 
         return False
-
-    # TODO: maybe merge with above?
-    def validate_types(self, types: Sequence[type]) -> None:
-        scalars = (int, str, float)
-
-        for type_ in types:
-            # Handle case: x = Annotated[Union[X, Y], strawberry.union("X")]
-            if get_origin(type_) is Annotated:
-                # Unwrap annotated type into the proper type hints
-                # and our strawberry type metadata
-                inner_type, *_ = get_args(type_)
-                union_members = get_args(inner_type)
-
-                for member in union_members:
-                    if isinstance(member, scalars):
-                        raise InvalidUnionTypeError(str(member), member, self)
-
-            elif type_ in scalars:
-                raise InvalidUnionTypeError(str(type_), type_, self)
 
 
 def union(

@@ -667,34 +667,89 @@ def test_error_with_invalid_annotated_type():
 
 
 @pytest.mark.raises_strawberry_exception(
-    InvalidUnionTypeError, match="Type `(.*)` cannot be used in a GraphQL Union"
+    InvalidUnionTypeError, match="Type `int` cannot be used in a GraphQL Union"
 )
-@pytest.mark.parametrize(
-    "annotation",
-    (
-        "int",
-        "str",
-        "float",
-        pytest.param(
-            "list[str]",
-            marks=pytest.mark.skipif(
-                sys.version_info < (3, 9, 0),
-                reason="list[str] is only available on python 3.9+",
-            ),
-        ),
-        "List[str]",
-    ),
-)
-def test_raises_on_union_of_scalars(annotation: str, monkeypatch):
+def test_raises_on_union_with_int():
+    global ICanBeInUnion
+
     @strawberry.type
     class ICanBeInUnion:
         foo: str
 
-    monkeypatch.setitem(globals(), ICanBeInUnion.__name__, ICanBeInUnion)
-    annotation = f"Union[{ICanBeInUnion.__name__}, {annotation}]"
+    @strawberry.type
+    class Query:
+        union: Union[ICanBeInUnion, int]
+
+    strawberry.Schema(query=Query)
+
+    del ICanBeInUnion
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidUnionTypeError,
+    match="Type `StrawberryList` cannot be used in a GraphQL Union",
+)
+@pytest.mark.skipif(
+    sys.version_info < (3, 9, 0),
+    reason="list[str] is only available on python 3.9+",
+)
+def test_raises_on_union_with_list_str():
+    global ICanBeInUnion
+
+    @strawberry.type
+    class ICanBeInUnion:
+        foo: str
 
     @strawberry.type
     class Query:
-        union: annotation  # type: ignore
+        union: Union[ICanBeInUnion, list[str]]
+
+    strawberry.Schema(query=Query)
+
+    del ICanBeInUnion
+
+
+# TODO: use annotation instead of `StrawberryList` as the name
+@pytest.mark.raises_strawberry_exception(
+    InvalidUnionTypeError,
+    match="Type `StrawberryList` cannot be used in a GraphQL Union",
+)
+@pytest.mark.skipif(
+    sys.version_info < (3, 9, 0),
+    reason="list[str] is only available on python 3.9+",
+)
+def test_raises_on_union_with_list_str_38():
+    global ICanBeInUnion
+
+    @strawberry.type
+    class ICanBeInUnion:
+        foo: str
+
+    @strawberry.type
+    class Query:
+        union: Union[ICanBeInUnion, List[str]]
+
+    strawberry.Schema(query=Query)
+
+    del ICanBeInUnion
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidUnionTypeError, match="Type `Always42` cannot be used in a GraphQL Union"
+)
+def test_raises_on_union_of_custom_scalar():
+    @strawberry.type
+    class ICanBeInUnion:
+        foo: str
+
+    @strawberry.scalar(serialize=lambda x: 42, parse_value=lambda x: Always42())
+    class Always42:
+        pass
+
+    @strawberry.type
+    class Query:
+        union: Annotated[
+            Union[Always42, ICanBeInUnion], strawberry.union(name="ExampleUnion")
+        ]
 
     strawberry.Schema(query=Query)

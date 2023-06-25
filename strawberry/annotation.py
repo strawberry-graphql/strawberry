@@ -206,8 +206,6 @@ class StrawberryAnnotation:
             union._source_file = arg._source_file
             union._source_line = arg._source_line
 
-        union.validate_types(types)
-
         return union
 
     @classmethod
