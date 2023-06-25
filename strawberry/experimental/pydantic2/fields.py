@@ -1,20 +1,19 @@
 import builtins
-from decimal import Decimal
-from typing import Any, List, Optional, Type
-from uuid import UUID
+from typing import Any, Type
 
 import pydantic
 from pydantic import BaseModel
-from strawberry.experimental.pydantic2.v2_compat import (
-    lenient_issubclass,
-    get_args,
-    get_origin,
-    is_new_type,
-    new_type_supertype,
-)
+
 from strawberry.experimental.pydantic2.exceptions import (
     UnregisteredTypeException,
     UnsupportedTypeError,
+)
+from strawberry.experimental.pydantic2.v2_compat import (
+    get_args,
+    get_origin,
+    is_new_type,
+    lenient_issubclass,
+    new_type_supertype,
 )
 from strawberry.types.types import TypeDefinition
 
@@ -42,13 +41,9 @@ FIELDS_MAP = {
 
 def get_basic_type(type_: Any) -> Type[Any]:
     # if lenient_issubclass(type_, pydantic.ConstrainedInt):
-    #     return int
     # if lenient_issubclass(type_, pydantic.ConstrainedFloat):
-    #     return float
     # if lenient_issubclass(type_, pydantic.ConstrainedStr):
-    #     return str
     # if lenient_issubclass(type_, pydantic.ConstrainedList):
-    #     return List[get_basic_type(type_.item_type)]  # type: ignore
 
     if type_ in FIELDS_MAP:
         type_ = FIELDS_MAP.get(type_)
