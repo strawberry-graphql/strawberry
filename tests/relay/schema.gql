@@ -104,6 +104,10 @@ type Query {
     """The ID of the object."""
     id: GlobalID!
   ): Node!
+  nodeWithAsyncPermissions(
+    """The ID of the object."""
+    id: GlobalID!
+  ): Node!
   nodes(
     """The IDs of the objects."""
     ids: [GlobalID!]!

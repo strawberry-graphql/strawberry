@@ -1,4 +1,5 @@
 class OperationNameResultUnionAnimal:
+    # typename: Animal
     age: int
     name: str
 

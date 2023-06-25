@@ -43,7 +43,7 @@ def test_federation_type():
         ),
         Result(
             type="information",
-            message='Type of "User" is "Type[User]"',
+            message='Type of "User" is "type[User]"',
             line=18,
             column=13,
         ),
@@ -92,7 +92,7 @@ def test_federation_interface():
         ),
         Result(
             type="information",
-            message='Type of "User" is "Type[User]"',
+            message='Type of "User" is "type[User]"',
             line=14,
             column=13,
         ),
@@ -139,7 +139,7 @@ def test_federation_input():
         ),
         Result(
             type="information",
-            message='Type of "User" is "Type[User]"',
+            message='Type of "User" is "type[User]"',
             line=12,
             column=13,
         ),

@@ -41,7 +41,7 @@ def test_pyright():
         ),
         Result(
             type="information",
-            message='Type of "User" is "Type[User]"',
+            message='Type of "User" is "type[User]"',
             line=17,
             column=13,
         ),
