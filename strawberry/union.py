@@ -50,22 +50,23 @@ if TYPE_CHECKING:
 
 
 class StrawberryUnion(StrawberryType):
+    # used for better error messages
+    _source_file: Optional[str] = None
+    _source_line: Optional[int] = None
+
     def __init__(
         self,
         name: Optional[str] = None,
         type_annotations: Tuple[StrawberryAnnotation, ...] = tuple(),
         description: Optional[str] = None,
         directives: Iterable[object] = (),
-        # used for better error messages
-        _source_file: Optional[str] = None,
-        _source_line: Optional[int] = None,
     ):
         self.graphql_name = name
         self.type_annotations = type_annotations
         self.description = description
         self.directives = directives
-        self._source_file = _source_file
-        self._source_line = _source_line
+        self._source_file = None
+        self._source_line = None
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryType):
@@ -258,22 +259,19 @@ def union(
     """
 
     if types is None:
-        _source_file = None
-        _source_line = None
+        union = StrawberryUnion(
+            name=name,
+            description=description,
+            directives=directives,
+        )
 
         if should_use_rich_exceptions():
             frame = sys._getframe(1)
 
-            _source_file = frame.f_code.co_filename
-            _source_line = frame.f_lineno
+            union._source_file = frame.f_code.co_filename
+            union._source_line = frame.f_lineno
 
-        return StrawberryUnion(
-            name=name,
-            description=description,
-            directives=directives,
-            _source_file=_source_file,
-            _source_line=_source_line,
-        )
+        return union
 
     warnings.warn(
         (
