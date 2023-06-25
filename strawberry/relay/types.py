@@ -38,6 +38,7 @@ from strawberry.object_type import interface, type
 from strawberry.private import StrawberryPrivate
 from strawberry.relay.exceptions import NodeIDAnnotationError
 from strawberry.type import StrawberryContainer
+from strawberry.types.info import Info  # noqa: TCH001
 from strawberry.types.types import TypeDefinition
 from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
 from strawberry.utils.inspect import in_async_context
@@ -47,7 +48,6 @@ from .utils import from_base64, to_base64
 
 if TYPE_CHECKING:
     from strawberry.scalars import ID
-    from strawberry.types.info import Info
     from strawberry.utils.await_maybe import AwaitableOrValue
 
 _T = TypeVar("_T")

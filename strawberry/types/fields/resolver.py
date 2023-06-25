@@ -135,14 +135,6 @@ class ReservedType(NamedTuple):
         if origin is Annotated:
             # Handle annotated arguments such as Private[str] and DirectiveValue[str]
             return any(isinstance(argument, self.type) for argument in get_args(other))
-        elif type(origin) is str:
-            # Handle forward references, there might be conflicts with the name,
-            # for example is someone makes an input type called "Info", but this
-            # is a rare case and we can ignore it for now
-            # another option would be to check if strawberry.types.info.Info is
-            # imported in a `if TYPE_CHECKING:` block, but that feels like too much
-            # work for a rare case
-            return origin == self.type.__name__
         else:
             # Handle both concrete and generic types (i.e Info, and Info[Any, Any])
             return (
