@@ -81,7 +81,8 @@ def test_strawberry_union_and_none():
 
 @pytest.mark.raises_strawberry_exception(
     InvalidUnionTypeError,
-    match="Type `int` cannot be used in a GraphQL Union",
+    # TODO: this error is not very clear, we should improve it
+    match="Type `StrawberryUnion` cannot be used in a GraphQL Union",
 )
 def test_raises_error_when_piping_with_scalar():
     @strawberry.type
@@ -94,8 +95,11 @@ def test_raises_error_when_piping_with_scalar():
 
     UserOrError = typing.Annotated[User | Error, strawberry.union("UserOrError")]
 
-    a = StrawberryAnnotation(UserOrError | int)
-    a.resolve()
+    @strawberry.type
+    class Query:
+        user: UserOrError | int
+
+    schema = strawberry.Schema(query=Query)
 
 
 @pytest.mark.raises_strawberry_exception(
