@@ -1,4 +1,5 @@
 import sys
+import textwrap
 from dataclasses import dataclass
 from textwrap import dedent
 from typing import Generic, List, Optional, TypeVar, Union
@@ -184,7 +185,7 @@ def test_types_not_included_in_the_union_are_rejected():
 
     assert (
         result.errors[0].message == "The type "
-        "\"<class 'tests.schema.test_union.test_types_not_included_in_the_union_are_rejected.<locals>.Outside'>\""  # noqa
+        "\"<class 'tests.schema.test_union.test_types_not_included_in_the_union_are_rejected.<locals>.Outside'>\""
         ' of the field "hello" '
         "is not in the list of the types of the union: \"['A', 'B']\""
     )
@@ -753,3 +754,61 @@ def test_raises_on_union_of_custom_scalar():
         ]
 
     strawberry.Schema(query=Query)
+
+
+def test_union_of_unions():
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Error:
+        name: str
+
+    @strawberry.type
+    class SpecificError:
+        name: str
+
+    @strawberry.type
+    class EvenMoreSpecificError:
+        name: str
+
+    ErrorUnion = Union[SpecificError, EvenMoreSpecificError]
+
+    @strawberry.type
+    class Query:
+        user: Union[User, Error]
+        error: Union[User, ErrorUnion]
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = textwrap.dedent(
+        """
+        type Error {
+          name: String!
+        }
+
+        type EvenMoreSpecificError {
+          name: String!
+        }
+
+        type Query {
+          user: UserError!
+          error: UserSpecificErrorEvenMoreSpecificError!
+        }
+
+        type SpecificError {
+          name: String!
+        }
+
+        type User {
+          name: String!
+        }
+
+        union UserError = User | Error
+
+        union UserSpecificErrorEvenMoreSpecificError = User | SpecificError | EvenMoreSpecificError
+        """
+    ).strip()
+
+    assert str(schema) == expected_schema
