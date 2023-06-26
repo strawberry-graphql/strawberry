@@ -419,26 +419,70 @@ class LibCSTSourceFinder:
         )
 
         annotated_calls = self._find(source, matcher)
-
-        if not annotated_calls:
-            return None
-
-        annotated_call_node = annotated_calls[0]
-
         invalid_type_name = getattr(invalid_type, "__name__", None)
 
-        if invalid_type_name:
-            invalid_type_nodes = m.findall(
-                annotated_call_node,
-                m.SubscriptElement(slice=m.Index(m.Name(invalid_type_name))),
+        if annotated_calls:
+            annotated_call_node = annotated_calls[0]
+
+            if invalid_type_name:
+                invalid_type_nodes = m.findall(
+                    annotated_call_node,
+                    m.SubscriptElement(slice=m.Index(m.Name(invalid_type_name))),
+                )
+
+                if not invalid_type_nodes:
+                    return None  # pragma: no cover
+
+                invalid_type_node = invalid_type_nodes[0]
+            else:
+                invalid_type_node = annotated_call_node
+        else:
+            matcher = m.Subscript(
+                value=m.Name(value="Annotated"),
+                slice=(
+                    m.SubscriptElement(slice=m.Index(value=m.BinaryOperation())),
+                    m.SubscriptElement(
+                        slice=m.Index(
+                            value=m.Call(
+                                func=m.Attribute(
+                                    value=m.Name(value="strawberry"),
+                                    attr=m.Name(value="union"),
+                                ),
+                                args=[
+                                    m.Arg(
+                                        value=m.SimpleString(
+                                            value=f"'{union_definition.graphql_name}'"
+                                        )
+                                        | m.SimpleString(
+                                            value=f'"{union_definition.graphql_name}"'
+                                        )
+                                    )
+                                ],
+                            )
+                        )
+                    ),
+                ),
             )
 
-            if not invalid_type_nodes:
-                return None  # pragma: no cover
+            annotated_calls = self._find(source, matcher)
 
-            invalid_type_node = invalid_type_nodes[0]
-        else:
-            invalid_type_node = annotated_call_node
+            if not annotated_calls:
+                return None
+
+            annotated_call_node = annotated_calls[0]
+
+            if invalid_type_name:
+                invalid_type_nodes = m.findall(
+                    annotated_call_node,
+                    m.BinaryOperation(left=m.Name(invalid_type_name)),
+                )
+
+                if not invalid_type_nodes:
+                    return None  # pragma: no cover
+
+                invalid_type_node = invalid_type_nodes[0].left  # type: ignore
+            else:
+                invalid_type_node = annotated_call_node
 
         position = self._position_metadata[annotated_call_node]
         invalid_type_node_position = self._position_metadata[invalid_type_node]

@@ -125,3 +125,25 @@ def test_error_with_scalar_types():
         something: Something
 
     schema = strawberry.Schema(query=Query)
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidUnionTypeError, match="Type `int` cannot be used in a GraphQL Union"
+)
+@pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason="short syntax for union is only available on python 3.10+",
+)
+def test_error_with_scalar_types_pipe():
+    # TODO: using Something as the name of the union makes the source finder
+    # use the union type defined above
+    Something2 = Annotated[
+        int | str | float | bool,
+        strawberry.union("Something2"),
+    ]
+
+    @strawberry.type
+    class Query:
+        something: Something2
+
+    schema = strawberry.Schema(query=Query)
