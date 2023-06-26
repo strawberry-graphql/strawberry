@@ -231,9 +231,15 @@ class StrawberryUnion(StrawberryType):
 
         # Can't confidently assert that these types are valid/invalid within Unions
         # until full type resolving stage is complete
+
         ignored_types = (LazyType, TypeVar)
+
         if isinstance(type_, ignored_types):
             return True
+
+        if isinstance(type_, StrawberryUnion):
+            return True
+
         if get_origin(type_) is Annotated:
             return True
 
