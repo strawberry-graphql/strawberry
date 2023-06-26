@@ -152,12 +152,20 @@ class GraphQLView(
 
         data = self.encode_json(response_data)
 
-        return HTTPResponse(
+        response = HTTPResponse(
             data,
             status=status_code,
             content_type="application/json",
-            headers=sub_response.headers,
         )
+
+        for k, v in sub_response.headers.items():
+            if isinstance(v, list):
+                for e in v:
+                    response.headers.add(k, e)
+            else:
+                response.headers.add(k, v)
+
+        return response
 
     async def post(self, request: Request) -> HTTPResponse:
         try:
