@@ -408,10 +408,16 @@ class Node:
             base_namespace = sys.modules[base.__module__].__dict__
 
             for attr_name, attr in getattr(base, "__annotations__", {}).items():
-                evaled = eval_type(
-                    ForwardRef(attr) if isinstance(attr, str) else attr,
-                    globalns=base_namespace,
-                )
+                try:
+                    evaled = eval_type(
+                        ForwardRef(attr) if isinstance(attr, str) else attr,
+                        globalns=base_namespace,
+                    )
+                except TypeError:
+                    # Some ClassVar might raise TypeError when being resolved
+                    # on some python versions. This is fine to skip since
+                    # we are not interested in ClassVars here
+                    continue
 
                 if get_origin(evaled) is Annotated and any(
                     isinstance(a, NodeIDPrivate) for a in get_args(evaled)
