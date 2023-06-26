@@ -688,7 +688,7 @@ def test_raises_on_union_with_int():
 
 @pytest.mark.raises_strawberry_exception(
     InvalidUnionTypeError,
-    match="Type `StrawberryList` cannot be used in a GraphQL Union",
+    match=r"Type `list\[...\]` cannot be used in a GraphQL Union",
 )
 @pytest.mark.skipif(
     sys.version_info < (3, 9, 0),
@@ -710,10 +710,9 @@ def test_raises_on_union_with_list_str():
     del ICanBeInUnion
 
 
-# TODO: use annotation instead of `StrawberryList` as the name
 @pytest.mark.raises_strawberry_exception(
     InvalidUnionTypeError,
-    match="Type `StrawberryList` cannot be used in a GraphQL Union",
+    match=r"Type `list\[...\]` cannot be used in a GraphQL Union",
 )
 @pytest.mark.skipif(
     sys.version_info < (3, 9, 0),
