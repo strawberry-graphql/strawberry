@@ -120,5 +120,8 @@ def test_error_with_scalar_types():
         strawberry.union("Something"),
     ]
 
-    annotation = StrawberryAnnotation(Something)
-    annotation.resolve()
+    @strawberry.type
+    class Query:
+        something: Something
+
+    schema = strawberry.Schema(query=Query)
