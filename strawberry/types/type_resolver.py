@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import copy
 import dataclasses
 import sys
-from typing import Dict, List, Type, TypeVar, cast
+from typing import Dict, List, Type
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -14,23 +15,6 @@ from strawberry.field import StrawberryField
 from strawberry.private import is_private
 from strawberry.type import has_object_definition
 from strawberry.unset import UNSET
-from strawberry.utils.inspect import get_specialized_type_var_map
-
-
-def _resolve_specialized_type_var(cls: Type, type_: Type) -> Type:
-    if isinstance(type_, TypeVar):
-        specialized_type_var_map = get_specialized_type_var_map(cls)
-        # If type_ is specialized and a TypeVar, replace it with its
-        # mapped type
-        if specialized_type_var_map and type_ in specialized_type_var_map:
-            return specialized_type_var_map[type_]
-    else:
-        specialized_type_var_map = get_specialized_type_var_map(type_)
-        # If type_ is specialized, copy its type_var_map to the definition
-        if specialized_type_var_map:
-            return type_.__strawberry_definition__.copy_with(specialized_type_var_map)
-
-    return type_
 
 
 def _get_fields(cls: Type) -> List[StrawberryField]:
@@ -138,22 +122,24 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # Note: We do this here rather in the `Strawberry.type` setter
             # function because at that point we don't have a link to the object
             # type that the field as attached to.
-            if isinstance(field.type_annotation, StrawberryAnnotation):
-                type_annotation = field.type_annotation
-                type_annotation.annotation = _resolve_specialized_type_var(
-                    cls,
-                    cast(type, type_annotation.annotation),
-                )
-                if type_annotation.namespace is None:
-                    type_annotation.set_namespace_from_field(field)
+            if (
+                isinstance(field.type_annotation, StrawberryAnnotation)
+                and field.type_annotation.namespace is None
+            ):
+                field.type_annotation.set_namespace_from_field(field)
+
+            # If the field origin is not cls, copy it and set cls on it.
+            # This is important for us to be able to resolve specialized
+            # generic when generating the schema.
+            if field.origin != cls:
+                field = copy.copy(field)  # noqa: PLW2901
+                field.origin = cls
 
         # Create a StrawberryField for fields that didn't use strawberry.field
         else:
             # Only ignore Private fields that weren't defined using StrawberryFields
             if is_private(field.type):
                 continue
-
-            field_type = _resolve_specialized_type_var(cls, field.type)
 
             origin = origins.get(field.name, cls)
             module = sys.modules[origin.__module__]
@@ -163,10 +149,10 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                 python_name=field.name,
                 graphql_name=None,
                 type_annotation=StrawberryAnnotation(
-                    annotation=field_type,
+                    annotation=field.type,
                     namespace=module.__dict__,
                 ),
-                origin=origin,
+                origin=cls,
                 default=getattr(cls, field.name, dataclasses.MISSING),
             )
 

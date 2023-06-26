@@ -27,13 +27,11 @@ def test_schema_future_annotations():
     from .schema_future_annotations import schema
 
     schema_output = str(schema).strip("\n").strip(" ")
-    output = pathlib.Path(__file__).parent / "schema.gql"
+    output = pathlib.Path(__file__).parent / "schema_future_annotations.gql"
     if not output.exists():
-        with output.open("w") as f:
-            f.write(schema_output + "\n")
+        output.write_text(schema_output + "\n")
 
-    with output.open() as f:
-        expected = f.read().strip("\n").strip(" ")
+    expected = output.read_text().strip("\n").strip(" ")
 
     assert schema_output == expected
 

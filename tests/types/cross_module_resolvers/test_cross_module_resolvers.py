@@ -73,12 +73,12 @@ def test_c_inheritance():
         b_age,
         b_is_of_full_age,
     ] = c_mod.CInheritance.__strawberry_definition__.fields
-    assert a_name.origin == a_mod.ABase
-    assert a_age.origin == a_mod.AObject
-    assert a_is_of_full_age.origin == a_mod.AObject
-    assert b_name.origin == b_mod.BBase
-    assert b_age.origin == b_mod.BObject
-    assert b_is_of_full_age.origin == b_mod.BObject
+    assert a_name.origin == c_mod.CInheritance
+    assert a_age.origin == c_mod.CInheritance
+    assert a_is_of_full_age.origin == c_mod.CInheritance
+    assert b_name.origin == c_mod.CInheritance
+    assert b_age.origin == c_mod.CInheritance
+    assert b_is_of_full_age.origin == c_mod.CInheritance
 
 
 def test_c_inheritance_resolver():

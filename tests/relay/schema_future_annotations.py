@@ -18,6 +18,7 @@ from typing_extensions import Annotated, Self
 
 import strawberry
 from strawberry import relay
+from strawberry.permission import BasePermission
 from strawberry.relay.utils import to_base64
 from strawberry.types import Info
 
@@ -178,9 +179,19 @@ async def fruits_async_resolver() -> Iterable[FruitAsync]:
     return fruits_async.values()
 
 
+class DummyPermission(BasePermission):
+    message = "Dummy message"
+
+    async def has_permission(self, source: Any, info: Info, **kwargs: Any) -> bool:
+        return True
+
+
 @strawberry.type
 class Query:
     node: relay.Node = relay.node()
+    node_with_async_permissions: relay.Node = relay.node(
+        permission_classes=[DummyPermission]
+    )
     nodes: List[relay.Node] = relay.node()
     node_optional: Optional[relay.Node] = relay.node()
     nodes_optional: List[Optional[relay.Node]] = relay.node()
