@@ -1,14 +1,20 @@
-Release type: patch
+Release type: minor
 
-Use typing.Annotated for unions so type checkers and IDEs correctly infer the type
+This release adds support for declaring union types using `typing.Annotated`
+instead of `strawberry.union(name, types=...)`.
 
+Code using the old syntax will continue to work, but it will trigger a
+deprecation warning. Using Annotated will improve type checking and IDE support
+especially when using `pyright`.
 
-Before
+Before:
+
 ```python
 Animal = strawberry.union("Animal", (Cat, Dog))
 ```
 
-After
+After:
+
 ```python
 from typing import Annotated, Union
 
