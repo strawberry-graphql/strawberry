@@ -422,7 +422,7 @@ class LibCSTSourceFinder:
         invalid_type_name = getattr(invalid_type, "__name__", None)
 
         if hasattr(invalid_type, "_scalar_definition"):
-            invalid_type_name = invalid_type._scalar_definition.name  # type: ignore
+            invalid_type_name = invalid_type._scalar_definition.name
 
         if annotated_calls:
             annotated_call_node = annotated_calls[0]
