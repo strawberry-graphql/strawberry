@@ -43,7 +43,7 @@ from strawberry.types.info import Info  # noqa: TCH001
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
 from strawberry.utils.inspect import in_async_context
-from strawberry.utils.typing import eval_type
+from strawberry.utils.typing import eval_type, is_classvar
 
 from .utils import from_base64, to_base64
 
@@ -408,16 +408,13 @@ class Node:
             base_namespace = sys.modules[base.__module__].__dict__
 
             for attr_name, attr in getattr(base, "__annotations__", {}).items():
-                try:
-                    evaled = eval_type(
-                        ForwardRef(attr) if isinstance(attr, str) else attr,
-                        globalns=base_namespace,
-                    )
-                except TypeError:
-                    # Some ClassVar might raise TypeError when being resolved
-                    # on some python versions. This is fine to skip since
-                    # we are not interested in ClassVars here
+                if is_classvar(base, attr):
                     continue
+
+                evaled = eval_type(
+                    ForwardRef(attr) if isinstance(attr, str) else attr,
+                    globalns=base_namespace,
+                )
 
                 if get_origin(evaled) is Annotated and any(
                     isinstance(a, NodeIDPrivate) for a in get_args(evaled)
