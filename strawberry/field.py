@@ -321,7 +321,6 @@ class StrawberryField(dataclasses.Field):
         # We return UNRESOLVED by default, which means this case will raise a
         # MissingReturnAnnotationError exception in _check_field_annotations
         resolved = UNRESOLVED
-        allow_generic = True
 
         # We are catching NameError because dataclasses tries to fetch the type
         # of the field from the class before the class is fully defined.
@@ -338,7 +337,6 @@ class StrawberryField(dataclasses.Field):
                 # on if we let it be returned. So use `type_annotation` instead
                 # which is the same behaviour as having no type information.
                 resolved = self.base_resolver.type
-                allow_generic = False
 
         # If this is a generic field, try to resolve it using its origin's
         # specialized type_var_map
@@ -358,13 +356,6 @@ class StrawberryField(dataclasses.Field):
                 and isinstance(resolved, StrawberryType)
             ):
                 resolved = resolved.copy_with(type_definition.type_var_map)
-
-            # If at this point the field is still generic and we are not allowing
-            # generics to be returned, set it to UNRESOLVED
-            if not allow_generic and _is_generic(
-                cast(Union[StrawberryType, type], resolved)
-            ):
-                resolved = UNRESOLVED
 
         return resolved
 
