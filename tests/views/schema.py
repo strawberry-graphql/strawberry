@@ -80,6 +80,10 @@ class Query:
         return "Hey"
 
     @strawberry.field
+    async def error(self, message: str) -> AsyncGenerator[str, None]:
+        yield GraphQLError(message)  # type: ignore
+
+    @strawberry.field
     async def exception(self, message: str) -> str:
         raise ValueError(message)
 
@@ -181,6 +185,12 @@ class Subscription:
     async def flavors(self) -> AsyncGenerator[Flavor, None]:
         yield Flavor.VANILLA
         yield Flavor.STRAWBERRY
+        yield Flavor.CHOCOLATE
+
+    @strawberry.subscription
+    async def flavors_invalid(self) -> AsyncGenerator[Flavor, None]:
+        yield Flavor.VANILLA
+        yield "invalid type"  # type: ignore
         yield Flavor.CHOCOLATE
 
     @strawberry.subscription

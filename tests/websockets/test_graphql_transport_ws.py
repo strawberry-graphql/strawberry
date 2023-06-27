@@ -430,14 +430,14 @@ async def test_subscription_errors(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert response["type"] == ErrorMessage.type
+    assert response["type"] == NextMessage.type
     assert response["id"] == "sub1"
-    assert len(response["payload"]) == 1
-    assert response["payload"][0].get("path") == ["error"]
-    assert response["payload"][0]["message"] == "TEST ERR"
+    assert len(response["payload"]["errors"]) == 1
+    assert response["payload"]["errors"][0]["path"] == ["error"]
+    assert response["payload"]["errors"][0]["message"] == "TEST ERR"
 
 
-async def test_subscription_error_no_complete(ws: WebSocketClient):
+async def test_operation_error_no_complete(ws: WebSocketClient):
     """
     Test that an "error" message is not followed by "complete"
     """
@@ -446,7 +446,7 @@ async def test_subscription_error_no_complete(ws: WebSocketClient):
         SubscribeMessage(
             id="sub1",
             payload=SubscribeMessagePayload(
-                query='subscription { error(message: "TEST ERR") }',
+                query='query { error(message: "TEST ERR") }',
             ),
         ).as_dict()
     )
@@ -461,7 +461,7 @@ async def test_subscription_error_no_complete(ws: WebSocketClient):
         SubscribeMessage(
             id="sub2",
             payload=SubscribeMessagePayload(
-                query='subscription { error(message: "TEST ERR") }',
+                query='query { error(message: "TEST ERR") }',
             ),
         ).as_dict()
     )
@@ -871,3 +871,40 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
     args = errorhandler.call_args
     assert isinstance(args[0][0], AttributeError)
     assert "total_seconds" in str(args[0][0])
+
+
+async def test_subscription_errors_continue(ws: WebSocketClient):
+    """
+    Verify that an ExecutionResult with errors during subscription does not terminate
+    the subscription
+    """
+
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="subscription { flavorsInvalid }",
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == NextMessage.type
+    assert response["id"] == "sub1"
+    assert response["payload"]["data"] == {"flavorsInvalid": "VANILLA"}
+
+    response = await ws.receive_json()
+    assert response["type"] == NextMessage.type
+    assert response["id"] == "sub1"
+    assert response["payload"]["data"] is None
+    errors = response["payload"]["errors"]
+    assert "cannot represent value" in str(errors)
+
+    response = await ws.receive_json()
+    assert response["type"] == NextMessage.type
+    assert response["id"] == "sub1"
+    assert response["payload"]["data"] == {"flavorsInvalid": "CHOCOLATE"}
+
+    response = await ws.receive_json()
+    assert response["type"] == CompleteMessage.type
+    assert response["id"] == "sub1"
