@@ -11,7 +11,7 @@ from typing import (
     Optional,
     Sequence,
 )
-from typing_extensions import Literal, Protocol, TypedDict
+from typing_extensions import Literal, Protocol, TypedDict, deprecated
 from weakref import WeakSet
 
 from channels.consumer import AsyncConsumer
@@ -86,8 +86,67 @@ class ChannelsConsumer(AsyncConsumer):
 
         await super().dispatch(message)
 
-    @contextlib.asynccontextmanager
+    @deprecated("Use listen_to_channel instead", stacklevel=2)
     async def channel_listen(
+        self,
+        type: str,
+        *,
+        timeout: Optional[float] = None,
+        groups: Sequence[str] = (),
+    ) -> AsyncGenerator[Any, None]:
+        """Listen for messages sent to this consumer.
+
+        Utility to listen for channels messages for this consumer inside
+        a resolver (usually inside a subscription).
+
+        Parameters:
+            type:
+                The type of the message to wait for.
+            timeout:
+                An optional timeout to wait for each subsequent message
+            groups:
+                An optional sequence of groups to receive messages from.
+                When passing this parameter, the groups will be registered
+                using `self.channel_layer.group_add` at the beggining of the
+                execution and then discarded using `self.channel_layer.group_discard`
+                at the end of the execution.
+
+        """
+        if self.channel_layer is None:
+            raise RuntimeError(
+                "Layers integration is required listening for channels.\n"
+                "Check https://channels.readthedocs.io/en/stable/topics/channel_layers.html "  # noqa:E501
+                "for more information"
+            )
+
+        added_groups = []
+        try:
+            # This queue will receive incoming messages for this generator instance
+            queue: asyncio.Queue = asyncio.Queue()
+            # Create a weak reference to the queue. Once we leave the current scope, it
+            # will be garbage collected
+            self.listen_queues[type].add(queue)
+
+            for group in groups:
+                await self.channel_layer.group_add(group, self.channel_name)
+                added_groups.append(group)
+
+            while True:
+                awaitable = queue.get()
+                if timeout is not None:
+                    awaitable = asyncio.wait_for(awaitable, timeout)
+                try:
+                    yield await awaitable
+                except asyncio.TimeoutError:
+                    # TODO: shall we add log here and maybe in the suppress below?
+                    return
+        finally:
+            for group in added_groups:
+                with contextlib.suppress(Exception):
+                    await self.channel_layer.group_discard(group, self.channel_name)
+
+    @contextlib.asynccontextmanager
+    async def listen_to_channel(
         self,
         type: str,
         *,
@@ -134,17 +193,17 @@ class ChannelsConsumer(AsyncConsumer):
             await self.channel_layer.group_add(group, self.channel_name)
             added_groups.append(group)
         try:
-            yield self._channel_listen_generator(queue, timeout)
+            yield self._listen_to_channel_generator(queue, timeout)
         finally:
             # Code to release resource (Channels subscriptions)
             for group in added_groups:
                 with contextlib.suppress(Exception):
                     await self.channel_layer.group_discard(group, self.channel_name)
 
-    async def _channel_listen_generator(
+    async def _listen_to_channel_generator(
         self, queue: asyncio.Queue, timeout: Optional[float]
     ) -> AsyncGenerator[Any, None]:
-        """Generator for channel_listen method.
+        """Generator for listen_to_channel method.
 
         Seperated to allow user code to be run after subscribing to channels
         and before blocking to wait for incoming channel messages.

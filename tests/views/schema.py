@@ -210,13 +210,12 @@ class Subscription:
     ) -> AsyncGenerator[str, None]:
         yield info.context["request"].channel_name
 
-        async with info.context["request"].channel_listen(
+        async for message in info.context["request"].channel_listen(
             type="test.message",
             timeout=timeout,
             groups=[group] if group is not None else [],
-        ) as cm:
-            async for message in cm:
-                yield message["text"]
+        ):
+            yield message["text"]
 
     @strawberry.subscription
     async def listener_with_confirmation(
@@ -225,7 +224,7 @@ class Subscription:
         timeout: Optional[float] = None,
         group: Optional[str] = None,
     ) -> AsyncGenerator[Union[str, None], None]:
-        async with info.context["request"].channel_listen(
+        async with info.context["request"].listen_to_channel(
             type="test.message",
             timeout=timeout,
             groups=[group] if group is not None else [],
