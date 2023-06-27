@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.189.3 - 2023-06-27
+--------------------
+
+This release removes some usage of deprecated functions from GraphQL-core.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2894](https://github.com/strawberry-graphql/strawberry/pull/2894/)
+
+
 0.189.2 - 2023-06-27
 --------------------
 
