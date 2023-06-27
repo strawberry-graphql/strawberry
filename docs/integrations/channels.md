@@ -136,8 +136,7 @@ class Subscription:
                 },
             )
 
-        async with ws.channel_listen("chat.message", groups=room_ids) as cm:
-            # Optionally: Confirm subscription with `yield None`
+        async with ws.listen_to_channel("chat.message", groups=room_ids) as cm:
             async for message in cm:
                 if message["room_id"] in room_ids:
                     yield ChatRoomMessage(
