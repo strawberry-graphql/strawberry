@@ -127,19 +127,17 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
                 payload = NextMessage(**response).payload
                 ret = ExecutionResult(payload["data"], None)
                 if "errors" in payload:
-                    ret.errors = process_errors(payload["errors"])
+                    ret.errors = self.process_errors(payload["errors"])
                 ret.extensions = payload.get("extensions", None)
                 yield ret
             elif message_type == ErrorMessage.type:
                 error_payload = ErrorMessage(**response).payload
-                yield ExecutionResult(data=None, errors=process_errors(error_payload))
+                yield ExecutionResult(
+                    data=None, errors=self.process_errors(error_payload)
+                )
                 return  # an error message is the last message for a subscription
             else:
                 return
 
-
-def process_errors(errors: List[GraphQLFormattedError]) -> List[GraphQLError]:
-    return [
-        GraphQLError(str(error), original_error=error)
-        for error in errors
-    ]
+    def process_errors(self, errors: List[GraphQLFormattedError]) -> List[GraphQLError]:
+        return [GraphQLError(str(error), original_error=error) for error in errors]
