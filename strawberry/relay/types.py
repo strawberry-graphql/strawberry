@@ -408,6 +408,9 @@ class Node:
             base_namespace = sys.modules[base.__module__].__dict__
 
             for attr_name, attr in getattr(base, "__annotations__", {}).items():
+                # Some ClassVar might raise TypeError when being resolved
+                # on some python versions. This is fine to skip since
+                # we are not interested in ClassVars here
                 if is_classvar(base, attr):
                     continue
 
