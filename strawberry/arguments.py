@@ -177,13 +177,17 @@ def convert_argument(
     if has_object_definition(type_):
         kwargs = {}
 
-        for field in type_.__strawberry_definition__.fields:
+        type_definition = type_.__strawberry_definition__
+        for field in type_definition.fields:
             value = cast(Mapping, value)
             graphql_name = config.name_converter.from_field(field)
 
             if graphql_name in value:
                 kwargs[field.python_name] = convert_argument(
-                    value[graphql_name], field.type, scalar_registry, config
+                    value[graphql_name],
+                    field.resolve_type(type_definition=type_definition),
+                    scalar_registry,
+                    config,
                 )
 
         type_ = cast(type, type_)
