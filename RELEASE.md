@@ -1,3 +1,3 @@
 Release type: patch
 
-Stop using functionality deprecated in graphql-core 3.2
+This release removes some usage of deprecated functions from GraphQL-core.
