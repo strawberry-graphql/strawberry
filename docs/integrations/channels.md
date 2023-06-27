@@ -159,7 +159,7 @@ a function to yield all
 messages sent using the given message `type` (`chat.message` in the above example)
 but does not ensure that the message was sent to the same group or groups that
 it was called with - if another subscription using the same `ChannelsConsumer`
-also uses `ws.channel_listen` with some other group names, those will be returned
+also uses `ws.listen_to_channel` with some other group names, those will be returned
 as well.
 
 In the example we ensure `message["room_id"] in room_ids` before passing messages
@@ -170,9 +170,9 @@ the chat rooms requested in that subscription.
 
 <Note>
 
-We do not need to call `await channel_layer.group_add(room, ws.channel_name)` If
+We do not need to call `await channel_layer.group_add(room, ws.channel_name)` if
 we don't want to send an initial message while instantiating the subscription.
-It is handled by `ws.channel_listen`.
+It is handled by `ws.listen_to_channel`.
 
 </Note>
 
@@ -622,13 +622,14 @@ Every graphql session will have an instance of this class inside `info.context["
 #### properties
 
 ```python
-async def channel_listen(
+@contextlib.asynccontextmanager
+async def listen_to_channel(
     self,
     type: str,
     *,
     timeout: float | None = None,
     groups: Sequence[str] | None = None
-) -> Awaitable[AsyncGenerator[Any, None]]:
+) -> AsyncGenerator[Any, None]:
     ...
 ```
 
