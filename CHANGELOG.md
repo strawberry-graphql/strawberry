@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.190.0 - 2023-06-27
+--------------------
+
+This release refactors the way we resolve field types to to make it
+more robust, resolving some corner cases.
+
+One case that should be fixed is when using specialized generics
+with future annotations.
+
+Contributed by [Alexander](https://github.com/devkral) via [PR #2868](https://github.com/strawberry-graphql/strawberry/pull/2868/)
+
+
 0.189.3 - 2023-06-27
 --------------------
 
