@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import warnings
 from collections import defaultdict
 from typing import (
     Any,
@@ -11,7 +12,7 @@ from typing import (
     Optional,
     Sequence,
 )
-from typing_extensions import Literal, Protocol, TypedDict, deprecated
+from typing_extensions import Literal, Protocol, TypedDict
 from weakref import WeakSet
 
 from channels.consumer import AsyncConsumer
@@ -86,7 +87,6 @@ class ChannelsConsumer(AsyncConsumer):
 
         await super().dispatch(message)
 
-    @deprecated("Use listen_to_channel instead", stacklevel=2)
     async def channel_listen(
         self,
         type: str,
@@ -112,6 +112,7 @@ class ChannelsConsumer(AsyncConsumer):
                 at the end of the execution.
 
         """
+        warnings.warn("Use listen_to_channel instead", DeprecationWarning, stacklevel=2)
         if self.channel_layer is None:
             raise RuntimeError(
                 "Layers integration is required listening for channels.\n"
