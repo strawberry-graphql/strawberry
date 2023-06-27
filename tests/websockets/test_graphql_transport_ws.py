@@ -433,7 +433,7 @@ async def test_subscription_errors(ws: WebSocketClient):
     assert response["type"] == NextMessage.type
     assert response["id"] == "sub1"
     assert len(response["payload"]["errors"]) == 1
-    assert response["payload"]["errors"][0].get("path") == ["error"]
+    assert response["payload"]["errors"][0]["path"] == ["error"]
     assert response["payload"]["errors"][0]["message"] == "TEST ERR"
 
 

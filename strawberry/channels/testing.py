@@ -140,9 +140,6 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
 
 def process_errors(errors: List[GraphQLFormattedError]) -> List[GraphQLError]:
     return [
-        GraphQLError(
-            message=error["message"],
-            extensions=error.get("extensions", None),
-        )
+        GraphQLError(str(error), original_error=error)
         for error in errors
     ]
