@@ -20,6 +20,9 @@ def generate_cookie_header_value(
     cookie: SimpleCookie = SimpleCookie()
 
     cookie[key] = value
+    cookie[key]["path"] = path
+    cookie[key]["secure"] = secure
+    cookie[key]["httponly"] = httponly
 
     if expires is not None:
         if expires.tzinfo is None:
@@ -32,11 +35,6 @@ def generate_cookie_header_value(
         cookie[key]["max-age"] = max_age
     if domain is not None:
         cookie[key]["domain"] = domain
-
-    cookie[key]["path"] = path
-    cookie[key]["secure"] = secure
-    cookie[key]["httponly"] = httponly
-
     if samesite is not None:
         cookie[key]["samesite"] = samesite
 
