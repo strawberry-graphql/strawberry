@@ -349,28 +349,23 @@ class StrawberryField(dataclasses.Field):
             )
             if specialized_type_var_map and isinstance(resolved, StrawberryType):
                 resolved = resolved.copy_with(specialized_type_var_map)
-            elif specialized_type_var_map and has_object_definition(resolved):
-                resolved = resolved.__strawberry_definition__.copy_with(
-                    specialized_type_var_map
-                )
 
             # If the field is still generic, try to resolve it from the type_definition
             # that is asking for it.
-            if _is_generic(cast(Union[StrawberryType, type], resolved)):
-                if type_definition is not None and type_definition.type_var_map:
-                    if isinstance(resolved, StrawberryType) and resolved.is_generic:
-                        resolved = resolved.copy_with(type_definition.type_var_map)
-                    elif (
-                        has_object_definition(resolved)
-                        and resolved.__strawberry_definition__.is_generic
-                    ):
-                        resolved = resolved.__strawberry_definition__.copy_with(
-                            type_definition.type_var_map
-                        )
-                    elif not allow_generic:
-                        resolved = UNRESOLVED
-                elif not allow_generic:
-                    resolved = UNRESOLVED
+            if (
+                _is_generic(cast(Union[StrawberryType, type], resolved))
+                and type_definition is not None
+                and type_definition.type_var_map
+                and isinstance(resolved, StrawberryType)
+            ):
+                resolved = resolved.copy_with(type_definition.type_var_map)
+
+            # If at this point the field is still generic and we are not allowing
+            # generics to be returned, set it to UNRESOLVED
+            if not allow_generic and _is_generic(
+                cast(Union[StrawberryType, type], resolved)
+            ):
+                resolved = UNRESOLVED
 
         return resolved
 
@@ -392,11 +387,13 @@ class StrawberryField(dataclasses.Field):
         elif isinstance(type_, StrawberryType):
             override_type = type_.copy_with(type_var_map)
 
-        if override_type is not None and new_field.type_annotation is not None:
-            new_field.type_annotation = copy.copy(new_field.type_annotation)
-            new_field.type_annotation.annotation = override_type
-        elif override_type is not None:
-            new_field.type_annotation = StrawberryAnnotation(override_type)
+        if override_type is not None:
+            new_field.type_annotation = StrawberryAnnotation(
+                override_type,
+                namespace=(
+                    self.type_annotation.namespace if self.type_annotation else None
+                ),
+            )
 
         if self.base_resolver is not None:
             new_field.base_resolver = self.base_resolver.copy_with(type_var_map)
