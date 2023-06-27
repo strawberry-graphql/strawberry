@@ -307,7 +307,7 @@ class BaseGraphQLTransportWSHandler(ABC):
                     next_payload = {"data": result.data}
                     if result.errors:
                         next_payload["errors"] = [
-                            format_graphql_error(err) for err in result.errors
+                            err.formatted for err in result.errors
                         ]
                     next_message = NextMessage(id=operation.id, payload=next_payload)
                     await operation.send_message(next_message)
