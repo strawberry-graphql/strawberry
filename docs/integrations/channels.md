@@ -155,7 +155,7 @@ message to all the channel_layer groups (specified in the subscription argument
 <Note>
 
 The `ChannelsConsumer` instance is shared between all subscriptions created in
-a single websocket connection. The `ws.channel_listen` context manager will return
+a single websocket connection. The `ws.listen_to_channel` context manager will return
 a function to yield all
 messages sent using the given message `type` (`chat.message` in the above example)
 but does not ensure that the message was sent to the same group or groups that
