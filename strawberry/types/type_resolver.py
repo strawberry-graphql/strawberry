@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import dataclasses
 import sys
 from typing import Dict, List, Type
@@ -128,13 +127,6 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             ):
                 field.type_annotation.set_namespace_from_field(field)
 
-            # If the field origin is not cls, copy it and set cls on it.
-            # This is important for us to be able to resolve specialized
-            # generic when generating the schema.
-            if field.origin != cls:
-                field = copy.copy(field)  # noqa: PLW2901
-                field.origin = cls
-
         # Create a StrawberryField for fields that didn't use strawberry.field
         else:
             # Only ignore Private fields that weren't defined using StrawberryFields
@@ -152,7 +144,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                     annotation=field.type,
                     namespace=module.__dict__,
                 ),
-                origin=cls,
+                origin=origin,
                 default=getattr(cls, field.name, dataclasses.MISSING),
             )
 

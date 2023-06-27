@@ -31,7 +31,6 @@ from strawberry.type import (
 )
 from strawberry.union import StrawberryUnion
 from strawberry.utils.cached_property import cached_property
-from strawberry.utils.inspect import get_specialized_type_var_map
 
 from .types.fields.resolver import StrawberryResolver
 
@@ -344,8 +343,8 @@ class StrawberryField(dataclasses.Field):
         # If this is a generic field, try to resolve it using its origin's
         # specialized type_var_map
         if _is_generic(resolved):  # type: ignore
-            specialized_type_var_map = get_specialized_type_var_map(
-                cast(type, self.origin)
+            specialized_type_var_map = (
+                type_definition and type_definition.specialized_type_var_map
             )
             if specialized_type_var_map and isinstance(resolved, StrawberryType):
                 resolved = resolved.copy_with(specialized_type_var_map)
