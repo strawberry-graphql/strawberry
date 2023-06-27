@@ -210,10 +210,15 @@ class ChannelsHttpClient(HttpClient):
 
         response_headers = {}
         for key, value in response["headers"]:
-            if isinstance(value, list):
-                response_headers[key.decode()] = [e.decode() for e in value]
+            name = key.decode()
+            if name in response_headers:
+                if isinstance(response_headers[name], list):
+                    response_headers[name].append(value.decode())
+                else:
+                    response_headers[name] = [response_headers[name], value.decode()]
             else:
-                response_headers[key.decode()] = value.decode()
+                response_headers[name] = value.decode()
+
 
         return Response(
             status_code=response["status"],

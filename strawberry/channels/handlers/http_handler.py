@@ -7,7 +7,7 @@ from __future__ import annotations
 import dataclasses
 import json
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union, Tuple
 from urllib.parse import parse_qs
 
 from django.conf import settings
@@ -39,8 +39,8 @@ class ChannelsResponse:
     content: bytes
     status: int = 200
     content_type: str = "application/json"
-    headers: Dict[bytes, Union[bytes, List[bytes]]] = dataclasses.field(
-        default_factory=dict
+    headers: List[Tuple[bytes, bytes]] = dataclasses.field(
+        default_factory=list
     )
 
 
@@ -166,12 +166,13 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse
     ) -> ChannelsResponse:
-        headers: Dict[bytes, Union[bytes, List[bytes]]] = {}
-        for k, v in sub_response.headers.items():
-            if isinstance(v, list):
-                headers[k.encode()] = [e.encode() for e in v]
+        headers = []
+        for name, value in sub_response.headers.items():
+            if isinstance(value, list):
+                multivalue_headers = [(name.encode(), element.encode()) for element in value]
+                headers.extend(multivalue_headers)
             else:
-                headers[k.encode()] = v.encode()
+                headers.append((name.encode(), value.encode()))
 
         return ChannelsResponse(
             content=json.dumps(response_data).encode(),
@@ -183,18 +184,7 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         request = ChannelsRequest(consumer=self, body=body)
         try:
             response: ChannelsResponse = await self.run(request)
-
-            if b"Content-Type" not in response.headers:
-                response.headers[b"Content-Type"] = response.content_type.encode()
-
-            headers = []
-
-            for k, v in response.headers.items():
-                if isinstance(v, list):
-                    for e in v:
-                        headers.append((k, e))
-                else:
-                    headers.append((k, v))
+            response.headers.append((b"Content-Type", response.content_type.encode()))
 
             await self.send_response(
                 response.status,
