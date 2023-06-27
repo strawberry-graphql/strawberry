@@ -100,6 +100,9 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
             response = await self.receive_json_from()
             assert response["type"] == GQL_CONNECTION_ACK
 
+    # Actual `ExecutionResult`` objects are not available client-side, since they
+    # get transformed into `FormattedExecutionResult` on the wire, but we attempt
+    # to do a limited representation of them here, to make testing simpler.
     async def subscribe(
         self, query: str, variables: Optional[Dict] = None
     ) -> Union[ExecutionResult, AsyncIterator[ExecutionResult]]:
@@ -140,4 +143,13 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
                 return
 
     def process_errors(self, errors: List[GraphQLFormattedError]) -> List[GraphQLError]:
-        return [GraphQLError(str(error), original_error=error) for error in errors]
+        """Reconst a GraphQLError from a FormattedGraphQLError"""
+        result = []
+        for f_error in errors:
+            error = GraphQLError(
+                message=f_error["message"],
+                extensions=f_error.get("extensions", None),
+            )
+            error.path = f_error.get("path", None)
+            result.append(error)
+        return result
