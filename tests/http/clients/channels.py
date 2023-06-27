@@ -219,7 +219,6 @@ class ChannelsHttpClient(HttpClient):
             else:
                 response_headers[name] = value.decode()
 
-
         return Response(
             status_code=response["status"],
             data=response["body"],

@@ -1,5 +1,3 @@
-
-
 from strawberry.http.temporal_response import TemporalResponse
 
 

@@ -7,7 +7,7 @@ from __future__ import annotations
 import dataclasses
 import json
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union, Tuple
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Tuple, Union
 from urllib.parse import parse_qs
 
 from django.conf import settings
@@ -39,9 +39,7 @@ class ChannelsResponse:
     content: bytes
     status: int = 200
     content_type: str = "application/json"
-    headers: List[Tuple[bytes, bytes]] = dataclasses.field(
-        default_factory=list
-    )
+    headers: List[Tuple[bytes, bytes]] = dataclasses.field(default_factory=list)
 
 
 @dataclasses.dataclass
@@ -169,7 +167,9 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         headers = []
         for name, value in sub_response.headers.items():
             if isinstance(value, list):
-                multivalue_headers = [(name.encode(), element.encode()) for element in value]
+                multivalue_headers = [
+                    (name.encode(), element.encode()) for element in value
+                ]
                 headers.extend(multivalue_headers)
             else:
                 headers.append((name.encode(), value.encode()))
