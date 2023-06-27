@@ -13,6 +13,7 @@ from strawberry.printer import print_schema
 from strawberry.scalars import JSON
 from strawberry.type import StrawberryList, StrawberryOptional
 from tests.a import A
+from tests.d import D
 
 
 def test_forward_reference():
@@ -74,12 +75,43 @@ def test_lazy_forward_reference():
     type B {
       id: ID!
       a: A!
+      aList: [A!]!
       optionalA: A
       optionalA2: A
     }
 
     type Query {
       a: A!
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+    assert print_schema(schema) == textwrap.dedent(expected_representation).strip()
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 9),
+    reason="Python 3.8 and previous can't properly resolve this.",
+)
+def test_lazy_forward_reference_schema_with_a_list_only():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def d(self) -> D:
+            return D(id=strawberry.ID("1"))
+
+    expected_representation = """
+    type C {
+      id: ID!
+    }
+
+    type D {
+      id: ID!
+      cList: [C!]!
+    }
+
+    type Query {
+      d: D!
     }
     """
 

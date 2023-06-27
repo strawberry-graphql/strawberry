@@ -26,6 +26,12 @@ def test_cyclic_import():
 
     type TypeB {
       typeA: TypeA!
+      typeAList: [TypeA!]!
+      typeCList: [TypeC!]!
+    }
+
+    type TypeC {
+      name: String!
     }
     """
 
