@@ -158,12 +158,12 @@ class GraphQLView(
             content_type="application/json",
         )
 
-        for k, v in sub_response.headers.items():
-            if isinstance(v, list):
-                for e in v:
-                    response.headers.add(k, e)
+        for name, value in sub_response.headers.items():
+            if isinstance(value, list):
+                for element in value:
+                    response.headers.add(name, element)
             else:
-                response.headers.add(k, v)
+                response.headers.add(name, value)
 
         return response
 
