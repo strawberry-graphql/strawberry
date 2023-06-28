@@ -1,6 +1,24 @@
 CHANGELOG
 =========
 
+0.192.0 - 2023-06-28
+--------------------
+
+This release introduces a new command called `upgrade`, this command can be used
+to run codemods on your codebase to upgrade to the latest version of Strawberry.
+
+At the moment we only support upgrading unions to use the new syntax with
+annotated, but in future we plan to add more commands to help with upgrading.
+
+Here's how you can use the command to upgrade your codebase:
+
+```shell
+strawberry upgrade annotated-union .
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2886](https://github.com/strawberry-graphql/strawberry/pull/2886/)
+
+
 0.191.0 - 2023-06-28
 --------------------
 
