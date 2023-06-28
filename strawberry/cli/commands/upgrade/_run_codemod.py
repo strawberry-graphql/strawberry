@@ -29,9 +29,9 @@ def _execute_transform_wrap(
 
 def _get_progress_and_pool(
     total_files: int, jobs: int
-) -> tuple[PoolType, ProgressType]:  # type: ignore
+) -> tuple[PoolType, ProgressType]:
     poll_impl: PoolType = Pool  # type: ignore
-    progress_impl = Progress
+    progress_impl: ProgressType = Progress
 
     if total_files == 1 or jobs == 1:
         poll_impl = DummyPool
@@ -63,7 +63,7 @@ def run_codemod(
         for filename in files
     ]
 
-    with pool_impl(processes=jobs) as p, progress_impl() as progress:
+    with pool_impl(processes=jobs) as p, progress_impl() as progress:  # type: ignore
         task_id = progress.add_task("[cyan]Updating...", total=len(tasks))
 
         for result in p.imap_unordered(

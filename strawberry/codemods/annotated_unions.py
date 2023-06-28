@@ -26,6 +26,8 @@ def _find_positional_argument(
         if index == search_index and arg.keyword is None:
             return arg
 
+    return None
+
 
 class ConvertUnionToAnnotatedUnion(VisitorBasedCodemodCommand):
     DESCRIPTION: str = (
@@ -101,27 +103,27 @@ class ConvertUnionToAnnotatedUnion(VisitorBasedCodemodCommand):
         assert union_name
         assert isinstance(types.value, (cst.Tuple, cst.List))
 
-        types = types.value.elements
-        union_name = union_name.value
+        types = types.value.elements  # type: ignore
+        union_name = union_name.value  # type: ignore
 
         description = _find_named_argument(original_node.args, "description")
         directives = _find_named_argument(original_node.args, "directives")
 
         if self.use_pipe_syntax:
-            union_node = self._create_union_node_with_pipe_syntax(types)
+            union_node = self._create_union_node_with_pipe_syntax(types)  # type: ignore
         else:
             AddImportsVisitor.add_needed_import(self.context, "typing", "Union")
 
             union_node = cst.Subscript(
                 value=cst.Name(value="Union"),
                 slice=[
-                    cst.SubscriptElement(slice=cst.Index(value=t.value)) for t in types
+                    cst.SubscriptElement(slice=cst.Index(value=t.value)) for t in types  # type: ignore  # noqa: E501
                 ],
             )
 
         union_call_args = [
             cst.Arg(
-                value=union_name,
+                value=union_name,  # type: ignore
                 keyword=cst.Name(value="name"),
                 equal=cst.AssignEqual(
                     whitespace_before=cst.SimpleWhitespace(""),
