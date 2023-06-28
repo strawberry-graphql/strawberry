@@ -28,14 +28,14 @@ def _find_positional_argument(
 
 
 class ConvertUnionToAnnotatedUnion(VisitorBasedCodemodCommand):
-    # TODO: support Union and | syntax, also in errors? ugh
     DESCRIPTION: str = (
         "Converts strawberry.union(..., types=(...)) to "
         "Annotated[Union[...], strawberry.union(...)]"
     )
 
-    def __init__(self, context: CodemodContext) -> None:
+    def __init__(self, context: CodemodContext, use_pipe_syntax: bool = True) -> None:
         self._is_using_named_import = False
+        self.use_pipe_syntax = use_pipe_syntax
 
         super().__init__(context)
 
@@ -99,10 +99,17 @@ class ConvertUnionToAnnotatedUnion(VisitorBasedCodemodCommand):
         description = _find_named_argument(original_node.args, "description")
         directives = _find_named_argument(original_node.args, "directives")
 
-        union_node = cst.Subscript(
-            value=cst.Name(value="Union"),
-            slice=[cst.SubscriptElement(slice=cst.Index(value=t.value)) for t in types],
-        )
+        if self.use_pipe_syntax:
+            union_node = self._create_union_node_with_pipe_syntax(types)
+        else:
+            AddImportsVisitor.add_needed_import(self.context, "typing", "Union")
+
+            union_node = cst.Subscript(
+                value=cst.Name(value="Union"),
+                slice=[
+                    cst.SubscriptElement(slice=cst.Index(value=t.value)) for t in types
+                ],
+            )
 
         union_call_args = [
             cst.Arg(
@@ -153,3 +160,16 @@ class ConvertUnionToAnnotatedUnion(VisitorBasedCodemodCommand):
                 ),
             ],
         )
+
+    @classmethod
+    def _create_union_node_with_pipe_syntax(
+        cls, types: Sequence[cst.BaseElement]
+    ) -> cst.BaseExpression:
+        type_names = [t.value for t in types]
+
+        if not all(isinstance(t, cst.Name) for t in type_names):
+            raise ValueError("Only names are supported for now")
+
+        expression = " | ".join(name.value for name in type_names)  # type: ignore
+
+        return cst.parse_expression(expression)

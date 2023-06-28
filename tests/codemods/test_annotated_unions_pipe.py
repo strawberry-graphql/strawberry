@@ -12,13 +12,12 @@ class TestConvertConstantCommand(CodemodTest):
         """
 
         after = """
-            from typing import Union
             from typing_extensions import Annotated
 
-            AUnion = Annotated[Union[Foo, Bar], strawberry.union(name="ABC")]
+            AUnion = Annotated[Foo | Bar, strawberry.union(name="ABC")]
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=False)
+        self.assertCodemod(before, after, use_pipe_syntax=True)
 
     def test_update_union_using_import(self) -> None:
         before = """
@@ -28,13 +27,12 @@ class TestConvertConstantCommand(CodemodTest):
         """
 
         after = """
-            from typing import Union
             from typing_extensions import Annotated
 
-            AUnion = Annotated[Union[Foo, Bar], strawberry.union(name="ABC")]
+            AUnion = Annotated[Foo | Bar, strawberry.union(name="ABC")]
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=False)
+        self.assertCodemod(before, after, use_pipe_syntax=True)
 
     def test_noop_other_union(self) -> None:
         before = """
@@ -49,7 +47,7 @@ class TestConvertConstantCommand(CodemodTest):
             union("A", "B")
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=False)
+        self.assertCodemod(before, after, use_pipe_syntax=True)
 
     def test_update_union_positional_name(self) -> None:
         before = """
@@ -57,13 +55,12 @@ class TestConvertConstantCommand(CodemodTest):
         """
 
         after = """
-            from typing import Union
             from typing_extensions import Annotated
 
-            AUnion = Annotated[Union[Foo, Bar], strawberry.union(name="ABC")]
+            AUnion = Annotated[Foo | Bar, strawberry.union(name="ABC")]
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=False)
+        self.assertCodemod(before, after, use_pipe_syntax=True)
 
     def test_update_swapped_kwargs(self) -> None:
         before = """
@@ -71,13 +68,12 @@ class TestConvertConstantCommand(CodemodTest):
         """
 
         after = """
-            from typing import Union
             from typing_extensions import Annotated
 
-            AUnion = Annotated[Union[Foo, Bar], strawberry.union(name="ABC")]
+            AUnion = Annotated[Foo | Bar, strawberry.union(name="ABC")]
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=False)
+        self.assertCodemod(before, after, use_pipe_syntax=True)
 
     def test_update_union_list(self) -> None:
         before = """
@@ -85,13 +81,12 @@ class TestConvertConstantCommand(CodemodTest):
         """
 
         after = """
-            from typing import Union
             from typing_extensions import Annotated
 
-            AUnion = Annotated[Union[Foo, Bar], strawberry.union(name="ABC")]
+            AUnion = Annotated[Foo | Bar, strawberry.union(name="ABC")]
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=False)
+        self.assertCodemod(before, after, use_pipe_syntax=True)
 
     def test_update_positional_arguments(self) -> None:
         before = """
@@ -99,13 +94,12 @@ class TestConvertConstantCommand(CodemodTest):
         """
 
         after = """
-            from typing import Union
             from typing_extensions import Annotated
 
-            AUnion = Annotated[Union[Foo, Bar], strawberry.union(name="ABC")]
+            AUnion = Annotated[Foo | Bar, strawberry.union(name="ABC")]
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=False)
+        self.assertCodemod(before, after, use_pipe_syntax=True)
 
     def test_supports_directives_and_description(self) -> None:
         before = """
@@ -118,21 +112,20 @@ class TestConvertConstantCommand(CodemodTest):
         """
 
         after = """
-            from typing import Union
             from typing_extensions import Annotated
 
-            AUnion = Annotated[Union[Foo, Bar], strawberry.union(name="ABC", description="cool union", directives=[object()])]
+            AUnion = Annotated[Foo | Bar, strawberry.union(name="ABC", description="cool union", directives=[object()])]
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=False)
+        self.assertCodemod(before, after, use_pipe_syntax=True)
 
     def test_noop_with_annotated_unions(self) -> None:
         before = """
-            AUnion = Annotated[Union[Foo, Bar], strawberry.union(name="ABC")]
+            AUnion = Annotated[Foo | Bar, strawberry.union(name="ABC")]
         """
 
         after = """
-            AUnion = Annotated[Union[Foo, Bar], strawberry.union(name="ABC")]
+            AUnion = Annotated[Foo | Bar, strawberry.union(name="ABC")]
         """
 
-        self.assertCodemod(before, after, use_pipe_syntax=False)
+        self.assertCodemod(before, after, use_pipe_syntax=True)
