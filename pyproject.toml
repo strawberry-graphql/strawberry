@@ -113,7 +113,7 @@ typer = {version = ">=0.7.0", optional = false}
 sentry-sdk = "^1.14.0"
 pyinstrument = {version = ">=4.0.0", optional = false}
 # added this here manually because poetry doesn't seem to be able to handle it =(
-botocore = "1.29.124"
+botocore = "1.29.162"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
