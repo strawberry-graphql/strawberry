@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import glob
 import pathlib
+import sys
 
 import rich
 import typer
@@ -26,10 +27,15 @@ def upgrade(
         help="Name of the upgrade to run",
     ),
     paths: list[pathlib.Path] = typer.Argument(file_okay=True, dir_okay=True),
-    use_union_syntax: bool = typer.Option(
+    python_target: str = typer.Option(
+        ".".join(str(x) for x in sys.version_info[:2]),
+        "--python-target",
+        help="Python version to target",
+    ),
+    use_typing_extensions: bool = typer.Option(
         False,
-        "--use-union-syntax",
-        help="Create the Union using Union[...] instead of the A | B syntax",
+        "--use-typing-extensions",
+        help="Use typing_extensions instead of typing for newer features",
     ),
 ) -> None:
     if codemod not in codemods:
@@ -37,8 +43,12 @@ def upgrade(
 
         raise typer.Exit(2)
 
+    python_target_version = tuple(int(x) for x in python_target.split("."))
+
     transformer = ConvertUnionToAnnotatedUnion(
-        CodemodContext(), use_pipe_syntax=not use_union_syntax
+        CodemodContext(),
+        use_pipe_syntax=python_target_version >= (3, 10),
+        use_typing_extensions=use_typing_extensions,
     )
 
     paths = paths or [pathlib.Path.cwd()]

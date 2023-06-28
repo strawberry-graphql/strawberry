@@ -33,9 +33,15 @@ class ConvertUnionToAnnotatedUnion(VisitorBasedCodemodCommand):
         "Annotated[Union[...], strawberry.union(...)]"
     )
 
-    def __init__(self, context: CodemodContext, use_pipe_syntax: bool = True) -> None:
+    def __init__(
+        self,
+        context: CodemodContext,
+        use_pipe_syntax: bool = True,
+        use_typing_extensions: bool = False,
+    ) -> None:
         self._is_using_named_import = False
         self.use_pipe_syntax = use_pipe_syntax
+        self.use_typing_extensions = use_typing_extensions
 
         super().__init__(context)
 
@@ -82,7 +88,9 @@ class ConvertUnionToAnnotatedUnion(VisitorBasedCodemodCommand):
             return original_node
 
         AddImportsVisitor.add_needed_import(
-            self.context, "typing_extensions", "Annotated"
+            self.context,
+            "typing_extensions" if self.use_typing_extensions else "typing",
+            "Annotated",
         )
 
         RemoveImportsVisitor.remove_unused_import(self.context, "strawberry", "union")

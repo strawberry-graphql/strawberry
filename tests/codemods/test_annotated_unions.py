@@ -12,8 +12,22 @@ class TestConvertConstantCommand(CodemodTest):
         """
 
         after = """
-            from typing import Union
-            from typing_extensions import Annotated
+            from typing import Annotated, Union
+
+            AUnion = Annotated[Union[Foo, Bar], strawberry.union(name="ABC")]
+        """
+
+        self.assertCodemod(
+            before, after, use_pipe_syntax=False, use_typing_extensions=False
+        )
+
+    def test_update_union_typing_extensions(self) -> None:
+        before = """
+            AUnion = strawberry.union(name="ABC", types=(Foo, Bar))
+        """
+
+        after = """
+            from typing import Annotated, Union
 
             AUnion = Annotated[Union[Foo, Bar], strawberry.union(name="ABC")]
         """
@@ -28,8 +42,7 @@ class TestConvertConstantCommand(CodemodTest):
         """
 
         after = """
-            from typing import Union
-            from typing_extensions import Annotated
+            from typing import Annotated, Union
 
             AUnion = Annotated[Union[Foo, Bar], strawberry.union(name="ABC")]
         """
@@ -57,8 +70,7 @@ class TestConvertConstantCommand(CodemodTest):
         """
 
         after = """
-            from typing import Union
-            from typing_extensions import Annotated
+            from typing import Annotated, Union
 
             AUnion = Annotated[Union[Foo, Bar], strawberry.union(name="ABC")]
         """
@@ -71,8 +83,7 @@ class TestConvertConstantCommand(CodemodTest):
         """
 
         after = """
-            from typing import Union
-            from typing_extensions import Annotated
+            from typing import Annotated, Union
 
             AUnion = Annotated[Union[Foo, Bar], strawberry.union(name="ABC")]
         """
@@ -85,8 +96,7 @@ class TestConvertConstantCommand(CodemodTest):
         """
 
         after = """
-            from typing import Union
-            from typing_extensions import Annotated
+            from typing import Annotated, Union
 
             AUnion = Annotated[Union[Foo, Bar], strawberry.union(name="ABC")]
         """
@@ -99,8 +109,7 @@ class TestConvertConstantCommand(CodemodTest):
         """
 
         after = """
-            from typing import Union
-            from typing_extensions import Annotated
+            from typing import Annotated, Union
 
             AUnion = Annotated[Union[Foo, Bar], strawberry.union(name="ABC")]
         """
@@ -118,8 +127,7 @@ class TestConvertConstantCommand(CodemodTest):
         """
 
         after = """
-            from typing import Union
-            from typing_extensions import Annotated
+            from typing import Annotated, Union
 
             AUnion = Annotated[Union[Foo, Bar], strawberry.union(name="ABC", description="cool union", directives=[object()])]
         """
