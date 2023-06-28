@@ -29,6 +29,7 @@ repos:
       - id: trailing-whitespace
       - id: check-merge-conflict
       - id: end-of-file-fixer
+        exclude: ^tests/relay/snapshots
       - id: check-toml
 
   - repo: https://github.com/adamchainz/blacken-docs

@@ -23,7 +23,7 @@ from graphql import (
     parse,
     validate_schema,
 )
-from graphql.subscription import subscribe
+from graphql.execution import subscribe
 from graphql.type.directives import specified_directives
 
 from strawberry import relay

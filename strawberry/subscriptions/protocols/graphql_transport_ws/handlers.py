@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any, AsyncGenerator, Callable, Dict, List, Opt
 
 from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError, GraphQLSyntaxError, parse
-from graphql.error.graphql_error import format_error as format_graphql_error
 
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
@@ -245,12 +244,12 @@ class BaseGraphQLTransportWSHandler(ABC):
 
             result_source = get_result_source()
 
-        operation = Operation(self, message.id)
+        operation = Operation(self, message.id, operation_type)
 
         # Handle initial validation errors
         if isinstance(result_source, GraphQLExecutionResult):
             assert result_source.errors
-            payload = [format_graphql_error(result_source.errors[0])]
+            payload = [err.formatted for err in result_source.errors]
             await self.send_message(ErrorMessage(id=message.id, payload=payload))
             self.schema.process_errors(result_source.errors)
             return
@@ -295,14 +294,21 @@ class BaseGraphQLTransportWSHandler(ABC):
     ) -> None:
         try:
             async for result in result_source:
-                if result.errors:
-                    error_payload = [format_graphql_error(err) for err in result.errors]
+                if (
+                    result.errors
+                    and operation.operation_type != OperationType.SUBSCRIPTION
+                ):
+                    error_payload = [err.formatted for err in result.errors]
                     error_message = ErrorMessage(id=operation.id, payload=error_payload)
                     await operation.send_message(error_message)
                     self.schema.process_errors(result.errors)
                     return
                 else:
                     next_payload = {"data": result.data}
+                    if result.errors:
+                        next_payload["errors"] = [
+                            err.formatted for err in result.errors
+                        ]
                     next_message = NextMessage(id=operation.id, payload=next_payload)
                     await operation.send_message(next_message)
         except asyncio.CancelledError:
@@ -312,7 +318,7 @@ class BaseGraphQLTransportWSHandler(ABC):
             # GraphQLErrors are handled by graphql-core and included in the
             # ExecutionResult
             error = GraphQLError(str(error), original_error=error)
-            error_payload = [format_graphql_error(error)]
+            error_payload = [error.formatted]
             error_message = ErrorMessage(id=operation.id, payload=error_payload)
             await operation.send_message(error_message)
             self.schema.process_errors([error])
@@ -358,11 +364,17 @@ class Operation:
     Helps enforce protocol state transition.
     """
 
-    __slots__ = ["handler", "id", "completed", "task"]
+    __slots__ = ["handler", "id", "operation_type", "completed", "task"]
 
-    def __init__(self, handler: BaseGraphQLTransportWSHandler, id: str):
+    def __init__(
+        self,
+        handler: BaseGraphQLTransportWSHandler,
+        id: str,
+        operation_type: OperationType,
+    ):
         self.handler = handler
         self.id = id
+        self.operation_type = operation_type
         self.completed = False
         self.task: Optional[asyncio.Task] = None
 

@@ -1,6 +1,70 @@
 CHANGELOG
 =========
 
+0.191.0 - 2023-06-28
+--------------------
+
+This release adds support for declaring union types using `typing.Annotated`
+instead of `strawberry.union(name, types=...)`.
+
+Code using the old syntax will continue to work, but it will trigger a
+deprecation warning. Using Annotated will improve type checking and IDE support
+especially when using `pyright`.
+
+Before:
+
+```python
+Animal = strawberry.union("Animal", (Cat, Dog))
+```
+
+After:
+
+```python
+from typing import Annotated, Union
+
+Animal = Annotated[Union[Cat, Dog], strawberry.union("Animal")]
+```
+
+0.190.0 - 2023-06-27
+--------------------
+
+This release refactors the way we resolve field types to to make it
+more robust, resolving some corner cases.
+
+One case that should be fixed is when using specialized generics
+with future annotations.
+
+Contributed by [Alexander](https://github.com/devkral) via [PR #2868](https://github.com/strawberry-graphql/strawberry/pull/2868/)
+
+
+0.189.3 - 2023-06-27
+--------------------
+
+This release removes some usage of deprecated functions from GraphQL-core.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2894](https://github.com/strawberry-graphql/strawberry/pull/2894/)
+
+
+0.189.2 - 2023-06-27
+--------------------
+
+The `graphql-transport-ws` protocol allows for subscriptions to error during execution without terminating
+the subscription.  Non-fatal errors produced by subscriptions now produce `Next` messages containing
+an `ExecutionResult` with an `error` field and don't necessarily terminate the subscription.
+This is in accordance to the behaviour of Apollo server.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2876](https://github.com/strawberry-graphql/strawberry/pull/2876/)
+
+
+0.189.1 - 2023-06-25
+--------------------
+
+This release fixes a deprecation warning being triggered
+by the relay integration.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2858](https://github.com/strawberry-graphql/strawberry/pull/2858/)
+
+
 0.189.0 - 2023-06-22
 --------------------
 

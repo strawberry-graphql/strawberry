@@ -13,13 +13,15 @@ following code will throw this error:
 ```python
 import strawberry
 
+from typing import Union, Annotated
+
 
 @strawberry.type
 class TypeA:
     id: strawberry.ID
 
 
-Example = strawberry.union(name="Example", types=(TypeA,))
+ExampleUnion = Annotated[Union[TypeA], strawberry.union("ExampleUnion")]
 
 
 @strawberry.type
