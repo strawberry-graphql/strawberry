@@ -28,7 +28,7 @@ def test_upgrade_works_annotated_unions(
 
     result = cli_runner.invoke(
         app,
-        ["upgrade", "annotated-union", str(target)],
+        ["upgrade", "--python-target", "3.11", "annotated-union", str(target)],
     )
 
     assert result.exit_code == 1
@@ -68,7 +68,14 @@ def test_upgrade_works_annotated_unions_typing_extensions(
 
     result = cli_runner.invoke(
         app,
-        ["upgrade", "--use-typing-extensions", "annotated-union", str(target)],
+        [
+            "upgrade",
+            "--use-typing-extensions",
+            "--python-target",
+            "3.11",
+            "annotated-union",
+            str(target),
+        ],
     )
 
     assert result.exit_code == 1

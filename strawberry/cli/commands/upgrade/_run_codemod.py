@@ -3,7 +3,7 @@ from __future__ import annotations
 import contextlib
 import os
 from multiprocessing import Pool, cpu_count
-from typing import TYPE_CHECKING, Any, Dict, Generator, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, Sequence, Type, Union
 
 from libcst.codemod._cli import ExecutionConfig, ExecutionResult, _execute_transform
 from libcst.codemod._dummy_pool import DummyPool
@@ -14,8 +14,8 @@ from ._fake_progress import FakeProgress
 if TYPE_CHECKING:
     from libcst.codemod import Codemod
 
-ProgressType = Union[type[Progress], type[FakeProgress]]
-PoolType = Union[type[Pool], type[DummyPool]]  # type: ignore
+ProgressType = Union[Type[Progress], Type[FakeProgress]]
+PoolType = Union[Type[Pool], Type[DummyPool]]  # type: ignore
 
 
 def _execute_transform_wrap(

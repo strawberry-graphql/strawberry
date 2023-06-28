@@ -3,6 +3,7 @@ from __future__ import annotations
 import glob
 import pathlib  # noqa: TCH003
 import sys
+from typing import List
 
 import rich
 import typer
@@ -26,7 +27,7 @@ def upgrade(
         autocompletion=lambda: list(codemods.keys()),
         help="Name of the upgrade to run",
     ),
-    paths: list[pathlib.Path] = typer.Argument(file_okay=True, dir_okay=True),
+    paths: List[pathlib.Path] = typer.Argument(file_okay=True, dir_okay=True),
     python_target: str = typer.Option(
         ".".join(str(x) for x in sys.version_info[:2]),
         "--python-target",
