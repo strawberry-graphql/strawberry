@@ -779,7 +779,7 @@ class GraphQLCoreConverter:
             # TypeVars, Annotations, LazyTypes, etc it can't perfectly detect issues at
             # that stage
             if not StrawberryUnion.is_valid_union_type(type_):
-                raise InvalidUnionTypeError(union_name, type_)
+                raise InvalidUnionTypeError(union_name, type_, union_definition=union)
 
         # Don't reevaluate known types
         if union_name in self.type_map:
