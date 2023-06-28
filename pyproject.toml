@@ -139,6 +139,7 @@ strawberry = "strawberry.cli:run"
 line-length = 88
 extend-exclude = '''
 tests/codegen/snapshots/
+tests/cli/snapshots/
 '''
 
 [tool.pytest.ini_options]

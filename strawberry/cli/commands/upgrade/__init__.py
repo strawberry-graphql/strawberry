@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import glob
-import pathlib
 import sys
+from typing import TYPE_CHECKING
 
 import rich
 import typer
@@ -12,6 +12,9 @@ from strawberry.cli.app import app
 from strawberry.codemods.annotated_unions import ConvertUnionToAnnotatedUnion
 
 from ._run_codemod import run_codemod
+
+if TYPE_CHECKING:
+    import pathlib
 
 codemods = {
     "annotated-union": ConvertUnionToAnnotatedUnion,
@@ -50,8 +53,6 @@ def upgrade(
         use_pipe_syntax=python_target_version >= (3, 10),
         use_typing_extensions=use_typing_extensions,
     )
-
-    paths = paths or [pathlib.Path.cwd()]
 
     files: list[str] = []
 
