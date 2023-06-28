@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import glob
 import pathlib
 
@@ -16,7 +18,6 @@ codemods = {
 
 
 # TODO: add support for running all of them
-# TODO: add support for passing a list of files
 @app.command(help="Upgrades a Strawberry project to the latest version")
 def upgrade(
     codemod: str = typer.Argument(
@@ -24,7 +25,7 @@ def upgrade(
         autocompletion=lambda: list(codemods.keys()),
         help="Name of the upgrade to run",
     ),
-    path: pathlib.Path = typer.Argument(default=".", file_okay=True, dir_okay=True),
+    paths: list[pathlib.Path] = typer.Argument(file_okay=True, dir_okay=True),
 ) -> None:
     if codemod not in codemods:
         rich.print(f'[red]Upgrade named "{codemod}" does not exist')
@@ -33,11 +34,18 @@ def upgrade(
 
     transformer = ConvertUnionToAnnotatedUnion(CodemodContext())
 
-    if path.is_dir():
-        glob_path = str(path / "**/*.py")
-        files = list(set(glob.glob(glob_path, recursive=True)))
-    else:
-        files = [str(path)]
+    paths = paths or [pathlib.Path.cwd()]
+
+    files: list[str] = []
+
+    for path in paths:
+        if path.is_dir():
+            glob_path = str(path / "**/*.py")
+            files.extend(glob.glob(glob_path, recursive=True))
+        else:
+            files.append(str(path))
+
+    files = list(set(files))
 
     results = list(run_codemod(transformer, files))
     changed = [result for result in results if result.changed]
