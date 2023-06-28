@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.189.1"
+version = "0.190.0"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -142,7 +142,7 @@ tests/codegen/snapshots/
 '''
 
 [tool.pytest.ini_options]
-addopts = "-s --emoji --mypy-ini-file=mypy.ini --benchmark-disable"
+addopts = "--emoji --mypy-ini-file=mypy.ini --benchmark-disable"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
 markers = [

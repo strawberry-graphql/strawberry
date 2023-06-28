@@ -8,6 +8,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generic,
     List,
     Optional,
     Tuple,
@@ -16,6 +17,7 @@ from typing import (
     Union,
     cast,
 )
+from typing_extensions import Protocol
 
 from graphql import (
     GraphQLArgument,
@@ -53,6 +55,8 @@ from strawberry.schema.types.scalar import _make_scalar_type
 from strawberry.type import (
     StrawberryList,
     StrawberryOptional,
+    StrawberryType,
+    WithStrawberryObjectDefinition,
     has_object_definition,
 )
 from strawberry.types.info import Info
@@ -83,7 +87,56 @@ if TYPE_CHECKING:
     from strawberry.field import StrawberryField
     from strawberry.schema.config import StrawberryConfig
     from strawberry.schema_directive import StrawberrySchemaDirective
-    from strawberry.type import StrawberryType
+
+
+FieldType = TypeVar(
+    "FieldType", bound=Union[GraphQLField, GraphQLInputField], covariant=True
+)
+
+
+class FieldConverterProtocol(Generic[FieldType], Protocol):
+    def __call__(  # pragma: no cover
+        self,
+        field: StrawberryField,
+        *,
+        override_type: Optional[
+            Union[StrawberryType, Type[WithStrawberryObjectDefinition]]
+        ] = None,
+    ) -> FieldType:
+        ...
+
+
+def _get_thunk_mapping(
+    type_definition: StrawberryObjectDefinition,
+    name_converter: Callable[[StrawberryField], str],
+    field_converter: FieldConverterProtocol[FieldType],
+) -> Dict[str, FieldType]:
+    """Create a GraphQL core `ThunkMapping` mapping of field names to field types.
+
+    This method filters out remaining `strawberry.Private` annotated fields that
+    could not be filtered during the initialization of a `TypeDefinition` due to
+    postponed type-hint evaluation (PEP-563). Performing this filtering now (at
+    schema conversion time) ensures that all types to be included in the schema
+    should have already been resolved.
+
+    Raises:
+        TypeError: If the type of a field in ``fields`` is `UNRESOLVED`
+    """
+    thunk_mapping: Dict[str, FieldType] = {}
+
+    for field in type_definition.fields:
+        field_type = field.resolve_type(type_definition=type_definition)
+
+        if field_type is UNRESOLVED:
+            raise UnresolvedFieldTypeError(type_definition, field)
+
+        if not is_private(field_type):
+            thunk_mapping[name_converter(field)] = field_converter(
+                field,
+                override_type=field_type,
+            )
+
+    return thunk_mapping
 
 
 # graphql-core expects a resolver for an Enum type to return
@@ -248,11 +301,20 @@ class GraphQLCoreConverter:
             },
         )
 
-    def from_field(self, field: StrawberryField) -> GraphQLField:
+    def from_field(
+        self,
+        field: StrawberryField,
+        *,
+        override_type: Optional[
+            Union[StrawberryType, Type[WithStrawberryObjectDefinition]]
+        ] = None,
+    ) -> GraphQLField:
         # self.from_resolver needs to be called before accessing field.type because
         # in there a field extension might want to change the type during its apply
         resolver = self.from_resolver(field)
-        field_type = cast("GraphQLOutputType", self.from_maybe_optional(field.type))
+        field_type = cast(
+            "GraphQLOutputType", self.from_maybe_optional(override_type or field.type)
+        )
         subscribe = None
 
         if field.is_subscription:
@@ -276,8 +338,17 @@ class GraphQLCoreConverter:
             },
         )
 
-    def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
-        field_type = cast("GraphQLInputType", self.from_maybe_optional(field.type))
+    def from_input_field(
+        self,
+        field: StrawberryField,
+        *,
+        override_type: Optional[
+            Union[StrawberryType, Type[WithStrawberryObjectDefinition]]
+        ] = None,
+    ) -> GraphQLInputField:
+        field_type = cast(
+            "GraphQLInputType", self.from_maybe_optional(override_type or field.type)
+        )
         default_value: object
 
         if field.default_value is UNSET or field.default_value is dataclasses.MISSING:
@@ -295,40 +366,10 @@ class GraphQLCoreConverter:
             },
         )
 
-    FieldType = TypeVar("FieldType", GraphQLField, GraphQLInputField)
-
-    @staticmethod
-    def _get_thunk_mapping(
-        type_definition: StrawberryObjectDefinition,
-        name_converter: Callable[[StrawberryField], str],
-        field_converter: Callable[[StrawberryField], FieldType],
-    ) -> Dict[str, FieldType]:
-        """Create a GraphQL core `ThunkMapping` mapping of field names to field types.
-
-        This method filters out remaining `strawberry.Private` annotated fields that
-        could not be filtered during the initialization of a `TypeDefinition` due to
-        postponed type-hint evaluation (PEP-563). Performing this filtering now (at
-        schema conversion time) ensures that all types to be included in the schema
-        should have already been resolved.
-
-        Raises:
-            TypeError: If the type of a field in ``fields`` is `UNRESOLVED`
-        """
-        thunk_mapping = {}
-
-        for field in type_definition.fields:
-            if field.type is UNRESOLVED:
-                raise UnresolvedFieldTypeError(type_definition, field)
-
-            if not is_private(field.type):
-                thunk_mapping[name_converter(field)] = field_converter(field)
-
-        return thunk_mapping
-
     def get_graphql_fields(
         self, type_definition: StrawberryObjectDefinition
     ) -> Dict[str, GraphQLField]:
-        return self._get_thunk_mapping(
+        return _get_thunk_mapping(
             type_definition=type_definition,
             name_converter=self.config.name_converter.from_field,
             field_converter=self.from_field,
@@ -337,7 +378,7 @@ class GraphQLCoreConverter:
     def get_graphql_input_fields(
         self, type_definition: StrawberryObjectDefinition
     ) -> Dict[str, GraphQLInputField]:
-        return self._get_thunk_mapping(
+        return _get_thunk_mapping(
             type_definition=type_definition,
             name_converter=self.config.name_converter.from_field,
             field_converter=self.from_input_field,

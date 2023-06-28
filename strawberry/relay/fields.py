@@ -235,6 +235,8 @@ class ConnectionExtension(FieldExtension):
         # for subscription support, but we can't use it here. Maybe we can refactor
         # this in the future.
         resolver_type = field.base_resolver.signature.return_annotation
+        if isinstance(resolver_type, str):
+            resolver_type = ForwardRef(resolver_type)
         if isinstance(resolver_type, ForwardRef):
             resolver_type = eval_type(
                 resolver_type,

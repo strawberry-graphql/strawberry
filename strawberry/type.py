@@ -13,7 +13,7 @@ from typing import (
     Union,
     overload,
 )
-from typing_extensions import Literal, Protocol
+from typing_extensions import Literal, Protocol, Self
 
 from strawberry.utils.typing import is_concrete_generic
 
@@ -113,7 +113,7 @@ class StrawberryContainer(StrawberryType):
         type_var_map: Mapping[
             TypeVar, Union[StrawberryType, Type[WithStrawberryObjectDefinition]]
         ],
-    ) -> StrawberryType:
+    ) -> Self:
         of_type_copy = self.of_type
 
         if has_object_definition(self.of_type):
