@@ -26,13 +26,20 @@ def upgrade(
         help="Name of the upgrade to run",
     ),
     paths: list[pathlib.Path] = typer.Argument(file_okay=True, dir_okay=True),
+    use_union_syntax: bool = typer.Option(
+        False,
+        "--use-union-syntax",
+        help="Create the Union using Union[...] instead of the A | B syntax",
+    ),
 ) -> None:
     if codemod not in codemods:
         rich.print(f'[red]Upgrade named "{codemod}" does not exist')
 
         raise typer.Exit(2)
 
-    transformer = ConvertUnionToAnnotatedUnion(CodemodContext())
+    transformer = ConvertUnionToAnnotatedUnion(
+        CodemodContext(), use_pipe_syntax=not use_union_syntax
+    )
 
     paths = paths or [pathlib.Path.cwd()]
 
