@@ -192,9 +192,11 @@ class StrawberryResolver(Generic[T]):
         self,
     ) -> Dict[inspect.Parameter, Union[StrawberryAnnotation, None]]:
         return {
-            p: StrawberryAnnotation(p.annotation, namespace=self._namespace)
-            if p.annotation is not inspect.Signature.empty
-            else None
+            p: (
+                StrawberryAnnotation(p.annotation, namespace=self._namespace)
+                if p.annotation is not inspect.Signature.empty
+                else None
+            )
             for p in self.signature.parameters.values()
         }
 
