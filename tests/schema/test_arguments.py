@@ -236,4 +236,4 @@ def test_argument_parse_order():
     schema_b = strawberry.Schema(type_b.Query)
 
     assert str(schema_a) == str(schema_b)
-    assert f"\n{schema_a}\n" == textwrap.dedent(expected)
+    assert str(schema_a) == textwrap.dedent(expected).strip()
