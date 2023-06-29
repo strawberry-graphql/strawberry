@@ -131,7 +131,7 @@ class ReservedType(NamedTuple):
         else:
             return None
 
-    def is_reserved_type(self, other: type) -> bool:
+    def is_reserved_type(self, other: builtins.type) -> bool:
         origin = cast(type, get_origin(other)) or other
         if origin is Annotated:
             # Handle annotated arguments such as Private[str] and DirectiveValue[str]
