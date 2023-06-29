@@ -227,12 +227,13 @@ assert result.data == {"currentTime": 1628683200}
 To override with a pendulum instance you'd want to serialize and parse_value
 just like the above example. Let's throw them in a class this time.
 
-In addition we'll be using the `Union` clause to combine possible input types. 
+In addition we'll be using the `Union` clause to combine possible input types.
 Since pendulum isn't typed yet, we'll have to silence mypy's errors using `# type: ignore`
 
 ```python
 import pendulum
 from datetime import datetime
+
 
 class DateTime:
     """
@@ -265,7 +266,7 @@ date_time = strawberry.scalar(
 
 Python by default allows, integer size to be 2^64. However the graphql spec has capped it to 2^32.
 
-This will inevitably raise errors. Instead of using strings on the client as a workaround, 
+This will inevitably raise errors. Instead of using strings on the client as a workaround,
 you could use the following scalar:
 
 ```python
