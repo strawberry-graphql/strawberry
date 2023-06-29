@@ -225,7 +225,7 @@ assert result.data == {"currentTime": 1628683200}
 ### Replacing datetime with the popular `pendulum` library
 
 To override with a pendulum instance you'd want to serialize and parse_value
-just like the above example. Let's throw them in a class this time.
+like the above example. Let's throw them in a class this time.
 
 In addition we'll be using the `Union` clause to combine possible input types.
 Since pendulum isn't typed yet, we'll have to silence mypy's errors using `# type: ignore`
