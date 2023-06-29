@@ -1,4 +1,5 @@
 import contextlib
+import io
 import os
 import re
 from collections import defaultdict
@@ -43,6 +44,18 @@ class StrawberryExceptionsPlugin:
             list
         )
         self.verbosity_level = verbosity_level
+        # check for encoding failure which can happen in VS Code on windows.
+        # For some reason, the underlying codec stays in a windows codepage,
+        # such as cp1252
+        console = rich.console.Console(record=True, width=120)
+
+        with suppress_output(self.verbosity_level):
+            try:
+                console.print("\u2771")
+            except UnicodeEncodeError:
+                self.use_rich = False
+            else:
+                self.use_rich = True
 
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_call(self, item: Item) -> Generator[None, _Result, None]:
@@ -102,10 +115,14 @@ class StrawberryExceptionsPlugin:
         self, test_name: str, raised_exception: StrawberryException
     ) -> None:
         console = rich.console.Console(record=True, width=120)
+        buf = io.StringIO()
 
         with suppress_output(self.verbosity_level):
             try:
-                console.print(raised_exception)
+                if self.use_rich:
+                    console.print(raised_exception)
+                else:
+                    print(raised_exception, file=buf)
             except UnableToFindExceptionSource:
                 traceback = Traceback(
                     Traceback.extract(
@@ -115,9 +132,12 @@ class StrawberryExceptionsPlugin:
                     ),
                     max_frames=10,
                 )
-                console.print(traceback)
+                if self.use_rich:
+                    console.print(traceback)
+                else:
+                    print(traceback, file=buf)
 
-        exception_text = console.export_text()
+        exception_text = console.export_text() + buf.getvalue()
 
         text = f"## {test_name}\n"
 
