@@ -15,7 +15,6 @@ from typing import (
     NamedTuple,
     Optional,
     Tuple,
-    Type,
     TypeVar,
     Union,
     cast,
@@ -100,7 +99,7 @@ class ReservedType(NamedTuple):
     """
 
     name: str
-    type: Type[Any]
+    type: type
 
     def find(
         self,
@@ -132,7 +131,7 @@ class ReservedType(NamedTuple):
         else:
             return None
 
-    def is_reserved_type(self, other: Type[Any]) -> bool:
+    def is_reserved_type(self, other: type) -> bool:
         origin = cast(type, get_origin(other)) or other
         if origin is Annotated:
             # Handle annotated arguments such as Private[str] and DirectiveValue[str]
