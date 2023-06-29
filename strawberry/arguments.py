@@ -92,6 +92,8 @@ class StrawberryArgument:
         try:
             evaled_type = type_annotation.evaluate()
         except NameError:
+            # Evaluation failures can happen when importing types within a TYPE_CHECKING
+            # block or if the type is declared later on in the current module.
             pass
         else:
             if get_origin(evaled_type) is Annotated:
