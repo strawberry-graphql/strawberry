@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import MISSING, dataclass
 from enum import Enum
 from functools import cmp_to_key, partial
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -19,6 +20,7 @@ from typing import (
 )
 from typing_extensions import Literal, Protocol
 
+import rich
 from graphql import (
     BooleanValueNode,
     EnumValueNode,
@@ -88,8 +90,6 @@ from .types import (
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from graphql import (
         ArgumentNode,
         DirectiveNode,
@@ -131,6 +131,14 @@ class HasSelectionSet(Protocol):
 
 
 class QueryCodegenPlugin:
+    def __init__(self, query: Path) -> None:
+        """Initialize the plugin.
+
+        The singular argument is the path to the file that is being processed
+        by this plugin.
+        """
+        self.query = query
+
     def on_start(self) -> None:
         ...
 
@@ -141,6 +149,41 @@ class QueryCodegenPlugin:
         self, types: List[GraphQLType], operation: GraphQLOperation
     ) -> List[CodegenFile]:
         return []
+
+
+class ConsolePlugin:
+    def __init__(self, output_dir: Path):
+        self.output_dir = output_dir
+        self.files_generated: List[Path] = []
+
+    def before_any_start(self) -> None:
+        rich.print(
+            "[bold yellow]The codegen is experimental. Please submit any bug at "
+            "https://github.com/strawberry-graphql/strawberry\n",
+        )
+
+    def after_all_finished(self) -> None:
+        rich.print("[green]Generated:")
+        for fname in self.files_generated:
+            rich.print(f"  {fname}")
+
+    def on_start(self, plugins: Iterable[QueryCodegenPlugin], query: Path) -> None:
+        plugin_names = [plugin.__class__.__name__ for plugin in plugins]
+
+        rich.print(
+            f"[green]Generating code for {query} using "
+            f"{', '.join(plugin_names)} plugin(s)",
+        )
+
+    def on_end(self, result: CodegenResult) -> None:
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        result.write(self.output_dir)
+
+        self.files_generated.extend(Path(cf.path) for cf in result.files)
+
+        rich.print(
+            f"[green] Generated {len(result.files)} files in {self.output_dir}",
+        )
 
 
 def _get_deps(t: GraphQLType) -> Iterable[GraphQLType]:
@@ -195,8 +238,13 @@ def _py_to_graphql_value(obj: Any) -> GraphQLArgumentValue:
 
 
 class QueryCodegenPluginManager:
-    def __init__(self, plugins: List[QueryCodegenPlugin]) -> None:
+    def __init__(
+        self,
+        plugins: List[QueryCodegenPlugin],
+        console_plugin: Optional[ConsolePlugin] = None,
+    ) -> None:
         self.plugins = plugins
+        self.console_plugin = console_plugin
 
     def _sort_types(self, types: List[GraphQLType]) -> List[GraphQLType]:
         """Sort the types.
@@ -234,6 +282,12 @@ class QueryCodegenPluginManager:
         return result
 
     def on_start(self) -> None:
+        if self.console_plugin and self.plugins:
+            # We need the query that we're processing
+            # just pick it off the first plugin
+            query = self.plugins[0].query
+            self.console_plugin.on_start(self.plugins, query)
+
         for plugin in self.plugins:
             plugin.on_start()
 
@@ -241,11 +295,19 @@ class QueryCodegenPluginManager:
         for plugin in self.plugins:
             plugin.on_end(result)
 
+        if self.console_plugin:
+            self.console_plugin.on_end(result)
+
 
 class QueryCodegen:
-    def __init__(self, schema: Schema, plugins: List[QueryCodegenPlugin]):
+    def __init__(
+        self,
+        schema: Schema,
+        plugins: List[QueryCodegenPlugin],
+        console_plugin: Optional[ConsolePlugin] = None,
+    ):
         self.schema = schema
-        self.plugin_manager = QueryCodegenPluginManager(plugins)
+        self.plugin_manager = QueryCodegenPluginManager(plugins, console_plugin)
         self.types: List[GraphQLType] = []
 
     def run(self, query: str) -> CodegenResult:

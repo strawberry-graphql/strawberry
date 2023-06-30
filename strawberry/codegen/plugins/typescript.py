@@ -14,7 +14,12 @@ from strawberry.codegen.types import (
 )
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from strawberry.codegen.types import GraphQLField, GraphQLOperation, GraphQLType
+
+
+DEFAULT_OUTFILE_NAME = "types.ts"
 
 
 class TypeScriptPlugin(QueryCodegenPlugin):
@@ -33,12 +38,16 @@ class TypeScriptPlugin(QueryCodegenPlugin):
         float: "number",
     }
 
+    def __init__(self, query: Path) -> None:
+        self.outfile_name: str = DEFAULT_OUTFILE_NAME
+        self.query = query
+
     def generate_code(
         self, types: List[GraphQLType], operation: GraphQLOperation
     ) -> List[CodegenFile]:
         printed_types = list(filter(None, (self._print_type(type) for type in types)))
 
-        return [CodegenFile("types.ts", "\n\n".join(printed_types))]
+        return [CodegenFile(self.outfile_name, "\n\n".join(printed_types))]
 
     def _get_type_name(self, type_: GraphQLType) -> str:
         if isinstance(type_, GraphQLOptional):

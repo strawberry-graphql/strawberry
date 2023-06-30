@@ -119,6 +119,13 @@ from strawberry.codegen.types import GraphQLType, GraphQLOperation
 
 
 class QueryCodegenPlugin:
+    def __init__(self, query: Path) -> None:
+        """Initialize the plugin.
+
+        The singular argument is the path to the file that is being processed by this plugin.
+        """
+        self.query = query
+
     def on_start(self) -> None:
         ...
 
@@ -137,3 +144,36 @@ class QueryCodegenPlugin:
 - `generated_code` is called when the codegen starts and it receives the types
   and the operation. You cans use this to generate code for each type and
   operation.
+
+### Console plugin
+
+There is also a plugin that helps to orchestrate the codegen process and notify the
+user about what the current codegen process is doing.
+
+The interface for the ConsolePlugin looks like:
+
+```python
+class ConsolePlugin:
+    def __init__(self, output_dir: Path):
+        """Initialize the plugin and tell it where the output should be written."""
+        ...
+
+    def before_any_start(self) -> None:
+        """This method is called before any plugins have been invoked or any queries have been processed."""
+        ...
+
+    def after_all_finished(self) -> None:
+        """This method is called after the full code generation is complete.
+
+        It can be used to report on all the things that have happened during the codegen.
+        """
+        ...
+
+    def on_start(self, plugins: Iterable[QueryCodegenPlugin], query: Path) -> None:
+        """This method is called before any of the individual plugins have been started."""
+        ...
+
+    def on_end(self, result: CodegenResult) -> None:
+        """This method typically persists the results from a single query to the output directory."""
+        ...
+```
