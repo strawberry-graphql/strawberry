@@ -325,34 +325,20 @@ class BaseGraphQLTransportWSHandler(ABC):
                 await operation.send_message(
                     ErrorMessage(id=operation.id, payload=payload)
                 )
-                self.schema.process_errors(result_source.errors)
+                if operation.operation_type == OperationType.SUBSCRIPTION:
+                    self.schema.process_errors(result_source.errors)
                 return
 
             try:
                 async for result in result_source:
-                    if (
-                        result.errors
-                        and operation.operation_type != OperationType.SUBSCRIPTION
-                    ):
-                        error_payload = [err.formatted for err in result.errors]
-                        error_message = ErrorMessage(
-                            id=operation.id, payload=error_payload
-                        )
-                        await operation.send_message(error_message)
-                        # don't need to call schema.process_errors() here because
-                        # it was already done by schema.execute()
-                        return
-                    else:
-                        next_payload = {"data": result.data}
-                        if result.errors:
-                            self.schema.process_errors(result.errors)
-                            next_payload["errors"] = [
-                                err.formatted for err in result.errors
-                            ]
-                        next_message = NextMessage(
-                            id=operation.id, payload=next_payload
-                        )
-                        await operation.send_message(next_message)
+                    next_payload = {"data": result.data}
+                    if result.errors:
+                        self.schema.process_errors(result.errors)
+                        next_payload["errors"] = [
+                            err.formatted for err in result.errors
+                        ]
+                    next_message = NextMessage(id=operation.id, payload=next_payload)
+                    await operation.send_message(next_message)
                 await operation.send_message(CompleteMessage(id=operation.id))
             finally:
                 # Close the AsyncGenerator in case of errors or cancellation
@@ -429,8 +415,9 @@ class Operation:
         self.task: Optional[asyncio.Task] = None
 
     async def send_message(self, message: GraphQLTransportMessage) -> None:
+        # defensive check, should never happen
         if self.completed:
-            return
+            return  # pragma: no cover
         if isinstance(message, (CompleteMessage, ErrorMessage)):
             self.completed = True
             # de-register the operation _before_ sending the final message
