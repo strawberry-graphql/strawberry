@@ -117,7 +117,7 @@ class BaseGraphQLTransportWSHandler(ABC):
             # so that unittests can inspect it.
             self.completed_tasks.append(task)
 
-    async def handle_task_exception(self, error: Exception) -> None:
+    async def handle_task_exception(self, error: Exception) -> None:  # pragma: no cover
         self.task_logger.exception("Exception in worker task", exc_info=error)
 
     async def handle_message(self, message: dict) -> None:
