@@ -29,21 +29,6 @@ class QueryCodegenTestPlugin(QueryCodegenPlugin):
         ]
 
 
-class QueryCodegenTestPluginWithInjectableQuery(QueryCodegenPlugin):
-    def __init__(self, query: Path, query_file: Path) -> None:
-        assert query == query_file
-
-    def generate_code(
-        self, types: List[GraphQLType], operation: GraphQLOperation
-    ) -> List[CodegenFile]:
-        return [
-            CodegenFile(
-                path="test.py",
-                content=f"# This is a test file for {operation.name}",
-            )
-        ]
-
-
 class EmptyPlugin(QueryCodegenPlugin):
     def generate_code(
         self, types: List[GraphQLType], operation: GraphQLOperation
@@ -96,32 +81,6 @@ def test_codegen(
             "codegen",
             "-p",
             "tests.cli.test_codegen:QueryCodegenTestPlugin",
-            "-o",
-            str(tmp_path),
-            "--schema",
-            selector,
-            str(query_file_path),
-        ],
-    )
-
-    assert result.exit_code == 0
-
-    code_path = tmp_path / "test.py"
-
-    assert code_path.exists()
-    assert code_path.read_text() == "# This is a test file for GetUser"
-
-
-def test_codegen_injection_parameters(
-    cli_app: Typer, cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
-):
-    selector = "tests.fixtures.sample_package.sample_module:schema"
-    result = cli_runner.invoke(
-        cli_app,
-        [
-            "codegen",
-            "-p",
-            "tests.cli.test_codegen:QueryCodegenTestPluginWithInjectableQuery",
             "-o",
             str(tmp_path),
             "--schema",

@@ -19,7 +19,7 @@ from strawberry.codegen.plugins.typescript import TypeScriptPlugin
 def _is_codegen_plugin(obj: object) -> bool:
     return (
         inspect.isclass(obj)
-        and issubclass(obj, QueryCodegenPlugin)
+        and issubclass(obj, (QueryCodegenPlugin, ConsolePlugin))
         and obj is not QueryCodegenPlugin
     )
 
