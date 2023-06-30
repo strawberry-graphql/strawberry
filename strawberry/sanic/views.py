@@ -113,14 +113,14 @@ class GraphQLView(
         self.json_encoder = json_encoder
         self.json_dumps_params = json_dumps_params
 
-        if self.json_encoder is not None:
+        if self.json_encoder is not None:  # pragma: no cover
             warnings.warn(
                 "json_encoder is deprecated, override encode_json instead",
                 DeprecationWarning,
                 stacklevel=2,
             )
 
-        if self.json_dumps_params is not None:
+        if self.json_dumps_params is not None:  # pragma: no cover
             warnings.warn(
                 "json_dumps_params is deprecated, override encode_json instead",
                 DeprecationWarning,

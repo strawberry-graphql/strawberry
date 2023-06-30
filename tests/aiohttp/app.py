@@ -35,6 +35,7 @@ class MyGraphQLView(GraphQLView):
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
     async def get_root_value(self, request: web.Request) -> Query:
+        await super().get_root_value(request)  # for coverage
         return Query()
 
 
