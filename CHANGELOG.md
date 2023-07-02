@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.192.1 - 2023-07-02
+--------------------
+
+Add specifications in FastAPI doc if query via GET is enabled
+
+Contributed by [guillaumeLepape](https://github.com/guillaumeLepape) via [PR #2913](https://github.com/strawberry-graphql/strawberry/pull/2913/)
+
+
 0.192.0 - 2023-06-28
 --------------------
 
