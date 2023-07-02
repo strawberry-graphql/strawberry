@@ -188,10 +188,12 @@ class GraphQLRouter(
                     "description": "The GraphiQL integrated development environment.",
                 },
                 404: {
-                    "description": "Not found if GraphiQL is not enabled.",
+                    "description": (
+                        "Not found if GraphiQL or query via GET are not enabled."
+                    )
                 },
             },
-            include_in_schema=graphiql,
+            include_in_schema=graphiql or allow_queries_via_get,
         )
         async def handle_http_get(  # pyright: ignore
             request: Request,
@@ -277,8 +279,7 @@ class GraphQLRouter(
         )
 
     def render_graphiql(self, request: Request) -> HTMLResponse:
-        html = get_graphiql_html()
-        return HTMLResponse(html)
+        return HTMLResponse(get_graphiql_html())
 
     @staticmethod
     def _merge_responses(response: Response, actual_response: Response) -> Response:
