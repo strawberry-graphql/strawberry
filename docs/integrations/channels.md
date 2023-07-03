@@ -369,6 +369,7 @@ the Channels layer subscription has started.
 ```python
 # mysite/gqlchat/subscription.py
 
+
 @strawberry.type
 class Subscription:
     @strawberry.subscription
