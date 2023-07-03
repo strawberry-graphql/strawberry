@@ -3,10 +3,10 @@ import dataclasses
 import re
 import sys
 from enum import Enum
-from typing import Any, Dict, List, NewType, Optional, Union
+from typing import Any, Dict, List, NewType, Optional, TypeVar, Union
 
 import pytest
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ConstrainedList, Field, ValidationError
 
 import strawberry
 from strawberry.experimental.pydantic._compat import (
@@ -1225,3 +1225,64 @@ def test_can_convert_optional_union_type_expression_fields_to_strawberry():
 
     assert test.optional_list == [1, 2, 3]
     assert test.optional_str is None
+
+
+def test_can_convert_pydantic_type_to_strawberry_with_constrained_list():
+    class WorkModel(BaseModel):
+        name: str
+
+    class workList(ConstrainedList):
+        min_items = 1
+
+    class UserModel(BaseModel):
+        work: workList[WorkModel]
+
+    @strawberry.experimental.pydantic.type(WorkModel)
+    class Work:
+        name: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(UserModel)
+    class User:
+        work: strawberry.auto
+
+    origin_user = UserModel(
+        work=[WorkModel(name="developer"), WorkModel(name="tester")]
+    )
+
+    user = User.from_pydantic(origin_user)
+
+    assert user == User(work=[Work(name="developer"), Work(name="tester")])
+
+
+SI = TypeVar("SI", covariant=True)  # pragma: no mutate
+
+
+class SpecialList(List[SI]):
+    pass
+
+
+def test_can_convert_pydantic_type_to_strawberry_with_specialized_list():
+    class WorkModel(BaseModel):
+        name: str
+
+    class workList(SpecialList[SI]):
+        min_items = 1
+
+    class UserModel(BaseModel):
+        work: workList[WorkModel]
+
+    @strawberry.experimental.pydantic.type(WorkModel)
+    class Work:
+        name: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(UserModel)
+    class User:
+        work: strawberry.auto
+
+    origin_user = UserModel(
+        work=[WorkModel(name="developer"), WorkModel(name="tester")]
+    )
+
+    user = User.from_pydantic(origin_user)
+
+    assert user == User(work=[Work(name="developer"), Work(name="tester")])
