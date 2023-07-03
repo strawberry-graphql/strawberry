@@ -357,6 +357,42 @@ Look here for some more complete examples:
 
 ---
 
+### Confirming GraphQL Subscriptions
+
+By default no confirmation message is sent to the GraphQL client once the
+subscription has started. However, this is useful to be able to synchronize
+actions and detect communication errors. The code below shows how the above
+example can be adapted to send a null from the server to the client to confirm
+that the subscription has successfully started. This includes confirming that
+the Channels layer subscription has started.
+
+```python
+# mysite/gqlchat/subscription.py
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def join_chat_rooms(
+        self,
+        info: Info,
+        rooms: List[ChatRoom],
+        user: str,
+    ) -> AsyncGenerator[ChatRoomMessage | None, None]:
+        ...
+        async with ws.listen_to_channel("chat.message", groups=room_ids) as cm:
+            yield None
+            async for message in cm:
+                if message["room_id"] in room_ids:
+                    yield ChatRoomMessage(
+                        room_name=message["room_id"],
+                        message=message["message"],
+                        current_user=user,
+                    )
+```
+
+Note the change in return signature for `join_chat_rooms` and the `yield None`
+after entering the `listen_to_channel` context manger.
+
 ## Testing
 
 We provide a minimal application communicator (`GraphQLWebsocketCommunicator`) for subscribing.
