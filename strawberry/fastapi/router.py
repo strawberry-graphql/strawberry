@@ -281,14 +281,6 @@ class GraphQLRouter(
     def render_graphiql(self, request: Request) -> HTMLResponse:
         return HTMLResponse(get_graphiql_html())
 
-    @staticmethod
-    def _merge_responses(response: Response, actual_response: Response) -> Response:
-        actual_response.headers.raw.extend(response.headers.raw)
-        if response.status_code:
-            actual_response.status_code = response.status_code
-
-        return actual_response
-
     async def process_result(
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
