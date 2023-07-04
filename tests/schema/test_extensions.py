@@ -1,5 +1,6 @@
 from enum import Enum, auto
-from typing import cast
+from typing import Union, cast
+from typing_extensions import Annotated
 
 from graphql import (
     DirectiveLocation,
@@ -138,7 +139,7 @@ def test_union():
     class StrThing:
         value: str
 
-    SomeThing = strawberry.union("SomeThing", types=[JsonThing, StrThing])
+    SomeThing = Annotated[Union[JsonThing, StrThing], strawberry.union("SomeThing")]
 
     @strawberry.type()
     class Query:
@@ -146,10 +147,10 @@ def test_union():
 
     schema = strawberry.Schema(query=Query)
     graphql_schema: GraphQLSchema = schema._schema
+    graphql_type = graphql_schema.get_type("SomeThing")
 
-    assert (
-        graphql_schema.get_type("SomeThing").extensions[DEFINITION_BACKREF] is SomeThing
-    )
+    assert graphql_type.extensions[DEFINITION_BACKREF].graphql_name == "SomeThing"
+    assert graphql_type.extensions[DEFINITION_BACKREF].description is None
 
 
 def test_object_types():

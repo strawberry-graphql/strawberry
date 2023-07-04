@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import sys
 import typing
 from collections import abc
@@ -9,6 +10,7 @@ from typing import (
     Any,
     Dict,
     ForwardRef,
+    List,
     Optional,
     Type,
     TypeVar,
@@ -30,11 +32,7 @@ from strawberry.type import (
 )
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.unset import UNSET
-from strawberry.utils.typing import (
-    eval_type,
-    is_generic,
-    is_type_var,
-)
+from strawberry.utils.typing import eval_type, is_generic, is_type_var
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
@@ -54,11 +52,18 @@ ASYNC_TYPES = (
 
 
 class StrawberryAnnotation:
+    __slots__ = "annotation", "namespace", "__eval_cache__"
+
     def __init__(
-        self, annotation: Union[object, str], *, namespace: Optional[Dict] = None
+        self,
+        annotation: Union[object, str],
+        *,
+        namespace: Optional[Dict[str, Any]] = None,
     ):
         self.annotation = annotation
         self.namespace = namespace
+
+        self.__eval_cache__: Optional[Type[Any]] = None
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, StrawberryAnnotation):
@@ -71,7 +76,7 @@ class StrawberryAnnotation:
 
     @staticmethod
     def from_annotation(
-        annotation: object, namespace: Optional[Dict] = None
+        annotation: object, namespace: Optional[Dict[str, Any]] = None
     ) -> Optional[StrawberryAnnotation]:
         if annotation is None:
             return None
@@ -80,18 +85,31 @@ class StrawberryAnnotation:
             return StrawberryAnnotation(annotation, namespace=namespace)
         return annotation
 
-    def resolve(self) -> Union[StrawberryType, type]:
+    def evaluate(self) -> type:
+        """Return evaluated annotation using `strawberry.util.typing.eval_type`."""
+        evaled_type = self.__eval_cache__
+        if evaled_type:
+            return evaled_type
+
         annotation = self.annotation
         if isinstance(annotation, str):
             annotation = ForwardRef(annotation)
 
         evaled_type = eval_type(annotation, self.namespace, None)
 
+        self.__eval_cache__ = evaled_type
+        return evaled_type
+
+    def resolve(self) -> Union[StrawberryType, type]:
+        """Return resolved (transformed) annotation."""
+        evaled_type = cast(Any, self.evaluate())
+
         if is_private(evaled_type):
             return evaled_type
 
+        args: List[Any] = []
         if get_origin(evaled_type) is Annotated:
-            evaled_type = get_args(evaled_type)[0]
+            evaled_type, *args = get_args(evaled_type)
 
         if self._is_async_type(evaled_type):
             evaled_type = self._strip_async_type(evaled_type)
@@ -99,7 +117,7 @@ class StrawberryAnnotation:
             return evaled_type
 
         if self._is_generic(evaled_type):
-            if any(is_type_var(type_) for type_ in evaled_type.__args__):
+            if any(is_type_var(type_) for type_ in get_args(evaled_type)):
                 return evaled_type
             return self.create_concrete_type(evaled_type)
 
@@ -116,7 +134,7 @@ class StrawberryAnnotation:
         elif self._is_optional(evaled_type):
             return self.create_optional(evaled_type)
         elif self._is_union(evaled_type):
-            return self.create_union(evaled_type)
+            return self.create_union(evaled_type, args)
         elif is_type_var(evaled_type) or evaled_type is Self:
             return self.create_type_var(cast(TypeVar, evaled_type))
 
@@ -127,6 +145,8 @@ class StrawberryAnnotation:
     def set_namespace_from_field(self, field: StrawberryField) -> None:
         module = sys.modules[field.origin.__module__]
         self.namespace = module.__dict__
+
+        self.__eval_cache__ = None  # Invalidate cache to allow re-evaluation
 
     def create_concrete_type(self, evaled_type: type) -> type:
         if has_object_definition(evaled_type):
@@ -140,15 +160,16 @@ class StrawberryAnnotation:
             raise NotAStrawberryEnumError(evaled_type)
 
     def create_list(self, evaled_type: Any) -> StrawberryList:
+        item_type, *_ = get_args(evaled_type)
         of_type = StrawberryAnnotation(
-            annotation=evaled_type.__args__[0],
+            annotation=item_type,
             namespace=self.namespace,
         ).resolve()
 
         return StrawberryList(of_type)
 
     def create_optional(self, evaled_type: Any) -> StrawberryOptional:
-        types = evaled_type.__args__
+        types = get_args(evaled_type)
         non_optional_types = tuple(
             filter(
                 lambda x: x is not type(None) and x is not type(UNSET),
@@ -173,7 +194,7 @@ class StrawberryAnnotation:
     def create_type_var(self, evaled_type: TypeVar) -> StrawberryTypeVar:
         return StrawberryTypeVar(evaled_type)
 
-    def create_union(self, evaled_type: Type) -> StrawberryUnion:
+    def create_union(self, evaled_type: Type[Any], args: list[Any]) -> StrawberryUnion:
         # Prevent import cycles
         from strawberry.union import StrawberryUnion
 
@@ -181,10 +202,28 @@ class StrawberryAnnotation:
         if isinstance(evaled_type, StrawberryUnion):
             return evaled_type
 
-        types = evaled_type.__args__
+        types = get_args(evaled_type)
+
         union = StrawberryUnion(
             type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
         )
+
+        union_args = [arg for arg in args if isinstance(arg, StrawberryUnion)]
+        if len(union_args) > 1:
+            logging.warning(
+                "Duplicate union definition detected. "
+                "Only the first definition will be considered"
+            )
+
+        if union_args:
+            arg = union_args[0]
+            union.graphql_name = arg.graphql_name
+            union.description = arg.description
+            union.directives = arg.directives
+
+            union._source_file = arg._source_file
+            union._source_line = arg._source_line
+
         return union
 
     @classmethod
@@ -219,7 +258,7 @@ class StrawberryAnnotation:
         if not cls._is_union(annotation):
             return False
 
-        types = annotation.__args__
+        types = get_args(annotation)
 
         # A Union to be optional needs to have at least one None type
         return any(x is type(None) for x in types)
@@ -228,7 +267,7 @@ class StrawberryAnnotation:
     def _is_list(cls, annotation: Any) -> bool:
         """Returns True if annotation is a List"""
 
-        annotation_origin = getattr(annotation, "__origin__", None)
+        annotation_origin = get_origin(annotation)
 
         return (annotation_origin in (list, tuple)) or annotation_origin is abc.Sequence
 

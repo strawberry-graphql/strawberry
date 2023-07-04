@@ -11,6 +11,7 @@ from typing import (
     AsyncIterator,
     Awaitable,
     ClassVar,
+    ForwardRef,
     Generic,
     Iterable,
     Iterator,
@@ -38,16 +39,16 @@ from strawberry.object_type import interface, type
 from strawberry.private import StrawberryPrivate
 from strawberry.relay.exceptions import NodeIDAnnotationError
 from strawberry.type import StrawberryContainer, get_object_definition
+from strawberry.types.info import Info  # noqa: TCH001
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
 from strawberry.utils.inspect import in_async_context
-from strawberry.utils.typing import eval_type
+from strawberry.utils.typing import eval_type, is_classvar
 
 from .utils import from_base64, to_base64
 
 if TYPE_CHECKING:
     from strawberry.scalars import ID
-    from strawberry.types.info import Info
     from strawberry.utils.await_maybe import AwaitableOrValue
 
 _T = TypeVar("_T")
@@ -407,7 +408,16 @@ class Node:
             base_namespace = sys.modules[base.__module__].__dict__
 
             for attr_name, attr in getattr(base, "__annotations__", {}).items():
-                evaled = eval_type(attr, globalns=base_namespace)
+                # Some ClassVar might raise TypeError when being resolved
+                # on some python versions. This is fine to skip since
+                # we are not interested in ClassVars here
+                if is_classvar(base, attr):
+                    continue
+
+                evaled = eval_type(
+                    ForwardRef(attr) if isinstance(attr, str) else attr,
+                    globalns=base_namespace,
+                )
 
                 if get_origin(evaled) is Annotated and any(
                     isinstance(a, NodeIDPrivate) for a in get_args(evaled)
@@ -845,7 +855,7 @@ class ListConnection(Connection[NodeType]):
         field_def = type_def.get_field("edges")
         assert field_def
 
-        field = field_def.type
+        field = field_def.resolve_type(type_definition=type_def)
         while isinstance(field, StrawberryContainer):
             field = field.of_type
 

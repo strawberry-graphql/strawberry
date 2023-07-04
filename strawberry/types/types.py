@@ -5,6 +5,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     List,
     Mapping,
     Optional,
@@ -21,6 +22,7 @@ from strawberry.type import (
     WithStrawberryObjectDefinition,
 )
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
+from strawberry.utils.inspect import get_specialized_type_var_map
 from strawberry.utils.typing import (
     is_generic as is_type_generic,
 )
@@ -133,6 +135,10 @@ class StrawberryObjectDefinition(StrawberryType):
     @property
     def is_specialized_generic(self) -> bool:
         return self.is_generic and not getattr(self.origin, "__parameters__", None)
+
+    @property
+    def specialized_type_var_map(self) -> Optional[Dict[TypeVar, type]]:
+        return get_specialized_type_var_map(self.origin)
 
     @property
     def type_params(self) -> List[TypeVar]:

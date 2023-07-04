@@ -35,7 +35,7 @@ class Animal:
     age: int
 
 
-PersonOrAnimal = strawberry.union("PersonOrAnimal", (Person, Animal))
+PersonOrAnimal = Annotated[Union[Person, Animal], strawberry.union("PersonOrAnimal")]
 
 
 @strawberry.interface
