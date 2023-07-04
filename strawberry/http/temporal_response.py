@@ -35,8 +35,9 @@ class TemporalResponse:
         )
 
         # It is possible to have multiple Set-Cookie headers
-        # so we need to support multiple values per key in the
-        # self.headers dictionary for this header.
+        # so we need to support multiple values per key by using
+        # a list of strings (if more than one Set-Cookie header should
+        # be present)
         if "Set-Cookie" in self.headers:
             if isinstance(self.headers["Set-Cookie"], list):
                 self.headers["Set-Cookie"].append(header_value)
