@@ -1,6 +1,5 @@
 import abc
 import json
-from ctypes import Union
 from dataclasses import dataclass
 from io import BytesIO
 from typing import (
@@ -12,6 +11,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Union,
 )
 from typing_extensions import Literal
 
@@ -26,7 +26,7 @@ ResultOverrideFunction = Optional[Callable[[ExecutionResult], GraphQLHTTPRespons
 class Response:
     status_code: int
     data: bytes
-    headers: Mapping[str, "Union[str, List[str]]"]
+    headers: Mapping[str, Union[str, List[str]]]
 
     @property
     def text(self) -> str:
