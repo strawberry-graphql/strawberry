@@ -108,8 +108,6 @@ class BaseGraphQLTransportWSHandler(ABC):
             self.connection_timed_out = True
             reason = "Connection initialisation timeout"
             await self.close(code=4408, reason=reason)
-        except asyncio.CancelledError:
-            raise
         except Exception as error:
             await self.handle_task_exception(error)  # pragma: no cover
         finally:
@@ -314,9 +312,6 @@ class BaseGraphQLTransportWSHandler(ABC):
                         ]
                     next_message = NextMessage(id=operation.id, payload=next_payload)
                     await operation.send_message(next_message)
-        except asyncio.CancelledError:
-            # CancelledErrors are expected during task cleanup.
-            raise
         except Exception as error:
             # GraphQLErrors are handled by graphql-core and included in the
             # ExecutionResult
