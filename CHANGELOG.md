@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.193.1 - 2023-07-05
+--------------------
+
+This fixes a regression from 0.190.0 where changes to the
+return type of a field done by Field Extensions would not
+be taken in consideration by the schema.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2922](https://github.com/strawberry-graphql/strawberry/pull/2922/)
+
+
 0.193.0 - 2023-07-04
 --------------------
 
