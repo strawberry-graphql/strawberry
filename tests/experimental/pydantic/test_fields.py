@@ -1,4 +1,5 @@
 import re
+import sys
 from typing import List
 from typing_extensions import Literal
 
@@ -131,9 +132,15 @@ def test_constrained_list():
         ...
 
     assert UserType.__strawberry_definition__.fields[0].name == "friends"
+
+    if sys.version_info >= (3, 9):
+        expected_annotation = list[str]
+    else:
+        expected_annotation = List[str]
+
     assert (
         UserType.__strawberry_definition__.fields[0].type_annotation.annotation
-        == List[str]
+        == expected_annotation
     )
 
     data = UserType(friends=[])
@@ -158,9 +165,15 @@ def test_constrained_list_nested():
         ...
 
     assert UserType.__strawberry_definition__.fields[0].name == "friends"
+
+    if sys.version_info >= (3, 9):
+        expected_annotation = list[list[int]]
+    else:
+        expected_annotation = List[List[str]]
+
     assert (
         UserType.__strawberry_definition__.fields[0].type_annotation.annotation
-        == List[List[int]]
+        == expected_annotation
     )
 
 
