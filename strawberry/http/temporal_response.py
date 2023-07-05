@@ -24,7 +24,7 @@ class TemporalResponse:
         httponly: bool = False,
         samesite: Optional[SameSite] = None,
     ) -> None:
-        """Set a cookie in the reponse
+        """Set a cookie in the response
 
         Parameters:
             key:
@@ -32,7 +32,7 @@ class TemporalResponse:
             value:
                 The value of the cookie
             max_age:
-                Set max age of the cookie in seconds
+                Set the max age of the cookie in seconds
             expires:
                 An expiration date of the cookie. It is assumed
                 to be in UTC, if the datetime has no timezone information
