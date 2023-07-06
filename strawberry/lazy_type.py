@@ -68,12 +68,12 @@ class LazyType(Generic[TypeName, Module]):
 
 
 class StrawberryLazyReference:
-    def __init__(self, module: str, package: Optional[str] = None) -> None:
+    def __init__(self, module: str) -> None:
         self.module = module
-        self.package = package
+        self.package = None
 
         if module.startswith(".") and not package:
-            frame = inspect.stack()[2][0]
+            frame = inspect.currentframe().f_back.f_back
             # TODO: raise a nice error if frame is None
             assert frame is not None
             self.package = cast(str, frame.f_globals["__package__"])
@@ -82,5 +82,5 @@ class StrawberryLazyReference:
         return LazyType(forward_ref.__forward_arg__, self.module, self.package)
 
 
-def lazy(module_path: str, package: Optional[str] = None) -> StrawberryLazyReference:
-    return StrawberryLazyReference(module_path, package)
+def lazy(module_path: str) -> StrawberryLazyReference:
+    return StrawberryLazyReference(module_path)
