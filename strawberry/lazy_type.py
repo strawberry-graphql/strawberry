@@ -72,7 +72,7 @@ class StrawberryLazyReference:
         self.module = module
         self.package = None
 
-        if module.startswith(".") and not package:
+        if module.startswith("."):
             frame = inspect.currentframe().f_back.f_back
             # TODO: raise a nice error if frame is None
             assert frame is not None
