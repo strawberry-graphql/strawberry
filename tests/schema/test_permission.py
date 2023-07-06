@@ -32,7 +32,9 @@ def test_raises_graphql_error_when_permission_is_denied():
     class IsAuthenticated(BasePermission):
         message = "User is not authenticated"
 
-        def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+        def has_permission(
+            self, source: typing.Any, info: Info, **kwargs: typing.Any
+        ) -> bool:
             return False
 
     @strawberry.type
@@ -54,7 +56,9 @@ async def test_raises_permission_error_for_subscription():
     class IsAdmin(BasePermission):
         message = "You are not authorized"
 
-        def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+        def has_permission(
+            self, source: typing.Any, info: Info, **kwargs: typing.Any
+        ) -> bool:
             return False
 
     @strawberry.type
@@ -81,7 +85,7 @@ async def test_sync_permissions_work_with_async_resolvers():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"
 
-        def has_permission(self, source, info, **kwargs) -> bool:
+        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
             return info.context["user"] == "Patrick"
 
     @strawberry.type
@@ -110,7 +114,9 @@ def test_can_use_source_when_testing_permission():
     class CanSeeEmail(BasePermission):
         message = "Cannot see email for this user"
 
-        def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+        def has_permission(
+            self, source: typing.Any, info: Info, **kwargs: typing.Any
+        ) -> bool:
             return source.name.lower() == "patrick"
 
     @strawberry.type
@@ -144,7 +150,9 @@ def test_can_use_args_when_testing_permission():
     class CanSeeEmail(BasePermission):
         message = "Cannot see email for this user"
 
-        def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+        def has_permission(
+            self, source: typing.Any, info: Info, **kwargs: typing.Any
+        ) -> bool:
             return kwargs.get("secure", False)
 
     @strawberry.type
@@ -178,7 +186,9 @@ def test_can_use_on_simple_fields():
     class CanSeeEmail(BasePermission):
         message = "Cannot see email for this user"
 
-        def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+        def has_permission(
+            self, source: typing.Any, info: Info, **kwargs: typing.Any
+        ) -> bool:
             return source.name.lower() == "patrick"
 
     @strawberry.type
@@ -210,7 +220,7 @@ async def test_dataclass_field_with_async_permission_class():
     class CanSeeEmail(BasePermission):
         message = "Cannot see email for this user"
 
-        async def has_permission(self, source, info, **kwargs) -> bool:
+        async def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
             return source.name.lower() == "patrick"
 
     @strawberry.type
@@ -240,7 +250,7 @@ async def test_async_resolver_with_async_permission_class():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"
 
-        async def has_permission(self, source, info, **kwargs) -> bool:
+        async def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
             return info.context["user"] == "Patrick"
 
     @strawberry.type
@@ -270,7 +280,7 @@ async def test_sync_resolver_with_async_permission_class():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"
 
-        async def has_permission(self, source, info, **kwargs) -> bool:
+        async def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
             return info.context["user"] == "Patrick"
 
     @strawberry.type
@@ -300,13 +310,13 @@ async def test_mixed_sync_and_async_permission_classes():
     class IsAuthorizedAsync(BasePermission):
         message = "User is not authorized (async)"
 
-        async def has_permission(self, source, info, **kwargs) -> bool:
+        async def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
             return info.context.get("passAsync", False)
 
     class IsAuthorizedSync(BasePermission):
         message = "User is not authorized (sync)"
 
-        def has_permission(self, source, info, **kwargs) -> bool:
+        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
             return info.context.get("passSync", False)
 
     @strawberry.type

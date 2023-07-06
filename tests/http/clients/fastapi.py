@@ -11,18 +11,33 @@ from starlette.websockets import WebSocketDisconnect
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
+from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
-from tests.fastapi.app import (
-    DebuggableGraphQLTransportWSHandler,
-    DebuggableGraphQLWSHandler,
-)
 from tests.http.schema import Query, get_schema
 
 from ..context import get_context
 from .asgi import AsgiWebSocketClient
-from .base import JSON, HttpClient, Response, ResultOverrideFunction, WebSocketClient
+from .base import (
+    JSON,
+    DebuggableGraphQLTransportWSMixin,
+    DebuggableGraphQLWSMixin,
+    HttpClient,
+    Response,
+    ResultOverrideFunction,
+    WebSocketClient,
+)
+
+
+class DebuggableGraphQLTransportWSHandler(
+    DebuggableGraphQLTransportWSMixin, GraphQLTransportWSHandler
+):
+    pass
+
+
+class DebuggableGraphQLWSHandler(DebuggableGraphQLWSMixin, GraphQLWSHandler):
+    pass
 
 
 def custom_context_dependency() -> str:

@@ -7,7 +7,7 @@ on preferences and client support. Then it hands off to the appropriate consumer
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from django.urls import re_path
 
@@ -46,8 +46,8 @@ class GraphQLProtocolTypeRouter(ProtocolTypeRouter):
     def __init__(
         self,
         schema: BaseSchema,
-        django_application=None,
-        url_pattern="^graphql",
+        django_application: Optional[str] = None,
+        url_pattern: str = "^graphql",
     ):
         http_urls = [re_path(url_pattern, GraphQLHTTPConsumer.as_asgi(schema=schema))]
         if django_application is not None:

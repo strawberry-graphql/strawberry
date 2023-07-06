@@ -2,27 +2,8 @@ from typing import Any, Dict, Union
 
 import strawberry
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
-from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
-from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
+from strawberry.fastapi import GraphQLRouter
 from tests.http.schema import get_schema
-
-
-class DebuggableGraphQLTransportWSHandler(GraphQLTransportWSHandler):
-    async def get_context(self) -> object:
-        context = await super().get_context()
-        context["ws"] = self._ws
-        context["tasks"] = self.tasks
-        context["connectionInitTimeoutTask"] = self.connection_init_timeout_task
-        return context
-
-
-class DebuggableGraphQLWSHandler(GraphQLWSHandler):
-    async def get_context(self) -> object:
-        context = await super().get_context()
-        context["ws"] = self._ws
-        context["tasks"] = self.tasks
-        context["connectionInitTimeoutTask"] = None
-        return context
 
 
 def custom_context_dependency() -> str:
@@ -33,7 +14,7 @@ async def get_context(
     background_tasks: BackgroundTasks,
     request: Request = None,
     ws: WebSocket = None,
-    custom_value=Depends(custom_context_dependency),
+    custom_value: str = Depends(custom_context_dependency),
 ) -> Dict[str, Any]:
     return {
         "custom_value": custom_value,
@@ -46,11 +27,6 @@ async def get_root_value(
     request: Request = None, ws: WebSocket = None
 ) -> Union[Request, WebSocket]:
     return request or ws
-
-
-class GraphQLRouter(BaseGraphQLRouter[Any, Any]):
-    graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
-    graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
 
 def create_app(schema: strawberry.Schema, **kwargs: Any) -> FastAPI:

@@ -1,14 +1,24 @@
 from __future__ import annotations
 
-import enum
 from copy import deepcopy
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    FrozenSet,
+    Generator,
+    Iterable,
+    Optional,
+    Set,
+    Union,
+)
 
 from opentelemetry import trace
 from opentelemetry.trace import SpanKind
 
-from strawberry.extensions import SchemaExtension
+from strawberry.extensions import LifecycleStep, SchemaExtension
 from strawberry.extensions.utils import get_path_from_info
 
 from .utils import should_skip_tracing
@@ -25,15 +35,9 @@ DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 ArgFilter = Callable[[Dict[str, Any], "GraphQLResolveInfo"], Dict[str, Any]]
 
 
-class RequestStage(enum.Enum):
-    REQUEST = enum.auto()
-    PARSING = enum.auto()
-    VALIDATION = enum.auto()
-
-
 class OpenTelemetryExtension(SchemaExtension):
     _arg_filter: Optional[ArgFilter]
-    _span_holder: Dict[RequestStage, Span] = dict()
+    _span_holder: Dict[LifecycleStep, Span] = dict()
     _tracer: Tracer
 
     def __init__(
@@ -55,13 +59,13 @@ class OpenTelemetryExtension(SchemaExtension):
             else "GraphQL Query"
         )
 
-        self._span_holder[RequestStage.REQUEST] = self._tracer.start_span(
+        self._span_holder[LifecycleStep.OPERATION] = self._tracer.start_span(
             span_name, kind=SpanKind.SERVER
         )
-        self._span_holder[RequestStage.REQUEST].set_attribute("component", "graphql")
+        self._span_holder[LifecycleStep.OPERATION].set_attribute("component", "graphql")
 
         if self.execution_context.query:
-            self._span_holder[RequestStage.REQUEST].set_attribute(
+            self._span_holder[LifecycleStep.OPERATION].set_attribute(
                 "query", self.execution_context.query
             )
 
@@ -73,26 +77,26 @@ class OpenTelemetryExtension(SchemaExtension):
         # useful name in our trace.
         if not self._operation_name and self.execution_context.operation_name:
             span_name = f"GraphQL Query: {self.execution_context.operation_name}"
-            self._span_holder[RequestStage.REQUEST].update_name(span_name)
-        self._span_holder[RequestStage.REQUEST].end()
+            self._span_holder[LifecycleStep.OPERATION].update_name(span_name)
+        self._span_holder[LifecycleStep.OPERATION].end()
 
     def on_validate(self) -> Generator[None, None, None]:
-        ctx = trace.set_span_in_context(self._span_holder[RequestStage.REQUEST])
-        self._span_holder[RequestStage.VALIDATION] = self._tracer.start_span(
+        ctx = trace.set_span_in_context(self._span_holder[LifecycleStep.OPERATION])
+        self._span_holder[LifecycleStep.VALIDATION] = self._tracer.start_span(
             "GraphQL Validation",
             context=ctx,
         )
         yield
-        self._span_holder[RequestStage.VALIDATION].end()
+        self._span_holder[LifecycleStep.VALIDATION].end()
 
     def on_parse(self) -> Generator[None, None, None]:
-        ctx = trace.set_span_in_context(self._span_holder[RequestStage.REQUEST])
-        self._span_holder[RequestStage.PARSING] = self._tracer.start_span(
+        ctx = trace.set_span_in_context(self._span_holder[LifecycleStep.OPERATION])
+        self._span_holder[LifecycleStep.PARSE] = self._tracer.start_span(
             "GraphQL Parsing", context=ctx
         )
 
         yield
-        self._span_holder[RequestStage.PARSING].end()
+        self._span_holder[LifecycleStep.PARSE].end()
 
     def filter_resolver_args(
         self, args: Dict[str, Any], info: GraphQLResolveInfo
@@ -101,9 +105,41 @@ class OpenTelemetryExtension(SchemaExtension):
             return args
         return self._arg_filter(deepcopy(args), info)
 
-    def add_tags(
-        self, span: Span, info: GraphQLResolveInfo, kwargs: Dict[str, Any]
-    ) -> None:
+    def convert_dict_to_allowed_types(self, value: dict) -> str:
+        return (
+            "{"
+            + ", ".join(
+                f"{k}: {self.convert_to_allowed_types(v)}" for k, v in value.items()
+            )
+            + "}"
+        )
+
+    def convert_to_allowed_types(self, value: Any) -> Any:
+        # Put these in decreasing order of use-cases to exit as soon as possible
+        if isinstance(value, (bool, str, bytes, int, float)):
+            return value
+        elif isinstance(value, (list, tuple, range)):
+            return self.convert_list_or_tuple_to_allowed_types(value)
+        elif isinstance(value, dict):
+            return self.convert_dict_to_allowed_types(value)
+        elif isinstance(value, (set, frozenset)):
+            return self.convert_set_to_allowed_types(value)
+        elif isinstance(value, complex):
+            return str(value)  # Convert complex numbers to strings
+        elif isinstance(value, (bytearray, memoryview)):
+            return bytes(value)  # Convert bytearray and memoryview to bytes
+        else:
+            return str(value)
+
+    def convert_set_to_allowed_types(self, value: Union[Set, FrozenSet]) -> str:
+        return (
+            "{" + ", ".join(str(self.convert_to_allowed_types(x)) for x in value) + "}"
+        )
+
+    def convert_list_or_tuple_to_allowed_types(self, value: Iterable) -> str:
+        return ", ".join(map(str, map(self.convert_to_allowed_types, value)))
+
+    def add_tags(self, span: Span, info: GraphQLResolveInfo, kwargs: Any) -> None:
         graphql_path = ".".join(map(str, get_path_from_info(info)))
 
         span.set_attribute("component", "graphql")
@@ -114,9 +150,17 @@ class OpenTelemetryExtension(SchemaExtension):
             filtered_kwargs = self.filter_resolver_args(kwargs, info)
 
             for kwarg, value in filtered_kwargs.items():
-                span.set_attribute(f"graphql.param.{kwarg}", value)
+                converted_value = self.convert_to_allowed_types(value)
+                span.set_attribute(f"graphql.param.{kwarg}", converted_value)
 
-    async def resolve(self, _next, root, info, *args, **kwargs) -> Any:
+    async def resolve(
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Any,
+    ) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -127,7 +171,9 @@ class OpenTelemetryExtension(SchemaExtension):
 
         with self._tracer.start_as_current_span(
             f"GraphQL Resolving: {info.field_name}",
-            context=trace.set_span_in_context(self._span_holder[RequestStage.REQUEST]),
+            context=trace.set_span_in_context(
+                self._span_holder[LifecycleStep.OPERATION]
+            ),
         ) as span:
             self.add_tags(span, info, kwargs)
             result = _next(root, info, *args, **kwargs)
@@ -139,7 +185,14 @@ class OpenTelemetryExtension(SchemaExtension):
 
 
 class OpenTelemetryExtensionSync(OpenTelemetryExtension):
-    def resolve(self, _next, root, info, *args, **kwargs) -> Any:
+    def resolve(
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Any,
+    ) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -147,7 +200,9 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
 
         with self._tracer.start_as_current_span(
             f"GraphQL Resolving: {info.field_name}",
-            context=trace.set_span_in_context(self._span_holder[RequestStage.REQUEST]),
+            context=trace.set_span_in_context(
+                self._span_holder[LifecycleStep.OPERATION]
+            ),
         ) as span:
             self.add_tags(span, info, kwargs)
             result = _next(root, info, *args, **kwargs)

@@ -101,7 +101,6 @@ from strawberry.sanic.views import GraphQLView
 from strawberry.http import GraphQLHTTPResponse, process_result
 from strawberry.types import ExecutionResult
 from sanic.request import Request
-from graphql.error.graphql_error import format_error as format_graphql_error
 
 
 class MyGraphQLView(GraphQLView):
@@ -109,7 +108,7 @@ class MyGraphQLView(GraphQLView):
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         if result.errors:
-            result.errors = [format_graphql_error(err) for err in result.errors]
+            result.errors = [err.formatted for err in result.errors]
 
         return process_result(data)
 ```

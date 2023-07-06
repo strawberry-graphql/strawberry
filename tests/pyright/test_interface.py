@@ -20,7 +20,7 @@ def test_pyright():
     assert results == [
         Result(
             type="information",
-            message='Type of "Node" is "Type[Node]"',
+            message='Type of "Node" is "type[Node]"',
             line=9,
             column=13,
         ),
@@ -45,7 +45,7 @@ def test_pyright_calling():
     assert results == [
         Result(
             type="information",
-            message='Type of "Node" is "Type[Node]"',
+            message='Type of "Node" is "type[Node]"',
             line=9,
             column=13,
         ),

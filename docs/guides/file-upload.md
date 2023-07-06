@@ -15,6 +15,7 @@ The type passed at runtime depends on the integration:
 | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [AIOHTTP](/docs/integrations/aiohttp)     | [`io.BytesIO`](https://docs.python.org/3/library/io.html#io.BytesIO)                                                                                  |
 | [ASGI](/docs/integrations/asgi)           | [`starlette.datastructures.UploadFile`](https://www.starlette.io/requests/#request-files)                                                             |
+| [Channels](/docs/integrations/channels)   | [`django.core.files.uploadedfile.UploadedFile`](https://docs.djangoproject.com/en/3.2/ref/files/uploads/#django.core.files.uploadedfile.UploadedFile) |
 | [Django](/docs/integrations/django)       | [`django.core.files.uploadedfile.UploadedFile`](https://docs.djangoproject.com/en/3.2/ref/files/uploads/#django.core.files.uploadedfile.UploadedFile) |
 | [FastAPI](/docs/integrations/fastapi)     | [`fastapi.UploadFile`](https://fastapi.tiangolo.com/tutorial/request-files/#file-parameters-with-uploadfile)                                          |
 | [Flask](/docs/integrations/flask)         | [`werkzeug.datastructures.FileStorage`](https://werkzeug.palletsprojects.com/en/2.0.x/datastructures/#werkzeug.datastructures.FileStorage)            |
@@ -66,7 +67,7 @@ class Mutation:
         return contents
 ```
 
-## Sanic / Flask / Django / AIOHTTP
+## Sanic / Flask / Django / Channels / AIOHTTP
 
 Example:
 
@@ -117,7 +118,7 @@ Assuming you have your schema up and running, here there are some requests examp
 
 ### Sending one file
 
-```bash
+```shell
 curl localhost:8000/graphql \
   -F operations='{ "query": "mutation($file: Upload!){ readFile(file: $file) }", "variables": { "file": null } }' \
   -F map='{ "file": ["variables.file"] }' \
@@ -126,7 +127,7 @@ curl localhost:8000/graphql \
 
 ### Sending a list of files
 
-```bash
+```shell
 curl localhost:8000/graphql \
   -F operations='{ "query": "mutation($files: [Upload!]!) { readFiles(files: $files) }", "variables": { "files": [null, null] } }' \
   -F map='{"file1": ["variables.files.0"], "file2": ["variables.files.1"]}' \
@@ -136,7 +137,7 @@ curl localhost:8000/graphql \
 
 ### Sending nested files
 
-```bash
+```shell
 curl localhost:8000/graphql \
   -F operations='{ "query": "mutation($folder: FolderInput!) { readFolder(folder: $folder) }", "variables": {"folder": {"files": [null, null]}} }' \
   -F map='{"file1": ["variables.folder.files.0"], "file2": ["variables.folder.files.1"]}' \

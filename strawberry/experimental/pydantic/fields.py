@@ -12,7 +12,7 @@ from strawberry.experimental.pydantic.exceptions import (
     UnregisteredTypeException,
     UnsupportedTypeError,
 )
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import StrawberryObjectDefinition
 
 try:
     from typing import GenericAlias as TypingGenericAlias  # type: ignore
@@ -78,7 +78,7 @@ FIELDS_MAP = {
 }
 
 
-def get_basic_type(type_) -> Type[Any]:
+def get_basic_type(type_: Any) -> Type[Any]:
     if lenient_issubclass(type_, pydantic.ConstrainedInt):
         return int
     if lenient_issubclass(type_, pydantic.ConstrainedFloat):
@@ -128,13 +128,13 @@ def replace_types_recursively(type_: Any, is_input: bool) -> Any:
 
     replaced_type = replaced_type.copy_with(converted)
 
-    if isinstance(replaced_type, TypeDefinition):
+    if isinstance(replaced_type, StrawberryObjectDefinition):
         # TODO: Not sure if this is necessary. No coverage in tests
         # TODO: Unnecessary with StrawberryObject
         replaced_type = builtins.type(
             replaced_type.name,
             (),
-            {"_type_definition": replaced_type},
+            {"__strawberry_definition__": replaced_type},
         )
 
     return replaced_type

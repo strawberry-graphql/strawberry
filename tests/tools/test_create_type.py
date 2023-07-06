@@ -3,16 +3,93 @@ from textwrap import dedent
 import pytest
 
 import strawberry
+from strawberry.annotation import StrawberryAnnotation
+from strawberry.field import StrawberryField
 from strawberry.tools import create_type
+from strawberry.type import get_object_definition
 
 
-def test_create_decorator_type():
+def test_create_type():
     @strawberry.field
     def name() -> str:
         return "foo"
 
-    MyType = create_type("MyType", [name])
-    definition = MyType._type_definition
+    MyType = create_type("MyType", [name], description="This is a description")
+    definition = get_object_definition(MyType, strict=True)
+
+    assert definition.name == "MyType"
+    assert definition.description == "This is a description"
+    assert definition.is_input is False
+
+    assert len(definition.fields) == 1
+
+    assert definition.fields[0].python_name == "name"
+    assert definition.fields[0].graphql_name is None
+    assert definition.fields[0].type == str
+
+
+def test_create_type_extend_and_directives():
+    @strawberry.field
+    def name() -> str:
+        return "foo"
+
+    MyType = create_type(
+        "MyType",
+        [name],
+        description="This is a description",
+        extend=True,
+        directives=[object()],
+    )
+    definition = get_object_definition(MyType, strict=True)
+
+    assert definition.name == "MyType"
+    assert definition.description == "This is a description"
+    assert definition.is_input is False
+    assert definition.extend is True
+    assert len(list(definition.directives)) == 1
+
+    assert len(definition.fields) == 1
+
+    assert definition.fields[0].python_name == "name"
+    assert definition.fields[0].graphql_name is None
+    assert definition.fields[0].type == str
+
+
+def test_create_input_type():
+    name = StrawberryField(
+        python_name="name", type_annotation=StrawberryAnnotation(str)
+    )
+
+    MyType = create_type(
+        "MyType", [name], is_input=True, description="This is a description"
+    )
+    definition = get_object_definition(MyType, strict=True)
+
+    assert definition.name == "MyType"
+    assert definition.description == "This is a description"
+    assert definition.is_input
+
+    assert len(definition.fields) == 1
+
+    assert definition.fields[0].python_name == "name"
+    assert definition.fields[0].graphql_name is None
+    assert definition.fields[0].type == str
+
+
+def test_create_interface_type():
+    name = StrawberryField(
+        python_name="name", type_annotation=StrawberryAnnotation(str)
+    )
+
+    MyType = create_type(
+        "MyType", [name], is_interface=True, description="This is a description"
+    )
+    definition = get_object_definition(MyType, strict=True)
+
+    assert definition.name == "MyType"
+    assert definition.description == "This is a description"
+    assert definition.is_input is False
+    assert definition.is_interface
 
     assert len(definition.fields) == 1
 
@@ -28,7 +105,7 @@ def test_create_variable_type():
     name = strawberry.field(name="name", resolver=get_name)
 
     MyType = create_type("MyType", [name])
-    definition = MyType._type_definition
+    definition = get_object_definition(MyType, strict=True)
 
     assert len(definition.fields) == 1
 
@@ -64,7 +141,7 @@ def test_create_mutation_type():
         return User(username=username)
 
     Mutation = create_type("Mutation", [make_user])
-    definition = Mutation._type_definition
+    definition = get_object_definition(Mutation, strict=True)
 
     assert len(definition.fields) == 1
 
@@ -83,7 +160,7 @@ def test_create_mutation_type_with_params():
         return User(username=username)
 
     Mutation = create_type("Mutation", [make_user])
-    definition = Mutation._type_definition
+    definition = get_object_definition(Mutation, strict=True)
 
     assert len(definition.fields) == 1
 

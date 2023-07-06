@@ -9,12 +9,14 @@ from .clients import (
     AsyncDjangoHttpClient,
     AsyncFlaskHttpClient,
     ChaliceHttpClient,
+    ChannelsHttpClient,
     DjangoHttpClient,
     FastAPIHttpClient,
     FlaskHttpClient,
     HttpClient,
     SanicHttpClient,
     StarliteHttpClient,
+    SyncChannelsHttpClient,
 )
 
 
@@ -29,6 +31,13 @@ from .clients import (
         pytest.param(FastAPIHttpClient, marks=pytest.mark.fastapi),
         pytest.param(FlaskHttpClient, marks=pytest.mark.flask),
         pytest.param(SanicHttpClient, marks=pytest.mark.sanic),
+        pytest.param(ChannelsHttpClient, marks=pytest.mark.channels),
+        pytest.param(
+            # SyncChannelsHttpClient uses @database_sync_to_async and therefore
+            # needs pytest.mark.django_db
+            SyncChannelsHttpClient,
+            marks=[pytest.mark.channels, pytest.mark.django_db],
+        ),
         pytest.param(
             StarliteHttpClient,
             marks=[

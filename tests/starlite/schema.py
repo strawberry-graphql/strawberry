@@ -1,7 +1,7 @@
 import asyncio
 import typing
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 from graphql import GraphQLError
 
@@ -15,7 +15,7 @@ from strawberry.types import Info
 class AlwaysFailPermission(BasePermission):
     message = "You are not authorized"
 
-    def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+    def has_permission(self, source: Any, info: Info, **kwargs: typing.Any) -> bool:
         return False
 
 
@@ -134,7 +134,7 @@ class Subscription:
     @strawberry.subscription
     async def debug(self, info) -> typing.AsyncGenerator[DebugInfo, None]:
         active_result_handlers = [
-            task for task in info.context["tasks"].values() if not task.done()
+            task for task in info.context["get_tasks"]() if not task.done()
         ]
 
         connection_init_timeout_task = info.context["connectionInitTimeoutTask"]

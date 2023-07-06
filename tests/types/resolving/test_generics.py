@@ -1,12 +1,19 @@
 from enum import Enum
 from typing import Generic, List, Optional, TypeVar, Union
 
+import pytest
+
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.enum import EnumDefinition
 from strawberry.field import StrawberryField
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
-from strawberry.types.types import TypeDefinition
+from strawberry.type import (
+    StrawberryList,
+    StrawberryOptional,
+    StrawberryTypeVar,
+    has_object_definition,
+)
+from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.union import StrawberryUnion
 
 
@@ -48,11 +55,11 @@ def test_generic_objects():
 
     # TODO: Simplify with StrawberryObject
     assert isinstance(resolved, type)
-    assert hasattr(resolved, "_type_definition")
-    assert isinstance(resolved._type_definition, TypeDefinition)
-    assert resolved._type_definition.is_generic
+    assert has_object_definition(resolved)
+    assert isinstance(resolved.__strawberry_definition__, StrawberryObjectDefinition)
+    assert resolved.__strawberry_definition__.is_generic
 
-    field: StrawberryField = resolved._type_definition.fields[0]
+    field: StrawberryField = resolved.__strawberry_definition__.fields[0]
     assert isinstance(field.type, StrawberryTypeVar)
     assert field.type == T
 
@@ -102,9 +109,20 @@ def test_generic_with_enums():
 
     # TODO: Simplify with StrawberryObject
     assert isinstance(resolved, type)
-    assert hasattr(resolved, "_type_definition")
-    assert isinstance(resolved._type_definition, TypeDefinition)
+    assert has_object_definition(resolved)
+    assert isinstance(resolved.__strawberry_definition__, StrawberryObjectDefinition)
 
-    generic_slot_field: StrawberryField = resolved._type_definition.fields[0]
+    generic_slot_field: StrawberryField = resolved.__strawberry_definition__.fields[0]
     assert isinstance(generic_slot_field.type, EnumDefinition)
     assert generic_slot_field.type is VehicleMake._enum_definition
+
+
+def test_cant_create_concrete_of_non_strawberry_object():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Foo(Generic[T]):
+        generic_slot: T
+
+    with pytest.raises(ValueError):
+        StrawberryAnnotation(Foo).create_concrete_type(int)

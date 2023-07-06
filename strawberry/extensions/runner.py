@@ -80,7 +80,7 @@ class SchemaExtensionsRunner:
 
         return data
 
-    def as_middleware_manager(self, *additional_middlewares) -> MiddlewareManager:
+    def as_middleware_manager(self, *additional_middlewares: Any) -> MiddlewareManager:
         middlewares = tuple(self.extensions) + additional_middlewares
 
         return MiddlewareManager(*middlewares)

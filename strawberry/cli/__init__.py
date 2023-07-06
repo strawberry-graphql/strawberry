@@ -1,15 +1,10 @@
-import click
+from .commands.codegen import codegen as codegen  # noqa
+from .commands.export_schema import export_schema as export_schema  # noqa
+from .commands.server import server as server  # noqa
+from .commands.upgrade import upgrade as upgrade  # noqa
 
-from .commands.codegen import codegen as cmd_codegen
-from .commands.export_schema import export_schema as cmd_export_schema
-from .commands.server import server as cmd_server
-
-
-@click.group()
-def run() -> None:  # pragma: no cover
-    pass
+from .app import app
 
 
-run.add_command(cmd_server)
-run.add_command(cmd_export_schema)
-run.add_command(cmd_codegen)
+def run() -> None:
+    app()

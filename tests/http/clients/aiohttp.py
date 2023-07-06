@@ -44,6 +44,7 @@ class GraphQLView(BaseGraphQLView[object, Query]):
         return get_context(context)
 
     async def get_root_value(self, request: web.Request) -> Query:
+        await super().get_root_value(request)  # for coverage
         return Query()
 
     async def process_result(

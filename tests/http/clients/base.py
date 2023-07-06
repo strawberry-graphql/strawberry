@@ -249,3 +249,38 @@ class WebSocketClient(abc.ABC):
     async def __aiter__(self) -> AsyncGenerator[Message, None]:
         while not self.closed:
             yield await self.receive()
+
+
+class DebuggableGraphQLTransportWSMixin:
+    @staticmethod
+    def on_init(self):
+        """
+        This method can be patched by unittests to get the instance of the
+        transport handler when it is initialized
+        """
+
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        DebuggableGraphQLTransportWSMixin.on_init(self)
+
+    def get_tasks(self) -> List:
+        return [op.task for op in self.operations.values()]
+
+    async def get_context(self) -> object:
+        context = await super().get_context()
+        context["ws"] = self._ws
+        context["get_tasks"] = self.get_tasks
+        context["connectionInitTimeoutTask"] = self.connection_init_timeout_task
+        return context
+
+
+class DebuggableGraphQLWSMixin:
+    def get_tasks(self) -> List:
+        return list(self.tasks.values())
+
+    async def get_context(self) -> object:
+        context = await super().get_context()
+        context["ws"] = self._ws
+        context["get_tasks"] = self.get_tasks
+        context["connectionInitTimeoutTask"] = None
+        return context

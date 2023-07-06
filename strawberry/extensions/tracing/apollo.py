@@ -4,12 +4,15 @@ import dataclasses
 import time
 from datetime import datetime
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, List, Optional
 
 from strawberry.extensions import SchemaExtension
 from strawberry.extensions.utils import get_path_from_info
 
 from .utils import should_skip_tracing
+
+if TYPE_CHECKING:
+    from graphql import GraphQLResolveInfo
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
@@ -121,7 +124,14 @@ class ApolloTracingExtension(SchemaExtension):
     def get_results(self) -> Dict[str, Dict[str, Any]]:
         return {"tracing": self.stats.to_json()}
 
-    async def resolve(self, _next, root, info, *args, **kwargs) -> Any:
+    async def resolve(
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Any,
+    ) -> Any:
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
@@ -154,7 +164,14 @@ class ApolloTracingExtension(SchemaExtension):
 
 
 class ApolloTracingExtensionSync(ApolloTracingExtension):
-    def resolve(self, _next, root, info, *args, **kwargs) -> Any:
+    def resolve(
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Any,
+    ) -> Any:
         if should_skip_tracing(_next, info):
             return _next(root, info, *args, **kwargs)
 

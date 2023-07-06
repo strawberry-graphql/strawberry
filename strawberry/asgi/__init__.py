@@ -124,6 +124,7 @@ class GraphQL(
                     get_root_value=self.get_root_value,
                     ws=ws,
                 ).handle()
+
             elif preferred_protocol == GRAPHQL_WS_PROTOCOL:
                 await self.graphql_ws_handler_class(
                     schema=self.schema,
@@ -134,6 +135,7 @@ class GraphQL(
                     get_root_value=self.get_root_value,
                     ws=ws,
                 ).handle()
+
             else:
                 # Subprotocol not acceptable
                 await ws.close(code=4406)

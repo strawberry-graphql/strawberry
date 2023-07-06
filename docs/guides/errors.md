@@ -163,6 +163,8 @@ For example, say you have a `registerUser` mutation where you need to deal with 
 ```python
 import strawberry
 
+from typing import Annotated, Union
+
 
 @strawberry.type
 class RegisterUserSuccess:
@@ -176,9 +178,10 @@ class UsernameAlreadyExistsError:
 
 
 # Create a Union type to represent the 2 results from the mutation
-Response = strawberry.union(
-    "RegisterUserResponse", [RegisterUserSuccess, UsernameAlreadyExistsError]
-)
+Response = Annotated[
+    Union[RegisterUserSuccess, UsernameAlreadyExistsError],
+    strawberry.union("RegisterUserResponse"),
+]
 
 
 @strawberry.mutation

@@ -21,6 +21,8 @@ Let's see how to put together these concepts with an example. First, we define a
 import strawberry
 from .types import User
 
+from typing import Annotated, Union
+
 
 @strawberry.type
 class LoginSuccess:
@@ -32,7 +34,9 @@ class LoginError:
     message: str
 
 
-LoginResult = strawberry.union("LoginResult", (LoginSuccess, LoginError))
+LoginResult = Annotated[
+    Union[LoginSuccess, LoginError], strawberry.union("LoginResult")
+]
 
 
 @strawberry.type

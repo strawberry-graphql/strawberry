@@ -10,6 +10,7 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    Type,
     TypeVar,
     Union,
     cast,
@@ -39,7 +40,7 @@ from graphql.utilities.print_schema import print_type as original_print_type
 from strawberry.custom_scalar import ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
-from strawberry.type import StrawberryContainer
+from strawberry.type import StrawberryContainer, has_object_definition
 from strawberry.unset import UNSET
 
 from .ast_from_value import ast_from_value
@@ -143,7 +144,7 @@ def print_schema_directive(
             while isinstance(f_type, StrawberryContainer):
                 f_type = f_type.of_type
 
-            if hasattr(f_type, "_type_definition"):
+            if has_object_definition(f_type):
                 extras.types.add(cast(type, f_type))
 
             if hasattr(f_type, "_scalar_definition"):
@@ -225,7 +226,7 @@ def print_args(
     )
 
 
-def print_fields(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
+def print_fields(type_: Type, schema: BaseSchema, *, extras: PrintExtras) -> str:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
     fields = []
@@ -276,7 +277,7 @@ def print_scalar(
 def print_enum_value(
     name: str,
     value: GraphQLEnumValue,
-    first_in_block,
+    first_in_block: bool,
     *,
     schema: BaseSchema,
     extras: PrintExtras,
@@ -320,7 +321,7 @@ def print_enum(
     )
 
 
-def print_extends(type_, schema: BaseSchema) -> str:
+def print_extends(type_: Type, schema: BaseSchema) -> str:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
     strawberry_type = type_.extensions and type_.extensions.get(
@@ -333,7 +334,9 @@ def print_extends(type_, schema: BaseSchema) -> str:
     return ""
 
 
-def print_type_directives(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
+def print_type_directives(
+    type_: Type, schema: BaseSchema, *, extras: PrintExtras
+) -> str:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
     strawberry_type = type_.extensions and type_.extensions.get(
@@ -362,7 +365,7 @@ def print_type_directives(type_, schema: BaseSchema, *, extras: PrintExtras) -> 
     )
 
 
-def _print_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
+def _print_object(type_: Any, schema: BaseSchema, *, extras: PrintExtras) -> str:
     return (
         print_description(type_)
         + print_extends(type_, schema)
@@ -373,7 +376,7 @@ def _print_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     )
 
 
-def _print_interface(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
+def _print_interface(type_: Any, schema: BaseSchema, *, extras: PrintExtras) -> str:
     return (
         print_description(type_)
         + print_extends(type_, schema)
@@ -392,7 +395,7 @@ def print_input_value(name: str, arg: GraphQLArgument) -> str:
     return arg_decl + print_deprecated(arg.deprecation_reason)
 
 
-def _print_input_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
+def _print_input_object(type_: Any, schema: BaseSchema, *, extras: PrintExtras) -> str:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
     fields = []
@@ -436,7 +439,7 @@ def print_union(
     )
 
 
-def _print_type(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
+def _print_type(type_: Any, schema: BaseSchema, *, extras: PrintExtras) -> str:
     # prevents us from trying to print a scalar as an input type
     if is_scalar_type(type_):
         return print_scalar(type_, schema=schema, extras=extras)
@@ -476,9 +479,11 @@ def print_schema_directives(schema: BaseSchema, *, extras: PrintExtras) -> str:
 
 
 def _all_root_names_are_common_names(schema: BaseSchema) -> bool:
-    query = schema.query._type_definition
-    mutation = schema.mutation._type_definition if schema.mutation else None
-    subscription = schema.subscription._type_definition if schema.subscription else None
+    query = schema.query.__strawberry_definition__
+    mutation = schema.mutation.__strawberry_definition__ if schema.mutation else None
+    subscription = (
+        schema.subscription.__strawberry_definition__ if schema.subscription else None
+    )
 
     return (
         query.name == "Query"
@@ -495,15 +500,15 @@ def print_schema_definition(
     if _all_root_names_are_common_names(schema) and not schema.schema_directives:
         return None
 
-    query_type = schema.query._type_definition
+    query_type = schema.query.__strawberry_definition__
     operation_types = [f"  query: {query_type.name}"]
 
     if schema.mutation:
-        mutation_type = schema.mutation._type_definition
+        mutation_type = schema.mutation.__strawberry_definition__
         operation_types.append(f"  mutation: {mutation_type.name}")
 
     if schema.subscription:
-        subscription_type = schema.subscription._type_definition
+        subscription_type = schema.subscription.__strawberry_definition__
         operation_types.append(f"  subscription: {subscription_type.name}")
 
     directives = print_schema_directives(schema, extras=extras)
