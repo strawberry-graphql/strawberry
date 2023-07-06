@@ -169,7 +169,7 @@ def test_constrained_list_nested():
     if sys.version_info >= (3, 9):
         expected_annotation = list[list[int]]
     else:
-        expected_annotation = List[List[str]]
+        expected_annotation = List[List[int]]
 
     assert (
         UserType.__strawberry_definition__.fields[0].type_annotation.annotation
