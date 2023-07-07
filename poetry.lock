@@ -371,13 +371,13 @@ wcwidth = ">=0.1.4"
 
 [[package]]
 name = "botocore"
-version = "1.29.124"
+version = "1.31.0"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">= 3.7"
 files = [
-    {file = "botocore-1.29.124-py3-none-any.whl", hash = "sha256:cbcbd5b084952d332d7b8170577f10509e3e7b3b6abbc2920b1c27e93ad2ab25"},
-    {file = "botocore-1.29.124.tar.gz", hash = "sha256:ebe8a83dd1db18180774ce45b1911959c60bb1843ea0db610231495527a3518a"},
+    {file = "botocore-1.31.0-py3-none-any.whl", hash = "sha256:bcb0601fabc9f6fb2f7c592e7c9c4dece69ccd8782bfe6cf991a14f7fa35e6f3"},
+    {file = "botocore-1.31.0.tar.gz", hash = "sha256:db22eea779de7f61621a612c6a36f3ee069a37d4572a9541aa374503447622aa"},
 ]
 
 [package.dependencies]
@@ -3887,4 +3887,4 @@ starlite = ["starlite"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "3552b9144a170ae9cb654493405544abc6d0c91e0a75d8111f3057b7faf10718"
+content-hash = "f6b27373e6b5b2bdde689b31c493ba959dd8ea39fd135128224ea56d23732570"
