@@ -43,8 +43,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - uses: wntrblm/nox@main
+        with:
+          python-versions: "3.7, 3.8, 3.9, 3.10, 3.11"
 
-      - uses: wntrblm/nox@2022.8.7
       - run: pipx install poetry
       - run: pipx inject nox nox-poetry
       - run: nox -s '${{ matrix.session }}'
