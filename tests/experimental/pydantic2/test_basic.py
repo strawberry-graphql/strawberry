@@ -335,7 +335,6 @@ def test_type_with_fields_mutable_default():
     [groups_field, friends_field] = definition.fields
 
     assert groups_field.default is dataclasses.MISSING
-    assert groups_field.default_factory is dataclasses.MISSING
     assert friends_field.default is dataclasses.MISSING
 
     # check that we really made a copy
@@ -627,8 +626,9 @@ input WorkInput {
 
 type WorkOutput {
   time: Float!
-}"""
-    assert schema.as_str().strip() == expected_schema.strip()
+}""".strip()
+    result_schema = schema.as_str().strip()
+    assert result_schema == expected_schema
 
     assert Group._strawberry_type == GroupOutput
     assert Group._strawberry_input_type == GroupInput

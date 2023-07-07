@@ -16,7 +16,7 @@ from typing import (
     cast,
 )
 
-from pydantic._internal._fields import Undefined
+from pydantic._internal._fields import PydanticUndefined
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.auto import StrawberryAuto
@@ -43,7 +43,7 @@ if TYPE_CHECKING:
 
 
 def is_required(field: FieldInfo) -> bool:
-    return field.default is Undefined and field.default_factory is None
+    return field.default is PydanticUndefined and field.default_factory is None
 
 
 def get_type_for_field(field: FieldInfo, is_input: bool):  # noqa: ANN201

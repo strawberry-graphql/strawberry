@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 
-from pydantic._internal._fields import Undefined, _UndefinedType
+from pydantic_core import PydanticUndefinedType
 from pydantic._internal._utils import smart_deepcopy
 
 from strawberry.experimental.pydantic2.exceptions import (
@@ -77,11 +77,11 @@ class DataclassCreationFields(NamedTuple):
 
 
 def is_required(field: ModelField) -> bool:
-    return field.default is Undefined and field.default_factory is None
+    return field.default is PydanticUndefinedType and field.default_factory is None
 
 
 def get_default_factory_for_field(
-    field: ModelField,
+        field: ModelField,
 ) -> Union[NoArgAnyCallable, dataclasses._MISSING_TYPE]:
     """
     Gets the default factory for a pydantic field.
@@ -95,7 +95,7 @@ def get_default_factory_for_field(
     default_factory = (
         field.default_factory if field.default_factory is not None else UNSET
     )
-    default = field.default if not isinstance(field.default, _UndefinedType) else UNSET
+    default = field.default if not isinstance(field.default, PydanticUndefinedType) else UNSET
 
     has_factory = default_factory is not UNSET
     has_default = default is not UNSET
@@ -131,7 +131,7 @@ def get_default_factory_for_field(
 
 
 def ensure_all_auto_fields_in_pydantic(
-    model: Type[BaseModel], auto_fields: Set[str], cls_name: str
+        model: Type[BaseModel], auto_fields: Set[str], cls_name: str
 ) -> Union[NoReturn, None]:
     # Raise error if user defined a strawberry.auto field not present in the model
     non_existing_fields = list(auto_fields - model.model_fields.keys())
