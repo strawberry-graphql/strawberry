@@ -49,7 +49,7 @@ jobs:
 
       - run: pipx install poetry
       - run: pipx inject nox nox-poetry
-      - run: nox -s '${{ matrix.session }}'
+      - run: nox -r -s '${{ matrix.session }}'
 
   unit-tests-on-windows:
     name: Python 3.10.0 on Windows
