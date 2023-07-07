@@ -14,7 +14,7 @@ core assumptions about a GraphQL server:
 2. It provides a description of how to page through connections.
 
 You can read more about the relay spec
-[here](https://relay.dev/docs/en/graphql-server-specification/).
+[here](https://relay.dev/docs/guides/graphql-server-specification/).
 
 ### Relay implementation example
 
