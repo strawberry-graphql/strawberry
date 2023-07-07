@@ -1,11 +1,11 @@
 import builtins
 from typing import Any, Type
+from typing_extensions import get_args, get_origin
 
 import pydantic
 from pydantic import BaseModel
 from pydantic._internal._typing_extra import is_new_type
 from pydantic._internal._utils import lenient_issubclass
-from typing_extensions import get_args, get_origin
 
 from strawberry.experimental.pydantic2.exceptions import (
     UnregisteredTypeException,

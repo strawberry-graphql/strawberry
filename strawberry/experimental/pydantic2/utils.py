@@ -14,8 +14,8 @@ from typing import (
     cast,
 )
 
-from pydantic_core import PydanticUndefinedType
 from pydantic._internal._utils import smart_deepcopy
+from pydantic_core import PydanticUndefinedType
 
 from strawberry.experimental.pydantic2.exceptions import (
     AutoFieldsNotInBaseModelError,
