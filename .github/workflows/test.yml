@@ -47,6 +47,18 @@ jobs:
         with:
           python-versions: "3.7, 3.8, 3.9, 3.10, 3.11"
 
+      - name: Pip and nox cache
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.nox
+          key: ${{ runner.os }}-nox-${{ matrix.session }}-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
+          restore-keys: |
+            ${{ runner.os }}-nox-${{ matrix.session }}-
+            ${{ runner.os }}-nox-
+
       - run: pipx install poetry
       - run: pipx inject nox nox-poetry
       - run: nox -r -s '${{ matrix.session }}'
