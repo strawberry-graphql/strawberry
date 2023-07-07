@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, List, Optional, Type, Union
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, List, Mapping, Optional, Type, Union
 
 if TYPE_CHECKING:
     from enum import EnumMeta
@@ -29,12 +29,36 @@ class GraphQLField:
     name: str
     alias: Optional[str]
     type: GraphQLType
+    default_value: Optional[GraphQLArgumentValue] = None
+
+
+@dataclass
+class GraphQLFragmentSpread:
+    name: str
 
 
 @dataclass
 class GraphQLObjectType:
     name: str
-    fields: List[GraphQLField]
+    fields: List[GraphQLField] = field(default_factory=list)
+    graphql_typename: Optional[str] = None
+
+
+# Subtype of GraphQLObjectType.
+# Because dataclass inheritance is a little odd, the fields are
+# repeated here.
+@dataclass
+class GraphQLFragmentType(GraphQLObjectType):
+    name: str
+    fields: List[GraphQLField] = field(default_factory=list)
+    graphql_typename: Optional[str] = None
+    on: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.on:
+            raise ValueError(
+                "GraphQLFragmentType must be constructed with a valid 'on'"
+            )
 
 
 @dataclass
@@ -75,7 +99,9 @@ class GraphQLInlineFragment:
     selections: List[GraphQLSelection]
 
 
-GraphQLSelection = Union[GraphQLFieldSelection, GraphQLInlineFragment]
+GraphQLSelection = Union[
+    GraphQLFieldSelection, GraphQLInlineFragment, GraphQLFragmentSpread
+]
 
 
 @dataclass
@@ -89,8 +115,14 @@ class GraphQLIntValue:
 
 
 @dataclass
+class GraphQLFloatValue:
+    value: float
+
+
+@dataclass
 class GraphQLEnumValue:
     name: str
+    enum_type: Optional[str] = None
 
 
 @dataclass
@@ -99,8 +131,20 @@ class GraphQLBoolValue:
 
 
 @dataclass
+class GraphQLNullValue:
+    """A class that represents a GraphQLNull value."""
+
+    value: None = None
+
+
+@dataclass
 class GraphQLListValue:
     values: List[GraphQLArgumentValue]
+
+
+@dataclass
+class GraphQLObjectValue:
+    values: Mapping[str, GraphQLArgumentValue]
 
 
 @dataclass
@@ -110,11 +154,14 @@ class GraphQLVariableReference:
 
 GraphQLArgumentValue = Union[
     GraphQLStringValue,
+    GraphQLNullValue,
     GraphQLIntValue,
     GraphQLVariableReference,
+    GraphQLFloatValue,
     GraphQLListValue,
     GraphQLEnumValue,
     GraphQLBoolValue,
+    GraphQLObjectValue,
 ]
 
 

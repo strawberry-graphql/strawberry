@@ -1,3 +1,5 @@
+from typing import Any
+
 from starlite import Provide, Request, Starlite
 from strawberry.starlite import make_graphql_controller
 from tests.starlite.schema import schema
@@ -18,7 +20,7 @@ async def get_context(app_dependency: str, request: Request = None):
     }
 
 
-def create_app(schema=schema, **kwargs):
+def create_app(schema=schema, **kwargs: Any):
     GraphQLController = make_graphql_controller(
         schema,
         path="/graphql",

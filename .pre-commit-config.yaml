@@ -3,13 +3,13 @@ repos:
     rev: 23.3.0
     hooks:
       - id: black
-        exclude: ^tests/codegen/snapshots/python/
+        exclude: ^tests/\w+/snapshots/
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.264
+    rev: v0.0.272
     hooks:
       - id: ruff
-        exclude: ^tests/codegen/snapshots/python/
+        exclude: ^tests/\w+/snapshots/
 
   - repo: https://github.com/patrick91/pre-commit-alex
     rev: aa5da9e54b92ab7284feddeaf52edf14b1690de3
@@ -29,9 +29,10 @@ repos:
       - id: trailing-whitespace
       - id: check-merge-conflict
       - id: end-of-file-fixer
+        exclude: ^tests/relay/snapshots
       - id: check-toml
 
   - repo: https://github.com/adamchainz/blacken-docs
-    rev: 1.13.0
+    rev: 1.14.0
     hooks:
       - id: blacken-docs

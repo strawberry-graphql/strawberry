@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -20,5 +20,5 @@ class GraphQL(BaseGraphQL):
         return {"request": request, "response": response, "custom_value": "Hi"}
 
 
-def create_app(**kwargs) -> GraphQL:
+def create_app(**kwargs: Any) -> GraphQL:
     return GraphQL(schema, **kwargs)

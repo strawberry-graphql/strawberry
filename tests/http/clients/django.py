@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from io import BytesIO
 from json import dumps
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 from typing_extensions import Literal
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
@@ -23,6 +23,7 @@ class GraphQLView(BaseGraphQLView):
     result_override: ResultOverrideFunction = None
 
     def get_root_value(self, request) -> Query:
+        super().get_root_value(request)  # for coverage
         return Query()
 
     def get_context(self, request: HttpRequest, response: HttpResponse) -> object:
@@ -96,7 +97,7 @@ class DjangoHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
         headers = self._get_headers(method=method, headers=headers, files=files)
         additional_arguments = {**kwargs, **headers}

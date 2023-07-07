@@ -18,6 +18,7 @@ class AsyncGraphQLView(BaseAsyncGraphQLView):
     result_override: ResultOverrideFunction = None
 
     async def get_root_value(self, request: HttpRequest) -> Query:
+        await super().get_root_value(request)  # for coverage
         return Query()
 
     async def get_context(self, request: HttpRequest, response: HttpResponse) -> object:

@@ -143,15 +143,12 @@ class BaseView:
         super().__init__(**kwargs)
 
     def render_graphiql(self, request: HttpRequest) -> HttpResponse:
-        context = None  # TODO?
-
         try:
             template = Template(render_to_string("graphql/graphiql.html"))
         except TemplateDoesNotExist:
             template = Template(get_graphiql_html(replace_variables=False))
 
-        context = context or {}
-        context.update({"SUBSCRIPTION_ENABLED": json.dumps(self.subscriptions_enabled)})
+        context = {"SUBSCRIPTION_ENABLED": json.dumps(self.subscriptions_enabled)}
 
         response = TemplateResponse(request=request, template=None, context=context)
         response.content = template.render(RequestContext(request, context))

@@ -35,7 +35,7 @@ def test_field_with_default_factory():
         the_int: int = strawberry.field(default_factory=lambda: 3)
 
     instance = Query()
-    [int_field] = Query._type_definition.fields
+    [int_field] = Query.__strawberry_definition__.fields
 
     assert instance.the_int == 3
     assert int_field.default_value == 3

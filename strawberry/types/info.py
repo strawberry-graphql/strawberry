@@ -2,7 +2,17 @@ from __future__ import annotations
 
 import dataclasses
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from strawberry.utils.cached_property import cached_property
 
@@ -16,7 +26,7 @@ if TYPE_CHECKING:
     from strawberry.arguments import StrawberryArgument
     from strawberry.field import StrawberryField
     from strawberry.schema import Schema
-    from strawberry.type import StrawberryType
+    from strawberry.type import StrawberryType, WithStrawberryObjectDefinition
 
     from .nodes import Selection
 
@@ -64,9 +74,10 @@ class Info(Generic[ContextType, RootValueType]):
     def variable_values(self) -> Dict[str, Any]:
         return self._raw_info.variable_values
 
-    # TODO: merge type with StrawberryType when StrawberryObject is implemented
     @property
-    def return_type(self) -> Optional[Union[type, StrawberryType]]:
+    def return_type(
+        self,
+    ) -> Optional[Union[Type[WithStrawberryObjectDefinition], StrawberryType]]:
         return self._field.type
 
     @property

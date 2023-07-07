@@ -254,18 +254,24 @@ class DebuggableGraphQLTransportWSMixin:
         super().__init__(*args, **kwargs)
         DebuggableGraphQLTransportWSMixin.on_init(self)
 
+    def get_tasks(self) -> List:
+        return [op.task for op in self.operations.values()]
+
     async def get_context(self) -> object:
         context = await super().get_context()
         context["ws"] = self._ws
-        context["tasks"] = self.tasks
+        context["get_tasks"] = self.get_tasks
         context["connectionInitTimeoutTask"] = self.connection_init_timeout_task
         return context
 
 
 class DebuggableGraphQLWSMixin:
+    def get_tasks(self) -> List:
+        return list(self.tasks.values())
+
     async def get_context(self) -> object:
         context = await super().get_context()
         context["ws"] = self._ws
-        context["tasks"] = self.tasks
+        context["get_tasks"] = self.get_tasks
         context["connectionInitTimeoutTask"] = None
         return context

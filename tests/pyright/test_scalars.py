@@ -99,7 +99,7 @@ def test_schema_overrides():
     assert results == [
         Result(
             type="information",
-            message='Type of "EpochDateTime" is "Type[datetime]"',
+            message='Type of "EpochDateTime" is "type[datetime]"',
             line=17,
             column=13,
         ),

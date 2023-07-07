@@ -135,7 +135,7 @@ def test_with_invalid_context_getter():
         dependencies={"custom_context_dependency": Provide(custom_context_dependency)},
     )
     test_client = TestClient(app, raise_server_exceptions=True)
-    # FIXME:
+    # TODO: test exception message
     # assert starlite.exceptions.http_exceptions.InternalServerException is raised
     # with pytest.raises(
     #     InternalServerException,

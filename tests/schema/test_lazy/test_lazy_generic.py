@@ -162,3 +162,23 @@ def test_lazy_types_declared_within_optional():
     ).strip()
 
     assert str(schema) == expected_schema
+
+
+def test_lazy_with_already_specialized_generic():
+    from tests.schema.test_lazy.type_d import Query
+
+    schema = strawberry.Schema(query=Query)
+    expected_schema = textwrap.dedent(
+        """
+        type Query {
+          typeD1: TypeD!
+          typeD: TypeD!
+        }
+
+        type TypeD {
+          name: String!
+        }
+        """
+    ).strip()
+
+    assert str(schema) == expected_schema
