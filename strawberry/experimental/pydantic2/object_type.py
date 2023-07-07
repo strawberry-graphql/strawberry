@@ -49,15 +49,9 @@ def is_required(field: FieldInfo) -> bool:
 def get_type_for_field(field: FieldInfo, is_input: bool):  # noqa: ANN201
     outer_type = field.annotation
     replaced_type = replace_types_recursively(outer_type, is_input)
-
-    default_defined: bool = (
-        field.default_factory is not None or field.default is not None
-    )
-    should_add_optional: bool = not (is_required(field) or default_defined)
-    if should_add_optional:
-        return Optional[replaced_type]
-    else:
-        return replaced_type
+    # Note that unlike pydantic v1, pydantic v2 does not add a default of None when
+    # the field is Optional[something]
+    return replaced_type
 
 
 def _build_dataclass_creation_fields(

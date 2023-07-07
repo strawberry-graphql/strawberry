@@ -81,7 +81,7 @@ def is_required(field: ModelField) -> bool:
 
 
 def get_default_factory_for_field(
-        field: ModelField,
+    field: ModelField,
 ) -> Union[NoArgAnyCallable, dataclasses._MISSING_TYPE]:
     """
     Gets the default factory for a pydantic field.
@@ -95,7 +95,9 @@ def get_default_factory_for_field(
     default_factory = (
         field.default_factory if field.default_factory is not None else UNSET
     )
-    default = field.default if not isinstance(field.default, PydanticUndefinedType) else UNSET
+    default = (
+        field.default if not isinstance(field.default, PydanticUndefinedType) else UNSET
+    )
 
     has_factory = default_factory is not UNSET
     has_default = default is not UNSET
@@ -121,17 +123,15 @@ def get_default_factory_for_field(
     if has_default:
         return lambda: smart_deepcopy(default)
 
-    # if we don't have default or default_factory, but the field is not required,
-    # we should return a factory that returns None
-
-    if not is_required(field):
-        return lambda: None
+    # Note that unlike pydantic v1, pydantic v2 does not add a default of None when
+    # the field is Optional[something]
+    # so there is no need to handle that case here
 
     return dataclasses.MISSING
 
 
 def ensure_all_auto_fields_in_pydantic(
-        model: Type[BaseModel], auto_fields: Set[str], cls_name: str
+    model: Type[BaseModel], auto_fields: Set[str], cls_name: str
 ) -> Union[NoReturn, None]:
     # Raise error if user defined a strawberry.auto field not present in the model
     non_existing_fields = list(auto_fields - model.model_fields.keys())
