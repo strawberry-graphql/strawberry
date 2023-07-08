@@ -101,3 +101,10 @@ def tests_pyright(session: Session) -> None:
     session.install("pyright")
 
     session.run("pytest", "tests/pyright", "-vv")
+
+
+@session
+def mypy(session: Session) -> None:
+    session.run_always("poetry", "install", external=True)
+
+    session.run("mypy", "--config-file", "mypy.ini")
