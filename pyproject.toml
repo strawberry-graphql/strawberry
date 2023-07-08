@@ -159,6 +159,7 @@ markers = [
     "chalice",
     "flask",
     "starlite",
+    "pydantic",
     "flaky",
     "relay",
 ]
