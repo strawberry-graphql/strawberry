@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.194.1 - 2023-07-08
+--------------------
+
+This release adds a setter on `StrawberryAnnotation.annotation`, this fixes
+an issue on Strawberry Django.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2932](https://github.com/strawberry-graphql/strawberry/pull/2932/)
+
+
 0.194.0 - 2023-07-08
 --------------------
 
