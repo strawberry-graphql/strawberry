@@ -92,7 +92,14 @@ def tests_litestar(session: Session) -> None:
 def tests_mypy(session: Session) -> None:
     session.run_always("poetry", "install", external=True)
 
-    session.run("pytest", "tests/mypy", "-vv")
+    session.run(
+        "pytest",
+        "--cov=strawberry",
+        "--cov-append",
+        "--cov-report=xml",
+        "tests/mypy",
+        "-vv",
+    )
 
 
 @session(python=PYTHON_VERSIONS, name="Pyright tests", tags=["tests"])
@@ -100,7 +107,14 @@ def tests_pyright(session: Session) -> None:
     session.run_always("poetry", "install", external=True)
     session.install("pyright")
 
-    session.run("pytest", "tests/pyright", "-vv")
+    session.run(
+        "pytest",
+        "--cov=strawberry",
+        "--cov-append",
+        "--cov-report=xml",
+        "tests/pyright",
+        "-vv",
+    )
 
 
 @session(name="Mypy", tags=["lint"])
