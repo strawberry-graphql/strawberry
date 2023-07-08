@@ -1,5 +1,5 @@
 import asyncio
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Type
 
 import pytest
 import pytest_asyncio
@@ -18,7 +18,12 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_STOP,
 )
 
-from ..http.clients import AioHttpClient, HttpClient, WebSocketClient
+from ..http.clients import (
+    AioHttpClient,
+    ChannelsHttpClient,
+    HttpClient,
+    WebSocketClient,
+)
 
 
 @pytest_asyncio.fixture
@@ -548,3 +553,90 @@ async def test_rejects_connection_params(aiohttp_app_client: HttpClient):
         # make sure the WebSocket is disconnected now
         await ws.receive(timeout=2)  # receive close
         assert ws.closed
+
+
+async def test_connection_handler_add(
+    ws_raw: WebSocketClient, http_client_class: Type[HttpClient]
+):
+    """
+    Test that custom on_ws_connect() can add to connection_params
+    """
+    if http_client_class == ChannelsHttpClient:
+        pytest.skip("View integration not enabled for Channels")
+    ws = ws_raw
+    payload = {"add": True}
+    await ws.send_json(
+        {
+            "type": GQL_CONNECTION_INIT,
+            "id": "demo",
+            "payload": payload,
+        }
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == GQL_CONNECTION_ACK
+
+    await ws.send_json(
+        {
+            "type": GQL_START,
+            "id": "demo",
+            "payload": {
+                "query": "subscription { connectionParamsAll }",
+            },
+        }
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == GQL_DATA
+    assert response["id"] == "demo"
+    assert response["payload"]["data"] == {
+        "connectionParamsAll": str({"add": True, "added": True})
+    }
+
+
+async def test_connection_handler_reject(
+    ws_raw: WebSocketClient, http_client_class: Type[HttpClient]
+):
+    """
+    Test that custom on_ws_connect() can reject a connection
+    """
+    if http_client_class == ChannelsHttpClient:
+        pytest.skip("View integration not enabled for Channels")
+    ws = ws_raw
+    payload = {"reject-me": True}
+    await ws.send_json(
+        {
+            "type": GQL_CONNECTION_INIT,
+            "id": "demo",
+            "payload": payload,
+        }
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == GQL_CONNECTION_ERROR
+    assert response["payload"] == {"reason": "Forbidden"}
+    await ws.receive(timeout=2)  # receive close
+    assert ws.closed
+
+
+async def test_connection_handler_response(
+    ws_raw: WebSocketClient, http_client_class: Type[HttpClient]
+):
+    """
+    Test that custom on_ws_connect() can return a payload
+    """
+    if http_client_class == ChannelsHttpClient:
+        pytest.skip("View integration not enabled for Channels")
+    ws = ws_raw
+    payload = {"response": {"my-response": "hello"}}
+    await ws.send_json(
+        {
+            "type": GQL_CONNECTION_INIT,
+            "id": "demo",
+            "payload": payload,
+        }
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == GQL_CONNECTION_ACK
+    assert response["payload"] == {"my-response": "hello"}

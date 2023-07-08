@@ -329,6 +329,7 @@ def make_graphql_controller(
             preferred_protocol = self.pick_preferred_protocol(socket)
             if preferred_protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
                 await self.graphql_transport_ws_handler_class(
+                    view=self,
                     schema=self.schema,
                     debug=self._debug,
                     connection_init_wait_timeout=self._connection_init_wait_timeout,
@@ -338,6 +339,7 @@ def make_graphql_controller(
                 ).handle()
             elif preferred_protocol == GRAPHQL_WS_PROTOCOL:
                 await self.graphql_ws_handler_class(
+                    view=self,
                     schema=self.schema,
                     debug=self._debug,
                     keep_alive=self._keep_alive,

@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, AsyncGenerator, Callable, Dict, List, Opt
 from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 
+from strawberry.http.async_base_view import WSConnectionParams
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
@@ -28,10 +29,21 @@ from strawberry.utils.operation import get_operation_type
 if TYPE_CHECKING:
     from datetime import timedelta
 
+    from strawberry.http.async_base_view import AsyncBaseHTTPView
     from strawberry.schema import BaseSchema
     from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
         GraphQLTransportMessage,
     )
+
+
+class GraphQLTransportWSParam(WSConnectionParams):
+    def __init__(self, connection_params: Dict[str, Any]):
+        self.connection_params = connection_params
+        self.response_params = None
+        self.rejected: bool = False
+
+    def reject(self) -> None:
+        self.rejected = True
 
 
 class BaseGraphQLTransportWSHandler(ABC):
@@ -39,10 +51,12 @@ class BaseGraphQLTransportWSHandler(ABC):
 
     def __init__(
         self,
+        view: Optional[AsyncBaseHTTPView],
         schema: BaseSchema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
     ):
+        self.view = view
         self.schema = schema
         self.debug = debug
         self.connection_init_wait_timeout = connection_init_wait_timeout
@@ -169,16 +183,30 @@ class BaseGraphQLTransportWSHandler(ABC):
             await self.close(code=4400, reason="Invalid connection init payload")
             return
 
-        self.connection_params = message.payload
-
         if self.connection_init_received:
             reason = "Too many initialisation requests"
             await self.close(code=4429, reason=reason)
             return
 
         self.connection_init_received = True
-        await self.send_message(ConnectionAckMessage())
+        payload = message.payload or {}
+        # self.view is still optional until channels integration
+        # is migrated to use views.
+        params = GraphQLTransportWSParam(connection_params=payload)
+        if self.view:
+            await self.view.on_ws_connect(params)
+            if params.rejected:
+                await self.close(code=4403, reason="Forbidden")
+                return
+
+        self.connection_params = params.connection_params
         self.connection_acknowledged = True
+        connection_ack = (
+            ConnectionAckMessage(payload=params.response_params)
+            if params.response_params is not None
+            else ConnectionAckMessage()
+        )
+        await self.send_message(connection_ack)
 
     async def handle_ping(self, message: PingMessage) -> None:
         await self.send_message(PongMessage())

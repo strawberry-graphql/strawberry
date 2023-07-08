@@ -251,6 +251,10 @@ class Subscription:
         yield info.context["connection_params"]["strawberry"]
 
     @strawberry.subscription
+    async def connection_params_all(self, info) -> AsyncGenerator[str, None]:
+        yield str(info.context["connection_params"])
+
+    @strawberry.subscription
     async def long_finalizer(
         self, info: Info[Any, Any], delay: float = 0
     ) -> AsyncGenerator[str, None]:

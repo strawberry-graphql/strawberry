@@ -132,6 +132,7 @@ class GraphQLView(
 
         if ws_test.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
             return await self.graphql_transport_ws_handler_class(
+                view=self,
                 schema=self.schema,
                 debug=self.debug,
                 connection_init_wait_timeout=self.connection_init_wait_timeout,
@@ -141,6 +142,7 @@ class GraphQLView(
             ).handle()
         elif ws_test.protocol == GRAPHQL_WS_PROTOCOL:
             return await self.graphql_ws_handler_class(
+                view=self,
                 schema=self.schema,
                 debug=self.debug,
                 keep_alive=self.keep_alive,

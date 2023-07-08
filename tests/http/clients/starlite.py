@@ -16,6 +16,7 @@ from strawberry.starlite.controller import GraphQLTransportWSHandler, GraphQLWSH
 from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
+from ...websockets.views import WebsocketsMixin
 from ..context import get_context
 from .base import (
     JSON,
@@ -73,7 +74,7 @@ class StarliteHttpClient(HttpClient):
             **kwargs,
         )
 
-        class GraphQLController(BaseGraphQLController):
+        class GraphQLController(WebsocketsMixin, BaseGraphQLController):
             graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
             graphql_ws_handler_class = DebuggableGraphQLWSHandler
 

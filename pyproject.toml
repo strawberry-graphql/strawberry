@@ -308,6 +308,8 @@ ignore = [
     "FIX001",
     "FIX002",
     "FA100",
+
+    "RET501",  # removing `return None` conflicts with mypy
 ]
 fix = true
 exclude = [

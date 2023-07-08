@@ -22,7 +22,10 @@ from strawberry.subscriptions.protocols.graphql_ws import (
 )
 from strawberry.utils.debug import pretty_print_graphql_operation
 
+from ..graphql_transport_ws.handlers import GraphQLTransportWSParam
+
 if TYPE_CHECKING:
+    from strawberry.http.async_base_view import AsyncBaseHTTPView
     from strawberry.schema import BaseSchema
     from strawberry.subscriptions.protocols.graphql_ws.types import (
         ConnectionInitPayload,
@@ -35,11 +38,13 @@ if TYPE_CHECKING:
 class BaseGraphQLWSHandler(ABC):
     def __init__(
         self,
+        view: Optional[AsyncBaseHTTPView],
         schema: BaseSchema,
         debug: bool,
         keep_alive: bool,
         keep_alive_interval: float,
     ):
+        self.view = view
         self.schema = schema
         self.debug = debug
         self.keep_alive = keep_alive
@@ -95,10 +100,23 @@ class BaseGraphQLWSHandler(ABC):
             await self.close()
             return
 
-        payload = cast(Optional["ConnectionInitPayload"], payload)
-        self.connection_params = payload
+        payload = cast(Optional["ConnectionInitPayload"], payload) or {}
+        params = GraphQLTransportWSParam(payload)
+        if self.view:
+            await self.view.on_ws_connect(params)
+            if params.rejected:
+                error_message = {
+                    "type": GQL_CONNECTION_ERROR,
+                    "payload": {"reason": "Forbidden"},
+                }
+                await self.send_json(error_message)
+                await self.close()
+                return
 
+        self.connection_params = params.connection_params
         acknowledge_message: OperationMessage = {"type": GQL_CONNECTION_ACK}
+        if params.response_params is not None:
+            acknowledge_message["payload"] = params.response_params
         await self.send_json(acknowledge_message)
 
         if self.keep_alive:

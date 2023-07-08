@@ -109,7 +109,7 @@ async def test_ws_messages_must_be_text(ws_raw: WebSocketClient):
         ws.assert_reason("WebSocket message type must be text")
 
 
-async def test_connection_init_timeout(request, http_client_class: Type[HttpClient]):
+async def test_connection_init_timeout(http_client_class: Type[HttpClient]):
     if http_client_class == AioHttpClient:
         pytest.skip(
             "Closing a AIOHTTP WebSocket from a task currently doesnt work as expected"
@@ -908,3 +908,71 @@ async def test_subscription_errors_continue(ws: WebSocketClient):
     response = await ws.receive_json()
     assert response["type"] == CompleteMessage.type
     assert response["id"] == "sub1"
+
+
+async def test_connection_handler_add(
+    ws_raw: WebSocketClient, http_client_class: Type[HttpClient]
+):
+    """
+    Test that custom on_ws_connect() can add to connection_params
+    """
+    if http_client_class == ChannelsHttpClient:
+        pytest.skip("View integration not enabled for Channels")
+    ws = ws_raw
+    payload = {"add": True}
+    await ws.send_json(ConnectionInitMessage(payload=payload).as_dict())
+    response = await ws.receive_json()
+    assert response == ConnectionAckMessage().as_dict()
+
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="subscription { connectionParamsAll }"
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert (
+        response
+        == NextMessage(
+            id="sub1",
+            payload={
+                "data": {"connectionParamsAll": str({"add": True, "added": True})}
+            },
+        ).as_dict()
+    )
+
+
+async def test_connection_handler_reject(
+    ws_raw: WebSocketClient, http_client_class: Type[HttpClient]
+):
+    """
+    Test that custom on_ws_connect() can reject a connection
+    """
+    if http_client_class == ChannelsHttpClient:
+        pytest.skip("View integration not enabled for Channels")
+    ws = ws_raw
+    payload = {"reject-me": True}
+    await ws.send_json(ConnectionInitMessage(payload=payload).as_dict())
+    data = await ws.receive(timeout=2)
+    assert ws.closed
+    assert ws.close_code == 4403
+    assert data.extra == "Forbidden"
+
+
+async def test_connection_handler_response(
+    ws_raw: WebSocketClient, http_client_class: Type[HttpClient]
+):
+    """
+    Test that custom on_ws_connect() can return a payload
+    """
+    if http_client_class == ChannelsHttpClient:
+        pytest.skip("View integration not enabled for Channels")
+    ws = ws_raw
+    payload = {"response": {"my-response": "hello"}}
+    await ws.send_json(ConnectionInitMessage(payload=payload).as_dict())
+    response = await ws.receive_json()
+
+    assert response == ConnectionAckMessage(payload={"my-response": "hello"}).as_dict()

@@ -17,6 +17,7 @@ from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
+from ...websockets.views import WebsocketsMixin
 from ..context import get_context
 from .base import (
     JSON,
@@ -40,7 +41,7 @@ class DebuggableGraphQLWSHandler(DebuggableGraphQLWSMixin, GraphQLWSHandler):
     pass
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(WebsocketsMixin, BaseGraphQLView):
     result_override: ResultOverrideFunction = None
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler

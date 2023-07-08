@@ -1,6 +1,7 @@
 import abc
 import json
 from typing import (
+    Any,
     Callable,
     Dict,
     Generic,
@@ -213,3 +214,30 @@ class AsyncBaseHTTPView(
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
+
+    async def on_ws_connect(self, params: "WSConnectionParams") -> None:
+        """
+        Validate the connection parameters provided with a websocket connection.
+        The default implementation leaves them unmodified, and returns no
+        response payload.
+        A custom implementation may modify the parameters and optionally set
+        a response payload to the client.  It may also call `params.reject()`
+        to reject the connection.
+        """
+        return None
+
+
+class WSConnectionParams(abc.ABC):
+    """
+    This class represents a websocket connection request
+    """
+
+    connection_params: Dict[str, Any]
+    response_params: Optional[Dict[str, Any]]
+
+    @abc.abstractmethod
+    def reject(self) -> None:
+        """
+        Reject the websocket connection.
+        """
+        ...
