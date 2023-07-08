@@ -18,9 +18,10 @@ on:
 
 jobs:
   generate-jobs:
+    name: 💻 Generate test matrix
     runs-on: ubuntu-latest
     outputs:
-      session: ${{ steps.set-matrix.outputs.session }}
+      sessions: ${{ steps.set-matrix.outputs.sessions }}
     steps:
       - uses: actions/checkout@v3
       - uses: wntrblm/nox@main
@@ -29,17 +30,17 @@ jobs:
       - id: set-matrix
         shell: bash
         run:
-          echo session=$(nox --json -l | jq -c '[.[].session]') | tee --append
+          echo sessions=$(nox --json -l) | tee --append
           $GITHUB_OUTPUT
 
   unit-tests:
-    name: Session ${{ matrix.session }}
+    name: Session ${{ matrix.session.name }} on ${{ matrix.session.python }}
     needs: [generate-jobs]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        session: ${{ fromJson(needs.generate-jobs.outputs.session) }}
+        session: ${{ fromJson(needs.generate-jobs.outputs.sessions) }}
 
     steps:
       - uses: actions/checkout@v3
@@ -56,15 +57,15 @@ jobs:
             ~/.nox
             .nox
           key:
-            ${{ runner.os }}-nox-${{ matrix.session }}-${{
+            ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
             hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
           restore-keys: |
-            ${{ runner.os }}-nox-${{ matrix.session }}-
+            ${{ runner.os }}-nox-${{ matrix.session.session }}-
             ${{ runner.os }}-nox-
 
       - run: pipx install poetry
       - run: pipx inject nox nox-poetry
-      - run: nox -r -s "${{ matrix.session }}"
+      - run: nox -r -s "${{ matrix.session.session }}"
 
   unit-tests-on-windows:
     name: Tests on Windows
@@ -93,4 +94,4 @@ jobs:
 
       - run: pipx install poetry
       - run: pipx inject nox nox-poetry
-      - run: nox -r -s "tests" -p 3.11
+      - run: nox -r -s "Tests" -p 3.11
