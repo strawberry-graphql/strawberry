@@ -1,6 +1,43 @@
 CHANGELOG
 =========
 
+0.194.2 - 2023-07-08
+--------------------
+
+This release includes a performance improvement to `strawberry.lazy()` to allow relative module imports to be resolved faster.
+
+Contributed by [Karim Alibhai](https://github.com/karimsa) via [PR #2926](https://github.com/strawberry-graphql/strawberry/pull/2926/)
+
+
+0.194.1 - 2023-07-08
+--------------------
+
+This release adds a setter on `StrawberryAnnotation.annotation`, this fixes
+an issue on Strawberry Django.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2932](https://github.com/strawberry-graphql/strawberry/pull/2932/)
+
+
+0.194.0 - 2023-07-08
+--------------------
+
+Restore evaled type access in `StrawberryAnnotation`
+
+Prior to Strawberry 192.2 the `annotation` attribute of `StrawberryAnnotation`
+would return an evaluated type when possible due reserved argument parsing.
+192.2 moved the responsibility of evaluating and caching results to the
+`evaluate` method of `StrawberryAnnotation`. This introduced a regression when
+using future annotations for any code implicitely relying on the `annotation`
+attribute being an evaluated type.
+
+To fix this regression and mimick pre-192.2 behavior, this release adds an
+`annotation` property to `StrawberryAnnotation` that internally calls the
+`evaluate` method. On success the evaluated type is returned. If a `NameError`
+is raised due to an unresolvable annotation, the raw annotation is returned.
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #2925](https://github.com/strawberry-graphql/strawberry/pull/2925/)
+
+
 0.193.1 - 2023-07-05
 --------------------
 
