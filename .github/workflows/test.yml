@@ -74,6 +74,16 @@ jobs:
       - run: pipx inject nox nox-poetry
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
 
+      - name: coverage xml
+        run: poetry run coverage xml -i
+        if: ${{ always() }}
+      - uses: codecov/codecov-action@v3
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
+
   lint:
     name: ✨ Lint
     runs-on: ubuntu-latest
