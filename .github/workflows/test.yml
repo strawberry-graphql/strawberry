@@ -35,7 +35,7 @@ jobs:
             jq 'map(
               {
                 session,
-                name: \"\( .name ) on \( .python )\( if .call_spec != {} then \" (\(.call_spec | to_entries | map(\"\(.key)=\(.value)\") | join(\", \")))\" else \"\" end )\"
+                name: "\( .name ) on \( .python )\( if .call_spec != {} then " (\(.call_spec | to_entries | map("\(.key)=\(.value)") | join(", ")))" else "" end )"
               }
             )'
           ) | tee --append
