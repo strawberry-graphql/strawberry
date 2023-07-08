@@ -1,8 +1,10 @@
 import nox
 from nox_poetry import Session, session
 
+PYTHON_VERSIONS = ["3.11", "3.10", "3.9", "3.8", "3.7"]
 
-@session(python=["3.11", "3.10", "3.9", "3.8", "3.7"])
+
+@session(python=PYTHON_VERSIONS)
 def tests(session: Session) -> None:
     session.run_always("poetry", "install", external=True)
 
@@ -28,7 +30,7 @@ def tests(session: Session) -> None:
 
 @session(python=["3.11"])
 @nox.parametrize("django", ["4.2", "4.1", "4.0", "3.2"])
-def test_django(session: Session, django: str) -> None:
+def tests_django(session: Session, django: str) -> None:
     session.run_always("poetry", "install", external=True)
 
     session._session.install(f"django=={django}")  # type: ignore
@@ -49,7 +51,7 @@ def test_django(session: Session, django: str) -> None:
 
 @session(python=["3.11"])
 @nox.parametrize("starlette", ["0.28.0", "0.27.0", "0.26.1"])
-def test_starlette(session: Session, starlette: str) -> None:
+def tests_starlette(session: Session, starlette: str) -> None:
     session.run_always("poetry", "install", external=True)
 
     session._session.install(f"starlette=={starlette}")  # type: ignore
@@ -69,7 +71,7 @@ def test_starlette(session: Session, starlette: str) -> None:
 
 
 @session(python=["3.11"])
-def test_litestar(session: Session) -> None:
+def tests_litestar(session: Session) -> None:
     session.run_always("poetry", "install", external=True)
 
     session.run(
@@ -84,3 +86,18 @@ def test_litestar(session: Session) -> None:
         "-m",
         "starlite",
     )
+
+
+@session(python=PYTHON_VERSIONS)
+def tests_mypy(session: Session) -> None:
+    session.run_always("poetry", "install", external=True)
+
+    session.run("pytest", "tests/mypy", "-vv")
+
+
+@session(python=PYTHON_VERSIONS)
+def tests_pyright(session: Session) -> None:
+    session.run_always("poetry", "install", external=True)
+    session.install("pyright")
+
+    session.run("pytest", "tests/pyright", "-vv")

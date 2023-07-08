@@ -67,7 +67,7 @@ jobs:
       - run: nox -r -s "${{ matrix.session }}"
 
   unit-tests-on-windows:
-    name: Python 3.10.0 on Windows
+    name: Tests on Windows
     runs-on: windows-latest
 
     steps:
