@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.194.4 - 2023-07-08
+--------------------
+
+This release makes sure that `Schema.process_errors()` is called _once_ for every error
+which happens with `graphql-transport-ws` operations.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2899](https://github.com/strawberry-graphql/strawberry/pull/2899/)
+
+
 0.194.3 - 2023-07-08
 --------------------
 
