@@ -113,7 +113,7 @@ typer = {version = ">=0.7.0", optional = false}
 sentry-sdk = "^1.14.0"
 pyinstrument = {version = ">=4.0.0", optional = false}
 # added this here manually because poetry doesn't seem to be able to handle it =(
-botocore = "1.29.124"
+botocore = "1.31.1"
 nox = "^2023.4.22"
 nox-poetry = "^1.0.2"
 
