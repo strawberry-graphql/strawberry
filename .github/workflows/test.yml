@@ -70,7 +70,7 @@ jobs:
             ${{ runner.os }}-nox-${{ matrix.session.session }}-
             ${{ runner.os }}-nox-
 
-      - run: pipx install poetry
+      - run: pipx install coverage
       - run: pipx inject nox nox-poetry
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
 
@@ -111,7 +111,6 @@ jobs:
             ${{ runner.os }}-lint-nox-${{ matrix.session.session }}-
             ${{ runner.os }}-lint-nox-
 
-      - run: pipx install poetry
       - run: pipx inject nox nox-poetry
       - run: nox -r -t lint
 
