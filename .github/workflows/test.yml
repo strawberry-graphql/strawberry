@@ -72,26 +72,25 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - uses: wntrblm/nox@main
+        with:
+          python-versions: "3.7, 3.8, 3.9, 3.10, 3.11"
+
+      - name: Pip and nox cache
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.nox
+            .nox
+          key:
+            ${{ runner.os }}-nox-windows-${{
+            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
+          restore-keys: |
+            ${{ runner.os }}-nox-windows
+            ${{ runner.os }}-nox-
+
       - run: pipx install poetry
-      - uses: actions/setup-python@v4
-        id: setup-python
-        with:
-          python-version: "3.10.0"
-          cache: "poetry"
-
-      - run: poetry install
-        if: steps.setup-python.outputs.cache-hit != 'true'
-
-      - name: pytest
-        run:
-          poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n
-          auto --showlocals -vv -m "not django" --ignore=tests/mypy
-          --ignore=tests/pyright
-
-        if: ${{ always() }}
-      - uses: codecov/codecov-action@v3
-        if: ${{ always() }}
-        with:
-          token: c0eec83c-17c8-4e8a-adf9-a34e4c22ef6a
-          fail_ci_if_error: true
-          verbose: true
+      - run: pipx inject nox nox-poetry
+      - run: nox -r -s "tests" -p 3.11
