@@ -91,7 +91,7 @@ async def test_channel_listen(ws: WebsocketCommunicator):
     )
 
     response = await ws.receive_json_from()
-    del response["payload"]["extensions"]
+    response["payload"].pop("extensions", None)
     assert (
         response
         == NextMessage(
@@ -138,6 +138,7 @@ async def test_channel_listen_with_confirmation(ws: WebsocketCommunicator):
     )
 
     response = await ws.receive_json_from()
+    response["payload"].pop("extensions", None)
     assert (
         response
         == NextMessage(
@@ -316,7 +317,7 @@ async def test_channel_listen_group(ws: WebsocketCommunicator):
         },
     )
     response = await ws.receive_json_from()
-    del response["payload"]["extensions"]
+    response["payload"].pop("extensions", None)
     assert (
         response
         == NextMessage(
@@ -333,7 +334,7 @@ async def test_channel_listen_group(ws: WebsocketCommunicator):
     )
 
     response = await ws.receive_json_from()
-    del response["payload"]["extensions"]
+    response["payload"].pop("extensions", None)
     assert (
         response
         == NextMessage(
@@ -380,6 +381,7 @@ async def test_channel_listen_group_cm(ws: WebsocketCommunicator):
         },
     )
     response = await ws.receive_json_from()
+    response["payload"].pop("extensions", None)
     assert (
         response
         == NextMessage(
@@ -396,6 +398,7 @@ async def test_channel_listen_group_cm(ws: WebsocketCommunicator):
     )
 
     response = await ws.receive_json_from()
+    response["payload"].pop("extensions", None)
     assert (
         response
         == NextMessage(
