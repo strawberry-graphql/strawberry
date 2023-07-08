@@ -1,4 +1,5 @@
 import ast
+import dataclasses
 import sys
 import typing
 from functools import lru_cache
@@ -159,6 +160,26 @@ def is_type_var(annotation: Type) -> bool:
     """Returns True if the annotation is a TypeVar."""
 
     return isinstance(annotation, TypeVar)
+
+
+def is_classvar(cls: type, annotation: Union[ForwardRef, str]) -> bool:
+    """Returns True if the annotation is a ClassVar."""
+    # This code was copied from the dataclassses cpython implementation to check
+    # if a field is annotated with ClassVar or not, taking future annotations
+    # in consideration.
+    if dataclasses._is_classvar(annotation, typing):  # type: ignore
+        return True
+
+    annotation_str = (
+        annotation.__forward_arg__ if isinstance(annotation, ForwardRef) else annotation
+    )
+    return isinstance(annotation_str, str) and dataclasses._is_type(  # type: ignore
+        annotation_str,
+        cls,
+        typing,
+        typing.ClassVar,
+        dataclasses._is_classvar,  # type: ignore
+    )
 
 
 def get_parameters(annotation: Type) -> Union[Tuple[object], Tuple[()]]:

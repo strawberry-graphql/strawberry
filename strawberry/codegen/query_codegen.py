@@ -43,8 +43,14 @@ from graphql import (
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
-from strawberry.types.types import TypeDefinition
+from strawberry.type import (
+    StrawberryList,
+    StrawberryOptional,
+    StrawberryType,
+    get_object_definition,
+    has_object_definition,
+)
+from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
@@ -284,11 +290,14 @@ class QueryCodegen:
         for fd in fragment_definitions:
             query_type = self.schema.get_type_by_name(fd.type_condition.name.value)
             assert isinstance(
-                query_type, TypeDefinition
+                query_type, StrawberryObjectDefinition
             ), f"{fd.type_condition.name.value!r} is not a type in the graphql schema!"
 
+            typename = fd.type_condition.name.value
             graph_ql_object_type_factory = partial(
-                GraphQLFragmentType, on=fd.type_condition.name.value
+                GraphQLFragmentType,
+                on=typename,
+                graphql_typename=typename,
             )
 
             self._collect_types(
@@ -394,7 +403,7 @@ class QueryCodegen:
         query_type = self.schema.get_type_by_name(
             operation_definition.operation.value.title()
         )
-        assert isinstance(query_type, TypeDefinition)
+        assert isinstance(query_type, StrawberryObjectDefinition)
 
         assert operation_definition.name is not None
         operation_name = operation_definition.name.value
@@ -504,10 +513,10 @@ class QueryCodegen:
                 self._collect_type_from_strawberry_type(strawberry_type.of_type)
             )
 
-        if hasattr(strawberry_type, "_type_definition"):
-            strawberry_type = strawberry_type._type_definition
+        if has_object_definition(strawberry_type):
+            strawberry_type = strawberry_type.__strawberry_definition__
 
-        if isinstance(strawberry_type, TypeDefinition):
+        if isinstance(strawberry_type, StrawberryObjectDefinition):
             type_ = GraphQLObjectType(
                 strawberry_type.name,
                 [],
@@ -556,7 +565,7 @@ class QueryCodegen:
         return GraphQLOptional(type_)
 
     def _field_from_selection(
-        self, selection: FieldNode, parent_type: TypeDefinition
+        self, selection: FieldNode, parent_type: StrawberryObjectDefinition
     ) -> GraphQLField:
         if selection.name.value == "__typename":
             return GraphQLField("__typename", None, GraphQLScalar("String", None))
@@ -598,7 +607,10 @@ class QueryCodegen:
         return type_, wrapper
 
     def _field_from_selection_set(
-        self, selection: FieldNode, class_name: str, parent_type: TypeDefinition
+        self,
+        selection: FieldNode,
+        class_name: str,
+        parent_type: StrawberryObjectDefinition,
     ) -> GraphQLField:
         assert selection.selection_set is not None
 
@@ -620,10 +632,7 @@ class QueryCodegen:
                 selection, parent_type, class_name
             )
         else:
-            parent_type = cast(
-                TypeDefinition, selected_field_type._type_definition  # type: ignore
-            )
-
+            parent_type = get_object_definition(selected_field_type, strict=True)
             field_type = self._collect_types(selection, parent_type, class_name)
 
         if wrapper:
@@ -636,7 +645,10 @@ class QueryCodegen:
         )
 
     def _get_field(
-        self, selection: FieldNode, class_name: str, parent_type: TypeDefinition
+        self,
+        selection: FieldNode,
+        class_name: str,
+        parent_type: StrawberryObjectDefinition,
     ) -> GraphQLField:
         if selection.selection_set:
             return self._field_from_selection_set(selection, class_name, parent_type)
@@ -646,7 +658,7 @@ class QueryCodegen:
     def _collect_types_with_inline_fragments(
         self,
         selection: HasSelectionSet,
-        parent_type: TypeDefinition,
+        parent_type: StrawberryObjectDefinition,
         class_name: str,
     ) -> Union[GraphQLObjectType, GraphQLUnion]:
         sub_types = self._collect_types_using_fragments(
@@ -665,7 +677,7 @@ class QueryCodegen:
     def _collect_types(
         self,
         selection: HasSelectionSet,
-        parent_type: TypeDefinition,
+        parent_type: StrawberryObjectDefinition,
         class_name: str,
         graph_ql_object_type_factory: Callable[
             [str], GraphQLObjectType
@@ -721,7 +733,7 @@ class QueryCodegen:
     def _collect_types_using_fragments(
         self,
         selection: HasSelectionSet,
-        parent_type: TypeDefinition,
+        parent_type: StrawberryObjectDefinition,
         class_name: str,
     ) -> List[GraphQLObjectType]:
         assert selection.selection_set
@@ -740,17 +752,21 @@ class QueryCodegen:
                 fragments.append(sub_selection)
 
         for fragment in fragments:
-            fragment_class_name = class_name + fragment.type_condition.name.value
-
-            current_type = GraphQLObjectType(fragment_class_name, list(common_fields))
+            type_condition_name = fragment.type_condition.name.value
+            fragment_class_name = class_name + type_condition_name
+            current_type = GraphQLObjectType(
+                fragment_class_name,
+                list(common_fields),
+                graphql_typename=type_condition_name,
+            )
 
             for sub_selection in fragment.selection_set.selections:
                 # TODO: recurse, use existing method ?
                 assert isinstance(sub_selection, FieldNode)
 
                 parent_type = cast(
-                    TypeDefinition,
-                    self.schema.get_type_by_name(fragment.type_condition.name.value),
+                    StrawberryObjectDefinition,
+                    self.schema.get_type_by_name(type_condition_name),
                 )
 
                 assert parent_type

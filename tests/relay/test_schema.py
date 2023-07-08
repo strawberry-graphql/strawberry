@@ -3,6 +3,7 @@ import textwrap
 from typing import List
 
 from pytest_mock import MockerFixture
+from pytest_snapshot.plugin import Snapshot
 
 import strawberry
 from strawberry import relay
@@ -10,19 +11,22 @@ from strawberry.relay.utils import to_base64
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 
 from .schema import schema
+from .schema_future_annotations import schema as schema_future_annotations
+
+SNAPSHOTS_DIR = pathlib.Path(__file__).parent / "snapshots"
 
 
-def test_schema():
-    schema_output = str(schema).strip("\n").strip(" ")
-    output = pathlib.Path(__file__).parent / "schema.gql"
-    if not output.exists():
-        with output.open("w") as f:
-            f.write(schema_output + "\n")
+def test_schema(snapshot: Snapshot):
+    snapshot.snapshot_dir = SNAPSHOTS_DIR
+    snapshot.assert_match(str(schema), "schema.gql")
 
-    with output.open() as f:
-        expected = f.read().strip("\n").strip(" ")
 
-    assert schema_output == expected
+def test_schema_future_annotations(snapshot: Snapshot):
+    snapshot.snapshot_dir = SNAPSHOTS_DIR
+    snapshot.assert_match(
+        str(schema_future_annotations),
+        "schema_future_annotations.gql",
+    )
 
 
 def test_node_id_annotation(mocker: MockerFixture):

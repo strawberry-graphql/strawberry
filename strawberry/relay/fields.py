@@ -72,6 +72,16 @@ class NodeExtension(FieldExtension):
     ) -> Any:
         return next_(source, info, **kwargs)
 
+    async def resolve_async(
+        self, next_: SyncExtensionResolver, source: Any, info: Info, **kwargs: Any
+    ) -> Any:
+        retval = next_(source, info, **kwargs)
+        # If the resolve_nodes method is not async, retval will not actually
+        # be awaitable. We still need the `resolve_async` in here because
+        # otherwise this extension can't be used together with other
+        # async extensions.
+        return await retval if inspect.isawaitable(retval) else retval
+
     def get_node_resolver(self, field: StrawberryField):  # noqa: ANN201
         type_ = field.type
         is_optional = isinstance(type_, StrawberryOptional)
@@ -225,6 +235,8 @@ class ConnectionExtension(FieldExtension):
         # for subscription support, but we can't use it here. Maybe we can refactor
         # this in the future.
         resolver_type = field.base_resolver.signature.return_annotation
+        if isinstance(resolver_type, str):
+            resolver_type = ForwardRef(resolver_type)
         if isinstance(resolver_type, ForwardRef):
             resolver_type = eval_type(
                 resolver_type,

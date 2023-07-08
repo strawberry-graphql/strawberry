@@ -3,6 +3,7 @@ from typing import Any
 import pytest
 
 from strawberry.relay.utils import from_base64, to_base64
+from strawberry.type import get_object_definition
 
 from .schema import Fruit
 
@@ -43,7 +44,7 @@ def test_to_base64_with_type():
 
 def test_to_base64_with_typedef():
     value = to_base64(
-        Fruit._type_definition,  # type: ignore
+        get_object_definition(Fruit, strict=True),
         "1",
     )
     assert value == "RnJ1aXQ6MQ=="
