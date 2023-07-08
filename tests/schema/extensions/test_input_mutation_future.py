@@ -18,13 +18,12 @@ class Query:
 class Mutation:
     @strawberry.mutation(extensions=[InputMutationExtension()])
     async def buggy(self, some_id: UUID) -> None:
-        pass
-
-
-schema = strawberry.Schema(query=Query, mutation=Mutation)
+        del some_id
 
 
 def test_schema():
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+
     expected_schema = '''
     input BuggyInput {
       someId: UUID!

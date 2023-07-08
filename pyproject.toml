@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.193.0"
+version = "0.194.4"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -114,6 +114,8 @@ sentry-sdk = "^1.14.0"
 pyinstrument = {version = ">=4.0.0", optional = false}
 # added this here manually because poetry doesn't seem to be able to handle it =(
 botocore = "1.29.124"
+nox = "^2023.4.22"
+nox-poetry = "^1.0.2"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
@@ -157,6 +159,7 @@ markers = [
     "chalice",
     "flask",
     "starlite",
+    "pydantic",
     "flaky",
     "relay",
 ]
