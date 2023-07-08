@@ -71,11 +71,12 @@ jobs:
             ${{ runner.os }}-nox-
 
       - run: pipx install coverage
+      - run: pipx install poetry
       - run: pipx inject nox nox-poetry
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
 
       - name: coverage xml
-        run: poetry run coverage xml -i
+        run: coverage xml -i
         if: ${{ always() }}
       - uses: codecov/codecov-action@v3
         if: ${{ always() }}
@@ -111,6 +112,7 @@ jobs:
             ${{ runner.os }}-lint-nox-${{ matrix.session.session }}-
             ${{ runner.os }}-lint-nox-
 
+      - run: pipx install poetry
       - run: pipx inject nox nox-poetry
       - run: nox -r -t lint
 
