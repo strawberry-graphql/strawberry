@@ -95,6 +95,10 @@ class StrawberryAnnotation:
             # block or if the type is declared later on in a module.
             return self.raw_annotation
 
+    @annotation.setter
+    def annotation(self, value: Union[object, str]) -> None:
+        self.raw_annotation = value
+
     def evaluate(self) -> type:
         """Return evaluated annotation using `strawberry.util.typing.eval_type`."""
         evaled_type = self.__eval_cache__
