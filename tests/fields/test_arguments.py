@@ -1,6 +1,6 @@
 import sys
 import warnings
-from typing import List, Optional
+from typing import List, Optional, Union
 from typing_extensions import Annotated
 
 import pytest
@@ -439,7 +439,7 @@ def test_union_as_an_argument_type():
     class Verb:
         text: str
 
-    Word = strawberry.union("Word", types=(Noun, Verb))
+    Word = Annotated[Union[Noun, Verb], strawberry.argument("Word")]
 
     @strawberry.field
     def add_word(word: Word) -> bool:

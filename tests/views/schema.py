@@ -1,7 +1,7 @@
 import asyncio
 import contextlib
 from enum import Enum
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 from graphql import GraphQLError
 
@@ -10,7 +10,7 @@ from strawberry.extensions import SchemaExtension
 from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
-from strawberry.types import Info
+from strawberry.types import ExecutionContext, Info
 
 
 class AlwaysFailPermission(BasePermission):
@@ -228,6 +228,23 @@ class Subscription:
             yield message["text"]
 
     @strawberry.subscription
+    async def listener_with_confirmation(
+        self,
+        info: Info[Any, Any],
+        timeout: Optional[float] = None,
+        group: Optional[str] = None,
+    ) -> AsyncGenerator[Union[str, None], None]:
+        async with info.context["request"].listen_to_channel(
+            type="test.message",
+            timeout=timeout,
+            groups=[group] if group is not None else [],
+        ) as cm:
+            yield None
+            yield info.context["request"].channel_name
+            async for message in cm:
+                yield message["text"]
+
+    @strawberry.subscription
     async def connection_params(
         self, info: Info[Any, Any]
     ) -> AsyncGenerator[str, None]:
@@ -245,7 +262,17 @@ class Subscription:
             await asyncio.sleep(delay)
 
 
-schema = strawberry.Schema(
+class Schema(strawberry.Schema):
+    def process_errors(
+        self, errors: List, execution_context: Optional[ExecutionContext] = None
+    ) -> None:
+        import traceback
+
+        traceback.print_stack()
+        return super().process_errors(errors, execution_context)
+
+
+schema = Schema(
     query=Query,
     mutation=Mutation,
     subscription=Subscription,

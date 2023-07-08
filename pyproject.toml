@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.190.0"
+version = "0.194.4"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -114,6 +114,8 @@ sentry-sdk = "^1.14.0"
 pyinstrument = {version = ">=4.0.0", optional = false}
 # added this here manually because poetry doesn't seem to be able to handle it =(
 botocore = "1.29.124"
+nox = "^2023.4.22"
+nox-poetry = "^1.0.2"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
@@ -139,6 +141,7 @@ strawberry = "strawberry.cli:run"
 line-length = 88
 extend-exclude = '''
 tests/codegen/snapshots/
+tests/cli/snapshots/
 '''
 
 [tool.pytest.ini_options]
@@ -156,6 +159,7 @@ markers = [
     "chalice",
     "flask",
     "starlite",
+    "pydantic",
     "flaky",
     "relay",
 ]
@@ -338,12 +342,14 @@ src = ["strawberry", "tests"]
 "tests/federation/printer/*" = ["E501"]
 "tests/test_printer/test_basic.py" = ["E501"]
 "tests/pyright/test_federation.py" = ["E501"]
+"tests/codemods/*" = ["E501"]
 "tests/test_printer/test_schema_directives.py" = ["E501"]
 "tests/*" = ["RSE102", "SLF001", "TCH001", "TCH002", "TCH003", "ANN001", "ANN201", "PLW0603", "PLC1901", "S603", "S607", "B018"]
 "strawberry/extensions/tracing/__init__.py" = ["TCH004"]
 "tests/http/clients/__init__.py" = ["F401"]
 "tests/schema/test_scalars.py" = ["E501"]
 "tests/schema/test_basic.py" = ["E501"]
+"tests/schema/test_union.py" = ["E501"]
 
 [tool.ruff.isort]
 known-first-party = ["strawberry"]

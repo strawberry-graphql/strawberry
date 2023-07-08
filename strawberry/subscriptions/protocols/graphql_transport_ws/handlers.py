@@ -117,7 +117,7 @@ class BaseGraphQLTransportWSHandler(ABC):
             # so that unittests can inspect it.
             self.completed_tasks.append(task)
 
-    async def handle_task_exception(self, error: Exception) -> None:
+    async def handle_task_exception(self, error: Exception) -> None:  # pragma: no cover
         self.task_logger.exception("Exception in worker task", exc_info=error)
 
     async def handle_message(self, message: dict) -> None:
@@ -248,6 +248,7 @@ class BaseGraphQLTransportWSHandler(ABC):
 
         # Handle initial validation errors
         if isinstance(result_source, GraphQLExecutionResult):
+            assert operation_type == OperationType.SUBSCRIPTION
             assert result_source.errors
             payload = [err.formatted for err in result_source.errors]
             await self.send_message(ErrorMessage(id=message.id, payload=payload))
@@ -301,11 +302,13 @@ class BaseGraphQLTransportWSHandler(ABC):
                     error_payload = [err.formatted for err in result.errors]
                     error_message = ErrorMessage(id=operation.id, payload=error_payload)
                     await operation.send_message(error_message)
-                    self.schema.process_errors(result.errors)
+                    # don't need to call schema.process_errors() here because
+                    # it was already done by schema.execute()
                     return
                 else:
                     next_payload = {"data": result.data}
                     if result.errors:
+                        self.schema.process_errors(result.errors)
                         next_payload["errors"] = [
                             err.formatted for err in result.errors
                         ]

@@ -56,7 +56,6 @@ from strawberry.type import (
     StrawberryList,
     StrawberryOptional,
     StrawberryType,
-    WithStrawberryObjectDefinition,
     has_object_definition,
 )
 from strawberry.types.info import Info
@@ -99,9 +98,7 @@ class FieldConverterProtocol(Generic[FieldType], Protocol):
         self,
         field: StrawberryField,
         *,
-        override_type: Optional[
-            Union[StrawberryType, Type[WithStrawberryObjectDefinition]]
-        ] = None,
+        type_definition: Optional[StrawberryObjectDefinition] = None,
     ) -> FieldType:
         ...
 
@@ -125,7 +122,7 @@ def _get_thunk_mapping(
     thunk_mapping: Dict[str, FieldType] = {}
 
     for field in type_definition.fields:
-        field_type = field.resolve_type(type_definition=type_definition)
+        field_type = field.type
 
         if field_type is UNRESOLVED:
             raise UnresolvedFieldTypeError(type_definition, field)
@@ -133,7 +130,7 @@ def _get_thunk_mapping(
         if not is_private(field_type):
             thunk_mapping[name_converter(field)] = field_converter(
                 field,
-                override_type=field_type,
+                type_definition=type_definition,
             )
 
     return thunk_mapping
@@ -305,15 +302,16 @@ class GraphQLCoreConverter:
         self,
         field: StrawberryField,
         *,
-        override_type: Optional[
-            Union[StrawberryType, Type[WithStrawberryObjectDefinition]]
-        ] = None,
+        type_definition: Optional[StrawberryObjectDefinition] = None,
     ) -> GraphQLField:
         # self.from_resolver needs to be called before accessing field.type because
         # in there a field extension might want to change the type during its apply
         resolver = self.from_resolver(field)
         field_type = cast(
-            "GraphQLOutputType", self.from_maybe_optional(override_type or field.type)
+            "GraphQLOutputType",
+            self.from_maybe_optional(
+                field.resolve_type(type_definition=type_definition)
+            ),
         )
         subscribe = None
 
@@ -342,12 +340,13 @@ class GraphQLCoreConverter:
         self,
         field: StrawberryField,
         *,
-        override_type: Optional[
-            Union[StrawberryType, Type[WithStrawberryObjectDefinition]]
-        ] = None,
+        type_definition: Optional[StrawberryObjectDefinition] = None,
     ) -> GraphQLInputField:
         field_type = cast(
-            "GraphQLInputType", self.from_maybe_optional(override_type or field.type)
+            "GraphQLInputType",
+            self.from_maybe_optional(
+                field.resolve_type(type_definition=type_definition)
+            ),
         )
         default_value: object
 
@@ -779,7 +778,7 @@ class GraphQLCoreConverter:
             # TypeVars, Annotations, LazyTypes, etc it can't perfectly detect issues at
             # that stage
             if not StrawberryUnion.is_valid_union_type(type_):
-                raise InvalidUnionTypeError(union_name, type_)
+                raise InvalidUnionTypeError(union_name, type_, union_definition=union)
 
         # Don't reevaluate known types
         if union_name in self.type_map:

@@ -1,5 +1,6 @@
 import datetime
 from typing import Generic, List, Optional, TypeVar, Union
+from typing_extensions import Annotated
 
 import pytest
 
@@ -502,7 +503,7 @@ def test_union_inside_generics():
     class Connection(Generic[T]):
         nodes: List[T]
 
-    DogCat = strawberry.union("DogCat", (Dog, Cat))
+    DogCat = Annotated[Union[Dog, Cat], strawberry.union("DogCat")]
 
     @strawberry.type
     class Query:
