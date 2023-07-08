@@ -47,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        session: ${{ fromJson(needs.generate-jobs.outputs.sessions) }}
+        session: ${{ fromJson(needs.generate-jobs-tests.outputs.sessions) }}
 
     steps:
       - uses: actions/checkout@v3
