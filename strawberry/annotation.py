@@ -52,7 +52,7 @@ ASYNC_TYPES = (
 
 
 class StrawberryAnnotation:
-    __slots__ = "annotation", "namespace", "__eval_cache__"
+    __slots__ = "raw_annotation", "namespace", "__eval_cache__"
 
     def __init__(
         self,
@@ -60,7 +60,7 @@ class StrawberryAnnotation:
         *,
         namespace: Optional[Dict[str, Any]] = None,
     ):
-        self.annotation = annotation
+        self.raw_annotation = annotation
         self.namespace = namespace
 
         self.__eval_cache__: Optional[Type[Any]] = None
@@ -85,13 +85,23 @@ class StrawberryAnnotation:
             return StrawberryAnnotation(annotation, namespace=namespace)
         return annotation
 
+    @property
+    def annotation(self) -> Union[object, str]:
+        """Return evaluated type on success or fallback to raw (string) annotation."""
+        try:
+            return self.evaluate()
+        except NameError:
+            # Evaluation failures can happen when importing types within a TYPE_CHECKING
+            # block or if the type is declared later on in a module.
+            return self.raw_annotation
+
     def evaluate(self) -> type:
         """Return evaluated annotation using `strawberry.util.typing.eval_type`."""
         evaled_type = self.__eval_cache__
         if evaled_type:
             return evaled_type
 
-        annotation = self.annotation
+        annotation = self.raw_annotation
         if isinstance(annotation, str):
             annotation = ForwardRef(annotation)
 
