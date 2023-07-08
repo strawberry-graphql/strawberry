@@ -17,7 +17,7 @@ on:
       - ".github/workflows/test.yml"
 
 jobs:
-  generate-jobs:
+  generate-jobs-tests:
     name: 💻 Generate test matrix
     runs-on: ubuntu-latest
     outputs:
@@ -31,7 +31,7 @@ jobs:
         shell: bash
         run: |
           echo sessions=$(
-            nox --json -l |
+            nox --json -t tests -l |
             jq 'map(
               {
                 session,
@@ -42,7 +42,7 @@ jobs:
 
   unit-tests:
     name: 🔬 ${{ matrix.session.name }}
-    needs: [generate-jobs]
+    needs: [generate-jobs-tests]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -75,13 +75,10 @@ jobs:
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
 
   lint:
-    name: ✨ ${{ matrix.session.name }}
-    needs: [generate-jobs]
+    name: ✨ Lint
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        session: ${{ fromJson(needs.generate-jobs.outputs.sessions) }}
 
     steps:
       - uses: actions/checkout@v3
@@ -98,17 +95,15 @@ jobs:
             ~/.nox
             .nox
           key:
-            ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
+            ${{ runner.os }}-nox-lint-${{ matrix.session.session }}-${{
             hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
           restore-keys: |
-            ${{ runner.os }}-nox-${{ matrix.session.session }}-
-            ${{ runner.os }}-nox-
+            ${{ runner.os }}-lint-nox-${{ matrix.session.session }}-
+            ${{ runner.os }}-lint-nox-
 
       - run: pipx install poetry
       - run: pipx inject nox nox-poetry
-      - run: nox -r -t lint -s "${{ matrix.session.session }}"
-
-
+      - run: nox -r -t lint
 
   unit-tests-on-windows:
     name: 🪟 Tests on Windows
