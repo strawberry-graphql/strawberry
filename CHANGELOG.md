@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.194.2 - 2023-07-08
+--------------------
+
+This release includes a performance improvement to `strawberry.lazy()` to allow relative module imports to be resolved faster.
+
+Contributed by [Karim Alibhai](https://github.com/karimsa) via [PR #2926](https://github.com/strawberry-graphql/strawberry/pull/2926/)
+
+
 0.194.1 - 2023-07-08
 --------------------
 
