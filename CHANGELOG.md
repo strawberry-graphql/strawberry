@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.194.3 - 2023-07-08
+--------------------
+
+Added default argument to the typer Argument function, this adds
+support for older versions of typer.
+
+Contributed by [Jaime Coello de Portugal](https://github.com/jaimecp89) via [PR #2906](https://github.com/strawberry-graphql/strawberry/pull/2906/)
+
+
 0.194.2 - 2023-07-08
 --------------------
 
