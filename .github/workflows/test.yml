@@ -54,6 +54,7 @@ jobs:
           path: |
             ~/.cache/pip
             ~/.nox
+            .nox
           key: ${{ runner.os }}-nox-${{ matrix.session }}-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
           restore-keys: |
             ${{ runner.os }}-nox-${{ matrix.session }}-
