@@ -38,8 +38,7 @@ jobs:
                 name: "\( .name ) on \( .python )\( if .call_spec != {} then " (\(.call_spec | to_entries | map("\(.key)=\(.value)") | join(", ")))" else "" end )"
               }
             )'
-          ) | tee --append
-          $GITHUB_OUTPUT
+          ) | tee --append $GITHUB_OUTPUT
 
   unit-tests:
     name: 🔬 ${{ matrix.session.name }}
