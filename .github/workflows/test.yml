@@ -29,12 +29,20 @@ jobs:
       - run: pipx inject nox nox-poetry
       - id: set-matrix
         shell: bash
-        run:
-          echo sessions=$(nox --json -l) | tee --append
+        run: |
+          echo sessions=$(
+            nox --json -l |
+            jq 'map(
+              {
+                session,
+                name: \"\( .name ) on \( .python )\( if .call_spec != {} then \" (\(.call_spec | to_entries | map(\"\(.key)=\(.value)\") | join(\", \")))\" else \"\" end )\"
+              }
+            )'
+          ) | tee --append
           $GITHUB_OUTPUT
 
   unit-tests:
-    name: Session ${{ matrix.session.name }} on ${{ matrix.session.python }}
+    name: 🔬 ${{ matrix.session.name }}
     needs: [generate-jobs]
     runs-on: ubuntu-latest
     strategy:
@@ -68,7 +76,7 @@ jobs:
       - run: nox -r -s "${{ matrix.session.session }}"
 
   unit-tests-on-windows:
-    name: Tests on Windows
+    name: 🪟 Tests on Windows
     runs-on: windows-latest
 
     steps:
