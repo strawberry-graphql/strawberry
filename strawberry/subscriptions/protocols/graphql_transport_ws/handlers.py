@@ -256,7 +256,6 @@ class BaseGraphQLTransportWSHandler(ABC):
             assert result_source.errors
             payload = [err.formatted for err in result_source.errors]
             await self.send_message(ErrorMessage(id=message.id, payload=payload))
-            self.schema.process_errors(result_source.errors)
             return
 
         # Create task to handle this subscription, reserve the operation ID
@@ -306,13 +305,10 @@ class BaseGraphQLTransportWSHandler(ABC):
                     error_payload = [err.formatted for err in result.errors]
                     error_message = ErrorMessage(id=operation.id, payload=error_payload)
                     await operation.send_message(error_message)
-                    # don't need to call schema.process_errors() here because
-                    # it was already done by schema.execute()
                     return
                 else:
                     next_payload = {"data": result.data}
                     if result.errors:
-                        self.schema.process_errors(result.errors)
                         next_payload["errors"] = [
                             err.formatted for err in result.errors
                         ]
