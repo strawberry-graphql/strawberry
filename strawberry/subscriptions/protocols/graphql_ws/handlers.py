@@ -135,7 +135,6 @@ class BaseGraphQLWSHandler(ABC):
             assert result_source.errors
             error_payload = result_source.errors[0].formatted
             await self.send_message(GQL_ERROR, operation_id, error_payload)
-            self.schema.process_errors(result_source.errors)
             return
 
         self.subscriptions[operation_id] = result_source
@@ -165,10 +164,6 @@ class BaseGraphQLWSHandler(ABC):
                 if result.extensions:
                     payload["extensions"] = result.extensions
                 await self.send_message(GQL_DATA, operation_id, payload)
-                # log errors after send_message to prevent potential
-                # slowdown of sending result
-                if result.errors:
-                    self.schema.process_errors(result.errors)
         except asyncio.CancelledError:
             # CancelledErrors are expected during task cleanup.
             pass
