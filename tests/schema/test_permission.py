@@ -83,7 +83,7 @@ async def test_raises_permission_error_for_subscription():
     query = "subscription { user }"
 
     with pytest.raises(SubscribeSingleResult) as err:
-        async for result in schema.subscribe(query):
+        async for _ in schema.subscribe(query):
             pass
     result = err.value.value
     assert result.errors[0].message == "You are not authorized"
