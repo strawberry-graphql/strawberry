@@ -404,7 +404,7 @@ schema = Schema(
     extensions=[MyExtension],
 )
 
-async_schema = strawberry.Schema(
+async_schema = Schema(
     query=Query,
     mutation=Mutation,
     subscription=Subscription,
