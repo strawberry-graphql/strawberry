@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from typing import TYPE_CHECKING, AsyncGenerator
+from unittest.mock import Mock, patch
 
 import pytest
 import pytest_asyncio
@@ -19,6 +20,7 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
     GQL_STOP,
 )
+from tests.views.schema import Schema
 
 if TYPE_CHECKING:
     from ..http.clients.aiohttp import HttpClient, WebSocketClient
@@ -198,25 +200,28 @@ async def test_subscription_cancellation(ws: WebSocketClient):
 
 
 async def test_subscription_errors(ws: WebSocketClient):
-    await ws.send_json(
-        {
-            "type": GQL_START,
-            "id": "demo",
-            "payload": {"query": 'subscription { error(message: "TEST ERR") }'},
-        }
-    )
+    process_errors = Mock()
+    with patch.object(Schema, "process_errors", process_errors):
+        await ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "demo",
+                "payload": {"query": 'subscription { error(message: "TEST ERR") }'},
+            }
+        )
 
-    response = await ws.receive_json()
-    assert response["type"] == GQL_DATA
-    assert response["id"] == "demo"
-    assert response["payload"]["data"] is None
-    assert len(response["payload"]["errors"]) == 1
-    assert response["payload"]["errors"][0]["path"] == ["error"]
-    assert response["payload"]["errors"][0]["message"] == "TEST ERR"
+        response = await ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "demo"
+        assert response["payload"]["data"] is None
+        assert len(response["payload"]["errors"]) == 1
+        assert response["payload"]["errors"][0]["path"] == ["error"]
+        assert response["payload"]["errors"][0]["message"] == "TEST ERR"
+        process_errors.assert_called_once()
 
-    response = await ws.receive_json()
-    assert response["type"] == GQL_COMPLETE
-    assert response["id"] == "demo"
+        response = await ws.receive_json()
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "demo"
 
 
 async def test_subscription_exceptions(ws: WebSocketClient):
@@ -241,23 +246,26 @@ async def test_subscription_exceptions(ws: WebSocketClient):
 
 
 async def test_subscription_field_error(ws: WebSocketClient):
-    await ws.send_json(
-        {
-            "type": GQL_START,
-            "id": "invalid-field",
-            "payload": {"query": "subscription { notASubscriptionField }"},
-        }
-    )
+    process_errors = Mock()
+    with patch.object(Schema, "process_errors", process_errors):
+        await ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "invalid-field",
+                "payload": {"query": "subscription { notASubscriptionField }"},
+            }
+        )
 
-    response = await ws.receive_json()
-    assert response["type"] == GQL_ERROR
-    assert response["id"] == "invalid-field"
-    assert response["payload"] == {
-        "locations": [{"line": 1, "column": 16}],
-        "message": (
-            "Cannot query field 'notASubscriptionField' on type 'Subscription'."
-        ),
-    }
+        response = await ws.receive_json()
+        assert response["type"] == GQL_ERROR
+        assert response["id"] == "invalid-field"
+        assert response["payload"] == {
+            "locations": [{"line": 1, "column": 16}],
+            "message": (
+                "Cannot query field 'notASubscriptionField' on type 'Subscription'."
+            ),
+        }
+        process_errors.assert_called_once()
 
 
 async def test_subscription_syntax_error(ws: WebSocketClient):
