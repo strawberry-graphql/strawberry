@@ -89,15 +89,11 @@ class StrawberryArgument:
             _deprecated_UNSET if default is inspect.Parameter.empty else default
         )
 
-        try:
-            evaled_type = type_annotation.evaluate()
-        except NameError:
-            # Evaluation failures can happen when importing types within a TYPE_CHECKING
-            # block or if the type is declared later on in the current module.
-            pass
-        else:
-            if get_origin(evaled_type) is Annotated:
-                first, *rest = get_args(evaled_type)
+        annotation = type_annotation.annotation
+        if not isinstance(annotation, str):
+            resolved_annotation = annotation
+            if get_origin(resolved_annotation) is Annotated:
+                first, *rest = get_args(resolved_annotation)
 
                 # The first argument to Annotated is always the underlying type
                 self.type_annotation = StrawberryAnnotation(first)

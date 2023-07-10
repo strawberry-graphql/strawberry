@@ -66,3 +66,10 @@ def test_eq_on_other_type():
 def test_eq_on_non_annotation():
     assert StrawberryAnnotation(int) != int
     assert StrawberryAnnotation(int) != 123
+
+
+def test_set_anntation():
+    annotation = StrawberryAnnotation(int)
+    annotation.annotation = str
+
+    assert annotation.annotation == str

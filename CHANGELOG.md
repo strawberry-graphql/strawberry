@@ -1,6 +1,119 @@
 CHANGELOG
 =========
 
+0.194.4 - 2023-07-08
+--------------------
+
+This release makes sure that `Schema.process_errors()` is called _once_ for every error
+which happens with `graphql-transport-ws` operations.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2899](https://github.com/strawberry-graphql/strawberry/pull/2899/)
+
+
+0.194.3 - 2023-07-08
+--------------------
+
+Added default argument to the typer Argument function, this adds
+support for older versions of typer.
+
+Contributed by [Jaime Coello de Portugal](https://github.com/jaimecp89) via [PR #2906](https://github.com/strawberry-graphql/strawberry/pull/2906/)
+
+
+0.194.2 - 2023-07-08
+--------------------
+
+This release includes a performance improvement to `strawberry.lazy()` to allow relative module imports to be resolved faster.
+
+Contributed by [Karim Alibhai](https://github.com/karimsa) via [PR #2926](https://github.com/strawberry-graphql/strawberry/pull/2926/)
+
+
+0.194.1 - 2023-07-08
+--------------------
+
+This release adds a setter on `StrawberryAnnotation.annotation`, this fixes
+an issue on Strawberry Django.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2932](https://github.com/strawberry-graphql/strawberry/pull/2932/)
+
+
+0.194.0 - 2023-07-08
+--------------------
+
+Restore evaled type access in `StrawberryAnnotation`
+
+Prior to Strawberry 192.2 the `annotation` attribute of `StrawberryAnnotation`
+would return an evaluated type when possible due reserved argument parsing.
+192.2 moved the responsibility of evaluating and caching results to the
+`evaluate` method of `StrawberryAnnotation`. This introduced a regression when
+using future annotations for any code implicitely relying on the `annotation`
+attribute being an evaluated type.
+
+To fix this regression and mimick pre-192.2 behavior, this release adds an
+`annotation` property to `StrawberryAnnotation` that internally calls the
+`evaluate` method. On success the evaluated type is returned. If a `NameError`
+is raised due to an unresolvable annotation, the raw annotation is returned.
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #2925](https://github.com/strawberry-graphql/strawberry/pull/2925/)
+
+
+0.193.1 - 2023-07-05
+--------------------
+
+This fixes a regression from 0.190.0 where changes to the
+return type of a field done by Field Extensions would not
+be taken in consideration by the schema.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2922](https://github.com/strawberry-graphql/strawberry/pull/2922/)
+
+
+0.193.0 - 2023-07-04
+--------------------
+
+This release updates the API to listen to Django Channels to avoid race conditions
+when confirming GraphQL subscriptions.
+
+**Deprecations:**
+
+This release contains a deprecation for the Channels integration. The `channel_listen`
+method will be replaced with an async context manager that returns an awaitable
+AsyncGenerator. This method is called `listen_to_channel`.
+
+An example of migrating existing code is given below:
+
+```py
+# Existing code
+@strawberry.type
+class MyDataType:
+   name: str
+
+@strawberry.type
+class Subscription:
+   @strawberry.subscription
+   async def my_data_subscription(
+      self, info: Info, groups: list[str]
+   ) -> AsyncGenerator[MyDataType | None, None]:
+      yield None
+      async for message in info.context["ws"].channel_listen("my_data", groups=groups):
+         yield MyDataType(name=message["payload"])
+```
+
+```py
+# New code
+@strawberry.type
+class Subscription:
+   @strawberry.subscription
+   async def my_data_subscription(
+      self, info: Info, groups: list[str]
+   ) -> AsyncGenerator[MyDataType | None, None]:
+      async with info.context["ws"].listen_to_channel("my_data", groups=groups) as cm:
+         yield None
+         async for message in cm:
+            yield MyDataType(name=message["payload"])
+```
+
+Contributed by [Moritz Ulmer](https://github.com/moritz89) via [PR #2856](https://github.com/strawberry-graphql/strawberry/pull/2856/)
+
+
 0.192.2 - 2023-07-03
 --------------------
 
