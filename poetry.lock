@@ -1979,13 +1979,13 @@ tox-to-nox = ["jinja2", "tox (<4)"]
 
 [[package]]
 name = "nox-poetry"
-version = "1.0.2"
+version = "1.0.3"
 description = "nox-poetry"
 optional = false
 python-versions = ">=3.7,<4.0"
 files = [
-    {file = "nox-poetry-1.0.2.tar.gz", hash = "sha256:22bc397979393a0283f5161af708a3a430e1c7e0cc2be274c7b27e9e46de0412"},
-    {file = "nox_poetry-1.0.2-py3-none-any.whl", hash = "sha256:a53c36eccbd67f15b5b83dd6562d077dd326c71fd4a942528d8b2299c417dbbe"},
+    {file = "nox_poetry-1.0.3-py3-none-any.whl", hash = "sha256:a2fffeb70ae81840479e68287afe1c772bf376f70f1e92f99832a20b3c64d064"},
+    {file = "nox_poetry-1.0.3.tar.gz", hash = "sha256:dc7ecbbd812a333a0c0b558f57e5b37f7c12926cddbcecaf2264957fd373824e"},
 ]
 
 [package.dependencies]
