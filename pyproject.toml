@@ -145,7 +145,7 @@ tests/cli/snapshots/
 '''
 
 [tool.pytest.ini_options]
-addopts = "--emoji --mypy-ini-file=mypy.ini --benchmark-disable"
+addopts = "--emoji --mypy-ini-file=mypy.ini"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
 markers = [
