@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import InitVar, dataclass, field
-from typing import Any, Callable, Optional
+from typing import Any, Callable
+from typing_extensions import Required, TypedDict
 
 from .name_converter import NameConverter
 
 
-@dataclass
-class BatchingConfig:
-    max_operations: int = 3
+class BatchingConfig(TypedDict, total=False):
+    enabled: Required[bool]
+    max_operations: int
 
 
 @dataclass
@@ -18,9 +19,12 @@ class StrawberryConfig:
     default_resolver: Callable[[Any, str], object] = getattr
     relay_max_results: int = 100
 
-    # Setting this means you are enabling batching
-    # TODO: do I like it this?
-    batching_config: Optional[BatchingConfig] = None
+    batching_config: BatchingConfig = field(
+        default_factory=lambda: {
+            "enabled": False,
+            "max_operations": 3,
+        }
+    )
 
     def __post_init__(
         self,

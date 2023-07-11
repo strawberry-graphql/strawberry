@@ -68,8 +68,10 @@ class BaseView(Generic[Request]):
         return params
 
     def _validate_batch_request(self, request_data: List[GraphQLRequestData]) -> None:
-        if self.schema.config.batching_config is None:
+        if self.schema.config.batching_config["enabled"] is False:
             raise HTTPException(400, "Batching is not enabled")
 
-        if len(request_data) > self.schema.config.batching_config.max_operations:
+        if len(request_data) > self.schema.config.batching_config.get(
+            "max_operations", 3
+        ):
             raise HTTPException(400, "Too many operations")
