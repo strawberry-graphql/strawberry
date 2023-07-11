@@ -30,13 +30,6 @@ def tests(session: Session) -> None:
     )
 
 
-@session(python=PYTHON_VERSIONS, name="Benchmarks", tags=["tests", "benchmarks"])
-def benchmarks(session: Session) -> None:
-    session.run_always("poetry", "install", external=True)
-
-    session.run("pytest", "--codspeed", "tests/benchmarks")
-
-
 @session(python=["3.11"], name="Django tests", tags=["tests"])
 @nox.parametrize("django", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"])
 def tests_django(session: Session, django: str) -> None:

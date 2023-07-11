@@ -85,6 +85,32 @@ jobs:
           fail_ci_if_error: true
           verbose: true
 
+  benchmarks:
+    name: 📈 Benchmarks
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v4
+        id: setup-python
+        with:
+          python-version: "3.11"
+          architecture: x64
+          cache: "poetry"
+
+      - run: poetry env use 3.11
+      - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
+
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v1
+        with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
+          run: poetry run pytest tests/benchmarks --codspeed
+
   lint:
     name: ✨ Lint
     runs-on: ubuntu-latest
@@ -135,8 +161,8 @@ jobs:
             ~/.nox
             .nox
           key:
-            ${{ runner.os }}-nox-windows-${{
-            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
+            ${{ runner.os }}-nox-windows-${{ hashFiles('**/poetry.lock') }}-${{
+            hashFiles('**/noxfile.py') }}
           restore-keys: |
             ${{ runner.os }}-nox-windows
             ${{ runner.os }}-nox-
