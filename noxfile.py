@@ -90,10 +90,29 @@ def tests_litestar(session: Session) -> None:
     )
 
 
-@session(python=["3.11"], name="Pydantic tests", tags=["tests"])
-# TODO: add pydantic 2.0 here :)
+@session(python=["3.11"], name="Pydantic v1 tests", tags=["tests"])
 @nox.parametrize("pydantic", ["1.10"])
-def test_pydantic(session: Session, pydantic: str) -> None:
+def test_pydantic_v1(session: Session, pydantic: str) -> None:
+    session.run_always("poetry", "install", external=True)
+
+    session._session.install(f"pydantic~={pydantic}")  # type: ignore
+
+    session.run(
+        "pytest",
+        "--cov=strawberry",
+        "--cov-append",
+        "--cov-report=xml",
+        "-n",
+        "auto",
+        "--showlocals",
+        "-vv",
+        "-m",
+        "pydantic",
+    )
+
+@session(python=["3.11"], name="Pydantic v2 tests", tags=["tests"])
+@nox.parametrize("pydantic", ["2.0"])
+def test_pydantic_v2(session: Session, pydantic: str) -> None:
     session.run_always("poetry", "install", external=True)
 
     session._session.install(f"pydantic~={pydantic}")  # type: ignore

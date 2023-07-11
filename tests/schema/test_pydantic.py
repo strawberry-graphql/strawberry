@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 import strawberry
 
-pytestmark = pytest.mark.pydantic
+pytestmark = pytest.mark.pydantic_v1
 
 
 def test_use_alias_as_gql_name():

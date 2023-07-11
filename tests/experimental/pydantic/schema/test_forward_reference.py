@@ -4,9 +4,11 @@ import textwrap
 from typing import Optional
 
 import pydantic
+import pytest
 
 import strawberry
 
+pytestmark = pytest.mark.pydantic_v1
 
 def test_auto_fields():
     global User

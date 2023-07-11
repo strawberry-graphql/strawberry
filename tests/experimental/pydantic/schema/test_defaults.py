@@ -2,9 +2,12 @@ import textwrap
 from typing import Optional
 
 import pydantic
+import pytest
 
 import strawberry
 from strawberry.printer import print_schema
+
+pytestmark = pytest.mark.pydantic_v1
 
 
 def test_field_type_default():

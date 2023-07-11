@@ -1,9 +1,11 @@
 from typing import Dict, List, Union
 
 import pydantic
+import pytest
 
 import strawberry
 
+pytestmark = pytest.mark.pydantic_v1
 
 def test_mutation():
     class User(pydantic.BaseModel):

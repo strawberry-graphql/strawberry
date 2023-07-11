@@ -13,6 +13,7 @@ from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.union import StrawberryUnion
 
+pytestmark = pytest.mark.pydantic_v1
 
 def test_basic_type_field_list():
     class User(pydantic.BaseModel):

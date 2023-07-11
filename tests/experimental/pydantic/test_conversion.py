@@ -19,6 +19,7 @@ from strawberry.experimental.pydantic.utils import get_default_factory_for_field
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import StrawberryObjectDefinition
 
+pytestmark = pytest.mark.pydantic_v1
 
 def test_can_use_type_standalone():
     class User(BaseModel):
