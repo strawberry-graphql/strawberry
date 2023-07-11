@@ -77,7 +77,6 @@ pytest-flask = {version = "^1.2.0"}
 flask = ">=1.1"
 chalice = {version = "^1.22"}
 requests = "^2.28.1"
-pytest-benchmark = "^4.0.0"
 freezegun = "^1.2.1"
 opentelemetry-api = "<2"
 opentelemetry-sdk = "<2"
@@ -116,6 +115,7 @@ pyinstrument = {version = ">=4.0.0", optional = false}
 botocore = "1.29.124"
 nox = "^2023.4.22"
 nox-poetry = "^1.0.2"
+pytest-codspeed = "^2.0.0"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
@@ -145,7 +145,7 @@ tests/cli/snapshots/
 '''
 
 [tool.pytest.ini_options]
-addopts = "--emoji --mypy-ini-file=mypy.ini --benchmark-disable"
+addopts = "--emoji --mypy-ini-file=mypy.ini"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
 markers = [
