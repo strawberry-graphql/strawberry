@@ -21,6 +21,7 @@ from strawberry.types.types import StrawberryObjectDefinition
 
 pytestmark = pytest.mark.pydantic_v1
 
+
 def test_can_use_type_standalone():
     class User(BaseModel):
         age: int

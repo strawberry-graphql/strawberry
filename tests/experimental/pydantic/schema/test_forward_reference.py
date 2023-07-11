@@ -10,6 +10,7 @@ import strawberry
 
 pytestmark = pytest.mark.pydantic_v1
 
+
 def test_auto_fields():
     global User
 

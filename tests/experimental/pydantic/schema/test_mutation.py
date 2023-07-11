@@ -7,6 +7,7 @@ import strawberry
 
 pytestmark = pytest.mark.pydantic_v1
 
+
 def test_mutation():
     class User(pydantic.BaseModel):
         name: pydantic.constr(min_length=2)

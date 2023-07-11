@@ -110,6 +110,7 @@ def test_pydantic_v1(session: Session, pydantic: str) -> None:
         "pydantic",
     )
 
+
 @session(python=["3.11"], name="Pydantic v2 tests", tags=["tests"])
 @nox.parametrize("pydantic", ["2.0"])
 def test_pydantic_v2(session: Session, pydantic: str) -> None:

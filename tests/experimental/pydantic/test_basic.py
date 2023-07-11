@@ -15,6 +15,7 @@ from strawberry.union import StrawberryUnion
 
 pytestmark = pytest.mark.pydantic_v1
 
+
 def test_basic_type_field_list():
     class User(pydantic.BaseModel):
         age: int

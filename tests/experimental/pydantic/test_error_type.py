@@ -10,6 +10,7 @@ from strawberry.types.types import StrawberryObjectDefinition
 
 pytestmark = pytest.mark.pydantic_v1
 
+
 def test_basic_error_type_fields():
     class UserModel(pydantic.BaseModel):
         name: str
