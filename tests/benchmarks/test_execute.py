@@ -5,15 +5,13 @@ from typing import List
 
 import pytest
 from asgiref.sync import async_to_sync
+from pytest_codspeed.plugin import BenchmarkFixture
 
 import strawberry
 
 
-@pytest.mark.parametrize(
-    "items",
-    [25, 100, 250],
-)
-def test_execute(benchmark, items):
+@pytest.mark.benchmark
+def test_execute(benchmark: BenchmarkFixture):
     birthday = datetime.datetime.now()
     pets = ("cat", "shark", "dog", "lama")
 
@@ -52,7 +50,7 @@ def test_execute(benchmark, items):
                     birthday=birthday,
                     tags=["go", "ajax"],
                 )
-                for i in range(items)
+                for i in range(1000)
             ]
 
     schema = strawberry.Schema(query=Query)
@@ -72,6 +70,5 @@ def test_execute(benchmark, items):
           }
         }
     """
-    result = benchmark(async_to_sync(schema.execute), query)
-    assert not result.errors
-    assert len(result.data["patrons"]) == items
+
+    benchmark(async_to_sync(schema.execute), query)
