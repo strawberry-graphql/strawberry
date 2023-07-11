@@ -144,6 +144,11 @@ class ChannelsHttpClient(HttpClient):
     ):
         self.schema = get_schema(schema_config)
 
+        self.ws_app = DebuggableGraphQLTransportWSConsumer.as_asgi(
+            schema=self.schema,
+            keep_alive=False,
+        )
+
         self.http_app = DebuggableGraphQLHTTPConsumer.as_asgi(
             schema=self.schema,
             graphiql=graphiql,
@@ -152,9 +157,6 @@ class ChannelsHttpClient(HttpClient):
         )
 
     def create_app(self, **kwargs: Any) -> None:
-        self.app = DebuggableGraphQLTransportWSConsumer.as_asgi(
-            schema=self.schema, **kwargs
-        )
         self.ws_app = DebuggableGraphQLTransportWSConsumer.as_asgi(
             schema=self.schema, **kwargs
         )
