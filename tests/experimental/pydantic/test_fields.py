@@ -132,7 +132,7 @@ def test_constrained_list():
 
     assert UserType.__strawberry_definition__.fields[0].name == "friends"
     assert (
-        UserType.__strawberry_definition__.fields[0].type_annotation.annotation
+        UserType.__strawberry_definition__.fields[0].type_annotation.raw_annotation
         == List[str]
     )
 
@@ -159,7 +159,7 @@ def test_constrained_list_nested():
 
     assert UserType.__strawberry_definition__.fields[0].name == "friends"
     assert (
-        UserType.__strawberry_definition__.fields[0].type_annotation.annotation
+        UserType.__strawberry_definition__.fields[0].type_annotation.raw_annotation
         == List[List[int]]
     )
 

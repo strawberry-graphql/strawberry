@@ -11,7 +11,7 @@ from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
 from strawberry.schema.config import StrawberryConfig
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
-from strawberry.types import Info
+from strawberry.types import ExecutionContext, Info
 
 
 class AlwaysFailPermission(BasePermission):
@@ -263,8 +263,20 @@ class Subscription:
             await asyncio.sleep(delay)
 
 
+class Schema(strawberry.Schema):
+    def process_errors(
+        self,
+        errors: List[GraphQLError],
+        execution_context: Optional[ExecutionContext] = None,
+    ) -> None:
+        import traceback
+
+        traceback.print_stack()
+        return super().process_errors(errors, execution_context)
+
+
 def get_schema(config: Optional[StrawberryConfig] = None) -> strawberry.Schema:
-    return strawberry.Schema(
+    return Schema(
         query=Query,
         mutation=Mutation,
         subscription=Subscription,
