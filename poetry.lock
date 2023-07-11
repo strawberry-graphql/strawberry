@@ -1041,13 +1041,13 @@ files = [
 
 [[package]]
 name = "django"
-version = "3.2.19"
+version = "3.2.20"
 description = "A high-level Python Web framework that encourages rapid development and clean, pragmatic design."
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "Django-3.2.19-py3-none-any.whl", hash = "sha256:21cc991466245d659ab79cb01204f9515690f8dae00e5eabde307f14d24d4d7d"},
-    {file = "Django-3.2.19.tar.gz", hash = "sha256:031365bae96814da19c10706218c44dff3b654cc4de20a98bd2d29b9bde469f0"},
+    {file = "Django-3.2.20-py3-none-any.whl", hash = "sha256:a477ab326ae7d8807dc25c186b951ab8c7648a3a23f9497763c37307a2b5ef87"},
+    {file = "Django-3.2.20.tar.gz", hash = "sha256:dec2a116787b8e14962014bf78e120bba454135108e1af9e9b91ade7b2964c40"},
 ]
 
 [package.dependencies]
@@ -3400,13 +3400,13 @@ files = [
 
 [[package]]
 name = "types-typed-ast"
-version = "1.5.8.6"
+version = "1.5.8.7"
 description = "Typing stubs for typed-ast"
 optional = false
 python-versions = "*"
 files = [
-    {file = "types-typed-ast-1.5.8.6.tar.gz", hash = "sha256:9543b5863db97b412a2b1d5f407c908336365a0bad304d64e8328a769f48c230"},
-    {file = "types_typed_ast-1.5.8.6-py3-none-any.whl", hash = "sha256:01edb7d635565fd27657a7e88c3cf204282e19a1fda4278b04eb4c7744a21de9"},
+    {file = "types-typed-ast-1.5.8.7.tar.gz", hash = "sha256:f7795f6f9d597b35212314040b993f6613b51d81738edce3c1e3a3e9ef655124"},
+    {file = "types_typed_ast-1.5.8.7-py3-none-any.whl", hash = "sha256:97bdd9b4228f96c6904a76e10a050305ddadb529bd35e4d8234711e09c41b543"},
 ]
 
 [[package]]

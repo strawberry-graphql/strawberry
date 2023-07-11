@@ -23,6 +23,8 @@ def tests(session: Session) -> None:
         "not django",
         "-m",
         "not starlite",
+        "-m",
+        "not pydantic",
         "--ignore=tests/mypy",
         "--ignore=tests/pyright",
     )
@@ -85,6 +87,28 @@ def tests_litestar(session: Session) -> None:
         "-vv",
         "-m",
         "starlite",
+    )
+
+
+@session(python=["3.11"], name="Pydantic tests", tags=["tests"])
+# TODO: add pydantic 2.0 here :)
+@nox.parametrize("pydantic", ["1.10"])
+def test_pydantic(session: Session, pydantic: str) -> None:
+    session.run_always("poetry", "install", external=True)
+
+    session._session.install(f"pydantic~={pydantic}")  # type: ignore
+
+    session.run(
+        "pytest",
+        "--cov=strawberry",
+        "--cov-append",
+        "--cov-report=xml",
+        "-n",
+        "auto",
+        "--showlocals",
+        "-vv",
+        "-m",
+        "pydantic",
     )
 
 
