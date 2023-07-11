@@ -24,7 +24,10 @@ def tests(session: Session) -> None:
         "-m",
         "not starlite",
         "-m",
-        "not pydantic",
+        "not pydantic_v1",
+        "-m",
+        "not pydantic_v2",
+        "-m",
         "--ignore=tests/mypy",
         "--ignore=tests/pyright",
     )
@@ -93,6 +96,7 @@ def tests_litestar(session: Session) -> None:
 @session(python=["3.11"], name="Pydantic v1 tests", tags=["tests"])
 @nox.parametrize("pydantic", ["1.10"])
 def test_pydantic_v1(session: Session, pydantic: str) -> None:
+    # pydantic_v1 has different tests files than pydantic_v2
     session.run_always("poetry", "install", external=True)
 
     session._session.install(f"pydantic~={pydantic}")  # type: ignore
@@ -107,13 +111,14 @@ def test_pydantic_v1(session: Session, pydantic: str) -> None:
         "--showlocals",
         "-vv",
         "-m",
-        "pydantic",
+        "pydantic_v1",
     )
 
 
 @session(python=["3.11"], name="Pydantic v2 tests", tags=["tests"])
 @nox.parametrize("pydantic", ["2.0"])
 def test_pydantic_v2(session: Session, pydantic: str) -> None:
+    # pydantic_v1 has different tests files than pydantic_v2
     session.run_always("poetry", "install", external=True)
 
     session._session.install(f"pydantic~={pydantic}")  # type: ignore
@@ -128,7 +133,7 @@ def test_pydantic_v2(session: Session, pydantic: str) -> None:
         "--showlocals",
         "-vv",
         "-m",
-        "pydantic",
+        "pydantic_v2",
     )
 
 
