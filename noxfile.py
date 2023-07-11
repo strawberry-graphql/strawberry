@@ -27,7 +27,6 @@ def tests(session: Session) -> None:
         "not pydantic_v1",
         "-m",
         "not pydantic_v2",
-        "-m",
         "--ignore=tests/mypy",
         "--ignore=tests/pyright",
     )
