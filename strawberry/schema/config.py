@@ -20,10 +20,10 @@ class StrawberryConfig:
     relay_max_results: int = 100
 
     batching_config: BatchingConfig = field(
-        default_factory=lambda: {
-            "enabled": False,
-            "max_operations": 3,
-        }
+        default_factory=lambda: BatchingConfig(
+            enabled=False,
+            max_operations=3,
+        )
     )
 
     def __post_init__(
