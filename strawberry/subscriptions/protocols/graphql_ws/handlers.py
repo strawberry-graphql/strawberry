@@ -190,13 +190,12 @@ class BaseGraphQLWSHandler(ABC):
         await self.send_message(GQL_COMPLETE, operation_id, None)
 
     async def cleanup_operation(self, operation_id: str) -> None:
-        await self.subscriptions[operation_id].aclose()
-        del self.subscriptions[operation_id]
-
-        self.tasks[operation_id].cancel()
+        iterator = self.subscriptions.pop(operation_id)
+        task = self.tasks.pop(operation_id)
+        task.cancel()
         with suppress(BaseException):
-            await self.tasks[operation_id]
-        del self.tasks[operation_id]
+            await task
+        await iterator.aclose()
 
     async def send_message(
         self,
