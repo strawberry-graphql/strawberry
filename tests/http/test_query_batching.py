@@ -1,13 +1,13 @@
 from typing import Type
 
-from strawberry.schema.config import BatchingConfig, StrawberryConfig
+from strawberry.schema.config import StrawberryConfig
 
 from .clients import HttpClient
 
 
 async def test_batch_graphql_query(http_client_class: Type[HttpClient]):
     http_client = http_client_class(
-        schema_config=StrawberryConfig(batching_config=BatchingConfig())
+        schema_config=StrawberryConfig(batching_config={"enabled": True})
     )
 
     response = await http_client.post(
@@ -30,7 +30,7 @@ async def test_returns_error_when_batching_is_disabled(
     http_client_class: Type[HttpClient],
 ):
     http_client = http_client_class(
-        schema_config=StrawberryConfig(batching_config=None)
+        schema_config=StrawberryConfig(batching_config={"enabled": False})
     )
 
     response = await http_client.post(
@@ -51,7 +51,9 @@ async def test_returns_error_when_trying_too_many_operations(
     http_client_class: Type[HttpClient],
 ):
     http_client = http_client_class(
-        schema_config=StrawberryConfig(batching_config=BatchingConfig(max_operations=2))
+        schema_config=StrawberryConfig(
+            batching_config={"enabled": True, "max_operations": 2}
+        )
     )
 
     response = await http_client.post(
