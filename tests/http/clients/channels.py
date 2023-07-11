@@ -17,6 +17,7 @@ from strawberry.channels import (
 from strawberry.channels.handlers.base import ChannelsConsumer
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.typevars import Context, RootValue
+from strawberry.schema.config import StrawberryConfig
 from tests.http.schema import Query, get_schema
 
 from ..context import get_context
@@ -139,8 +140,9 @@ class ChannelsHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
-        self.schema = get_schema()
+        self.schema = get_schema(schema_config)
 
         self.http_app = DebuggableGraphQLHTTPConsumer.as_asgi(
             schema=self.schema,
@@ -258,8 +260,9 @@ class SyncChannelsHttpClient(ChannelsHttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
-        self.schema = get_schema()
+        self.schema = get_schema(config=schema_config)
         self.http_app = DebuggableSyncGraphQLHTTPConsumer.as_asgi(
             schema=self.schema,
             graphiql=graphiql,
