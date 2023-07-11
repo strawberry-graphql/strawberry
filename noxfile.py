@@ -34,7 +34,7 @@ def tests(session: Session) -> None:
 def benchmarks(session: Session) -> None:
     session.run_always("poetry", "install", external=True)
 
-    session.run("pytest", "--codspeed" "tests")
+    session.run("pytest", "--codspeed" "tests/benchmarks")
 
 
 @session(python=["3.11"], name="Django tests", tags=["tests"])
