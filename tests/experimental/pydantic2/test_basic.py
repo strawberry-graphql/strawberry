@@ -12,7 +12,6 @@ from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
-
 if pydantic.__version__ >= "2.0.0":
     # pydantic v2 imports need to be here to avoid import errors when running
     # noxfile tests with pydantic v1

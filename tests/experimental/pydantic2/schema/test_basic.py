@@ -7,7 +7,6 @@ import pydantic
 import strawberry
 
 
-
 def test_all_fields():
     class UserModel(pydantic.BaseModel):
         age: int

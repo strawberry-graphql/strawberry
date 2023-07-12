@@ -1,7 +1,7 @@
-import pytest
 from pydantic import BaseModel, Field
 
 import strawberry
+
 
 def test_use_alias_as_gql_name():
     class UserModel(BaseModel):
