@@ -8,6 +8,15 @@ PYTHON_VERSIONS = ["3.12", "3.11", "3.10", "3.9", "3.8", "3.7"]
 def tests(session: Session) -> None:
     session.run_always("poetry", "install", external=True)
 
+    markers_to_skip = [
+        "starlette",
+        "django",
+        "starlite",
+        "pydantic",
+        "sanic",
+        "aiohttp",
+    ]
+
     session.run(
         "pytest",
         "--cov=strawberry",
@@ -17,14 +26,7 @@ def tests(session: Session) -> None:
         "auto",
         "--showlocals",
         "-vv",
-        "-m",
-        "not starlette",
-        "-m",
-        "not django",
-        "-m",
-        "not starlite",
-        "-m",
-        "not pydantic",
+        *(["-m", "not " + ",".join(markers_to_skip)] if markers_to_skip else []),
         "--ignore=tests/aiohttp",
         "--ignore=tests/mypy",
         "--ignore=tests/pyright",

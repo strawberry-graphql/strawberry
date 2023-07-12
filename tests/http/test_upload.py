@@ -199,6 +199,7 @@ async def test_sending_invalid_form_data(http_client: HttpClient):
     )
 
 
+@pytest.mark.aiohttp
 async def test_sending_invalid_json_body(http_client: HttpClient):
     import aiohttp
 
