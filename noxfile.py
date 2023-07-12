@@ -23,9 +23,10 @@ def tests(session: Session) -> None:
         "not django",
         "-m",
         "not starlite",
-        "-m",
         "--ignore=tests/mypy",
         "--ignore=tests/pyright",
+        "--ignore=tests/experimental/pydantic",
+        "--ignore=tests/experimental/pydantic2",
     )
 
 
