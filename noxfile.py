@@ -60,6 +60,7 @@ def tests_aiohttp(session: Session, aiohttp: str) -> None:
     session.run_always("poetry", "install", external=True)
 
     session._session.install(f"aiohttp~={aiohttp}")  # type: ignore
+    session._session.install("pytest-aiohttp")  # type: ignore
 
     session.run(
         "pytest",
