@@ -56,6 +56,7 @@ def tests_django(session: Session, django: str) -> None:
         "-vv",
         "-m",
         "django",
+        "--ignore=tests/aiohttp",
     )
 
 
@@ -99,6 +100,7 @@ def tests_sanic(session: Session, sanic: str) -> None:
         "-vv",
         "-m",
         "sanic",
+        "--ignore=tests/aiohttp",
     )
 
 
@@ -120,6 +122,7 @@ def tests_starlette(session: Session, starlette: str) -> None:
         "-vv",
         "-m",
         "starlette",
+        "--ignore=tests/aiohttp",
     )
 
 
@@ -138,6 +141,7 @@ def tests_litestar(session: Session) -> None:
         "-vv",
         "-m",
         "starlite",
+        "--ignore=tests/aiohttp",
     )
 
 
@@ -160,6 +164,7 @@ def test_pydantic(session: Session, pydantic: str) -> None:
         "-vv",
         "-m",
         "pydantic",
+        "--ignore=tests/aiohttp",
     )
 
 
@@ -174,6 +179,7 @@ def tests_mypy(session: Session) -> None:
         "--cov-report=xml",
         "tests/mypy",
         "-vv",
+        "--ignore=tests/aiohttp",
     )
 
 
@@ -189,6 +195,7 @@ def tests_pyright(session: Session) -> None:
         "--cov-report=xml",
         "tests/pyright",
         "-vv",
+        "--ignore=tests/aiohttp",
     )
 
 
