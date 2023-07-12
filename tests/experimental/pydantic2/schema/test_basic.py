@@ -3,11 +3,9 @@ from enum import Enum
 from typing import List, Optional, Union
 
 import pydantic
-import pytest
 
 import strawberry
 
-pytestmark = pytest.mark.pydantic_v2
 
 
 def test_all_fields():

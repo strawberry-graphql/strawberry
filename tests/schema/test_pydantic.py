@@ -3,9 +3,6 @@ from pydantic import BaseModel, Field
 
 import strawberry
 
-pytestmark = pytest.mark.pydantic_v1
-
-
 def test_use_alias_as_gql_name():
     class UserModel(BaseModel):
         age_: int = Field(..., alias="age_alias")

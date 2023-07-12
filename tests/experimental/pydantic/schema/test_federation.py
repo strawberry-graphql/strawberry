@@ -1,12 +1,9 @@
 import typing
 
-import pytest
 from pydantic import BaseModel
 
 import strawberry
 from strawberry.federation.schema_directives import Key
-
-pytestmark = pytest.mark.pydantic_v1
 
 
 def test_fetch_entities_pydantic():

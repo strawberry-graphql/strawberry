@@ -12,7 +12,6 @@ from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
-pytestmark = pytest.mark.pydantic_v2
 
 if pydantic.__version__ >= "2.0.0":
     # pydantic v2 imports need to be here to avoid import errors when running

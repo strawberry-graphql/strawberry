@@ -159,8 +159,6 @@ markers = [
     "chalice",
     "flask",
     "starlite",
-    "pydantic_v1",
-    "pydantic_v2",
     "flaky",
     "relay",
 ]

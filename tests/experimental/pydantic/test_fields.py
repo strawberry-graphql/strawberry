@@ -10,8 +10,6 @@ import strawberry
 from strawberry.type import StrawberryOptional
 from strawberry.types.types import StrawberryObjectDefinition
 
-pytestmark = pytest.mark.pydantic_v1
-
 
 @pytest.mark.parametrize(
     ("pydantic_type", "field_type"),

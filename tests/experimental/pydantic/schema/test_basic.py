@@ -3,11 +3,8 @@ from enum import Enum
 from typing import List, Optional, Union
 
 import pydantic
-import pytest
 
 import strawberry
-
-pytestmark = pytest.mark.pydantic_v1
 
 
 def test_basic_type_field_list():
