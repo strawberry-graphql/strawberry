@@ -2,7 +2,7 @@ from typing import Type
 
 import pytest
 
-from .clients import HttpClient
+from .clients.base import HttpClient
 
 
 @pytest.mark.parametrize("header_value", ["text/html", "*/*"])

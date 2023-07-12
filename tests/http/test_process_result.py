@@ -7,7 +7,7 @@ import pytest
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
-from .clients import HttpClient
+from .clients.base import HttpClient
 
 
 def process_result(result: ExecutionResult) -> GraphQLHTTPResponse:

@@ -1,7 +1,6 @@
 import asyncio
 from typing import AsyncGenerator
 
-import pytest
 import pytest_asyncio
 
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
@@ -18,7 +17,7 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_STOP,
 )
 
-from ..http.clients import AioHttpClient, HttpClient, WebSocketClient
+from ..http.clients.base import HttpClient, WebSocketClient
 
 
 @pytest_asyncio.fixture
@@ -44,12 +43,6 @@ async def ws(ws_raw: WebSocketClient) -> AsyncGenerator[WebSocketClient, None]:
     # make sure the WebSocket is disconnected now
     await ws.receive(timeout=2)  # receive close
     assert ws.closed
-
-
-# convenience fixture to use previous name
-@pytest.fixture
-def aiohttp_app_client(http_client: HttpClient) -> HttpClient:
-    return http_client
 
 
 async def test_simple_subscription(ws: WebSocketClient):
@@ -100,9 +93,9 @@ async def test_operation_selection(ws: WebSocketClient):
     assert response["id"] == "demo"
 
 
-async def test_sends_keep_alive(aiohttp_app_client: HttpClient):
-    aiohttp_app_client.create_app(keep_alive=True, keep_alive_interval=0.1)
-    async with aiohttp_app_client.ws_connect(
+async def test_sends_keep_alive(http_client: HttpClient):
+    http_client.create_app(keep_alive=True, keep_alive_interval=0.1)
+    async with http_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
     ) as ws:
         await ws.send_json({"type": GQL_CONNECTION_INIT})
@@ -403,12 +396,14 @@ async def test_resolving_enums(ws: WebSocketClient):
     assert response["id"] == "demo"
 
 
-async def test_task_cancellation_separation(aiohttp_app_client: HttpClient):
+async def test_task_cancellation_separation(http_client: HttpClient):
     # Note Python 3.7 does not support Task.get_name/get_coro so we have to use
     # repr(Task) to check whether expected tasks are running.
     # This only works for aiohttp, where we are using the same event loop
     # on the client side and server.
-    aio = aiohttp_app_client == AioHttpClient
+    from ..http.clients.aiohttp import AioHttpClient
+
+    aio = http_client == AioHttpClient
 
     def get_result_handler_tasks():
         return [
@@ -417,12 +412,8 @@ async def test_task_cancellation_separation(aiohttp_app_client: HttpClient):
             if "BaseGraphQLWSHandler.handle_async_results" in repr(task)
         ]
 
-    connection1 = aiohttp_app_client.ws_connect(
-        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
-    )
-    connection2 = aiohttp_app_client.ws_connect(
-        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
-    )
+    connection1 = http_client.ws_connect("/graphql", protocols=[GRAPHQL_WS_PROTOCOL])
+    connection2 = http_client.ws_connect("/graphql", protocols=[GRAPHQL_WS_PROTOCOL])
 
     async with connection1 as ws1, connection2 as ws2:
         start_payload = {
@@ -489,8 +480,8 @@ async def test_task_cancellation_separation(aiohttp_app_client: HttpClient):
         assert response["id"] == "debug1"
 
 
-async def test_injects_connection_params(aiohttp_app_client: HttpClient):
-    async with aiohttp_app_client.ws_connect(
+async def test_injects_connection_params(http_client: HttpClient):
+    async with http_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(
@@ -530,8 +521,8 @@ async def test_injects_connection_params(aiohttp_app_client: HttpClient):
         assert ws.closed
 
 
-async def test_rejects_connection_params(aiohttp_app_client: HttpClient):
-    async with aiohttp_app_client.ws_connect(
+async def test_rejects_connection_params(http_client: HttpClient):
+    async with http_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(

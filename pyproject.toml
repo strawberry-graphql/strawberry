@@ -34,7 +34,7 @@ requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 graphql-core = "~3.2.0"
 typing-extensions = ">=4.5.0"
 python-dateutil = "^2.7.0"
@@ -85,9 +85,6 @@ pydantic = {version = "<2", optional = false}
 email-validator = {version = "^1.1.3", optional = false}
 uvicorn = ">=0.11.6"
 starlette = ">=0.13.6"
-sanic = ">=20.12.2"
-aiohttp = "^3.7.4.post0"
-pytest-aiohttp = "^1.0.3"
 types-typed-ast = "^1.5.8"
 types-toml = "^0.10.8"
 types-ujson = "^5.6.0"
@@ -118,7 +115,7 @@ nox-poetry = "^1.0.2"
 pytest-codspeed = "^2.0.0"
 
 [tool.poetry.extras]
-aiohttp = ["aiohttp", "pytest-aiohttp"]
+aiohttp = ["aiohttp"]
 asgi = ["starlette", "python-multipart"]
 debug = ["rich", "libcst"]
 debug-server = ["starlette", "uvicorn", "python-multipart", "typer", "pygments", "rich", "libcst"]
@@ -180,7 +177,7 @@ include = ["strawberry"]
 exclude = ["**/__pycache__",]
 reportMissingImports = true
 reportMissingTypeStubs = false
-pythonVersion = "3.7"
+pythonVersion = "3.8"
 stubPath = ""
 
 [tool.ruff]

@@ -4,9 +4,7 @@ from typing import Type
 
 import pytest
 
-import aiohttp
-
-from .clients import HttpClient
+from .clients.base import HttpClient
 from .clients.chalice import ChaliceHttpClient
 
 
@@ -151,7 +149,10 @@ class FakeWriter:
         return self.buffer.getvalue()
 
 
+@pytest.mark.aiohttp  # TODO: remove dep on aiohttp
 async def test_extra_form_data_fields_are_ignored(http_client: HttpClient):
+    import aiohttp
+
     query = """mutation($textFile: Upload!) {
         readText(textFile: $textFile)
     }"""
@@ -199,6 +200,8 @@ async def test_sending_invalid_form_data(http_client: HttpClient):
 
 
 async def test_sending_invalid_json_body(http_client: HttpClient):
+    import aiohttp
+
     f = BytesIO(b"strawberry")
     operations = "}"
     file_map = json.dumps({"textFile": ["variables.textFile"]})

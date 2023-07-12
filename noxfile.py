@@ -25,6 +25,7 @@ def tests(session: Session) -> None:
         "not starlite",
         "-m",
         "not pydantic",
+        "--ignore=tests/aiohttp",
         "--ignore=tests/mypy",
         "--ignore=tests/pyright",
     )
