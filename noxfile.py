@@ -133,6 +133,8 @@ def test_pydantic_v2(session: Session, pydantic: str) -> None:
         "-vv",
         "-m",
         "pydantic_v2",
+        "--ignore",
+        "tests/experimental/pydantic2",
     )
 
 
