@@ -52,6 +52,48 @@ def tests_django(session: Session, django: str) -> None:
     )
 
 
+@session(python=["3.11"], name="Aiohttp tests", tags=["tests"])
+@nox.parametrize("aiohttp", ["3.8.4"])
+def tests_aiohttp(session: Session, aiohttp: str) -> None:
+    session.run_always("poetry", "install", external=True)
+
+    session._session.install(f"aiohttp~={aiohttp}")  # type: ignore
+
+    session.run(
+        "pytest",
+        "--cov=strawberry",
+        "--cov-append",
+        "--cov-report=xml",
+        "-n",
+        "auto",
+        "--showlocals",
+        "-vv",
+        "-m",
+        "aiohttp",
+    )
+
+
+@session(python=["3.11"], name="Sanic tests", tags=["tests"])
+@nox.parametrize("sanic", ["23.3.0"])
+def tests_sanic(session: Session, sanic: str) -> None:
+    session.run_always("poetry", "install", external=True)
+
+    session._session.install(f"sanic~={sanic}")  # type: ignore
+
+    session.run(
+        "pytest",
+        "--cov=strawberry",
+        "--cov-append",
+        "--cov-report=xml",
+        "-n",
+        "auto",
+        "--showlocals",
+        "-vv",
+        "-m",
+        "sanic",
+    )
+
+
 @session(python=["3.11"], name="Starlette tests", tags=["tests"])
 @nox.parametrize("starlette", ["0.28.0", "0.27.0", "0.26.1"])
 def tests_starlette(session: Session, starlette: str) -> None:
