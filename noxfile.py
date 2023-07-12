@@ -102,6 +102,7 @@ def test_pydantic_v1(session: Session, pydantic: str) -> None:
 
     session.run(
         "pytest",
+        "tests/experimental/pydantic",
         "--cov=strawberry",
         "--cov-append",
         "--cov-report=xml",
@@ -124,6 +125,7 @@ def test_pydantic_v2(session: Session, pydantic: str) -> None:
 
     session.run(
         "pytest",
+        "tests/experimental/pydantic2",
         "--cov=strawberry",
         "--cov-append",
         "--cov-report=xml",
@@ -133,8 +135,6 @@ def test_pydantic_v2(session: Session, pydantic: str) -> None:
         "-vv",
         "-m",
         "pydantic_v2",
-        "--ignore",
-        "tests/experimental/pydantic2",
     )
 
 
