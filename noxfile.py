@@ -17,19 +17,24 @@ def tests(session: Session) -> None:
         "aiohttp",
     ]
 
+    skip_markers = [["-m", f"not {marker}"] for marker in markers_to_skip]
+    skip_markers = [item for sublist in skip_markers for item in sublist]
+
     session.run(
-        "pytest",
-        "--cov=strawberry",
-        "--cov-append",
-        "--cov-report=xml",
-        "-n",
-        "auto",
-        "--showlocals",
-        "-vv",
-        *(["-m", "not " + ",".join(markers_to_skip)] if markers_to_skip else []),
-        "--ignore=tests/aiohttp",
-        "--ignore=tests/mypy",
-        "--ignore=tests/pyright",
+        *[
+            "pytest",
+            "--cov=strawberry",
+            "--cov-append",
+            "--cov-report=xml",
+            "-n",
+            "auto",
+            "--showlocals",
+            "-vv",
+            *skip_markers,
+            "--ignore=tests/aiohttp",
+            "--ignore=tests/mypy",
+            "--ignore=tests/pyright",
+        ]
     )
 
 
