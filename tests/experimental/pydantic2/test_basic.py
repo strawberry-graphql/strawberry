@@ -7,7 +7,6 @@ import pytest
 
 import strawberry
 from strawberry.enum import EnumDefinition
-
 from strawberry.schema_directive import Location
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
@@ -20,6 +19,7 @@ if pydantic.__version__ >= "2.0.0":
     # noxfile tests with pydantic v1
     # otherwise you need to add explicit directory exclusions for this folder
     from strawberry.experimental.pydantic2.exceptions import MissingFieldsListError
+
 
 def test_basic_type_all_fields():
     class User(pydantic.BaseModel):
