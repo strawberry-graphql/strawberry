@@ -64,11 +64,11 @@ jobs:
             ~/.nox
             .nox
           key:
-            ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
+            ${{ runner.os }}-nox-2-${{ matrix.session.session }}-${{
             hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
           restore-keys: |
-            ${{ runner.os }}-nox-${{ matrix.session.session }}-
-            ${{ runner.os }}-nox-
+            ${{ runner.os }}-nox-2-${{ matrix.session.session }}-
+            ${{ runner.os }}-nox-2-
 
       - run: pipx install coverage
       - run: pipx install poetry
@@ -132,7 +132,7 @@ jobs:
             ~/.nox
             .nox
           key:
-            ${{ runner.os }}-nox-lint-${{ matrix.session.session }}-${{
+            ${{ runner.os }}-nox-2-lint-${{ matrix.session.session }}-${{
             hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
           restore-keys: |
             ${{ runner.os }}-lint-nox-${{ matrix.session.session }}-
@@ -161,11 +161,11 @@ jobs:
             ~/.nox
             .nox
           key:
-            ${{ runner.os }}-nox-windows-${{ hashFiles('**/poetry.lock') }}-${{
+            ${{ runner.os }}-nox-2-windows-${{ hashFiles('**/poetry.lock') }}-${{
             hashFiles('**/noxfile.py') }}
           restore-keys: |
-            ${{ runner.os }}-nox-windows
-            ${{ runner.os }}-nox-
+            ${{ runner.os }}-nox-2-windows
+            ${{ runner.os }}-nox-2-
 
       - run: pipx install poetry
       - run: pipx inject nox nox-poetry
