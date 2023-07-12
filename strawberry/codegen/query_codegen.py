@@ -1,13 +1,17 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from functools import partial
+from dataclasses import MISSING, dataclass
+from enum import Enum
+from functools import cmp_to_key, partial
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Iterable,
     List,
+    Mapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -19,6 +23,7 @@ from graphql import (
     BooleanValueNode,
     EnumValueNode,
     FieldNode,
+    FloatValueNode,
     FragmentDefinitionNode,
     FragmentSpreadNode,
     InlineFragmentNode,
@@ -27,6 +32,8 @@ from graphql import (
     ListValueNode,
     NamedTypeNode,
     NonNullTypeNode,
+    NullValueNode,
+    ObjectValueNode,
     OperationDefinitionNode,
     StringValueNode,
     VariableNode,
@@ -36,8 +43,14 @@ from graphql import (
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
-from strawberry.types.types import TypeDefinition
+from strawberry.type import (
+    StrawberryList,
+    StrawberryOptional,
+    StrawberryType,
+    get_object_definition,
+    has_object_definition,
+)
+from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
@@ -54,13 +67,16 @@ from .types import (
     GraphQLEnumValue,
     GraphQLField,
     GraphQLFieldSelection,
+    GraphQLFloatValue,
     GraphQLFragmentSpread,
     GraphQLFragmentType,
     GraphQLInlineFragment,
     GraphQLIntValue,
     GraphQLList,
     GraphQLListValue,
+    GraphQLNullValue,
     GraphQLObjectType,
+    GraphQLObjectValue,
     GraphQLOperation,
     GraphQLOptional,
     GraphQLScalar,
@@ -126,14 +142,87 @@ class QueryCodegenPlugin:
         return []
 
 
+def _get_deps(t: GraphQLType) -> Iterable[GraphQLType]:
+    """Get all the types that `t` depends on.
+
+    To keep things simple, `t` depends on itself.
+    """
+    yield t
+
+    if isinstance(t, GraphQLObjectType):
+        for fld in t.fields:
+            yield from _get_deps(fld.type)
+
+    elif isinstance(t, (GraphQLEnum, GraphQLScalar)):
+        # enums and scalars have no dependent types
+        pass
+
+    elif isinstance(t, (GraphQLOptional, GraphQLList)):
+        yield from _get_deps(t.of_type)
+
+    elif isinstance(t, GraphQLUnion):
+        for gql_type in t.types:
+            yield from _get_deps(gql_type)
+    else:
+        # Want to make sure that all types are covered.
+        raise ValueError(f"Unknown GraphQLType: {t}")
+
+
+_TYPE_TO_GRAPHQL_TYPE = {
+    int: GraphQLIntValue,
+    float: GraphQLFloatValue,
+    str: GraphQLStringValue,
+    bool: GraphQLBoolValue,
+}
+
+
+def _py_to_graphql_value(obj: Any) -> GraphQLArgumentValue:
+    """Convert a python object to a GraphQLArgumentValue."""
+    if obj is None:
+        return GraphQLNullValue()
+    obj_type = type(obj)
+    if obj_type in _TYPE_TO_GRAPHQL_TYPE:
+        return _TYPE_TO_GRAPHQL_TYPE[obj_type](obj)
+    if issubclass(obj_type, Enum):
+        return GraphQLEnumValue(obj.name, enum_type=obj_type.__name__)
+    if issubclass(obj_type, Sequence):
+        return GraphQLListValue([_py_to_graphql_value(v) for v in obj])
+    if issubclass(obj_type, Mapping):
+        return GraphQLObjectValue({k: _py_to_graphql_value(v) for k, v in obj.items()})
+    raise ValueError(f"Cannot convet {obj!r} into a GraphQLArgumentValue")
+
+
 class QueryCodegenPluginManager:
     def __init__(self, plugins: List[QueryCodegenPlugin]) -> None:
         self.plugins = plugins
+
+    def _sort_types(self, types: List[GraphQLType]) -> List[GraphQLType]:
+        """Sort the types.
+
+        t1 < t2 iff t2 has a dependency on t1.
+        t1 == t2 iff neither type has a dependency on the other.
+        """
+
+        def type_cmp(t1: GraphQLType, t2: GraphQLType) -> int:
+            """Compare the types."""
+            if t1 is t2:
+                return 0
+
+            if t1 in _get_deps(t2):
+                return -1
+            elif t2 in _get_deps(t1):
+                return 1
+            else:
+                return 0
+
+        return sorted(types, key=cmp_to_key(type_cmp))
 
     def generate_code(
         self, types: List[GraphQLType], operation: GraphQLOperation
     ) -> CodegenResult:
         result = CodegenResult(files=[])
+
+        types = self._sort_types(types)
 
         for plugin in self.plugins:
             files = plugin.generate_code(types, operation)
@@ -201,11 +290,14 @@ class QueryCodegen:
         for fd in fragment_definitions:
             query_type = self.schema.get_type_by_name(fd.type_condition.name.value)
             assert isinstance(
-                query_type, TypeDefinition
+                query_type, StrawberryObjectDefinition
             ), f"{fd.type_condition.name.value!r} is not a type in the graphql schema!"
 
+            typename = fd.type_condition.name.value
             graph_ql_object_type_factory = partial(
-                GraphQLFragmentType, on=fd.type_condition.name.value
+                GraphQLFragmentType,
+                on=typename,
+                graphql_typename=typename,
             )
 
             self._collect_types(
@@ -256,6 +348,12 @@ class QueryCodegen:
         if isinstance(value, IntValueNode):
             return GraphQLIntValue(int(value.value))
 
+        if isinstance(value, FloatValueNode):
+            return GraphQLFloatValue(float(value.value))
+
+        if isinstance(value, NullValueNode):
+            return GraphQLNullValue()
+
         if isinstance(value, VariableNode):
             return GraphQLVariableReference(value.name.value)
 
@@ -269,6 +367,14 @@ class QueryCodegen:
 
         if isinstance(value, BooleanValueNode):
             return GraphQLBoolValue(value.value)
+
+        if isinstance(value, ObjectValueNode):
+            return GraphQLObjectValue(
+                {
+                    field.name.value: self._convert_value(field.value)
+                    for field in value.fields
+                }
+            )
 
         raise ValueError(f"Unsupported type: {type(value)}")  # pragma: no cover
 
@@ -297,7 +403,7 @@ class QueryCodegen:
         query_type = self.schema.get_type_by_name(
             operation_definition.operation.value.title()
         )
-        assert isinstance(query_type, TypeDefinition)
+        assert isinstance(query_type, StrawberryObjectDefinition)
 
         assert operation_definition.name is not None
         operation_name = operation_definition.name.value
@@ -350,7 +456,6 @@ class QueryCodegen:
             )
 
             type_.fields.append(GraphQLField(variable.name, None, variable_type))
-
             variables.append(variable)
 
         return variables, type_
@@ -404,14 +509,14 @@ class QueryCodegen:
             )
 
         if isinstance(strawberry_type, StrawberryList):
-            return GraphQLOptional(
+            return GraphQLList(
                 self._collect_type_from_strawberry_type(strawberry_type.of_type)
             )
 
-        if hasattr(strawberry_type, "_type_definition"):
-            strawberry_type = strawberry_type._type_definition
+        if has_object_definition(strawberry_type):
+            strawberry_type = strawberry_type.__strawberry_definition__
 
-        if isinstance(strawberry_type, TypeDefinition):
+        if isinstance(strawberry_type, StrawberryObjectDefinition):
             type_ = GraphQLObjectType(
                 strawberry_type.name,
                 [],
@@ -419,7 +524,12 @@ class QueryCodegen:
 
             for field in strawberry_type.fields:
                 field_type = self._collect_type_from_strawberry_type(field.type)
-                type_.fields.append(GraphQLField(field.name, None, field_type))
+                default = None
+                if field.default is not MISSING:
+                    default = _py_to_graphql_value(field.default)
+                type_.fields.append(
+                    GraphQLField(field.name, None, field_type, default_value=default)
+                )
 
             self._collect_type(type_)
         else:
@@ -455,12 +565,12 @@ class QueryCodegen:
         return GraphQLOptional(type_)
 
     def _field_from_selection(
-        self, selection: FieldNode, parent_type: TypeDefinition
+        self, selection: FieldNode, parent_type: StrawberryObjectDefinition
     ) -> GraphQLField:
         if selection.name.value == "__typename":
             return GraphQLField("__typename", None, GraphQLScalar("String", None))
         field = self.schema.get_field_for_type(selection.name.value, parent_type.name)
-        assert field
+        assert field, f"{parent_type.name},{selection.name.value}"
 
         field_type = self._get_field_type(field.type)
 
@@ -497,14 +607,19 @@ class QueryCodegen:
         return type_, wrapper
 
     def _field_from_selection_set(
-        self, selection: FieldNode, class_name: str, parent_type: TypeDefinition
+        self,
+        selection: FieldNode,
+        class_name: str,
+        parent_type: StrawberryObjectDefinition,
     ) -> GraphQLField:
         assert selection.selection_set is not None
 
         selected_field = self.schema.get_field_for_type(
             selection.name.value, parent_type.name
         )
-        assert selected_field
+        assert (
+            selected_field
+        ), f"Couldn't find {parent_type.name}.{selection.name.value}"
 
         selected_field_type, wrapper = self._unwrap_type(selected_field.type)
         name = capitalize_first(to_camel_case(selection.name.value))
@@ -517,10 +632,7 @@ class QueryCodegen:
                 selection, parent_type, class_name
             )
         else:
-            parent_type = cast(
-                TypeDefinition, selected_field_type._type_definition  # type: ignore
-            )
-
+            parent_type = get_object_definition(selected_field_type, strict=True)
             field_type = self._collect_types(selection, parent_type, class_name)
 
         if wrapper:
@@ -533,7 +645,10 @@ class QueryCodegen:
         )
 
     def _get_field(
-        self, selection: FieldNode, class_name: str, parent_type: TypeDefinition
+        self,
+        selection: FieldNode,
+        class_name: str,
+        parent_type: StrawberryObjectDefinition,
     ) -> GraphQLField:
         if selection.selection_set:
             return self._field_from_selection_set(selection, class_name, parent_type)
@@ -543,7 +658,7 @@ class QueryCodegen:
     def _collect_types_with_inline_fragments(
         self,
         selection: HasSelectionSet,
-        parent_type: TypeDefinition,
+        parent_type: StrawberryObjectDefinition,
         class_name: str,
     ) -> Union[GraphQLObjectType, GraphQLUnion]:
         sub_types = self._collect_types_using_fragments(
@@ -562,7 +677,7 @@ class QueryCodegen:
     def _collect_types(
         self,
         selection: HasSelectionSet,
-        parent_type: TypeDefinition,
+        parent_type: StrawberryObjectDefinition,
         class_name: str,
         graph_ql_object_type_factory: Callable[
             [str], GraphQLObjectType
@@ -618,7 +733,7 @@ class QueryCodegen:
     def _collect_types_using_fragments(
         self,
         selection: HasSelectionSet,
-        parent_type: TypeDefinition,
+        parent_type: StrawberryObjectDefinition,
         class_name: str,
     ) -> List[GraphQLObjectType]:
         assert selection.selection_set
@@ -637,18 +752,21 @@ class QueryCodegen:
                 fragments.append(sub_selection)
 
         for fragment in fragments:
-            fragment_class_name = class_name + fragment.type_condition.name.value
-            current_type = GraphQLObjectType(fragment_class_name, [])
+            type_condition_name = fragment.type_condition.name.value
+            fragment_class_name = class_name + type_condition_name
+            current_type = GraphQLObjectType(
+                fragment_class_name,
+                list(common_fields),
+                graphql_typename=type_condition_name,
+            )
 
             for sub_selection in fragment.selection_set.selections:
                 # TODO: recurse, use existing method ?
                 assert isinstance(sub_selection, FieldNode)
 
-                current_type.fields = list(common_fields)
-
                 parent_type = cast(
-                    TypeDefinition,
-                    self.schema.get_type_by_name(fragment.type_condition.name.value),
+                    StrawberryObjectDefinition,
+                    self.schema.get_type_by_name(type_condition_name),
                 )
 
                 assert parent_type

@@ -18,19 +18,18 @@ from typing_extensions import Annotated, get_args, get_origin
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType, StrawberryLazyReference
-from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.type import StrawberryList, StrawberryOptional, has_object_definition
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
 from .unset import UNSET as _deprecated_UNSET
-from .unset import _deprecated_is_unset  # noqa
+from .unset import _deprecated_is_unset  # noqa # type: ignore
 
 if TYPE_CHECKING:
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.schema.config import StrawberryConfig
     from strawberry.type import StrawberryType
 
-    from .types.types import TypeDefinition
 
 DEPRECATED_NAMES: Dict[str, str] = {
     "UNSET": (
@@ -80,7 +79,6 @@ class StrawberryArgument:
         self.graphql_name = graphql_name
         self.is_subscription = is_subscription
         self.description = description
-        self._type: Optional[StrawberryType] = None
         self.type_annotation = type_annotation
         self.deprecation_reason = deprecation_reason
         self.directives = directives
@@ -91,47 +89,43 @@ class StrawberryArgument:
             _deprecated_UNSET if default is inspect.Parameter.empty else default
         )
 
-        if self._annotation_is_annotated(type_annotation):
-            self._parse_annotated()
+        annotation = type_annotation.annotation
+        if not isinstance(annotation, str):
+            resolved_annotation = annotation
+            if get_origin(resolved_annotation) is Annotated:
+                first, *rest = get_args(resolved_annotation)
+
+                # The first argument to Annotated is always the underlying type
+                self.type_annotation = StrawberryAnnotation(first)
+
+                # Find any instances of StrawberryArgumentAnnotation
+                # in the other Annotated args, raising an exception if there
+                # are multiple StrawberryArgumentAnnotations
+                argument_annotation_seen = False
+
+                for arg in rest:
+                    if isinstance(arg, StrawberryArgumentAnnotation):
+                        if argument_annotation_seen:
+                            raise MultipleStrawberryArgumentsError(
+                                argument_name=python_name
+                            )
+
+                        argument_annotation_seen = True
+
+                        self.description = arg.description
+                        self.graphql_name = arg.name
+                        self.deprecation_reason = arg.deprecation_reason
+                        self.directives = arg.directives
+                        self.metadata = arg.metadata
+
+                    if isinstance(arg, StrawberryLazyReference):
+                        self.type_annotation = StrawberryAnnotation(
+                            arg.resolve_forward_ref(first)
+                        )
 
     @property
     def type(self) -> Union[StrawberryType, type]:
         return self.type_annotation.resolve()
-
-    @classmethod
-    def _annotation_is_annotated(cls, annotation: StrawberryAnnotation) -> bool:
-        return get_origin(annotation.annotation) is Annotated
-
-    def _parse_annotated(self):
-        annotated_args = get_args(self.type_annotation.annotation)
-
-        # The first argument to Annotated is always the underlying type
-        self.type_annotation = StrawberryAnnotation(annotated_args[0])
-
-        # Find any instances of StrawberryArgumentAnnotation
-        # in the other Annotated args, raising an exception if there
-        # are multiple StrawberryArgumentAnnotations
-        argument_annotation_seen = False
-
-        for arg in annotated_args[1:]:
-            if isinstance(arg, StrawberryArgumentAnnotation):
-                if argument_annotation_seen:
-                    raise MultipleStrawberryArgumentsError(
-                        argument_name=self.python_name
-                    )
-
-                argument_annotation_seen = True
-
-                self.description = arg.description
-                self.graphql_name = arg.name
-                self.deprecation_reason = arg.deprecation_reason
-                self.directives = arg.directives
-                self.metadata = arg.metadata
-
-            if isinstance(arg, StrawberryLazyReference):
-                self.type_annotation = StrawberryAnnotation(
-                    arg.resolve_forward_ref(annotated_args[0])
-                )
 
 
 def convert_argument(
@@ -171,18 +165,20 @@ def convert_argument(
         enum_definition: EnumDefinition = type_._enum_definition
         return convert_argument(value, enum_definition, scalar_registry, config)
 
-    if hasattr(type_, "_type_definition"):  # TODO: Replace with StrawberryInputObject
-        type_definition: TypeDefinition = type_._type_definition
-
+    if has_object_definition(type_):
         kwargs = {}
 
+        type_definition = type_.__strawberry_definition__
         for field in type_definition.fields:
             value = cast(Mapping, value)
             graphql_name = config.name_converter.from_field(field)
 
             if graphql_name in value:
                 kwargs[field.python_name] = convert_argument(
-                    value[graphql_name], field.type, scalar_registry, config
+                    value[graphql_name],
+                    field.resolve_type(type_definition=type_definition),
+                    scalar_registry,
+                    config,
                 )
 
         type_ = cast(type, type_)
@@ -252,7 +248,7 @@ def __getattr__(name: str) -> Any:
 __all__ = [  # noqa: F822
     "StrawberryArgument",
     "StrawberryArgumentAnnotation",
-    "UNSET",  # for backwards compatibility
+    "UNSET",  # for backwards compatibility  # type: ignore
     "argument",
-    "is_unset",  # for backwards compatibility
+    "is_unset",  # for backwards compatibility  # type: ignore
 ]

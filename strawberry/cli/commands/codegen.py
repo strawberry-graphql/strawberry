@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import importlib
 import inspect
-from pathlib import Path
+from pathlib import Path  # noqa: TCH003
 from typing import TYPE_CHECKING, List, Optional, Type
 
-import click
+import rich
+import typer
 
+from strawberry.cli.app import app
 from strawberry.cli.utils import load_schema
 from strawberry.codegen import QueryCodegen, QueryCodegenPlugin
 
@@ -70,7 +72,8 @@ def _load_plugin(plugin_path: str) -> Type[QueryCodegenPlugin]:
         plugin = _import_plugin(f"strawberry.codegen.plugins.{plugin_path}")
 
     if plugin is None:
-        raise click.ClickException(f"Plugin {plugin_path} not found")
+        rich.print(f"[red]Error: Plugin {plugin_path} not found")
+        raise typer.Exit(1)
 
     return plugin
 
@@ -88,65 +91,56 @@ class ConsolePlugin(QueryCodegenPlugin):
         self.plugins = plugins
 
     def on_start(self) -> None:
-        click.echo(
-            click.style(
-                "The codegen is experimental. Please submit any bug at "
-                "https://github.com/strawberry-graphql/strawberry\n",
-                fg="yellow",
-                bold=True,
-            )
+        rich.print(
+            "[bold yellow]The codegen is experimental. Please submit any bug at "
+            "https://github.com/strawberry-graphql/strawberry\n",
         )
 
         plugin_names = [plugin.__class__.__name__ for plugin in self.plugins]
 
-        click.echo(
-            click.style(
-                f"Generating code for {self.query} using "
-                f"{', '.join(plugin_names)} plugin(s)",
-                fg="green",
-            )
+        rich.print(
+            f"[green]Generating code for {self.query} using "
+            f"{', '.join(plugin_names)} plugin(s)",
         )
 
     def on_end(self, result: CodegenResult) -> None:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         result.write(self.output_dir)
 
-        click.echo(
-            click.style(
-                f"Generated {len(result.files)} files in {self.output_dir}", fg="green"
-            )
+        rich.print(
+            f"[green] Generated {len(result.files)} files in {self.output_dir}",
         )
 
 
-@click.command(short_help="Generate code from a query")
-@click.option("--plugins", "-p", "selected_plugins", multiple=True, required=True)
-@click.option("--cli-plugin", "cli_plugin", required=False)
-@click.option(
-    "--output-dir",
-    "-o",
-    default=".",
-    help="Output directory",
-    type=click.Path(path_type=Path, exists=False, dir_okay=True, file_okay=False),
-)
-@click.option("--schema", type=str, required=True)
-@click.argument("query", type=click.Path(path_type=Path, exists=True))
-@click.option(
-    "--app-dir",
-    default=".",
-    type=str,
-    show_default=True,
-    help=(
-        "Look for the module in the specified directory, by adding this to the "
-        "PYTHONPATH. Defaults to the current working directory. "
-        "Works the same as `--app-dir` in uvicorn."
-    ),
-)
+@app.command(help="Generate code from a query")
 def codegen(
-    schema: str,
-    query: Path,
-    app_dir: str,
-    output_dir: Path,
-    selected_plugins: List[str],
+    query: Path = typer.Argument(..., exists=True, dir_okay=False),
+    schema: str = typer.Option(..., help="Python path to the schema file"),
+    app_dir: str = typer.Option(
+        ".",
+        "--app-dir",
+        show_default=True,
+        help=(
+            "Look for the module in the specified directory, by adding this to the "
+            "PYTHONPATH. Defaults to the current working directory. "
+            "Works the same as `--app-dir` in uvicorn."
+        ),
+    ),
+    output_dir: Path = typer.Option(
+        ...,
+        "-o",
+        "--output-dir",
+        exists=True,
+        file_okay=False,
+        dir_okay=True,
+        writable=True,
+        resolve_path=True,
+    ),
+    selected_plugins: List[str] = typer.Option(
+        ...,
+        "-p",
+        "--plugins",
+    ),
     cli_plugin: Optional[str] = None,
 ) -> None:
     schema_symbol = load_schema(schema, app_dir)

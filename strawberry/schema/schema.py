@@ -23,9 +23,10 @@ from graphql import (
     parse,
     validate_schema,
 )
-from graphql.subscription import subscribe
+from graphql.execution import subscribe
 from graphql.type.directives import specified_directives
 
+from strawberry import relay
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.extensions.directives import (
     DirectivesExtension,
@@ -33,9 +34,10 @@ from strawberry.extensions.directives import (
 )
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
+from strawberry.type import has_object_definition
 from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import StrawberryObjectDefinition
 
 from ..printer import print_schema
 from . import compat
@@ -102,14 +104,14 @@ class Schema(BaseSchema):
         self.directives = directives
         self.schema_directives = list(schema_directives)
 
-        query_type = self.schema_converter.from_object(query._type_definition)
+        query_type = self.schema_converter.from_object(query.__strawberry_definition__)
         mutation_type = (
-            self.schema_converter.from_object(mutation._type_definition)
+            self.schema_converter.from_object(mutation.__strawberry_definition__)
             if mutation
             else None
         )
         subscription_type = (
-            self.schema_converter.from_object(subscription._type_definition)
+            self.schema_converter.from_object(subscription.__strawberry_definition__)
             if subscription
             else None
         )
@@ -125,8 +127,8 @@ class Schema(BaseSchema):
                     self.schema_converter.from_schema_directive(type_)
                 )
             else:
-                if hasattr(type_, "_type_definition"):
-                    if type_._type_definition.is_generic:
+                if has_object_definition(type_):
+                    if type_.__strawberry_definition__.is_generic:
                         type_ = StrawberryAnnotation(type_).resolve()  # noqa: PLW2901
                 graphql_type = self.schema_converter.from_maybe_optional(type_)
                 if isinstance(graphql_type, GraphQLNonNull):
@@ -163,6 +165,7 @@ class Schema(BaseSchema):
         self._schema._strawberry_schema = self  # type: ignore
 
         self._warn_for_federation_directives()
+        self._resolve_node_ids()
 
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible
@@ -185,7 +188,12 @@ class Schema(BaseSchema):
     def get_type_by_name(
         self, name: str
     ) -> Optional[
-        Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
+        Union[
+            StrawberryObjectDefinition,
+            ScalarDefinition,
+            EnumDefinition,
+            StrawberryUnion,
+        ]
     ]:
         # TODO: respect auto_camel_case
         if name in self.schema_converter.type_map:
@@ -201,7 +209,7 @@ class Schema(BaseSchema):
         if not type_:
             return None  # pragma: no cover
 
-        assert isinstance(type_, TypeDefinition)
+        assert isinstance(type_, StrawberryObjectDefinition)
 
         return next(
             (
@@ -305,6 +313,28 @@ class Schema(BaseSchema):
             variable_values=variable_values,
             operation_name=operation_name,
         )
+
+    def _resolve_node_ids(self):
+        for concrete_type in self.schema_converter.type_map.values():
+            type_def = concrete_type.definition
+
+            # This can be a TypeDefinition, EnumDefinition, ScalarDefinition
+            # or UnionDefinition
+            if not isinstance(type_def, StrawberryObjectDefinition):
+                continue
+
+            # Do not validate id_attr for interfaces. relay.Node itself and
+            # any other interfdace that implements it are not required to
+            # provide a NodeID annotation, only the concrete type implementing
+            # them needs to do that.
+            if type_def.is_interface:
+                continue
+
+            # Call resolve_id_attr in here to make sure we raise provide
+            # early feedback for missing NodeID annotations
+            origin = type_def.origin
+            if issubclass(origin, relay.Node):
+                origin.resolve_id_attr()
 
     def _warn_for_federation_directives(self):
         """Raises a warning if the schema has any federation directives."""

@@ -267,7 +267,7 @@ def test_extension_argument_parsing():
     assert isinstance(field_kwargs["some_input"], StringInput)
     input_value = field_kwargs["some_input"]
     assert input_value.some_input_value == "foo"
-    assert input_value._type_definition.is_input is True
+    assert input_value.__strawberry_definition__.is_input is True
 
 
 def test_extension_mutate_arguments():

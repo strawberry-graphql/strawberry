@@ -8,7 +8,7 @@ from pydantic import BaseModel, ValidationError, conlist
 
 import strawberry
 from strawberry.type import StrawberryOptional
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import StrawberryObjectDefinition
 
 
 @pytest.mark.parametrize(
@@ -40,7 +40,7 @@ def test_types(pydantic_type, field_type):
     class Type:
         field: strawberry.auto
 
-    definition: TypeDefinition = Type._type_definition
+    definition: StrawberryObjectDefinition = Type.__strawberry_definition__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -61,7 +61,7 @@ def test_types_optional(pydantic_type, field_type):
     class Type:
         field: strawberry.auto
 
-    definition: TypeDefinition = Type._type_definition
+    definition: StrawberryObjectDefinition = Type.__strawberry_definition__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -79,7 +79,7 @@ def test_conint():
     class Type:
         field: strawberry.auto
 
-    definition: TypeDefinition = Type._type_definition
+    definition: StrawberryObjectDefinition = Type.__strawberry_definition__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -96,7 +96,7 @@ def test_confloat():
     class Type:
         field: strawberry.auto
 
-    definition: TypeDefinition = Type._type_definition
+    definition: StrawberryObjectDefinition = Type.__strawberry_definition__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -113,7 +113,7 @@ def test_constr():
     class Type:
         field: strawberry.auto
 
-    definition: TypeDefinition = Type._type_definition
+    definition: StrawberryObjectDefinition = Type.__strawberry_definition__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -130,8 +130,11 @@ def test_constrained_list():
     class UserType:
         ...
 
-    assert UserType._type_definition.fields[0].name == "friends"
-    assert UserType._type_definition.fields[0].type_annotation.annotation == List[str]
+    assert UserType.__strawberry_definition__.fields[0].name == "friends"
+    assert (
+        UserType.__strawberry_definition__.fields[0].type_annotation.raw_annotation
+        == List[str]
+    )
 
     data = UserType(friends=[])
 
@@ -154,9 +157,9 @@ def test_constrained_list_nested():
     class UserType:
         ...
 
-    assert UserType._type_definition.fields[0].name == "friends"
+    assert UserType.__strawberry_definition__.fields[0].name == "friends"
     assert (
-        UserType._type_definition.fields[0].type_annotation.annotation
+        UserType.__strawberry_definition__.fields[0].type_annotation.raw_annotation
         == List[List[int]]
     )
 
@@ -196,7 +199,7 @@ def test_literal_types():
     class Type:
         field: strawberry.auto
 
-    definition: TypeDefinition = Type._type_definition
+    definition: StrawberryObjectDefinition = Type.__strawberry_definition__
     assert definition.name == "Type"
 
     [field] = definition.fields

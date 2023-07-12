@@ -31,7 +31,7 @@ class LibCSTSourceFinder:
         self.cst = importlib.import_module("libcst")
 
     def find_source(self, module: str) -> Optional[SourcePath]:
-        # todo: support for pyodide
+        # TODO: support for pyodide
 
         source_module = sys.modules.get(module)
 
@@ -100,7 +100,7 @@ class LibCSTSourceFinder:
         return None
 
     def _find_function_definition(
-        self, source: SourcePath, function: Callable
+        self, source: SourcePath, function: Callable[..., Any]
     ) -> Optional[FunctionDef]:
         import libcst.matchers as m
 
@@ -114,7 +114,7 @@ class LibCSTSourceFinder:
         )
 
     def _find_class_definition(
-        self, source: SourcePath, cls: Type
+        self, source: SourcePath, cls: Type[Any]
     ) -> Optional[CSTNode]:
         import libcst.matchers as m
 
@@ -123,7 +123,7 @@ class LibCSTSourceFinder:
         class_defs = self._find(source.code, matcher)
         return self._find_definition_by_qualname(cls.__qualname__, class_defs)
 
-    def find_class(self, cls: Type) -> Optional[ExceptionSource]:
+    def find_class(self, cls: Type[Any]) -> Optional[ExceptionSource]:
         source = self.find_source(cls.__module__)
 
         if source is None:
@@ -148,7 +148,7 @@ class LibCSTSourceFinder:
         )
 
     def find_class_attribute(
-        self, cls: Type, attribute_name: str
+        self, cls: Type[Any], attribute_name: str
     ) -> Optional[ExceptionSource]:
         source = self.find_source(cls.__module__)
 
@@ -190,7 +190,7 @@ class LibCSTSourceFinder:
             error_column_end=attribute_position.end.column,
         )
 
-    def find_function(self, function: Callable) -> Optional[ExceptionSource]:
+    def find_function(self, function: Callable[..., Any]) -> Optional[ExceptionSource]:
         source = self.find_source(function.__module__)
 
         if source is None:
@@ -223,7 +223,7 @@ class LibCSTSourceFinder:
         )
 
     def find_argument(
-        self, function: Callable, argument_name: str
+        self, function: Callable[..., Any], argument_name: str
     ) -> Optional[ExceptionSource]:
         source = self.find_source(function.__module__)
 
@@ -372,6 +372,134 @@ class LibCSTSourceFinder:
             error_column_end=invalid_type_node_position.end.column,
         )
 
+    def find_annotated_union(
+        self, union_definition: StrawberryUnion, invalid_type: object
+    ) -> Optional[ExceptionSource]:
+        if union_definition._source_file is None:
+            return None
+
+        # find things like Annotated[Union[...], strawberry.union(name="aaa")]
+
+        import libcst.matchers as m
+
+        path = Path(union_definition._source_file)
+        source = path.read_text()
+
+        matcher = m.Subscript(
+            value=m.Name(value="Annotated"),
+            slice=(
+                m.SubscriptElement(
+                    slice=m.Index(
+                        value=m.Subscript(
+                            value=m.Name(value="Union"),
+                        )
+                    )
+                ),
+                m.SubscriptElement(
+                    slice=m.Index(
+                        value=m.Call(
+                            func=m.Attribute(
+                                value=m.Name(value="strawberry"),
+                                attr=m.Name(value="union"),
+                            ),
+                            args=[
+                                m.Arg(
+                                    value=m.SimpleString(
+                                        value=f"'{union_definition.graphql_name}'"
+                                    )
+                                    | m.SimpleString(
+                                        value=f'"{union_definition.graphql_name}"'
+                                    )
+                                )
+                            ],
+                        )
+                    )
+                ),
+            ),
+        )
+
+        annotated_calls = self._find(source, matcher)
+        invalid_type_name = getattr(invalid_type, "__name__", None)
+
+        if hasattr(invalid_type, "_scalar_definition"):
+            invalid_type_name = invalid_type._scalar_definition.name
+
+        if annotated_calls:
+            annotated_call_node = annotated_calls[0]
+
+            if invalid_type_name:
+                invalid_type_nodes = m.findall(
+                    annotated_call_node,
+                    m.SubscriptElement(slice=m.Index(m.Name(invalid_type_name))),
+                )
+
+                if not invalid_type_nodes:
+                    return None  # pragma: no cover
+
+                invalid_type_node = invalid_type_nodes[0]
+            else:
+                invalid_type_node = annotated_call_node
+        else:
+            matcher = m.Subscript(
+                value=m.Name(value="Annotated"),
+                slice=(
+                    m.SubscriptElement(slice=m.Index(value=m.BinaryOperation())),
+                    m.SubscriptElement(
+                        slice=m.Index(
+                            value=m.Call(
+                                func=m.Attribute(
+                                    value=m.Name(value="strawberry"),
+                                    attr=m.Name(value="union"),
+                                ),
+                                args=[
+                                    m.Arg(
+                                        value=m.SimpleString(
+                                            value=f"'{union_definition.graphql_name}'"
+                                        )
+                                        | m.SimpleString(
+                                            value=f'"{union_definition.graphql_name}"'
+                                        )
+                                    )
+                                ],
+                            )
+                        )
+                    ),
+                ),
+            )
+
+            annotated_calls = self._find(source, matcher)
+
+            if not annotated_calls:
+                return None
+
+            annotated_call_node = annotated_calls[0]
+
+            if invalid_type_name:
+                invalid_type_nodes = m.findall(
+                    annotated_call_node,
+                    m.BinaryOperation(left=m.Name(invalid_type_name)),
+                )
+
+                if not invalid_type_nodes:
+                    return None  # pragma: no cover
+
+                invalid_type_node = invalid_type_nodes[0].left  # type: ignore
+            else:
+                invalid_type_node = annotated_call_node
+
+        position = self._position_metadata[annotated_call_node]
+        invalid_type_node_position = self._position_metadata[invalid_type_node]
+
+        return ExceptionSource(
+            path=path,
+            code=source,
+            start_line=position.start.line,
+            end_line=position.end.line,
+            error_line=invalid_type_node_position.start.line,
+            error_column=invalid_type_node_position.start.column,
+            error_column_end=invalid_type_node_position.end.column,
+        )
+
     def find_scalar_call(
         self, scalar_definition: ScalarDefinition
     ) -> Optional[ExceptionSource]:
@@ -426,7 +554,6 @@ class LibCSTSourceFinder:
 
 
 class SourceFinder:
-    # TODO: this might need to become a getter
     @cached_property
     def cst(self) -> Optional[LibCSTSourceFinder]:
         try:
@@ -434,21 +561,21 @@ class SourceFinder:
         except ImportError:
             return None  # pragma: no cover
 
-    def find_class_from_object(self, cls: Type) -> Optional[ExceptionSource]:
+    def find_class_from_object(self, cls: Type[Any]) -> Optional[ExceptionSource]:
         return self.cst.find_class(cls) if self.cst else None
 
     def find_class_attribute_from_object(
-        self, cls: Type, attribute_name: str
+        self, cls: Type[Any], attribute_name: str
     ) -> Optional[ExceptionSource]:
         return self.cst.find_class_attribute(cls, attribute_name) if self.cst else None
 
     def find_function_from_object(
-        self, function: Callable
+        self, function: Callable[..., Any]
     ) -> Optional[ExceptionSource]:
         return self.cst.find_function(function) if self.cst else None
 
     def find_argument_from_object(
-        self, function: Callable, argument_name: str
+        self, function: Callable[..., Any], argument_name: str
     ) -> Optional[ExceptionSource]:
         return self.cst.find_argument(function, argument_name) if self.cst else None
 
@@ -470,3 +597,12 @@ class SourceFinder:
         self, scalar_definition: ScalarDefinition
     ) -> Optional[ExceptionSource]:
         return self.cst.find_scalar_call(scalar_definition) if self.cst else None
+
+    def find_annotated_union(
+        self, union_definition: StrawberryUnion, invalid_type: object
+    ) -> Optional[ExceptionSource]:
+        return (
+            self.cst.find_annotated_union(union_definition, invalid_type)
+            if self.cst
+            else None
+        )

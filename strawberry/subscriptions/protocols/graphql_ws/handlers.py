@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional, cast
 
 from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError
-from graphql.error.graphql_error import format_error as format_graphql_error
 
 from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_COMPLETE,
@@ -133,14 +132,14 @@ class BaseGraphQLWSHandler(ABC):
                 root_value=root_value,
             )
         except GraphQLError as error:
-            error_payload = format_graphql_error(error)
+            error_payload = error.formatted
             await self.send_message(GQL_ERROR, operation_id, error_payload)
             self.schema.process_errors([error])
             return
 
         if isinstance(result_source, GraphQLExecutionResult):
             assert result_source.errors
-            error_payload = format_graphql_error(result_source.errors[0])
+            error_payload = result_source.errors[0].formatted
             await self.send_message(GQL_ERROR, operation_id, error_payload)
             self.schema.process_errors(result_source.errors)
             return
@@ -168,9 +167,7 @@ class BaseGraphQLWSHandler(ABC):
             async for result in result_source:
                 payload = {"data": result.data}
                 if result.errors:
-                    payload["errors"] = [
-                        format_graphql_error(err) for err in result.errors
-                    ]
+                    payload["errors"] = [err.formatted for err in result.errors]
                 await self.send_message(GQL_DATA, operation_id, payload)
                 # log errors after send_message to prevent potential
                 # slowdown of sending result
@@ -186,7 +183,7 @@ class BaseGraphQLWSHandler(ABC):
             await self.send_message(
                 GQL_DATA,
                 operation_id,
-                {"data": None, "errors": [format_graphql_error(error)]},
+                {"data": None, "errors": [error.formatted]},
             )
             self.schema.process_errors([error])
 

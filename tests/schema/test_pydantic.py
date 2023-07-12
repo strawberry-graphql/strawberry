@@ -1,6 +1,9 @@
+import pytest
 from pydantic import BaseModel, Field
 
 import strawberry
+
+pytestmark = pytest.mark.pydantic
 
 
 def test_use_alias_as_gql_name():
