@@ -63,6 +63,7 @@ def _convert_from_pydantic_to_strawberry_type(
 
     return data
 
+
 def convert_pydantic_model_to_strawberry_class(
     cls, *, model_instance=None, extra=None  # noqa: ANN001
 ) -> Any:
