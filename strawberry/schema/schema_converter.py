@@ -21,6 +21,7 @@ from typing import (
 from typing_extensions import Protocol
 
 from graphql import (
+    GraphQLAbstractType,
     GraphQLArgument,
     GraphQLDirective,
     GraphQLEnumType,
@@ -67,9 +68,7 @@ from strawberry.union import StrawberryUnion
 from strawberry.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
 
-from ..extensions.field_extension import (
-    build_field_extension_resolvers,
-)
+from ..extensions.field_extension import build_field_extension_resolvers
 from . import compat
 from .types.concrete_type import ConcreteType
 
@@ -433,7 +432,7 @@ class GraphQLCoreConverter:
                 return interface.resolve_type
 
             def resolve_type(
-                obj: Any, info: GraphQLResolveInfo, abstract_type: GraphQLInterfaceType
+                obj: Any, info: GraphQLResolveInfo, abstract_type: GraphQLAbstractType
             ) -> Union[Awaitable[Optional[str]], str, None]:
                 if isinstance(obj, interface.origin):
                     return obj._type_definition.name
