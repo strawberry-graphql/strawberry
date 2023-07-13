@@ -9,6 +9,7 @@ from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.union import StrawberryUnion
 
 if TYPE_CHECKING:
+    from strawberry.field import StrawberryField
     from strawberry.type import StrawberryType
 
 
@@ -61,7 +62,6 @@ def _convert_from_pydantic_to_strawberry_type(
         )
 
     return data
-
 
 def convert_pydantic_model_to_strawberry_class(
     cls, *, model_instance=None, extra=None  # noqa: ANN001

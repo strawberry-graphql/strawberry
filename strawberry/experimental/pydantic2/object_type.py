@@ -265,7 +265,7 @@ def type(
             ret._original_model = instance
             return ret
 
-        def to_pydantic_default(self: Any, **kwargs) -> PydanticModel:
+        def to_pydantic_default(self: Any, **kwargs: Any) -> PydanticModel:
             instance_kwargs = {
                 f.name: convert_strawberry_class_to_pydantic_model(
                     getattr(self, f.name)

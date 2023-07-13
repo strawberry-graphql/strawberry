@@ -1,5 +1,5 @@
 import builtins
-from typing import Any, Type
+from typing import Any, NewType, Type
 from typing_extensions import get_args, get_origin
 
 import pydantic
@@ -35,7 +35,7 @@ FIELDS_MAP = {
 }
 
 
-def new_type_supertype(type_):
+def new_type_supertype(type_: NewType) -> Type[Any]:
     return type_.__supertype__
 
 
