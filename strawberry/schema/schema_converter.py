@@ -435,7 +435,7 @@ class GraphQLCoreConverter:
                 obj: Any, info: GraphQLResolveInfo, abstract_type: GraphQLAbstractType
             ) -> Union[Awaitable[Optional[str]], str, None]:
                 if isinstance(obj, interface.origin):
-                    return obj._type_definition.name
+                    return obj.__strawberry_definition__.name
                 else:
                     # Revert to calling is_type_of for cases where a direct subclass
                     # of the interface is not returned (i.e. an ORM object)
