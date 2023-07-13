@@ -279,7 +279,8 @@ def test_interface_resolve_type(mocker: MockerFixture):
         title: str
 
         @classmethod
-        def is_type_of(cls, *_) -> bool:
+        def is_type_of(cls, *args: Any, **kwargs: Any) -> bool:
+            del args, kwargs
             raise RuntimeError("Movie.is_type_of shouldn't have been called")
 
     @strawberry.type
@@ -303,7 +304,8 @@ def test_interface_specialized_resolve_type(mocker: MockerFixture):
 
     class InterfaceTester:
         @classmethod
-        def resolve_type(cls, obj: Any, *_) -> str:
+        def resolve_type(cls, obj: Any, *args: Any, **kwargs: Any) -> str:
+            del args, kwargs
             return obj._type_definition.name
 
     spy_resolve_type = mocker.spy(InterfaceTester, "resolve_type")
@@ -336,12 +338,14 @@ async def test_derived_interface(mocker: MockerFixture):
 
     class NodeInterfaceTester:
         @classmethod
-        def resolve_type(cls, obj: Any, *_) -> str:
+        def resolve_type(cls, obj: Any, *args: Any, **kwargs: Any) -> str:
+            del args, kwargs
             return obj._type_definition.name
 
     class NamedNodeInterfaceTester:
         @classmethod
-        def resolve_type(cls, obj: Any, *_) -> str:
+        def resolve_type(cls, obj: Any, *args: Any, **kwargs: Any) -> str:
+            del args, kwargs
             return obj._type_definition.name
 
     spy_node_resolve_type = mocker.spy(NodeInterfaceTester, "resolve_type")
