@@ -28,7 +28,7 @@ from strawberry.utils.typing import (
 )
 
 if TYPE_CHECKING:
-    from graphql import GraphQLResolveInfo
+    from graphql import GraphQLAbstractType, GraphQLResolveInfo
 
     from strawberry.field import StrawberryField
 
