@@ -52,7 +52,7 @@ def tests(session: Session) -> None:
     )
 
 
-@session(python=["3.11"], tags=["tests"])
+@session(python=["3.11"], name="Django tests", tags=["tests"])
 @nox.parametrize("django", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"])
 def tests_django(session: Session, django: str) -> None:
     session.run_always("poetry", "install", external=True)
@@ -60,12 +60,7 @@ def tests_django(session: Session, django: str) -> None:
     session._session.install(f"django~={django}")  # type: ignore
     session._session.install("pytest-django")  # type: ignore
 
-    session.run(
-        "pytest",
-        *PYTEST_OPTIONS,
-        "-m",
-        "django",
-    )
+    session.run("pytest", *PYTEST_OPTIONS, "-m", "django", "-m", "not aiohttp")
 
 
 @session(python=["3.11"], name="Starlette tests", tags=["tests"])
@@ -75,12 +70,7 @@ def tests_starlette(session: Session, starlette: str) -> None:
 
     session._session.install(f"starlette=={starlette}")  # type: ignore
 
-    session.run(
-        "pytest",
-        *PYTEST_OPTIONS,
-        "-m",
-        "starlette",
-    )
+    session.run("pytest", *PYTEST_OPTIONS, "-m", "starlette", "-m", "not aiohttp")
 
 
 @session(python=["3.11"], name="Test integrations", tags=["tests"])
@@ -106,12 +96,7 @@ def tests_integrations(session: Session, integration: str) -> None:
     elif integration == "flask":
         session._session.install("pytest-flask")  # type: ignore
 
-    session.run(
-        "pytest",
-        *PYTEST_OPTIONS,
-        "-m",
-        integration,
-    )
+    session.run("pytest", *PYTEST_OPTIONS, "-m", integration, "-m", "not aiohttp")
 
 
 @session(python=["3.11"], name="Pydantic tests", tags=["tests"])
