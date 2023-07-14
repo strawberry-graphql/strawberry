@@ -4,7 +4,7 @@ from nox_poetry import Session, session
 PYTHON_VERSIONS = ["3.11", "3.10", "3.9", "3.8", "3.7"]
 
 
-PYTEST_OPTIONS = [
+COMMON_PYTEST_OPTIONS = [
     "--cov=strawberry",
     "--cov-append",
     "--cov-report=xml",
@@ -12,6 +12,8 @@ PYTEST_OPTIONS = [
     "auto",
     "--showlocals",
     "-vv",
+    "--ignore=tests/mypy",
+    "--ignore=tests/pyright",
 ]
 
 INTEGRATIONS = [
@@ -41,10 +43,8 @@ def tests(session: Session) -> None:
 
     session.run(
         "pytest",
-        *PYTEST_OPTIONS,
+        *COMMON_PYTEST_OPTIONS,
         *markers,
-        "--ignore=tests/mypy",
-        "--ignore=tests/pyright",
         # TODO: reintroduce this
         "--ignore=tests/cli",
         "--ignore=tests/experimental/pydantic",
@@ -60,7 +60,7 @@ def tests_django(session: Session, django: str) -> None:
     session._session.install(f"django~={django}")  # type: ignore
     session._session.install("pytest-django")  # type: ignore
 
-    session.run("pytest", *PYTEST_OPTIONS, "-m", "django", "-m", "not aiohttp")
+    session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", "django", "-m", "not aiohttp")
 
 
 @session(python=["3.11"], name="Starlette tests", tags=["tests"])
@@ -70,7 +70,9 @@ def tests_starlette(session: Session, starlette: str) -> None:
 
     session._session.install(f"starlette=={starlette}")  # type: ignore
 
-    session.run("pytest", *PYTEST_OPTIONS, "-m", "starlette", "-m", "not aiohttp")
+    session.run(
+        "pytest", *COMMON_PYTEST_OPTIONS, "-m", "starlette", "-m", "not aiohttp"
+    )
 
 
 @session(python=["3.11"], name="Test integrations", tags=["tests"])
@@ -96,7 +98,9 @@ def tests_integrations(session: Session, integration: str) -> None:
     elif integration == "flask":
         session._session.install("pytest-flask")  # type: ignore
 
-    session.run("pytest", *PYTEST_OPTIONS, "-m", integration, "-m", "not aiohttp")
+    session.run(
+        "pytest", *COMMON_PYTEST_OPTIONS, "-m", integration, "-m", "not aiohttp"
+    )
 
 
 @session(python=["3.11"], name="Pydantic tests", tags=["tests"])
@@ -109,7 +113,7 @@ def test_pydantic(session: Session, pydantic: str) -> None:
 
     session.run(
         "pytest",
-        *PYTEST_OPTIONS,
+        *COMMON_PYTEST_OPTIONS,
         "-m",
         "pydantic",
     )
