@@ -1,16 +1,17 @@
 from pathlib import Path
 
 from pytest_snapshot.plugin import Snapshot
+from typer import Typer
 from typer.testing import CliRunner
-
-from strawberry.cli.app import app
 
 HERE = Path(__file__).parent
 
 
-def test_upgrade_returns_error_code_if_codemod_does_not_exist(cli_runner: CliRunner):
+def test_upgrade_returns_error_code_if_codemod_does_not_exist(
+    cli_app: Typer, cli_runner: CliRunner
+):
     result = cli_runner.invoke(
-        app,
+        cli_app,
         ["upgrade", "a_random_codemod", "."],
     )
 
@@ -19,7 +20,7 @@ def test_upgrade_returns_error_code_if_codemod_does_not_exist(cli_runner: CliRun
 
 
 def test_upgrade_works_annotated_unions(
-    cli_runner: CliRunner, tmp_path: Path, snapshot: Snapshot
+    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path, snapshot: Snapshot
 ):
     source = HERE / "fixtures/unions.py"
 
@@ -27,7 +28,7 @@ def test_upgrade_works_annotated_unions(
     target.write_text(source.read_text())
 
     result = cli_runner.invoke(
-        app,
+        cli_app,
         ["upgrade", "--python-target", "3.11", "annotated-union", str(target)],
     )
 
@@ -39,7 +40,7 @@ def test_upgrade_works_annotated_unions(
 
 
 def test_upgrade_works_annotated_unions_target_python(
-    cli_runner: CliRunner, tmp_path: Path, snapshot: Snapshot
+    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path, snapshot: Snapshot
 ):
     source = HERE / "fixtures/unions.py"
 
@@ -47,7 +48,7 @@ def test_upgrade_works_annotated_unions_target_python(
     target.write_text(source.read_text())
 
     result = cli_runner.invoke(
-        app,
+        cli_app,
         ["upgrade", "--python-target", "3.8", "annotated-union", str(target)],
     )
 
@@ -59,7 +60,7 @@ def test_upgrade_works_annotated_unions_target_python(
 
 
 def test_upgrade_works_annotated_unions_typing_extensions(
-    cli_runner: CliRunner, tmp_path: Path, snapshot: Snapshot
+    cli_app: Typer, cli_runner: CliRunner, tmp_path: Path, snapshot: Snapshot
 ):
     source = HERE / "fixtures/unions.py"
 
@@ -67,7 +68,7 @@ def test_upgrade_works_annotated_unions_typing_extensions(
     target.write_text(source.read_text())
 
     result = cli_runner.invoke(
-        app,
+        cli_app,
         [
             "upgrade",
             "--use-typing-extensions",

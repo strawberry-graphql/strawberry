@@ -9,6 +9,7 @@ from typer.testing import CliRunner
 
 if TYPE_CHECKING:
     from starlette.testclient import TestClient
+    from typer import Typer
 
 
 @pytest.fixture
@@ -29,3 +30,10 @@ def debug_server_client(mocker: MockFixture) -> TestClient:
     from strawberry.cli.debug_server import app
 
     return TestClient(app)
+
+
+@pytest.fixture
+def cli_app() -> Typer:
+    from strawberry.cli.app import app
+
+    return app
