@@ -605,7 +605,7 @@ def test_query_connection_filtering_after_without_first():
     assert not result.errors
     assert len(result.data["someFruits"]["edges"]) == 100
     assert (
-        relay.from_base64(result.data["someFruits"]["edges"][99]["node"]["id"])[1]
+        relay.from_base64(result.data["someFruits"]["edges"][-1]["node"]["id"])[1]
         == "199"
     )
 
