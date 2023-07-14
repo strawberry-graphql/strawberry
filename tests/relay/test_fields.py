@@ -597,11 +597,11 @@ def test_query_connection_filtering_after_without_first():
         == "99"
     )
     result = schema.execute_sync(
-        """{ someFruits(after: "%s", first: 100) {
+        """query ($after: String!){ someFruits(after: $after, first: 100) {
             edges { node { id } }
-        } }"""
-        % result.data["someFruits"]["pageInfo"]["endCursor"]
-    )  #
+        } }""",
+        variable_values={"after": result.data["someFruits"]["pageInfo"]["endCursor"]},
+    )
     assert not result.errors
     assert len(result.data["someFruits"]["edges"]) == 100
     assert (
