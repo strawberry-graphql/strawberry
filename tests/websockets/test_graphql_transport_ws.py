@@ -27,11 +27,12 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
-from tests.http.clients import AioHttpClient, ChannelsHttpClient
+from tests.http.clients.aiohttp import AioHttpClient
 from tests.http.clients.base import DebuggableGraphQLTransportWSMixin
+from tests.http.clients.channels import ChannelsHttpClient
 from tests.views.schema import Schema
 
-from ..http.clients import HttpClient, WebSocketClient
+from ..http.clients.base import HttpClient, WebSocketClient
 
 
 @pytest_asyncio.fixture

@@ -18,7 +18,7 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_STOP,
 )
 
-from ..http.clients import AioHttpClient, HttpClient, WebSocketClient
+from ..http.clients.aiohttp import AioHttpClient, HttpClient, WebSocketClient
 
 
 @pytest_asyncio.fixture

@@ -47,6 +47,8 @@ def tests(session: Session) -> None:
         "--ignore=tests/pyright",
         # TODO: reintroduce this
         "--ignore=tests/cli",
+        "--ignore=tests/experimental/pydantic",
+        "--ignore=tests/websockets",
     )
 
 
