@@ -1,4 +1,4 @@
-from .clients import HttpClient
+from .clients.base import HttpClient
 
 
 async def test_mutation(http_client: HttpClient):

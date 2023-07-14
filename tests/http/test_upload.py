@@ -6,7 +6,7 @@ import pytest
 
 import aiohttp
 
-from .clients import HttpClient
+from .clients.base import HttpClient
 from .clients.chalice import ChaliceHttpClient
 
 
