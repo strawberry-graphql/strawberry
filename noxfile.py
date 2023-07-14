@@ -14,6 +14,10 @@ COMMON_PYTEST_OPTIONS = [
     "-vv",
     "--ignore=tests/mypy",
     "--ignore=tests/pyright",
+    # TODO: reintroduce this in its own test session
+    "--ignore=tests/cli",
+    "--ignore=tests/experimental/pydantic",
+    "--ignore=tests/websockets",
 ]
 
 INTEGRATIONS = [
@@ -45,10 +49,6 @@ def tests(session: Session) -> None:
         "pytest",
         *COMMON_PYTEST_OPTIONS,
         *markers,
-        # TODO: reintroduce this
-        "--ignore=tests/cli",
-        "--ignore=tests/experimental/pydantic",
-        "--ignore=tests/websockets",
     )
 
 
@@ -60,7 +60,7 @@ def tests_django(session: Session, django: str) -> None:
     session._session.install(f"django~={django}")  # type: ignore
     session._session.install("pytest-django")  # type: ignore
 
-    session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", "django", "-m", "not aiohttp")
+    session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", "django")
 
 
 @session(python=["3.11"], name="Starlette tests", tags=["tests"])
@@ -70,9 +70,7 @@ def tests_starlette(session: Session, starlette: str) -> None:
 
     session._session.install(f"starlette=={starlette}")  # type: ignore
 
-    session.run(
-        "pytest", *COMMON_PYTEST_OPTIONS, "-m", "starlette", "-m", "not aiohttp"
-    )
+    session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", "starlette")
 
 
 @session(python=["3.11"], name="Test integrations", tags=["tests"])
@@ -98,9 +96,7 @@ def tests_integrations(session: Session, integration: str) -> None:
     elif integration == "flask":
         session._session.install("pytest-flask")  # type: ignore
 
-    session.run(
-        "pytest", *COMMON_PYTEST_OPTIONS, "-m", integration, "-m", "not aiohttp"
-    )
+    session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", integration)
 
 
 @session(python=["3.11"], name="Pydantic tests", tags=["tests"])

@@ -2,7 +2,6 @@ from unittest import mock
 
 import pytest
 
-from strawberry.channels.router import GraphQLProtocolTypeRouter
 from tests.views.schema import schema
 
 
@@ -14,6 +13,8 @@ def _fake_asgi():
 @mock.patch("strawberry.channels.router.GraphQLWSConsumer.as_asgi")
 @pytest.mark.parametrize("pattern", ["^graphql", "^foo"])
 def test_included_paths(ws_asgi: mock.Mock, http_asgi: mock.Mock, pattern: str):
+    from strawberry.channels.router import GraphQLProtocolTypeRouter
+
     http_ret = _fake_asgi()
     http_asgi.return_value = http_ret
 
@@ -42,6 +43,8 @@ def test_included_paths_with_django_app(
     http_asgi: mock.Mock,
     pattern: str,
 ):
+    from strawberry.channels.router import GraphQLProtocolTypeRouter
+
     http_ret = _fake_asgi()
     http_asgi.return_value = http_ret
 

@@ -1,14 +1,10 @@
 import asyncio
-from typing import AsyncGenerator, Dict
+from typing import Any, AsyncGenerator, Dict
 
 import pytest
-from starlette.websockets import WebSocketDisconnect
 
 import strawberry
-from fastapi import Depends, FastAPI
-from fastapi.testclient import TestClient
 from strawberry.exceptions import InvalidCustomContext
-from strawberry.fastapi import BaseContext, GraphQLRouter
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
@@ -31,6 +27,8 @@ from strawberry.types import Info
 
 
 def test_base_context():
+    from strawberry.fastapi import BaseContext
+
     base_context = BaseContext()
     assert base_context.request is None
     assert base_context.background_tasks is None
@@ -38,10 +36,14 @@ def test_base_context():
 
 
 def test_with_explicit_class_context_getter():
+    from fastapi import Depends, FastAPI
+    from fastapi.testclient import TestClient
+    from strawberry.fastapi import BaseContext, GraphQLRouter
+
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info) -> str:
+        def abc(self, info: Info[Any, None]) -> str:
             assert info.context.request is not None
             assert info.context.strawberry == "explicitly rocks"
             assert info.context.connection_params is None
@@ -59,7 +61,7 @@ def test_with_explicit_class_context_getter():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
@@ -70,10 +72,14 @@ def test_with_explicit_class_context_getter():
 
 
 def test_with_implicit_class_context_getter():
+    from fastapi import Depends, FastAPI
+    from fastapi.testclient import TestClient
+    from strawberry.fastapi import BaseContext, GraphQLRouter
+
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info) -> str:
+        def abc(self, info: Info[Any, None]) -> str:
             assert info.context.request is not None
             assert info.context.strawberry == "implicitly rocks"
             assert info.context.connection_params is None
@@ -89,7 +95,7 @@ def test_with_implicit_class_context_getter():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
@@ -100,10 +106,14 @@ def test_with_implicit_class_context_getter():
 
 
 def test_with_dict_context_getter():
+    from fastapi import Depends, FastAPI
+    from fastapi.testclient import TestClient
+    from strawberry.fastapi import GraphQLRouter
+
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info) -> str:
+        def abc(self, info: Info[Any, None]) -> str:
             assert info.context.get("request") is not None
             assert "connection_params" not in info.context.keys()
             assert info.context.get("strawberry") == "rocks"
@@ -117,7 +127,7 @@ def test_with_dict_context_getter():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
@@ -128,17 +138,21 @@ def test_with_dict_context_getter():
 
 
 def test_without_context_getter():
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from strawberry.fastapi import GraphQLRouter
+
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info) -> str:
+        def abc(self, info: Info[Any, None]) -> str:
             assert info.context.get("request") is not None
             assert info.context.get("strawberry") is None
             return "abc"
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter(schema, context_getter=None)
+    graphql_app = GraphQLRouter[None, None](schema, context_getter=None)
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
@@ -149,10 +163,14 @@ def test_without_context_getter():
 
 
 def test_with_invalid_context_getter():
+    from fastapi import Depends, FastAPI
+    from fastapi.testclient import TestClient
+    from strawberry.fastapi import GraphQLRouter
+
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info) -> str:
+        def abc(self, info: Info[Any, None]) -> str:
             assert info.context.get("request") is not None
             assert info.context.get("strawberry") is None
             return "abc"
@@ -165,7 +183,7 @@ def test_with_invalid_context_getter():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
@@ -180,6 +198,10 @@ def test_with_invalid_context_getter():
 
 
 def test_class_context_injects_connection_params_over_transport_ws():
+    from fastapi import Depends, FastAPI
+    from fastapi.testclient import TestClient
+    from strawberry.fastapi import BaseContext, GraphQLRouter
+
     @strawberry.type
     class Query:
         x: str = "hi"
@@ -188,7 +210,7 @@ def test_class_context_injects_connection_params_over_transport_ws():
     class Subscription:
         @strawberry.subscription
         async def connection_params(
-            self, info: Info, delay: float = 0
+            self, info: Info[Any, None], delay: float = 0
         ) -> AsyncGenerator[str, None]:
             assert info.context.request is not None
             await asyncio.sleep(delay)
@@ -205,7 +227,7 @@ def test_class_context_injects_connection_params_over_transport_ws():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query, subscription=Subscription)
-    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
     test_client = TestClient(app)
 
@@ -240,6 +262,12 @@ def test_class_context_injects_connection_params_over_transport_ws():
 
 
 def test_class_context_injects_connection_params_over_ws():
+    from starlette.websockets import WebSocketDisconnect
+
+    from fastapi import Depends, FastAPI
+    from fastapi.testclient import TestClient
+    from strawberry.fastapi import BaseContext, GraphQLRouter
+
     @strawberry.type
     class Query:
         x: str = "hi"
@@ -248,7 +276,7 @@ def test_class_context_injects_connection_params_over_ws():
     class Subscription:
         @strawberry.subscription
         async def connection_params(
-            self, info: Info, delay: float = 0
+            self, info: Info[Any, None], delay: float = 0
         ) -> AsyncGenerator[str, None]:
             assert info.context.request is not None
             await asyncio.sleep(delay)
@@ -265,7 +293,7 @@ def test_class_context_injects_connection_params_over_ws():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query, subscription=Subscription)
-    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
     test_client = TestClient(app)
 
