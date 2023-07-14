@@ -6,6 +6,7 @@ from functools import partial, reduce
 from typing import (
     TYPE_CHECKING,
     Any,
+    Awaitable,
     Callable,
     Dict,
     Generic,
@@ -20,6 +21,7 @@ from typing import (
 from typing_extensions import Protocol
 
 from graphql import (
+    GraphQLAbstractType,
     GraphQLArgument,
     GraphQLDirective,
     GraphQLEnumType,
@@ -33,6 +35,8 @@ from graphql import (
     GraphQLObjectType,
     GraphQLUnionType,
     Undefined,
+    ValueNode,
+    default_type_resolver,
 )
 from graphql.language.directive_locations import DirectiveLocation
 
@@ -64,9 +68,7 @@ from strawberry.union import StrawberryUnion
 from strawberry.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
 
-from ..extensions.field_extension import (
-    build_field_extension_resolvers,
-)
+from ..extensions.field_extension import build_field_extension_resolvers
 from . import compat
 from .types.concrete_type import ConcreteType
 
@@ -77,7 +79,6 @@ if TYPE_CHECKING:
         GraphQLOutputType,
         GraphQLResolveInfo,
         GraphQLScalarType,
-        ValueNode,
     )
 
     from strawberry.custom_scalar import ScalarDefinition
@@ -426,6 +427,22 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_interface, GraphQLInterfaceType)  # For mypy
             return graphql_interface
 
+        def _get_resolve_type():
+            if interface.resolve_type:
+                return interface.resolve_type
+
+            def resolve_type(
+                obj: Any, info: GraphQLResolveInfo, abstract_type: GraphQLAbstractType
+            ) -> Union[Awaitable[Optional[str]], str, None]:
+                if isinstance(obj, interface.origin):
+                    return obj.__strawberry_definition__.name
+                else:
+                    # Revert to calling is_type_of for cases where a direct subclass
+                    # of the interface is not returned (i.e. an ORM object)
+                    return default_type_resolver(obj, info, abstract_type)
+
+            return resolve_type
+
         graphql_interface = GraphQLInterfaceType(
             name=interface_name,
             fields=lambda: self.get_graphql_fields(interface),
@@ -434,6 +451,7 @@ class GraphQLCoreConverter:
             extensions={
                 GraphQLCoreConverter.DEFINITION_BACKREF: interface,
             },
+            resolve_type=_get_resolve_type(),
         )
 
         self.type_map[interface_name] = ConcreteType(
