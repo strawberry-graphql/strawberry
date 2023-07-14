@@ -3258,6 +3258,17 @@ files = [
 ]
 
 [[package]]
+name = "types-protobuf"
+version = "4.23.0.1"
+description = "Typing stubs for protobuf"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-protobuf-4.23.0.1.tar.gz", hash = "sha256:7bd5ea122a057b11a82b785d9de464932a1e9175fe977a4128adef11d7f35547"},
+    {file = "types_protobuf-4.23.0.1-py3-none-any.whl", hash = "sha256:c926104f69ea62103846681b35b690d8d100ecf86c6cdda16c850a1313a272e4"},
+]
+
+[[package]]
 name = "types-python-dateutil"
 version = "2.8.19.13"
 description = "Typing stubs for python-dateutil"
@@ -3887,4 +3898,4 @@ starlite = ["starlite"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "f081d4c024a2f717edd0a93e7641222661a39aad2b93b7d98fd8caab0ff2b710"
+content-hash = "a89864123184a6f7ee513054910c81c01fea2ee135942275bc0ee8cb1112d2b9"

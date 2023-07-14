@@ -100,6 +100,7 @@ types-ujson = "^5.6.0"
 botocore = "1.29.124"
 mypy = "1.3.0"
 pytest-mypy-plugins = "^1.10"
+types-protobuf = "^4.23.0.1"
 
 [tool.poetry.group.integrations]
 optional = true
