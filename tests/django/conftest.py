@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 import pathlib
+from typing import TYPE_CHECKING, List
 
 import pytest
-from django.test.client import Client
 
-from strawberry.django.test import GraphQLTestClient
+if TYPE_CHECKING:
+    from strawberry.django.test import GraphQLTestClient
 
 
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(config: pytest.Config, items: List[pytest.Item]):
     # automatically mark tests with 'django' if they are in the django subfolder
 
     rootdir = pathlib.Path(config.rootdir)
@@ -20,4 +23,8 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.fixture()
 def graphql_client() -> GraphQLTestClient:
+    from django.test.client import Client
+
+    from strawberry.django.test import GraphQLTestClient
+
     return GraphQLTestClient(Client())
