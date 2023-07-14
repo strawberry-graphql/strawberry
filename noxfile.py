@@ -14,8 +14,8 @@ COMMON_PYTEST_OPTIONS = [
     "-vv",
     "--ignore=tests/mypy",
     "--ignore=tests/pyright",
-    # TODO: reintroduce this in its own test session
     "--ignore=tests/cli",
+    # TODO: reintroduce this in its own test session
     "--ignore=tests/experimental/pydantic",
     "--ignore=tests/websockets",
 ]
@@ -154,3 +154,20 @@ def mypy(session: Session) -> None:
     session.run_always("poetry", "install", "--with", "integrations", external=True)
 
     session.run("mypy", "--config-file", "mypy.ini")
+
+
+@session(python=PYTHON_VERSIONS, name="CLI tests", tags=["tests"])
+def tests_cli(session: Session) -> None:
+    session.run_always("poetry", "install", external=True)
+
+    session._session.install("uvicorn")  # type: ignore
+    session._session.install("starlette")  # type: ignore
+
+    session.run(
+        "pytest",
+        "--cov=strawberry",
+        "--cov-append",
+        "--cov-report=xml",
+        "tests/cli",
+        "-vv",
+    )
