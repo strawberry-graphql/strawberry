@@ -4,48 +4,57 @@ from nox_poetry import Session, session
 PYTHON_VERSIONS = ["3.11", "3.10", "3.9", "3.8", "3.7"]
 
 
+PYTEST_OPTIONS = [
+    "--cov=strawberry",
+    "--cov-append",
+    "--cov-report=xml",
+    "-n",
+    "auto",
+    "--showlocals",
+    "-vv",
+]
+
+INTEGRATIONS = [
+    "aiohttp",
+    "chalice",
+    "channels",
+    "fastapi",
+    "flask",
+    "sanic",
+    "starlette",
+    "starlite",
+    "pydantic",
+]
+
+
 @session(python=PYTHON_VERSIONS, name="Tests", tags=["tests"])
 def tests(session: Session) -> None:
     session.run_always("poetry", "install", external=True)
 
+    markers = (["not", integration] for integration in INTEGRATIONS)
+    markers = [item for sublist in markers for item in sublist]
+
     session.run(
         "pytest",
-        "--cov=strawberry",
-        "--cov-append",
-        "--cov-report=xml",
-        "-n",
-        "auto",
-        "--showlocals",
-        "-vv",
-        "-m",
-        "not starlette",
-        "-m",
-        "not django",
-        "-m",
-        "not starlite",
-        "-m",
-        "not pydantic",
+        *PYTEST_OPTIONS,
+        *markers,
         "--ignore=tests/mypy",
         "--ignore=tests/pyright",
+        "--ignore=tests/aiohttp",
     )
 
 
-@session(python=["3.11"], name="Django tests", tags=["tests"])
+@session(python=["3.11"], tags=["tests"])
 @nox.parametrize("django", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"])
 def tests_django(session: Session, django: str) -> None:
     session.run_always("poetry", "install", external=True)
 
     session._session.install(f"django~={django}")  # type: ignore
+    session._session.install("pytest-django")  # type: ignore
 
     session.run(
         "pytest",
-        "--cov=strawberry",
-        "--cov-append",
-        "--cov-report=xml",
-        "-n",
-        "auto",
-        "--showlocals",
-        "-vv",
+        *PYTEST_OPTIONS,
         "-m",
         "django",
     )
@@ -60,33 +69,40 @@ def tests_starlette(session: Session, starlette: str) -> None:
 
     session.run(
         "pytest",
-        "--cov=strawberry",
-        "--cov-append",
-        "--cov-report=xml",
-        "-n",
-        "auto",
-        "--showlocals",
-        "-vv",
+        *PYTEST_OPTIONS,
         "-m",
         "starlette",
     )
 
 
-@session(python=["3.11"], name="Litestar tests", tags=["tests"])
-def tests_litestar(session: Session) -> None:
+@session(python=["3.11"], name="Test integrations", tags=["tests"])
+@nox.parametrize(
+    "integration",
+    [
+        "aiohttp",
+        "chalice",
+        "channels",
+        "fastapi",
+        "flask",
+        "sanic",
+        "starlite",
+    ],
+)
+def tests_integrations(session: Session, integration: str) -> None:
     session.run_always("poetry", "install", external=True)
+
+    session._session.install(integration)  # type: ignore
+
+    if integration == "aiohttp":
+        session._session.install("pytest-aiohttp")  # type: ignore
+    elif integration == "flask":
+        session._session.install("pytest-flask")  # type: ignore
 
     session.run(
         "pytest",
-        "--cov=strawberry",
-        "--cov-append",
-        "--cov-report=xml",
-        "-n",
-        "auto",
-        "--showlocals",
-        "-vv",
+        *PYTEST_OPTIONS,
         "-m",
-        "starlite",
+        integration,
     )
 
 
@@ -100,13 +116,7 @@ def test_pydantic(session: Session, pydantic: str) -> None:
 
     session.run(
         "pytest",
-        "--cov=strawberry",
-        "--cov-append",
-        "--cov-report=xml",
-        "-n",
-        "auto",
-        "--showlocals",
-        "-vv",
+        *PYTEST_OPTIONS,
         "-m",
         "pydantic",
     )
