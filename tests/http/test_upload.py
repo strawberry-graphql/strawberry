@@ -35,6 +35,7 @@ async def test_upload(http_client: HttpClient):
         files={"textFile": f},
     )
 
+    assert response.json.get("errors") is None
     assert response.json["data"] == {"readText": "strawberry"}
 
 
