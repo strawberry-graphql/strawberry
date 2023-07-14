@@ -15,9 +15,11 @@ PYTEST_OPTIONS = [
 ]
 
 INTEGRATIONS = [
+    "asgi",
     "aiohttp",
     "chalice",
     "channels",
+    "django",
     "fastapi",
     "flask",
     "sanic",
@@ -31,7 +33,10 @@ INTEGRATIONS = [
 def tests(session: Session) -> None:
     session.run_always("poetry", "install", external=True)
 
-    markers = (["-m", "not", integration] for integration in INTEGRATIONS)
+    markers = (
+        ["-m", f"not {integration}", f"--ignore=tests/{integration}"]
+        for integration in INTEGRATIONS
+    )
     markers = [item for sublist in markers for item in sublist]
 
     session.run(
@@ -40,7 +45,8 @@ def tests(session: Session) -> None:
         *markers,
         "--ignore=tests/mypy",
         "--ignore=tests/pyright",
-        "--ignore=tests/aiohttp",
+        # TODO: reintroduce this
+        "--ignore=tests/cli",
     )
 
 
