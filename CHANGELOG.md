@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.195.1 - 2023-07-15
+--------------------
+
+This release fixes a bug where returning a generic type from a field
+that was returning an interface would throw an error.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2955](https://github.com/strawberry-graphql/strawberry/pull/2955/)
+
+
 0.195.0 - 2023-07-14
 --------------------
 
