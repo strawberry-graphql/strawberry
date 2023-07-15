@@ -55,20 +55,20 @@ jobs:
         with:
           python-versions: "3.7, 3.8, 3.9, 3.10, 3.11"
 
-      - name: Pip and nox cache
-        id: cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/pip
-            ~/.nox
-            .nox
-          key:
-            ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
-            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
-          restore-keys: |
-            ${{ runner.os }}-nox-${{ matrix.session.session }}-
-            ${{ runner.os }}-nox-
+      # - name: Pip and nox cache
+      #   id: cache
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: |
+      #       ~/.cache/pip
+      #       ~/.nox
+      #       .nox
+      #     key:
+      #       ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
+      #       hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-nox-${{ matrix.session.session }}-
+      #       ${{ runner.os }}-nox-
 
       - run: pipx install coverage
       - run: pipx install poetry
