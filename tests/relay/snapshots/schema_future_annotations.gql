@@ -322,4 +322,17 @@ type Query {
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
   ): FruitAlikeConnection!
+  someFruits(
+    """Returns the items in the list that come before the specified cursor."""
+    before: String = null
+
+    """Returns the items in the list that come after the specified cursor."""
+    after: String = null
+
+    """Returns the first n items from the list."""
+    first: Int = null
+
+    """Returns the items in the list that come after the specified cursor."""
+    last: Int = null
+  ): FruitConnection!
 }
