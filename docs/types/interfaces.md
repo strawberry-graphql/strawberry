@@ -4,14 +4,17 @@ title: Interfaces
 
 # Interfaces
 
-Interfaces are an abstract type which may be implemented by object types.
+Interfaces are abstract types which may be implemented by object types.
 
-An interface has fields, but it’s never instantiated. Instead, objects may
-implement interfaces, which makes them a member of that interface. Also, fields
-may return interface types. When this happens, the returned object may be any
-member of that interface.
+An interface defines fields that object types inherit when they implement it. 
+These object types are then considered members of that interface.
 
-For example, let's say a `Customer` (interface) can either be an `Individual`
+Fields may return interface types.
+However, the returned object must be resolved to any member of that interface.
+
+## Example
+
+Let's say a `Customer` (interface) can either be an `Individual`
 (object) or a `Company` (object). Here's what that might look like in the
 [GraphQL Schema Definition Language](https://graphql.org/learn/schema/#type-language)
 (SDL):
@@ -91,7 +94,8 @@ interface Customer {
 
 <Note>
 
-Interface classes should never be instantiated directly.
+Interface class instances should not be returned without providing methods to identify
+them as a member (, as explained [here](#resolving-an-interface)). 
 
 </Note>
 
@@ -198,8 +202,10 @@ class Company(Customer):
 
 When a field’s return type is an interface, GraphQL needs to know what specific
 object type to use for the return value. In the example above, each customer
-must be categorized as an `Individual` or `Company`. To do this you need to
-always return an instance of an object type from your resolver:
+must be categorized as an `Individual` or `Company`. 
+
+### Returning member instance
+To do this, you could return an instance of a member from your resolver:
 
 ```python
 import strawberry
@@ -211,3 +217,19 @@ class Query:
     def best_customer(self) -> Customer:
         return Individual(name="Patrick")
 ```
+
+### Using `resolve_type`
+You could also return the interface directly by defining a `resolve_type`
+method on the interface.
+
+### Using `is_type_of`
+It is also possible to return the interface directly by defining `is_type_of` methods 
+on every member.
+
+
+<Note>
+
+It is much more performant to use the `resolve_type` method on the interface as opposed 
+to the `is_type_of` method on every member (`O(1) vs O(n)`).
+
+</Note>
