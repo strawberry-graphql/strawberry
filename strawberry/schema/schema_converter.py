@@ -60,6 +60,7 @@ from strawberry.type import (
     StrawberryList,
     StrawberryOptional,
     StrawberryType,
+    get_object_definition,
     has_object_definition,
 )
 from strawberry.types.info import Info
@@ -435,11 +436,16 @@ class GraphQLCoreConverter:
                 obj: Any, info: GraphQLResolveInfo, abstract_type: GraphQLAbstractType
             ) -> Union[Awaitable[Optional[str]], str, None]:
                 if isinstance(obj, interface.origin):
-                    return obj.__strawberry_definition__.name
-                else:
-                    # Revert to calling is_type_of for cases where a direct subclass
-                    # of the interface is not returned (i.e. an ORM object)
-                    return default_type_resolver(obj, info, abstract_type)
+                    type_definition = get_object_definition(obj, strict=True)
+
+                    # TODO: we should find the correct type here from the
+                    # generic
+                    if not type_definition.is_generic:
+                        return obj.__strawberry_definition__.name
+
+                # Revert to calling is_type_of for cases where a direct subclass
+                # of the interface is not returned (i.e. an ORM object)
+                return default_type_resolver(obj, info, abstract_type)
 
             return resolve_type
 
