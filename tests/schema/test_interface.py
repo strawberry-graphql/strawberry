@@ -307,6 +307,7 @@ def test_interface_specialized_resolve_type(mocker: MockerFixture):
         def resolve_type(cls, obj: Any, *args: Any, **kwargs: Any) -> str:
             del args, kwargs
             return obj._type_definition.name
+            # return obj.__strawberry_definition__.name Todo ?
 
     spy_resolve_type = mocker.spy(InterfaceTester, "resolve_type")
 
@@ -341,12 +342,14 @@ async def test_derived_interface(mocker: MockerFixture):
         def resolve_type(cls, obj: Any, *args: Any, **kwargs: Any) -> str:
             del args, kwargs
             return obj._type_definition.name
+            # return obj.__strawberry_definition__.name Todo ?
 
     class NamedNodeInterfaceTester:
         @classmethod
         def resolve_type(cls, obj: Any, *args: Any, **kwargs: Any) -> str:
             del args, kwargs
             return obj._type_definition.name
+            # return obj.__strawberry_definition__.name Todo ?
 
     spy_node_resolve_type = mocker.spy(NodeInterfaceTester, "resolve_type")
     spy_named_node_resolve_type = mocker.spy(NamedNodeInterfaceTester, "resolve_type")
