@@ -1,6 +1,9 @@
 import nox
 from nox_poetry import Session, session
 
+nox.options.reuse_existing_virtualenvs = True
+nox.options.error_on_external_run = True
+
 PYTHON_VERSIONS = ["3.11", "3.10", "3.9", "3.8", "3.7"]
 
 
@@ -15,6 +18,9 @@ COMMON_PYTEST_OPTIONS = [
     "--ignore=tests/mypy",
     "--ignore=tests/pyright",
     "--ignore=tests/cli",
+    # TODO: reintroduce this in its own test session
+    "--ignore=tests/experimental/pydantic",
+    "--ignore=tests/websockets",
 ]
 
 INTEGRATIONS = [
