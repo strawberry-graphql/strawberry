@@ -115,7 +115,9 @@ def test_pydantic(session: Session, pydantic: str) -> None:
 
     session.run(
         "pytest",
-        *COMMON_PYTEST_OPTIONS,
+        "--cov=.",
+        "--cov-append",
+        "--cov-report=xml",
         "-m",
         "pydantic",
     )
