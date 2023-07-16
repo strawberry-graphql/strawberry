@@ -8,7 +8,7 @@ PYTHON_VERSIONS = ["3.11", "3.10", "3.9", "3.8", "3.7"]
 
 
 COMMON_PYTEST_OPTIONS = [
-    "--cov=strawberry",
+    "--cov=.",
     "--cov-append",
     "--cov-report=xml",
     "-n",
@@ -128,7 +128,7 @@ def tests_mypy(session: Session) -> None:
 
     session.run(
         "pytest",
-        "--cov=strawberry",
+        "--cov=.",
         "--cov-append",
         "--cov-report=xml",
         "tests/mypy",
@@ -143,7 +143,7 @@ def tests_pyright(session: Session) -> None:
 
     session.run(
         "pytest",
-        "--cov=strawberry",
+        "--cov=.",
         "--cov-append",
         "--cov-report=xml",
         "tests/pyright",
@@ -167,7 +167,7 @@ def tests_cli(session: Session) -> None:
 
     session.run(
         "pytest",
-        "--cov=strawberry",
+        "--cov=.",
         "--cov-append",
         "--cov-report=xml",
         "tests/cli",

@@ -36,7 +36,6 @@ ignore_errors = True
 
 omit =
   ./.venv/**
-  ./tests/*
 
 [html]
 directory = coverage_html_report
