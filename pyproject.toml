@@ -153,19 +153,20 @@ addopts = "--emoji --mypy-ini-file=mypy.ini"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
 markers = [
-    "django",
-    "asgi",
-    "starlette",
-    "channels",
-    "sanic",
     "aiohttp",
-    "fastapi",
+    "asgi",
     "chalice",
-    "flask",
-    "starlite",
-    "pydantic",
+    "channels",
+    "django_db",
+    "django",
+    "fastapi",
     "flaky",
+    "flask",
+    "pydantic",
     "relay",
+    "sanic",
+    "starlette",
+    "starlite",
 ]
 asyncio_mode = "auto"
 filterwarnings = [
