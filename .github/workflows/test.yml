@@ -157,7 +157,6 @@ jobs:
           python-version: "3.11"
           cache: "poetry"
 
-      - run: poetry env use 3.11
       - run: poetry install --with integrations
         if: steps.setup-python.outputs.cache-hit != 'true'
 
