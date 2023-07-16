@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.195.2 - 2023-07-15
+--------------------
+
+This release introduces a bug fix for relay connection where previously they wouldn't work without padding the `first` argument.
+
+Contributed by [Alexander](https://github.com/devkral) via [PR #2938](https://github.com/strawberry-graphql/strawberry/pull/2938/)
+
+
 0.195.1 - 2023-07-15
 --------------------
 

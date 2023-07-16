@@ -33,7 +33,7 @@ class Fruit(relay.Node):
     def resolve_nodes(
         cls,
         *,
-        info: Info,
+        info: Info[None, None],
         node_ids: Iterable[str],
         required: bool = False,
     ) -> Iterable[Optional[Self]]:
@@ -43,7 +43,7 @@ class Fruit(relay.Node):
         return fruits.values()
 
     @classmethod
-    def is_type_of(cls, obj, _info) -> bool:
+    def is_type_of(cls, obj: Any, _info: Info[None, None]) -> bool:
         # This is here to support FruitConcrete, which is mimicing an integration
         # object which would return an object alike Fruit (e.g. the django integration)
         return isinstance(obj, (cls, FruitConcrete))
@@ -66,7 +66,7 @@ class FruitAsync(relay.Node):
     async def resolve_nodes(
         cls,
         *,
-        info: Optional[Info] = None,
+        info: Optional[Info[None, None]] = None,
         node_ids: Iterable[str],
         required: bool = False,
     ) -> Iterable[Optional[Self]]:
@@ -79,7 +79,7 @@ class FruitAsync(relay.Node):
         return fruits_async.values()
 
     @classmethod
-    async def resolve_id(cls, root: Self, *, info: Info) -> str:
+    async def resolve_id(cls, root: Self, *, info: Info[None, None]) -> str:
         return str(root.id)
 
 
@@ -94,7 +94,7 @@ class FruitCustomPaginationConnection(relay.Connection[Fruit]):
         cls,
         nodes: Iterable[Fruit],
         *,
-        info: Optional[Info] = None,
+        info: Optional[Info[None, None]] = None,
         total_count: Optional[int] = None,
         before: Optional[str] = None,
         after: Optional[str] = None,
@@ -163,7 +163,9 @@ FruitAlike = namedtuple("FruitAlike", ["id", "name", "color"])
 @strawberry.type
 class FruitAlikeConnection(relay.ListConnection[Fruit]):
     @classmethod
-    def resolve_node(cls, node: FruitAlike, *, info: Info, **kwargs: Any) -> Fruit:
+    def resolve_node(
+        cls, node: FruitAlike, *, info: Info[None, None], **kwargs: Any
+    ) -> Fruit:
         return Fruit(
             id=node.id,
             name=node.name,
@@ -209,7 +211,7 @@ class Query:
     @relay.connection(relay.ListConnection[Fruit])
     def fruits_concrete_resolver(
         self,
-        info: Info,
+        info: Info[None, None],
         name_endswith: Optional[str] = None,
     ) -> List[Fruit]:
         # This is mimicing integrations, like Django
@@ -229,7 +231,7 @@ class Query:
     @relay.connection(relay.ListConnection[Fruit])
     def fruits_custom_resolver(
         self,
-        info: Info,
+        info: Info[None, None],
         name_endswith: Optional[str] = None,
     ) -> List[Fruit]:
         return [
@@ -241,7 +243,7 @@ class Query:
     @relay.connection(relay.ListConnection[Fruit])
     def fruits_custom_resolver_lazy(
         self,
-        info: Info,
+        info: Info[None, None],
         name_endswith: Optional[str] = None,
     ) -> List[Annotated[Fruit, strawberry.lazy("tests.relay.schema")]]:
         return [
@@ -253,7 +255,7 @@ class Query:
     @relay.connection(relay.ListConnection[Fruit])
     def fruits_custom_resolver_iterator(
         self,
-        info: Info,
+        info: Info[None, None],
         name_endswith: Optional[str] = None,
     ) -> Iterator[Fruit]:
         for f in fruits.values():
@@ -263,7 +265,7 @@ class Query:
     @relay.connection(relay.ListConnection[Fruit])
     def fruits_custom_resolver_iterable(
         self,
-        info: Info,
+        info: Info[None, None],
         name_endswith: Optional[str] = None,
     ) -> Iterator[Fruit]:
         for f in fruits.values():
@@ -273,7 +275,7 @@ class Query:
     @relay.connection(relay.ListConnection[Fruit])
     def fruits_custom_resolver_generator(
         self,
-        info: Info,
+        info: Info[None, None],
         name_endswith: Optional[str] = None,
     ) -> Generator[Fruit, None, None]:
         for f in fruits.values():
@@ -283,7 +285,7 @@ class Query:
     @relay.connection(relay.ListConnection[Fruit])
     async def fruits_custom_resolver_async_iterable(
         self,
-        info: Info,
+        info: Info[None, None],
         name_endswith: Optional[str] = None,
     ) -> AsyncIterable[Fruit]:
         for f in fruits.values():
@@ -293,7 +295,7 @@ class Query:
     @relay.connection(relay.ListConnection[Fruit])
     async def fruits_custom_resolver_async_iterator(
         self,
-        info: Info,
+        info: Info[None, None],
         name_endswith: Optional[str] = None,
     ) -> AsyncIterator[Fruit]:
         for f in fruits.values():
@@ -303,7 +305,7 @@ class Query:
     @relay.connection(relay.ListConnection[Fruit])
     async def fruits_custom_resolver_async_generator(
         self,
-        info: Info,
+        info: Info[None, None],
         name_endswith: Optional[str] = None,
     ) -> AsyncGenerator[Fruit, None]:
         for f in fruits.values():
@@ -313,7 +315,7 @@ class Query:
     @relay.connection(FruitAlikeConnection)
     def fruit_alike_connection_custom_resolver(
         self,
-        info: Info,
+        info: Info[None, None],
         name_endswith: Optional[str] = None,
     ) -> List[FruitAlike]:
         return [
@@ -321,6 +323,10 @@ class Query:
             for f in fruits.values()
             if name_endswith is None or f.name.endswith(name_endswith)
         ]
+
+    @strawberry.relay.connection(strawberry.relay.ListConnection[Fruit])
+    def some_fruits(self) -> List[Fruit]:
+        return [Fruit(id=x, name="apple", color="green") for x in range(200)]
 
 
 @strawberry.type
@@ -333,7 +339,7 @@ class Mutation:
     @strawberry.mutation
     def create_fruit(
         self,
-        info: Info,
+        info: Info[None, None],
         name: str,
         color: str,
     ) -> CreateFruitPayload:

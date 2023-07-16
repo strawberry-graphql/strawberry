@@ -322,6 +322,10 @@ class Query:
             if name_endswith is None or f.name.endswith(name_endswith)
         ]
 
+    @strawberry.relay.connection(strawberry.relay.ListConnection[Fruit])
+    def some_fruits(self) -> List[Fruit]:
+        return [Fruit(id=x, name="apple", color="green") for x in range(200)]
+
 
 @strawberry.type
 class CreateFruitPayload:

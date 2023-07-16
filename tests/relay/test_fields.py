@@ -581,6 +581,35 @@ async def test_query_connection_filtering_first_async(mocker, query_attr: str):
     }
 
 
+def test_query_connection_filtering_after_without_first():
+    result = schema.execute_sync(
+        """{ someFruits {
+            edges { node { id } }
+            pageInfo {
+                endCursor
+            }
+        } }"""
+    )
+    assert not result.errors
+    assert len(result.data["someFruits"]["edges"]) == 100
+    assert (
+        relay.from_base64(result.data["someFruits"]["edges"][99]["node"]["id"])[1]
+        == "99"
+    )
+    result = schema.execute_sync(
+        """query ($after: String!){ someFruits(after: $after, first: 100) {
+            edges { node { id } }
+        } }""",
+        variable_values={"after": result.data["someFruits"]["pageInfo"]["endCursor"]},
+    )
+    assert not result.errors
+    assert len(result.data["someFruits"]["edges"]) == 100
+    assert (
+        relay.from_base64(result.data["someFruits"]["edges"][-1]["node"]["id"])[1]
+        == "199"
+    )
+
+
 @pytest.mark.parametrize("query_attr", attrs)
 def test_query_connection_filtering_first_with_after(query_attr: str):
     result = schema.execute_sync(
