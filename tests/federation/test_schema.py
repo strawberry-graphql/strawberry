@@ -302,16 +302,16 @@ def test_does_not_warn_when_using_federation_schema():
         def top_products(self, first: int) -> List[ProductFed]:
             return []
 
-    with warnings.catch_warnings(
-        record=True,
-    ) as w:
+    with warnings.catch_warnings(record=True) as w:
+        warnings.filterwarnings(
+            "ignore",
+            category=DeprecationWarning,
+            message=r"'.*' is deprecated and slated for removal in Python 3\.\d+",
+        )
+
         strawberry.federation.Schema(
             query=Query,
             enable_federation_2=True,
         )
 
-    non_python_warnings = [
-        warning for warning in w if "removal in Python 3." not in str(warning.message)
-    ]
-
-    assert len(non_python_warnings) == 0
+    assert len(w) == 0
