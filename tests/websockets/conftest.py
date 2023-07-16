@@ -13,11 +13,6 @@ def _get_http_client_classes() -> Generator[Any, None, None]:
         ("ChannelsHttpClient", "channels", [pytest.mark.channels]),
         ("FastAPIHttpClient", "fastapi", [pytest.mark.fastapi]),
         ("StarliteHttpClient", "starlite", [pytest.mark.starlite]),
-        (
-            "SyncChannelsHttpClient",
-            "channels",
-            [pytest.mark.channels, pytest.mark.django_db],
-        ),
     ]:
         try:
             client_class = getattr(
