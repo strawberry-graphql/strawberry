@@ -302,10 +302,16 @@ def test_does_not_warn_when_using_federation_schema():
         def top_products(self, first: int) -> List[ProductFed]:
             return []
 
-    with warnings.catch_warnings(record=True) as w:
+    with warnings.catch_warnings(
+        record=True,
+    ) as w:
         strawberry.federation.Schema(
             query=Query,
             enable_federation_2=True,
         )
 
-    assert not w
+    non_python_warnings = [
+        warning for warning in w if "removal in Python 3." not in str(warning.message)
+    ]
+
+    assert len(non_python_warnings) == 0

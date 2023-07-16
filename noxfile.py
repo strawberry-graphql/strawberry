@@ -4,7 +4,7 @@ from nox_poetry import Session, session
 nox.options.reuse_existing_virtualenvs = True
 nox.options.error_on_external_run = True
 
-PYTHON_VERSIONS = ["3.11", "3.10", "3.9", "3.8", "3.7"]
+PYTHON_VERSIONS = ["3.12", "3.11", "3.10", "3.9", "3.8"]
 
 
 COMMON_PYTEST_OPTIONS = [
