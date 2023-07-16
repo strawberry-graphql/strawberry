@@ -8,8 +8,10 @@ from typing import (
     Any,
     Dict,
     Iterable,
+    List,
     Mapping,
     Optional,
+    Union,
     cast,
 )
 
@@ -163,7 +165,9 @@ class GraphQLView(
         return {"request": request, "response": response}  # type: ignore
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: web.Response
+        self,
+        response_data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]],
+        sub_response: web.Response,
     ) -> web.Response:
         sub_response.text = self.encode_json(response_data)
         sub_response.content_type = "application/json"

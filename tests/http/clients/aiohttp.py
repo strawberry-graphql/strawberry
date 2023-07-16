@@ -13,8 +13,13 @@ from aiohttp.test_utils import TestClient, TestServer
 from strawberry.aiohttp.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
-from tests.views.schema import Query, schema
+from tests.aiohttp.app import (
+    DebuggableGraphQLTransportWSHandler,
+    DebuggableGraphQLWSHandler,
+)
+from tests.http.schema import Query, get_schema
 
 from ..context import get_context
 from .base import (
@@ -29,17 +34,19 @@ from .base import (
 )
 
 
-class DebuggableGraphQLTransportWSHandler(
+class DebuggableGraphQLTransportWSHandler(  # noqa: F811
     DebuggableGraphQLTransportWSMixin, GraphQLTransportWSHandler
 ):
     pass
 
 
-class DebuggableGraphQLWSHandler(DebuggableGraphQLWSMixin, GraphQLWSHandler):
+class DebuggableGraphQLWSHandler(  # noqa: F811
+    DebuggableGraphQLWSMixin, GraphQLWSHandler
+):
     pass
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(BaseGraphQLView[object, Query]):
     result_override: ResultOverrideFunction = None
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
@@ -70,9 +77,12 @@ class AioHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
+        self.schema = get_schema(config=schema_config)
+
         view = GraphQLView(
-            schema=schema,
+            schema=self.schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
             keep_alive=False,
@@ -87,7 +97,7 @@ class AioHttpClient(HttpClient):
         )
 
     def create_app(self, **kwargs: Any) -> None:
-        view = GraphQLView(schema=schema, **kwargs)
+        view = GraphQLView(schema=self.schema, **kwargs)
 
         self.app = web.Application()
         self.app.router.add_route(

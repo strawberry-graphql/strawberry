@@ -9,6 +9,7 @@ import strawberry
 from strawberry.extensions import SchemaExtension
 from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
+from strawberry.schema.config import StrawberryConfig
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
 from strawberry.types import ExecutionContext, Info
 
@@ -39,7 +40,7 @@ def _read_file(text_file: Upload) -> str:
         if isinstance(text_file, StarliteUploadFile):
             text_file = text_file.file  # type: ignore
 
-    return text_file.read().decode()
+    return text_file.read().decode()  # type: ignore
 
 
 @strawberry.enum
@@ -143,7 +144,7 @@ class Mutation:
 
     @strawberry.mutation
     def match_text(self, text_file: Upload, pattern: str) -> str:
-        text = text_file.read().decode()
+        text = text_file.read().decode()  # type: ignore
         return pattern if pattern in text else ""
 
 
@@ -264,7 +265,9 @@ class Subscription:
 
 class Schema(strawberry.Schema):
     def process_errors(
-        self, errors: List, execution_context: Optional[ExecutionContext] = None
+        self,
+        errors: List[GraphQLError],
+        execution_context: Optional[ExecutionContext] = None,
     ) -> None:
         import traceback
 
@@ -272,9 +275,11 @@ class Schema(strawberry.Schema):
         return super().process_errors(errors, execution_context)
 
 
-schema = Schema(
-    query=Query,
-    mutation=Mutation,
-    subscription=Subscription,
-    extensions=[MyExtension],
-)
+def get_schema(config: Optional[StrawberryConfig] = None) -> strawberry.Schema:
+    return Schema(
+        query=Query,
+        mutation=Mutation,
+        subscription=Subscription,
+        extensions=[MyExtension],
+        config=config,
+    )

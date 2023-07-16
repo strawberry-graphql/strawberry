@@ -12,17 +12,18 @@ from django.test.client import RequestFactory
 
 from strawberry.django.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
-from tests.views.schema import Query, schema
+from tests.http.schema import Query, get_schema
 
 from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(BaseGraphQLView[object, Query]):
     result_override: ResultOverrideFunction = None
 
-    def get_root_value(self, request) -> Query:
+    def get_root_value(self, request: HttpRequest) -> Query:
         super().get_root_value(request)  # for coverage
         return Query()
 
@@ -45,10 +46,12 @@ class DjangoHttpClient(HttpClient):
         self,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
+        schema_config: Optional[StrawberryConfig] = None,
         result_override: ResultOverrideFunction = None,
     ):
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
+        self.schema_config = schema_config
         self.result_override = result_override
 
     def _get_header_name(self, key: str) -> str:
@@ -67,7 +70,7 @@ class DjangoHttpClient(HttpClient):
 
     async def _do_request(self, request: RequestFactory) -> Response:
         view = GraphQLView.as_view(
-            schema=schema,
+            schema=get_schema(config=self.schema_config),
             graphiql=self.graphiql,
             allow_queries_via_get=self.allow_queries_via_get,
             result_override=self.result_override,

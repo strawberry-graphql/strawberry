@@ -14,14 +14,15 @@ from flask import Request as FlaskRequest
 from flask import Response as FlaskResponse
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
-from tests.views.schema import Query, schema
+from tests.http.schema import Query, get_schema
 
 from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(BaseGraphQLView[Dict[str, object], Query]):
     # this allows to test our code path for checking the request type
     # TODO: we might want to remove our check since it is done by flask
     # already
@@ -29,7 +30,7 @@ class GraphQLView(BaseGraphQLView):
 
     result_override: ResultOverrideFunction = None
 
-    def __init__(self, *args: str, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 
@@ -58,6 +59,7 @@ class FlaskHttpClient(HttpClient):
         self,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
+        schema_config: Optional[StrawberryConfig] = None,
         result_override: ResultOverrideFunction = None,
     ):
         self.app = Flask(__name__)
@@ -65,7 +67,7 @@ class FlaskHttpClient(HttpClient):
 
         view = GraphQLView.as_view(
             "graphql_view",
-            schema=schema,
+            schema=get_schema(config=schema_config),
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,

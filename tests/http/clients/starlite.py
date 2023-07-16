@@ -11,10 +11,11 @@ from starlite.exceptions import WebSocketDisconnect
 from starlite.testing import TestClient
 from starlite.testing.websocket_test_session import WebSocketTestSession
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.schema.config import StrawberryConfig
 from strawberry.starlite import make_graphql_controller
 from strawberry.starlite.controller import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.types import ExecutionResult
-from tests.views.schema import Query, schema
+from tests.http.schema import Query, get_schema
 
 from ..context import get_context
 from .base import (
@@ -56,17 +57,24 @@ class StarliteHttpClient(HttpClient):
         self,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
+        schema_config: Optional[StrawberryConfig] = None,
         result_override: ResultOverrideFunction = None,
     ):
         self.create_app(
             graphiql=graphiql,
+            schema_config=schema_config,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
         )
 
-    def create_app(self, result_override: ResultOverrideFunction = None, **kwargs: Any):
+    def create_app(
+        self,
+        result_override: ResultOverrideFunction = None,
+        schema_config: Optional[StrawberryConfig] = None,
+        **kwargs: Any,
+    ):
         BaseGraphQLController = make_graphql_controller(
-            schema=schema,
+            schema=get_schema(config=schema_config),
             path="/graphql",
             context_getter=starlite_get_context,
             root_value_getter=get_root_value,
@@ -78,7 +86,7 @@ class StarliteHttpClient(HttpClient):
             graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
             async def process_result(
-                self, request: Request, result: ExecutionResult
+                self, request: Request[Any, Any], result: ExecutionResult
             ) -> GraphQLHTTPResponse:
                 if result_override:
                     return result_override(result)

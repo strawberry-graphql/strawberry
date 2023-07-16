@@ -29,7 +29,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
 )
 from tests.http.clients import AioHttpClient, ChannelsHttpClient
 from tests.http.clients.base import DebuggableGraphQLTransportWSMixin
-from tests.views.schema import Schema
+from tests.http.schema import Schema
 
 from ..http.clients import HttpClient, WebSocketClient
 

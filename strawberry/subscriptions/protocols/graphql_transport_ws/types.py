@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class GraphQLTransportMessage:
-    def as_dict(self) -> dict:
+    def as_dict(self) -> Dict[str, Any]:
         data = asdict(self)
         if getattr(self, "payload", None) is UNSET:
             # Unset fields must have a JSON value of "undefined" not "null"

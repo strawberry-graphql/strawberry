@@ -13,8 +13,9 @@ from fastapi.testclient import TestClient
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
-from tests.views.schema import Query, schema
+from tests.http.schema import Query, get_schema
 
 from ..context import get_context
 from .asgi import AsgiWebSocketClient
@@ -83,12 +84,14 @@ class FastAPIHttpClient(HttpClient):
         self,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
+        schema_config: Optional[StrawberryConfig] = None,
         result_override: ResultOverrideFunction = None,
     ):
         self.app = FastAPI()
+        self.schema = get_schema(config=schema_config)
 
         graphql_app = GraphQLRouter(
-            schema,
+            schema=self.schema,
             graphiql=graphiql,
             context_getter=fastapi_get_context,
             root_value_getter=get_root_value,
@@ -102,7 +105,7 @@ class FastAPIHttpClient(HttpClient):
 
     def create_app(self, **kwargs: Any) -> None:
         self.app = FastAPI()
-        graphql_app = GraphQLRouter(schema=schema, **kwargs)
+        graphql_app = GraphQLRouter(schema=self.schema, **kwargs)
         self.app.include_router(graphql_app, prefix="/graphql")
 
         self.client = TestClient(self.app)

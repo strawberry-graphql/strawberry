@@ -17,7 +17,8 @@ from strawberry.channels import (
 from strawberry.channels.handlers.base import ChannelsConsumer
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.typevars import Context, RootValue
-from tests.views.schema import Query, schema
+from strawberry.schema.config import StrawberryConfig
+from tests.http.schema import Query, get_schema
 
 from ..context import get_context
 from .base import (
@@ -31,7 +32,7 @@ from .base import (
 
 
 def generate_get_path(
-    path, query: str, variables: Optional[Dict[str, Any]] = None
+    path: str, query: str, variables: Optional[Dict[str, Any]] = None
 ) -> str:
     body: Dict[str, Any] = {"query": query}
     if variables is not None:
@@ -69,7 +70,7 @@ class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
         else:
             return list(self._handler.tasks.values())
 
-    async def get_context(self, *args: str, **kwargs: Any) -> object:
+    async def get_context(self, *args: Any, **kwargs: Any) -> object:
         context = await super().get_context(*args, **kwargs)
         context["ws"] = self._handler._ws
         context["get_tasks"] = self.get_tasks
@@ -139,14 +140,17 @@ class ChannelsHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
+        self.schema = get_schema(schema_config)
+
         self.ws_app = DebuggableGraphQLTransportWSConsumer.as_asgi(
-            schema=schema,
+            schema=self.schema,
             keep_alive=False,
         )
 
         self.http_app = DebuggableGraphQLHTTPConsumer.as_asgi(
-            schema=schema,
+            schema=self.schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
@@ -154,7 +158,7 @@ class ChannelsHttpClient(HttpClient):
 
     def create_app(self, **kwargs: Any) -> None:
         self.ws_app = DebuggableGraphQLTransportWSConsumer.as_asgi(
-            schema=schema, **kwargs
+            schema=self.schema, **kwargs
         )
 
     async def _graphql_request(
@@ -258,9 +262,11 @@ class SyncChannelsHttpClient(ChannelsHttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
+        self.schema = get_schema(config=schema_config)
         self.http_app = DebuggableSyncGraphQLHTTPConsumer.as_asgi(
-            schema=schema,
+            schema=self.schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,

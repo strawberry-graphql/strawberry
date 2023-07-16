@@ -7,14 +7,14 @@ from django.test.client import RequestFactory
 from strawberry.django.views import AsyncGraphQLView as BaseAsyncGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
-from tests.views.schema import Query, schema
+from tests.http.schema import Query, get_schema
 
 from ..context import get_context
 from .base import Response, ResultOverrideFunction
 from .django import DjangoHttpClient
 
 
-class AsyncGraphQLView(BaseAsyncGraphQLView):
+class AsyncGraphQLView(BaseAsyncGraphQLView[object, Query]):
     result_override: ResultOverrideFunction = None
 
     async def get_root_value(self, request: HttpRequest) -> Query:
@@ -38,7 +38,7 @@ class AsyncGraphQLView(BaseAsyncGraphQLView):
 class AsyncDjangoHttpClient(DjangoHttpClient):
     async def _do_request(self, request: RequestFactory) -> Response:
         view = AsyncGraphQLView.as_view(
-            schema=schema,
+            schema=get_schema(config=self.schema_config),
             graphiql=self.graphiql,
             allow_queries_via_get=self.allow_queries_via_get,
             result_override=self.result_override,

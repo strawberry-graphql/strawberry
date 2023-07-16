@@ -7,7 +7,7 @@ from __future__ import annotations
 import dataclasses
 import json
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union
 from urllib.parse import parse_qs
 
 from django.conf import settings
@@ -162,7 +162,9 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         return ChannelsResponse(content=html.encode(), content_type="text/html")
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse
+        self,
+        response_data: Union[GraphQLHTTPResponse, List[GraphQLHTTPResponse]],
+        sub_response: TemporalResponse,
     ) -> ChannelsResponse:
         return ChannelsResponse(
             content=json.dumps(response_data).encode(),

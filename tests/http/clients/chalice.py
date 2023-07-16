@@ -12,14 +12,15 @@ from chalice.test import Client
 from strawberry.chalice.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.temporal_response import TemporalResponse
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
-from tests.views.schema import Query, schema
+from tests.http.schema import Query, get_schema
 
 from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(BaseGraphQLView[object, Query]):
     result_override: ResultOverrideFunction = None
 
     def get_root_value(self, request: ChaliceRequest) -> Query:
@@ -47,12 +48,13 @@ class ChaliceHttpClient(HttpClient):
         self,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
+        schema_config: Optional[StrawberryConfig] = None,
         result_override: ResultOverrideFunction = None,
     ):
         self.app = Chalice(app_name="TheStackBadger")
 
         view = GraphQLView(
-            schema=schema,
+            schema=get_schema(config=schema_config),
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
         )

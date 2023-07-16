@@ -14,8 +14,9 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 from strawberry.asgi import GraphQL as BaseGraphQLView
 from strawberry.asgi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
-from tests.views.schema import Query, schema
+from tests.http.schema import Query, get_schema
 
 from ..context import get_context
 from .base import (
@@ -40,7 +41,7 @@ class DebuggableGraphQLWSHandler(DebuggableGraphQLWSMixin, GraphQLWSHandler):
     pass
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(BaseGraphQLView[object, Query]):
     result_override: ResultOverrideFunction = None
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
@@ -58,7 +59,7 @@ class GraphQLView(BaseGraphQLView):
         return get_context(context)
 
     async def process_result(
-        self, request: Request, result: ExecutionResult
+        self, request: Union[WebSocket, Request], result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         if self.result_override:
             return self.result_override(result)
@@ -71,10 +72,12 @@ class AsgiHttpClient(HttpClient):
         self,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
+        schema_config: Optional[StrawberryConfig] = None,
         result_override: ResultOverrideFunction = None,
     ):
+        self.schema = get_schema(config=schema_config)
         view = GraphQLView(
-            schema,
+            schema=self.schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
             keep_alive=False,
@@ -84,7 +87,7 @@ class AsgiHttpClient(HttpClient):
         self.client = TestClient(view)
 
     def create_app(self, **kwargs: Any) -> None:
-        view = GraphQLView(schema=schema, **kwargs)
+        view = GraphQLView(schema=self.schema, **kwargs)
         self.client = TestClient(view)
 
     async def _graphql_request(
