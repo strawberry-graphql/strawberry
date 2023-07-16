@@ -32,7 +32,6 @@ def pytest_collection_modifyitems(config: pytest.Config, items: List[pytest.Item
             "flask",
             "pydantic",
             "sanic",
-            "starlette",
             "starlite",
         ]
 

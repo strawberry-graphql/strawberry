@@ -36,6 +36,7 @@ ignore_errors = True
 
 omit =
   ./.venv/**
+  noxfile.py
 
 [html]
 directory = coverage_html_report

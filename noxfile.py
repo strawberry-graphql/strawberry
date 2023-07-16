@@ -31,7 +31,6 @@ INTEGRATIONS = [
     "fastapi",
     "flask",
     "sanic",
-    "starlette",
     "starlite",
     "pydantic",
 ]
@@ -72,7 +71,7 @@ def tests_starlette(session: Session, starlette: str) -> None:
 
     session._session.install(f"starlette=={starlette}")  # type: ignore
 
-    session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", "starlette")
+    session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", "asgi")
 
 
 @session(python=["3.11"], name="Test integrations", tags=["tests"])
