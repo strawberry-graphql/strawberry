@@ -26,12 +26,13 @@ class MyExtension(SchemaExtension):
 
 
 def _read_file(text_file: Upload) -> str:
-    from starlette.datastructures import UploadFile
+    with contextlib.suppress(ModuleNotFoundError):
+        from starlette.datastructures import UploadFile
 
-    # allow to keep this function synchronous, starlette's files have
-    # async methods for reading
-    if isinstance(text_file, UploadFile):
-        text_file = text_file.file._file  # type: ignore
+        # allow to keep this function synchronous, starlette's files have
+        # async methods for reading
+        if isinstance(text_file, UploadFile):
+            text_file = text_file.file._file  # type: ignore
 
     with contextlib.suppress(ModuleNotFoundError):
         from starlite import UploadFile as StarliteUploadFile

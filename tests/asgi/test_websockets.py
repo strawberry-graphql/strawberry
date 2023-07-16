@@ -1,12 +1,14 @@
 import pytest
-from starlette.testclient import TestClient
-from starlette.websockets import WebSocketDisconnect
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from tests.asgi.app import create_app
 
 
 def test_turning_off_graphql_ws():
+    from starlette.testclient import TestClient
+    from starlette.websockets import WebSocketDisconnect
+
+    from tests.asgi.app import create_app
+
     app = create_app(subscription_protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL])
     test_client = TestClient(app)
 
@@ -18,6 +20,11 @@ def test_turning_off_graphql_ws():
 
 
 def test_turning_off_graphql_transport_ws():
+    from starlette.testclient import TestClient
+    from starlette.websockets import WebSocketDisconnect
+
+    from tests.asgi.app import create_app
+
     app = create_app(subscription_protocols=[GRAPHQL_WS_PROTOCOL])
     test_client = TestClient(app)
 
@@ -29,6 +36,11 @@ def test_turning_off_graphql_transport_ws():
 
 
 def test_turning_off_all_ws_protocols():
+    from starlette.testclient import TestClient
+    from starlette.websockets import WebSocketDisconnect
+
+    from tests.asgi.app import create_app
+
     app = create_app(subscription_protocols=[])
     test_client = TestClient(app)
 
@@ -46,6 +58,11 @@ def test_turning_off_all_ws_protocols():
 
 
 def test_unsupported_ws_protocol():
+    from starlette.testclient import TestClient
+    from starlette.websockets import WebSocketDisconnect
+
+    from tests.asgi.app import create_app
+
     app = create_app(subscription_protocols=[])
     test_client = TestClient(app)
 
@@ -57,6 +74,10 @@ def test_unsupported_ws_protocol():
 
 
 def test_clients_can_prefer_protocols():
+    from starlette.testclient import TestClient
+
+    from tests.asgi.app import create_app
+
     app = create_app(
         subscription_protocols=[GRAPHQL_WS_PROTOCOL, GRAPHQL_TRANSPORT_WS_PROTOCOL]
     )

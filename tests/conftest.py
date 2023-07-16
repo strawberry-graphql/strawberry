@@ -22,5 +22,19 @@ def pytest_collection_modifyitems(config: pytest.Config, items: List[pytest.Item
     for item in items:
         rel_path = pathlib.Path(item.fspath).relative_to(rootdir)
 
-        if "pydantic" in rel_path.parts:
-            item.add_marker(pytest.mark.pydantic)
+        markers = [
+            "aiohttp",
+            "asgi",
+            "chalice",
+            "channels",
+            "django",
+            "fastapi",
+            "flask",
+            "pydantic",
+            "sanic",
+            "starlite",
+        ]
+
+        for marker in markers:
+            if marker in rel_path.parts:
+                item.add_marker(getattr(pytest.mark, marker))
