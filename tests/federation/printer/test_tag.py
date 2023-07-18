@@ -59,7 +59,7 @@ def test_field_tag_printed_correctly():
 def test_field_tag_printed_correctly_on_scalar():
     @strawberry.federation.scalar(tags=["myTag", "anotherTag"])
     class SomeScalar(str):
-        ...
+        __slots__ = ()
 
     @strawberry.federation.type
     class Query:

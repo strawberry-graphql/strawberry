@@ -386,6 +386,8 @@ def test_prints_with_enum():
     class Reason(str, Enum):
         EXAMPLE = "example"
 
+        __slots__ = ()
+
     @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
     class Sensitive:
         reason: Reason
@@ -468,9 +470,13 @@ def test_print_directive_on_enum():
     class Sensitive:
         reason: str
 
+        __slots__ = ()
+
     @strawberry.enum(directives=[Sensitive(reason="example")])
     class SomeEnum(str, Enum):
         EXAMPLE = "example"
+
+        __slots__ = ()
 
     @strawberry.type
     class Query:

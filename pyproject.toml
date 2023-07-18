@@ -297,6 +297,9 @@ ignore = [
     # pandas
     "PD",
 
+    "RUF012",
+    "PLC0105",
+
     # code complexity
     "C",
     "C901",
