@@ -299,6 +299,7 @@ ignore = [
 
     "RUF012",
     "PLC0105",
+    "FA102",
 
     # code complexity
     "C",
