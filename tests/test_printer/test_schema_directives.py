@@ -470,8 +470,6 @@ def test_print_directive_on_enum():
     class Sensitive:
         reason: str
 
-        __slots__ = ()
-
     @strawberry.enum(directives=[Sensitive(reason="example")])
     class SomeEnum(str, Enum):
         EXAMPLE = "example"
