@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type
 import pydantic
 from pydantic import BaseModel
 from pydantic.version import VERSION as PYDANTIC_VERSION
-from pydantic_core import PydanticUndefined
 
 if TYPE_CHECKING:
     from pydantic.fields import FieldInfo
@@ -32,6 +31,7 @@ if pydantic.VERSION[0] == "2":
 
     from pydantic._internal._typing_extra import is_new_type
     from pydantic._internal._utils import lenient_issubclass, smart_deepcopy
+    from pydantic_core import PydanticUndefined
 
     PYDANTIC_MISSING_TYPE = PydanticUndefined
 
