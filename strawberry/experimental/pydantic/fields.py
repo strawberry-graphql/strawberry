@@ -1,6 +1,7 @@
 import builtins
+import types
 from decimal import Decimal
-from typing import Any, List, Optional, Type
+from typing import Any, List, Optional, Type, Union
 from uuid import UUID
 
 import pydantic
@@ -21,6 +22,7 @@ from strawberry.types.types import StrawberryObjectDefinition
 
 try:
     from typing import GenericAlias as TypingGenericAlias  # type: ignore
+    from types import UnionType as TypingUnionType  # type: ignore
 except ImportError:
     import sys
 
@@ -28,6 +30,10 @@ except ImportError:
     # we do this under a conditional to avoid a mypy :)
     if sys.version_info < (3, 9):
         TypingGenericAlias = ()
+    else:
+        raise
+    if sys.version_info < (3, 10):
+        TypingUnionType = ()
     else:
         raise
 
@@ -138,7 +144,8 @@ def replace_types_recursively(type_: Any, is_input: bool) -> Any:
 
     if isinstance(replaced_type, TypingGenericAlias):
         return TypingGenericAlias(origin, converted)
-
+    if isinstance(replaced_type, TypingUnionType):
+        return Union[converted]
     replaced_type = replaced_type.copy_with(converted)
 
     if isinstance(replaced_type, StrawberryObjectDefinition):
