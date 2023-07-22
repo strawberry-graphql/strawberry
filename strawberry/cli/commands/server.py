@@ -19,6 +19,8 @@ class LogLevel(str, Enum):
     warning = "warning"
     error = "error"
 
+    __slots__ = ()
+
 
 @app.command(help="Starts debug server")
 def server(

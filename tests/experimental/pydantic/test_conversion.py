@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import dataclasses
 import re
@@ -984,7 +986,9 @@ def test_custom_conversion_functions():
         password: strawberry.auto
 
         @staticmethod
-        def from_pydantic(instance: User, extra: Dict[str, Any] = None) -> "UserType":
+        def from_pydantic(
+            instance: User, extra: Optional[Dict[str, Any]] = None
+        ) -> UserType:
             return UserType(
                 age=str(instance.age),
                 password=base64.b64encode(instance.password.encode()).decode()
@@ -1024,7 +1028,9 @@ def test_nested_custom_conversion_functions():
         password: strawberry.auto
 
         @staticmethod
-        def from_pydantic(instance: User, extra: Dict[str, Any] = None) -> "UserType":
+        def from_pydantic(
+            instance: User, extra: Optional[Dict[str, Any]] = None
+        ) -> UserType:
             return UserType(
                 age=str(instance.age),
                 password=base64.b64encode(instance.password.encode()).decode()

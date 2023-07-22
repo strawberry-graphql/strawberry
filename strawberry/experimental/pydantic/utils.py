@@ -54,13 +54,7 @@ def get_strawberry_type_from_model(type_: Any) -> Any:
 
 
 def get_private_fields(cls: Type) -> List[dataclasses.Field]:
-    private_fields: List[dataclasses.Field] = []
-
-    for field in dataclasses.fields(cls):
-        if is_private(field.type):
-            private_fields.append(field)
-
-    return private_fields
+    return [field for field in dataclasses.fields(cls) if is_private(field.type)]
 
 
 class DataclassCreationFields(NamedTuple):
