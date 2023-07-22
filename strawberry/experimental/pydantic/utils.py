@@ -33,7 +33,6 @@ from strawberry.utils.typing import (
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
-    from pydantic.fields import ModelField
     from pydantic.typing import NoArgAnyCallable
 
 
@@ -72,7 +71,7 @@ class DataclassCreationFields(NamedTuple):
 
 def get_default_factory_for_field(
     field: CompatModelField,
-) -> Union[NoArgAnyCallable, PYDANTIC_MISSING_TYPE]:
+) -> Union[NoArgAnyCallable, dataclasses._MISSING_TYPE]:
     """
     Gets the default factory for a pydantic field.
 

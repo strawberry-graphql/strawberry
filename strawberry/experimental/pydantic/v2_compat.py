@@ -4,7 +4,6 @@ from typing import Dict, Type, Any, Optional, Callable
 
 import pydantic
 from pydantic import BaseModel
-from pydantic.v1.typing import NoArgAnyCallable
 from pydantic.version import VERSION as PYDANTIC_VERSION
 from pydantic_core import PydanticUndefined
 
@@ -19,10 +18,10 @@ class CompatModelField:
     default: Any
     default_factory: Optional[Callable[[], Any]]
     required: bool
-    alias: str
+    alias: Optional[str]
     allow_none: bool
     has_alias: bool
-    description: str
+    description: Optional[str]
 
 
 if pydantic.VERSION[0] == "2":
@@ -33,7 +32,7 @@ if pydantic.VERSION[0] == "2":
     from pydantic.v1.fields import ModelField
     from pydantic.fields import FieldInfo
 
-    PYDANTIC_MISSING_TYPE = PydanticUndefined
+    PYDANTIC_MISSING_TYPE: Type = PydanticUndefined
 
     def new_type_supertype(type_):
         return type_.__supertype__
@@ -58,7 +57,7 @@ if pydantic.VERSION[0] == "2":
         return new_fields
 
 else:
-    from pydantic.utils import smart_deepcopy
+    from pydantic.utils import smart_deepcopy  # type: ignore
     from pydantic.utils import lenient_issubclass
     from pydantic.typing import get_args, get_origin, is_new_type, new_type_supertype
     from pydantic import ModelField
@@ -83,4 +82,13 @@ else:
         return new_fields
 
 
-__all__ = ["smart_deepcopy", "lenient_issubclass"]
+__all__ = [
+    "smart_deepcopy",
+    "lenient_issubclass",
+    "get_args",
+    "get_origin",
+    "is_new_type",
+    "new_type_supertype",
+    "get_model_fields",
+    "PYDANTIC_MISSING_TYPE",
+]

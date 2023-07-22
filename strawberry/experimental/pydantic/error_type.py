@@ -23,7 +23,7 @@ from strawberry.experimental.pydantic.utils import (
     get_strawberry_type_from_model,
     normalize_type,
 )
-from strawberry.experimental.pydantic.v2_compat import lenient_issubclass, get_model_fields
+from strawberry.experimental.pydantic.v2_compat import lenient_issubclass, get_model_fields, CompatModelField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.typing import get_list_annotation, is_list
@@ -32,11 +32,8 @@ from strawberry.utils.typing import get_list_annotation, is_list
 
 from .exceptions import MissingFieldsListError
 
-if TYPE_CHECKING:
-    from pydantic.fields import ModelField
 
-
-def get_type_for_field(field: ModelField) -> Union[Any, Type[None], Type[List]]:
+def get_type_for_field(field: CompatModelField) -> Union[Any, Type[None], Type[List]]:
     type_ = field.outer_type_
     type_ = normalize_type(type_)
     return field_type_to_type(type_)

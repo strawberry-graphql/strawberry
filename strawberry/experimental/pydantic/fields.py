@@ -22,7 +22,7 @@ from strawberry.types.types import StrawberryObjectDefinition
 
 try:
     from typing import GenericAlias as TypingGenericAlias  # type: ignore
-    from types import UnionType as TypingUnionType  # type: ignore
+    from types import UnionType as TypingUnionType
 except ImportError:
     import sys
 
