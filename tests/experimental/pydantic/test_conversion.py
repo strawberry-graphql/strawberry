@@ -852,6 +852,7 @@ def test_get_default_factory_for_field():
     ) -> CompatModelField:
         return CompatModelField(
             name="a",
+            type_=str,
             outer_type_=str,
             default=default,
             default_factory=default_factory,

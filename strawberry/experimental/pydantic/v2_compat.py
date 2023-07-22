@@ -16,6 +16,7 @@ IS_PYDANTIC_V1: bool = not IS_PYDANTIC_V2
 @dataclass
 class CompatModelField:
     name: str
+    type_: Any
     outer_type_: Any
     default: Any
     default_factory: Optional[Callable[[], Any]]
@@ -45,6 +46,7 @@ if pydantic.VERSION[0] == "2":
         for name, field in field_info.items():
             new_fields[name] = CompatModelField(
                 name=name,
+                type_=field.annotation,
                 outer_type_=field.annotation,
                 default=field.default,
                 default_factory=field.default_factory,
@@ -77,7 +79,8 @@ else:
         for name, field in model.__fields__.items():  # type: ignore[attr-defined]
             new_fields[name] = CompatModelField(
                 name=name,
-                outer_type_=field.type_,
+                type_=field.type_,
+                outer_type_=field.outer_type_,
                 default=field.default,
                 default_factory=field.default_factory,
                 required=field.required,
