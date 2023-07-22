@@ -1,28 +1,28 @@
 import builtins
-import types
 from decimal import Decimal
 from typing import Any, List, Optional, Type, Union
 from uuid import UUID
 
 import pydantic
 from pydantic import BaseModel
-from strawberry.experimental.pydantic.v2_compat import (
-    lenient_issubclass,
-    get_args,
-    get_origin,
-    is_new_type,
-    new_type_supertype,
-    IS_PYDANTIC_V2,
-)
+
 from strawberry.experimental.pydantic.exceptions import (
     UnregisteredTypeException,
     UnsupportedTypeError,
 )
+from strawberry.experimental.pydantic.v2_compat import (
+    IS_PYDANTIC_V2,
+    get_args,
+    get_origin,
+    is_new_type,
+    lenient_issubclass,
+    new_type_supertype,
+)
 from strawberry.types.types import StrawberryObjectDefinition
 
 try:
-    from typing import GenericAlias as TypingGenericAlias  # type: ignore
     from types import UnionType as TypingUnionType  # type: ignore
+    from typing import GenericAlias as TypingGenericAlias  # type: ignore
 except ImportError:
     import sys
 
@@ -82,7 +82,7 @@ ATTR_TO_TYPE_MAP = {
 }
 
 """TODO:
-Most of these fields are not supported by pydantic V2 
+Most of these fields are not supported by pydantic V2
 """
 FIELDS_MAP = (
     {

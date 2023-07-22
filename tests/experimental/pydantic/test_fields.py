@@ -10,7 +10,7 @@ import strawberry
 from strawberry.experimental.pydantic.v2_compat import IS_PYDANTIC_V1
 from strawberry.type import StrawberryOptional
 from strawberry.types.types import StrawberryObjectDefinition
-from tests.experimental.pydantic.utils import needs_pydanticv2, needs_pydanticv1
+from tests.experimental.pydantic.utils import needs_pydanticv1, needs_pydanticv2
 
 
 @needs_pydanticv1

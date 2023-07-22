@@ -30,7 +30,11 @@ from strawberry.experimental.pydantic.utils import (
     get_default_factory_for_field,
     get_private_fields,
 )
-from strawberry.experimental.pydantic.v2_compat import CompatModelField, get_model_fields, IS_PYDANTIC_V2
+from strawberry.experimental.pydantic.v2_compat import (
+    IS_PYDANTIC_V2,
+    CompatModelField,
+    get_model_fields,
+)
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
