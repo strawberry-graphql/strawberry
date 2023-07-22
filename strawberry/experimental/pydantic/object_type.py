@@ -44,7 +44,6 @@ if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
 
 
-
 def get_type_for_field(field: CompatModelField, is_input: bool):  # noqa: ANN201
     outer_type = field.outer_type_
     replaced_type = replace_types_recursively(outer_type, is_input)

@@ -40,8 +40,6 @@ def get_type_for_field(field: CompatModelField) -> Union[Any, Type[None], Type[L
     return field_type_to_type(type_)
 
 
-
-
 def field_type_to_type(type_: Type) -> Union[Any, List[Any], None]:
     error_class: Any = str
     strawberry_type: Any = error_class
@@ -65,13 +63,13 @@ def field_type_to_type(type_: Type) -> Union[Any, List[Any], None]:
 
 
 def error_type(
-        model: Type[BaseModel],
-        *,
-        fields: Optional[List[str]] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        directives: Optional[Sequence[object]] = (),
-        all_fields: bool = False,
+    model: Type[BaseModel],
+    *,
+    fields: Optional[List[str]] = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+    all_fields: bool = False,
 ) -> Callable[..., Type]:
     def wrap(cls: Type) -> Type:
         model_fields = get_model_fields(model)

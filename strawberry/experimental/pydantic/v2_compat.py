@@ -69,12 +69,12 @@ else:
         smart_deepcopy,  # type: ignore[no-redef]
     )
 
-    PYDANTIC_MISSING_TYPE = dataclasses.MISSING # type: ignore[assignment]
+    PYDANTIC_MISSING_TYPE = dataclasses.MISSING  # type: ignore[assignment]
 
     def get_model_fields(model: Type[BaseModel]) -> Dict[str, CompatModelField]:
         new_fields = {}
         # Convert it into CompatModelField
-        for name, field in model.__fields__.items(): # type: ignore[attr-defined]
+        for name, field in model.__fields__.items():  # type: ignore[attr-defined]
             new_fields[name] = CompatModelField(
                 name=name,
                 outer_type_=field.type_,
