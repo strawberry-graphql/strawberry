@@ -1,9 +1,11 @@
 import os
 import sys
-from typing import Any
+from enum import Enum
 
-import click
+import rich
+import typer
 
+from strawberry.cli.app import app
 from strawberry.cli.constants import (
     DEBUG_SERVER_LOG_OPERATIONS,
     DEBUG_SERVER_SCHEMA_ENV_VAR_KEY,
@@ -11,36 +13,41 @@ from strawberry.cli.constants import (
 from strawberry.cli.utils import load_schema
 
 
-@click.command("server", short_help="Starts debug server")
-@click.argument("schema", type=str)
-@click.option("-h", "--host", default="0.0.0.0", type=str)
-@click.option("-p", "--port", default=8000, type=int)
-@click.option(
-    "--log-level",
-    default="error",
-    type=click.Choice(["debug", "info", "warning", "error"], case_sensitive=False),
-    help="passed to uvicorn to determine the log level",
-)
-@click.option(
-    "--app-dir",
-    default=".",
-    type=str,
-    show_default=True,
-    help=(
-        "Look for the module in the specified directory, by adding this to the "
-        "PYTHONPATH. Defaults to the current working directory. "
-        "Works the same as `--app-dir` in uvicorn."
-    ),
-)
-@click.option(
-    "--log-operations",
-    default=True,
-    type=bool,
-    show_default=True,
-    help="Log GraphQL operations",
-)
+class LogLevel(str, Enum):
+    debug = "debug"
+    info = "info"
+    warning = "warning"
+    error = "error"
+
+    __slots__ = ()
+
+
+@app.command(help="Starts debug server")
 def server(
-    schema: str, host: str, port: int, log_level: str, app_dir: str, log_operations: Any
+    schema: str,
+    host: str = typer.Option("0.0.0.0", "-h", "--host", show_default=True),
+    port: int = typer.Option(8000, "-p", "--port", show_default=True),
+    log_level: LogLevel = typer.Option(
+        "error",
+        "--log-level",
+        help="passed to uvicorn to determine the log level",
+    ),
+    app_dir: str = typer.Option(
+        ".",
+        "--app-dir",
+        show_default=True,
+        help=(
+            "Look for the module in the specified directory, by adding this to the "
+            "PYTHONPATH. Defaults to the current working directory. "
+            "Works the same as `--app-dir` in uvicorn."
+        ),
+    ),
+    log_operations: bool = typer.Option(
+        True,
+        "--log-operations",
+        show_default=True,
+        help="Log GraphQL operations",
+    ),
 ) -> None:
     sys.path.insert(0, app_dir)
 
@@ -48,11 +55,12 @@ def server(
         import starlette  # noqa: F401
         import uvicorn
     except ImportError:
-        message = (
-            "The debug server requires additional packages, install them by running:\n"
-            "pip install 'strawberry-graphql[debug-server]'"
+        rich.print(
+            "[red]Error: The debug server requires additional packages, "
+            "install them by running:\n"
+            r"pip install 'strawberry-graphql\[debug-server]'"
         )
-        raise click.ClickException(message)
+        raise typer.Exit(1)
 
     load_schema(schema, app_dir=app_dir)
 

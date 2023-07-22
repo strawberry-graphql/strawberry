@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import AsyncGenerator
+from typing import TYPE_CHECKING, AsyncGenerator
 
 import pytest
 import pytest_asyncio
@@ -18,7 +20,8 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_STOP,
 )
 
-from ..http.clients import AioHttpClient, HttpClient, WebSocketClient
+if TYPE_CHECKING:
+    from ..http.clients.aiohttp import HttpClient, WebSocketClient
 
 
 @pytest_asyncio.fixture
@@ -119,13 +122,17 @@ async def test_sends_keep_alive(aiohttp_app_client: HttpClient):
         response = await ws.receive_json()
         assert response["type"] == GQL_CONNECTION_ACK
 
-        response = await ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_KEEP_ALIVE
+        # we can't be sure how many keep-alives exactly we
+        # get but they should be more than one.
+        keepalive_count = 0
+        while True:
+            response = await ws.receive_json()
+            if response["type"] == GQL_CONNECTION_KEEP_ALIVE:
+                keepalive_count += 1
+            else:
+                break
+        assert keepalive_count >= 1
 
-        response = await ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_KEEP_ALIVE
-
-        response = await ws.receive_json()
         assert response["type"] == GQL_DATA
         assert response["id"] == "demo"
         assert response["payload"]["data"] == {"echo": "Hi"}
@@ -404,7 +411,12 @@ async def test_task_cancellation_separation(aiohttp_app_client: HttpClient):
     # repr(Task) to check whether expected tasks are running.
     # This only works for aiohttp, where we are using the same event loop
     # on the client side and server.
-    aio = aiohttp_app_client == AioHttpClient
+    try:
+        from ..http.clients.aiohttp import AioHttpClient
+
+        aio = aiohttp_app_client == AioHttpClient  # type: ignore
+    except ImportError:
+        aio = False
 
     def get_result_handler_tasks():
         return [

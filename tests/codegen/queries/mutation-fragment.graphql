@@ -1,0 +1,9 @@
+fragment IdFragment on BlogPost {
+  id
+}
+
+mutation addBook($input: String!) {
+  addBook(input: $input) {
+    ...IdFragment
+  }
+}

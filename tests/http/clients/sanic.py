@@ -26,12 +26,13 @@ class GraphQLView(BaseGraphQLView[object, Query]):
         super().__init__(*args, **kwargs)
 
     async def get_root_value(self, request: SanicRequest) -> Query:
+        await super().get_root_value(request)  # for coverage
         return Query()
 
     async def get_context(
         self, request: SanicRequest, response: TemporalResponse
     ) -> object:
-        context = {"request": request, "response": response}
+        context = await super().get_context(request, response)
 
         return get_context(context)
 
@@ -72,7 +73,7 @@ class SanicHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
         body = self._build_body(
             query=query, variables=variables, files=files, method=method

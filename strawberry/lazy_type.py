@@ -73,7 +73,7 @@ class StrawberryLazyReference:
         self.package = None
 
         if module.startswith("."):
-            frame = inspect.stack()[2][0]
+            frame = sys._getframe(2)
             # TODO: raise a nice error if frame is None
             assert frame is not None
             self.package = cast(str, frame.f_globals["__package__"])

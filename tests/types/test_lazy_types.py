@@ -7,8 +7,8 @@ import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
+from strawberry.type import get_object_definition
 from strawberry.types.fields.resolver import StrawberryResolver
-from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion, union
 
 
@@ -104,12 +104,9 @@ def test_lazy_type_generic():
     annotation = StrawberryAnnotation(ResolvedType)
     resolved = annotation.resolve()
 
-    # TODO: Simplify with StrawberryObject
-    assert isinstance(resolved, type)
-    assert hasattr(resolved, "_type_definition")
-    assert isinstance(resolved._type_definition, TypeDefinition)
-
-    items_field: StrawberryField = resolved._type_definition.fields[0]
+    definition = get_object_definition(resolved)
+    assert definition
+    items_field: StrawberryField = definition.fields[0]
     assert items_field.type is LazierType
     assert items_field.type.resolve_type() is LaziestType
 
@@ -122,8 +119,7 @@ def test_lazy_type_object():
     class WaterParkFeature:
         river: LazierType
 
-    # TODO: Remove reference to ._type_definition with StrawberryObject
-    field: StrawberryField = WaterParkFeature._type_definition.fields[0]
+    field: StrawberryField = WaterParkFeature.__strawberry_definition__.fields[0]
 
     assert isinstance(field.type, LazyType)
     assert field.type is LazierType

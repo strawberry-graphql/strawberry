@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import strawberry
 from strawberry.schema_directive import Location
@@ -135,7 +135,7 @@ class User:
         return None
 
     @classmethod
-    def resolve_reference(cls, **data) -> Optional["User"]:
+    def resolve_reference(cls, **data: Any) -> Optional["User"]:
         if email := data.get("email"):
             years_of_employment = data.get("yearsOfEmployment")
 
@@ -183,7 +183,7 @@ class ProductResearch:
         )
 
     @classmethod
-    def resolve_reference(cls, **data) -> Optional["ProductResearch"]:
+    def resolve_reference(cls, **data: Any) -> Optional["ProductResearch"]:
         study = data.get("study")
 
         if not study:
@@ -211,7 +211,7 @@ class DeprecatedProduct:
     created_by: Optional[User]
 
     @classmethod
-    def resolve_reference(cls, **data) -> Optional["DeprecatedProduct"]:
+    def resolve_reference(cls, **data: Any) -> Optional["DeprecatedProduct"]:
         if deprecated_product["sku"] == data.get("sku") and deprecated_product[
             "package"
         ] == data.get("package"):
@@ -271,7 +271,7 @@ class Product:
         )
 
     @classmethod
-    def resolve_reference(cls, **data) -> Optional["Product"]:
+    def resolve_reference(cls, **data: Any) -> Optional["Product"]:
         if "id" in data:
             return get_product_by_id(id=data["id"])
 

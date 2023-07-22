@@ -7,11 +7,16 @@ from strawberry.codegen import CodegenFile, QueryCodegenPlugin
 from strawberry.codegen.types import (
     GraphQLBoolValue,
     GraphQLEnumValue,
+    GraphQLField,
     GraphQLFieldSelection,
+    GraphQLFragmentSpread,
+    GraphQLFragmentType,
     GraphQLInlineFragment,
     GraphQLIntValue,
     GraphQLList,
     GraphQLListValue,
+    GraphQLObjectType,
+    GraphQLObjectValue,
     GraphQLOptional,
     GraphQLStringValue,
     GraphQLVariableReference,
@@ -32,8 +37,15 @@ class PrintOperationPlugin(QueryCodegenPlugin):
     def generate_code(
         self, types: List[GraphQLType], operation: GraphQLOperation
     ) -> List[CodegenFile]:
+        code_lines = []
+        for t in types:
+            if not isinstance(t, GraphQLFragmentType):
+                continue
+            code_lines.append(self._print_fragment(t))
+
         code = "\n".join(
             [
+                *code_lines,
                 (
                     f"{operation.kind} {operation.name}"
                     f"{self._print_operation_variables(operation)}"
@@ -44,6 +56,30 @@ class PrintOperationPlugin(QueryCodegenPlugin):
             ]
         )
         return [CodegenFile("query.graphql", code)]
+
+    def _print_fragment_field(self, field: GraphQLField, indent: str = "") -> str:
+        code_lines = []
+        if isinstance(field.type, GraphQLObjectType):
+            code_lines.append(f"{indent}{field.name} {{")
+            for subfield in field.type.fields:
+                code_lines.append(  # noqa: PERF401
+                    self._print_fragment_field(subfield, indent=indent + "  ")
+                )
+            code_lines.append(f"{indent}}}")
+        else:
+            code_lines.append(f"{indent}{field.name}")
+        return "\n".join(code_lines)
+
+    def _print_fragment(self, fragment: GraphQLFragmentType) -> str:
+        code_lines = []
+        code_lines.append(f"fragment {fragment.name} on {fragment.on} {{")
+        for field in fragment.fields:
+            code_lines.append(  # noqa: PERF401
+                self._print_fragment_field(field, indent="  ")
+            )
+        code_lines.append("}")
+        code_lines.append("")
+        return "\n".join(code_lines)
 
     def _print_operation_variables(self, operation: GraphQLOperation) -> str:
         if not operation.variables:
@@ -90,6 +126,16 @@ class PrintOperationPlugin(QueryCodegenPlugin):
 
         if isinstance(value, GraphQLBoolValue):
             return str(value.value).lower()
+
+        if isinstance(value, GraphQLObjectValue):
+            return (
+                "{"
+                + ", ".join(
+                    f"{name}: {self._print_argument_value(v)}"
+                    for name, v in value.values.items()
+                )
+                + "}"
+            )
 
         raise ValueError(f"not supported: {type(value)}")  # pragma: no cover
 
@@ -143,12 +189,18 @@ class PrintOperationPlugin(QueryCodegenPlugin):
             ]
         )
 
+    def _print_fragment_spread(self, fragment: GraphQLFragmentSpread) -> str:
+        return f"...{fragment.name}"
+
     def _print_selection(self, selection: GraphQLSelection) -> str:
         if isinstance(selection, GraphQLFieldSelection):
             return self._print_field_selection(selection)
 
         if isinstance(selection, GraphQLInlineFragment):
             return self._print_inline_fragment(selection)
+
+        if isinstance(selection, GraphQLFragmentSpread):
+            return self._print_fragment_spread(selection)
 
         raise ValueError(f"Unsupported selection: {selection}")  # pragma: no cover
 

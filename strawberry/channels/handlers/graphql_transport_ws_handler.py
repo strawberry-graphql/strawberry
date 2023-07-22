@@ -41,7 +41,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         await self._ws.send_json(data)
 
     async def close(self, code: int = 1000, reason: Optional[str] = None) -> None:
-        # FIXME: We are using `self._ws.base_send` directly instead of `self._ws.close`
+        # TODO: We are using `self._ws.base_send` directly instead of `self._ws.close`
         # because the later doesn't accept the `reason` argument.
         await self._ws.base_send(
             {

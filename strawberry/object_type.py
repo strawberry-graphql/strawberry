@@ -12,9 +12,9 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
     overload,
 )
+from typing_extensions import dataclass_transform
 
 from .exceptions import (
     MissingFieldAnnotationError,
@@ -22,21 +22,22 @@ from .exceptions import (
     ObjectIsNotClassError,
 )
 from .field import StrawberryField, field
+from .type import get_object_definition
 from .types.type_resolver import _get_fields
-from .types.types import TypeDefinition
+from .types.types import (
+    StrawberryObjectDefinition,
+)
 from .utils.dataclasses import add_custom_init_fn
+from .utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from .utils.str_converters import to_camel_case
-from .utils.typing import __dataclass_transform__
 
 T = TypeVar("T", bound=Type)
 
 
-def _get_interfaces(cls: Type[Any]) -> List[TypeDefinition]:
-    interfaces: List[TypeDefinition] = []
+def _get_interfaces(cls: Type[Any]) -> List[StrawberryObjectDefinition]:
+    interfaces: List[StrawberryObjectDefinition] = []
     for base in cls.__mro__[1:]:  # Exclude current class
-        type_definition = cast(
-            Optional[TypeDefinition], getattr(base, "_type_definition", None)
-        )
+        type_definition = get_object_definition(base)
         if type_definition and type_definition.is_interface:
             interfaces.append(type_definition)
 
@@ -138,8 +139,9 @@ def _process_type(
     interfaces = _get_interfaces(cls)
     fields = _get_fields(cls)
     is_type_of = getattr(cls, "is_type_of", None)
+    resolve_type = getattr(cls, "resolve_type", None)
 
-    cls._type_definition = TypeDefinition(
+    cls.__strawberry_definition__ = StrawberryObjectDefinition(
         name=name,
         is_input=is_input,
         is_interface=is_interface,
@@ -150,7 +152,14 @@ def _process_type(
         extend=extend,
         _fields=fields,
         is_type_of=is_type_of,
+        resolve_type=resolve_type,
     )
+    # TODO: remove when deprecating _type_definition
+    DeprecatedDescriptor(
+        DEPRECATION_MESSAGES._TYPE_DEFINITION,
+        cls.__strawberry_definition__,
+        "_type_definition",
+    ).inject(cls)
 
     # dataclasses removes attributes from the class here:
     # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
@@ -177,8 +186,8 @@ def _process_type(
 
 
 @overload
-@__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def type(
     cls: T,
@@ -194,8 +203,8 @@ def type(
 
 
 @overload
-@__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def type(
     *,
@@ -256,8 +265,8 @@ def type(
 
 
 @overload
-@__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def input(
     cls: T,
@@ -270,8 +279,8 @@ def input(
 
 
 @overload
-@__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def input(
     *,
@@ -306,8 +315,8 @@ def input(
 
 
 @overload
-@__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def interface(
     cls: T,
@@ -320,8 +329,8 @@ def interface(
 
 
 @overload
-@__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def interface(
     *,
@@ -332,8 +341,8 @@ def interface(
     ...
 
 
-@__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def interface(
     cls: Optional[T] = None,
@@ -374,7 +383,7 @@ def asdict(obj: Any) -> Dict[str, object]:
 
 
 __all__ = [
-    "TypeDefinition",
+    "StrawberryObjectDefinition",
     "input",
     "interface",
     "type",

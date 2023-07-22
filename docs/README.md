@@ -10,6 +10,7 @@
 - [Subscriptions](./general/subscriptions.md)
 - [Why](./general/why.md)
 - [Breaking changes](./breaking-changes.md)
+- [Upgrading Strawberry](./general/upgrades.md)
 - [FAQ](./faq.md)
 
 ## Types
@@ -45,6 +46,7 @@
 - [Dealing with errors](./guides/errors.md)
 - [Federation](./guides/federation.md)
 - [Federation V1](./guides/federation-v1.md)
+- [Relay](./guides/relay.md)
 - [Custom extensions](./guides/custom-extensions.md)
 - [File upload](./guides/file-upload.md)
 - [Pagination](./guides/pagination/overview.md)

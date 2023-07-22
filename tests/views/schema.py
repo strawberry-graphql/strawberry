@@ -1,17 +1,16 @@
 import asyncio
 import contextlib
 from enum import Enum
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 from graphql import GraphQLError
 
 import strawberry
-from strawberry.channels.context import StrawberryChannelsContext
 from strawberry.extensions import SchemaExtension
 from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
-from strawberry.types import Info
+from strawberry.types import ExecutionContext, Info
 
 
 class AlwaysFailPermission(BasePermission):
@@ -27,12 +26,13 @@ class MyExtension(SchemaExtension):
 
 
 def _read_file(text_file: Upload) -> str:
-    from starlette.datastructures import UploadFile
+    with contextlib.suppress(ModuleNotFoundError):
+        from starlette.datastructures import UploadFile
 
-    # allow to keep this function synchronous, starlette's files have
-    # async methods for reading
-    if isinstance(text_file, UploadFile):
-        text_file = text_file.file._file  # type: ignore
+        # allow to keep this function synchronous, starlette's files have
+        # async methods for reading
+        if isinstance(text_file, UploadFile):
+            text_file = text_file.file._file  # type: ignore
 
     with contextlib.suppress(ModuleNotFoundError):
         from starlite import UploadFile as StarliteUploadFile
@@ -79,6 +79,10 @@ class Query:
     @strawberry.field(permission_classes=[AlwaysFailPermission])
     def always_fail(self) -> Optional[str]:
         return "Hey"
+
+    @strawberry.field
+    async def error(self, message: str) -> AsyncGenerator[str, None]:
+        yield GraphQLError(message)  # type: ignore
 
     @strawberry.field
     async def exception(self, message: str) -> str:
@@ -185,9 +189,15 @@ class Subscription:
         yield Flavor.CHOCOLATE
 
     @strawberry.subscription
+    async def flavors_invalid(self) -> AsyncGenerator[Flavor, None]:
+        yield Flavor.VANILLA
+        yield "invalid type"  # type: ignore
+        yield Flavor.CHOCOLATE
+
+    @strawberry.subscription
     async def debug(self, info: Info[Any, Any]) -> AsyncGenerator[DebugInfo, None]:
         active_result_handlers = [
-            task for task in info.context["tasks"].values() if not task.done()
+            task for task in info.context["get_tasks"]() if not task.done()
         ]
 
         connection_init_timeout_task = info.context["connectionInitTimeoutTask"]
@@ -205,18 +215,35 @@ class Subscription:
     @strawberry.subscription
     async def listener(
         self,
-        info: Info[StrawberryChannelsContext, Any],
+        info: Info[Any, Any],
         timeout: Optional[float] = None,
         group: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
-        yield info.context.request.channel_name
+        yield info.context["request"].channel_name
 
-        async for message in info.context.request.channel_listen(
+        async for message in info.context["request"].channel_listen(
             type="test.message",
             timeout=timeout,
             groups=[group] if group is not None else [],
         ):
             yield message["text"]
+
+    @strawberry.subscription
+    async def listener_with_confirmation(
+        self,
+        info: Info[Any, Any],
+        timeout: Optional[float] = None,
+        group: Optional[str] = None,
+    ) -> AsyncGenerator[Union[str, None], None]:
+        async with info.context["request"].listen_to_channel(
+            type="test.message",
+            timeout=timeout,
+            groups=[group] if group is not None else [],
+        ) as cm:
+            yield None
+            yield info.context["request"].channel_name
+            async for message in cm:
+                yield message["text"]
 
     @strawberry.subscription
     async def connection_params(
@@ -236,7 +263,17 @@ class Subscription:
             await asyncio.sleep(delay)
 
 
-schema = strawberry.Schema(
+class Schema(strawberry.Schema):
+    def process_errors(
+        self, errors: List, execution_context: Optional[ExecutionContext] = None
+    ) -> None:
+        import traceback
+
+        traceback.print_stack()
+        return super().process_errors(errors, execution_context)
+
+
+schema = Schema(
     query=Query,
     mutation=Mutation,
     subscription=Subscription,

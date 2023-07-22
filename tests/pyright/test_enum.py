@@ -25,7 +25,7 @@ def test_enum_with_decorator():
     assert results == [
         Result(
             type="information",
-            message='Type of "IceCreamFlavour" is "Type[IceCreamFlavour]"',
+            message='Type of "IceCreamFlavour" is "type[IceCreamFlavour]"',
             line=12,
             column=13,
         ),
@@ -63,7 +63,7 @@ def test_enum_with_decorator_and_name():
     assert results == [
         Result(
             type="information",
-            message='Type of "Flavour" is "Type[Flavour]"',
+            message='Type of "Flavour" is "type[Flavour]"',
             line=12,
             column=13,
         ),
@@ -99,7 +99,7 @@ def test_enum_with_manual_decorator():
             type="information",
             message=(
                 'Type of "strawberry.enum(IceCreamFlavour)" '
-                'is "Type[IceCreamFlavour]"'
+                'is "type[IceCreamFlavour]"'
             ),
             line=11,
             column=13,
@@ -139,7 +139,7 @@ def test_enum_with_manual_decorator_and_name():
             type="information",
             message=(
                 'Type of "strawberry.enum(name="IceCreamFlavour")(Flavour)" '
-                'is "Type[Flavour]"'
+                'is "type[Flavour]"'
             ),
             line=11,
             column=13,
@@ -180,7 +180,7 @@ def test_enum_deprecated():
     assert results == [
         Result(
             type="information",
-            message='Type of "IceCreamFlavour" is "Type[IceCreamFlavour]"',
+            message='Type of "IceCreamFlavour" is "type[IceCreamFlavour]"',
             line=14,
             column=13,
         ),

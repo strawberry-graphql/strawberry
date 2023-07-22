@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
     from strawberry.types import ExecutionContext, ExecutionResult
     from strawberry.types.graphql import OperationType
-    from strawberry.types.types import TypeDefinition
+    from strawberry.types.types import StrawberryObjectDefinition
     from strawberry.union import StrawberryUnion
 
     from .config import StrawberryConfig
@@ -69,7 +69,12 @@ class BaseSchema(Protocol):
     def get_type_by_name(
         self, name: str
     ) -> Optional[
-        Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
+        Union[
+            StrawberryObjectDefinition,
+            ScalarDefinition,
+            EnumDefinition,
+            StrawberryUnion,
+        ]
     ]:
         raise NotImplementedError
 

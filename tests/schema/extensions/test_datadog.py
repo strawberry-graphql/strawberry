@@ -252,3 +252,40 @@ def test_uses_operation_type_sync(datadog_extension_sync):
     schema.execute_sync(query, operation_name="MyMutation")
 
     mock.tracer.trace().set_tag.assert_any_call("graphql.operation_type", "mutation")
+
+
+@pytest.mark.asyncio
+async def test_create_span_override(datadog_extension):
+    from strawberry.extensions.tracing.datadog import LifecycleStep
+
+    extension, mock = datadog_extension
+
+    class CustomExtension(extension):
+        def create_span(
+            self,
+            lifecycle_step: LifecycleStep,
+            name: str,
+            **kwargs,  # noqa: ANN003
+        ):
+            span = super().create_span(lifecycle_step, name, **kwargs)
+            if lifecycle_step == LifecycleStep.OPERATION:
+                span.set_tag("graphql.query", self.execution_context.query)
+            return span
+
+    schema = strawberry.Schema(
+        query=Query,
+        mutation=Mutation,
+        extensions=[CustomExtension],
+    )
+
+    query = """
+        query {
+            personAsync {
+                name
+            }
+        }
+    """
+
+    await schema.execute(query)
+
+    mock.tracer.trace().set_tag.assert_any_call("graphql.query", query)

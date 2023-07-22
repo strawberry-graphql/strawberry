@@ -162,6 +162,58 @@ def test_supports_generic_specialized_with_type():
     }
 
 
+def test_supports_generic_specialized_with_list_type():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Fruit:
+        name: str
+
+    @strawberry.type
+    class Edge(Generic[T]):
+        cursor: strawberry.ID
+        nodes: List[T]
+
+    @strawberry.type
+    class FruitEdge(Edge[Fruit]):
+        ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self) -> FruitEdge:
+            return FruitEdge(
+                cursor=strawberry.ID("1"),
+                nodes=[Fruit(name="Banana"), Fruit(name="Apple")],
+            )
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        example {
+            __typename
+            cursor
+            nodes {
+                name
+            }
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {
+        "example": {
+            "__typename": "FruitEdge",
+            "cursor": "1",
+            "nodes": [
+                {"name": "Banana"},
+                {"name": "Apple"},
+            ],
+        }
+    }
+
+
 def test_supports_generic():
     T = TypeVar("T")
 
@@ -1128,3 +1180,48 @@ def test_generic_interface():
             "repr": "foo",
         }
     }
+
+
+def test_generic_interface_extra_types():
+    T = TypeVar("T")
+
+    @strawberry.interface
+    class Abstract:
+        x: str = ""
+
+    @strawberry.type
+    class Real(Generic[T], Abstract):
+        y: T
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def real(self) -> Abstract:
+            return Real[int](y=0)
+
+    schema = strawberry.Schema(Query, types=[Real[int]])
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+            interface Abstract {
+              x: String!
+            }
+
+            type IntReal implements Abstract {
+              x: String!
+              y: Int!
+            }
+
+            type Query {
+              real: Abstract!
+            }
+            """
+        ).strip()
+    )
+
+    query_result = schema.execute_sync("{ real { __typename x } }")
+
+    assert not query_result.errors
+    assert query_result.data == {"real": {"__typename": "IntReal", "x": ""}}

@@ -1,6 +1,1038 @@
 CHANGELOG
 =========
 
+0.195.3 - 2023-07-22
+--------------------
+
+This release no longer requires an upperbound pin for uvicorn, ensuring
+compatibility with future versions of uvicorn without the need for updating
+Strawberry.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2968](https://github.com/strawberry-graphql/strawberry/pull/2968/)
+
+
+0.195.2 - 2023-07-15
+--------------------
+
+This release introduces a bug fix for relay connection where previously they wouldn't work without padding the `first` argument.
+
+Contributed by [Alexander](https://github.com/devkral) via [PR #2938](https://github.com/strawberry-graphql/strawberry/pull/2938/)
+
+
+0.195.1 - 2023-07-15
+--------------------
+
+This release fixes a bug where returning a generic type from a field
+that was returning an interface would throw an error.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2955](https://github.com/strawberry-graphql/strawberry/pull/2955/)
+
+
+0.195.0 - 2023-07-14
+--------------------
+
+Improve the time complexity of `strawberry.interface` using `resolve_type`.
+Achieved time complexity is now O(1) with respect to the number of
+implementations of an interface. Previously, the use of `is_type_of` resulted
+in a worst-case performance of O(n).
+
+**Before**:
+
+```shell
+---------------------------------------------------------------------------
+Name (time in ms)                         Min                 Max
+---------------------------------------------------------------------------
+test_interface_performance[1]         18.0224 (1.0)       50.3003 (1.77)
+test_interface_performance[16]        22.0060 (1.22)      28.4240 (1.0)
+test_interface_performance[256]       69.1364 (3.84)      76.1349 (2.68)
+test_interface_performance[4096]     219.6461 (12.19)    231.3732 (8.14)
+---------------------------------------------------------------------------
+```
+
+**After**:
+
+```shell
+---------------------------------------------------------------------------
+Name (time in ms)                        Min                Max
+---------------------------------------------------------------------------
+test_interface_performance[1]        14.3921 (1.0)      46.2064 (2.79)
+test_interface_performance[16]       14.8669 (1.03)     16.5732 (1.0)
+test_interface_performance[256]      15.8977 (1.10)     24.4618 (1.48)
+test_interface_performance[4096]     18.7340 (1.30)     21.2899 (1.28)
+---------------------------------------------------------------------------
+```
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #1949](https://github.com/strawberry-graphql/strawberry/pull/1949/)
+
+
+0.194.4 - 2023-07-08
+--------------------
+
+This release makes sure that `Schema.process_errors()` is called _once_ for every error
+which happens with `graphql-transport-ws` operations.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2899](https://github.com/strawberry-graphql/strawberry/pull/2899/)
+
+
+0.194.3 - 2023-07-08
+--------------------
+
+Added default argument to the typer Argument function, this adds
+support for older versions of typer.
+
+Contributed by [Jaime Coello de Portugal](https://github.com/jaimecp89) via [PR #2906](https://github.com/strawberry-graphql/strawberry/pull/2906/)
+
+
+0.194.2 - 2023-07-08
+--------------------
+
+This release includes a performance improvement to `strawberry.lazy()` to allow relative module imports to be resolved faster.
+
+Contributed by [Karim Alibhai](https://github.com/karimsa) via [PR #2926](https://github.com/strawberry-graphql/strawberry/pull/2926/)
+
+
+0.194.1 - 2023-07-08
+--------------------
+
+This release adds a setter on `StrawberryAnnotation.annotation`, this fixes
+an issue on Strawberry Django.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2932](https://github.com/strawberry-graphql/strawberry/pull/2932/)
+
+
+0.194.0 - 2023-07-08
+--------------------
+
+Restore evaled type access in `StrawberryAnnotation`
+
+Prior to Strawberry 192.2 the `annotation` attribute of `StrawberryAnnotation`
+would return an evaluated type when possible due reserved argument parsing.
+192.2 moved the responsibility of evaluating and caching results to the
+`evaluate` method of `StrawberryAnnotation`. This introduced a regression when
+using future annotations for any code implicitely relying on the `annotation`
+attribute being an evaluated type.
+
+To fix this regression and mimick pre-192.2 behavior, this release adds an
+`annotation` property to `StrawberryAnnotation` that internally calls the
+`evaluate` method. On success the evaluated type is returned. If a `NameError`
+is raised due to an unresolvable annotation, the raw annotation is returned.
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #2925](https://github.com/strawberry-graphql/strawberry/pull/2925/)
+
+
+0.193.1 - 2023-07-05
+--------------------
+
+This fixes a regression from 0.190.0 where changes to the
+return type of a field done by Field Extensions would not
+be taken in consideration by the schema.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2922](https://github.com/strawberry-graphql/strawberry/pull/2922/)
+
+
+0.193.0 - 2023-07-04
+--------------------
+
+This release updates the API to listen to Django Channels to avoid race conditions
+when confirming GraphQL subscriptions.
+
+**Deprecations:**
+
+This release contains a deprecation for the Channels integration. The `channel_listen`
+method will be replaced with an async context manager that returns an awaitable
+AsyncGenerator. This method is called `listen_to_channel`.
+
+An example of migrating existing code is given below:
+
+```py
+# Existing code
+@strawberry.type
+class MyDataType:
+   name: str
+
+@strawberry.type
+class Subscription:
+   @strawberry.subscription
+   async def my_data_subscription(
+      self, info: Info, groups: list[str]
+   ) -> AsyncGenerator[MyDataType | None, None]:
+      yield None
+      async for message in info.context["ws"].channel_listen("my_data", groups=groups):
+         yield MyDataType(name=message["payload"])
+```
+
+```py
+# New code
+@strawberry.type
+class Subscription:
+   @strawberry.subscription
+   async def my_data_subscription(
+      self, info: Info, groups: list[str]
+   ) -> AsyncGenerator[MyDataType | None, None]:
+      async with info.context["ws"].listen_to_channel("my_data", groups=groups) as cm:
+         yield None
+         async for message in cm:
+            yield MyDataType(name=message["payload"])
+```
+
+Contributed by [Moritz Ulmer](https://github.com/moritz89) via [PR #2856](https://github.com/strawberry-graphql/strawberry/pull/2856/)
+
+
+0.192.2 - 2023-07-03
+--------------------
+
+This release fixes an issue related to using `typing.Annotated` in resolver
+arguments following the declaration of a reserved argument such as
+`strawberry.types.Info`.
+
+Before this fix, the following would be converted incorrectly:
+
+```python
+from __future__ import annotations
+import strawberry
+import uuid
+from typing_extensions import Annotated
+from strawberry.types import Info
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def get_testing(
+        self,
+        info: Info[None, None],
+        id_: Annotated[uuid.UUID, strawberry.argument(name="id")],
+    ) -> str | None:
+        return None
+
+
+schema = strawberry.Schema(query=Query)
+
+print(schema)
+```
+
+Resulting in the schema:
+
+```graphql
+type Query {
+  getTesting(id_: UUID!): String # ⬅️ see `id_`
+}
+
+scalar UUID
+```
+
+After this fix, the schema is converted correctly:
+
+```graphql
+type Query {
+  getTesting(id: UUID!): String
+}
+
+scalar UUID
+```
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #2901](https://github.com/strawberry-graphql/strawberry/pull/2901/)
+
+
+0.192.1 - 2023-07-02
+--------------------
+
+Add specifications in FastAPI doc if query via GET is enabled
+
+Contributed by [guillaumeLepape](https://github.com/guillaumeLepape) via [PR #2913](https://github.com/strawberry-graphql/strawberry/pull/2913/)
+
+
+0.192.0 - 2023-06-28
+--------------------
+
+This release introduces a new command called `upgrade`, this command can be used
+to run codemods on your codebase to upgrade to the latest version of Strawberry.
+
+At the moment we only support upgrading unions to use the new syntax with
+annotated, but in future we plan to add more commands to help with upgrading.
+
+Here's how you can use the command to upgrade your codebase:
+
+```shell
+strawberry upgrade annotated-union .
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2886](https://github.com/strawberry-graphql/strawberry/pull/2886/)
+
+
+0.191.0 - 2023-06-28
+--------------------
+
+This release adds support for declaring union types using `typing.Annotated`
+instead of `strawberry.union(name, types=...)`.
+
+Code using the old syntax will continue to work, but it will trigger a
+deprecation warning. Using Annotated will improve type checking and IDE support
+especially when using `pyright`.
+
+Before:
+
+```python
+Animal = strawberry.union("Animal", (Cat, Dog))
+```
+
+After:
+
+```python
+from typing import Annotated, Union
+
+Animal = Annotated[Union[Cat, Dog], strawberry.union("Animal")]
+```
+
+0.190.0 - 2023-06-27
+--------------------
+
+This release refactors the way we resolve field types to to make it
+more robust, resolving some corner cases.
+
+One case that should be fixed is when using specialized generics
+with future annotations.
+
+Contributed by [Alexander](https://github.com/devkral) via [PR #2868](https://github.com/strawberry-graphql/strawberry/pull/2868/)
+
+
+0.189.3 - 2023-06-27
+--------------------
+
+This release removes some usage of deprecated functions from GraphQL-core.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2894](https://github.com/strawberry-graphql/strawberry/pull/2894/)
+
+
+0.189.2 - 2023-06-27
+--------------------
+
+The `graphql-transport-ws` protocol allows for subscriptions to error during execution without terminating
+the subscription.  Non-fatal errors produced by subscriptions now produce `Next` messages containing
+an `ExecutionResult` with an `error` field and don't necessarily terminate the subscription.
+This is in accordance to the behaviour of Apollo server.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2876](https://github.com/strawberry-graphql/strawberry/pull/2876/)
+
+
+0.189.1 - 2023-06-25
+--------------------
+
+This release fixes a deprecation warning being triggered
+by the relay integration.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2858](https://github.com/strawberry-graphql/strawberry/pull/2858/)
+
+
+0.189.0 - 2023-06-22
+--------------------
+
+This release updates `create_type` to add support for all arguments
+that `strawberry.type` supports. This includes: `description`, `extend`,
+`directives`, `is_input` and `is_interface`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2880](https://github.com/strawberry-graphql/strawberry/pull/2880/)
+
+
+0.188.0 - 2023-06-22
+--------------------
+
+This release gives codegen clients the ability to inquire about the `__typename`
+of a `GraphQLObjectType`.  This information can be used to automatically select
+the proper type to hydrate when working with a union type in the response.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2875](https://github.com/strawberry-graphql/strawberry/pull/2875/)
+
+
+0.187.5 - 2023-06-21
+--------------------
+
+This release fixes a regression when comparing a `StrawberryAnnotation`
+instance with anything that is not also a `StrawberryAnnotation` instance,
+which caused it to raise a `NotImplementedError`.
+
+This reverts its behavior back to how it worked before, where it returns
+`NotImplemented` instead, meaning that the comparison can be delegated to
+the type being compared against or return `False` in case it doesn't define
+an `__eq__` method.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2879](https://github.com/strawberry-graphql/strawberry/pull/2879/)
+
+
+0.187.4 - 2023-06-21
+--------------------
+
+`graphql-transport-ws` handler now uses a single dict to manage active operations.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2699](https://github.com/strawberry-graphql/strawberry/pull/2699/)
+
+
+0.187.3 - 2023-06-21
+--------------------
+
+This release fixes a typing regression on `StraberryContainer` subclasses
+where type checkers would not allow non `WithStrawberryObjectDefinition` types
+to be passed for its `of_type` argument (e.g. `StrawberryOptional(str)`)
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2878](https://github.com/strawberry-graphql/strawberry/pull/2878/)
+
+
+0.187.2 - 2023-06-21
+--------------------
+
+This release removes `get_object_definition_strict` and instead
+overloads `get_object_definition` to accept an extra `strct` keyword.
+
+This is a new feature so it is unlikely to break anything.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2877](https://github.com/strawberry-graphql/strawberry/pull/2877/)
+
+
+0.187.1 - 2023-06-21
+--------------------
+
+This release bumps the minimum requirement of
+`typing-extensions` to 4.5
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2872](https://github.com/strawberry-graphql/strawberry/pull/2872/)
+
+
+0.187.0 - 2023-06-20
+--------------------
+
+This release renames `_type_definition` to `__strawberry_definition__`. This doesn't change the public API of Strawberry, but if you were using `_type_definition` you can still access it, but it will be removed in future.
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #2836](https://github.com/strawberry-graphql/strawberry/pull/2836/)
+
+
+0.186.3 - 2023-06-20
+--------------------
+
+This release adds resolve_async to NodeExtension to allow it to
+be used together with other field async extensions/permissions.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2863](https://github.com/strawberry-graphql/strawberry/pull/2863/)
+
+
+0.186.2 - 2023-06-19
+--------------------
+
+This release fixes an issue on StrawberryField.copy_with method
+not copying its extensions and overwritten `_arguments`.
+
+Also make sure that all lists/tuples in those types are copied as
+new lists/tuples to avoid unexpected behavior.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2865](https://github.com/strawberry-graphql/strawberry/pull/2865/)
+
+
+0.186.1 - 2023-06-16
+--------------------
+
+In this release, we pass the default values from the strawberry.Schema through to the codegen plugins.
+The default python plugin now adds these default values to the objects it generates.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2860](https://github.com/strawberry-graphql/strawberry/pull/2860/)
+
+
+0.186.0 - 2023-06-15
+--------------------
+
+This release removes more parts of the Mypy plugin, since they are
+not needed anymore.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2852](https://github.com/strawberry-graphql/strawberry/pull/2852/)
+
+
+0.185.2 - 2023-06-15
+--------------------
+
+This release fixes a bug causing a KeyError exception to be thrown during subscription cleanup.
+
+Contributed by [rjwills28](https://github.com/rjwills28) via [PR #2794](https://github.com/strawberry-graphql/strawberry/pull/2794/)
+
+
+0.185.1 - 2023-06-14
+--------------------
+
+Correct a type-hinting bug with `strawberry.directive`.
+This may cause some consumers to have to remove a `# type: ignore` comment
+or unnecessary `typing.cast` in order to get `mypy` to pass.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2847](https://github.com/strawberry-graphql/strawberry/pull/2847/)
+
+
+0.185.0 - 2023-06-14
+--------------------
+
+This release removes our custom `__dataclass_transform__` decorator and replaces
+it with typing-extension's one. It also removes parts of the mypy plugin, since
+most of it is not needed anymore 🙌
+
+This update requires typing_extensions>=4.1.0
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2227](https://github.com/strawberry-graphql/strawberry/pull/2227/)
+
+
+0.184.1 - 2023-06-13
+--------------------
+
+This release migrates our CLI to typer, all commands
+should work the same as before.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2569](https://github.com/strawberry-graphql/strawberry/pull/2569/)
+
+
+0.184.0 - 2023-06-12
+--------------------
+
+This release improves the ﻿`relay.NodeID` annotation check by delaying it until after class initialization. This resolves issues with evaluating type annotations before they are fully defined and enables integrations to inject code for it in the type.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2838](https://github.com/strawberry-graphql/strawberry/pull/2838/)
+
+
+0.183.8 - 2023-06-12
+--------------------
+
+This release fixes a bug in the codegen where `List` objects are currently emitted
+as `Optional` objects.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2843](https://github.com/strawberry-graphql/strawberry/pull/2843/)
+
+
+0.183.7 - 2023-06-12
+--------------------
+
+Refactor `ConnectionExtension` to copy arguments instead of extending them.
+This should fix some issues with integrations which override `arguments`,
+like the django one, where the inserted arguments were vanishing.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2839](https://github.com/strawberry-graphql/strawberry/pull/2839/)
+
+
+0.183.6 - 2023-06-09
+--------------------
+
+This release fixes a bug where codegen would fail on mutations that have object arguments in the query.
+
+Additionally, it does a topological sort of the types before passing it to the plugins to ensure that
+dependent types are defined after their dependencies.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2831](https://github.com/strawberry-graphql/strawberry/pull/2831/)
+
+
+0.183.5 - 2023-06-08
+--------------------
+
+This release fixes an issue where Strawberry would make copies
+of types that were using specialized generics that were not
+Strawerry types.
+
+This issue combined with the use of lazy types was resulting
+in duplicated type errors.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2824](https://github.com/strawberry-graphql/strawberry/pull/2824/)
+
+
+0.183.4 - 2023-06-07
+--------------------
+
+This release fixes an issue for parsing lazy types using forward references
+when they were enclosed in an `Optional[...]` type.
+
+The following now should work properly:
+
+```python
+from __future__ import annotations
+
+from typing import Optional, Annotated
+import strawberry
+
+
+@strawberry.type
+class MyType:
+    other_type: Optional[Annotated["OtherType", strawberry.lazy("some.module")]]
+    # or like this
+    other_type: Annotated["OtherType", strawberry.lazy("some.module")] | None
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2821](https://github.com/strawberry-graphql/strawberry/pull/2821/)
+
+
+0.183.3 - 2023-06-07
+--------------------
+
+This release fixes a codegen bug.  Prior to this fix,
+inline fragments would only include the last field defined
+within its scope and all fields common with its siblings.
+
+After this fix, all fields will be included in the
+generated types.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2819](https://github.com/strawberry-graphql/strawberry/pull/2819/)
+
+
+0.183.2 - 2023-06-07
+--------------------
+
+Fields with generics support directives.
+
+Contributed by [A. Coady](https://github.com/coady) via [PR #2811](https://github.com/strawberry-graphql/strawberry/pull/2811/)
+
+
+0.183.1 - 2023-06-06
+--------------------
+
+This release fixes an issue of the new relay integration adding an `id: GlobalID!`
+argument on all objects that inherit from `relay.Node`. That should've only happened
+for `Query` types.
+
+Strawberry now will not force a `relay.Node` or any type that inherits it to be
+inject the node extension which adds the argument and a resolver for it, meaning that
+this code:
+
+```python
+import strawberry
+from strawberry import relay
+
+
+@strawberry.type
+class Fruit(relay.Node):
+    id: relay.NodeID[int]
+
+
+@strawberry.type
+class Query:
+    node: relay.Node
+    fruit: Fruit
+```
+
+Should now be written as:
+
+```python
+import strawberry
+from strawberry import relay
+
+
+@strawberry.type
+class Fruit(relay.Node):
+    id: relay.NodeID[int]
+
+
+@strawberry.type
+class Query:
+    node: relay.Node = relay.node()  # <- note the "= relay.node()" here
+    fruit: Fruit = relay.node()
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2814](https://github.com/strawberry-graphql/strawberry/pull/2814/)
+
+
+0.183.0 - 2023-06-06
+--------------------
+
+This release adds a new field extension called `InputMutationExtension`, which makes
+it easier to create mutations that receive a single input type called `input`,
+while still being able to define the arguments of that input on the resolver itself.
+
+The following example:
+
+```python
+import strawberry
+from strawberry.field_extensions import InputMutationExtension
+
+
+@strawberry.type
+class Fruit:
+    id: strawberry.ID
+    name: str
+    weight: float
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation(extensions=[InputMutationExtension()])
+    def update_fruit_weight(
+        self,
+        info: Info,
+        id: strawberry.ID,
+        weight: Annotated[
+            float,
+            strawberry.argument(description="The fruit's new weight in grams"),
+        ],
+    ) -> Fruit:
+        fruit = ...  # retrieve the fruit with the given ID
+        fruit.weight = weight
+        ...  # maybe save the fruit in the database
+        return fruit
+```
+
+Would generate a schema like this:
+
+```graphql
+input UpdateFruitInput {
+  id: ID!
+
+  """
+  The fruit's new weight in grams
+  """
+  weight: Float!
+}
+
+type Fruit {
+  id: ID!
+  name: String!
+  weight: Float!
+}
+
+type Mutation {
+  updateFruitWeight(input: UpdateFruitInput!): Fruit!
+}
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2580](https://github.com/strawberry-graphql/strawberry/pull/2580/)
+
+
+0.182.0 - 2023-06-06
+--------------------
+
+Initial relay spec implementation. For information on how to use
+it, check out the docs in here: https://strawberry.rocks/docs/guides/relay
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2511](https://github.com/strawberry-graphql/strawberry/pull/2511/)
+
+
+0.181.0 - 2023-06-06
+--------------------
+
+This release adds support for properly resolving lazy references
+when using forward refs.
+
+For example, this code should now work without any issues:
+
+```python
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Annotated
+
+if TYPE_CHECKING:
+    from some.module import OtherType
+
+
+@strawberry.type
+class MyType:
+    @strawberry.field
+    async def other_type(self) -> Annotated[OtherType, strawberry.lazy("some.module")]:
+        ...
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2744](https://github.com/strawberry-graphql/strawberry/pull/2744/)
+
+
+0.180.5 - 2023-06-02
+--------------------
+
+This release fixes a bug in fragment codegen to pick up type definitions from the proper place
+in the schema.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2805](https://github.com/strawberry-graphql/strawberry/pull/2805/)
+
+
+0.180.4 - 2023-06-02
+--------------------
+
+Custom codegen plugins will fail to write files if the plugin is trying to put the
+file anywhere other than the root output directory (since the child directories do
+not yet exist).  This change will create the child directory if necessary before
+attempting to write the file.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2806](https://github.com/strawberry-graphql/strawberry/pull/2806/)
+
+
+0.180.3 - 2023-06-02
+--------------------
+
+This release updates the built-in GraphiQL to the current latest version 2.4.7 and improves styling for the GraphiQL Explorer Plugin.
+
+Contributed by [Kien Dang](https://github.com/kiendang) via [PR #2804](https://github.com/strawberry-graphql/strawberry/pull/2804/)
+
+
+0.180.2 - 2023-06-02
+--------------------
+
+In this release codegen no longer chokes on queries that use a fragment.
+
+There is one significant limitation at the present.  When a fragment is included via the spread operator in an object, it must be the only field present.  Attempts to include more fields will result in a ``ValueError``.
+
+However, there are some real benefits.  When a fragment is included in multiple places in the query, only a single class will be made to represent that fragment:
+
+```
+fragment Point on Bar {
+   id
+   x
+   y
+}
+
+query GetPoints {
+  circlePoints {
+    ...Point
+  }
+  squarePoints {
+    ...Point
+  }
+}
+```
+
+Might generate the following types
+
+```py
+class Point:
+    id: str
+    x: float
+    y: float
+
+class GetPointsResult:
+    circle_points: List[Point]
+    square_points: List[Point]
+```
+
+The previous behavior would generate duplicate classes for for the `GetPointsCirclePoints` and `GetPointsSquarePoints` even though they are really identical classes.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2802](https://github.com/strawberry-graphql/strawberry/pull/2802/)
+
+
+0.180.1 - 2023-06-01
+--------------------
+
+Make StrawberryAnnotation hashable, to make it compatible to newer versions of dacite.
+
+Contributed by [Jaime Coello de Portugal](https://github.com/jaimecp89) via [PR #2790](https://github.com/strawberry-graphql/strawberry/pull/2790/)
+
+
+0.180.0 - 2023-05-31
+--------------------
+
+This release updates the Django Channels integration so that it uses the same base
+classes used by all other integrations.
+
+**New features:**
+
+The Django Channels integration supports two new features:
+
+* Setting headers in a response
+* File uploads via `multipart/form-data` POST requests
+
+**Breaking changes:**
+
+This release contains a breaking change for the Channels integration. The context
+object is now a `dict` and it contains different keys depending on the connection
+protocol:
+
+1. HTTP: `request` and `response`. The `request` object contains the full
+   request (including the body). Previously, `request` was the `GraphQLHTTPConsumer`
+   instance of the current connection. The consumer is now available via
+   `request.consumer`.
+2. WebSockets: `request`, `ws` and `response`. `request` and `ws` are the same
+   `GraphQLWSConsumer` instance of the current connection.
+
+If you want to use a dataclass for the context object (like in previous releases),
+you can still use them by overriding the `get_context` methods. See the Channels
+integration documentation for an example.
+
+Contributed by [Christian Dröge](https://github.com/cdroege) via [PR #2775](https://github.com/strawberry-graphql/strawberry/pull/2775/)
+
+
+0.179.0 - 2023-05-31
+--------------------
+
+This PR allows passing metadata to Strawberry arguments.
+
+Example:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(
+        self,
+        info,
+        input: Annotated[str, strawberry.argument(metadata={"test": "foo"})],
+    ) -> str:
+        argument_definition = info.get_argument_definition("input")
+        assert argument_definition.metadata["test"] == "foo"
+
+        return f"Hi {input}"
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2755](https://github.com/strawberry-graphql/strawberry/pull/2755/)
+
+
+0.178.3 - 2023-05-31
+--------------------
+
+In this release codegen no longer chokes on queries that have a `__typename` in them.
+Python generated types will not have the `__typename` included in the fields.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2797](https://github.com/strawberry-graphql/strawberry/pull/2797/)
+
+
+0.178.2 - 2023-05-31
+--------------------
+
+Prevent AssertionError when using `strawberry codegen` on a query file that contains a mutation.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #2795](https://github.com/strawberry-graphql/strawberry/pull/2795/)
+
+
+0.178.1 - 2023-05-30
+--------------------
+
+This release fixes a bug in experimental.pydantic whereby `Optional` type annotations weren't exactly aligned between strawberry type and pydantic model.
+
+Previously this would have caused the series field to be non-nullable in graphql.
+```python
+from typing import Optional
+from pydantic import BaseModel, Field
+import strawberry
+
+
+class VehicleModel(BaseModel):
+    series: Optional[str] = Field(default="")
+
+
+@strawberry.experimental.pydantic.type(model=VehicleModel, all_fields=True)
+class VehicleModelType:
+    pass
+```
+
+Contributed by [Nick Butlin](https://github.com/nicholasbutlin) via [PR #2782](https://github.com/strawberry-graphql/strawberry/pull/2782/)
+
+
+0.178.0 - 2023-05-22
+--------------------
+
+This release introduces the new `should_ignore` argument to the `QueryDepthLimiter` extension that provides
+a more general and more verbose way of specifying the rules by which a query's depth should be limited.
+
+The `should_ignore` argument should be a function that accepts a single argument of type `IgnoreContext`.
+The `IgnoreContext` class has the following attributes:
+- `field_name` of type `str`: the name of the field to be compared against
+- `field_args` of type `strawberry.extensions.query_depth_limiter.FieldArgumentsType`: the arguments of the field to be compared against
+- `query` of type `graphql.language.Node`: the query string
+- `context` of type `graphql.validation.ValidationContext`: the context passed to the query
+and returns `True` if the field should be ignored and `False` otherwise.
+This argument is injected, regardless of name, by the `QueryDepthLimiter` class and should not be passed by the user.
+
+Instead, the user should write business logic to determine whether a field should be ignored or not by
+the attributes of the `IgnoreContext` class.
+
+For example, the following query:
+```python
+"""
+    query {
+      matt: user(name: "matt") {
+        email
+      }
+      andy: user(name: "andy") {
+        email
+        address {
+          city
+        }
+        pets {
+          name
+          owner {
+            name
+          }
+        }
+      }
+    }
+"""
+```
+can have its depth limited by the following `should_ignore`:
+```python
+from strawberry.extensions import IgnoreContext
+
+
+def should_ignore(ignore: IgnoreContext):
+    return ignore.field_args.get("name") == "matt"
+
+
+query_depth_limiter = QueryDepthLimiter(should_ignore=should_ignore)
+```
+so that it *effectively* becomes:
+```python
+"""
+    query {
+      andy: user(name: "andy") {
+        email
+        pets {
+          name
+          owner {
+            name
+          }
+        }
+      }
+    }
+"""
+```
+
+Contributed by [Tommy Smith](https://github.com/tsmith023) via [PR #2505](https://github.com/strawberry-graphql/strawberry/pull/2505/)
+
+
+0.177.3 - 2023-05-19
+--------------------
+
+This release adds a method on the DatadogTracingExtension class called `create_span` that can be overridden to create a custom span or add additional tags to the span.
+
+```python
+from ddtrace import Span
+
+from strawberry.extensions import LifecycleStep
+from strawberry.extensions.tracing import DatadogTracingExtension
+
+
+class DataDogExtension(DatadogTracingExtension):
+    def create_span(
+        self,
+        lifecycle_step: LifecycleStep,
+        name: str,
+        **kwargs,
+    ) -> Span:
+        span = super().create_span(lifecycle_step, name, **kwargs)
+        if lifecycle_step == LifeCycleStep.OPERATION:
+            span.set_tag("graphql.query", self.execution_context.query)
+        return span
+```
+
+Contributed by [Ronald Williams](https://github.com/ronaldnwilliams) via [PR #2773](https://github.com/strawberry-graphql/strawberry/pull/2773/)
+
+
+0.177.2 - 2023-05-18
+--------------------
+
+This release fixes an issue with optional scalars using the `or`
+notation with forward references on python 3.10.
+
+The following code would previously raise `TypeError` on python 3.10:
+
+```python
+from __future__ import annotations
+
+import strawberry
+from strawberry.scalars import JSON
+
+
+@strawberry.type
+class SomeType:
+    an_optional_json: JSON | None
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2774](https://github.com/strawberry-graphql/strawberry/pull/2774/)
+
+
 0.177.1 - 2023-05-09
 --------------------
 

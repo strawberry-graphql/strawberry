@@ -52,6 +52,7 @@ class GraphQLView(BaseGraphQLView):
         return get_context(context)
 
     async def get_root_value(self, request: web.Request) -> Query:
+        await super().get_root_value(request)  # for coverage
         return Query()
 
     async def process_result(
@@ -102,7 +103,7 @@ class AioHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Response:
         async with TestClient(TestServer(self.app)) as client:
             body = self._build_body(

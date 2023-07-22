@@ -1,0 +1,8 @@
+query OperationName {
+  getPersonOrAnimal {
+    ... on Person {
+      name
+      age
+    }
+  }
+}

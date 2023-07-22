@@ -9,7 +9,7 @@ COPY pyproject.toml ./
 COPY poetry.lock ./
 COPY README.md ./
 
-RUN poetry install
+RUN poetry install --with integrations
 
 COPY federation-compatibility/schema.py ./
 

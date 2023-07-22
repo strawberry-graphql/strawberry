@@ -29,11 +29,14 @@ exclude_lines =
 
     @overload
 
+    # Those are not supposed to be hit
+    assert_never\(\w+\)
+
 ignore_errors = True
 
 omit =
   ./.venv/**
-  ./tests/*
+  noxfile.py
 
 [html]
 directory = coverage_html_report

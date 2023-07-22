@@ -1,12 +1,13 @@
 import sys
-from dataclasses import dataclass
-from typing import Generic, NewType, TypeVar, Union
+from typing import Generic, TypeVar, Union
+from typing_extensions import Annotated
 
 import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidUnionTypeError
+from strawberry.type import get_object_definition
 from strawberry.union import StrawberryUnion, union
 
 
@@ -67,7 +68,7 @@ def test_strawberry_union():
     class Error:
         name: str
 
-    cool_union = union(name="CoolUnion", types=(User, Error))
+    cool_union = Annotated[Union[User, Error], union(name="CoolUnion")]
     annotation = StrawberryAnnotation(cool_union)
     resolved = annotation.resolve()
 
@@ -78,24 +79,6 @@ def test_strawberry_union():
         name="CoolUnion",
         type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
     )
-    assert resolved != Union[User, Error]  # Name will be different
-
-
-def test_named_union():
-    @strawberry.type
-    class A:
-        a: int
-
-    @strawberry.type
-    class B:
-        b: int
-
-    Result = strawberry.union("Result", (A, B))
-
-    strawberry_union = Result
-    assert isinstance(strawberry_union, StrawberryUnion)
-    assert strawberry_union.graphql_name == "Result"
-    assert strawberry_union.types == (A, B)
 
 
 def test_union_with_generic():
@@ -109,70 +92,58 @@ def test_union_with_generic():
     class Edge(Generic[T]):
         node: T
 
-    Result = strawberry.union("Result", (Error, Edge[str]))
+    Result = Annotated[Union[Error, Edge[str]], strawberry.union("Result")]
 
-    strawberry_union = Result
+    strawberry_union = StrawberryAnnotation(Result).resolve()
+
     assert isinstance(strawberry_union, StrawberryUnion)
     assert strawberry_union.graphql_name == "Result"
     assert strawberry_union.types[0] == Error
 
-    assert strawberry_union.types[1]._type_definition.is_generic is False
-
-
-def test_cannot_use_union_directly():
-    @strawberry.type
-    class A:
-        a: int
-
-    @strawberry.type
-    class B:
-        b: int
-
-    Result = strawberry.union("Result", (A, B))
-
-    with pytest.raises(ValueError, match=r"Cannot use union type directly"):
-        Result()  # type: ignore
-
-
-def test_error_with_empty_type_list():
-    with pytest.raises(TypeError, match="No types passed to `union`"):
-        strawberry.union("Result", ())
+    assert (
+        get_object_definition(strawberry_union.types[1], strict=True).is_generic
+        is False
+    )
 
 
 @pytest.mark.raises_strawberry_exception(
     InvalidUnionTypeError, match="Type `int` cannot be used in a GraphQL Union"
 )
 def test_error_with_scalar_types():
-    strawberry.union(
-        "Result",
-        (
+    Something = Annotated[
+        Union[
             int,
             str,
             float,
             bool,
-        ),
-    )
+        ],
+        strawberry.union("Something"),
+    ]
+
+    @strawberry.type
+    class Query:
+        something: Something
+
+    schema = strawberry.Schema(query=Query)
 
 
 @pytest.mark.raises_strawberry_exception(
-    InvalidUnionTypeError, match="Type `CustomScalar` cannot be used in a GraphQL Union"
+    InvalidUnionTypeError, match="Type `int` cannot be used in a GraphQL Union"
 )
-def test_error_with_custom_scalar_types():
-    CustomScalar = strawberry.scalar(
-        NewType("CustomScalar", str),
-        serialize=lambda v: str(v),
-        parse_value=lambda v: str(v),
-    )
-
-    strawberry.union("Result", (CustomScalar,))
-
-
-@pytest.mark.raises_strawberry_exception(
-    InvalidUnionTypeError, match="Type `A` cannot be used in a GraphQL Union"
+@pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason="short syntax for union is only available on python 3.10+",
 )
-def test_error_with_non_strawberry_type():
-    @dataclass
-    class A:
-        a: int
+def test_error_with_scalar_types_pipe():
+    # TODO: using Something as the name of the union makes the source finder
+    # use the union type defined above
+    Something2 = Annotated[
+        int | str | float | bool,
+        strawberry.union("Something2"),
+    ]
 
-    strawberry.union("Result", (A,))
+    @strawberry.type
+    class Query:
+        something: Something2
+
+    schema = strawberry.Schema(query=Query)

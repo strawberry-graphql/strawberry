@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 import asyncio
+import contextlib
 import json
 import sys
 import time
 from datetime import timedelta
-from typing import AsyncGenerator, Type
-from unittest.mock import patch
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Type
+from unittest.mock import Mock, patch
 
 try:
     from unittest.mock import AsyncMock
@@ -27,10 +30,11 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
-from tests.http.clients import AioHttpClient, ChannelsHttpClient
 from tests.http.clients.base import DebuggableGraphQLTransportWSMixin
+from tests.views.schema import Schema
 
-from ..http.clients import HttpClient, WebSocketClient
+if TYPE_CHECKING:
+    from ..http.clients.base import HttpClient, WebSocketClient
 
 
 @pytest_asyncio.fixture
@@ -109,11 +113,17 @@ async def test_ws_messages_must_be_text(ws_raw: WebSocketClient):
         ws.assert_reason("WebSocket message type must be text")
 
 
-async def test_connection_init_timeout(request, http_client_class: Type[HttpClient]):
-    if http_client_class == AioHttpClient:
-        pytest.skip(
-            "Closing a AIOHTTP WebSocket from a task currently doesnt work as expected"
-        )
+async def test_connection_init_timeout(
+    request: Any, http_client_class: Type[HttpClient]
+):
+    with contextlib.suppress(ImportError):
+        from tests.http.clients.aiohttp import AioHttpClient
+
+        if http_client_class == AioHttpClient:
+            pytest.skip(
+                "Closing a AIOHTTP WebSocket from a "
+                "task currently doesn't work as expected"
+            )
 
     test_client = http_client_class()
     test_client.create_app(connection_init_wait_timeout=timedelta(seconds=0))
@@ -163,7 +173,7 @@ async def test_connection_init_timeout_cancellation(
     reason="Task name was introduced in 3.8 and we need it for this test",
 )
 async def test_close_twice(
-    mocker: MockerFixture, request, http_client_class: Type[HttpClient]
+    mocker: MockerFixture, request: Any, http_client_class: Type[HttpClient]
 ):
     test_client = http_client_class()
     test_client.create_app(connection_init_wait_timeout=timedelta(seconds=0.25))
@@ -345,25 +355,28 @@ async def test_subscription_syntax_error(ws: WebSocketClient):
 
 
 async def test_subscription_field_errors(ws: WebSocketClient):
-    await ws.send_json(
-        SubscribeMessage(
-            id="sub1",
-            payload=SubscribeMessagePayload(
-                query="subscription { notASubscriptionField }",
-            ),
-        ).as_dict()
-    )
+    process_errors = Mock()
+    with patch.object(Schema, "process_errors", process_errors):
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query="subscription { notASubscriptionField }",
+                ),
+            ).as_dict()
+        )
 
-    response = await ws.receive_json()
-    assert response["type"] == ErrorMessage.type
-    assert response["id"] == "sub1"
-    assert len(response["payload"]) == 1
-    assert response["payload"][0].get("path") is None
-    assert response["payload"][0]["locations"] == [{"line": 1, "column": 16}]
-    assert (
-        response["payload"][0]["message"]
-        == "The subscription field 'notASubscriptionField' is not defined."
-    )
+        response = await ws.receive_json()
+        assert response["type"] == ErrorMessage.type
+        assert response["id"] == "sub1"
+        assert len(response["payload"]) == 1
+        assert response["payload"][0].get("path") is None
+        assert response["payload"][0]["locations"] == [{"line": 1, "column": 16}]
+        assert (
+            response["payload"][0]["message"]
+            == "The subscription field 'notASubscriptionField' is not defined."
+        )
+        process_errors.assert_called_once()
 
 
 async def test_subscription_cancellation(ws: WebSocketClient):
@@ -430,14 +443,14 @@ async def test_subscription_errors(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert response["type"] == ErrorMessage.type
+    assert response["type"] == NextMessage.type
     assert response["id"] == "sub1"
-    assert len(response["payload"]) == 1
-    assert response["payload"][0].get("path") == ["error"]
-    assert response["payload"][0]["message"] == "TEST ERR"
+    assert len(response["payload"]["errors"]) == 1
+    assert response["payload"]["errors"][0]["path"] == ["error"]
+    assert response["payload"]["errors"][0]["message"] == "TEST ERR"
 
 
-async def test_subscription_error_no_complete(ws: WebSocketClient):
+async def test_operation_error_no_complete(ws: WebSocketClient):
     """
     Test that an "error" message is not followed by "complete"
     """
@@ -446,7 +459,7 @@ async def test_subscription_error_no_complete(ws: WebSocketClient):
         SubscribeMessage(
             id="sub1",
             payload=SubscribeMessagePayload(
-                query='subscription { error(message: "TEST ERR") }',
+                query='query { error(message: "TEST ERR") }',
             ),
         ).as_dict()
     )
@@ -461,7 +474,7 @@ async def test_subscription_error_no_complete(ws: WebSocketClient):
         SubscribeMessage(
             id="sub2",
             payload=SubscribeMessagePayload(
-                query='subscription { error(message: "TEST ERR") }',
+                query='query { error(message: "TEST ERR") }',
             ),
         ).as_dict()
     )
@@ -471,22 +484,25 @@ async def test_subscription_error_no_complete(ws: WebSocketClient):
 
 
 async def test_subscription_exceptions(ws: WebSocketClient):
-    await ws.send_json(
-        SubscribeMessage(
-            id="sub1",
-            payload=SubscribeMessagePayload(
-                query='subscription { exception(message: "TEST EXC") }',
-            ),
-        ).as_dict()
-    )
+    process_errors = Mock()
+    with patch.object(Schema, "process_errors", process_errors):
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='subscription { exception(message: "TEST EXC") }',
+                ),
+            ).as_dict()
+        )
 
-    response = await ws.receive_json()
-    assert response["type"] == ErrorMessage.type
-    assert response["id"] == "sub1"
-    assert len(response["payload"]) == 1
-    assert response["payload"][0].get("path") is None
-    assert response["payload"][0].get("locations") is None
-    assert response["payload"][0]["message"] == "TEST EXC"
+        response = await ws.receive_json()
+        assert response["type"] == ErrorMessage.type
+        assert response["id"] == "sub1"
+        assert len(response["payload"]) == 1
+        assert response["payload"][0].get("path") is None
+        assert response["payload"][0].get("locations") is None
+        assert response["payload"][0]["message"] == "TEST EXC"
+        process_errors.assert_called_once()
 
 
 async def test_single_result_query_operation(ws: WebSocketClient):
@@ -640,20 +656,23 @@ async def test_single_result_invalid_operation_selection(ws: WebSocketClient):
 
 
 async def test_single_result_operation_error(ws: WebSocketClient):
-    await ws.send_json(
-        SubscribeMessage(
-            id="sub1",
-            payload=SubscribeMessagePayload(
-                query="query { alwaysFail }",
-            ),
-        ).as_dict()
-    )
+    process_errors = Mock()
+    with patch.object(Schema, "process_errors", process_errors):
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query="query { alwaysFail }",
+                ),
+            ).as_dict()
+        )
 
-    response = await ws.receive_json()
-    assert response["type"] == ErrorMessage.type
-    assert response["id"] == "sub1"
-    assert len(response["payload"]) == 1
-    assert response["payload"][0]["message"] == "You are not authorized"
+        response = await ws.receive_json()
+        assert response["type"] == ErrorMessage.type
+        assert response["id"] == "sub1"
+        assert len(response["payload"]) == 1
+        assert response["payload"][0]["message"] == "You are not authorized"
+        process_errors.assert_called_once()
 
 
 async def test_single_result_operation_exception(ws: WebSocketClient):
@@ -661,21 +680,24 @@ async def test_single_result_operation_exception(ws: WebSocketClient):
     Test that single-result-operations which raise exceptions
     behave in the same way as streaming operations
     """
-    await ws.send_json(
-        SubscribeMessage(
-            id="sub1",
-            payload=SubscribeMessagePayload(
-                query='query { exception(message: "bummer") }',
-            ),
-        ).as_dict()
-    )
+    process_errors = Mock()
+    with patch.object(Schema, "process_errors", process_errors):
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='query { exception(message: "bummer") }',
+                ),
+            ).as_dict()
+        )
 
-    response = await ws.receive_json()
-    assert response["type"] == ErrorMessage.type
-    assert response["id"] == "sub1"
-    assert len(response["payload"]) == 1
-    assert response["payload"][0].get("path") == ["exception"]
-    assert response["payload"][0]["message"] == "bummer"
+        response = await ws.receive_json()
+        assert response["type"] == ErrorMessage.type
+        assert response["id"] == "sub1"
+        assert len(response["payload"]) == 1
+        assert response["payload"][0].get("path") == ["exception"]
+        assert response["payload"][0]["message"] == "bummer"
+        process_errors.assert_called_once()
 
 
 async def test_single_result_duplicate_ids_sub(ws: WebSocketClient):
@@ -787,6 +809,9 @@ async def test_rejects_connection_params_not_unset(ws_raw: WebSocketClient):
     ws.assert_reason("Invalid connection init payload")
 
 
+# timings can sometimes fail currently.  Until this test is rewritten when
+# generator based subscriptions are implemented, mark it as flaky
+@pytest.mark.flaky
 async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
     # Test that when we cancel a subscription, the websocket isn't blocked
     # while some complex finalization takes place.
@@ -834,10 +859,15 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
     Test that the error handler is called when the timeout
     task encounters an error
     """
-    if isinstance(http_client, ChannelsHttpClient):
-        pytest.skip("Can't patch on_init for this client")
+    with contextlib.suppress(ImportError):
+        from tests.http.clients.channels import ChannelsHttpClient
+
+        if isinstance(http_client, ChannelsHttpClient):
+            pytest.skip("Can't patch on_init for this client")
+
     if not AsyncMock:
         pytest.skip("Don't have AsyncMock")
+
     ws = ws_raw
     handler = None
     errorhandler = AsyncMock()
@@ -868,3 +898,42 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
     args = errorhandler.call_args
     assert isinstance(args[0][0], AttributeError)
     assert "total_seconds" in str(args[0][0])
+
+
+async def test_subscription_errors_continue(ws: WebSocketClient):
+    """
+    Verify that an ExecutionResult with errors during subscription does not terminate
+    the subscription
+    """
+    process_errors = Mock()
+    with patch.object(Schema, "process_errors", process_errors):
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query="subscription { flavorsInvalid }",
+                ),
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert response["type"] == NextMessage.type
+        assert response["id"] == "sub1"
+        assert response["payload"]["data"] == {"flavorsInvalid": "VANILLA"}
+
+        response = await ws.receive_json()
+        assert response["type"] == NextMessage.type
+        assert response["id"] == "sub1"
+        assert response["payload"]["data"] is None
+        errors = response["payload"]["errors"]
+        assert "cannot represent value" in str(errors)
+        process_errors.assert_called_once()
+
+        response = await ws.receive_json()
+        assert response["type"] == NextMessage.type
+        assert response["id"] == "sub1"
+        assert response["payload"]["data"] == {"flavorsInvalid": "CHOCOLATE"}
+
+        response = await ws.receive_json()
+        assert response["type"] == CompleteMessage.type
+        assert response["id"] == "sub1"
