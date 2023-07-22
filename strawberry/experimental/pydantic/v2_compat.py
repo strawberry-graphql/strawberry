@@ -66,9 +66,9 @@ else:
         is_new_type,
         new_type_supertype,
     )
-    from pydantic.utils import (
-        lenient_issubclass,  # type: ignore[no-redef]
-        smart_deepcopy,  # type: ignore[no-redef]
+    from pydantic.utils import (  # type: ignore[no-redef]
+        lenient_issubclass,
+        smart_deepcopy,
     )
 
     PYDANTIC_MISSING_TYPE = dataclasses.MISSING  # type: ignore[assignment]
