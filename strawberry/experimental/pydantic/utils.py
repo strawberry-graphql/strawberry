@@ -20,6 +20,7 @@ from strawberry.experimental.pydantic.exceptions import (
     BothDefaultAndDefaultFactoryDefinedError,
     UnregisteredTypeException,
 )
+from strawberry.experimental.pydantic.v2_compat import CompatModelField, smart_deepcopy
 from strawberry.private import is_private
 from strawberry.unset import UNSET
 from strawberry.utils.typing import (
@@ -69,7 +70,7 @@ class DataclassCreationFields(NamedTuple):
 
 
 def get_default_factory_for_field(
-        field: ModelField,
+        field: CompatModelField,
 ) -> Union[NoArgAnyCallable, dataclasses._MISSING_TYPE]:
     """
     Gets the default factory for a pydantic field.

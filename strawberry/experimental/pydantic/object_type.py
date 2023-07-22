@@ -30,29 +30,31 @@ from strawberry.experimental.pydantic.utils import (
     get_default_factory_for_field,
     get_private_fields,
 )
+from strawberry.experimental.pydantic.v2_compat import CompatModelField, get_model_fields, IS_PYDANTIC_V2
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.dataclasses import add_custom_init_fn
-from strawberry.experimental.pydantic.v2_compat import ModelField
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
 
 
 
-def get_type_for_field(field: ModelField, is_input: bool):  # noqa: ANN201
+def get_type_for_field(field: CompatModelField, is_input: bool):  # noqa: ANN201
     outer_type = field.outer_type_
     replaced_type = replace_types_recursively(outer_type, is_input)
-    should_add_optional: bool = field.allow_none
-    if should_add_optional:
-        return Optional[replaced_type]
-    else:
-        return replaced_type
+    if not IS_PYDANTIC_V2:
+        # only pydantic v1 has this Optional logic
+        should_add_optional: bool = field.allow_none
+        if should_add_optional:
+            return Optional[replaced_type]
+
+    return replaced_type
 
 
 def _build_dataclass_creation_fields(
-    field: ModelField,
+    field: CompatModelField,
     is_input: bool,
     existing_fields: Dict[str, StrawberryField],
     auto_fields_set: Set[str],
@@ -86,7 +88,7 @@ def _build_dataclass_creation_fields(
             default=dataclasses.MISSING,
             default_factory=get_default_factory_for_field(field),
             type_annotation=StrawberryAnnotation.from_annotation(field_type),
-            description=field.field_info.description,
+            description=field.description,
             deprecation_reason=(
                 existing_field.deprecation_reason if existing_field else None
             ),
@@ -124,7 +126,7 @@ def type(
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
-        model_fields = model.__fields__
+        model_fields = get_model_fields(model)
         original_fields_set = set(fields) if fields else set()
 
         if fields:

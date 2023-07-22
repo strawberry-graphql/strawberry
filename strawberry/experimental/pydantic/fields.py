@@ -5,8 +5,14 @@ from uuid import UUID
 
 import pydantic
 from pydantic import BaseModel
-from strawberry.experimental.pydantic.v2_compat import lenient_issubclass, get_args, get_origin, is_new_type, \
-    new_type_supertype
+from strawberry.experimental.pydantic.v2_compat import (
+    lenient_issubclass,
+    get_args,
+    get_origin,
+    is_new_type,
+    new_type_supertype,
+    IS_PYDANTIC_V2,
+)
 from strawberry.experimental.pydantic.exceptions import (
     UnregisteredTypeException,
     UnsupportedTypeError,
@@ -69,22 +75,31 @@ ATTR_TO_TYPE_MAP = {
     "RedisDsn": str,
 }
 
-FIELDS_MAP = {
-    getattr(pydantic, field_name): type
-    for field_name, type in ATTR_TO_TYPE_MAP.items()
-    if hasattr(pydantic, field_name)
-}
+"""TODO:
+Most of these fields are not supported by pydantic V2 
+"""
+FIELDS_MAP = (
+    {
+        getattr(pydantic, field_name): type
+        for field_name, type in ATTR_TO_TYPE_MAP.items()
+        if hasattr(pydantic, field_name)
+    }
+    if not IS_PYDANTIC_V2
+    else {}
+)
 
 
 def get_basic_type(type_: Any) -> Type[Any]:
-    if lenient_issubclass(type_, pydantic.ConstrainedInt):
-        return int
-    if lenient_issubclass(type_, pydantic.ConstrainedFloat):
-        return float
-    if lenient_issubclass(type_, pydantic.ConstrainedStr):
-        return str
-    if lenient_issubclass(type_, pydantic.ConstrainedList):
-        return List[get_basic_type(type_.item_type)]  # type: ignore
+    if not IS_PYDANTIC_V2:
+        # only pydantic v1 has these
+        if lenient_issubclass(type_, pydantic.ConstrainedInt):
+            return int
+        if lenient_issubclass(type_, pydantic.ConstrainedFloat):
+            return float
+        if lenient_issubclass(type_, pydantic.ConstrainedStr):
+            return str
+        if lenient_issubclass(type_, pydantic.ConstrainedList):
+            return List[get_basic_type(type_.item_type)]  # type: ignore
 
     if type_ in FIELDS_MAP:
         type_ = FIELDS_MAP.get(type_)
