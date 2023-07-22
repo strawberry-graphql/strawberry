@@ -7,8 +7,6 @@ from typing import Any, Dict, List, NewType, Optional, Union, cast
 
 import pytest
 from pydantic import BaseConfig, BaseModel, Field, ValidationError
-from pydantic.fields import ModelField
-from pydantic.typing import NoArgAnyCallable
 
 import strawberry
 from strawberry.experimental.pydantic.exceptions import (
@@ -16,8 +14,18 @@ from strawberry.experimental.pydantic.exceptions import (
     BothDefaultAndDefaultFactoryDefinedError,
 )
 from strawberry.experimental.pydantic.utils import get_default_factory_for_field
+from strawberry.experimental.pydantic.v2_compat import (
+    IS_PYDANTIC_V2,
+    CompatModelField,
+    PYDANTIC_MISSING_TYPE,
+)
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import StrawberryObjectDefinition
+
+if IS_PYDANTIC_V2:
+    from pydantic.v1.fields import ModelField
+else:
+    from pydantic.fields import ModelField
 
 
 def test_can_use_type_standalone():
@@ -839,15 +847,19 @@ def test_can_convert_pydantic_type_to_strawberry_newtype_list():
 
 def test_get_default_factory_for_field():
     def _get_field(
-        default: Any = dataclasses.MISSING, default_factory: Any = dataclasses.MISSING
-    ) -> ModelField:
-        return ModelField(
+        default: Any = PYDANTIC_MISSING_TYPE,
+        default_factory: Any = PYDANTIC_MISSING_TYPE,
+    ) -> CompatModelField:
+        return CompatModelField(
             name="a",
-            type_=str,
-            class_validators={},
-            model_config=BaseConfig,
+            outer_type_=str,
             default=default,
             default_factory=default_factory,
+            alias="a",
+            allow_none=False,
+            description="",
+            has_alias=False,
+            required=True,
         )
 
     field = _get_field()
@@ -867,7 +879,7 @@ def test_get_default_factory_for_field():
     field = _get_field(mutable_default)
 
     created_factory = get_default_factory_for_field(field)
-    created_factory = cast(NoArgAnyCallable, created_factory)
+    created_factory = created_factory
 
     # should return a factory that copies the default parameter
     assert created_factory() == mutable_default
@@ -885,13 +897,27 @@ def test_get_default_factory_for_field():
 def test_convert_input_types_to_pydantic_default_and_default_factory():
     # Pydantic should raise an error if the user specifies both default
     # and default_factory. this checks for a regression on their side
-    with pytest.raises(
-        ValueError,
-        match=("cannot specify both default and default_factory"),
-    ):
+    if IS_PYDANTIC_V2:
+        with pytest.raises(
+            TypeError,
+            match=("cannot specify both default and default_factory"),
+        ):
 
-        class User(BaseModel):
-            password: Optional[str] = Field(default=None, default_factory=lambda: None)
+            class User(BaseModel):
+                password: Optional[str] = Field(
+                    default=None, default_factory=lambda: None
+                )
+
+    else:
+        with pytest.raises(
+            ValueError,
+            match=("cannot specify both default and default_factory"),
+        ):
+
+            class User(BaseModel):
+                password: Optional[str] = Field(
+                    default=None, default_factory=lambda: None
+                )
 
 
 def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers():

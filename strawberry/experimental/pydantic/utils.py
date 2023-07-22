@@ -20,7 +20,8 @@ from strawberry.experimental.pydantic.exceptions import (
     BothDefaultAndDefaultFactoryDefinedError,
     UnregisteredTypeException,
 )
-from strawberry.experimental.pydantic.v2_compat import CompatModelField, smart_deepcopy, PYDANTIC_MISSING_TYPE
+from strawberry.experimental.pydantic.v2_compat import CompatModelField, smart_deepcopy, PYDANTIC_MISSING_TYPE, \
+    get_model_fields
 from strawberry.private import is_private
 from strawberry.unset import UNSET
 from strawberry.utils.typing import (
@@ -71,7 +72,7 @@ class DataclassCreationFields(NamedTuple):
 
 def get_default_factory_for_field(
     field: CompatModelField,
-) -> Union[NoArgAnyCallable, dataclasses._MISSING_TYPE]:
+) -> Union[NoArgAnyCallable, PYDANTIC_MISSING_TYPE]:
     """
     Gets the default factory for a pydantic field.
 
@@ -125,7 +126,7 @@ def ensure_all_auto_fields_in_pydantic(
     model: Type[BaseModel], auto_fields: Set[str], cls_name: str
 ) -> Union[NoReturn, None]:
     # Raise error if user defined a strawberry.auto field not present in the model
-    non_existing_fields = list(auto_fields - model.__fields__.keys())
+    non_existing_fields = list(auto_fields - get_model_fields(model).keys())
 
     if non_existing_fields:
         raise AutoFieldsNotInBaseModelError(
