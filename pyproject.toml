@@ -77,7 +77,7 @@ pygments = "^2.3"
 pyinstrument = {version = ">=4.0.0", optional = false}
 pytest = "^7.2"
 pytest-asyncio = ">=0.20.3,<0.22.0"
-pytest-codspeed = "^2.0.0"
+pytest-codspeed = "^2.0.1"
 pytest-cov = "^4.0.0"
 pytest-emoji = "^0.2.0"
 pytest-mock = "^3.10"
