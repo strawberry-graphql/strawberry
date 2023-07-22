@@ -167,8 +167,6 @@ markers = [
     "sanic",
     "starlette",
     "starlite",
-    "skip_on_",
-    "pydantic_v1"
 ]
 asyncio_mode = "auto"
 filterwarnings = [

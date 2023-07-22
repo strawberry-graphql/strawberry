@@ -1,6 +1,6 @@
 try:
     from . import pydantic
-except ImportError as e:
+except ImportError:
     pass
 else:
     __all__ = ["pydantic"]
