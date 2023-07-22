@@ -18,7 +18,6 @@ COMMON_PYTEST_OPTIONS = [
     "--ignore=tests/mypy",
     "--ignore=tests/pyright",
     "--ignore=tests/cli",
-    # TODO: reintroduce this in its own test session
     "--ignore=tests/experimental/pydantic",
 ]
 
@@ -120,6 +119,7 @@ def test_pydantic(session: Session, pydantic: str) -> None:
         "--cov-report=xml",
         "-m",
         "pydantic",
+        "--ignore=tests/cli",
     )
 
 

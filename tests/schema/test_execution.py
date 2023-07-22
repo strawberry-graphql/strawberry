@@ -160,7 +160,7 @@ async def test_sending_wrong_variables():
 
 
 @pytest.mark.asyncio
-async def test_logging_exceptions(caplog):
+async def test_logging_exceptions(caplog: pytest.LogCaptureFixture):
     @strawberry.type
     class Query:
         @strawberry.field
@@ -209,7 +209,7 @@ async def test_logging_exceptions(caplog):
 
 
 @pytest.mark.asyncio
-async def test_logging_graphql_exceptions(caplog):
+async def test_logging_graphql_exceptions(caplog: pytest.LogCaptureFixture):
     @strawberry.type
     class Query:
         @strawberry.field
@@ -241,7 +241,7 @@ async def test_logging_graphql_exceptions(caplog):
 
 
 @pytest.mark.asyncio
-async def test_logging_parsing_error(caplog):
+async def test_logging_parsing_error(caplog: pytest.LogCaptureFixture):
     @strawberry.type
     class Query:
         @strawberry.field
@@ -272,7 +272,7 @@ async def test_logging_parsing_error(caplog):
     assert "Syntax Error" in record.message
 
 
-def test_logging_parsing_error_sync(caplog):
+def test_logging_parsing_error_sync(caplog: pytest.LogCaptureFixture):
     @strawberry.type
     class Query:
         @strawberry.field
@@ -304,7 +304,7 @@ def test_logging_parsing_error_sync(caplog):
 
 
 @pytest.mark.asyncio
-async def test_logging_validation_errors(caplog):
+async def test_logging_validation_errors(caplog: pytest.LogCaptureFixture):
     @strawberry.type
     class Query:
         @strawberry.field
@@ -343,7 +343,7 @@ async def test_logging_validation_errors(caplog):
     assert "Cannot query field 'missingField'" in record2.message
 
 
-def test_logging_validation_errors_sync(caplog):
+def test_logging_validation_errors_sync(caplog: pytest.LogCaptureFixture):
     @strawberry.type
     class Query:
         @strawberry.field
@@ -382,7 +382,7 @@ def test_logging_validation_errors_sync(caplog):
     assert "Cannot query field 'missingField'" in record2.message
 
 
-def test_overriding_process_errors(caplog):
+def test_overriding_process_errors(caplog: pytest.LogCaptureFixture):
     @strawberry.type
     class Query:
         @strawberry.field
@@ -447,3 +447,30 @@ def test_adding_custom_validation_rules():
         root_value=Query(),
     )
     assert not result.errors
+
+
+def test_partial_responses():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self) -> str:
+            return "hi"
+
+        @strawberry.field
+        def this_fails(self) -> Optional[str]:
+            raise ValueError("this field fails")
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+        query {
+            example
+            thisFails
+        }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert result.data == {"example": "hi", "thisFails": None}
+    assert result.errors
+    assert result.errors[0].message == "this field fails"
