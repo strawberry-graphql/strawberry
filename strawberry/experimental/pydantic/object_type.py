@@ -34,10 +34,11 @@ from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.dataclasses import add_custom_init_fn
+from strawberry.experimental.pydantic.v2_compat import ModelField
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
-    from pydantic.fields import ModelField
+
 
 
 def get_type_for_field(field: ModelField, is_input: bool):  # noqa: ANN201
