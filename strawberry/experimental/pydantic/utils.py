@@ -14,14 +14,17 @@ from typing import (
     cast,
 )
 
-
 from strawberry.experimental.pydantic.exceptions import (
     AutoFieldsNotInBaseModelError,
     BothDefaultAndDefaultFactoryDefinedError,
     UnregisteredTypeException,
 )
-from strawberry.experimental.pydantic.v2_compat import CompatModelField, smart_deepcopy, PYDANTIC_MISSING_TYPE, \
-    get_model_fields
+from strawberry.experimental.pydantic.v2_compat import (
+    PYDANTIC_MISSING_TYPE,
+    CompatModelField,
+    get_model_fields,
+    smart_deepcopy,
+)
 from strawberry.private import is_private
 from strawberry.unset import UNSET
 from strawberry.utils.typing import (

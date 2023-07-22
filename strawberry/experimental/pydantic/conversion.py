@@ -13,8 +13,8 @@ from strawberry.type import (
 from strawberry.union import StrawberryUnion
 
 if TYPE_CHECKING:
-    from strawberry.type import StrawberryType
     from strawberry.field import StrawberryField
+    from strawberry.type import StrawberryType
 
 
 def _convert_from_pydantic_to_strawberry_type(

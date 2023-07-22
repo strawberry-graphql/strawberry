@@ -1,11 +1,14 @@
 import dataclasses
 from dataclasses import dataclass
-from typing import Dict, Type, Any, Optional, Callable
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type
 
 import pydantic
 from pydantic import BaseModel
 from pydantic.version import VERSION as PYDANTIC_VERSION
 from pydantic_core import PydanticUndefined
+
+if TYPE_CHECKING:
+    from pydantic.fields import FieldInfo
 
 IS_PYDANTIC_V2: bool = PYDANTIC_VERSION.startswith("2.")
 IS_PYDANTIC_V1: bool = not IS_PYDANTIC_V2
@@ -25,16 +28,14 @@ class CompatModelField:
 
 
 if pydantic.VERSION[0] == "2":
-    from pydantic._internal._utils import smart_deepcopy
-    from pydantic._internal._utils import lenient_issubclass
     from typing_extensions import get_args, get_origin
+
     from pydantic._internal._typing_extra import is_new_type
-    from pydantic.v1.fields import ModelField
-    from pydantic.fields import FieldInfo
+    from pydantic._internal._utils import lenient_issubclass, smart_deepcopy
 
-    PYDANTIC_MISSING_TYPE: Type = PydanticUndefined
+    PYDANTIC_MISSING_TYPE = PydanticUndefined
 
-    def new_type_supertype(type_):
+    def new_type_supertype(type_: Any) -> Any:
         return type_.__supertype__
 
     def get_model_fields(model: Type[BaseModel]) -> Dict[str, CompatModelField]:
@@ -57,17 +58,23 @@ if pydantic.VERSION[0] == "2":
         return new_fields
 
 else:
-    from pydantic.utils import smart_deepcopy  # type: ignore
-    from pydantic.utils import lenient_issubclass
-    from pydantic.typing import get_args, get_origin, is_new_type, new_type_supertype
-    from pydantic import ModelField
+    from pydantic.typing import (  # type: ignore[no-redef]
+        get_args,
+        get_origin,
+        is_new_type,
+        new_type_supertype,
+    )
+    from pydantic.utils import (
+        lenient_issubclass,  # type: ignore[no-redef]
+        smart_deepcopy,  # type: ignore[no-redef]
+    )
 
-    PYDANTIC_MISSING_TYPE = dataclasses.MISSING
+    PYDANTIC_MISSING_TYPE = dataclasses.MISSING # type: ignore[assignment]
 
     def get_model_fields(model: Type[BaseModel]) -> Dict[str, CompatModelField]:
         new_fields = {}
         # Convert it into CompatModelField
-        for name, field in model.__fields__.items():
+        for name, field in model.__fields__.items(): # type: ignore[attr-defined]
             new_fields[name] = CompatModelField(
                 name=name,
                 outer_type_=field.type_,
