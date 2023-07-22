@@ -1,14 +1,12 @@
 import dataclasses
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type
+from typing import Dict, Type, Any, Optional, Callable
 
 import pydantic
 from pydantic import BaseModel
+from pydantic.v1.typing import NoArgAnyCallable
 from pydantic.version import VERSION as PYDANTIC_VERSION
 from pydantic_core import PydanticUndefined
-
-if TYPE_CHECKING:
-    from pydantic.fields import FieldInfo
 
 IS_PYDANTIC_V2: bool = PYDANTIC_VERSION.startswith("2.")
 IS_PYDANTIC_V1: bool = not IS_PYDANTIC_V2
@@ -28,12 +26,16 @@ class CompatModelField:
 
 
 if pydantic.VERSION[0] == "2":
-
-    from pydantic._internal._utils import lenient_issubclass, smart_deepcopy
+    from pydantic._internal._utils import smart_deepcopy
+    from pydantic._internal._utils import lenient_issubclass
+    from typing_extensions import get_args, get_origin
+    from pydantic._internal._typing_extra import is_new_type
+    from pydantic.v1.fields import ModelField
+    from pydantic.fields import FieldInfo
 
     PYDANTIC_MISSING_TYPE = PydanticUndefined
 
-    def new_type_supertype(type_: Any) -> Any:
+    def new_type_supertype(type_):
         return type_.__supertype__
 
     def get_model_fields(model: Type[BaseModel]) -> Dict[str, CompatModelField]:
@@ -56,7 +58,10 @@ if pydantic.VERSION[0] == "2":
         return new_fields
 
 else:
-    from pydantic.utils import lenient_issubclass, smart_deepcopy
+    from pydantic.utils import smart_deepcopy
+    from pydantic.utils import lenient_issubclass
+    from pydantic.typing import get_args, get_origin, is_new_type, new_type_supertype
+    from pydantic import ModelField
 
     PYDANTIC_MISSING_TYPE = dataclasses.MISSING
 

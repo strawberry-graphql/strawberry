@@ -136,7 +136,7 @@ class BaseGraphQLTestClient(ABC):
             # In case of folders the variables will look like
             # `{"folder": {"files": ...]}}`
             if isinstance(values, dict):
-                folder_key = next(iter(values.keys()))
+                folder_key = list(values.keys())[0]
                 reference += f".{folder_key}"
                 # the list of file is inside the folder keyword
                 variable_values = variable_values[folder_key]
@@ -146,7 +146,7 @@ class BaseGraphQLTestClient(ABC):
                 # copying `files` as when we map a file we must discard from the dict
                 _kwargs = files.copy()
                 for index, _ in enumerate(variable_values):
-                    k = next(iter(_kwargs.keys()))
+                    k = list(_kwargs.keys())[0]
                     _kwargs.pop(k)
                     map.setdefault(k, [])
                     map[k].append(f"variables.{reference}.{index}")

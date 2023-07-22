@@ -3,10 +3,10 @@ import dataclasses
 import re
 import sys
 from enum import Enum
-from typing import Any, Dict, List, NewType, Optional, Union
+from typing import Any, Dict, List, NewType, Optional, Union, cast
 
 import pytest
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseConfig, BaseModel, Field, ValidationError
 
 import strawberry
 from strawberry.experimental.pydantic.exceptions import (
@@ -16,16 +16,16 @@ from strawberry.experimental.pydantic.exceptions import (
 from strawberry.experimental.pydantic.utils import get_default_factory_for_field
 from strawberry.experimental.pydantic.v2_compat import (
     IS_PYDANTIC_V2,
-    PYDANTIC_MISSING_TYPE,
     CompatModelField,
+    PYDANTIC_MISSING_TYPE,
 )
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import StrawberryObjectDefinition
 
 if IS_PYDANTIC_V2:
-    pass
+    from pydantic.v1.fields import ModelField
 else:
-    pass
+    from pydantic.fields import ModelField
 
 
 def test_can_use_type_standalone():
