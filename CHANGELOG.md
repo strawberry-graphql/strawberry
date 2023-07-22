@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.195.3 - 2023-07-22
+--------------------
+
+This release no longer requires an upperbound pin for uvicorn, ensuring
+compatibility with future versions of uvicorn without the need for updating
+Strawberry.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2968](https://github.com/strawberry-graphql/strawberry/pull/2968/)
+
+
 0.195.2 - 2023-07-15
 --------------------
 
