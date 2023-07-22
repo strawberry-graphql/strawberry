@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import base64
 import dataclasses
 import re
@@ -988,7 +986,7 @@ def test_custom_conversion_functions():
         @staticmethod
         def from_pydantic(
             instance: User, extra: Optional[Dict[str, Any]] = None
-        ) -> UserType:
+        ) -> "UserType":
             return UserType(
                 age=str(instance.age),
                 password=base64.b64encode(instance.password.encode()).decode()
@@ -1030,7 +1028,7 @@ def test_nested_custom_conversion_functions():
         @staticmethod
         def from_pydantic(
             instance: User, extra: Optional[Dict[str, Any]] = None
-        ) -> UserType:
+        ) -> "UserType":
             return UserType(
                 age=str(instance.age),
                 password=base64.b64encode(instance.password.encode()).decode()
