@@ -76,5 +76,5 @@ def server(
         port=port,
         log_level=log_level,
         reload=True,
-        reload_dirs=[app_dir],
+        reload_dirs=[app_dir]
     )
