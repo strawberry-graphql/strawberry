@@ -181,7 +181,7 @@ def test_v1_implicit_default():
     type PydanticUser {
       name: String = null
     }
-    
+
     type Query {
       a: PydanticUser!
     }
@@ -212,7 +212,7 @@ def test_v2_explicit_default():
     type PydanticUser {
       name: String
     }
-    
+
     type Query {
       a: PydanticUser!
     }

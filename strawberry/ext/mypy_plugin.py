@@ -52,7 +52,6 @@ from mypy.types import (
 )
 from mypy.typevars import fill_typevars
 from mypy.util import get_unique_redefinition_name
-
 from strawberry.experimental.pydantic.v2_compat import IS_PYDANTIC_V1
 
 # Backwards compatible with the removal of `TypeVarDef` in mypy 0.920.
