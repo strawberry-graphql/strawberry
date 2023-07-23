@@ -184,7 +184,7 @@ def execute_sync(
         with extensions_runner.parsing():
             try:
                 if not execution_context.graphql_document:
-                    execution_context.graphql_document = executor.parse(
+                    executor.parse(
                         execution_context
                     )
 
