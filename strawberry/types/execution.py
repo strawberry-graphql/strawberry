@@ -51,7 +51,9 @@ class GraphQlCoreExecutor(Executor):
         super().__init__(schema)
 
     def parse(self, execution_context: ExecutionContext) -> None:
-        execution_context.graphql_document = parse(execution_context.query, **execution_context.parse_options)
+        execution_context.graphql_document = parse(
+            execution_context.query, **execution_context.parse_options
+        )
 
     def validate(
         self,
