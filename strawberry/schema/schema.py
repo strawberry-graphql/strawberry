@@ -176,7 +176,10 @@ class Schema(BaseSchema):
             formatted_errors = "\n\n".join(f"❌ {error.message}" for error in errors)
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
-        self.executor = executor_class(self) or GraphQlCoreExecutor(self)
+        if executor_class:
+            self.executor = executor_class(self)
+        else:
+            self.executor = GraphQlCoreExecutor(self)
 
     def get_extensions(
         self, sync: bool = False
