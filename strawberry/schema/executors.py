@@ -25,8 +25,8 @@ class RustberryExecutor(Executor):
         execution_context.graphql_document = self.compiler.gql_core_ast_mirror(file_id)
 
     def validate(
-            self,
-            execution_context: ExecutionContext,
+        self,
+        execution_context: ExecutionContext,
     ) -> None:
         assert execution_context.graphql_document
         file_id: FileId = getattr(execution_context, RUSTBERRY_FILE_ID_FIELD, None)
