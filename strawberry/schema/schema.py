@@ -263,6 +263,7 @@ class Schema(BaseSchema):
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
             process_errors=self.process_errors,
+            executor=self.executor,
         )
 
         return result
@@ -295,6 +296,7 @@ class Schema(BaseSchema):
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
             process_errors=self.process_errors,
+            executor=self.executor,
         )
 
         return result
