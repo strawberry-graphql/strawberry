@@ -12,39 +12,68 @@ from typing import (
     Sequence,
     Type,
     Union,
-    cast,
+    cast, Tuple,
 )
 
-from graphql import GraphQLError
+from graphql import GraphQLError, validate, parse
 from graphql import execute as original_execute
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.extensions.runner import SchemaExtensionsRunner
 from strawberry.types import ExecutionResult
-
 from .exceptions import InvalidOperationTypeError
 
 if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
     from graphql import ExecutionContext as GraphQLExecutionContext
-    from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql import GraphQLSchema
+    from graphql.language import DocumentNode
+    from graphql.validation import ASTValidationRule
 
     from strawberry.extensions import SchemaExtension
     from strawberry.types import ExecutionContext
-    from strawberry.types.execution import Executor
+    from strawberry.types.execution import ParseOptions, Executor
     from strawberry.types.graphql import OperationType
 
 
+def parse_document(query: str, **kwargs: Unpack[ParseOptions]) -> DocumentNode:
+    return parse(query, **kwargs)
+
+
+def validate_document(
+        schema: GraphQLSchema,
+        document: DocumentNode,
+        validation_rules: Tuple[Type[ASTValidationRule], ...],
+) -> List[GraphQLError]:
+    return validate(
+        schema,
+        document,
+        validation_rules,
+    )
+
+
+def _run_validation(execution_context: ExecutionContext) -> None:
+    # Check if there are any validation rules or if validation has
+    # already been run by an extension
+    if len(execution_context.validation_rules) > 0 and execution_context.errors is None:
+        assert execution_context.graphql_document
+        execution_context.errors = validate_document(
+            execution_context.schema._schema,
+            execution_context.graphql_document,
+            execution_context.validation_rules,
+        )
+
+
 async def execute(
-    schema: GraphQLSchema,
-    *,
-    allowed_operation_types: Iterable[OperationType],
-    extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]],
-    execution_context: ExecutionContext,
-    execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
-    process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
-    executor: Executor,
+        schema: GraphQLSchema,
+        *,
+        allowed_operation_types: Iterable[OperationType],
+        extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]],
+        execution_context: ExecutionContext,
+        execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+        process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
+        executor: Executor,
 ) -> ExecutionResult:
     extensions_runner = SchemaExtensionsRunner(
         execution_context=execution_context,
@@ -129,14 +158,14 @@ async def execute(
 
 
 def execute_sync(
-    schema: GraphQLSchema,
-    *,
-    allowed_operation_types: Iterable[OperationType],
-    extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]],
-    execution_context: ExecutionContext,
-    execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
-    process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
-    executor: Executor,
+        schema: GraphQLSchema,
+        *,
+        allowed_operation_types: Iterable[OperationType],
+        extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]],
+        execution_context: ExecutionContext,
+        execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+        process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
+        executor: Executor,
 ) -> ExecutionResult:
     extensions_runner = SchemaExtensionsRunner(
         execution_context=execution_context,

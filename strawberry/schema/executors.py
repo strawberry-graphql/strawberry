@@ -19,15 +19,15 @@ class RustberryExecutor(Executor):
         self.compiler = QueryCompiler()
         self.compiler.set_schema(schema.as_str())
 
-    def parse(self, execution_context: ExecutionContext):
+    def parse(self, execution_context: ExecutionContext) -> None:
         file_id = self.compiler.add_executable(execution_context.query)
         setattr(execution_context, RUSTBERRY_FILE_ID_FIELD, file_id)
         execution_context.graphql_document = self.compiler.gql_core_ast_mirror(file_id)
 
     def validate(
-        self,
-        execution_context: ExecutionContext,
-    ):
+            self,
+            execution_context: ExecutionContext,
+    ) -> None:
         assert execution_context.graphql_document
         file_id: FileId = getattr(execution_context, RUSTBERRY_FILE_ID_FIELD, None)
         assert file_id, "File ID not set - Required for Rustberry use"

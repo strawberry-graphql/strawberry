@@ -35,14 +35,14 @@ class Executor(abc.ABC):
         self.schema = schema
 
     @abc.abstractmethod
-    def parse(self, execution_context: ExecutionContext):
+    def parse(self, execution_context: ExecutionContext) -> None:
         ...
 
     @abc.abstractmethod
     def validate(
         self,
         execution_context: ExecutionContext,
-    ):
+    ) -> None:
         ...
 
 
