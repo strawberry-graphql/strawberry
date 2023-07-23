@@ -5,7 +5,7 @@ import pydantic
 
 import strawberry
 from strawberry.printer import print_schema
-from tests.experimental.pydantic.utils import needs_pydanticv1, needs_pydanticv2
+from tests.experimental.pydantic.utils import needs_pydanticv2
 
 
 def test_field_type_default():
@@ -157,6 +157,8 @@ def test_input_type_default():
     """
 
     assert print_schema(schema) == textwrap.dedent(expected).strip()
+
+
 @needs_pydanticv2
 def test_v2_explicit_default():
     class User(pydantic.BaseModel):
