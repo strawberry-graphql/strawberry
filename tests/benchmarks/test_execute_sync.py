@@ -30,14 +30,11 @@ def test_execute_with_many_fields_and_directives(benchmark: BenchmarkFixture):
 
 # @pytest.mark.benchmark
 # def test_execute_with_10_items(benchmark: BenchmarkFixture):
-#     benchmark(schema.execute_sync, items_query, variable_values={"count": 10})
 #
 #
 # @pytest.mark.benchmark
 # def test_execute_with_100_items(benchmark: BenchmarkFixture):
-#     benchmark(schema.execute_sync, items_query, variable_values={"count": 100})
 #
 #
 # @pytest.mark.benchmark
 # def test_execute_with_1000_items(benchmark: BenchmarkFixture):
-#     benchmark(schema.execute_sync, items_query, variable_values={"count": 1000})
