@@ -37,36 +37,8 @@ if TYPE_CHECKING:
 
     from strawberry.extensions import SchemaExtension
     from strawberry.types import ExecutionContext
-    from strawberry.types.execution import ParseOptions
+    from strawberry.types.execution import ParseOptions, Executor
     from strawberry.types.graphql import OperationType
-
-
-def parse_document(query: str, **kwargs: Unpack[ParseOptions]) -> DocumentNode:
-    return parse(query, **kwargs)
-
-
-def validate_document(
-    schema: GraphQLSchema,
-    document: DocumentNode,
-    validation_rules: Tuple[Type[ASTValidationRule], ...],
-) -> List[GraphQLError]:
-    return validate(
-        schema,
-        document,
-        validation_rules,
-    )
-
-
-def _run_validation(execution_context: ExecutionContext) -> None:
-    # Check if there are any validation rules or if validation has
-    # already been run by an extension
-    if len(execution_context.validation_rules) > 0 and execution_context.errors is None:
-        assert execution_context.graphql_document
-        execution_context.errors = validate_document(
-            execution_context.schema._schema,
-            execution_context.graphql_document,
-            execution_context.validation_rules,
-        )
 
 
 async def execute(
@@ -77,6 +49,7 @@ async def execute(
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
+    executor: Executor,
 ) -> ExecutionResult:
     extensions_runner = SchemaExtensionsRunner(
         execution_context=execution_context,
@@ -92,9 +65,7 @@ async def execute(
         async with extensions_runner.parsing():
             try:
                 if not execution_context.graphql_document:
-                    execution_context.graphql_document = parse_document(
-                        execution_context.query, **execution_context.parse_options
-                    )
+                    executor.parse(execution_context)
 
             except GraphQLError as error:
                 execution_context.errors = [error]
@@ -121,7 +92,7 @@ async def execute(
             raise InvalidOperationTypeError(execution_context.operation_type)
 
         async with extensions_runner.validation():
-            _run_validation(execution_context)
+            executor.validate(execution_context)
             if execution_context.errors:
                 process_errors(execution_context.errors, execution_context)
                 return ExecutionResult(data=None, errors=execution_context.errors)
