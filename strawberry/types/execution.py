@@ -50,13 +50,13 @@ class GraphQlCoreExecutor(Executor):
     def __init__(self, schema: Schema):
         super().__init__(schema)
 
-    def parse(self, execution_context: ExecutionContext) -> DocumentNode:
-        return parse(execution_context.query, **execution_context.parse_options)
+    def parse(self, execution_context: ExecutionContext) -> None:
+        execution_context.graphql_document = parse(execution_context.query, **execution_context.parse_options)
 
     def validate(
         self,
         execution_context: ExecutionContext,
-    ):
+    ) -> None:
         if (
             len(execution_context.validation_rules) > 0
             and execution_context.errors is None
