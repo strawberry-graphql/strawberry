@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from typing_extensions import Unpack
 
     from graphql import ExecutionContext as GraphQLExecutionContext
+    from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql import GraphQLSchema
     from graphql.language import DocumentNode
     from graphql.validation import ASTValidationRule
