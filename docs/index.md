@@ -143,7 +143,7 @@ We can now execute GraphQL queries. Strawberry comes with a tool called
 
 You should see something like this:
 
-<img src="./images/index-server.png" alt="A view of the GraphiQL interface" width="2048" height="1536" />
+![A view of the GraphiQL interface](./images/index-server.png)
 
 The GraphiQL UI includes:
 
@@ -167,7 +167,7 @@ Paste the following string into the left area and then click the play button:
 
 You should see the hardcoded data appear on the right side:
 
-<img src="./images/index-query-example.png" alt="A view of the GraphiQL interface after running a GraphQL query" width="2048" height="1536" />
+![A view of the GraphiQL interface after running a GraphQL query](./images/index-query-example.png)
 
 GraphQL allows clients to query only the fields they need, go ahead and remove
 `author` from the query and run it again. The response should now only show the
