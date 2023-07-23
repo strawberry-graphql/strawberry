@@ -95,6 +95,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: pipx install poetry
+      # virtualenv cache should depends on OS, Python version and `poetry.lock` (and optionally workflow files).
+      - name: Cache Packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.local
+          key: poetry-local-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('.github/workflows/*.yml') }}
       - uses: actions/setup-python@v4
         id: setup-python
         with:
