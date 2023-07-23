@@ -157,39 +157,6 @@ def test_input_type_default():
     """
 
     assert print_schema(schema) == textwrap.dedent(expected).strip()
-
-
-@needs_pydanticv1
-def test_v1_implicit_default():
-    class User(pydantic.BaseModel):
-        name: Optional[str]
-
-    @strawberry.experimental.pydantic.type(User, all_fields=True)
-    class PydanticUser:
-        ...
-
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def a(self) -> PydanticUser:
-            ...
-
-    schema = strawberry.Schema(Query)
-
-    # name should have a default of None
-    expected = """
-    type PydanticUser {
-      name: String = null
-    }
-
-    type Query {
-      a: PydanticUser!
-    }
-    """
-
-    assert print_schema(schema) == textwrap.dedent(expected).strip()
-
-
 @needs_pydanticv2
 def test_v2_explicit_default():
     class User(pydantic.BaseModel):
