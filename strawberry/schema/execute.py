@@ -10,15 +10,13 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Tuple,
     Type,
     Union,
     cast,
 )
 
-from graphql import GraphQLError, parse
+from graphql import GraphQLError
 from graphql import execute as original_execute
-from graphql.validation import validate
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.extensions.runner import SchemaExtensionsRunner
@@ -27,17 +25,14 @@ from strawberry.types import ExecutionResult
 from .exceptions import InvalidOperationTypeError
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
 
     from graphql import ExecutionContext as GraphQLExecutionContext
     from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql import GraphQLSchema
-    from graphql.language import DocumentNode
-    from graphql.validation import ASTValidationRule
 
     from strawberry.extensions import SchemaExtension
     from strawberry.types import ExecutionContext
-    from strawberry.types.execution import ParseOptions, Executor
+    from strawberry.types.execution import Executor
     from strawberry.types.graphql import OperationType
 
 
@@ -157,7 +152,9 @@ def execute_sync(
         with extensions_runner.parsing():
             try:
                 if not execution_context.graphql_document:
-                    execution_context.graphql_document = executor.parse(execution_context)
+                    execution_context.graphql_document = executor.parse(
+                        execution_context
+                    )
 
             except GraphQLError as error:
                 execution_context.errors = [error]

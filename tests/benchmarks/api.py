@@ -80,7 +80,9 @@ def uppercase(value: str) -> str:
     return value.upper()
 
 
-schema = strawberry.Schema(query=Query, subscription=Subscription, executor_class=RustberryExecutor)
+schema = strawberry.Schema(
+    query=Query, subscription=Subscription, executor_class=RustberryExecutor
+)
 schema_with_directives = strawberry.Schema(
     query=Query, directives=[uppercase], subscription=Subscription
 )

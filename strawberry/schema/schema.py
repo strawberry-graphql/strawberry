@@ -38,12 +38,13 @@ from strawberry.type import has_object_definition
 from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
 from strawberry.types.types import StrawberryObjectDefinition
+
+from ..printer import print_schema
+from ..types.execution import Executor, GraphQlCoreExecutor
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
-from ..printer import print_schema
-from ..types.execution import GraphQlCoreExecutor, Executor
 
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
@@ -82,7 +83,7 @@ class Schema(BaseSchema):
             Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]]
         ] = None,
         schema_directives: Iterable[object] = (),
-        executor_class: Optional[Type[Executor]]=None,
+        executor_class: Optional[Type[Executor]] = None,
     ):
         self.query = query
         self.mutation = mutation
@@ -178,7 +179,7 @@ class Schema(BaseSchema):
         self.executor = executor_class(self) or GraphQlCoreExecutor(self)
 
     def get_extensions(
-            self, sync: bool = False
+        self, sync: bool = False
     ) -> List[Union[Type[SchemaExtension], SchemaExtension]]:
         extensions = list(self.extensions)
 
@@ -189,7 +190,7 @@ class Schema(BaseSchema):
 
     @lru_cache()
     def get_type_by_name(
-            self, name: str
+        self, name: str
     ) -> Optional[
         Union[
             StrawberryObjectDefinition,
@@ -205,7 +206,7 @@ class Schema(BaseSchema):
         return None
 
     def get_field_for_type(
-            self, field_name: str, type_name: str
+        self, field_name: str, type_name: str
     ) -> Optional[StrawberryField]:
         type_ = self.get_type_by_name(type_name)
 
@@ -235,13 +236,13 @@ class Schema(BaseSchema):
         )
 
     async def execute(
-            self,
-            query: Optional[str],
-            variable_values: Optional[Dict[str, Any]] = None,
-            context_value: Optional[Any] = None,
-            root_value: Optional[Any] = None,
-            operation_name: Optional[str] = None,
-            allowed_operation_types: Optional[Iterable[OperationType]] = None,
+        self,
+        query: Optional[str],
+        variable_values: Optional[Dict[str, Any]] = None,
+        context_value: Optional[Any] = None,
+        root_value: Optional[Any] = None,
+        operation_name: Optional[str] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ) -> ExecutionResult:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
@@ -269,13 +270,13 @@ class Schema(BaseSchema):
         return result
 
     def execute_sync(
-            self,
-            query: Optional[str],
-            variable_values: Optional[Dict[str, Any]] = None,
-            context_value: Optional[Any] = None,
-            root_value: Optional[Any] = None,
-            operation_name: Optional[str] = None,
-            allowed_operation_types: Optional[Iterable[OperationType]] = None,
+        self,
+        query: Optional[str],
+        variable_values: Optional[Dict[str, Any]] = None,
+        context_value: Optional[Any] = None,
+        root_value: Optional[Any] = None,
+        operation_name: Optional[str] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ) -> ExecutionResult:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
@@ -302,13 +303,13 @@ class Schema(BaseSchema):
         return result
 
     async def subscribe(
-            self,
-            # TODO: make this optional when we support extensions
-            query: str,
-            variable_values: Optional[Dict[str, Any]] = None,
-            context_value: Optional[Any] = None,
-            root_value: Optional[Any] = None,
-            operation_name: Optional[str] = None,
+        self,
+        # TODO: make this optional when we support extensions
+        query: str,
+        variable_values: Optional[Dict[str, Any]] = None,
+        context_value: Optional[Any] = None,
+        root_value: Optional[Any] = None,
+        operation_name: Optional[str] = None,
     ) -> Union[AsyncIterator[GraphQLExecutionResult], GraphQLExecutionResult]:
         return await subscribe(
             self._schema,
@@ -355,7 +356,7 @@ class Schema(BaseSchema):
         )
 
         if any(
-                isinstance(directive, FederationDirective) for directive in all_directives
+            isinstance(directive, FederationDirective) for directive in all_directives
         ):
             warnings.warn(
                 "Federation directive found in schema. "

@@ -2,13 +2,13 @@ from typing import TYPE_CHECKING
 
 from graphql import GraphQLError
 from rustberry import QueryCompiler
-from rustberry._rustberry import FileId
 
-from strawberry.types.execution import Executor
+from strawberry import Schema
+from strawberry.types.execution import ExecutionContext, Executor
 
 if TYPE_CHECKING:
-    from strawberry import Schema
-    from strawberry.types.execution import ExecutionContext
+    from rustberry._rustberry import FileId
+
 
 RUSTBERRY_FILE_ID_FIELD = "__rustberry_file_id"
 
@@ -25,11 +25,11 @@ class RustberryExecutor(Executor):
         execution_context.graphql_document = self.compiler.gql_core_ast_mirror(file_id)
 
     def validate(
-            self,
-            execution_context: ExecutionContext,
+        self,
+        execution_context: ExecutionContext,
     ):
         assert execution_context.graphql_document
-        file_id : FileId = getattr(execution_context, RUSTBERRY_FILE_ID_FIELD, None)
+        file_id: FileId = getattr(execution_context, RUSTBERRY_FILE_ID_FIELD, None)
         assert file_id, "File ID not set - Required for Rustberry use"
         validation_successful = self.compiler.validate_file(file_id)
         if not validation_successful:

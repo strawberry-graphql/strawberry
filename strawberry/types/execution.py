@@ -11,9 +11,9 @@ from typing import (
     Tuple,
     Type,
 )
-
-from graphql import specified_rules, parse, validate
 from typing_extensions import TypedDict
+
+from graphql import parse, specified_rules, validate
 
 from strawberry.utils.operation import get_first_operation, get_operation_type
 
@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql.error.graphql_error import GraphQLError
     from graphql.language import DocumentNode, OperationDefinitionNode
-    from graphql import GraphQLSchema
 
     from strawberry.schema import Schema
 
@@ -32,7 +31,6 @@ if TYPE_CHECKING:
 
 
 class Executor(abc.ABC):
-
     def __init__(self, schema: Schema):
         self.schema = schema
 
@@ -42,8 +40,8 @@ class Executor(abc.ABC):
 
     @abc.abstractmethod
     def validate(
-            self,
-            execution_context: ExecutionContext,
+        self,
+        execution_context: ExecutionContext,
     ):
         ...
 
@@ -56,10 +54,13 @@ class GraphQlCoreExecutor(Executor):
         return parse(execution_context.query, **execution_context.parse_options)
 
     def validate(
-            self,
-            execution_context: ExecutionContext,
+        self,
+        execution_context: ExecutionContext,
     ):
-        if len(execution_context.validation_rules) > 0 and execution_context.errors is None:
+        if (
+            len(execution_context.validation_rules) > 0
+            and execution_context.errors is None
+        ):
             assert execution_context.graphql_document
             execution_context.errors = validate(
                 execution_context.schema._schema,
