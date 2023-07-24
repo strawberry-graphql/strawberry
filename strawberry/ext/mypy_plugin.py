@@ -409,9 +409,9 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
 
         pydantic_fields: Set[PydanticModelField] = set()
         try:
-            for _name, data in model_type.type.metadata[PYDANTIC_METADATA_KEY][
+            for data in model_type.type.metadata[PYDANTIC_METADATA_KEY][
                 "fields"
-            ].items():
+            ].values():
                 field = PydanticModelField.deserialize(ctx.cls.info, data)
                 pydantic_fields.add(field)
         except KeyError:

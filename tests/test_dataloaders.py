@@ -363,7 +363,7 @@ async def test_dont_dispatch_cancelled():
 async def test_cache_override():
     class TestCache(AbstractCache[int, int]):
         def __init__(self):
-            self.cache: Dict[int, "Future[int]"] = {}
+            self.cache: Dict[int, Future[int]] = {}
 
         def get(self, key: int) -> Optional["Future[int]"]:
             return self.cache.get(key)
