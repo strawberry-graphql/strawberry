@@ -138,5 +138,7 @@ and verbose syntax.
 class IceCreamFlavour(Enum):
     VANILLA = strawberry.enum_value("vanilla")
     CHOCOLATE = "chocolate"
-    STRAWBERRY = strawberry.enum_value("strawberry", deprecation_reason="Let's call the whole thing off")
+    STRAWBERRY = strawberry.enum_value(
+        "strawberry", deprecation_reason="Let's call the whole thing off"
+    )
 ```
