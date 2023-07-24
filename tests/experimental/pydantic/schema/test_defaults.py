@@ -172,7 +172,7 @@ def test_v2_explicit_default():
     class Query:
         @strawberry.field
         def a(self) -> PydanticUser:
-            ...
+            raise NotImplementedError
 
     schema = strawberry.Schema(Query)
 
