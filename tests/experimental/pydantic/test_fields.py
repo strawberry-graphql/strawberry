@@ -7,13 +7,13 @@ import pytest
 from pydantic import BaseModel, ValidationError, conlist
 
 import strawberry
-from strawberry.experimental.pydantic.v2_compat import IS_PYDANTIC_V1
+from strawberry.experimental.pydantic._compat import IS_PYDANTIC_V1
 from strawberry.type import StrawberryOptional
 from strawberry.types.types import StrawberryObjectDefinition
-from tests.experimental.pydantic.utils import needs_pydanticv1, needs_pydanticv2
+from tests.experimental.pydantic.utils import needs_pydantic_v1, needs_pydantic_v2
 
 
-@needs_pydanticv1
+@needs_pydantic_v1
 @pytest.mark.parametrize(
     ("pydantic_type", "field_type"),
     [
@@ -54,7 +54,7 @@ def test_types(pydantic_type, field_type):
     assert field.type is field_type
 
 
-@needs_pydanticv1
+@needs_pydantic_v1
 @pytest.mark.parametrize(
     ("pydantic_type", "field_type"),
     [(pydantic.NoneStr, str)] if IS_PYDANTIC_V1 else [],
@@ -77,7 +77,7 @@ def test_types_optional(pydantic_type, field_type):
     assert field.type.of_type is field_type
 
 
-@needs_pydanticv2
+@needs_pydantic_v2
 def test_conint():
     class Model(pydantic.BaseModel):
         field: pydantic.conint(lt=100)
@@ -95,7 +95,7 @@ def test_conint():
     assert field.type is int
 
 
-@needs_pydanticv1
+@needs_pydantic_v1
 def test_confloat():
     class Model(pydantic.BaseModel):
         field: pydantic.confloat(lt=100.5)
@@ -113,7 +113,7 @@ def test_confloat():
     assert field.type is float
 
 
-@needs_pydanticv1
+@needs_pydantic_v1
 def test_constr():
     class Model(pydantic.BaseModel):
         field: pydantic.constr(max_length=100)
@@ -131,7 +131,7 @@ def test_constr():
     assert field.type is str
 
 
-@needs_pydanticv1
+@needs_pydantic_v1
 def test_constrained_list():
     class User(BaseModel):
         friends: conlist(str, min_items=1)
@@ -159,7 +159,7 @@ def test_constrained_list():
         data.to_pydantic()
 
 
-@needs_pydanticv1
+@needs_pydantic_v1
 def test_constrained_list_nested():
     class User(BaseModel):
         friends: conlist(conlist(int, min_items=1), min_items=1)
@@ -175,7 +175,7 @@ def test_constrained_list_nested():
     )
 
 
-@needs_pydanticv1
+@needs_pydantic_v1
 @pytest.mark.parametrize(
     "pydantic_type",
     [

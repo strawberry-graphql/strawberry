@@ -6,17 +6,16 @@ from uuid import UUID
 import pydantic
 from pydantic import BaseModel
 
-from strawberry.experimental.pydantic.exceptions import (
-    UnregisteredTypeException,
-    UnsupportedTypeError,
-)
-from strawberry.experimental.pydantic.v2_compat import (
-    IS_PYDANTIC_V2,
+from strawberry.experimental.pydantic._compat import (
     get_args,
     get_origin,
     is_new_type,
     lenient_issubclass,
-    new_type_supertype,
+    new_type_supertype, IS_PYDANTIC_V1,
+)
+from strawberry.experimental.pydantic.exceptions import (
+    UnregisteredTypeException,
+    UnsupportedTypeError,
 )
 from strawberry.types.types import StrawberryObjectDefinition
 
@@ -90,13 +89,13 @@ FIELDS_MAP = (
         for field_name, type in ATTR_TO_TYPE_MAP.items()
         if hasattr(pydantic, field_name)
     }
-    if not IS_PYDANTIC_V2
+    if IS_PYDANTIC_V1
     else {}
 )
 
 
 def get_basic_type(type_: Any) -> Type[Any]:
-    if not IS_PYDANTIC_V2:
+    if IS_PYDANTIC_V1:
         # only pydantic v1 has these
         if lenient_issubclass(type_, pydantic.ConstrainedInt):
             return int

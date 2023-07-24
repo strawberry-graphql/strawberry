@@ -14,7 +14,7 @@ from strawberry.experimental.pydantic.exceptions import (
     BothDefaultAndDefaultFactoryDefinedError,
 )
 from strawberry.experimental.pydantic.utils import get_default_factory_for_field
-from strawberry.experimental.pydantic.v2_compat import (
+from strawberry.experimental.pydantic._compat import (
     IS_PYDANTIC_V2,
     PYDANTIC_MISSING_TYPE,
     CompatModelField,

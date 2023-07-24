@@ -22,7 +22,7 @@ from strawberry.experimental.pydantic.utils import (
     get_strawberry_type_from_model,
     normalize_type,
 )
-from strawberry.experimental.pydantic.v2_compat import (
+from strawberry.experimental.pydantic._compat import (
     CompatModelField,
     get_model_fields,
     lenient_issubclass,

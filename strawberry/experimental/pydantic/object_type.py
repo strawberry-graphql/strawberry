@@ -18,6 +18,10 @@ from typing import (
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.auto import StrawberryAuto
+from strawberry.experimental.pydantic._compat import (
+    CompatModelField,
+    get_model_fields, IS_PYDANTIC_V1,
+)
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
     convert_strawberry_class_to_pydantic_model,
@@ -29,11 +33,6 @@ from strawberry.experimental.pydantic.utils import (
     ensure_all_auto_fields_in_pydantic,
     get_default_factory_for_field,
     get_private_fields,
-)
-from strawberry.experimental.pydantic.v2_compat import (
-    IS_PYDANTIC_V2,
-    CompatModelField,
-    get_model_fields,
 )
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
@@ -47,7 +46,7 @@ if TYPE_CHECKING:
 def get_type_for_field(field: CompatModelField, is_input: bool):  # noqa: ANN201
     outer_type = field.outer_type_
     replaced_type = replace_types_recursively(outer_type, is_input)
-    if not IS_PYDANTIC_V2:
+    if IS_PYDANTIC_V1:
         # only pydantic v1 has this Optional logic
         should_add_optional: bool = field.allow_none
         if should_add_optional:

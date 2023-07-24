@@ -3,7 +3,7 @@ from typing import Dict, List, Union
 import pydantic
 
 import strawberry
-from strawberry.experimental.pydantic.v2_compat import IS_PYDANTIC_V2
+from strawberry.experimental.pydantic._compat import IS_PYDANTIC_V2
 
 
 def test_mutation():

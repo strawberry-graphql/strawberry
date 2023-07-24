@@ -19,7 +19,7 @@ from strawberry.experimental.pydantic.exceptions import (
     BothDefaultAndDefaultFactoryDefinedError,
     UnregisteredTypeException,
 )
-from strawberry.experimental.pydantic.v2_compat import (
+from strawberry.experimental.pydantic._compat import (
     PYDANTIC_MISSING_TYPE,
     CompatModelField,
     get_model_fields,
