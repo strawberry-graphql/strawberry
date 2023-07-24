@@ -7,11 +7,12 @@ import pydantic
 from pydantic import BaseModel
 
 from strawberry.experimental.pydantic._compat import (
+    IS_PYDANTIC_V1,
     get_args,
     get_origin,
     is_new_type,
     lenient_issubclass,
-    new_type_supertype, IS_PYDANTIC_V1,
+    new_type_supertype,
 )
 from strawberry.experimental.pydantic.exceptions import (
     UnregisteredTypeException,

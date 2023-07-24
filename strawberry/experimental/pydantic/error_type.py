@@ -17,15 +17,15 @@ from typing import (
 from pydantic import BaseModel
 
 from strawberry.auto import StrawberryAuto
-from strawberry.experimental.pydantic.utils import (
-    get_private_fields,
-    get_strawberry_type_from_model,
-    normalize_type,
-)
 from strawberry.experimental.pydantic._compat import (
     CompatModelField,
     get_model_fields,
     lenient_issubclass,
+)
+from strawberry.experimental.pydantic.utils import (
+    get_private_fields,
+    get_strawberry_type_from_model,
+    normalize_type,
 )
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields

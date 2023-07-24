@@ -19,8 +19,9 @@ from typing import (
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic._compat import (
+    IS_PYDANTIC_V1,
     CompatModelField,
-    get_model_fields, IS_PYDANTIC_V1,
+    get_model_fields,
 )
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
