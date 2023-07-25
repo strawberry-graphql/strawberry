@@ -457,13 +457,13 @@ ujson = ["ujson (>=5.4.0,<6.0.0)"]
 
 [[package]]
 name = "certifi"
-version = "2023.5.7"
+version = "2023.7.22"
 description = "Python package for providing Mozilla's CA Bundle."
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "certifi-2023.5.7-py3-none-any.whl", hash = "sha256:c6c2e98f5c7869efca1f8916fed228dd91539f9f1b444c314c06eef02980c716"},
-    {file = "certifi-2023.5.7.tar.gz", hash = "sha256:0f0d56dc5a6ad56fd4ba36484d6cc34451e1c6548c61daad8c320169f91eddc7"},
+    {file = "certifi-2023.7.22-py3-none-any.whl", hash = "sha256:92d6037539857d8206b8f6ae472e8b77db8058fec5937a1ef3f54304089edbb9"},
+    {file = "certifi-2023.7.22.tar.gz", hash = "sha256:539cc1d13202e33ca466e88b2807e29f4c13049d6d87031a3c110744495cb082"},
 ]
 
 [[package]]
@@ -2416,19 +2416,19 @@ testing = ["coverage (>=6.2)", "flaky (>=3.5.0)", "hypothesis (>=5.7.1)", "mypy 
 
 [[package]]
 name = "pytest-codspeed"
-version = "2.0.0"
+version = "2.0.1"
 description = "Pytest plugin to create CodSpeed benchmarks"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pytest_codspeed-2.0.0-py3-none-any.whl", hash = "sha256:13c1fa9fd7e2dac04eae61d84be949d55f0de57cac90a153ed1d36a896b435a9"},
-    {file = "pytest_codspeed-2.0.0.tar.gz", hash = "sha256:85b5be806653ba51516bb883d74802afa11e14c26642aa93f0cbb3deb9c1f990"},
+    {file = "pytest_codspeed-2.0.1-py3-none-any.whl", hash = "sha256:342af8a02d956009a538126e8a360310375088f851f5bc261c72ebacbf11be7c"},
+    {file = "pytest_codspeed-2.0.1.tar.gz", hash = "sha256:e529394d016b3512fe0defdab694eda54771ffbc36abd53a64f821f49a91784f"},
 ]
 
 [package.dependencies]
 cffi = ">=1.15.1,<1.16.0"
 pytest = ">=3.8"
-setuptools = {version = ">=67.8.0,<67.9.0", markers = "python_version >= \"3.12\""}
+setuptools = {version = ">=67.8.0,<67.9.0", markers = "python_full_version >= \"3.12.0b1\""}
 
 [package.extras]
 compat = ["pytest-benchmark (>=4.0.0,<4.1.0)"]
@@ -3651,17 +3651,17 @@ watchdog = ["watchdog"]
 
 [[package]]
 name = "wheel"
-version = "0.40.0"
+version = "0.41.0"
 description = "A built-package format for Python"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "wheel-0.40.0-py3-none-any.whl", hash = "sha256:d236b20e7cb522daf2390fa84c55eea81c5c30190f90f29ae2ca1ad8355bf247"},
-    {file = "wheel-0.40.0.tar.gz", hash = "sha256:cd1196f3faee2b31968d626e1731c94f99cbdb67cf5a46e4f5656cbee7738873"},
+    {file = "wheel-0.41.0-py3-none-any.whl", hash = "sha256:7e9be3bbd0078f6147d82ed9ed957e323e7708f57e134743d2edef3a7b7972a9"},
+    {file = "wheel-0.41.0.tar.gz", hash = "sha256:55a0f0a5a84869bce5ba775abfd9c462e3a6b1b7b7ec69d72c0b83d673a5114d"},
 ]
 
 [package.extras]
-test = ["pytest (>=6.0.0)"]
+test = ["pytest (>=6.0.0)", "setuptools (>=65)"]
 
 [[package]]
 name = "wrapt"
@@ -3928,4 +3928,4 @@ starlite = ["starlite"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7"
-content-hash = "f519da462dc6f05db99c688962e5951bb9591ae86633bf269b30544b73c14313"
+content-hash = "7e1c41ece0197cdbb134f5ff1b7539f0d035b7cc636a11eddf061a068010b55c"
