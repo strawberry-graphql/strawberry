@@ -16,9 +16,8 @@ from typing import (
     cast,
 )
 
-from graphql import GraphQLError, parse
+from graphql import GraphQLError, parse, validate
 from graphql import execute as original_execute
-from graphql.validation import validate
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.extensions.runner import SchemaExtensionsRunner
@@ -37,7 +36,7 @@ if TYPE_CHECKING:
 
     from strawberry.extensions import SchemaExtension
     from strawberry.types import ExecutionContext
-    from strawberry.types.execution import ParseOptions
+    from strawberry.types.execution import Executor, ParseOptions
     from strawberry.types.graphql import OperationType
 
 
@@ -77,6 +76,7 @@ async def execute(
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
+    executor: Executor,
 ) -> ExecutionResult:
     extensions_runner = SchemaExtensionsRunner(
         execution_context=execution_context,
@@ -92,9 +92,7 @@ async def execute(
         async with extensions_runner.parsing():
             try:
                 if not execution_context.graphql_document:
-                    execution_context.graphql_document = parse_document(
-                        execution_context.query, **execution_context.parse_options
-                    )
+                    executor.parse(execution_context)
 
             except GraphQLError as error:
                 execution_context.errors = [error]
@@ -121,7 +119,7 @@ async def execute(
             raise InvalidOperationTypeError(execution_context.operation_type)
 
         async with extensions_runner.validation():
-            _run_validation(execution_context)
+            executor.validate(execution_context)
             if execution_context.errors:
                 process_errors(execution_context.errors, execution_context)
                 return ExecutionResult(data=None, errors=execution_context.errors)
@@ -170,6 +168,7 @@ def execute_sync(
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
+    executor: Executor,
 ) -> ExecutionResult:
     extensions_runner = SchemaExtensionsRunner(
         execution_context=execution_context,
@@ -185,9 +184,7 @@ def execute_sync(
         with extensions_runner.parsing():
             try:
                 if not execution_context.graphql_document:
-                    execution_context.graphql_document = parse_document(
-                        execution_context.query, **execution_context.parse_options
-                    )
+                    executor.parse(execution_context)
 
             except GraphQLError as error:
                 execution_context.errors = [error]
@@ -213,7 +210,7 @@ def execute_sync(
             raise InvalidOperationTypeError(execution_context.operation_type)
 
         with extensions_runner.validation():
-            _run_validation(execution_context)
+            executor.validate(execution_context)
             if execution_context.errors:
                 process_errors(execution_context.errors, execution_context)
                 return ExecutionResult(data=None, errors=execution_context.errors)
