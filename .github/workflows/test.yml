@@ -165,9 +165,9 @@ jobs:
 
       # we use poetry directly instead of nox since we want to
       # test all integrations at once on windows
+      # but we want to exclude tests/mypy since we are using an old version of pydantic
       - run: |
-          poetry run pytest --cov=. --cov-append --cov-report=xml -n auto --showlocals -vv
-
+          poetry run pytest --cov=. --cov-append --cov-report=xml -n auto --showlocals --ignore tests/mypy -vv
       - name: coverage xml
         run: coverage xml -i
         if: ${{ always() }}
