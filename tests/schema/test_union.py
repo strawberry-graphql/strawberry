@@ -811,3 +811,48 @@ def test_union_of_unions():
     ).strip()
 
     assert str(schema) == expected_schema
+
+
+def test_single_union():
+    @strawberry.type
+    class A:
+        a: int = 5
+
+    @strawberry.type
+    class Query:
+        something: Annotated[A, strawberry.union(name="Something")] = strawberry.field(
+            default_factory=A
+        )
+
+    schema = strawberry.Schema(query=Query)
+    query = """{
+        something {
+            __typename,
+
+            ... on A {
+                a
+            }
+        }
+    }"""
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+        type A {
+          a: Int!
+        }
+
+        type Query {
+          something: Something!
+        }
+
+        union Something = A
+        """
+        ).strip()
+    )
+
+    result = schema.execute_sync(query, root_value=Query())
+
+    assert not result.errors
+    assert result.data["something"] == {"__typename": "A", "a": 5}
