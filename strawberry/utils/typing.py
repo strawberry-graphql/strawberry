@@ -295,7 +295,7 @@ def _get_namespace_from_ast(
         # here to resolve lazy types by execing the annotated args, resolving the
         # type directly and then adding it to extra namespace, so that _eval_type
         # can properly resolve it later
-        type_name = args[0]
+        type_name = args[0].strip()
         for arg in args[1:]:
             evaled_arg = eval(arg, globalns, localns)  # noqa: PGH001
             if isinstance(evaled_arg, StrawberryLazyReference):
