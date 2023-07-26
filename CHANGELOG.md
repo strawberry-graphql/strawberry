@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.196.1 - 2023-07-26
+--------------------
+
+This release fixes an issue where annotations resolution for auto and lazy fields
+using `Annotated` where not preserving the remaining arguments because of a
+typo in the arguments filtering.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2983](https://github.com/strawberry-graphql/strawberry/pull/2983/)
+
+
 0.196.0 - 2023-07-26
 --------------------
 
