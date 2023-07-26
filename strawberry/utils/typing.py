@@ -348,7 +348,7 @@ def eval_type(
                     remaining_args = [
                         a
                         for a in args[1:]
-                        if not isinstance(arg, StrawberryLazyReference)
+                        if not isinstance(a, StrawberryLazyReference)
                     ]
                     type_arg = (
                         arg.resolve_forward_ref(args[0])
@@ -359,7 +359,7 @@ def eval_type(
                     break
                 if isinstance(arg, StrawberryAuto):
                     remaining_args = [
-                        a for a in args[1:] if not isinstance(arg, StrawberryAuto)
+                        a for a in args[1:] if not isinstance(a, StrawberryAuto)
                     ]
                     args = (arg, *remaining_args)
                     break
