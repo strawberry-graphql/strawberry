@@ -350,11 +350,14 @@ def eval_type(
                         for a in args[1:]
                         if not isinstance(a, StrawberryLazyReference)
                     ]
-                    type_arg = (
-                        arg.resolve_forward_ref(args[0])
-                        if isinstance(args[0], ForwardRef)
-                        else args[0]
-                    )
+                    # The type itself will come as str for python 3.7/3.8 and as a
+                    # ForwardRef for python 3.9+
+                    if isinstance(args[0], str):
+                        type_arg = arg.resolve_forward_ref(ForwardRef(args[0]))
+                    elif isinstance(args[0], ForwardRef):
+                        type_arg = arg.resolve_forward_ref(args[0])
+                    else:
+                        type_arg = args[0]
                     args = (type_arg, *remaining_args)
                     break
                 if isinstance(arg, StrawberryAuto):
