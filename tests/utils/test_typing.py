@@ -3,6 +3,7 @@ from typing import ClassVar, ForwardRef, Optional, Union
 from typing_extensions import Annotated
 
 import strawberry
+from strawberry.lazy_type import LazyType
 from strawberry.utils.typing import eval_type, get_optional_annotation, is_classvar
 
 
@@ -46,13 +47,14 @@ def test_eval_type():
     )
     assert (
         eval_type(
-            ForwardRef(
-                "Annotated['Fruit', strawberry.lazy('tests.utils.test_typing')]"
-            ),
-            globals(),
-            locals(),
+            ForwardRef("Annotated[Fruit, strawberry.lazy('tests.utils.test_typing')]"),
+            {"strawberry": strawberry, "Annotated": Annotated},
+            None,
         )
-        == Annotated[Fruit, strawberry.lazy("tests.utils.test_typing")]
+        == Annotated[
+            LazyType("Fruit", "tests.utils.test_typing"),
+            strawberry.lazy("tests.utils.test_typing"),
+        ]
     )
 
 
