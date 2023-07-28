@@ -56,6 +56,14 @@ def test_eval_type():
             strawberry.lazy("tests.utils.test_typing"),
         ]
     )
+    assert (
+        eval_type(
+            ForwardRef("Annotated[strawberry.auto, 'foobar']"),
+            {"strawberry": strawberry, "Annotated": Annotated},
+            None,
+        )
+        == Annotated[strawberry.auto, "foobar"]
+    )
 
 
 def test_is_classvar():
