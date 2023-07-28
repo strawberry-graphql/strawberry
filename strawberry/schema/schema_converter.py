@@ -500,7 +500,13 @@ class GraphQLCoreConverter:
                 ):
                     return True
 
-                return isinstance(obj, object_type.origin)
+                # this allows returning interfaces as well as the object type
+
+                possible_types = tuple(
+                    interface.origin for interface in object_type.interfaces
+                ) + (object_type.origin,)
+
+                return isinstance(obj, possible_types)
 
             return is_type_of
 
