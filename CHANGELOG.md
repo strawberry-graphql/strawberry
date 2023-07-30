@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.197.0 - 2023-07-30
+--------------------
+
+This release removes support for Python 3.7 as its end of life
+was on 27 Jun 2023.
+
+This will allow us to reduce the number of CI jobs we have,
+and potentially use newer features of Python. ⚡
+
+Contributed by [Alexander](https://github.com/devkral) via [PR #2907](https://github.com/strawberry-graphql/strawberry/pull/2907/)
+
+
 0.196.2 - 2023-07-28
 --------------------
 
