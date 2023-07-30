@@ -473,6 +473,11 @@ def test_raise_if_defined_both_legacy_and_new_style(default_query_types_and_quer
 
 async def test_legacy_extension_supported():
     with warnings.catch_warnings(record=True) as w:
+        warnings.filterwarnings(
+            "ignore",
+            category=DeprecationWarning,
+            message=r"'.*' is deprecated and slated for removal in Python 3\.\d+",
+        )
 
         class CompatExtension(ExampleExtension):
             async def on_request_start(self):
@@ -521,6 +526,11 @@ async def test_legacy_extension_supported():
 
 async def test_legacy_only_start():
     with warnings.catch_warnings(record=True) as w:
+        warnings.filterwarnings(
+            "ignore",
+            category=DeprecationWarning,
+            message=r"'.*' is deprecated and slated for removal in Python 3\.\d+",
+        )
 
         class CompatExtension(ExampleExtension):
             expected = {1, 2, 3, 4}
@@ -559,6 +569,11 @@ async def test_legacy_only_start():
 
 async def test_legacy_only_end():
     with warnings.catch_warnings(record=True) as w:
+        warnings.filterwarnings(
+            "ignore",
+            category=DeprecationWarning,
+            message=r"'.*' is deprecated and slated for removal in Python 3\.\d+",
+        )
 
         class CompatExtension(ExampleExtension):
             async def on_request_end(self):
