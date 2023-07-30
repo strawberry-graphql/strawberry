@@ -1,5 +1,6 @@
 # ruff: noqa: F821
 
+import sys
 import textwrap
 from enum import Enum
 from typing import Any, List, Optional, Union
@@ -8,6 +9,10 @@ from typing_extensions import Self
 import pytest
 
 import strawberry
+
+pytestmark = pytest.mark.skipif(
+    sys.version_info < (3, 12), reason="These are tests for Python 3.12+"
+)
 
 
 def test_supports_generic_simple_type():
@@ -430,7 +435,7 @@ def test_can_extend_generics():
         edges: List[Edge[T]]
 
     @strawberry.type
-    class ConnectionWithMeta(Connection[T]):
+    class ConnectionWithMeta[T](Connection[T]):
         meta: str
 
     @strawberry.type
