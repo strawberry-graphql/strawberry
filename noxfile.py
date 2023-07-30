@@ -19,8 +19,6 @@ COMMON_PYTEST_OPTIONS = [
     "--ignore=tests/pyright",
     "--ignore=tests/cli",
     "--ignore=tests/experimental/pydantic",
-    "--ignore=tests/utils/test_inspect_312.py",
-    "--ignore=tests/schema/test_generics_312.py",
 ]
 
 INTEGRATIONS = [
@@ -47,15 +45,9 @@ def tests(session: Session) -> None:
     )
     markers = [item for sublist in markers for item in sublist]
 
-    options = COMMON_PYTEST_OPTIONS[:]
-
-    if session.python == "3.12":
-        options.remove("--ignore=tests/utils/test_inspect_312.py")
-        options.remove("--ignore=tests/schema/test_generics_312.py")
-
     session.run(
         "pytest",
-        *options,
+        *COMMON_PYTEST_OPTIONS,
         *markers,
     )
 
