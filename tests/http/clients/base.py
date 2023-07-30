@@ -156,7 +156,7 @@ class HttpClient(abc.ABC):
         files_map: Dict[str, List[str]] = {}
         for key, values in variables.items():
             if isinstance(values, dict):
-                folder_key = list(values.keys())[0]
+                folder_key = next(iter(values.keys()))
                 key += f".{folder_key}"  # noqa: PLW2901
                 # the list of file is inside the folder keyword
                 values = values[folder_key]  # noqa: PLW2901
@@ -166,7 +166,7 @@ class HttpClient(abc.ABC):
                 # copying `files` as when we map a file we must discard from the dict
                 _kwargs = files.copy()
                 for index, _ in enumerate(values):
-                    k = list(_kwargs.keys())[0]
+                    k = next(iter(_kwargs.keys()))
                     _kwargs.pop(k)
                     files_map.setdefault(k, [])
                     files_map[k].append(f"variables.{key}.{index}")

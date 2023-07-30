@@ -63,8 +63,7 @@ jobs:
             ~/.cache
             ~/.nox
             .nox
-          key:
-            ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
+          key: ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
             hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
           restore-keys: |
             ${{ runner.os }}-nox-${{ matrix.session.session }}-
@@ -132,8 +131,7 @@ jobs:
             ~/.cache
             ~/.nox
             .nox
-          key:
-            ${{ runner.os }}-nox-lint-${{ matrix.session.session }}-${{
+          key: ${{ runner.os }}-nox-lint-${{ matrix.session.session }}-${{
             hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
           restore-keys: |
             ${{ runner.os }}-lint-nox-${{ matrix.session.session }}-
