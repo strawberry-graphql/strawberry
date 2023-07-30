@@ -34,7 +34,7 @@ requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 graphql-core = "~3.2.0"
 typing-extensions = ">=4.5.0"
 python-dateutil = "^2.7.0"
@@ -185,7 +185,7 @@ include = ["strawberry"]
 exclude = ["**/__pycache__",]
 reportMissingImports = true
 reportMissingTypeStubs = false
-pythonVersion = "3.7"
+pythonVersion = "3.8"
 stubPath = ""
 
 [tool.ruff]
