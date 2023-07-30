@@ -389,13 +389,13 @@ files = [
 
 [[package]]
 name = "botocore"
-version = "1.31.9"
+version = "1.31.14"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">= 3.7"
 files = [
-    {file = "botocore-1.31.9-py3-none-any.whl", hash = "sha256:e56ccd3536a90094ea5b176b5dd33bfe4f049efdf71af468ea1661bd424c787d"},
-    {file = "botocore-1.31.9.tar.gz", hash = "sha256:bd849d3ac95f1781385ed831d753a04a3ec870a59d6598175aaedd71dc2baf5f"},
+    {file = "botocore-1.31.14-py3-none-any.whl", hash = "sha256:47818998c1b4528cc98cf61658a28cf2244d06efc898016e390b8e83a06de792"},
+    {file = "botocore-1.31.14.tar.gz", hash = "sha256:63d7f27c93cea570a534d245221000731c2279ac2ca9b1e63694d3080b0761b9"},
 ]
 
 [package.dependencies]
@@ -1155,13 +1155,13 @@ files = [
 
 [[package]]
 name = "fastapi"
-version = "0.100.0"
+version = "0.100.1"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "fastapi-0.100.0-py3-none-any.whl", hash = "sha256:271662daf986da8fa98dc2b7c7f61c4abdfdccfb4786d79ed8b2878f172c6d5f"},
-    {file = "fastapi-0.100.0.tar.gz", hash = "sha256:acb5f941ea8215663283c10018323ba7ea737c571b67fc7e88e9469c7eb1d12e"},
+    {file = "fastapi-0.100.1-py3-none-any.whl", hash = "sha256:ec6dd52bfc4eff3063cfcd0713b43c87640fefb2687bbbe3d8a08d94049cdf32"},
+    {file = "fastapi-0.100.1.tar.gz", hash = "sha256:522700d7a469e4a973d92321ab93312448fbe20fca9c8da97effc7e7bc56df23"},
 ]
 
 [package.dependencies]
@@ -1958,13 +1958,13 @@ files = [
 
 [[package]]
 name = "pathspec"
-version = "0.11.1"
+version = "0.11.2"
 description = "Utility library for gitignore style pattern matching of file paths."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pathspec-0.11.1-py3-none-any.whl", hash = "sha256:d8af70af76652554bd134c22b3e8a1cc46ed7d91edcdd721ef1a0c51a84a5293"},
-    {file = "pathspec-0.11.1.tar.gz", hash = "sha256:2798de800fa92780e33acca925945e9a19a133b715067cf165b8866c15a31687"},
+    {file = "pathspec-0.11.2-py3-none-any.whl", hash = "sha256:1d6ed233af05e679efb96b1851550ea95bbb64b7c490b0f5aa52996c11e92a20"},
+    {file = "pathspec-0.11.2.tar.gz", hash = "sha256:e0d8d0ac2f12da61956eb2306b69f9469b42f4deb0f3cb6ed47b9cce9996ced3"},
 ]
 
 [[package]]
@@ -1980,18 +1980,18 @@ files = [
 
 [[package]]
 name = "platformdirs"
-version = "3.9.1"
+version = "3.10.0"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "platformdirs-3.9.1-py3-none-any.whl", hash = "sha256:ad8291ae0ae5072f66c16945166cb11c63394c7a3ad1b1bc9828ca3162da8c2f"},
-    {file = "platformdirs-3.9.1.tar.gz", hash = "sha256:1b42b450ad933e981d56e59f1b97495428c9bd60698baab9f3eb3d00d5822421"},
+    {file = "platformdirs-3.10.0-py3-none-any.whl", hash = "sha256:d7c24979f292f916dc9cbf8648319032f551ea8c49a4c9bf2fb556a02070ec1d"},
+    {file = "platformdirs-3.10.0.tar.gz", hash = "sha256:b45696dab2d7cc691a3226759c0d3b00c47c8b6e293d96f6436f733303f77f6d"},
 ]
 
 [package.extras]
-docs = ["furo (>=2023.5.20)", "proselint (>=0.13)", "sphinx (>=7.0.1)", "sphinx-autodoc-typehints (>=1.23,!=1.23.4)"]
-test = ["appdirs (==1.4.4)", "covdefaults (>=2.3)", "pytest (>=7.3.1)", "pytest-cov (>=4.1)", "pytest-mock (>=3.10)"]
+docs = ["furo (>=2023.7.26)", "proselint (>=0.13)", "sphinx (>=7.1.1)", "sphinx-autodoc-typehints (>=1.24)"]
+test = ["appdirs (==1.4.4)", "covdefaults (>=2.3)", "pytest (>=7.4)", "pytest-cov (>=4.1)", "pytest-mock (>=3.11.1)"]
 
 [[package]]
 name = "pluggy"
@@ -2330,13 +2330,13 @@ testing = ["coverage (>=6.2)", "flaky (>=3.5.0)", "hypothesis (>=5.7.1)", "mypy 
 
 [[package]]
 name = "pytest-codspeed"
-version = "2.0.1"
+version = "2.1.0"
 description = "Pytest plugin to create CodSpeed benchmarks"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pytest_codspeed-2.0.1-py3-none-any.whl", hash = "sha256:342af8a02d956009a538126e8a360310375088f851f5bc261c72ebacbf11be7c"},
-    {file = "pytest_codspeed-2.0.1.tar.gz", hash = "sha256:e529394d016b3512fe0defdab694eda54771ffbc36abd53a64f821f49a91784f"},
+    {file = "pytest_codspeed-2.1.0-py3-none-any.whl", hash = "sha256:91831cd8a8cdf68d489d4f393ff80fcc2ba05153c3c5afc2385b75e9897dcbb6"},
+    {file = "pytest_codspeed-2.1.0.tar.gz", hash = "sha256:af289d5a1c32166a221df5920141924942a59906c7af572aacf892a726b86b49"},
 ]
 
 [package.dependencies]
@@ -2955,13 +2955,13 @@ files = [
 
 [[package]]
 name = "tomlkit"
-version = "0.12.0"
+version = "0.12.1"
 description = "Style preserving TOML library"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "tomlkit-0.12.0-py3-none-any.whl", hash = "sha256:926f1f37a1587c7a4f6c7484dae538f1345d96d793d9adab5d3675957b1d0766"},
-    {file = "tomlkit-0.12.0.tar.gz", hash = "sha256:01f0477981119c7d8ee0f67ebe0297a7c95b14cf9f4b102b45486deb77018716"},
+    {file = "tomlkit-0.12.1-py3-none-any.whl", hash = "sha256:712cbd236609acc6a3e2e97253dfc52d4c2082982a88f61b640ecf0817eab899"},
+    {file = "tomlkit-0.12.1.tar.gz", hash = "sha256:38e1ff8edb991273ec9f6181244a6a391ac30e9f5098e7535640ea6be97a7c86"},
 ]
 
 [[package]]
@@ -3771,4 +3771,4 @@ starlite = ["starlite"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "b78518cb759b4e20bd0455e2c70302ad883dea2aa3d4f1c54ef91b09909ae542"
+content-hash = "31ae4d7cc4f6a040b2f1195bbcd53dfd87eca6757b4e34716620be7e938e35a9"

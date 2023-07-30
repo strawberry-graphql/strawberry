@@ -361,7 +361,7 @@ def eval_type(
                     remaining_args = [
                         a for a in args[1:] if not isinstance(a, StrawberryAuto)
                     ]
-                    args = (arg, *remaining_args)
+                    args = (args[0], arg, *remaining_args)
                     break
 
             # If we have only a StrawberryLazyReference and no more annotations,
