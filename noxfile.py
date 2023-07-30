@@ -45,9 +45,17 @@ def tests(session: Session) -> None:
     )
     markers = [item for sublist in markers for item in sublist]
 
+    options = COMMON_PYTEST_OPTIONS
+
+    if session.python != "3.12":
+        options += [
+            "--ignore=tests/utils/test_inspect_312.py",
+            "--ignore=tests/schema/test_generics_312.py",
+        ]
+
     session.run(
         "pytest",
-        *COMMON_PYTEST_OPTIONS,
+        *options,
         *markers,
     )
 
