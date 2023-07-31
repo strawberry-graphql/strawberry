@@ -4,10 +4,9 @@ import importlib
 import importlib.util
 import sys
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Type, cast
-
-from strawberry.utils.cached_property import cached_property
 
 from ..exception_source import ExceptionSource
 

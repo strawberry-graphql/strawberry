@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from functools import cached_property
 from typing import TYPE_CHECKING, Optional, Type, cast
 
 from strawberry.exceptions.exception import StrawberryException
 from strawberry.exceptions.utils.source_finder import SourceFinder
-from strawberry.utils.cached_property import cached_property
 
 if TYPE_CHECKING:
     from strawberry.exceptions.exception_source import ExceptionSource

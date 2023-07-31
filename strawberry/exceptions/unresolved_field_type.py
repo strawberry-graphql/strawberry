@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from functools import cached_property
 from typing import TYPE_CHECKING, Optional
 
 from strawberry.exceptions.utils.source_finder import SourceFinder
-from strawberry.utils.cached_property import cached_property
 
 from .exception import StrawberryException
 
