@@ -79,7 +79,7 @@ class BaseSchema(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    @lru_cache()
+    @lru_cache
     def get_directive_by_name(self, graphql_name: str) -> Optional[StrawberryDirective]:
         raise NotImplementedError
 

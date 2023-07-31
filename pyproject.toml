@@ -191,7 +191,7 @@ stubPath = ""
 [tool.ruff]
 line-length = 88
 select = ["ALL"]
-target-version = "py37"
+target-version = "py38"
 ignore = [
     # https://github.com/astral-sh/ruff/pull/4427
     # equivalent to keep-runtime-typing

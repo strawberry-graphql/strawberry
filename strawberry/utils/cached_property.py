@@ -1,10 +1,5 @@
-import sys
+from functools import cached_property
 from typing import TYPE_CHECKING
-
-if sys.version_info < (3, 8):
-    from backports.cached_property import cached_property
-else:
-    from functools import cached_property
 
 if TYPE_CHECKING:
     from threading import RLock
