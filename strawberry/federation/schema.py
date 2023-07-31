@@ -210,7 +210,7 @@ class Schema(BaseSchema):
 
             try:
                 result = get_result()
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 result = GraphQLError(
                     f"Unable to resolve reference for {definition.origin}",
                     original_error=e,

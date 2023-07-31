@@ -2,9 +2,9 @@ from pathlib import Path
 from typing import List
 
 import pytest
+from typer import Typer
 from typer.testing import CliRunner
 
-from strawberry.cli.app import app
 from strawberry.cli.commands.codegen import ConsolePlugin
 from strawberry.codegen import CodegenFile, CodegenResult, QueryCodegenPlugin
 from strawberry.codegen.types import GraphQLOperation, GraphQLType
@@ -56,10 +56,12 @@ def query_file_path(tmp_path: Path) -> Path:
     return output_path
 
 
-def test_codegen(cli_runner: CliRunner, query_file_path: Path, tmp_path: Path):
+def test_codegen(
+    cli_app: Typer, cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
+):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
-        app,
+        cli_app,
         [
             "codegen",
             "-p",
@@ -81,11 +83,11 @@ def test_codegen(cli_runner: CliRunner, query_file_path: Path, tmp_path: Path):
 
 
 def test_codegen_passing_plugin_symbol(
-    cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
+    cli_app: Typer, cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
-        app,
+        cli_app,
         [
             "codegen",
             "-p",
@@ -107,11 +109,11 @@ def test_codegen_passing_plugin_symbol(
 
 
 def test_codegen_returns_error_when_symbol_does_not_exist(
-    cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
+    cli_app: Typer, cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
-        app,
+        cli_app,
         [
             "codegen",
             "-p",
@@ -125,17 +127,18 @@ def test_codegen_returns_error_when_symbol_does_not_exist(
     )
 
     assert result.exit_code == 1
+    assert result.exception
     assert result.exception.args == (
         "module 'tests.cli.test_codegen' has no attribute 'SomePlugin'",
     )
 
 
 def test_codegen_returns_error_when_module_does_not_exist(
-    cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
+    cli_app: Typer, cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
-        app,
+        cli_app,
         [
             "codegen",
             "-p",
@@ -153,11 +156,11 @@ def test_codegen_returns_error_when_module_does_not_exist(
 
 
 def test_codegen_returns_error_when_does_not_find_plugin(
-    cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
+    cli_app: Typer, cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
-        app,
+        cli_app,
         [
             "codegen",
             "-p",
@@ -175,11 +178,11 @@ def test_codegen_returns_error_when_does_not_find_plugin(
 
 
 def test_codegen_finds_our_plugins(
-    cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
+    cli_app: Typer, cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
-        app,
+        cli_app,
         [
             "codegen",
             "-p",
@@ -201,11 +204,11 @@ def test_codegen_finds_our_plugins(
 
 
 def test_can_use_custom_cli_plugin(
-    cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
+    cli_app: Typer, cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
-        app,
+        cli_app,
         [
             "codegen",
             "--cli-plugin",

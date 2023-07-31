@@ -1,38 +1,49 @@
 import json
-from typing import List
+from typing import List, Tuple
 
-import django
 import pytest
 from asgiref.sync import sync_to_async
-from django.test.client import RequestFactory
+from pytest_mock import MockerFixture
 
 import strawberry
 from strawberry.dataloader import DataLoader
-from strawberry.django.views import AsyncGraphQLView
 
-from .app.models import Example
+try:
+    import django
+
+    DJANGO_VERSION: Tuple[int, int, int] = django.VERSION
+except ImportError:
+    DJANGO_VERSION = (0, 0, 0)
+
 
 pytestmark = [
     pytest.mark.asyncio,
     pytest.mark.skipif(
-        django.VERSION < (3, 1),
+        DJANGO_VERSION < (3, 1),
         reason="Async views are only supported in Django >= 3.1",
     ),
 ]
 
 
 def _prepare_db():
-    ids = []
+    from .app.models import Example
 
-    for index in range(5):
-        ids.append(Example.objects.create(name=f"This is a demo async {index}").id)
+    return [
+        Example.objects.create(name=f"This is a demo async {index}").pk
+        for index in range(5)
+    ]
 
-    return ids
 
-
+@pytest.mark.django
 @pytest.mark.django_db
-async def test_fetch_data_from_db(mocker):
-    def _sync_batch_load(keys):
+async def test_fetch_data_from_db(mocker: MockerFixture):
+    from django.test.client import RequestFactory
+
+    from strawberry.django.views import AsyncGraphQLView
+
+    from .app.models import Example
+
+    def _sync_batch_load(keys: List[str]):
         data = Example.objects.filter(id__in=keys)
 
         return list(data)
@@ -42,12 +53,12 @@ async def test_fetch_data_from_db(mocker):
 
     ids = await prepare_db()
 
-    async def idx(keys) -> List[Example]:
+    async def idx(keys: List[str]) -> List[Example]:
         return await batch_load(keys)
 
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=mock_loader)
+    loader = DataLoader[str, Example](load_fn=mock_loader)
 
     @strawberry.type
     class Query:

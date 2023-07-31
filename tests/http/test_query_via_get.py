@@ -1,4 +1,4 @@
-from .clients import HttpClient
+from .clients.base import HttpClient
 
 
 async def test_sending_empty_query(http_client_class):

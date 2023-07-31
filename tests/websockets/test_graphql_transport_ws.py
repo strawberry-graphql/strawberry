@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import asyncio
+import contextlib
 import json
 import sys
 import time
 from datetime import timedelta
-from typing import AsyncGenerator, Type
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Type
 from unittest.mock import Mock, patch
 
 try:
@@ -27,11 +30,11 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
-from tests.http.clients import AioHttpClient, ChannelsHttpClient
 from tests.http.clients.base import DebuggableGraphQLTransportWSMixin
 from tests.views.schema import Schema
 
-from ..http.clients import HttpClient, WebSocketClient
+if TYPE_CHECKING:
+    from ..http.clients.base import HttpClient, WebSocketClient
 
 
 @pytest_asyncio.fixture
@@ -110,11 +113,17 @@ async def test_ws_messages_must_be_text(ws_raw: WebSocketClient):
         ws.assert_reason("WebSocket message type must be text")
 
 
-async def test_connection_init_timeout(request, http_client_class: Type[HttpClient]):
-    if http_client_class == AioHttpClient:
-        pytest.skip(
-            "Closing a AIOHTTP WebSocket from a task currently doesnt work as expected"
-        )
+async def test_connection_init_timeout(
+    request: Any, http_client_class: Type[HttpClient]
+):
+    with contextlib.suppress(ImportError):
+        from tests.http.clients.aiohttp import AioHttpClient
+
+        if http_client_class == AioHttpClient:
+            pytest.skip(
+                "Closing a AIOHTTP WebSocket from a "
+                "task currently doesn't work as expected"
+            )
 
     test_client = http_client_class()
     test_client.create_app(connection_init_wait_timeout=timedelta(seconds=0))
@@ -164,7 +173,7 @@ async def test_connection_init_timeout_cancellation(
     reason="Task name was introduced in 3.8 and we need it for this test",
 )
 async def test_close_twice(
-    mocker: MockerFixture, request, http_client_class: Type[HttpClient]
+    mocker: MockerFixture, request: Any, http_client_class: Type[HttpClient]
 ):
     test_client = http_client_class()
     test_client.create_app(connection_init_wait_timeout=timedelta(seconds=0.25))
@@ -850,10 +859,15 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
     Test that the error handler is called when the timeout
     task encounters an error
     """
-    if isinstance(http_client, ChannelsHttpClient):
-        pytest.skip("Can't patch on_init for this client")
+    with contextlib.suppress(ImportError):
+        from tests.http.clients.channels import ChannelsHttpClient
+
+        if isinstance(http_client, ChannelsHttpClient):
+            pytest.skip("Can't patch on_init for this client")
+
     if not AsyncMock:
         pytest.skip("Don't have AsyncMock")
+
     ws = ws_raw
     handler = None
     errorhandler = AsyncMock()

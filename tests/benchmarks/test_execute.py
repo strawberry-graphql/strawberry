@@ -81,9 +81,9 @@ def test_interface_performance(benchmark: BenchmarkFixture, ntypes: int):
     class Item:
         id: ID
 
-    CONCRETE_TYPES: List[Type[Item]] = []
-    for i in range(ntypes):
-        CONCRETE_TYPES.append(strawberry.type(type(f"Item{i}", (Item,), {})))
+    CONCRETE_TYPES: List[Type[Item]] = [
+        strawberry.type(type(f"Item{i}", (Item,), {})) for i in range(ntypes)
+    ]
 
     @strawberry.type
     class Query:

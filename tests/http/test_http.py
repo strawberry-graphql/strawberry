@@ -1,6 +1,6 @@
 import pytest
 
-from .clients import HttpClient
+from .clients.base import HttpClient
 
 
 @pytest.mark.parametrize("method", ["delete", "head", "put", "patch"])

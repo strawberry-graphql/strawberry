@@ -41,7 +41,7 @@ class NameConverter:
 
     def from_type(
         self,
-        type_: Union[StrawberryType, StrawberryDirective, StrawberryDirective],
+        type_: Union[StrawberryType, StrawberryDirective],
     ) -> str:
         if isinstance(type_, (StrawberryDirective, StrawberrySchemaDirective)):
             return self.from_directive(type_)

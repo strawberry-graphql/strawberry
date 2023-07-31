@@ -52,7 +52,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
             while self._ws.application_state != WebSocketState.DISCONNECTED:
                 try:
                     message = await self._ws.receive_json()
-                except KeyError:
+                except KeyError:  # noqa: PERF203
                     error_message = "WebSocket message type must be text"
                     await self.handle_invalid_message(error_message)
                 else:

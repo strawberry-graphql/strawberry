@@ -81,6 +81,15 @@ class StrawberryLazyReference:
     def resolve_forward_ref(self, forward_ref: ForwardRef) -> LazyType:
         return LazyType(forward_ref.__forward_arg__, self.module, self.package)
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, StrawberryLazyReference):
+            return NotImplemented
+
+        return self.module == other.module and self.package == other.package
+
+    def __hash__(self) -> int:
+        return hash((self.__class__, self.module, self.package))
+
 
 def lazy(module_path: str) -> StrawberryLazyReference:
     return StrawberryLazyReference(module_path)

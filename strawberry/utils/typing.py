@@ -295,9 +295,9 @@ def _get_namespace_from_ast(
         # here to resolve lazy types by execing the annotated args, resolving the
         # type directly and then adding it to extra namespace, so that _eval_type
         # can properly resolve it later
-        type_name = args[0]
+        type_name = args[0].strip()
         for arg in args[1:]:
-            evaled_arg = eval(arg, globalns, localns)  # noqa: PGH001
+            evaled_arg = eval(arg, globalns, localns)  # noqa: PGH001, S307
             if isinstance(evaled_arg, StrawberryLazyReference):
                 extra[type_name] = evaled_arg.resolve_forward_ref(ForwardRef(type_name))
 
@@ -348,7 +348,7 @@ def eval_type(
                     remaining_args = [
                         a
                         for a in args[1:]
-                        if not isinstance(arg, StrawberryLazyReference)
+                        if not isinstance(a, StrawberryLazyReference)
                     ]
                     type_arg = (
                         arg.resolve_forward_ref(args[0])
@@ -359,9 +359,9 @@ def eval_type(
                     break
                 if isinstance(arg, StrawberryAuto):
                     remaining_args = [
-                        a for a in args[1:] if not isinstance(arg, StrawberryAuto)
+                        a for a in args[1:] if not isinstance(a, StrawberryAuto)
                     ]
-                    args = (arg, *remaining_args)
+                    args = (args[0], arg, *remaining_args)
                     break
 
             # If we have only a StrawberryLazyReference and no more annotations,

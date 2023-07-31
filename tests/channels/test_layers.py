@@ -1,12 +1,10 @@
+from __future__ import annotations
+
 import asyncio
-from typing import Generator
+from typing import TYPE_CHECKING, Generator
 
 import pytest
 
-from channels.layers import get_channel_layer
-from channels.testing import WebsocketCommunicator
-from strawberry.channels import GraphQLWSConsumer
-from strawberry.channels.handlers.base import ChannelsConsumer
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
@@ -18,9 +16,15 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
 )
 from tests.views.schema import schema
 
+if TYPE_CHECKING:
+    from channels.testing import WebsocketCommunicator
+
 
 @pytest.fixture
 async def ws() -> Generator[WebsocketCommunicator, None, None]:
+    from channels.testing import WebsocketCommunicator
+    from strawberry.channels import GraphQLWSConsumer
+
     client = WebsocketCommunicator(
         GraphQLWSConsumer.as_asgi(schema=schema),
         "/graphql",
@@ -35,6 +39,8 @@ async def ws() -> Generator[WebsocketCommunicator, None, None]:
 
 
 async def test_no_layers():
+    from strawberry.channels.handlers.base import ChannelsConsumer
+
     consumer = ChannelsConsumer()
     # Mimic lack of layers. If layers is not installed/configured in channels,
     # consumer.channel_layer will be `None`
@@ -49,11 +55,13 @@ async def test_no_layers():
         await consumer.channel_listen("foobar").__anext__()
 
     with pytest.raises(RuntimeError, match=msg):
-        async with consumer.listen_to_channel("foobar") as cm:
+        async with consumer.listen_to_channel("foobar"):
             pass
 
 
 async def test_channel_listen(ws: WebsocketCommunicator):
+    from channels.layers import get_channel_layer
+
     await ws.send_json_to(ConnectionInitMessage().as_dict())
 
     response = await ws.receive_json_from()
@@ -94,6 +102,8 @@ async def test_channel_listen(ws: WebsocketCommunicator):
 
 
 async def test_channel_listen_with_confirmation(ws: WebsocketCommunicator):
+    from channels.layers import get_channel_layer
+
     await ws.send_json_to(ConnectionInitMessage().as_dict())
 
     response = await ws.receive_json_from()
@@ -138,6 +148,8 @@ async def test_channel_listen_with_confirmation(ws: WebsocketCommunicator):
 
 
 async def test_channel_listen_timeout(ws: WebsocketCommunicator):
+    from channels.layers import get_channel_layer
+
     await ws.send_json_to(ConnectionInitMessage().as_dict())
 
     response = await ws.receive_json_from()
@@ -164,6 +176,8 @@ async def test_channel_listen_timeout(ws: WebsocketCommunicator):
 
 
 async def test_channel_listen_timeout_cm(ws: WebsocketCommunicator):
+    from channels.layers import get_channel_layer
+
     await ws.send_json_to(ConnectionInitMessage().as_dict())
 
     response = await ws.receive_json_from()
@@ -194,6 +208,8 @@ async def test_channel_listen_timeout_cm(ws: WebsocketCommunicator):
 
 
 async def test_channel_listen_no_message_on_channel(ws: WebsocketCommunicator):
+    from channels.layers import get_channel_layer
+
     await ws.send_json_to(ConnectionInitMessage().as_dict())
 
     response = await ws.receive_json_from()
@@ -228,6 +244,8 @@ async def test_channel_listen_no_message_on_channel(ws: WebsocketCommunicator):
 
 
 async def test_channel_listen_no_message_on_channel_cm(ws: WebsocketCommunicator):
+    from channels.layers import get_channel_layer
+
     await ws.send_json_to(ConnectionInitMessage().as_dict())
 
     response = await ws.receive_json_from()
@@ -266,6 +284,8 @@ async def test_channel_listen_no_message_on_channel_cm(ws: WebsocketCommunicator
 
 
 async def test_channel_listen_group(ws: WebsocketCommunicator):
+    from channels.layers import get_channel_layer
+
     await ws.send_json_to(ConnectionInitMessage().as_dict())
 
     response = await ws.receive_json_from()
@@ -322,6 +342,8 @@ async def test_channel_listen_group(ws: WebsocketCommunicator):
 
 
 async def test_channel_listen_group_cm(ws: WebsocketCommunicator):
+    from channels.layers import get_channel_layer
+
     await ws.send_json_to(ConnectionInitMessage().as_dict())
 
     response = await ws.receive_json_from()
@@ -382,6 +404,8 @@ async def test_channel_listen_group_cm(ws: WebsocketCommunicator):
 
 
 async def test_channel_listen_group_twice(ws: WebsocketCommunicator):
+    from channels.layers import get_channel_layer
+
     await ws.send_json_to(ConnectionInitMessage().as_dict())
 
     response = await ws.receive_json_from()
@@ -470,6 +494,8 @@ async def test_channel_listen_group_twice(ws: WebsocketCommunicator):
 
 
 async def test_channel_listen_group_twice_cm(ws: WebsocketCommunicator):
+    from channels.layers import get_channel_layer
+
     await ws.send_json_to(ConnectionInitMessage().as_dict())
 
     response = await ws.receive_json_from()

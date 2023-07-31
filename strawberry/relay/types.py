@@ -24,14 +24,7 @@ from typing import (
     cast,
     overload,
 )
-from typing_extensions import (
-    Annotated,
-    Literal,
-    Self,
-    TypeAlias,
-    get_args,
-    get_origin,
-)
+from typing_extensions import Annotated, Literal, Self, TypeAlias, get_args, get_origin
 
 from strawberry.field import field
 from strawberry.lazy_type import LazyType
@@ -844,7 +837,7 @@ class ListConnection(Connection[NodeType]):
                 end = sys.maxsize
 
         if end is None:
-            end = max_results
+            end = start + max_results
 
         expected = end - start if end != sys.maxsize else None
         # Overfetch by 1 to check if we have a next result

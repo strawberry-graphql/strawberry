@@ -1,0 +1,18 @@
+{
+  people {
+    age
+    description
+    address
+    name
+    propA
+    propB
+    propC
+    propD
+    propE
+    propF
+    propG
+    propH
+    propI
+    propJ
+  }
+}

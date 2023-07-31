@@ -1,9 +1,18 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Awaitable, Callable
+
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
-from .app import create_app
+if TYPE_CHECKING:
+    from aiohttp.test_utils import TestClient
 
 
-async def test_turning_off_graphql_ws(aiohttp_client):
+async def test_turning_off_graphql_ws(
+    aiohttp_client: Callable[..., Awaitable[TestClient]]
+) -> None:
+    from .app import create_app
+
     app = create_app(subscription_protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL])
     aiohttp_app_client = await aiohttp_client(app)
 
@@ -17,7 +26,11 @@ async def test_turning_off_graphql_ws(aiohttp_client):
         assert data.extra == "Subprotocol not acceptable"
 
 
-async def test_turning_off_graphql_transport_ws(aiohttp_client):
+async def test_turning_off_graphql_transport_ws(
+    aiohttp_client: Callable[..., Awaitable[TestClient]]
+):
+    from .app import create_app
+
     app = create_app(subscription_protocols=[GRAPHQL_WS_PROTOCOL])
     aiohttp_app_client = await aiohttp_client(app)
 
@@ -31,7 +44,11 @@ async def test_turning_off_graphql_transport_ws(aiohttp_client):
         assert data.extra == "Subprotocol not acceptable"
 
 
-async def test_turning_off_all_ws_protocols(aiohttp_client):
+async def test_turning_off_all_ws_protocols(
+    aiohttp_client: Callable[..., Awaitable[TestClient]]
+):
+    from .app import create_app
+
     app = create_app(subscription_protocols=[])
     aiohttp_app_client = await aiohttp_client(app)
 
@@ -54,7 +71,11 @@ async def test_turning_off_all_ws_protocols(aiohttp_client):
         assert data.extra == "Subprotocol not acceptable"
 
 
-async def test_unsupported_ws_protocol(aiohttp_client):
+async def test_unsupported_ws_protocol(
+    aiohttp_client: Callable[..., Awaitable[TestClient]]
+):
+    from .app import create_app
+
     app = create_app(subscription_protocols=[])
     aiohttp_app_client = await aiohttp_client(app)
 
@@ -68,7 +89,11 @@ async def test_unsupported_ws_protocol(aiohttp_client):
         assert data.extra == "Subprotocol not acceptable"
 
 
-async def test_clients_can_prefer_protocols(aiohttp_client):
+async def test_clients_can_prefer_protocols(
+    aiohttp_client: Callable[..., Awaitable[TestClient]]
+):
+    from .app import create_app
+
     app = create_app(
         subscription_protocols=[GRAPHQL_WS_PROTOCOL, GRAPHQL_TRANSPORT_WS_PROTOCOL]
     )

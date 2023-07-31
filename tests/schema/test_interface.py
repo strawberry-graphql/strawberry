@@ -306,7 +306,7 @@ def test_interface_specialized_resolve_type(mocker: MockerFixture):
         @classmethod
         def resolve_type(cls, obj: Any, *args: Any, **kwargs: Any) -> str:
             del args, kwargs
-            return obj._type_definition.name
+            return obj.__strawberry_definition__.name
 
     spy_resolve_type = mocker.spy(InterfaceTester, "resolve_type")
 
@@ -340,13 +340,13 @@ async def test_derived_interface(mocker: MockerFixture):
         @classmethod
         def resolve_type(cls, obj: Any, *args: Any, **kwargs: Any) -> str:
             del args, kwargs
-            return obj._type_definition.name
+            return obj.__strawberry_definition__.name
 
     class NamedNodeInterfaceTester:
         @classmethod
         def resolve_type(cls, obj: Any, *args: Any, **kwargs: Any) -> str:
             del args, kwargs
-            return obj._type_definition.name
+            return obj.__strawberry_definition__.name
 
     spy_node_resolve_type = mocker.spy(NodeInterfaceTester, "resolve_type")
     spy_named_node_resolve_type = mocker.spy(NamedNodeInterfaceTester, "resolve_type")
@@ -378,3 +378,50 @@ async def test_derived_interface(mocker: MockerFixture):
     assert result.data is not None
     assert spy_named_node_resolve_type.call_count == len(result.data["friends"])
     spy_node_resolve_type.assert_not_called()
+
+
+def test_resolve_type_on_interface_returning_interface():
+    @strawberry.interface
+    class Node:
+        id: strawberry.ID
+
+        @classmethod
+        def resolve_type(cls, obj: Any, *args: Any, **kwargs: Any) -> str:
+            return "Video" if obj.id == "1" else "Image"
+
+    @strawberry.type
+    class Video(Node):
+        ...
+
+    @strawberry.type
+    class Image(Node):
+        ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def node(self, id: strawberry.ID) -> Node:
+            return Node(id=id)
+
+    schema = strawberry.Schema(query=Query, types=[Video, Image])
+
+    query = """
+        query {
+            one: node(id: "1") {
+                __typename
+                id
+            }
+            two: node(id: "2") {
+                __typename
+                id
+            }
+        }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+
+    assert result.data
+    assert result.data["one"] == {"id": "1", "__typename": "Video"}
+    assert result.data["two"] == {"id": "2", "__typename": "Image"}

@@ -32,7 +32,7 @@ class PythonType:
 
 
 class PythonPlugin(QueryCodegenPlugin):
-    SCALARS_TO_PYTHON_TYPES = {
+    SCALARS_TO_PYTHON_TYPES: Dict[str, PythonType] = {
         "ID": PythonType("str"),
         "Int": PythonType("int"),
         "String": PythonType("str"),
