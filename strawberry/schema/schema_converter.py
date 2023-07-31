@@ -492,6 +492,13 @@ class GraphQLCoreConverter:
             if not object_type.interfaces:
                 return None
 
+            # this allows returning interfaces types as well as the actual object type
+            # this is useful in combination with `resolve_type` in interfaces
+            possible_types = (
+                *tuple(interface.origin for interface in object_type.interfaces),
+                object_type.origin,
+            )
+
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
                 if object_type.concrete_of and (
                     has_object_definition(obj)
@@ -499,10 +506,6 @@ class GraphQLCoreConverter:
                     is object_type.concrete_of.origin
                 ):
                     return True
-
-                # this allows returning interfaces as well as the object type
-
-                possible_types = (*tuple(interface.origin for interface in object_type.interfaces), object_type.origin)
 
                 return isinstance(obj, possible_types)
 
