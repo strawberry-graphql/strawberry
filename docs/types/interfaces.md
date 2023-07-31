@@ -6,7 +6,7 @@ title: Interfaces
 
 Interfaces are abstract types which may be implemented by object types.
 
-An interface defines fields that object types inherit when they implement it. 
+An interface defines fields that object types inherit when they implement it.
 These object types are then considered members of that interface.
 
 Fields may return interface types.
@@ -95,7 +95,7 @@ interface Customer {
 <Note>
 
 Interface class instances should not be returned without providing methods to resolve
-them to a member (, as explained [here](#resolving-an-interface)). 
+them to a member (, as explained [here](#resolving-an-interface)).
 
 </Note>
 
@@ -202,13 +202,29 @@ class Company(Customer):
 
 When a field’s return type is an interface, GraphQL needs to know what specific
 object type to use for the return value. In the example above, each customer
-must be categorized as an `Individual` or `Company`. 
+must be categorized as an `Individual` or `Company`.
 
 ### Returning a member instance
+
 To do this, you could return an instance of a member from your resolver:
 
 ```python
 import strawberry
+
+
+@strawberry.interface
+class Customer:
+    name: str
+
+
+@strawberry.type
+class Individual(Customer):
+    ...
+
+
+@strawberry.type
+class Company(Customer):
+    ...
 
 
 @strawberry.type
@@ -216,9 +232,13 @@ class Query:
     @strawberry.field
     def best_customer(self) -> Customer:
         return Individual(name="Patrick")
+
+
+schema = strawberry.Schema(query=Query, types=[Individual, Company])
 ```
 
 ### Returning an interface instance
+
 You could also return the interface directly by defining a `resolve_type`
 method on the interface.
 
@@ -229,12 +249,12 @@ import strawberry
 @strawberry.interface
 class Customer:
     name: str
-    
+
     @classmethod
     async def resolve_type(cls, obj: Any, info: Info):
         return Individual.__name__ if obj.name == "Patrick" else Company.__name__
 
-    
+
 @strawberry.type
 class Individual(Customer):
     ...
@@ -250,4 +270,7 @@ class Query:
     @strawberry.field
     def best_customer(self) -> Customer:
         return Customer(name="Patrick")
+
+
+schema = strawberry.Schema(query=Query, types=[Individual, Company])
 ```
