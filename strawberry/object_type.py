@@ -12,9 +12,11 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    get_args,
+    get_origin,
     overload,
 )
-from typing_extensions import dataclass_transform
+from typing_extensions import Annotated, dataclass_transform
 
 from .exceptions import (
     MissingFieldAnnotationError,
@@ -56,6 +58,16 @@ def _check_field_annotations(cls: Type[Any]):
     cls_annotations = cls.__dict__.get("__annotations__", {})
     cls.__annotations__ = cls_annotations
 
+    def replace_annotation(name: str, new_annotation: Any):
+        # TODO: This will not work with future annotations. For those we will probably
+        # want to parse the ast and replace the type in there.
+        if name in cls_annotations and get_origin(cls_annotations[name]) is Annotated:
+            new_annotation = Annotated[
+                (new_annotation, *get_args(cls_annotations[name])[1:])
+            ]
+
+        cls_annotations[name] = new_annotation
+
     for field_name, field_ in cls.__dict__.items():
         if not isinstance(field_, (StrawberryField, dataclasses.Field)):
             # Not a dataclasses.Field, nor a StrawberryField. Ignore
@@ -65,10 +77,10 @@ def _check_field_annotations(cls: Type[Any]):
         # to make sure dataclasses.dataclass is ready for it
         if isinstance(field_, StrawberryField):
             # If the field has a type override then use that instead of using
-            # the class annotations or resolver annotation
+            # the class annotations or resolver annotation, but only if we
+            # don't have an annotation already in there
             if field_.type_annotation is not None:
-                cls_annotations[field_name] = field_.type_annotation.annotation
-                continue
+                replace_annotation(field_name, field_.type_annotation.annotation)
 
             # Make sure the cls has an annotation
             if field_name not in cls_annotations:
@@ -85,7 +97,9 @@ def _check_field_annotations(cls: Type[Any]):
                         field_name, resolver=field_.base_resolver
                     )
 
-                cls_annotations[field_name] = field_.base_resolver.type_annotation
+                replace_annotation(
+                    field_name, field_.base_resolver.type_annotation.annotation
+                )
 
             # TODO: Make sure the cls annotation agrees with the field's type
             # >>> if cls_annotations[field_name] != field.base_resolver.type:

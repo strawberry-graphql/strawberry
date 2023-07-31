@@ -1,6 +1,7 @@
 import itertools
 from enum import Enum
 from typing import Optional, TypeVar, Union
+from typing_extensions import Annotated
 
 import pytest
 
@@ -68,8 +69,20 @@ def test_eq_on_non_annotation():
     assert StrawberryAnnotation(int) != 123
 
 
-def test_set_anntation():
+def test_set_annotation():
     annotation = StrawberryAnnotation(int)
     annotation.annotation = str
 
     assert annotation.annotation == str
+
+
+def test_annotated_is_preserved():
+    @strawberry.type
+    class SomeType:
+        foo: Annotated[str, "foo"]
+        bar: Annotated[str, "bar"] = strawberry.field(graphql_type=int)
+
+    assert SomeType.__annotations__ == {
+        "foo": Annotated[str, "foo"],
+        "bar": Annotated[int, "bar"],
+    }
