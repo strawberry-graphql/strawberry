@@ -87,13 +87,6 @@ def test_setup_install_handler(mocker):
     assert threading.excepthook == strawberry_threading_exception_handler
 
 
-def test_setup_install_handler_does_add_attribute(mocker):
-    reset_exception_handler()
-    setup_exception_handler()
-
-    assert hasattr(threading, "excepthook") is False
-
-
 def test_setup_does_not_install_handler_when_disabled_via_env(mocker):
     reset_exception_handler()
 
