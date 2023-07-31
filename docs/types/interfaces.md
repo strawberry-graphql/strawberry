@@ -10,12 +10,12 @@ An interface defines fields that object types inherit when they implement it.
 These object types are then considered members of that interface.
 
 Fields may return interface types.
-However, the returned object must be resolved to any member of that interface.
+However, the returned object must be resolved to a member of that interface.
 
 ## Example
 
 Let's say a `Customer` (interface) can either be an `Individual`
-(object) or a `Company` (object). Here's what that might look like in the
+(member) or a `Company` (member). Here's what that might look like in the
 [GraphQL Schema Definition Language](https://graphql.org/learn/schema/#type-language)
 (SDL):
 
@@ -94,8 +94,8 @@ interface Customer {
 
 <Note>
 
-Interface class instances should not be returned without providing methods to identify
-them as a member (, as explained [here](#resolving-an-interface)). 
+Interface class instances should not be returned without providing methods to resolve
+them to a member (, as explained [here](#resolving-an-interface)). 
 
 </Note>
 
@@ -204,7 +204,7 @@ When a field’s return type is an interface, GraphQL needs to know what specifi
 object type to use for the return value. In the example above, each customer
 must be categorized as an `Individual` or `Company`. 
 
-### Returning member instance
+### Returning a member instance
 To do this, you could return an instance of a member from your resolver:
 
 ```python
@@ -218,18 +218,36 @@ class Query:
         return Individual(name="Patrick")
 ```
 
-### Using `resolve_type`
+### Returning an interface instance
 You could also return the interface directly by defining a `resolve_type`
 method on the interface.
 
-### Using `is_type_of`
-It is also possible to return the interface directly by defining `is_type_of` methods 
-on every member.
+```python
+import strawberry
 
 
-<Note>
+@strawberry.interface
+class Customer:
+    name: str
+    
+    @classmethod
+    async def resolve_type(cls, obj: Any, info: Info):
+        return Individual.__name__ if obj.name == "Patrick" else Company.__name__
 
-It is much more performant to use the `resolve_type` method on the interface as opposed 
-to the `is_type_of` method on every member (`O(1) vs O(n)`).
+    
+@strawberry.type
+class Individual(Customer):
+    ...
 
-</Note>
+
+@strawberry.type
+class Company(Customer):
+    ...
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def best_customer(self) -> Customer:
+        return Customer(name="Patrick")
+```
