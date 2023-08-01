@@ -55,7 +55,7 @@ class ScalarDefinition(StrawberryType):
     _source_line: Optional[int] = None
 
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+        self, type_var_map: Mapping[str, Union[StrawberryType, type]]
     ) -> Union[StrawberryType, type]:
         return super().copy_with(type_var_map)  # type: ignore[safe-super]
 

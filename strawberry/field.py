@@ -360,7 +360,7 @@ class StrawberryField(dataclasses.Field):
         return resolved
 
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
+        self, type_var_map: Mapping[str, Union[StrawberryType, builtins.type]]
     ) -> Self:
         new_field = copy.copy(self)
 
