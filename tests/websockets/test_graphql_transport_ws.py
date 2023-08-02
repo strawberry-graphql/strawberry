@@ -803,9 +803,15 @@ async def test_rejects_connection_params_not_dict(ws_raw: WebSocketClient):
     ws.assert_reason("Invalid connection init payload")
 
 
-async def test_rejects_connection_params_with_wrong_type(ws_raw: WebSocketClient):
+@pytest.mark.parametrize(
+    "payload",
+    [[], "invalid value", 1],
+)
+async def test_rejects_connection_params_with_wrong_type(
+    payload: Any, ws_raw: WebSocketClient
+):
     ws = ws_raw
-    await ws.send_json(ConnectionInitMessage(payload="abc").as_dict())
+    await ws.send_json(ConnectionInitMessage(payload=payload).as_dict())
 
     data = await ws.receive(timeout=2)
     assert ws.closed
