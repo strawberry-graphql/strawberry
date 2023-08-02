@@ -172,6 +172,8 @@ asyncio_mode = "auto"
 filterwarnings = [
     "ignore::DeprecationWarning:strawberry.*.resolver",
     "ignore:LazyType is deprecated:DeprecationWarning",
+    "ignore::DeprecationWarning:ddtrace.internal",
+    "ignore::DeprecationWarning:django.utils.encoding",
 ]
 
 [tool.autopub]
