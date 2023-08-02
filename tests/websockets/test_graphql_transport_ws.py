@@ -183,8 +183,11 @@ async def test_close_twice(
     ) as ws:
         transport_close = mocker.patch.object(ws, "close")
 
-        # TODO: payload is set to 1 to force close, but is this right?
-        await ws.send_json(ConnectionInitMessage(payload=1).as_dict())
+        # We set payload is set to "invalid value" to force a invalid payload error
+        # which will close the connection
+        await ws.send_json(
+            ConnectionInitMessage(payload="invalid value").as_dict(),  # type: ignore
+        )
         # Yield control so that ._close can be called
         await asyncio.sleep(0)
 
