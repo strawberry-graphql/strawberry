@@ -183,7 +183,8 @@ async def test_close_twice(
     ) as ws:
         transport_close = mocker.patch.object(ws, "close")
 
-        await ws.send_json(ConnectionInitMessage(payload=None).as_dict())
+        # TODO: payload is set to 1 to force close, but is this right?
+        await ws.send_json(ConnectionInitMessage(payload=1).as_dict())
         # Yield control so that ._close can be called
         await asyncio.sleep(0)
 
@@ -799,9 +800,9 @@ async def test_rejects_connection_params_not_dict(ws_raw: WebSocketClient):
     ws.assert_reason("Invalid connection init payload")
 
 
-async def test_rejects_connection_params_not_unset(ws_raw: WebSocketClient):
+async def test_rejects_connection_params_with_wrong_type(ws_raw: WebSocketClient):
     ws = ws_raw
-    await ws.send_json(ConnectionInitMessage(payload=None).as_dict())
+    await ws.send_json(ConnectionInitMessage(payload="abc").as_dict())
 
     data = await ws.receive(timeout=2)
     assert ws.closed
