@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.199.1 - 2023-08-02
+--------------------
+
+This release fixes an issue in the `graphql-ws` implementation
+where sending a `null` payload would cause the connection
+to be closed.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3007](https://github.com/strawberry-graphql/strawberry/pull/3007/)
+
+
 0.199.0 - 2023-08-01
 --------------------
 
