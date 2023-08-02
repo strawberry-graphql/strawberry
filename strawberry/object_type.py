@@ -67,7 +67,8 @@ def _check_field_annotations(cls: Type[Any]):
             # If the field has a type override then use that instead of using
             # the class annotations or resolver annotation
             if field_.type_annotation is not None:
-                cls_annotations[field_name] = field_.type_annotation.annotation
+                if field_name not in cls_annotations:
+                    cls_annotations[field_name] = field_.type_annotation.annotation
                 continue
 
             # Make sure the cls has an annotation
@@ -85,7 +86,8 @@ def _check_field_annotations(cls: Type[Any]):
                         field_name, resolver=field_.base_resolver
                     )
 
-                cls_annotations[field_name] = field_.base_resolver.type_annotation
+                if field_name not in cls_annotations:
+                    cls_annotations[field_name] = field_.base_resolver.type_annotation
 
             # TODO: Make sure the cls annotation agrees with the field's type
             # >>> if cls_annotations[field_name] != field.base_resolver.type:
