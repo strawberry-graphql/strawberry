@@ -260,7 +260,7 @@ def type(
         # so we need to extract the information before running `_wrap_dataclass`
         original_type_annotations: Dict[str, Any] = {}
 
-        for field_name, _ in cls.__annotations__.items():
+        for field_name in cls.__annotations__:
             field = getattr(cls, field_name, None)
 
             if field and isinstance(field, StrawberryField) and field.type_annotation:
