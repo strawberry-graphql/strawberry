@@ -127,7 +127,7 @@ def _wrap_dataclass(cls: Type[Any]):
 
 
 def _process_type(
-    cls: Type,
+    cls: Type[Any],
     *,
     name: Optional[str] = None,
     is_input: bool = False,
@@ -135,11 +135,13 @@ def _process_type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
+    original_type_annotations: Optional[Dict[str, Any]] = None,
 ):
     name = name or to_camel_case(cls.__name__)
+    original_type_annotations = original_type_annotations or {}
 
     interfaces = _get_interfaces(cls)
-    fields = _get_fields(cls)
+    fields = _get_fields(cls, original_type_annotations)
     is_type_of = getattr(cls, "is_type_of", None)
     resolve_type = getattr(cls, "resolve_type", None)
 
@@ -239,7 +241,7 @@ def type(
     >>>     field_abc: str = "ABC"
     """
 
-    def wrap(cls: Type):
+    def wrap(cls: Type[Any]):
         if not inspect.isclass(cls):
             if is_input:
                 exc = ObjectIsNotClassError.input
@@ -249,7 +251,23 @@ def type(
                 exc = ObjectIsNotClassError.type
             raise exc(cls)
 
+        # when running `_wrap_dataclass` we lose some of the information about the
+        # the passed types, especially the type_annotation inside the StrawberryField
+        # this makes it impossible to customise the field type, like this:
+        # >>> @strawberry.type
+        # >>> class Query:
+        # >>>     a: int = strawberry.field(graphql_type=str)
+        # so we need to extract the information before running `_wrap_dataclass`
+        original_type_annotations: Dict[str, Any] = {}
+
+        for field_name, _ in cls.__annotations__.items():
+            field = getattr(cls, field_name, None)
+
+            if field and isinstance(field, StrawberryField) and field.type_annotation:
+                original_type_annotations[field_name] = field.type_annotation.annotation
+
         wrapped = _wrap_dataclass(cls)
+
         return _process_type(
             wrapped,
             name=name,
@@ -258,6 +276,7 @@ def type(
             description=description,
             directives=directives,
             extend=extend,
+            original_type_annotations=original_type_annotations,
         )
 
     if cls is None:
