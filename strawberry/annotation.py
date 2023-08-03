@@ -118,8 +118,6 @@ class StrawberryAnnotation:
     def _get_type_with_args(
         self, evaled_type: Type[Any]
     ) -> Tuple[Type[Any], List[Any]]:
-        args: List[Any] = []
-
         if self._is_async_type(evaled_type):
             return self._get_type_with_args(self._strip_async_type(evaled_type))
 
@@ -128,7 +126,7 @@ class StrawberryAnnotation:
             stripped_type, stripped_args = self._get_type_with_args(evaled_type)
             return stripped_type, args + stripped_args
 
-        return evaled_type, args
+        return evaled_type, []
 
     def resolve(self) -> Union[StrawberryType, type]:
         """Return resolved (transformed) annotation."""
@@ -139,7 +137,7 @@ class StrawberryAnnotation:
 
         args: List[Any] = []
 
-        evaled_type, *args = self._get_type_with_args(evaled_type)
+        evaled_type, args = self._get_type_with_args(evaled_type)
 
         if self._is_lazy_type(evaled_type):
             return evaled_type
