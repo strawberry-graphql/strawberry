@@ -1,4 +1,4 @@
-Release type: path
+Release type: patch
 
 This releases improves how we handle Annotated and async types
 (used in subscriptions). Previously we weren't able to use
