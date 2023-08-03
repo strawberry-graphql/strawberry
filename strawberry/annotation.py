@@ -12,6 +12,7 @@ from typing import (
     ForwardRef,
     List,
     Optional,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -114,6 +115,21 @@ class StrawberryAnnotation:
         self.__eval_cache__ = evaled_type
         return evaled_type
 
+    def _get_type_with_args(
+        self, evaled_type: Type[Any]
+    ) -> Tuple[Type[Any], List[Any]]:
+        args: List[Any] = []
+
+        if self._is_async_type(evaled_type):
+            return self._get_type_with_args(self._strip_async_type(evaled_type))
+
+        if get_origin(evaled_type) is Annotated:
+            evaled_type, *args = get_args(evaled_type)
+            stripped_type, stripped_args = self._get_type_with_args(evaled_type)
+            return stripped_type, args + stripped_args
+
+        return evaled_type, args
+
     def resolve(self) -> Union[StrawberryType, type]:
         """Return resolved (transformed) annotation."""
         evaled_type = cast(Any, self.evaluate())
@@ -122,11 +138,9 @@ class StrawberryAnnotation:
             return evaled_type
 
         args: List[Any] = []
-        if get_origin(evaled_type) is Annotated:
-            evaled_type, *args = get_args(evaled_type)
 
-        if self._is_async_type(evaled_type):
-            evaled_type = self._strip_async_type(evaled_type)
+        evaled_type, *args = self._get_type_with_args(evaled_type)
+
         if self._is_lazy_type(evaled_type):
             return evaled_type
 
@@ -342,7 +356,7 @@ class StrawberryAnnotation:
         return any(isinstance(arg, StrawberryUnion) for arg in args)
 
     @classmethod
-    def _strip_async_type(cls, annotation: Type) -> type:
+    def _strip_async_type(cls, annotation: Type[Any]) -> type:
         return annotation.__args__[0]
 
     @classmethod
