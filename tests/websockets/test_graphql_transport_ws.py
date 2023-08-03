@@ -6,12 +6,7 @@ import json
 import time
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Type
-from unittest.mock import Mock, patch
-
-try:
-    from unittest.mock import AsyncMock
-except ImportError:
-    AsyncMock = None
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import pytest_asyncio
@@ -926,9 +921,6 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
 
         if isinstance(http_client, ChannelsHttpClient):
             pytest.skip("Can't patch on_init for this client")
-
-    if not AsyncMock:
-        pytest.skip("Don't have AsyncMock")
 
     ws = ws_raw
     handler = None
