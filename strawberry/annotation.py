@@ -358,7 +358,7 @@ class StrawberryAnnotation:
         return annotation.__args__[0]
 
     @classmethod
-    def _strip_lazy_type(cls, annotation: LazyType[None, None]) -> type:
+    def _strip_lazy_type(cls, annotation: LazyType[Any, Any]) -> type:
         return annotation.resolve_type()
 
 
