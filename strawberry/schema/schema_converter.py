@@ -18,7 +18,7 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import Protocol
+from typing_extensions import Protocol, get_args
 
 from graphql import (
     GraphQLAbstractType,
@@ -499,12 +499,23 @@ class GraphQLCoreConverter:
                 object_type.origin,
             )
 
+            type_var_values = tuple(object_type.type_var_map.values())
+
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
                 if object_type.concrete_of and (
                     has_object_definition(obj)
                     and obj.__strawberry_definition__.origin
                     is object_type.concrete_of.origin
                 ):
+                    # Check if type var values from ``obj`` match those narrowed by
+                    # ``object_type``. This ensures that a Foo[int] type does not return
+                    # `True`` for a Foo[str]() object.
+                    if (
+                        object_type.concrete_of.is_generic
+                        and (args := get_args(getattr(obj, "__orig_class__", None)))
+                        and args != type_var_values
+                    ):
+                        return False
                     return True
 
                 return isinstance(obj, possible_types)
