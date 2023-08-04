@@ -2905,13 +2905,13 @@ full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart", "pyyam
 
 [[package]]
 name = "starlite"
-version = "1.51.13"
+version = "1.51.14"
 description = "Performant, light and flexible ASGI API Framework"
 optional = false
 python-versions = ">=3.8,<4.0"
 files = [
-    {file = "starlite-1.51.13-py3-none-any.whl", hash = "sha256:43544dcddf98883adeb8554eabd06781519448ef68cedf839aff5d94ddbe3b5d"},
-    {file = "starlite-1.51.13.tar.gz", hash = "sha256:969f175bd3fed21f41090be8be0577a6f5f709c9432d48f9e2fb8ded68680401"},
+    {file = "starlite-1.51.14-py3-none-any.whl", hash = "sha256:7e0c9a2034d6d170db0569be37626be6e1c1a6dbe167150ffdb57e62349af855"},
+    {file = "starlite-1.51.14.tar.gz", hash = "sha256:f4f7d7b87a61d2a2d0126fe09342d8ce49dd4bd9ee08fb410014b7a77d5d46b6"},
 ]
 
 [package.dependencies]
