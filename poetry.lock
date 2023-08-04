@@ -2437,13 +2437,13 @@ dev = ["pre-commit", "pytest-asyncio", "tox"]
 
 [[package]]
 name = "pytest-mypy-plugins"
-version = "2.0.0"
+version = "3.0.0"
 description = "pytest plugin for writing tests for mypy plugins"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "pytest-mypy-plugins-2.0.0.tar.gz", hash = "sha256:98e57cbfe87a3667ca3f3808dda86cbe9ee9d76fed5ed50d1946ea6125d09eda"},
-    {file = "pytest_mypy_plugins-2.0.0-py3-none-any.whl", hash = "sha256:365ed0b144de29ffde7a8b157f48638ae12f9c06197d06bbfc4890e0ba2cec9c"},
+    {file = "pytest-mypy-plugins-3.0.0.tar.gz", hash = "sha256:05a728c7cbc4f33610f97fe9266b2c3eb209e41c28935011b4fc9531662625f6"},
+    {file = "pytest_mypy_plugins-3.0.0-py3-none-any.whl", hash = "sha256:a1e3f51b68898bc25713cc53718a28d9dc0cfd51d28a537ef18c7df3b123ed84"},
 ]
 
 [package.dependencies]
@@ -2454,6 +2454,7 @@ packaging = "*"
 pytest = ">=7.0.0"
 pyyaml = "*"
 regex = "*"
+tomlkit = ">=0.11"
 
 [[package]]
 name = "pytest-snapshot"
@@ -3771,4 +3772,4 @@ starlite = ["starlite"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "15a957e8c1490bbea06d0a48c3f3384b0f56d4a83047e48db65b39d995119322"
+content-hash = "039e0aae5752be6dc77e40c2b1c2f6b3904a3b14ff8f7bde38d59ebdee6f2fc6"
