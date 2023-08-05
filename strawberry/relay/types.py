@@ -871,14 +871,24 @@ class ListConnection(Connection[NodeType]):
                         overfetch,
                     )
 
-                assert isinstance(iterator, (AsyncIterator, AsyncIterable))
-                edges: List[Edge] = [
-                    edge_class.resolve_edge(
-                        cls.resolve_node(v, info=info, **kwargs),
-                        cursor=start + i,
-                    )
-                    async for i, v in aenumerate(iterator)
-                ]
+                # The slice above might return an object that now is not async
+                # iterable anymore (e.g. an already cached django queryset)
+                if isinstance(iterator, (AsyncIterator, AsyncIterable)):
+                    edges: List[Edge] = [
+                        edge_class.resolve_edge(
+                            cls.resolve_node(v, info=info, **kwargs),
+                            cursor=start + i,
+                        )
+                        async for i, v in aenumerate(iterator)
+                    ]
+                else:
+                    edges: List[Edge] = [  # type: ignore[no-redef]
+                        edge_class.resolve_edge(
+                            cls.resolve_node(v, info=info, **kwargs),
+                            cursor=start + i,
+                        )
+                        for i, v in enumerate(iterator)
+                    ]
 
                 has_previous_page = start > 0
                 if expected is not None and len(edges) == expected + 1:
