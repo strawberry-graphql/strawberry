@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.199.3 - 2023-08-06
+--------------------
+
+This release fixes an issue on `relay.ListConnection` where async iterables that returns
+non async iterable objects after being sliced where producing errors.
+
+This should fix an issue with async strawberry-graphql-django when returning already
+prefetched QuerySets.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3014](https://github.com/strawberry-graphql/strawberry/pull/3014/)
+
+
 0.199.2 - 2023-08-03
 --------------------
 
