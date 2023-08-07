@@ -48,7 +48,7 @@ flask = {version = ">=1.1", optional = true}
 opentelemetry-api = {version = "<2", optional = true}
 opentelemetry-sdk = {version = "<2", optional = true}
 chalice = {version = "^1.22", optional = true}
-pydantic = {version = "<2", optional = true}
+pydantic = {version = ">1.6.1", optional = true}
 python-multipart = {version = ">=0.0.5,<0.0.7", optional = true}
 sanic = {version = ">=20.12.2", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
@@ -112,7 +112,7 @@ channels = "^3.0.5"
 Django = ">=3.2"
 fastapi = {version = ">=0.65.0", optional = false}
 flask = ">=1.1"
-pydantic = {version = "<2", optional = false}
+pydantic = {version = ">1.6.1", optional = false}
 pytest-aiohttp = "^1.0.3"
 pytest-django = {version = "^4.5"}
 pytest-flask = {version = "^1.2.0"}

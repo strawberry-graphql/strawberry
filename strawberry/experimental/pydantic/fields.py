@@ -1,13 +1,19 @@
 import builtins
 from decimal import Decimal
-from typing import Any, List, Optional, Type
+from typing import Any, List, Optional, Type, Union
 from uuid import UUID
 
 import pydantic
 from pydantic import BaseModel
-from pydantic.typing import get_args, get_origin, is_new_type, new_type_supertype
-from pydantic.utils import lenient_issubclass
 
+from strawberry.experimental.pydantic._compat import (
+    IS_PYDANTIC_V1,
+    get_args,
+    get_origin,
+    is_new_type,
+    lenient_issubclass,
+    new_type_supertype,
+)
 from strawberry.experimental.pydantic.exceptions import (
     UnregisteredTypeException,
     UnsupportedTypeError,
@@ -15,6 +21,7 @@ from strawberry.experimental.pydantic.exceptions import (
 from strawberry.types.types import StrawberryObjectDefinition
 
 try:
+    from types import UnionType as TypingUnionType
     from typing import GenericAlias as TypingGenericAlias  # type: ignore
 except ImportError:
     import sys
@@ -23,6 +30,10 @@ except ImportError:
     # we do this under a conditional to avoid a mypy :)
     if sys.version_info < (3, 9):
         TypingGenericAlias = ()
+    else:
+        raise
+    if sys.version_info < (3, 10):
+        TypingUnionType = ()
     else:
         raise
 
@@ -70,23 +81,31 @@ ATTR_TO_TYPE_MAP = {
     "RedisDsn": str,
 }
 
-
-FIELDS_MAP = {
-    getattr(pydantic, field_name): type
-    for field_name, type in ATTR_TO_TYPE_MAP.items()
-    if hasattr(pydantic, field_name)
-}
+"""TODO:
+Most of these fields are not supported by pydantic V2
+"""
+FIELDS_MAP = (
+    {
+        getattr(pydantic, field_name): type
+        for field_name, type in ATTR_TO_TYPE_MAP.items()
+        if hasattr(pydantic, field_name)
+    }
+    if IS_PYDANTIC_V1
+    else {}
+)
 
 
 def get_basic_type(type_: Any) -> Type[Any]:
-    if lenient_issubclass(type_, pydantic.ConstrainedInt):
-        return int
-    if lenient_issubclass(type_, pydantic.ConstrainedFloat):
-        return float
-    if lenient_issubclass(type_, pydantic.ConstrainedStr):
-        return str
-    if lenient_issubclass(type_, pydantic.ConstrainedList):
-        return List[get_basic_type(type_.item_type)]  # type: ignore
+    if IS_PYDANTIC_V1:
+        # only pydantic v1 has these
+        if lenient_issubclass(type_, pydantic.ConstrainedInt):
+            return int
+        if lenient_issubclass(type_, pydantic.ConstrainedFloat):
+            return float
+        if lenient_issubclass(type_, pydantic.ConstrainedStr):
+            return str
+        if lenient_issubclass(type_, pydantic.ConstrainedList):
+            return List[get_basic_type(type_.item_type)]  # type: ignore
 
     if type_ in FIELDS_MAP:
         type_ = FIELDS_MAP.get(type_)
@@ -125,7 +144,8 @@ def replace_types_recursively(type_: Any, is_input: bool) -> Any:
 
     if isinstance(replaced_type, TypingGenericAlias):
         return TypingGenericAlias(origin, converted)
-
+    if isinstance(replaced_type, TypingUnionType):
+        return Union[converted]
     replaced_type = replaced_type.copy_with(converted)
 
     if isinstance(replaced_type, StrawberryObjectDefinition):

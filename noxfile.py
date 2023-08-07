@@ -105,8 +105,7 @@ def tests_integrations(session: Session, integration: str) -> None:
 
 
 @session(python=["3.11"], name="Pydantic tests", tags=["tests"])
-# TODO: add pydantic 2.0 here :)
-@nox.parametrize("pydantic", ["1.10"])
+@nox.parametrize("pydantic", ["1.10", "2.0.3"])
 def test_pydantic(session: Session, pydantic: str) -> None:
     session.run_always("poetry", "install", external=True)
 
