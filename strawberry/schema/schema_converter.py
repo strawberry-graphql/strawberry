@@ -574,7 +574,7 @@ class GraphQLCoreConverter:
             # the following code allows to omit info and root arguments
             # by inspecting the original resolver arguments,
             # if it asks for self, the source will be passed as first argument
-            # if it asks for root, the source it will be passed as kwarg
+            # if it asks for root or parent, the source will be passed as kwarg
             # if it asks for info, the info will be passed as kwarg
 
             args = []
@@ -583,12 +583,13 @@ class GraphQLCoreConverter:
                 if field.base_resolver.self_parameter:
                     args.append(source)
 
-                root_parameter = field.base_resolver.root_parameter
-                if root_parameter:
+                if parent_parameter := field.base_resolver.parent_parameter:
+                    kwargs[parent_parameter.name] = source
+
+                if root_parameter := field.base_resolver.root_parameter:
                     kwargs[root_parameter.name] = source
 
-                info_parameter = field.base_resolver.info_parameter
-                if info_parameter:
+                if info_parameter := field.base_resolver.info_parameter:
                     kwargs[info_parameter.name] = info
 
             return args, kwargs

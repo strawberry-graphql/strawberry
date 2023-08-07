@@ -5,6 +5,9 @@ from typing import TYPE_CHECKING, Optional, Set, Union
 
 from graphql import GraphQLError
 
+from strawberry.utils.cached_property import cached_property
+
+from .conflicting_arguments import ConflictingArgumentsError
 from .duplicated_type_name import DuplicatedTypeName
 from .exception import StrawberryException, UnableToFindExceptionSource
 from .handler import setup_exception_handler
@@ -178,6 +181,7 @@ __all__ = [
     "WrongNumberOfResultsReturned",
     "FieldWithResolverAndDefaultValueError",
     "FieldWithResolverAndDefaultFactoryError",
+    "ConflictingArgumentsError",
     "MissingQueryError",
     "InvalidArgumentTypeError",
     "InvalidDefaultFactoryError",

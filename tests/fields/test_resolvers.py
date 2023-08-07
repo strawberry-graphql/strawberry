@@ -6,6 +6,7 @@ import pytest
 
 import strawberry
 from strawberry.exceptions import (
+    ConflictingArgumentsError,
     MissingArgumentsAnnotationsError,
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
@@ -292,6 +293,39 @@ def test_raises_error_calling_uncallable_resolver():
         resolver()
 
 
+@pytest.mark.raises_strawberry_exception(
+    ConflictingArgumentsError,
+    match=(
+        'Arguments "self and "parent" define conflicting resources. '
+        "Only one of these arguments may be defined per resolver."
+    ),
+)
+def test_raises_error_when_multiple_source_params():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, parent: strawberry.Parent[str]) -> str:
+            return "I'm a resolver"
+
+
+@pytest.mark.raises_strawberry_exception(
+    ConflictingArgumentsError,
+    match=(
+        'Arguments "parent1" and "parent2" define conflicting resources. '
+        "Only one of these arguments may be defined per resolver."
+    ),
+)
+def test_raises_error_when_multiple_parents_params():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        @staticmethod
+        def hello(
+            parent1: strawberry.Parent[str], parent2: strawberry.Parent[str]
+        ) -> str:
+            return "I'm a resolver"
+
+
 def test_can_reuse_resolver():
     def get_name(self) -> str:
         return "Name"
@@ -360,7 +394,7 @@ def test_resolver_annotations():
     """Ensure only non-reserved annotations are returned."""
 
     def resolver_annotated_info(
-        self, root, foo: str, bar: float, info: str, strawberry_info: Info
+        root, foo: str, bar: float, info: str, strawberry_info: Info
     ) -> str:
         return "Hello world"
 

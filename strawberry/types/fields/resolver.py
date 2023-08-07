@@ -20,12 +20,16 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import Annotated, Protocol, get_args, get_origin
+from typing_extensions import Annotated, Protocol, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
-from strawberry.exceptions import MissingArgumentsAnnotationsError
-from strawberry.type import StrawberryType, has_object_definition
+from strawberry.exceptions import (
+    ConflictingArgumentsError,
+    MissingArgumentsAnnotationsError,
+)
+from strawberry.parent import StrawberryParent
+from strawberry.type import StrawberryType, has_object_definition, is_annotated_type
 from strawberry.types.info import Info
 
 if TYPE_CHECKING:
@@ -95,10 +99,10 @@ class ReservedType(NamedTuple):
     """Define a reserved type by name or by type.
 
     To preserve backwards-comaptibility, if an annotation was defined but does not match
-    :attr:`type`, then the name is used as a fallback.
+    :attr:`type`, then the name is used as a fallback if available.
     """
 
-    name: str
+    name: str | None
     type: type
 
     def find(
@@ -118,6 +122,8 @@ class ReservedType(NamedTuple):
                         return parameter
 
         # Fallback to matching by name
+        if not self.name:
+            return None
         reserved_name = ReservedName(name=self.name).find(parameters, resolver)
         if reserved_name:
             warning = DeprecationWarning(
@@ -135,7 +141,7 @@ class ReservedType(NamedTuple):
         origin = cast(type, get_origin(other)) or other
         if origin is Annotated:
             # Handle annotated arguments such as Private[str] and DirectiveValue[str]
-            return any(isinstance(argument, self.type) for argument in get_args(other))
+            return is_annotated_type(other, self.type)
         else:
             # Handle both concrete and generic types (i.e Info, and Info[Any, Any])
             return (
@@ -149,6 +155,7 @@ SELF_PARAMSPEC = ReservedNameBoundParameter("self")
 CLS_PARAMSPEC = ReservedNameBoundParameter("cls")
 ROOT_PARAMSPEC = ReservedName("root")
 INFO_PARAMSPEC = ReservedType("info", Info)
+PARENT_PARAMSPEC = ReservedType(name=None, type=StrawberryParent)
 
 T = TypeVar("T")
 
@@ -159,6 +166,7 @@ class StrawberryResolver(Generic[T]):
         CLS_PARAMSPEC,
         ROOT_PARAMSPEC,
         INFO_PARAMSPEC,
+        PARENT_PARAMSPEC,
     )
 
     def __init__(
@@ -213,6 +221,20 @@ class StrawberryResolver(Generic[T]):
         """Resolver arguments exposed in the GraphQL Schema."""
         parameters = self.signature.parameters.values()
         reserved_parameters = set(self.reserved_parameters.values())
+        populated_reserved_parameters = set(
+            key for key, value in self.reserved_parameters.items() if value is not None
+        )
+
+        if (
+            conflicting_arguments := (
+                populated_reserved_parameters
+                & {SELF_PARAMSPEC, ROOT_PARAMSPEC, PARENT_PARAMSPEC}
+            )
+        ) and len(conflicting_arguments) > 1:
+            raise ConflictingArgumentsError(
+                self,
+                [self.reserved_parameters[key].name for key in conflicting_arguments],
+            )
 
         missing_annotations: List[str] = []
         arguments: List[StrawberryArgument] = []
@@ -245,6 +267,10 @@ class StrawberryResolver(Generic[T]):
     @cached_property
     def self_parameter(self) -> Optional[inspect.Parameter]:
         return self.reserved_parameters.get(SELF_PARAMSPEC)
+
+    @cached_property
+    def parent_parameter(self) -> Optional[inspect.Parameter]:
+        return self.reserved_parameters.get(PARENT_PARAMSPEC)
 
     @cached_property
     def name(self) -> str:
