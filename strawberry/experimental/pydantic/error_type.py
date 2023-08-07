@@ -83,13 +83,12 @@ def error_type(
             )
 
         existing_fields = getattr(cls, "__annotations__", {})
-        fields_set = fields_set.union(
-            {
-                name
-                for name, type_ in existing_fields.items()
-                if isinstance(type_, StrawberryAuto)
-            }
-        )
+        auto_fields_set = {
+            name
+            for name, type_ in existing_fields.items()
+            if isinstance(type_, StrawberryAuto)
+        }
+        fields_set |= auto_fields_set
 
         if all_fields:
             if fields_set:
@@ -124,7 +123,10 @@ def error_type(
                 field,
             )
             for field in extra_fields + private_fields
-            if not isinstance(field.type, StrawberryAuto)
+            if (
+                field.name not in auto_fields_set
+                and not isinstance(field.type, StrawberryAuto)
+            )
         )
 
         cls = dataclasses.make_dataclass(

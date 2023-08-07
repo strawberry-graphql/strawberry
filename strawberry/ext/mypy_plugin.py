@@ -410,7 +410,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
 
         pydantic_fields: Set[PydanticModelField] = set()
         try:
-            for _name, data in model_type.type.metadata[PYDANTIC_METADATA_KEY][
+            for data in model_type.type.metadata[PYDANTIC_METADATA_KEY][
                 "fields"
             ].items():
                 if IS_PYDANTIC_V1:

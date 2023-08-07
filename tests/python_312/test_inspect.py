@@ -1,12 +1,9 @@
-from typing import Generic, TypeVar
+# ruff: noqa: F821
 
 import pytest
 
 import strawberry
 from strawberry.utils.inspect import get_specialized_type_var_map
-
-_T = TypeVar("_T")
-_K = TypeVar("_K")
 
 
 @pytest.mark.parametrize("value", [object, type(None), int, str, type("Foo", (), {})])
@@ -16,7 +13,7 @@ def test_get_specialized_type_var_map_non_generic(value: type):
 
 def test_get_specialized_type_var_map_generic_not_specialized():
     @strawberry.type
-    class Foo(Generic[_T]):
+    class Foo[_T]:
         ...
 
     assert get_specialized_type_var_map(Foo) == {}
@@ -24,7 +21,7 @@ def test_get_specialized_type_var_map_generic_not_specialized():
 
 def test_get_specialized_type_var_map_generic():
     @strawberry.type
-    class Foo(Generic[_T]):
+    class Foo[_T]:
         ...
 
     @strawberry.type
@@ -36,7 +33,7 @@ def test_get_specialized_type_var_map_generic():
 
 def test_get_specialized_type_var_map_generic_subclass():
     @strawberry.type
-    class Foo(Generic[_T]):
+    class Foo[_T]:
         ...
 
     @strawberry.type
@@ -52,11 +49,11 @@ def test_get_specialized_type_var_map_generic_subclass():
 
 def test_get_specialized_type_var_map_double_generic():
     @strawberry.type
-    class Foo(Generic[_T]):
+    class Foo[_T]:
         ...
 
     @strawberry.type
-    class Bar(Foo[_T]):
+    class Bar[_T](Foo[_T]):
         ...
 
     @strawberry.type
@@ -68,11 +65,11 @@ def test_get_specialized_type_var_map_double_generic():
 
 def test_get_specialized_type_var_map_double_generic_subclass():
     @strawberry.type
-    class Foo(Generic[_T]):
+    class Foo[_T]:
         ...
 
     @strawberry.type
-    class Bar(Foo[_T]):
+    class Bar[_T](Foo[_T]):
         ...
 
     @strawberry.type
@@ -88,11 +85,11 @@ def test_get_specialized_type_var_map_double_generic_subclass():
 
 def test_get_specialized_type_var_map_multiple_inheritance():
     @strawberry.type
-    class Foo(Generic[_T]):
+    class Foo[_T]:
         ...
 
     @strawberry.type
-    class Bar(Generic[_K]):
+    class Bar[_K]:
         ...
 
     @strawberry.type
@@ -111,11 +108,11 @@ def test_get_specialized_type_var_map_multiple_inheritance():
 
 def test_get_specialized_type_var_map_multiple_inheritance_subclass():
     @strawberry.type
-    class Foo(Generic[_T]):
+    class Foo[_T]:
         ...
 
     @strawberry.type
-    class Bar(Generic[_K]):
+    class Bar[_K]:
         ...
 
     @strawberry.type

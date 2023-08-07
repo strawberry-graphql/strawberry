@@ -1,6 +1,200 @@
 CHANGELOG
 =========
 
+0.199.3 - 2023-08-06
+--------------------
+
+This release fixes an issue on `relay.ListConnection` where async iterables that returns
+non async iterable objects after being sliced where producing errors.
+
+This should fix an issue with async strawberry-graphql-django when returning already
+prefetched QuerySets.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3014](https://github.com/strawberry-graphql/strawberry/pull/3014/)
+
+
+0.199.2 - 2023-08-03
+--------------------
+
+This releases improves how we handle Annotated and async types
+(used in subscriptions). Previously we weren't able to use
+unions with names inside subscriptions, now that's fixed 😊
+
+Example:
+
+```python
+@strawberry.type
+class A:
+    a: str
+
+
+@strawberry.type
+class B:
+    b: str
+
+
+@strawberry.type
+class Query:
+    x: str = "Hello"
+
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def example_with_union(self) -> AsyncGenerator[Union[A, B], None]:
+        yield A(a="Hi")
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3008](https://github.com/strawberry-graphql/strawberry/pull/3008/)
+
+
+0.199.1 - 2023-08-02
+--------------------
+
+This release fixes an issue in the `graphql-ws` implementation
+where sending a `null` payload would cause the connection
+to be closed.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3007](https://github.com/strawberry-graphql/strawberry/pull/3007/)
+
+
+0.199.0 - 2023-08-01
+--------------------
+
+This release changes how we handle generic type vars, bringing
+support to the new generic syntax in Python 3.12 (which will be out in October).
+
+This now works:
+
+```python
+@strawberry.type
+class Edge[T]:
+    cursor: strawberry.ID
+    node_field: T
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def example(self) -> Edge[int]:
+        return Edge(cursor=strawberry.ID("1"), node_field=1)
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2993](https://github.com/strawberry-graphql/strawberry/pull/2993/)
+
+
+0.198.0 - 2023-07-31
+--------------------
+
+This release adds support for returning interfaces directly in resolvers:
+
+```python
+@strawberry.interface
+class Node:
+    id: strawberry.ID
+
+    @classmethod
+    def resolve_type(cls, obj: Any, *args: Any, **kwargs: Any) -> str:
+        return "Video" if obj.id == "1" else "Image"
+
+
+@strawberry.type
+class Video(Node):
+    ...
+
+
+@strawberry.type
+class Image(Node):
+    ...
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def node(self, id: strawberry.ID) -> Node:
+        return Node(id=id)
+
+
+schema = strawberry.Schema(query=Query, types=[Video, Image])
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2989](https://github.com/strawberry-graphql/strawberry/pull/2989/)
+
+
+0.197.0 - 2023-07-30
+--------------------
+
+This release removes support for Python 3.7 as its end of life
+was on 27 Jun 2023.
+
+This will allow us to reduce the number of CI jobs we have,
+and potentially use newer features of Python. ⚡
+
+Contributed by [Alexander](https://github.com/devkral) via [PR #2907](https://github.com/strawberry-graphql/strawberry/pull/2907/)
+
+
+0.196.2 - 2023-07-28
+--------------------
+
+This release fixes an issue when trying to use `Annotated[strawberry.auto, ...]`
+on python 3.10 or older, which got evident after the fix from 0.196.1.
+
+Previously we were throwing the type away, since it usually is `Any`, but python
+3.10 and older will validate that the first argument passed for `Annotated`
+is callable (3.11+ does not do that anymore), and `StrawberryAuto` is not.
+
+This changes it to keep that `Any`, which is also what someone would expect
+when resolving the annotation using our custom `eval_type` function.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2990](https://github.com/strawberry-graphql/strawberry/pull/2990/)
+
+
+0.196.1 - 2023-07-26
+--------------------
+
+This release fixes an issue where annotations resolution for auto and lazy fields
+using `Annotated` where not preserving the remaining arguments because of a
+typo in the arguments filtering.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2983](https://github.com/strawberry-graphql/strawberry/pull/2983/)
+
+
+0.196.0 - 2023-07-26
+--------------------
+
+This release adds support for union with a single member, they are
+useful for future proofing your schema in cases you know a field
+will be part of a union in future.
+
+```python
+import strawberry
+
+from typing import Annotated
+
+
+@strawberry.type
+class Audio:
+    duration: int
+
+
+@strawberry.type
+class Query:
+    # note: Python's Union type doesn't support single members,
+    # Union[Audio] is exactly the same as Audio, so we use
+    # use Annotated and strawberry.union to tell Strawberry this is
+    # a union with a single member
+    latest_media: Annotated[Audio, strawberry.union("MediaItem")]
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2982](https://github.com/strawberry-graphql/strawberry/pull/2982/)
+
+
 0.195.3 - 2023-07-22
 --------------------
 
