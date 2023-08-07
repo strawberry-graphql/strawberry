@@ -25,7 +25,6 @@ from typing_extensions import Annotated, Protocol, get_origin
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import (
-    ConflictingArgumentsError,
     MissingArgumentsAnnotationsError,
 )
 from strawberry.parent import StrawberryParent
@@ -221,20 +220,6 @@ class StrawberryResolver(Generic[T]):
         """Resolver arguments exposed in the GraphQL Schema."""
         parameters = self.signature.parameters.values()
         reserved_parameters = set(self.reserved_parameters.values())
-        populated_reserved_parameters = set(
-            key for key, value in self.reserved_parameters.items() if value is not None
-        )
-
-        if (
-            conflicting_arguments := (
-                populated_reserved_parameters
-                & {SELF_PARAMSPEC, ROOT_PARAMSPEC, PARENT_PARAMSPEC}
-            )
-        ) and len(conflicting_arguments) > 1:
-            raise ConflictingArgumentsError(
-                self,
-                [self.reserved_parameters[key].name for key in conflicting_arguments],
-            )
 
         missing_annotations: List[str] = []
         arguments: List[StrawberryArgument] = []
