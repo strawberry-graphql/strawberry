@@ -278,6 +278,7 @@ def type(
                     getattr(self, f.name)
                 )
                 for f in dataclasses.fields(self)
+                if getattr(self, f.name) is not None
             }
             instance_kwargs.update(kwargs)
             return model(**instance_kwargs)

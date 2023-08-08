@@ -1225,3 +1225,31 @@ def test_can_convert_optional_union_type_expression_fields_to_strawberry():
 
     assert test.optional_list == [1, 2, 3]
     assert test.optional_str is None
+
+
+def test_exclude_unset_parameter_when_convert_strawberry_type_to_pydantic_type():
+    class User(BaseModel):
+        id: int
+        name: str
+        surname: Optional[str]
+
+    @strawberry.experimental.pydantic.type(model=User, all_fields=True)
+    class UserType:
+        pass
+
+    user = User(id=1, name="leffe")
+    user_type = UserType(id=1, name="leffe")
+    user_type_pydantic = user_type.to_pydantic()
+
+    assert user.dict(exclude_unset=True) == user_type_pydantic.dict(exclude_unset=True)
+    assert user.json(exclude_unset=True) == user_type_pydantic.json(exclude_unset=True)
+
+    user_type_has_surname = UserType(id=1, name="leffe", surname="yoon")
+    user_type_has_surname_pydantic = user_type_has_surname.to_pydantic()
+
+    assert user.dict(exclude_unset=True) != user_type_has_surname_pydantic.dict(
+        exclude_unset=True
+    )
+    assert user.json(exclude_unset=True) != user_type_has_surname_pydantic.json(
+        exclude_unset=True
+    )
