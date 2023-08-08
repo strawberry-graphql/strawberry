@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.201.0 - 2023-08-08
+--------------------
+
+Fix import error in `strawberry.ext.mypy_plugin` for users who don't use pydantic.
+
+Contributed by [David Němec](https://github.com/davidnemec) via [PR #3018](https://github.com/strawberry-graphql/strawberry/pull/3018/)
+
+
 0.200.0 - 2023-08-07
 --------------------
 
