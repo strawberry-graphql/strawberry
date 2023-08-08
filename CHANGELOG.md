@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.202.0 - 2023-08-08
+--------------------
+
+This release updates Strawberry's codebase to use new features in Python 3.8.
+It also removes `backports.cached-property` from our dependencies, as we can
+now rely on the standard library's `functools.cached_property`.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2995](https://github.com/strawberry-graphql/strawberry/pull/2995/)
+
+
 0.201.1 - 2023-08-08
 --------------------
 
