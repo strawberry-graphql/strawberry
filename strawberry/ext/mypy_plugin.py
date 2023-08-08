@@ -52,7 +52,6 @@ from mypy.types import (
 )
 from mypy.typevars import fill_typevars
 from mypy.util import get_unique_redefinition_name
-from strawberry.experimental.pydantic._compat import IS_PYDANTIC_V1
 
 # Backwards compatible with the removal of `TypeVarDef` in mypy 0.920.
 try:
@@ -64,8 +63,11 @@ except ImportError:
 try:
     from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY
     from pydantic.mypy import PydanticModelField
+
+    from strawberry.experimental.pydantic._compat import IS_PYDANTIC_V1
 except ImportError:
     PYDANTIC_METADATA_KEY = ""
+    IS_PYDANTIC_V1 = False
 
 
 if TYPE_CHECKING:
