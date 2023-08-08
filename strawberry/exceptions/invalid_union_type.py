@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+from functools import cached_property
 from inspect import getframeinfo, stack
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Type
 
 from strawberry.exceptions.utils.source_finder import SourceFinder
-from strawberry.utils.cached_property import cached_property
 
 from .exception import StrawberryException
 

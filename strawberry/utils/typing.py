@@ -37,7 +37,7 @@ if not TYPE_CHECKING and ast_unparse is None:
     ast_unparse = astunparse.unparse
 
 
-@lru_cache()
+@lru_cache
 def get_generic_alias(type_: Type) -> Type:
     """Get the generic alias for a type.
 

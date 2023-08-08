@@ -6,10 +6,7 @@ from typing import Any, Callable, Optional, Tuple, Type, cast
 
 from .exception import StrawberryException, UnableToFindExceptionSource
 
-if sys.version_info >= (3, 8):
-    original_threading_exception_hook = threading.excepthook
-else:
-    original_threading_exception_hook = None
+original_threading_exception_hook = threading.excepthook
 
 
 ExceptionHandler = Callable[
@@ -83,13 +80,11 @@ def strawberry_threading_exception_handler(
 def reset_exception_handler() -> None:
     sys.excepthook = sys.__excepthook__
 
-    if sys.version_info >= (3, 8):
-        threading.excepthook = original_threading_exception_hook
+    threading.excepthook = original_threading_exception_hook
 
 
 def setup_exception_handler() -> None:
     if should_use_rich_exceptions():
         sys.excepthook = strawberry_exception_handler
 
-        if sys.version_info >= (3, 8):
-            threading.excepthook = strawberry_threading_exception_handler
+        threading.excepthook = strawberry_threading_exception_handler

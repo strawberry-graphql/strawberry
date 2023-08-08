@@ -3866,4 +3866,4 @@ starlite = ["starlite"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "496c086c3b1b253201352e45a09e5167756a57e26748ebdd506c5a82faae1fae"
+content-hash = "b53f0b2fb5069cec2f4a9a7d79d3f039cd1d693db63029f67ad06ef0a20b8b59"

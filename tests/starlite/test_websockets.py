@@ -1,5 +1,3 @@
-import sys
-
 import pytest
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
@@ -10,11 +8,6 @@ try:
     from tests.starlite.app import create_app
 except ModuleNotFoundError:
     pass
-
-
-pytestmark = pytest.mark.skipif(
-    sys.version_info < (3, 8), reason="requires python3.8 or higher"
-)
 
 
 def test_turning_off_graphql_ws():

@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
-import sys
 import time
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Type
@@ -168,10 +167,6 @@ async def test_connection_init_timeout_cancellation(
     )
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 8),
-    reason="Task name was introduced in 3.8 and we need it for this test",
-)
 async def test_close_twice(
     mocker: MockerFixture, request: Any, http_client_class: Type[HttpClient]
 ):

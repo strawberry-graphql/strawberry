@@ -229,10 +229,7 @@ class StrawberryLogger:
         if logger_kwargs.get("stack_info") is None:
             logger_kwargs["stack_info"] = True
 
-        # stacklevel was added in version 3.8
-        # https://docs.python.org/3/library/logging.html#logging.Logger.debug
-        if sys.version_info >= (3, 8):
-            logger_kwargs["stacklevel"] = 3
+        logger_kwargs["stacklevel"] = 3
 
         cls.logger.error(error, exc_info=error.original_error, **logger_kwargs)
 ```
