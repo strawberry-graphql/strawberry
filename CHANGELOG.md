@@ -1,6 +1,119 @@
 CHANGELOG
 =========
 
+0.201.1 - 2023-08-08
+--------------------
+
+Fix strawberry mypy plugin for pydantic v1
+
+Contributed by [tjeerddie](https://github.com/tjeerddie) via [PR #3019](https://github.com/strawberry-graphql/strawberry/pull/3019/)
+
+
+0.201.0 - 2023-08-08
+--------------------
+
+Fix import error in `strawberry.ext.mypy_plugin` for users who don't use pydantic.
+
+Contributed by [David Němec](https://github.com/davidnemec) via [PR #3018](https://github.com/strawberry-graphql/strawberry/pull/3018/)
+
+
+0.200.0 - 2023-08-07
+--------------------
+
+Adds initial support for pydantic V2.
+
+This is extremely experimental for wider initial testing.
+
+We do not encourage using this in production systems yet.
+
+Contributed by [James Chua](https://github.com/thejaminator) via [PR #2972](https://github.com/strawberry-graphql/strawberry/pull/2972/)
+
+
+0.199.3 - 2023-08-06
+--------------------
+
+This release fixes an issue on `relay.ListConnection` where async iterables that returns
+non async iterable objects after being sliced where producing errors.
+
+This should fix an issue with async strawberry-graphql-django when returning already
+prefetched QuerySets.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3014](https://github.com/strawberry-graphql/strawberry/pull/3014/)
+
+
+0.199.2 - 2023-08-03
+--------------------
+
+This releases improves how we handle Annotated and async types
+(used in subscriptions). Previously we weren't able to use
+unions with names inside subscriptions, now that's fixed 😊
+
+Example:
+
+```python
+@strawberry.type
+class A:
+    a: str
+
+
+@strawberry.type
+class B:
+    b: str
+
+
+@strawberry.type
+class Query:
+    x: str = "Hello"
+
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def example_with_union(self) -> AsyncGenerator[Union[A, B], None]:
+        yield A(a="Hi")
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3008](https://github.com/strawberry-graphql/strawberry/pull/3008/)
+
+
+0.199.1 - 2023-08-02
+--------------------
+
+This release fixes an issue in the `graphql-ws` implementation
+where sending a `null` payload would cause the connection
+to be closed.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3007](https://github.com/strawberry-graphql/strawberry/pull/3007/)
+
+
+0.199.0 - 2023-08-01
+--------------------
+
+This release changes how we handle generic type vars, bringing
+support to the new generic syntax in Python 3.12 (which will be out in October).
+
+This now works:
+
+```python
+@strawberry.type
+class Edge[T]:
+    cursor: strawberry.ID
+    node_field: T
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def example(self) -> Edge[int]:
+        return Edge(cursor=strawberry.ID("1"), node_field=1)
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2993](https://github.com/strawberry-graphql/strawberry/pull/2993/)
+
+
 0.198.0 - 2023-07-31
 --------------------
 

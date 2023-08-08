@@ -63,8 +63,11 @@ except ImportError:
 try:
     from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY
     from pydantic.mypy import PydanticModelField
+
+    from strawberry.experimental.pydantic._compat import IS_PYDANTIC_V1
 except ImportError:
     PYDANTIC_METADATA_KEY = ""
+    IS_PYDANTIC_V1 = False
 
 
 if TYPE_CHECKING:
@@ -409,10 +412,16 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
 
         pydantic_fields: Set[PydanticModelField] = set()
         try:
-            for data in model_type.type.metadata[PYDANTIC_METADATA_KEY][
-                "fields"
-            ].values():
-                field = PydanticModelField.deserialize(ctx.cls.info, data)
+            fields = model_type.type.metadata[PYDANTIC_METADATA_KEY]["fields"]
+            for data in fields.items():
+                if IS_PYDANTIC_V1:
+                    field = PydanticModelField.deserialize(
+                        ctx.cls.info, data[1]
+                    )  # type:ignore[call-arg]
+                else:
+                    field = PydanticModelField.deserialize(
+                        info=ctx.cls.info, data=data, api=ctx.api
+                    )
                 pydantic_fields.add(field)
         except KeyError:
             # this will happen if the user didn't add the pydantic plugin
@@ -440,21 +449,38 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
 
         # Add the default to_pydantic if undefined by the user
         if "to_pydantic" not in ctx.cls.info.names:
-            add_method(
-                ctx,
-                "to_pydantic",
-                args=[
-                    f.to_argument(
-                        # TODO: use_alias should depend on config?
-                        info=model_type.type,
-                        typed=True,
-                        force_optional=False,
-                        use_alias=True,
-                    )
-                    for f in missing_pydantic_fields
-                ],
-                return_type=model_type,
-            )
+            if IS_PYDANTIC_V1:
+                add_method(
+                    ctx,
+                    "to_pydantic",
+                    args=[
+                        f.to_argument(
+                            # TODO: use_alias should depend on config?
+                            info=model_type.type,  # type:ignore[call-arg]
+                            typed=True,
+                            force_optional=False,
+                            use_alias=True,
+                        )
+                        for f in missing_pydantic_fields
+                    ],
+                    return_type=model_type,
+                )
+            else:
+                add_method(
+                    ctx,
+                    "to_pydantic",
+                    args=[
+                        f.to_argument(
+                            # TODO: use_alias should depend on config?
+                            current_info=model_type.type,
+                            typed=True,
+                            force_optional=False,
+                            use_alias=True,
+                        )
+                        for f in missing_pydantic_fields
+                    ],
+                    return_type=model_type,
+                )
 
         # Add from_pydantic
         model_argument = Argument(

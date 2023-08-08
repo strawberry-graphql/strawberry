@@ -625,7 +625,8 @@ def test_both_output_and_input_type():
 
     class User(pydantic.BaseModel):
         name: str
-        work: Optional[Work]
+        # Note that pydantic v2 requires an explicit default of None for Optionals
+        work: Optional[Work] = None
 
     class Group(pydantic.BaseModel):
         users: List[User]

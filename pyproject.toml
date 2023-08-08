@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.198.0"
+version = "0.201.1"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -48,7 +48,7 @@ flask = {version = ">=1.1", optional = true}
 opentelemetry-api = {version = "<2", optional = true}
 opentelemetry-sdk = {version = "<2", optional = true}
 chalice = {version = "^1.22", optional = true}
-pydantic = {version = "<2", optional = true}
+pydantic = {version = ">1.6.1", optional = true}
 python-multipart = {version = ">=0.0.5,<0.0.7", optional = true}
 sanic = {version = ">=20.12.2", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
@@ -96,9 +96,9 @@ types-toml = "^0.10.8"
 types-typed-ast = "^1.5.8"
 types-ujson = "^5.6.0"
 # added this here manually because poetry doesn't seem to be able to handle it =(
-botocore = "1.31.14"
-mypy = "1.3.0"
-pytest-mypy-plugins = ">=1.10,<3.0"
+botocore = "1.31.18"
+mypy = "1.4.1"
+pytest-mypy-plugins = ">=1.10,<4.0"
 types-protobuf = "^4.23.0.1"
 
 [tool.poetry.group.integrations]
@@ -111,7 +111,7 @@ channels = "^3.0.5"
 Django = ">=3.2"
 fastapi = {version = ">=0.65.0", optional = false}
 flask = ">=1.1"
-pydantic = {version = "<2", optional = false}
+pydantic = {version = ">1.6.1", optional = false}
 pytest-aiohttp = "^1.0.3"
 pytest-django = {version = "^4.5"}
 pytest-flask = {version = "^1.2.0"}

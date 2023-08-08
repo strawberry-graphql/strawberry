@@ -4,7 +4,7 @@ import sys
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import ForwardRef, Generic, Optional, Tuple, Type, TypeVar, cast
+from typing import Any, ForwardRef, Generic, Optional, Tuple, Type, TypeVar, cast
 
 TypeName = TypeVar("TypeName")
 Module = TypeVar("Module")
@@ -38,7 +38,7 @@ class LazyType(Generic[TypeName, Module]):
 
         return cls(type_name, module, package)
 
-    def resolve_type(self) -> Type:
+    def resolve_type(self) -> Type[Any]:
         module = importlib.import_module(self.module, self.package)
         main_module = sys.modules.get("__main__", None)
         if main_module:

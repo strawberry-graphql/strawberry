@@ -23,7 +23,7 @@ urlpatterns = [
 Strawberry only provides a GraphQL view for Django, [Strawberry GraphQL Django](https://github.com/strawberry-graphql/strawberry-graphql-django) provides integration with the models.
 `import strawberry_django` should do the same as `import strawberry.django` if both libraries are installed.
 
-You'd also need to add `strawberry.django` to the `INSTALLED_APPS` of your
+You'd also need to add `strawberry_django` to the `INSTALLED_APPS` of your
 project, this is needed to provide the template for the GraphiQL interface.
 
 ## Options
@@ -161,7 +161,7 @@ urlpatterns = [
 ]
 ```
 
-You'd also need to add `strawberry.django` to the `INSTALLED_APPS` of your
+You'd also need to add `strawberry_django` to the `INSTALLED_APPS` of your
 project, this is needed to provide the template for the GraphiQL interface.
 
 ## Options

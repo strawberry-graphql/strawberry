@@ -163,11 +163,17 @@ class BaseGraphQLTransportWSHandler(ABC):
         if self.connection_init_timeout_task:
             self.connection_init_timeout_task.cancel()
 
-        if message.payload is not UNSET and not isinstance(message.payload, dict):
+        payload = (
+            message.payload
+            if message.payload is not None and message.payload is not UNSET
+            else {}
+        )
+
+        if not isinstance(payload, dict):
             await self.close(code=4400, reason="Invalid connection init payload")
             return
 
-        self.connection_params = message.payload
+        self.connection_params = payload
 
         if self.connection_init_received:
             reason = "Too many initialisation requests"

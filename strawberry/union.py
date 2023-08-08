@@ -133,7 +133,7 @@ class StrawberryUnion(StrawberryType):
         return any(map(_is_generic, self.types))
 
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+        self, type_var_map: Mapping[str, Union[StrawberryType, type]]
     ) -> StrawberryType:
         if not self.is_generic:
             return self
