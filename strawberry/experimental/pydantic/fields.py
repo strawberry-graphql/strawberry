@@ -26,13 +26,10 @@ try:
 except ImportError:
     import sys
 
-    # python < 3.9 does not have GenericAlias (list[int], tuple[str, ...] and so on)
+    # python < 3.10 does not have GenericAlias (list[int], tuple[str, ...] and so on)
     # we do this under a conditional to avoid a mypy :)
-    if sys.version_info < (3, 9):
-        TypingGenericAlias = ()
-    else:
-        raise
     if sys.version_info < (3, 10):
+        TypingGenericAlias = ()
         TypingUnionType = ()
     else:
         raise
