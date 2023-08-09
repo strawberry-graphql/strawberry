@@ -231,7 +231,7 @@ def get_object_definition(
     return definition
 
 
-def is_annotated_type(type_: object, annotated: Type[Annotated]) -> bool:
+def is_annotated_type(type_: object, annotated: Type) -> bool:
     if get_origin(type_) is Annotated:
         return any(isinstance(argument, annotated) for argument in get_args(type_))
 
