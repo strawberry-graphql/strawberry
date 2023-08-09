@@ -1,3 +1,5 @@
 Release type: patch
 
-Fix incorrect TypingUnionType import check of python version `< 3.9` to `< 3.10` in `experimental.pydantic.fields.py`
+TypingUnionType import error check is reraised because TypingGenericAlias is checked at the same time which is checked under 3.9 instead of under 3.10
+
+Fix by separating TypingUnionType and TypingGenericAlias imports in their own try-catch

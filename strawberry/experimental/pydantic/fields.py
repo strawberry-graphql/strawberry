@@ -22,15 +22,23 @@ from strawberry.types.types import StrawberryObjectDefinition
 
 try:
     from types import UnionType as TypingUnionType
+except ImportError:
+    import sys
+
+    if sys.version_info < (3, 10):
+        TypingUnionType = ()
+    else:
+        raise
+
+try:
     from typing import GenericAlias as TypingGenericAlias  # type: ignore
 except ImportError:
     import sys
 
-    # python < 3.10 does not have GenericAlias (list[int], tuple[str, ...] and so on)
+    # python < 3.9 does not have GenericAlias (list[int], tuple[str, ...] and so on)
     # we do this under a conditional to avoid a mypy :)
-    if sys.version_info < (3, 10):
+    if sys.version_info < (3, 9):
         TypingGenericAlias = ()
-        TypingUnionType = ()
     else:
         raise
 
