@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.202.1 - 2023-08-09
+--------------------
+
+TypingUnionType import error check is reraised because TypingGenericAlias is checked at the same time which is checked under 3.9 instead of under 3.10
+
+Fix by separating TypingUnionType and TypingGenericAlias imports in their own try-catch
+
+Contributed by [tjeerddie](https://github.com/tjeerddie) via [PR #3023](https://github.com/strawberry-graphql/strawberry/pull/3023/)
+
+
 0.202.0 - 2023-08-08
 --------------------
 
