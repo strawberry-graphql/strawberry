@@ -22,6 +22,15 @@ from strawberry.types.types import StrawberryObjectDefinition
 
 try:
     from types import UnionType as TypingUnionType
+except ImportError:
+    import sys
+
+    if sys.version_info < (3, 10):
+        TypingUnionType = ()
+    else:
+        raise
+
+try:
     from typing import GenericAlias as TypingGenericAlias  # type: ignore
 except ImportError:
     import sys
@@ -30,10 +39,6 @@ except ImportError:
     # we do this under a conditional to avoid a mypy :)
     if sys.version_info < (3, 9):
         TypingGenericAlias = ()
-    else:
-        raise
-    if sys.version_info < (3, 10):
-        TypingUnionType = ()
     else:
         raise
 
