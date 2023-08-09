@@ -113,6 +113,35 @@
 #   Auto Complete:  Ctrl-Space (or just start typing)
 #
 `;
+      const parameters = {};
+
+      for (const entry of window.location.search.slice(1).split('&')) {
+        const eq = entry.indexOf('=');
+        if (eq >= 0) {
+          parameters[decodeURIComponent(entry.slice(0, eq))] = decodeURIComponent(
+            entry.slice(eq + 1),
+          );
+        }
+      }
+
+      function updateURL(data) {
+
+        Object.assign(parameters, data);
+
+        const newSearch =
+          '?' +
+          Object.keys(parameters)
+            .filter(function (key) {
+              return Boolean(parameters[key]);
+            })
+            .map(function (key) {
+              return (
+                encodeURIComponent(key) + '=' + encodeURIComponent(parameters[key])
+              );
+            })
+            .join('&');
+        history.replaceState(null, null, newSearch);
+      }
 
       const fetchURL = window.location.href;
 
@@ -142,19 +171,44 @@
         subscriptionUrl,
       });
 
+
       function GraphiQLWithExplorer() {
-        const [query, setQuery] = React.useState(EXAMPLE_QUERY);
+        const [query, setQuery] = React.useState(parameters.q || EXAMPLE_QUERY);
+        const [variables, setVariables] = React.useState(parameters.variables);
+        const [headers, setHeaders] = React.useState(parameters.headers);
+
+        function onEditQuery(query) {
+          setQuery(query)
+          updateURL({ q: query });
+        }
+
+        function onEditVariables(variables) {
+          updateURL({ variables });
+        }
+
+        function onEditHeaders(headers) {
+          updateURL({ headers });
+        }
+
         const explorerPlugin = GraphiQLPluginExplorer.useExplorerPlugin({
           query: query,
-          onEdit: setQuery,
+          onEdit: onEditQuery,
         });
+
         return React.createElement(GraphiQL, {
           fetcher: fetcher,
           defaultEditorToolsVisibility: true,
+          headers: headers,
           plugins: [explorerPlugin],
           query: query,
-          onEditQuery: setQuery,
+          variables: variables,
+          onEditQuery: onEditQuery,
+          onEditHeaders: onEditHeaders,
+          onEditVariables: onEditVariables,
           inputValueDeprecation: true,
+          defaultEditorToolsVisibility: true,
+          isHeadersEditorEnabled: true,
+          shouldPersistHeaders: true,
         });
       }
 
