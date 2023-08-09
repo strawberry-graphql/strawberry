@@ -220,3 +220,15 @@ def test_literal_types():
 
     assert field.python_name == "field"
     assert field.type == Literal["field"]
+
+
+def test_typing_union_type_import():
+    from strawberry.experimental.pydantic.fields import TypingUnionType
+
+    assert TypingUnionType
+
+
+def test_typing_generic_alias_import():
+    from strawberry.experimental.pydantic.fields import TypingGenericAlias
+
+    assert TypingGenericAlias
