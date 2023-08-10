@@ -21,7 +21,7 @@ def from_base64(value: str) -> Tuple[str, str]:
 
     """
     try:
-        res = base64.b64decode(value.encode()).decode().split(":")
+        res = base64.b64decode(value.encode()).decode().split(":", 1)
     except Exception as e:
         raise ValueError(str(e)) from e
 
