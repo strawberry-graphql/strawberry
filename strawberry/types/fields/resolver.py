@@ -30,7 +30,6 @@ from strawberry.exceptions import (
 from strawberry.parent import StrawberryParent
 from strawberry.type import StrawberryType, has_object_definition
 from strawberry.types.info import Info
-from strawberry.utils.cached_property import cached_property
 from strawberry.utils.typing import type_has_annotation
 
 if TYPE_CHECKING:

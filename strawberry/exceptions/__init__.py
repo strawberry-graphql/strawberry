@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING, Optional, Set, Union
 
 from graphql import GraphQLError
 
-from strawberry.utils.cached_property import cached_property
-
 from .duplicated_type_name import DuplicatedTypeName
 from .exception import StrawberryException, UnableToFindExceptionSource
 from .handler import setup_exception_handler
