@@ -593,12 +593,12 @@ def test_parent_argument(resolver):
     assert result.data["user"]["name"] == "User 🍓"
 
 
-def multiple_parents(user: Parent[UserLiteral], user2: Parent[UserLiteral]) -> str:
-    return f"User {user.id}"
+def multiple_parents(user: Parent[Any], user2: Parent[Any]) -> str:
+    raise AssertionError("Unreachable code.")
 
 
 def multiple_infos(root, info1: Info, info2: Info) -> str:
-    return f"User {root.id}"
+    raise AssertionError("Unreachable code.")
 
 
 @pytest.mark.parametrize(
@@ -610,17 +610,8 @@ def multiple_infos(root, info1: Info, info2: Info) -> str:
 )
 def test_multiple_conflicting_reserved_arguments(resolver):
     @strawberry.type
-    class User:
-        id: str
-
-        name: str = strawberry.field(resolver=resolver)
-
-    @strawberry.type
     class Query:
-        @strawberry.field
-        @staticmethod
-        def user(self, user_id: str) -> User:
-            return UserLiteral(user_id)
+        name: str = strawberry.field(resolver=resolver)
 
     # Would be awesome to give a more helpful error here, but c'est la vie.
     with pytest.raises(TypeError):

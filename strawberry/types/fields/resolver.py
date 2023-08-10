@@ -28,8 +28,10 @@ from strawberry.exceptions import (
     MissingArgumentsAnnotationsError,
 )
 from strawberry.parent import StrawberryParent
-from strawberry.type import StrawberryType, has_object_definition, is_annotated_type
+from strawberry.type import StrawberryType, has_object_definition
 from strawberry.types.info import Info
+from strawberry.utils.cached_property import cached_property
+from strawberry.utils.typing import type_has_annotation
 
 if TYPE_CHECKING:
     import builtins
@@ -140,7 +142,7 @@ class ReservedType(NamedTuple):
         origin = cast(type, get_origin(other)) or other
         if origin is Annotated:
             # Handle annotated arguments such as Private[str] and DirectiveValue[str]
-            return is_annotated_type(other, self.type)
+            return type_has_annotation(other, self.type)
         else:
             # Handle both concrete and generic types (i.e Info, and Info[Any, Any])
             return (

@@ -13,7 +13,7 @@ from typing import (
     Union,
     overload,
 )
-from typing_extensions import Annotated, Literal, Protocol, Self, get_args, get_origin
+from typing_extensions import Literal, Protocol, Self
 
 from strawberry.utils.typing import is_concrete_generic
 
@@ -229,10 +229,3 @@ def get_object_definition(
     if strict and definition is None:
         raise TypeError(f"{obj!r} does not have a StrawberryObjectDefinition")
     return definition
-
-
-def is_annotated_type(type_: object, annotated: Type) -> bool:
-    if get_origin(type_) is Annotated:
-        return any(isinstance(argument, annotated) for argument in get_args(type_))
-
-    return False
