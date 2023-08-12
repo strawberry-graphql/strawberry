@@ -61,14 +61,14 @@
     <link
       crossorigin
       rel="stylesheet"
-      href="https://unpkg.com/graphiql@2.4.7/graphiql.min.css"
-      integrity="sha384-486GcFFVcFN0yj7LIp/vn7DVsuf2CTytJlNuqjHg0zF2g72zra2gWCNV2HBxJgC6"
+      href="https://unpkg.com/graphiql@3.0.5/graphiql.min.css"
+      integrity="sha384-yz3/sqpuplkA7msMo0FE4ekg0xdwdvZ8JX9MVZREsxipqjU4h8IRfmAMRcb1QpUy"
     />
 
     <link
       crossorigin
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@graphiql/plugin-explorer@0.1.15/dist/style.css"
+      href="https://unpkg.com/@graphiql/plugin-explorer@0.3.4/dist/style.css"
       integrity="sha384-kOrlMT58B3t0hTVIPFqWyg1oL4DKvxHNcC1X2qugv4fXd9ehKULhhjDLvBi3HoEK"
     />
   </head>
@@ -77,13 +77,13 @@
     <div id="graphiql" class="graphiql-container">Loading...</div>
     <script
       crossorigin
-      src="https://unpkg.com/graphiql@2.4.7/graphiql.min.js"
-      integrity="sha384-8da92RVD56z/pbOOnJ4Ud5qlhqEzDtJI6qVZjN88SCbOatpo4xVDeP3T0nmfTf+9"
+      src="https://unpkg.com/graphiql@3.0.5/graphiql.min.js"
+      integrity="sha384-M+Ed4RZlnWvJ8keiTju1xlV6xM5tB9tLTfoSdWPDVrK4aOOpavtruK9pz/dfuCZ/"
     ></script>
     <script
       crossorigin
-      src="https://unpkg.com/@graphiql/plugin-explorer@0.1.15/dist/graphiql-plugin-explorer.umd.js"
-      integrity="sha384-730PslzMVMN3EMJOKuh/WVRaRwhaBbWE43IOXyR+DMDlQiYx0BjiPmoPZ+6qEa0C"
+      src="https://unpkg.com/@graphiql/plugin-explorer@0.3.4/dist/index.umd.js"
+      integrity="sha384-2oonKe47vfHIZnmB6ZZ10vl7T0Y+qrHQF2cmNTaFDuPshpKqpUMGMc9jgj9MLDZ9"
     ></script>
     <script>
       const EXAMPLE_QUERY = `# Welcome to GraphiQL 🍓
@@ -142,24 +142,15 @@
         subscriptionUrl,
       });
 
-      function GraphiQLWithExplorer() {
-        const [query, setQuery] = React.useState(EXAMPLE_QUERY);
-        const explorerPlugin = GraphiQLPluginExplorer.useExplorerPlugin({
-          query: query,
-          onEdit: setQuery,
-        });
-        return React.createElement(GraphiQL, {
+      const explorerPlugin = GraphiQLPluginExplorer.explorerPlugin();
+
+      ReactDOM.render(
+        React.createElement(GraphiQL, {
           fetcher: fetcher,
           defaultEditorToolsVisibility: true,
           plugins: [explorerPlugin],
-          query: query,
-          onEditQuery: setQuery,
           inputValueDeprecation: true,
-        });
-      }
-
-      ReactDOM.render(
-        React.createElement(GraphiQLWithExplorer),
+        }),
         document.getElementById("graphiql")
       );
     </script>
