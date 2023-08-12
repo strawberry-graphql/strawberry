@@ -25,3 +25,9 @@ In order to store the exported schema in a file, pipes or redirection can be uti
 ```bash
 strawberry export-schema package.module:schema > schema.graphql
 ```
+
+Alternatively, the `--output` option can be used:
+
+```bash
+strawberry export-schema package.module:schema --output schema.graphql
+```
