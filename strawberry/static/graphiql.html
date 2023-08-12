@@ -43,13 +43,13 @@
 
     <script
       crossorigin
-      src="https://unpkg.com/react@17.0.2/umd/react.development.js"
-      integrity="sha384-xQwCoNcK/7P3Lpv50IZSEbJdpqbToWEODAUyI/RECaRXmOE2apWt7htari8kvKa/"
+      src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"
+      integrity="sha384-tMH8h3BGESGckSAVGZ82T9n90ztNXxvdwvdM6UoR56cYcf+0iGXBliJ29D+wZ/x8"
     ></script>
     <script
       crossorigin
-      src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.development.js"
-      integrity="sha384-E9IgxDsnjKgh0777N3lXen7NwXeTsOpLLJhI01SW7idG046SRqJpsW2rJwsOYk0L"
+      src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"
+      integrity="sha384-bm7MnzvK++ykSwVJ2tynSE5TRdN+xL418osEVF2DE/L/gfWHj91J2Sphe582B1Bh"
     ></script>
 
     <script
@@ -144,14 +144,15 @@
 
       const explorerPlugin = GraphiQLPluginExplorer.explorerPlugin();
 
-      ReactDOM.render(
+      const root = ReactDOM.createRoot(document.getElementById("graphiql"));
+
+      root.render(
         React.createElement(GraphiQL, {
           fetcher: fetcher,
           defaultEditorToolsVisibility: true,
           plugins: [explorerPlugin],
           inputValueDeprecation: true,
         }),
-        document.getElementById("graphiql")
       );
     </script>
   </body>
