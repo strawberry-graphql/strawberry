@@ -1,4 +1,5 @@
 import typer
+from pathlib import Path
 
 from strawberry.cli.app import app
 from strawberry.cli.utils import load_schema
@@ -18,7 +19,7 @@ def export_schema(
             "Works the same as `--app-dir` in uvicorn."
         ),
     ),
-    output: str = typer.Option(
+    output: Path = typer.Option(
         None,
         "--output",
         help="File to save the exported schema. If not provided, prints to console.",
@@ -26,11 +27,11 @@ def export_schema(
 ) -> None:
     schema_symbol = load_schema(schema, app_dir)
 
-    schema_text = print_schema(schema_symbol)  # noqa: T201
+    schema_text = print_schema(schema_symbol)
 
     if output:
         with open(output, "w") as file:
             file.write(schema_text)
         typer.echo(f"Schema exported to {output}")
     else:
-        print(schema_text)
+        print(schema_text) # noqa: T201
