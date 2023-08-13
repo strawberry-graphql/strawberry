@@ -1,5 +1,6 @@
-import typer
 from pathlib import Path
+
+import typer
 
 from strawberry.cli.app import app
 from strawberry.cli.utils import load_schema
@@ -34,4 +35,4 @@ def export_schema(
             file.write(schema_text)
         typer.echo(f"Schema exported to {output}")
     else:
-        print(schema_text) # noqa: T201
+        print(schema_text)  # noqa: T201
