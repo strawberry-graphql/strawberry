@@ -30,7 +30,7 @@ def export_schema(
     schema_text = print_schema(schema_symbol)
 
     if output:
-        with open(output, "w") as file:
+        with Path.open(output, "w") as file:
             file.write(schema_text)
         typer.echo(f"Schema exported to {output}")
     else:
