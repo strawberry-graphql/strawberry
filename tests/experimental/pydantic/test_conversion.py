@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Any, Dict, List, NewType, Optional, TypeVar, Union
 
 import pytest
-from pydantic import BaseModel, ConstrainedList, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 import strawberry
 from strawberry.experimental.pydantic._compat import (
@@ -21,6 +21,7 @@ from strawberry.experimental.pydantic.exceptions import (
 from strawberry.experimental.pydantic.utils import get_default_factory_for_field
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import StrawberryObjectDefinition
+from tests.experimental.pydantic.utils import needs_pydantic_v1
 
 if IS_PYDANTIC_V2:
     pass
@@ -1227,7 +1228,10 @@ def test_can_convert_optional_union_type_expression_fields_to_strawberry():
     assert test.optional_str is None
 
 
+@needs_pydantic_v1
 def test_can_convert_pydantic_type_to_strawberry_with_constrained_list():
+    from pydantic import ConstrainedList
+
     class WorkModel(BaseModel):
         name: str
 
