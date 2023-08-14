@@ -1229,6 +1229,10 @@ def test_can_convert_optional_union_type_expression_fields_to_strawberry():
 
 
 @needs_pydantic_v1
+@pytest.mark.skipif(
+    sys.version_info < (3, 9),
+    reason="ConstrainedList with another model does not work with 3.8",
+)
 def test_can_convert_pydantic_type_to_strawberry_with_constrained_list():
     from pydantic import ConstrainedList
 
@@ -1265,6 +1269,10 @@ class SpecialList(List[SI]):
     pass
 
 
+@needs_pydantic_v1
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="SpecialList does not work with 3.8"
+)
 def test_can_convert_pydantic_type_to_strawberry_with_specialized_list():
     class WorkModel(BaseModel):
         name: str
