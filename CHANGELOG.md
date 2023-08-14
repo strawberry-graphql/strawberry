@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.203.3 - 2023-08-14
+--------------------
+
+Mark pydantic constrained list test with need_pydantic_v1 since it is removed in pydantic V2
+
+Contributed by [tjeerddie](https://github.com/tjeerddie) via [PR #3034](https://github.com/strawberry-graphql/strawberry/pull/3034/)
+
+
 0.203.2 - 2023-08-14
 --------------------
 
