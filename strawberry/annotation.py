@@ -141,6 +141,8 @@ class StrawberryAnnotation:
 
         if self._is_lazy_type(evaled_type):
             return evaled_type
+        if self._is_list(evaled_type):
+            return self.create_list(evaled_type)
 
         if self._is_generic(evaled_type):
             if any(is_type_var(type_) for type_ in get_args(evaled_type)):
@@ -151,8 +153,6 @@ class StrawberryAnnotation:
         # a StrawberryType
         if self._is_enum(evaled_type):
             return self.create_enum(evaled_type)
-        if self._is_list(evaled_type):
-            return self.create_list(evaled_type)
         elif self._is_optional(evaled_type, args):
             return self.create_optional(evaled_type)
         elif self._is_union(evaled_type, args):
@@ -298,8 +298,14 @@ class StrawberryAnnotation:
         """Returns True if annotation is a List"""
 
         annotation_origin = get_origin(annotation)
+        annotation_mro = getattr(annotation, "__mro__", [])
+        is_list = any(x is list for x in annotation_mro)
 
-        return (annotation_origin in (list, tuple)) or annotation_origin is abc.Sequence
+        return (
+            (annotation_origin in (list, tuple))
+            or annotation_origin is abc.Sequence
+            or is_list
+        )
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:
