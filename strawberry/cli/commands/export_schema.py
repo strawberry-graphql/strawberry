@@ -23,6 +23,7 @@ def export_schema(
     output: Path = typer.Option(
         None,
         "--output",
+        "-o",
         help="File to save the exported schema. If not provided, prints to console.",
     ),
 ) -> None:
@@ -31,8 +32,7 @@ def export_schema(
     schema_text = print_schema(schema_symbol)
 
     if output:
-        with Path.open(output, "w") as file:
-            file.write(schema_text)
+        Path(output).write_text(schema_text)
         typer.echo(f"Schema exported to {output}")
     else:
         print(schema_text)  # noqa: T201
