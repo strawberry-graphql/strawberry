@@ -1,10 +1,13 @@
+import sys
 import textwrap
 from enum import Enum
 from typing import List, Optional, Union
 
 import pydantic
+import pytest
 
 import strawberry
+from tests.experimental.pydantic.utils import needs_pydantic_v1
 
 
 def test_basic_type_field_list():
@@ -528,6 +531,11 @@ def test_basic_type_with_optional_and_default():
     assert result.data["user"]["password"] is None
 
 
+@needs_pydantic_v1
+@pytest.mark.skipif(
+    sys.version_info < (3, 9),
+    reason="ConstrainedList with another model does not work with 3.8",
+)
 def test_basic_type_with_constrained_list():
     class FriendList(pydantic.ConstrainedList):
         min_items = 1
