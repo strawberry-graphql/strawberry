@@ -3,7 +3,7 @@ import dataclasses
 import re
 import sys
 from enum import Enum
-from typing import Any, Dict, List, NewType, Optional, Union
+from typing import Any, Dict, List, NewType, Optional, TypeVar, Union
 
 import pytest
 from pydantic import BaseModel, Field, ValidationError
@@ -21,6 +21,7 @@ from strawberry.experimental.pydantic.exceptions import (
 from strawberry.experimental.pydantic.utils import get_default_factory_for_field
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import StrawberryObjectDefinition
+from tests.experimental.pydantic.utils import needs_pydantic_v1
 
 if IS_PYDANTIC_V2:
     pass
@@ -1225,3 +1226,75 @@ def test_can_convert_optional_union_type_expression_fields_to_strawberry():
 
     assert test.optional_list == [1, 2, 3]
     assert test.optional_str is None
+
+
+@needs_pydantic_v1
+@pytest.mark.skipif(
+    sys.version_info < (3, 9),
+    reason="ConstrainedList with another model does not work with 3.8",
+)
+def test_can_convert_pydantic_type_to_strawberry_with_constrained_list():
+    from pydantic import ConstrainedList
+
+    class WorkModel(BaseModel):
+        name: str
+
+    class workList(ConstrainedList):
+        min_items = 1
+
+    class UserModel(BaseModel):
+        work: workList[WorkModel]
+
+    @strawberry.experimental.pydantic.type(WorkModel)
+    class Work:
+        name: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(UserModel)
+    class User:
+        work: strawberry.auto
+
+    origin_user = UserModel(
+        work=[WorkModel(name="developer"), WorkModel(name="tester")]
+    )
+
+    user = User.from_pydantic(origin_user)
+
+    assert user == User(work=[Work(name="developer"), Work(name="tester")])
+
+
+SI = TypeVar("SI", covariant=True)  # pragma: no mutate
+
+
+class SpecialList(List[SI]):
+    pass
+
+
+@needs_pydantic_v1
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="SpecialList does not work with 3.8"
+)
+def test_can_convert_pydantic_type_to_strawberry_with_specialized_list():
+    class WorkModel(BaseModel):
+        name: str
+
+    class workList(SpecialList[SI]):
+        min_items = 1
+
+    class UserModel(BaseModel):
+        work: workList[WorkModel]
+
+    @strawberry.experimental.pydantic.type(WorkModel)
+    class Work:
+        name: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(UserModel)
+    class User:
+        work: strawberry.auto
+
+    origin_user = UserModel(
+        work=[WorkModel(name="developer"), WorkModel(name="tester")]
+    )
+
+    user = User.from_pydantic(origin_user)
+
+    assert user == User(work=[Work(name="developer"), Work(name="tester")])

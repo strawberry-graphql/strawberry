@@ -1,6 +1,55 @@
 CHANGELOG
 =========
 
+0.203.3 - 2023-08-14
+--------------------
+
+Mark pydantic constrained list test with need_pydantic_v1 since it is removed in pydantic V2
+
+Contributed by [tjeerddie](https://github.com/tjeerddie) via [PR #3034](https://github.com/strawberry-graphql/strawberry/pull/3034/)
+
+
+0.203.2 - 2023-08-14
+--------------------
+
+Enhancements:
+- Improved pydantic conversion compatibility with specialized list classes.
+  - Modified `StrawberryAnnotation._is_list` to check if the `annotation` extends from the `list` type, enabling it to be considered a list.
+  - in `StrawberryAnnotation` Moved the `_is_list` check before the `_is_generic` check in `resolve` to avoid `unsupported` error in `_is_generic` before it checked `_is_list`.
+
+This enhancement enables the usage of constrained lists as class types and allows the creation of specialized lists. The following example demonstrates this feature:
+
+```python
+import strawberry
+from pydantic import BaseModel, ConstrainedList
+
+
+class FriendList(ConstrainedList):
+    min_items = 1
+
+
+class UserModel(BaseModel):
+    age: int
+    friend_names: FriendList[str]
+
+
+@strawberry.experimental.pydantic.type(UserModel)
+class User:
+    age: strawberry.auto
+    friend_names: strawberry.auto
+```
+
+Contributed by [tjeerddie](https://github.com/tjeerddie) via [PR #2909](https://github.com/strawberry-graphql/strawberry/pull/2909/)
+
+
+0.203.1 - 2023-08-12
+--------------------
+
+This release updates the built-in GraphiQL to the current latest version (3.0.5), it also updates React to the current latest version (18.2.0) and uses the production distribution instead of development to reduce bundle size.
+
+Contributed by [Kien Dang](https://github.com/kiendang) via [PR #3031](https://github.com/strawberry-graphql/strawberry/pull/3031/)
+
+
 0.203.0 - 2023-08-10
 --------------------
 
