@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.204.0 - 2023-08-15
+--------------------
+
+Adds a new flag to `export-schema` command, `--output`, which allows the user to specify the output file. If unset (current behavior), the command will continue to print to stdout.
+
+Contributed by [Chris Hua](https://github.com/stillmatic) via [PR #3033](https://github.com/strawberry-graphql/strawberry/pull/3033/)
+
+
 0.203.3 - 2023-08-14
 --------------------
 
