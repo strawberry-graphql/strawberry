@@ -10,6 +10,7 @@ from strawberry.codegen.types import (
     GraphQLEnum,
     GraphQLEnumValue,
     GraphQLList,
+    GraphQLNullValue,
     GraphQLObjectType,
     GraphQLOptional,
     GraphQLScalar,
@@ -141,6 +142,8 @@ class PythonPlugin(QueryCodegenPlugin):
                     "GraphQLEnumValue must have a type for python code gen. {argval}"
                 )
             return f"{argval.enum_type}.{argval.name}"
+        if isinstance(argval, GraphQLNullValue):
+            return "None"
         if not hasattr(argval, "value"):
             raise TypeError(f"Unrecognized values type: {argval}")
         return repr(argval.value)
