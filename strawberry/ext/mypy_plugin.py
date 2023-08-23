@@ -600,6 +600,3 @@ def plugin(version: str) -> typing.Type[StrawberryPlugin]:
         )
 
     return StrawberryPlugin
-
-
-# test
