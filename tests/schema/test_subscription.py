@@ -159,8 +159,7 @@ async def test_subscription_with_unions():
 
     query = "subscription { exampleWithUnion { ... on A { a } } }"
 
-    async for ok, result in schema.subscribe(query):
-        assert ok
+    async for result in schema.subscribe(query):
         assert not result.errors
         assert result.data["exampleWithUnion"]["a"] == "Hi"
 
@@ -197,8 +196,7 @@ async def test_subscription_with_unions_and_annotated():
 
     query = "subscription { exampleWithAnnotatedUnion { ... on C { c } } }"
 
-    async for ok, result in schema.subscribe(query):
-        assert ok
+    async for result in schema.subscribe(query):
         assert not result.errors
         assert result.data["exampleWithAnnotatedUnion"]["c"] == "Hi"
 
@@ -223,7 +221,6 @@ async def test_subscription_with_annotated():
 
     query = "subscription { example }"
 
-    async for ok, result in schema.subscribe(query):
-        assert ok
+    async for result in schema.subscribe(query):
         assert not result.errors
         assert result.data["example"] == "Hi"
