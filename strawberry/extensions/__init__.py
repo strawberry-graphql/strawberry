@@ -8,6 +8,7 @@ from .mask_errors import MaskErrors
 from .max_aliases import MaxAliasesLimiter
 from .max_tokens import MaxTokensLimiter
 from .parser_cache import ParserCache
+from .partial_results import PartialResultsExtension
 from .query_depth_limiter import IgnoreContext, QueryDepthLimiter
 from .validation_cache import ValidationCache
 
@@ -34,6 +35,7 @@ __all__ = [
     "AddValidationRules",
     "DisableValidation",
     "ParserCache",
+    "PartialResultsExtension",
     "QueryDepthLimiter",
     "IgnoreContext",
     "ValidationCache",
