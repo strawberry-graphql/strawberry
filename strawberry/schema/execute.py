@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from asyncio import ensure_future
-from inspect import isawaitable
+from inspect import isawaitable, isclass
 from typing import (
     TYPE_CHECKING,
     Awaitable,
@@ -17,7 +17,7 @@ from typing import (
     cast,
 )
 
-from graphql import GraphQLError, parse
+from graphql import GraphQLError, located_error, parse
 from graphql import execute as original_execute
 from graphql.validation import validate
 
@@ -79,6 +79,22 @@ def _run_validation(execution_context: ExecutionContext) -> None:
         )
 
 
+def _get_partial_errors(
+    execution_context: ExecutionContext,
+) -> list[GraphQLError]:
+    # pull any partial errors off the context
+    partial_errors = getattr(execution_context.context, "partial_errors", None)
+    if not partial_errors or not isinstance(partial_errors, list):
+        # if not the type we expect or can act upon
+        return None
+
+    # map each error to a `GraphQLError` if not one already
+    return [
+        error if isinstance(error, GraphQLError) else located_error(error)
+        for error in partial_errors
+    ]
+
+
 async def execute(
     schema: GraphQLSchema,
     *,
@@ -127,6 +143,12 @@ async def execute(
 
             async with extensions_runner.executing():
                 if not execution_context.result:
+                    if execution_context.context and isclass(execution_context.context):
+                        # Initialize a list of `Exceptions` on the context
+                        # Clients can add errors to this list but still return data, in
+                        # order to support partial results that contain both data and errors
+                        execution_context.context.partial_errors: list[Exception] = []
+
                     result = original_execute(
                         schema,
                         execution_context.graphql_document,
@@ -143,6 +165,15 @@ async def execute(
 
                     result = cast("GraphQLExecutionResult", result)
                     execution_context.result = result
+
+                    partial_errors = _get_partial_errors(execution_context)
+                    if partial_errors:
+                        if not result.errors:
+                            result.errors = []
+                        # Add any partial errors manually added
+                        # to the list of errors automatically added
+                        result.errors.extend(partial_errors)
+
                     # Also set errors on the execution_context so that it's easier
                     # to access in extensions
                     if result.errors:
