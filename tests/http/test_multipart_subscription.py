@@ -1,5 +1,3 @@
-
-
 from .clients.base import HttpClient
 
 # TODO: do multipart subscriptions work on both GET and POST?
