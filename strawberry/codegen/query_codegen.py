@@ -678,12 +678,29 @@ class QueryCodegen:
     ) -> GraphQLField:
         assert selection.selection_set is not None
 
+        parent_type_name = parent_type.name
+
+        # Check if the parent type is generic.
+        # This seems to be tracked by `strawberry` in the `type_var_map`
+        # If the type is generic, then the strawberry generated schema
+        # naming convention is <GenericType,...><ClassName>
+        # The implementation here assumes that the `type_var_map` is ordered,
+        # but insertion order is maintained in python3.6+ (for CPython) and
+        # guaranteed for all python implementations in python3.7+, so that
+        # should be pretty safe.
+        if parent_type.type_var_map:
+            parent_type_name = (
+                "".join(c.__name__ for c in parent_type.type_var_map.values())
+                + parent_type.name
+            )
+
         selected_field = self.schema.get_field_for_type(
-            selection.name.value, parent_type.name
+            selection.name.value, parent_type_name
         )
+
         assert (
             selected_field
-        ), f"Couldn't find {parent_type.name}.{selection.name.value}"
+        ), f"Couldn't find {parent_type_name}.{selection.name.value}"
 
         selected_field_type, wrapper = self._unwrap_type(selected_field.type)
         name = capitalize_first(to_camel_case(selection.name.value))
