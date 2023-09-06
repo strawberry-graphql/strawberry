@@ -690,7 +690,10 @@ class QueryCodegen:
         # should be pretty safe.
         if parent_type.type_var_map:
             parent_type_name = (
-                "".join(c.__name__ for c in parent_type.type_var_map.values())
+                "".join(
+                    c.__name__  # type: ignore[union-attr]
+                    for c in parent_type.type_var_map.values()
+                )
                 + parent_type.name
             )
 
