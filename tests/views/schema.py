@@ -151,7 +151,7 @@ class Mutation:
 @strawberry.type
 class Subscription:
     @strawberry.subscription
-    async def echo(self, message: str, delay: float = 0) -> AsyncGenerator[str, None]:
+    async def echo2(self, message: str, delay: float = 0) -> AsyncGenerator[str, None]:
         await asyncio.sleep(delay)
         yield message
 

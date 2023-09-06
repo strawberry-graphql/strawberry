@@ -112,6 +112,14 @@ class AsyncBaseHTTPView(
 
         assert self.schema
 
+        return await self.schema.subscribe(
+            request_data.query,
+            root_value=root_value,
+            variable_values=request_data.variables,
+            context_value=context,
+            operation_name=request_data.operation_name,
+        )
+
         return await self.schema.execute(
             request_data.query,
             root_value=root_value,
@@ -185,9 +193,17 @@ class AsyncBaseHTTPView(
 
         response_data = await self.process_result(request=request, result=result)
 
+        # only if is a multipart subscription
+        return self.create_multipart_response(response_data, sub_response)
+
         return self.create_response(
             response_data=response_data, sub_response=sub_response
         )
+
+    async def parse_multipart_subscriptions(
+        self, request: AsyncHTTPRequestAdapter
+    ) -> Dict[str, str]:
+        return self.parse_json(await request.get_body())
 
     async def parse_http_body(
         self, request: AsyncHTTPRequestAdapter
@@ -198,6 +214,9 @@ class AsyncBaseHTTPView(
             data = self.parse_json(await request.get_body())
         elif content_type.startswith("multipart/form-data"):
             data = await self.parse_multipart(request)
+        elif content_type.startswith("multipart/mixed"):
+            # TODO: do a check that checks if this is a multipart subscription
+            data = await self.parse_multipart_subscriptions(request)
         elif request.method == "GET":
             data = self.parse_query_params(request.query_params)
         else:
@@ -212,4 +231,9 @@ class AsyncBaseHTTPView(
     async def process_result(
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
+        # check if result is iterable
+        if hasattr(result, "__aiter__"):
+            return [await self.process_result(request, value) async for value in result]
+
+        breakpoint()
         return process_result(result)
