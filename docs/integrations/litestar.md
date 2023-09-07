@@ -1,20 +1,20 @@
 ---
-title: Starlite
+title: Litestar
 ---
 
-# Starlite
+# Litestar
 
 Strawberry comes with an integration for
-[Starlite](https://starliteproject.dev/) by providing a
+[Litestar](https://litestar.dev/) by providing a
 `make_graphql_controller` function that can be used to create a GraphQL
 controller.
 
-See the example below for integrating Starlite with Strawberry:
+See the example below for integrating Litestar with Strawberry:
 
 ```python
 import strawberry
-from starlite import Starlite
-from strawberry.starlite import make_graphql_controller
+from litestar import Litestar
+from strawberry.litestar import make_graphql_controller
 
 
 @strawberry.type
@@ -32,7 +32,7 @@ GraphQLController = make_graphql_controller(
     path="/graphql",
 )
 
-app = Starlite(
+app = Litestar(
     route_handlers=[GraphQLController],
 )
 ```
@@ -48,9 +48,9 @@ The `make_graphql_controller` function accepts the following options:
   interface.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
-- `context_getter`: optional Starlite dependency for providing custom context
+- `context_getter`: optional Litestar dependency for providing custom context
   value.
-- `root_value_getter`: optional Starlite dependency for providing custom root
+- `root_value_getter`: optional Litestar dependency for providing custom root
   value.
 - `debug`: optional, defaults to `False`, whether to enable debug mode.
 - `keep_alive`: optional, defaults to `False`, whether to enable keep alive mode
@@ -66,8 +66,8 @@ extract information from the request.
 
 ```python
 import strawberry
-from starlite import Request, Starlite
-from strawberry.starlite import make_graphql_controller
+from litestar import Request, Litestar
+from strawberry.litestar import make_graphql_controller
 from strawberry.types.info import Info
 
 
@@ -91,7 +91,7 @@ GraphQLController = make_graphql_controller(
     context_getter=custom_context_getter,
 )
 
-app = Starlite(
+app = Litestar(
     route_handlers=[GraphQLController],
 )
 ```
@@ -104,8 +104,8 @@ extract information from the request.
 
 ```python
 import strawberry
-from starlite import Request, Starlite
-from strawberry.starlite import make_graphql_controller
+from litestar import Request, Litestar
+from strawberry.litestar import make_graphql_controller
 
 
 @strawberry.type
@@ -130,7 +130,7 @@ GraphQLController = make_graphql_controller(
     root_value_getter=custom_get_root_value,
 )
 
-app = Starlite(
+app = Litestar(
     route_handlers=[GraphQLController],
 )
 ```
