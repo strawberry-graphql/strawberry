@@ -12,8 +12,6 @@ import typer
 from strawberry.cli.app import app
 from strawberry.cli.utils import load_schema
 from strawberry.codegen import ConsolePlugin, QueryCodegen, QueryCodegenPlugin
-from strawberry.codegen.plugins.python import PythonPlugin
-from strawberry.codegen.plugins.typescript import TypeScriptPlugin
 
 
 def _is_codegen_plugin(obj: object) -> bool:
@@ -134,15 +132,6 @@ def codegen(
     for q in query:
         plugins = _load_plugins(selected_plugins, q)
         console_plugin.query = q  # update the query in the console plugin.
-
-        for p in plugins:
-            # Adjust the names of the output files for the buildin plugins if there
-            # are multiple files being generated.
-            if len(query) > 1:
-                if isinstance(p, PythonPlugin):
-                    p.outfile_name = q.stem + ".py"
-                elif isinstance(p, TypeScriptPlugin):
-                    p.outfile_name = q.stem + ".ts"
 
         code_generator = QueryCodegen(
             schema_symbol, plugins=plugins, console_plugin=console_plugin

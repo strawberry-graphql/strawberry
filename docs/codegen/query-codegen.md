@@ -73,7 +73,7 @@ With the following command:
 strawberry codegen --schema schema --output-dir ./output -p python query.graphql
 ```
 
-We'll get the following output inside `output/types.py`:
+We'll get the following output inside `output/query.py`:
 
 ```python
 class MyQueryResultUserPost:

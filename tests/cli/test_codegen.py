@@ -271,7 +271,7 @@ def test_codegen_finds_our_plugins(
 
     assert result.exit_code == 0
 
-    code_path = tmp_path / "types.py"
+    code_path = tmp_path / query_file_path.with_suffix(".py").name
 
     assert code_path.exists()
     assert "class GetUserResult" in code_path.read_text()

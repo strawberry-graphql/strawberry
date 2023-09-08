@@ -19,9 +19,6 @@ if TYPE_CHECKING:
     from strawberry.codegen.types import GraphQLField, GraphQLOperation, GraphQLType
 
 
-DEFAULT_OUTFILE_NAME = "types.ts"
-
-
 class TypeScriptPlugin(QueryCodegenPlugin):
     SCALARS_TO_TS_TYPE = {
         "ID": "string",
@@ -39,7 +36,7 @@ class TypeScriptPlugin(QueryCodegenPlugin):
     }
 
     def __init__(self, query: Path) -> None:
-        self.outfile_name: str = DEFAULT_OUTFILE_NAME
+        self.outfile_name: str = query.with_suffix(".ts").name
         self.query = query
 
     def generate_code(

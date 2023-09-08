@@ -28,9 +28,6 @@ if TYPE_CHECKING:
     )
 
 
-DEFAULT_OUTFILE_NAME = "types.py"
-
-
 @dataclass
 class PythonType:
     type: str
@@ -53,7 +50,7 @@ class PythonPlugin(QueryCodegenPlugin):
 
     def __init__(self, query: Path) -> None:
         self.imports: Dict[str, Set[str]] = defaultdict(set)
-        self.outfile_name: str = DEFAULT_OUTFILE_NAME
+        self.outfile_name: str = query.with_suffix(".py").name
         self.query = query
 
     def generate_code(
