@@ -783,6 +783,10 @@ class QueryCodegen:
                 if isinstance(t, GraphQLObjectType) and t.name == spread_field.name
             )
 
+        # This cast is safe because all the fields are either
+        # `GraphQLField` or `GraphQLFragmentSpread`
+        # and the suite above will cause this statement to be
+        # skipped if there are any `GraphQLFragmentSpread`.
         current_type.fields = cast(List[GraphQLField], fields)
 
         self._collect_type(current_type)
@@ -823,9 +827,13 @@ class QueryCodegen:
                 list(common_fields),
                 graphql_typename=type_condition_name,
             )
+            fields: List[Union[GraphQLFragmentSpread, GraphQLField]] = []
 
             for sub_selection in fragment.selection_set.selections:
-                # TODO: recurse, use existing method ?
+                if isinstance(sub_selection, FragmentSpreadNode):
+                    fields.append(GraphQLFragmentSpread(sub_selection.name.value))
+                    continue
+
                 assert isinstance(sub_selection, FieldNode)
 
                 parent_type = cast(
@@ -833,9 +841,9 @@ class QueryCodegen:
                     self.schema.get_type_by_name(type_condition_name),
                 )
 
-                assert parent_type
+                assert parent_type, type_condition_name
 
-                current_type.fields.append(
+                fields.append(
                     self._get_field(
                         selection=sub_selection,
                         class_name=fragment_class_name,
@@ -843,9 +851,30 @@ class QueryCodegen:
                     )
                 )
 
+            if any(isinstance(f, GraphQLFragmentSpread) for f in fields):
+                if len(fields) > 1:
+                    raise ValueError(
+                        "Queries with Fragments cannot currently include separate fields."
+                    )
+                spread_field = fields[0]
+                assert isinstance(spread_field, GraphQLFragmentSpread)
+                sub_type = next(
+                    t
+                    for t in self.types
+                    if isinstance(t, GraphQLObjectType) and t.name == spread_field.name
+                )
+                fields = [*sub_type.fields]
+
+            # This cast is safe because all the fields are either
+            # `GraphQLField` or `GraphQLFragmentSpread`
+            # and the suite above will cause this statement to be
+            # skipped if there are any `GraphQLFragmentSpread`.
+            current_type.fields.extend(cast(List[GraphQLField], fields))
+
             sub_types.append(current_type)
 
-        self.types.extend(sub_types)
+        for sub_type in sub_types:
+            self._collect_type(sub_type)
 
         return sub_types
 
