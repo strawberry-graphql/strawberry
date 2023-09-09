@@ -819,9 +819,12 @@ class QueryCodegen:
             if isinstance(sub_selection, InlineFragmentNode):
                 fragments.append(sub_selection)
 
+        all_common_fields_typename = all(f.name == "__typename" for f in common_fields)
+
         for fragment in fragments:
             type_condition_name = fragment.type_condition.name.value
             fragment_class_name = class_name + type_condition_name
+
             current_type = GraphQLObjectType(
                 fragment_class_name,
                 list(common_fields),
@@ -864,6 +867,9 @@ class QueryCodegen:
                     if isinstance(t, GraphQLObjectType) and t.name == spread_field.name
                 )
                 fields = [*sub_type.fields]
+                if all_common_fields_typename:  # No need to create a new type.
+                    sub_types.append(sub_type)
+                    continue
 
             # This cast is safe because all the fields are either
             # `GraphQLField` or `GraphQLFragmentSpread`
