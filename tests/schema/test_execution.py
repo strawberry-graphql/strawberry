@@ -653,3 +653,120 @@ def test_partial_errors_yes_data_yes_errors():
         "message": "Raw GraphQLError with extensions",
         "extensions": {"foo": "bar"},
     }
+
+
+@pytest.mark.parametrize("context_type", ("class", "dict"))
+def test_partial_errors_example_use_case(context_type):
+    """
+    Example use case for partial errors, the server successfully saves
+    all models except one, so the server responds with BOTH successful data
+    AND an error message pointing to the index that resulted in a failure
+    """
+
+    @dataclass
+    class Context:
+        pass
+
+    @strawberry.type
+    class Thing:
+        id: strawberry.ID
+        value: str
+
+    @strawberry.input
+    class UpdateThingInput:
+        id: strawberry.ID
+        value: str
+
+    @strawberry.input
+    class UpdateThingsInput:
+        things: list[UpdateThingInput]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def query(self) -> bool:
+            return True
+
+    class Datastore:
+        @classmethod
+        def get(self, id) -> Thing:
+            store = {
+                "1": Thing(id=1, value="foo"),
+                "2": Thing(id=2, value="bar"),
+                "3": Thing(id=3, value="baz"),
+            }
+            return store[str(id)]
+
+        @classmethod
+        def save(cls, thing, value) -> None:
+            if thing.id == 2:
+                # mock a database exception for a failure state
+                raise Exception(f"Database error trying to save Thing id: {thing.id}")
+            # otherwise mock a successful save
+            thing.value = value
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def update_things(
+            self, info, input: UpdateThingsInput
+        ) -> list[Optional[Thing]]:
+            ids = [thing.id for thing in input.things]
+            data = [Datastore.get(id) for id in ids]
+
+            things = []
+            for i, thing in enumerate(data):
+                thing_input = input.things[i]
+                try:
+                    Datastore.save(thing, thing_input.value)
+                    things.append(thing)
+                except Exception as e:
+                    things.append(None)
+                    nodes = info.field_nodes
+                    node = next(n for n in nodes if n.name.value == "updateThings")
+                    path = [*info.path.as_list(), i]
+                    partial_errors = (
+                        info.context.partial_errors
+                        if context_type == "class"
+                        else info.context["partial_errors"]
+                    )
+                    partial_errors.append(located_error(e, nodes=[node], path=path))
+            return things
+
+    schema = strawberry.Schema(Query, Mutation)
+    result = schema.execute_sync(
+        """
+        mutation UpdateThings($input: UpdateThingsInput!) {
+          updateThings(input: $input) {
+            id
+            value
+          }
+        }
+        """,
+        variable_values={
+            "input": {
+                "things": [
+                    {"id": 1, "value": "bar"},
+                    {"id": 2, "value": "baz"},
+                    {"id": 3, "value": "qua"},
+                ]
+            }
+        },
+        context_value=Context() if context_type == "class" else {},
+    )
+    data, errors = result.data, result.errors
+
+    assert len(data["updateThings"]) == 3
+    assert data["updateThings"][0]["id"] == "1"
+    assert data["updateThings"][0]["value"] == "bar"
+    assert data["updateThings"][1] is None
+    assert data["updateThings"][2]["id"] == "3"
+    assert data["updateThings"][2]["value"] == "qua"
+
+    assert len(errors) == 1
+    error: GraphQLError = errors[0]
+    assert error.formatted == {
+        "message": "Database error trying to save Thing id: 2",
+        "locations": [{"line": 3, "column": 11}],
+        "path": ["updateThings", 1],
+    }
