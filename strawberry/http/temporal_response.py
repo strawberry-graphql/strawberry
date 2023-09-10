@@ -4,7 +4,7 @@ from http.cookies import SimpleCookie
 from typing import Dict, List, Optional, Union
 from typing_extensions import Literal
 
-SameSite = Union[Literal["strict"], Literal["lax"], Literal["none"]]
+SameSite = Literal["strict", "lax", "none"]
 
 
 @dataclass
