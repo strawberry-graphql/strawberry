@@ -3,6 +3,11 @@ from datetime import datetime, timedelta
 import pytest
 from freezegun import freeze_time
 
+try:
+    import zoneinfo
+except ImportError:
+    from backports import zoneinfo
+
 from strawberry.http.temporal_response import TemporalResponse
 
 
@@ -75,6 +80,20 @@ def test_set_cookie_samesite(samesite):
 @freeze_time("20300101 00:00:00")
 def test_set_cookie_expires():
     one_day_later = datetime.now() + timedelta(days=1)
+    seconds_in_a_day = 86400
+    response = TemporalResponse()
+    response.set_cookie("strawberry", "rocks", expires=one_day_later)
+    assert (
+        response.headers["Set-Cookie"]
+        == f"strawberry=rocks; Max-Age={seconds_in_a_day}; Path=/; Secure"
+    )
+
+
+@freeze_time("20300101 00:00:00")
+def test_set_cookie_expires_with_timezone():
+    one_day_later = datetime.now(tz=zoneinfo.ZoneInfo("Europe/Berlin")) + timedelta(
+        days=1
+    )
     seconds_in_a_day = 86400
     response = TemporalResponse()
     response.set_cookie("strawberry", "rocks", expires=one_day_later)
