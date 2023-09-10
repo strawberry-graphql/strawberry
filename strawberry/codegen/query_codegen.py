@@ -52,6 +52,7 @@ from strawberry.type import (
 )
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.union import StrawberryUnion
+from strawberry.unset import UNSET
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
 from .exceptions import (
@@ -178,8 +179,9 @@ _TYPE_TO_GRAPHQL_TYPE = {
 
 def _py_to_graphql_value(obj: Any) -> GraphQLArgumentValue:
     """Convert a python object to a GraphQLArgumentValue."""
-    if obj is None:
-        return GraphQLNullValue()
+    if obj is None or obj is UNSET:
+        return GraphQLNullValue(value=obj)
+
     obj_type = type(obj)
     if obj_type in _TYPE_TO_GRAPHQL_TYPE:
         return _TYPE_TO_GRAPHQL_TYPE[obj_type](obj)

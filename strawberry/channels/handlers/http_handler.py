@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+from functools import cached_property
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Tuple, Union
 from urllib.parse import parse_qs
@@ -23,7 +24,6 @@ from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.types import FormData
 from strawberry.http.typevars import Context, RootValue
 from strawberry.unset import UNSET
-from strawberry.utils.cached_property import cached_property
 from strawberry.utils.graphiql import get_graphiql_html
 
 from .base import ChannelsConsumer

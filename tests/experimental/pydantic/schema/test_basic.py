@@ -1,10 +1,13 @@
+import sys
 import textwrap
 from enum import Enum
 from typing import List, Optional, Union
 
 import pydantic
+import pytest
 
 import strawberry
+from tests.experimental.pydantic.utils import needs_pydantic_v1
 
 
 def test_basic_type_field_list():
@@ -526,3 +529,37 @@ def test_basic_type_with_optional_and_default():
     assert not result.errors
     assert result.data["user"]["age"] == 1
     assert result.data["user"]["password"] is None
+
+
+@needs_pydantic_v1
+@pytest.mark.skipif(
+    sys.version_info < (3, 9),
+    reason="ConstrainedList with another model does not work with 3.8",
+)
+def test_basic_type_with_constrained_list():
+    class FriendList(pydantic.ConstrainedList):
+        min_items = 1
+
+    class UserModel(pydantic.BaseModel):
+        age: int
+        friend_names: FriendList[str]
+
+    @strawberry.experimental.pydantic.type(UserModel)
+    class User:
+        age: strawberry.auto
+        friend_names: strawberry.auto
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return User(age=1, friend_names=["A", "B"])
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ user { friendNames } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["user"]["friendNames"] == ["A", "B"]

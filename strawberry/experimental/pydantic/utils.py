@@ -14,8 +14,12 @@ from typing import (
     cast,
 )
 
-from pydantic.utils import smart_deepcopy
-
+from strawberry.experimental.pydantic._compat import (
+    PYDANTIC_MISSING_TYPE,
+    CompatModelField,
+    get_model_fields,
+    smart_deepcopy,
+)
 from strawberry.experimental.pydantic.exceptions import (
     AutoFieldsNotInBaseModelError,
     BothDefaultAndDefaultFactoryDefinedError,
@@ -32,7 +36,6 @@ from strawberry.utils.typing import (
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
-    from pydantic.fields import ModelField
     from pydantic.typing import NoArgAnyCallable
 
 
@@ -54,13 +57,7 @@ def get_strawberry_type_from_model(type_: Any) -> Any:
 
 
 def get_private_fields(cls: Type) -> List[dataclasses.Field]:
-    private_fields: List[dataclasses.Field] = []
-
-    for field in dataclasses.fields(cls):
-        if is_private(field.type):
-            private_fields.append(field)
-
-    return private_fields
+    return [field for field in dataclasses.fields(cls) if is_private(field.type)]
 
 
 class DataclassCreationFields(NamedTuple):
@@ -76,7 +73,7 @@ class DataclassCreationFields(NamedTuple):
 
 
 def get_default_factory_for_field(
-    field: ModelField,
+    field: CompatModelField,
 ) -> Union[NoArgAnyCallable, dataclasses._MISSING_TYPE]:
     """
     Gets the default factory for a pydantic field.
@@ -89,10 +86,10 @@ def get_default_factory_for_field(
     # replace dataclasses.MISSING with our own UNSET to make comparisons easier
     default_factory = (
         field.default_factory
-        if field.default_factory is not dataclasses.MISSING
+        if field.default_factory is not PYDANTIC_MISSING_TYPE
         else UNSET
     )
-    default = field.default if field.default is not dataclasses.MISSING else UNSET
+    default = field.default if field.default is not PYDANTIC_MISSING_TYPE else UNSET
 
     has_factory = default_factory is not None and default_factory is not UNSET
     has_default = default is not None and default is not UNSET
@@ -131,7 +128,7 @@ def ensure_all_auto_fields_in_pydantic(
     model: Type[BaseModel], auto_fields: Set[str], cls_name: str
 ) -> Union[NoReturn, None]:
     # Raise error if user defined a strawberry.auto field not present in the model
-    non_existing_fields = list(auto_fields - model.__fields__.keys())
+    non_existing_fields = list(auto_fields - get_model_fields(model).keys())
 
     if non_existing_fields:
         raise AutoFieldsNotInBaseModelError(

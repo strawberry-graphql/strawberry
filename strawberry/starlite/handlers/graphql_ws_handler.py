@@ -44,7 +44,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
             while self._ws.connection_state != "disconnect":
                 try:
                     message = await self._ws.receive_json()
-                except (SerializationException, ValueError):
+                except (SerializationException, ValueError):  # noqa: PERF203
                     # Ignore non-text messages
                     continue
                 else:

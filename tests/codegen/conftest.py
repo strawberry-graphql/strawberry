@@ -60,6 +60,7 @@ class Image(Node):
 @strawberry.input
 class PersonInput:
     name: str
+    age: Optional[int] = strawberry.UNSET
 
 
 @strawberry.input

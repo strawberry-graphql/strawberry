@@ -1,12 +1,14 @@
 import pytest
-from starlette.testclient import TestClient
 
 import strawberry
-from fastapi import FastAPI
-from strawberry.fastapi import GraphQLRouter
 
 
 def test_include_router_prefix():
+    from starlette.testclient import TestClient
+
+    from fastapi import FastAPI
+    from strawberry.fastapi import GraphQLRouter
+
     @strawberry.type
     class Query:
         @strawberry.field
@@ -15,7 +17,7 @@ def test_include_router_prefix():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter(schema)
+    graphql_app = GraphQLRouter[None, None](schema)
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
@@ -26,6 +28,11 @@ def test_include_router_prefix():
 
 
 def test_graphql_router_path():
+    from starlette.testclient import TestClient
+
+    from fastapi import FastAPI
+    from strawberry.fastapi import GraphQLRouter
+
     @strawberry.type
     class Query:
         @strawberry.field
@@ -34,7 +41,7 @@ def test_graphql_router_path():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter(schema, path="/graphql")
+    graphql_app = GraphQLRouter[None, None](schema, path="/graphql")
     app.include_router(graphql_app)
 
     test_client = TestClient(app)
@@ -45,6 +52,9 @@ def test_graphql_router_path():
 
 
 def test_missing_path_and_prefix():
+    from fastapi import FastAPI
+    from strawberry.fastapi import GraphQLRouter
+
     @strawberry.type
     class Query:
         @strawberry.field
@@ -53,7 +63,7 @@ def test_missing_path_and_prefix():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter(schema)
+    graphql_app = GraphQLRouter[None, None](schema)
 
     with pytest.raises(Exception) as exc:
         app.include_router(graphql_app)

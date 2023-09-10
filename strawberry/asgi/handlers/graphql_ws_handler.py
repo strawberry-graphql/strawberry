@@ -50,7 +50,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
             while self._ws.application_state != WebSocketState.DISCONNECTED:
                 try:
                     message = await self._ws.receive_json()
-                except KeyError:
+                except KeyError:  # noqa: PERF203
                     # Ignore non-text messages
                     continue
                 else:

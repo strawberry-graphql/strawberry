@@ -184,7 +184,7 @@ class Schema(BaseSchema):
 
         return extensions
 
-    @lru_cache()
+    @lru_cache
     def get_type_by_name(
         self, name: str
     ) -> Optional[
@@ -220,7 +220,7 @@ class Schema(BaseSchema):
             None,
         )
 
-    @lru_cache()
+    @lru_cache
     def get_directive_by_name(self, graphql_name: str) -> Optional[StrawberryDirective]:
         return next(
             (

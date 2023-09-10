@@ -33,7 +33,7 @@ def test_basic_generic():
     assert field.type.type_var is T
 
     # let's make a copy of this generic type
-    copy = get_object_definition(Edge, strict=True).copy_with({T: str})
+    copy = get_object_definition(Edge, strict=True).copy_with({"T": str})
 
     definition_copy = get_object_definition(copy, strict=True)
 
@@ -65,7 +65,7 @@ def test_generics_nested():
 
     # let's make a copy of this generic type
     definition_copy = get_object_definition(
-        get_object_definition(Connection, strict=True).copy_with({T: str}),
+        get_object_definition(Connection, strict=True).copy_with({"T": str}),
         strict=True,
     )
 
@@ -86,7 +86,7 @@ def test_generics_name():
         edge: T
 
     definition_copy = get_object_definition(
-        get_object_definition(Connection, strict=True).copy_with({T: EdgeName}),
+        get_object_definition(Connection, strict=True).copy_with({"T": EdgeName}),
         strict=True,
     )
 
@@ -117,7 +117,7 @@ def test_generics_nested_in_list():
 
     # let's make a copy of this generic type
     definition_copy = get_object_definition(
-        Connection.__strawberry_definition__.copy_with({T: str}),
+        Connection.__strawberry_definition__.copy_with({"T": str}),
         strict=True,
     )
 
@@ -175,7 +175,7 @@ def test_generic_with_optional():
 
     # let's make a copy of this generic type
     definition_copy = Edge.__strawberry_definition__.copy_with(
-        {T: str}
+        {"T": str}
     ).__strawberry_definition__
 
     assert not definition_copy.is_generic
@@ -204,7 +204,7 @@ def test_generic_with_list():
 
     # let's make a copy of this generic type
     definition_copy = Connection.__strawberry_definition__.copy_with(
-        {T: str}
+        {"T": str}
     ).__strawberry_definition__
 
     assert not definition_copy.is_generic
@@ -234,7 +234,7 @@ def test_generic_with_list_of_optionals():
 
     # let's make a copy of this generic type
     definition_copy = Connection.__strawberry_definition__.copy_with(
-        {T: str}
+        {"T": str}
     ).__strawberry_definition__
 
     assert not definition_copy.is_generic
@@ -270,7 +270,7 @@ def test_generics_with_unions():
         name: str
 
     definition_copy = Edge.__strawberry_definition__.copy_with(
-        {T: Node}
+        {"T": Node}
     ).__strawberry_definition__
 
     assert not definition_copy.is_generic
@@ -630,7 +630,7 @@ def test_federation():
         node_field: T
 
     definition_copy = Edge.__strawberry_definition__.copy_with(
-        {T: str}
+        {"T": str}
     ).__strawberry_definition__
 
     assert not definition_copy.is_generic

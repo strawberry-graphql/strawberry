@@ -1,8 +1,5 @@
 import os
-import sys
 import threading
-
-import pytest
 
 from strawberry.exceptions import MissingFieldAnnotationError
 from strawberry.exceptions.handler import (
@@ -83,9 +80,6 @@ def test_exception_handler_uses_original_when_libcst_is_not_installed(mocker):
     )
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 8), reason="threading.excepthook is only available in 3.8+"
-)
 def test_setup_install_handler(mocker):
     reset_exception_handler()
     setup_exception_handler()
@@ -93,17 +87,6 @@ def test_setup_install_handler(mocker):
     assert threading.excepthook == strawberry_threading_exception_handler
 
 
-@pytest.mark.skipif(sys.version_info >= (3, 8), reason="test for python < 3.8")
-def test_setup_install_handler_does_add_attribute(mocker):
-    reset_exception_handler()
-    setup_exception_handler()
-
-    assert hasattr(threading, "excepthook") is False
-
-
-@pytest.mark.skipif(
-    sys.version_info < (3, 8), reason="threading.excepthook is only available in 3.8+"
-)
 def test_setup_does_not_install_handler_when_disabled_via_env(mocker):
     reset_exception_handler()
 

@@ -3,6 +3,7 @@ from __future__ import annotations as _
 import inspect
 import sys
 import warnings
+from functools import cached_property
 from inspect import isasyncgenfunction, iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
@@ -26,7 +27,6 @@ from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import MissingArgumentsAnnotationsError
 from strawberry.type import StrawberryType, has_object_definition
 from strawberry.types.info import Info
-from strawberry.utils.cached_property import cached_property
 
 if TYPE_CHECKING:
     import builtins
@@ -297,7 +297,7 @@ class StrawberryResolver(Generic[T]):
         )
 
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
+        self, type_var_map: Mapping[str, Union[StrawberryType, builtins.type]]
     ) -> StrawberryResolver:
         type_override = None
 

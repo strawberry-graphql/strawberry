@@ -53,18 +53,17 @@ jobs:
       - uses: actions/checkout@v3
       - uses: wntrblm/nox@main
         with:
-          python-versions: "3.7, 3.8, 3.9, 3.10, 3.11"
+          python-versions: "3.8, 3.9, 3.10, 3.11, 3.12"
 
       - name: Pip and nox cache
         id: cache
         uses: actions/cache@v3
         with:
           path: |
-            ~/.cache/pip
+            ~/.cache
             ~/.nox
             .nox
-          key:
-            ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
+          key: ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
             hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
           restore-keys: |
             ${{ runner.os }}-nox-${{ matrix.session.session }}-
@@ -78,12 +77,39 @@ jobs:
       - name: coverage xml
         run: coverage xml -i
         if: ${{ always() }}
+
       - uses: codecov/codecov-action@v3
         if: ${{ always() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           verbose: true
+
+  benchmarks:
+    name: 📈 Benchmarks
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v4
+        id: setup-python
+        with:
+          python-version: "3.12.0-beta.3"
+          architecture: x64
+          cache: "poetry"
+
+      - run: poetry env use 3.12.0-beta.3
+      - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
+
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v1
+        with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
+          run: poetry run pytest tests/benchmarks --codspeed
 
   lint:
     name: ✨ Lint
@@ -95,18 +121,17 @@ jobs:
       - uses: actions/checkout@v3
       - uses: wntrblm/nox@main
         with:
-          python-versions: "3.7, 3.8, 3.9, 3.10, 3.11"
+          python-versions: "3.8, 3.9, 3.10, 3.11, 3.12"
 
       - name: Pip and nox cache
         id: cache
         uses: actions/cache@v3
         with:
           path: |
-            ~/.cache/pip
+            ~/.cache
             ~/.nox
             .nox
-          key:
-            ${{ runner.os }}-nox-lint-${{ matrix.session.session }}-${{
+          key: ${{ runner.os }}-nox-lint-${{ matrix.session.session }}-${{
             hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
           restore-keys: |
             ${{ runner.os }}-lint-nox-${{ matrix.session.session }}-
@@ -122,25 +147,32 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: wntrblm/nox@main
-        with:
-          python-versions: "3.7, 3.8, 3.9, 3.10, 3.11"
-
-      - name: Pip and nox cache
-        id: cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/pip
-            ~/.nox
-            .nox
-          key:
-            ${{ runner.os }}-nox-windows-${{
-            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
-          restore-keys: |
-            ${{ runner.os }}-nox-windows
-            ${{ runner.os }}-nox-
-
       - run: pipx install poetry
-      - run: pipx inject nox nox-poetry
-      - run: nox -r -s "Tests" -p 3.11
+      - run: pipx install coverage
+      - uses: actions/setup-python@v4
+        id: setup-python
+        with:
+          python-version: "3.11"
+          cache: "poetry"
+
+      - run: poetry install --with integrations
+        if: steps.setup-python.outputs.cache-hit != 'true'
+      # Since we are running all the integrations at once, we can't use
+      # pydantic v2. It is not compatible with starlette yet
+      - run: poetry run pip install pydantic==1.10
+
+      # we use poetry directly instead of nox since we want to
+      # test all integrations at once on windows
+      # but we want to exclude tests/mypy since we are using an old version of pydantic
+      - run: |
+          poetry run pytest --cov=. --cov-append --cov-report=xml -n auto --showlocals --ignore tests/mypy -vv
+      - name: coverage xml
+        run: coverage xml -i
+        if: ${{ always() }}
+
+      - uses: codecov/codecov-action@v3
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true

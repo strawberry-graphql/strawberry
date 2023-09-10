@@ -1,5 +1,6 @@
 import pathlib
-from typing import List, Tuple
+import sys
+from typing import Any, List, Tuple
 
 import pytest
 
@@ -22,5 +23,29 @@ def pytest_collection_modifyitems(config: pytest.Config, items: List[pytest.Item
     for item in items:
         rel_path = pathlib.Path(item.fspath).relative_to(rootdir)
 
-        if "pydantic" in rel_path.parts:
-            item.add_marker(pytest.mark.pydantic)
+        markers = [
+            "aiohttp",
+            "asgi",
+            "chalice",
+            "channels",
+            "django",
+            "fastapi",
+            "flask",
+            "pydantic",
+            "sanic",
+            "starlite",
+        ]
+
+        for marker in markers:
+            if marker in rel_path.parts:
+                item.add_marker(getattr(pytest.mark, marker))
+
+
+if sys.version_info < (3, 12):
+
+    @pytest.hookimpl
+    def pytest_ignore_collect(
+        collection_path: pathlib.Path, path: Any, config: pytest.Config
+    ):
+        if "python_312" in collection_path.parts:
+            return True

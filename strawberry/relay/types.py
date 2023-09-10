@@ -24,14 +24,7 @@ from typing import (
     cast,
     overload,
 )
-from typing_extensions import (
-    Annotated,
-    Literal,
-    Self,
-    TypeAlias,
-    get_args,
-    get_origin,
-)
+from typing_extensions import Annotated, Literal, Self, TypeAlias, get_args, get_origin
 
 from strawberry.field import field
 from strawberry.lazy_type import LazyType
@@ -844,7 +837,7 @@ class ListConnection(Connection[NodeType]):
                 end = sys.maxsize
 
         if end is None:
-            end = max_results
+            end = start + max_results
 
         expected = end - start if end != sys.maxsize else None
         # Overfetch by 1 to check if we have a next result
@@ -878,14 +871,24 @@ class ListConnection(Connection[NodeType]):
                         overfetch,
                     )
 
-                assert isinstance(iterator, (AsyncIterator, AsyncIterable))
-                edges: List[Edge] = [
-                    edge_class.resolve_edge(
-                        cls.resolve_node(v, info=info, **kwargs),
-                        cursor=start + i,
-                    )
-                    async for i, v in aenumerate(iterator)
-                ]
+                # The slice above might return an object that now is not async
+                # iterable anymore (e.g. an already cached django queryset)
+                if isinstance(iterator, (AsyncIterator, AsyncIterable)):
+                    edges: List[Edge] = [
+                        edge_class.resolve_edge(
+                            cls.resolve_node(v, info=info, **kwargs),
+                            cursor=start + i,
+                        )
+                        async for i, v in aenumerate(iterator)
+                    ]
+                else:
+                    edges: List[Edge] = [  # type: ignore[no-redef]
+                        edge_class.resolve_edge(
+                            cls.resolve_node(v, info=info, **kwargs),
+                            cursor=start + i,
+                        )
+                        for i, v in enumerate(iterator)
+                    ]
 
                 has_previous_page = start > 0
                 if expected is not None and len(edges) == expected + 1:

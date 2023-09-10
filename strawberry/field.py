@@ -5,6 +5,7 @@ import copy
 import dataclasses
 import inspect
 import sys
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -30,7 +31,6 @@ from strawberry.type import (
     has_object_definition,
 )
 from strawberry.union import StrawberryUnion
-from strawberry.utils.cached_property import cached_property
 
 from .types.fields.resolver import StrawberryResolver
 
@@ -360,7 +360,7 @@ class StrawberryField(dataclasses.Field):
         return resolved
 
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
+        self, type_var_map: Mapping[str, Union[StrawberryType, builtins.type]]
     ) -> Self:
         new_field = copy.copy(self)
 

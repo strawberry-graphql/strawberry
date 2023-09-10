@@ -1,6 +1,6 @@
 from collections import defaultdict
 from copy import copy
-from functools import partial
+from functools import cached_property, partial
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -31,7 +31,6 @@ from graphql.type.definition import GraphQLArgument
 from strawberry.printer import print_schema
 from strawberry.schema import Schema as BaseSchema
 from strawberry.types.types import StrawberryObjectDefinition
-from strawberry.utils.cached_property import cached_property
 from strawberry.utils.inspect import get_func_args
 
 from .schema_directive import StrawberryFederationSchemaDirective
@@ -210,7 +209,7 @@ class Schema(BaseSchema):
 
             try:
                 result = get_result()
-            except Exception as e:
+            except Exception as e:  # noqa: PERF203
                 result = GraphQLError(
                     f"Unable to resolve reference for {definition.origin}",
                     original_error=e,

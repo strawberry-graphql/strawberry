@@ -28,7 +28,7 @@ from strawberry.utils.typing import (
 )
 
 if TYPE_CHECKING:
-    from graphql import GraphQLResolveInfo
+    from graphql import GraphQLAbstractType, GraphQLResolveInfo
 
     from strawberry.field import StrawberryField
 
@@ -51,12 +51,15 @@ class StrawberryObjectDefinition(StrawberryType):
     extend: bool
     directives: Optional[Sequence[object]]
     is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
+    resolve_type: Optional[
+        Callable[[Any, GraphQLResolveInfo, GraphQLAbstractType], str]
+    ]
 
     _fields: List[StrawberryField]
 
     concrete_of: Optional[StrawberryObjectDefinition] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
-    type_var_map: Mapping[TypeVar, Union[StrawberryType, type]] = dataclasses.field(
+    type_var_map: Mapping[str, Union[StrawberryType, type]] = dataclasses.field(
         default_factory=dict
     )
 
@@ -64,7 +67,7 @@ class StrawberryObjectDefinition(StrawberryType):
         # resolve `Self` annotation with the origin type
         for index, field in enumerate(self.fields):
             if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):  # type: ignore  # noqa: E501
-                self.fields[index] = field.copy_with({Self: self.origin})  # type: ignore  # noqa: E501
+                self.fields[index] = field.copy_with({Self.__name__: self.origin})  # type: ignore  # noqa: E501
 
     def resolve_generic(self, wrapped_cls: type) -> type:
         from strawberry.annotation import StrawberryAnnotation
@@ -78,12 +81,12 @@ class StrawberryObjectDefinition(StrawberryType):
             resolved_type = StrawberryAnnotation(passed_type).resolve()
             resolved_types.append(resolved_type)
 
-        type_var_map = dict(zip(params, resolved_types))
+        type_var_map = dict(zip((param.__name__ for param in params), resolved_types))
 
         return self.copy_with(type_var_map)
 
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+        self, type_var_map: Mapping[str, Union[StrawberryType, type]]
     ) -> Type[WithStrawberryObjectDefinition]:
         fields = [field.copy_with(type_var_map) for field in self.fields]
 
@@ -97,6 +100,7 @@ class StrawberryObjectDefinition(StrawberryType):
             description=self.description,
             extend=self.extend,
             is_type_of=self.is_type_of,
+            resolve_type=self.resolve_type,
             _fields=fields,
             concrete_of=self,
             type_var_map=type_var_map,
@@ -137,7 +141,7 @@ class StrawberryObjectDefinition(StrawberryType):
         return self.is_generic and not getattr(self.origin, "__parameters__", None)
 
     @property
-    def specialized_type_var_map(self) -> Optional[Dict[TypeVar, type]]:
+    def specialized_type_var_map(self) -> Optional[Dict[str, type]]:
         return get_specialized_type_var_map(self.origin)
 
     @property
@@ -170,7 +174,9 @@ class StrawberryObjectDefinition(StrawberryType):
                 continue
 
             # For each TypeVar found, get the expected type from the copy's type map
-            expected_concrete_type = self.type_var_map.get(generic_field_type.type_var)
+            expected_concrete_type = self.type_var_map.get(
+                generic_field_type.type_var.__name__
+            )
             if expected_concrete_type is None:
                 # TODO: Should this return False?
                 continue

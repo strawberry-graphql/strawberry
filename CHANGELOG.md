@@ -1,6 +1,402 @@
 CHANGELOG
 =========
 
+0.205.0 - 2023-08-24
+--------------------
+
+`strawberry codegen` previously choked for inputs that used the
+`strawberry.UNSET` sentinal singleton value as a default.  The intent
+here is to say that if a variable is not part of the request payload,
+then the `UNSET` default value will not be modified and the service
+code can then treat an unset value differently from a default value,
+etc.
+
+For codegen, we treat the `UNSET` default value as a `GraphQLNullValue`.
+The `.value` property is the `UNSET` object in this case (instead of
+the usual `None`).  In the built-in python code generator, this causes
+the client to generate an object with a `None` default.  Custom client
+generators can sniff at this value and update their behavior.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #3050](https://github.com/strawberry-graphql/strawberry/pull/3050/)
+
+
+0.204.0 - 2023-08-15
+--------------------
+
+Adds a new flag to `export-schema` command, `--output`, which allows the user to specify the output file. If unset (current behavior), the command will continue to print to stdout.
+
+Contributed by [Chris Hua](https://github.com/stillmatic) via [PR #3033](https://github.com/strawberry-graphql/strawberry/pull/3033/)
+
+
+0.203.3 - 2023-08-14
+--------------------
+
+Mark pydantic constrained list test with need_pydantic_v1 since it is removed in pydantic V2
+
+Contributed by [tjeerddie](https://github.com/tjeerddie) via [PR #3034](https://github.com/strawberry-graphql/strawberry/pull/3034/)
+
+
+0.203.2 - 2023-08-14
+--------------------
+
+Enhancements:
+- Improved pydantic conversion compatibility with specialized list classes.
+  - Modified `StrawberryAnnotation._is_list` to check if the `annotation` extends from the `list` type, enabling it to be considered a list.
+  - in `StrawberryAnnotation` Moved the `_is_list` check before the `_is_generic` check in `resolve` to avoid `unsupported` error in `_is_generic` before it checked `_is_list`.
+
+This enhancement enables the usage of constrained lists as class types and allows the creation of specialized lists. The following example demonstrates this feature:
+
+```python
+import strawberry
+from pydantic import BaseModel, ConstrainedList
+
+
+class FriendList(ConstrainedList):
+    min_items = 1
+
+
+class UserModel(BaseModel):
+    age: int
+    friend_names: FriendList[str]
+
+
+@strawberry.experimental.pydantic.type(UserModel)
+class User:
+    age: strawberry.auto
+    friend_names: strawberry.auto
+```
+
+Contributed by [tjeerddie](https://github.com/tjeerddie) via [PR #2909](https://github.com/strawberry-graphql/strawberry/pull/2909/)
+
+
+0.203.1 - 2023-08-12
+--------------------
+
+This release updates the built-in GraphiQL to the current latest version (3.0.5), it also updates React to the current latest version (18.2.0) and uses the production distribution instead of development to reduce bundle size.
+
+Contributed by [Kien Dang](https://github.com/kiendang) via [PR #3031](https://github.com/strawberry-graphql/strawberry/pull/3031/)
+
+
+0.203.0 - 2023-08-10
+--------------------
+
+Add support for extra colons in the `GlobalID` string.
+
+Before, the string `SomeType:some:value` would produce raise an error saying that
+it was expected the string to be splited in 2 parts when doing `.split(":")`.
+
+Now we are using `.split(":", 1)`, meaning that the example above will consider
+`SomeType` to be the type name, and `some:value` to be the node_id.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3025](https://github.com/strawberry-graphql/strawberry/pull/3025/)
+
+
+0.202.1 - 2023-08-09
+--------------------
+
+TypingUnionType import error check is reraised because TypingGenericAlias is checked at the same time which is checked under 3.9 instead of under 3.10
+
+Fix by separating TypingUnionType and TypingGenericAlias imports in their own try-catch
+
+Contributed by [tjeerddie](https://github.com/tjeerddie) via [PR #3023](https://github.com/strawberry-graphql/strawberry/pull/3023/)
+
+
+0.202.0 - 2023-08-08
+--------------------
+
+This release updates Strawberry's codebase to use new features in Python 3.8.
+It also removes `backports.cached-property` from our dependencies, as we can
+now rely on the standard library's `functools.cached_property`.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2995](https://github.com/strawberry-graphql/strawberry/pull/2995/)
+
+
+0.201.1 - 2023-08-08
+--------------------
+
+Fix strawberry mypy plugin for pydantic v1
+
+Contributed by [tjeerddie](https://github.com/tjeerddie) via [PR #3019](https://github.com/strawberry-graphql/strawberry/pull/3019/)
+
+
+0.201.0 - 2023-08-08
+--------------------
+
+Fix import error in `strawberry.ext.mypy_plugin` for users who don't use pydantic.
+
+Contributed by [David Němec](https://github.com/davidnemec) via [PR #3018](https://github.com/strawberry-graphql/strawberry/pull/3018/)
+
+
+0.200.0 - 2023-08-07
+--------------------
+
+Adds initial support for pydantic V2.
+
+This is extremely experimental for wider initial testing.
+
+We do not encourage using this in production systems yet.
+
+Contributed by [James Chua](https://github.com/thejaminator) via [PR #2972](https://github.com/strawberry-graphql/strawberry/pull/2972/)
+
+
+0.199.3 - 2023-08-06
+--------------------
+
+This release fixes an issue on `relay.ListConnection` where async iterables that returns
+non async iterable objects after being sliced where producing errors.
+
+This should fix an issue with async strawberry-graphql-django when returning already
+prefetched QuerySets.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3014](https://github.com/strawberry-graphql/strawberry/pull/3014/)
+
+
+0.199.2 - 2023-08-03
+--------------------
+
+This releases improves how we handle Annotated and async types
+(used in subscriptions). Previously we weren't able to use
+unions with names inside subscriptions, now that's fixed 😊
+
+Example:
+
+```python
+@strawberry.type
+class A:
+    a: str
+
+
+@strawberry.type
+class B:
+    b: str
+
+
+@strawberry.type
+class Query:
+    x: str = "Hello"
+
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def example_with_union(self) -> AsyncGenerator[Union[A, B], None]:
+        yield A(a="Hi")
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3008](https://github.com/strawberry-graphql/strawberry/pull/3008/)
+
+
+0.199.1 - 2023-08-02
+--------------------
+
+This release fixes an issue in the `graphql-ws` implementation
+where sending a `null` payload would cause the connection
+to be closed.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3007](https://github.com/strawberry-graphql/strawberry/pull/3007/)
+
+
+0.199.0 - 2023-08-01
+--------------------
+
+This release changes how we handle generic type vars, bringing
+support to the new generic syntax in Python 3.12 (which will be out in October).
+
+This now works:
+
+```python
+@strawberry.type
+class Edge[T]:
+    cursor: strawberry.ID
+    node_field: T
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def example(self) -> Edge[int]:
+        return Edge(cursor=strawberry.ID("1"), node_field=1)
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2993](https://github.com/strawberry-graphql/strawberry/pull/2993/)
+
+
+0.198.0 - 2023-07-31
+--------------------
+
+This release adds support for returning interfaces directly in resolvers:
+
+```python
+@strawberry.interface
+class Node:
+    id: strawberry.ID
+
+    @classmethod
+    def resolve_type(cls, obj: Any, *args: Any, **kwargs: Any) -> str:
+        return "Video" if obj.id == "1" else "Image"
+
+
+@strawberry.type
+class Video(Node):
+    ...
+
+
+@strawberry.type
+class Image(Node):
+    ...
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def node(self, id: strawberry.ID) -> Node:
+        return Node(id=id)
+
+
+schema = strawberry.Schema(query=Query, types=[Video, Image])
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2989](https://github.com/strawberry-graphql/strawberry/pull/2989/)
+
+
+0.197.0 - 2023-07-30
+--------------------
+
+This release removes support for Python 3.7 as its end of life
+was on 27 Jun 2023.
+
+This will allow us to reduce the number of CI jobs we have,
+and potentially use newer features of Python. ⚡
+
+Contributed by [Alexander](https://github.com/devkral) via [PR #2907](https://github.com/strawberry-graphql/strawberry/pull/2907/)
+
+
+0.196.2 - 2023-07-28
+--------------------
+
+This release fixes an issue when trying to use `Annotated[strawberry.auto, ...]`
+on python 3.10 or older, which got evident after the fix from 0.196.1.
+
+Previously we were throwing the type away, since it usually is `Any`, but python
+3.10 and older will validate that the first argument passed for `Annotated`
+is callable (3.11+ does not do that anymore), and `StrawberryAuto` is not.
+
+This changes it to keep that `Any`, which is also what someone would expect
+when resolving the annotation using our custom `eval_type` function.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2990](https://github.com/strawberry-graphql/strawberry/pull/2990/)
+
+
+0.196.1 - 2023-07-26
+--------------------
+
+This release fixes an issue where annotations resolution for auto and lazy fields
+using `Annotated` where not preserving the remaining arguments because of a
+typo in the arguments filtering.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2983](https://github.com/strawberry-graphql/strawberry/pull/2983/)
+
+
+0.196.0 - 2023-07-26
+--------------------
+
+This release adds support for union with a single member, they are
+useful for future proofing your schema in cases you know a field
+will be part of a union in future.
+
+```python
+import strawberry
+
+from typing import Annotated
+
+
+@strawberry.type
+class Audio:
+    duration: int
+
+
+@strawberry.type
+class Query:
+    # note: Python's Union type doesn't support single members,
+    # Union[Audio] is exactly the same as Audio, so we use
+    # use Annotated and strawberry.union to tell Strawberry this is
+    # a union with a single member
+    latest_media: Annotated[Audio, strawberry.union("MediaItem")]
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2982](https://github.com/strawberry-graphql/strawberry/pull/2982/)
+
+
+0.195.3 - 2023-07-22
+--------------------
+
+This release no longer requires an upperbound pin for uvicorn, ensuring
+compatibility with future versions of uvicorn without the need for updating
+Strawberry.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2968](https://github.com/strawberry-graphql/strawberry/pull/2968/)
+
+
+0.195.2 - 2023-07-15
+--------------------
+
+This release introduces a bug fix for relay connection where previously they wouldn't work without padding the `first` argument.
+
+Contributed by [Alexander](https://github.com/devkral) via [PR #2938](https://github.com/strawberry-graphql/strawberry/pull/2938/)
+
+
+0.195.1 - 2023-07-15
+--------------------
+
+This release fixes a bug where returning a generic type from a field
+that was returning an interface would throw an error.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2955](https://github.com/strawberry-graphql/strawberry/pull/2955/)
+
+
+0.195.0 - 2023-07-14
+--------------------
+
+Improve the time complexity of `strawberry.interface` using `resolve_type`.
+Achieved time complexity is now O(1) with respect to the number of
+implementations of an interface. Previously, the use of `is_type_of` resulted
+in a worst-case performance of O(n).
+
+**Before**:
+
+```shell
+---------------------------------------------------------------------------
+Name (time in ms)                         Min                 Max
+---------------------------------------------------------------------------
+test_interface_performance[1]         18.0224 (1.0)       50.3003 (1.77)
+test_interface_performance[16]        22.0060 (1.22)      28.4240 (1.0)
+test_interface_performance[256]       69.1364 (3.84)      76.1349 (2.68)
+test_interface_performance[4096]     219.6461 (12.19)    231.3732 (8.14)
+---------------------------------------------------------------------------
+```
+
+**After**:
+
+```shell
+---------------------------------------------------------------------------
+Name (time in ms)                        Min                Max
+---------------------------------------------------------------------------
+test_interface_performance[1]        14.3921 (1.0)      46.2064 (2.79)
+test_interface_performance[16]       14.8669 (1.03)     16.5732 (1.0)
+test_interface_performance[256]      15.8977 (1.10)     24.4618 (1.48)
+test_interface_performance[4096]     18.7340 (1.30)     21.2899 (1.28)
+---------------------------------------------------------------------------
+```
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #1949](https://github.com/strawberry-graphql/strawberry/pull/1949/)
+
+
 0.194.4 - 2023-07-08
 --------------------
 
