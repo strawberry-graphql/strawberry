@@ -56,6 +56,21 @@ def query_file_path(tmp_path: Path) -> Path:
     return output_path
 
 
+@pytest.fixture
+def query_file_path2(tmp_path: Path) -> Path:
+    output_path = tmp_path / "query2.graphql"
+    output_path.write_text(
+        """
+        query GetUser {
+            user {
+                name
+            }
+        }
+        """
+    )
+    return output_path
+
+
 def test_codegen(
     cli_app: Typer, cli_runner: CliRunner, query_file_path: Path, tmp_path: Path
 ):
@@ -80,6 +95,65 @@ def test_codegen(
 
     assert code_path.exists()
     assert code_path.read_text() == "# This is a test file for GetUser"
+
+
+def test_codegen_multiple_files(
+    cli_app: Typer,
+    cli_runner: CliRunner,
+    query_file_path: Path,
+    query_file_path2: Path,
+    tmp_path: Path,
+):
+    expected_paths = [
+        tmp_path / "query.py",
+        tmp_path / "query2.py",
+        tmp_path / "query.ts",
+        tmp_path / "query2.ts",
+    ]
+    for path in expected_paths:
+        assert not path.exists()
+
+    selector = "tests.fixtures.sample_package.sample_module:schema"
+    result = cli_runner.invoke(
+        cli_app,
+        [
+            "codegen",
+            "-p",
+            "python",
+            "-p",
+            "typescript",
+            "-o",
+            str(tmp_path),
+            "--schema",
+            selector,
+            str(query_file_path),
+            str(query_file_path2),
+        ],
+    )
+
+    assert result.exit_code == 0
+
+    for path in expected_paths:
+        assert path.exists()
+        assert " GetUserResult" in path.read_text()
+
+
+def test_codegen_pass_no_query(cli_app: Typer, cli_runner: CliRunner, tmp_path: Path):
+    selector = "tests.fixtures.sample_package.sample_module:schema"
+    result = cli_runner.invoke(
+        cli_app,
+        [
+            "codegen",
+            "-p",
+            "tests.cli.test_codegen:EmptyPlugin",
+            "-o",
+            str(tmp_path),
+            "--schema",
+            selector,
+        ],
+    )
+
+    assert result.exit_code == 0
 
 
 def test_codegen_passing_plugin_symbol(
@@ -197,7 +271,7 @@ def test_codegen_finds_our_plugins(
 
     assert result.exit_code == 0
 
-    code_path = tmp_path / "types.py"
+    code_path = tmp_path / query_file_path.with_suffix(".py").name
 
     assert code_path.exists()
     assert "class GetUserResult" in code_path.read_text()

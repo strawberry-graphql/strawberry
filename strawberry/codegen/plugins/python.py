@@ -18,6 +18,8 @@ from strawberry.codegen.types import (
 )
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from strawberry.codegen.types import (
         GraphQLArgumentValue,
         GraphQLField,
@@ -46,8 +48,10 @@ class PythonPlugin(QueryCodegenPlugin):
         "Decimal": PythonType("Decimal", "decimal"),
     }
 
-    def __init__(self) -> None:
+    def __init__(self, query: Path) -> None:
         self.imports: Dict[str, Set[str]] = defaultdict(set)
+        self.outfile_name: str = query.with_suffix(".py").name
+        self.query = query
 
     def generate_code(
         self, types: List[GraphQLType], operation: GraphQLOperation
@@ -57,7 +61,7 @@ class PythonPlugin(QueryCodegenPlugin):
 
         code = imports + "\n\n" + "\n\n".join(printed_types)
 
-        return [CodegenFile("types.py", code.strip())]
+        return [CodegenFile(self.outfile_name, code.strip())]
 
     def _print_imports(self) -> str:
         imports = [
