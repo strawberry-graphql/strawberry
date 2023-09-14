@@ -1,6 +1,37 @@
 CHANGELOG
 =========
 
+0.208.0 - 2023-09-14
+--------------------
+
+Adds new strawberry.Parent type annotation to support resolvers without use of self.
+
+E.g.
+
+```python
+@dataclass
+class UserRow:
+    id_: str
+
+
+@strawberry.type
+class User:
+    @strawberry.field
+    @staticmethod
+    async def name(parent: strawberry.Parent[UserRow]) -> str:
+        return f"User Number {parent.id}"
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user(self) -> User:
+        return UserRow(id_="1234")
+```
+
+Contributed by [mattalbr](https://github.com/mattalbr) via [PR #3017](https://github.com/strawberry-graphql/strawberry/pull/3017/)
+
+
 0.207.1 - 2023-09-14
 --------------------
 
