@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.207.0 - 2023-09-14
+--------------------
+
+This release removes the deprecated `ignore` argument from the `QueryDepthLimiter` extension.
+
+Contributed by [Kai Benevento](https://github.com/benesgarage) via [PR #3093](https://github.com/strawberry-graphql/strawberry/pull/3093/)
+
+
 0.206.0 - 2023-09-13
 --------------------
 
