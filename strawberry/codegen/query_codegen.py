@@ -857,7 +857,7 @@ class QueryCodegen:
             if any(isinstance(f, GraphQLFragmentSpread) for f in fields):
                 if len(fields) > 1:
                     raise ValueError(
-                        "Queries with Fragments cannot currently include separate fields."
+                        "Queries with Fragments cannot include separate fields."
                     )
                 spread_field = fields[0]
                 assert isinstance(spread_field, GraphQLFragmentSpread)
