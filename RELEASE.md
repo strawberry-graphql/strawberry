@@ -1,3 +1,3 @@
-Release type: patch
+Release type: minor
 
-Only raise deprecation warning in QueryDepthLimiter if `ignore` parameter is passed in.
+This release removes the deprecated `ignore` argument from the `QueryDepthLimiter` extension.
