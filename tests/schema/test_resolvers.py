@@ -583,7 +583,6 @@ def test_parent_argument(resolver):
     assert result.data["user"]["name"] == "User 🍓"
 
 
-# Should we allow these?
 def parent_and_self(self, parent: Parent[UserLiteral]) -> str:
     raise AssertionError("Unreachable code.")
 
