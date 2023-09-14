@@ -50,7 +50,7 @@ class LibCSTSourceFinder:
         if not path.exists() or path.suffix != ".py":
             return None  # pragma: no cover
 
-        source = path.read_text()
+        source = path.read_text(encoding="utf-8")
 
         return SourcePath(path=path, code=source)
 
