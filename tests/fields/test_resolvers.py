@@ -364,7 +364,7 @@ def root_and_info(
     info: str,
     strawberry_info: Info,
 ) -> str:
-    return "Hello world"
+    raise AssertionError("Unreachable code.")
 
 
 def self_and_info(
@@ -374,7 +374,7 @@ def self_and_info(
     info: str,
     strawberry_info: Info,
 ) -> str:
-    return "Hello world"
+    raise AssertionError("Unreachable code.")
 
 
 def parent_and_info(
@@ -384,7 +384,7 @@ def parent_and_info(
     info: str,
     strawberry_info: Info,
 ) -> str:
-    return "Hello world"
+    raise AssertionError("Unreachable code.")
 
 
 @pytest.mark.parametrize(

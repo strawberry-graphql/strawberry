@@ -245,7 +245,10 @@ class StrawberryResolver(Generic[T]):
         ) and len(conflicting_arguments) > 1:
             raise ConflictingArgumentsError(
                 self,
-                [self.reserved_parameters[key].name for key in conflicting_arguments],
+                [
+                    cast(Parameter, self.reserved_parameters[key]).name
+                    for key in conflicting_arguments
+                ],
             )
 
         missing_annotations: List[str] = []
