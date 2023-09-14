@@ -1,10 +1,12 @@
 # type: ignore
 import typing
-from typing import Any, Generic, List, Optional, Type, TypeVar, Union
+from typing import Any, Generic, List, NamedTuple, Optional, Type, TypeVar, Union
 
 import pytest
 
 import strawberry
+from strawberry.exceptions import ConflictingArgumentsError
+from strawberry.parent import Parent
 from strawberry.types.info import Info
 
 
@@ -540,3 +542,87 @@ def test_name_based_info_is_deprecated():
                 ...
 
         strawberry.Schema(query=Query)
+
+
+class UserLiteral(NamedTuple):
+    id: str
+
+
+def parent_no_self(parent: Parent[UserLiteral]) -> str:
+    return f"User {parent.id}"
+
+
+class Foo:
+    @staticmethod
+    def static_method_parent(asdf: Parent[UserLiteral]) -> str:
+        return f"User {asdf.id}"
+
+
+@pytest.mark.parametrize(
+    "resolver",
+    (
+        pytest.param(parent_no_self),
+        pytest.param(Foo.static_method_parent),
+    ),
+)
+def test_parent_argument(resolver):
+    @strawberry.type
+    class User:
+        id: str
+        name: str = strawberry.field(resolver=resolver)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, user_id: str) -> User:
+            return UserLiteral(user_id)
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync('{ user(userId: "🍓") { name } }')
+    assert not result.errors
+    assert result.data["user"]["name"] == "User 🍓"
+
+
+def parent_and_self(self, parent: Parent[UserLiteral]) -> str:
+    raise AssertionError("Unreachable code.")
+
+
+def parent_self_and_root(self, root, parent: Parent[UserLiteral]) -> str:
+    raise AssertionError("Unreachable code.")
+
+
+def self_and_root(self, root) -> str:
+    raise AssertionError("Unreachable code.")
+
+
+def multiple_parents(user: Parent[Any], user2: Parent[Any]) -> str:
+    raise AssertionError("Unreachable code.")
+
+
+def multiple_infos(root, info1: Info, info2: Info) -> str:
+    raise AssertionError("Unreachable code.")
+
+
+@pytest.mark.parametrize(
+    "resolver",
+    (
+        pytest.param(parent_and_self),
+        pytest.param(parent_self_and_root),
+        pytest.param(self_and_root),
+        pytest.param(multiple_parents),
+        pytest.param(multiple_infos),
+    ),
+)
+@pytest.mark.raises_strawberry_exception(
+    ConflictingArgumentsError,
+    match=(
+        "Arguments .* define conflicting resources. "
+        "Only one of these arguments may be defined per resolver."
+    ),
+)
+def test_multiple_conflicting_reserved_arguments(resolver):
+    @strawberry.type
+    class Query:
+        name: str = strawberry.field(resolver=resolver)
+
+    strawberry.Schema(query=Query)
