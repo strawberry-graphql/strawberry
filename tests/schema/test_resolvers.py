@@ -5,6 +5,7 @@ from typing import Any, Generic, List, NamedTuple, Optional, Type, TypeVar, Unio
 import pytest
 
 import strawberry
+from strawberry.exceptions import ConflictingArgumentsError
 from strawberry.parent import Parent
 from strawberry.types.info import Info
 
@@ -551,15 +552,6 @@ def parent_no_self(parent: Parent[UserLiteral]) -> str:
     return f"User {parent.id}"
 
 
-# Should we allow these?
-def parent_and_self(self, parent: Parent[UserLiteral]) -> str:
-    return f"User {parent.id}"
-
-
-def parent_self_and_root(self, root, parent: Parent[UserLiteral]) -> str:
-    return f"User {parent.id}"
-
-
 class Foo:
     @staticmethod
     def static_method_parent(asdf: Parent[UserLiteral]) -> str:
@@ -570,8 +562,6 @@ class Foo:
     "resolver",
     (
         pytest.param(parent_no_self),
-        pytest.param(parent_and_self),
-        pytest.param(parent_self_and_root),
         pytest.param(Foo.static_method_parent),
     ),
 )
@@ -593,6 +583,19 @@ def test_parent_argument(resolver):
     assert result.data["user"]["name"] == "User 🍓"
 
 
+# Should we allow these?
+def parent_and_self(self, parent: Parent[UserLiteral]) -> str:
+    raise AssertionError("Unreachable code.")
+
+
+def parent_self_and_root(self, root, parent: Parent[UserLiteral]) -> str:
+    raise AssertionError("Unreachable code.")
+
+
+def self_and_root(self, root) -> str:
+    raise AssertionError("Unreachable code.")
+
+
 def multiple_parents(user: Parent[Any], user2: Parent[Any]) -> str:
     raise AssertionError("Unreachable code.")
 
@@ -604,8 +607,18 @@ def multiple_infos(root, info1: Info, info2: Info) -> str:
 @pytest.mark.parametrize(
     "resolver",
     (
+        pytest.param(parent_and_self),
+        pytest.param(parent_self_and_root),
+        pytest.param(self_and_root),
         pytest.param(multiple_parents),
         pytest.param(multiple_infos),
+    ),
+)
+@pytest.mark.raises_strawberry_exception(
+    ConflictingArgumentsError,
+    match=(
+        "Arguments .* define conflicting resources. "
+        "Only one of these arguments may be defined per resolver."
     ),
 )
 def test_multiple_conflicting_reserved_arguments(resolver):
@@ -613,6 +626,4 @@ def test_multiple_conflicting_reserved_arguments(resolver):
     class Query:
         name: str = strawberry.field(resolver=resolver)
 
-    # Would be awesome to give a more helpful error here, but c'est la vie.
-    with pytest.raises(TypeError):
-        schema = strawberry.Schema(query=Query)
+    strawberry.Schema(query=Query)

@@ -357,21 +357,47 @@ def test_with_resolver_fields():
     assert Query(a=1) != Query(a=2)
 
 
-def test_resolver_annotations():
+def root_and_info(
+    root,
+    foo: str,
+    bar: float,
+    info: str,
+    strawberry_info: Info,
+) -> str:
+    return "Hello world"
+
+
+def self_and_info(
+    self,
+    foo: str,
+    bar: float,
+    info: str,
+    strawberry_info: Info,
+) -> str:
+    return "Hello world"
+
+
+def parent_and_info(
+    parent: Parent[str],
+    foo: str,
+    bar: float,
+    info: str,
+    strawberry_info: Info,
+) -> str:
+    return "Hello world"
+
+
+@pytest.mark.parametrize(
+    "resolver_func",
+    (
+        pytest.param(self_and_info),
+        pytest.param(root_and_info),
+        pytest.param(parent_and_info),
+    ),
+)
+def test_resolver_annotations(resolver_func):
     """Ensure only non-reserved annotations are returned."""
-
-    def resolver_annotated_info(
-        self,
-        root,
-        parent: Parent[str],
-        foo: str,
-        bar: float,
-        info: str,
-        strawberry_info: Info,
-    ) -> str:
-        return "Hello world"
-
-    resolver = StrawberryResolver(resolver_annotated_info)
+    resolver = StrawberryResolver(resolver_func)
 
     expected_annotations = {"foo": str, "bar": float, "info": str, "return": str}
     assert resolver.annotations == expected_annotations

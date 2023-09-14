@@ -25,6 +25,7 @@ from typing_extensions import Annotated, Protocol, get_origin
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import (
+    ConflictingArgumentsError,
     MissingArgumentsAnnotationsError,
 )
 from strawberry.parent import StrawberryParent
@@ -110,6 +111,9 @@ class ReservedType(NamedTuple):
         parameters: Tuple[inspect.Parameter, ...],
         resolver: StrawberryResolver[Any],
     ) -> Optional[inspect.Parameter]:
+        # Go through all the types even after we've found one so we can
+        # give a helpful error message if someone uses the type more than once.
+        type_parameters = []
         for parameter in parameters:
             annotation = resolver.strawberry_annotations[parameter]
             if isinstance(annotation, StrawberryAnnotation):
@@ -119,7 +123,15 @@ class ReservedType(NamedTuple):
                     continue
                 else:
                     if self.is_reserved_type(evaled_annotation):
-                        return parameter
+                        type_parameters.append(parameter)
+
+        if len(type_parameters) > 1:
+            raise ConflictingArgumentsError(
+                resolver, [parameter.name for parameter in type_parameters]
+            )
+
+        if type_parameters:
+            return type_parameters[0]
 
         # Fallback to matching by name
         if not self.name:
@@ -221,6 +233,20 @@ class StrawberryResolver(Generic[T]):
         """Resolver arguments exposed in the GraphQL Schema."""
         parameters = self.signature.parameters.values()
         reserved_parameters = set(self.reserved_parameters.values())
+        populated_reserved_parameters = set(
+            key for key, value in self.reserved_parameters.items() if value is not None
+        )
+
+        if (
+            conflicting_arguments := (
+                populated_reserved_parameters
+                & {SELF_PARAMSPEC, ROOT_PARAMSPEC, PARENT_PARAMSPEC}
+            )
+        ) and len(conflicting_arguments) > 1:
+            raise ConflictingArgumentsError(
+                self,
+                [self.reserved_parameters[key].name for key in conflicting_arguments],
+            )
 
         missing_annotations: List[str] = []
         arguments: List[StrawberryArgument] = []
