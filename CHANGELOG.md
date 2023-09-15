@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.208.1 - 2023-09-15
+--------------------
+
+This fixes a bug where codegen would choke trying to find a field in the schema for a generic type.
+
+Contributed by [Matt Gilson](https://github.com/mgilson) via [PR #3077](https://github.com/strawberry-graphql/strawberry/pull/3077/)
+
+
 0.208.0 - 2023-09-14
 --------------------
 
