@@ -521,6 +521,7 @@ The default context returned by `get_context()` is a `dict` that includes the fo
 - `response` A `TemporalResponse` object, that can be used to influence the HTTP response:
   - `status_code`: The status code of the response, if there are no execution errors (defaults to `200`)
   - `headers`: Any additional headers that should be send with the response
+  - `set_cookie`: A method for setting cookies, e.g. `set_cookie("token", "asd")` would set a `token` cookie with the value `asd`.
 
 ## GraphQLWSConsumer (WebSockets / Subscriptions)
 

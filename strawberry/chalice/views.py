@@ -111,7 +111,9 @@ class GraphQLView(
         return Response(
             body=self.encode_json(response_data),
             status_code=status_code,
-            headers=sub_response.headers,
+            # The type definition of the headers field of the Response class is wrong,
+            # see https://github.com/aws/chalice/pull/2050
+            headers=sub_response.headers,  # type: ignore
         )
 
     def execute_request(self, request: Request) -> Response:

@@ -100,6 +100,7 @@ botocore = "1.31.18"
 mypy = "1.4.1"
 pytest-mypy-plugins = ">=1.10,<4.0"
 types-protobuf = "^4.23.0.1"
+backports-zoneinfo = {markers = "python_version < \"3.9\"", version = "^0.2.1"}
 
 [tool.poetry.group.integrations]
 optional = true

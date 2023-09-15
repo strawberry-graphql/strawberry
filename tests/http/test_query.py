@@ -170,3 +170,42 @@ async def test_updating_headers(
     assert response.status_code == 200
     assert response.json["data"] == {"setHeader": "Jake"}
     assert response.headers["X-Name"] == "Jake"
+
+
+@pytest.mark.parametrize("method", ["get", "post"])
+async def test_setting_cookie(method: Literal["get", "post"], http_client: HttpClient):
+    response = await http_client.query(
+        method=method,
+        query="query { setCookie }",
+    )
+
+    assert response.status_code == 200
+    assert "errors" not in response.json
+    assert "Set-Cookie" in response.headers
+    assert "strawberry=rocks" in response.headers["Set-Cookie"]
+
+
+@pytest.mark.parametrize("method", ["get", "post"])
+async def test_setting_multiple_cookies(
+    method: Literal["get", "post"], http_client: HttpClient
+):
+    response = await http_client.query(
+        method=method,
+        query="query { setTwoCookies }",
+    )
+
+    assert response.status_code == 200
+    assert "errors" not in response.json
+    assert "Set-Cookie" in response.headers
+
+    if hasattr(response.headers, "get_all"):
+        headers = response.headers.get_all("Set-Cookie")
+    elif hasattr(response.headers, "getall"):
+        headers = response.headers.getall("Set-Cookie")
+    elif hasattr(response.headers, "get_list"):
+        headers = response.headers.get_list("Set-Cookie")
+    else:
+        headers = response.headers["Set-Cookie"]
+
+    assert any(cookie_value.startswith("strawberry=rocks") for cookie_value in headers)
+    assert any(cookie_value.startswith("snek=is_little") for cookie_value in headers)

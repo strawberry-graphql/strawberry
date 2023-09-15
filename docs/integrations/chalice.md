@@ -159,3 +159,18 @@ class MyGraphQLView(GraphQLView):
     def encode_json(self, data: GraphQLHTTPResponse) -> str:
         return json.dumps(data, indent=2)
 ```
+
+## Setting cookies
+
+It is possible to set cookies by using the `response` object contained inside the context of the `Info` object, e.g. you can
+set a `token` cookie during a login:
+
+```python
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def login(self, info: Info) -> bool:
+        token = do_login()
+        info.context["response"].set_cookie(key="token", value=token)
+        return True
+```

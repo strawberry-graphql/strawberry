@@ -76,18 +76,28 @@ class DjangoHttpClient(HttpClient):
         try:
             response = view(request)
         except Http404:
-            return Response(
-                status_code=404, data=b"Not found", headers=response.headers
-            )
+            return Response(status_code=404, data=b"Not found", headers={})
         except (BadRequest, SuspiciousOperation) as e:
-            return Response(
-                status_code=400, data=e.args[0].encode(), headers=response.headers
-            )
+            return Response(status_code=400, data=e.args[0].encode(), headers={})
         else:
+            response_headers = {}
+            for k, v in response.headers.items():
+                response_headers[k] = v
+
+            if len(response.cookies) > 1:
+                response_headers["Set-Cookie"] = [
+                    cookie.output(header="").strip()
+                    for cookie in response.cookies.values()
+                ]
+            else:
+                response_headers["Set-Cookie"] = response.cookies.output(
+                    header=""
+                ).strip()
+
             return Response(
                 status_code=response.status_code,
                 data=response.content,
-                headers=response.headers,
+                headers=response_headers,
             )
 
     async def _graphql_request(

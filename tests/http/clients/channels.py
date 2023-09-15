@@ -208,10 +208,21 @@ class ChannelsHttpClient(HttpClient):
         )
         response = await communicator.get_response()
 
+        response_headers = {}
+        for key, value in response["headers"]:
+            name = key.decode()
+            if name in response_headers:
+                if isinstance(response_headers[name], list):
+                    response_headers[name].append(value.decode())
+                else:
+                    response_headers[name] = [response_headers[name], value.decode()]
+            else:
+                response_headers[name] = value.decode()
+
         return Response(
             status_code=response["status"],
             data=response["body"],
-            headers={k.decode(): v.decode() for k, v in response["headers"]},
+            headers=response_headers,
         )
 
     async def get(

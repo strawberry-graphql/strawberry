@@ -8,7 +8,7 @@ import dataclasses
 import json
 from functools import cached_property
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Tuple, Union
 from urllib.parse import parse_qs
 
 from django.conf import settings
@@ -39,7 +39,7 @@ class ChannelsResponse:
     content: bytes
     status: int = 200
     content_type: str = "application/json"
-    headers: Dict[bytes, bytes] = dataclasses.field(default_factory=dict)
+    headers: List[Tuple[bytes, bytes]] = dataclasses.field(default_factory=list)
 
 
 @dataclasses.dataclass
@@ -164,19 +164,27 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse
     ) -> ChannelsResponse:
+        headers = []
+        for name, value in sub_response.headers.items():
+            if isinstance(value, list):
+                multivalue_headers = [
+                    (name.encode(), element.encode()) for element in value
+                ]
+                headers.extend(multivalue_headers)
+            else:
+                headers.append((name.encode(), value.encode()))
+
         return ChannelsResponse(
             content=json.dumps(response_data).encode(),
             status=sub_response.status_code,
-            headers={k.encode(): v.encode() for k, v in sub_response.headers.items()},
+            headers=headers,
         )
 
     async def handle(self, body: bytes) -> None:
         request = ChannelsRequest(consumer=self, body=body)
         try:
             response: ChannelsResponse = await self.run(request)
-
-            if b"Content-Type" not in response.headers:
-                response.headers[b"Content-Type"] = response.content_type.encode()
+            response.headers.append((b"Content-Type", response.content_type.encode()))
 
             await self.send_response(
                 response.status,

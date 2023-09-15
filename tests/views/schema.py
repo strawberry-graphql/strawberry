@@ -119,6 +119,31 @@ class Query:
 
         return name
 
+    @strawberry.field
+    def set_cookie(self, info: Info[Any, Any]) -> str:
+        response = info.context["response"]
+        response.set_cookie(
+            "strawberry",
+            "rocks",
+        )
+
+        return "adb"
+
+    @strawberry.field
+    def set_two_cookies(self, info: Info[Any, Any]) -> str:
+        response = info.context["response"]
+        response.set_cookie(
+            "strawberry",
+            "rocks",
+        )
+
+        response.set_cookie(
+            "snek",
+            "is_little",
+        )
+
+        return "adb"
+
 
 @strawberry.type
 class Mutation:
