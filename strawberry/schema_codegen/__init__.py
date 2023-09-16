@@ -10,6 +10,8 @@ from graphql import (
     NamedTypeNode,
     NonNullTypeNode,
     ObjectTypeDefinitionNode,
+    OperationType,
+    SchemaDefinitionNode,
     TypeNode,
     parse,
 )
@@ -166,10 +168,56 @@ def _get_class_definition(
     )
 
 
+def _get_schema_definition(
+    root_query_name: str | None,
+    root_mutation_name: str | None,
+    root_subscription_name: str | None,
+) -> cst.SimpleStatementLine | None:
+    if not any([root_query_name, root_mutation_name, root_subscription_name]):
+        return None
+
+    args: list[cst.Arg] = []
+
+    def _get_arg(name: str, value: str):
+        return cst.Arg(
+            keyword=cst.Name(name),
+            value=cst.Name(value),
+            equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
+        )
+
+    if root_query_name:
+        args.append(_get_arg("query", root_query_name))
+
+    if root_mutation_name:
+        args.append(_get_arg("mutation", root_mutation_name))
+
+    if root_subscription_name:
+        args.append(_get_arg("subscription", root_subscription_name))
+
+    return cst.SimpleStatementLine(
+        body=[
+            cst.Assign(
+                targets=[cst.AssignTarget(cst.Name("schema"))],
+                value=cst.Call(
+                    func=cst.Attribute(
+                        value=cst.Name("strawberry"),
+                        attr=cst.Name("Schema"),
+                    ),
+                    args=args,
+                ),
+            )
+        ]
+    )
+
+
 def codegen(schema: str) -> str:
     document = parse(schema)
 
-    definitions: list[cst.BaseCompoundStatement] = []
+    definitions: list[cst.CSTNode] = []
+
+    root_query_name: str | None = None
+    root_mutation_name: str | None = None
+    root_subscription_name: str | None = None
 
     for definition in document.definitions:
         definitions.append(cst.EmptyLine())  # type: ignore - this works :)
@@ -180,15 +228,36 @@ def codegen(schema: str) -> str:
             class_definition = _get_class_definition(definition)
 
             definitions.append(class_definition)
+        elif isinstance(definition, SchemaDefinitionNode):
+            for operation_type_definition in definition.operation_types:
+                if operation_type_definition.operation == OperationType.QUERY:
+                    root_query_name = operation_type_definition.type.name.value
+                elif operation_type_definition.operation == OperationType.MUTATION:
+                    root_mutation_name = operation_type_definition.type.name.value
+                elif operation_type_definition.operation == OperationType.SUBSCRIPTION:
+                    root_subscription_name = operation_type_definition.type.name.value
+                else:
+                    raise NotImplementedError(
+                        f"Unknown operation {operation_type_definition.operation}"
+                    )
         else:
             raise NotImplementedError(f"Unknown definition {definition}")
+
+    schema_definition = _get_schema_definition(
+        root_query_name=root_query_name,
+        root_mutation_name=root_mutation_name,
+        root_subscription_name=root_subscription_name,
+    )
+
+    if schema_definition:
+        definitions.append(schema_definition)
 
     module = cst.Module(
         body=[
             cst.SimpleStatementLine(
                 body=[cst.Import(names=[cst.ImportAlias(name=cst.Name("strawberry"))])]
             ),
-            *definitions,
+            *definitions,  # type: ignore
         ]
     )
 
