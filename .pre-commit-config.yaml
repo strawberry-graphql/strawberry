@@ -31,6 +31,8 @@ repos:
       - id: end-of-file-fixer
         exclude: ^tests/relay/snapshots
       - id: check-toml
+      - id: no-commit-to-branch
+        args: ['--branch', 'main']
 
   - repo: https://github.com/adamchainz/blacken-docs
     rev: 1.15.0
