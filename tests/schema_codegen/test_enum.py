@@ -28,6 +28,7 @@ def test_enum():
     assert codegen(schema).strip() == expected
 
 
+# TODO: descriptions
 def test_multiple_enums_single_import():
     schema = """
     enum AuthStateNameEnum {
