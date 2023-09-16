@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import dataclasses
 import keyword
 
 import libcst as cst
 from graphql import (
+    EnumTypeDefinitionNode,
+    EnumValueDefinitionNode,
     FieldDefinitionNode,
     InterfaceTypeDefinitionNode,
     ListTypeNode,
@@ -168,6 +171,36 @@ def _get_class_definition(
     )
 
 
+def _get_enum_value(enum_value: EnumValueDefinitionNode) -> cst.SimpleStatementLine:
+    name = enum_value.name.value
+    return cst.SimpleStatementLine(
+        body=[
+            cst.Assign(
+                targets=[cst.AssignTarget(cst.Name(name))],
+                value=cst.SimpleString(f'"{name}"'),
+            )
+        ]
+    )
+
+
+def _get_enum_definition(definition: EnumTypeDefinitionNode) -> cst.ClassDef:
+    decorator = cst.Decorator(
+        decorator=cst.Attribute(
+            value=cst.Name("strawberry"),
+            attr=cst.Name("enum"),
+        ),
+    )
+
+    return cst.ClassDef(
+        name=cst.Name(definition.name.value),
+        bases=[cst.Arg(cst.Name("Enum"))],
+        body=cst.IndentedBlock(
+            body=[_get_enum_value(value) for value in definition.values]
+        ),
+        decorators=[decorator],
+    )
+
+
 def _get_schema_definition(
     root_query_name: str | None,
     root_mutation_name: str | None,
@@ -210,6 +243,23 @@ def _get_schema_definition(
     )
 
 
+@dataclasses.dataclass(frozen=True)
+class Import:
+    module: str | None
+    imports: tuple[str]
+
+    def to_cst(self) -> cst.Import | cst.ImportFrom:
+        if self.module is None:
+            return cst.Import(
+                names=[cst.ImportAlias(name=cst.Name(name)) for name in self.imports]
+            )
+
+        return cst.ImportFrom(
+            module=cst.Name(self.module),
+            names=[cst.ImportAlias(name=cst.Name(name)) for name in self.imports],
+        )
+
+
 def codegen(schema: str) -> str:
     document = parse(schema)
 
@@ -218,6 +268,10 @@ def codegen(schema: str) -> str:
     root_query_name: str | None = None
     root_mutation_name: str | None = None
     root_subscription_name: str | None = None
+
+    imports: set[Import] = {
+        Import(module=None, imports=("strawberry",)),
+    }
 
     for definition in document.definitions:
         definitions.append(cst.EmptyLine())  # type: ignore - this works :)
@@ -228,6 +282,12 @@ def codegen(schema: str) -> str:
             class_definition = _get_class_definition(definition)
 
             definitions.append(class_definition)
+
+        if isinstance(definition, EnumTypeDefinitionNode):
+            imports.add(Import(module="enum", imports=("Enum",)))
+
+            definitions.append(_get_enum_definition(definition))
+
         elif isinstance(definition, SchemaDefinitionNode):
             for operation_type_definition in definition.operation_types:
                 if operation_type_definition.operation == OperationType.QUERY:
@@ -254,9 +314,7 @@ def codegen(schema: str) -> str:
 
     module = cst.Module(
         body=[
-            cst.SimpleStatementLine(
-                body=[cst.Import(names=[cst.ImportAlias(name=cst.Name("strawberry"))])]
-            ),
+            *[cst.SimpleStatementLine(body=[import_.to_cst()]) for import_ in imports],
             *definitions,  # type: ignore
         ]
     )
