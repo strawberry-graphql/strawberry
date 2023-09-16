@@ -8,6 +8,8 @@ from graphql import (
     EnumTypeDefinitionNode,
     EnumValueDefinitionNode,
     FieldDefinitionNode,
+    InputObjectTypeDefinitionNode,
+    InputValueDefinitionNode,
     InterfaceTypeDefinitionNode,
     ListTypeNode,
     NamedTypeNode,
@@ -103,7 +105,9 @@ def _get_field_value(description: str | None, alias: str | None) -> cst.Call | N
         )
 
 
-def _get_field(field: FieldDefinitionNode) -> cst.SimpleStatementLine:
+def _get_field(
+    field: FieldDefinitionNode | InputValueDefinitionNode,
+) -> cst.SimpleStatementLine:
     name = to_snake_case(field.name.value)
     alias: str | None = None
 
@@ -128,11 +132,14 @@ def _get_field(field: FieldDefinitionNode) -> cst.SimpleStatementLine:
 
 
 def _get_strawberry_decorator(
-    definition: ObjectTypeDefinitionNode | InterfaceTypeDefinitionNode,
+    definition: ObjectTypeDefinitionNode
+    | InterfaceTypeDefinitionNode
+    | InputObjectTypeDefinitionNode,
 ) -> cst.Decorator:
     type_ = {
         ObjectTypeDefinitionNode: "type",
         InterfaceTypeDefinitionNode: "interface",
+        InputObjectTypeDefinitionNode: "input",
     }[type(definition)]
 
     description = definition.description
@@ -154,13 +161,18 @@ def _get_strawberry_decorator(
 
 
 def _get_class_definition(
-    definition: ObjectTypeDefinitionNode | InterfaceTypeDefinitionNode,
+    definition: ObjectTypeDefinitionNode
+    | InterfaceTypeDefinitionNode
+    | InputObjectTypeDefinitionNode,
 ) -> cst.ClassDef:
     decorator = _get_strawberry_decorator(definition)
 
     bases = (
         [cst.Arg(cst.Name(interface.name.value)) for interface in definition.interfaces]
-        if definition.interfaces
+        if isinstance(
+            definition, (ObjectTypeDefinitionNode, InterfaceTypeDefinitionNode)
+        )
+        and definition.interfaces
         else []
     )
 
@@ -307,7 +319,12 @@ def codegen(schema: str) -> str:
         definitions.append(cst.EmptyLine())  # type: ignore - this works :)
 
         if isinstance(
-            definition, (ObjectTypeDefinitionNode, InterfaceTypeDefinitionNode)
+            definition,
+            (
+                ObjectTypeDefinitionNode,
+                InterfaceTypeDefinitionNode,
+                InputObjectTypeDefinitionNode,
+            ),
         ):
             class_definition = _get_class_definition(definition)
 
