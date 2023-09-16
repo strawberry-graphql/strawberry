@@ -19,3 +19,7 @@ def to_kebab_case(name: str) -> str:
 
 def capitalize_first(name: str) -> str:
     return name[0].upper() + name[1:]
+
+
+def to_snake_case(name: str) -> str:
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()

@@ -2,9 +2,9 @@ import strawberry
 
 @strawberry.type(description="A connection to a list of items.")
 class FilmCharactersConnection:
-    pageInfo: PageInfo = strawberry.field(description="Information to aid in pagination.")
+    page_info: PageInfo = strawberry.field(description="Information to aid in pagination.")
     edges: list[FilmCharactersEdge | None] | None = strawberry.field(description="A list of edges.")
-    totalCount: int | None = strawberry.field(description="""
+    total_count: int | None = strawberry.field(description="""
 A count of the total number of objects in this connection, ignoring pagination.
 This allows a client to fetch the first five objects by passing "5" as the
 argument to "first", then fetch the total count so it could display "5 of 83",

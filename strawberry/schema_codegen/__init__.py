@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import keyword
+
 import libcst as cst
 from graphql import (
     FieldDefinitionNode,
@@ -11,6 +13,8 @@ from graphql import (
     TypeNode,
     parse,
 )
+
+from strawberry.utils.str_converters import to_snake_case
 
 _SCALAR_MAP = {
     "Int": cst.Name("int"),
@@ -67,31 +71,51 @@ def _get_argument(name: str, value: str) -> cst.Arg:
 
     return cst.Arg(
         value=argument_value,
-        keyword=cst.Name("description"),
+        keyword=cst.Name(name),
         equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
     )
 
 
-def _get_field(field: FieldDefinitionNode) -> cst.SimpleStatementLine:
-    if field.description:
-        value = cst.Call(
+def _get_field_value(description: str | None, alias: str | None) -> cst.Call | None:
+    args = list(
+        filter(
+            None,
+            [
+                _get_argument("description", description) if description else None,
+                _get_argument("name", alias) if alias else None,
+            ],
+        )
+    )
+
+    if args:
+        return cst.Call(
             func=cst.Attribute(
                 value=cst.Name("strawberry"),
                 attr=cst.Name("field"),
             ),
-            args=[_get_argument("description", field.description.value)],
+            args=args,
         )
-    else:
-        value = None
+
+
+def _get_field(field: FieldDefinitionNode) -> cst.SimpleStatementLine:
+    name = to_snake_case(field.name.value)
+    alias: str | None = None
+
+    if keyword.iskeyword(name):
+        name = f"{name}_"
+        alias = field.name.value
 
     return cst.SimpleStatementLine(
         body=[
             cst.AnnAssign(
-                target=cst.Name(field.name.value),
+                target=cst.Name(name),
                 annotation=cst.Annotation(
                     _get_field_type(field.type),
                 ),
-                value=value,
+                value=_get_field_value(
+                    description=field.description.value if field.description else None,
+                    alias=alias if alias != name else None,
+                ),
             )
         ]
     )
