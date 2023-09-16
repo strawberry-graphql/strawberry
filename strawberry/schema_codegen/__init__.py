@@ -44,7 +44,7 @@ def _get_field_type(
         expr = _SCALAR_MAP.get(field_type.name.value)
 
         if expr is None:
-            raise NotImplementedError(f"Unknown type {field_type.name.value}")
+            expr = cst.Name(field_type.name.value)
 
     else:
         raise NotImplementedError(f"Unknown type {field_type}")
@@ -60,8 +60,13 @@ def _get_field_type(
 
 
 def _get_argument(name: str, value: str) -> cst.Arg:
+    if "\n" in value:
+        argument_value = cst.SimpleString(f'"""\n{value}\n"""')
+    else:
+        argument_value = cst.SimpleString(f'"{value}"')
+
     return cst.Arg(
-        value=cst.SimpleString(f'"{value}"'),
+        value=argument_value,
         keyword=cst.Name("description"),
         equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
     )
