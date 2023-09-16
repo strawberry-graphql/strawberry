@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import libcst as cst
 from graphql import (
+    FieldDefinitionNode,
     ListTypeNode,
     NamedTypeNode,
     NonNullTypeNode,
@@ -57,6 +58,62 @@ def _get_field_type(
     )
 
 
+def _get_argument(name: str, value: str) -> cst.Arg:
+    return cst.Arg(
+        value=cst.SimpleString(f'"{value}"'),
+        keyword=cst.Name("description"),
+        equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
+    )
+
+
+def _get_field(field: FieldDefinitionNode) -> cst.SimpleStatementLine:
+    if field.description:
+        value = cst.Call(
+            func=cst.Attribute(
+                value=cst.Name("strawberry"),
+                attr=cst.Name("field"),
+            ),
+            args=[_get_argument("description", field.description.value)],
+        )
+    else:
+        value = None
+
+    return cst.SimpleStatementLine(
+        body=[
+            cst.AnnAssign(
+                target=cst.Name(field.name.value),
+                annotation=cst.Annotation(
+                    _get_field_type(field.type),
+                ),
+                value=value,
+            )
+        ]
+    )
+
+
+def _get_strawberry_decorator(
+    definition: ObjectTypeDefinitionNode,
+) -> cst.Decorator:
+    type_ = "type"
+
+    description = definition.description
+
+    decorator = cst.Attribute(
+        value=cst.Name("strawberry"),
+        attr=cst.Name(type_),
+    )
+
+    if description is not None:
+        decorator = cst.Call(
+            func=decorator,
+            args=[_get_argument("description", description.value)],
+        )
+
+    return cst.Decorator(
+        decorator=decorator,
+    )
+
+
 def codegen(schema: str) -> str:
     document = parse(schema)
 
@@ -65,30 +122,13 @@ def codegen(schema: str) -> str:
     for definition in document.definitions:
         assert isinstance(definition, ObjectTypeDefinitionNode)
 
-        decorator = cst.Decorator(
-            decorator=cst.Attribute(
-                value=cst.Name("strawberry"),
-                attr=cst.Name("type"),
-            ),
-        )
+        decorator = _get_strawberry_decorator(definition)
 
         class_definition = cst.ClassDef(
             name=cst.Name(definition.name.value),
             bases=[],
             body=cst.IndentedBlock(
-                body=[
-                    cst.SimpleStatementLine(
-                        body=[
-                            cst.AnnAssign(
-                                target=cst.Name(field.name.value),
-                                annotation=cst.Annotation(
-                                    _get_field_type(field.type),
-                                ),  # cst.Name(field.type.name.value),
-                            )
-                        ]
-                    )
-                    for field in definition.fields
-                ]
+                body=[_get_field(field) for field in definition.fields]
             ),
             decorators=[decorator],
         )

@@ -26,26 +26,51 @@ def test_codegen_object_type():
 
     expected = textwrap.dedent(
         """
-    import strawberry
+        import strawberry
 
-    @strawberry.type
-    class Example:
-        a: int
-        b: float
-        c: bool
-        d: str
-        e: strawberry.ID
-        f: list[int]
-        g: list[float]
-        h: list[bool]
-        i: list[str]
-        j: list[strawberry.ID]
-        k: list[int | None] | None
-        l: list[float | None] | None
-        m: list[bool | None] | None
-        n: list[str | None] | None
-        o: list[strawberry.ID | None] | None
+        @strawberry.type
+        class Example:
+            a: int
+            b: float
+            c: bool
+            d: str
+            e: strawberry.ID
+            f: list[int]
+            g: list[float]
+            h: list[bool]
+            i: list[str]
+            j: list[strawberry.ID]
+            k: list[int | None] | None
+            l: list[float | None] | None
+            m: list[bool | None] | None
+            n: list[str | None] | None
+            o: list[strawberry.ID | None] | None
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
+
+
+def test_supports_descriptions():
+    schema = """
+    "Example description"
+    type Example {
+        "a description"
+        a: Int!
+        "b description"
+        b: Float!
+    }
     """
+
+    expected = textwrap.dedent(
+        """
+        import strawberry
+
+        @strawberry.type(description="Example description")
+        class Example:
+            a: int = strawberry.field(description="a description")
+            b: float = strawberry.field(description="b description")
+        """
     ).strip()
 
     assert codegen(schema).strip() == expected
