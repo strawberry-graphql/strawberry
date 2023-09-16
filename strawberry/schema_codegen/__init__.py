@@ -1,0 +1,108 @@
+from __future__ import annotations
+
+import libcst as cst
+from graphql import (
+    ListTypeNode,
+    NamedTypeNode,
+    NonNullTypeNode,
+    ObjectTypeDefinitionNode,
+    TypeNode,
+    parse,
+)
+
+_SCALAR_MAP = {
+    "Int": cst.Name("int"),
+    "Float": cst.Name("float"),
+    "Boolean": cst.Name("bool"),
+    "String": cst.Name("str"),
+    "ID": cst.Attribute(
+        value=cst.Name("strawberry"),
+        attr=cst.Name("ID"),
+    ),
+}
+
+
+def _get_field_type(
+    field_type: TypeNode, was_non_nullable: bool = False
+) -> cst.BaseExpression:
+    if isinstance(field_type, NonNullTypeNode):
+        return _get_field_type(field_type.type, was_non_nullable=True)
+    elif isinstance(field_type, ListTypeNode):
+        expr = cst.Subscript(
+            value=cst.Name("list"),
+            slice=[
+                cst.SubscriptElement(
+                    cst.Index(
+                        value=_get_field_type(field_type.type),
+                    ),
+                )
+            ],
+        )
+    elif isinstance(field_type, NamedTypeNode):
+        expr = _SCALAR_MAP.get(field_type.name.value)
+
+        if expr is None:
+            raise NotImplementedError(f"Unknown type {field_type.name.value}")
+
+    else:
+        raise NotImplementedError(f"Unknown type {field_type}")
+
+    if was_non_nullable:
+        return expr
+
+    return cst.BinaryOperation(
+        left=expr,
+        operator=cst.BitOr(),
+        right=cst.Name("None"),
+    )
+
+
+def codegen(schema: str) -> str:
+    document = parse(schema)
+
+    definitions: list[cst.BaseCompoundStatement] = []
+
+    for definition in document.definitions:
+        assert isinstance(definition, ObjectTypeDefinitionNode)
+
+        decorator = cst.Decorator(
+            decorator=cst.Attribute(
+                value=cst.Name("strawberry"),
+                attr=cst.Name("type"),
+            ),
+        )
+
+        class_definition = cst.ClassDef(
+            name=cst.Name(definition.name.value),
+            bases=[],
+            body=cst.IndentedBlock(
+                body=[
+                    cst.SimpleStatementLine(
+                        body=[
+                            cst.AnnAssign(
+                                target=cst.Name(field.name.value),
+                                annotation=cst.Annotation(
+                                    _get_field_type(field.type),
+                                ),  # cst.Name(field.type.name.value),
+                            )
+                        ]
+                    )
+                    for field in definition.fields
+                ]
+            ),
+            decorators=[decorator],
+        )
+
+        definitions.append(class_definition)
+
+    module = cst.Module(
+        body=[
+            cst.SimpleStatementLine(
+                body=[cst.Import(names=[cst.ImportAlias(name=cst.Name("strawberry"))])]
+            ),
+            cst.EmptyLine(),  # type: ignore - this works :)
+            *definitions,
+        ]
+    )
+
+    return module.code
