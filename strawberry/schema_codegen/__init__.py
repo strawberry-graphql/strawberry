@@ -3,6 +3,7 @@ from __future__ import annotations
 import libcst as cst
 from graphql import (
     FieldDefinitionNode,
+    InterfaceTypeDefinitionNode,
     ListTypeNode,
     NamedTypeNode,
     NonNullTypeNode,
@@ -92,9 +93,12 @@ def _get_field(field: FieldDefinitionNode) -> cst.SimpleStatementLine:
 
 
 def _get_strawberry_decorator(
-    definition: ObjectTypeDefinitionNode,
+    definition: ObjectTypeDefinitionNode | InterfaceTypeDefinitionNode,
 ) -> cst.Decorator:
-    type_ = "type"
+    type_ = {
+        ObjectTypeDefinitionNode: "type",
+        InterfaceTypeDefinitionNode: "interface",
+    }[type(definition)]
 
     description = definition.description
 
@@ -114,33 +118,47 @@ def _get_strawberry_decorator(
     )
 
 
+def _get_class_definition(
+    definition: ObjectTypeDefinitionNode | InterfaceTypeDefinitionNode,
+) -> cst.ClassDef:
+    decorator = _get_strawberry_decorator(definition)
+
+    bases = (
+        [cst.Arg(cst.Name(interface.name.value)) for interface in definition.interfaces]
+        if definition.interfaces
+        else []
+    )
+
+    return cst.ClassDef(
+        name=cst.Name(definition.name.value),
+        bases=bases,
+        body=cst.IndentedBlock(body=[_get_field(field) for field in definition.fields]),
+        decorators=[decorator],
+    )
+
+
 def codegen(schema: str) -> str:
     document = parse(schema)
 
     definitions: list[cst.BaseCompoundStatement] = []
 
     for definition in document.definitions:
-        assert isinstance(definition, ObjectTypeDefinitionNode)
+        definitions.append(cst.EmptyLine())  # type: ignore - this works :)
 
-        decorator = _get_strawberry_decorator(definition)
+        if isinstance(
+            definition, (ObjectTypeDefinitionNode, InterfaceTypeDefinitionNode)
+        ):
+            class_definition = _get_class_definition(definition)
 
-        class_definition = cst.ClassDef(
-            name=cst.Name(definition.name.value),
-            bases=[],
-            body=cst.IndentedBlock(
-                body=[_get_field(field) for field in definition.fields]
-            ),
-            decorators=[decorator],
-        )
-
-        definitions.append(class_definition)
+            definitions.append(class_definition)
+        else:
+            raise NotImplementedError(f"Unknown definition {definition}")
 
     module = cst.Module(
         body=[
             cst.SimpleStatementLine(
                 body=[cst.Import(names=[cst.ImportAlias(name=cst.Name("strawberry"))])]
             ),
-            cst.EmptyLine(),  # type: ignore - this works :)
             *definitions,
         ]
     )

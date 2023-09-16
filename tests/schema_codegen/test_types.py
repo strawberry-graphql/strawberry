@@ -74,3 +74,33 @@ def test_supports_descriptions():
     ).strip()
 
     assert codegen(schema).strip() == expected
+
+
+def test_supports_interfaces():
+    schema = """
+    interface Node {
+        id: ID!
+    }
+
+    type User implements Node {
+        id: ID!
+        name: String!
+    }
+    """
+
+    expected = textwrap.dedent(
+        """
+        import strawberry
+
+        @strawberry.interface
+        class Node:
+            id: strawberry.ID
+
+        @strawberry.type
+        class User(Node):
+            id: strawberry.ID
+            name: str
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
