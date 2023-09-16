@@ -16,6 +16,7 @@ from graphql import (
     OperationType,
     SchemaDefinitionNode,
     TypeNode,
+    UnionTypeDefinitionNode,
     parse,
 )
 
@@ -260,6 +261,35 @@ class Import:
         )
 
 
+def _get_union_definition(definition: UnionTypeDefinitionNode) -> cst.Assign:
+    name = definition.name.value
+
+    types = cst.parse_expression(
+        " | ".join([type_.name.value for type_ in definition.types])
+    )
+
+    return cst.Assign(
+        targets=[cst.AssignTarget(cst.Name(name))],
+        value=cst.Subscript(
+            value=cst.Name("Annotated"),
+            slice=[
+                cst.SubscriptElement(slice=cst.Index(types)),
+                cst.SubscriptElement(
+                    slice=cst.Index(
+                        cst.Call(
+                            cst.Attribute(
+                                value=cst.Name("strawberry"),
+                                attr=cst.Name("union"),
+                            ),
+                            args=[_get_argument("name", name)],
+                        )
+                    )
+                ),
+            ],
+        ),
+    )
+
+
 def codegen(schema: str) -> str:
     document = parse(schema)
 
@@ -283,7 +313,7 @@ def codegen(schema: str) -> str:
 
             definitions.append(class_definition)
 
-        if isinstance(definition, EnumTypeDefinitionNode):
+        elif isinstance(definition, EnumTypeDefinitionNode):
             imports.add(Import(module="enum", imports=("Enum",)))
 
             definitions.append(_get_enum_definition(definition))
@@ -300,6 +330,11 @@ def codegen(schema: str) -> str:
                     raise NotImplementedError(
                         f"Unknown operation {operation_type_definition.operation}"
                     )
+        elif isinstance(definition, UnionTypeDefinitionNode):
+            imports.add(Import(module="typing", imports=("Annotated",)))
+
+            definitions.append(_get_union_definition(definition))
+            definitions.append(cst.EmptyLine())  # type: ignore - this works :)
         else:
             raise NotImplementedError(f"Unknown definition {definition}")
 
@@ -314,7 +349,10 @@ def codegen(schema: str) -> str:
 
     module = cst.Module(
         body=[
-            *[cst.SimpleStatementLine(body=[import_.to_cst()]) for import_ in imports],
+            *[
+                cst.SimpleStatementLine(body=[import_.to_cst()])
+                for import_ in sorted(imports, key=lambda i: i.module or "")
+            ],
             *definitions,  # type: ignore
         ]
     )
