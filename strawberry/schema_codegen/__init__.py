@@ -15,6 +15,7 @@ from graphql import (
     NamedTypeNode,
     NonNullTypeNode,
     ObjectTypeDefinitionNode,
+    ObjectTypeExtensionNode,
     OperationType,
     SchemaDefinitionNode,
     TypeNode,
@@ -133,6 +134,7 @@ def _get_field(
 
 def _get_strawberry_decorator(
     definition: ObjectTypeDefinitionNode
+    | ObjectTypeExtensionNode
     | InterfaceTypeDefinitionNode
     | InputObjectTypeDefinitionNode,
 ) -> cst.Decorator:
@@ -140,9 +142,14 @@ def _get_strawberry_decorator(
         ObjectTypeDefinitionNode: "type",
         InterfaceTypeDefinitionNode: "interface",
         InputObjectTypeDefinitionNode: "input",
+        ObjectTypeExtensionNode: "type",
     }[type(definition)]
 
-    description = definition.description
+    description = (
+        definition.description
+        if not isinstance(definition, ObjectTypeExtensionNode)
+        else None
+    )
 
     decorator = cst.Attribute(
         value=cst.Name("strawberry"),
@@ -162,6 +169,7 @@ def _get_strawberry_decorator(
 
 def _get_class_definition(
     definition: ObjectTypeDefinitionNode
+    | ObjectTypeExtensionNode
     | InterfaceTypeDefinitionNode
     | InputObjectTypeDefinitionNode,
 ) -> cst.ClassDef:
@@ -324,6 +332,7 @@ def codegen(schema: str) -> str:
                 ObjectTypeDefinitionNode,
                 InterfaceTypeDefinitionNode,
                 InputObjectTypeDefinitionNode,
+                ObjectTypeExtensionNode,
             ),
         ):
             class_definition = _get_class_definition(definition)
