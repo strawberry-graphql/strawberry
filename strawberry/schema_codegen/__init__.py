@@ -19,6 +19,7 @@ from graphql import (
     OperationType,
     ScalarTypeDefinitionNode,
     SchemaDefinitionNode,
+    StringValueNode,
     TypeNode,
     UnionTypeDefinitionNode,
     parse,
@@ -50,6 +51,8 @@ _SCALAR_MAP = {
 def _get_field_type(
     field_type: TypeNode, was_non_nullable: bool = False
 ) -> cst.BaseExpression:
+    expr: cst.BaseExpression | None
+
     if isinstance(field_type, NonNullTypeNode):
         return _get_field_type(field_type.type, was_non_nullable=True)
     elif isinstance(field_type, ListTypeNode):
@@ -115,6 +118,8 @@ def _get_field_value(description: str | None, alias: str | None) -> cst.Call | N
             args=args,
         )
 
+    return None
+
 
 def _get_field(
     field: FieldDefinitionNode | InputValueDefinitionNode,
@@ -161,7 +166,7 @@ def _get_strawberry_decorator(
         else None
     )
 
-    decorator = cst.Attribute(
+    decorator: cst.BaseExpression = cst.Attribute(
         value=cst.Name("strawberry"),
         attr=cst.Name(type_),
     )
@@ -349,7 +354,11 @@ def _get_scalar_definition(
 
     for directive in definition.directives:
         if directive.name.value == "specifiedBy":
-            specified_by_url = directive.arguments[0].value.value
+            arg = directive.arguments[0]
+
+            assert isinstance(arg.value, StringValueNode)
+
+            specified_by_url = arg.value.value
 
     imports.add(Import(module="typing", imports=("NewType",)))
 
