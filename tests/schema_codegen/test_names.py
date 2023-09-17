@@ -34,6 +34,8 @@ def test_converts_names_to_snake_case():
     schema = """
     type Example {
         someField: String!
+        allowCustomExportURL: Boolean!
+        allowInsecureTLS: Boolean!
     }
     """
 
@@ -44,6 +46,8 @@ def test_converts_names_to_snake_case():
         @strawberry.type
         class Example:
             some_field: str
+            allow_custom_export_url: bool
+            allow_insecure_tls: bool
         """
     ).strip()
 
