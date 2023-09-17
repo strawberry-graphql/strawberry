@@ -426,6 +426,8 @@ def codegen(schema: str) -> str:
         Import(module=None, imports=("strawberry",)),
     }
 
+    object_types: dict[str, cst.ClassDef] = {}
+
     for definition in document.definitions:
         if isinstance(
             definition,
@@ -437,6 +439,8 @@ def codegen(schema: str) -> str:
             ),
         ):
             class_definition = _get_class_definition(definition)
+
+            object_types[definition.name.value] = class_definition
 
             definitions.append(cst.EmptyLine())
             definitions.append(class_definition)
@@ -474,6 +478,17 @@ def codegen(schema: str) -> str:
                 definitions.append(cst.EmptyLine())
         else:
             raise NotImplementedError(f"Unknown definition {definition}")
+
+    if root_query_name is None:
+        root_query_name = "Query" if "Query" in object_types else None
+
+    if root_mutation_name is None:
+        root_mutation_name = "Mutation" if "Mutation" in object_types else None
+
+    if root_subscription_name is None:
+        root_subscription_name = (
+            "Subscription" if "Subscription" in object_types else None
+        )
 
     schema_definition = _get_schema_definition(
         root_query_name=root_query_name,
