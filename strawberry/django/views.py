@@ -231,7 +231,7 @@ class AsyncGraphQLView(
         # https://docs.djangoproject.com/en/3.1/topics/async/#async-views
 
         view = super().as_view(**initkwargs)
-        view._is_coroutine = asyncio.coroutines._is_coroutine  # type: ignore[attr-defined] # noqa: E501
+        view._is_coroutine = asyncio.coroutines._is_coroutine  # type: ignore[attr-defined]
         return view
 
     async def get_root_value(self, request: HttpRequest) -> Any:
