@@ -1,6 +1,5 @@
-from __future__ import annotations
-
-from pathlib import Path  # noqa: TCH003
+from pathlib import Path
+from typing import Optional
 
 import typer
 
@@ -11,8 +10,7 @@ from strawberry.schema_codegen import codegen
 @app.command(help="Generate code from a query")
 def schema_codegen(
     schema: Path = typer.Argument(exists=True),
-    output_dir: Path
-    | None = typer.Option(
+    output_dir: Optional[Path] = typer.Option(
         None,
         "-o",
         "--output-dir",
