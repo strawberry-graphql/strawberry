@@ -9,8 +9,18 @@ def test_adds_schema_if_schema_is_defined():
         hello: String!
     }
 
+    type RootMutation {
+        hello: String!
+    }
+
+    type RootSubscription {
+        hello: String!
+    }
+
     schema {
         query: Root
+        mutation: RootMutation
+        subscription: RootSubscription
     }
     """
 
@@ -22,7 +32,15 @@ def test_adds_schema_if_schema_is_defined():
         class Root:
             hello: str
 
-        schema = strawberry.Schema(query=Root)
+        @strawberry.type
+        class RootMutation:
+            hello: str
+
+        @strawberry.type
+        class RootSubscription:
+            hello: str
+
+        schema = strawberry.Schema(query=Root, mutation=RootMutation, subscription=RootSubscription)
         """
     ).strip()
 
