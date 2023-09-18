@@ -3,6 +3,25 @@ import pytest
 import strawberry
 
 
+def test_include_router_default_prefix():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def abc(self) -> str:
+            return "abc"
+
+    app = FastAPI()
+    schema = strawberry.Schema(query=Query)
+    graphql_app = GraphQLRouter(schema)
+    app.include_router(graphql_app)
+
+    test_client = TestClient(app)
+    response = test_client.post("/graphql", json={"query": "{ abc }"})
+
+    assert response.status_code == 200
+    assert response.json() == {"data": {"abc": "abc"}}
+
+
 def test_include_router_prefix():
     from starlette.testclient import TestClient
 

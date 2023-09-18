@@ -145,7 +145,7 @@ class GraphQLRouter(
     def __init__(
         self,
         schema: BaseSchema,
-        path: str = "",
+        path: str = "/graphql",
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
