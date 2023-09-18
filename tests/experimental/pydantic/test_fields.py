@@ -13,7 +13,6 @@ from strawberry.types.types import StrawberryObjectDefinition
 from tests.experimental.pydantic.utils import needs_pydantic_v1, needs_pydantic_v2
 
 
-@needs_pydantic_v1
 @pytest.mark.parametrize(
     ("pydantic_type", "field_type"),
     [
@@ -35,7 +34,21 @@ from tests.experimental.pydantic.utils import needs_pydantic_v1, needs_pydantic_
         (pydantic.RedisDsn, str),
     ]
     if IS_PYDANTIC_V1
-    else [],
+    else [
+        (pydantic.PositiveInt, int),
+        (pydantic.NegativeInt, int),
+        (pydantic.StrictInt, int),
+        (pydantic.StrictStr, str),
+        (pydantic.SecretStr, str),
+        (pydantic.StrictBool, bool),
+        (pydantic.SecretBytes, bytes),
+        (pydantic.EmailStr, str),
+        (pydantic.AnyUrl, str),
+        (pydantic.AnyHttpUrl, str),
+        (pydantic.HttpUrl, str),
+        (pydantic.PostgresDsn, str),
+        (pydantic.RedisDsn, str),
+    ],
 )
 def test_types(pydantic_type, field_type):
     class Model(pydantic.BaseModel):
