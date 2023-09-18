@@ -1,6 +1,42 @@
 CHANGELOG
 =========
 
+0.208.2 - 2023-09-18
+--------------------
+
+This release fixes an issue that would prevent using generics with unnamed
+unions, like in this example:
+
+```python
+from typing import Generic, TypeVar, Union
+import strawberry
+
+T = TypeVar("T")
+
+
+@strawberry.type
+class Connection(Generic[T]):
+    nodes: list[T]
+
+
+@strawberry.type
+class Entity1:
+    id: int
+
+
+@strawberry.type
+class Entity2:
+    id: int
+
+
+@strawberry.type
+class Query:
+    entities: Connection[Union[Entity1, Entity2]]
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3099](https://github.com/strawberry-graphql/strawberry/pull/3099/)
+
+
 0.208.1 - 2023-09-15
 --------------------
 
