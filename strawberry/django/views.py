@@ -12,7 +12,12 @@ from typing import (
     cast,
 )
 
-from django.http import HttpRequest, HttpResponseNotAllowed, JsonResponse
+from django.http import (
+    HttpRequest,
+    HttpResponseNotAllowed,
+    JsonResponse,
+    StreamingHttpResponse,
+)
 from django.http.response import HttpResponse
 from django.template import RequestContext, Template
 from django.template.exceptions import TemplateDoesNotExist
@@ -175,6 +180,15 @@ class BaseView:
             response.cookies[name] = value
 
         return response
+
+    async def create_multipart_response(
+        self, response_stream: ..., sub_response: HttpResponse
+    ) -> HttpResponse:
+        async def event_stream():
+            async for x in response_stream:
+                yield x
+
+        return StreamingHttpResponse(streaming_content=event_stream())
 
 
 class GraphQLView(

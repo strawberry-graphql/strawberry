@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
-from django.http import Http404, HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse, StreamingHttpResponse
 from django.test.client import RequestFactory
 
 from strawberry.django.views import AsyncGraphQLView as BaseAsyncGraphQLView
@@ -53,6 +53,13 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
         except (BadRequest, SuspiciousOperation) as e:
             return Response(
                 status_code=400, data=e.args[0].encode(), headers=response.headers
+            )
+
+        if isinstance(response, StreamingHttpResponse):
+            return Response(
+                status_code=response.status_code,
+                data=response.streaming_content,
+                headers=response.headers,
             )
         else:
             return Response(

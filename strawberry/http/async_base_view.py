@@ -92,6 +92,12 @@ class AsyncBaseHTTPView(
     ) -> Response:
         ...
 
+    @abc.abstractmethod
+    def create_multipart_response(
+        self, response_data: GraphQLHTTPResponse, sub_response: SubResponse
+    ) -> Response:
+        ...
+
     async def execute_operation(
         self, request: Request, context: Context, root_value: Optional[RootValue]
     ) -> ExecutionResult:
@@ -191,10 +197,17 @@ class AsyncBaseHTTPView(
         except MissingQueryError as e:
             raise HTTPException(400, "No GraphQL query found in the request") from e
 
+        if hasattr(result, "__aiter__"):
+
+            async def stream():
+                async for value in result:
+                    yield await self.process_result(request, value)
+
+            return await self.create_multipart_response(stream(), sub_response)
+
         response_data = await self.process_result(request=request, result=result)
 
         # only if is a multipart subscription
-        return self.create_multipart_response(response_data, sub_response)
 
         return self.create_response(
             response_data=response_data, sub_response=sub_response
@@ -231,9 +244,4 @@ class AsyncBaseHTTPView(
     async def process_result(
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
-        # check if result is iterable
-        if hasattr(result, "__aiter__"):
-            return [await self.process_result(request, value) async for value in result]
-
-        breakpoint()
         return process_result(result)

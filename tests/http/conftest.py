@@ -18,7 +18,6 @@ def _get_http_client_classes() -> Generator[Any, None, None]:
         ("FastAPIHttpClient", "fastapi", [pytest.mark.fastapi]),
         ("FlaskHttpClient", "flask", [pytest.mark.flask]),
         ("SanicHttpClient", "sanic", [pytest.mark.sanic]),
-        ("StarliteHttpClient", "starlite", [pytest.mark.starlite]),
         (
             "SyncChannelsHttpClient",
             "channels",

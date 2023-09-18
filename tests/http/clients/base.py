@@ -6,11 +6,13 @@ from typing import (
     Any,
     AsyncContextManager,
     AsyncGenerator,
+    AsyncIterable,
     Callable,
     Dict,
     List,
     Mapping,
     Optional,
+    Union,
 )
 from typing_extensions import Literal
 
@@ -24,15 +26,17 @@ ResultOverrideFunction = Optional[Callable[[ExecutionResult], GraphQLHTTPRespons
 @dataclass
 class Response:
     status_code: int
-    data: bytes
+    data: Union[bytes, AsyncIterable[bytes]]
     headers: Mapping[str, str]
 
     @property
     def text(self) -> str:
+        assert isinstance(self.data, bytes)
         return self.data.decode()
 
     @property
     def json(self) -> JSON:
+        assert isinstance(self.data, bytes)
         return json.loads(self.data)
 
 
