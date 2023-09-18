@@ -1195,22 +1195,7 @@ def test_generics_via_anonymous_union():
 
     @strawberry.type
     class Query:
-        @strawberry.field
-        def entities(
-            self,
-        ) -> Connection[Union[Entity1, Entity2]]:
-            return Connection(
-                edges=[
-                    Edge(
-                        cursor="1",
-                        node=Entity1(id=1),
-                    ),
-                    Edge(
-                        cursor="2",
-                        node=Entity2(id=2),
-                    ),
-                ],
-            )
+        entities: Connection[Union[Entity1, Entity2]]
 
     schema = strawberry.Schema(query=Query)
 
