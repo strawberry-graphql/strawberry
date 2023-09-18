@@ -10,23 +10,23 @@ from strawberry.schema_codegen import codegen
 @app.command(help="Generate code from a query")
 def schema_codegen(
     schema: Path = typer.Argument(exists=True),
-    output_dir: Optional[Path] = typer.Option(
+    output: Optional[Path] = typer.Option(
         None,
         "-o",
-        "--output-dir",
-        exists=True,
-        file_okay=False,
-        dir_okay=True,
+        "--output",
+        file_okay=True,
+        dir_okay=False,
         writable=True,
         resolve_path=True,
     ),
 ) -> None:
-    output = codegen(schema.read_text())
+    generated_output = codegen(schema.read_text())
 
-    if output_dir is None:
-        typer.echo(output)
+    if output is None:
+        typer.echo(generated_output)
         return
 
-    output_dir.mkdir(parents=True, exist_ok=True)
-    output_file = output_dir / "schema.py"
-    output_file.write_text(output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(generated_output)
+
+    typer.echo(f"Code generated at `{output.name}`")
