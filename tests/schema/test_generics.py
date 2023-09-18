@@ -768,6 +768,77 @@ def test_supports_multiple_generics_in_union():
     }
 
 
+def test_generics_via_anonymous_union():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Edge(Generic[T]):
+        cursor: str
+        node: T
+
+    @strawberry.type
+    class Connection(Generic[T]):
+        edges: list[Edge[T]]
+
+    @strawberry.type
+    class Entity1:
+        id: int
+
+    @strawberry.type
+    class Entity2:
+        id: int
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def entities(
+            self,
+        ) -> Connection[Union[Entity1, Entity2]]:
+            return Connection(
+                edges=[
+                    Edge(
+                        cursor="1",
+                        node=Entity1(id=1),
+                    ),
+                    Edge(
+                        cursor="2",
+                        node=Entity2(id=2),
+                    ),
+                ],
+            )
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = textwrap.dedent(
+        """
+        type Entity1 {
+          id: Int!
+        }
+
+        union Entity1Entity2 = Entity1 | Entity2
+
+        type Entity1Entity2Connection {
+          edges: [Entity1Entity2Edge!]!
+        }
+
+        type Entity1Entity2Edge {
+          cursor: String!
+          node: Entity1Entity2!
+        }
+
+        type Entity2 {
+          id: Int!
+        }
+
+        type Query {
+          entities: Entity1Entity2Connection!
+        }
+        """
+    ).strip()
+
+    assert str(schema) == expected_schema
+
+
 def test_generated_names():
     T = TypeVar("T")
 

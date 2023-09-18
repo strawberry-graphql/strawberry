@@ -146,10 +146,7 @@ class NameConverter:
         elif isinstance(type_, EnumDefinition):
             name = type_.name
         elif isinstance(type_, StrawberryUnion):
-            # TODO: test Generics with unnamed unions
-            assert type_.graphql_name
-
-            name = type_.graphql_name
+            name = type_.graphql_name if type_.graphql_name else self.from_union(type_)
         elif isinstance(type_, StrawberryList):
             name = self.get_from_type(type_.of_type) + "List"
         elif isinstance(type_, StrawberryOptional):
