@@ -7,7 +7,7 @@ async def test_graphql_query(http_client: HttpClient):
     response = await http_client.post(
         url="/graphql",
         json={
-            "query": 'subscription { echo2(message: "Hello world", delay: 0.2) }',
+            "query": 'subscription { echo(message: "Hello world", delay: 0.2) }',
         },
         headers={
             # TODO: this might just be for django
