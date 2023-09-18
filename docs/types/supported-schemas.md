@@ -22,8 +22,8 @@ available.
 ### Running multiple schemas using "similar" objects
 
 Sometimes, you may want to serve multiple GraphQL APIs that use the same objects
-but with slightly different fields. A good example is that your third party GraphQL 
-API might expose the "core" fields of an object but your first party API might 
+but with slightly different fields. A good example is that your third party GraphQL
+API might expose the "core" fields of an object but your first party API might
 add more information and more fields for your first party apps.
 
 Instead of duplicating code or creating a complex class hierarchy, `supported_schemas`

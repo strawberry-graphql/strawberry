@@ -18,6 +18,7 @@ from typing import (
     Union,
     cast,
 )
+from typing_extensions import Protocol
 
 from graphql import (
     GraphQLAbstractType,
@@ -38,7 +39,6 @@ from graphql import (
     default_type_resolver,
 )
 from graphql.language.directive_locations import DirectiveLocation
-from typing_extensions import Protocol
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument, convert_arguments
@@ -53,7 +53,6 @@ from strawberry.exceptions import (
     UnresolvedFieldTypeError,
 )
 from strawberry.field import UNRESOLVED
-from strawberry.identifier import SchemaIdentifier
 from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
 from strawberry.schema.types.scalar import _make_scalar_type
@@ -87,6 +86,7 @@ if TYPE_CHECKING:
     from strawberry.directive import StrawberryDirective
     from strawberry.enum import EnumValue
     from strawberry.field import StrawberryField
+    from strawberry.identifier import SchemaIdentifier
     from strawberry.schema.config import StrawberryConfig
     from strawberry.schema_directive import StrawberrySchemaDirective
 
@@ -965,10 +965,4 @@ def _is_schema_supported(
     if not supported_schemas:
         # If we don't define any specific schema to support, we support everything
         return True
-    for schema in supported_schemas:
-        if schema.matches(schema_identifier):
-            # We try to find a supported schema that would match the current
-            # name and version
-            return True
-    # Nothing was found, the schema is not supported at all.
-    return False
+    return any(schema.matches(schema_identifier) for schema in supported_schemas)

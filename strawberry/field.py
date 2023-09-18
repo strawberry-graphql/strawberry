@@ -25,7 +25,6 @@ from typing import (
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidArgumentTypeError, InvalidDefaultFactoryError
-from strawberry.identifier import SupportedSchema
 from strawberry.type import (
     StrawberryType,
     WithStrawberryObjectDefinition,
@@ -37,11 +36,11 @@ from .types.fields.resolver import StrawberryResolver
 
 if TYPE_CHECKING:
     import builtins
-
     from typing_extensions import Literal, Self
 
     from strawberry.arguments import StrawberryArgument
     from strawberry.extensions.field_extension import FieldExtension
+    from strawberry.identifier import SupportedSchema
     from strawberry.types.info import Info
     from strawberry.types.types import StrawberryObjectDefinition
 
@@ -93,7 +92,7 @@ class StrawberryField(dataclasses.Field):
         deprecation_reason: Optional[str] = None,
         directives: Sequence[object] = (),
         extensions: List[FieldExtension] = (),  # type: ignore
-        supported_schemas: List[SupportedSchema] = None,
+        supported_schemas: Optional[List[SupportedSchema]] = None,
     ):
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
@@ -426,7 +425,7 @@ def field(
     directives: Optional[Sequence[object]] = (),
     extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-    supported_schemas: List[SupportedSchema] = None,
+    supported_schemas: Optional[List[SupportedSchema]] = None,
 ) -> T:
     ...
 
@@ -446,7 +445,7 @@ def field(
     directives: Optional[Sequence[object]] = (),
     extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-    supported_schemas: List[SupportedSchema] = None,
+    supported_schemas: Optional[List[SupportedSchema]] = None,
 ) -> Any:
     ...
 
@@ -466,7 +465,7 @@ def field(
     directives: Optional[Sequence[object]] = (),
     extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-    supported_schemas: List[SupportedSchema] = None,
+    supported_schemas: Optional[List[SupportedSchema]] = None,
 ) -> StrawberryField:
     ...
 
@@ -474,7 +473,7 @@ def field(
 def field(
     resolver: Optional[_RESOLVER_TYPE[Any]] = None,
     *,
-    schemas: List[str] = None,  # type: ignore
+    schemas: Optional[List[str]] = None,  # type: ignore
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
@@ -490,7 +489,7 @@ def field(
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
     init: Literal[True, False, None] = None,
-    supported_schemas: List[SupportedSchema] = None,
+    supported_schemas: Optional[List[SupportedSchema]] = None,
 ) -> Any:
     """Annotates a method or property as a GraphQL field.
 

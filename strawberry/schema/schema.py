@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import dataclasses
 import warnings
 from functools import lru_cache
 from typing import (
@@ -33,7 +32,6 @@ from strawberry.extensions.directives import (
     DirectivesExtension,
     DirectivesExtensionSync,
 )
-from strawberry.identifier import SchemaIdentifier
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.type import has_object_definition
@@ -56,6 +54,7 @@ if TYPE_CHECKING:
     from strawberry.enum import EnumDefinition
     from strawberry.extensions import SchemaExtension
     from strawberry.field import StrawberryField
+    from strawberry.identifier import SchemaIdentifier
     from strawberry.type import StrawberryType
     from strawberry.types import ExecutionResult
     from strawberry.union import StrawberryUnion

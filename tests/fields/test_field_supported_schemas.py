@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 
 from strawberry import Schema, field
 from strawberry import type as graphql_type
