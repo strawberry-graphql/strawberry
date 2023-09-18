@@ -3,7 +3,7 @@ repos:
     rev: 23.7.0
     hooks:
       - id: black
-        exclude: ^tests/\w+/snapshots/
+        exclude: ^(tests/\w+/snapshots/|tests/python_312/)
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.0.280
