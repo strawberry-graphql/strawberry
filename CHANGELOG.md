@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.208.3 - 2023-09-19
+--------------------
+
+Adding support for additional pydantic built in types like EmailStr or PostgresDsn.
+
+Contributed by [ppease](https://github.com/ppease) via [PR #3101](https://github.com/strawberry-graphql/strawberry/pull/3101/)
+
+
 0.208.2 - 2023-09-18
 --------------------
 
