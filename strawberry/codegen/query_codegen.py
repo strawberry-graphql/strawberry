@@ -545,14 +545,14 @@ class QueryCodegen:
             not isinstance(field_type, StrawberryType)
             and field_type in self.schema.schema_converter.scalar_registry
         ):
-            field_type = self.schema.schema_converter.scalar_registry[field_type]  # type: ignore  # noqa: E501
+            field_type = self.schema.schema_converter.scalar_registry[field_type]  # type: ignore
 
         if isinstance(field_type, ScalarWrapper):
             python_type = field_type.wrap
             if hasattr(python_type, "__supertype__"):
                 python_type = python_type.__supertype__
 
-            return self._collect_scalar(field_type._scalar_definition, python_type)  # type: ignore  # noqa: E501
+            return self._collect_scalar(field_type._scalar_definition, python_type)  # type: ignore
 
         if isinstance(field_type, ScalarDefinition):
             return self._collect_scalar(field_type, None)

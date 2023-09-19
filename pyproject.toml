@@ -251,6 +251,9 @@ ignore = [
     "PT001",
     "PT023",
 
+    # this is pretty much handled by black
+    "E501",
+
     # enable these, we have some in tests
     "B006",
     "PT004",
@@ -347,17 +350,9 @@ src = ["strawberry", "tests"]
 
 [tool.ruff.per-file-ignores]
 "strawberry/schema/types/concrete_type.py" = ["TCH002"]
-"tests/federation/printer/*" = ["E501"]
-"tests/test_printer/test_basic.py" = ["E501"]
-"tests/pyright/test_federation.py" = ["E501"]
-"tests/codemods/*" = ["E501"]
-"tests/test_printer/test_schema_directives.py" = ["E501"]
 "tests/*" = ["RSE102", "SLF001", "TCH001", "TCH002", "TCH003", "ANN001", "ANN201", "PLW0603", "PLC1901", "S603", "S607", "B018"]
 "strawberry/extensions/tracing/__init__.py" = ["TCH004"]
 "tests/http/clients/__init__.py" = ["F401"]
-"tests/schema/test_scalars.py" = ["E501"]
-"tests/schema/test_basic.py" = ["E501"]
-"tests/schema/test_union.py" = ["E501"]
 
 [tool.ruff.isort]
 known-first-party = ["strawberry"]
