@@ -198,6 +198,7 @@ class AsyncBaseHTTPView(
             raise HTTPException(400, "No GraphQL query found in the request") from e
 
         if hasattr(result, "__aiter__"):
+
             async def stream():
                 async for value in result:
                     yield await self.process_result(request, value)

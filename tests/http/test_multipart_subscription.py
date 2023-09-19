@@ -17,4 +17,4 @@ async def test_graphql_query(http_client: HttpClient):
 
     data = [d async for d in response.streaming_json()]
 
-    assert data == [{'data': {'echo': 'Hello world'}}]
+    assert data == [{"data": {"echo": "Hello world"}}]
