@@ -2424,22 +2424,23 @@ testing = ["coverage (>=6.2)", "flaky (>=3.5.0)", "hypothesis (>=5.7.1)", "mypy 
 
 [[package]]
 name = "pytest-codspeed"
-version = "2.1.0"
+version = "2.2.0"
 description = "Pytest plugin to create CodSpeed benchmarks"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pytest_codspeed-2.1.0-py3-none-any.whl", hash = "sha256:91831cd8a8cdf68d489d4f393ff80fcc2ba05153c3c5afc2385b75e9897dcbb6"},
-    {file = "pytest_codspeed-2.1.0.tar.gz", hash = "sha256:af289d5a1c32166a221df5920141924942a59906c7af572aacf892a726b86b49"},
+    {file = "pytest_codspeed-2.2.0-py3-none-any.whl", hash = "sha256:5da48b842fc465926d122dd15bb86e86af5d9f0c53ec1b7c736e9a9aed558c13"},
+    {file = "pytest_codspeed-2.2.0.tar.gz", hash = "sha256:665003fc20117b64a98d16ffd1008f5bd6bf3b1e9af142b98c00abff7f626bbd"},
 ]
 
 [package.dependencies]
 cffi = ">=1.15.1,<1.16.0"
+filelock = ">=3.12.2,<3.13.0"
 pytest = ">=3.8"
 setuptools = {version = ">=67.8.0,<67.9.0", markers = "python_full_version >= \"3.12.0b1\""}
 
 [package.extras]
-compat = ["pytest-benchmark (>=4.0.0,<4.1.0)"]
+compat = ["pytest-benchmark (>=4.0.0,<4.1.0)", "pytest-xdist (>=2.0.0,<2.1.0)"]
 lint = ["black (>=23.3.0,<23.4.0)", "isort (>=5.12.0,<5.13.0)", "mypy (>=1.3.0,<1.4.0)", "ruff (>=0.0.275,<0.1.0)"]
 test = ["pytest (>=7.0,<8.0)", "pytest-cov (>=4.0.0,<4.1.0)"]
 
