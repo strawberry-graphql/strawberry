@@ -2,7 +2,6 @@ import dataclasses
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type
 
-import pydantic
 from pydantic import BaseModel
 from pydantic.version import VERSION as PYDANTIC_VERSION
 
@@ -27,7 +26,7 @@ class CompatModelField:
     description: Optional[str]
 
 
-if pydantic.VERSION[0] == "2":
+if IS_PYDANTIC_V2:
     from typing_extensions import get_args, get_origin
 
     from pydantic._internal._typing_extra import is_new_type
