@@ -1,6 +1,6 @@
 import builtins
 from decimal import Decimal
-from typing import Any, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union
 from uuid import UUID
 
 import pydantic
@@ -99,7 +99,7 @@ ATTR_TO_TYPE_MAP_Pydantic_Core_V2 = {
 }
 
 
-def get_fields_map_for_v2():
+def get_fields_map_for_v2() -> Dict[Any, Any]:
     fields_map = {
         getattr(pydantic, field_name): type
         for field_name, type in ATTR_TO_TYPE_MAP_Pydantic_V2.items()
