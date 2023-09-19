@@ -198,7 +198,6 @@ class AsyncBaseHTTPView(
             raise HTTPException(400, "No GraphQL query found in the request") from e
 
         if hasattr(result, "__aiter__"):
-
             async def stream():
                 async for value in result:
                     yield await self.process_result(request, value)
@@ -206,8 +205,6 @@ class AsyncBaseHTTPView(
             return await self.create_multipart_response(stream(), sub_response)
 
         response_data = await self.process_result(request=request, result=result)
-
-        # only if is a multipart subscription
 
         return self.create_response(
             response_data=response_data, sub_response=sub_response

@@ -39,6 +39,12 @@ class Response:
         assert isinstance(self.data, bytes)
         return json.loads(self.data)
 
+    async def streaming_json(self) -> AsyncIterable[JSON]:
+        assert isinstance(self.data, AsyncIterable)
+
+        async for data in self.data:
+            yield json.loads(data)
+
 
 class HttpClient(abc.ABC):
     @abc.abstractmethod

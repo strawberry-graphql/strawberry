@@ -185,10 +185,16 @@ class BaseView:
         self, response_stream: ..., sub_response: HttpResponse
     ) -> HttpResponse:
         async def event_stream():
-            async for x in response_stream:
-                yield x
+            async for data in response_stream:
+                yield "\r\n--graphql\r\n"
+                yield "Content-Type: application/json\r\n\r\n"
 
-        return StreamingHttpResponse(streaming_content=event_stream())
+                yield self.encode_json(data) +"\n" # type: ignore
+
+        return StreamingHttpResponse(streaming_content=event_stream(), headers={
+            "Transfer-Encoding": "chunked",
+            "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json"
+        })
 
 
 class GraphQLView(
