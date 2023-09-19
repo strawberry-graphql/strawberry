@@ -92,7 +92,7 @@ jobs:
         uses: strawberry-graphql/get-pr-info-action@v6
 
   update-release-on-github:
-    name: Update release on github
+    name: Update release on GitHub
     runs-on: ubuntu-latest
     needs: [release-file-check, get-contributor-info, release]
     if: ${{ needs.release-file-check.outputs.status == 'OK' }}
@@ -102,18 +102,16 @@ jobs:
           python-version: '3.9'
       - name: Install dependencies
         run: pip install httpx
-      - name: Send tweet
+      - name: Update release on GitHub
         shell: python
         run: |
           import os
 
           import httpx
 
-
           tag = os.environ["TAG"]
           contributor_username = os.environ["CONTRIBUTOR_USERNAME"]
           pr_number = os.environ["PR_NUMBER"]
-
 
           response = httpx.get(
               url=f"https://api.github.com/repos/strawberry-graphql/strawberry/releases/tags/{tag}",
@@ -215,20 +213,41 @@ jobs:
           import base64
           import tweepy
 
-          auth = tweepy.OAuthHandler(
-              os.environ["TWITTER_CONSUMER_KEY"],
-              os.environ["TWITTER_CONSUMER_SECRET"],
+          TWITTER_CONSUMER_KEY = os.environ["TWITTER_API_KEY"]
+          TWITTER_CONSUMER_SECRET = os.environ["TWITTER_API_SECRET"]
+          TWITTER_ACCESS_TOKEN = os.environ["TWITTER_ACCESS_TOKEN"]
+          TWITTER_ACCESS_TOKEN_SECRET = os.environ["TWITTER_ACCESS_TOKEN_SECRET"]
+          TWITTER_BEARER_TOKEN = os.environ["TWITTER_BEARER_TOKEN"]
+
+          tweepy_auth = tweepy.OAuth1UserHandler(
+              consumer_key=TWITTER_CONSUMER_KEY,
+              consumer_secret=TWITTER_CONSUMER_SECRET,
+              access_token=TWITTER_ACCESS_TOKEN,
+              access_token_secret=TWITTER_ACCESS_TOKEN_SECRET,
           )
-          auth.set_access_token(
-              os.environ["TWITTER_ACCESS_TOKEN"],
-              os.environ["TWITTER_ACCESS_TOKEN_SECRET"],
+
+          tweepy_v1 = tweepy.API(tweepy_auth)
+          tweepy_v2 = tweepy.Client(
+              TWITTER_BEARER_TOKEN,
+              consumer_key=TWITTER_CONSUMER_KEY,
+              consumer_secret=TWITTER_CONSUMER_SECRET,
+              access_token=TWITTER_ACCESS_TOKEN,
+              access_token_secret=TWITTER_ACCESS_TOKEN_SECRET,
           )
 
-          api = tweepy.API(auth)
+          def upload_media() -> str:
+              post = tweepy_v1.simple_upload("screenshot.png")
 
-          tweet = base64.b64decode(os.environ["TWEET"]).decode("utf-8")
+              return post.media_id_string
 
-          api.update_status_with_media(filename="screenshot.png", status=tweet)
+          def post_tweet(media_id: str):
+              text = base64.b64decode(os.environ["TWEET"]).decode("utf-8")
+              tweepy_v2.create_tweet(text=text, media_ids=[media_id])
+
+          media = upload_media()
+
+          post_tweet(media)
+
         env:
           TWEET: ${{ needs.read-tweet-md.outputs.tweet }}
           TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
