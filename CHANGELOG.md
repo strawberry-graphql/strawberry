@@ -1,6 +1,51 @@
 CHANGELOG
 =========
 
+0.209.0 - 2023-09-19
+--------------------
+
+This release adds support for generating Strawberry types from SDL files. For example, given the following SDL file:
+
+```graphql
+type Query {
+  user: User
+}
+
+type User {
+  id: ID!
+  name: String!
+}
+```
+
+you can run
+
+```bash
+strawberry schema-codegen schema.graphql
+```
+
+to generate the following Python code:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Query:
+    user: User | None
+
+
+@strawberry.type
+class User:
+    id: strawberry.ID
+    name: str
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3096](https://github.com/strawberry-graphql/strawberry/pull/3096/)
+
+
 0.208.3 - 2023-09-19
 --------------------
 
