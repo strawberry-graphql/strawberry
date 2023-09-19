@@ -25,7 +25,7 @@ root of our project and add the following settings:
 plugins = strawberry.ext.mypy_plugin
 ```
 
-The configuration for Poetry's `pyproject.toml`:
+You can also configure Mypy inside the `pyproject.toml` file, like so:
 
 ```toml
 [tool.mypy]
