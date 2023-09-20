@@ -1,6 +1,7 @@
 import builtins
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Type, Union
+from typing_extensions import Annotated
 from uuid import UUID
 
 import pydantic
@@ -42,14 +43,6 @@ except ImportError:
     else:
         raise
 
-try:
-    from typing import Annotated
-except ImportError:
-    # python < 3.9 does not have Annotated
-    if sys.version_info < (3, 9):
-        Annotated = ()
-    else:
-        raise
 
 ATTR_TO_TYPE_MAP = {
     "NoneStr": Optional[str],
