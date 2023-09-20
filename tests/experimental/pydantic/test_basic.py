@@ -1,6 +1,7 @@
 import dataclasses
 from enum import Enum
-from typing import Annotated, Any, List, Optional, Union
+from typing import Any, List, Optional, Union
+from typing_extensions import Annotated
 
 import pydantic
 import pytest
