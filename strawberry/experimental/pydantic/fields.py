@@ -42,6 +42,15 @@ except ImportError:
     else:
         raise
 
+try:
+    from typing import Annotated
+except ImportError:
+    # python < 3.9 does not have Annotated
+    if sys.version_info < (3, 9):
+        Annotated = ()
+    else:
+        raise
+
 ATTR_TO_TYPE_MAP = {
     "NoneStr": Optional[str],
     "NoneBytes": Optional[bytes],
@@ -178,6 +187,9 @@ def replace_types_recursively(type_: Any, is_input: bool) -> Any:
         return TypingGenericAlias(origin, converted)
     if isinstance(replaced_type, TypingUnionType):
         return Union[converted]
+    if origin is Annotated and converted:
+        converted = (converted[0],)
+
     replaced_type = replaced_type.copy_with(converted)
 
     if isinstance(replaced_type, StrawberryObjectDefinition):
