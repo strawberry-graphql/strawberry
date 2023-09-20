@@ -3233,13 +3233,13 @@ files = [
 
 [[package]]
 name = "types-protobuf"
-version = "4.23.0.3"
+version = "4.24.0.2"
 description = "Typing stubs for protobuf"
 optional = false
 python-versions = "*"
 files = [
-    {file = "types-protobuf-4.23.0.3.tar.gz", hash = "sha256:772ed02906d456d71711d34c3c036b2137fd99a562a883da6d9aa232be0da357"},
-    {file = "types_protobuf-4.23.0.3-py3-none-any.whl", hash = "sha256:035bd85066828d21f12ba42bfe941089b2b59a7d8ca64708696d63f8b4850e89"},
+    {file = "types-protobuf-4.24.0.2.tar.gz", hash = "sha256:598bb2290b9b0ea65f4f63569a09deaa4475edd7bb0d8589057a38deb0b19f4f"},
+    {file = "types_protobuf-4.24.0.2-py3-none-any.whl", hash = "sha256:b86b0deefd1cb1582d355be4fd7a2a807cf49c993d9744d3c9fbe1cbf1e6b044"},
 ]
 
 [[package]]
