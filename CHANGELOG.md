@@ -1,6 +1,29 @@
 CHANGELOG
 =========
 
+0.209.1 - 2023-09-21
+--------------------
+
+This release fixes an issue when trying to generate code from a schema that
+was using double quotes inside descriptions.
+
+The following schema will now generate code correctly:
+
+```graphql
+"""
+A type of person or character within the "Star Wars" Universe.
+"""
+type Species {
+  """
+  The classification of this species, such as "mammal" or "reptile".
+  """
+  classification: String!
+}
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3112](https://github.com/strawberry-graphql/strawberry/pull/3112/)
+
+
 0.209.0 - 2023-09-19
 --------------------
 
