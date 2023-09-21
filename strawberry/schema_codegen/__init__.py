@@ -88,6 +88,8 @@ def _get_field_type(
 def _get_argument(name: str, value: str) -> cst.Arg:
     if "\n" in value:
         argument_value = cst.SimpleString(f'"""\n{value}\n"""')
+    elif '"' in value:
+        argument_value = cst.SimpleString(f"'{value}'")
     else:
         argument_value = cst.SimpleString(f'"{value}"')
 

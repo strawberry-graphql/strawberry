@@ -1,4 +1,5 @@
 import ast
+import textwrap
 from pathlib import Path
 
 from pytest_snapshot.plugin import Snapshot
@@ -45,3 +46,27 @@ def test_long_descriptions(snapshot: Snapshot):
     ast.parse(output)
 
     snapshot.assert_match(output, "long_descriptions.py")
+
+
+def test_can_convert_descriptions_with_quotes():
+    schema = '''
+    """A type of person or character within the "Star Wars" Universe."""
+    type Species {
+        """The classification of this species, such as "mammal" or "reptile"."""
+        classification: String!
+    }
+    '''
+
+    output = codegen(schema)
+
+    expected_output = textwrap.dedent(
+        """
+        import strawberry
+
+        @strawberry.type(description='A type of person or character within the "Star Wars" Universe.')
+        class Species:
+            classification: str = strawberry.field(description='The classification of this species, such as "mammal" or "reptile".')
+        """
+    ).lstrip()
+
+    assert output == expected_output
