@@ -59,6 +59,7 @@ astunparse = {version = "^1.6.3", python = "<3.9"}
 libcst = {version = ">=0.4.7", optional = true}
 rich = {version = ">=12.0.0", optional = true}
 pyinstrument = {version = ">=4.0.0", optional = true}
+graphlib_backport = {version = "*", python = "<3.9", optional = true}
 
 [tool.poetry.group.dev.dependencies]
 asgiref = "^3.2"
@@ -100,6 +101,7 @@ botocore = "1.31.50"
 mypy = "1.5.1"
 pytest-mypy-plugins = ">=1.10,<4.0"
 types-protobuf = "^4.23.0.1"
+graphlib_backport = {version = "*", python = "<3.9", optional = false}
 
 [tool.poetry.group.integrations]
 optional = true
@@ -133,7 +135,7 @@ pydantic = ["pydantic"]
 sanic = ["sanic"]
 fastapi = ["fastapi", "python-multipart"]
 chalice = ["chalice"]
-cli = ["typer", "pygments", "rich", "libcst"]
+cli = ["typer", "pygments", "rich", "libcst", "graphlib_backport"]
 starlite = ["starlite"]
 pyinstrument = ["pyinstrument"]
 
