@@ -109,6 +109,34 @@ def _wrap_dataclass(cls: Type[Any]):
 
     dclass_kwargs: Dict[str, bool] = {}
 
+    if dataclasses.is_dataclass(cls):
+        # TODO: it would be nice if we had an easy way to check if a class is a
+        # Strawberry type
+        if not hasattr(cls, "_type_definition"):
+            # If the class is already a dataclass and not a strawberry type then just
+            # return it directly
+            return cls
+
+        # Because the class is a Strawberry type we need to copy it's dataclass params
+        # so that we can inherit them correctly.
+        # This allows us to support things like this:
+        #
+        # >> import strawberry
+        # >>
+        # >> @strawberry.type
+        # >> class A:
+        # >>     number: int
+        # >>
+        # >> @strawberry.type
+        # >> @dataclass(repr=False)
+        # >> class B(A):
+        # >>     string: str
+        #
+        dclass_params = cls.__dataclass_params__  # type: ignore
+        dclass_kwargs = {
+            slot: getattr(dclass_params, slot) for slot in dclass_params.__slots__
+        }
+
     # Python 3.10 introduces the kw_only param. If we're on an older version
     # then generate our own custom init function
     if sys.version_info >= (3, 10):

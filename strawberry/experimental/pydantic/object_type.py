@@ -225,7 +225,11 @@ def type(
         if hasattr(cls, "resolve_reference"):
             namespace["resolve_reference"] = cls.resolve_reference
 
-        kwargs: Dict[str, object] = {}
+        # Copy the dataclass params from the underlying pydantic dataclass
+        dclass_params = wrapped.__dataclass_params__  # type: ignore
+        dclass_kwargs: Dict[str, object] = {
+            slot: getattr(dclass_params, slot) for slot in dclass_params.__slots__
+        }
 
         # Python 3.10.1 introduces the kw_only param to `make_dataclass`.
         # If we're on an older version then generate our own custom init function
@@ -233,16 +237,16 @@ def type(
         # just missed from the `make_dataclass` function:
         # https://github.com/python/cpython/issues/89961
         if sys.version_info >= (3, 10, 1):
-            kwargs["kw_only"] = dataclasses.MISSING
+            dclass_kwargs["kw_only"] = True
         else:
-            kwargs["init"] = False
+            dclass_kwargs["init"] = False
 
         cls = dataclasses.make_dataclass(
             cls.__name__,
             [field.to_tuple() for field in all_model_fields],
             bases=cls.__bases__,
             namespace=namespace,
-            **kwargs,  # type: ignore
+            **dclass_kwargs,  # type: ignore
         )
 
         if sys.version_info < (3, 10, 1):

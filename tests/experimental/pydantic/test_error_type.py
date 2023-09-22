@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import List, Optional
 
 import pydantic
@@ -350,3 +351,16 @@ def test_error_type_with_matrix_list_of_scalar():
     )
 
     assert field.type.of_type.of_type.of_type.of_type.of_type.of_type is str
+
+
+def test_error_type_with_kwargs():
+    class UserModel(pydantic.BaseModel):
+        number: int
+
+    @strawberry.experimental.pydantic.type(UserModel)
+    @dataclass(repr=False)
+    class UserErrorWithNoRepr:
+        number: strawberry.auto
+
+    instance = UserErrorWithNoRepr(number=5)
+    assert "UserErrorWithNoRepr object at" in repr(instance)

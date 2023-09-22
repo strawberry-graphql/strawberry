@@ -914,3 +914,16 @@ def test_field_metadata():
 
     assert field2.python_name == "public"
     assert not field2.metadata
+
+
+def test_type_with_kwargs():
+    class User(pydantic.BaseModel):
+        number: int
+
+    @strawberry.experimental.pydantic.type(User)
+    @dataclasses.dataclass(repr=False)
+    class UserTypeWithNoRepr:
+        number: strawberry.auto
+
+    instance = UserTypeWithNoRepr(number=5)
+    assert "UserTypeWithNoRepr object at" in repr(instance)

@@ -1,4 +1,5 @@
 import textwrap
+from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional, Union
 from typing_extensions import Annotated
@@ -643,3 +644,13 @@ def test_print_directive_on_argument_with_description():
     schema = strawberry.Schema(query=Query)
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_schema_directive_with_kwargs():
+    @strawberry.schema_directive(locations=[Location.OBJECT])
+    @dataclass(repr=False)
+    class CacheControlWithNoRepr:
+        max_age: int
+
+    instance = CacheControlWithNoRepr(max_age=50)
+    assert "CacheControlWithNoRepr object at" in repr(instance)
