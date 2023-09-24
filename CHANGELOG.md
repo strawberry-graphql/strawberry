@@ -1,6 +1,28 @@
 CHANGELOG
 =========
 
+0.209.2 - 2023-09-24
+--------------------
+
+Fix generation of input based on pydantic models using nested `Annotated` type annotations:
+
+```python
+import strawberry
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    age: Optional[Annotated[int, "metadata"]]
+
+
+@strawberry.experimental.pydantic.input(all_fields=True)
+class UserInput:
+    pass
+```
+
+Contributed by [Matthieu MN](https://github.com/gazorby) via [PR #3109](https://github.com/strawberry-graphql/strawberry/pull/3109/)
+
+
 0.209.1 - 2023-09-21
 --------------------
 
