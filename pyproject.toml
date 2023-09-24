@@ -53,7 +53,7 @@ python-multipart = {version = ">=0.0.5,<0.0.7", optional = true}
 sanic = {version = ">=20.12.2", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
 fastapi = {version = ">=0.65.2", optional = true}
-starlite = {version = ">=1.48.0", optional = true, python = ">=3.8"}
+litestar = {version = ">=1", optional = true, python = ">=3.8"}
 channels = {version = ">=3.0.5", optional = true}
 astunparse = {version = "^1.6.3", python = "<3.9"}
 libcst = {version = ">=0.4.7", optional = true}
@@ -117,8 +117,8 @@ pytest-django = {version = "^4.5"}
 pytest-flask = {version = "^1.2.0"}
 sanic = ">=20.12.2"
 starlette = ">=0.13.6"
-starlite = {version = ">=1.48.0", optional = false, python = ">=3.8", extras = ["testing"]}
 uvicorn = ">=0.11.6"
+litestar = {version = ">=1", optional = false, python = ">=3.8", extras = ["testing"]}
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp"]

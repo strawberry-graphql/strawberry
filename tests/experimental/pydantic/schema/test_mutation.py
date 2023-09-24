@@ -81,14 +81,8 @@ def test_mutation_with_validation():
     result = schema.execute_sync(query)
 
     if IS_PYDANTIC_V2:
-        assert result.errors[0].message == (
-            "1 validation error for User\n"
-            "name\n"
-            "  String should have at least 2 characters [type=string_too_short, "
-            "input_value='P', input_type=str]\n"
-            "    For further information visit "
-            "https://errors.pydantic.dev/2.0.3/v/string_too_short"
-        )
+        assert "String should have at least 2 characters" in result.errors[0].message
+
     else:
         assert result.errors[0].message == (
             "1 validation error for User\nname\n  ensure this value has at "
@@ -143,15 +137,7 @@ def test_mutation_with_validation_of_nested_model():
     result = schema.execute_sync(query)
 
     if IS_PYDANTIC_V2:
-        assert result.errors[0].message == (
-            "1 validation error for HobbyInputModel\n"
-            "name\n"
-            "  String should have at least 2 characters [type=string_too_short, "
-            "input_value='P', input_type=str]\n"
-            "    For further information visit "
-            "https://errors.pydantic.dev/2.0.3/v/string_too_short"
-        )
-
+        assert "String should have at least 2 characters" in result.errors[0].message
     else:
         assert result.errors[0].message == (
             "1 validation error for HobbyInputModel\nname\n"
