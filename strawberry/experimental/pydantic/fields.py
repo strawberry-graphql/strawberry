@@ -180,6 +180,8 @@ def replace_types_recursively(type_: Any, is_input: bool) -> Any:
         return TypingGenericAlias(origin, converted)
     if isinstance(replaced_type, TypingUnionType):
         return Union[converted]
+
+    # TODO: investigate if we could move the check for annotated to the top
     if origin is Annotated and converted:
         converted = (converted[0],)
 
