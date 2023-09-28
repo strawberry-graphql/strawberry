@@ -5,6 +5,10 @@ faq: true
 
 # Frequently Asked Questions
 
+## What is the origin of the project name "Strawberry"?
+
+TODO - does anyone know?!
+
 ## How can I hide a field from GraphQL?
 
 Strawberry provides a `Private` type that can be used to hide fields from
