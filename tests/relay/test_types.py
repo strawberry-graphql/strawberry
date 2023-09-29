@@ -1,7 +1,7 @@
 from typing import Any, AsyncGenerator, AsyncIterable, Optional, Union, cast
+from typing_extensions import assert_type
 
 import pytest
-from typing_extensions import assert_type
 
 import strawberry
 from strawberry import relay
@@ -250,12 +250,12 @@ def test_overwrite_resolve_id_and_no_node_id():
 
         @classmethod
         def resolve_id(cls, root) -> str:
-            return "test"
+            return "test"  # pragma: no cover
 
     @strawberry.type
     class Query:
         @strawberry.field
         def fruit(self) -> Fruit:
-            return Fruit(color="red")
+            return Fruit(color="red")  # pragma: no cover
 
     strawberry.Schema(query=Query)

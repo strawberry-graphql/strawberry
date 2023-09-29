@@ -367,11 +367,11 @@ def test_overwrite_resolve_id_and_no_node_id(mocker: MockerFixture):
 
     @strawberry.type
     class Fruit(relay.Node):
-        code: str
+        color: str
 
         @classmethod
         def resolve_id(cls, root) -> str:
-            return "test"
+            return "test"  # pragma: no cover
 
     @strawberry.type
     class Query:
@@ -380,7 +380,7 @@ def test_overwrite_resolve_id_and_no_node_id(mocker: MockerFixture):
     expected_type = '''type Fruit implements Node {
   """The Globally Unique ID of this object"""
   id: GlobalID!
-  code: String!
+  color: String!
 }
 
 """__GLOBAL_ID_DESC__"""
