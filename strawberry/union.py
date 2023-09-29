@@ -110,7 +110,10 @@ class StrawberryUnion(StrawberryType):
                 parameters = getattr(type_, "__parameters__", None)
 
                 return list(parameters) if parameters else []
-
+            if not hasattr(type_, "type_params"):
+                raise InvalidUnionType(
+                    f"Type `{type_.__name__}` cannot be used in a GraphQL Union"
+                )
             return type_.type_params
 
         # TODO: check if order is important:

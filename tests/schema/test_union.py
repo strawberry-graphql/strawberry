@@ -105,6 +105,61 @@ def test_cannot_use_non_strawberry_fields_for_the_union():
     )
 
 
+def test_cannot_use_non_strawberry_fields_in_the_union():
+    @strawberry.type
+    class UnionTypeOne:
+        one: str
+
+    class UnionTypeTwo:
+        two: str
+
+    United = Union[
+        UnionTypeOne,
+        UnionTypeTwo,
+    ]
+
+    @strawberry.type
+    class Transaction:
+        title: str
+        details: Optional[United] = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def test(self) -> Transaction:
+            return Transaction(title="title")
+
+    with pytest.raises(
+        TypeError, match="Type `UnionTypeTwo` cannot be used in a GraphQL Union"
+    ):
+        strawberry.Schema(query=Query)
+
+
+def test_cannot_use_scalars_in_the_union():
+    @strawberry.type
+    class UnionTypeOne:
+        one: str
+
+    United = Union[
+        UnionTypeOne,
+        int,
+    ]
+
+    @strawberry.type
+    class Transaction:
+        title: str
+        details: Optional[United] = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def test(self) -> Transaction:
+            return Transaction(title="title")
+
+    with pytest.raises(TypeError, match="Type `int` cannot be used in a GraphQL Union"):
+        strawberry.Schema(query=Query)
+
+
 def test_union_as_mutation_return():
     @strawberry.type
     class A:
