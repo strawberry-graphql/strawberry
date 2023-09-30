@@ -379,25 +379,26 @@ def test_overwrite_resolve_id_and_no_node_id(mocker: MockerFixture):
 
     expected_type = textwrap.dedent(
         '''
-        type Fruit implements Node {
-        """The Globally Unique ID of this object"""
-        id: GlobalID!
-        color: String!
-      }
+          type Fruit implements Node {
+          """The Globally Unique ID of this object"""
+          id: GlobalID!
+          color: String!
+        }
 
-      """__GLOBAL_ID_DESC__"""
-      scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
+        """__GLOBAL_ID_DESC__"""
+        scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
 
-      """An object with a Globally Unique ID"""
-      interface Node {
-        """The Globally Unique ID of this object"""
-        id: GlobalID!
-      }
+        """An object with a Globally Unique ID"""
+        interface Node {
+          """The Globally Unique ID of this object"""
+          id: GlobalID!
+        }
 
-      type Query {
-        fruit: Fruit!
-      }
-      '''
+        type Query {
+          fruit: Fruit!
+        }
+        '''
+    )
 
     schema = strawberry.Schema(query=Query)
 
