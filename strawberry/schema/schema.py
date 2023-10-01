@@ -26,6 +26,7 @@ from graphql import (
 from graphql.execution import subscribe
 from graphql.type.directives import specified_directives
 
+from strawberry import relay
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.extensions.directives import (
     DirectivesExtension,
@@ -328,6 +329,21 @@ class Schema(BaseSchema):
             # them needs to do that.
             if type_def.is_interface:
                 continue
+
+            # Call resolve_id_attr in here to make sure we raise provide
+            # early feedback for missing NodeID annotations
+            origin = type_def.origin
+            if issubclass(origin, relay.Node):
+                has_custom_resolve_id = False
+                for base in origin.__mro__:
+                    if base is relay.Node:
+                        break
+                    if "resolve_id" in base.__dict__:
+                        has_custom_resolve_id = True
+                        break
+
+                if not has_custom_resolve_id:
+                    origin.resolve_id_attr()
 
     def _warn_for_federation_directives(self):
         """Raises a warning if the schema has any federation directives."""

@@ -360,21 +360,6 @@ class Node:
 
     _id_attr: ClassVar[Optional[str]] = None
 
-    def __init_subclass__(cls, **kwargs: Any):
-        super().__init_subclass__(**kwargs)
-        # Call resolve_id_attr in here to make sure we raise provide
-        # early feedback for missing NodeID annotations
-        has_custom_resolve_id = False
-        for base in cls.__mro__:
-            if base is Node:
-                break
-            if "resolve_id" in base.__dict__:
-                has_custom_resolve_id = True
-                break
-
-        if not has_custom_resolve_id:
-            cls.resolve_id_attr()
-
     @field(name="id", description="The Globally Unique ID of this object")
     @classmethod
     def _id(cls, root: Node, info: Info) -> GlobalID:
