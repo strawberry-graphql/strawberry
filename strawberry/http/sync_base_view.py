@@ -5,10 +5,13 @@ from typing import (
     Callable,
     Dict,
     Generic,
+    List,
     Mapping,
     Optional,
     Union,
 )
+
+from graphql import GraphQLError
 
 from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
@@ -158,6 +161,11 @@ class SyncBaseHTTPView(
             operation_name=data.get("operationName"),
         )
 
+    def _handle_errors(self, errors: List[GraphQLError]) -> None:
+        """
+        Hook to allow custom handling of errors, used by the Sentry Integration
+        """
+
     def run(
         self,
         request: Request,
@@ -197,6 +205,9 @@ class SyncBaseHTTPView(
             ) from e
         except MissingQueryError as e:
             raise HTTPException(400, "No GraphQL query found in the request") from e
+
+        if result.errors:
+            self._handle_errors(result.errors)
 
         response_data = self.process_result(request=request, result=result)
 
