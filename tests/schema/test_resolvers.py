@@ -606,11 +606,23 @@ def multiple_infos(root, info1: Info, info2: Info) -> str:
 @pytest.mark.parametrize(
     "resolver",
     (
-        pytest.param(parent_and_self),
         pytest.param(parent_self_and_root),
-        pytest.param(self_and_root),
         pytest.param(multiple_parents),
         pytest.param(multiple_infos),
+        pytest.param(
+            parent_and_self,
+            marks=pytest.mark.xfail(
+                strict=True,
+                reason="`self` should not raise ConflictingArgumentsError",
+            ),
+        ),
+        pytest.param(
+            self_and_root,
+            marks=pytest.mark.xfail(
+                strict=True,
+                reason="`self` should not raise ConflictingArgumentsError",
+            ),
+        ),
     ),
 )
 @pytest.mark.raises_strawberry_exception(
