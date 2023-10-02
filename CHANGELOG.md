@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.209.4 - 2023-10-02
+--------------------
+
+This release changes how we check for conflicting resolver arguments to
+exclude `self` from those checks, which were introduced on version 0.208.0.
+
+It is a common pattern among integrations, such as the Django one, to
+use `root: Model` in the resolvers for better typing inference.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3131](https://github.com/strawberry-graphql/strawberry/pull/3131/)
+
+
 0.209.3 - 2023-10-02
 --------------------
 
