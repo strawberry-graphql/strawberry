@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.209.3 - 2023-10-02
+--------------------
+
+Mark Django's asyncview as a coroutine using `asgiref.sync.markcoroutinefunction`
+to support using it with Python 3.12.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3124](https://github.com/strawberry-graphql/strawberry/pull/3124/)
+
+
 0.209.2 - 2023-09-24
 --------------------
 
