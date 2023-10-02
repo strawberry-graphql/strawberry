@@ -1,6 +1,7 @@
 from typing_extensions import Literal
 
 import pytest
+from graphql import GraphQLError, Source
 from pytest_mock import MockFixture
 
 from .clients.base import HttpClient
@@ -45,7 +46,27 @@ async def test_calls_handle_errors(
         }
     ]
 
-    assert sync_mock.called or async_mock.called
+    errors = [
+        GraphQLError(
+            "Cannot query field 'hey' on type 'Query'.",
+            positions=[2],
+            source=Source("query { hey }"),
+        )
+    ]
+    response_data = {
+        "data": None,
+        "errors": [
+            {
+                "message": "Cannot query field 'hey' on type 'Query'.",
+                "locations": [{"line": 1, "column": 3}],
+            }
+        ],
+    }
+
+    call_args = async_mock.call_args[0] if async_mock.called else sync_mock.call_args[0]
+
+    assert call_args[0][0].message == errors[0].message
+    assert call_args[1] == response_data
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
