@@ -52,7 +52,7 @@ def tests(session: Session) -> None:
     )
 
 
-@session(python=["3.11"], name="Django tests", tags=["tests"])
+@session(python=["3.11", "3.12"], name="Django tests", tags=["tests"])
 @nox.parametrize("django", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"])
 def tests_django(session: Session, django: str) -> None:
     session.run_always("poetry", "install", external=True)
