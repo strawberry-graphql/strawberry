@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.209.5 - 2023-10-03
+--------------------
+
+This release adds a new private hook in our HTTP views, it is called
+`_handle_errors` and it is meant to be used by Sentry (or other integrations)
+to handle errors without having to patch methods that could be overridden
+by the users
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3127](https://github.com/strawberry-graphql/strawberry/pull/3127/)
+
+
 0.209.4 - 2023-10-02
 --------------------
 
