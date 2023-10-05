@@ -113,7 +113,7 @@ class NodeExtension(FieldExtension):
             # Store the index of the node in the list of nodes of the same type
             # so that we can return them in the same order while also supporting
             # different types
-            index_map: Dict[GlobalID, Tuple[Type[Node], int]] = {}
+            index_map: Dict[field.type.Config.GlobalID, Tuple[Type[Node], int]] = {}
             for gid in ids:
                 node_t = gid.resolve_type(info)
                 nodes_map[node_t].append(gid.node_id)
