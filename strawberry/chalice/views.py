@@ -76,7 +76,10 @@ class GraphQLView(
         Returns:
             The GraphiQL html page as a string
         """
-        return get_graphiql_html(subscription_enabled=False)  # type: ignore
+        return Response(
+            get_graphiql_html(subscription_enabled=False),
+            headers={"Content-Type": "text/html"},
+        )
 
     def get_sub_response(self, request: Request) -> TemporalResponse:
         return TemporalResponse()
