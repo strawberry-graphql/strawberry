@@ -125,6 +125,7 @@ def test_pydantic(session: Session, pydantic: str) -> None:
 @session(python=PYTHON_VERSIONS, name="Mypy tests")
 def tests_mypy(session: Session) -> None:
     session.run_always("poetry", "install", "--with", "integrations", external=True)
+    session._session.install("pydantic~=2.0.3")  # type: ignore
 
     session.run(
         "pytest",
@@ -154,6 +155,7 @@ def tests_pyright(session: Session) -> None:
 @session(name="Mypy", tags=["lint"])
 def mypy(session: Session) -> None:
     session.run_always("poetry", "install", "--with", "integrations", external=True)
+    session._session.install("pydantic~=2.0.3")  # type: ignore
 
     session.run("mypy", "--config-file", "mypy.ini")
 
