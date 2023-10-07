@@ -5,8 +5,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional
 from typing_extensions import TypedDict
 
-from graphql.error.graphql_error import format_error as format_graphql_error
-
 if TYPE_CHECKING:
     from strawberry.types import ExecutionResult
 
@@ -21,7 +19,7 @@ def process_result(result: ExecutionResult) -> GraphQLHTTPResponse:
     data: GraphQLHTTPResponse = {"data": result.data}
 
     if result.errors:
-        data["errors"] = [format_graphql_error(err) for err in result.errors]
+        data["errors"] = [err.formatted for err in result.errors]
     if result.extensions:
         data["extensions"] = result.extensions
 

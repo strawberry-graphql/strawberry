@@ -4,7 +4,6 @@ from typing_extensions import Annotated
 import strawberry
 from strawberry.field_extensions import InputMutationExtension
 from strawberry.schema_directive import Location, schema_directive
-from strawberry.types import Info
 
 
 @schema_directive(
@@ -24,10 +23,16 @@ class Fruit:
 
 @strawberry.type
 class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "hi"
+
+
+@strawberry.type
+class Mutation:
     @strawberry.mutation(extensions=[InputMutationExtension()])
     def create_fruit(
         self,
-        info: Info,
         name: str,
         color: Annotated[
             str,
@@ -45,7 +50,6 @@ class Query:
     @strawberry.mutation(extensions=[InputMutationExtension()])
     async def create_fruit_async(
         self,
-        info: Info,
         name: str,
         color: Annotated[str, object()],
     ) -> Fruit:
@@ -55,7 +59,7 @@ class Query:
         )
 
 
-schema = strawberry.Schema(query=Query)
+schema = strawberry.Schema(query=Query, mutation=Mutation)
 
 
 def test_schema():
@@ -79,7 +83,7 @@ def test_schema():
       color: String!
     }
 
-    type Query {
+    type Mutation {
       createFruit(
         """Input data for `createFruit` mutation"""
         input: CreateFruitInput!
@@ -89,6 +93,10 @@ def test_schema():
         input: CreateFruitAsyncInput!
       ): Fruit!
     }
+
+    type Query {
+      hello: String!
+    }
     '''
     assert str(schema).strip() == textwrap.dedent(expected).strip()
 
@@ -96,7 +104,7 @@ def test_schema():
 def test_input_mutation():
     result = schema.execute_sync(
         """
-        query TestQuery ($input: CreateFruitInput!) {
+        mutation TestQuery ($input: CreateFruitInput!) {
             createFruit (input: $input) {
                 ... on Fruit {
                     name
@@ -124,7 +132,7 @@ def test_input_mutation():
 async def test_input_mutation_async():
     result = await schema.execute(
         """
-        query TestQuery ($input: CreateFruitAsyncInput!) {
+        mutation TestQuery ($input: CreateFruitAsyncInput!) {
             createFruitAsync (input: $input) {
                 ... on Fruit {
                     name

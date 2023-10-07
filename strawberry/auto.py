@@ -39,7 +39,7 @@ class StrawberryAutoMeta(type):
         instance: Union[StrawberryAuto, StrawberryAnnotation, StrawberryType, type],
     ):
         if isinstance(instance, StrawberryAnnotation):
-            resolved = instance.annotation
+            resolved = instance.raw_annotation
             if isinstance(resolved, str):
                 namespace = instance.namespace
                 resolved = namespace and namespace.get(resolved)

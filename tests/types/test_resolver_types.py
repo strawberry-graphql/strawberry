@@ -24,7 +24,7 @@ def test_forward_references():
     global FutureUmpire
 
     def get_sportsball_official() -> "FutureUmpire":
-        return FutureUmpire("ref")
+        return FutureUmpire("ref")  # noqa: F821
 
     @strawberry.type
     class FutureUmpire:

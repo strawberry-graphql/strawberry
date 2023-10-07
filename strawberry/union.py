@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import itertools
+import sys
+import warnings
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -28,6 +30,7 @@ from strawberry.exceptions import (
     UnallowedReturnTypeForUnion,
     WrongReturnTypeForUnion,
 )
+from strawberry.exceptions.handler import should_use_rich_exceptions
 from strawberry.lazy_type import LazyType
 from strawberry.type import (
     StrawberryOptional,
@@ -47,6 +50,10 @@ if TYPE_CHECKING:
 
 
 class StrawberryUnion(StrawberryType):
+    # used for better error messages
+    _source_file: Optional[str] = None
+    _source_line: Optional[int] = None
+
     def __init__(
         self,
         name: Optional[str] = None,
@@ -58,6 +65,8 @@ class StrawberryUnion(StrawberryType):
         self.type_annotations = type_annotations
         self.description = description
         self.directives = directives
+        self._source_file = None
+        self._source_line = None
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryType):
@@ -75,13 +84,13 @@ class StrawberryUnion(StrawberryType):
         return hash((self.graphql_name, self.type_annotations, self.description))
 
     def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
+        # TODO: this will be removed in future versions, you should
+        # use Annotated[Union[...], strawberry.union(...)] instead
+
         if other is None:
             # Return the correct notation when using `StrawberryUnion | None`.
             return StrawberryOptional(of_type=self)
 
-        # Raise an error in any other case.
-        # There is Work in progress to deal with more merging cases, see:
-        # https://github.com/strawberry-graphql/strawberry/pull/1455
         raise InvalidTypeForUnionMergeError(self, other)
 
     @property
@@ -124,7 +133,7 @@ class StrawberryUnion(StrawberryType):
         return any(map(_is_generic, self.types))
 
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+        self, type_var_map: Mapping[str, Union[StrawberryType, type]]
     ) -> StrawberryType:
         if not self.is_generic:
             return self
@@ -222,30 +231,28 @@ class StrawberryUnion(StrawberryType):
 
         # Can't confidently assert that these types are valid/invalid within Unions
         # until full type resolving stage is complete
+
         ignored_types = (LazyType, TypeVar)
+
         if isinstance(type_, ignored_types):
             return True
+
+        if isinstance(type_, StrawberryUnion):
+            return True
+
         if get_origin(type_) is Annotated:
             return True
 
         return False
 
 
-Types = TypeVar("Types", bound=Type)
-
-
-# We return a Union type here in order to allow to use the union type as type
-# annotation.
-# For the `types` argument we'd ideally use a TypeVarTuple, but that's not
-# yet supported in any python implementation (or in typing_extensions).
-# See https://www.python.org/dev/peps/pep-0646/ for more information
 def union(
     name: str,
-    types: Collection[Types],
+    types: Optional[Collection[Type[Any]]] = None,
     *,
     description: Optional[str] = None,
     directives: Iterable[object] = (),
-) -> Union[Types]:
+) -> StrawberryUnion:
     """Creates a new named Union type.
 
     Example usages:
@@ -254,8 +261,32 @@ def union(
     ... class A: ...
     >>> @strawberry.type
     ... class B: ...
-    >>> strawberry.union("Name", (A, Optional[B]))
+    >>> Annotated[A | B, strawberry.union("Name")]
     """
+
+    if types is None:
+        union = StrawberryUnion(
+            name=name,
+            description=description,
+            directives=directives,
+        )
+
+        if should_use_rich_exceptions():
+            frame = sys._getframe(1)
+
+            union._source_file = frame.f_code.co_filename
+            union._source_line = frame.f_lineno
+
+        return union
+
+    warnings.warn(
+        (
+            "Passing types to `strawberry.union` is deprecated. Please use "
+            f'{name} = Annotated[Union[A, B], strawberry.union("{name}")] instead'
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     # Validate types
     if not types:
@@ -267,11 +298,9 @@ def union(
         if not StrawberryUnion.is_valid_union_type(type_):
             raise InvalidUnionTypeError(union_name=name, invalid_type=type_)
 
-    union_definition = StrawberryUnion(
+    return StrawberryUnion(
         name=name,
         type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
         description=description,
         directives=directives,
     )
-
-    return union_definition  # type: ignore

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import json
 from typing import (
     TYPE_CHECKING,
@@ -12,6 +11,7 @@ from typing import (
     cast,
 )
 
+from asgiref.sync import markcoroutinefunction
 from django.http import HttpRequest, HttpResponseNotAllowed, JsonResponse
 from django.http.response import HttpResponse
 from django.template import RequestContext, Template
@@ -231,7 +231,8 @@ class AsyncGraphQLView(
         # https://docs.djangoproject.com/en/3.1/topics/async/#async-views
 
         view = super().as_view(**initkwargs)
-        view._is_coroutine = asyncio.coroutines._is_coroutine  # type: ignore[attr-defined] # noqa: E501
+        markcoroutinefunction(view)
+
         return view
 
     async def get_root_value(self, request: HttpRequest) -> Any:

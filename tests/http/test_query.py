@@ -1,8 +1,10 @@
 from typing_extensions import Literal
 
 import pytest
+from graphql import GraphQLError
+from pytest_mock import MockFixture
 
-from .clients import HttpClient
+from .clients.base import HttpClient
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
@@ -15,6 +17,51 @@ async def test_graphql_query(method: Literal["get", "post"], http_client: HttpCl
 
     assert response.status_code == 200
     assert data["hello"] == "Hello world"
+
+
+@pytest.mark.parametrize("method", ["get", "post"])
+async def test_calls_handle_errors(
+    method: Literal["get", "post"], http_client: HttpClient, mocker: MockFixture
+):
+    sync_mock = mocker.patch(
+        "strawberry.http.sync_base_view.SyncBaseHTTPView._handle_errors"
+    )
+    async_mock = mocker.patch(
+        "strawberry.http.async_base_view.AsyncBaseHTTPView._handle_errors"
+    )
+
+    response = await http_client.query(
+        method=method,
+        query="{ hey }",
+    )
+    data = response.json["data"]
+
+    assert response.status_code == 200
+    assert data is None
+
+    assert response.json["errors"] == [
+        {
+            "message": "Cannot query field 'hey' on type 'Query'.",
+            "locations": [{"line": 1, "column": 3}],
+        }
+    ]
+
+    error = GraphQLError("Cannot query field 'hey' on type 'Query'.")
+
+    response_data = {
+        "data": None,
+        "errors": [
+            {
+                "message": "Cannot query field 'hey' on type 'Query'.",
+                "locations": [{"line": 1, "column": 3}],
+            }
+        ],
+    }
+
+    call_args = async_mock.call_args[0] if async_mock.called else sync_mock.call_args[0]
+
+    assert call_args[0][0].message == error.message
+    assert call_args[1] == response_data
 
 
 @pytest.mark.parametrize("method", ["get", "post"])

@@ -303,9 +303,15 @@ def test_does_not_warn_when_using_federation_schema():
             return []
 
     with warnings.catch_warnings(record=True) as w:
+        warnings.filterwarnings(
+            "ignore",
+            category=DeprecationWarning,
+            message=r"'.*' is deprecated and slated for removal in Python 3\.\d+",
+        )
+
         strawberry.federation.Schema(
             query=Query,
             enable_federation_2=True,
         )
 
-    assert not w
+    assert len(w) == 0

@@ -8,6 +8,7 @@ from .field import field
 from .lazy_type import LazyType, lazy
 from .mutation import mutation, subscription
 from .object_type import asdict, input, interface, type
+from .parent import Parent
 from .permission import BasePermission
 from .private import Private
 from .scalars import ID
@@ -23,6 +24,7 @@ __all__ = [
     "UNSET",
     "lazy",
     "LazyType",
+    "Parent",
     "Private",
     "Schema",
     "argument",

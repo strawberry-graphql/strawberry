@@ -10,6 +10,7 @@
 - [Subscriptions](./general/subscriptions.md)
 - [Why](./general/why.md)
 - [Breaking changes](./breaking-changes.md)
+- [Upgrading Strawberry](./general/upgrades.md)
 - [FAQ](./faq.md)
 
 ## Types
@@ -32,6 +33,7 @@
 
 ## Codegen
 
+- [Schema codegen](./codegen/schema-codegen.md)
 - [Query codegen](./codegen/query-codegen.md)
 
 ## [Extensions](./extensions)

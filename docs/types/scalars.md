@@ -221,3 +221,71 @@ schema = strawberry.Schema(
 result = schema.execute_sync("{ currentTime }")
 assert result.data == {"currentTime": 1628683200}
 ```
+
+### Replacing datetime with the popular `pendulum` library
+
+To override with a pendulum instance you'd want to serialize and parse_value
+like the above example. Let's throw them in a class this time.
+
+In addition we'll be using the `Union` clause to combine possible input types.
+Since pendulum isn't typed yet, we'll have to silence mypy's errors using `# type: ignore`
+
+```python
+import pendulum
+from datetime import datetime
+
+
+class DateTime:
+    """
+    This class is used to convert the pendulum.DateTime type to a string
+    and back to a pendulum.DateTime type
+    """
+
+    @staticmethod
+    def serialize(dt: Union[pendulum.DateTime, datetime]) -> str:  # type: ignore
+        try:
+            return dt.isoformat()
+        except ValueError:
+            return dt.to_iso8601_string()  # type: ignore
+
+    @staticmethod
+    def parse_value(value: str) -> Union[pendulum.DateTime, datetime]:  # type: ignore
+        return pendulum.parse(value)  # type: ignore
+
+
+date_time = strawberry.scalar(
+    Union[pendulum.DateTime, datetime],  # type: ignore
+    name="datetime",
+    description="A date and time",
+    serialize=DateTime.serialize,
+    parse_value=DateTime.parse_value,
+)
+```
+
+## Int64
+
+Python by default allows, integer size to be 2^64. However the graphql spec has capped it to 2^32.
+
+This will inevitably raise errors. Instead of using strings on the client as a workaround,
+you could use the following scalar:
+
+```python
+# This is needed because GraphQL does not support int64
+Int64 = strawberry.scalar(
+    Union[int, str],  # type: ignore
+    serialize=lambda v: int(v),
+    parse_value=lambda v: str(v),
+    description="Int64 field",
+)
+```
+
+Remember to override these changes in your schema instance:
+
+```python
+user_schema = strawberry.Schema(
+    query=Query,
+    mutation=Mutation,
+    subscription=Subscription,
+    scalar_overrides={datetime: date_time, int: Int64},
+)
+```

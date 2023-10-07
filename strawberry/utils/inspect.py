@@ -38,7 +38,7 @@ def get_func_args(func: Callable[[Any], Any]) -> List[str]:
     ]
 
 
-def get_specialized_type_var_map(cls: type) -> Optional[Dict[TypeVar, type]]:
+def get_specialized_type_var_map(cls: type) -> Optional[Dict[str, type]]:
     """Get a type var map for specialized types.
 
     Consider the following:
@@ -103,7 +103,7 @@ def get_specialized_type_var_map(cls: type) -> Optional[Dict[TypeVar, type]]:
             continue
 
         type_var_map.update(
-            {p: a for p, a in zip(params, args) if not isinstance(a, TypeVar)}
+            {p.__name__: a for p, a in zip(params, args) if not isinstance(a, TypeVar)}
         )
 
     return type_var_map

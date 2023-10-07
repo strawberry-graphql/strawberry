@@ -1,9 +1,11 @@
-from typing import Any, Optional, Union, cast
+from typing import Any, AsyncGenerator, AsyncIterable, Optional, Union, cast
 from typing_extensions import assert_type
 
 import pytest
 
+import strawberry
 from strawberry import relay
+from strawberry.relay.utils import to_base64
 from strawberry.types.info import Info
 
 from .schema import Fruit, FruitAsync, schema
@@ -148,3 +150,94 @@ async def test_global_id_resolve_node_ensure_type_wrong_type():
     gid = relay.GlobalID(type_name="FruitAsync", node_id="1")
     with pytest.raises(TypeError):
         fruit = await gid.resolve_node(fake_info, ensure_type=Foo)
+
+
+async def test_resolve_async_list_connection():
+    @strawberry.type
+    class SomeType(relay.Node):
+        id: relay.NodeID[int]
+
+    @strawberry.type
+    class Query:
+        @relay.connection(relay.ListConnection[SomeType])
+        async def some_type_conn(self) -> AsyncGenerator[SomeType, None]:
+            yield SomeType(id=0)
+            yield SomeType(id=1)
+            yield SomeType(id=2)
+
+    schema = strawberry.Schema(query=Query)
+    ret = await schema.execute(
+        """\
+    query {
+      someTypeConn {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+    }
+    """
+    )
+    assert ret.errors is None
+    assert ret.data == {
+        "someTypeConn": {
+            "edges": [
+                {"node": {"id": to_base64("SomeType", 0)}},
+                {"node": {"id": to_base64("SomeType", 1)}},
+                {"node": {"id": to_base64("SomeType", 2)}},
+            ],
+        }
+    }
+
+
+async def test_resolve_async_list_connection_but_sync_after_sliced():
+    # We are mimicking an object which is async iterable, but when sliced
+    # returns something that is not anymore. This is similar to an already
+    # prefetched django QuerySet, which is async iterable by default, but
+    # when sliced, since it is already prefetched, will return a list.
+    class Slicer:
+        def __init__(self, nodes) -> None:
+            self.nodes = nodes
+
+        async def __aiter__(self):
+            for n in self.nodes:
+                yield n
+
+        def __getitem__(self, key):
+            return self.nodes[key]
+
+    @strawberry.type
+    class SomeType(relay.Node):
+        id: relay.NodeID[int]
+
+    @strawberry.type
+    class Query:
+        @relay.connection(relay.ListConnection[SomeType])
+        async def some_type_conn(self) -> AsyncIterable[SomeType]:
+            return Slicer([SomeType(id=0), SomeType(id=1), SomeType(id=2)])
+
+    schema = strawberry.Schema(query=Query)
+    ret = await schema.execute(
+        """\
+    query {
+      someTypeConn {
+        edges {
+          node {
+            id
+          }
+        }
+      }
+    }
+    """
+    )
+    assert ret.errors is None
+    assert ret.data == {
+        "someTypeConn": {
+            "edges": [
+                {"node": {"id": to_base64("SomeType", 0)}},
+                {"node": {"id": to_base64("SomeType", 1)}},
+                {"node": {"id": to_base64("SomeType", 2)}},
+            ],
+        }
+    }

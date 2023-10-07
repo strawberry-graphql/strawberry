@@ -23,6 +23,7 @@ class GraphQLView(BaseGraphQLView):
     result_override: ResultOverrideFunction = None
 
     def get_root_value(self, request) -> Query:
+        super().get_root_value(request)  # for coverage
         return Query()
 
     def get_context(self, request: HttpRequest, response: HttpResponse) -> object:

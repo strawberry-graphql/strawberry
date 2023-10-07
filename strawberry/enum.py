@@ -39,7 +39,7 @@ class EnumDefinition(StrawberryType):
         return hash(self.name)
 
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+        self, type_var_map: Mapping[str, Union[StrawberryType, type]]
     ) -> Union[StrawberryType, type]:
         # enum don't support type parameters, so we can safely return self
         return self

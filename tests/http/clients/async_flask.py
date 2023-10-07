@@ -25,6 +25,7 @@ class GraphQLView(BaseAsyncGraphQLView):
         super().__init__(*args, **kwargs)
 
     async def get_root_value(self, request: FlaskRequest) -> Query:
+        await super().get_root_value(request)  # for coverage
         return Query()
 
     async def get_context(

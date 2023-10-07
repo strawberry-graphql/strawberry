@@ -23,7 +23,7 @@ from graphql import (
     parse,
     validate_schema,
 )
-from graphql.subscription import subscribe
+from graphql.execution import subscribe
 from graphql.type.directives import specified_directives
 
 from strawberry import relay
@@ -184,7 +184,7 @@ class Schema(BaseSchema):
 
         return extensions
 
-    @lru_cache()
+    @lru_cache
     def get_type_by_name(
         self, name: str
     ) -> Optional[
@@ -220,7 +220,7 @@ class Schema(BaseSchema):
             None,
         )
 
-    @lru_cache()
+    @lru_cache
     def get_directive_by_name(self, graphql_name: str) -> Optional[StrawberryDirective]:
         return next(
             (

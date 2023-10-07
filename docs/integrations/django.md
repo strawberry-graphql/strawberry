@@ -20,7 +20,10 @@ urlpatterns = [
 ]
 ```
 
-You'd also need to add `strawberry.django` to the `INSTALLED_APPS` of your
+Strawberry only provides a GraphQL view for Django, [Strawberry GraphQL Django](https://github.com/strawberry-graphql/strawberry-graphql-django) provides integration with the models.
+`import strawberry_django` should do the same as `import strawberry.django` if both libraries are installed.
+
+You'd also need to add `strawberry_django` to the `INSTALLED_APPS` of your
 project, this is needed to provide the template for the GraphiQL interface.
 
 ## Options
@@ -126,8 +129,6 @@ and the execution results.
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
-from graphql.error.graphql_error import format_error as format_graphql_error
-
 
 class MyGraphQLView(GraphQLView):
     def process_result(
@@ -136,7 +137,7 @@ class MyGraphQLView(GraphQLView):
         data: GraphQLHTTPResponse = {"data": result.data}
 
         if result.errors:
-            data["errors"] = [format_graphql_error(err) for err in result.errors]
+            data["errors"] = [err.formatted for err in result.errors]
 
         return data
 ```
@@ -160,7 +161,7 @@ urlpatterns = [
 ]
 ```
 
-You'd also need to add `strawberry.django` to the `INSTALLED_APPS` of your
+You'd also need to add `strawberry_django` to the `INSTALLED_APPS` of your
 project, this is needed to provide the template for the GraphiQL interface.
 
 ## Options
@@ -244,8 +245,6 @@ and the execution results.
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
-from graphql.error.graphql_error import format_error as format_graphql_error
-
 
 class MyGraphQLView(AsyncGraphQLView):
     async def process_result(
@@ -254,7 +253,7 @@ class MyGraphQLView(AsyncGraphQLView):
         data: GraphQLHTTPResponse = {"data": result.data}
 
         if result.errors:
-            data["errors"] = [format_graphql_error(err) for err in result.errors]
+            data["errors"] = [err.formatted for err in result.errors]
 
         return data
 ```

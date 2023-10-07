@@ -87,15 +87,17 @@ type Image {
 }
 ```
 
-Or if you need to specify a name or a description for a union you can use the
-`strawberry.union` function:
+Or if you need to specify a name or a description for a union you can use Annotated
+with the `strawberry.union` function:
 
 ```python+schema
 import strawberry
 
+from typing import Union, Annotated
+
 @strawberry.type
 class Query:
-    latest_media: strawberry.union("MediaItem", types=(Audio, Video, Image))
+    latest_media: Annotated[Union[Audio, Video, Image], strawberry.union("MediaItem")]
 ---
 union MediaItem = Audio | Video | Image
 
@@ -135,4 +137,37 @@ class Query:
         return Video(
             thumbnail_url="https://i.ytimg.com/vi/dQw4w9WgXcQ/hq720.jpg",
         )
+```
+
+## Single member union
+
+Sometimes you might want to define a union with only one member. This is useful
+for future proofing your schema, for example if you want to add more types to
+the union in the future.
+
+Python's `typing.Union` does not really support this use case, but using Annotated
+and `strawberry.union` you can tell Strawberry that you want to define a union
+with only one member:
+
+```python+schema
+import strawberry
+
+from typing import Annotated
+
+@strawberry.type
+class Audio:
+    duration: int
+
+@strawberry.type
+class Query:
+    latest_media: Annotated[Audio, strawberry.union("MediaItem")]
+
+
+schema = strawberry.Schema(query=Query)
+---
+union MediaItem = Audio
+
+type Query {
+  latestMedia: MediaItem!
+}
 ```

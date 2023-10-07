@@ -1,7 +1,4 @@
-import sys
 from typing import Any, Dict
-
-import pytest
 
 import strawberry
 
@@ -13,11 +10,6 @@ try:
     from tests.starlite.app import create_app
 except ModuleNotFoundError:
     pass
-
-
-pytestmark = pytest.mark.skipif(
-    sys.version_info < (3, 8), reason="requires python3.8 or higher"
-)
 
 
 def test_base_context():

@@ -1,4 +1,5 @@
 import ast
+import dataclasses
 import sys
 import typing
 from functools import lru_cache
@@ -36,7 +37,7 @@ if not TYPE_CHECKING and ast_unparse is None:
     ast_unparse = astunparse.unparse
 
 
-@lru_cache()
+@lru_cache
 def get_generic_alias(type_: Type) -> Type:
     """Get the generic alias for a type.
 
@@ -161,6 +162,34 @@ def is_type_var(annotation: Type) -> bool:
     return isinstance(annotation, TypeVar)
 
 
+def is_classvar(cls: type, annotation: Union[ForwardRef, str]) -> bool:
+    """Returns True if the annotation is a ClassVar."""
+    # This code was copied from the dataclassses cpython implementation to check
+    # if a field is annotated with ClassVar or not, taking future annotations
+    # in consideration.
+    if dataclasses._is_classvar(annotation, typing):  # type: ignore
+        return True
+
+    annotation_str = (
+        annotation.__forward_arg__ if isinstance(annotation, ForwardRef) else annotation
+    )
+    return isinstance(annotation_str, str) and dataclasses._is_type(  # type: ignore
+        annotation_str,
+        cls,
+        typing,
+        typing.ClassVar,
+        dataclasses._is_classvar,  # type: ignore
+    )
+
+
+def type_has_annotation(type_: object, annotation: Type) -> bool:
+    """Returns True if the type_ has been annotated with annotation."""
+    if get_origin(type_) is Annotated:
+        return any(isinstance(argument, annotation) for argument in get_args(type_))
+
+    return False
+
+
 def get_parameters(annotation: Type) -> Union[Tuple[object], Tuple[()]]:
     if (
         isinstance(annotation, _GenericAlias)
@@ -274,9 +303,9 @@ def _get_namespace_from_ast(
         # here to resolve lazy types by execing the annotated args, resolving the
         # type directly and then adding it to extra namespace, so that _eval_type
         # can properly resolve it later
-        type_name = args[0]
+        type_name = args[0].strip()
         for arg in args[1:]:
-            evaled_arg = eval(arg, globalns, localns)  # noqa: PGH001
+            evaled_arg = eval(arg, globalns, localns)  # noqa: PGH001, S307
             if isinstance(evaled_arg, StrawberryLazyReference):
                 extra[type_name] = evaled_arg.resolve_forward_ref(ForwardRef(type_name))
 
@@ -327,7 +356,7 @@ def eval_type(
                     remaining_args = [
                         a
                         for a in args[1:]
-                        if not isinstance(arg, StrawberryLazyReference)
+                        if not isinstance(a, StrawberryLazyReference)
                     ]
                     type_arg = (
                         arg.resolve_forward_ref(args[0])
@@ -338,9 +367,9 @@ def eval_type(
                     break
                 if isinstance(arg, StrawberryAuto):
                     remaining_args = [
-                        a for a in args[1:] if not isinstance(arg, StrawberryAuto)
+                        a for a in args[1:] if not isinstance(a, StrawberryAuto)
                     ]
-                    args = (arg, *remaining_args)
+                    args = (args[0], arg, *remaining_args)
                     break
 
             # If we have only a StrawberryLazyReference and no more annotations,

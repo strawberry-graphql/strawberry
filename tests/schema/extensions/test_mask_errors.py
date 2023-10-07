@@ -1,7 +1,6 @@
 from unittest.mock import Mock
 
 from graphql.error import GraphQLError
-from graphql.error.graphql_error import format_error as format_graphql_error
 
 import strawberry
 from strawberry.extensions import MaskErrors
@@ -20,7 +19,7 @@ def test_mask_all_errors():
 
     result = schema.execute_sync(query)
     assert result.errors is not None
-    formatted_errors = [format_graphql_error(err) for err in result.errors]
+    formatted_errors = [err.formatted for err in result.errors]
     assert formatted_errors == [
         {
             "locations": [{"column": 9, "line": 1}],
@@ -58,7 +57,7 @@ def test_mask_some_errors():
 
     result = schema.execute_sync(query)
     assert result.errors is not None
-    formatted_errors = [format_graphql_error(err) for err in result.errors]
+    formatted_errors = [err.formatted for err in result.errors]
     assert formatted_errors == [
         {
             "locations": [{"column": 9, "line": 1}],
@@ -71,7 +70,7 @@ def test_mask_some_errors():
 
     result = schema.execute_sync(query)
     assert result.errors is not None
-    formatted_errors = [format_graphql_error(err) for err in result.errors]
+    formatted_errors = [err.formatted for err in result.errors]
     assert formatted_errors == [
         {
             "locations": [{"column": 9, "line": 1}],
@@ -101,7 +100,7 @@ def test_process_errors_original_error():
 
     result = schema.execute_sync(query)
     assert result.errors is not None
-    formatted_errors = [format_graphql_error(err) for err in result.errors]
+    formatted_errors = [err.formatted for err in result.errors]
     assert formatted_errors == [
         {
             "locations": [{"column": 9, "line": 1}],
@@ -129,7 +128,7 @@ def test_graphql_error_masking():
 
     result = schema.execute_sync(query)
     assert result.errors is not None
-    formatted_errors = [format_graphql_error(err) for err in result.errors]
+    formatted_errors = [err.formatted for err in result.errors]
     assert formatted_errors == [
         {
             "locations": [{"column": 9, "line": 1}],

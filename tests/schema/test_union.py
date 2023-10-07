@@ -1,4 +1,5 @@
 import sys
+import textwrap
 from dataclasses import dataclass
 from textwrap import dedent
 from typing import Generic, List, Optional, TypeVar, Union
@@ -184,7 +185,7 @@ def test_types_not_included_in_the_union_are_rejected():
 
     assert (
         result.errors[0].message == "The type "
-        "\"<class 'tests.schema.test_union.test_types_not_included_in_the_union_are_rejected.<locals>.Outside'>\""  # noqa
+        "\"<class 'tests.schema.test_union.test_types_not_included_in_the_union_are_rejected.<locals>.Outside'>\""
         ' of the field "hello" '
         "is not in the list of the types of the union: \"['A', 'B']\""
     )
@@ -235,7 +236,7 @@ def test_named_union():
     class B:
         b: int
 
-    Result = strawberry.union("Result", (A, B))
+    Result = Annotated[Union[A, B], strawberry.union(name="Result")]
 
     @strawberry.type
     class Query:
@@ -274,7 +275,9 @@ def test_named_union_description():
     class B:
         b: int
 
-    Result = strawberry.union("Result", (A, B), description="Example Result")
+    Result = Annotated[
+        Union[A, B], strawberry.union(name="Result", description="Example Result")
+    ]
 
     @strawberry.type
     class Query:
@@ -313,7 +316,7 @@ def test_can_use_union_in_optional():
     class B:
         b: int
 
-    Result = strawberry.union("Result", (A, B))
+    Result = Annotated[Union[A, B], strawberry.union(name="Result")]
 
     @strawberry.type
     class Query:
@@ -397,7 +400,7 @@ def test_union_used_multiple_times():
     class B:
         b: int
 
-    MyUnion = strawberry.union("MyUnion", types=(A, B))
+    MyUnion = Annotated[Union[A, B], strawberry.union("MyUnion")]
 
     @strawberry.type
     class Query:
@@ -442,7 +445,7 @@ def test_union_explicit_type_resolution():
     class B:
         b: int
 
-    MyUnion = strawberry.union("MyUnion", types=(A, B))
+    MyUnion = Annotated[Union[A, B], strawberry.union("MyUnion")]
 
     @strawberry.type
     class Query:
@@ -477,7 +480,7 @@ def test_union_optional_with_or_operator():
     class Dog:
         name: str
 
-    animal_union = strawberry.union("Animal", (Cat, Dog))
+    animal_union = Annotated[Cat | Dog, strawberry.union("Animal")]
 
     @strawberry.type
     class Query:
@@ -665,34 +668,191 @@ def test_error_with_invalid_annotated_type():
 
 
 @pytest.mark.raises_strawberry_exception(
-    InvalidUnionTypeError, match="Type `(.*)` cannot be used in a GraphQL Union"
+    InvalidUnionTypeError, match="Type `int` cannot be used in a GraphQL Union"
 )
-@pytest.mark.parametrize(
-    "annotation",
-    (
-        "int",
-        "str",
-        "float",
-        pytest.param(
-            "list[str]",
-            marks=pytest.mark.skipif(
-                sys.version_info < (3, 9, 0),
-                reason="list[str] is only available on python 3.9+",
-            ),
-        ),
-        "List[str]",
-    ),
-)
-def test_raises_on_union_of_scalars(annotation: str, monkeypatch):
+def test_raises_on_union_with_int():
+    global ICanBeInUnion
+
     @strawberry.type
     class ICanBeInUnion:
         foo: str
 
-    monkeypatch.setitem(globals(), ICanBeInUnion.__name__, ICanBeInUnion)
-    annotation = f"Union[{ICanBeInUnion.__name__}, {annotation}]"
+    @strawberry.type
+    class Query:
+        union: Union[ICanBeInUnion, int]
+
+    strawberry.Schema(query=Query)
+
+    del ICanBeInUnion
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidUnionTypeError,
+    match=r"Type `list\[...\]` cannot be used in a GraphQL Union",
+)
+@pytest.mark.skipif(
+    sys.version_info < (3, 9, 0),
+    reason="list[str] is only available on python 3.9+",
+)
+def test_raises_on_union_with_list_str():
+    global ICanBeInUnion
+
+    @strawberry.type
+    class ICanBeInUnion:
+        foo: str
 
     @strawberry.type
     class Query:
-        union: annotation  # type: ignore
+        union: Union[ICanBeInUnion, list[str]]
 
     strawberry.Schema(query=Query)
+
+    del ICanBeInUnion
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidUnionTypeError,
+    match=r"Type `list\[...\]` cannot be used in a GraphQL Union",
+)
+@pytest.mark.skipif(
+    sys.version_info < (3, 9, 0),
+    reason="list[str] is only available on python 3.9+",
+)
+def test_raises_on_union_with_list_str_38():
+    global ICanBeInUnion
+
+    @strawberry.type
+    class ICanBeInUnion:
+        foo: str
+
+    @strawberry.type
+    class Query:
+        union: Union[ICanBeInUnion, List[str]]
+
+    strawberry.Schema(query=Query)
+
+    del ICanBeInUnion
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidUnionTypeError, match="Type `Always42` cannot be used in a GraphQL Union"
+)
+def test_raises_on_union_of_custom_scalar():
+    @strawberry.type
+    class ICanBeInUnion:
+        foo: str
+
+    @strawberry.scalar(serialize=lambda x: 42, parse_value=lambda x: Always42())
+    class Always42:
+        pass
+
+    @strawberry.type
+    class Query:
+        union: Annotated[
+            Union[Always42, ICanBeInUnion], strawberry.union(name="ExampleUnion")
+        ]
+
+    strawberry.Schema(query=Query)
+
+
+def test_union_of_unions():
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Error:
+        name: str
+
+    @strawberry.type
+    class SpecificError:
+        name: str
+
+    @strawberry.type
+    class EvenMoreSpecificError:
+        name: str
+
+    ErrorUnion = Union[SpecificError, EvenMoreSpecificError]
+
+    @strawberry.type
+    class Query:
+        user: Union[User, Error]
+        error: Union[User, ErrorUnion]
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = textwrap.dedent(
+        """
+        type Error {
+          name: String!
+        }
+
+        type EvenMoreSpecificError {
+          name: String!
+        }
+
+        type Query {
+          user: UserError!
+          error: UserSpecificErrorEvenMoreSpecificError!
+        }
+
+        type SpecificError {
+          name: String!
+        }
+
+        type User {
+          name: String!
+        }
+
+        union UserError = User | Error
+
+        union UserSpecificErrorEvenMoreSpecificError = User | SpecificError | EvenMoreSpecificError
+        """
+    ).strip()
+
+    assert str(schema) == expected_schema
+
+
+def test_single_union():
+    @strawberry.type
+    class A:
+        a: int = 5
+
+    @strawberry.type
+    class Query:
+        something: Annotated[A, strawberry.union(name="Something")] = strawberry.field(
+            default_factory=A
+        )
+
+    schema = strawberry.Schema(query=Query)
+    query = """{
+        something {
+            __typename,
+
+            ... on A {
+                a
+            }
+        }
+    }"""
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+        type A {
+          a: Int!
+        }
+
+        type Query {
+          something: Something!
+        }
+
+        union Something = A
+        """
+        ).strip()
+    )
+
+    result = schema.execute_sync(query, root_value=Query())
+
+    assert not result.errors
+    assert result.data["something"] == {"__typename": "A", "a": 5}

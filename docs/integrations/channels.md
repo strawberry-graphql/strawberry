@@ -136,13 +136,14 @@ class Subscription:
                 },
             )
 
-        async for message in ws.channel_listen("chat.message", groups=room_ids):
-            if message["room_id"] in room_ids:
-                yield ChatRoomMessage(
-                    room_name=message["room_id"],
-                    message=message["message"],
-                    current_user=user,
-                )
+        async with ws.listen_to_channel("chat.message", groups=room_ids) as cm:
+            async for message in cm:
+                if message["room_id"] in room_ids:
+                    yield ChatRoomMessage(
+                        room_name=message["room_id"],
+                        message=message["message"],
+                        current_user=user,
+                    )
 ```
 
 Explanation: `Info.context["ws"]` or `Info.context["request"]` is a pointer to the
@@ -153,11 +154,12 @@ message to all the channel_layer groups (specified in the subscription argument
 <Note>
 
 The `ChannelsConsumer` instance is shared between all subscriptions created in
-a single websocket connection. The `ws.channel_listen` function will yield all
+a single websocket connection. The `ws.listen_to_channel` context manager will return
+a function to yield all
 messages sent using the given message `type` (`chat.message` in the above example)
 but does not ensure that the message was sent to the same group or groups that
 it was called with - if another subscription using the same `ChannelsConsumer`
-also uses `ws.channel_listen` with some other group names, those will be returned
+also uses `ws.listen_to_channel` with some other group names, those will be returned
 as well.
 
 In the example we ensure `message["room_id"] in room_ids` before passing messages
@@ -168,9 +170,9 @@ the chat rooms requested in that subscription.
 
 <Note>
 
-We do not need to call `await channel_layer.group_add(room, ws.channel_name)` If
+We do not need to call `await channel_layer.group_add(room, ws.channel_name)` if
 we don't want to send an initial message while instantiating the subscription.
-It is handled by `ws.channel_listen`.
+It is handled by `ws.listen_to_channel`.
 
 </Note>
 
@@ -354,6 +356,43 @@ Look here for some more complete examples:
    contains a basic example app demonstrating subscriptions with Channels.
 
 ---
+
+### Confirming GraphQL Subscriptions
+
+By default no confirmation message is sent to the GraphQL client once the
+subscription has started. However, this is useful to be able to synchronize
+actions and detect communication errors. The code below shows how the above
+example can be adapted to send a null from the server to the client to confirm
+that the subscription has successfully started. This includes confirming that
+the Channels layer subscription has started.
+
+```python
+# mysite/gqlchat/subscription.py
+
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def join_chat_rooms(
+        self,
+        info: Info,
+        rooms: List[ChatRoom],
+        user: str,
+    ) -> AsyncGenerator[ChatRoomMessage | None, None]:
+        ...
+        async with ws.listen_to_channel("chat.message", groups=room_ids) as cm:
+            yield None
+            async for message in cm:
+                if message["room_id"] in room_ids:
+                    yield ChatRoomMessage(
+                        room_name=message["room_id"],
+                        message=message["message"],
+                        current_user=user,
+                    )
+```
+
+Note the change in return signature for `join_chat_rooms` and the `yield None`
+after entering the `listen_to_channel` context manger.
 
 ## Testing
 
@@ -620,13 +659,14 @@ Every graphql session will have an instance of this class inside `info.context["
 #### properties
 
 ```python
-async def channel_listen(
+@contextlib.asynccontextmanager
+async def listen_to_channel(
     self,
     type: str,
     *,
     timeout: float | None = None,
     groups: Sequence[str] | None = None
-):  # AsyncGenerator
+) -> AsyncGenerator[Any, None]:
     ...
 ```
 

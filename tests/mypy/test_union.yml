@@ -1,6 +1,7 @@
 - case: test_union
   main: |
-    import typing
+    from typing_extensions import Annotated
+    from typing import Union
 
     import strawberry
 
@@ -12,7 +13,7 @@
     class Error:
         message: str
 
-    Response = strawberry.union("Response", (User, Error))
+    Response = Annotated[Union[User, Error], strawberry.union(name="Response")]
 
     a: Response
     reveal_type(Response)
@@ -21,13 +22,15 @@
     a = User(name="abc")
     reveal_type(a)
   out: |
-    main:16: note: Revealed type is "typing._SpecialForm"
-    main:17: note: Revealed type is "Union[main.User, main.Error]"
-    main:20: note: Revealed type is "main.User"
+    main:17: note: Revealed type is "typing._SpecialForm"
+    main:18: note: Revealed type is "Union[main.User, main.Error]"
+    main:21: note: Revealed type is "main.User"
 
 - case: test_union_generics
   main: |
     from typing import Generic, TypeVar
+    from typing_extensions import Annotated
+    from typing import Union
 
     import strawberry
 
@@ -41,18 +44,20 @@
     class Edge(Generic[T]):
         node: T
 
-    Result = strawberry.union("Result", (Error, Edge[str]))
+    Result = Annotated[Union[Error, Edge[str]], strawberry.union("Result")]
+
     reveal_type(Result)
 
     a: Result
     reveal_type(a)
   out: |
-    main:16: note: Revealed type is "typing._SpecialForm"
-    main:19: note: Revealed type is "Union[main.Error, main.Edge[builtins.str]]"
+    main:19: note: Revealed type is "typing._SpecialForm"
+    main:22: note: Revealed type is "Union[main.Error, main.Edge[builtins.str]]"
 
 - case: test_union_kwargs
   main: |
-    import typing
+    from typing_extensions import Annotated
+    from typing import Union
 
     import strawberry
 
@@ -64,7 +69,7 @@
     class Error:
         message: str
 
-    Response = strawberry.union(types=(User, Error), name="Response")
+    Response = Annotated[Union[User, Error], strawberry.union("Response")]
 
     a: Response
     reveal_type(Response)
@@ -73,6 +78,6 @@
     a = User(name="abc")
     reveal_type(a)
   out: |
-    main:16: note: Revealed type is "typing._SpecialForm"
-    main:17: note: Revealed type is "Union[main.User, main.Error]"
-    main:20: note: Revealed type is "main.User"
+    main:17: note: Revealed type is "typing._SpecialForm"
+    main:18: note: Revealed type is "Union[main.User, main.Error]"
+    main:21: note: Revealed type is "main.User"

@@ -3,14 +3,17 @@ import dataclasses
 import re
 import sys
 from enum import Enum
-from typing import Any, Dict, List, NewType, Optional, Union, cast
+from typing import Any, Dict, List, NewType, Optional, TypeVar, Union
 
 import pytest
-from pydantic import BaseConfig, BaseModel, Field, ValidationError
-from pydantic.fields import ModelField
-from pydantic.typing import NoArgAnyCallable
+from pydantic import BaseModel, Field, ValidationError
 
 import strawberry
+from strawberry.experimental.pydantic._compat import (
+    IS_PYDANTIC_V2,
+    PYDANTIC_MISSING_TYPE,
+    CompatModelField,
+)
 from strawberry.experimental.pydantic.exceptions import (
     AutoFieldsNotInBaseModelError,
     BothDefaultAndDefaultFactoryDefinedError,
@@ -18,6 +21,12 @@ from strawberry.experimental.pydantic.exceptions import (
 from strawberry.experimental.pydantic.utils import get_default_factory_for_field
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import StrawberryObjectDefinition
+from tests.experimental.pydantic.utils import needs_pydantic_v1
+
+if IS_PYDANTIC_V2:
+    pass
+else:
+    pass
 
 
 def test_can_use_type_standalone():
@@ -839,15 +848,20 @@ def test_can_convert_pydantic_type_to_strawberry_newtype_list():
 
 def test_get_default_factory_for_field():
     def _get_field(
-        default: Any = dataclasses.MISSING, default_factory: Any = dataclasses.MISSING
-    ) -> ModelField:
-        return ModelField(
+        default: Any = PYDANTIC_MISSING_TYPE,
+        default_factory: Any = PYDANTIC_MISSING_TYPE,
+    ) -> CompatModelField:
+        return CompatModelField(
             name="a",
             type_=str,
-            class_validators={},
-            model_config=BaseConfig,
+            outer_type_=str,
             default=default,
             default_factory=default_factory,
+            alias="a",
+            allow_none=False,
+            description="",
+            has_alias=False,
+            required=True,
         )
 
     field = _get_field()
@@ -867,7 +881,7 @@ def test_get_default_factory_for_field():
     field = _get_field(mutable_default)
 
     created_factory = get_default_factory_for_field(field)
-    created_factory = cast(NoArgAnyCallable, created_factory)
+    created_factory = created_factory
 
     # should return a factory that copies the default parameter
     assert created_factory() == mutable_default
@@ -885,13 +899,27 @@ def test_get_default_factory_for_field():
 def test_convert_input_types_to_pydantic_default_and_default_factory():
     # Pydantic should raise an error if the user specifies both default
     # and default_factory. this checks for a regression on their side
-    with pytest.raises(
-        ValueError,
-        match=("cannot specify both default and default_factory"),
-    ):
+    if IS_PYDANTIC_V2:
+        with pytest.raises(
+            TypeError,
+            match=("cannot specify both default and default_factory"),
+        ):
 
-        class User(BaseModel):
-            password: Optional[str] = Field(default=None, default_factory=lambda: None)
+            class User(BaseModel):
+                password: Optional[str] = Field(
+                    default=None, default_factory=lambda: None
+                )
+
+    else:
+        with pytest.raises(
+            ValueError,
+            match=("cannot specify both default and default_factory"),
+        ):
+
+            class User(BaseModel):
+                password: Optional[str] = Field(
+                    default=None, default_factory=lambda: None
+                )
 
 
 def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers():
@@ -984,7 +1012,9 @@ def test_custom_conversion_functions():
         password: strawberry.auto
 
         @staticmethod
-        def from_pydantic(instance: User, extra: Dict[str, Any] = None) -> "UserType":
+        def from_pydantic(
+            instance: User, extra: Optional[Dict[str, Any]] = None
+        ) -> "UserType":
             return UserType(
                 age=str(instance.age),
                 password=base64.b64encode(instance.password.encode()).decode()
@@ -1024,7 +1054,9 @@ def test_nested_custom_conversion_functions():
         password: strawberry.auto
 
         @staticmethod
-        def from_pydantic(instance: User, extra: Dict[str, Any] = None) -> "UserType":
+        def from_pydantic(
+            instance: User, extra: Optional[Dict[str, Any]] = None
+        ) -> "UserType":
             return UserType(
                 age=str(instance.age),
                 password=base64.b64encode(instance.password.encode()).decode()
@@ -1194,3 +1226,75 @@ def test_can_convert_optional_union_type_expression_fields_to_strawberry():
 
     assert test.optional_list == [1, 2, 3]
     assert test.optional_str is None
+
+
+@needs_pydantic_v1
+@pytest.mark.skipif(
+    sys.version_info < (3, 9),
+    reason="ConstrainedList with another model does not work with 3.8",
+)
+def test_can_convert_pydantic_type_to_strawberry_with_constrained_list():
+    from pydantic import ConstrainedList
+
+    class WorkModel(BaseModel):
+        name: str
+
+    class workList(ConstrainedList):
+        min_items = 1
+
+    class UserModel(BaseModel):
+        work: workList[WorkModel]
+
+    @strawberry.experimental.pydantic.type(WorkModel)
+    class Work:
+        name: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(UserModel)
+    class User:
+        work: strawberry.auto
+
+    origin_user = UserModel(
+        work=[WorkModel(name="developer"), WorkModel(name="tester")]
+    )
+
+    user = User.from_pydantic(origin_user)
+
+    assert user == User(work=[Work(name="developer"), Work(name="tester")])
+
+
+SI = TypeVar("SI", covariant=True)  # pragma: no mutate
+
+
+class SpecialList(List[SI]):
+    pass
+
+
+@needs_pydantic_v1
+@pytest.mark.skipif(
+    sys.version_info < (3, 9), reason="SpecialList does not work with 3.8"
+)
+def test_can_convert_pydantic_type_to_strawberry_with_specialized_list():
+    class WorkModel(BaseModel):
+        name: str
+
+    class workList(SpecialList[SI]):
+        min_items = 1
+
+    class UserModel(BaseModel):
+        work: workList[WorkModel]
+
+    @strawberry.experimental.pydantic.type(WorkModel)
+    class Work:
+        name: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(UserModel)
+    class User:
+        work: strawberry.auto
+
+    origin_user = UserModel(
+        work=[WorkModel(name="developer"), WorkModel(name="tester")]
+    )
+
+    user = User.from_pydantic(origin_user)
+
+    assert user == User(work=[Work(name="developer"), Work(name="tester")])

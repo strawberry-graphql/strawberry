@@ -1,19 +1,18 @@
-from typing import Iterable, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Collection, Iterable, Optional, Type
 
+from strawberry.union import StrawberryUnion
 from strawberry.union import union as base_union
-
-Types = TypeVar("Types", bound=Type)
 
 
 def union(
     name: str,
-    types: Tuple[Types, ...],
+    types: Optional[Collection[Type[Any]]] = None,
     *,
     description: Optional[str] = None,
     directives: Iterable[object] = (),
     inaccessible: bool = False,
     tags: Optional[Iterable[str]] = (),
-) -> Union[Types]:
+) -> StrawberryUnion:
     """Creates a new named Union type.
 
     Example usages:

@@ -13,7 +13,7 @@ from typing import (
     Union,
     overload,
 )
-from typing_extensions import Literal, Protocol
+from typing_extensions import Literal, Protocol, Self
 
 from strawberry.utils.typing import is_concrete_generic
 
@@ -41,7 +41,7 @@ class StrawberryType(ABC):
     def copy_with(
         self,
         type_var_map: Mapping[
-            TypeVar, Union[StrawberryType, Type[WithStrawberryObjectDefinition]]
+            str, Union[StrawberryType, Type[WithStrawberryObjectDefinition]]
         ],
     ) -> Union[StrawberryType, Type[WithStrawberryObjectDefinition]]:
         raise NotImplementedError()
@@ -111,9 +111,9 @@ class StrawberryContainer(StrawberryType):
     def copy_with(
         self,
         type_var_map: Mapping[
-            TypeVar, Union[StrawberryType, Type[WithStrawberryObjectDefinition]]
+            str, Union[StrawberryType, Type[WithStrawberryObjectDefinition]]
         ],
-    ) -> StrawberryType:
+    ) -> Self:
         of_type_copy = self.of_type
 
         if has_object_definition(self.of_type):
@@ -155,9 +155,9 @@ class StrawberryTypeVar(StrawberryType):
         self.type_var = type_var
 
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+        self, type_var_map: Mapping[str, Union[StrawberryType, type]]
     ) -> Union[StrawberryType, type]:
-        return type_var_map[self.type_var]
+        return type_var_map[self.type_var.__name__]
 
     @property
     def is_generic(self) -> bool:

@@ -121,7 +121,7 @@ need a reliable and consistent way to handle pagination.
 
 Strawberry provides a cursor based pagination implementing the
 [relay spec](https://relay.dev/docs/guides/graphql-server-specification/).
-You can read more about it in the [relay](./input-types) page.
+You can read more about it in the [relay](../relay) page.
 
 </Note>
 

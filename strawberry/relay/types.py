@@ -11,6 +11,7 @@ from typing import (
     AsyncIterator,
     Awaitable,
     ClassVar,
+    ForwardRef,
     Generic,
     Iterable,
     Iterator,
@@ -23,14 +24,7 @@ from typing import (
     cast,
     overload,
 )
-from typing_extensions import (
-    Annotated,
-    Literal,
-    Self,
-    TypeAlias,
-    get_args,
-    get_origin,
-)
+from typing_extensions import Annotated, Literal, Self, TypeAlias, get_args, get_origin
 
 from strawberry.field import field
 from strawberry.lazy_type import LazyType
@@ -38,16 +32,16 @@ from strawberry.object_type import interface, type
 from strawberry.private import StrawberryPrivate
 from strawberry.relay.exceptions import NodeIDAnnotationError
 from strawberry.type import StrawberryContainer, get_object_definition
+from strawberry.types.info import Info  # noqa: TCH001
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
 from strawberry.utils.inspect import in_async_context
-from strawberry.utils.typing import eval_type
+from strawberry.utils.typing import eval_type, is_classvar
 
 from .utils import from_base64, to_base64
 
 if TYPE_CHECKING:
     from strawberry.scalars import ID
-    from strawberry.types.info import Info
     from strawberry.utils.await_maybe import AwaitableOrValue
 
 _T = TypeVar("_T")
@@ -407,7 +401,16 @@ class Node:
             base_namespace = sys.modules[base.__module__].__dict__
 
             for attr_name, attr in getattr(base, "__annotations__", {}).items():
-                evaled = eval_type(attr, globalns=base_namespace)
+                # Some ClassVar might raise TypeError when being resolved
+                # on some python versions. This is fine to skip since
+                # we are not interested in ClassVars here
+                if is_classvar(base, attr):
+                    continue
+
+                evaled = eval_type(
+                    ForwardRef(attr) if isinstance(attr, str) else attr,
+                    globalns=base_namespace,
+                )
 
                 if get_origin(evaled) is Annotated and any(
                     isinstance(a, NodeIDPrivate) for a in get_args(evaled)
@@ -834,7 +837,7 @@ class ListConnection(Connection[NodeType]):
                 end = sys.maxsize
 
         if end is None:
-            end = max_results
+            end = start + max_results
 
         expected = end - start if end != sys.maxsize else None
         # Overfetch by 1 to check if we have a next result
@@ -845,7 +848,7 @@ class ListConnection(Connection[NodeType]):
         field_def = type_def.get_field("edges")
         assert field_def
 
-        field = field_def.type
+        field = field_def.resolve_type(type_definition=type_def)
         while isinstance(field, StrawberryContainer):
             field = field.of_type
 
@@ -868,14 +871,24 @@ class ListConnection(Connection[NodeType]):
                         overfetch,
                     )
 
-                assert isinstance(iterator, (AsyncIterator, AsyncIterable))
-                edges: List[Edge] = [
-                    edge_class.resolve_edge(
-                        cls.resolve_node(v, info=info, **kwargs),
-                        cursor=start + i,
-                    )
-                    async for i, v in aenumerate(iterator)
-                ]
+                # The slice above might return an object that now is not async
+                # iterable anymore (e.g. an already cached django queryset)
+                if isinstance(iterator, (AsyncIterator, AsyncIterable)):
+                    edges: List[Edge] = [
+                        edge_class.resolve_edge(
+                            cls.resolve_node(v, info=info, **kwargs),
+                            cursor=start + i,
+                        )
+                        async for i, v in aenumerate(iterator)
+                    ]
+                else:
+                    edges: List[Edge] = [  # type: ignore[no-redef]
+                        edge_class.resolve_edge(
+                            cls.resolve_node(v, info=info, **kwargs),
+                            cursor=start + i,
+                        )
+                        for i, v in enumerate(iterator)
+                    ]
 
                 has_previous_page = start > 0
                 if expected is not None and len(edges) == expected + 1:

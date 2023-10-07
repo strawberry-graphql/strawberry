@@ -34,6 +34,7 @@ class GraphQLView(BaseGraphQLView):
         super().__init__(*args, **kwargs)
 
     def get_root_value(self, request: FlaskRequest) -> object:
+        super().get_root_value(request)  # for coverage
         return Query()
 
     def get_context(

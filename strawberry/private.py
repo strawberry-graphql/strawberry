@@ -1,5 +1,7 @@
 from typing import TypeVar
-from typing_extensions import Annotated, get_args, get_origin
+from typing_extensions import Annotated
+
+from strawberry.utils.typing import type_has_annotation
 
 
 class StrawberryPrivate:
@@ -22,9 +24,4 @@ Example:
 
 
 def is_private(type_: object) -> bool:
-    if get_origin(type_) is Annotated:
-        return any(
-            isinstance(argument, StrawberryPrivate) for argument in get_args(type_)
-        )
-
-    return False
+    return type_has_annotation(type_, StrawberryPrivate)

@@ -12,13 +12,15 @@ allowed in unions, for example the following code will throw this error:
 ```python
 import strawberry
 
+from typing import Union, Annotated
+
 
 @strawberry.type
 class Example:
     name: str
 
 
-ExampleUnion = strawberry.union("ExampleUnion", types=(Example,))
+ExampleUnion = Annotated[Union[Example], strawberry.union("ExampleUnion")]
 
 
 @strawberry.type
@@ -43,6 +45,8 @@ which is a wrapper on top of the `int` scalar:
 ```python
 import strawberry
 
+from typing import Union, Annotated
+
 
 @strawberry.type
 class Example:
@@ -54,7 +58,7 @@ class IntWrapper:
     value: int
 
 
-ExampleUnion = strawberry.union("ExampleUnion", types=(Example, IntWrapper))
+ExampleUnion = Annotated[Union[Example, IntWrapper], strawberry.union("ExampleUnion")]
 
 
 @strawberry.type

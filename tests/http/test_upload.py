@@ -1,19 +1,22 @@
+import contextlib
 import json
 from io import BytesIO
 from typing import Type
 
 import pytest
+from urllib3 import encode_multipart_formdata
 
-import aiohttp
-
-from .clients import HttpClient
-from .clients.chalice import ChaliceHttpClient
+from .clients.base import HttpClient
 
 
 @pytest.fixture()
 def http_client(http_client_class: Type[HttpClient]) -> HttpClient:
-    if http_client_class is ChaliceHttpClient:
-        pytest.xfail(reason="Chalice does not support uploads")
+    with contextlib.suppress(ImportError):
+        from .clients.chalice import ChaliceHttpClient
+
+        if http_client_class is ChaliceHttpClient:
+            pytest.xfail(reason="Chalice does not support uploads")
+
     return http_client_class()
 
 
@@ -32,6 +35,7 @@ async def test_upload(http_client: HttpClient):
         files={"textFile": f},
     )
 
+    assert response.json.get("errors") is None
     assert response.json["data"] == {"readText": "strawberry"}
 
 
@@ -161,23 +165,22 @@ async def test_extra_form_data_fields_are_ignored(http_client: HttpClient):
     file_map = json.dumps({"textFile": ["variables.textFile"]})
     extra_field_data = json.dumps({})
 
-    form_data = aiohttp.FormData()
-    form_data.add_field("textFile", f, filename="textFile.txt")
-    form_data.add_field("operations", operations)
-    form_data.add_field("map", file_map)
-    form_data.add_field("extra_field", extra_field_data)
+    f = BytesIO(b"strawberry")
+    fields = {
+        "operations": operations,
+        "map": file_map,
+        "extra_field": extra_field_data,
+        "textFile": ("textFile.txt", f.read(), "text/plain"),
+    }
 
-    buffer = FakeWriter()
-    writer = form_data()
-
-    await writer.write(buffer)  # type: ignore
+    data, header = encode_multipart_formdata(fields)
 
     response = await http_client.post(
         url="/graphql",
-        data=buffer.value,
+        data=data,
         headers={
-            "content-type": writer.content_type,
-            "content-length": f"{len(buffer.value)}",
+            "content-type": header,
+            "content-length": f"{len(data)}",
         },
     )
 
@@ -198,27 +201,26 @@ async def test_sending_invalid_form_data(http_client: HttpClient):
     )
 
 
+@pytest.mark.aiohttp
 async def test_sending_invalid_json_body(http_client: HttpClient):
     f = BytesIO(b"strawberry")
     operations = "}"
     file_map = json.dumps({"textFile": ["variables.textFile"]})
 
-    form_data = aiohttp.FormData()
-    form_data.add_field("textFile", f, filename="textFile.txt")
-    form_data.add_field("operations", operations)
-    form_data.add_field("map", file_map)
+    fields = {
+        "operations": operations,
+        "map": file_map,
+        "textFile": ("textFile.txt", f.read(), "text/plain"),
+    }
 
-    buffer = FakeWriter()
-    writer = form_data()
-
-    await writer.write(buffer)  # type: ignore
+    data, header = encode_multipart_formdata(fields)
 
     response = await http_client.post(
         "/graphql",
-        data=buffer.value,
+        data=data,
         headers={
-            "content-type": writer.content_type,
-            "content-length": f"{len(buffer.value)}",
+            "content-type": header,
+            "content-length": f"{len(data)}",
         },
     )
 

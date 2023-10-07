@@ -272,8 +272,6 @@ from strawberry.fastapi import GraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
-from graphql.error.graphql_error import format_error as format_graphql_error
-
 
 class MyGraphQLRouter(GraphQLRouter):
     async def process_result(
@@ -282,7 +280,7 @@ class MyGraphQLRouter(GraphQLRouter):
         data: GraphQLHTTPResponse = {"data": result.data}
 
         if result.errors:
-            data["errors"] = [format_graphql_error(err) for err in result.errors]
+            data["errors"] = [err.formatted for err in result.errors]
 
         return data
 ```

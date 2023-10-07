@@ -9,9 +9,15 @@ from .schema import Fruit
 
 
 def test_from_base64():
-    type_name, node_id = from_base64("Zm9vYmFyOjE=")
+    type_name, node_id = from_base64("Zm9vYmFyOjE=")  # foobar:1
     assert type_name == "foobar"
     assert node_id == "1"
+
+
+def test_from_base64_with_extra_colon():
+    type_name, node_id = from_base64("Zm9vYmFyOjE6Mjoz")  # foobar:1:2:3
+    assert type_name == "foobar"
+    assert node_id == "1:2:3"
 
 
 @pytest.mark.parametrize("value", [None, 1, 1.1, "dsadfas"])
@@ -23,8 +29,9 @@ def test_from_base64_non_base64(value: Any):
 @pytest.mark.parametrize(
     "value",
     [
-        "Zm9vYmFy",  # "foobar"
-        "Zm9vYmFyOjE6Mg==",  # "foobar:1:2"
+        "Zm9vYmFy",  # foobar
+        "Zm9vYmFyLDE=",  # foobar,1
+        "Zm9vYmFyOzE=",  # foobar;1
     ],
 )
 def test_from_base64_wrong_number_of_args(value: Any):
