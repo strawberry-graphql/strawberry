@@ -23,9 +23,8 @@ class Query:
         return "ABC"
 ```
 
-For now, the old way of adding permissions using `permission_classes` is still
-supported via the automatic addition of a `PermissionExtension` on the field, but will
-be removed in a future release.
+The old way of adding permissions using `permission_classes` is still
+supported via the automatic addition of a `PermissionExtension` on the field.
 
 Using the new `PermissionExtension` API, permissions support even more features:
 
@@ -42,7 +41,7 @@ the  `error_class` and `error_extensions` attributes on the `BasePermission` cla
 
 #### Customizable Error Handling
 
-To customize the error handling, the `handle_no_permission` method on
+To customize the error handling, the `on_unauthorized` method on
 the `BasePermission` class can be used. Further changes can be implemented by
 subclassing the `PermissionExtension` class.
 
