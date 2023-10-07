@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.209.6 - 2023-10-07
+--------------------
+
+Add text/html content-type to chalice graphiql response
+
+Contributed by [Julian Popescu](https://github.com/jpopesculian) via [PR #3137](https://github.com/strawberry-graphql/strawberry/pull/3137/)
+
+
 0.209.5 - 2023-10-03
 --------------------
 
