@@ -38,14 +38,14 @@ class PermissionFailSilentlyRequiresOptionalError(StrawberryException):
         source = None
         if origin is not None:
             source = source_finder.find_class_attribute_from_object(
-                origin,
+                origin,  # type: ignore
                 self.field.python_name,
             )
 
         # in case it is a function
         if source is None and self.field.base_resolver is not None:
             source = source_finder.find_function_from_object(
-                self.field.base_resolver.wrapped_func
+                self.field.base_resolver.wrapped_func  # type: ignore
             )
 
         return source
