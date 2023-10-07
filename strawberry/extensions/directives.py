@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple
 
 from strawberry.extensions import SchemaExtension
 from strawberry.types import Info
 from strawberry.types.nodes import convert_arguments
-from strawberry.utils.await_maybe import await_maybe
+from strawberry.utils.await_maybe import AsyncIteratorOrIterator, await_maybe
 
 if TYPE_CHECKING:
     from graphql import DirectiveNode, GraphQLResolveInfo
@@ -20,6 +20,38 @@ SPECIFIED_DIRECTIVES = {"include", "skip"}
 
 
 class DirectivesExtension(SchemaExtension):
+    async def _handle_directives(
+        self, value: Any, directives: List[DirectiveNode], info: Any = None
+    ) -> Any:
+        for directive in directives:
+            if directive.name.value in SPECIFIED_DIRECTIVES:
+                continue
+
+            strawberry_directive, arguments = process_directive(
+                directive=directive,
+                value=value,
+                info=info,
+                schema=self.execution_context.schema,
+            )
+
+            value = await await_maybe(strawberry_directive.resolver(**arguments))
+
+        return value
+
+    async def on_execute(self) -> AsyncIteratorOrIterator[None]:
+        # TODO: check if there's more definitions
+        definition = self.execution_context.graphql_document.definitions[0]
+
+        yield
+
+        value = self.execution_context.result.data
+
+        # TODO: info is none here, but it's probably fine
+
+        self.execution_context.result.data = await self._handle_directives(
+            value, definition.directives
+        )
+
     async def resolve(
         self,
         _next: Callable,
@@ -30,16 +62,45 @@ class DirectivesExtension(SchemaExtension):
     ) -> AwaitableOrValue[Any]:
         value = await await_maybe(_next(root, info, *args, **kwargs))
 
-        for directive in info.field_nodes[0].directives:
-            if directive.name.value in SPECIFIED_DIRECTIVES:
-                continue
-            strawberry_directive, arguments = process_directive(directive, value, info)
-            value = await await_maybe(strawberry_directive.resolver(**arguments))
-
-        return value
+        return await self._handle_directives(
+            value, info.field_nodes[0].directives, info
+        )
 
 
 class DirectivesExtensionSync(SchemaExtension):
+    def _handle_directives(
+        self, value: Any, directives: List[DirectiveNode], info: Any = None
+    ) -> Any:
+        for directive in directives:
+            if directive.name.value in SPECIFIED_DIRECTIVES:
+                continue
+
+            strawberry_directive, arguments = process_directive(
+                directive=directive,
+                value=value,
+                info=info,
+                schema=self.execution_context.schema,
+            )
+
+            # TODO: was this a bug? - add test with multiple directives
+            value = strawberry_directive.resolver(**arguments)
+
+        return value
+
+    def on_execute(self) -> AsyncIteratorOrIterator[None]:
+        # TODO: check if there's more definitions
+        definition = self.execution_context.graphql_document.definitions[0]
+
+        yield
+
+        value = self.execution_context.result.data
+
+        # TODO: info is none here, but it's probably fine
+
+        self.execution_context.result.data = self._handle_directives(
+            value, definition.directives
+        )
+
     def resolve(
         self,
         _next: Callable,
@@ -50,23 +111,17 @@ class DirectivesExtensionSync(SchemaExtension):
     ) -> AwaitableOrValue[Any]:
         value = _next(root, info, *args, **kwargs)
 
-        for directive in info.field_nodes[0].directives:
-            if directive.name.value in SPECIFIED_DIRECTIVES:
-                continue
-            strawberry_directive, arguments = process_directive(directive, value, info)
-            value = strawberry_directive.resolver(**arguments)
-
-        return value
+        return self._handle_directives(value, info.field_nodes[0].directives, info)
 
 
 def process_directive(
     directive: DirectiveNode,
     value: Any,
     info: GraphQLResolveInfo,
-) -> Tuple[StrawberryDirective, Dict[str, Any]]:
+    schema: Schema,
+) -> Tuple[StrawberryDirective[Any], Dict[str, Any]]:
     """Get a `StrawberryDirective` from ``directive` and prepare its arguments."""
     directive_name = directive.name.value
-    schema: Schema = info.schema._strawberry_schema  # type: ignore
 
     strawberry_directive = schema.get_directive_by_name(directive_name)
     assert strawberry_directive is not None, f"Directive {directive_name} not found"

@@ -180,7 +180,7 @@ def test_runs_directives():
 
     schema = strawberry.Schema(query=Query, directives=[turn_uppercase, replace])
 
-    query = """query People($identified: Boolean!){
+    query = """query People($identified: Boolean!) {
         person {
             name @turnUppercase
         }
@@ -195,9 +195,35 @@ def test_runs_directives():
     result = schema.execute_sync(query, variable_values={"identified": False})
 
     assert not result.errors
+    assert result.data
     assert result.data["person"]["name"] == "JESS"
     assert result.data["jess"]["name"] == "Jessica"
     assert result.data["johnDoe"].get("name") is None
+
+
+def test_runs_directives_on_root_type():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def person(self) -> str:
+            return "Bryce"
+
+    @strawberry.directive(locations=[DirectiveLocation.QUERY])
+    def debug(value: str):
+        # TODO: so, here we are dealing with dictionaries and not strawberry objects
+        return {"person": "BryceBryce"}
+
+    schema = strawberry.Schema(query=Query, directives=[debug])
+
+    query = """query @debug {
+        person
+    }"""
+
+    result = schema.execute_sync(query, variable_values={"identified": False})
+
+    assert not result.errors
+    assert result.data
+    assert result.data["person"] == "BryceBryce"
 
 
 def test_runs_directives_camel_case_off():
@@ -242,6 +268,7 @@ def test_runs_directives_camel_case_off():
     result = schema.execute_sync(query, variable_values={"identified": False})
 
     assert not result.errors
+    assert result.data
     assert result.data["person"]["name"] == "JESS"
     assert result.data["jess"]["name"] == "Jessica"
     assert result.data["johnDoe"].get("name") is None
@@ -280,6 +307,32 @@ async def test_runs_directives_async():
     assert result.data["person"]["name"] == "JESS"
 
 
+@pytest.mark.asyncio
+async def test_runs_directives_on_root_type_async():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def person(self) -> str:
+            return "Bryce"
+
+    @strawberry.directive(locations=[DirectiveLocation.QUERY])
+    async def debug(value: str):
+        # TODO: so, here we are dealing with dictionaries and not strawberry objects
+        return {"person": "BryceBryce"}
+
+    schema = strawberry.Schema(query=Query, directives=[debug])
+
+    query = """query @debug {
+        person
+    }"""
+
+    result = await schema.execute(query, variable_values={"identified": False})
+
+    assert not result.errors
+    assert result.data
+    assert result.data["person"] == "BryceBryce"
+
+
 @pytest.mark.xfail
 def test_runs_directives_with_list_params():
     @strawberry.type
@@ -310,6 +363,7 @@ def test_runs_directives_with_list_params():
     result = schema.execute_sync(query, variable_values={"identified": False})
 
     assert not result.errors
+    assert result.data
     assert result.data["person"]["name"] == "JESS"
 
 
