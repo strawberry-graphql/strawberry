@@ -9,9 +9,12 @@ from .clients.base import HttpClient
 async def test_renders_graphiql(header_value: str, http_client_class: Type[HttpClient]):
     http_client = http_client_class()
     response = await http_client.get("/graphql", headers={"Accept": header_value})
+    content_type = response.headers.get(
+        "content-type", response.headers.get("Content-Type", "")
+    )
 
     assert response.status_code == 200
-
+    assert "text/html" in content_type
     assert "<title>Strawberry GraphiQL</title>" in response.text
 
 
