@@ -55,7 +55,7 @@ class BasePermission(abc.ABC):
             "Permission classes should override has_permission method"
         )
 
-    def handle_no_permission(self) -> None:
+    def on_unauthorized(self) -> None:
         """
         Default error raising for permissions.
         This can be overridden to customize the behavior.
@@ -132,13 +132,12 @@ class PermissionExtension(FieldExtension):
                 self.return_empty_list = True
             else:
                 errror = PermissionFailSilentlyRequiresOptionalError(field)
-                a = errror.exception_source
                 raise errror
 
-    def _handle_no_permission(self, permission: BasePermission) -> Any:
+    def _on_unauthorized(self, permission: BasePermission) -> Any:
         if self.fail_silently:
             return [] if self.return_empty_list else None
-        return permission.handle_no_permission()
+        return permission.on_unauthorized()
 
     def resolve(
         self,
@@ -153,7 +152,7 @@ class PermissionExtension(FieldExtension):
         """
         for permission in self.permissions:
             if not permission.has_permission(source, info, **kwargs):
-                return self._handle_no_permission(permission)
+                return self._on_unauthorized(permission)
         return next_(source, info, **kwargs)
 
     async def resolve_async(
@@ -169,7 +168,7 @@ class PermissionExtension(FieldExtension):
             )
 
             if not has_permission:
-                return self._handle_no_permission(permission)
+                return self._on_unauthorized(permission)
         return await next_(source, info, **kwargs)
 
     @cached_property
