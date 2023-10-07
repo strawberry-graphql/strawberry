@@ -1,4 +1,5 @@
 import abc
+import contextlib
 import json
 from dataclasses import dataclass
 from io import BytesIO
@@ -30,6 +31,11 @@ class Response:
     headers: Mapping[str, str]
 
     @property
+    def is_multipart(self) -> bool:
+        # TODO: check casing
+        return self.headers.get("Content-type", "").startswith("multipart/mixed")
+
+    @property
     def text(self) -> str:
         assert isinstance(self.data, bytes)
         return self.data.decode()
@@ -42,8 +48,17 @@ class Response:
     async def streaming_json(self) -> AsyncIterable[JSON]:
         assert isinstance(self.data, AsyncIterable)
 
+        if not self.is_multipart:
+            raise ValueError("Streaming not supported")
+
+        # assuming we receive lines
+
         async for data in self.data:
-            yield json.loads(data)
+            text = data.decode("utf-8").strip()
+
+            # TODO: this is silly, but bear with me :)
+            with contextlib.suppress(json.JSONDecodeError):
+                yield json.loads(text)
 
 
 class HttpClient(abc.ABC):

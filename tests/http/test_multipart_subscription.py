@@ -10,7 +10,7 @@ async def test_graphql_query(http_client: HttpClient):
             "query": 'subscription { echo(message: "Hello world", delay: 0.2) }',
         },
         headers={
-            # TODO: this header might just be for django
+            # TODO: this header might just be for django (the way it is written)
             "CONTENT_TYPE": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
         },
     )
