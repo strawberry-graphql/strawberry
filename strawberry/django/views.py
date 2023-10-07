@@ -14,11 +14,12 @@ from typing import (
 
 from django.http import (
     HttpRequest,
+    HttpResponse,
     HttpResponseNotAllowed,
     JsonResponse,
     StreamingHttpResponse,
 )
-from django.http.response import HttpResponse
+from django.http.response import HttpResponseBase
 from django.template import RequestContext, Template
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
@@ -147,7 +148,7 @@ class BaseView:
 
         super().__init__(**kwargs)
 
-    def render_graphiql(self, request: HttpRequest) -> HttpResponse:
+    def render_graphiql(self, request: HttpRequest) -> HttpResponseBase:
         try:
             template = Template(render_to_string("graphql/graphiql.html"))
         except TemplateDoesNotExist:
@@ -162,7 +163,7 @@ class BaseView:
 
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: HttpResponse
-    ) -> HttpResponse:
+    ) -> HttpResponseBase:
         data = self.encode_json(response_data)  # type: ignore
 
         response = HttpResponse(
@@ -183,16 +184,9 @@ class BaseView:
 
     async def create_multipart_response(
         self, response_stream: ..., sub_response: HttpResponse
-    ) -> HttpResponse:
-        async def event_stream():
-            async for data in response_stream:
-                yield "\r\n--graphql\r\n"
-                yield "Content-Type: application/json\r\n\r\n"
-
-                yield self.encode_json(data) + "\n"  # type: ignore
-
+    ) -> HttpResponseBase:
         return StreamingHttpResponse(
-            streaming_content=event_stream(),
+            streaming_content=response_stream(),
             headers={
                 "Transfer-Encoding": "chunked",
                 "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
@@ -203,7 +197,7 @@ class BaseView:
 class GraphQLView(
     BaseView,
     SyncBaseHTTPView[
-        HttpRequest, HttpResponse, TemporalHttpResponse, Context, RootValue
+        HttpRequest, HttpResponseBase, TemporalHttpResponse, Context, RootValue
     ],
     View,
 ):
@@ -225,7 +219,7 @@ class GraphQLView(
     @method_decorator(csrf_exempt)
     def dispatch(
         self, request: HttpRequest, *args: Any, **kwargs: Any
-    ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
+    ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponseBase]:
         try:
             return self.run(request=request)
         except HTTPException as e:
@@ -238,7 +232,7 @@ class GraphQLView(
 class AsyncGraphQLView(
     BaseView,
     AsyncBaseHTTPView[
-        HttpRequest, HttpResponse, TemporalHttpResponse, Context, RootValue
+        HttpRequest, HttpResponseBase, TemporalHttpResponse, Context, RootValue
     ],
     View,
 ):
@@ -269,7 +263,7 @@ class AsyncGraphQLView(
     @method_decorator(csrf_exempt)
     async def dispatch(  # pyright: ignore
         self, request: HttpRequest, *args: Any, **kwargs: Any
-    ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
+    ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponseBase]:
         try:
             return await self.run(request=request)
         except HTTPException as e:

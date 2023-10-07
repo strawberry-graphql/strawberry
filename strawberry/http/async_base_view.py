@@ -201,9 +201,13 @@ class AsyncBaseHTTPView(
 
             async def stream():
                 async for value in result:
-                    yield await self.process_result(request, value)
+                    yield "\r\n--graphql\r\n"
+                    yield "Content-Type: application/json\r\n\r\n"
+                    data = await self.process_result(request, value)
 
-            return await self.create_multipart_response(stream(), sub_response)
+                    yield self.encode_json(data) + "\n"  # type: ignore
+
+            return await self.create_multipart_response(stream, sub_response)
 
         response_data = await self.process_result(request=request, result=result)
 

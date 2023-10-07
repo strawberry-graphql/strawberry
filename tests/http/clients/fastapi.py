@@ -107,6 +107,14 @@ class FastAPIHttpClient(HttpClient):
 
         self.client = TestClient(self.app)
 
+    async def _handle_response(self, response: Any) -> Response:
+        # TODO: here we should handle the stream
+        return Response(
+            status_code=response.status_code,
+            data=response.content,
+            headers=response.headers,
+        )
+
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
@@ -138,11 +146,7 @@ class FastAPIHttpClient(HttpClient):
             **kwargs,
         )
 
-        return Response(
-            status_code=response.status_code,
-            data=response.content,
-            headers=response.headers,
-        )
+        return await self._handle_response(response)
 
     async def request(
         self,
@@ -152,11 +156,7 @@ class FastAPIHttpClient(HttpClient):
     ) -> Response:
         response = getattr(self.client, method)(url, headers=headers)
 
-        return Response(
-            status_code=response.status_code,
-            data=response.content,
-            headers=response.headers,
-        )
+        return await self._handle_response(response)
 
     async def get(
         self,
@@ -172,13 +172,11 @@ class FastAPIHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
-        response = self.client.post(url, headers=headers, content=data, json=json)
-
-        return Response(
-            status_code=response.status_code,
-            data=response.content,
-            headers=response.headers,
+        response = self.client.post(
+            url, headers=headers, content=data, json=json, stream=True
         )
+
+        return await self._handle_response(response)
 
     @contextlib.asynccontextmanager
     async def ws_connect(

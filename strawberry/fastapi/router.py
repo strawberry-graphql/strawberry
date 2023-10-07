@@ -21,6 +21,7 @@ from starlette.responses import (
     HTMLResponse,
     PlainTextResponse,
     Response,
+    StreamingResponse,
 )
 from starlette.websockets import WebSocket
 
@@ -311,3 +312,14 @@ class GraphQLRouter(
         response.headers.raw.extend(sub_response.headers.raw)
 
         return response
+
+    async def create_multipart_response(
+        self, response_stream: ..., sub_response: Response
+    ) -> Response:
+        return StreamingResponse(
+            response_stream(),
+            headers={
+                "Transfer-Encoding": "chunked",
+                "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+            },
+        )
