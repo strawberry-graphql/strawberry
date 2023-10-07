@@ -111,7 +111,7 @@ _[Issue #830](https://github.com/strawberry-graphql/strawberry/issues/830)._
 
 In addition to the message, permissions automatically add pre-defined error extensions to the error, and
 can use a custom `GraphQLError` class. This can be configured by modifying
-the  `error_class` and `error_extensions` attributes on the `BasePermission` class.
+the `error_class` and `error_extensions` attributes on the `BasePermission` class.
 Error extensions will be propagated to the response as specified in
 the [GraphQL spec](https://strawberry.rocks/docs/types/exceptions).
 
@@ -171,9 +171,8 @@ the field and instead return `None` or an empty list to the client.
 To return `None` or `[]` instead of raising an error, the `fail_silently ` keyword
 argument on `PermissionExtension` can be set to `True`:
 
-
 <Warning>
-Note that this will only work if the field returns a type that 
+Note that this will only work if the field returns a type that
 is nullable or a list, e.g. `Optional[str]` or `List[str]`.
 </Warning>
 
@@ -184,7 +183,11 @@ from strawberry.permission import PermissionExtension, BasePermission
 
 @strawberry.type
 class Query:
-    @strawberry.field(extensions=[PermissionExtension(permissions=[IsAuthenticated()], fail_silently=True)])
+    @strawberry.field(
+        extensions=[
+            PermissionExtension(permissions=[IsAuthenticated()], fail_silently=True)
+        ]
+    )
     def name(self) -> str:
         return "ABC"
 ```
