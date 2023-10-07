@@ -13,20 +13,20 @@ By the end of this tutorial, we should be able to return a connection of users w
 ```graphql+response
 query getUsers {
   getUsers(first: 2) {
-    users {
-      edges {
-        node {
-          id
-          name
-          occupation
-          age
-        }
+    edges {
+      node {
+        id
+        name
+        occupation
+        age
       }
       cursor
     }
     pageInfo {
-      endCursor
       hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
     }
   }
 }
@@ -34,31 +34,31 @@ query getUsers {
 {
   "data": {
     "getUsers": {
-      "users": {
-        "edges": [
-          {
-            "node": {
-              "id": 1,
-              "name": "Norman Osborn",
-              "occupation": "Founder, Oscorp Industries",
-              "age": 42
-            },
-            "cursor": "dXNlcjox"
+      "edges": [
+        {
+          "node": {
+            "id": 3,
+            "name": "Harold Osborn",
+            "occupation": "President, Oscorp Industries",
+            "age": 19
           },
-          {
-            "node": {
-              "id": 2,
-              "name": "Peter Parker",
-              "occupation": "Freelance Photographer, The Daily Bugle",
-              "age": 20
-            },
-            "cursor": "dXNlcjoy"
-          }
-        ]
-      },
+          "cursor": "dXNlcjoz"
+        },
+        {
+          "node": {
+            "id": 4,
+            "name": "Eddie Brock",
+            "occupation": "Journalist, The Eddie Brock Report",
+            "age": 20
+          },
+          "cursor": "dXNlcjo0"
+        }
+      ],
       "pageInfo": {
-          "endCursor": "dXNlcjoz",
-          "hasNextPage": true
+        "hasNextPage": false,
+        "hasPreviousPage": true,
+        "startCursor": "dXNlcjoz",
+        "endCursor": "dXNlcjo0"
       }
     }
   }
@@ -309,7 +309,7 @@ Let us define a couple of helper functions to encode and decode cursors as follo
 # example.py
 
 from base64 import b64encode, b64decode
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, Dict, Any
 
 import strawberry
 
@@ -415,7 +415,7 @@ Let us also plug our query into a schema.
 # example.py
 
 from base64 import b64encode, b64decode
-from typing import List, Optional, Generic, TypeVar
+from typing import List, Optional, Generic, TypeVar, Dict, Any
 
 import strawberry
 
@@ -514,6 +514,11 @@ class Edge(Generic[GenericType]):
 
 @strawberry.type
 class User:
+
+    id: int = strawberry.field(
+        description="The ID of the user."
+    )
+
     name: str = strawberry.field(
         description="The name of the user."
     )
@@ -526,6 +531,15 @@ class User:
         description="The age of the user."
     )
 
+    @staticmethod
+    def from_row(row: Dict[str, Any]):
+        return User(
+            id=row['id'],
+            name=row['name'],
+            occupation=row['occupation'],
+            age=row['age']
+        )
+
 
 @strawberry.type
 class Query:
@@ -533,23 +547,23 @@ class Query:
     def get_users(self, first: int = 2, after: Optional[str] = None) -> Connection[User]:
         if after is not None:
           # decode the user ID from the given cursor.
-          user_id = decode_user_cursor(cursor=after)
+          user_id = decode_user_cursor(cursor=after) - 1
         else:
           # no cursor was given (this happens usually when the
           # client sends a query for the first time).
           user_id = 0
 
         # filter the user data, going through the next set of results.
-        filtered_data = map(lambda user: user.id > user_id, user_data)
+        filtered_data = [user for user in user_data if user['id'] > user_id]
 
         # slice the relevant user data (Here, we also slice an
         # additional user instance, to prepare the next cursor).
-        sliced_users = filtered_data[after:first+1]
+        sliced_users = filtered_data[user_id:first+1]
 
         if len(sliced_users) > first:
           # calculate the client's next cursor.
           last_user = sliced_users.pop(-1)
-          next_cursor = encode_user_cursor(id=last_user.id)
+          next_cursor = encode_user_cursor(id=last_user['id'])
           has_next_page = True
         else:
           # We have reached the last page, and
@@ -565,8 +579,8 @@ class Query:
         # build user edges.
         edges = [
           Edge(
-            node=cast(UserType, user),
-            cursor=encode_user_cursor(id=user.id),
+            node=User.from_row(user),
+            cursor=encode_user_cursor(id=user['id']),
           )
           for user in sliced_users
         ]
@@ -612,20 +626,20 @@ Here's an example query to try out:
 ```graphql
 query getUsers {
   getUsers(first: 2) {
-    users {
-      edges {
-        node {
-          id
-          name
-          occupation
-          age
-        }
+    edges {
+      node {
+        id
+        name
+        occupation
+        age
       }
       cursor
     }
     pageInfo {
-      endCursor
       hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
     }
   }
 }
