@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+from functools import cached_property
 from inspect import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
@@ -21,7 +22,6 @@ from strawberry.extensions import FieldExtension
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.utils.await_maybe import await_maybe
-from strawberry.utils.cached_property import cached_property
 
 if TYPE_CHECKING:
     from graphql import GraphQLError, GraphQLErrorExtensions
