@@ -134,3 +134,68 @@ type Mutation {
   updateFruitWeight(input: UpdateFruitWeightInput!): Fruit!
 }
 ```
+
+## Nested mutations
+
+To avoid a graph becoming too large and to improve discoverability, it can be helpful to group mutations in a namespace, as described by [Namespacing by separation of concerns](https://www.apollographql.com/docs/technotes/TN0012-namespacing-by-separation-of-concern/).
+
+```graphql
+type Mutation {
+  fruit: FruitMutations!
+}
+
+type FruitMutations {
+  add(input: AddFruitInput): Fruit!
+  updateWeight(input: UpdateFruitWeightInput!): Fruit!
+}
+```
+
+Since all GraphQL operations are fields, we can define a `FruitMutation` type and add mutation fields to it like we could add mutation fields to the root `Mutation` type.
+
+```python
+import strawberry
+
+
+@strawberry.type
+class FruitMutations:
+    @strawberry.mutation
+    def add(self, info, input: AddFruitInput) -> Fruit:
+        # ...
+
+    @strawberry.mutation
+    def update_weight(self, info, input: UpdateFruitWeightInput) -> Fruit:
+        # ...
+
+
+@strawberry.type
+class Mutation:
+    fruit: FruitMutations
+```
+
+<Note>
+Fields on the root `Mutation` type are resolved serially. Namespace types introduce the potential for mutations to be resolved asynchronously and in parallel because the mutation fields that mutate data are no longer at the root level.
+
+To guarantee serial execution when namespace types are used, clients should use aliases to select the root mutation field for each mutation.
+In the following example, once `addFruit` execution is complete, `updateFruitWeight` begins.
+
+```graphql
+mutation (
+  $addFruitInput: AddFruitInput!
+  $updateFruitWeightInput: UpdateFruitWeightInput!
+) {
+  addFruit: fruit {
+    add(input: $addFruitInput) {
+      id
+    }
+  }
+
+  updateFruitWeight: fruit {
+    updateWeight(input: $updateFruitWeightInput) {
+      id
+    }
+  }
+}
+```
+
+For more details, see [Namespaces for serial mutations](https://www.apollographql.com/docs/technotes/TN0012-namespacing-by-separation-of-concern/#namespaces-for-serial-mutations) and [Interactive Guide to GraphQL Queries: Aliases and Variables](https://rapidapi.com/guides/graphql-aliases-variables).
+</Note>
