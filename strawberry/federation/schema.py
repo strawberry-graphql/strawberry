@@ -17,7 +17,15 @@ from typing import (
     cast,
 )
 
-from graphql import GraphQLError
+from graphql import (
+    GraphQLField,
+    GraphQLInterfaceType,
+    GraphQLList,
+    GraphQLNonNull,
+    GraphQLScalarType,
+    GraphQLUnionType,
+)
+from graphql.type.definition import GraphQLArgument
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import scalar
@@ -196,11 +204,15 @@ class Schema(BaseSchema):
 
             try:
                 result = get_result()
-            except Exception as e:
-                result = GraphQLError(
-                    f"Unable to resolve reference for {definition.origin}",
-                    original_error=e,
-                )
+            except Exception as e:  # noqa: PERF203
+                # check explicitly for type __name__ instead of checking `isinstance`
+                # so clients can raise custom TypeErrors to avoid this wrapper
+                if type(e).__name__ == "TypeError":
+                    result = Exception(
+                        f"Unable to resolve reference for {type_.definition.name}"
+                    )
+                else:
+                    result = e
 
             results.append(result)
 
