@@ -33,6 +33,7 @@
 
 ## Codegen
 
+- [Schema codegen](./codegen/schema-codegen.md)
 - [Query codegen](./codegen/query-codegen.md)
 
 ## [Extensions](./extensions)

@@ -116,7 +116,7 @@ class ChannelsConsumer(AsyncConsumer):
         if self.channel_layer is None:
             raise RuntimeError(
                 "Layers integration is required listening for channels.\n"
-                "Check https://channels.readthedocs.io/en/stable/topics/channel_layers.html "  # noqa:E501
+                "Check https://channels.readthedocs.io/en/stable/topics/channel_layers.html "
                 "for more information"
             )
 
@@ -176,7 +176,7 @@ class ChannelsConsumer(AsyncConsumer):
         if self.channel_layer is None:
             raise RuntimeError(
                 "Layers integration is required listening for channels.\n"
-                "Check https://channels.readthedocs.io/en/stable/topics/channel_layers.html "  # noqa:E501
+                "Check https://channels.readthedocs.io/en/stable/topics/channel_layers.html "
                 "for more information"
             )
 

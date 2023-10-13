@@ -66,8 +66,8 @@ class StrawberryObjectDefinition(StrawberryType):
     def __post_init__(self):
         # resolve `Self` annotation with the origin type
         for index, field in enumerate(self.fields):
-            if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):  # type: ignore  # noqa: E501
-                self.fields[index] = field.copy_with({Self.__name__: self.origin})  # type: ignore  # noqa: E501
+            if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):  # type: ignore
+                self.fields[index] = field.copy_with({Self.__name__: self.origin})  # type: ignore
 
     def resolve_generic(self, wrapped_cls: type) -> type:
         from strawberry.annotation import StrawberryAnnotation

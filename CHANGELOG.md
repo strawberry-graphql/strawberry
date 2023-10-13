@@ -1,6 +1,144 @@
 CHANGELOG
 =========
 
+0.209.6 - 2023-10-07
+--------------------
+
+Add text/html content-type to chalice graphiql response
+
+Contributed by [Julian Popescu](https://github.com/jpopesculian) via [PR #3137](https://github.com/strawberry-graphql/strawberry/pull/3137/)
+
+
+0.209.5 - 2023-10-03
+--------------------
+
+This release adds a new private hook in our HTTP views, it is called
+`_handle_errors` and it is meant to be used by Sentry (or other integrations)
+to handle errors without having to patch methods that could be overridden
+by the users
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3127](https://github.com/strawberry-graphql/strawberry/pull/3127/)
+
+
+0.209.4 - 2023-10-02
+--------------------
+
+This release changes how we check for conflicting resolver arguments to
+exclude `self` from those checks, which were introduced on version 0.208.0.
+
+It is a common pattern among integrations, such as the Django one, to
+use `root: Model` in the resolvers for better typing inference.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3131](https://github.com/strawberry-graphql/strawberry/pull/3131/)
+
+
+0.209.3 - 2023-10-02
+--------------------
+
+Mark Django's asyncview as a coroutine using `asgiref.sync.markcoroutinefunction`
+to support using it with Python 3.12.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3124](https://github.com/strawberry-graphql/strawberry/pull/3124/)
+
+
+0.209.2 - 2023-09-24
+--------------------
+
+Fix generation of input based on pydantic models using nested `Annotated` type annotations:
+
+```python
+import strawberry
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    age: Optional[Annotated[int, "metadata"]]
+
+
+@strawberry.experimental.pydantic.input(all_fields=True)
+class UserInput:
+    pass
+```
+
+Contributed by [Matthieu MN](https://github.com/gazorby) via [PR #3109](https://github.com/strawberry-graphql/strawberry/pull/3109/)
+
+
+0.209.1 - 2023-09-21
+--------------------
+
+This release fixes an issue when trying to generate code from a schema that
+was using double quotes inside descriptions.
+
+The following schema will now generate code correctly:
+
+```graphql
+"""
+A type of person or character within the "Star Wars" Universe.
+"""
+type Species {
+  """
+  The classification of this species, such as "mammal" or "reptile".
+  """
+  classification: String!
+}
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3112](https://github.com/strawberry-graphql/strawberry/pull/3112/)
+
+
+0.209.0 - 2023-09-19
+--------------------
+
+This release adds support for generating Strawberry types from SDL files. For example, given the following SDL file:
+
+```graphql
+type Query {
+  user: User
+}
+
+type User {
+  id: ID!
+  name: String!
+}
+```
+
+you can run
+
+```bash
+strawberry schema-codegen schema.graphql
+```
+
+to generate the following Python code:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Query:
+    user: User | None
+
+
+@strawberry.type
+class User:
+    id: strawberry.ID
+    name: str
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3096](https://github.com/strawberry-graphql/strawberry/pull/3096/)
+
+
+0.208.3 - 2023-09-19
+--------------------
+
+Adding support for additional pydantic built in types like EmailStr or PostgresDsn.
+
+Contributed by [ppease](https://github.com/ppease) via [PR #3101](https://github.com/strawberry-graphql/strawberry/pull/3101/)
+
+
 0.208.2 - 2023-09-18
 --------------------
 

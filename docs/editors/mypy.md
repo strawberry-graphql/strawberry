@@ -25,5 +25,12 @@ root of our project and add the following settings:
 plugins = strawberry.ext.mypy_plugin
 ```
 
+You can also configure Mypy inside the `pyproject.toml` file, like so:
+
+```toml
+[tool.mypy]
+plugins = ["strawberry.ext.mypy_plugin"]
+```
+
 Once you have configured the settings, you can run `mypy` and you should be
 getting type checking errors.

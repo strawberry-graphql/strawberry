@@ -240,7 +240,11 @@ class StrawberryResolver(Generic[T]):
         if (
             conflicting_arguments := (
                 populated_reserved_parameters
-                & {SELF_PARAMSPEC, ROOT_PARAMSPEC, PARENT_PARAMSPEC}
+                # TODO: Maybe use SELF_PARAMSPEC in the future? Right now
+                # it would prevent some common pattern for integrations
+                # (e.g. django) of typing the `root` parameters as the
+                # type of the real object being used
+                & {ROOT_PARAMSPEC, PARENT_PARAMSPEC}
             )
         ) and len(conflicting_arguments) > 1:
             raise ConflictingArgumentsError(

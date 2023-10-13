@@ -1,6 +1,7 @@
 import builtins
 from decimal import Decimal
-from typing import Any, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union
+from typing_extensions import Annotated
 from uuid import UUID
 
 import pydantic
@@ -41,6 +42,7 @@ except ImportError:
         TypingGenericAlias = ()
     else:
         raise
+
 
 ATTR_TO_TYPE_MAP = {
     "NoneStr": Optional[str],
@@ -86,9 +88,37 @@ ATTR_TO_TYPE_MAP = {
     "RedisDsn": str,
 }
 
-"""TODO:
-Most of these fields are not supported by pydantic V2
-"""
+ATTR_TO_TYPE_MAP_Pydantic_V2 = {
+    "EmailStr": str,
+    "SecretStr": str,
+    "SecretBytes": bytes,
+    "AnyUrl": str,
+}
+
+ATTR_TO_TYPE_MAP_Pydantic_Core_V2 = {
+    "MultiHostUrl": str,
+}
+
+
+def get_fields_map_for_v2() -> Dict[Any, Any]:
+    import pydantic_core
+
+    fields_map = {
+        getattr(pydantic, field_name): type
+        for field_name, type in ATTR_TO_TYPE_MAP_Pydantic_V2.items()
+        if hasattr(pydantic, field_name)
+    }
+    fields_map.update(
+        {
+            getattr(pydantic_core, field_name): type
+            for field_name, type in ATTR_TO_TYPE_MAP_Pydantic_Core_V2.items()
+            if hasattr(pydantic_core, field_name)
+        }
+    )
+
+    return fields_map
+
+
 FIELDS_MAP = (
     {
         getattr(pydantic, field_name): type
@@ -96,7 +126,7 @@ FIELDS_MAP = (
         if hasattr(pydantic, field_name)
     }
     if IS_PYDANTIC_V1
-    else {}
+    else get_fields_map_for_v2()
 )
 
 
@@ -114,7 +144,6 @@ def get_basic_type(type_: Any) -> Type[Any]:
 
     if type_ in FIELDS_MAP:
         type_ = FIELDS_MAP.get(type_)
-
         if type_ is None:
             raise UnsupportedTypeError()
 
@@ -151,6 +180,11 @@ def replace_types_recursively(type_: Any, is_input: bool) -> Any:
         return TypingGenericAlias(origin, converted)
     if isinstance(replaced_type, TypingUnionType):
         return Union[converted]
+
+    # TODO: investigate if we could move the check for annotated to the top
+    if origin is Annotated and converted:
+        converted = (converted[0],)
+
     replaced_type = replaced_type.copy_with(converted)
 
     if isinstance(replaced_type, StrawberryObjectDefinition):

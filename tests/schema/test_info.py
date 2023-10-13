@@ -95,7 +95,7 @@ def test_info_has_the_correct_shape():
         "contextEqual": True,
         "rootEqual": True,
         "variableValues": "{}",
-        "returnType": "<class 'tests.schema.test_info.test_info_has_the_correct_shape.<locals>.Result'>",  # noqa
+        "returnType": "<class 'tests.schema.test_info.test_info_has_the_correct_shape.<locals>.Result'>",
         "schemaPrint": schema.as_str(),
     }
 

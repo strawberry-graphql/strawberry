@@ -31,7 +31,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         self._ws = web.WebSocketResponse(protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL])
 
     async def get_context(self) -> Any:
-        return await self._get_context(request=self._request, response=self._ws)  # type: ignore  # noqa: E501
+        return await self._get_context(request=self._request, response=self._ws)  # type: ignore
 
     async def get_root_value(self) -> Any:
         return await self._get_root_value(request=self._request)

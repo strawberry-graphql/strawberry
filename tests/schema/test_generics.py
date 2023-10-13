@@ -778,7 +778,7 @@ def test_generics_via_anonymous_union():
 
     @strawberry.type
     class Connection(Generic[T]):
-        edges: list[Edge[T]]
+        edges: List[Edge[T]]
 
     @strawberry.type
     class Entity1:
