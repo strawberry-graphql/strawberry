@@ -1,21 +1,20 @@
-import contextlib
 from typing import Type
 
 import pytest
 
 from .clients.base import HttpClient
 
+# TODO: httpx doesn't support streaming, so we can only test the full output for now
+
 
 @pytest.fixture()
 def http_client(http_client_class: Type[HttpClient]) -> HttpClient:
-    with contextlib.suppress(ImportError):
-        from .clients.fastapi import FastAPIHttpClient
+    # with contextlib.suppress(ImportError):
 
-        if http_client_class is FastAPIHttpClient:
-            # TODO: we could test this, but it doesn't make a lot of sense
-            # we should fix httpx instead :)
-            # https://github.com/encode/httpx/issues/2186
-            pytest.xfail(reason="HTTPX doesn't support streaming yet")
+    #     if http_client_class is FastAPIHttpClient:
+    #         # TODO: we could test this, but it doesn't make a lot of sense
+    #         # we should fix httpx instead :)
+    #         # https://github.com/encode/httpx/issues/2186
 
     return http_client_class()
 

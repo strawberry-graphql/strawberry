@@ -1,6 +1,7 @@
 import abc
 import contextlib
 import json
+import logging
 from dataclasses import dataclass
 from io import BytesIO
 from typing import (
@@ -19,6 +20,8 @@ from typing_extensions import Literal
 
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
+
+logger = logging.getLogger("strawberry.test.http_client")
 
 JSON = Dict[str, object]
 ResultOverrideFunction = Optional[Callable[[ExecutionResult], GraphQLHTTPResponse]]
@@ -46,19 +49,34 @@ class Response:
         return json.loads(self.data)
 
     async def streaming_json(self) -> AsyncIterable[JSON]:
-        assert isinstance(self.data, AsyncIterable)
-
         if not self.is_multipart:
             raise ValueError("Streaming not supported")
 
-        # assuming we receive lines
-
-        async for data in self.data:
-            text = data.decode("utf-8").strip()
-
-            # TODO: this is silly, but bear with me :)
+        def parse_chunk(text: str) -> Union[JSON, None]:
+            # TODO: better parsing? :)
             with contextlib.suppress(json.JSONDecodeError):
-                yield json.loads(text)
+                return json.loads(text)
+
+        if isinstance(self.data, AsyncIterable):
+            chunks = self.data
+
+            async for chunk in chunks:
+                text = chunk.decode("utf-8").strip()
+
+                if data := parse_chunk(text):
+                    yield data
+        else:
+            # TODO: we do this because httpx doesn't support streaming
+            # it would be nice to fix httpx instead of doing this,
+            # but we might have the same issue in other clients too
+            # TODO: better message
+            logger.warning("Didn't receive a stream, parsing it sync")
+
+            chunks = self.data.decode("utf-8").split("\r\n")
+
+            for chunk in chunks:
+                if data := parse_chunk(chunk):
+                    yield data
 
 
 class HttpClient(abc.ABC):

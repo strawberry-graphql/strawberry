@@ -172,9 +172,7 @@ class FastAPIHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
-        response = self.client.post(
-            url, headers=headers, content=data, json=json, stream=True
-        )
+        response = self.client.post(url, headers=headers, content=data, json=json)
 
         return await self._handle_response(response)
 
