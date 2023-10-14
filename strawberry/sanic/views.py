@@ -5,6 +5,8 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
+    Callable,
     Dict,
     List,
     Mapping,
@@ -160,13 +162,35 @@ class GraphQLView(
         )
 
     async def post(self, request: Request) -> HTTPResponse:
+        self.request = request
+
         try:
             return await self.run(request)
         except HTTPException as e:
             return HTTPResponse(e.reason, status=e.status_code)
 
     async def get(self, request: Request) -> HTTPResponse:
+        self.request = request
         try:
             return await self.run(request)
         except HTTPException as e:
             return HTTPResponse(e.reason, status=e.status_code)
+
+    async def create_multipart_response(
+        self,
+        stream: Callable[[], AsyncGenerator[str, None]],
+        sub_response: TemporalResponse,
+    ) -> HTTPResponse:
+        response = await self.request.respond(
+            content_type="multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+            headers={
+                "Transfer-Encoding": "chunked",
+            },
+        )
+
+        async for chunk in stream():
+            await response.send(chunk)
+
+        await response.eof()
+
+        return response

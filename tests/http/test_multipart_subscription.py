@@ -31,6 +31,12 @@ def http_client(http_client_class: Type[HttpClient]) -> HttpClient:
         if http_client_class is AsyncFlaskHttpClient:
             pytest.xfail(reason="AsyncFlaskHttpClient doesn't support subscriptions")
 
+    with contextlib.suppress(ImportError):
+        from .clients.chalice import ChaliceHttpClient
+
+        if http_client_class is ChaliceHttpClient:
+            pytest.xfail(reason="ChaliceHttpClient doesn't support subscriptions")
+
     return http_client_class()
 
 
@@ -42,7 +48,8 @@ async def test_graphql_query(http_client: HttpClient):
             "query": 'subscription { echo(message: "Hello world", delay: 0.2) }',
         },
         headers={
-            # TODO: this header might just be for django (the way it is written)
+            # TODO: fix headers :) second one is for django
+            "content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
             "CONTENT_TYPE": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
         },
     )
