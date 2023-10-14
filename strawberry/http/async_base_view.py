@@ -1,6 +1,7 @@
 import abc
 import json
 from typing import (
+    AsyncGenerator,
     Callable,
     Dict,
     Generic,
@@ -10,7 +11,7 @@ from typing import (
     Union,
 )
 
-from graphql import GraphQLError
+from graphql import GraphQLError, MapAsyncIterator
 
 from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
@@ -96,14 +97,14 @@ class AsyncBaseHTTPView(
         ...
 
     @abc.abstractmethod
-    def create_multipart_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: SubResponse
+    async def create_multipart_response(
+        self, stream: Callable[[], AsyncGenerator[str, None]], sub_response: SubResponse
     ) -> Response:
         ...
 
     async def execute_operation(
         self, request: Request, context: Context, root_value: Optional[RootValue]
-    ) -> ExecutionResult:
+    ) -> Union[ExecutionResult, MapAsyncIterator]:
         request_adapter = self.request_adapter_class(request)
 
         try:
@@ -121,6 +122,7 @@ class AsyncBaseHTTPView(
 
         assert self.schema
 
+        # TODO: check if this is a subscription
         return await self.schema.subscribe(
             request_data.query,
             root_value=root_value,
@@ -207,15 +209,9 @@ class AsyncBaseHTTPView(
         except MissingQueryError as e:
             raise HTTPException(400, "No GraphQL query found in the request") from e
 
-        if hasattr(result, "__aiter__"):
-
-            async def stream():
-                async for value in result:
-                    yield "\r\n--graphql\r\n"
-                    yield "Content-Type: application/json\r\n\r\n"
-                    data = await self.process_result(request, value)
-
-                    yield self.encode_json(data) + "\n"  # type: ignore
+        # TODO: maybe abstract this out? maybe with a protocol
+        if isinstance(result, MapAsyncIterator):
+            stream = self._get_stream(request, result)
 
             return await self.create_multipart_response(stream, sub_response)
 
@@ -227,6 +223,21 @@ class AsyncBaseHTTPView(
         return self.create_response(
             response_data=response_data, sub_response=sub_response
         )
+
+    def _get_stream(
+        self, request: Request, result: MapAsyncIterator, separator: str = "graphql"
+    ) -> Callable[[], AsyncGenerator[str, None]]:
+        async def stream():
+            async for value in result:
+                yield f"\r\n--{separator}\r\n"
+                yield "Content-Type: application/json\r\n\r\n"
+                data = await self.process_result(request, value)
+
+                yield self.encode_json(data) + "\n"  # type: ignore
+
+            yield f"\r\n--{separator}--\r\n"
+
+        return stream
 
     async def parse_multipart_subscriptions(
         self, request: AsyncHTTPRequestAdapter
