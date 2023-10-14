@@ -5,6 +5,7 @@ from inspect import signature
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
     Awaitable,
     Callable,
     Mapping,
@@ -314,10 +315,10 @@ class GraphQLRouter(
         return response
 
     async def create_multipart_response(
-        self, response_stream: ..., sub_response: Response
+        self, stream: Callable[[], AsyncIterator[str]], sub_response: Response
     ) -> Response:
         return StreamingResponse(
-            response_stream(),
+            stream(),
             headers={
                 "Transfer-Encoding": "chunked",
                 "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",

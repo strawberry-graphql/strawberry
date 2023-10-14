@@ -4,6 +4,8 @@ from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
+    Callable,
     Mapping,
     Optional,
     Sequence,
@@ -13,7 +15,12 @@ from typing import (
 
 from starlette import status
 from starlette.requests import Request
-from starlette.responses import HTMLResponse, PlainTextResponse, Response
+from starlette.responses import (
+    HTMLResponse,
+    PlainTextResponse,
+    Response,
+    StreamingResponse,
+)
 from starlette.websockets import WebSocket
 
 from strawberry.asgi.handlers import (
@@ -206,3 +213,14 @@ class GraphQL(
             response.status_code = sub_response.status_code
 
         return response
+
+    async def create_multipart_response(
+        self, stream: Callable[[], AsyncIterator[str]], sub_response: Response
+    ) -> Response:
+        return StreamingResponse(
+            stream(),
+            headers={
+                "Transfer-Encoding": "chunked",
+                "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+            },
+        )

@@ -4,6 +4,7 @@ import json
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
     Callable,
     Mapping,
     Optional,
@@ -183,10 +184,10 @@ class BaseView:
         return response
 
     async def create_multipart_response(
-        self, response_stream: ..., sub_response: HttpResponse
+        self, stream: Callable[[], AsyncIterator[Any]], sub_response: HttpResponse
     ) -> HttpResponseBase:
         return StreamingHttpResponse(
-            streaming_content=response_stream(),
+            streaming_content=stream(),
             headers={
                 "Transfer-Encoding": "chunked",
                 "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
