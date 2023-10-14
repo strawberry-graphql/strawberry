@@ -11,7 +11,7 @@ from typing import (
     Union,
 )
 
-from graphql import GraphQLError, MapAsyncIterator
+from graphql import GraphQLError
 
 from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
@@ -19,7 +19,7 @@ from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData, process_result
 from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
-from strawberry.types import ExecutionResult
+from strawberry.types import ExecutionResult, SubscriptionExecutionResult
 from strawberry.types.graphql import OperationType
 
 from .base import BaseView
@@ -104,7 +104,7 @@ class AsyncBaseHTTPView(
 
     async def execute_operation(
         self, request: Request, context: Context, root_value: Optional[RootValue]
-    ) -> Union[ExecutionResult, MapAsyncIterator]:
+    ) -> Union[ExecutionResult, SubscriptionExecutionResult]:
         request_adapter = self.request_adapter_class(request)
 
         try:
@@ -209,8 +209,7 @@ class AsyncBaseHTTPView(
         except MissingQueryError as e:
             raise HTTPException(400, "No GraphQL query found in the request") from e
 
-        # TODO: maybe abstract this out? maybe with a protocol
-        if isinstance(result, MapAsyncIterator):
+        if isinstance(result, SubscriptionExecutionResult):
             stream = self._get_stream(request, result)
 
             return await self.create_multipart_response(stream, sub_response)
@@ -225,7 +224,10 @@ class AsyncBaseHTTPView(
         )
 
     def _get_stream(
-        self, request: Request, result: MapAsyncIterator, separator: str = "graphql"
+        self,
+        request: Request,
+        result: SubscriptionExecutionResult,
+        separator: str = "graphql",
     ) -> Callable[[], AsyncGenerator[str, None]]:
         async def stream():
             async for value in result:

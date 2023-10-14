@@ -9,8 +9,9 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    runtime_checkable,
 )
-from typing_extensions import TypedDict
+from typing_extensions import Protocol, TypedDict
 
 from graphql import specified_rules
 
@@ -94,3 +95,12 @@ class ExecutionResult:
 
 class ParseOptions(TypedDict):
     max_tokens: NotRequired[int]
+
+
+@runtime_checkable
+class SubscriptionExecutionResult(Protocol):
+    def __aiter__(self) -> SubscriptionExecutionResult:
+        ...
+
+    async def __anext__(self) -> Any:
+        ...
