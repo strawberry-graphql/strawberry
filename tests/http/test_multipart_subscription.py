@@ -9,15 +9,27 @@ from .clients.base import HttpClient
 @pytest.fixture()
 def http_client(http_client_class: Type[HttpClient]) -> HttpClient:
     with contextlib.suppress(ImportError):
-        from .clients.channels import SyncChannelsHttpClient
         from .clients.django import DjangoHttpClient
 
         if http_client_class is DjangoHttpClient:
             pytest.xfail(reason="(sync) DjangoHttpClient doesn't support subscriptions")
 
+    with contextlib.suppress(ImportError):
+        from .clients.channels import SyncChannelsHttpClient
+
         # TODO: why do we have a sync channels client?
         if http_client_class is SyncChannelsHttpClient:
             pytest.xfail(reason="SyncChannelsHttpClient doesn't support subscriptions")
+
+    with contextlib.suppress(ImportError):
+        from .clients.async_flask import AsyncFlaskHttpClient
+        from .clients.flask import FlaskHttpClient
+
+        if http_client_class is FlaskHttpClient:
+            pytest.xfail(reason="FlaskHttpClient doesn't support subscriptions")
+
+        if http_client_class is AsyncFlaskHttpClient:
+            pytest.xfail(reason="AsyncFlaskHttpClient doesn't support subscriptions")
 
     return http_client_class()
 
