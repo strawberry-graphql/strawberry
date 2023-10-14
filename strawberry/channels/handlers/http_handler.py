@@ -322,5 +322,5 @@ class SyncGraphQLHTTPConsumer(
         request: ChannelsRequest,
         context: Optional[Context] = UNSET,
         root_value: Optional[RootValue] = UNSET,
-    ) -> ChannelsResponse:  # type: ignore
-        return super().run(request, context, root_value)
+    ) -> ChannelsResponse:  # pyright: ignore
+        return super().run(request, context, root_value)  # type: ignore

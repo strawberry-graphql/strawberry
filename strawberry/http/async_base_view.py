@@ -225,7 +225,7 @@ class AsyncBaseHTTPView(
                 yield "Content-Type: application/json\r\n\r\n"
                 data = await self.process_result(request, value)
 
-                yield self.encode_json(data) + "\n"  # type: ignore
+                yield self.encode_json(data) + "\n"
 
             yield f"\r\n--{separator}--\r\n"
 

@@ -3,8 +3,6 @@ from __future__ import annotations
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Callable,
     List,
     Mapping,
     Optional,
@@ -171,12 +169,3 @@ class AsyncGraphQLView(
                 response=e.reason,
                 status=e.status_code,
             )
-
-    async def create_multipart_response(
-        self, stream: Callable[[], AsyncIterator[str]], sub_response: Response
-    ) -> Response:
-        # TODO: this is not supported :)
-        return stream(), {
-            "Transfer-Encoding": "chunked",
-            "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
-        }
