@@ -122,15 +122,6 @@ class AsyncBaseHTTPView(
 
         assert self.schema
 
-        # TODO: check if this is a subscription
-        return await self.schema.subscribe(
-            request_data.query,
-            root_value=root_value,
-            variable_values=request_data.variables,
-            context_value=context,
-            operation_name=request_data.operation_name,
-        )
-
         return await self.schema.execute(
             request_data.query,
             root_value=root_value,

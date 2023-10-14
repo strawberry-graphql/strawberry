@@ -55,7 +55,7 @@ if TYPE_CHECKING:
     from strawberry.extensions import SchemaExtension
     from strawberry.field import StrawberryField
     from strawberry.type import StrawberryType
-    from strawberry.types import ExecutionResult
+    from strawberry.types import ExecutionResult, SubscriptionExecutionResult
     from strawberry.union import StrawberryUnion
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
@@ -239,7 +239,7 @@ class Schema(BaseSchema):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
-    ) -> ExecutionResult:
+    ) -> Union[ExecutionResult, SubscriptionExecutionResult]:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
 
