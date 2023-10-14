@@ -8,7 +8,16 @@ import dataclasses
 import json
 from functools import cached_property
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    Callable,
+    Dict,
+    Mapping,
+    Optional,
+    Union,
+)
 from urllib.parse import parse_qs
 
 from django.conf import settings
@@ -39,6 +48,14 @@ class ChannelsResponse:
     content: bytes
     status: int = 200
     content_type: str = "application/json"
+    headers: Dict[bytes, bytes] = dataclasses.field(default_factory=dict)
+
+
+@dataclasses.dataclass
+class MultipartChannelsResponse:
+    stream: Callable[[], AsyncGenerator[str, None]]
+    status: int = 200
+    content_type: str = "multipart/mixed;boundary=graphql;subscriptionSpec=1.0"
     headers: Dict[bytes, bytes] = dataclasses.field(default_factory=dict)
 
 
@@ -170,19 +187,37 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
             headers={k.encode(): v.encode() for k, v in sub_response.headers.items()},
         )
 
+    async def run(
+        self,
+        request: Any,
+        context: Optional[Any] = UNSET,
+        root_value: Optional[Any] = UNSET,
+    ) -> Union[ChannelsResponse, MultipartChannelsResponse]:
+        # putting this here just for type checking
+        raise NotImplementedError()
+
     async def handle(self, body: bytes) -> None:
         request = ChannelsRequest(consumer=self, body=body)
         try:
-            response: ChannelsResponse = await self.run(request)
+            response = await self.run(request)
 
             if b"Content-Type" not in response.headers:
                 response.headers[b"Content-Type"] = response.content_type.encode()
 
-            await self.send_response(
-                response.status,
-                response.content,
-                headers=response.headers,
-            )
+            if isinstance(response, MultipartChannelsResponse):
+                response.headers[b"Transfer-Encoding"] = b"chunked"
+                await self.send_headers(headers=response.headers)
+
+                async for chunk in response.stream():
+                    # TODO: we should change more body
+                    await self.send_body(chunk.encode("utf-8"), more_body=True)
+
+            else:
+                await self.send_response(
+                    response.status,
+                    response.content,
+                    headers=response.headers,
+                )
         except HTTPException as e:
             await self.send_response(e.status_code, e.reason.encode())
 
@@ -191,7 +226,7 @@ class GraphQLHTTPConsumer(
     BaseGraphQLHTTPConsumer,
     AsyncBaseHTTPView[
         ChannelsRequest,
-        ChannelsResponse,
+        Union[ChannelsResponse, MultipartChannelsResponse],
         TemporalResponse,
         Context,
         RootValue,
@@ -234,6 +269,14 @@ class GraphQLHTTPConsumer(
 
     async def get_sub_response(self, request: ChannelsRequest) -> TemporalResponse:
         return TemporalResponse()
+
+    async def create_multipart_response(
+        self,
+        stream: Callable[[], AsyncGenerator[str, None]],
+        sub_response: TemporalResponse,
+    ) -> MultipartChannelsResponse:
+        # TODO: sub response
+        return MultipartChannelsResponse(stream=stream)
 
 
 class SyncGraphQLHTTPConsumer(
@@ -279,5 +322,5 @@ class SyncGraphQLHTTPConsumer(
         request: ChannelsRequest,
         context: Optional[Context] = UNSET,
         root_value: Optional[RootValue] = UNSET,
-    ) -> ChannelsResponse:
+    ) -> ChannelsResponse:  # type: ignore
         return super().run(request, context, root_value)

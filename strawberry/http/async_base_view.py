@@ -96,11 +96,10 @@ class AsyncBaseHTTPView(
     ) -> Response:
         ...
 
-    @abc.abstractmethod
     async def create_multipart_response(
         self, stream: Callable[[], AsyncGenerator[str, None]], sub_response: SubResponse
     ) -> Response:
-        ...
+        raise ValueError("Multipart responses are not supported1")
 
     async def execute_operation(
         self, request: Request, context: Context, root_value: Optional[RootValue]
