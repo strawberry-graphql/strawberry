@@ -6,10 +6,13 @@ from io import BytesIO
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
+    Callable,
     Dict,
     Iterable,
     Mapping,
     Optional,
+    Union,
     cast,
 )
 
@@ -74,7 +77,13 @@ class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class GraphQLView(
-    AsyncBaseHTTPView[web.Request, web.Response, web.Response, Context, RootValue]
+    AsyncBaseHTTPView[
+        web.Request,
+        Union[web.Response, web.StreamResponse],
+        web.Response,
+        Context,
+        RootValue,
+    ]
 ):
     # Mark the view as coroutine so that AIOHTTP does not confuse it with a deprecated
     # bare handler function.
@@ -123,6 +132,8 @@ class GraphQLView(
 
         if not ws_test.ok:
             try:
+                # TODO: pass this down from run to multipart thingy
+                self.request = request
                 return await self.run(request=request)
             except HTTPException as e:
                 return web.Response(
@@ -169,3 +180,26 @@ class GraphQLView(
         sub_response.content_type = "application/json"
 
         return sub_response
+
+    async def create_multipart_response(
+        self,
+        stream: Callable[[], AsyncGenerator[str, None]],
+        sub_response: web.Response,
+    ) -> web.StreamResponse:
+        # TODO: use sub response
+        response = web.StreamResponse(
+            status=200,
+            headers={
+                "Transfer-Encoding": "chunked",
+                "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+            },
+            reason="OK",
+        )
+
+        await response.prepare(self.request)
+
+        async for data in stream():
+            await response.write(data.encode())
+
+        await response.write_eof()
+        return response

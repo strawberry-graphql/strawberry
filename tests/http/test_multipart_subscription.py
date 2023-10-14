@@ -1,20 +1,23 @@
+import contextlib
 from typing import Type
 
 import pytest
 
 from .clients.base import HttpClient
 
-# TODO: httpx doesn't support streaming, so we can only test the full output for now
-
 
 @pytest.fixture()
 def http_client(http_client_class: Type[HttpClient]) -> HttpClient:
-    # with contextlib.suppress(ImportError):
+    with contextlib.suppress(ImportError):
+        from .clients.channels import SyncChannelsHttpClient
+        from .clients.django import DjangoHttpClient
 
-    #     if http_client_class is FastAPIHttpClient:
-    #         # TODO: we could test this, but it doesn't make a lot of sense
-    #         # we should fix httpx instead :)
-    #         # https://github.com/encode/httpx/issues/2186
+        if http_client_class is DjangoHttpClient:
+            pytest.xfail(reason="(sync) DjangoHttpClient doesn't support subscriptions")
+
+        # TODO: why do we have a sync channels client?
+        if http_client_class is SyncChannelsHttpClient:
+            pytest.xfail(reason="SyncChannelsHttpClient doesn't support subscriptions")
 
     return http_client_class()
 
