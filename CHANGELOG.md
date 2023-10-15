@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.209.7 - 2023-10-15
+--------------------
+
+Remove stack_info from error log messages to not clutter error logging with unnecessary information.
+
+Contributed by [Malte Finsterwalder](https://github.com/finsterwalder) via [PR #3143](https://github.com/strawberry-graphql/strawberry/pull/3143/)
+
+
 0.209.6 - 2023-10-07
 --------------------
 
