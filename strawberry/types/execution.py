@@ -99,8 +99,8 @@ class ParseOptions(TypedDict):
 
 @runtime_checkable
 class SubscriptionExecutionResult(Protocol):
-    def __aiter__(self) -> SubscriptionExecutionResult:
+    def __aiter__(self) -> SubscriptionExecutionResult:  # pragma: no cover
         ...
 
-    async def __anext__(self) -> Any:
+    async def __anext__(self) -> Any:  # pragma: no cover
         ...
