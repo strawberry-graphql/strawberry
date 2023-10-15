@@ -187,15 +187,6 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
             headers={k.encode(): v.encode() for k, v in sub_response.headers.items()},
         )
 
-    async def run(
-        self,
-        request: Any,
-        context: Optional[Any] = UNSET,
-        root_value: Optional[Any] = UNSET,
-    ) -> Union[ChannelsResponse, MultipartChannelsResponse]:
-        # putting this here just for type checking
-        raise NotImplementedError()
-
     async def handle(self, body: bytes) -> None:
         request = ChannelsRequest(consumer=self, body=body)
         try:
