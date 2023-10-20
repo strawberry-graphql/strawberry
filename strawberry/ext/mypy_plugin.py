@@ -420,7 +420,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                     )  # type:ignore[call-arg]
                 else:
                     field = PydanticModelField.deserialize(
-                        info=ctx.cls.info, data=data, api=ctx.api
+                        info=ctx.cls.info, data=data[1], api=ctx.api
                     )
                 pydantic_fields.add(field)
         except KeyError:
