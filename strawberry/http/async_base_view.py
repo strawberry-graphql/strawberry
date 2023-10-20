@@ -1,6 +1,8 @@
 import abc
+import asyncio
 import json
 from typing import (
+    Any,
     AsyncGenerator,
     Callable,
     Dict,
@@ -8,6 +10,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Tuple,
     Union,
 )
 
@@ -213,6 +216,68 @@ class AsyncBaseHTTPView(
             response_data=response_data, sub_response=sub_response
         )
 
+    def encode_multipart_data(self, data: Any, separator: str) -> str:
+        return "".join(
+            [
+                f"\r\n--{separator}\r\n",
+                "Content-Type: application/json\r\n\r\n",
+                self.encode_json(data),
+                "\n",
+            ]
+        )
+
+    def _stream_with_heartbeat(
+        self, stream: Callable[[], AsyncGenerator[str, None]]
+    ) -> Callable[[], AsyncGenerator[str, None]]:
+        """Adds a heartbeat to the stream, to prevent the connection from closing
+        when there are no messages being sent."""
+        # TODO: handle errors
+        # TODO: should we do this more efficiently? and only send the heartbeat when
+        # 5 seconds have passed after the last message? (apollo router doesn't seem to do this)
+        queue = asyncio.Queue[Tuple[bool, Any]](1)
+
+        cancelling = False
+
+        async def drain():
+            try:
+                async for item in stream():
+                    await queue.put((False, item))
+            except Exception as e:
+                if not cancelling:
+                    await queue.put((True, e))
+                else:
+                    raise
+
+        async def heartbeat():
+            while True:
+                await queue.put((False, self.encode_multipart_data({}, "graphql")))
+
+                await asyncio.sleep(5)
+
+        async def merged() -> AsyncGenerator[str, None]:
+            heartbeat_task = asyncio.create_task(heartbeat())
+            task = asyncio.create_task(drain())
+
+            def cancel_tasks():
+                nonlocal cancelling
+                cancelling = True
+                task.cancel()
+                heartbeat_task.cancel()
+
+            try:
+                while not task.done():
+                    raised, data = await queue.get()
+
+                    if raised:
+                        cancel_tasks()
+                        raise data
+
+                    yield data
+            finally:
+                cancel_tasks()
+
+        return merged
+
     def _get_stream(
         self,
         request: Request,
@@ -221,15 +286,12 @@ class AsyncBaseHTTPView(
     ) -> Callable[[], AsyncGenerator[str, None]]:
         async def stream():
             async for value in result:
-                yield f"\r\n--{separator}\r\n"
-                yield "Content-Type: application/json\r\n\r\n"
                 data = await self.process_result(request, value)
-
-                yield self.encode_json(data) + "\n"
+                yield self.encode_multipart_data(data, separator)
 
             yield f"\r\n--{separator}--\r\n"
 
-        return stream
+        return self._stream_with_heartbeat(stream)
 
     async def parse_multipart_subscriptions(
         self, request: AsyncHTTPRequestAdapter

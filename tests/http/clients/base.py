@@ -61,10 +61,11 @@ class Response:
             chunks = self.data
 
             async for chunk in chunks:
-                text = chunk.decode("utf-8").strip()
+                lines = chunk.decode("utf-8").split("\r\n")
 
-                if data := parse_chunk(text):
-                    yield data
+                for text in lines:
+                    if data := parse_chunk(text):
+                        yield data
         else:
             # TODO: we do this because httpx doesn't support streaming
             # it would be nice to fix httpx instead of doing this,

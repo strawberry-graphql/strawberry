@@ -49,7 +49,7 @@ def http_client(http_client_class: Type[HttpClient]) -> HttpClient:
 
 
 # TODO: do multipart subscriptions work on both GET and POST?
-async def test_graphql_query(http_client: HttpClient):
+async def test_multipart_subscription(http_client: HttpClient):
     response = await http_client.post(
         url="/graphql",
         json={
