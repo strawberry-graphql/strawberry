@@ -18,7 +18,6 @@ from typing import (
 )
 
 from graphql import (
-    GraphQLError,
     GraphQLField,
     GraphQLInterfaceType,
     GraphQLList,
@@ -210,10 +209,14 @@ class Schema(BaseSchema):
             try:
                 result = get_result()
             except Exception as e:  # noqa: PERF203
-                result = GraphQLError(
-                    f"Unable to resolve reference for {definition.origin}",
-                    original_error=e,
-                )
+                if type(e).__name__ == "TypeError":
+                    # check explicitly for type name instead of `isinstance` so
+                    # clients can raise custom TypeErrors to avoid this wrapper
+                    result = Exception(
+                        f"Unable to resolve reference for {type_.definition.name}"
+                    )
+                else:
+                    result = e
 
             results.append(result)
 
