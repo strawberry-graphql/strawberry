@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.209.8 - 2023-10-20
+--------------------
+
+Fix strawberry mypy plugin for pydantic v2
+
+Contributed by [Corentin-Br](https://github.com/Corentin-Br) via [PR #3159](https://github.com/strawberry-graphql/strawberry/pull/3159/)
+
+
 0.209.7 - 2023-10-15
 --------------------
 
