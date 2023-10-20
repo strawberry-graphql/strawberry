@@ -64,4 +64,4 @@ async def test_multipart_subscription(http_client: HttpClient):
 
     data = [d async for d in response.streaming_json()]
 
-    assert data == [{"data": {"echo": "Hello world"}}]
+    assert data == [{"payload": {"data": {"echo": "Hello world"}}}]

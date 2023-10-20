@@ -286,8 +286,8 @@ class AsyncBaseHTTPView(
     ) -> Callable[[], AsyncGenerator[str, None]]:
         async def stream():
             async for value in result:
-                data = await self.process_result(request, value)
-                yield self.encode_multipart_data(data, separator)
+                response = await self.process_result(request, value)
+                yield self.encode_multipart_data({"payload": response}, separator)
 
             yield f"\r\n--{separator}--\r\n"
 
