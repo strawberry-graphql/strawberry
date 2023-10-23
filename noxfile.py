@@ -93,10 +93,6 @@ def tests_integrations(session: Session, integration: str) -> None:
 
     if integration == "aiohttp":
         session._session.install("pytest-aiohttp")  # type: ignore
-    elif integration == "flask":
-        session._session.install("pytest-flask")  # type: ignore
-        # TODO: pytest-flask doesn't support Flask 3.0 yet
-        session._session.install("flask<3")  # type: ignore
     elif integration == "channels":
         session._session.install("pytest-django")  # type: ignore
         session._session.install("daphne")  # type: ignore
