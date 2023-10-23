@@ -115,7 +115,7 @@ def test_with_dict_context_getter():
         @strawberry.field
         def abc(self, info: Info[Any, None]) -> str:
             assert info.context.get("request") is not None
-            assert "connection_params" not in info.context.keys()
+            assert "connection_params" not in info.context
             assert info.context.get("strawberry") == "rocks"
             return "abc"
 
