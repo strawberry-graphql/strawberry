@@ -774,31 +774,34 @@ An example of migrating existing code is given below:
 # Existing code
 @strawberry.type
 class MyDataType:
-   name: str
+    name: str
+
 
 @strawberry.type
 class Subscription:
-   @strawberry.subscription
-   async def my_data_subscription(
-      self, info: Info, groups: list[str]
-   ) -> AsyncGenerator[MyDataType | None, None]:
-      yield None
-      async for message in info.context["ws"].channel_listen("my_data", groups=groups):
-         yield MyDataType(name=message["payload"])
+    @strawberry.subscription
+    async def my_data_subscription(
+        self, info: Info, groups: list[str]
+    ) -> AsyncGenerator[MyDataType | None, None]:
+        yield None
+        async for message in info.context["ws"].channel_listen(
+            "my_data", groups=groups
+        ):
+            yield MyDataType(name=message["payload"])
 ```
 
 ```py
 # New code
 @strawberry.type
 class Subscription:
-   @strawberry.subscription
-   async def my_data_subscription(
-      self, info: Info, groups: list[str]
-   ) -> AsyncGenerator[MyDataType | None, None]:
-      async with info.context["ws"].listen_to_channel("my_data", groups=groups) as cm:
-         yield None
-         async for message in cm:
-            yield MyDataType(name=message["payload"])
+    @strawberry.subscription
+    async def my_data_subscription(
+        self, info: Info, groups: list[str]
+    ) -> AsyncGenerator[MyDataType | None, None]:
+        async with info.context["ws"].listen_to_channel("my_data", groups=groups) as cm:
+            yield None
+            async for message in cm:
+                yield MyDataType(name=message["payload"])
 ```
 
 Contributed by [Moritz Ulmer](https://github.com/moritz89) via [PR #2856](https://github.com/strawberry-graphql/strawberry/pull/2856/)
@@ -1416,6 +1419,7 @@ class Point:
     id: str
     x: float
     y: float
+
 
 class GetPointsResult:
     circle_points: List[Point]

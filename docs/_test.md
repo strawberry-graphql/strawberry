@@ -16,6 +16,7 @@ Code blocks now support:
 ```python highlight=strawberry,str
 import strawberry
 
+
 @strawberry.type
 class X:
     name: str
@@ -25,6 +26,7 @@ class X:
 
 ```python lines=1-4
 import strawberry
+
 
 @strawberry.type
 class X:
