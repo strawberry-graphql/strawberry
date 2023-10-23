@@ -1,7 +1,7 @@
 import json
 import urllib.parse
 from io import BytesIO
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 from typing_extensions import Literal
 
 from quart import Quart
