@@ -78,6 +78,7 @@
 - [Channels](./integrations/channels.md)
 - [FastAPI](./integrations/fastapi.md)
 - [Flask](./integrations/flask.md)
+- [Quart](./integrations/quart.md)
 - [Sanic](./integrations/sanic.md)
 - [Chalice](./integrations/chalice.md)
 - [Starlette](./integrations/starlette.md)

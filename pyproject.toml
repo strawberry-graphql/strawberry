@@ -45,6 +45,7 @@ uvicorn = {version = ">=0.11.6", optional = true}
 Django = {version = ">=3.2", optional = true}
 asgiref = {version = "^3.2", optional = true}
 flask = {version = ">=1.1", optional = true}
+quart = {version = ">=0.19.3", optional = true}
 opentelemetry-api = {version = "<2", optional = true}
 opentelemetry-sdk = {version = "<2", optional = true}
 chalice = {version = "^1.22", optional = true}
@@ -111,6 +112,7 @@ channels = "^3.0.5"
 Django = ">=3.2"
 fastapi = {version = ">=0.65.0", optional = false}
 flask = ">=1.1"
+quart = ">=0.19.3"
 pydantic = {version = ">1.6.1,<2.0", optional = false}
 pytest-aiohttp = "^1.0.3"
 pytest-django = {version = "^4.5"}
@@ -127,6 +129,7 @@ debug-server = ["starlette", "uvicorn", "python-multipart", "typer", "pygments",
 django = ["Django", "pytest-django", "asgiref"]
 channels = ["channels", "asgiref"]
 flask = ["flask"]
+quart=["quart"]
 opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 pydantic = ["pydantic"]
 sanic = ["sanic"]
@@ -160,6 +163,7 @@ markers = [
     "fastapi",
     "flaky",
     "flask",
+    "quart",
     "pydantic",
     "relay",
     "sanic",
