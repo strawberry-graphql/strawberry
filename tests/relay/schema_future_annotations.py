@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import dataclasses
-from collections import namedtuple
 from typing import (
     Any,
     AsyncGenerator,
@@ -11,6 +10,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    NamedTuple,
     Optional,
     cast,
 )
@@ -157,7 +157,10 @@ fruits_async = {
 }
 
 
-FruitAlike = namedtuple("FruitAlike", ["id", "name", "color"])
+class FruitAlike(NamedTuple):
+    id: int
+    name: str
+    color: str
 
 
 @strawberry.type

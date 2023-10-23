@@ -90,8 +90,6 @@ def _process_enum(
     if not name:
         name = cls.__name__
 
-    description = description
-
     values = []
     for item in cls:  # type: ignore
         item_value = item.value

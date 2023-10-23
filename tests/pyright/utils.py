@@ -39,7 +39,9 @@ def run_pyright(code: str, strict: bool = True) -> List[Result]:
     with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as f:
         f.write(code)
 
-    process_result = subprocess.run(["pyright", f.name], stdout=subprocess.PIPE)
+    process_result = subprocess.run(
+        ["pyright", f.name], stdout=subprocess.PIPE, check=True
+    )
 
     os.unlink(f.name)  # noqa: PTH108
 
