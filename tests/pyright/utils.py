@@ -40,7 +40,7 @@ def run_pyright(code: str, strict: bool = True) -> List[Result]:
         f.write(code)
 
     process_result = subprocess.run(
-        ["pyright", f.name], stdout=subprocess.PIPE, check=True
+        ["pyright", f.name], stdout=subprocess.PIPE, check=False
     )
 
     os.unlink(f.name)  # noqa: PTH108
