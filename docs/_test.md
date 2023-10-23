@@ -40,9 +40,11 @@ This is probably not implemented in the best way, but for now it works:
 ```python
 import strawberry
 
-
 #      ^^^^^^^^^^
 #      This is a note about this line
+
+
+# this is a standard comment
 @strawberry.type
 class X:
     name: str
