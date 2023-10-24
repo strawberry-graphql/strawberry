@@ -95,7 +95,7 @@ class GraphQLRouter(
     def __get_context_getter(
         custom_getter: Callable[
             ..., Union[Optional[CustomContext], Awaitable[Optional[CustomContext]]]
-        ]
+        ],
     ) -> Callable[..., Awaitable[CustomContext]]:
         async def dependency(
             custom_context: Optional[CustomContext],

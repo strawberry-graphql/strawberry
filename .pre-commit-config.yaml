@@ -1,14 +1,10 @@
 repos:
-  - repo: https://github.com/psf/black
-    rev: 23.10.0
-    hooks:
-      - id: black
-        exclude: ^(tests/\w+/snapshots/|tests/python_312/)
-
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.1
+    rev: v0.1.2
     hooks:
       - id: ruff
+        exclude: ^tests/\w+/snapshots/
+      - id: ruff-format
         exclude: ^tests/\w+/snapshots/
 
   - repo: https://github.com/patrick91/pre-commit-alex
@@ -32,7 +28,7 @@ repos:
         exclude: ^tests/relay/snapshots
       - id: check-toml
       - id: no-commit-to-branch
-        args: ['--branch', 'main']
+        args: ["--branch", "main"]
 
   - repo: https://github.com/adamchainz/blacken-docs
     rev: 1.16.0
