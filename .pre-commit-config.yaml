@@ -4,6 +4,7 @@ repos:
     hooks:
       - id: ruff
         exclude: ^tests/\w+/snapshots/
+      - id: ruff-format
 
   - repo: https://github.com/patrick91/pre-commit-alex
     rev: aa5da9e54b92ab7284feddeaf52edf14b1690de3
@@ -26,7 +27,7 @@ repos:
         exclude: ^tests/relay/snapshots
       - id: check-toml
       - id: no-commit-to-branch
-        args: ['--branch', 'main']
+        args: ["--branch", "main"]
 
   - repo: https://github.com/adamchainz/blacken-docs
     rev: 1.16.0
