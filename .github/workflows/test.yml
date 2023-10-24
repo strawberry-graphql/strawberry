@@ -102,7 +102,7 @@ jobs:
           cache: "poetry"
 
       - run: poetry env use 3.12.0-beta.3
-      - run: poetry install
+      - run: poetry install --with integrations
         if: steps.setup-python.outputs.cache-hit != 'true'
 
       - name: Run benchmarks
