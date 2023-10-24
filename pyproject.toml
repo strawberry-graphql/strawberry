@@ -139,13 +139,6 @@ pyinstrument = ["pyinstrument"]
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"
 
-[tool.ruff.format]
-line-length = 88
-extend-exclude = '''
-tests/codegen/snapshots/
-tests/cli/snapshots/
-'''
-
 [tool.pytest.ini_options]
 addopts = "--emoji --mypy-ini-file=mypy.ini"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
@@ -357,3 +350,9 @@ src = ["strawberry", "tests"]
 known-first-party = ["strawberry"]
 known-third-party = ["django", "graphql"]
 extra-standard-library = ["typing_extensions"]
+
+[tool.ruff.format]
+exclude =[
+    'tests/codegen/snapshots/',
+    'tests/cli/snapshots/'
+]
