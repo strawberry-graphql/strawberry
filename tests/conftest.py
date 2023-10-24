@@ -31,6 +31,7 @@ def pytest_collection_modifyitems(config: pytest.Config, items: List[pytest.Item
             "django",
             "fastapi",
             "flask",
+            "quart",
             "pydantic",
             "sanic",
             "starlite",

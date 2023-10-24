@@ -29,6 +29,7 @@ See the Strawberry Options documentation for the integration you are using for m
 - [Django](../integrations/django.md#options)
 - [FastAPI](../integrations/fastapi.md#options)
 - [Flask](../integrations/flask.md#options)
+- [Quart](../integrations/quart.md#options)
 - [Sanic](../integrations/sanic.md#options)
 - [Chalice](../integrations/chalice.md#options)
 - [Starlette](../integrations/starlette.md#options)
