@@ -140,7 +140,7 @@ pyinstrument = ["pyinstrument"]
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"
 
-[tool.black]
+[tool.ruff.format]
 line-length = 88
 extend-exclude = '''
 tests/codegen/snapshots/
