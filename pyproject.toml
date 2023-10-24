@@ -163,7 +163,9 @@ asyncio_mode = "auto"
 filterwarnings = [
     "ignore::DeprecationWarning:strawberry.*.resolver",
     "ignore:LazyType is deprecated:DeprecationWarning",
-    "ignore::django.utils.deprecation.RemovedInDjango50Warning",
+    # ignoring the text instead of the whole warning because we'd
+    # get an error when django is not installed
+    "ignore:The default value of USE_TZ",
 ]
 
 [tool.autopub]
