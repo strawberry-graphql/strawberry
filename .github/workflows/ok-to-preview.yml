@@ -31,7 +31,7 @@ jobs:
             event_data = json.load(f)
 
         links = [
-          "https://strawberry.rocks/docs/pr/{pr_number}/{path}".format(
+          "https://beta.strawberry.rocks/docs/pr/{pr_number}/{path}".format(
             pr_number=event_data["number"],
             path=file.replace(".md", "").replace("docs/", "")
           )
