@@ -156,14 +156,13 @@ jobs:
 
     outputs:
       tweet: ${{ steps.extract.outputs.tweet }}
-      card-text: ${{ steps.extract.outputs.card-text }}
       has-tweet-file: ${{ steps.extract.outputs.has-tweet-file }}
 
     steps:
     - uses: actions/checkout@v1
     - name: Extract tweet message and changelog
       id: extract
-      uses: strawberry-graphql/tweet-actions/read-tweet@v4
+      uses: strawberry-graphql/tweet-actions/read-tweet@v5
       with:
         changelog: ${{ needs.release-file-check.outputs.changelog }}
         version: ${{ needs.release.outputs.version }}
@@ -176,21 +175,6 @@ jobs:
     needs: [release-file-check, read-tweet-md, release, get-contributor-info]
     if: ${{ needs.release-file-check.outputs.status == 'OK' }}
 
-    steps:
-    - name: Generate Twitter card preview
-      uses: strawberry-graphql/release-cards@main
-      if: ${{ needs.release-file-check.outputs.status == 'OK' }}
-      with:
-        version: ${{ needs.release.outputs.version }}
-        contributor: ${{ needs.get-contributor-info.outputs.contributor-name }}
-        description_base64: ${{ needs.read-tweet-md.outputs.card-text }}
-    - name: Store card in artificats
-      uses: actions/upload-artifact@v2
-      with:
-        name: card
-        path: screenshot.png
-        retention-days: 1
-
   send-tweet:
     name: Send tweet
     runs-on: ubuntu-latest
@@ -198,9 +182,6 @@ jobs:
     if: ${{ needs.release-file-check.outputs.status == 'OK' }}
 
     steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: card
       - uses: actions/setup-python@v4
         with:
           python-version: '3.9'
