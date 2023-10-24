@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.211.0 - 2023-10-24
+--------------------
+
+This release adds a Quart view.
+
+Contributed by [Pierre Chapuis](https://github.com/catwell) via [PR #3162](https://github.com/strawberry-graphql/strawberry/pull/3162/)
+
+
 0.210.0 - 2023-10-24
 --------------------
 
