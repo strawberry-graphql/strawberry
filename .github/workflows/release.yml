@@ -180,12 +180,13 @@ jobs:
         with:
           python-version: "3.9"
       - name: Install dependencies
-        run: pip install tweepy==4.0.0
+        run: pip install tweepy==4.14.0
       - name: Send tweet
         shell: python
         run: |
-          import os
           import base64
+          import os
+
           import tweepy
 
           TWITTER_CONSUMER_KEY = os.environ["TWITTER_API_KEY"]
@@ -194,14 +195,7 @@ jobs:
           TWITTER_ACCESS_TOKEN_SECRET = os.environ["TWITTER_ACCESS_TOKEN_SECRET"]
           TWITTER_BEARER_TOKEN = os.environ["TWITTER_BEARER_TOKEN"]
 
-          tweepy_auth = tweepy.OAuth1UserHandler(
-              consumer_key=TWITTER_CONSUMER_KEY,
-              consumer_secret=TWITTER_CONSUMER_SECRET,
-              access_token=TWITTER_ACCESS_TOKEN,
-              access_token_secret=TWITTER_ACCESS_TOKEN_SECRET,
-          )
 
-          tweepy_v1 = tweepy.API(tweepy_auth)
           tweepy_v2 = tweepy.Client(
               TWITTER_BEARER_TOKEN,
               consumer_key=TWITTER_CONSUMER_KEY,
@@ -210,18 +204,13 @@ jobs:
               access_token_secret=TWITTER_ACCESS_TOKEN_SECRET,
           )
 
-          def upload_media() -> str:
-              post = tweepy_v1.simple_upload("screenshot.png")
 
-              return post.media_id_string
-
-          def post_tweet(media_id: str):
+          def post_tweet() -> None:
               text = base64.b64decode(os.environ["TWEET"]).decode("utf-8")
-              tweepy_v2.create_tweet(text=text, media_ids=[media_id])
+              tweepy_v2.create_tweet(text=text)
 
-          media = upload_media()
 
-          post_tweet(media)
+          post_tweet()
 
         env:
           TWEET: ${{ needs.read-tweet-md.outputs.tweet }}
