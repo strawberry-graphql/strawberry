@@ -1,5 +1,8 @@
+# ruff: noqa: F821
+
 import datetime
-from typing import Generic, List, Optional, TypeVar, Union
+import sys
+from typing import List, Optional, TypeVar, Union
 from typing_extensions import Annotated
 
 import pytest
@@ -13,14 +16,16 @@ from strawberry.type import (
 )
 from strawberry.union import StrawberryUnion
 
-T = TypeVar("T")
+pytestmark = pytest.mark.skipif(
+    sys.version_info < (3, 12), reason="These are tests for Python 3.12+"
+)
 
 
 def test_basic_generic():
     directive = object()
 
     @strawberry.type
-    class Edge(Generic[T]):
+    class Edge[T]:
         node_field: T = strawberry.field(directives=[directive])
 
     definition = get_object_definition(Edge, strict=True)
@@ -48,11 +53,11 @@ def test_basic_generic():
 
 def test_generics_nested():
     @strawberry.type
-    class Edge(Generic[T]):
+    class Edge[T]:
         node: T
 
     @strawberry.type
-    class Connection(Generic[T]):
+    class Connection[T]:
         edge: Edge[T]
 
     definition = get_object_definition(Connection, strict=True)
@@ -82,7 +87,7 @@ def test_generics_name():
         node: str
 
     @strawberry.type
-    class Connection(Generic[T]):
+    class Connection[T]:
         edge: T
 
     definition_copy = get_object_definition(
@@ -99,11 +104,11 @@ def test_generics_name():
 
 def test_generics_nested_in_list():
     @strawberry.type
-    class Edge(Generic[T]):
+    class Edge[T]:
         node: T
 
     @strawberry.type
-    class Connection(Generic[T]):
+    class Connection[T]:
         edges: List[Edge[T]]
 
     definition = get_object_definition(Connection, strict=True)
@@ -133,7 +138,7 @@ def test_list_inside_generic():
     T = TypeVar("T")
 
     @strawberry.type
-    class Value(Generic[T]):
+    class Value[T]:
         valuation_date: datetime.date
         value: T
 
@@ -160,7 +165,7 @@ def test_list_inside_generic():
 
 def test_generic_with_optional():
     @strawberry.type
-    class Edge(Generic[T]):
+    class Edge[T]:
         node: Optional[T]
 
     definition = get_object_definition(Edge, strict=True)
@@ -189,7 +194,7 @@ def test_generic_with_optional():
 
 def test_generic_with_list():
     @strawberry.type
-    class Connection(Generic[T]):
+    class Connection[T]:
         edges: List[T]
 
     definition = get_object_definition(Connection, strict=True)
@@ -218,7 +223,7 @@ def test_generic_with_list():
 
 def test_generic_with_list_of_optionals():
     @strawberry.type
-    class Connection(Generic[T]):
+    class Connection[T]:
         edges: List[Optional[T]]
 
     definition = get_object_definition(Connection, strict=True)
@@ -253,7 +258,7 @@ def test_generics_with_unions():
         message: str
 
     @strawberry.type
-    class Edge(Generic[T]):
+    class Edge[T]:
         node: Union[Error, T]
 
     definition = get_object_definition(Edge, strict=True)
@@ -284,7 +289,7 @@ def test_generics_with_unions():
 
 def test_using_generics():
     @strawberry.type
-    class Edge(Generic[T]):
+    class Edge[T]:
         node: T
 
     @strawberry.type
@@ -310,11 +315,11 @@ def test_using_generics():
 
 def test_using_generics_nested():
     @strawberry.type
-    class Edge(Generic[T]):
+    class Edge[T]:
         node: T
 
     @strawberry.type
-    class Connection(Generic[T]):
+    class Connection[T]:
         edges: Edge[T]
 
     @strawberry.type
@@ -343,7 +348,7 @@ def test_using_generics_nested():
 
 def test_using_generics_raises_when_missing_annotation():
     @strawberry.type
-    class Edge(Generic[T]):
+    class Edge[T]:
         node: T
 
     @strawberry.type
@@ -365,11 +370,11 @@ def test_using_generics_raises_when_missing_annotation():
 
 def test_using_generics_raises_when_missing_annotation_nested():
     @strawberry.type
-    class Edge(Generic[T]):
+    class Edge[T]:
         node: T
 
     @strawberry.type
-    class Connection(Generic[T]):
+    class Connection[T]:
         edges: List[Edge[T]]
 
     @strawberry.type
@@ -395,7 +400,7 @@ def test_generics_inside_optional():
         message: str
 
     @strawberry.type
-    class Edge(Generic[T]):
+    class Edge[T]:
         node: T
 
     @strawberry.type
@@ -415,7 +420,7 @@ def test_generics_inside_optional():
 
 def test_generics_inside_list():
     @strawberry.type
-    class Edge(Generic[T]):
+    class Edge[T]:
         node: T
 
     @strawberry.type
@@ -439,7 +444,7 @@ def test_generics_inside_unions():
         message: str
 
     @strawberry.type
-    class Edge(Generic[T]):
+    class Edge[T]:
         node: T
 
     @strawberry.type
@@ -460,7 +465,7 @@ def test_generics_inside_unions():
 
 def test_multiple_generics_inside_unions():
     @strawberry.type
-    class Edge(Generic[T]):
+    class Edge[T]:
         node: T
 
     @strawberry.type
@@ -496,7 +501,7 @@ def test_union_inside_generics():
         name: str
 
     @strawberry.type
-    class Connection(Generic[T]):
+    class Connection[T]:
         nodes: List[T]
 
     DogCat = Annotated[Union[Dog, Cat], strawberry.union("DogCat")]
@@ -533,7 +538,7 @@ def test_anonymous_union_inside_generics():
         name: str
 
     @strawberry.type
-    class Connection(Generic[T]):
+    class Connection[T]:
         nodes: List[T]
 
     @strawberry.type
@@ -559,7 +564,7 @@ def test_anonymous_union_inside_generics():
 
 def test_using_generics_with_interfaces():
     @strawberry.type
-    class Edge(Generic[T]):
+    class Edge[T]:
         node: T
 
     @strawberry.interface
@@ -587,7 +592,7 @@ def test_generic_with_arguments():
     T = TypeVar("T")
 
     @strawberry.type
-    class Collection(Generic[T]):
+    class Collection[T]:
         @strawberry.field
         def by_id(self, ids: List[int]) -> List[T]:
             return []
@@ -621,7 +626,7 @@ def test_generic_with_arguments():
 
 def test_federation():
     @strawberry.federation.type(keys=["id"])
-    class Edge(Generic[T]):
+    class Edge[T]:
         id: strawberry.ID
         node_field: T
 
