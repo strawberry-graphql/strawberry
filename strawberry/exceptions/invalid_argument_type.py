@@ -62,6 +62,6 @@ class InvalidArgumentTypeError(StrawberryException):
         source_finder = SourceFinder()
 
         return source_finder.find_argument_from_object(
-            self.function,
-            self.argument_name,  # type: ignore
+            self.function,  # type: ignore
+            self.argument_name,
         )
