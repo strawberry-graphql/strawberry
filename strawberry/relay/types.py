@@ -45,7 +45,6 @@ if TYPE_CHECKING:
     from strawberry.utils.await_maybe import AwaitableOrValue
 
 _T = TypeVar("_T")
-_R = TypeVar("_R")
 
 NodeIterableType: TypeAlias = Union[
     Iterator[_T],

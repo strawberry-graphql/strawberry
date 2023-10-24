@@ -171,7 +171,10 @@ class Schema(BaseSchema):
         self._schema.type_map[query_type.name] = query_type
 
     def entities_resolver(
-        self, root, info, representations  # noqa: ANN001
+        self,
+        root,  # noqa: ANN001
+        info,  # noqa: ANN001
+        representations,  # noqa: ANN001
     ) -> List[object]:
         results = []
 
@@ -209,7 +212,7 @@ class Schema(BaseSchema):
 
             try:
                 result = get_result()
-            except Exception as e:  # noqa: PERF203
+            except Exception as e:
                 result = GraphQLError(
                     f"Unable to resolve reference for {definition.origin}",
                     original_error=e,
@@ -392,7 +395,7 @@ def _has_federation_keys(
         "ScalarDefinition",
         "EnumDefinition",
         "StrawberryUnion",
-    ]
+    ],
 ) -> bool:
     if isinstance(definition, StrawberryObjectDefinition):
         return any(_is_key(directive) for directive in definition.directives or [])
