@@ -18,11 +18,11 @@ jobs:
       change_type: ${{ steps.release-check.outputs.change_type }}
 
     steps:
-    - uses: actions/checkout@v1
+      - uses: actions/checkout@v1
 
-    - name: Release file check
-      uses: ./.github/release-check-action
-      id: release-check
+      - name: Release file check
+        uses: ./.github/release-check-action
+        id: release-check
 
   release:
     name: Release
@@ -99,7 +99,7 @@ jobs:
     steps:
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: "3.9"
       - name: Install dependencies
         run: pip install httpx
       - name: Update release on GitHub
@@ -159,21 +159,15 @@ jobs:
       has-tweet-file: ${{ steps.extract.outputs.has-tweet-file }}
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Extract tweet message and changelog
-      id: extract
-      uses: strawberry-graphql/tweet-actions/read-tweet@v5
-      with:
-        changelog: ${{ needs.release-file-check.outputs.changelog }}
-        version: ${{ needs.release.outputs.version }}
-        contributor_name: ${{ needs.get-contributor-info.outputs.contributor-name }}
-        contributor_twitter_username: ${{ needs.get-contributor-info.outputs.contributor-twitter-username }}
-
-  generate-preview:
-    name: Generate Preview
-    runs-on: ubuntu-latest
-    needs: [release-file-check, read-tweet-md, release, get-contributor-info]
-    if: ${{ needs.release-file-check.outputs.status == 'OK' }}
+      - uses: actions/checkout@v1
+      - name: Extract tweet message and changelog
+        id: extract
+        uses: strawberry-graphql/tweet-actions/read-tweet@v5
+        with:
+          changelog: ${{ needs.release-file-check.outputs.changelog }}
+          version: ${{ needs.release.outputs.version }}
+          contributor_name: ${{ needs.get-contributor-info.outputs.contributor-name }}
+          contributor_twitter_username: ${{ needs.get-contributor-info.outputs.contributor-twitter-username }}
 
   send-tweet:
     name: Send tweet
@@ -184,7 +178,7 @@ jobs:
     steps:
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: "3.9"
       - name: Install dependencies
         run: pip install tweepy==4.0.0
       - name: Send tweet
@@ -244,17 +238,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-      with:
-        persist-credentials: false
-    - name: Remove TWEET.md and commit
-      env:
-        GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
-      run: |
-        git config --global user.name 'Strawberry GraphQL Bot'
-        git config --global user.email 'bot@strawberry.rocks'
-        git remote set-url origin https://${{ secrets.BOT_TOKEN }}@github.com/${{ github.repository }}
-        git pull
-        git rm TWEET.md
-        git commit -m "Remove TWEET.md"
-        git push
+      - uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+      - name: Remove TWEET.md and commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: |
+          git config --global user.name 'Strawberry GraphQL Bot'
+          git config --global user.email 'bot@strawberry.rocks'
+          git remote set-url origin https://${{ secrets.BOT_TOKEN }}@github.com/${{ github.repository }}
+          git pull
+          git rm TWEET.md
+          git commit -m "Remove TWEET.md"
+          git push
