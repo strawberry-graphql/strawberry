@@ -1,4 +1,12 @@
 Release type: patch
 
-Fix `parser_cache` extension in combination with another configurable extension e.g. `MaxTokensLimiter`
-(pass `parse_options` to `cached_parse_document` function)
+This release fixes an issue that prevented the `parser_cache` extension to be used in combination with
+other extensions such as `MaxTokensLimiter`.
+
+The following should work as expected now:
+
+```python
+schema = strawberry.Schema(
+    query=Query, extensions=[MaxTokensLimiter(max_token_count=20), ParserCache()]
+)
+```
