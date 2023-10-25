@@ -1,6 +1,23 @@
 CHANGELOG
 =========
 
+0.211.1 - 2023-10-25
+--------------------
+
+This release fixes an issue that prevented the `parser_cache` extension to be used in combination with
+other extensions such as `MaxTokensLimiter`.
+
+The following should work as expected now:
+
+```python
+schema = strawberry.Schema(
+    query=Query, extensions=[MaxTokensLimiter(max_token_count=20), ParserCache()]
+)
+```
+
+Contributed by [David Šanda](https://github.com/Dazix) via [PR #3170](https://github.com/strawberry-graphql/strawberry/pull/3170/)
+
+
 0.211.0 - 2023-10-24
 --------------------
 
