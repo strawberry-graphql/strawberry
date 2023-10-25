@@ -14,7 +14,7 @@ from typing import (
     Union,
     overload,
 )
-from typing_extensions import dataclass_transform
+from typing_extensions import Annotated, Doc, dataclass_transform
 
 from .exceptions import (
     MissingFieldAnnotationError,
@@ -190,7 +190,7 @@ def _process_type(
     order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def type(
-    cls: T,
+    cls: Annotated[T, Doc("The class you want to convert to a GraphQL type")],
     *,
     name: Optional[str] = None,
     is_input: bool = False,
@@ -219,14 +219,23 @@ def type(
 
 
 def type(
-    cls: Optional[T] = None,
+    cls: Annotated[
+        Optional[T], Doc("The class you want to convert to a GraphQL type")
+    ] = None,
     *,
-    name: Optional[str] = None,
-    is_input: bool = False,
-    is_interface: bool = False,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
-    extend: bool = False,
+    name: Annotated[
+        Optional[str],
+        Doc("The name of the GraphQL type, based on the class name if not passed"),
+    ] = None,
+    is_input: Annotated[bool, Doc("Used internally")] = False,
+    is_interface: Annotated[bool, Doc("Used internally")] = False,
+    description: Annotated[Optional[str], Doc("The GraphQL description")] = None,
+    directives: Annotated[
+        Optional[Sequence[object]], Doc("A sequence of GraphQL schema directives")
+    ] = (),
+    extend: Annotated[
+        bool, Doc("Wether to mark this GraphQL type as an extension")
+    ] = False,
 ) -> Union[T, Callable[[T], T]]:
     """Annotates a class as a GraphQL type.
 
