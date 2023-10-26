@@ -2,9 +2,9 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.2
     hooks:
-      - id: ruff
-        exclude: ^tests/\w+/snapshots/
       - id: ruff-format
+        exclude: ^tests/\w+/snapshots/
+      - id: ruff
         exclude: ^tests/\w+/snapshots/
 
   - repo: https://github.com/patrick91/pre-commit-alex
