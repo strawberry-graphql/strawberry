@@ -97,10 +97,9 @@ class Query:
 This will generate a schema like this:
 
 ```graphql
-scalar GlobalID
 
 interface Node {
-  id: GlobalID!
+  id: ID!
 }
 
 type PageInfo {
@@ -111,7 +110,7 @@ type PageInfo {
 }
 
 type Fruit implements Node {
-  id: GlobalID!
+  id: ID!
   name: String!
   weight: Float!
 }
@@ -127,7 +126,7 @@ type FruitConnection {
 }
 
 type Query {
-  node(id: GlobalID!): Node!
+  node(id: ID!): Node!
   fruits(
     before: String = null
     after: String = null
@@ -199,7 +198,7 @@ It can be defined in in the `Query` objects in 4 ways:
   a `Node` instance. This is the most basic way to define it.
 - `node: Optional[Node]`: The same as `Node`, but if the given object doesn't
   exist, it will return `null`.
-- `node: List[Node]`: This will define a field that accepts `[GlobalID!]!` and
+- `node: List[Node]`: This will define a field that accepts `[ID!]!` and
   returns a list of `Node` instances. They can even be from different types.
 - `node: List[Optional[Node]]`: The same as `List[Node]`, but the returned list
   can contain `null` values if the given objects don't exist.
@@ -406,6 +405,10 @@ similar use case, like SQLAlchemy, etc.
 
 The `GlobalID` scalar is a special object that contains all the info necessary to
 identify and retrieve a given object that implements the `Node` interface.
+
+It constrains the existing `strawberry.ID!` type, which can be any string. Under
+relay, the GlobalID is composed of the type and the internal ID, encoded as a base64
+string.
 
 It can for example be useful in a mutation, to receive and object and retrieve
 it in its resolver. For example:
