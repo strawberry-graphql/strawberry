@@ -97,7 +97,6 @@ class Query:
 This will generate a schema like this:
 
 ```graphql
-
 interface Node {
   id: ID!
 }

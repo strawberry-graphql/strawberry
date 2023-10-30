@@ -299,13 +299,15 @@ class GlobalID:
 
         return node
 
-ID = scalar(NewType("ID", GlobalID),
+
+ID = scalar(
+    NewType("ID", GlobalID),
     description="ID in the Global ID format, a base64 encoded string that"
     "wraps the type and the internal id of the object."
     "This is a specialization of the strawberry.ID type, which can be any string.",
     specified_by_url="https://graphql.org/learn/global-object-identification/",
-     serialize=str,
-     parse_value=GlobalID.from_id
+    serialize=str,
+    parse_value=GlobalID.from_id,
 )
 
 
