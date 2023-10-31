@@ -26,6 +26,9 @@ from strawberry.utils.inspect import get_specialized_type_var_map
 from strawberry.utils.typing import (
     is_generic as is_type_generic,
 )
+from strawberry.utils.typing import (
+    is_type_var,
+)
 
 if TYPE_CHECKING:
     from graphql import GraphQLAbstractType, GraphQLResolveInfo
@@ -111,6 +114,15 @@ class StrawberryObjectDefinition(StrawberryType):
             (self.origin,),
             {"__strawberry_definition__": new_type_definition},
         )
+
+        # update all annotations to point to the new type
+        for name, type_ in self.origin.__annotations__.items():
+            if is_type_var(type_):
+                actual_type = type_var_map[type_.__name__]
+
+                new_type.__annotations__[name] = actual_type
+                new_type.__dataclass_fields__[name].type = actual_type
+
         # TODO: remove when deprecating _type_definition
         DeprecatedDescriptor(
             DEPRECATION_MESSAGES._TYPE_DEFINITION,

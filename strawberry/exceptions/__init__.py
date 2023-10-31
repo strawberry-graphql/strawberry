@@ -68,7 +68,6 @@ class InvalidTypeInputForUnion(Exception):
         super().__init__(message)
 
 
-# TODO: this doesn't seem to be tested
 class MissingTypesForGenericError(Exception):
     """Raised when a generic types was used without passing any type."""
 

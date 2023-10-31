@@ -1,12 +1,10 @@
 from typing import List
 
-import a_mod
-import b_mod
-import x_mod
-from a_mod import AObject as C_AObject
-from b_mod import BObject as C_BObject
-
 import strawberry
+
+from . import a_mod, b_mod, x_mod
+from .a_mod import AObject as C_AObject
+from .b_mod import BObject as C_BObject
 
 
 def c_inheritance_resolver() -> List["CInheritance"]:

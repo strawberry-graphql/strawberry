@@ -417,7 +417,6 @@ class GraphQLCoreConverter:
         self, interface: StrawberryObjectDefinition
     ) -> GraphQLInterfaceType:
         # TODO: Use StrawberryInterface when it's implemented in another PR
-
         interface_name = self.config.name_converter.from_type(interface)
 
         # Don't reevaluate known types
@@ -473,6 +472,7 @@ class GraphQLCoreConverter:
 
     def from_object(self, object_type: StrawberryObjectDefinition) -> GraphQLObjectType:
         # TODO: Use StrawberryObjectType when it's implemented in another PR
+
         object_type_name = self.config.name_converter.from_type(object_type)
 
         # Don't reevaluate known types

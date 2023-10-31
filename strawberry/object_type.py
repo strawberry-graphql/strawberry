@@ -35,13 +35,19 @@ T = TypeVar("T", bound=Type)
 
 
 def _get_interfaces(cls: Type[Any]) -> List[StrawberryObjectDefinition]:
-    interfaces: List[StrawberryObjectDefinition] = []
+    interfaces: Dict[str, StrawberryObjectDefinition] = {}
+
     for base in cls.__mro__[1:]:  # Exclude current class
         type_definition = get_object_definition(base)
         if type_definition and type_definition.is_interface:
-            interfaces.append(type_definition)
+            # TODO: make this better, and add comment on why it is needed
+            if existing_definition := interfaces.get(type_definition.name):
+                if existing_definition.concrete_of == type_definition:
+                    break
 
-    return interfaces
+            interfaces[type_definition.name] = type_definition
+
+    return list(interfaces.values())
 
 
 def _check_field_annotations(cls: Type[Any]):
