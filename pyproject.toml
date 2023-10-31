@@ -119,6 +119,7 @@ sanic = ">=20.12.2"
 starlette = ">=0.13.6"
 starlite = {version = ">=1.48.0", optional = false, python = ">=3.8", extras = ["testing"]}
 uvicorn = ">=0.11.6"
+daphne = "^4.0.0"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp"]
