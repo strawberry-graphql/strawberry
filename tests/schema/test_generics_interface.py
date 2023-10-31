@@ -12,15 +12,6 @@ def test_supports_generic_interface():
         cursor: strawberry.ID
         field: T
 
-        # TODO: add this to the interface class when they are generic
-        def __class_getitem__(cls, params):
-            params = params if isinstance(params, tuple) else (params,)
-            type_vars = (p.__name__ for p in cls.__parameters__)
-
-            type_var_map = dict(zip(type_vars, params))
-
-            return cls.__strawberry_definition__.copy_with(type_var_map=type_var_map)
-
     @strawberry.type
     class User(Example[str]):
         ...

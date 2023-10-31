@@ -131,7 +131,7 @@ def _wrap_dataclass(cls: Type[Any]):
 
 
 def _process_type(
-    cls: Type,
+    cls: Type[Any],
     *,
     name: Optional[str] = None,
     is_input: bool = False,
@@ -160,6 +160,19 @@ def _process_type(
         is_type_of=is_type_of,
         resolve_type=resolve_type,
     )
+
+    if is_interface and cls.__strawberry_definition__.is_generic:
+
+        def __class_getitem__(cls: Type[Any], params: Any) -> Type[Any]:
+            params = params if isinstance(params, tuple) else (params,)
+            type_vars = (p.__name__ for p in cls.__parameters__)
+
+            type_var_map = dict(zip(type_vars, params))
+
+            return cls.__strawberry_definition__.copy_with(type_var_map=type_var_map)
+
+        cls.__class_getitem__ = classmethod(__class_getitem__)
+
     # TODO: remove when deprecating _type_definition
     DeprecatedDescriptor(
         DEPRECATION_MESSAGES._TYPE_DEFINITION,
