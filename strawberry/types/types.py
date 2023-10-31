@@ -153,12 +153,18 @@ class StrawberryObjectDefinition(StrawberryType):
         # have any generic fields (for example when using `strawberry.Private[T]`)
         # without affecting the generated schema
 
+        # TODO: we need to do this also for arguments, also, it is probably worth
+        # caching this function since it is called recursively for each field
+
         if is_generic:
-            return any(
-                getattr(field_.type, "is_generic", None) for field_ in self.fields
+            generic_fields = (
+                is_type_generic(field.type) or getattr(field.type, "is_generic", None)
+                for field in self.fields
             )
 
-        return False
+            is_generic = any(generic_fields)
+
+        return is_generic
 
     @property
     def is_specialized_generic(self) -> bool:
