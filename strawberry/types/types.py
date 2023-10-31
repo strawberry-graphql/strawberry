@@ -146,7 +146,19 @@ class StrawberryObjectDefinition(StrawberryType):
 
     @property
     def is_generic(self) -> bool:
-        return is_type_generic(self.origin)
+        is_generic = is_type_generic(self.origin)
+
+        # we only treat types that have at least one field with a generic type
+        # as generic, this makes it possible to create generic types that don't
+        # have any generic fields (for example when using `strawberry.Private[T]`)
+        # without affecting the generated schema
+
+        if is_generic:
+            return any(
+                getattr(field_.type, "is_generic", None) for field_ in self.fields
+            )
+
+        return False
 
     @property
     def is_specialized_generic(self) -> bool:

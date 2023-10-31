@@ -161,13 +161,7 @@ def _process_type(
         resolve_type=resolve_type,
     )
 
-    should_add_class_getitem = is_interface and cls.__strawberry_definition__.is_generic
-
-    # check if any field is generic
-    if not any(getattr(field_.type, "is_generic", None) for field_ in fields):
-        should_add_class_getitem = False
-
-    if should_add_class_getitem:
+    if is_interface and cls.__strawberry_definition__.is_generic:
 
         def __class_getitem__(cls: Type[Any], params: Any) -> Type[Any]:
             params = params if isinstance(params, tuple) else (params,)

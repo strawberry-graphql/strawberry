@@ -147,7 +147,18 @@ class StrawberryAnnotation:
         if self._is_generic(evaled_type):
             if any(is_type_var(type_) for type_ in get_args(evaled_type)):
                 return evaled_type
-            return self.create_concrete_type(evaled_type)
+
+            # we only want to create a generic type if the origin is a StrawberryType
+            # and it is actually generic (e.g. it has a GraphQL field that's generic)
+            # TODO: I wonder if we can consolidate some of this logic
+
+            if has_object_definition(evaled_type):
+                if evaled_type.__strawberry_definition__.is_generic:
+                    return evaled_type.__strawberry_definition__.resolve_generic(
+                        evaled_type
+                    )
+            else:
+                raise ValueError(f"Not supported {evaled_type}")
 
         # Everything remaining should be a raw annotation that needs to be turned into
         # a StrawberryType
@@ -172,11 +183,6 @@ class StrawberryAnnotation:
         self.namespace = module.__dict__
 
         self.__eval_cache__ = None  # Invalidate cache to allow re-evaluation
-
-    def create_concrete_type(self, evaled_type: type) -> type:
-        if has_object_definition(evaled_type):
-            return evaled_type.__strawberry_definition__.resolve_generic(evaled_type)
-        raise ValueError(f"Not supported {evaled_type}")
 
     def create_enum(self, evaled_type: Any) -> EnumDefinition:
         try:
