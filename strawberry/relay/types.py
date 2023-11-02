@@ -198,7 +198,11 @@ class GlobalID:
                 ensure_type = tuple(get_args(ensure_type))
 
             if not isinstance(node, ensure_type):
-                raise TypeError(f"{ensure_type} expected, found {node!r}")
+                msg = (
+                    f"Cannot resolve. GlobalID requires {ensure_type}, received {node!r}. "
+                    "Verify that the supplied ID is entended for this Query/Mutation/Subscription."
+                )
+                raise TypeError(msg)
 
         return node
 
@@ -294,7 +298,11 @@ class GlobalID:
                 ensure_type = tuple(get_args(ensure_type))
 
             if not isinstance(node, ensure_type):
-                raise TypeError(f"{ensure_type} expected, found {node!r}")
+                msg = (
+                    f"Cannot resolve. GlobalID requires {ensure_type}, received {node!r}. "
+                    "Verify that the supplied ID is entended for this Query/Mutation/Subscription."
+                )
+                raise TypeError(msg)
 
         return node
 
