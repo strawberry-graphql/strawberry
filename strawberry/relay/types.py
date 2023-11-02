@@ -200,7 +200,7 @@ class GlobalID:
             if not isinstance(node, ensure_type):
                 msg = (
                     f"Cannot resolve. GlobalID requires {ensure_type}, received {node!r}. "
-                    "Verify that the supplied ID is entended for this Query/Mutation/Subscription."
+                    "Verify that the supplied ID is intended for this Query/Mutation/Subscription."
                 )
                 raise TypeError(msg)
 
@@ -300,7 +300,7 @@ class GlobalID:
             if not isinstance(node, ensure_type):
                 msg = (
                     f"Cannot resolve. GlobalID requires {ensure_type}, received {node!r}. "
-                    "Verify that the supplied ID is entended for this Query/Mutation/Subscription."
+                    "Verify that the supplied ID is intended for this Query/Mutation/Subscription."
                 )
                 raise TypeError(msg)
 
