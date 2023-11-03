@@ -237,6 +237,10 @@ class StrawberryField(dataclasses.Field):
     def arguments(self, value: List[StrawberryArgument]):
         self._arguments = value
 
+    @property
+    def is_graphql_generic(self) -> bool:
+        return self.base_resolver.is_graphql_generic if self.base_resolver else False
+
     def _python_name(self) -> Optional[str]:
         if self.name:
             return self.name
@@ -340,6 +344,7 @@ class StrawberryField(dataclasses.Field):
 
         # If this is a generic field, try to resolve it using its origin's
         # specialized type_var_map
+        # TODO: should we check arguments here too?
         if _is_generic(resolved):  # type: ignore
             specialized_type_var_map = (
                 type_definition and type_definition.specialized_type_var_map

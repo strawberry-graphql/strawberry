@@ -31,7 +31,7 @@ from strawberry.exceptions import (
 from strawberry.parent import StrawberryParent
 from strawberry.type import StrawberryType, has_object_definition
 from strawberry.types.info import Info
-from strawberry.utils.typing import type_has_annotation
+from strawberry.utils.typing import is_generic, type_has_annotation
 
 if TYPE_CHECKING:
     import builtins
@@ -334,6 +334,12 @@ class StrawberryResolver(Generic[T]):
         if self.type_annotation is None:
             return None
         return self.type_annotation.resolve()
+
+    @property
+    def is_graphql_generic(self) -> bool:
+        return any(
+            argument.is_graphql_generic for argument in self.arguments
+        ) or is_generic(self.type)
 
     @cached_property
     def is_async(self) -> bool:

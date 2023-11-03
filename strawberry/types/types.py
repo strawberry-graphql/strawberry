@@ -132,9 +132,16 @@ class StrawberryObjectDefinition(StrawberryType):
         # TODO: rename _fields to fields and remove this property
         return self._fields
 
+    # TODO: rename this to `is_graphql_generic`? (yes)
     @property
     def is_generic(self) -> bool:
-        return is_type_generic(self.origin)
+        if not is_type_generic(self.origin):
+            return False
+
+        # here we are checking if any exposed field is generic
+        # a Strawberry class can be "generic", but not expose any
+        # generic field to GraphQL
+        return any(field.is_graphql_generic for field in self.fields)
 
     @property
     def is_specialized_generic(self) -> bool:
