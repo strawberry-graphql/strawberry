@@ -178,7 +178,7 @@ project-name = "🍓"
 append-github-contributor = true
 
 [tool.pyright]
-include = ["strawberry"]
+# include = ["strawberry"]
 exclude = ["**/__pycache__",]
 reportMissingImports = true
 reportMissingTypeStubs = false
