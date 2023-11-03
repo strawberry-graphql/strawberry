@@ -129,6 +129,7 @@ class StrawberryContainer(StrawberryType):
 
     @property
     def is_generic(self) -> bool:
+        # TODO: we should make sure that we only have one of these, I think
         type_ = self.of_type
         if isinstance(type_, StrawberryType):
             return type_.is_generic
