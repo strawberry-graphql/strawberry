@@ -1,15 +1,50 @@
+from __future__ import annotations
+
+import json
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
-from typing import List, cast
+from typing import List, TypedDict, cast
 from typing_extensions import Literal
 
 import pytest
 
 ResultType = Literal["error", "information"]
+
+
+class PyrightCLIResult(TypedDict):
+    version: str
+    time: str
+    generalDiagnostics: List[GeneralDiagnostic]
+    summary: Summary
+
+
+class GeneralDiagnostic(TypedDict):
+    file: str
+    severity: str
+    message: str
+    range: Range
+
+
+class Range(TypedDict):
+    start: EndOrStart
+    end: EndOrStart
+
+
+class EndOrStart(TypedDict):
+    line: int
+    character: int
+
+
+class Summary(TypedDict):
+    filesAnalyzed: int
+    errorCount: int
+    warningCount: int
+    informationCount: int
+    timeInSec: float
 
 
 @dataclass
@@ -18,18 +53,6 @@ class Result:
     message: str
     line: int
     column: int
-
-    @classmethod
-    def from_output_line(cls, output_line: str) -> "Result":
-        # an output line looks like: filename.py:11:6 - type: Message
-
-        file_info, result = output_line.split("-", maxsplit=1)
-
-        line, column = (int(value) for value in file_info.split(":")[1:])
-        type_, message = (value.strip() for value in result.split(":", maxsplit=1))
-        type_ = cast(ResultType, type_)
-
-        return cls(type=type_, message=message, line=line, column=column)
 
 
 def run_pyright(code: str, strict: bool = True) -> List[Result]:
@@ -40,24 +63,22 @@ def run_pyright(code: str, strict: bool = True) -> List[Result]:
         f.write(code)
 
     process_result = subprocess.run(
-        ["pyright", f.name], stdout=subprocess.PIPE, check=False
+        ["pyright", "--outputjson", f.name], stdout=subprocess.PIPE, check=False
     )
 
     os.unlink(f.name)  # noqa: PTH108
 
-    output = process_result.stdout.decode("utf-8")
+    pyright_result: PyrightCLIResult = json.loads(process_result.stdout.decode("utf-8"))
 
-    results: List[Result] = []
-
-    for line in output.splitlines():
-        if line.strip().startswith(f"{f.name}:"):
-            result = Result.from_output_line(line)
-            if strict:
-                result.line -= 1
-
-            results.append(result)
-
-    return results
+    return [
+        Result(
+            type=cast(ResultType, diagnostic["severity"]),
+            message=diagnostic["message"],
+            line=diagnostic["range"]["start"]["line"],
+            column=diagnostic["range"]["start"]["character"] + 1,
+        )
+        for diagnostic in pyright_result["generalDiagnostics"]
+    ]
 
 
 def pyright_exist() -> bool:
