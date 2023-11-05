@@ -23,7 +23,7 @@ Both views are provides the same API, with the main difference being that the
 
 To create a view, you need to create a class that inherits from either
 `SyncBaseHTTPView` or `AsyncBaseHTTPView` and implement the `get_root_value`
-method. Here is an example of a view that inherits from `ASyncBaseHTTPView`:
+method. Here is an example of a view that inherits from `AsyncBaseHTTPView`:
 
 ```python
 from strawberry.http.async_base_view import AsyncBaseHTTPView
