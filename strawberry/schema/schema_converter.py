@@ -440,7 +440,7 @@ class GraphQLCoreConverter:
 
                     # TODO: we should find the correct type here from the
                     # generic
-                    if not type_definition.is_generic:
+                    if not type_definition.is_graphql_generic:
                         return obj.__strawberry_definition__.name
 
                 # Revert to calling is_type_of for cases where a direct subclass
@@ -770,7 +770,7 @@ class GraphQLCoreConverter:
             return GraphQLNonNull(self.from_type(type_))
 
     def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
-        if compat.is_generic(type_):
+        if compat.is_graphql_generic(type_):
             raise MissingTypesForGenericError(type_)
 
         if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum

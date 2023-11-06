@@ -23,9 +23,7 @@ from strawberry.type import (
 )
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.inspect import get_specialized_type_var_map
-from strawberry.utils.typing import (
-    is_generic as is_type_generic,
-)
+from strawberry.utils.typing import is_generic as is_type_generic
 
 if TYPE_CHECKING:
     from graphql import GraphQLAbstractType, GraphQLResolveInfo
@@ -55,7 +53,7 @@ class StrawberryObjectDefinition(StrawberryType):
         Callable[[Any, GraphQLResolveInfo, GraphQLAbstractType], str]
     ]
 
-    _fields: List[StrawberryField]
+    fields: List[StrawberryField]
 
     concrete_of: Optional[StrawberryObjectDefinition] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
@@ -101,7 +99,7 @@ class StrawberryObjectDefinition(StrawberryType):
             extend=self.extend,
             is_type_of=self.is_type_of,
             resolve_type=self.resolve_type,
-            _fields=fields,
+            fields=fields,
             concrete_of=self,
             type_var_map=type_var_map,
         )
@@ -128,13 +126,7 @@ class StrawberryObjectDefinition(StrawberryType):
         )
 
     @property
-    def fields(self) -> List[StrawberryField]:
-        # TODO: rename _fields to fields and remove this property
-        return self._fields
-
-    # TODO: rename this to `is_graphql_generic`? (yes)
-    @property
-    def is_generic(self) -> bool:
+    def is_graphql_generic(self) -> bool:
         if not is_type_generic(self.origin):
             return False
 
@@ -145,7 +137,9 @@ class StrawberryObjectDefinition(StrawberryType):
 
     @property
     def is_specialized_generic(self) -> bool:
-        return self.is_generic and not getattr(self.origin, "__parameters__", None)
+        return self.is_graphql_generic and not getattr(
+            self.origin, "__parameters__", None
+        )
 
     @property
     def specialized_type_var_map(self) -> Optional[Dict[str, type]]:

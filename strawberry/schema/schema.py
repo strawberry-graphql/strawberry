@@ -128,7 +128,7 @@ class Schema(BaseSchema):
                 )
             else:
                 if has_object_definition(type_):
-                    if type_.__strawberry_definition__.is_generic:
+                    if type_.__strawberry_definition__.is_graphql_generic:
                         type_ = StrawberryAnnotation(type_).resolve()  # noqa: PLW2901
                 graphql_type = self.schema_converter.from_maybe_optional(type_)
                 if isinstance(graphql_type, GraphQLNonNull):

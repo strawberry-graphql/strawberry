@@ -45,7 +45,7 @@ class EnumDefinition(StrawberryType):
         return self
 
     @property
-    def is_generic(self) -> bool:
+    def is_graphql_generic(self) -> bool:
         return False
 
 

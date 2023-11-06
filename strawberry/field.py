@@ -62,11 +62,11 @@ UNRESOLVED = object()
 def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
     """Returns True if `resolver_type` is generic else False"""
     if isinstance(resolver_type, StrawberryType):
-        return resolver_type.is_generic
+        return resolver_type.is_graphql_generic
 
     # solves the Generic subclass case
     if has_object_definition(resolver_type):
-        return resolver_type.__strawberry_definition__.is_generic
+        return resolver_type.__strawberry_definition__.is_graphql_generic
 
     return False
 
@@ -380,7 +380,7 @@ class StrawberryField(dataclasses.Field):
         if has_object_definition(type_):
             type_definition = type_.__strawberry_definition__
 
-            if type_definition.is_generic:
+            if type_definition.is_graphql_generic:
                 type_ = type_definition
                 override_type = type_.copy_with(type_var_map)
         elif isinstance(type_, StrawberryType):

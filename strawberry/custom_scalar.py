@@ -60,7 +60,7 @@ class ScalarDefinition(StrawberryType):
         return super().copy_with(type_var_map)  # type: ignore[safe-super]
 
     @property
-    def is_generic(self) -> bool:
+    def is_graphql_generic(self) -> bool:
         return False
 
 
