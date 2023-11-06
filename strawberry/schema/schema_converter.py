@@ -897,12 +897,6 @@ class GraphQLCoreConverter:
         first_type_definition = cached_type.definition
         second_type_definition = type_definition
 
-        if (
-            not first_type_definition.is_graphql_generic
-            or not second_type_definition.is_graphql_generic
-        ):
-            return
-
         # TODO: maybe move this on the StrawberryType class
         if (
             isinstance(first_type_definition, StrawberryObjectDefinition)
