@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.211.2 - 2023-11-06
+--------------------
+
+This release removes unused `graphiql` submodules for Flask, Quart and Sanic.
+
+Contributed by [Pierre Chapuis](https://github.com/catwell) via [PR #3203](https://github.com/strawberry-graphql/strawberry/pull/3203/)
+
+
 0.211.1 - 2023-10-25
 --------------------
 
