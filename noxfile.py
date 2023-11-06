@@ -97,7 +97,6 @@ def tests_integrations(session: Session, integration: str) -> None:
         session._session.install("pytest-aiohttp")  # type: ignore
     elif integration == "channels":
         session._session.install("pytest-django")  # type: ignore
-        session._session.install("daphne")  # type: ignore
     elif integration == "starlite":
         session._session.install("pydantic<2.0")  # type: ignore
 
