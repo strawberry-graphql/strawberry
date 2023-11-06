@@ -1,3 +1,3 @@
 Release type: patch
 
-This release removed unused `graphiql` submodules for Flask, Quart and Sanic.
+This release removes unused `graphiql` submodules for Flask, Quart and Sanic.
