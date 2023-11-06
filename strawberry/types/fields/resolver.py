@@ -339,9 +339,13 @@ class StrawberryResolver(Generic[T]):
     def is_graphql_generic(self) -> bool:
         from strawberry.schema.compat import is_graphql_generic
 
-        return any(
+        has_generic_arguments = any(
             argument.is_graphql_generic for argument in self.arguments
-        ) or is_graphql_generic(self.type)
+        )
+
+        return has_generic_arguments or bool(
+            self.type and is_graphql_generic(self.type)
+        )
 
     @cached_property
     def is_async(self) -> bool:
