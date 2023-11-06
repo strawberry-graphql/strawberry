@@ -127,7 +127,6 @@ def test_with_interface():
     assert str(schema) == expected_schema
 
 
-@pytest.mark.xfail(reason="TODO: fix this")
 def test_with_interface_and_type():
     @strawberry.interface
     class GenericInterface[T]:

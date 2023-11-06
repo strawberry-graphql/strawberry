@@ -135,7 +135,7 @@ def test_inline_resolver():
     @strawberry.type
     class Edge(Generic[T]):
         @strawberry.field
-        def node(self) -> T:  # type: ignore
+        def node(self) -> T:  # type: ignore  # pragma: no cover
             ...
 
     resolved = StrawberryAnnotation(Edge).resolve()
