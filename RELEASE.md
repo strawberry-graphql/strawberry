@@ -1,3 +1,5 @@
+Release type: minor
+
 This release adds support in *all* all our HTTP integration for choosing between
 different GraphQL IDEs. For now we support GraphiQL (the default) and Apollo Sandbox,
 but we'll add more in future.
