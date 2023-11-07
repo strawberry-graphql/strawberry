@@ -1,6 +1,86 @@
 CHANGELOG
 =========
 
+0.212.0 - 2023-11-07
+--------------------
+
+This release changes how we check for generic types. Previously, any type that
+had a generic typevar would be considered generic for the GraphQL schema, this
+would generate un-necessary types in some cases. Now, we only consider a type
+generic if it has a typevar that is used as the type of a field or one of its arguments.
+
+For example the following type:
+
+```python
+@strawberry.type
+class Edge[T]:
+    cursor: strawberry.ID
+    some_interna_value: strawberry.Private[T]
+```
+
+Will not generate a generic type in the schema, as the typevar `T` is not used
+as the type of a field or argument.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3202](https://github.com/strawberry-graphql/strawberry/pull/3202/)
+
+
+0.211.2 - 2023-11-06
+--------------------
+
+This release removes unused `graphiql` submodules for Flask, Quart and Sanic.
+
+Contributed by [Pierre Chapuis](https://github.com/catwell) via [PR #3203](https://github.com/strawberry-graphql/strawberry/pull/3203/)
+
+
+0.211.1 - 2023-10-25
+--------------------
+
+This release fixes an issue that prevented the `parser_cache` extension to be used in combination with
+other extensions such as `MaxTokensLimiter`.
+
+The following should work as expected now:
+
+```python
+schema = strawberry.Schema(
+    query=Query, extensions=[MaxTokensLimiter(max_token_count=20), ParserCache()]
+)
+```
+
+Contributed by [David Šanda](https://github.com/Dazix) via [PR #3170](https://github.com/strawberry-graphql/strawberry/pull/3170/)
+
+
+0.211.0 - 2023-10-24
+--------------------
+
+This release adds a Quart view.
+
+Contributed by [Pierre Chapuis](https://github.com/catwell) via [PR #3162](https://github.com/strawberry-graphql/strawberry/pull/3162/)
+
+
+0.210.0 - 2023-10-24
+--------------------
+
+This release deprecates our `SentryTracingExtension`, as it is now incorporated directly into Sentry itself as of [version 1.32.0](https://github.com/getsentry/sentry-python/releases/tag/1.32.0). You can now directly instrument Strawberry with Sentry.
+
+Below is the revised usage example:
+
+```python
+import sentry_sdk
+from sentry_sdk.integrations.strawberry import StrawberryIntegration
+
+sentry_sdk.init(
+    dsn="___PUBLIC_DSN___",
+    integrations=[
+        # make sure to set async_execution to False if you're executing
+        # GraphQL queries synchronously
+        StrawberryIntegration(async_execution=True),
+    ],
+    traces_sample_rate=1.0,
+)
+```
+
+Many thanks to @sentrivana for their work on this integration!
+
 0.209.8 - 2023-10-20
 --------------------
 
@@ -774,31 +854,34 @@ An example of migrating existing code is given below:
 # Existing code
 @strawberry.type
 class MyDataType:
-   name: str
+    name: str
+
 
 @strawberry.type
 class Subscription:
-   @strawberry.subscription
-   async def my_data_subscription(
-      self, info: Info, groups: list[str]
-   ) -> AsyncGenerator[MyDataType | None, None]:
-      yield None
-      async for message in info.context["ws"].channel_listen("my_data", groups=groups):
-         yield MyDataType(name=message["payload"])
+    @strawberry.subscription
+    async def my_data_subscription(
+        self, info: Info, groups: list[str]
+    ) -> AsyncGenerator[MyDataType | None, None]:
+        yield None
+        async for message in info.context["ws"].channel_listen(
+            "my_data", groups=groups
+        ):
+            yield MyDataType(name=message["payload"])
 ```
 
 ```py
 # New code
 @strawberry.type
 class Subscription:
-   @strawberry.subscription
-   async def my_data_subscription(
-      self, info: Info, groups: list[str]
-   ) -> AsyncGenerator[MyDataType | None, None]:
-      async with info.context["ws"].listen_to_channel("my_data", groups=groups) as cm:
-         yield None
-         async for message in cm:
-            yield MyDataType(name=message["payload"])
+    @strawberry.subscription
+    async def my_data_subscription(
+        self, info: Info, groups: list[str]
+    ) -> AsyncGenerator[MyDataType | None, None]:
+        async with info.context["ws"].listen_to_channel("my_data", groups=groups) as cm:
+            yield None
+            async for message in cm:
+                yield MyDataType(name=message["payload"])
 ```
 
 Contributed by [Moritz Ulmer](https://github.com/moritz89) via [PR #2856](https://github.com/strawberry-graphql/strawberry/pull/2856/)
@@ -1416,6 +1499,7 @@ class Point:
     id: str
     x: float
     y: float
+
 
 class GetPointsResult:
     circle_points: List[Point]

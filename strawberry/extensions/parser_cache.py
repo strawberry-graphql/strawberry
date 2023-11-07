@@ -37,6 +37,6 @@ class ParserCache(SchemaExtension):
         execution_context = self.execution_context
 
         execution_context.graphql_document = self.cached_parse_document(
-            execution_context.query,
+            execution_context.query, **execution_context.parse_options
         )
         yield

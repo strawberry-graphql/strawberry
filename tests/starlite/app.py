@@ -26,7 +26,7 @@ def create_app(schema=schema, **kwargs: Any):
         path="/graphql",
         context_getter=get_context,
         root_value_getter=get_root_value,
-        **kwargs
+        **kwargs,
     )
 
     app = Starlite(

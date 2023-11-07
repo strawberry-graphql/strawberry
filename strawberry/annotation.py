@@ -29,6 +29,7 @@ from strawberry.type import (
     StrawberryList,
     StrawberryOptional,
     StrawberryTypeVar,
+    get_object_definition,
     has_object_definition,
 )
 from strawberry.types.types import StrawberryObjectDefinition
@@ -144,7 +145,7 @@ class StrawberryAnnotation:
         if self._is_list(evaled_type):
             return self.create_list(evaled_type)
 
-        if self._is_generic(evaled_type):
+        if self._is_graphql_generic(evaled_type):
             if any(is_type_var(type_) for type_ in get_args(evaled_type)):
                 return evaled_type
             return self.create_concrete_type(evaled_type)
@@ -270,8 +271,11 @@ class StrawberryAnnotation:
         return issubclass(annotation, Enum)
 
     @classmethod
-    def _is_generic(cls, annotation: Any) -> bool:
+    def _is_graphql_generic(cls, annotation: Any) -> bool:
         if hasattr(annotation, "__origin__"):
+            if definition := get_object_definition(annotation.__origin__):
+                return definition.is_graphql_generic
+
             return is_generic(annotation.__origin__)
 
         return False

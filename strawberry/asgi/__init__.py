@@ -184,9 +184,7 @@ class GraphQL(
         try:
             response = await self.run(request)
         except HTTPException as e:
-            response = PlainTextResponse(
-                e.reason, status_code=e.status_code
-            )  # pyright: ignore
+            response = PlainTextResponse(e.reason, status_code=e.status_code)  # pyright: ignore
 
         await response(scope, receive, send)
 

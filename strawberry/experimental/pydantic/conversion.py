@@ -18,7 +18,9 @@ if TYPE_CHECKING:
 
 
 def _convert_from_pydantic_to_strawberry_type(
-    type_: Union[StrawberryType, type], data_from_model=None, extra=None  # noqa: ANN001
+    type_: Union[StrawberryType, type],
+    data_from_model=None,  # noqa: ANN001
+    extra=None,  # noqa: ANN001
 ):
     data = data_from_model if data_from_model is not None else extra
 
@@ -69,7 +71,10 @@ def _convert_from_pydantic_to_strawberry_type(
 
 
 def convert_pydantic_model_to_strawberry_class(
-    cls, *, model_instance=None, extra=None  # noqa: ANN001
+    cls,  # noqa: ANN001
+    *,
+    model_instance=None,  # noqa: ANN001
+    extra=None,  # noqa: ANN001
 ) -> Any:
     extra = extra or {}
     kwargs = {}

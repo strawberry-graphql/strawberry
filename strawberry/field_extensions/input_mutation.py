@@ -4,7 +4,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
-    TypeVar,
 )
 
 import strawberry
@@ -20,8 +19,6 @@ from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
 if TYPE_CHECKING:
     from strawberry.types.info import Info
-
-_T = TypeVar("_T")
 
 
 class InputMutationExtension(FieldExtension):

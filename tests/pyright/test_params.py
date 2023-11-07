@@ -31,25 +31,25 @@ def test_pyright():
     assert results == [
         Result(
             type="error",
-            message='No parameter named "n" (reportGeneralTypeIssues)',
+            message='No parameter named "n"',
             line=16,
             column=11,
         ),
         Result(
             type="error",
-            message='Argument missing for parameter "name" (reportGeneralTypeIssues)',
+            message='Argument missing for parameter "name"',
             line=16,
             column=1,
         ),
         Result(
             type="error",
-            message='No parameter named "n" (reportGeneralTypeIssues)',
+            message='No parameter named "n"',
             line=19,
             column=11,
         ),
         Result(
             type="error",
-            message='Argument missing for parameter "name" (reportGeneralTypeIssues)',
+            message='Argument missing for parameter "name"',
             line=19,
             column=1,
         ),
