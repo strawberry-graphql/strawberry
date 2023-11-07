@@ -44,8 +44,7 @@ The `make_graphql_controller` function accepts the following options:
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
 - `path`: optional, defaults to ``, the path where the GraphQL endpoint will be
   mounted.
-- `graphiql`: optional, defaults to `True`, whether to enable the GraphiQL
-  interface.
+- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the GraphQL IDE interface (either `graphiql` or `apollo-sandbox`) or to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
 - `context_getter`: optional Starlite dependency for providing custom context

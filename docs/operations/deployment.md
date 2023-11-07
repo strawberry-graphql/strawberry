@@ -20,7 +20,7 @@ Before deploying your GraphQL app to production you should disable `GraphiQL` an
 
 GraphiQL is useful during testing and development but should be disabled in production by default.
 
-It can be turned off by setting the `graphiql` option to `False`
+It can be turned off by setting the `graphql_ide` option to `None`
 
 See the Strawberry Options documentation for the integration you are using for more information on how to disable it:
 
