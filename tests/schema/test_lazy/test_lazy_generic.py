@@ -107,8 +107,8 @@ def test_lazy_types_loaded_from_same_module(commands: Sequence[str]):
         args=[*commands],
         env=os.environ,
         capture_output=True,
+        check=True,
     )
-    result.check_returncode()
 
     expected = """\
     type Query {

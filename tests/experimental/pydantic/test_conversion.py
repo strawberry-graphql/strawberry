@@ -881,7 +881,6 @@ def test_get_default_factory_for_field():
     field = _get_field(mutable_default)
 
     created_factory = get_default_factory_for_field(field)
-    created_factory = created_factory
 
     # should return a factory that copies the default parameter
     assert created_factory() == mutable_default

@@ -127,6 +127,13 @@ class StrawberryArgument:
     def type(self) -> Union[StrawberryType, type]:
         return self.type_annotation.resolve()
 
+    @property
+    def is_graphql_generic(self) -> bool:
+        # TODO: double check this
+        from strawberry.schema.compat import is_graphql_generic
+
+        return is_graphql_generic(self.type)
+
 
 def convert_argument(
     value: object,

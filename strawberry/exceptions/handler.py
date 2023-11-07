@@ -60,7 +60,7 @@ def strawberry_threading_exception_handler(
         Optional[BaseException],
         Optional[TracebackType],
         Optional[threading.Thread],
-    ]
+    ],
 ) -> None:
     (exception_type, exception, traceback, _) = args
 

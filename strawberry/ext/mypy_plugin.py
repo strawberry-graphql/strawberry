@@ -415,12 +415,10 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
             fields = model_type.type.metadata[PYDANTIC_METADATA_KEY]["fields"]
             for data in fields.items():
                 if IS_PYDANTIC_V1:
-                    field = PydanticModelField.deserialize(
-                        ctx.cls.info, data[1]
-                    )  # type:ignore[call-arg]
+                    field = PydanticModelField.deserialize(ctx.cls.info, data[1])  # type:ignore[call-arg]
                 else:
                     field = PydanticModelField.deserialize(
-                        info=ctx.cls.info, data=data, api=ctx.api
+                        info=ctx.cls.info, data=data[1], api=ctx.api
                     )
                 pydantic_fields.add(field)
         except KeyError:
