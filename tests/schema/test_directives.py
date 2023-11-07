@@ -226,6 +226,39 @@ def test_runs_directives_on_root_type():
     assert result.data["person"] == "BryceBryce"
 
 
+def test_runs_directives_on_root_type_multiple_operations():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def person(self) -> str:
+            return "Bryce"
+
+    @strawberry.directive(locations=[DirectiveLocation.QUERY])
+    def debug(value: str):
+        # TODO: so, here we are dealing with dictionaries and not strawberry objects
+        return {key: value + value for key, value in value.items()}  # type: ignore
+
+    schema = strawberry.Schema(query=Query, directives=[debug])
+
+    query = """
+    query GetPersonWithoutDebug {
+        person
+    }
+
+    query GetPerson @debug {
+        name: person
+    }
+    """
+
+    result = schema.execute_sync(
+        query, variable_values={"identified": False}, operation_name="GetPerson"
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data["name"] == "BryceBryce"
+
+
 def test_runs_directives_camel_case_off():
     @strawberry.type
     class Person:

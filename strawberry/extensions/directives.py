@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple
 
+from graphql import OperationDefinitionNode
+
 from strawberry.extensions import SchemaExtension
 from strawberry.types import Info
 from strawberry.types.nodes import convert_arguments
@@ -13,10 +15,45 @@ if TYPE_CHECKING:
     from strawberry.directive import StrawberryDirective
     from strawberry.field import StrawberryField
     from strawberry.schema.schema import Schema
+    from strawberry.types import ExecutionContext
     from strawberry.utils.await_maybe import AwaitableOrValue
 
 
 SPECIFIED_DIRECTIVES = {"include", "skip"}
+
+
+class CurrentDefinitionMixin:
+    execution_context: ExecutionContext
+
+    @property
+    def current_definition(self) -> OperationDefinitionNode:
+        assert self.execution_context.graphql_document
+
+        if self.execution_context.operation_name:
+            for definition in self.execution_context.graphql_document.definitions:
+                if isinstance(definition, OperationDefinitionNode) and (
+                    definition.name
+                    and definition.name.value == self.execution_context.operation_name
+                ):
+                    return definition
+
+            raise ValueError(
+                f"Operation {self.execution_context.operation_name} not found"
+            )
+
+        definition = next(
+            (
+                definition
+                for definition in self.execution_context.graphql_document.definitions
+                if isinstance(definition, OperationDefinitionNode)
+            ),
+            None,
+        )
+
+        if definition is None:
+            raise ValueError("No operation found")
+
+        return definition
 
 
 class DirectivesExtension(SchemaExtension):
@@ -39,9 +76,6 @@ class DirectivesExtension(SchemaExtension):
         return value
 
     async def on_execute(self) -> AsyncIteratorOrIterator[None]:
-        # TODO: check if there's more definitions
-        definition = self.execution_context.graphql_document.definitions[0]
-
         yield
 
         value = self.execution_context.result.data
@@ -49,7 +83,7 @@ class DirectivesExtension(SchemaExtension):
         # TODO: info is none here, but it's probably fine
 
         self.execution_context.result.data = await self._handle_directives(
-            value, definition.directives
+            value, self.current_definition.directives
         )
 
     async def resolve(
@@ -67,7 +101,7 @@ class DirectivesExtension(SchemaExtension):
         )
 
 
-class DirectivesExtensionSync(SchemaExtension):
+class DirectivesExtensionSync(SchemaExtension, CurrentDefinitionMixin):
     def _handle_directives(
         self, value: Any, directives: List[DirectiveNode], info: Any = None
     ) -> Any:
@@ -88,9 +122,6 @@ class DirectivesExtensionSync(SchemaExtension):
         return value
 
     def on_execute(self) -> AsyncIteratorOrIterator[None]:
-        # TODO: check if there's more definitions
-        definition = self.execution_context.graphql_document.definitions[0]
-
         yield
 
         value = self.execution_context.result.data
@@ -98,7 +129,7 @@ class DirectivesExtensionSync(SchemaExtension):
         # TODO: info is none here, but it's probably fine
 
         self.execution_context.result.data = self._handle_directives(
-            value, definition.directives
+            value, self.current_definition.directives
         )
 
     def resolve(
