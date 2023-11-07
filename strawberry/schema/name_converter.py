@@ -64,9 +64,9 @@ class NameConverter:
         return self.get_graphql_name(argument)
 
     def from_object(self, object_type: StrawberryObjectDefinition) -> str:
-        # if concrete_of is not generic, than this is a subclass of an already
-        # especialized type.
-        if object_type.concrete_of and object_type.concrete_of.is_generic:
+        # if concrete_of is not generic, then this is a subclass of an already
+        # specialized type.
+        if object_type.concrete_of and object_type.concrete_of.is_graphql_generic:
             return self.from_generic(
                 object_type, list(object_type.type_var_map.values())
             )
@@ -159,7 +159,7 @@ class NameConverter:
             strawberry_type = type_.__strawberry_definition__
 
             if (
-                strawberry_type.is_generic
+                strawberry_type.is_graphql_generic
                 and not strawberry_type.is_specialized_generic
             ):
                 types = type_.__args__  # type: ignore

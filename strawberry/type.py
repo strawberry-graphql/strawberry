@@ -48,7 +48,7 @@ class StrawberryType(ABC):
 
     @property
     @abstractmethod
-    def is_generic(self) -> bool:
+    def is_graphql_generic(self) -> bool:
         raise NotImplementedError()
 
     def has_generic(self, type_var: TypeVar) -> bool:
@@ -119,22 +119,23 @@ class StrawberryContainer(StrawberryType):
         if has_object_definition(self.of_type):
             type_definition = self.of_type.__strawberry_definition__
 
-            if type_definition.is_generic:
+            if type_definition.is_graphql_generic:
                 of_type_copy = type_definition.copy_with(type_var_map)
 
-        elif isinstance(self.of_type, StrawberryType) and self.of_type.is_generic:
+        elif (
+            isinstance(self.of_type, StrawberryType) and self.of_type.is_graphql_generic
+        ):
             of_type_copy = self.of_type.copy_with(type_var_map)
 
         return type(self)(of_type_copy)
 
     @property
-    def is_generic(self) -> bool:
+    def is_graphql_generic(self) -> bool:
+        from strawberry.schema.compat import is_graphql_generic
+
         type_ = self.of_type
-        if isinstance(type_, StrawberryType):
-            return type_.is_generic
-        if has_object_definition(type_):
-            return type_.__strawberry_definition__.is_generic
-        return False
+
+        return is_graphql_generic(type_)
 
     def has_generic(self, type_var: TypeVar) -> bool:
         if isinstance(self.of_type, StrawberryType):
@@ -160,7 +161,7 @@ class StrawberryTypeVar(StrawberryType):
         return type_var_map[self.type_var.__name__]
 
     @property
-    def is_generic(self) -> bool:
+    def is_graphql_generic(self) -> bool:
         return True
 
     def has_generic(self, type_var: TypeVar) -> bool:

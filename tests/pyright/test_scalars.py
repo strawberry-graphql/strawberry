@@ -100,7 +100,7 @@ def test_schema_overrides():
         Result(
             type="information",
             message='Type of "EpochDateTime" is "type[datetime]"',
-            line=17,
+            line=16,
             column=13,
         ),
     ]

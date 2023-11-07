@@ -165,7 +165,7 @@ class Schema(BaseSchema):
         fields.update(query_type.fields)
 
         query_type = copy(query_type)
-        query_type._fields = fields
+        query_type.fields = fields
 
         self._schema.query_type = query_type
         self._schema.type_map[query_type.name] = query_type

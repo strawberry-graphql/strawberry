@@ -101,7 +101,7 @@ def test_union_with_generic():
     assert strawberry_union.types[0] == Error
 
     assert (
-        get_object_definition(strawberry_union.types[1], strict=True).is_generic
+        get_object_definition(strawberry_union.types[1], strict=True).is_graphql_generic
         is False
     )
 
