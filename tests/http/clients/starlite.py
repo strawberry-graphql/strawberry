@@ -55,11 +55,13 @@ class DebuggableGraphQLWSHandler(DebuggableGraphQLWSMixin, GraphQLWSHandler):
 class StarliteHttpClient(HttpClient):
     def __init__(
         self,
+        graphiql: Optional[bool] = None,
         graphql_ide: GraphQL_IDE = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
         self.create_app(
+            graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,

@@ -57,6 +57,7 @@ class GraphQLView(BaseGraphQLView):
 class FlaskHttpClient(HttpClient):
     def __init__(
         self,
+        graphiql: Optional[bool] = None,
         graphql_ide: GraphQL_IDE = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
@@ -67,6 +68,7 @@ class FlaskHttpClient(HttpClient):
         view = GraphQLView.as_view(
             "graphql_view",
             schema=schema,
+            graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,

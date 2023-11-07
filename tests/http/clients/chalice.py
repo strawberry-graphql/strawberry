@@ -46,6 +46,7 @@ class GraphQLView(BaseGraphQLView):
 class ChaliceHttpClient(HttpClient):
     def __init__(
         self,
+        graphiql: Optional[bool] = None,
         graphql_ide: GraphQL_IDE = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
@@ -54,6 +55,7 @@ class ChaliceHttpClient(HttpClient):
 
         view = GraphQLView(
             schema=schema,
+            graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
         )

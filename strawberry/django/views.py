@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -132,15 +133,25 @@ class BaseView:
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: bool = True,
+        graphiql: Optional[str] = None,
+        graphql_ide: GraphQL_IDE = "graphiql",
         allow_queries_via_get: bool = True,
         subscriptions_enabled: bool = False,
         **kwargs: Any,
     ):
         self.schema = schema
-        self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.subscriptions_enabled = subscriptions_enabled
+
+        if graphiql is not None:
+            warnings.warn(
+                "The `graphiql` argument is deprecated in favor of `graphql_ide`",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.graphql_ide = "graphiql" if graphiql else None
+        else:
+            self.graphql_ide = graphql_ide
 
         super().__init__(**kwargs)
 

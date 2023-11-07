@@ -82,6 +82,7 @@ class GraphQLRouter(BaseGraphQLRouter[Any, Any]):
 class FastAPIHttpClient(HttpClient):
     def __init__(
         self,
+        graphiql: Optional[bool] = None,
         graphql_ide: GraphQL_IDE = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
@@ -90,6 +91,7 @@ class FastAPIHttpClient(HttpClient):
 
         graphql_app = GraphQLRouter(
             schema,
+            graphiql=graphiql,
             graphql_ide=graphql_ide,
             context_getter=fastapi_get_context,
             root_value_getter=get_root_value,

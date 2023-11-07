@@ -70,12 +70,14 @@ class GraphQLView(BaseGraphQLView):
 class AsgiHttpClient(HttpClient):
     def __init__(
         self,
+        graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
         view = GraphQLView(
             schema,
+            graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             keep_alive=False,

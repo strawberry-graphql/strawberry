@@ -44,10 +44,12 @@ class GraphQLView(BaseGraphQLView):
 class DjangoHttpClient(HttpClient):
     def __init__(
         self,
+        graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
+        self.graphiql = graphiql
         self.graphql_ide = graphql_ide
         self.allow_queries_via_get = allow_queries_via_get
         self.result_override = result_override
@@ -69,6 +71,7 @@ class DjangoHttpClient(HttpClient):
     async def _do_request(self, request: RequestFactory) -> Response:
         view = GraphQLView.as_view(
             schema=schema,
+            graphiql=self.graphiql,
             graphql_ide=self.graphql_ide,
             allow_queries_via_get=self.allow_queries_via_get,
             result_override=self.result_override,
