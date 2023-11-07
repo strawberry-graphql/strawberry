@@ -14,6 +14,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 from strawberry.asgi import GraphQL as BaseGraphQLView
 from strawberry.asgi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
@@ -69,13 +70,13 @@ class GraphQLView(BaseGraphQLView):
 class AsgiHttpClient(HttpClient):
     def __init__(
         self,
-        graphiql: bool = True,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
         view = GraphQLView(
             schema,
-            graphiql=graphiql,
+            graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             keep_alive=False,
         )

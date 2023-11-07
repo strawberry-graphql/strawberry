@@ -12,6 +12,7 @@ from django.test.client import RequestFactory
 
 from strawberry.django.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
@@ -43,11 +44,11 @@ class GraphQLView(BaseGraphQLView):
 class DjangoHttpClient(HttpClient):
     def __init__(
         self,
-        graphiql: bool = True,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
-        self.graphiql = graphiql
+        self.graphql_ide = graphql_ide
         self.allow_queries_via_get = allow_queries_via_get
         self.result_override = result_override
 
@@ -68,7 +69,7 @@ class DjangoHttpClient(HttpClient):
     async def _do_request(self, request: RequestFactory) -> Response:
         view = GraphQLView.as_view(
             schema=schema,
-            graphiql=self.graphiql,
+            graphql_ide=self.graphql_ide,
             allow_queries_via_get=self.allow_queries_via_get,
             result_override=self.result_override,
         )

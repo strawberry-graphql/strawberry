@@ -3,6 +3,7 @@ from typing import Any, Dict, Generic, List, Mapping, Optional, Union
 from typing_extensions import Protocol
 
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.ides import GraphQL_IDE, get_graphql_ide_html
 from strawberry.http.types import HTTPMethod
 
 from .exceptions import HTTPException
@@ -24,7 +25,13 @@ class BaseRequestProtocol(Protocol):
 
 
 class BaseView(Generic[Request]):
-    def should_render_graphiql(self, request: BaseRequestProtocol) -> bool:
+    graphql_ide: GraphQL_IDE
+
+    # TODO: we might remove this in future :)
+    _ide_replace_variables: bool = True
+    _ide_subscription_enabled: bool = True
+
+    def should_render_graphql_ide(self, request: BaseRequestProtocol) -> bool:
         return (
             request.method == "GET"
             and request.query_params.get("query") is None
@@ -61,3 +68,11 @@ class BaseView(Generic[Request]):
                 params["variables"] = json.loads(variables)
 
         return params
+
+    @property
+    def graphql_ide_html(self) -> str:
+        return get_graphql_ide_html(
+            subscription_enabled=self._ide_subscription_enabled,
+            replace_variables=self._ide_replace_variables,
+            graphql_ide=self.graphql_ide,
+        )

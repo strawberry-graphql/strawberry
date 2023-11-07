@@ -30,12 +30,12 @@ from strawberry.http.typevars import (
     Context,
     RootValue,
 )
-from strawberry.utils.graphiql import get_graphiql_html
 
 from .context import StrawberryDjangoContext
 
 if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse
+    from strawberry.http.ides import GraphQL_IDE
 
     from ..schema import BaseSchema
 
@@ -127,6 +127,8 @@ class AsyncDjangoHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class BaseView:
+    _ide_replace_variables = False
+
     def __init__(
         self,
         schema: BaseSchema,
@@ -142,11 +144,11 @@ class BaseView:
 
         super().__init__(**kwargs)
 
-    def render_graphiql(self, request: HttpRequest) -> HttpResponse:
+    def render_graphql_ide(self, request: HttpRequest) -> HttpResponse:
         try:
             template = Template(render_to_string("graphql/graphiql.html"))
         except TemplateDoesNotExist:
-            template = Template(get_graphiql_html(replace_variables=False))
+            template = Template(self.graphql_ide_html)
 
         context = {"SUBSCRIPTION_ENABLED": json.dumps(self.subscriptions_enabled)}
 
@@ -185,7 +187,9 @@ class GraphQLView(
     View,
 ):
     subscriptions_enabled = False
-    graphiql = True
+    # TODO: deprecate this
+    graphiql = None
+    graphql_ide: GraphQL_IDE = "graphiql"
     allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = DjangoHTTPRequestAdapter
@@ -220,7 +224,8 @@ class AsyncGraphQLView(
     View,
 ):
     subscriptions_enabled = False
-    graphiql = True
+    graphiql = None
+    graphql_ide: GraphQL_IDE = "graphiql"
     allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = AsyncDjangoHTTPRequestAdapter

@@ -16,6 +16,7 @@ from strawberry.channels import (
 )
 from strawberry.channels.handlers.base import ChannelsConsumer
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.typevars import Context, RootValue
 from tests.views.schema import Query, schema
 
@@ -136,7 +137,7 @@ class ChannelsHttpClient(HttpClient):
 
     def __init__(
         self,
-        graphiql: bool = True,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
@@ -147,7 +148,7 @@ class ChannelsHttpClient(HttpClient):
 
         self.http_app = DebuggableGraphQLHTTPConsumer.as_asgi(
             schema=schema,
-            graphiql=graphiql,
+            graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
         )
@@ -255,13 +256,13 @@ class ChannelsHttpClient(HttpClient):
 class SyncChannelsHttpClient(ChannelsHttpClient):
     def __init__(
         self,
-        graphiql: bool = True,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
         self.http_app = DebuggableSyncGraphQLHTTPConsumer.as_asgi(
             schema=schema,
-            graphiql=graphiql,
+            graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
         )

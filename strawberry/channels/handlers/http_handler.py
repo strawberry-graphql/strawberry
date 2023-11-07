@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import warnings
 from functools import cached_property
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
@@ -24,12 +25,12 @@ from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.types import FormData
 from strawberry.http.typevars import Context, RootValue
 from strawberry.unset import UNSET
-from strawberry.utils.graphiql import get_graphiql_html
 
 from .base import ChannelsConsumer
 
 if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse
+    from strawberry.http.ides import GraphQL_IDE
     from strawberry.http.types import HTTPMethod, QueryParams
     from strawberry.schema import BaseSchema
 
@@ -143,23 +144,38 @@ class SyncChannelsRequestAdapter(BaseChannelsRequestAdapter, SyncHTTPRequestAdap
 
 
 class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
+    graphql_ide_html: str
+
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: bool = True,
+        graphiql: Optional[bool] = None,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         subscriptions_enabled: bool = True,
         **kwargs: Any,
     ):
         self.schema = schema
-        self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.subscriptions_enabled = subscriptions_enabled
+        self._ide_subscriptions_enabled = subscriptions_enabled
+
+        if graphiql is not None:
+            warnings.warn(
+                "The `graphiql` argument is deprecated in favor of `graphql_ide`",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.graphql_ide = "graphiql" if graphiql else None
+        else:
+            self.graphql_ide = graphql_ide
+
         super().__init__(**kwargs)
 
-    def render_graphiql(self, request: ChannelsRequest) -> ChannelsResponse:
-        html = get_graphiql_html(self.subscriptions_enabled)
-        return ChannelsResponse(content=html.encode(), content_type="text/html")
+    def render_graphql_ide(self, request: ChannelsRequest) -> ChannelsResponse:
+        return ChannelsResponse(
+            content=self.graphql_ide_html.encode(), content_type="text/html"
+        )
 
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse

@@ -16,6 +16,7 @@ from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData, process_result
+from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
@@ -63,7 +64,7 @@ class AsyncBaseHTTPView(
     Generic[Request, Response, SubResponse, Context, RootValue],
 ):
     schema: BaseSchema
-    graphiql: bool
+    graphql_ide: GraphQL_IDE
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
 
     @property
@@ -81,12 +82,6 @@ class AsyncBaseHTTPView(
 
     @abc.abstractmethod
     async def get_root_value(self, request: Request) -> Optional[RootValue]:
-        ...
-
-    @abc.abstractmethod
-    def render_graphiql(self, request: Request) -> Response:
-        # TODO: this could be non abstract
-        # maybe add a get template function?
         ...
 
     @abc.abstractmethod
@@ -164,9 +159,9 @@ class AsyncBaseHTTPView(
         if not self.is_request_allowed(request_adapter):
             raise HTTPException(405, "GraphQL only supports GET and POST requests.")
 
-        if self.should_render_graphiql(request_adapter):
-            if self.graphiql:
-                return self.render_graphiql(request)
+        if self.should_render_graphql_ide(request_adapter):
+            if self.graphql_ide:
+                return self.render_graphql_ide(request)
             else:
                 raise HTTPException(404, "Not Found")
 

@@ -54,7 +54,7 @@ class MyView(
     async def get_root_value(self, request: Request) -> Optional[RootValue]:
         return None
 
-    def render_graphiql(self, request: Request) -> Response:
+    def render_graphql_ide(self, request: Request) -> Response:
         ...
 
     def create_response(

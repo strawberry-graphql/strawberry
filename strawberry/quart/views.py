@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Optional, cast
 
@@ -5,9 +6,9 @@ from quart import Request, Response, request
 from quart.views import View
 from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
 from strawberry.http.exceptions import HTTPException
+from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import Context, RootValue
-from strawberry.utils.graphiql import get_graphiql_html
 
 if TYPE_CHECKING:
     from quart.typing import ResponseReturnValue
@@ -16,19 +17,31 @@ if TYPE_CHECKING:
 
 
 class BaseGraphQLView:
+    _ide_subscription_enabled = False
+    graphql_ide_html: str
+
     def __init__(
         self,
         schema: "BaseSchema",
-        graphiql: bool = True,
+        graphiql: Optional[bool] = None,
+        graphql_ide: GraphQL_IDE = "graphiql",
         allow_queries_via_get: bool = True,
     ):
         self.schema = schema
-        self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
 
-    def render_graphiql(self, request: Request) -> Response:
-        template = get_graphiql_html(False)
-        return Response(template)
+        if graphiql is not None:
+            warnings.warn(
+                "The `graphiql` argument is deprecated in favor of `graphql_ide`",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.graphql_ide = "graphiql" if graphiql else None
+        else:
+            self.graphql_ide = graphql_ide
+
+    def render_graphql_ide(self, request: Request) -> Response:
+        return Response(self.graphql_ide_html)
 
     def create_response(
         self, response_data: "GraphQLHTTPResponse", sub_response: Response

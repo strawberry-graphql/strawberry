@@ -13,6 +13,7 @@ from aiohttp.test_utils import TestClient, TestServer
 from strawberry.aiohttp.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
@@ -67,13 +68,13 @@ class GraphQLView(BaseGraphQLView):
 class AioHttpClient(HttpClient):
     def __init__(
         self,
-        graphiql: bool = True,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
         view = GraphQLView(
             schema=schema,
-            graphiql=graphiql,
+            graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             keep_alive=False,
         )

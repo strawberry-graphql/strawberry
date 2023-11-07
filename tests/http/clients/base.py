@@ -15,6 +15,7 @@ from typing import (
 from typing_extensions import Literal
 
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
 
 JSON = Dict[str, object]
@@ -40,7 +41,7 @@ class HttpClient(abc.ABC):
     @abc.abstractmethod
     def __init__(
         self,
-        graphiql: bool = True,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
