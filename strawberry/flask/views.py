@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -20,11 +21,11 @@ from strawberry.http.sync_base_view import (
 )
 from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import Context, RootValue
-from strawberry.utils.graphiql import get_graphiql_html
 
 if TYPE_CHECKING:
     from flask.typing import ResponseReturnValue
     from strawberry.http import GraphQLHTTPResponse
+    from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema.base import BaseSchema
 
 
@@ -62,20 +63,29 @@ class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
 
 
 class BaseGraphQLView:
+    _ide_subscription_enabled = False
+    graphql_ide: Optional[GraphQL_IDE]
+
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: bool = True,
+        graphiql: Optional[bool] = None,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
     ):
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
 
-    def render_graphiql(self, request: Request) -> Response:
-        template = get_graphiql_html(False)
-
-        return render_template_string(template)  # type: ignore
+        if graphiql is not None:
+            warnings.warn(
+                "The `graphiql` argument is deprecated in favor of `graphql_ide`",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.graphql_ide = "graphiql" if graphiql else None
+        else:
+            self.graphql_ide = graphql_ide
 
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: Response
@@ -111,6 +121,9 @@ class GraphQLView(
                 response=e.reason,
                 status=e.status_code,
             )
+
+    def render_graphql_ide(self, request: Request) -> Response:
+        return render_template_string(self.graphql_ide_html)  # type: ignore
 
 
 class AsyncFlaskHTTPRequestAdapter(AsyncHTTPRequestAdapter):
@@ -169,3 +182,6 @@ class AsyncGraphQLView(
                 response=e.reason,
                 status=e.status_code,
             )
+
+    async def render_graphql_ide(self, request: Request) -> Response:
+        return render_template_string(self.graphql_ide_html)  # type: ignore

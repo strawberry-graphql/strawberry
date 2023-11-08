@@ -9,6 +9,7 @@ from typing_extensions import Literal
 from sanic import Sanic
 from sanic.request import Request as SanicRequest
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.sanic.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult
@@ -48,7 +49,8 @@ class GraphQLView(BaseGraphQLView[object, Query]):
 class SanicHttpClient(HttpClient):
     def __init__(
         self,
-        graphiql: bool = True,
+        graphiql: Optional[bool] = None,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
@@ -58,6 +60,7 @@ class SanicHttpClient(HttpClient):
         view = GraphQLView.as_view(
             schema=schema,
             graphiql=graphiql,
+            graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
         )

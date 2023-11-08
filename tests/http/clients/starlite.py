@@ -11,6 +11,7 @@ from starlite.exceptions import WebSocketDisconnect
 from starlite.testing import TestClient
 from starlite.testing.websocket_test_session import WebSocketTestSession
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.ides import GraphQL_IDE
 from strawberry.starlite import make_graphql_controller
 from strawberry.starlite.controller import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.types import ExecutionResult
@@ -54,12 +55,14 @@ class DebuggableGraphQLWSHandler(DebuggableGraphQLWSMixin, GraphQLWSHandler):
 class StarliteHttpClient(HttpClient):
     def __init__(
         self,
-        graphiql: bool = True,
+        graphiql: Optional[bool] = None,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
         self.create_app(
             graphiql=graphiql,
+            graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
         )

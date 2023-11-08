@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from datetime import timedelta
 from inspect import signature
 from typing import (
@@ -41,13 +42,13 @@ from strawberry.http.typevars import (
     RootValue,
 )
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from strawberry.utils.graphiql import get_graphiql_html
 
 if TYPE_CHECKING:
     from starlette.types import ASGIApp
 
     from strawberry.fastapi.context import MergedContext
     from strawberry.http import GraphQLHTTPResponse
+    from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
     from strawberry.types import ExecutionResult
 
@@ -148,7 +149,8 @@ class GraphQLRouter(
         self,
         schema: BaseSchema,
         path: str = "",
-        graphiql: bool = True,
+        graphiql: Optional[bool] = None,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
@@ -170,7 +172,6 @@ class GraphQLRouter(
             on_shutdown=on_shutdown,
         )
         self.schema = schema
-        self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
@@ -182,6 +183,16 @@ class GraphQLRouter(
         )
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
+
+        if graphiql is not None:
+            warnings.warn(
+                "The `graphiql` argument is deprecated in favor of `graphql_ide`",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.graphql_ide = "graphiql" if graphiql else None
+        else:
+            self.graphql_ide = graphql_ide
 
         @self.get(
             path,
@@ -280,8 +291,8 @@ class GraphQLRouter(
             default=None,
         )
 
-    def render_graphiql(self, request: Request) -> HTMLResponse:
-        return HTMLResponse(get_graphiql_html())
+    async def render_graphql_ide(self, request: Request) -> HTMLResponse:
+        return HTMLResponse(self.graphql_ide_html)
 
     async def process_result(
         self, request: Request, result: ExecutionResult

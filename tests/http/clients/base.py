@@ -19,6 +19,7 @@ from typing import (
 from typing_extensions import Literal
 
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
 
 logger = logging.getLogger("strawberry.test.http_client")
@@ -84,7 +85,8 @@ class HttpClient(abc.ABC):
     @abc.abstractmethod
     def __init__(
         self,
-        graphiql: bool = True,
+        graphiql: Optional[bool] = None,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):

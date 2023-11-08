@@ -301,7 +301,7 @@ class Query:
 
 
 schema = strawberry.Schema(query=Query)
-app = MyGraphQL(schema, graphiql=True)
+app = MyGraphQL(schema)
 ```
 
 ## Usage with GraphQL
