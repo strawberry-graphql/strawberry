@@ -156,19 +156,6 @@ class BaseView:
 
         super().__init__(**kwargs)
 
-    def render_graphql_ide(self, request: HttpRequest) -> HttpResponse:
-        try:
-            template = Template(render_to_string("graphql/graphiql.html"))
-        except TemplateDoesNotExist:
-            template = Template(self.graphql_ide_html)
-
-        context = {"SUBSCRIPTION_ENABLED": json.dumps(self.subscriptions_enabled)}
-
-        response = TemplateResponse(request=request, template=None, context=context)
-        response.content = template.render(RequestContext(request, context))
-
-        return response
-
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: HttpResponse
     ) -> HttpResponse:
@@ -226,6 +213,19 @@ class GraphQLView(
                 status=e.status_code,
             )
 
+    def render_graphql_ide(self, request: HttpRequest) -> HttpResponse:
+        try:
+            template = Template(render_to_string("graphql/graphiql.html"))
+        except TemplateDoesNotExist:
+            template = Template(self.graphql_ide_html)
+
+        context = {"SUBSCRIPTION_ENABLED": json.dumps(self.subscriptions_enabled)}
+
+        response = TemplateResponse(request=request, template=None, context=context)
+        response.content = template.render(RequestContext(request, context))
+
+        return response
+
 
 class AsyncGraphQLView(
     BaseView,
@@ -271,3 +271,16 @@ class AsyncGraphQLView(
                 content=e.reason,
                 status=e.status_code,
             )
+
+    async def render_graphql_ide(self, request: HttpRequest) -> HttpResponse:
+        try:
+            template = Template(render_to_string("graphql/graphiql.html"))
+        except TemplateDoesNotExist:
+            template = Template(self.graphql_ide_html)
+
+        context = {"SUBSCRIPTION_ENABLED": json.dumps(self.subscriptions_enabled)}
+
+        response = TemplateResponse(request=request, template=None, context=context)
+        response.content = template.render(RequestContext(request, context))
+
+        return response
