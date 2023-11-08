@@ -122,7 +122,7 @@ class AsyncDjangoHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def content_type(self) -> Optional[str]:
-        return self.request.content_type
+        return self.headers.get("Content-type")
 
     async def get_body(self) -> str:
         return self.request.body.decode()

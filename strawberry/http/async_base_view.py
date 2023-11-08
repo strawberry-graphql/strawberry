@@ -19,7 +19,11 @@ from graphql import GraphQLError
 from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
-from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData, process_result
+from strawberry.http import (
+    GraphQLHTTPResponse,
+    GraphQLRequestData,
+    process_result,
+)
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
@@ -28,6 +32,7 @@ from strawberry.types.graphql import OperationType
 
 from .base import BaseView
 from .exceptions import HTTPException
+from .parse_content_type import parse_content_type
 from .types import FormData, HTTPMethod, QueryParams
 from .typevars import Context, Request, Response, RootValue, SubResponse
 
@@ -300,14 +305,13 @@ class AsyncBaseHTTPView(
     async def parse_http_body(
         self, request: AsyncHTTPRequestAdapter
     ) -> GraphQLRequestData:
-        content_type = request.content_type or ""
+        content_type, params = parse_content_type(request.content_type or "")
 
-        if "application/json" in content_type:
+        if content_type == "application/json":
             data = self.parse_json(await request.get_body())
-        elif content_type.startswith("multipart/form-data"):
+        elif content_type == "multipart/form-data":
             data = await self.parse_multipart(request)
-        elif content_type.startswith("multipart/mixed"):
-            # TODO: do a check that checks if this is a multipart subscription
+        elif self._is_multipart_subscriptions(content_type, params):
             data = await self.parse_multipart_subscriptions(request)
         elif request.method == "GET":
             data = self.parse_query_params(request.query_params)

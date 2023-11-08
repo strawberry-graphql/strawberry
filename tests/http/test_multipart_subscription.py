@@ -56,9 +56,7 @@ async def test_multipart_subscription(http_client: HttpClient):
             "query": 'subscription { echo(message: "Hello world", delay: 0.2) }',
         },
         headers={
-            # TODO: fix headers :) second one is for django
             "content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
-            "CONTENT_TYPE": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
         },
     )
 

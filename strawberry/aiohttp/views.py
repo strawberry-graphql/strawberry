@@ -74,7 +74,7 @@ class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def content_type(self) -> Optional[str]:
-        return self.request.content_type
+        return self.headers.get("content-type")
 
 
 class GraphQLView(

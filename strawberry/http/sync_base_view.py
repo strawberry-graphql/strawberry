@@ -16,7 +16,11 @@ from graphql import GraphQLError
 from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
-from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData, process_result
+from strawberry.http import (
+    GraphQLHTTPResponse,
+    GraphQLRequestData,
+    process_result,
+)
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
@@ -25,6 +29,7 @@ from strawberry.types.graphql import OperationType
 
 from .base import BaseView
 from .exceptions import HTTPException
+from .parse_content_type import parse_content_type
 from .types import HTTPMethod, QueryParams
 from .typevars import Context, Request, Response, RootValue, SubResponse
 
@@ -144,14 +149,18 @@ class SyncBaseHTTPView(
             raise HTTPException(400, "File(s) missing in form data") from e
 
     def parse_http_body(self, request: SyncHTTPRequestAdapter) -> GraphQLRequestData:
-        content_type = request.content_type or ""
+        content_type, params = parse_content_type(request.content_type or "")
 
-        if "application/json" in content_type:
+        if content_type == "application/json":
             data = self.parse_json(request.body)
-        elif content_type.startswith("multipart/form-data"):
+        elif content_type == "multipart/form-data":
             data = self.parse_multipart(request)
         elif request.method == "GET":
             data = self.parse_query_params(request.query_params)
+        elif self._is_multipart_subscriptions(content_type, params):
+            raise HTTPException(
+                400, "Multipart subcriptions are not supported in sync mode"
+            )
         else:
             raise HTTPException(400, "Unsupported content type")
 
