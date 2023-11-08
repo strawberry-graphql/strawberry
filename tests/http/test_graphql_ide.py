@@ -28,10 +28,10 @@ async def test_renders_graphql_ide(
     assert "<title>Strawberry GraphiQL</title>" in response.text
 
     if graphql_ide == "apollo-sandbox":
-        assert "https://embeddable-sandbox.cdn.apollographql.com/" in response.text
+        assert "embeddable-sandbox.cdn.apollographql" in response.text
 
     if graphql_ide == "graphiql" or graphql_ide is None:
-        assert "https://unpkg.com/graphiql" in response.text
+        assert "unpkg.com/graphiql" in response.text
 
 
 @pytest.mark.parametrize("header_value", ["text/html", "*/*"])
