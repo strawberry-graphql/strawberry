@@ -91,13 +91,13 @@ class Query:
 
     @strawberry.field(permission_classes=[AlwaysFailPermission])
     def always_fail(self) -> Optional[str]:
-        return "Hey"
+        return "Hey"  # pragma: no cover
 
     @strawberry.field(permission_classes=[ConditionalFailPermission])
     def conditional_fail(
         self, sleep: Optional[float] = None, fail: bool = False
     ) -> str:
-        return "Hey"
+        return "Hey"  # pragma: no cover
 
     @strawberry.field
     async def error(self, message: str) -> AsyncGenerator[str, None]:
@@ -285,7 +285,7 @@ class Subscription:
     async def conditional_fail(
         self, sleep: Optional[float] = None, fail: bool = False
     ) -> AsyncGenerator[str, None]:
-        yield "Hey"
+        yield "Hey"  # pragma: no cover
 
 
 class Schema(strawberry.Schema):
