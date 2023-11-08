@@ -157,7 +157,7 @@ def make_graphql_controller(
     schema: BaseSchema,
     path: str = "",
     graphiql: Optional[bool] = None,
-    graphql_ide: GraphQL_IDE = "graphiql",
+    graphql_ide: Optional[GraphQL_IDE] = "graphiql",
     allow_queries_via_get: bool = True,
     keep_alive: bool = False,
     keep_alive_interval: float = 1,
@@ -195,6 +195,7 @@ def make_graphql_controller(
 
     schema_ = schema
     allow_queries_via_get_ = allow_queries_via_get
+    graphql_ide_: Optional[GraphQL_IDE]
 
     if graphiql is not None:
         warnings.warn(
@@ -257,7 +258,7 @@ def make_graphql_controller(
                     media_type=MediaType.TEXT,
                 )
 
-        def render_graphql_ide(self, request: Request[Any, Any]) -> Response[str]:
+        async def render_graphql_ide(self, request: Request[Any, Any]) -> Response[str]:
             return Response(self.graphql_ide_html, media_type=MediaType.HTML)
 
         def create_response(

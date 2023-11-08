@@ -192,7 +192,7 @@ class GraphQL(
 
         await response(scope, receive, send)
 
-    def render_graphql_ide(self, request: Union[Request, WebSocket]) -> Response:
+    async def render_graphql_ide(self, request: Union[Request, WebSocket]) -> Response:
         return HTMLResponse(self.graphql_ide_html)
 
     def create_response(

@@ -58,7 +58,7 @@ class FlaskHttpClient(HttpClient):
     def __init__(
         self,
         graphiql: Optional[bool] = None,
-        graphql_ide: GraphQL_IDE = "graphiql",
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):

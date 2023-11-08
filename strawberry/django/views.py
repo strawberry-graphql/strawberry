@@ -129,12 +129,13 @@ class AsyncDjangoHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 class BaseView:
     _ide_replace_variables = False
+    graphql_ide_html: str
 
     def __init__(
         self,
         schema: BaseSchema,
         graphiql: Optional[str] = None,
-        graphql_ide: GraphQL_IDE = "graphiql",
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         subscriptions_enabled: bool = False,
         **kwargs: Any,
@@ -198,9 +199,8 @@ class GraphQLView(
     View,
 ):
     subscriptions_enabled = False
-    # TODO: deprecate this
-    graphiql = None
-    graphql_ide: GraphQL_IDE = "graphiql"
+    graphiql: Optional[bool] = None
+    graphql_ide: Optional[GraphQL_IDE] = "graphiql"
     allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = DjangoHTTPRequestAdapter
@@ -235,13 +235,13 @@ class AsyncGraphQLView(
     View,
 ):
     subscriptions_enabled = False
-    graphiql = None
-    graphql_ide: GraphQL_IDE = "graphiql"
+    graphiql: Optional[bool] = None
+    graphql_ide: Optional[GraphQL_IDE] = "graphiql"
     allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = AsyncDjangoHTTPRequestAdapter
 
-    @classonlymethod
+    @classonlymethod  # pyright: ignore[reportIncompatibleMethodOverride]
     def as_view(cls, **initkwargs: Any) -> Callable[..., HttpResponse]:
         # This code tells django that this view is async, see docs here:
         # https://docs.djangoproject.com/en/3.1/topics/async/#async-views

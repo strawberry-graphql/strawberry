@@ -119,7 +119,7 @@ class GraphQLView(
         else:
             self.graphql_ide = graphql_ide
 
-    def render_graphql_ide(self, request: web.Request) -> web.Response:
+    async def render_graphql_ide(self, request: web.Request) -> web.Response:
         return web.Response(text=self.graphql_ide_html, content_type="text/html")
 
     async def get_sub_response(self, request: web.Request) -> web.Response:

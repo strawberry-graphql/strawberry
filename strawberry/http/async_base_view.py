@@ -64,7 +64,7 @@ class AsyncBaseHTTPView(
     Generic[Request, Response, SubResponse, Context, RootValue],
 ):
     schema: BaseSchema
-    graphql_ide: GraphQL_IDE
+    graphql_ide: Optional[GraphQL_IDE]
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
 
     @property
@@ -88,6 +88,10 @@ class AsyncBaseHTTPView(
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: SubResponse
     ) -> Response:
+        ...
+
+    @abc.abstractmethod
+    async def render_graphql_ide(self, request: Request) -> Response:
         ...
 
     async def execute_operation(
@@ -161,7 +165,7 @@ class AsyncBaseHTTPView(
 
         if self.should_render_graphql_ide(request_adapter):
             if self.graphql_ide:
-                return self.render_graphql_ide(request)
+                return await self.render_graphql_ide(request)
             else:
                 raise HTTPException(404, "Not Found")
 

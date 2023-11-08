@@ -145,6 +145,7 @@ class SyncChannelsRequestAdapter(BaseChannelsRequestAdapter, SyncHTTPRequestAdap
 
 class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
     graphql_ide_html: str
+    graphql_ide: Optional[GraphQL_IDE] = "graphiql"
 
     def __init__(
         self,
@@ -171,11 +172,6 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
             self.graphql_ide = graphql_ide
 
         super().__init__(**kwargs)
-
-    def render_graphql_ide(self, request: ChannelsRequest) -> ChannelsResponse:
-        return ChannelsResponse(
-            content=self.graphql_ide_html.encode(), content_type="text/html"
-        )
 
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse
@@ -251,6 +247,11 @@ class GraphQLHTTPConsumer(
     async def get_sub_response(self, request: ChannelsRequest) -> TemporalResponse:
         return TemporalResponse()
 
+    async def render_graphql_ide(self, request: ChannelsRequest) -> ChannelsResponse:
+        return ChannelsResponse(
+            content=self.graphql_ide_html.encode(), content_type="text/html"
+        )
+
 
 class SyncGraphQLHTTPConsumer(
     BaseGraphQLHTTPConsumer,
@@ -286,10 +287,15 @@ class SyncGraphQLHTTPConsumer(
     def get_sub_response(self, request: ChannelsRequest) -> TemporalResponse:
         return TemporalResponse()
 
+    def render_graphql_ide(self, request: ChannelsRequest) -> ChannelsResponse:
+        return ChannelsResponse(
+            content=self.graphql_ide_html.encode(), content_type="text/html"
+        )
+
     # Sync channels is actually async, but it uses database_sync_to_async to call
     # handlers in a threadpool. Check SyncConsumer's documentation for more info:
     # https://github.com/django/channels/blob/main/channels/consumer.py#L104
-    @database_sync_to_async
+    @database_sync_to_async  # pyright: ignore[reportIncompatibleMethodOverride]
     def run(
         self,
         request: ChannelsRequest,

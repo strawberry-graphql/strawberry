@@ -56,12 +56,13 @@ class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
 
 class BaseGraphQLView:
     _ide_subscription_enabled = False
+    graphql_ide: Optional[GraphQL_IDE]
 
     def __init__(
         self,
         schema: BaseSchema,
         graphiql: Optional[bool] = None,
-        graphql_ide: GraphQL_IDE = "graphiql",
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
     ):
         self.schema = schema
@@ -77,9 +78,6 @@ class BaseGraphQLView:
             self.graphql_ide = "graphiql" if graphiql else None
         else:
             self.graphql_ide = graphql_ide
-
-    def render_graphql_ide(self, request: Request) -> Response:
-        return render_template_string(self.graphql_ide_html)  # type: ignore
 
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: Response
@@ -115,6 +113,9 @@ class GraphQLView(
                 response=e.reason,
                 status=e.status_code,
             )
+
+    def render_graphql_ide(self, request: Request) -> Response:
+        return render_template_string(self.graphql_ide_html)  # type: ignore
 
 
 class AsyncFlaskHTTPRequestAdapter(AsyncHTTPRequestAdapter):
@@ -173,3 +174,6 @@ class AsyncGraphQLView(
                 response=e.reason,
                 status=e.status_code,
             )
+
+    async def render_graphql_ide(self, request: Request) -> Response:
+        return render_template_string(self.graphql_ide_html)  # type: ignore

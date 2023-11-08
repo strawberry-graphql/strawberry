@@ -1,5 +1,6 @@
 import json
 import pathlib
+from typing import Optional
 from typing_extensions import Literal
 
 GraphQL_IDE = Literal["graphiql", "apollo-sandbox"]
@@ -8,7 +9,7 @@ GraphQL_IDE = Literal["graphiql", "apollo-sandbox"]
 def get_graphql_ide_html(
     subscription_enabled: bool = True,
     replace_variables: bool = True,
-    graphql_ide: GraphQL_IDE = "graphiql",
+    graphql_ide: Optional[GraphQL_IDE] = "graphiql",
 ) -> str:
     here = pathlib.Path(__file__).parents[1]
 

@@ -17,6 +17,7 @@ from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData, process_result
+from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
@@ -71,7 +72,8 @@ class SyncBaseHTTPView(
     Generic[Request, Response, SubResponse, Context, RootValue],
 ):
     schema: BaseSchema
-    graphiql: bool
+    graphiql: Optional[bool]
+    graphql_ide: Optional[GraphQL_IDE]
     request_adapter_class: Callable[[Request], SyncHTTPRequestAdapter]
 
     # Methods that need to be implemented by individual frameworks

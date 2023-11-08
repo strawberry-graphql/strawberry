@@ -25,7 +25,7 @@ class BaseRequestProtocol(Protocol):
 
 
 class BaseView(Generic[Request]):
-    graphql_ide: GraphQL_IDE
+    graphql_ide: Optional[GraphQL_IDE]
 
     # TODO: we might remove this in future :)
     _ide_replace_variables: bool = True

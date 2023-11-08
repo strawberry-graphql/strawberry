@@ -148,7 +148,7 @@ class GraphQLRouter(
         schema: BaseSchema,
         path: str = "",
         graphiql: Optional[bool] = None,
-        graphql_ide: GraphQL_IDE = "graphiql",
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
@@ -289,7 +289,7 @@ class GraphQLRouter(
             default=None,
         )
 
-    def render_graphql_ide(self, request: Request) -> HTMLResponse:
+    async def render_graphql_ide(self, request: Request) -> HTMLResponse:
         return HTMLResponse(self.graphql_ide_html)
 
     async def process_result(

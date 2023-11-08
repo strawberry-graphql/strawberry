@@ -103,7 +103,7 @@ class GraphQLView(
         self,
         schema: BaseSchema,
         graphiql: Optional[bool] = None,
-        graphql_ide: GraphQL_IDE = "graphiql",
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         json_encoder: Optional[Type[json.JSONEncoder]] = None,
         json_dumps_params: Optional[Dict[str, Any]] = None,
@@ -147,7 +147,7 @@ class GraphQLView(
     ) -> Context:
         return {"request": request, "response": response}  # type: ignore
 
-    def render_graphql_ide(self, request: Request) -> HTTPResponse:
+    async def render_graphql_ide(self, request: Request) -> HTTPResponse:
         return html(self.graphql_ide_html)
 
     async def get_sub_response(self, request: Request) -> TemporalResponse:
