@@ -25,7 +25,7 @@ async def test_renders_graphql_ide(
 
     assert response.status_code == 200
     assert "text/html" in content_type
-    assert "<title>Strawberry GraphiQL</title>" in response.text
+    assert "<title>Strawberry" in response.text
 
     if graphql_ide == "apollo-sandbox":
         assert "embeddable-sandbox.cdn.apollographql" in response.text

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Strawberry GraphiQL</title>
+    <title>Strawberry Apollo Sandbox</title>
     <link
       rel="icon"
       href="data:image/svg+xml,
@@ -18,85 +18,18 @@
         overflow: hidden;
       }
 
-      #graphiql {
+      #embedded-sandbox {
+        width: 100vw;
         height: 100vh;
-        display: flex;
-      }
-
-      .docExplorerHide {
-        display: none;
-      }
-
-      .doc-explorer-contents {
-        overflow-y: hidden !important;
-      }
-
-      .docExplorerWrap {
-        width: unset !important;
-        min-width: unset !important;
-      }
-
-      .graphiql-explorer-actions select {
-        margin-left: 4px;
       }
     </style>
-
-    <script
-      crossorigin
-      src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"
-      integrity="sha384-tMH8h3BGESGckSAVGZ82T9n90ztNXxvdwvdM6UoR56cYcf+0iGXBliJ29D+wZ/x8"
-    ></script>
-    <script
-      crossorigin
-      src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"
-      integrity="sha384-bm7MnzvK++ykSwVJ2tynSE5TRdN+xL418osEVF2DE/L/gfWHj91J2Sphe582B1Bh"
-    ></script>
-
-    <script
-      crossorigin
-      src="https://unpkg.com/js-cookie@3.0.5/dist/js.cookie.min.js"
-      integrity="sha384-/vxhYfM1LENRhdpZ8dwEsQn/X4VhpbEZSiU4m/FwR+PVpzar4fkEOw8FP9Y+OfQN"
-    ></script>
-
-    <link
-      crossorigin
-      rel="stylesheet"
-      href="https://unpkg.com/graphiql@3.0.5/graphiql.min.css"
-      integrity="sha384-yz3/sqpuplkA7msMo0FE4ekg0xdwdvZ8JX9MVZREsxipqjU4h8IRfmAMRcb1QpUy"
-    />
-
-    <link
-      crossorigin
-      rel="stylesheet"
-      href="https://unpkg.com/@graphiql/plugin-explorer@0.3.4/dist/style.css"
-      integrity="sha384-kOrlMT58B3t0hTVIPFqWyg1oL4DKvxHNcC1X2qugv4fXd9ehKULhhjDLvBi3HoEK"
-    />
   </head>
 
   <body>
-    <div style="width: 100%; height: 100%" id="embedded-sandbox"></div>
+    <div id="embedded-sandbox"></div>
 
     <script src="https://embeddable-sandbox.cdn.apollographql.com/_latest/embeddable-sandbox.umd.production.min.js"></script>
     <script>
-      const EXAMPLE_QUERY = `# Welcome to Apollo Sandbox for Strawberry 🍓
-      #
-      # Type queries into this side of the screen, and you will see intelligent
-      # typeaheads aware of the current GraphQL type schema and live syntax and
-      # validation errors highlighted within the text.
-      #
-      # GraphQL queries typically start with a "{" character. Lines that starts
-      # with a # are ignored.
-      #
-      # An example GraphQL query might look like:
-      #
-      #     {
-      #       field(arg: "value") {
-      #         subField
-      #       }
-      #     }
-      #
-      `;
-
       new window.EmbeddedSandbox({
         target: "#embedded-sandbox",
         initialEndpoint: window.location.href,
