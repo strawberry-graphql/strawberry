@@ -31,7 +31,7 @@ def _get_http_client_classes() -> Generator[Any, None, None]:
                 importlib.import_module(f".{module}", package="tests.http.clients"),
                 client,
             )
-        except ImportError:
+        except ImportError as e:
             client_class = None
 
         yield pytest.param(

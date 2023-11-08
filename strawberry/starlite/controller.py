@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Union, cast
@@ -35,7 +36,6 @@ from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_P
 from strawberry.subscriptions.protocols.graphql_transport_ws import (
     WS_4406_PROTOCOL_NOT_ACCEPTABLE,
 )
-from strawberry.utils.graphiql import get_graphiql_html
 
 from .handlers.graphql_transport_ws_handler import (
     GraphQLTransportWSHandler as BaseGraphQLTransportWSHandler,
@@ -47,6 +47,7 @@ if TYPE_CHECKING:
 
     from starlite.types import AnyCallable, Dependencies
     from strawberry.http import GraphQLHTTPResponse
+    from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
 
     MergedContext = Union[
@@ -155,7 +156,8 @@ class BaseContext:
 def make_graphql_controller(
     schema: BaseSchema,
     path: str = "",
-    graphiql: bool = True,
+    graphiql: Optional[bool] = None,
+    graphql_ide: Optional[GraphQL_IDE] = "graphiql",
     allow_queries_via_get: bool = True,
     keep_alive: bool = False,
     keep_alive_interval: float = 1,
@@ -193,7 +195,17 @@ def make_graphql_controller(
 
     schema_ = schema
     allow_queries_via_get_ = allow_queries_via_get
-    graphiql_ = graphiql
+    graphql_ide_: Optional[GraphQL_IDE]
+
+    if graphiql is not None:
+        warnings.warn(
+            "The `graphiql` argument is deprecated in favor of `graphql_ide`",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        graphql_ide_ = "graphiql" if graphiql else None
+    else:
+        graphql_ide_ = graphql_ide
 
     class GraphQLController(
         Controller,
@@ -223,7 +235,7 @@ def make_graphql_controller(
 
         schema: BaseSchema = schema_
         allow_queries_via_get = allow_queries_via_get_
-        graphiql = graphiql_
+        graphql_ide = graphql_ide_
 
         async def execute_request(
             self,
@@ -246,9 +258,8 @@ def make_graphql_controller(
                     media_type=MediaType.TEXT,
                 )
 
-        def render_graphiql(self, request: Request[Any, Any]) -> Response[str]:
-            html = get_graphiql_html()
-            return Response(html, media_type=MediaType.HTML)
+        async def render_graphql_ide(self, request: Request[Any, Any]) -> Response[str]:
+            return Response(self.graphql_ide_html, media_type=MediaType.HTML)
 
         def create_response(
             self, response_data: GraphQLHTTPResponse, sub_response: Response[bytes]

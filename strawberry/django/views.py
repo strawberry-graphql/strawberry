@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -30,12 +31,12 @@ from strawberry.http.typevars import (
     Context,
     RootValue,
 )
-from strawberry.utils.graphiql import get_graphiql_html
 
 from .context import StrawberryDjangoContext
 
 if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse
+    from strawberry.http.ides import GraphQL_IDE
 
     from ..schema import BaseSchema
 
@@ -127,33 +128,33 @@ class AsyncDjangoHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class BaseView:
+    _ide_replace_variables = False
+    graphql_ide_html: str
+
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: bool = True,
+        graphiql: Optional[str] = None,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         subscriptions_enabled: bool = False,
         **kwargs: Any,
     ):
         self.schema = schema
-        self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.subscriptions_enabled = subscriptions_enabled
 
+        if graphiql is not None:
+            warnings.warn(
+                "The `graphiql` argument is deprecated in favor of `graphql_ide`",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.graphql_ide = "graphiql" if graphiql else None
+        else:
+            self.graphql_ide = graphql_ide
+
         super().__init__(**kwargs)
-
-    def render_graphiql(self, request: HttpRequest) -> HttpResponse:
-        try:
-            template = Template(render_to_string("graphql/graphiql.html"))
-        except TemplateDoesNotExist:
-            template = Template(get_graphiql_html(replace_variables=False))
-
-        context = {"SUBSCRIPTION_ENABLED": json.dumps(self.subscriptions_enabled)}
-
-        response = TemplateResponse(request=request, template=None, context=context)
-        response.content = template.render(RequestContext(request, context))
-
-        return response
 
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: HttpResponse
@@ -185,7 +186,8 @@ class GraphQLView(
     View,
 ):
     subscriptions_enabled = False
-    graphiql = True
+    graphiql: Optional[bool] = None
+    graphql_ide: Optional[GraphQL_IDE] = "graphiql"
     allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = DjangoHTTPRequestAdapter
@@ -211,6 +213,19 @@ class GraphQLView(
                 status=e.status_code,
             )
 
+    def render_graphql_ide(self, request: HttpRequest) -> HttpResponse:
+        try:
+            template = Template(render_to_string("graphql/graphiql.html"))
+        except TemplateDoesNotExist:
+            template = Template(self.graphql_ide_html)
+
+        context = {"SUBSCRIPTION_ENABLED": json.dumps(self.subscriptions_enabled)}
+
+        response = TemplateResponse(request=request, template=None, context=context)
+        response.content = template.render(RequestContext(request, context))
+
+        return response
+
 
 class AsyncGraphQLView(
     BaseView,
@@ -220,12 +235,13 @@ class AsyncGraphQLView(
     View,
 ):
     subscriptions_enabled = False
-    graphiql = True
+    graphiql: Optional[bool] = None
+    graphql_ide: Optional[GraphQL_IDE] = "graphiql"
     allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = AsyncDjangoHTTPRequestAdapter
 
-    @classonlymethod
+    @classonlymethod  # pyright: ignore[reportIncompatibleMethodOverride]
     def as_view(cls, **initkwargs: Any) -> Callable[..., HttpResponse]:
         # This code tells django that this view is async, see docs here:
         # https://docs.djangoproject.com/en/3.1/topics/async/#async-views
@@ -255,3 +271,16 @@ class AsyncGraphQLView(
                 content=e.reason,
                 status=e.status_code,
             )
+
+    async def render_graphql_ide(self, request: HttpRequest) -> HttpResponse:
+        try:
+            template = Template(render_to_string("graphql/graphiql.html"))
+        except TemplateDoesNotExist:
+            template = Template(self.graphql_ide_html)
+
+        context = {"SUBSCRIPTION_ENABLED": json.dumps(self.subscriptions_enabled)}
+
+        response = TemplateResponse(request=request, template=None, context=context)
+        response.content = template.render(RequestContext(request, context))
+
+        return response
