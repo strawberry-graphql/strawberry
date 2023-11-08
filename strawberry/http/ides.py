@@ -3,7 +3,7 @@ import pathlib
 from typing import Optional
 from typing_extensions import Literal
 
-GraphQL_IDE = Literal["graphiql", "apollo-sandbox"]
+GraphQL_IDE = Literal["graphiql", "apollo-sandbox", "pathfinder"]
 
 
 def get_graphql_ide_html(
@@ -15,6 +15,8 @@ def get_graphql_ide_html(
 
     if graphql_ide == "apollo-sandbox":
         path = here / "static/apollo-sandbox.html"
+    elif graphql_ide == "pathfinder":
+        path = here / "static/pathfinder.html"
     else:
         path = here / "static/graphiql.html"
 

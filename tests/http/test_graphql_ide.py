@@ -7,11 +7,11 @@ from .clients.base import HttpClient
 
 
 @pytest.mark.parametrize("header_value", ["text/html", "*/*"])
-@pytest.mark.parametrize("graphql_ide", ["graphiql", "apollo-sandbox"])
+@pytest.mark.parametrize("graphql_ide", ["graphiql", "apollo-sandbox", "pathfinder"])
 async def test_renders_graphql_ide(
     header_value: str,
     http_client_class: Type[HttpClient],
-    graphql_ide: Literal["graphiql", "apollo-sandbox", None],
+    graphql_ide: Literal["graphiql", "apollo-sandbox", "pathfinder", None],
 ):
     if graphql_ide is None:
         http_client = http_client_class()
@@ -29,6 +29,9 @@ async def test_renders_graphql_ide(
 
     if graphql_ide == "apollo-sandbox":
         assert "embeddable-sandbox.cdn.apollographql" in response.text
+
+    if graphql_ide == "pathfinder":
+        assert "@pathfinder-ide/react" in response.text
 
     if graphql_ide == "graphiql" or graphql_ide is None:
         assert "unpkg.com/graphiql" in response.text
