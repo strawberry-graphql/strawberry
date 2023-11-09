@@ -21,6 +21,7 @@ def test_with_class_context_getter():
     class Query:
         @strawberry.field
         def abc(self, info: Info[Any, Any]) -> str:
+            assert isinstance(info.context, CustomContext)
             assert info.context.request is not None
             assert info.context.strawberry == "rocks"
             return "abc"
@@ -36,10 +37,7 @@ def test_with_class_context_getter():
 
     schema = strawberry.Schema(query=Query)
     graphql_controller = make_graphql_controller(
-        path="/graphql",
-        schema=schema,
-        context_getter=get_context,
-        context_type=CustomContext,
+        path="/graphql", schema=schema, context_getter=get_context
     )
     app = Litestar(
         route_handlers=[graphql_controller],
@@ -68,6 +66,7 @@ def test_with_dict_context_getter():
     class Query:
         @strawberry.field
         def abc(self, info: Info[Any, Any]) -> str:
+            assert isinstance(info.context, dict)
             assert info.context.get("request") is not None
             assert info.context.get("strawberry") == "rocks"
             return "abc"
@@ -107,6 +106,7 @@ def test_without_context_getter():
     class Query:
         @strawberry.field
         def abc(self, info: Info[Any, Any]) -> str:
+            assert isinstance(info.context, dict)
             assert info.context.get("request") is not None
             assert info.context.get("strawberry") is None
             return "abc"

@@ -52,7 +52,6 @@ from .handlers.graphql_ws_handler import GraphQLWSHandler as BaseGraphQLWSHandle
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
-    from typing_extensions import TypeAlias
 
     from litestar.types import AnyCallable, Dependencies
     from strawberry.http import GraphQLHTTPResponse
@@ -88,7 +87,6 @@ class WebSocketContextDict(TypedDict):
     socket: WebSocket
 
 
-CustomContext: TypeAlias = Union[dict, BaseContext]
 MergedContext = Union[
     BaseContext, WebSocketContextDict, HTTPContextDict, Dict[str, Any]
 ]
@@ -103,7 +101,7 @@ async def _none_root_value_getter() -> None:
 
 
 async def _context_getter_ws(
-    custom_context: Optional[CustomContext], socket: WebSocket
+    custom_context: Optional[Any], socket: WebSocket
 ) -> MergedContext:
     if isinstance(custom_context, BaseContext):
         custom_context.websocket = socket
@@ -125,7 +123,7 @@ def _response_getter() -> Response:
 
 
 async def _context_getter_http(
-    custom_context: Optional[CustomContext],
+    custom_context: Optional[Any],
     response: Response,
     request: Request[Any, Any, Any],
 ) -> MergedContext:
@@ -232,7 +230,7 @@ class GraphQLController(
     async def execute_request(
         self,
         request: Request[Any, Any, Any],
-        context: CustomContext,
+        context: Any,
         root_value: Any,
     ) -> Response[Union[GraphQLResource, str]]:
         try:
@@ -277,7 +275,7 @@ class GraphQLController(
     async def handle_http_get(
         self,
         request: Request[Any, Any, Any],
-        context: CustomContext,
+        context: Any,
         root_value: Any,
         response: Response,
     ) -> Response[Union[GraphQLResource, str]]:
@@ -293,7 +291,7 @@ class GraphQLController(
     async def handle_http_post(
         self,
         request: Request[Any, Any, Any],
-        context: CustomContext,
+        context: Any,
         root_value: Any,
         response: Response,
     ) -> Response[Union[GraphQLResource, str]]:
@@ -324,7 +322,7 @@ class GraphQLController(
     async def websocket_endpoint(
         self,
         socket: WebSocket,
-        context_ws: CustomContext,
+        context_ws: Any,
         root_value: Any,
     ) -> None:
         async def _get_context():
@@ -382,7 +380,6 @@ def make_graphql_controller(
     root_value_getter: Optional[AnyCallable] = None,
     # TODO: context typevar
     context_getter: Optional[AnyCallable] = None,
-    context_type: Type[Union[BaseContext, dict]] = dict,
     subscription_protocols: Tuple[str, ...] = (
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
         GRAPHQL_WS_PROTOCOL,
@@ -393,13 +390,6 @@ def make_graphql_controller(
         custom_context_getter_ = _none_custom_context_getter
     else:
         custom_context_getter_ = context_getter
-
-    # Quite hacky, but needed so Litestar does not crash when validating dependency arguments.
-    # The clean way would be to use `Dependancy(skip_validation)` on `_context_getter_http`/`_context_getter_ws`
-    # but it does not seems to work as of now.
-    global CustomContext  # noqa: PLW0603
-    CustomContext = Union[context_type, None]  # type: ignore
-    _context_getter_http.__annotations__["custom_context"] = CustomContext
 
     if root_value_getter is None:
         root_value_getter_ = _none_root_value_getter
