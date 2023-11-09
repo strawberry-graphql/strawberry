@@ -1,4 +1,4 @@
-"""Starlite integration for strawberry-graphql."""
+"""Litestar integration for strawberry-graphql."""
 
 from __future__ import annotations
 
@@ -167,7 +167,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         return await self._get_root_value()
 
 
-class StarliteRequestAdapter(AsyncHTTPRequestAdapter):
+class LitestarRequestAdapter(AsyncHTTPRequestAdapter):
     def __init__(self, request: Request[Any, Any, Any]) -> None:
         self.request = request
 
@@ -211,7 +211,7 @@ class GraphQLController(
         "response": Provide(_response_getter, sync_to_thread=True),
     }
 
-    request_adapter_class = StarliteRequestAdapter
+    request_adapter_class = LitestarRequestAdapter
     graphql_ws_handler_class: Type[GraphQLWSHandler] = GraphQLWSHandler
     graphql_transport_ws_handler_class: Type[
         GraphQLTransportWSHandler
@@ -314,7 +314,7 @@ class GraphQLController(
     async def get_root_value(
         self, request: Request[Any, Any, Any]
     ) -> RootValue | None:  # pragma: no cover
-        msg = "`get_root_value` is not used by Starlite's controller"
+        msg = "`get_root_value` is not used by Litestar's controller"
         raise ValueError(msg)
 
     async def get_sub_response(self, request: Request[Any, Any, Any]) -> Response:
