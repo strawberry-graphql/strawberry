@@ -238,7 +238,7 @@ class GraphQLController(
                 request,
                 # TODO: check the dependency, above, can we make it so that
                 # we don't need to type ignore here?
-                context=context,  # type: ignore
+                context=context,
                 root_value=root_value,
             )
         except HTTPException as e:
