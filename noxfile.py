@@ -32,6 +32,7 @@ INTEGRATIONS = [
     "quart",
     "sanic",
     "starlite",
+    "litestar",
     "pydantic",
 ]
 
@@ -86,6 +87,7 @@ def tests_starlette(session: Session, starlette: str) -> None:
         "quart",
         "sanic",
         "starlite",
+        "litestar",
     ],
 )
 def tests_integrations(session: Session, integration: str) -> None:

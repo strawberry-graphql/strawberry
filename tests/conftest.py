@@ -35,6 +35,7 @@ def pytest_collection_modifyitems(config: pytest.Config, items: List[pytest.Item
             "pydantic",
             "sanic",
             "starlite",
+            "litestar",
         ]
 
         for marker in markers:
