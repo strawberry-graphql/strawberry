@@ -13,7 +13,7 @@ from litestar.testing.websocket_test_session import WebSocketTestSession
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.litestar import make_graphql_controller
-from strawberry.starlite.controller import GraphQLTransportWSHandler, GraphQLWSHandler
+from strawberry.litestar.controller import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
@@ -34,7 +34,7 @@ def custom_context_dependency() -> str:
     return "Hi!"
 
 
-async def starlite_get_context(request: Request = None):
+async def litestar_get_context(request: Request = None):
     return get_context({"request": request})
 
 
@@ -71,7 +71,7 @@ class LitestarHttpClient(HttpClient):
         BaseGraphQLController = make_graphql_controller(
             schema=schema,
             path="/graphql",
-            context_getter=starlite_get_context,
+            context_getter=litestar_get_context,
             root_value_getter=get_root_value,
             **kwargs,
         )
