@@ -629,7 +629,7 @@ def test_warning_about_async_get_results_hooks_in_sync_context():
 
 
 @pytest.mark.asyncio
-async def test_dont_swallow_errors_in_parsing_hooks():
+async def test_non_parsing_errors_are_not_swallowed_by_parsing_hooks():
     class MyExtension(SchemaExtension):
         def on_parse(self):
             raise Exception("This shouldn't be swallowed")
@@ -650,7 +650,7 @@ async def test_dont_swallow_errors_in_parsing_hooks():
         await schema.execute(query)
 
 
-def test_on_parsing_end_called_when_errors():
+def test_on_parsing_end_is_called_with_parsing_errors():
     execution_errors = False
 
     class MyExtension(SchemaExtension):
