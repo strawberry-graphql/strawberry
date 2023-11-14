@@ -102,12 +102,12 @@ async def execute(
                             execution_context.query, **execution_context.parse_options
                         )
 
-                except GraphQLError as error:
-                    execution_context.errors = [error]
-                    process_errors([error], execution_context)
+                except GraphQLError as exc:
+                    execution_context.errors = [exc]
+                    process_errors([exc], execution_context)
                     return ExecutionResult(
                         data=None,
-                        errors=[error],
+                        errors=[exc],
                         extensions=await extensions_runner.get_extensions_results(),
                     )
 
@@ -196,12 +196,12 @@ def execute_sync(
                             execution_context.query, **execution_context.parse_options
                         )
 
-                except GraphQLError as error:
-                    execution_context.errors = [error]
-                    process_errors([error], execution_context)
+                except GraphQLError as exc:
+                    execution_context.errors = [exc]
+                    process_errors([exc], execution_context)
                     return ExecutionResult(
                         data=None,
-                        errors=[error],
+                        errors=[exc],
                         extensions=extensions_runner.get_extensions_results_sync(),
                     )
 
