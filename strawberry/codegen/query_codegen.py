@@ -101,8 +101,7 @@ if TYPE_CHECKING:
         VariableDefinitionNode,
     )
 
-    from strawberry.schema import Schema
-
+    from .schema_adapter import SchemaLike
     from .types import GraphQLArgumentValue, GraphQLSelection, GraphQLType
 
 
@@ -302,7 +301,7 @@ class QueryCodegenPluginManager:
 class QueryCodegen:
     def __init__(
         self,
-        schema: Schema,
+        schema: SchemaLike,
         plugins: List[QueryCodegenPlugin],
         console_plugin: Optional[ConsolePlugin] = None,
     ):
@@ -545,7 +544,7 @@ class QueryCodegen:
             not isinstance(field_type, StrawberryType)
             and field_type in self.schema.schema_converter.scalar_registry
         ):
-            field_type = self.schema.schema_converter.scalar_registry[field_type]  # type: ignore
+            field_type = self.schema.schema_converter.scalar_registry[field_type]
 
         if isinstance(field_type, ScalarWrapper):
             python_type = field_type.wrap
@@ -637,9 +636,10 @@ class QueryCodegen:
         assert field, f"{parent_type.name},{selection.name.value}"
 
         field_type = self._get_field_type(field.type)
-
         return GraphQLField(
-            field.name, selection.alias.value if selection.alias else None, field_type
+            field.name,
+            selection.alias.value if selection.alias else None,
+            field_type,
         )
 
     def _unwrap_type(
@@ -660,8 +660,8 @@ class QueryCodegen:
         elif isinstance(type_, StrawberryList):
             type_, wrapper = self._unwrap_type(type_.of_type)
             wrapper = (
-                GraphQLList if wrapper is None else lambda t: GraphQLList(wrapper(t))  # type: ignore[misc]
-            )
+                GraphQLList if wrapper is None else lambda t: GraphQLList(wrapper(t))
+            )  # type: ignore[misc]
 
         elif isinstance(type_, LazyType):
             return self._unwrap_type(type_.resolve_type())
@@ -686,12 +686,9 @@ class QueryCodegen:
         # but insertion order is maintained in python3.6+ (for CPython) and
         # guaranteed for all python implementations in python3.7+, so that
         # should be pretty safe.
-        if parent_type.type_var_map:
+        if getattr(parent_type, "type_var_map", None):
             parent_type_name = (
-                "".join(
-                    c.__name__  # type: ignore[union-attr]
-                    for c in parent_type.type_var_map.values()
-                )
+                "".join(c.__name__ for c in parent_type.type_var_map.values())  # type: ignore[union-attr]
                 + parent_type.name
             )
 

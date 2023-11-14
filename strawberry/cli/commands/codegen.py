@@ -3,15 +3,17 @@ from __future__ import annotations
 import functools
 import importlib
 import inspect
-from pathlib import Path  # noqa: TCH003
+from pathlib import Path
 from typing import List, Optional, Type
 
 import rich
 import typer
+from graphql.utilities import build_schema
 
 from strawberry.cli.app import app
 from strawberry.cli.utils import load_schema
 from strawberry.codegen import ConsolePlugin, QueryCodegen, QueryCodegenPlugin
+from strawberry.codegen.schema_adapter import GraphQLSchemaWrapper, SchemaLike
 
 
 def _is_codegen_plugin(obj: object) -> bool:
@@ -123,7 +125,12 @@ def codegen(
     if not query:
         return
 
-    schema_symbol = load_schema(schema, app_dir)
+    schema_symbol: SchemaLike
+    if schema.endswith(".graphql"):
+        with Path(schema).open() as input_schema:
+            schema_symbol = GraphQLSchemaWrapper(build_schema(input_schema.read()))
+    else:
+        schema_symbol = load_schema(schema, app_dir)
 
     console_plugin_type = _load_plugin(cli_plugin) if cli_plugin else ConsolePlugin
     console_plugin = console_plugin_type(output_dir)
