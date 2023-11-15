@@ -344,7 +344,7 @@ Other directives you may need to specifically include when relevant.
 - `@shareable`
 - `@tag`
 
-For example:
+For example, adding the following directives:
 
 ```python
 import strawberry
