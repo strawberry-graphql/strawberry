@@ -660,7 +660,7 @@ class QueryCodegen:
         elif isinstance(type_, StrawberryList):
             type_, wrapper = self._unwrap_type(type_.of_type)
             wrapper = (
-                GraphQLList if wrapper is None else lambda t: GraphQLList(wrapper(t))  # type: ignore[misc]
+                GraphQLList if wrapper is None else lambda t: GraphQLList(wrapper(t))
             )
 
         elif isinstance(type_, LazyType):
