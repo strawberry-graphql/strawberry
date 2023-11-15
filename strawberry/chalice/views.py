@@ -22,7 +22,7 @@ class ChaliceHTTPRequestAdapter(SyncHTTPRequestAdapter):
 
     @property
     def query_params(self) -> QueryParams:
-        return self.request.query_params or {}  # type: ignore
+        return self.request.query_params or {}
 
     @property
     def body(self) -> Union[str, bytes]:
