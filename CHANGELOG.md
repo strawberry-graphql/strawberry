@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.214.0 - 2023-11-15
+--------------------
+
+This release updates the GraphiQL packages to their latest versions:
+
+- `graphiql@3.0.9`
+- `@graphiql/plugin-explorer@1.0.2`
+
+Contributed by [Rodrigo Feijao](https://github.com/rodrigofeijao) via [PR #3227](https://github.com/strawberry-graphql/strawberry/pull/3227/)
+
+
 0.213.0 - 2023-11-08
 --------------------
 
