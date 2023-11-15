@@ -81,7 +81,7 @@ type Mutation {
 
 <Note>
 
-Mutations with void-result go against [GQL best practices](https://graphql-rules.com/rules/mutation-payload)
+Mutations with void-result go against [this community-created guide on GQL best practices](https://graphql-rules.com/rules/mutation-payload).
 
 </Note>
 
@@ -137,7 +137,7 @@ type Mutation {
 
 ## Nested mutations
 
-To avoid a graph becoming too large and to improve discoverability, it can be helpful to group mutations in a namespace, as described by [Namespacing by separation of concerns](https://www.apollographql.com/docs/technotes/TN0012-namespacing-by-separation-of-concern/).
+To avoid a graph becoming too large and to improve discoverability, it can be helpful to group mutations in a namespace, as described by [Apollo's guide on Namespacing by separation of concerns](https://www.apollographql.com/docs/technotes/TN0012-namespacing-by-separation-of-concern/).
 
 ```graphql
 type Mutation {
@@ -197,5 +197,5 @@ mutation (
 }
 ```
 
-For more details, see [Namespaces for serial mutations](https://www.apollographql.com/docs/technotes/TN0012-namespacing-by-separation-of-concern/#namespaces-for-serial-mutations) and [Interactive Guide to GraphQL Queries: Aliases and Variables](https://rapidapi.com/guides/graphql-aliases-variables).
+For more details, see [Apollo's guide on Namespaces for serial mutations](https://www.apollographql.com/docs/technotes/TN0012-namespacing-by-separation-of-concern/#namespaces-for-serial-mutations) and [Rapid API's Interactive Guide to GraphQL Queries: Aliases and Variables](https://rapidapi.com/guides/graphql-aliases-variables).
 </Note>
