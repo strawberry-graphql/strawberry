@@ -362,7 +362,7 @@ class CommonType:
     woops: bool = strawberry.field(directives=[Inaccessible()])
 ```
 
-Will result in:
+Will result in the following GraphQL schema:
 
 ```graphql
 schema
