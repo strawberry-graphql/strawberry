@@ -154,7 +154,7 @@ To achieve this, we introduce the concept of the
 function.
 
 Continuing with this example of books and authors, resolvers can be defined to
-provides values to the fields:
+provide values to the fields:
 
 ```python
 def get_author_for_book(root) -> "Author":
