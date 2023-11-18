@@ -21,8 +21,8 @@ from strawberry.unset import UNSET
 if TYPE_CHECKING:
     from typing_extensions import Literal
 
-    from strawberry.field import _RESOLVER_TYPE, StrawberryField
     from strawberry.extensions.field_extension import FieldExtension
+    from strawberry.field import _RESOLVER_TYPE, StrawberryField
     from strawberry.permission import BasePermission
 
 
