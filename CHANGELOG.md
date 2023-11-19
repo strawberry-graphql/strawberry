@@ -1,6 +1,20 @@
 CHANGELOG
 =========
 
+0.215.0 - 2023-11-19
+--------------------
+
+Adds an optional `extensions` parameter to `strawberry.federation.field`, with default value `None`. The key is passed through to `strawberry.field`, so the functionality is exactly as described [here](https://strawberry.rocks/docs/guides/field-extensions).
+
+Example:
+
+```python
+strawberry.federation.field(extensions=[InputMutationExtension()])
+```
+
+Contributed by [Bryan Ricker](https://github.com/bricker) via [PR #3239](https://github.com/strawberry-graphql/strawberry/pull/3239/)
+
+
 0.214.0 - 2023-11-15
 --------------------
 
