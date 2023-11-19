@@ -129,3 +129,31 @@
     reveal_type(i.a)
   out: |
     main:14: note: Revealed type is "builtins.str"
+
+- case: test_mismatched_annotations_sync_resolver
+  main: |
+    import strawberry
+
+    def some_resolver() -> int:
+        return 0
+
+    @strawberry.type
+    class User:
+        name: str = strawberry.field(resolver=some_resolver)
+
+  out: |
+    main:8: error: Incompatible types in assignment (expression has type "int", variable has type "str")  [assignment]
+
+- case: test_mismatched_annotations_async_resolver
+  main: |
+    import strawberry
+
+    async def some_resolver() -> int:
+        return 0
+
+    @strawberry.type
+    class User:
+        name: str = strawberry.field(resolver=some_resolver)
+
+  out: |
+    main:8: error: Incompatible types in assignment (expression has type "int", variable has type "str")  [assignment]
