@@ -14,7 +14,7 @@ class Fruit:
 @strawberry.federation.type
 class Query:
     @strawberry.field
-    def hello(self) -> str: # pragma: no cover
+    def hello(self) -> str:  # pragma: no cover
         return "hi"
 
 
