@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.215.1 - 2023-11-20
+--------------------
+
+Improved error message when supplying GlobalID format that relates to another type than the query itself.
+
+Contributed by [SD](https://github.com/sdobbelaere) via [PR #3194](https://github.com/strawberry-graphql/strawberry/pull/3194/)
+
+
 0.215.0 - 2023-11-19
 --------------------
 
