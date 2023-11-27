@@ -1,5 +1,6 @@
 from functools import lru_cache
 from typing import Iterator, Optional
+from graphql import GraphQLError
 
 from strawberry.extensions.base_extension import SchemaExtension
 from strawberry.schema.execute import parse_document
@@ -36,7 +37,10 @@ class ParserCache(SchemaExtension):
     def on_parse(self) -> Iterator[None]:
         execution_context = self.execution_context
 
-        execution_context.graphql_document = self.cached_parse_document(
-            execution_context.query, **execution_context.parse_options
-        )
+        try:
+            execution_context.graphql_document = self.cached_parse_document(
+                execution_context.query, **execution_context.parse_options
+            )
+        except GraphQLError as error:
+            execution_context.errors = [error]
         yield
