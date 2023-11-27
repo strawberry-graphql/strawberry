@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 import pytest
-from graphql import parse
+from graphql import GraphQLError, parse
 
 import strawberry
 from strawberry.extensions import MaxTokensLimiter, ParserCache
@@ -89,7 +89,14 @@ def test_parser_cache_extension_syntax_error(mock_parse):
 
     result = schema.execute_sync(query)
 
-    assert result.errors
+    assert result.errors == [
+        GraphQLError(
+            "Syntax Error: Expected Name, found <EOF>.\n\n"
+            "GraphQL request:1:14\n"
+            "1 | query { hello\n"
+            "  |              ^"
+        )
+    ]
     assert mock_parse.call_count == 1
 
 
