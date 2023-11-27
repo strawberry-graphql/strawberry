@@ -1,5 +1,6 @@
 from functools import lru_cache
 from typing import Iterator, Optional
+
 from graphql import GraphQLError
 
 from strawberry.extensions.base_extension import SchemaExtension
