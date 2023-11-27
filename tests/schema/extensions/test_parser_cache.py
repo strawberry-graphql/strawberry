@@ -76,6 +76,24 @@ def test_parser_cache_extension_arguments(mock_parse):
 
 
 @patch("strawberry.schema.execute.parse", wraps=parse)
+def test_parser_cache_extension_syntax_error(mock_parse):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self) -> str:
+            return "world"
+
+    schema = strawberry.Schema(query=Query, extensions=[ParserCache()])
+
+    query = "query { hello"
+
+    result = schema.execute_sync(query)
+
+    assert result.errors
+    assert mock_parse.call_count == 1
+
+
+@patch("strawberry.schema.execute.parse", wraps=parse)
 def test_parser_cache_extension_max_size(mock_parse):
     @strawberry.type
     class Query:
