@@ -80,7 +80,7 @@ def test_parser_cache_extension_syntax_error(mock_parse):
     @strawberry.type
     class Query:
         @strawberry.field
-        def hello(self) -> str:
+        def hello(self) -> str:  # pragma: no cover
             return "world"
 
     schema = strawberry.Schema(query=Query, extensions=[ParserCache()])
