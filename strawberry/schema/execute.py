@@ -152,7 +152,11 @@ async def execute(
     except (MissingQueryError, InvalidOperationTypeError) as e:
         raise e
     except Exception as exc:
-        error = GraphQLError(str(exc), original_error=exc)
+        error = (
+            exc
+            if isinstance(exc, GraphQLError)
+            else GraphQLError(str(exc), original_error=exc)
+        )
         execution_context.errors = [error]
         process_errors([error], execution_context)
         return ExecutionResult(
@@ -250,7 +254,11 @@ def execute_sync(
     except (MissingQueryError, InvalidOperationTypeError) as e:
         raise e
     except Exception as exc:
-        error = GraphQLError(str(exc), original_error=exc)
+        error = (
+            exc
+            if isinstance(exc, GraphQLError)
+            else GraphQLError(str(exc), original_error=exc)
+        )
         execution_context.errors = [error]
         process_errors([error], execution_context)
         return ExecutionResult(
