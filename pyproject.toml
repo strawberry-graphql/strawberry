@@ -96,8 +96,8 @@ types-toml = "^0.10.8"
 types-typed-ast = "^1.5.8"
 types-ujson = "^5.6.0"
 # added this here manually because poetry doesn't seem to be able to handle it =(
-botocore = "1.31.84"
-mypy = "1.7.0"
+botocore = "1.33.5"
+mypy = "1.7.1"
 pytest-mypy-plugins = ">=1.10,<4.0"
 types-protobuf = "^4.23.0.1"
 
