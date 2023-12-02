@@ -102,19 +102,13 @@ def test_basic_type_with_list():
 
 
 def test_basic_type_with_nested_model():
-    class Hobby(pydantic.BaseModel):
+    @first_class()
+    class HobbyType(pydantic.BaseModel):
         name: str
 
-    @strawberry.experimental.pydantic.type(Hobby)
-    class HobbyType:
-        name: strawberry.auto
-
-    class User(pydantic.BaseModel):
-        hobby: Hobby
-
-    @strawberry.experimental.pydantic.type(User)
-    class UserType:
-        hobby: strawberry.auto
+    @first_class()
+    class UserType(pydantic.BaseModel):
+        hobby: HobbyType
 
     @strawberry.type
     class Query:
@@ -133,19 +127,13 @@ def test_basic_type_with_nested_model():
 
 
 def test_basic_type_with_list_of_nested_model():
-    class Hobby(pydantic.BaseModel):
+    @first_class()
+    class HobbyType(pydantic.BaseModel):
         name: str
 
-    @strawberry.experimental.pydantic.type(Hobby)
-    class HobbyType:
-        name: strawberry.auto
-
-    class User(pydantic.BaseModel):
-        hobbies: List[Hobby]
-
-    @strawberry.experimental.pydantic.type(User)
-    class UserType:
-        hobbies: strawberry.auto
+    @first_class()
+    class UserType(pydantic.BaseModel):
+        hobbies: List[HobbyType]
 
     @strawberry.type
     class Query:
@@ -171,55 +159,15 @@ def test_basic_type_with_list_of_nested_model():
     ]
 
 
-def test_basic_type_with_extended_fields():
-    class UserModel(pydantic.BaseModel):
-        age: int
-
-    @strawberry.experimental.pydantic.type(UserModel)
-    class User:
-        name: str
-        age: strawberry.auto
-
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def user(self) -> User:
-            return User(name="Marco", age=100)
-
-    schema = strawberry.Schema(query=Query)
-
-    expected_schema = """
-    type Query {
-      user: User!
-    }
-
-    type User {
-      name: String!
-      age: Int!
-    }
-    """
-    assert str(schema) == textwrap.dedent(expected_schema).strip()
-
-    query = "{ user { name age } }"
-
-    result = schema.execute_sync(query)
-
-    assert not result.errors
-    assert result.data["user"]["name"] == "Marco"
-    assert result.data["user"]["age"] == 100
-
-
+@pytest.mark.xfail(reason="No support for resolvers yet")
 def test_type_with_custom_resolver():
-    class UserModel(pydantic.BaseModel):
-        age: int
-
     def get_age_in_months(root):
         return root.age * 12
 
-    @strawberry.experimental.pydantic.type(UserModel)
-    class User:
+    @first_class()
+    class User(pydantic.BaseModel):
+        age: int
         age_in_months: int = strawberry.field(resolver=get_age_in_months)
-        age: strawberry.auto
 
     @strawberry.type
     class Query:
@@ -239,26 +187,17 @@ def test_type_with_custom_resolver():
 
 
 def test_basic_type_with_union():
-    class BranchA(pydantic.BaseModel):
+    @first_class()
+    class BranchAType(pydantic.BaseModel):
         field_a: str
 
-    class BranchB(pydantic.BaseModel):
+    @first_class()
+    class BranchBType(pydantic.BaseModel):
         field_b: int
 
-    class User(pydantic.BaseModel):
-        union_field: Union[BranchA, BranchB]
-
-    @strawberry.experimental.pydantic.type(BranchA)
-    class BranchAType:
-        field_a: strawberry.auto
-
-    @strawberry.experimental.pydantic.type(BranchB)
-    class BranchBType:
-        field_b: strawberry.auto
-
-    @strawberry.experimental.pydantic.type(User)
-    class UserType:
-        union_field: strawberry.auto
+    @first_class()
+    class UserType(pydantic.BaseModel):
+        union_field: Union[BranchAType, BranchBType]
 
     @strawberry.type
     class Query:
@@ -276,59 +215,16 @@ def test_basic_type_with_union():
     assert result.data["user"]["unionField"]["fieldB"] == 10
 
 
-def test_basic_type_with_union_pydantic_types():
-    class BranchA(pydantic.BaseModel):
-        field_a: str
-
-    class BranchB(pydantic.BaseModel):
-        field_b: int
-
-    class User(pydantic.BaseModel):
-        union_field: Union[BranchA, BranchB]
-
-    @strawberry.experimental.pydantic.type(BranchA)
-    class BranchAType:
-        field_a: strawberry.auto
-
-    @strawberry.experimental.pydantic.type(BranchB)
-    class BranchBType:
-        field_b: strawberry.auto
-
-    @strawberry.experimental.pydantic.type(User)
-    class UserType:
-        union_field: strawberry.auto
-
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def user(self) -> UserType:
-            # note that BranchB is a pydantic type, not a strawberry type
-            return UserType(union_field=BranchB(field_b=10))
-
-    schema = strawberry.Schema(query=Query)
-
-    query = "{ user { unionField { ... on BranchBType { fieldB } } } }"
-
-    result = schema.execute_sync(query)
-
-    assert not result.errors
-    assert result.data["user"]["unionField"]["fieldB"] == 10
-
-
 def test_basic_type_with_enum():
     @strawberry.enum
     class UserKind(Enum):
         user = 0
         admin = 1
 
-    class User(pydantic.BaseModel):
+    @first_class()
+    class UserType(pydantic.BaseModel):
         age: int
         kind: UserKind
-
-    @strawberry.experimental.pydantic.type(User)
-    class UserType:
-        age: strawberry.auto
-        kind: strawberry.auto
 
     @strawberry.type
     class Query:
@@ -347,33 +243,21 @@ def test_basic_type_with_enum():
 
 
 def test_basic_type_with_interface():
-    class Base(pydantic.BaseModel):
+    @first_class(is_interface=True)
+    class BaseType(pydantic.BaseModel):
         base_field: str
 
-    class BranchA(Base):
+    @first_class()
+    class BranchAType(BaseType):
         field_a: str
 
-    class BranchB(Base):
+    @first_class()
+    class BranchBType(BaseType):
         field_b: int
 
-    class User(pydantic.BaseModel):
-        interface_field: Base
-
-    @strawberry.experimental.pydantic.interface(Base)
-    class BaseType:
-        base_field: strawberry.auto
-
-    @strawberry.experimental.pydantic.type(BranchA)
-    class BranchAType(BaseType):
-        field_a: strawberry.auto
-
-    @strawberry.experimental.pydantic.type(BranchB)
-    class BranchBType(BaseType):
-        field_b: strawberry.auto
-
-    @strawberry.experimental.pydantic.type(User)
-    class UserType:
-        interface_field: strawberry.auto
+    @first_class()
+    class UserType(pydantic.BaseModel):
+        interface_field: BaseType
 
     @strawberry.type
     class Query:
@@ -393,13 +277,10 @@ def test_basic_type_with_interface():
 
 
 def test_basic_type_with_optional_and_default():
-    class UserModel(pydantic.BaseModel):
+    @first_class()
+    class User(pydantic.BaseModel):
         age: int
         password: Optional[str] = pydantic.Field(default="ABC")
-
-    @strawberry.experimental.pydantic.type(UserModel, all_fields=True)
-    class User:
-        pass
 
     @strawberry.type
     class Query:
@@ -445,37 +326,3 @@ def test_basic_type_with_optional_and_default():
     assert not result.errors
     assert result.data["user"]["age"] == 1
     assert result.data["user"]["password"] is None
-
-
-@needs_pydantic_v1
-@pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="ConstrainedList with another model does not work with 3.8",
-)
-def test_basic_type_with_constrained_list():
-    class FriendList(pydantic.ConstrainedList):
-        min_items = 1
-
-    class UserModel(pydantic.BaseModel):
-        age: int
-        friend_names: FriendList[str]
-
-    @strawberry.experimental.pydantic.type(UserModel)
-    class User:
-        age: strawberry.auto
-        friend_names: strawberry.auto
-
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def user(self) -> User:
-            return User(age=1, friend_names=["A", "B"])
-
-    schema = strawberry.Schema(query=Query)
-
-    query = "{ user { friendNames } }"
-
-    result = schema.execute_sync(query)
-
-    assert not result.errors
-    assert result.data["user"]["friendNames"] == ["A", "B"]
