@@ -11,7 +11,7 @@ import pytest
 import strawberry
 from tests.experimental.pydantic.utils import needs_pydantic_v1
 
-from strawberry.experimental.pydantic.first_class import (
+from strawberry.experimental.pydantic.pydantic_first_class import (
     first_class,
 )
 
@@ -27,7 +27,7 @@ from strawberry.enum import EnumDefinition
 
 from strawberry.schema_directive import Location
 
-from strawberry.experimental.pydantic.first_class import register_first_class
+from strawberry.experimental.pydantic.pydantic_first_class import register_first_class
 
 
 def test_basic_type_field_list():

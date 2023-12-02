@@ -70,7 +70,7 @@ def first_class_process_basemodel(
     name = name or to_camel_case(model.__name__)
 
     interfaces = _get_interfaces(model)
-    fields = _get_strawberry_fields_from_basemodel(
+    fields: List[StrawberryField] = _get_strawberry_fields_from_basemodel(
         model, is_input=is_input, use_pydantic_alias=use_pydantic_alias
     )
     is_type_of = getattr(model, "is_type_of", None)
