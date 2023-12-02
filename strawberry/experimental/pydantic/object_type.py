@@ -124,7 +124,7 @@ if TYPE_CHECKING:
 
 
 def _get_strawberry_fields_from_pydantic(
-    model: Type[BaseModel],
+    model: Type[BaseModel], is_input: bool
 ) -> List[StrawberryField]:
     """Get all the strawberry fields off a pydantic BaseModel cls
 
@@ -141,7 +141,7 @@ def _get_strawberry_fields_from_pydantic(
     # BaseModel already has fields, so we need to get them from there
     model_fields: Dict[str, CompatModelField] = get_model_fields(model)
     for name, field in model_fields.items():
-        converted_type = replace_types_recursively(field.outer_type_, is_input=False)
+        converted_type = replace_types_recursively(field.outer_type_, is_input=is_input)
         if field.allow_none:
             converted_type = Optional[converted_type]
         fields.append(
@@ -163,8 +163,8 @@ def _get_strawberry_fields_from_pydantic(
     return fields
 
 
-def first_class_process_type(
-    cls: Type,
+def first_class_process_base_model(
+    model: Type[BaseModel],
     *,
     name: Optional[str] = None,
     is_input: bool = False,
@@ -173,21 +173,21 @@ def first_class_process_type(
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
 ):
-    name = name or to_camel_case(cls.__name__)
+    name = name or to_camel_case(model.__name__)
 
-    interfaces = _get_interfaces(cls)
-    fields = _get_strawberry_fields_from_pydantic(cls)
-    is_type_of = getattr(cls, "is_type_of", None)
-    resolve_type = getattr(cls, "resolve_type", None)
+    interfaces = _get_interfaces(model)
+    fields = _get_strawberry_fields_from_pydantic(model, is_input)
+    is_type_of = getattr(model, "is_type_of", None)
+    resolve_type = getattr(model, "resolve_type", None)
 
-    cls.__strawberry_definition__ = StrawberryObjectDefinition(
+    model.__strawberry_definition__ = StrawberryObjectDefinition(
         name=name,
         is_input=is_input,
         is_interface=is_interface,
         interfaces=interfaces,
         description=description,
         directives=directives,
-        origin=cls,
+        origin=model,
         extend=extend,
         fields=fields,
         is_type_of=is_type_of,
@@ -196,11 +196,11 @@ def first_class_process_type(
     # TODO: remove when deprecating _type_definition
     DeprecatedDescriptor(
         DEPRECATION_MESSAGES._TYPE_DEFINITION,
-        cls.__strawberry_definition__,
+        model.__strawberry_definition__,
         "_type_definition",
-    ).inject(cls)
+    ).inject(model)
 
-    return cls
+    return model
 
 
 def register_first_class(
@@ -233,7 +233,7 @@ def register_first_class(
 
     """
 
-    first_class_process_type(
+    first_class_process_base_model(
         model,
         name=name,
         is_input=is_input,
@@ -241,12 +241,33 @@ def register_first_class(
         description=description,
     )
 
-    # if is_input:
-    #     model._strawberry_input_type = cls  # type: ignore
-    # else:
-    #     model._strawberry_type = cls  # type: ignore
+    if is_input:
+        model._strawberry_input_type = model  # type: ignore
+    else:
+        model._strawberry_type = model  # type: ignore
 
     return model
+
+
+def first_class_type(
+    name: Optional[str] = None,
+    is_input: bool = False,
+    is_interface: bool = False,
+    description: Optional[str] = None,
+    ) -> Callable[[Type[PydanticModel]], Type[PydanticModel]]:
+    """A decorator to make a pydantic class work on strawberry without creating
+    a separate strawberry type."""
+    def wrap(model: Type[PydanticModel]) -> Type[PydanticModel]:
+        return register_first_class(
+            model,
+            name=name,
+            is_input=is_input,
+            is_interface=is_interface,
+            description=description,
+        )
+    return wrap
+    
+
 
 
 def type(
