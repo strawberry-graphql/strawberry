@@ -90,7 +90,7 @@ def test_basic_type_with_list():
             return User(age=1, friend_names=["A", "B"])
 
     schema = strawberry.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=True)
+        query=Query,
     )
 
     query = "{ user { friendNames } }"

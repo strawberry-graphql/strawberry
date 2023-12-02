@@ -37,10 +37,14 @@ def _get_strawberry_fields_from_basemodel(
         converted_type = replace_types_recursively(field.outer_type_, is_input=is_input)
         if field.allow_none:
             converted_type = Optional[converted_type]
+        graphql_before_case = (
+            field.alias or field.name if use_pydantic_alias else field.name
+        )
+        camel_case_name = to_camel_case(graphql_before_case)
         fields.append(
             StrawberryField(
                 python_name=name,
-                graphql_name=field.alias if use_pydantic_alias else None,
+                graphql_name=camel_case_name,
                 # always unset because we use default_factory instead
                 default=dataclasses.MISSING,
                 default_factory=get_default_factory_for_field(field),
@@ -128,7 +132,7 @@ def register_first_class(
 
     first_class_process_basemodel(
         model,
-        name=name,
+        name=name or to_camel_case(model.__name__),
         is_input=is_input,
         is_interface=is_interface,
         description=description,
@@ -153,7 +157,7 @@ def first_class(
 ) -> Callable[[Type[PydanticModel]], Type[PydanticModel]]:
     """A decorator to make a pydantic class work on strawberry without creating
     a separate strawberry type.
-    
+
     Example:
         @strawberry.experimental.pydantic.first_class()
         class User(BaseModel):
@@ -165,7 +169,7 @@ def first_class(
             @strawberry.field
             def user(self) -> User:
                 return User(id=1, name="Patrick")
-    
+
     """
 
     def wrap(model: Type[PydanticModel]) -> Type[PydanticModel]:
