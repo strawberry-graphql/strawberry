@@ -11,9 +11,8 @@ import pytest
 import strawberry
 from tests.experimental.pydantic.utils import needs_pydantic_v1
 
-from strawberry.experimental.pydantic.object_type import (
-    first_class_type,
-    register_first_class,
+from strawberry.experimental.pydantic.first_class import (
+    first_class,
 )
 
 from strawberry.types.types import StrawberryObjectDefinition
@@ -28,9 +27,11 @@ from strawberry.enum import EnumDefinition
 
 from strawberry.schema_directive import Location
 
+from strawberry.experimental.pydantic.first_class import register_first_class
+
 
 def test_basic_type_field_list():
-    @first_class_type()
+    @first_class()
     class User(pydantic.BaseModel):
         age: int
         password: Optional[str]
@@ -73,7 +74,7 @@ def test_referencing_other_models_fails_when_not_registered():
         match=("Cannot find a Strawberry Type for (.*) did you forget to register it?"),
     ):
 
-        @first_class_type()
+        @first_class()
         class User(pydantic.BaseModel):
             age: int
             password: Optional[str]
@@ -81,7 +82,7 @@ def test_referencing_other_models_fails_when_not_registered():
 
 
 def test_referencing_other_input_models_fails_when_not_registered():
-    @first_class_type()  # Not an input type so it should fail
+    @first_class()  # Not an input type so it should fail
     class Group(pydantic.BaseModel):
         name: str
 
@@ -90,7 +91,7 @@ def test_referencing_other_input_models_fails_when_not_registered():
         match=("Cannot find a Strawberry Type for (.*) did you forget to register it?"),
     ):
 
-        @first_class_type(is_input=True)
+        @first_class(is_input=True)
         class User(pydantic.BaseModel):
             age: int
             password: Optional[str]
@@ -98,11 +99,11 @@ def test_referencing_other_input_models_fails_when_not_registered():
 
 
 def test_referencing_other_registered_models():
-    @first_class_type()
+    @first_class()
     class Group(pydantic.BaseModel):
         name: str
 
-    @first_class_type()
+    @first_class()
     class User(pydantic.BaseModel):
         age: int
         group: Group
@@ -120,7 +121,7 @@ def test_referencing_other_registered_models():
 
 
 def test_list():
-    @first_class_type()
+    @first_class()
     class User(pydantic.BaseModel):
         friend_names: List[str]
 
@@ -135,11 +136,11 @@ def test_list():
 
 
 def test_list_of_types():
-    @first_class_type()
+    @first_class()
     class Friend(pydantic.BaseModel):
         name: str
 
-    @first_class_type()
+    @first_class()
     class User(pydantic.BaseModel):
         friends: Optional[List[Optional[Friend]]]
 
@@ -156,7 +157,7 @@ def test_list_of_types():
 
 
 def test_optional_and_default():
-    @first_class_type()
+    @first_class()
     class User(pydantic.BaseModel):
         age: int
         name: str = pydantic.Field("Michael", description="The user name")
@@ -202,7 +203,7 @@ def test_optional_and_default():
 
 
 def test_type_with_aliased_pydantic_field():
-    @first_class_type()
+    @first_class()
     class User(pydantic.BaseModel):
         age_: int = pydantic.Field(..., alias="age")
         password: Optional[str]
@@ -222,15 +223,15 @@ def test_type_with_aliased_pydantic_field():
 
 
 def test_union():
-    @first_class_type()
+    @first_class()
     class BranchAType(pydantic.BaseModel):
         field_a: str
 
-    @first_class_type()
+    @first_class()
     class BranchBType(pydantic.BaseModel):
         field_b: int
 
-    @first_class_type()
+    @first_class()
     class UserType(pydantic.BaseModel):
         age: int
         union_field: Union[BranchAType, BranchBType]
@@ -255,7 +256,7 @@ def test_enum():
         user = 0
         admin = 1
 
-    @first_class_type()
+    @first_class()
     class UserType(pydantic.BaseModel):
         age: int
         kind: UserKind
@@ -274,19 +275,19 @@ def test_enum():
 
 
 def test_interface():
-    @first_class_type(is_interface=True)
+    @first_class(is_interface=True)
     class BaseType(pydantic.BaseModel):
         base_field: str
 
-    @first_class_type()
+    @first_class()
     class BranchAType(BaseType):
         field_a: str
 
-    @first_class_type()
+    @first_class()
     class BranchBType(BaseType):
         field_b: int
 
-    @first_class_type()
+    @first_class()
     class UserType(pydantic.BaseModel):
         age: int
         interface_field: BaseType
@@ -310,20 +311,20 @@ def test_interface():
 # Or just store them in a dict rather than on the model itself.
 @pytest.mark.xfail(reason="Need to fix this")
 def test_both_output_and_input_type():
-    @first_class_type(name="WorkInput", is_input=True)
-    @first_class_type(name="WorkOutput")
+    @first_class(name="WorkInput", is_input=True)
+    @first_class(name="WorkOutput")
     class Work(pydantic.BaseModel):
         time: float
 
-    @first_class_type(name="UserInput", is_input=True)
-    @first_class_type(name="UserOutput")
+    @first_class(name="UserInput", is_input=True)
+    @first_class(name="UserOutput")
     class User(pydantic.BaseModel):
         name: str
         # Note that pydantic v2 requires an explicit default of None for Optionals
         work: Optional[Work] = None
 
-    @first_class_type(name="GroupInput", is_input=True)
-    @first_class_type(name="GroupOutput")
+    @first_class(name="GroupInput", is_input=True)
+    @first_class(name="GroupOutput")
     class Group(pydantic.BaseModel):
         users: List[User]
 
@@ -386,7 +387,7 @@ type WorkOutput {
 # No support yet for strawberry field in pydantic models
 @pytest.mark.xfail(reason="Need to implement strawberry.field in pydantic models")
 def test_deprecated_fields():
-    @first_class_type()
+    @first_class()
     class UserType(pydantic.BaseModel):
         age: int = strawberry.field(deprecation_reason="Because")
         password: Optional[str]
@@ -418,7 +419,7 @@ def test_permission_classes():
         ) -> bool:
             return False
 
-    @first_class_type()
+    @first_class()
     class UserType(pydantic.BaseModel):
         age: int = strawberry.field(permission_classes=[IsAuthenticated])
         password: Optional[str]
@@ -446,7 +447,7 @@ def test_field_directives():
     class Sensitive:
         reason: str
 
-    @first_class_type()
+    @first_class()
     class UserType(pydantic.BaseModel):
         age: int = strawberry.field(directives=[Sensitive(reason="GDPR")])
         password: Optional[str]
@@ -485,7 +486,7 @@ def test_alias_fields():
 
 @pytest.mark.xfail(reason="Need to implement strawberry.field in pydantic models")
 def test_field_metadata():
-    @first_class_type()
+    @first_class()
     class UserType(pydantic.BaseModel):
         private: bool
         public: bool
@@ -503,7 +504,7 @@ def test_field_metadata():
 
 
 def test_annotated():
-    @first_class_type(is_input=True)
+    @first_class(is_input=True)
     class UserType(pydantic.BaseModel):
         a: Annotated[int, "metadata"]
 
@@ -516,7 +517,7 @@ def test_annotated():
 
 
 def test_nested_annotated():
-    @first_class_type()
+    @first_class()
     class UserType(pydantic.BaseModel):
         a: Optional[Annotated[int, "metadata"]]
         b: Optional[List[Annotated[int, "metadata"]]]
