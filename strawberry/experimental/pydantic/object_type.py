@@ -124,7 +124,7 @@ if TYPE_CHECKING:
 
 
 def _get_strawberry_fields_from_pydantic(
-    model: Type[BaseModel], is_input: bool
+    model: Type[BaseModel], is_input: bool, use_pydantic_alias: bool
 ) -> List[StrawberryField]:
     """Get all the strawberry fields off a pydantic BaseModel cls
 
@@ -147,7 +147,7 @@ def _get_strawberry_fields_from_pydantic(
         fields.append(
             StrawberryField(
                 python_name=name,
-                graphql_name=field.alias,
+                graphql_name=field.alias if use_pydantic_alias else None,
                 # always unset because we use default_factory instead
                 default=dataclasses.MISSING,
                 default_factory=get_default_factory_for_field(field),
@@ -172,11 +172,14 @@ def first_class_process_base_model(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
+    use_pydantic_alias: bool = True,
 ):
     name = name or to_camel_case(model.__name__)
 
     interfaces = _get_interfaces(model)
-    fields = _get_strawberry_fields_from_pydantic(model, is_input)
+    fields = _get_strawberry_fields_from_pydantic(
+        model, is_input=is_input, use_pydantic_alias=use_pydantic_alias
+    )
     is_type_of = getattr(model, "is_type_of", None)
     resolve_type = getattr(model, "resolve_type", None)
 
@@ -210,6 +213,7 @@ def register_first_class(
     is_input: bool = False,
     is_interface: bool = False,
     description: Optional[str] = None,
+    use_pydantic_alias: bool = True,
 ) -> Type[PydanticModel]:
     """Registers a pydantic model as a first class strawberry type.
 
@@ -239,6 +243,7 @@ def register_first_class(
         is_input=is_input,
         is_interface=is_interface,
         description=description,
+        use_pydantic_alias=use_pydantic_alias,
     )
 
     if is_input:
@@ -255,9 +260,11 @@ def first_class_type(
     is_input: bool = False,
     is_interface: bool = False,
     description: Optional[str] = None,
-    ) -> Callable[[Type[PydanticModel]], Type[PydanticModel]]:
+    use_pydantic_alias: bool = True,
+) -> Callable[[Type[PydanticModel]], Type[PydanticModel]]:
     """A decorator to make a pydantic class work on strawberry without creating
     a separate strawberry type."""
+
     def wrap(model: Type[PydanticModel]) -> Type[PydanticModel]:
         return register_first_class(
             model,
@@ -265,10 +272,10 @@ def first_class_type(
             is_input=is_input,
             is_interface=is_interface,
             description=description,
+            use_pydantic_alias=use_pydantic_alias,
         )
-    return wrap
-    
 
+    return wrap
 
 
 def type(

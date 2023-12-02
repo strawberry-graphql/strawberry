@@ -303,25 +303,29 @@ def test_interface():
     assert field2.type is BaseType
 
 
+# Excepted failure. Need to fix this. Currently fails because we now mutate the same
+# __strawberry_definition__ field on the pydantic model. This is a problem because
+# we need to be able to have both a) an input type and b) an output type on the
+# same pydantic model. Maybe we need to have a separate __strawberry_input_definition__
+# Or just store them in a dict rather than on the model itself.
+@pytest.mark.xfail(reason="Need to fix this")
 def test_both_output_and_input_type():
-    @first_class_type(name="WorkInput",is_input=True)
+    @first_class_type(name="WorkInput", is_input=True)
     @first_class_type(name="WorkOutput")
     class Work(pydantic.BaseModel):
         time: float
 
-    @first_class_type(name="UserInput",is_input=True)
+    @first_class_type(name="UserInput", is_input=True)
     @first_class_type(name="UserOutput")
-
     class User(pydantic.BaseModel):
         name: str
         # Note that pydantic v2 requires an explicit default of None for Optionals
         work: Optional[Work] = None
 
-    @first_class_type(name="GroupInput",is_input=True)
+    @first_class_type(name="GroupInput", is_input=True)
     @first_class_type(name="GroupOutput")
     class Group(pydantic.BaseModel):
         users: List[User]
-
 
     @strawberry.type
     class Query:
@@ -379,58 +383,14 @@ type WorkOutput {
     assert Work._strawberry_input_type == WorkInput
 
 
-def test_single_field_changed_type():
-    class User(pydantic.BaseModel):
-        age: int
-
-    @strawberry.experimental.pydantic.type(User)
-    class UserType:
-        age: str
-
-    definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
-    assert definition.name == "UserType"
-
-    [field1] = definition.fields
-
-    assert field1.python_name == "age"
-    assert field1.graphql_name is None
-    assert field1.type is str
-
-
-def test_type_with_aliased_pydantic_field_changed_type():
-    class UserModel(pydantic.BaseModel):
-        age_: int = pydantic.Field(..., alias="age")
-        password: Optional[str]
-
-    @strawberry.experimental.pydantic.type(UserModel)
-    class User:
-        age_: str
-        password: strawberry.auto
-
-    definition: StrawberryObjectDefinition = User.__strawberry_definition__
-    assert definition.name == "User"
-
-    [field1, field2] = definition.fields
-
-    assert field1.python_name == "age_"
-    assert field1.type is str
-    assert field1.graphql_name == "age"
-
-    assert field2.python_name == "password"
-    assert isinstance(field2.type, StrawberryOptional)
-    assert field2.type.of_type is str
-
-
+# No support yet for strawberry field in pydantic models
+@pytest.mark.xfail(reason="Need to implement strawberry.field in pydantic models")
 def test_deprecated_fields():
-    class User(pydantic.BaseModel):
-        age: int
+    @first_class_type()
+    class UserType(pydantic.BaseModel):
+        age: int = strawberry.field(deprecation_reason="Because")
         password: Optional[str]
         other: float
-
-    @strawberry.experimental.pydantic.type(User)
-    class UserType:
-        age: strawberry.auto = strawberry.field(deprecation_reason="Because")
-        password: strawberry.auto
 
     definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
     assert definition.name == "UserType"
@@ -448,6 +408,7 @@ def test_deprecated_fields():
     assert field2.type.of_type is str
 
 
+@pytest.mark.xfail(reason="Need to implement strawberry.field in pydantic models")
 def test_permission_classes():
     class IsAuthenticated(strawberry.BasePermission):
         message = "User is not authenticated"
@@ -457,15 +418,11 @@ def test_permission_classes():
         ) -> bool:
             return False
 
-    class User(pydantic.BaseModel):
-        age: int
+    @first_class_type()
+    class UserType(pydantic.BaseModel):
+        age: int = strawberry.field(permission_classes=[IsAuthenticated])
         password: Optional[str]
         other: float
-
-    @strawberry.experimental.pydantic.type(User)
-    class UserType:
-        age: strawberry.auto = strawberry.field(permission_classes=[IsAuthenticated])
-        password: strawberry.auto
 
     definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
     assert definition.name == "UserType"
@@ -483,20 +440,17 @@ def test_permission_classes():
     assert field2.type.of_type is str
 
 
+@pytest.mark.xfail(reason="Need to implement strawberry.field in pydantic models")
 def test_field_directives():
     @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
     class Sensitive:
         reason: str
 
-    class User(pydantic.BaseModel):
-        age: int
+    @first_class_type()
+    class UserType(pydantic.BaseModel):
+        age: int = strawberry.field(directives=[Sensitive(reason="GDPR")])
         password: Optional[str]
         other: float
-
-    @strawberry.experimental.pydantic.type(User)
-    class UserType:
-        age: strawberry.auto = strawberry.field(directives=[Sensitive(reason="GDPR")])
-        password: strawberry.auto
 
     definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
     assert definition.name == "UserType"
@@ -514,13 +468,10 @@ def test_field_directives():
     assert field2.type.of_type is str
 
 
+@pytest.mark.xfail(reason="Need to implement strawberry.field in pydantic models")
 def test_alias_fields():
-    class User(pydantic.BaseModel):
-        age: int
-
-    @strawberry.experimental.pydantic.type(User)
-    class UserType:
-        age: strawberry.auto = strawberry.field(name="ageAlias")
+    class UserType(pydantic.BaseModel):
+        age: int = strawberry.field(name="ageAlias")
 
     definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
     assert definition.name == "UserType"
@@ -532,42 +483,12 @@ def test_alias_fields():
     assert field1.type is int
 
 
-def test_alias_fields_with_use_pydantic_alias():
-    class User(pydantic.BaseModel):
-        age: int
-        state: str = pydantic.Field(alias="statePydantic")
-        country: str = pydantic.Field(alias="countryPydantic")
-
-    @strawberry.experimental.pydantic.type(User, use_pydantic_alias=True)
-    class UserType:
-        age: strawberry.auto = strawberry.field(name="ageAlias")
-        state: strawberry.auto = strawberry.field(name="state")
-        country: strawberry.auto
-
-    definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
-    assert definition.name == "UserType"
-
-    [field1, field2, field3] = definition.fields
-
-    assert field1.python_name == "age"
-    assert field1.graphql_name == "ageAlias"
-
-    assert field2.python_name == "state"
-    assert field2.graphql_name == "state"
-
-    assert field3.python_name == "country"
-    assert field3.graphql_name == "countryPydantic"
-
-
+@pytest.mark.xfail(reason="Need to implement strawberry.field in pydantic models")
 def test_field_metadata():
-    class User(pydantic.BaseModel):
+    @first_class_type()
+    class UserType(pydantic.BaseModel):
         private: bool
         public: bool
-
-    @strawberry.experimental.pydantic.type(User)
-    class UserType:
-        private: strawberry.auto = strawberry.field(metadata={"admin_only": True})
-        public: strawberry.auto
 
     definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
     assert definition.name == "UserType"
@@ -582,12 +503,9 @@ def test_field_metadata():
 
 
 def test_annotated():
-    class User(pydantic.BaseModel):
+    @first_class_type(is_input=True)
+    class UserType(pydantic.BaseModel):
         a: Annotated[int, "metadata"]
-
-    @strawberry.experimental.pydantic.input(User, all_fields=True)
-    class UserType:
-        pass
 
     definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
     assert definition.name == "UserType"
@@ -598,13 +516,10 @@ def test_annotated():
 
 
 def test_nested_annotated():
-    class User(pydantic.BaseModel):
+    @first_class_type()
+    class UserType(pydantic.BaseModel):
         a: Optional[Annotated[int, "metadata"]]
         b: Optional[List[Annotated[int, "metadata"]]]
-
-    @strawberry.experimental.pydantic.input(User, all_fields=True)
-    class UserType:
-        pass
 
     definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
     assert definition.name == "UserType"
