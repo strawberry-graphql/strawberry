@@ -15,6 +15,7 @@ from typing import (
     Type,
     cast,
 )
+from pydantic import BaseModel
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.auto import StrawberryAuto
@@ -36,9 +37,15 @@ from strawberry.experimental.pydantic.utils import (
     get_private_fields,
 )
 from strawberry.field import StrawberryField
-from strawberry.object_type import _process_type, _wrap_dataclass
+from strawberry.object_type import _get_interfaces, _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.dataclasses import add_custom_init_fn
+
+from strawberry.utils.str_converters import to_camel_case
+
+from strawberry.types.types import StrawberryObjectDefinition
+
+from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
@@ -114,6 +121,132 @@ if TYPE_CHECKING:
         PydanticModel,
         StrawberryTypeFromPydantic,
     )
+
+
+def _get_strawberry_fields_from_pydantic(
+    model: Type[BaseModel],
+) -> List[StrawberryField]:
+    """Get all the strawberry fields off a pydantic BaseModel cls
+
+    This function returns a list of StrawberryFields (one for each field item), while
+    also paying attention the name and typing of the field.
+
+
+    Type #1:
+        A pure pydantic field. Will not have a StrawberryField; one will need to
+        be created in this function. Type annotation is required.
+    """
+    fields: list[StrawberryField] = []
+
+    # BaseModel already has fields, so we need to get them from there
+    model_fields: Dict[str, CompatModelField] = get_model_fields(model)
+    for name, field in model_fields.items():
+        converted_type = replace_types_recursively(field.outer_type_, is_input=False)
+        if field.allow_none:
+            converted_type = Optional[converted_type]
+        fields.append(
+            StrawberryField(
+                python_name=name,
+                graphql_name=field.alias,
+                # always unset because we use default_factory instead
+                default=dataclasses.MISSING,
+                default_factory=get_default_factory_for_field(field),
+                type_annotation=StrawberryAnnotation.from_annotation(converted_type),
+                description=field.description,
+                deprecation_reason=None,
+                permission_classes=[],
+                directives=[],
+                metadata={},
+            )
+        )
+
+    return fields
+
+
+def first_class_process_type(
+    cls: Type,
+    *,
+    name: Optional[str] = None,
+    is_input: bool = False,
+    is_interface: bool = False,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+    extend: bool = False,
+):
+    name = name or to_camel_case(cls.__name__)
+
+    interfaces = _get_interfaces(cls)
+    fields = _get_strawberry_fields_from_pydantic(cls)
+    is_type_of = getattr(cls, "is_type_of", None)
+    resolve_type = getattr(cls, "resolve_type", None)
+
+    cls.__strawberry_definition__ = StrawberryObjectDefinition(
+        name=name,
+        is_input=is_input,
+        is_interface=is_interface,
+        interfaces=interfaces,
+        description=description,
+        directives=directives,
+        origin=cls,
+        extend=extend,
+        fields=fields,
+        is_type_of=is_type_of,
+        resolve_type=resolve_type,
+    )
+    # TODO: remove when deprecating _type_definition
+    DeprecatedDescriptor(
+        DEPRECATION_MESSAGES._TYPE_DEFINITION,
+        cls.__strawberry_definition__,
+        "_type_definition",
+    ).inject(cls)
+
+    return cls
+
+
+def register_first_class(
+    model: Type[PydanticModel],
+    *,
+    name: Optional[str] = None,
+    is_input: bool = False,
+    is_interface: bool = False,
+    description: Optional[str] = None,
+) -> Type[PydanticModel]:
+    """Registers a pydantic model as a first class strawberry type.
+
+    This is useful if you want to use a pydantic model as a type in a field
+    without having to create a separate strawberry type.
+
+    Example:
+
+        class User(BaseModel):
+            id: int
+            name: str
+
+        register_first_class(User)
+
+        @strawberry.type
+        class Query:
+            @strawberry.field
+            def user(self) -> User:
+                return User(id=1, name="Patrick")
+
+
+    """
+
+    first_class_process_type(
+        model,
+        name=name,
+        is_input=is_input,
+        is_interface=is_interface,
+        description=description,
+    )
+
+    # if is_input:
+    #     model._strawberry_input_type = cls  # type: ignore
+    # else:
+    #     model._strawberry_type = cls  # type: ignore
+
+    return model
 
 
 def type(
