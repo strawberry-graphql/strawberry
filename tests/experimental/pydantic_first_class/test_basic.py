@@ -3,6 +3,7 @@ import sys
 import textwrap
 from enum import Enum
 from typing import Annotated, Any, List, Optional, Union
+from graphql import is_input_type
 
 import pydantic
 import pytest
@@ -303,52 +304,33 @@ def test_interface():
 
 
 def test_both_output_and_input_type():
+    @first_class_type(name="WorkInput",is_input=True)
+    @first_class_type(name="WorkOutput")
     class Work(pydantic.BaseModel):
         time: float
+
+    @first_class_type(name="UserInput",is_input=True)
+    @first_class_type(name="UserOutput")
 
     class User(pydantic.BaseModel):
         name: str
         # Note that pydantic v2 requires an explicit default of None for Optionals
         work: Optional[Work] = None
 
+    @first_class_type(name="GroupInput",is_input=True)
+    @first_class_type(name="GroupOutput")
     class Group(pydantic.BaseModel):
         users: List[User]
 
-    # Test both definition orders
-    @strawberry.experimental.pydantic.input(Work)
-    class WorkInput:
-        time: strawberry.auto
-
-    @strawberry.experimental.pydantic.type(Work)
-    class WorkOutput:
-        time: strawberry.auto
-
-    @strawberry.experimental.pydantic.type(User)
-    class UserOutput:
-        name: strawberry.auto
-        work: strawberry.auto
-
-    @strawberry.experimental.pydantic.input(User)
-    class UserInput:
-        name: strawberry.auto
-        work: strawberry.auto
-
-    @strawberry.experimental.pydantic.input(Group)
-    class GroupInput:
-        users: strawberry.auto
-
-    @strawberry.experimental.pydantic.type(Group)
-    class GroupOutput:
-        users: strawberry.auto
 
     @strawberry.type
     class Query:
-        groups: List[GroupOutput]
+        groups: List[Group]
 
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def updateGroup(group: GroupInput) -> GroupOutput:
+        def updateGroup(group: Group) -> Group:
             pass
 
     # This triggers the exception from #1504

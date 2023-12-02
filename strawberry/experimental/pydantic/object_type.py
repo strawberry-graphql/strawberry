@@ -242,6 +242,7 @@ def register_first_class(
     )
 
     if is_input:
+        # TODO: Probably should check if the name clashes with an existing type?
         model._strawberry_input_type = model  # type: ignore
     else:
         model._strawberry_type = model  # type: ignore
