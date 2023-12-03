@@ -1,4 +1,3 @@
-import sys
 import textwrap
 from enum import Enum
 from typing import List, Optional, Union
@@ -7,11 +6,7 @@ import pydantic
 import pytest
 
 import strawberry
-from tests.experimental.pydantic.utils import needs_pydantic_v1
-
 from strawberry.experimental.pydantic.pydantic_first_class import first_class
-
-from strawberry.schema.config import StrawberryConfig
 
 
 def test_basic_type_field_list():

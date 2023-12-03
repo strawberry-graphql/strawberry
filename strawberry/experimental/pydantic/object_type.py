@@ -40,7 +40,6 @@ from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.dataclasses import add_custom_init_fn
 
-
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
 

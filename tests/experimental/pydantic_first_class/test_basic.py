@@ -1,33 +1,19 @@
-import dataclasses
-import sys
 import textwrap
 from enum import Enum
 from typing import Annotated, Any, List, Optional, Union
-from graphql import is_input_type
 
 import pydantic
 import pytest
 
 import strawberry
-from tests.experimental.pydantic.utils import needs_pydantic_v1
-
+from strawberry.enum import EnumDefinition
 from strawberry.experimental.pydantic.pydantic_first_class import (
     first_class,
 )
-
-from strawberry.types.types import StrawberryObjectDefinition
-
-from strawberry.type import StrawberryList, StrawberryOptional
-
-from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
-
-from strawberry.union import StrawberryUnion
-
-from strawberry.enum import EnumDefinition
-
 from strawberry.schema_directive import Location
-
-from strawberry.experimental.pydantic.pydantic_first_class import register_first_class
+from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.types.types import StrawberryObjectDefinition
+from strawberry.union import StrawberryUnion
 
 
 def test_basic_type_field_list():

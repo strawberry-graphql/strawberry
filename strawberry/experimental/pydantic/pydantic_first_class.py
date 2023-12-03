@@ -1,22 +1,18 @@
-from strawberry.annotation import StrawberryAnnotation
-from strawberry.experimental.pydantic._compat import CompatModelField, get_model_fields
-from strawberry.experimental.pydantic.fields import replace_types_recursively
-from strawberry.experimental.pydantic.utils import get_default_factory_for_field
-from strawberry.field import StrawberryField
-
-
-from pydantic import BaseModel
-
-
 import dataclasses
 from typing import Callable, Dict, List, Optional, Sequence, Type
 
+from pydantic import BaseModel
+
+from strawberry.annotation import StrawberryAnnotation
+from strawberry.experimental.pydantic._compat import CompatModelField, get_model_fields
+from strawberry.experimental.pydantic.conversion_types import PydanticModel
+from strawberry.experimental.pydantic.fields import replace_types_recursively
+from strawberry.experimental.pydantic.utils import get_default_factory_for_field
+from strawberry.field import StrawberryField
 from strawberry.object_type import _get_interfaces
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.str_converters import to_camel_case
-
-from strawberry.experimental.pydantic.conversion_types import PydanticModel
 
 
 def _get_strawberry_fields_from_basemodel(

@@ -1,12 +1,10 @@
 from typing import Dict, List, Union
-from graphql import is_valid_name_error
 
 import pydantic
 import pytest
 
 import strawberry
 from strawberry.experimental.pydantic._compat import IS_PYDANTIC_V2
-
 from strawberry.experimental.pydantic.pydantic_first_class import first_class
 
 
