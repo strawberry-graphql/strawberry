@@ -174,6 +174,8 @@ def test_mutation_with_validation_and_error_type():
             try:
                 data = input
             except pydantic.ValidationError as e:
+                # issue: the error will never be thrown here because the validation
+                # happens in convert_argument
                 args: Dict[str, List[str]] = {}
                 for error in e.errors():
                     field = error["loc"][0]  # currently doesn't support nested errors
