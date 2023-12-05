@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.215.2 - 2023-12-05
+--------------------
+
+This release updates the Apollo Sandbox integration to all you to
+pass cookies to the GraphQL endpoint by enabling the **Include cookes**
+option in the Sandbox settings.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3278](https://github.com/strawberry-graphql/strawberry/pull/3278/)
+
+
 0.215.1 - 2023-11-20
 --------------------
 
