@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.216.0 - 2023-12-06
+--------------------
+
+Override encode_json() method in Django BaseView to use DjangoJSONEncoder
+
+Contributed by [Noam Stolero](https://github.com/noamsto) via [PR #3273](https://github.com/strawberry-graphql/strawberry/pull/3273/)
+
+
 0.215.3 - 2023-12-06
 --------------------
 
