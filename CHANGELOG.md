@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.215.3 - 2023-12-06
+--------------------
+
+Fixed the base view so it uses `parse_json` when loading parameters from the query string instead of `json.loads`.
+
+Contributed by [Elias Gabriel](https://github.com/thearchitector) via [PR #3272](https://github.com/strawberry-graphql/strawberry/pull/3272/)
+
+
 0.215.2 - 2023-12-05
 --------------------
 
