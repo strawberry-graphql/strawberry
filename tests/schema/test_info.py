@@ -24,6 +24,7 @@ def test_info_has_the_correct_shape():
         operation: str
         path: str
         variable_values: str
+        fragments: str
         context_equal: bool
         root_equal: bool
         return_type: str
@@ -40,6 +41,7 @@ def test_info_has_the_correct_shape():
                 python_name=info.python_name,
                 selected_field=json.dumps(dataclasses.asdict(*info.selected_fields)),
                 variable_values=str(info.variable_values),
+                fragments=str(info.fragments),
                 context_equal=info.context == my_context,
                 root_equal=info.root_value == root_value,
                 return_type=str(info.return_type),
@@ -53,6 +55,7 @@ def test_info_has_the_correct_shape():
             fieldName
             pythonName
             selectedField
+            fragments
             contextEqual
             operation
             path
@@ -77,6 +80,7 @@ def test_info_has_the_correct_shape():
         "operation",
         "contextEqual",
         "variableValues",
+        "fragments",
         "returnType",
         "fieldName",
         "pythonName",
@@ -95,6 +99,7 @@ def test_info_has_the_correct_shape():
         "contextEqual": True,
         "rootEqual": True,
         "variableValues": "{}",
+        "fragments": "{}",
         "returnType": "<class 'tests.schema.test_info.test_info_has_the_correct_shape.<locals>.Result'>",
         "schemaPrint": schema.as_str(),
     }
