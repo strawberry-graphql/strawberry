@@ -13,20 +13,19 @@ TEMPLATES = [
 ]
 
 
-def test_render_graphiql_template():
+def run_sync_view():
     headers = {
         "Accept": "text/html",
     }
     client = Client(headers=headers)
     response: HttpResponse = client.get("/graphql/")
     assert 'JSON.parse("false")' in response.content.decode()
+
+
+def test_render_graphiql_template():
+    run_sync_view()
 
 
 @override_settings(TEMPLATES=TEMPLATES)
 def test_subscription_enabled_not_empty():
-    headers = {
-        "Accept": "text/html",
-    }
-    client = Client(headers=headers)
-    response: HttpResponse = client.get("/graphql/")
-    assert 'JSON.parse("false")' in response.content.decode()
+    run_sync_view()
