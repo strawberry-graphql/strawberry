@@ -14,11 +14,8 @@ TEMPLATES = [
 
 
 def run_sync_view():
-    headers = {
-        "Accept": "text/html",
-    }
-    client = Client(headers=headers)
-    response: HttpResponse = client.get("/graphql/")
+    client = Client()
+    response: HttpResponse = client.get("/graphql/", HTTP_ACCEPT="text/html")
     assert 'JSON.parse("false")' in response.content.decode()
 
 
