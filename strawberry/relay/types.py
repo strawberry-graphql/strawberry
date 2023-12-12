@@ -217,7 +217,6 @@ class GlobalID:
             The resolved GraphQL type for the execution info
 
         """
-        schema = info.schema
         type_def = info.schema.get_type_by_name(self.type_name)
         assert isinstance(type_def, StrawberryObjectDefinition)
 
