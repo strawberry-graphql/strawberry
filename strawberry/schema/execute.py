@@ -190,6 +190,13 @@ def execute_sync(
         with extensions_runner.parsing():
             try:
                 if not execution_context.graphql_document:
+                    # TODO implement sha-256 validation for APQ
+                    # TODO search for query.
+                    # TODO fail, because can't be found. Return error message (HASH_NOT_FOUND)
+                    # TODO as user, send back actual query plus hash. Save this, then execute query and return result.
+                    # ...
+                    # TODO When the user sends the sha256 again. Should be good, because found.
+                    
                     execution_context.graphql_document = parse_document(
                         execution_context.query, **execution_context.parse_options
                     )

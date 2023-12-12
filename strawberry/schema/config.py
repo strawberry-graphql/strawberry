@@ -12,6 +12,7 @@ class StrawberryConfig:
     name_converter: NameConverter = field(default_factory=NameConverter)
     default_resolver: Callable[[Any, str], object] = getattr
     relay_max_results: int = 100
+    use_apq: bool = False
 
     def __post_init__(
         self,
