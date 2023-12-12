@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.216.1 - 2023-12-12
+--------------------
+
+Don't require `NodeId` annotation if resolve_id is overwritten on `Node` implemented types
+
+Contributed by [Alexander](https://github.com/devkral) via [PR #2844](https://github.com/strawberry-graphql/strawberry/pull/2844/)
+
+
 0.216.0 - 2023-12-06
 --------------------
 
