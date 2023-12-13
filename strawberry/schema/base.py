@@ -2,7 +2,17 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Type,
+    Union,
+)
 from typing_extensions import Protocol
 
 from strawberry.utils.logging import StrawberryLogger
@@ -20,6 +30,15 @@ if TYPE_CHECKING:
     from strawberry.union import StrawberryUnion
 
     from .config import StrawberryConfig
+
+
+class SubscribeSingleResult(RuntimeError):
+    """Raised when Schema.subscribe() returns a single execution result, instead of a
+    subscription generator, typically as a result of validation errors.
+    """
+
+    def __init__(self, value: ExecutionResult) -> None:
+        self.value = value
 
 
 class BaseSchema(Protocol):
@@ -55,14 +74,14 @@ class BaseSchema(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    async def subscribe(
+    def subscribe(
         self,
         query: str,
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ) -> Any:
+    ) -> AsyncGenerator[ExecutionResult, None]:
         raise NotImplementedError
 
     @abstractmethod
