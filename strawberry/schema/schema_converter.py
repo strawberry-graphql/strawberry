@@ -768,6 +768,11 @@ class GraphQLCoreConverter:
             return GraphQLNonNull(self.from_type(type_))
 
     def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
+        # TODO: not 100% sure if this is fine? would be nice
+        # not to have to do it here too
+        if not isinstance(type_, StrawberryType):
+            type_ = StrawberryAnnotation(type_).resolve()
+
         if compat.is_graphql_generic(type_):
             raise MissingTypesForGenericError(type_)
 
