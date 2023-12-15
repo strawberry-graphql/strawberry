@@ -123,7 +123,7 @@ class FastAPIHttpClient(HttpClient):
         body = self._build_body(
             query=query, variables=variables, files=files, method=method, extensions=extensions
         )
-        
+
         if body:
             if method == "get":
                 kwargs["params"] = body

@@ -136,10 +136,10 @@ class HttpClient(abc.ABC):
 
         if variables:
             body["variables"] = variables
-        
+
         if extensions:
             body["extensions"] = extensions
-    
+
         if files:
             assert variables is not None
 

@@ -33,16 +33,14 @@ from strawberry.extensions.directives import (
     DirectivesExtension,
     DirectivesExtensionSync,
 )
+from strawberry.schema.apq.constants import QUERY_HASH_NOT_FOUND_ERROR
+from strawberry.schema.hash import is_valid_hash256
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.type import has_object_definition
 from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
 from strawberry.types.types import StrawberryObjectDefinition
-
-from strawberry.schema.hash import is_valid_hash256
-
-from strawberry.schema.apq.constants import QUERY_HASH_NOT_FOUND_ERROR
 
 from ..printer import print_schema
 from . import compat
@@ -73,7 +71,7 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 class Schema(BaseSchema):
     # dict with hash -> query
     QUERY_HASH_CACHE = {}
-    
+
     def __init__(
         self,
         # TODO: can we make sure we only allow to pass
@@ -284,8 +282,8 @@ class Schema(BaseSchema):
     ) -> ExecutionResult:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
-            
-        should_handle_persisted_query = 'sha256Hash' in extensions.get('persistedQuery') and self.is_persisted_query(extensions['persistedQuery']['sha256Hash'])
+
+        should_handle_persisted_query = "sha256Hash" in extensions.get("persistedQuery") and self.is_persisted_query(extensions["persistedQuery"]["sha256Hash"])
 
         execution_context = ExecutionContext(
             query=query,
@@ -306,8 +304,8 @@ class Schema(BaseSchema):
         )
 
         return result
-    
-    
+
+
     def is_persisted_query(self, query_hash: str) -> bool:
         return self.config.use_apq and is_valid_hash256(query_hash)
 
@@ -328,13 +326,13 @@ class Schema(BaseSchema):
             if query is None:
                 error = GraphQLError(QUERY_HASH_NOT_FOUND_ERROR)
                 self.process_errors([error], None)
-                
+
                 from strawberry.types import ExecutionResult
                 result = ExecutionResult(
                     data=None, errors=[error]
                 )
                 return result
-                
+
         return self.execute_sync(query, variable_values, context_value, root_value, operation_name, allowed_operation_types)
 
 

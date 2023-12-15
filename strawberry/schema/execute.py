@@ -23,13 +23,10 @@ from graphql.validation import validate
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.extensions.runner import SchemaExtensionsRunner
+from strawberry.schema.hash import is_valid_hash256
 from strawberry.types import ExecutionResult
 
-from strawberry.schema.apq.constants import QUERY_HASH_NOT_FOUND_ERROR
-
 from .exceptions import InvalidOperationTypeError
-
-from strawberry.schema.hash import hash256, is_valid_hash256
 
 if TYPE_CHECKING:
     from typing_extensions import NotRequired, Unpack

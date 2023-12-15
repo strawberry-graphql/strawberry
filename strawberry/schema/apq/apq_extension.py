@@ -1,4 +1,3 @@
-import strawberry
 from strawberry.extensions import SchemaExtension
 
 
