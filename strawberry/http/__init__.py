@@ -33,6 +33,7 @@ class GraphQLRequestData:
     query: Optional[str]
     variables: Optional[Dict[str, Any]]
     operation_name: Optional[str]
+    extensions: Optional[dict[str, Any]] = None
 
 
 def parse_query_params(params: Dict[str, str]) -> Dict[str, Any]:

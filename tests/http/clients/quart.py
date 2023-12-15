@@ -79,6 +79,7 @@ class QuartHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
+        extensions: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(

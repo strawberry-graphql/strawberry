@@ -280,9 +280,12 @@ class Schema(BaseSchema):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
+        extensions: Optional[Dict[str, str]] = None
     ) -> ExecutionResult:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
+            
+        should_handle_persisted_query = 'sha256Hash' in extensions.get('persistedQuery') and self.is_persisted_query(extensions['persistedQuery']['sha256Hash'])
 
         execution_context = ExecutionContext(
             query=query,
@@ -305,8 +308,8 @@ class Schema(BaseSchema):
         return result
     
     
-    def apq_eligable(self, hash: str):
-        return self.config.use_apq and is_valid_hash256(hash)
+    def is_persisted_query(self, query_hash: str) -> bool:
+        return self.config.use_apq and is_valid_hash256(query_hash)
 
     def execute_hashed_sync(
         self,
@@ -317,7 +320,7 @@ class Schema(BaseSchema):
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ) -> ExecutionResult:
-        if self.apq_eligable(query_hash):
+        if self.is_persisted_query(query_hash):
             # Search for query in a local cache
             query = self.QUERY_HASH_CACHE.get(query_hash)
 

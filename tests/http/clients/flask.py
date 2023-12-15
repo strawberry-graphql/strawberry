@@ -86,10 +86,11 @@ class FlaskHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
+        extensions: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
-            query=query, variables=variables, files=files, method=method
+            query=query, variables=variables, files=files, method=method, extensions=extensions
         )
 
         data: Union[Dict[str, object], str, None] = None
