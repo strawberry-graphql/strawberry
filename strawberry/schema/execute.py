@@ -174,8 +174,6 @@ async def execute(
 def apq_eligable(execution_context: ExecutionContext):
     return execution_context.schema.config.use_apq and is_valid_hash256(execution_context.query)
 
-# dict with hash -> query
-QUERY_HASH_CACHE = {}
 
 def execute_sync(
     schema: GraphQLSchema,
@@ -199,21 +197,6 @@ def execute_sync(
 
         with extensions_runner.parsing():
             try:
-                if apq_eligable(execution_context):
-                    query_hash = execution_context.query
-
-                    # Search for query in a local cache
-                    query = QUERY_HASH_CACHE.get(query_hash)
-
-                    # fail, because can't be found. Return error message (HASH_NOT_FOUND)
-                    if query is None:
-                        raise GraphQLError(QUERY_HASH_NOT_FOUND_ERROR)
-                    
-                    # TODO as user, send back actual query plus hash. Save this, then execute query and return result.
-                    # ...
-                    # TODO When the user sends the sha256 again. Should be good, because found.
-                    ...
-
                 if not execution_context.graphql_document:
                     execution_context.graphql_document = parse_document(
                         execution_context.query, **execution_context.parse_options

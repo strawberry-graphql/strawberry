@@ -23,6 +23,7 @@ from graphql import (
     parse,
     validate_schema,
 )
+from graphql.error.graphql_error import GraphQLError
 from graphql.execution import subscribe
 from graphql.type.directives import specified_directives
 
@@ -38,6 +39,10 @@ from strawberry.type import has_object_definition
 from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
 from strawberry.types.types import StrawberryObjectDefinition
+
+from strawberry.schema.hash import is_valid_hash256
+
+from strawberry.schema.apq.constants import QUERY_HASH_NOT_FOUND_ERROR
 
 from ..printer import print_schema
 from . import compat
@@ -66,6 +71,9 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 
 
 class Schema(BaseSchema):
+    # dict with hash -> query
+    QUERY_HASH_CACHE = {}
+    
     def __init__(
         self,
         # TODO: can we make sure we only allow to pass
@@ -295,6 +303,40 @@ class Schema(BaseSchema):
         )
 
         return result
+    
+    
+    def apq_eligable(self, hash: str):
+        return self.config.use_apq and is_valid_hash256(hash)
+
+    def execute_hashed_sync(
+        self,
+        query_hash: str,
+        variable_values: Optional[Dict[str, Any]] = None,
+        context_value: Optional[Any] = None,
+        root_value: Optional[Any] = None,
+        operation_name: Optional[str] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
+    ) -> ExecutionResult:
+        if self.apq_eligable(query_hash):
+            # Search for query in a local cache
+            query = self.QUERY_HASH_CACHE.get(query_hash)
+
+            # fail, because can't be found. Return error message (HASH_NOT_FOUND)
+            if query is None:
+                error = GraphQLError(QUERY_HASH_NOT_FOUND_ERROR)
+                self.process_errors([error], None)
+                
+                from strawberry.types import ExecutionResult
+                result = ExecutionResult(
+                    data=None, errors=[error]
+                )
+                return result
+                
+        return self.execute_sync(query, variable_values, context_value, root_value, operation_name, allowed_operation_types)
+
+
+    def cache_hashed_query(self, hash: str, query: str):
+        self.QUERY_HASH_CACHE[hash] = query
 
     async def subscribe(
         self,
