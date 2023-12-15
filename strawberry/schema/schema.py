@@ -283,8 +283,12 @@ class Schema(BaseSchema):
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
 
-        should_handle_persisted_query = "sha256Hash" in extensions.get("persistedQuery") and self.is_persisted_query(extensions["persistedQuery"]["sha256Hash"])
+        peristed_query = extensions.get("persistedQuery", {}) if extensions is not None else {}
 
+        should_persist = isinstance(peristed_query, dict) and "sha256Hash" in peristed_query and self.is_persisted_query(peristed_query["sha256Hash"])
+        if should_persist:
+            return self.execute_hashed_sync(peristed_query["sha256Hash"])
+        
         execution_context = ExecutionContext(
             query=query,
             schema=self,
@@ -307,7 +311,7 @@ class Schema(BaseSchema):
 
 
     def is_persisted_query(self, query_hash: str) -> bool:
-        return self.config.use_apq and is_valid_hash256(query_hash)
+        return is_valid_hash256(query_hash)
 
     def execute_hashed_sync(
         self,
@@ -318,20 +322,18 @@ class Schema(BaseSchema):
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ) -> ExecutionResult:
-        if self.is_persisted_query(query_hash):
-            # Search for query in a local cache
-            query = self.QUERY_HASH_CACHE.get(query_hash)
+        query = self.QUERY_HASH_CACHE.get(query_hash)
 
-            # fail, because can't be found. Return error message (HASH_NOT_FOUND)
-            if query is None:
-                error = GraphQLError(QUERY_HASH_NOT_FOUND_ERROR)
-                self.process_errors([error], None)
+        # fail, because can't be found. Return error message (HASH_NOT_FOUND)
+        if query is None:
+            error = GraphQLError(QUERY_HASH_NOT_FOUND_ERROR)
+            self.process_errors([error], None)
 
-                from strawberry.types import ExecutionResult
-                result = ExecutionResult(
-                    data=None, errors=[error]
-                )
-                return result
+            from strawberry.types import ExecutionResult
+            result = ExecutionResult(
+                data=None, errors=[error]
+            )
+            return result
 
         return self.execute_sync(query, variable_values, context_value, root_value, operation_name, allowed_operation_types)
 
