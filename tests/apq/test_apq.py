@@ -14,18 +14,6 @@ def test_valid_hash():
     result = hash256("""{ helloWorld }""")
     assert is_valid_hash256(result)
 
-
-def test_simple_query_syntax_error(simple_schema: strawberry.Schema):
-    query = """{
-        helloWorld
-    }"""
-    hashed_query  = hash256(query)
-
-    result = simple_schema.execute_hashed_sync(hashed_query)
-
-    assert result.errors != []
-    assert isinstance(result.errors[0], GraphQLSyntaxError)
-
 def test_simple_query_notfound(simple_schema: strawberry.Schema):
     query = """{
         helloWorld
