@@ -245,10 +245,16 @@ class Schema(BaseSchema):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
+        extensions: Optional[Dict[str, str]] = None
     ) -> ExecutionResult:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
 
+        peristed_query = extensions.get("persistedQuery", {}) if extensions is not None else {}
+        should_persist = isinstance(peristed_query, dict) and "sha256Hash" in peristed_query and self.is_persisted_query(peristed_query["sha256Hash"])
+        if should_persist:
+            return await self.execute_hashed(peristed_query["sha256Hash"])
+        
         # Create execution context
         execution_context = ExecutionContext(
             query=query,
@@ -284,7 +290,6 @@ class Schema(BaseSchema):
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
 
         peristed_query = extensions.get("persistedQuery", {}) if extensions is not None else {}
-
         should_persist = isinstance(peristed_query, dict) and "sha256Hash" in peristed_query and self.is_persisted_query(peristed_query["sha256Hash"])
         if should_persist:
             return self.execute_hashed_sync(peristed_query["sha256Hash"])
@@ -313,6 +318,29 @@ class Schema(BaseSchema):
     def is_persisted_query(self, query_hash: str) -> bool:
         return is_valid_hash256(query_hash)
 
+    async def execute_hashed(
+        self,
+        query_hash: str,
+        variable_values: Optional[Dict[str, Any]] = None,
+        context_value: Optional[Any] = None,
+        root_value: Optional[Any] = None,
+        operation_name: Optional[str] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
+    ):
+        query = self.QUERY_HASH_CACHE.get(query_hash)
+
+        if query is None:
+            error = GraphQLError(QUERY_HASH_NOT_FOUND_ERROR)
+            self.process_errors([error], None)
+
+            from strawberry.types import ExecutionResult
+            result = ExecutionResult(
+                data=None, errors=[error]
+            )
+            return result
+
+        return await self.execute(query, variable_values, context_value, root_value, operation_name, allowed_operation_types)
+    
     def execute_hashed_sync(
         self,
         query_hash: str,

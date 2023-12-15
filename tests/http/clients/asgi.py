@@ -101,7 +101,7 @@ class AsgiHttpClient(HttpClient):
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
-            query=query, variables=variables, files=files, method=method
+            query=query, variables=variables, files=files, method=method, extensions=extensions
         )
 
         if method == "get":

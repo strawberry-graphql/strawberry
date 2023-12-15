@@ -108,7 +108,7 @@ class DjangoHttpClient(HttpClient):
         additional_arguments = {**kwargs, **headers}
 
         body = self._build_body(
-            query=query, variables=variables, files=files, method=method
+            query=query, variables=variables, files=files, method=method, extensions=extensions
         )
 
         data: Union[Dict[str, object], str, None] = None
