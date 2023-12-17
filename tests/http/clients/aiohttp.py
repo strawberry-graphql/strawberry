@@ -111,7 +111,11 @@ class AioHttpClient(HttpClient):
     ) -> Response:
         async with TestClient(TestServer(self.app)) as client:
             body = self._build_body(
-                query=query, variables=variables, files=files, method=method, extensions=extensions
+                query=query,
+                variables=variables,
+                files=files,
+                method=method,
+                extensions=extensions,
             )
 
             if body and files:

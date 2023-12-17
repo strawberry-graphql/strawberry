@@ -23,7 +23,6 @@ from graphql.validation import validate
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.extensions.runner import SchemaExtensionsRunner
-from strawberry.schema.hash import is_valid_hash256
 from strawberry.types import ExecutionResult
 
 from .exceptions import InvalidOperationTypeError

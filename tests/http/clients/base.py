@@ -98,7 +98,12 @@ class HttpClient(abc.ABC):
         extensions: Optional[Dict[str, Any]] = None,
     ) -> Response:
         return await self._graphql_request(
-            method, query=query, headers=headers, variables=variables, files=files, extensions=extensions
+            method,
+            query=query,
+            headers=headers,
+            variables=variables,
+            files=files,
+            extensions=extensions,
         )
 
     def _get_headers(
@@ -124,7 +129,7 @@ class HttpClient(abc.ABC):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         method: Literal["get", "post"] = "post",
-        extensions: Optional[Dict[str, Any]] = None
+        extensions: Optional[Dict[str, Any]] = None,
     ) -> Optional[Dict[str, object]]:
         if query is None and extensions is None:
             assert files is None

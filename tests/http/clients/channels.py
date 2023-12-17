@@ -171,7 +171,11 @@ class ChannelsHttpClient(HttpClient):
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
-            query=query, variables=variables, files=files, method=method, extensions=extensions
+            query=query,
+            variables=variables,
+            files=files,
+            method=method,
+            extensions=extensions,
         )
 
         headers = self._get_headers(method=method, headers=headers, files=files)

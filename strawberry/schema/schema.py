@@ -23,7 +23,6 @@ from graphql import (
     parse,
     validate_schema,
 )
-from graphql.error.graphql_error import GraphQLError
 from graphql.execution import subscribe
 from graphql.type.directives import specified_directives
 
@@ -33,7 +32,6 @@ from strawberry.extensions.directives import (
     DirectivesExtension,
     DirectivesExtensionSync,
 )
-from strawberry.schema.hash import is_valid_hash256
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.type import has_object_definition
@@ -68,7 +66,6 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 
 
 class Schema(BaseSchema):
-
     def __init__(
         self,
         # TODO: can we make sure we only allow to pass
@@ -233,7 +230,7 @@ class Schema(BaseSchema):
             ),
             None,
         )
-        
+
     async def execute(
         self,
         query: Optional[str],
@@ -242,11 +239,11 @@ class Schema(BaseSchema):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
-        extensions: Optional[Dict[str, str]] = None
+        extensions: Optional[Dict[str, str]] = None,
     ) -> ExecutionResult:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
-        
+
         # Create execution context
         execution_context = ExecutionContext(
             query=query,
@@ -276,11 +273,11 @@ class Schema(BaseSchema):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
-        extensions: Optional[Dict[str, str]] = {}
+        extensions: Optional[Dict[str, str]] = {},
     ) -> ExecutionResult:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
-        
+
         execution_context = ExecutionContext(
             query=query,
             schema=self,
@@ -300,7 +297,6 @@ class Schema(BaseSchema):
         )
 
         return result
-
 
     async def subscribe(
         self,
