@@ -168,10 +168,6 @@ async def execute(
     )
 
 
-def apq_eligable(execution_context: ExecutionContext):
-    return execution_context.schema.config.use_apq and is_valid_hash256(execution_context.query)
-
-
 def execute_sync(
     schema: GraphQLSchema,
     *,
