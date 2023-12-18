@@ -592,31 +592,6 @@ class GraphQLCoreConverter:
 
             return args, kwargs
 
-        def _check_permissions(source: Any, info: Info, kwargs: Any):
-            """
-            Checks if the permission should be accepted and
-            raises an exception if not
-            """
-            for permission_class in field.permission_classes:
-                permission = permission_class()
-
-                if not permission.has_permission(source, info, **kwargs):
-                    message = getattr(permission, "message", None)
-                    raise PermissionError(message)
-
-        async def _check_permissions_async(source: Any, info: Info, kwargs: Any):
-            for permission_class in field.permission_classes:
-                permission = permission_class()
-                has_permission: bool
-
-                has_permission = await await_maybe(
-                    permission.has_permission(source, info, **kwargs)
-                )
-
-                if not has_permission:
-                    message = getattr(permission, "message", None)
-                    raise PermissionError(message)
-
         def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
             return Info(
                 _raw_info=info,
@@ -685,7 +660,6 @@ class GraphQLCoreConverter:
 
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs: Any):
             strawberry_info = _strawberry_info_from_graphql(info)
-            _check_permissions(_source, strawberry_info, kwargs)
 
             return _get_result_with_extensions(
                 _source,
@@ -697,7 +671,6 @@ class GraphQLCoreConverter:
             _source: Any, info: GraphQLResolveInfo, **kwargs: Any
         ):
             strawberry_info = _strawberry_info_from_graphql(info)
-            await _check_permissions_async(_source, strawberry_info, kwargs)
 
             return await await_maybe(
                 _get_result_with_extensions(
