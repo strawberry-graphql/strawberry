@@ -28,7 +28,7 @@ def test_raises_graphql_error_when_permission_method_is_missing():
         @strawberry.type
         class Query:
             @strawberry.field(permission_classes=[IsAuthenticated])
-            def user(self) -> str:
+            def user(self) -> str:  # pragma: no cover
                 return "patrick"
 
 
@@ -44,7 +44,7 @@ def test_raises_graphql_error_when_permission_is_denied():
     @strawberry.type
     class Query:
         @strawberry.field(permission_classes=[IsAuthenticated])
-        def user(self) -> str:
+        def user(self) -> str:  # pragma: no cover
             return "patrick"
 
     schema = strawberry.Schema(query=Query)
@@ -72,7 +72,9 @@ async def test_raises_permission_error_for_subscription():
     @strawberry.type
     class Subscription:
         @strawberry.subscription(permission_classes=[IsAdmin])
-        async def user(self, info) -> typing.AsyncGenerator[str, None]:
+        async def user(
+            self, info
+        ) -> typing.AsyncGenerator[str, None]:  # pragma: no cover
             yield "Hello"
 
     schema = strawberry.Schema(query=Query, subscription=Subscription)
@@ -365,7 +367,7 @@ def test_permissions_with_custom_extensions():
     @strawberry.type
     class Query:
         @strawberry.field(permission_classes=[IsAuthorized])
-        def name(self) -> str:
+        def name(self) -> str:  # pragma: no cover
             return "ABC"
 
     schema = strawberry.Schema(query=Query)
@@ -393,7 +395,7 @@ def test_permissions_with_custom_extensions_on_custom_error():
     @strawberry.type
     class Query:
         @strawberry.field(permission_classes=[IsAuthorized])
-        def name(self) -> str:
+        def name(self) -> str:  # pragma: no cover
             return "ABC"
 
     schema = strawberry.Schema(query=Query)
@@ -419,7 +421,7 @@ def test_silent_permissions_optional():
         @strawberry.field(
             extensions=[PermissionExtension([IsAuthorized()], fail_silently=True)]
         )
-        def name(self) -> Optional[str]:
+        def name(self) -> Optional[str]:  # pragma: no cover
             return "ABC"
 
     schema = strawberry.Schema(query=Query)
@@ -442,7 +444,7 @@ def test_silent_permissions_optional_list():
         @strawberry.field(
             extensions=[PermissionExtension([IsAuthorized()], fail_silently=True)]
         )
-        def names(self) -> Optional[List[str]]:
+        def names(self) -> Optional[List[str]]:  # pragma: no cover
             return ["ABC"]
 
     schema = strawberry.Schema(query=Query)
@@ -465,7 +467,7 @@ def test_silent_permissions_list():
         @strawberry.field(
             extensions=[PermissionExtension([IsAuthorized()], fail_silently=True)]
         )
-        def names(self) -> List[str]:
+        def names(self) -> List[str]:  # pragma: no cover
             return ["ABC"]
 
     schema = strawberry.Schema(query=Query)
@@ -484,7 +486,9 @@ def test_silent_permissions_incompatible_types():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"
 
-        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
+        def has_permission(
+            self, source, info, **kwargs: typing.Any
+        ) -> bool:  # pragma: no cover
             return False
 
     @strawberry.type
@@ -496,7 +500,7 @@ def test_silent_permissions_incompatible_types():
         @strawberry.field(
             extensions=[PermissionExtension([IsAuthorized()], fail_silently=True)]
         )
-        def name(self) -> User:
+        def name(self) -> User:  # pragma: no cover
             return User(name="ABC")
 
     error = re.escape(
@@ -510,13 +514,15 @@ def test_permission_directives_added():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"
 
-        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
+        def has_permission(
+            self, source, info, **kwargs: typing.Any
+        ) -> bool:  # pragma: no cover
             return False
 
     @strawberry.type
     class Query:
         @strawberry.field(extensions=[PermissionExtension([IsAuthorized()])])
-        def name(self) -> str:
+        def name(self) -> str:  # pragma: no cover
             return "ABC"
 
     schema = strawberry.Schema(query=Query)
@@ -535,13 +541,15 @@ def test_permission_directives_not_added_on_field():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"
 
-        def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
+        def has_permission(
+            self, source, info, **kwargs: typing.Any
+        ) -> bool:  # pragma: no cover
             return False
 
     @strawberry.type
     class Query:
         @strawberry.field(permission_classes=[IsAuthorized])
-        def name(self) -> str:
+        def name(self) -> str:  # pragma: no cover
             return "ABC"
 
     schema = strawberry.Schema(query=Query)
