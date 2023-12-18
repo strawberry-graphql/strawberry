@@ -416,8 +416,6 @@ class GraphQLCoreConverter:
     def from_interface(
         self, interface: StrawberryObjectDefinition
     ) -> GraphQLInterfaceType:
-        # TODO: Use StrawberryInterface when it's implemented in another PR
-
         interface_name = self.config.name_converter.from_type(interface)
 
         # Don't reevaluate known types
@@ -440,7 +438,7 @@ class GraphQLCoreConverter:
 
                     # TODO: we should find the correct type here from the
                     # generic
-                    if not type_definition.is_generic:
+                    if not type_definition.is_graphql_generic:
                         return obj.__strawberry_definition__.name
 
                 # Revert to calling is_type_of for cases where a direct subclass
@@ -743,7 +741,7 @@ class GraphQLCoreConverter:
             return GraphQLNonNull(self.from_type(type_))
 
     def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
-        if compat.is_generic(type_):
+        if compat.is_graphql_generic(type_):
             raise MissingTypesForGenericError(type_)
 
         if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
@@ -869,21 +867,25 @@ class GraphQLCoreConverter:
         # of they are of the same generic type, we need to check if the type
         # var map is the same, in that case we can return
 
+        first_type_definition = cached_type.definition
+        second_type_definition = type_definition
+
+        # TODO: maybe move this on the StrawberryType class
         if (
-            isinstance(type_definition, StrawberryObjectDefinition)
-            and isinstance(cached_type.definition, StrawberryObjectDefinition)
-            and cached_type.definition.concrete_of is not None
-            and cached_type.definition.concrete_of == type_definition.concrete_of
+            isinstance(first_type_definition, StrawberryObjectDefinition)
+            and isinstance(second_type_definition, StrawberryObjectDefinition)
+            and first_type_definition.concrete_of is not None
+            and first_type_definition.concrete_of == second_type_definition.concrete_of
             and (
-                cached_type.definition.type_var_map.keys()
-                == type_definition.type_var_map.keys()
+                first_type_definition.type_var_map.keys()
+                == second_type_definition.type_var_map.keys()
             )
         ):
             # manually compare type_var_maps while resolving any lazy types
             # so that they're considered equal to the actual types they're referencing
             equal = True
-            for type_var, type1 in cached_type.definition.type_var_map.items():
-                type2 = type_definition.type_var_map[type_var]
+            for type_var, type1 in first_type_definition.type_var_map.items():
+                type2 = second_type_definition.type_var_map[type_var]
                 # both lazy types are always resolved because two different lazy types
                 # may be referencing the same actual type
                 if isinstance(type1, LazyType):
@@ -906,17 +908,17 @@ class GraphQLCoreConverter:
             if equal:
                 return
 
-        if isinstance(type_definition, StrawberryObjectDefinition):
-            first_origin = type_definition.origin
-        elif isinstance(type_definition, EnumDefinition):
-            first_origin = type_definition.wrapped_cls
+        if isinstance(second_type_definition, StrawberryObjectDefinition):
+            first_origin = second_type_definition.origin
+        elif isinstance(second_type_definition, EnumDefinition):
+            first_origin = second_type_definition.wrapped_cls
         else:
             first_origin = None
 
-        if isinstance(cached_type.definition, StrawberryObjectDefinition):
-            second_origin = cached_type.definition.origin
-        elif isinstance(cached_type.definition, EnumDefinition):
-            second_origin = cached_type.definition.wrapped_cls
+        if isinstance(first_type_definition, StrawberryObjectDefinition):
+            second_origin = first_type_definition.origin
+        elif isinstance(first_type_definition, EnumDefinition):
+            second_origin = first_type_definition.wrapped_cls
         else:
             second_origin = None
 

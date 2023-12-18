@@ -331,6 +331,7 @@ regarding it.
 
 ```python
 from strawberry.fastapi import GraphQLRouter
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from fastapi import FastAPI
 from api.schema import schema
 

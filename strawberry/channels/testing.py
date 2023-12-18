@@ -34,6 +34,9 @@ from strawberry.subscriptions.protocols.graphql_ws import (
 from strawberry.types import ExecutionResult
 
 if TYPE_CHECKING:
+    from types import TracebackType
+    from typing_extensions import Self
+
     from asgiref.typing import ASGIApplication
 
 
@@ -80,11 +83,16 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         subprotocols.append(protocol)
         super().__init__(application, path, headers, subprotocols=subprotocols)
 
-    async def __aenter__(self) -> GraphQLWebsocketCommunicator:
+    async def __aenter__(self) -> Self:
         await self.gql_init()
         return self
 
-    async def __aexit__(self, exc_type: Type, exc_val: Any, exc_tb: Any) -> None:
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
         await self.disconnect()
 
     async def gql_init(self) -> None:

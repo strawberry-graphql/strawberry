@@ -57,8 +57,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
         if has_object_definition(base):
             base_fields = {
                 field.python_name: field
-                # TODO: we need to rename _fields to something else
-                for field in base.__strawberry_definition__._fields
+                for field in base.__strawberry_definition__.fields
             }
 
             # Add base's fields to cls' fields
@@ -71,7 +70,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
 
     for base in cls.__mro__:
         if has_object_definition(base):
-            for field in base.__strawberry_definition__._fields:
+            for field in base.__strawberry_definition__.fields:
                 if field.python_name in base.__annotations__:
                     origins.setdefault(field.name, base)
 

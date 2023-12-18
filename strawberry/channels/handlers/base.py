@@ -138,7 +138,7 @@ class ChannelsConsumer(AsyncConsumer):
                     awaitable = asyncio.wait_for(awaitable, timeout)
                 try:
                     yield await awaitable
-                except asyncio.TimeoutError:  # noqa: PERF203
+                except asyncio.TimeoutError:
                     # TODO: shall we add log here and maybe in the suppress below?
                     return
         finally:
@@ -215,7 +215,7 @@ class ChannelsConsumer(AsyncConsumer):
                 awaitable = asyncio.wait_for(awaitable, timeout)
             try:
                 yield await awaitable
-            except asyncio.TimeoutError:  # noqa: PERF203
+            except asyncio.TimeoutError:
                 # TODO: shall we add log here and maybe in the suppress below?
                 return
 

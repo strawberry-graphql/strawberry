@@ -20,7 +20,7 @@ Before deploying your GraphQL app to production you should disable `GraphiQL` an
 
 GraphiQL is useful during testing and development but should be disabled in production by default.
 
-It can be turned off by setting the `graphiql` option to `False`
+It can be turned off by setting the `graphql_ide` option to `None`
 
 See the Strawberry Options documentation for the integration you are using for more information on how to disable it:
 
@@ -29,6 +29,7 @@ See the Strawberry Options documentation for the integration you are using for m
 - [Django](../integrations/django.md#options)
 - [FastAPI](../integrations/fastapi.md#options)
 - [Flask](../integrations/flask.md#options)
+- [Quart](../integrations/quart.md#options)
 - [Sanic](../integrations/sanic.md#options)
 - [Chalice](../integrations/chalice.md#options)
 - [Starlette](../integrations/starlette.md#options)

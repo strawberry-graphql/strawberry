@@ -1,6 +1,222 @@
 CHANGELOG
 =========
 
+0.216.1 - 2023-12-12
+--------------------
+
+Don't require `NodeId` annotation if resolve_id is overwritten on `Node` implemented types
+
+Contributed by [Alexander](https://github.com/devkral) via [PR #2844](https://github.com/strawberry-graphql/strawberry/pull/2844/)
+
+
+0.216.0 - 2023-12-06
+--------------------
+
+Override encode_json() method in Django BaseView to use DjangoJSONEncoder
+
+Contributed by [Noam Stolero](https://github.com/noamsto) via [PR #3273](https://github.com/strawberry-graphql/strawberry/pull/3273/)
+
+
+0.215.3 - 2023-12-06
+--------------------
+
+Fixed the base view so it uses `parse_json` when loading parameters from the query string instead of `json.loads`.
+
+Contributed by [Elias Gabriel](https://github.com/thearchitector) via [PR #3272](https://github.com/strawberry-graphql/strawberry/pull/3272/)
+
+
+0.215.2 - 2023-12-05
+--------------------
+
+This release updates the Apollo Sandbox integration to all you to
+pass cookies to the GraphQL endpoint by enabling the **Include cookes**
+option in the Sandbox settings.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3278](https://github.com/strawberry-graphql/strawberry/pull/3278/)
+
+
+0.215.1 - 2023-11-20
+--------------------
+
+Improved error message when supplying GlobalID format that relates to another type than the query itself.
+
+Contributed by [SD](https://github.com/sdobbelaere) via [PR #3194](https://github.com/strawberry-graphql/strawberry/pull/3194/)
+
+
+0.215.0 - 2023-11-19
+--------------------
+
+Adds an optional `extensions` parameter to `strawberry.federation.field`, with default value `None`. The key is passed through to `strawberry.field`, so the functionality is exactly as described [here](https://strawberry.rocks/docs/guides/field-extensions).
+
+Example:
+
+```python
+strawberry.federation.field(extensions=[InputMutationExtension()])
+```
+
+Contributed by [Bryan Ricker](https://github.com/bricker) via [PR #3239](https://github.com/strawberry-graphql/strawberry/pull/3239/)
+
+
+0.214.0 - 2023-11-15
+--------------------
+
+This release updates the GraphiQL packages to their latest versions:
+
+- `graphiql@3.0.9`
+- `@graphiql/plugin-explorer@1.0.2`
+
+Contributed by [Rodrigo Feijao](https://github.com/rodrigofeijao) via [PR #3227](https://github.com/strawberry-graphql/strawberry/pull/3227/)
+
+
+0.213.0 - 2023-11-08
+--------------------
+
+This release adds support in _all_ all our HTTP integration for choosing between
+different GraphQL IDEs. For now we support [GraphiQL](https://github.com/graphql/graphiql) (the default),
+[Apollo Sandbox](https://www.apollographql.com/docs/graphos/explorer/sandbox/), and [Pathfinder](https://pathfinder.dev/).
+
+**Deprecations:** This release deprecates the `graphiql` option in all HTTP integrations,
+in favour of `graphql_ide`, this allows us to only have one settings to change GraphQL ide,
+or to disable it.
+
+Here's a couple of examples of how you can use this:
+
+### FastAPI
+
+```python
+import strawberry
+
+from fastapi import FastAPI
+from strawberry.fastapi import GraphQLRouter
+from api.schema import schema
+
+graphql_app = GraphQLRouter(schema, graphql_ide="apollo-sandbox")
+
+app = FastAPI()
+app.include_router(graphql_app, prefix="/graphql")
+```
+
+### Django
+
+```python
+from django.urls import path
+
+from strawberry.django.views import GraphQLView
+
+from api.schema import schema
+
+urlpatterns = [
+    path("graphql/", GraphQLView.as_view(schema=schema, graphql_ide="pathfinder")),
+]
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3209](https://github.com/strawberry-graphql/strawberry/pull/3209/)
+
+
+0.212.0 - 2023-11-07
+--------------------
+
+This release changes how we check for generic types. Previously, any type that
+had a generic typevar would be considered generic for the GraphQL schema, this
+would generate un-necessary types in some cases. Now, we only consider a type
+generic if it has a typevar that is used as the type of a field or one of its arguments.
+
+For example the following type:
+
+```python
+@strawberry.type
+class Edge[T]:
+    cursor: strawberry.ID
+    some_interna_value: strawberry.Private[T]
+```
+
+Will not generate a generic type in the schema, as the typevar `T` is not used
+as the type of a field or argument.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3202](https://github.com/strawberry-graphql/strawberry/pull/3202/)
+
+
+0.211.2 - 2023-11-06
+--------------------
+
+This release removes unused `graphiql` submodules for Flask, Quart and Sanic.
+
+Contributed by [Pierre Chapuis](https://github.com/catwell) via [PR #3203](https://github.com/strawberry-graphql/strawberry/pull/3203/)
+
+
+0.211.1 - 2023-10-25
+--------------------
+
+This release fixes an issue that prevented the `parser_cache` extension to be used in combination with
+other extensions such as `MaxTokensLimiter`.
+
+The following should work as expected now:
+
+```python
+schema = strawberry.Schema(
+    query=Query, extensions=[MaxTokensLimiter(max_token_count=20), ParserCache()]
+)
+```
+
+Contributed by [David Šanda](https://github.com/Dazix) via [PR #3170](https://github.com/strawberry-graphql/strawberry/pull/3170/)
+
+
+0.211.0 - 2023-10-24
+--------------------
+
+This release adds a Quart view.
+
+Contributed by [Pierre Chapuis](https://github.com/catwell) via [PR #3162](https://github.com/strawberry-graphql/strawberry/pull/3162/)
+
+
+0.210.0 - 2023-10-24
+--------------------
+
+This release deprecates our `SentryTracingExtension`, as it is now incorporated directly into Sentry itself as of [version 1.32.0](https://github.com/getsentry/sentry-python/releases/tag/1.32.0). You can now directly instrument Strawberry with Sentry.
+
+Below is the revised usage example:
+
+```python
+import sentry_sdk
+from sentry_sdk.integrations.strawberry import StrawberryIntegration
+
+sentry_sdk.init(
+    dsn="___PUBLIC_DSN___",
+    integrations=[
+        # make sure to set async_execution to False if you're executing
+        # GraphQL queries synchronously
+        StrawberryIntegration(async_execution=True),
+    ],
+    traces_sample_rate=1.0,
+)
+```
+
+Many thanks to @sentrivana for their work on this integration!
+
+0.209.8 - 2023-10-20
+--------------------
+
+Fix strawberry mypy plugin for pydantic v2
+
+Contributed by [Corentin-Br](https://github.com/Corentin-Br) via [PR #3159](https://github.com/strawberry-graphql/strawberry/pull/3159/)
+
+
+0.209.7 - 2023-10-15
+--------------------
+
+Remove stack_info from error log messages to not clutter error logging with unnecessary information.
+
+Contributed by [Malte Finsterwalder](https://github.com/finsterwalder) via [PR #3143](https://github.com/strawberry-graphql/strawberry/pull/3143/)
+
+
+0.209.6 - 2023-10-07
+--------------------
+
+Add text/html content-type to chalice graphiql response
+
+Contributed by [Julian Popescu](https://github.com/jpopesculian) via [PR #3137](https://github.com/strawberry-graphql/strawberry/pull/3137/)
+
+
 0.209.5 - 2023-10-03
 --------------------
 
@@ -750,31 +966,34 @@ An example of migrating existing code is given below:
 # Existing code
 @strawberry.type
 class MyDataType:
-   name: str
+    name: str
+
 
 @strawberry.type
 class Subscription:
-   @strawberry.subscription
-   async def my_data_subscription(
-      self, info: Info, groups: list[str]
-   ) -> AsyncGenerator[MyDataType | None, None]:
-      yield None
-      async for message in info.context["ws"].channel_listen("my_data", groups=groups):
-         yield MyDataType(name=message["payload"])
+    @strawberry.subscription
+    async def my_data_subscription(
+        self, info: Info, groups: list[str]
+    ) -> AsyncGenerator[MyDataType | None, None]:
+        yield None
+        async for message in info.context["ws"].channel_listen(
+            "my_data", groups=groups
+        ):
+            yield MyDataType(name=message["payload"])
 ```
 
 ```py
 # New code
 @strawberry.type
 class Subscription:
-   @strawberry.subscription
-   async def my_data_subscription(
-      self, info: Info, groups: list[str]
-   ) -> AsyncGenerator[MyDataType | None, None]:
-      async with info.context["ws"].listen_to_channel("my_data", groups=groups) as cm:
-         yield None
-         async for message in cm:
-            yield MyDataType(name=message["payload"])
+    @strawberry.subscription
+    async def my_data_subscription(
+        self, info: Info, groups: list[str]
+    ) -> AsyncGenerator[MyDataType | None, None]:
+        async with info.context["ws"].listen_to_channel("my_data", groups=groups) as cm:
+            yield None
+            async for message in cm:
+                yield MyDataType(name=message["payload"])
 ```
 
 Contributed by [Moritz Ulmer](https://github.com/moritz89) via [PR #2856](https://github.com/strawberry-graphql/strawberry/pull/2856/)
@@ -1392,6 +1611,7 @@ class Point:
     id: str
     x: float
     y: float
+
 
 class GetPointsResult:
     circle_points: List[Point]

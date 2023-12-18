@@ -118,7 +118,7 @@ that the current tests are passing on your machine:
 
 ```shell
 $ poetry install --with integrations
-$ poetry run pytest tests -n auto
+$ poetry run pytest
 $ poetry run mypy
 ```
 

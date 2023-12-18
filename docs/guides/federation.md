@@ -323,6 +323,66 @@ We have provided a full example that you can run and tweak to play with
 Strawberry and Federation. The repo is available here:
 [https://github.com/strawberry-graphql/federation-demo](https://github.com/strawberry-graphql/federation-demo)
 
+## Federated schema directives
+
+Strawberry provides implementations for [Apollo federation-specific GraphQL directives](https://www.apollographql.com/docs/federation/federated-types/federated-directives/).
+
+Some of these directives may not be necessary to directly include in your code, and are accessed through other means.
+
+- `@interfaceObject` (for more details, see [Extending interfaces](https://strawberry.rocks/docs/federation/entity-interfaces))
+- `@key` (for more details, see [Entities (Apollo Federation)](https://strawberry.rocks/docs/federation/entities))
+- `@link` (is automatically be added to the schema when any other federated schema directive is used)
+
+Other directives you may need to specifically include when relevant.
+
+- `@composeDirective`
+- `@external`
+- `@inaccessible`
+- `@override`
+- `@provides`
+- `@requires`
+- `@shareable`
+- `@tag`
+
+For example, adding the following directives:
+
+```python
+import strawberry
+from strawberry.federation.schema_directives import Inaccessible, Shareable, Tag
+
+
+@strawberry.type(directives=[Key(fields="id"), Tag(name="experimental")])
+class Book:
+    id: strawberry.ID
+
+
+@strawberry.type(directives=[Shareable()])
+class CommonType:
+    foo: str
+    woops: bool = strawberry.field(directives=[Inaccessible()])
+```
+
+Will result in the following GraphQL schema:
+
+```graphql
+schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.3"
+    import: ["@key", "@inaccessible", "@shareable", "@tag"]
+  ) {
+  query: Query
+  mutation: Mutation
+}
+
+type Book @tag(name: "experimental") @key(fields: "id", resolveable: true) {
+  id: ID!
+}
+
+type CommonType @shareable {
+  foo: String!
+}
+```
+
 ## Additional resources
 
 [Apollo Federation Quickstart](https://www.apollographql.com/docs/federation/quickstart/setup/)

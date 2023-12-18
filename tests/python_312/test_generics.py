@@ -1174,7 +1174,6 @@ def test_generic_interface_extra_types():
     assert query_result.data == {"real": {"__typename": "IntReal", "x": ""}}
 
 
-
 def test_generics_via_anonymous_union():
     @strawberry.type
     class Edge[T]:
