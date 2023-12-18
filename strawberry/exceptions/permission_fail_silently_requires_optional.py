@@ -20,7 +20,7 @@ class PermissionFailSilentlyRequiresOptionalError(StrawberryException):
         self.rich_message = (
             "fail_silently permissions can only be used with fields of type "
             f"optional or list. Provided field `[underline]{field.name}[/]` "
-            f"is of type `[underline]{field.type}[/]`"
+            f"is of type `[underline]{field.type.__name__}[/]`"
         )
         self.annotation_message = "field defined here"
         self.suggestion = (

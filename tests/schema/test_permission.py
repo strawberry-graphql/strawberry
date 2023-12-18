@@ -476,6 +476,10 @@ def test_silent_permissions_list():
     assert result.errors is None
 
 
+@pytest.mark.raises_strawberry_exception(
+    PermissionFailSilentlyRequiresOptionalError,
+    match="Cannot use fail_silently=True with a non-optional or non-list field",
+)
 def test_silent_permissions_incompatible_types():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"
@@ -484,20 +488,22 @@ def test_silent_permissions_incompatible_types():
             return False
 
     @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
     class Query:
         @strawberry.field(
             extensions=[PermissionExtension([IsAuthorized()], fail_silently=True)]
         )
-        def name(self) -> str:
-            return "ABC"
+        def name(self) -> User:
+            return User(name="ABC")
 
     error = re.escape(
         "Cannot use fail_silently=True with a non-optional " "or non-list field"
     )
 
-    # expect pytest error with message saved in variable error
-    with pytest.raises(PermissionFailSilentlyRequiresOptionalError):
-        schema = strawberry.Schema(query=Query)
+    strawberry.Schema(query=Query)
 
 
 def test_permission_directives_added():
