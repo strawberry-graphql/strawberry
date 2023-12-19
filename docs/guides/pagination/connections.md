@@ -496,6 +496,8 @@ class Edge(Generic[GenericType]):
 
 @strawberry.type
 class User:
+    id: int = strawberry.field(description="The id of the user.")
+
     name: str = strawberry.field(description="The name of the user.")
 
     occupation: str = strawberry.field(description="The occupation of the user.")
@@ -518,16 +520,16 @@ class Query:
             user_id = 0
 
         # filter the user data, going through the next set of results.
-        filtered_data = map(lambda user: user.id > user_id, user_data)
+        filtered_data = list(filter(lambda user: user["id"] > user_id, user_data))
 
         # slice the relevant user data (Here, we also slice an
         # additional user instance, to prepare the next cursor).
-        sliced_users = filtered_data[after : first + 1]
+        sliced_users = filtered_data[: first + 1]
 
         if len(sliced_users) > first:
             # calculate the client's next cursor.
             last_user = sliced_users.pop(-1)
-            next_cursor = encode_user_cursor(id=last_user.id)
+            next_cursor = encode_user_cursor(id=last_user["id"])
             has_next_page = True
         else:
             # We have reached the last page, and
@@ -543,8 +545,8 @@ class Query:
         # build user edges.
         edges = [
             Edge(
-                node=cast(UserType, user),
-                cursor=encode_user_cursor(id=user.id),
+                node=User(**user),
+                cursor=encode_user_cursor(id=user["id"]),
             )
             for user in sliced_users
         ]
@@ -590,14 +592,12 @@ Here's an example query to try out:
 ```graphql
 query getUsers {
   getUsers(first: 2) {
-    users {
-      edges {
-        node {
-          id
-          name
-          occupation
-          age
-        }
+    edges {
+      node {
+        id
+        name
+        occupation
+        age
       }
       cursor
     }
