@@ -524,7 +524,7 @@ class Query:
 
         # slice the relevant user data (Here, we also slice an
         # additional user instance, to prepare the next cursor).
-        sliced_users = filtered_data[ :first+1]
+        sliced_users = filtered_data[: first + 1]
 
         if len(sliced_users) > first:
             # calculate the client's next cursor.
