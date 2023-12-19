@@ -131,7 +131,7 @@ class HttpClient(abc.ABC):
         method: Literal["get", "post"] = "post",
         extensions: Optional[Dict[str, Any]] = None,
     ) -> Optional[Dict[str, object]]:
-        if query is None and extensions is None:
+        if query is None:
             assert files is None
             assert variables is None
 
