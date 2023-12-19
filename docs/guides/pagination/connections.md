@@ -592,14 +592,12 @@ Here's an example query to try out:
 ```graphql
 query getUsers {
   getUsers(first: 2) {
-    users {
-      edges {
-        node {
-          id
-          name
-          occupation
-          age
-        }
+    edges {
+      node {
+        id
+        name
+        occupation
+        age
       }
       cursor
     }
