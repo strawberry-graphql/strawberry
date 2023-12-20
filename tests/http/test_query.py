@@ -225,6 +225,6 @@ async def test_get_extensions(method: Literal["get", "post"], http_client: HttpC
         method=method,
         variables={"name": "Bas"},
         query="query ($name: String!) { setHeader(name: $name) }",
-        extensions={"persist": 'ext'},
+        extensions={"persist": "ext"},
     )
     assert response.status_code == 200
