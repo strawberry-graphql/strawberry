@@ -5,5 +5,5 @@ Related to [#1707](https://github.com/strawberry-graphql/strawberry/issues/1707)
 ```bash
 curl --get http://localhost:4000/graphql \
   --header 'content-type: application/json' \
-  --data-urlencode 'extensions={"persistedQuery":{"version":1,"sha256Hash":"ecf4edb46db40b5132295c0291d62fb65d6759a9eedfa4d5d612dd5ec54a6b38"}}'
+  --data-urlencode 'extensions={"persistedQuery":{"version":2,"sha256Hash":"ecf4edb46db40b5132295c0291d62fb65d6759a9eedfa4d5d612dd5ec54a6b38"}}'
 ```
