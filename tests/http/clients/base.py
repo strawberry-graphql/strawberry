@@ -56,7 +56,7 @@ class HttpClient(abc.ABC):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        extensions: Optional[Dict[str, Any]] = None,
+        extensions: Optional[Dict[str, object]] = None,
         **kwargs: Any,
     ) -> Response:
         ...
@@ -95,7 +95,7 @@ class HttpClient(abc.ABC):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        extensions: Optional[Dict[str, Any]] = None,
+        extensions: Optional[Dict[str, object]] = None,
     ) -> Response:
         return await self._graphql_request(
             method,
@@ -129,7 +129,7 @@ class HttpClient(abc.ABC):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         method: Literal["get", "post"] = "post",
-        extensions: Optional[Dict[str, Any]] = None,
+        extensions: Optional[Dict[str, object]] = None,
     ) -> Optional[Dict[str, object]]:
         if query is None:
             assert files is None
@@ -157,6 +157,9 @@ class HttpClient(abc.ABC):
 
         if method == "get" and variables:
             body["variables"] = json.dumps(variables)
+
+        if method == "get" and extensions:
+            body["extensions"] = json.dumps(extensions)
 
         return body
 

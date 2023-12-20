@@ -239,7 +239,7 @@ class Schema(BaseSchema):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
-        extensions: Optional[Dict[str, str]] = None,
+        extensions: Optional[Dict[str, Any]] = None,
     ) -> ExecutionResult:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
@@ -273,7 +273,7 @@ class Schema(BaseSchema):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
-        extensions: Optional[Dict[str, str]] = {},
+        extensions: Optional[Dict[str, Any]] = {},
     ) -> ExecutionResult:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES

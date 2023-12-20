@@ -101,7 +101,7 @@ class DjangoHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        extensions: Optional[Dict[str, Any]] = None,
+        extensions: Optional[Dict[str, object]] = None,
         **kwargs: Any,
     ) -> Response:
         headers = self._get_headers(method=method, headers=headers, files=files)

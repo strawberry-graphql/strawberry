@@ -106,7 +106,7 @@ class AioHttpClient(HttpClient):
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
-        extensions: Optional[Dict[str, Any]] = None,
+        extensions: Optional[Dict[str, object]] = None,
         **kwargs: Any,
     ) -> Response:
         async with TestClient(TestServer(self.app)) as client:
