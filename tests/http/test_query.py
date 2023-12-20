@@ -217,3 +217,17 @@ async def test_updating_headers(
     assert response.status_code == 200
     assert response.json["data"] == {"setHeader": "Jake"}
     assert response.headers["X-Name"] == "Jake"
+
+
+
+@pytest.mark.parametrize("method", ["get", "post"])
+async def test_get_extensions(
+    method: Literal["get", "post"], http_client: HttpClient
+):
+    response = await http_client.query(
+        method=method,
+        variables={"name": "Bas"},
+        query="query ($name: String!) { setHeader(name: $name) }",
+        extensions={"persist": True}
+    )
+    assert response.status_code == 200
