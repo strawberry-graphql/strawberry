@@ -262,7 +262,7 @@ date_time = strawberry.scalar(
 )
 ```
 
-## Int64
+## BigInt (64-bit integers)
 
 Python by default allows, integer size to be 2^64. However the graphql spec has capped it to 2^32.
 
@@ -270,22 +270,29 @@ This will inevitably raise errors. Instead of using strings on the client as a w
 you could use the following scalar:
 
 ```python
-# This is needed because GraphQL does not support int64
-Int64 = strawberry.scalar(
+# This is needed because GraphQL does not support 64 bit integers
+BigInt = strawberry.scalar(
     Union[int, str],  # type: ignore
     serialize=lambda v: int(v),
     parse_value=lambda v: str(v),
-    description="Int64 field",
+    description="BigInt field",
 )
 ```
 
-Remember to override these changes in your schema instance:
+You can adapt your schema to automatically use this scalar for all integers by using the `scalar_overrides` parameter
+
+<Tip>
+Only use this override, if you expect most of your integers to be 64-bit. Since most GraphQL schemas 
+follow standardized design patterns and most clients require additional effort to handle all numbers 
+as strings, it makes more sense to reserve BigInt for numbers that actually exceed the 32-bit limit. 
+You can achieve this by annotating `BigInt` instead of `int` in your resolvers handling large python integers.
+</Tip>
 
 ```python
 user_schema = strawberry.Schema(
     query=Query,
     mutation=Mutation,
     subscription=Subscription,
-    scalar_overrides={datetime: date_time, int: Int64},
+    scalar_overrides={datetime: date_time, int: BigInt},
 )
 ```
