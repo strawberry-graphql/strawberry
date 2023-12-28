@@ -282,7 +282,7 @@ BigInt = strawberry.scalar(
 You can adapt your schema to automatically use this scalar for all integers by using the `scalar_overrides` parameter
 
 <Tip>
-Only use this override, if you expect most of your integers to be 64-bit. Since most GraphQL schemas
+Only use this override if you expect most of your integers to be 64-bit. Since most GraphQL schemas
 follow standardized design patterns and most clients require additional effort to handle all numbers
 as strings, it makes more sense to reserve BigInt for numbers that actually exceed the 32-bit limit.
 You can achieve this by annotating `BigInt` instead of `int` in your resolvers handling large python integers.
