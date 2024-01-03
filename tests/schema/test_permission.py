@@ -532,6 +532,39 @@ def test_permission_directives_added():
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
+def test_or_permission_directives_added():
+    class AllowedPermission(BasePermission):
+        message = "Allowed"
+
+        def has_permission(self, source, info, **kwargs: typing.Any):
+            return True
+
+    class DeniedPermission(BasePermission):
+        message = "Denied"
+
+        def has_permission(self, source, info, **kwargs: typing.Any):
+            return False
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(
+            extensions=[PermissionExtension([AllowedPermission() | DeniedPermission()])]
+        )
+        def name(self) -> str:  # pragma: no cover
+            return "ABC"
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_output = """
+    directive @allowedPermissionOrDeniedPermission on FIELD_DEFINITION
+
+    type Query {
+      name: String! @allowedPermissionOrDeniedPermission
+    }
+    """
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
 def test_permission_directives_reused_across_fields():
     class IsAuthorized(BasePermission):
         def has_permission(self, source, info, **kwargs: typing.Any) -> bool:
