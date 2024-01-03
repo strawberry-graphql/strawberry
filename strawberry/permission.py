@@ -100,6 +100,9 @@ class OrPermission(BasePermission):
     failed_permission: Optional[BasePermission] = None
 
     def __init__(self, permissions: Tuple[BasePermission, ...]):
+        if not permissions:
+            raise ValueError("At least one permission is required")
+
         self.permissions = permissions
 
         messages = [p.message for p in permissions if p.message]
