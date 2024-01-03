@@ -7,12 +7,16 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Awaitable,
+    Callable,
     Dict,
     List,
     Optional,
+    Tuple,
     Type,
     Union,
 )
+
+from asgiref.sync import async_to_sync
 
 from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.exceptions.permission_fail_silently_requires_optional import (
@@ -47,6 +51,9 @@ class BasePermission(abc.ABC):
 
     _schema_directive: Optional[object] = None
 
+    def __or__(self, other: BasePermission):
+        return OrPermission((self, other))
+
     @abc.abstractmethod
     def has_permission(
         self, source: Any, info: Info, **kwargs: Any
@@ -80,6 +87,55 @@ class BasePermission(abc.ABC):
                 __strawberry_directive__ = StrawberrySchemaDirective(
                     self.__class__.__name__,
                     self.__class__.__name__,
+                    [Location.FIELD_DEFINITION],
+                    [],
+                )
+
+            self._schema_directive = AutoDirective()
+
+        return self._schema_directive
+
+
+class OrPermission(BasePermission):
+    failed_permission: Optional[BasePermission] = None
+
+    def __init__(self, permissions: Tuple[BasePermission, ...]):
+        self.permissions = permissions
+
+        messages = [p.message for p in permissions if p.message]
+        if messages:
+            self.message = ", or ".join(messages)
+
+    def has_permission(self, source: Any, info: Info, **kwargs: Any) -> bool:
+        for permission in self.permissions:
+            has_permission = (
+                async_to_sync(permission.has_permission)
+                if iscoroutinefunction(permission.has_permission)
+                else permission.has_permission
+            )
+            if has_permission(source, info, **kwargs):
+                return True
+
+        self.failed_permission = permission
+        self.message = permission.message
+        return False
+
+    @property
+    def on_unauthorized(self) -> Callable[[], None]:
+        if not self.failed_permission:
+            return lambda: None
+
+        return self.failed_permission.on_unauthorized
+
+    @property
+    def schema_directive(self) -> object:
+        if not self._schema_directive:
+            directive_name = "Or".join([p.__class__.__name__ for p in self.permissions])
+
+            class AutoDirective:
+                __strawberry_directive__ = StrawberrySchemaDirective(
+                    directive_name,
+                    directive_name,
                     [Location.FIELD_DEFINITION],
                     [],
                 )

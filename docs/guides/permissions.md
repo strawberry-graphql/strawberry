@@ -204,6 +204,29 @@ To customize the error handling, the `on_unauthorized` method on
 the `BasePermission` class can be used. Further changes can be implemented by
 subclassing the `PermissionExtension` class.
 
+## `|` operator support
+
+Permissions can be combined with the `|` operator to require the user pass _either_ of the `has_permission` checks:
+
+```python
+import strawberry
+from strawberry.permission import PermissionExtension
+
+
+@strawberry.type
+class User:
+    @strawberry.field(
+        extensions=[
+            PermissionExtension(
+                # require auth AND (node is current user OR current user is staff)
+                permissions=[IsAuthenticated(), IsExactUser() | IsStaff()]
+            )
+        ]
+    )
+    def ssn(self) -> str:
+        return "555-55-5555"
+```
+
 ## Schema Directives
 
 Permissions will automatically be added as schema directives to the schema. This
