@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import sys
 from collections import abc  # noqa: F401
-from typing import AsyncGenerator, AsyncIterable, AsyncIterator, Union  # noqa: F401
+from typing import AsyncGenerator, AsyncIterable, AsyncIterator, Union, \
+    Any  # noqa: F401
 from typing_extensions import Annotated
 
 import pytest
 
 import strawberry
+from strawberry.types import Info
 
 
 @pytest.mark.asyncio
@@ -20,6 +22,35 @@ async def test_subscription():
     @strawberry.type
     class Subscription:
         @strawberry.subscription
+        async def example(self) -> AsyncGenerator[str, None]:
+            yield "Hi"
+
+    schema = strawberry.Schema(query=Query, subscription=Subscription)
+
+    query = "subscription { example }"
+
+    sub = await schema.subscribe(query)
+    result = await sub.__anext__()
+
+    assert not result.errors
+    assert result.data["example"] == "Hi"
+
+@pytest.mark.asyncio
+async def test_subscription():
+    from strawberry import BasePermission
+    class IsAuthenticated(BasePermission):
+        message = "Unauthorized"
+
+        async def has_permission(self, source: Any, info: Info, **kwargs: Any) -> bool:
+            return True
+
+    @strawberry.type
+    class Query:
+        x: str = "Hello"
+
+    @strawberry.type
+    class Subscription:
+        @strawberry.subscription(permission_classes=[IsAuthenticated])
         async def example(self) -> AsyncGenerator[str, None]:
             yield "Hi"
 
