@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import inspect
 from functools import cached_property
 from inspect import iscoroutinefunction
 from typing import (
@@ -169,7 +170,10 @@ class PermissionExtension(FieldExtension):
 
             if not has_permission:
                 return self._on_unauthorized(permission)
-        return await next_(source, info, **kwargs)
+        next = next_(source, info, **kwargs)
+        if inspect.isasyncgen(next):
+            return next
+        return await next
 
     @cached_property
     def supports_sync(self) -> bool:
