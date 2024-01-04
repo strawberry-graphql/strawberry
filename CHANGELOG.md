@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.217.1 - 2024-01-04
+--------------------
+
+This hotfix enables permission extensions to be used with AsyncGenerators.
+
+Contributed by [Erik Wrede](https://github.com/erikwrede) via [PR #3318](https://github.com/strawberry-graphql/strawberry/pull/3318/)
+
+
 0.217.0 - 2023-12-18
 --------------------
 
