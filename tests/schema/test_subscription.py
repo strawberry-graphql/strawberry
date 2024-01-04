@@ -42,7 +42,7 @@ async def test_subscription():
 
 
 @pytest.mark.asyncio
-async def test_subscription():
+async def test_subscription_with_permission():
     from strawberry import BasePermission
 
     class IsAuthenticated(BasePermission):
