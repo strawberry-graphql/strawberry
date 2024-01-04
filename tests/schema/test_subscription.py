@@ -3,8 +3,13 @@ from __future__ import annotations
 
 import sys
 from collections import abc  # noqa: F401
-from typing import AsyncGenerator, AsyncIterable, AsyncIterator, Union, \
-    Any  # noqa: F401
+from typing import (  # noqa: F401
+    Any,
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    Union,
+)
 from typing_extensions import Annotated
 
 import pytest
@@ -35,9 +40,11 @@ async def test_subscription():
     assert not result.errors
     assert result.data["example"] == "Hi"
 
+
 @pytest.mark.asyncio
 async def test_subscription():
     from strawberry import BasePermission
+
     class IsAuthenticated(BasePermission):
         message = "Unauthorized"
 
