@@ -35,7 +35,7 @@ build-backend = "poetry.masonry.api"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-graphql-core = "~3.3.0a3"
+graphql-core = {version="3.3.0a3", allows-prereleases = true}
 typing-extensions = ">=4.5.0"
 python-dateutil = "^2.7.0"
 starlette = {version = ">=0.18.0", optional = true}
