@@ -66,6 +66,8 @@ First, let's create some Strawberry-types for the chat.
 ```python
 # mysite/gqlchat/subscription.py
 
+import strawberry
+
 
 @strawberry.input
 class ChatRoom:
@@ -104,6 +106,13 @@ Now we will create the chat [subscription](../general/subscriptions.md).
 
 ```python
 # mysite/gqlchat/subscription.py
+
+import os
+import threading
+
+from typing import AsyncGenerator, List
+
+from strawberry.types import Info
 
 
 @strawberry.type
@@ -184,7 +193,10 @@ have to create a mutation for sending messages via the `channel_layer`
 ```python
 # mysite/gqlchat/subscription.py
 
+from channels.layers import get_channel_layer
 
+
+@strawberry.type
 class Mutation:
     @strawberry.mutation
     async def send_chat_message(
@@ -193,8 +205,7 @@ class Mutation:
         room: ChatRoom,
         message: str,
     ) -> None:
-        ws = info.context["ws"]
-        channel_layer = ws.channel_layer
+        channel_layer = get_channel_layer()
 
         await channel_layer.group_send(
             f"chat_{room.room_name}",
@@ -248,6 +259,7 @@ An example of this (continuing from channels tutorial) would be:
 
 ```python
 import os
+
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.core.asgi import get_asgi_application
@@ -264,13 +276,14 @@ django_asgi_app = get_asgi_application()
 from chat import routing
 from mysite.graphql import schema
 
-websocket_urlpatterns = routing.websocket_urlpatterns + [
-    re_path(r"graphql", GraphQLWSConsumer.as_asgi(schema=schema)),
-]
-
 
 gql_http_consumer = AuthMiddlewareStack(GraphQLHTTPConsumer.as_asgi(schema=schema))
 gql_ws_consumer = GraphQLWSConsumer.as_asgi(schema=schema)
+
+websocket_urlpatterns = routing.websocket_urlpatterns + [
+    re_path(r"graphql", gql_ws_consumer),
+]
+
 application = ProtocolTypeRouter(
     {
         "http": URLRouter(
@@ -493,8 +506,7 @@ be extended:
 `GraphQLHTTPConsumer` supports the same options as all other integrations:
 
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
-- `graphiql`: optional, defaults to `True`, whether to enable the GraphiQL
-  interface.
+- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
 - `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in

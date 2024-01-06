@@ -11,42 +11,32 @@ should be able to return a sorted, filtered, and paginated list of users.
 
 Let us model the `User` type, which represents one user, with a name, occupation, and age.
 
-```py line=1-24
+```python
 # example.py
-from typing import List, TypeVar, Dict, Any
+from typing import List, TypeVar, Dict, Any, Generic
 import strawberry
 
 
 @strawberry.type
 class User:
-    name: str = strawberry.field(
-        description="The name of the user."
-    )
-    occupation: str = strawberry.field(
-        description="The occupation of the user."
-    )
-    age: int = strawberry.field(
-        description="The age of the user."
-    )
+    name: str = strawberry.field(description="The name of the user.")
+    occupation: str = strawberry.field(description="The occupation of the user.")
+    age: int = strawberry.field(description="The age of the user.")
 
     @staticmethod
     def from_row(row: Dict[str, Any]):
-        return User(
-            name=row['name'],
-            occupation=row['occupation'],
-            age=row['age']
-        )
+        return User(name=row["name"], occupation=row["occupation"], age=row["age"])
 ```
 
 Let us now model the `PaginationWindow`, which represents one "slice" of sorted, filtered, and paginated items.
 
-```py line=27-38
-GenericType = TypeVar("GenericType")
+```python
+Item = TypeVar("Item")
 
 
 @strawberry.type
-class PaginationWindow(List[GenericType]):
-    items: List[GenericType] = strawberry.field(
+class PaginationWindow(Generic[Item]):
+    items: List[Item] = strawberry.field(
         description="The list of items in this pagination window."
     )
 
@@ -63,25 +53,25 @@ dataset, so that the client knows what the highest offset value can be.
 
 Let's define the query:
 
-```py line=41-70
+```python
 @strawberry.type
 class Query:
     @strawberry.field(description="Get a list of users.")
-    def users(self,
-              order_by: str,
-              limit: int,
-              offset: int = 0,
-              name: str | None = None,
-              occupation: str| None = None
-              ) -> PaginationWindow[User]:
-
+    def users(
+        self,
+        order_by: str,
+        limit: int,
+        offset: int = 0,
+        name: str | None = None,
+        occupation: str | None = None,
+    ) -> PaginationWindow[User]:
         filters = {}
 
         if name:
-            filters['name'] = name
+            filters["name"] = name
 
         if occupation:
-            filters['occupation'] = occupation
+            filters["occupation"] = occupation
 
         return get_pagination_window(
             dataset=user_data,
@@ -89,8 +79,9 @@ class Query:
             order_by=order_by,
             limit=limit,
             offset=offset,
-            filters=filters
+            filters=filters,
         )
+
 
 schema = strawberry.Schema(query=Query)
 ```
@@ -99,46 +90,47 @@ Now we'll define a mock dataset and implement the `get_pagination_window` functi
 
 For the sake of simplicity, our dataset will be an in-memory list containing four users:
 
-```py line=72-97
+```python
 user_data = [
-  {
-    "id": 1,
-    "name": "Norman Osborn",
-    "occupation": "Founder, Oscorp Industries",
-    "age": 42
-  },
-  {
-    "id": 2,
-    "name": "Peter Parker",
-    "occupation": "Freelance Photographer, The Daily Bugle",
-    "age": 20
-  },
-  {
-    "id": 3,
-    "name": "Harold Osborn",
-    "occupation": "President, Oscorp Industries",
-    "age": 19
-  },
-  {
-    "id": 4,
-    "name": "Eddie Brock",
-    "occupation": "Journalist, The Eddie Brock Report",
-    "age": 20
-  }
+    {
+        "id": 1,
+        "name": "Norman Osborn",
+        "occupation": "Founder, Oscorp Industries",
+        "age": 42,
+    },
+    {
+        "id": 2,
+        "name": "Peter Parker",
+        "occupation": "Freelance Photographer, The Daily Bugle",
+        "age": 20,
+    },
+    {
+        "id": 3,
+        "name": "Harold Osborn",
+        "occupation": "President, Oscorp Industries",
+        "age": 19,
+    },
+    {
+        "id": 4,
+        "name": "Eddie Brock",
+        "occupation": "Journalist, The Eddie Brock Report",
+        "age": 20,
+    },
 ]
 ```
 
 Here's the implementation of the `get_pagination_window` function. Note that it is generic and should work for all item types,
 not only for the `User` type.
 
-```py line=100-146
+```python
 def get_pagination_window(
-        dataset: List[GenericType],
-        ItemType: type,
-        order_by: str,
-        limit: int,
-        offset: int = 0,
-        filters: dict[str, str] = {}) -> PaginationWindow:
+    dataset: List[GenericType],
+    ItemType: type,
+    order_by: str,
+    limit: int,
+    offset: int = 0,
+    filters: dict[str, str] = {},
+) -> PaginationWindow:
     """
     Get one pagination window on the given dataset for the given limit
     and offset, ordered by the given attribute and filtered using the
@@ -146,7 +138,7 @@ def get_pagination_window(
     """
 
     if limit <= 0 or limit > 100:
-        raise Exception(f'limit ({limit}) must be between 0-100')
+        raise Exception(f"limit ({limit}) must be between 0-100")
 
     if filters:
         dataset = list(filter(lambda x: matches(x, filters), dataset))
@@ -154,19 +146,15 @@ def get_pagination_window(
     dataset.sort(key=lambda x: x[order_by])
 
     if offset != 0 and not 0 <= offset < len(dataset):
-        raise Exception(f'offset ({offset}) is out of range '
-                        f'(0-{len(dataset) - 1})')
+        raise Exception(f"offset ({offset}) is out of range " f"(0-{len(dataset) - 1})")
 
     total_items_count = len(dataset)
 
-    items = dataset[offset:offset + limit]
+    items = dataset[offset : offset + limit]
 
     items = [ItemType.from_row(x) for x in items]
 
-    return PaginationWindow(
-        items=items,
-        total_items_count=total_items_count
-    )
+    return PaginationWindow(items=items, total_items_count=total_items_count)
 
 
 def matches(item, filters):

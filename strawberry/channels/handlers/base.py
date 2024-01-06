@@ -116,7 +116,7 @@ class ChannelsConsumer(AsyncConsumer):
         if self.channel_layer is None:
             raise RuntimeError(
                 "Layers integration is required listening for channels.\n"
-                "Check https://channels.readthedocs.io/en/stable/topics/channel_layers.html "  # noqa:E501
+                "Check https://channels.readthedocs.io/en/stable/topics/channel_layers.html "
                 "for more information"
             )
 
@@ -138,7 +138,7 @@ class ChannelsConsumer(AsyncConsumer):
                     awaitable = asyncio.wait_for(awaitable, timeout)
                 try:
                     yield await awaitable
-                except asyncio.TimeoutError:  # noqa: PERF203
+                except asyncio.TimeoutError:
                     # TODO: shall we add log here and maybe in the suppress below?
                     return
         finally:
@@ -176,7 +176,7 @@ class ChannelsConsumer(AsyncConsumer):
         if self.channel_layer is None:
             raise RuntimeError(
                 "Layers integration is required listening for channels.\n"
-                "Check https://channels.readthedocs.io/en/stable/topics/channel_layers.html "  # noqa:E501
+                "Check https://channels.readthedocs.io/en/stable/topics/channel_layers.html "
                 "for more information"
             )
 
@@ -215,7 +215,7 @@ class ChannelsConsumer(AsyncConsumer):
                 awaitable = asyncio.wait_for(awaitable, timeout)
             try:
                 yield await awaitable
-            except asyncio.TimeoutError:  # noqa: PERF203
+            except asyncio.TimeoutError:
                 # TODO: shall we add log here and maybe in the suppress below?
                 return
 

@@ -86,7 +86,7 @@ very small resolvers.
 
 The _self_ argument is a bit special here, when executing a GraphQL query, in
 case of resolvers defined with a decorator, the _self_ argument corresponds to
-the _root_ value that field. In this example the _root_ value is the value
+the _root_ value of that field. In this example the _root_ value is the value
 `Query` type, which is usually `None`. You can change the _root_ value when
 calling the `execute` method on a `Schema`. More on _root_ values below.
 
@@ -220,6 +220,50 @@ class User:
     first_name: str
     last_name: str
     full_name: str = strawberry.field(resolver=full_name)
+```
+
+For either decorated resolvers or Python functions, there is a third option
+which is to annotate one of the parameters with the type `Parent`. This is
+particularly useful if the parent resolver returns a type other than the
+strawberry type that the resolver is defined within, as it allows you to
+specify the type of the parent object. This comes up particularly often
+for resolvers that return ORMs:
+
+```python
+import dataclass
+
+import strawberry
+
+
+@dataclass
+class UserRow:
+    id_: str
+
+
+@strawberry.type
+class User:
+    @strawberry.field
+    @staticmethod
+    async def name(parent: strawberry.Parent[UserRow]) -> str:
+        return f"User Number {parent.id}"
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user(self) -> User:
+        # Even though this method is annotated as returning type `User`,
+        # which strawberry uses to define the GraphQL schema, we're
+        # not actually required to return an object of that type. Whatever
+        # object we do return will be passed on to child resolvers that
+        # request it via the `self`, `root`, or `strawberry.Parent` parameter.
+        # In this case, we return our ORM directly.
+        #
+        # Put differently, the GraphQL schema and associated resolvers come
+        # from the type annotations, but the actual object passed to the
+        # resolvers via `self`, `root`, or `strawberry.Parent` is whatever
+        # the parent resolvers return, regardless of type.
+        return UserRow(id_="1234")
 ```
 
 ## Accessing execution information

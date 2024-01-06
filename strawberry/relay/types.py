@@ -45,7 +45,6 @@ if TYPE_CHECKING:
     from strawberry.utils.await_maybe import AwaitableOrValue
 
 _T = TypeVar("_T")
-_R = TypeVar("_R")
 
 NodeIterableType: TypeAlias = Union[
     Iterator[_T],
@@ -199,7 +198,11 @@ class GlobalID:
                 ensure_type = tuple(get_args(ensure_type))
 
             if not isinstance(node, ensure_type):
-                raise TypeError(f"{ensure_type} expected, found {node!r}")
+                msg = (
+                    f"Cannot resolve. GlobalID requires {ensure_type}, received {node!r}. "
+                    "Verify that the supplied ID is intended for this Query/Mutation/Subscription."
+                )
+                raise TypeError(msg)
 
         return node
 
@@ -214,7 +217,6 @@ class GlobalID:
             The resolved GraphQL type for the execution info
 
         """
-        schema = info.schema
         type_def = info.schema.get_type_by_name(self.type_name)
         assert isinstance(type_def, StrawberryObjectDefinition)
 
@@ -295,7 +297,11 @@ class GlobalID:
                 ensure_type = tuple(get_args(ensure_type))
 
             if not isinstance(node, ensure_type):
-                raise TypeError(f"{ensure_type} expected, found {node!r}")
+                msg = (
+                    f"Cannot resolve. GlobalID requires {ensure_type}, received {node!r}. "
+                    "Verify that the supplied ID is intended for this Query/Mutation/Subscription."
+                )
+                raise TypeError(msg)
 
         return node
 
@@ -871,14 +877,24 @@ class ListConnection(Connection[NodeType]):
                         overfetch,
                     )
 
-                assert isinstance(iterator, (AsyncIterator, AsyncIterable))
-                edges: List[Edge] = [
-                    edge_class.resolve_edge(
-                        cls.resolve_node(v, info=info, **kwargs),
-                        cursor=start + i,
-                    )
-                    async for i, v in aenumerate(iterator)
-                ]
+                # The slice above might return an object that now is not async
+                # iterable anymore (e.g. an already cached django queryset)
+                if isinstance(iterator, (AsyncIterator, AsyncIterable)):
+                    edges: List[Edge] = [
+                        edge_class.resolve_edge(
+                            cls.resolve_node(v, info=info, **kwargs),
+                            cursor=start + i,
+                        )
+                        async for i, v in aenumerate(iterator)
+                    ]
+                else:
+                    edges: List[Edge] = [  # type: ignore[no-redef]
+                        edge_class.resolve_edge(
+                            cls.resolve_node(v, info=info, **kwargs),
+                            cursor=start + i,
+                        )
+                        for i, v in enumerate(iterator)
+                    ]
 
                 has_previous_page = start > 0
                 if expected is not None and len(edges) == expected + 1:

@@ -3,8 +3,8 @@ from __future__ import annotations
 import contextlib
 import copy
 import dataclasses
-import inspect
 import sys
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -30,7 +30,6 @@ from strawberry.type import (
     has_object_definition,
 )
 from strawberry.union import StrawberryUnion
-from strawberry.utils.cached_property import cached_property
 
 from .types.fields.resolver import StrawberryResolver
 
@@ -62,11 +61,11 @@ UNRESOLVED = object()
 def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
     """Returns True if `resolver_type` is generic else False"""
     if isinstance(resolver_type, StrawberryType):
-        return resolver_type.is_generic
+        return resolver_type.is_graphql_generic
 
     # solves the Generic subclass case
     if has_object_definition(resolver_type):
-        return resolver_type.__strawberry_definition__.is_generic
+        return resolver_type.__strawberry_definition__.is_graphql_generic
 
     return False
 
@@ -143,6 +142,19 @@ class StrawberryField(dataclasses.Field):
         self.directives = list(directives)
         self.extensions: List[FieldExtension] = list(extensions)
 
+        # Automatically add the permissions extension
+        if len(self.permission_classes):
+            from .permission import PermissionExtension
+
+            if not self.extensions:
+                self.extensions = []
+            permission_instances = [
+                permission_class() for permission_class in permission_classes
+            ]
+            # Append to make it run first (last is outermost)
+            self.extensions.append(
+                PermissionExtension(permission_instances, use_directives=False)
+            )
         self.deprecation_reason = deprecation_reason
 
     def __copy__(self) -> Self:
@@ -220,11 +232,7 @@ class StrawberryField(dataclasses.Field):
         an `Info` object and running any permission checks in the resolver
         which improves performance.
         """
-        return (
-            not self.base_resolver
-            and not self.permission_classes
-            and not self.extensions
-        )
+        return not self.base_resolver and not self.extensions
 
     @property
     def arguments(self) -> List[StrawberryArgument]:
@@ -236,6 +244,14 @@ class StrawberryField(dataclasses.Field):
     @arguments.setter
     def arguments(self, value: List[StrawberryArgument]):
         self._arguments = value
+
+    @property
+    def is_graphql_generic(self) -> bool:
+        return (
+            self.base_resolver.is_graphql_generic
+            if self.base_resolver
+            else _is_generic(self.type)
+        )
 
     def _python_name(self) -> Optional[str]:
         if self.name:
@@ -249,7 +265,7 @@ class StrawberryField(dataclasses.Field):
     def _set_python_name(self, name: str) -> None:
         self.name = name
 
-    python_name: str = property(_python_name, _set_python_name)  # type: ignore[assignment]  # noqa: E501
+    python_name: str = property(_python_name, _set_python_name)  # type: ignore[assignment]
 
     @property
     def base_resolver(self) -> Optional[StrawberryResolver]:
@@ -340,6 +356,7 @@ class StrawberryField(dataclasses.Field):
 
         # If this is a generic field, try to resolve it using its origin's
         # specialized type_var_map
+        # TODO: should we check arguments here too?
         if _is_generic(resolved):  # type: ignore
             specialized_type_var_map = (
                 type_definition and type_definition.specialized_type_var_map
@@ -360,7 +377,7 @@ class StrawberryField(dataclasses.Field):
         return resolved
 
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
+        self, type_var_map: Mapping[str, Union[StrawberryType, builtins.type]]
     ) -> Self:
         new_field = copy.copy(self)
 
@@ -371,7 +388,7 @@ class StrawberryField(dataclasses.Field):
         if has_object_definition(type_):
             type_definition = type_.__strawberry_definition__
 
-            if type_definition.is_generic:
+            if type_definition.is_graphql_generic:
                 type_ = type_definition
                 override_type = type_.copy_with(type_var_map)
         elif isinstance(type_, StrawberryType):
@@ -391,19 +408,12 @@ class StrawberryField(dataclasses.Field):
         return new_field
 
     @property
-    def _has_async_permission_classes(self) -> bool:
-        for permission_class in self.permission_classes:
-            if inspect.iscoroutinefunction(permission_class.has_permission):
-                return True
-        return False
-
-    @property
     def _has_async_base_resolver(self) -> bool:
         return self.base_resolver is not None and self.base_resolver.is_async
 
     @cached_property
     def is_async(self) -> bool:
-        return self._has_async_permission_classes or self._has_async_base_resolver
+        return self._has_async_base_resolver
 
 
 @overload

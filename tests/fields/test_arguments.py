@@ -259,7 +259,7 @@ def test_annotated_argument_on_resolver():
             argument: Annotated[
                 str,
                 strawberry.argument(description="This is a description"),
-            ]
+            ],
         ) -> str:
             return "Name"
 
@@ -283,7 +283,7 @@ def test_annotated_optional_arguments_on_resolver():
             argument: Annotated[
                 Optional[str],
                 strawberry.argument(description="This is a description"),
-            ]
+            ],
         ) -> str:
             return "Name"
 

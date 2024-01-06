@@ -138,3 +138,36 @@ class Query:
             thumbnail_url="https://i.ytimg.com/vi/dQw4w9WgXcQ/hq720.jpg",
         )
 ```
+
+## Single member union
+
+Sometimes you might want to define a union with only one member. This is useful
+for future proofing your schema, for example if you want to add more types to
+the union in the future.
+
+Python's `typing.Union` does not really support this use case, but using Annotated
+and `strawberry.union` you can tell Strawberry that you want to define a union
+with only one member:
+
+```python+schema
+import strawberry
+
+from typing import Annotated
+
+@strawberry.type
+class Audio:
+    duration: int
+
+@strawberry.type
+class Query:
+    latest_media: Annotated[Audio, strawberry.union("MediaItem")]
+
+
+schema = strawberry.Schema(query=Query)
+---
+union MediaItem = Audio
+
+type Query {
+  latestMedia: MediaItem!
+}
+```

@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
-import sys
 import time
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Type
@@ -168,10 +167,6 @@ async def test_connection_init_timeout_cancellation(
     )
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 8),
-    reason="Task name was introduced in 3.8 and we need it for this test",
-)
 async def test_close_twice(
     mocker: MockerFixture, request: Any, http_client_class: Type[HttpClient]
 ):
@@ -183,7 +178,11 @@ async def test_close_twice(
     ) as ws:
         transport_close = mocker.patch.object(ws, "close")
 
-        await ws.send_json(ConnectionInitMessage(payload=None).as_dict())
+        # We set payload is set to "invalid value" to force a invalid payload error
+        # which will close the connection
+        await ws.send_json(
+            ConnectionInitMessage(payload="invalid value").as_dict(),  # type: ignore
+        )
         # Yield control so that ._close can be called
         await asyncio.sleep(0)
 
@@ -799,9 +798,15 @@ async def test_rejects_connection_params_not_dict(ws_raw: WebSocketClient):
     ws.assert_reason("Invalid connection init payload")
 
 
-async def test_rejects_connection_params_not_unset(ws_raw: WebSocketClient):
+@pytest.mark.parametrize(
+    "payload",
+    [[], "invalid value", 1],
+)
+async def test_rejects_connection_params_with_wrong_type(
+    payload: Any, ws_raw: WebSocketClient
+):
     ws = ws_raw
-    await ws.send_json(ConnectionInitMessage(payload=None).as_dict())
+    await ws.send_json(ConnectionInitMessage(payload=payload).as_dict())
 
     data = await ws.receive(timeout=2)
     assert ws.closed

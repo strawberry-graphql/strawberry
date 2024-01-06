@@ -12,6 +12,7 @@ from typing import (
     Sequence,
     Tuple,
     Type,
+    TypedDict,
     Union,
     cast,
 )
@@ -26,7 +27,7 @@ from strawberry.types import ExecutionResult
 from .exceptions import InvalidOperationTypeError
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing_extensions import NotRequired, Unpack
 
     from graphql import ExecutionContext as GraphQLExecutionContext
     from graphql import ExecutionResult as GraphQLExecutionResult
@@ -38,6 +39,11 @@ if TYPE_CHECKING:
     from strawberry.types import ExecutionContext
     from strawberry.types.execution import Executor, ParseOptions
     from strawberry.types.graphql import OperationType
+
+
+# duplicated because of https://github.com/mkdocstrings/griffe-typingdoc/issues/7
+class ParseOptions(TypedDict):
+    max_tokens: NotRequired[int]
 
 
 def parse_document(query: str, **kwargs: Unpack[ParseOptions]) -> DocumentNode:

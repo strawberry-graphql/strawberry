@@ -31,7 +31,7 @@ def test_get_specialized_type_var_map_generic():
     class Bar(Foo[int]):
         ...
 
-    assert get_specialized_type_var_map(Bar) == {_T: int}
+    assert get_specialized_type_var_map(Bar) == {"_T": int}
 
 
 def test_get_specialized_type_var_map_generic_subclass():
@@ -47,7 +47,7 @@ def test_get_specialized_type_var_map_generic_subclass():
     class BarSubclass(Bar):
         ...
 
-    assert get_specialized_type_var_map(BarSubclass) == {_T: int}
+    assert get_specialized_type_var_map(BarSubclass) == {"_T": int}
 
 
 def test_get_specialized_type_var_map_double_generic():
@@ -63,7 +63,7 @@ def test_get_specialized_type_var_map_double_generic():
     class Bin(Bar[int]):
         ...
 
-    assert get_specialized_type_var_map(Bin) == {_T: int}
+    assert get_specialized_type_var_map(Bin) == {"_T": int}
 
 
 def test_get_specialized_type_var_map_double_generic_subclass():
@@ -83,7 +83,7 @@ def test_get_specialized_type_var_map_double_generic_subclass():
     class BinSubclass(Bin):
         ...
 
-    assert get_specialized_type_var_map(Bin) == {_T: int}
+    assert get_specialized_type_var_map(Bin) == {"_T": int}
 
 
 def test_get_specialized_type_var_map_multiple_inheritance():
@@ -104,8 +104,8 @@ def test_get_specialized_type_var_map_multiple_inheritance():
         ...
 
     assert get_specialized_type_var_map(Baz) == {
-        _T: int,
-        _K: str,
+        "_T": int,
+        "_K": str,
     }
 
 
@@ -131,6 +131,6 @@ def test_get_specialized_type_var_map_multiple_inheritance_subclass():
         ...
 
     assert get_specialized_type_var_map(BazSubclass) == {
-        _T: int,
-        _K: str,
+        "_T": int,
+        "_K": str,
     }

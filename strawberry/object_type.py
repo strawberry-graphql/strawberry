@@ -150,7 +150,7 @@ def _process_type(
         directives=directives,
         origin=cls,
         extend=extend,
-        _fields=fields,
+        fields=fields,
         is_type_of=is_type_of,
         resolve_type=resolve_type,
     )

@@ -1,5 +1,6 @@
 import pathlib
-from typing import List, Tuple
+import sys
+from typing import Any, List, Tuple
 
 import pytest
 
@@ -30,6 +31,7 @@ def pytest_collection_modifyitems(config: pytest.Config, items: List[pytest.Item
             "django",
             "fastapi",
             "flask",
+            "quart",
             "pydantic",
             "sanic",
             "starlite",
@@ -38,3 +40,13 @@ def pytest_collection_modifyitems(config: pytest.Config, items: List[pytest.Item
         for marker in markers:
             if marker in rel_path.parts:
                 item.add_marker(getattr(pytest.mark, marker))
+
+
+if sys.version_info < (3, 12):
+
+    @pytest.hookimpl
+    def pytest_ignore_collect(
+        collection_path: pathlib.Path, path: Any, config: pytest.Config
+    ):
+        if "python_312" in collection_path.parts:
+            return True

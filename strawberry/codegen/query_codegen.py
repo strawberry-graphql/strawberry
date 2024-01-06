@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import MISSING, dataclass
 from enum import Enum
 from functools import cmp_to_key, partial
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -19,6 +20,7 @@ from typing import (
 )
 from typing_extensions import Literal, Protocol
 
+import rich
 from graphql import (
     BooleanValueNode,
     EnumValueNode,
@@ -52,6 +54,7 @@ from strawberry.type import (
 )
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.union import StrawberryUnion
+from strawberry.unset import UNSET
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
 from .exceptions import (
@@ -87,8 +90,6 @@ from .types import (
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from graphql import (
         ArgumentNode,
         DirectiveNode,
@@ -130,6 +131,14 @@ class HasSelectionSet(Protocol):
 
 
 class QueryCodegenPlugin:
+    def __init__(self, query: Path) -> None:
+        """Initialize the plugin.
+
+        The singular argument is the path to the file that is being processed
+        by this plugin.
+        """
+        self.query = query
+
     def on_start(self) -> None:
         ...
 
@@ -140,6 +149,41 @@ class QueryCodegenPlugin:
         self, types: List[GraphQLType], operation: GraphQLOperation
     ) -> List[CodegenFile]:
         return []
+
+
+class ConsolePlugin:
+    def __init__(self, output_dir: Path):
+        self.output_dir = output_dir
+        self.files_generated: List[Path] = []
+
+    def before_any_start(self) -> None:
+        rich.print(
+            "[bold yellow]The codegen is experimental. Please submit any bug at "
+            "https://github.com/strawberry-graphql/strawberry\n",
+        )
+
+    def after_all_finished(self) -> None:
+        rich.print("[green]Generated:")
+        for fname in self.files_generated:
+            rich.print(f"  {fname}")
+
+    def on_start(self, plugins: Iterable[QueryCodegenPlugin], query: Path) -> None:
+        plugin_names = [plugin.__class__.__name__ for plugin in plugins]
+
+        rich.print(
+            f"[green]Generating code for {query} using "
+            f"{', '.join(plugin_names)} plugin(s)",
+        )
+
+    def on_end(self, result: CodegenResult) -> None:
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        result.write(self.output_dir)
+
+        self.files_generated.extend(Path(cf.path) for cf in result.files)
+
+        rich.print(
+            f"[green] Generated {len(result.files)} files in {self.output_dir}",
+        )
 
 
 def _get_deps(t: GraphQLType) -> Iterable[GraphQLType]:
@@ -178,8 +222,9 @@ _TYPE_TO_GRAPHQL_TYPE = {
 
 def _py_to_graphql_value(obj: Any) -> GraphQLArgumentValue:
     """Convert a python object to a GraphQLArgumentValue."""
-    if obj is None:
-        return GraphQLNullValue()
+    if obj is None or obj is UNSET:
+        return GraphQLNullValue(value=obj)
+
     obj_type = type(obj)
     if obj_type in _TYPE_TO_GRAPHQL_TYPE:
         return _TYPE_TO_GRAPHQL_TYPE[obj_type](obj)
@@ -193,8 +238,13 @@ def _py_to_graphql_value(obj: Any) -> GraphQLArgumentValue:
 
 
 class QueryCodegenPluginManager:
-    def __init__(self, plugins: List[QueryCodegenPlugin]) -> None:
+    def __init__(
+        self,
+        plugins: List[QueryCodegenPlugin],
+        console_plugin: Optional[ConsolePlugin] = None,
+    ) -> None:
         self.plugins = plugins
+        self.console_plugin = console_plugin
 
     def _sort_types(self, types: List[GraphQLType]) -> List[GraphQLType]:
         """Sort the types.
@@ -232,6 +282,12 @@ class QueryCodegenPluginManager:
         return result
 
     def on_start(self) -> None:
+        if self.console_plugin and self.plugins:
+            # We need the query that we're processing
+            # just pick it off the first plugin
+            query = self.plugins[0].query
+            self.console_plugin.on_start(self.plugins, query)
+
         for plugin in self.plugins:
             plugin.on_start()
 
@@ -239,11 +295,19 @@ class QueryCodegenPluginManager:
         for plugin in self.plugins:
             plugin.on_end(result)
 
+        if self.console_plugin:
+            self.console_plugin.on_end(result)
+
 
 class QueryCodegen:
-    def __init__(self, schema: Schema, plugins: List[QueryCodegenPlugin]):
+    def __init__(
+        self,
+        schema: Schema,
+        plugins: List[QueryCodegenPlugin],
+        console_plugin: Optional[ConsolePlugin] = None,
+    ):
         self.schema = schema
-        self.plugin_manager = QueryCodegenPluginManager(plugins)
+        self.plugin_manager = QueryCodegenPluginManager(plugins, console_plugin)
         self.types: List[GraphQLType] = []
 
     def run(self, query: str) -> CodegenResult:
@@ -481,14 +545,14 @@ class QueryCodegen:
             not isinstance(field_type, StrawberryType)
             and field_type in self.schema.schema_converter.scalar_registry
         ):
-            field_type = self.schema.schema_converter.scalar_registry[field_type]  # type: ignore  # noqa: E501
+            field_type = self.schema.schema_converter.scalar_registry[field_type]  # type: ignore
 
         if isinstance(field_type, ScalarWrapper):
             python_type = field_type.wrap
             if hasattr(python_type, "__supertype__"):
                 python_type = python_type.__supertype__
 
-            return self._collect_scalar(field_type._scalar_definition, python_type)  # type: ignore  # noqa: E501
+            return self._collect_scalar(field_type._scalar_definition, python_type)  # type: ignore
 
         if isinstance(field_type, ScalarDefinition):
             return self._collect_scalar(field_type, None)
@@ -596,9 +660,7 @@ class QueryCodegen:
         elif isinstance(type_, StrawberryList):
             type_, wrapper = self._unwrap_type(type_.of_type)
             wrapper = (
-                GraphQLList
-                if wrapper is None
-                else lambda t: GraphQLList(wrapper(t))  # type: ignore[misc]
+                GraphQLList if wrapper is None else lambda t: GraphQLList(wrapper(t))
             )
 
         elif isinstance(type_, LazyType):
@@ -614,12 +676,32 @@ class QueryCodegen:
     ) -> GraphQLField:
         assert selection.selection_set is not None
 
+        parent_type_name = parent_type.name
+
+        # Check if the parent type is generic.
+        # This seems to be tracked by `strawberry` in the `type_var_map`
+        # If the type is generic, then the strawberry generated schema
+        # naming convention is <GenericType,...><ClassName>
+        # The implementation here assumes that the `type_var_map` is ordered,
+        # but insertion order is maintained in python3.6+ (for CPython) and
+        # guaranteed for all python implementations in python3.7+, so that
+        # should be pretty safe.
+        if parent_type.type_var_map:
+            parent_type_name = (
+                "".join(
+                    c.__name__  # type: ignore[union-attr]
+                    for c in parent_type.type_var_map.values()
+                )
+                + parent_type.name
+            )
+
         selected_field = self.schema.get_field_for_type(
-            selection.name.value, parent_type.name
+            selection.name.value, parent_type_name
         )
+
         assert (
             selected_field
-        ), f"Couldn't find {parent_type.name}.{selection.name.value}"
+        ), f"Couldn't find {parent_type_name}.{selection.name.value}"
 
         selected_field_type, wrapper = self._unwrap_type(selected_field.type)
         name = capitalize_first(to_camel_case(selection.name.value))
@@ -719,6 +801,10 @@ class QueryCodegen:
                 if isinstance(t, GraphQLObjectType) and t.name == spread_field.name
             )
 
+        # This cast is safe because all the fields are either
+        # `GraphQLField` or `GraphQLFragmentSpread`
+        # and the suite above will cause this statement to be
+        # skipped if there are any `GraphQLFragmentSpread`.
         current_type.fields = cast(List[GraphQLField], fields)
 
         self._collect_type(current_type)
@@ -751,17 +837,24 @@ class QueryCodegen:
             if isinstance(sub_selection, InlineFragmentNode):
                 fragments.append(sub_selection)
 
+        all_common_fields_typename = all(f.name == "__typename" for f in common_fields)
+
         for fragment in fragments:
             type_condition_name = fragment.type_condition.name.value
             fragment_class_name = class_name + type_condition_name
+
             current_type = GraphQLObjectType(
                 fragment_class_name,
                 list(common_fields),
                 graphql_typename=type_condition_name,
             )
+            fields: List[Union[GraphQLFragmentSpread, GraphQLField]] = []
 
             for sub_selection in fragment.selection_set.selections:
-                # TODO: recurse, use existing method ?
+                if isinstance(sub_selection, FragmentSpreadNode):
+                    fields.append(GraphQLFragmentSpread(sub_selection.name.value))
+                    continue
+
                 assert isinstance(sub_selection, FieldNode)
 
                 parent_type = cast(
@@ -769,9 +862,9 @@ class QueryCodegen:
                     self.schema.get_type_by_name(type_condition_name),
                 )
 
-                assert parent_type
+                assert parent_type, type_condition_name
 
-                current_type.fields.append(
+                fields.append(
                     self._get_field(
                         selection=sub_selection,
                         class_name=fragment_class_name,
@@ -779,9 +872,33 @@ class QueryCodegen:
                     )
                 )
 
+            if any(isinstance(f, GraphQLFragmentSpread) for f in fields):
+                if len(fields) > 1:
+                    raise ValueError(
+                        "Queries with Fragments cannot include separate fields."
+                    )
+                spread_field = fields[0]
+                assert isinstance(spread_field, GraphQLFragmentSpread)
+                sub_type = next(
+                    t
+                    for t in self.types
+                    if isinstance(t, GraphQLObjectType) and t.name == spread_field.name
+                )
+                fields = [*sub_type.fields]
+                if all_common_fields_typename:  # No need to create a new type.
+                    sub_types.append(sub_type)
+                    continue
+
+            # This cast is safe because all the fields are either
+            # `GraphQLField` or `GraphQLFragmentSpread`
+            # and the suite above will cause this statement to be
+            # skipped if there are any `GraphQLFragmentSpread`.
+            current_type.fields.extend(cast(List[GraphQLField], fields))
+
             sub_types.append(current_type)
 
-        self.types.extend(sub_types)
+        for sub_type in sub_types:
+            self._collect_type(sub_type)
 
         return sub_types
 

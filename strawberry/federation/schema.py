@@ -1,6 +1,6 @@
 from collections import defaultdict
 from copy import copy
-from functools import partial
+from functools import cached_property, partial
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -31,7 +31,6 @@ from graphql.type.definition import GraphQLArgument
 from strawberry.printer import print_schema
 from strawberry.schema import Schema as BaseSchema
 from strawberry.types.types import StrawberryObjectDefinition
-from strawberry.utils.cached_property import cached_property
 from strawberry.utils.inspect import get_func_args
 
 from .schema_directive import StrawberryFederationSchemaDirective
@@ -166,13 +165,16 @@ class Schema(BaseSchema):
         fields.update(query_type.fields)
 
         query_type = copy(query_type)
-        query_type._fields = fields
+        query_type.fields = fields
 
         self._schema.query_type = query_type
         self._schema.type_map[query_type.name] = query_type
 
     def entities_resolver(
-        self, root, info, representations  # noqa: ANN001
+        self,
+        root,  # noqa: ANN001
+        info,  # noqa: ANN001
+        representations,  # noqa: ANN001
     ) -> List[object]:
         results = []
 
@@ -210,7 +212,7 @@ class Schema(BaseSchema):
 
             try:
                 result = get_result()
-            except Exception as e:  # noqa: PERF203
+            except Exception as e:
                 result = GraphQLError(
                     f"Unable to resolve reference for {definition.origin}",
                     original_error=e,
@@ -393,7 +395,7 @@ def _has_federation_keys(
         "ScalarDefinition",
         "EnumDefinition",
         "StrawberryUnion",
-    ]
+    ],
 ) -> bool:
     if isinstance(definition, StrawberryObjectDefinition):
         return any(_is_key(directive) for directive in definition.directives or [])

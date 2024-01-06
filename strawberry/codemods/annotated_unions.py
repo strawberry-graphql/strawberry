@@ -117,7 +117,8 @@ class ConvertUnionToAnnotatedUnion(VisitorBasedCodemodCommand):
             union_node = cst.Subscript(
                 value=cst.Name(value="Union"),
                 slice=[
-                    cst.SubscriptElement(slice=cst.Index(value=t.value)) for t in types  # type: ignore  # noqa: E501
+                    cst.SubscriptElement(slice=cst.Index(value=t.value))
+                    for t in types  # type: ignore
                 ],
             )
 

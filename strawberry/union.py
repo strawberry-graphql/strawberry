@@ -120,22 +120,22 @@ class StrawberryUnion(StrawberryType):
         )
 
     @property
-    def is_generic(self) -> bool:
+    def is_graphql_generic(self) -> bool:
         def _is_generic(type_: object) -> bool:
             if has_object_definition(type_):
                 type_ = type_.__strawberry_definition__
 
             if isinstance(type_, StrawberryType):
-                return type_.is_generic
+                return type_.is_graphql_generic
 
             return False
 
         return any(map(_is_generic, self.types))
 
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+        self, type_var_map: Mapping[str, Union[StrawberryType, type]]
     ) -> StrawberryType:
-        if not self.is_generic:
+        if not self.is_graphql_generic:
             return self
 
         new_types = []
@@ -145,9 +145,9 @@ class StrawberryUnion(StrawberryType):
             if has_object_definition(type_):
                 type_definition = type_.__strawberry_definition__
 
-                if type_definition.is_generic:
+                if type_definition.is_graphql_generic:
                     new_type = type_definition.copy_with(type_var_map)
-            if isinstance(type_, StrawberryType) and type_.is_generic:
+            if isinstance(type_, StrawberryType) and type_.is_graphql_generic:
                 new_type = type_.copy_with(type_var_map)
             else:
                 new_type = type_

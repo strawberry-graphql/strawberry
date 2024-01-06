@@ -1,7 +1,3 @@
-import sys
-
-import pytest
-
 import strawberry
 from strawberry.types import Info
 
@@ -11,11 +7,6 @@ try:
     from strawberry.starlite import make_graphql_controller
 except ModuleNotFoundError:
     pass
-
-
-pytestmark = pytest.mark.skipif(
-    sys.version_info < (3, 8), reason="requires python3.8 or higher"
-)
 
 
 # TODO: move this to common tests

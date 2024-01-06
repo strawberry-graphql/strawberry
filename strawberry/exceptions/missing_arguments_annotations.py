@@ -1,8 +1,7 @@
 from __future__ import annotations
 
+from functools import cached_property
 from typing import TYPE_CHECKING, List, Optional
-
-from strawberry.utils.cached_property import cached_property
 
 from .exception import StrawberryException
 from .utils.source_finder import SourceFinder
@@ -56,5 +55,6 @@ class MissingArgumentsAnnotationsError(StrawberryException):
         source_finder = SourceFinder()
 
         return source_finder.find_argument_from_object(
-            self.function, self.argument_name  # type: ignore
+            self.function,  # type: ignore
+            self.argument_name,
         )

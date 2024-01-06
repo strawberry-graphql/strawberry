@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, Callable, Generic, List, Optional, TypeVar
 from typing_extensions import Annotated
 
@@ -13,7 +14,6 @@ from strawberry.types.fields.resolver import (
     StrawberryResolver,
 )
 from strawberry.unset import UNSET
-from strawberry.utils.cached_property import cached_property
 
 if TYPE_CHECKING:
     import inspect

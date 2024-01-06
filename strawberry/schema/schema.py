@@ -130,7 +130,7 @@ class Schema(BaseSchema):
                 )
             else:
                 if has_object_definition(type_):
-                    if type_.__strawberry_definition__.is_generic:
+                    if type_.__strawberry_definition__.is_graphql_generic:
                         type_ = StrawberryAnnotation(type_).resolve()  # noqa: PLW2901
                 graphql_type = self.schema_converter.from_maybe_optional(type_)
                 if isinstance(graphql_type, GraphQLNonNull):
@@ -191,7 +191,7 @@ class Schema(BaseSchema):
 
         return extensions
 
-    @lru_cache()
+    @lru_cache
     def get_type_by_name(
         self, name: str
     ) -> Optional[
@@ -227,7 +227,7 @@ class Schema(BaseSchema):
             None,
         )
 
-    @lru_cache()
+    @lru_cache
     def get_directive_by_name(self, graphql_name: str) -> Optional[StrawberryDirective]:
         return next(
             (
@@ -343,7 +343,16 @@ class Schema(BaseSchema):
             # early feedback for missing NodeID annotations
             origin = type_def.origin
             if issubclass(origin, relay.Node):
-                origin.resolve_id_attr()
+                has_custom_resolve_id = False
+                for base in origin.__mro__:
+                    if base is relay.Node:
+                        break
+                    if "resolve_id" in base.__dict__:
+                        has_custom_resolve_id = True
+                        break
+
+                if not has_custom_resolve_id:
+                    origin.resolve_id_attr()
 
     def _warn_for_federation_directives(self):
         """Raises a warning if the schema has any federation directives."""

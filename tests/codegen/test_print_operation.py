@@ -14,7 +14,7 @@ def test_codegen(
     query: Path,
     schema,
 ):
-    generator = QueryCodegen(schema, plugins=[PrintOperationPlugin()])
+    generator = QueryCodegen(schema, plugins=[PrintOperationPlugin(query)])
     query_content = query.read_text()
 
     result = generator.run(query_content)

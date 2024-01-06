@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import warnings
 from datetime import timedelta
 from io import BytesIO
 from typing import (
@@ -26,10 +27,10 @@ from strawberry.http.typevars import (
     RootValue,
 )
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from strawberry.utils.graphiql import get_graphiql_html
 
 if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse
+    from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
 
 
@@ -88,7 +89,8 @@ class GraphQLView(
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: bool = True,
+        graphiql: Optional[bool] = None,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
@@ -100,7 +102,6 @@ class GraphQLView(
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     ):
         self.schema = schema
-        self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
@@ -108,11 +109,18 @@ class GraphQLView(
         self.subscription_protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
 
-    def render_graphiql(self, request: web.Request) -> web.Response:
-        # TODO: get_graphiql_html should be on self
-        html_string = get_graphiql_html()
+        if graphiql is not None:
+            warnings.warn(
+                "The `graphiql` argument is deprecated in favor of `graphql_ide`",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.graphql_ide = "graphiql" if graphiql else None
+        else:
+            self.graphql_ide = graphql_ide
 
-        return web.Response(text=html_string, content_type="text/html")
+    async def render_graphql_ide(self, request: web.Request) -> web.Response:
+        return web.Response(text=self.graphql_ide_html, content_type="text/html")
 
     async def get_sub_response(self, request: web.Request) -> web.Response:
         return web.Response()

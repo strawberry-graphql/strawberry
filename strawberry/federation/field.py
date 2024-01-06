@@ -21,6 +21,7 @@ from strawberry.unset import UNSET
 if TYPE_CHECKING:
     from typing_extensions import Literal
 
+    from strawberry.extensions.field_extension import FieldExtension
     from strawberry.field import _RESOLVER_TYPE, StrawberryField
     from strawberry.permission import BasePermission
 
@@ -48,6 +49,7 @@ def field(
     default: Any = UNSET,
     default_factory: Union[Callable[..., object], object] = UNSET,
     directives: Sequence[object] = (),
+    extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> T:
     ...
@@ -72,6 +74,7 @@ def field(
     default: Any = UNSET,
     default_factory: Union[Callable[..., object], object] = UNSET,
     directives: Sequence[object] = (),
+    extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> Any:
     ...
@@ -96,6 +99,7 @@ def field(
     default: Any = UNSET,
     default_factory: Union[Callable[..., object], object] = UNSET,
     directives: Sequence[object] = (),
+    extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> StrawberryField:
     ...
@@ -119,6 +123,7 @@ def field(
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     directives: Sequence[object] = (),
+    extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
@@ -169,5 +174,6 @@ def field(
         default_factory=default_factory,
         init=init,  # type: ignore
         directives=directives,
+        extensions=extensions,
         graphql_type=graphql_type,
     )
