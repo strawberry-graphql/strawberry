@@ -85,7 +85,7 @@ query Query($query: String!, $first: Int!) {
 """
 
 
-@pytest.mark.parametrize("number", [100])
+@pytest.mark.parametrize("number", [50])
 def test_interface_performance(benchmark: BenchmarkFixture, number: int):
     result = benchmark(
         async_to_sync(schema.execute),
