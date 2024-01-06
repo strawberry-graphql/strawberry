@@ -169,7 +169,9 @@ class FruitMutations:
 
 @strawberry.type
 class Mutation:
-    fruit: FruitMutations
+    @strawberry.field
+    def fruit(self) -> FruitMutations:
+        return FruitMutations()
 ```
 
 <Note>
