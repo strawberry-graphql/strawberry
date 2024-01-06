@@ -18,6 +18,7 @@ COMMON_PYTEST_OPTIONS = [
     "--ignore=tests/mypy",
     "--ignore=tests/pyright",
     "--ignore=tests/cli",
+    "--ignore=tests/benchmarks",
     "--ignore=tests/experimental/pydantic",
 ]
 
