@@ -1,5 +1,6 @@
+import asyncio
+
 import pytest
-from asgiref.sync import async_to_sync
 from pytest_codspeed.plugin import BenchmarkFixture
 
 from .schema import schema
@@ -87,10 +88,14 @@ query Query($query: String!, $first: Int!) {
 
 @pytest.mark.parametrize("number", [50])
 def test_execute_complex_schema(benchmark: BenchmarkFixture, number: int):
-    result = benchmark(
-        async_to_sync(schema.execute),
-        query,
-        variable_values={"query": "test", "first": number},
-    )
+    def run():
+        coroutine = schema.execute(
+            query,
+            variable_values={"query": "test", "first": number},
+        )
+
+        return asyncio.run(coroutine)
+
+    result = benchmark(run)
 
     assert not result.errors
