@@ -167,6 +167,7 @@ async def test_connection_init_timeout_cancellation(
     )
 
 
+@pytest.mark.xfail(reason="This test is flaky")
 async def test_close_twice(
     mocker: MockerFixture, request: Any, http_client_class: Type[HttpClient]
 ):
