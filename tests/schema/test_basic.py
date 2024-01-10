@@ -580,3 +580,43 @@ def test_kw_only():
             FooBar(foo=1)
         FooBar(bar=2)
         FooBar(foo=1, bar=2)
+
+
+def test_use_default_factory_on_root():
+    @strawberry.type
+    class Sub:
+        foo: str = strawberry.field(default="bar")
+
+    @strawberry.type
+    class Query:
+        sub: Sub = strawberry.field(default_factory=Sub)
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync(
+        """
+        query TestQuery{
+            sub {
+                foo
+            }
+        }
+        """
+    )
+    assert result.data == {"sub": {"foo": "bar"}}
+
+
+def test_use_default_on_root():
+    @strawberry.type
+    class Query:
+        sub: bool = strawberry.field(default=True)
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync(
+        """
+        query TestQuery{
+            sub
+        }
+        """
+    )
+    assert result.data == {"sub": True}
