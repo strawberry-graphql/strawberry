@@ -331,13 +331,13 @@ files = [
 
 [[package]]
 name = "botocore"
-version = "1.34.13"
+version = "1.34.16"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">= 3.8"
 files = [
-    {file = "botocore-1.34.13-py3-none-any.whl", hash = "sha256:b39f96e658865bd1f3c2d043794b91cd6206f9db531c0a06b53093ed82d41ef7"},
-    {file = "botocore-1.34.13.tar.gz", hash = "sha256:1680b0e0633a546b8d54d1bbd5154e30bb1044d0496e0df7cfd24a383e10b0d3"},
+    {file = "botocore-1.34.16-py3-none-any.whl", hash = "sha256:e59f3340673abd31e042b494a4bca96e55d232f7d3f8222a40a6273515e25891"},
+    {file = "botocore-1.34.16.tar.gz", hash = "sha256:94697602998dced2ce63321a3dbb2e3ddd477721b376cde41fcca9d3ef069037"},
 ]
 
 [package.dependencies]
@@ -2698,13 +2698,13 @@ jupyter = ["ipywidgets (>=7.5.1,<9)"]
 
 [[package]]
 name = "sanic"
-version = "23.12.0"
+version = "23.12.1"
 description = "A web server and web framework that's written to go fast. Build fast. Run fast."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "sanic-23.12.0-py3-none-any.whl", hash = "sha256:33a92c66c9a533065744fc20339a13974736d2f87d505813076d344b43ae9956"},
-    {file = "sanic-23.12.0.tar.gz", hash = "sha256:de829a85b02d7ceea3795e5ba3552cd6cb656321654b5bbd7789bb9c0384a19a"},
+    {file = "sanic-23.12.1-py3-none-any.whl", hash = "sha256:e292293b2663a7afeb380bdc48ab93978468b27deae46ad9561513941eb0311f"},
+    {file = "sanic-23.12.1.tar.gz", hash = "sha256:2528ca81d2bdc58ea67d93c500df1a9c58404904b0bc3442425b464c72b4bb84"},
 ]
 
 [package.dependencies]
@@ -2757,13 +2757,13 @@ dev = ["pytest", "pytest-asyncio", "sanic (>=22.12)", "setuptools"]
 
 [[package]]
 name = "sentry-sdk"
-version = "1.39.1"
+version = "1.39.2"
 description = "Python client for Sentry (https://sentry.io)"
 optional = false
 python-versions = "*"
 files = [
-    {file = "sentry-sdk-1.39.1.tar.gz", hash = "sha256:320a55cdf9da9097a0bead239c35b7e61f53660ef9878861824fd6d9b2eaf3b5"},
-    {file = "sentry_sdk-1.39.1-py2.py3-none-any.whl", hash = "sha256:81b5b9ffdd1a374e9eb0c053b5d2012155db9cbe76393a8585677b753bd5fdc1"},
+    {file = "sentry-sdk-1.39.2.tar.gz", hash = "sha256:24c83b0b41c887d33328a9166f5950dc37ad58f01c9f2fbff6b87a6f1094170c"},
+    {file = "sentry_sdk-1.39.2-py2.py3-none-any.whl", hash = "sha256:acaf597b30258fc7663063b291aa99e58f3096e91fe1e6634f4b79f9c1943e8e"},
 ]
 
 [package.dependencies]
@@ -2789,7 +2789,7 @@ huey = ["huey (>=2)"]
 loguru = ["loguru (>=0.5)"]
 opentelemetry = ["opentelemetry-distro (>=0.35b0)"]
 opentelemetry-experimental = ["opentelemetry-distro (>=0.40b0,<1.0)", "opentelemetry-instrumentation-aiohttp-client (>=0.40b0,<1.0)", "opentelemetry-instrumentation-django (>=0.40b0,<1.0)", "opentelemetry-instrumentation-fastapi (>=0.40b0,<1.0)", "opentelemetry-instrumentation-flask (>=0.40b0,<1.0)", "opentelemetry-instrumentation-requests (>=0.40b0,<1.0)", "opentelemetry-instrumentation-sqlite3 (>=0.40b0,<1.0)", "opentelemetry-instrumentation-urllib (>=0.40b0,<1.0)"]
-pure-eval = ["asttokens", "executing", "pure-eval"]
+pure-eval = ["asttokens", "executing", "pure_eval"]
 pymongo = ["pymongo (>=3.1)"]
 pyspark = ["pyspark (>=2.4.4)"]
 quart = ["blinker (>=1.1)", "quart (>=0.16.1)"]
@@ -3077,13 +3077,13 @@ test = ["black (>=22.3.0,<23.0.0)", "coverage (>=6.2,<7.0)", "isort (>=5.0.6,<6.
 
 [[package]]
 name = "types-aiofiles"
-version = "23.2.0.0"
+version = "23.2.0.20240106"
 description = "Typing stubs for aiofiles"
 optional = false
-python-versions = "*"
+python-versions = ">=3.8"
 files = [
-    {file = "types-aiofiles-23.2.0.0.tar.gz", hash = "sha256:b6a7127bd232e0802532837b84140b1cd5df19ee60bea3a5699720d2b583361b"},
-    {file = "types_aiofiles-23.2.0.0-py3-none-any.whl", hash = "sha256:5d6719e8148cb2a9c4ea46dad86d50d3b675c46a940adca698533a8d2216d53d"},
+    {file = "types-aiofiles-23.2.0.20240106.tar.gz", hash = "sha256:ef4fa3072441c58beaadbd0d07ba18e89beff49c71648dd223e2ca861f3dac53"},
+    {file = "types_aiofiles-23.2.0.20240106-py3-none-any.whl", hash = "sha256:7324f9a9f7200c1f4986a9e40a42b548290f707b967709f30b280e99fdacbd99"},
 ]
 
 [[package]]
@@ -3121,24 +3121,24 @@ files = [
 
 [[package]]
 name = "types-protobuf"
-version = "4.24.0.4"
+version = "4.24.0.20240106"
 description = "Typing stubs for protobuf"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "types-protobuf-4.24.0.4.tar.gz", hash = "sha256:57ab42cb171dfdba2c74bb5b50c250478538cc3c5ed95b8b368929ad0c9f90a5"},
-    {file = "types_protobuf-4.24.0.4-py3-none-any.whl", hash = "sha256:131ab7d0cbc9e444bc89c994141327dcce7bcaeded72b1acb72a94827eb9c7af"},
+    {file = "types-protobuf-4.24.0.20240106.tar.gz", hash = "sha256:024f034f3b5e2bb2bbff55ebc4d591ed0d2280d90faceedcb148b9e714a3f3ee"},
+    {file = "types_protobuf-4.24.0.20240106-py3-none-any.whl", hash = "sha256:0612ef3156bd80567460a15ac7c109b313f6022f1fee04b4d922ab2789baab79"},
 ]
 
 [[package]]
 name = "types-python-dateutil"
-version = "2.8.19.14"
+version = "2.8.19.20240106"
 description = "Typing stubs for python-dateutil"
 optional = false
-python-versions = "*"
+python-versions = ">=3.8"
 files = [
-    {file = "types-python-dateutil-2.8.19.14.tar.gz", hash = "sha256:1f4f10ac98bb8b16ade9dbee3518d9ace017821d94b057a425b069f834737f4b"},
-    {file = "types_python_dateutil-2.8.19.14-py3-none-any.whl", hash = "sha256:f977b8de27787639986b4e28963263fd0e5158942b3ecef91b9335c130cb1ce9"},
+    {file = "types-python-dateutil-2.8.19.20240106.tar.gz", hash = "sha256:1f8db221c3b98e6ca02ea83a58371b22c374f42ae5bbdf186db9c9a76581459f"},
+    {file = "types_python_dateutil-2.8.19.20240106-py3-none-any.whl", hash = "sha256:efbbdc54590d0f16152fa103c9879c7d4a00e82078f6e2cf01769042165acaa2"},
 ]
 
 [[package]]
@@ -3788,4 +3788,4 @@ starlite = ["starlite"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "40f5c098dfc7fd91c0ed83d651394a91dbcc77e65e2a4c6fd25e324bb64e4708"
+content-hash = "6a5e9b8e22d5b9e23550da24c6bb44f02a169a52f6f23216eef779233e6adf07"
