@@ -130,12 +130,12 @@ In addition to object types and input types, Strawberry allows you to create
 Pydantic errors in GraphQL. Let's see an example:
 
 ```python+schema
-import pydantic
+from pydantic import BaseModel, constr
 import strawberry
 
 class User(BaseModel):
     id: int
-    name: pydantic.constr(min_length=2)
+    name: constr(min_length=2)
     signup_ts: Optional[datetime] = None
     friends: List[int] = []
 
@@ -163,7 +163,7 @@ GraphQL type that aren't defined in the pydantic model
 
 ```python+schema
 import strawberry
-import pydantic
+from pydantic import BaseModel
 
 from .models import User
 
