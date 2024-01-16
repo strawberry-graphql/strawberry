@@ -167,7 +167,7 @@ class BaseView:
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: HttpResponse
     ) -> HttpResponseBase:
-        data = self.encode_json(response_data)  # type: ignore
+        data = self.encode_json(response_data)
 
         response = HttpResponse(
             data,
