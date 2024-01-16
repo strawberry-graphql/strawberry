@@ -43,7 +43,7 @@ class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def query_params(self) -> QueryParams:
-        return self.request.query.copy()
+        return self.request.query.copy()  # type: ignore[attr-defined]
 
     async def get_body(self) -> str:
         return (await self.request.content.read()).decode()

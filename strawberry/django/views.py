@@ -14,14 +14,15 @@ from typing import (
 )
 
 from asgiref.sync import markcoroutinefunction
+from django.core.serializers.json import DjangoJSONEncoder
 from django.http import (
     HttpRequest,
     HttpResponse,
+    HttpResponseBase,
     HttpResponseNotAllowed,
     JsonResponse,
     StreamingHttpResponse,
 )
-from django.http.response import HttpResponseBase
 from django.template import RequestContext, Template
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
@@ -194,6 +195,9 @@ class BaseView:
                 "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
             },
         )
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        return json.dumps(response_data, cls=DjangoJSONEncoder)
 
 
 class GraphQLView(

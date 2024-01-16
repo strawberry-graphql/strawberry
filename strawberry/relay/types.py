@@ -198,7 +198,11 @@ class GlobalID:
                 ensure_type = tuple(get_args(ensure_type))
 
             if not isinstance(node, ensure_type):
-                raise TypeError(f"{ensure_type} expected, found {node!r}")
+                msg = (
+                    f"Cannot resolve. GlobalID requires {ensure_type}, received {node!r}. "
+                    "Verify that the supplied ID is intended for this Query/Mutation/Subscription."
+                )
+                raise TypeError(msg)
 
         return node
 
@@ -213,7 +217,6 @@ class GlobalID:
             The resolved GraphQL type for the execution info
 
         """
-        schema = info.schema
         type_def = info.schema.get_type_by_name(self.type_name)
         assert isinstance(type_def, StrawberryObjectDefinition)
 
@@ -294,7 +297,11 @@ class GlobalID:
                 ensure_type = tuple(get_args(ensure_type))
 
             if not isinstance(node, ensure_type):
-                raise TypeError(f"{ensure_type} expected, found {node!r}")
+                msg = (
+                    f"Cannot resolve. GlobalID requires {ensure_type}, received {node!r}. "
+                    "Verify that the supplied ID is intended for this Query/Mutation/Subscription."
+                )
+                raise TypeError(msg)
 
         return node
 

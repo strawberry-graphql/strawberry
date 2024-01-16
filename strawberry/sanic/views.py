@@ -177,8 +177,9 @@ class GraphQLView(
         except HTTPException as e:
             return HTTPResponse(e.reason, status=e.status_code)
 
-    async def get(self, request: Request) -> HTTPResponse:
+    async def get(self, request: Request) -> HTTPResponse:  # type: ignore[override]
         self.request = request
+
         try:
             return await self.run(request)
         except HTTPException as e:
