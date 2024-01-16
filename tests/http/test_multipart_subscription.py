@@ -1,5 +1,6 @@
 import contextlib
 from typing import Type
+from typing_extensions import Literal
 
 import pytest
 
@@ -55,13 +56,13 @@ def http_client(http_client_class: Type[HttpClient]) -> HttpClient:
     return http_client_class()
 
 
-# TODO: do multipart subscriptions work on both GET and POST?
-async def test_multipart_subscription(http_client: HttpClient):
-    response = await http_client.post(
-        url="/graphql",
-        json={
-            "query": 'subscription { echo(message: "Hello world", delay: 0.2) }',
-        },
+@pytest.mark.parametrize("method", ["get", "post"])
+async def test_multipart_subscription(
+    http_client: HttpClient, method: Literal["get", "post"]
+):
+    response = await http_client.query(
+        method=method,
+        query='subscription { echo(message: "Hello world", delay: 0.2) }',
         headers={
             "content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
         },

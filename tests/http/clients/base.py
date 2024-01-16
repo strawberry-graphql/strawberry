@@ -163,16 +163,18 @@ class HttpClient(abc.ABC):
         headers: Optional[Dict[str, str]],
         files: Optional[Dict[str, BytesIO]],
     ) -> Dict[str, str]:
-        addition_headers = {}
+        additional_headers = {}
+        headers = headers or {}
 
-        content_type = None
+        # TODO: fix case sensitivity
+        content_type = headers.get("content-type")
 
-        if method == "post" and not files:
+        if not content_type and method == "post" and not files:
             content_type = "application/json"
 
-        addition_headers = {"Content-Type": content_type} if content_type else {}
+        additional_headers = {"Content-Type": content_type} if content_type else {}
 
-        return addition_headers if headers is None else {**addition_headers, **headers}
+        return {**additional_headers, **headers}
 
     def _build_body(
         self,

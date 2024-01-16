@@ -308,6 +308,9 @@ class AsyncBaseHTTPView(
     async def parse_multipart_subscriptions(
         self, request: AsyncHTTPRequestAdapter
     ) -> Dict[str, str]:
+        if request.method == "GET":
+            return self.parse_query_params(request.query_params)
+
         return self.parse_json(await request.get_body())
 
     async def parse_http_body(
