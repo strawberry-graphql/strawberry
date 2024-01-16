@@ -23,7 +23,8 @@ def test_can_change_which_fields_are_exposed():
         def get_fields(
             self, type_definition: StrawberryObjectDefinition
         ) -> List[StrawberryField]:
-            return list(filter(public_field_filter, type_definition.fields))
+            fields = super().get_fields(type_definition)
+            return list(filter(public_field_filter, fields))
 
     schema = PublicSchema(query=Query)
 
