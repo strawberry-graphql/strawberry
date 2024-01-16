@@ -106,7 +106,11 @@ class GraphQLView(
     async def create_multipart_response(
         self, stream: Callable[[], AsyncGenerator[str, None]], sub_response: Response
     ) -> Response:
-        return stream(), 200, {  # type: ignore
-            "Transfer-Encoding": "chunked",
-            "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
-        }
+        return (
+            stream(),
+            200,
+            {  # type: ignore
+                "Transfer-Encoding": "chunked",
+                "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+            },
+        )
