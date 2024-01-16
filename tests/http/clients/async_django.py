@@ -48,23 +48,21 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
         try:
             response = await view(request)
         except Http404:
-            return Response(
-                status_code=404, data=b"Not found", headers=response.headers
-            )
+            return Response(status_code=404, data=b"Not found", headers={})
         except (BadRequest, SuspiciousOperation) as e:
             return Response(
-                status_code=400, data=e.args[0].encode(), headers=response.headers
+                status_code=400,
+                data=e.args[0].encode(),
+                headers={},
             )
+        data = (
+            response.streaming_content
+            if isinstance(response, StreamingHttpResponse)
+            else response.content
+        )
 
-        if isinstance(response, StreamingHttpResponse):
-            return Response(
-                status_code=response.status_code,
-                data=response.streaming_content,
-                headers=response.headers,
-            )
-        else:
-            return Response(
-                status_code=response.status_code,
-                data=response.content,
-                headers=response.headers,
-            )
+        return Response(
+            status_code=response.status_code,
+            data=data,
+            headers=response.headers,
+        )
