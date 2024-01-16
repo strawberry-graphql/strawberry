@@ -1,5 +1,6 @@
 import abc
 import asyncio
+import contextlib
 import json
 from typing import (
     Any,
@@ -262,23 +263,30 @@ class AsyncBaseHTTPView(
             heartbeat_task = asyncio.create_task(heartbeat())
             task = asyncio.create_task(drain())
 
-            def cancel_tasks():
+            async def cancel_tasks():
                 nonlocal cancelling
                 cancelling = True
                 task.cancel()
+
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
+
                 heartbeat_task.cancel()
+
+                with contextlib.suppress(asyncio.CancelledError):
+                    await heartbeat_task
 
             try:
                 while not task.done():
                     raised, data = await queue.get()
 
                     if raised:
-                        cancel_tasks()
+                        await cancel_tasks()
                         raise data
 
                     yield data
             finally:
-                cancel_tasks()
+                await cancel_tasks()
 
         return merged
 
