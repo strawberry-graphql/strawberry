@@ -236,9 +236,6 @@ class AsyncBaseHTTPView(
     ) -> Callable[[], AsyncGenerator[str, None]]:
         """Adds a heartbeat to the stream, to prevent the connection from closing
         when there are no messages being sent."""
-        # TODO: handle errors
-        # TODO: should we do this more efficiently? and only send the heartbeat when
-        # 5 seconds have passed after the last message? (apollo router doesn't seem to do this)
         queue = asyncio.Queue[Tuple[bool, Any]](1)
 
         cancelling = False
