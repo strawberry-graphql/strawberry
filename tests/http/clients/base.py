@@ -3,6 +3,7 @@ import contextlib
 import json
 import logging
 from dataclasses import dataclass
+from functools import cached_property
 from io import BytesIO
 from typing import (
     Any,
@@ -32,12 +33,25 @@ ResultOverrideFunction = Optional[Callable[[ExecutionResult], GraphQLHTTPRespons
 class Response:
     status_code: int
     data: Union[bytes, AsyncIterable[bytes]]
-    headers: Mapping[str, str]
+
+    def __init__(
+        self,
+        status_code: int,
+        data: Union[bytes, AsyncIterable[bytes]],
+        *,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> None:
+        self.status_code = status_code
+        self.data = data
+        self._headers = headers or {}
+
+    @cached_property
+    def headers(self) -> Mapping[str, str]:
+        return {k.lower(): v for k, v in self._headers.items()}
 
     @property
     def is_multipart(self) -> bool:
-        # TODO: check casing
-        return self.headers.get("Content-type", "").startswith("multipart/mixed")
+        return self.headers.get("content-type", "").startswith("multipart/mixed")
 
     @property
     def text(self) -> str:

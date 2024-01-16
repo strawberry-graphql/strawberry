@@ -216,4 +216,4 @@ async def test_updating_headers(
 
     assert response.status_code == 200
     assert response.json["data"] == {"setHeader": "Jake"}
-    assert response.headers["X-Name"] == "Jake"
+    assert response.headers["x-name"] == "Jake"
