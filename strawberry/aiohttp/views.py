@@ -140,8 +140,6 @@ class GraphQLView(
 
         if not ws_test.ok:
             try:
-                # TODO: pass this down from run to multipart thingy
-                self.request = request
                 return await self.run(request=request)
             except HTTPException as e:
                 return web.Response(
@@ -191,6 +189,7 @@ class GraphQLView(
 
     async def create_multipart_response(
         self,
+        request: web.Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: web.Response,
     ) -> web.StreamResponse:
@@ -204,10 +203,11 @@ class GraphQLView(
             reason="OK",
         )
 
-        await response.prepare(self.request)
+        await response.prepare(request)
 
         async for data in stream():
             await response.write(data.encode())
 
         await response.write_eof()
+
         return response

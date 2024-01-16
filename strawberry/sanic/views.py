@@ -187,6 +187,7 @@ class GraphQLView(
 
     async def create_multipart_response(
         self,
+        request: Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: TemporalResponse,
     ) -> HTTPResponse:

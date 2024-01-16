@@ -19,6 +19,7 @@ from typing import (
     Optional,
     Union,
 )
+from typing_extensions import assert_never
 from urllib.parse import parse_qs
 
 from django.conf import settings
@@ -212,15 +213,18 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
                 await self.send_headers(headers=response.headers)
 
                 async for chunk in response.stream():
-                    # TODO: we should change more body
                     await self.send_body(chunk.encode("utf-8"), more_body=True)
 
-            else:
+                await self.send_body(b"", more_body=False)
+
+            elif isinstance(response, ChannelsResponse):
                 await self.send_response(
                     response.status,
                     response.content,
                     headers=response.headers,
                 )
+            else:
+                assert_never(response)
         except HTTPException as e:
             await self.send_response(e.status_code, e.reason.encode())
 
@@ -275,6 +279,7 @@ class GraphQLHTTPConsumer(
 
     async def create_multipart_response(
         self,
+        request: ChannelsRequest,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: TemporalResponse,
     ) -> MultipartChannelsResponse:

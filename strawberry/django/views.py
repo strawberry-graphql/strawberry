@@ -186,7 +186,10 @@ class BaseView:
         return response
 
     async def create_multipart_response(
-        self, stream: Callable[[], AsyncIterator[Any]], sub_response: HttpResponse
+        self,
+        request: HttpRequest,
+        stream: Callable[[], AsyncIterator[Any]],
+        sub_response: HttpResponse,
     ) -> HttpResponseBase:
         return StreamingHttpResponse(
             streaming_content=stream(),

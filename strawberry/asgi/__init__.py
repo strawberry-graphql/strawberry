@@ -222,7 +222,10 @@ class GraphQL(
         return response
 
     async def create_multipart_response(
-        self, stream: Callable[[], AsyncIterator[str]], sub_response: Response
+        self,
+        request: Request,
+        stream: Callable[[], AsyncIterator[str]],
+        sub_response: Response,
     ) -> Response:
         return StreamingResponse(
             stream(),
