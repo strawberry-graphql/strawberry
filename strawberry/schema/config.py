@@ -1,9 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import InitVar, dataclass, field
-from typing import Any, Callable
+from typing import Any, Callable, TypedDict
 
 from .name_converter import NameConverter
+
+
+class StrawberryConfigDict(TypedDict, total=False):
+    auto_camel_case: bool
+    name_converter: NameConverter
+    default_resolver: Callable[[Any, str], object]
+    relay_max_results: int
 
 
 @dataclass
@@ -19,3 +26,9 @@ class StrawberryConfig:
     ):
         if auto_camel_case is not None:
             self.name_converter.auto_camel_case = auto_camel_case
+
+    @classmethod
+    def from_dict(cls, data: StrawberryConfigDict | None) -> StrawberryConfig:
+        if not data:
+            return cls()
+        return cls(**data)
