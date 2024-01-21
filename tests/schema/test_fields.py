@@ -5,7 +5,6 @@ from operator import getitem
 import strawberry
 from strawberry.field import StrawberryField
 from strawberry.printer import print_schema
-from strawberry.schema.config import StrawberryConfig
 
 
 def test_custom_field():
@@ -62,7 +61,7 @@ def test_can_change_default_resolver():
 
     schema = strawberry.Schema(
         query=Query,
-        config=StrawberryConfig(default_resolver=getitem),
+        config={"default_resolver": getitem},
     )
 
     query = "{ user { name } }"
