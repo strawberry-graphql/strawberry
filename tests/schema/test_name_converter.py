@@ -8,7 +8,6 @@ from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.field import StrawberryField
-from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.name_converter import NameConverter
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.type import StrawberryType
@@ -125,7 +124,7 @@ class Query:
 schema = strawberry.Schema(
     query=Query,
     types=[MyScalar, Node],
-    config=StrawberryConfig(name_converter=AppendsNameConverter("X")),
+    config={"name_converter": AppendsNameConverter("X")},
 )
 
 
