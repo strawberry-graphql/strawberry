@@ -70,7 +70,7 @@ def run_pyright(code: str, strict: bool = True) -> List[Result]:
 
     pyright_result: PyrightCLIResult = json.loads(process_result.stdout.decode("utf-8"))
 
-    return [
+    result = [
         Result(
             type=cast(ResultType, diagnostic["severity"].strip()),
             message=diagnostic["message"].strip(),
@@ -79,6 +79,11 @@ def run_pyright(code: str, strict: bool = True) -> List[Result]:
         )
         for diagnostic in pyright_result["generalDiagnostics"]
     ]
+
+    # make sure that results are sorted by line and column and then message
+    result.sort(key=lambda x: (x.line, x.column, x.message))
+
+    return result
 
 
 def pyright_exist() -> bool:
