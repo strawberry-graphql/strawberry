@@ -233,3 +233,43 @@ class StrawberryLogger:
 
         cls.logger.error(error, exc_info=error.original_error, **logger_kwargs)
 ```
+
+## Filtering/customising fields
+
+You can customise the fields that are exposed on a schema by subclassing the
+`Schema` class and overriding the `get_fields` method, for example you can use
+this to create different GraphQL APIs, such as a public and an internal API.
+Here's an example of this:
+
+```python
+@strawberry.type
+class User:
+    name: str
+    email: str = strawberry.field(metadata={"tags": ["internal"]})
+
+
+@strawberry.type
+class Query:
+    user: User
+
+
+def public_field_filter(field: StrawberryField) -> bool:
+    return "internal" not in field.metadata.get("tags", [])
+
+
+class PublicSchema(strawberry.Schema):
+    def get_fields(
+        self, type_definition: StrawberryObjectDefinition
+    ) -> List[StrawberryField]:
+        return list(filter(public_field_filter, type_definition.fields))
+
+
+schema = PublicSchema(query=Query)
+```
+
+<Note>
+
+The `get_fields` method is only called once when creating the schema, this is
+not intended to be used to dynamically customise the schema.
+
+</Note>
