@@ -1,6 +1,44 @@
 CHANGELOG
 =========
 
+0.218.0 - 2024-01-22
+--------------------
+
+This release adds a new method `get_fields` on the `Schema` class.
+You can use `get_fields` to hide certain field based on some conditions,
+for example:
+
+```python
+@strawberry.type
+class User:
+    name: str
+    email: str = strawberry.field(metadata={"tags": ["internal"]})
+
+
+@strawberry.type
+class Query:
+    user: User
+
+
+def public_field_filter(field: StrawberryField) -> bool:
+    return "internal" not in field.metadata.get("tags", [])
+
+
+class PublicSchema(strawberry.Schema):
+    def get_fields(
+        self, type_definition: StrawberryObjectDefinition
+    ) -> List[StrawberryField]:
+        return list(filter(public_field_filter, type_definition.fields))
+
+
+schema = PublicSchema(query=Query)
+```
+
+The schema here would only have the `name` field on the `User` type.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3274](https://github.com/strawberry-graphql/strawberry/pull/3274/)
+
+
 0.217.1 - 2024-01-04
 --------------------
 
