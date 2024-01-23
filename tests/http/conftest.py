@@ -33,6 +33,11 @@ def _get_http_client_classes() -> Generator[Any, None, None]:
             )
         except ImportError as e:
             client_class = None
+        except Exception as e:
+            # Starlite is not compatible with Pydantic 2 so we get an error
+            # when importing it, for now we skip it, in future we'll remove
+            # Starlite in favour of Litestar
+            client_class = None
 
         yield pytest.param(
             client_class,
