@@ -87,7 +87,7 @@ def test_mutation_with_validation():
             "  String should have at least 2 characters [type=string_too_short, "
             "input_value='P', input_type=str]\n"
             "    For further information visit "
-            "https://errors.pydantic.dev/2.0.3/v/string_too_short"
+            f"https://errors.pydantic.dev/{pydantic.version.version_short()}/v/string_too_short"
         )
     else:
         assert result.errors[0].message == (
@@ -149,7 +149,7 @@ def test_mutation_with_validation_of_nested_model():
             "  String should have at least 2 characters [type=string_too_short, "
             "input_value='P', input_type=str]\n"
             "    For further information visit "
-            "https://errors.pydantic.dev/2.0.3/v/string_too_short"
+            f"https://errors.pydantic.dev/{pydantic.version.version_short()}/v/string_too_short"
         )
 
     else:
