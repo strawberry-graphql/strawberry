@@ -39,17 +39,17 @@ if IS_PYDANTIC_V2:
         return type_.__supertype__
 
     def get_model_fields(model: Type[BaseModel]) -> Dict[str, CompatModelField]:
-        field_info: dict[str, FieldInfo] = model.model_fields  # type: ignore[attr-defined]
+        field_info: dict[str, FieldInfo] = model.model_fields
         new_fields = {}
         # Convert it into CompatModelField
         for name, field in field_info.items():
             new_fields[name] = CompatModelField(
                 name=name,
-                type_=field.annotation,  # type: ignore[attr-defined]
-                outer_type_=field.annotation,  # type: ignore[attr-defined]
+                type_=field.annotation,
+                outer_type_=field.annotation,
                 default=field.default,
                 default_factory=field.default_factory,
-                required=field.is_required(),  # type: ignore[attr-defined]
+                required=field.is_required(),
                 alias=field.alias,
                 # v2 doesn't have allow_none
                 allow_none=False,
@@ -65,24 +65,24 @@ else:
         is_new_type,
         new_type_supertype,
     )
-    from pydantic.utils import (
+    from pydantic.utils import (  # type: ignore[no-redef]
         lenient_issubclass,
         smart_deepcopy,
     )
 
-    PYDANTIC_MISSING_TYPE = dataclasses.MISSING
+    PYDANTIC_MISSING_TYPE = dataclasses.MISSING  # type: ignore[assignment]
 
     def get_model_fields(model: Type[BaseModel]) -> Dict[str, CompatModelField]:
         new_fields = {}
         # Convert it into CompatModelField
-        for name, field in model.__fields__.items():
+        for name, field in model.__fields__.items():  # type: ignore[attr-defined]
             new_fields[name] = CompatModelField(
                 name=name,
                 type_=field.type_,
                 outer_type_=field.outer_type_,
                 default=field.default,
                 default_factory=field.default_factory,
-                required=field.required,  # type: ignore[arg-type]
+                required=field.required,
                 alias=field.alias,
                 allow_none=field.allow_none,
                 has_alias=field.has_alias,
