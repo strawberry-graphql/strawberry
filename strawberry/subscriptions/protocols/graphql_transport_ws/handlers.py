@@ -138,7 +138,15 @@ class BaseGraphQLTransportWSHandler(ABC):
 
             elif message_type == SubscribeMessage.type:
                 handler = self.handle_subscribe
-                payload = SubscribeMessagePayload(**message.pop("payload"))
+
+                payload_args = message.pop("payload")
+
+                payload = SubscribeMessagePayload(
+                    query=payload_args["query"],
+                    operationName=payload_args.get("operationName"),
+                    variables=payload_args.get("variables"),
+                    extensions=payload_args.get("extensions"),
+                )
                 handler_arg = SubscribeMessage(payload=payload, **message)
 
             elif message_type == CompleteMessage.type:

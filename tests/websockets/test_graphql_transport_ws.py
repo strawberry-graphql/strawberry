@@ -217,6 +217,35 @@ async def test_ping_pong(ws: WebSocketClient):
     assert response == PongMessage().as_dict()
 
 
+async def test_can_send_payload_with_additional_things(ws_raw: WebSocketClient):
+    ws = ws_raw
+
+    # send  init
+
+    await ws.send_json(ConnectionInitMessage().as_dict())
+
+    await ws.receive(timeout=2)
+
+    await ws.send_json(
+        {
+            "type": "subscribe",
+            "payload": {
+                "query": 'subscription { echo(message: "Hi") }',
+                "some": "other thing",
+            },
+            "id": "1",
+        }
+    )
+
+    data = await ws.receive(timeout=2)
+
+    assert json.loads(data.data) == {
+        "type": "next",
+        "id": "1",
+        "payload": {"data": {"echo": "Hi"}},
+    }
+
+
 async def test_server_sent_ping(ws: WebSocketClient):
     await ws.send_json(
         SubscribeMessage(
