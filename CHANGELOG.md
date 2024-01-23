@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.218.1 - 2024-01-23
+--------------------
+
+This release fixes a small issue in the GraphQL Transport websocket
+where the connection would fail when receiving extra parameters
+in the payload sent from the client.
+
+This would happen when using Apollo Sandbox.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3356](https://github.com/strawberry-graphql/strawberry/pull/3356/)
+
+
 0.218.0 - 2024-01-22
 --------------------
 
