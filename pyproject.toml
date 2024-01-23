@@ -100,6 +100,7 @@ botocore = "1.34.13"
 mypy = "1.8.0"
 pytest-mypy-plugins = ">=1.10,<4.0"
 types-protobuf = "^4.23.0.1"
+poetry-plugin-export = "^1.6.0"
 
 [tool.poetry.group.integrations]
 optional = true
