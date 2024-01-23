@@ -347,13 +347,13 @@ files = [
 
 [[package]]
 name = "botocore"
-version = "1.34.13"
+version = "1.34.25"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">= 3.8"
 files = [
-    {file = "botocore-1.34.13-py3-none-any.whl", hash = "sha256:b39f96e658865bd1f3c2d043794b91cd6206f9db531c0a06b53093ed82d41ef7"},
-    {file = "botocore-1.34.13.tar.gz", hash = "sha256:1680b0e0633a546b8d54d1bbd5154e30bb1044d0496e0df7cfd24a383e10b0d3"},
+    {file = "botocore-1.34.25-py3-none-any.whl", hash = "sha256:35dfab5bdb4620f73ac7c557c4e0d012429706d8760b100f099feea34b5505f8"},
+    {file = "botocore-1.34.25.tar.gz", hash = "sha256:a39070bb760bd9545b0eef52a8bcb2d03918206e67a5a786ea4bd6f4bd949edd"},
 ]
 
 [package.dependencies]
@@ -1187,13 +1187,13 @@ idna = ">=2.0.0"
 
 [[package]]
 name = "envier"
-version = "0.5.0"
+version = "0.5.1"
 description = "Python application configuration via the environment"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "envier-0.5.0-py3-none-any.whl", hash = "sha256:5fed6099ee5d7ad4cf664f8bb99d1281d4ab5fadeec8f40ba9458610938293be"},
-    {file = "envier-0.5.0.tar.gz", hash = "sha256:f35ca8605f0c70c2c0367133af9dc1ef16710021dbd0e28c1b0a83070db06768"},
+    {file = "envier-0.5.1-py3-none-any.whl", hash = "sha256:b45ef6051fea33d0c32a64e186bff2cfb446e2242d6781216c9bc9ce708c5909"},
+    {file = "envier-0.5.1.tar.gz", hash = "sha256:bd5ccf707447973ea0f4125b7df202ba415ad888bcdcb8df80e0b002ee11ffdb"},
 ]
 
 [package.extras]
@@ -4761,4 +4761,4 @@ starlite = ["starlite"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "9bb7387baf797ed531f9b2755d5969555b1ea99fd1d4554f4d66468ec6c99d8b"
+content-hash = "e444c03fb86677dbe07f9e7b6cf233b790b2df0397c9469703ff397a60cb0894"
