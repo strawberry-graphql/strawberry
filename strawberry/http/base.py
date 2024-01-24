@@ -44,7 +44,7 @@ class BaseView(Generic[Request]):
     def is_request_allowed(self, request: BaseRequestProtocol) -> bool:
         return request.method in ("GET", "POST")
 
-    def parse_json(self, data: Union[str, bytes]) -> Dict[str, str]:
+    def parse_json(self, data: Union[str, bytes]) -> Any:
         try:
             return json.loads(data)
         except json.JSONDecodeError as e:
@@ -65,7 +65,7 @@ class BaseView(Generic[Request]):
                 variables = variables[0]
 
             if variables:
-                params["variables"] = json.loads(variables)
+                params["variables"] = self.parse_json(variables)
 
         return params
 

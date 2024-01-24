@@ -217,7 +217,7 @@ class AsyncBaseHTTPView(
 
         return GraphQLRequestData(
             query=data.get("query"),
-            variables=data.get("variables"),  # type: ignore
+            variables=data.get("variables"),
             operation_name=data.get("operationName"),
         )
 

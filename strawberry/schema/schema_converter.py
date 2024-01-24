@@ -109,6 +109,7 @@ def _get_thunk_mapping(
     type_definition: StrawberryObjectDefinition,
     name_converter: Callable[[StrawberryField], str],
     field_converter: FieldConverterProtocol[FieldType],
+    get_fields: Callable[[StrawberryObjectDefinition], List[StrawberryField]],
 ) -> Dict[str, FieldType]:
     """Create a GraphQL core `ThunkMapping` mapping of field names to field types.
 
@@ -123,7 +124,9 @@ def _get_thunk_mapping(
     """
     thunk_mapping: Dict[str, FieldType] = {}
 
-    for field in type_definition.fields:
+    fields = get_fields(type_definition)
+
+    for field in fields:
         field_type = field.type
 
         if field_type is UNRESOLVED:
@@ -178,10 +181,12 @@ class GraphQLCoreConverter:
         self,
         config: StrawberryConfig,
         scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+        get_fields: Callable[[StrawberryObjectDefinition], List[StrawberryField]],
     ):
         self.type_map: Dict[str, ConcreteType] = {}
         self.config = config
         self.scalar_registry = scalar_registry
+        self.get_fields = get_fields
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
         argument_type = cast(
@@ -374,6 +379,7 @@ class GraphQLCoreConverter:
             type_definition=type_definition,
             name_converter=self.config.name_converter.from_field,
             field_converter=self.from_field,
+            get_fields=self.get_fields,
         )
 
     def get_graphql_input_fields(
@@ -383,6 +389,7 @@ class GraphQLCoreConverter:
             type_definition=type_definition,
             name_converter=self.config.name_converter.from_field,
             field_converter=self.from_input_field,
+            get_fields=self.get_fields,
         )
 
     def from_input_object(self, object_type: type) -> GraphQLInputObjectType:
@@ -592,31 +599,6 @@ class GraphQLCoreConverter:
 
             return args, kwargs
 
-        def _check_permissions(source: Any, info: Info, kwargs: Any):
-            """
-            Checks if the permission should be accepted and
-            raises an exception if not
-            """
-            for permission_class in field.permission_classes:
-                permission = permission_class()
-
-                if not permission.has_permission(source, info, **kwargs):
-                    message = getattr(permission, "message", None)
-                    raise PermissionError(message)
-
-        async def _check_permissions_async(source: Any, info: Info, kwargs: Any):
-            for permission_class in field.permission_classes:
-                permission = permission_class()
-                has_permission: bool
-
-                has_permission = await await_maybe(
-                    permission.has_permission(source, info, **kwargs)
-                )
-
-                if not has_permission:
-                    message = getattr(permission, "message", None)
-                    raise PermissionError(message)
-
         def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
             return Info(
                 _raw_info=info,
@@ -685,7 +667,6 @@ class GraphQLCoreConverter:
 
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs: Any):
             strawberry_info = _strawberry_info_from_graphql(info)
-            _check_permissions(_source, strawberry_info, kwargs)
 
             return _get_result_with_extensions(
                 _source,
@@ -697,7 +678,6 @@ class GraphQLCoreConverter:
             _source: Any, info: GraphQLResolveInfo, **kwargs: Any
         ):
             strawberry_info = _strawberry_info_from_graphql(info)
-            await _check_permissions_async(_source, strawberry_info, kwargs)
 
             return await await_maybe(
                 _get_result_with_extensions(

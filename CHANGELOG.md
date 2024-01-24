@@ -1,6 +1,189 @@
 CHANGELOG
 =========
 
+0.218.1 - 2024-01-23
+--------------------
+
+This release fixes a small issue in the GraphQL Transport websocket
+where the connection would fail when receiving extra parameters
+in the payload sent from the client.
+
+This would happen when using Apollo Sandbox.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3356](https://github.com/strawberry-graphql/strawberry/pull/3356/)
+
+
+0.218.0 - 2024-01-22
+--------------------
+
+This release adds a new method `get_fields` on the `Schema` class.
+You can use `get_fields` to hide certain field based on some conditions,
+for example:
+
+```python
+@strawberry.type
+class User:
+    name: str
+    email: str = strawberry.field(metadata={"tags": ["internal"]})
+
+
+@strawberry.type
+class Query:
+    user: User
+
+
+def public_field_filter(field: StrawberryField) -> bool:
+    return "internal" not in field.metadata.get("tags", [])
+
+
+class PublicSchema(strawberry.Schema):
+    def get_fields(
+        self, type_definition: StrawberryObjectDefinition
+    ) -> List[StrawberryField]:
+        return list(filter(public_field_filter, type_definition.fields))
+
+
+schema = PublicSchema(query=Query)
+```
+
+The schema here would only have the `name` field on the `User` type.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3274](https://github.com/strawberry-graphql/strawberry/pull/3274/)
+
+
+0.217.1 - 2024-01-04
+--------------------
+
+This hotfix enables permission extensions to be used with AsyncGenerators.
+
+Contributed by [Erik Wrede](https://github.com/erikwrede) via [PR #3318](https://github.com/strawberry-graphql/strawberry/pull/3318/)
+
+
+0.217.0 - 2023-12-18
+--------------------
+
+Permissions classes now use a `FieldExtension`. The new preferred way to add permissions
+is to use the `PermissionsExtension` class:
+
+```python
+import strawberry
+from strawberry.permission import PermissionExtension, BasePermission
+
+
+class IsAuthorized(BasePermission):
+    message = "User is not authorized"
+    error_extensions = {"code": "UNAUTHORIZED"}
+
+    def has_permission(self, source, info, **kwargs) -> bool:
+        return False
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(extensions=[PermissionExtension(permissions=[IsAuthorized()])])
+    def name(self) -> str:
+        return "ABC"
+```
+
+The old way of adding permissions using `permission_classes` is still
+supported via the automatic addition of a `PermissionExtension` on the field.
+
+Using the new `PermissionExtension` API, permissions support even more features:
+
+#### Silent errors
+
+To return `None` or `[]` instead of raising an error, the `fail_silently ` keyword
+argument on `PermissionExtension` can be set to `True`.
+
+#### Custom Error Extensions & classes
+
+Permissions will now automatically add pre-defined error extensions to the error, and
+can use a custom `GraphQLError` class. This can be configured by modifying
+the  `error_class` and `error_extensions` attributes on the `BasePermission` class.
+
+#### Customizable Error Handling
+
+To customize the error handling, the `on_unauthorized` method on
+the `BasePermission` class can be used. Further changes can be implemented by
+subclassing the `PermissionExtension` class.
+
+#### Schema Directives
+
+Permissions will automatically be added as schema directives to the schema. This
+behavior can be altered by setting the `add_directives` to `False`
+on `PermissionExtension`, or by setting the `_schema_directive` class attribute of the
+permission to a custom directive.
+
+Contributed by [Erik Wrede](https://github.com/erikwrede) via [PR #2570](https://github.com/strawberry-graphql/strawberry/pull/2570/)
+
+
+0.216.1 - 2023-12-12
+--------------------
+
+Don't require `NodeId` annotation if resolve_id is overwritten on `Node` implemented types
+
+Contributed by [Alexander](https://github.com/devkral) via [PR #2844](https://github.com/strawberry-graphql/strawberry/pull/2844/)
+
+
+0.216.0 - 2023-12-06
+--------------------
+
+Override encode_json() method in Django BaseView to use DjangoJSONEncoder
+
+Contributed by [Noam Stolero](https://github.com/noamsto) via [PR #3273](https://github.com/strawberry-graphql/strawberry/pull/3273/)
+
+
+0.215.3 - 2023-12-06
+--------------------
+
+Fixed the base view so it uses `parse_json` when loading parameters from the query string instead of `json.loads`.
+
+Contributed by [Elias Gabriel](https://github.com/thearchitector) via [PR #3272](https://github.com/strawberry-graphql/strawberry/pull/3272/)
+
+
+0.215.2 - 2023-12-05
+--------------------
+
+This release updates the Apollo Sandbox integration to all you to
+pass cookies to the GraphQL endpoint by enabling the **Include cookes**
+option in the Sandbox settings.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3278](https://github.com/strawberry-graphql/strawberry/pull/3278/)
+
+
+0.215.1 - 2023-11-20
+--------------------
+
+Improved error message when supplying GlobalID format that relates to another type than the query itself.
+
+Contributed by [SD](https://github.com/sdobbelaere) via [PR #3194](https://github.com/strawberry-graphql/strawberry/pull/3194/)
+
+
+0.215.0 - 2023-11-19
+--------------------
+
+Adds an optional `extensions` parameter to `strawberry.federation.field`, with default value `None`. The key is passed through to `strawberry.field`, so the functionality is exactly as described [here](https://strawberry.rocks/docs/guides/field-extensions).
+
+Example:
+
+```python
+strawberry.federation.field(extensions=[InputMutationExtension()])
+```
+
+Contributed by [Bryan Ricker](https://github.com/bricker) via [PR #3239](https://github.com/strawberry-graphql/strawberry/pull/3239/)
+
+
+0.214.0 - 2023-11-15
+--------------------
+
+This release updates the GraphiQL packages to their latest versions:
+
+- `graphiql@3.0.9`
+- `@graphiql/plugin-explorer@1.0.2`
+
+Contributed by [Rodrigo Feijao](https://github.com/rodrigofeijao) via [PR #3227](https://github.com/strawberry-graphql/strawberry/pull/3227/)
+
+
 0.213.0 - 2023-11-08
 --------------------
 

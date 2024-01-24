@@ -21,6 +21,9 @@ def _get_http_client_classes() -> Generator[Any, None, None]:
             )
         except ImportError:
             client_class = None
+        except Exception:
+            # TODO: remove this when removing Starlite
+            client_class = None
 
         yield pytest.param(
             client_class,
