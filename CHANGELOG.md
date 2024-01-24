@@ -1,6 +1,96 @@
 CHANGELOG
 =========
 
+0.219.0 - 2024-01-24
+--------------------
+
+This release adds support for [litestar](https://litestar.dev/).
+
+```python
+import strawberry
+from litestar import Request, Litestar
+from strawberry.litestar import make_graphql_controller
+from strawberry.types.info import Info
+
+
+def custom_context_getter(request: Request):
+    return {"custom": "context"}
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self, info: Info[object, None]) -> str:
+        return info.context["custom"]
+
+
+schema = strawberry.Schema(Query)
+
+
+GraphQLController = make_graphql_controller(
+    schema,
+    path="/graphql",
+    context_getter=custom_context_getter,
+)
+
+app = Litestar(
+    route_handlers=[GraphQLController],
+)
+```
+
+Contributed by [Matthieu MN](https://github.com/gazorby) via [PR #3213](https://github.com/strawberry-graphql/strawberry/pull/3213/)
+
+
+0.218.1 - 2024-01-23
+--------------------
+
+This release fixes a small issue in the GraphQL Transport websocket
+where the connection would fail when receiving extra parameters
+in the payload sent from the client.
+
+This would happen when using Apollo Sandbox.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3356](https://github.com/strawberry-graphql/strawberry/pull/3356/)
+
+
+0.218.0 - 2024-01-22
+--------------------
+
+This release adds a new method `get_fields` on the `Schema` class.
+You can use `get_fields` to hide certain field based on some conditions,
+for example:
+
+```python
+@strawberry.type
+class User:
+    name: str
+    email: str = strawberry.field(metadata={"tags": ["internal"]})
+
+
+@strawberry.type
+class Query:
+    user: User
+
+
+def public_field_filter(field: StrawberryField) -> bool:
+    return "internal" not in field.metadata.get("tags", [])
+
+
+class PublicSchema(strawberry.Schema):
+    def get_fields(
+        self, type_definition: StrawberryObjectDefinition
+    ) -> List[StrawberryField]:
+        return list(filter(public_field_filter, type_definition.fields))
+
+
+schema = PublicSchema(query=Query)
+```
+
+The schema here would only have the `name` field on the `User` type.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3274](https://github.com/strawberry-graphql/strawberry/pull/3274/)
+
+
 0.217.1 - 2024-01-04
 --------------------
 
