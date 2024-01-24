@@ -40,6 +40,12 @@ def _read_file(text_file: Upload) -> str:
         if isinstance(text_file, StarliteUploadFile):
             text_file = text_file.file  # type: ignore
 
+    with contextlib.suppress(ModuleNotFoundError):
+        from litestar.datastructures import UploadFile as LitestarUploadFile
+
+        if isinstance(text_file, LitestarUploadFile):
+            text_file = text_file.file  # type: ignore
+
     return text_file.read().decode()
 
 

@@ -83,6 +83,8 @@
 - [Sanic](./integrations/sanic.md)
 - [Chalice](./integrations/chalice.md)
 - [Starlette](./integrations/starlette.md)
+- [Starlite](./integrations/starlite.md)
+- [Litestar](./integrations/litestar.md)
 - [Creating an integration](./integrations/creating-an-integration.md)
 - [Pydantic **experimental**](./integrations/pydantic.md)
 

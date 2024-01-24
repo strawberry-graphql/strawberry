@@ -20,6 +20,7 @@ def _get_http_client_classes() -> Generator[Any, None, None]:
         ("QuartHttpClient", "quart", [pytest.mark.quart]),
         ("SanicHttpClient", "sanic", [pytest.mark.sanic]),
         ("StarliteHttpClient", "starlite", [pytest.mark.starlite]),
+        ("LitestarHttpClient", "litestar", [pytest.mark.litestar]),
         (
             "SyncChannelsHttpClient",
             "channels",

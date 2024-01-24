@@ -170,13 +170,13 @@ trio = ["trio (>=0.23)"]
 
 [[package]]
 name = "argcomplete"
-version = "3.2.1"
+version = "3.2.2"
 description = "Bash tab completion for argparse"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "argcomplete-3.2.1-py3-none-any.whl", hash = "sha256:30891d87f3c1abe091f2142613c9d33cac84a5e15404489f033b20399b691fec"},
-    {file = "argcomplete-3.2.1.tar.gz", hash = "sha256:437f67fb9b058da5a090df505ef9be0297c4883993f3f56cb186ff087778cfb4"},
+    {file = "argcomplete-3.2.2-py3-none-any.whl", hash = "sha256:e44f4e7985883ab3e73a103ef0acd27299dbfe2dfed00142c35d4ddd3005901d"},
+    {file = "argcomplete-3.2.2.tar.gz", hash = "sha256:f3e49e8ea59b4026ee29548e24488af46e30c9de57d48638e24f54a1ea1000a2"},
 ]
 
 [package.extras]
@@ -347,13 +347,13 @@ files = [
 
 [[package]]
 name = "botocore"
-version = "1.34.25"
+version = "1.34.26"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">= 3.8"
 files = [
-    {file = "botocore-1.34.25-py3-none-any.whl", hash = "sha256:35dfab5bdb4620f73ac7c557c4e0d012429706d8760b100f099feea34b5505f8"},
-    {file = "botocore-1.34.25.tar.gz", hash = "sha256:a39070bb760bd9545b0eef52a8bcb2d03918206e67a5a786ea4bd6f4bd949edd"},
+    {file = "botocore-1.34.26-py3-none-any.whl", hash = "sha256:4f3df0f6ed722e944d6f0eed964bc00b6489e50c6e8d5fdbbb68eb0c6c16c7c9"},
+    {file = "botocore-1.34.26.tar.gz", hash = "sha256:63543102467b3b5ba73903f11a14c3157ee442a360f3cb2f5316a8d6bc3e10e7"},
 ]
 
 [package.dependencies]
@@ -1229,13 +1229,13 @@ testing = ["hatch", "pre-commit", "pytest", "tox"]
 
 [[package]]
 name = "faker"
-version = "22.5.0"
+version = "22.5.1"
 description = "Faker is a Python package that generates fake data for you."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "Faker-22.5.0-py3-none-any.whl", hash = "sha256:9a510a31090cc47a7ef7d95c1da8126a891a9d076c7e26b01ad02e1bcf915c3e"},
-    {file = "Faker-22.5.0.tar.gz", hash = "sha256:a4e689e2f4e62474245364bbd82cec045dcbbf85a539ee742a515fb4e93a6dd5"},
+    {file = "Faker-22.5.1-py3-none-any.whl", hash = "sha256:4e7bb19c1955bb978bf1d4cb0cf25930e37de0e7dfbc6abd768fd4784d9a9653"},
+    {file = "Faker-22.5.1.tar.gz", hash = "sha256:79cbe3be786789efa05b8c75d7e0ec4efa6ecb786b8fe90eae49c2f8f9cbe31a"},
 ]
 
 [package.dependencies]
@@ -1901,6 +1901,52 @@ typing-inspect = ">=0.4.0"
 dev = ["Sphinx (>=5.1.1)", "black (==23.9.1)", "build (>=0.10.0)", "coverage (>=4.5.4)", "fixit (==2.0.0.post1)", "flake8 (>=3.7.8,<5)", "hypothesis (>=4.36.0)", "hypothesmith (>=0.0.4)", "jinja2 (==3.1.2)", "jupyter (>=1.0.0)", "maturin (>=0.8.3,<0.16)", "nbsphinx (>=0.4.2)", "prompt-toolkit (>=2.0.9)", "pyre-check (==0.9.18)", "setuptools-rust (>=1.5.2)", "setuptools-scm (>=6.0.1)", "slotscheck (>=0.7.1)", "sphinx-rtd-theme (>=0.4.3)", "ufmt (==2.2.0)", "usort (==1.0.7)"]
 
 [[package]]
+name = "litestar"
+version = "2.5.1"
+description = "Litestar - A production-ready, highly performant, extensible ASGI API Framework"
+optional = false
+python-versions = "<4.0,>=3.8"
+files = [
+    {file = "litestar-2.5.1-py3-none-any.whl", hash = "sha256:6423c8331add1ba52aca5a3769a3c41d3224b176ddd8778fb606f8db60b2e9cb"},
+    {file = "litestar-2.5.1.tar.gz", hash = "sha256:6307278ba4f796542b0cdbfeac82a5e71233da20cb7f744d16c8c7723da3a1cd"},
+]
+
+[package.dependencies]
+anyio = ">=3"
+click = "*"
+httpx = ">=0.22"
+importlib-metadata = {version = "*", markers = "python_version < \"3.10\""}
+importlib-resources = {version = ">=5.12.0", markers = "python_version < \"3.9\""}
+msgspec = ">=0.18.2"
+multidict = ">=6.0.2"
+polyfactory = ">=2.6.3"
+pyyaml = "*"
+rich = ">=13.0.0"
+rich-click = "*"
+typing-extensions = "*"
+
+[package.extras]
+annotated-types = ["annotated-types"]
+attrs = ["attrs"]
+brotli = ["brotli"]
+cli = ["jsbeautifier", "uvicorn[standard]", "uvloop (>=0.18.0)"]
+cryptography = ["cryptography"]
+full = ["litestar[annotated-types,attrs,brotli,cli,cryptography,jinja,jwt,mako,minijinja,opentelemetry,piccolo,picologging,prometheus,pydantic,redis,sqlalchemy,standard,structlog]"]
+jinja = ["jinja2 (>=3.1.2)"]
+jwt = ["cryptography", "python-jose"]
+mako = ["mako (>=1.2.4)"]
+minijinja = ["minijinja (>=1.0.0)"]
+opentelemetry = ["opentelemetry-instrumentation-asgi"]
+piccolo = ["piccolo"]
+picologging = ["picologging"]
+prometheus = ["prometheus-client"]
+pydantic = ["email-validator", "pydantic", "pydantic-extra-types"]
+redis = ["redis[hiredis] (>=4.4.4)"]
+sqlalchemy = ["advanced-alchemy (>=0.2.2,<1.0.0)"]
+standard = ["fast-query-parsers (>=1.0.2)", "jinja2", "jsbeautifier", "uvicorn[standard]", "uvloop (>=0.18.0)"]
+structlog = ["structlog"]
+
+[[package]]
 name = "mako"
 version = "1.3.1"
 description = "A super-fast templating language that borrows the best ideas from the existing templating languages."
@@ -2502,6 +2548,30 @@ files = [
 [package.dependencies]
 poetry = ">=1.6.0,<2.0.0"
 poetry-core = ">=1.7.0,<2.0.0"
+
+[[package]]
+name = "polyfactory"
+version = "2.14.1"
+description = "Mock data generation factories"
+optional = false
+python-versions = "<4.0,>=3.8"
+files = [
+    {file = "polyfactory-2.14.1-py3-none-any.whl", hash = "sha256:8aff3be75e046501ec5c411c78c23db284322c760fef50d560ee6ed683f217c8"},
+    {file = "polyfactory-2.14.1.tar.gz", hash = "sha256:8c1d5f15dad1ebfd0845d65d4a55f9791cddfa6b3096ad9f9e2fd02a4804631b"},
+]
+
+[package.dependencies]
+faker = "*"
+typing-extensions = ">=4.6.0"
+
+[package.extras]
+attrs = ["attrs (>=22.2.0)"]
+beanie = ["beanie", "pydantic[email]"]
+full = ["attrs", "beanie", "msgspec", "odmantic", "pydantic", "sqlalchemy"]
+msgspec = ["msgspec"]
+odmantic = ["odmantic (<1.0.0)", "pydantic[email]"]
+pydantic = ["pydantic[email]"]
+sqlalchemy = ["sqlalchemy (>=1.4.29)"]
 
 [[package]]
 name = "priority"
@@ -3503,6 +3573,25 @@ typing-extensions = {version = ">=4.0.0,<5.0", markers = "python_version < \"3.9
 jupyter = ["ipywidgets (>=7.5.1,<9)"]
 
 [[package]]
+name = "rich-click"
+version = "1.7.3"
+description = "Format click help output nicely with rich"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "rich-click-1.7.3.tar.gz", hash = "sha256:bced1594c497dc007ab49508ff198bb437c576d01291c13a61658999066481f4"},
+    {file = "rich_click-1.7.3-py3-none-any.whl", hash = "sha256:bc4163d4e2a3361e21c4d72d300eca6eb8896dfc978667923cb1d4937b8769a3"},
+]
+
+[package.dependencies]
+click = ">=7"
+rich = ">=10.7.0"
+typing-extensions = "*"
+
+[package.extras]
+dev = ["flake8", "flake8-docstrings", "mypy", "packaging", "pre-commit", "pytest", "pytest-cov", "types-setuptools"]
+
+[[package]]
 name = "sanic"
 version = "23.12.1"
 description = "A web server and web framework that's written to go fast. Build fast. Run fast."
@@ -4159,23 +4248,6 @@ secure = ["certifi", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "ipaddress", "p
 socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
-name = "urllib3"
-version = "2.0.7"
-description = "HTTP library with thread-safe connection pooling, file post, and more."
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "urllib3-2.0.7-py3-none-any.whl", hash = "sha256:fdb6d215c776278489906c2f8916e6e7d4f5a9b602ccbcfdf7f016fc8da0596e"},
-    {file = "urllib3-2.0.7.tar.gz", hash = "sha256:c97dfde1f7bd43a71c8d2a58e369e9b2bf692d1334ea9f9cae55add7d0dd0f84"},
-]
-
-[package.extras]
-brotli = ["brotli (>=1.0.9)", "brotlicffi (>=0.8.0)"]
-secure = ["certifi", "cryptography (>=1.9)", "idna (>=2.0.0)", "pyopenssl (>=17.1.0)", "urllib3-secure-extra"]
-socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
-zstd = ["zstandard (>=0.18.0)"]
-
-[[package]]
 name = "uvicorn"
 version = "0.27.0"
 description = "The lightning-fast ASGI server."
@@ -4751,6 +4823,7 @@ debug-server = ["libcst", "pygments", "python-multipart", "rich", "starlette", "
 django = ["Django", "asgiref"]
 fastapi = ["fastapi", "python-multipart"]
 flask = ["flask"]
+litestar = ["litestar"]
 opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 pydantic = ["pydantic"]
 pyinstrument = ["pyinstrument"]
@@ -4761,4 +4834,4 @@ starlite = ["starlite"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "e444c03fb86677dbe07f9e7b6cf233b790b2df0397c9469703ff397a60cb0894"
+content-hash = "84fd992f1e0cab3004c5a6911f373813a62df80fdfe878d49c7378334db31ada"
