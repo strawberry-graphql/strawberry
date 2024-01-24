@@ -86,6 +86,4 @@ class BaseView(Generic[Request]):
         if params.get("boundary") != "graphql":
             return False
 
-        return tuple(
-            part.strip() for part in params.get("subscriptionspec", "").split(",")
-        ) == ("1.0", "application/json")
+        return params.get("subscriptionspec") == "1.0"
