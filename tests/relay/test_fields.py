@@ -1574,3 +1574,30 @@ def test_parameters(mocker: MockerFixture):
     }
     '''
     assert str(schema) == textwrap.dedent(expected).strip()
+
+def test_query_before_error():
+    """
+    Verify if the error raised on a non-existing before hash 
+    raises the correct error
+    """
+    # with pytest.raises(ValueError):
+    result = schema.execute_sync(
+        fruits_custom_query,
+        variable_values={"before": "ZnJ1aXRfbmFtZTpHcmFwZQ00"},
+    )
+
+    assert result.errors is not None
+
+
+def test_query_after_error():
+    """
+    Verify if the error raised on a non-existing before hash 
+    raises the correct error
+    """
+    result = schema.execute_sync(
+        fruits_custom_query,
+        variable_values={"after": "ZnJ1aXRfbmFtZTpHcmFwZQ00"},
+    )
+
+    assert result.errors is not None
+    

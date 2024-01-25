@@ -122,19 +122,8 @@ poetry install --with integrations
 poetry run pytest
 ```
 
-This will install all the dependencies (including dev ones) and run the tests.
+For all further detail, check out the [Contributing Page](CONTRIBUTING.md)
 
-Should you wish to create a pull-request with your contributions, make sure you include a "RELEASE.md" file.
-The contents could be:
-
-```markdown
-Release type: patch
-
-A summary of what I patched.
-
-```
-
-[For example](https://github.com/strawberry-graphql/strawberry/pull/3227/files#diff-2b1b69303b927a484e02c7fad9fc87d0d3ff0dc22ae1da0ecd0dc935d922a23c)
 
 ### Pre commit
 
