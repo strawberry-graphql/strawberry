@@ -810,7 +810,7 @@ class ListConnection(Connection[NodeType]):
             after_type, after_parsed = from_base64(after)
             if after_type != PREFIX:
                 # When the base64 hash doesnt exist, the after_type seems to return
-                # arrayconnEction instead of PREFIX. Let's raise a predictable 
+                # arrayconnEction instead of PREFIX. Let's raise a predictable
                 # instead of "An unknown error occurred."
                 raise TypeError("Argument 'after' contains a non-existing value.")
 
@@ -819,7 +819,7 @@ class ListConnection(Connection[NodeType]):
             before_type, before_parsed = from_base64(before)
             if before_type != PREFIX:
                 # When the base64 hash doesnt exist, the after_type seems to return
-                # arrayconnEction instead of PREFIX. Let's raise a predictable 
+                # arrayconnEction instead of PREFIX. Let's raise a predictable
                 # instead of "An unknown error occurred.
                 raise TypeError("Argument 'before' contains a non-existing value.")
             end = int(before_parsed)
