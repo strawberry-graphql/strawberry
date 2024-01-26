@@ -191,9 +191,7 @@ class GraphQLView(
         self,
         request: web.Request,
         stream: Callable[[], AsyncGenerator[str, None]],
-        sub_response: web.Response,
     ) -> web.StreamResponse:
-        # TODO: use sub response
         response = web.StreamResponse(
             status=200,
             headers={

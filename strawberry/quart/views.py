@@ -107,7 +107,6 @@ class GraphQLView(
         self,
         request: Request,
         stream: Callable[[], AsyncGenerator[str, None]],
-        sub_response: Response,
     ) -> Response:
         return (
             stream(),

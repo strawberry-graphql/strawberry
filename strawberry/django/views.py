@@ -189,7 +189,6 @@ class BaseView:
         self,
         request: HttpRequest,
         stream: Callable[[], AsyncIterator[Any]],
-        sub_response: HttpResponse,
     ) -> HttpResponseBase:
         return StreamingHttpResponse(
             streaming_content=stream(),

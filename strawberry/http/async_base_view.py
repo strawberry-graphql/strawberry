@@ -108,7 +108,6 @@ class AsyncBaseHTTPView(
         self,
         request: Request,
         stream: Callable[[], AsyncGenerator[str, None]],
-        sub_response: SubResponse,
     ) -> Response:
         raise ValueError("Multipart responses are not supported")
 
@@ -213,7 +212,7 @@ class AsyncBaseHTTPView(
         if isinstance(result, SubscriptionExecutionResult):
             stream = self._get_stream(request, result)
 
-            return await self.create_multipart_response(request, stream, sub_response)
+            return await self.create_multipart_response(request, stream)
 
         response_data = await self.process_result(request=request, result=result)
 

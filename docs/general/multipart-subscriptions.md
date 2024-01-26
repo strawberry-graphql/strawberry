@@ -19,6 +19,7 @@ libraries:
 - Litestar
 - FastAPI
 - AioHTTP
+- Quart
 
 # Usage
 

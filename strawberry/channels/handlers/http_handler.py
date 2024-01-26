@@ -281,7 +281,6 @@ class GraphQLHTTPConsumer(
         self,
         request: ChannelsRequest,
         stream: Callable[[], AsyncGenerator[str, None]],
-        sub_response: TemporalResponse,
     ) -> MultipartChannelsResponse:
         # TODO: sub response
         return MultipartChannelsResponse(stream=stream)

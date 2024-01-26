@@ -329,7 +329,6 @@ class GraphQLRouter(
         self,
         request: Request,
         stream: Callable[[], AsyncIterator[str]],
-        sub_response: Response,
     ) -> Response:
         return StreamingResponse(
             stream(),
