@@ -1576,18 +1576,41 @@ def test_parameters(mocker: MockerFixture):
     assert str(schema) == textwrap.dedent(expected).strip()
 
 
-def test_query_before_error():
+
+
+before_after_test_query = """
+query fruitsBeforeAfterTest (
+    $before: String = null,
+    $after: String = null,
+) {
+    fruits (
+        before: $before
+        after: $after
+    ) {
+        edges {
+            cursor
+            node {
+                id
+            }
+        }
+    }
+}
+"""
+
+async def test_query_before_error():
     """
     Verify if the error raised on a non-existing before hash
     raises the correct error
     """
     # with pytest.raises(ValueError):
-    result = schema.execute_sync(
-        fruits_custom_query,
-        variable_values={"before": "ZnJ1aXRfbmFtZTpHcmFwZQ00"},
+    index = to_base64("Fake", 9292292)
+    # result =schema.execute_async(
+    result = await schema.execute(
+        before_after_test_query,
+        variable_values={"before": index},
     )
-
     assert result.errors is not None
+    assert "Argument 'before' contains a non-existing value" in str(result.errors)
 
 
 def test_query_after_error():
@@ -1595,9 +1618,11 @@ def test_query_after_error():
     Verify if the error raised on a non-existing before hash
     raises the correct error
     """
+    index = to_base64("Fake", 9292292)
     result = schema.execute_sync(
-        fruits_custom_query,
-        variable_values={"after": "ZnJ1aXRfbmFtZTpHcmFwZQ00"},
+        before_after_test_query,
+        variable_values={"after": index},
     )
 
     assert result.errors is not None
+    assert "Argument 'after' contains a non-existing value" in str(result.errors)
