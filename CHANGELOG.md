@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.219.1 - 2024-01-28
+--------------------
+
+- Improved error message when supplying in incorrect before or after argument with using relay and pagination.
+- Add extra PR requirement in README.md
+
+Contributed by [SD](https://github.com/sdobbelaere) via [PR #3361](https://github.com/strawberry-graphql/strawberry/pull/3361/)
+
+
 0.219.0 - 2024-01-24
 --------------------
 
