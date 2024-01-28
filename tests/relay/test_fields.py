@@ -1576,8 +1576,6 @@ def test_parameters(mocker: MockerFixture):
     assert str(schema) == textwrap.dedent(expected).strip()
 
 
-
-
 before_after_test_query = """
 query fruitsBeforeAfterTest (
     $before: String = null,
@@ -1596,6 +1594,7 @@ query fruitsBeforeAfterTest (
     }
 }
 """
+
 
 async def test_query_before_error():
     """
