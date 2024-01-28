@@ -1576,8 +1576,6 @@ def test_parameters(mocker: MockerFixture):
     assert str(schema) == textwrap.dedent(expected).strip()
 
 
-
-
 before_after_test_query = """
 query fruitsBeforeAfterTest (
     $before: String = null,
@@ -1597,6 +1595,7 @@ query fruitsBeforeAfterTest (
 }
 """
 
+
 async def test_query_before_error():
     """
     Verify if the error raised on a non-existing before hash
@@ -1604,7 +1603,6 @@ async def test_query_before_error():
     """
     # with pytest.raises(ValueError):
     index = to_base64("Fake", 9292292)
-    # result =schema.execute_async(
     result = await schema.execute(
         before_after_test_query,
         variable_values={"before": index},
