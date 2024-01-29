@@ -237,13 +237,20 @@ def type(
         else:
             kwargs["init"] = False
 
-        cls = dataclasses.make_dataclass(
+        new_cls = dataclasses.make_dataclass(
             cls.__name__,
             [field.to_tuple() for field in all_model_fields],
             bases=cls.__bases__,
             namespace=namespace,
             **kwargs,  # type: ignore
         )
+
+        # Add back attributes that were not copied (like internal methods)
+        for key, value in vars(cls).items():
+            if not hasattr(new_cls, key):
+                setattr(new_cls, key, value)
+
+        cls = new_cls
 
         if sys.version_info < (3, 10, 1):
             add_custom_init_fn(cls)
