@@ -185,7 +185,7 @@
 
     MyModelStrawberry(email="").to_pydantic()
   out: |
-- case: test_to_pydantic_kwargs_with_optional_default
+- case: test_to_pydantic_kwargs_with_default_none
   main: |
     from pydantic import BaseModel
     from typing import Optional
@@ -194,7 +194,7 @@
 
     class MyModel(BaseModel):
         email: str
-        password: Optional[str] # pydantic makes this implicit = None default
+        password: Optional[str] = None
 
 
     @strawberry.experimental.pydantic.input(model=MyModel)

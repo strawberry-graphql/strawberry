@@ -109,6 +109,7 @@ def _get_thunk_mapping(
     type_definition: StrawberryObjectDefinition,
     name_converter: Callable[[StrawberryField], str],
     field_converter: FieldConverterProtocol[FieldType],
+    get_fields: Callable[[StrawberryObjectDefinition], List[StrawberryField]],
 ) -> Dict[str, FieldType]:
     """Create a GraphQL core `ThunkMapping` mapping of field names to field types.
 
@@ -123,7 +124,9 @@ def _get_thunk_mapping(
     """
     thunk_mapping: Dict[str, FieldType] = {}
 
-    for field in type_definition.fields:
+    fields = get_fields(type_definition)
+
+    for field in fields:
         field_type = field.type
 
         if field_type is UNRESOLVED:
@@ -178,10 +181,12 @@ class GraphQLCoreConverter:
         self,
         config: StrawberryConfig,
         scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+        get_fields: Callable[[StrawberryObjectDefinition], List[StrawberryField]],
     ):
         self.type_map: Dict[str, ConcreteType] = {}
         self.config = config
         self.scalar_registry = scalar_registry
+        self.get_fields = get_fields
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
         argument_type = cast(
@@ -374,6 +379,7 @@ class GraphQLCoreConverter:
             type_definition=type_definition,
             name_converter=self.config.name_converter.from_field,
             field_converter=self.from_field,
+            get_fields=self.get_fields,
         )
 
     def get_graphql_input_fields(
@@ -383,6 +389,7 @@ class GraphQLCoreConverter:
             type_definition=type_definition,
             name_converter=self.config.name_converter.from_field,
             field_converter=self.from_input_field,
+            get_fields=self.get_fields,
         )
 
     def from_input_object(self, object_type: type) -> GraphQLInputObjectType:
