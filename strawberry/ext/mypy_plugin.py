@@ -487,12 +487,23 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
             initializer=None,
             kind=ARG_OPT,
         )
+        extra_type = ctx.api.named_type(
+            "builtins.dict",
+            [ctx.api.named_type("builtins.str"), AnyType(TypeOfAny.explicit)],
+        )
+
+        extra_argument = Argument(
+            variable=Var(name="extra", type=UnionType([NoneType(), extra_type])),
+            type_annotation=UnionType([NoneType(), extra_type]),
+            initializer=None,
+            kind=ARG_OPT,
+        )
 
         add_static_method_to_class(
             ctx.api,
             ctx.cls,
             name="from_pydantic",
-            args=[model_argument],
+            args=[model_argument, extra_argument],
             return_type=fill_typevars(ctx.cls.info),
         )
 
