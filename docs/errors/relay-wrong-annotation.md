@@ -17,8 +17,7 @@ from strawberry import relay
 
 
 @strawberry.type
-class MyType(relay.Node):
-    ...
+class MyType(relay.Node): ...
 
 
 @strawberry.type
@@ -28,13 +27,11 @@ class Query:
 
     # Missing the Connection class annotation
     @relay.connection
-    def my_type_conn_with_resolver(self) -> List[MyType]:
-        ...
+    def my_type_conn_with_resolver(self) -> List[MyType]: ...
 
     # The connection class is not a subclass of relay.Connection
     @relay.connection(List[MyType])
-    def my_type_conn_with_resolver2(self) -> List[MyType]:
-        ...
+    def my_type_conn_with_resolver2(self) -> List[MyType]: ...
 ```
 
 ## How to fix this error
@@ -52,12 +49,10 @@ from strawberry import relay
 
 
 @strawberry.type
-class MyType(relay.Node):
-    ...
+class MyType(relay.Node): ...
 
 
-def get_my_type_list() -> List[MyType]:
-    ...
+def get_my_type_list() -> List[MyType]: ...
 
 
 @strawberry.type
@@ -68,11 +63,9 @@ class Query:
 
     # Missing the Connection class annotation
     @relay.connection(relay.Connection[MyType])
-    def my_type_conn_with_resolver(self) -> List[MyType]:
-        ...
+    def my_type_conn_with_resolver(self) -> List[MyType]: ...
 
     # The connection class is not a subclass of relay.Connection
     @relay.connection(relay.Connection[MyType])
-    def my_type_conn_with_resolver2(self) -> List[MyType]:
-        ...
+    def my_type_conn_with_resolver2(self) -> List[MyType]: ...
 ```

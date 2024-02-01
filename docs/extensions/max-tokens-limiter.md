@@ -27,8 +27,7 @@ With the above configuration, if a client sends a query with more than 1000 toke
 ## API reference:
 
 ```python
-class MaxTokensLimiter(max_token_count):
-    ...
+class MaxTokensLimiter(max_token_count): ...
 ```
 
 #### `max_token_count: int`

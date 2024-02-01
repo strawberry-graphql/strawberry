@@ -100,8 +100,7 @@ on the response via the context:
 from starlette.background import BackgroundTask
 
 
-async def notify_new_flavour(name: str):
-    ...
+async def notify_new_flavour(name: str): ...
 
 
 @strawberry.type

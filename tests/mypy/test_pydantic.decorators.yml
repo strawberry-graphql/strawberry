@@ -81,7 +81,7 @@
   out: |
      main:11: note: Revealed type is "main.UserStrawberry"
 - case: test_converted_from_pydantic_with_extra
-  main: |    
+  main: |
     from pydantic import BaseModel
     import strawberry
 

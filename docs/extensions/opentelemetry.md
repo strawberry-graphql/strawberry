@@ -55,8 +55,7 @@ schema = strawberry.Schema(
 ## API reference:
 
 ```python
-class OpenTelemetryExtension(arg_filter=None):
-    ...
+class OpenTelemetryExtension(arg_filter=None): ...
 ```
 
 #### `arg_filter: Optional[ArgFilter]`
