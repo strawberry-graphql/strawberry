@@ -342,8 +342,7 @@ class Example(BaseModel):
 
 
 @strawberry.experimental.pydantic.type(model=Example, all_fields=True)
-class ExampleGQL:
-    ...
+class ExampleGQL: ...
 
 
 MyScalarType = strawberry.scalar(

@@ -917,13 +917,11 @@ class Node:
 
 
 @strawberry.type
-class Video(Node):
-    ...
+class Video(Node): ...
 
 
 @strawberry.type
-class Image(Node):
-    ...
+class Image(Node): ...
 
 
 @strawberry.type
@@ -1734,8 +1732,9 @@ if TYPE_CHECKING:
 @strawberry.type
 class MyType:
     @strawberry.field
-    async def other_type(self) -> Annotated[OtherType, strawberry.lazy("some.module")]:
-        ...
+    async def other_type(
+        self,
+    ) -> Annotated[OtherType, strawberry.lazy("some.module")]: ...
 ```
 
 Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2744](https://github.com/strawberry-graphql/strawberry/pull/2744/)
@@ -2575,8 +2574,7 @@ class UserPydantic(pydantic.BaseModel):
 
 
 @strawberry.experimental.pydantic.type(UserPydantic, all_fields=True)
-class User:
-    ...
+class User: ...
 
 
 @strawberry.type
@@ -2939,8 +2937,7 @@ class Foo(Generic[T]):
 
 
 @strawberry.type
-class IntFoo(Foo[int]):
-    ...
+class IntFoo(Foo[int]): ...
 
 
 @strawberry.type
@@ -4043,8 +4040,7 @@ class MyModel(BaseModel):
 
 
 @strawberry.experimental.pydantic.input(model=MyModel, all_fields=True)
-class MyModelStrawberry:
-    ...
+class MyModelStrawberry: ...
 
 
 MyModelStrawberry(email="").to_pydantic()
@@ -5879,8 +5875,7 @@ class Example(BaseModel):
 
 
 @strawberry.experimental.pydantic.input(model=Example, all_fields=True)
-class ExampleGQL:
-    ...
+class ExampleGQL: ...
 
 
 @strawberry.type
@@ -6861,13 +6856,11 @@ from strawberry.tools import merge_types
 
 
 @strawberry.type
-class QueryA:
-    ...
+class QueryA: ...
 
 
 @strawberry.type
-class QueryB:
-    ...
+class QueryB: ...
 
 
 ComboQuery = merge_types("ComboQuery", (QueryB, QueryA))
@@ -7229,8 +7222,7 @@ Word = strawberry.union("Word", types=(Noun, Verb))
 
 
 @strawberry.field
-def add_word(word: Word) -> bool:
-    ...
+def add_word(word: Word) -> bool: ...
 ```
 
 Contributed by [Mohammad Hossein Yazdani](https://github.com/MAM-SYS) [PR #1222](https://github.com/strawberry-graphql/strawberry/pull/1222/)
@@ -7397,8 +7389,7 @@ def name() -> str:
 MyType = create_type("MyType", [name])
 
 
-class Query(MyType):
-    ...
+class Query(MyType): ...
 ```
 
 Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1175](https://github.com/strawberry-graphql/strawberry/pull/1175/)
@@ -9076,8 +9067,7 @@ class Query:
     @strawberry.field
     def user_by_id(
         id: Annotated[str, strawberry.argument(description="The ID of the user")]
-    ) -> User:
-        ...
+    ) -> User: ...
 ```
 
 which results in the following schema:
