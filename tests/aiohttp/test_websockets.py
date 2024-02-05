@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 
 async def test_turning_off_graphql_ws(
-    aiohttp_client: Callable[..., Awaitable[TestClient]]
+    aiohttp_client: Callable[..., Awaitable[TestClient]],
 ) -> None:
     from .app import create_app
 
@@ -27,7 +27,7 @@ async def test_turning_off_graphql_ws(
 
 
 async def test_turning_off_graphql_transport_ws(
-    aiohttp_client: Callable[..., Awaitable[TestClient]]
+    aiohttp_client: Callable[..., Awaitable[TestClient]],
 ):
     from .app import create_app
 
@@ -45,7 +45,7 @@ async def test_turning_off_graphql_transport_ws(
 
 
 async def test_turning_off_all_ws_protocols(
-    aiohttp_client: Callable[..., Awaitable[TestClient]]
+    aiohttp_client: Callable[..., Awaitable[TestClient]],
 ):
     from .app import create_app
 
@@ -72,7 +72,7 @@ async def test_turning_off_all_ws_protocols(
 
 
 async def test_unsupported_ws_protocol(
-    aiohttp_client: Callable[..., Awaitable[TestClient]]
+    aiohttp_client: Callable[..., Awaitable[TestClient]],
 ):
     from .app import create_app
 
@@ -90,7 +90,7 @@ async def test_unsupported_ws_protocol(
 
 
 async def test_clients_can_prefer_protocols(
-    aiohttp_client: Callable[..., Awaitable[TestClient]]
+    aiohttp_client: Callable[..., Awaitable[TestClient]],
 ):
     from .app import create_app
 

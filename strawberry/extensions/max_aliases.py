@@ -65,7 +65,7 @@ def create_validator(max_alias_count: int) -> Type[ValidationRule]:
 
 
 def count_fields_with_alias(
-    selection_set_owner: Union[ExecutableDefinitionNode, FieldNode, InlineFragmentNode]
+    selection_set_owner: Union[ExecutableDefinitionNode, FieldNode, InlineFragmentNode],
 ) -> int:
     if selection_set_owner.selection_set is None:
         return 0
