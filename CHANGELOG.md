@@ -137,6 +137,32 @@ class Query:
 The old way of adding permissions using `permission_classes` is still
 supported via the automatic addition of a `PermissionExtension` on the field.
 
+### ⚠️ Breaking changes
+
+Previously the `kwargs` argument keys for the `has_permission` method were
+using camel casing (depending on your schema configuration), now they will
+always follow the python name defined in your resolvers.
+
+```python
+class IsAuthorized(BasePermission):
+    message = "User is not authorized"
+
+    def has_permission(
+        self, source, info, **kwargs: typing.Any
+    ) -> bool:  # pragma: no cover
+        # kwargs will have a key called "a_key"
+        # instead of `aKey`
+
+        return False
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(permission_classes=[IsAuthorized])
+    def name(self, a_key: str) -> str:  # pragma: no cover
+        return "Erik"
+```
+
 Using the new `PermissionExtension` API, permissions support even more features:
 
 #### Silent errors
