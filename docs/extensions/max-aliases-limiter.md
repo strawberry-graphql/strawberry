@@ -27,8 +27,7 @@ schema = strawberry.Schema(
 ## API reference:
 
 ```python
-class MaxAliasesLimiter(max_alias_count):
-    ...
+class MaxAliasesLimiter(max_alias_count): ...
 ```
 
 #### `max_alias_count: int`

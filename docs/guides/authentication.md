@@ -72,8 +72,7 @@ from strawberry.types.info import RootValueType
 
 
 @strawberry.type
-class User:
-    ...  # This is just a stub for an actual user object
+class User: ...  # This is just a stub for an actual user object
 
 
 class Context(BaseContext):

@@ -19,19 +19,16 @@ from strawberry import relay
 
 
 @strawberry.type
-class MyType(relay.Node):
-    ...
+class MyType(relay.Node): ...
 
 
 @strawberry.type
 class Query:
     @relay.connection(relay.Connection[MyType])
-    def some_connection_returning_mytype(self) -> MyType:
-        ...
+    def some_connection_returning_mytype(self) -> MyType: ...
 
     @relay.connection(relay.Connection[MyType])
-    def some_connection_returning_any(self) -> Any:
-        ...
+    def some_connection_returning_any(self) -> Any: ...
 ```
 
 This happens because the connection resolver needs to return something that can
@@ -60,15 +57,13 @@ from strawberry import relay
 
 
 @strawberry.type
-class MyType(relay.Node):
-    ...
+class MyType(relay.Node): ...
 
 
 @strawberry.type
 class Query:
     @relay.connection(relay.Connection[MyType])
-    def some_connection(self) -> Iterable[MyType]:
-        ...
+    def some_connection(self) -> Iterable[MyType]: ...
 ```
 
 <Note>

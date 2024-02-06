@@ -25,8 +25,7 @@ schema = strawberry.Schema(
 ## API reference:
 
 ```python
-class QueryDepthLimiter(max_depth, callback=None, should_ignore=None):
-    ...
+class QueryDepthLimiter(max_depth, callback=None, should_ignore=None): ...
 ```
 
 #### `max_depth: int`

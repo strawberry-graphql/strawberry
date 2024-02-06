@@ -97,8 +97,7 @@ class UserResponse:
 @strawberry.type
 class Query:
     @strawberry.field(description="Get a list of users.")
-    def get_users(self) -> UserResponse:
-        ...
+    def get_users(self) -> UserResponse: ...
 
 
 schema = strawberry.Schema(query=Query)
@@ -175,8 +174,7 @@ class UserResponse:
 @strawberry.type
 class Query:
     @strawberry.field(description="Get a list of users.")
-    def get_users(self) -> UserResponse:
-        ...
+    def get_users(self) -> UserResponse: ...
 
 
 schema = strawberry.Schema(query=Query)
@@ -291,8 +289,7 @@ class UserResponse:
 @strawberry.type
 class Query:
     @strawberry.field(description="Get a list of users.")
-    def get_users(self) -> UserResponse:
-        ...
+    def get_users(self) -> UserResponse: ...
 
 
 schema = strawberry.Schema(query=Query)
