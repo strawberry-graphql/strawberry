@@ -50,7 +50,7 @@ opentelemetry-api = {version = "<2", optional = true}
 opentelemetry-sdk = {version = "<2", optional = true}
 chalice = {version = "^1.22", optional = true}
 pydantic = {version = ">1.6.1", optional = true}
-python-multipart = {version = ">=0.0.5,<0.0.7", optional = true}
+python-multipart = {version = ">=0.0.7", optional = true}
 sanic = {version = ">=20.12.2", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
 fastapi = {version = ">=0.65.2", optional = true}
@@ -83,7 +83,7 @@ pytest-emoji = "^0.2.0"
 pytest-mock = "^3.10"
 pytest-snapshot = "^0.9.0"
 pytest-xdist = {extras = ["psutil"], version = "^3.1.0"}
-python-multipart = ">=0.0.5,<0.0.7"
+python-multipart = ">=0.0.7"
 rich = {version = ">=12.5.1,<14.0.0", optional = false}
 sanic-testing = ">=22.9,<24.0"
 sentry-sdk = "^1.39.2"
