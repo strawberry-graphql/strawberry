@@ -4,8 +4,8 @@ title: Chalice
 
 # Chalice
 
-Strawberry comes with an AWS Chalice integration. It provides a view that you can
-use to serve your GraphQL schema:
+Strawberry comes with an AWS Chalice integration. It provides a view that you
+can use to serve your GraphQL schema:
 
 Use the Chalice CLI to create a new project
 
@@ -57,14 +57,16 @@ And then run `chalice local` to start the localhost
 chalice local
 ```
 
-The GraphiQL interface can then be opened in your browser on http://localhost:8000/graphql
+The GraphiQL interface can then be opened in your browser on
+http://localhost:8000/graphql
 
 ## Options
 
 The `GraphQLView` accepts two options at the moment:
 
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
-- `graphiql`: optional, defaults to `True`, whether to enable the GraphiQL interface.
+- `graphiql`: optional, defaults to `True`, whether to enable the GraphiQL
+  interface.
 
 ## Extending the view
 

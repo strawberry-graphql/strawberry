@@ -25,7 +25,8 @@ schema = strawberry.Schema(
 ## API reference:
 
 ```python
-class ExtensionName(an_argument=None): ...
+class ExtensionName(an_argument=None):
+    ...
 ```
 
 #### `an_argument: Optional[str] = None`

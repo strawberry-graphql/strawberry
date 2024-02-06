@@ -30,7 +30,8 @@ schema = strawberry.Schema(Query)
 ## API reference
 
 ```python
-class Schema(Query, mutation=None, subscription=None, **kwargs): ...
+class Schema(Query, mutation=None, subscription=None, **kwargs):
+    ...
 ```
 
 <!-- TODO: add docs on directives, types, extensions and execution context class -->
@@ -122,9 +123,8 @@ Override the implementation of the built in scalars.
 Executes a GraphQL operation against a schema (async)
 
 ```python
-async def execute(
-    query, variable_values, context_value, root_value, operation_name
-): ...
+async def execute(query, variable_values, context_value, root_value, operation_name):
+    ...
 ```
 
 #### `query: str`
@@ -154,7 +154,8 @@ operation in the document will be executed.
 Executes a GraphQL operation against a schema
 
 ```python
-def execute_sync(query, variable_values, context_value, root_value, operation_name): ...
+def execute_sync(query, variable_values, context_value, root_value, operation_name):
+    ...
 ```
 
 #### `query: str`

@@ -4,10 +4,9 @@ title: Litestar
 
 # Litestar
 
-Strawberry comes with an integration for
-[Litestar](https://litestar.dev/) by providing a
-`make_graphql_controller` function that can be used to create a GraphQL
-controller.
+Strawberry comes with an integration for [Litestar](https://litestar.dev/) by
+providing a `make_graphql_controller` function that can be used to create a
+GraphQL controller.
 
 See the example below for integrating Litestar with Strawberry:
 
@@ -41,7 +40,9 @@ The `make_graphql_controller` function accepts the following options:
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
 - `path`: optional, defaults to ``, the path where the GraphQL endpoint will be
   mounted.
-- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or to disable it by passing `None`.
+- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the
+  GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or
+  to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
 - `context_getter`: optional Litestar dependency for providing custom context
@@ -53,13 +54,18 @@ The `make_graphql_controller` function accepts the following options:
   for websockets.
 - `keep_alive_interval`: optional, defaults to `1`, the interval in seconds for
   keep alive messages.
-- `subscription_protocols` optional, defaults to `(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL)`, the allowed subscription protocols
-- `connection_init_wait_timeout` optional, default to `timedelta(minutes=1)`, the maximum time to wait for the connection initialization message when using `graphql-transport-ws` [protocol](<[https://](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#connectioninit)>)
+- `subscription_protocols` optional, defaults to
+  `(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL)`, the allowed
+  subscription protocols
+- `connection_init_wait_timeout` optional, default to `timedelta(minutes=1)`,
+  the maximum time to wait for the connection initialization message when using
+  `graphql-transport-ws`
+  [protocol](<[https://](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#connectioninit)>)
 
 ## context_getter
 
-The `context_getter` option allows you to provide a Litestar dependency that return a custom context object that
-can be used in your resolver.
+The `context_getter` option allows you to provide a Litestar dependency that
+return a custom context object that can be used in your resolver.
 
 ```python
 import strawberry
@@ -90,7 +96,8 @@ GraphQLController = make_graphql_controller(
 app = Litestar(route_handlers=[GraphQLController])
 ```
 
-The `context_getter` is a standard Litestar dependency and can receive any existing dependency:
+The `context_getter` is a standard Litestar dependency and can receive any
+existing dependency:
 
 ```python
 import strawberry
@@ -129,7 +136,9 @@ GraphQLController = make_graphql_controller(
 app = Litestar(route_handlers=[GraphQLController])
 ```
 
-You can also use a class-based custom context. To do this, you must inherit from `BaseContext` [msgspec Struct](https://jcristharif.com/msgspec/structs.html) or an `InvalidCustomContext` exception will be raised.
+You can also use a class-based custom context. To do this, you must inherit from
+`BaseContext` [msgspec Struct](https://jcristharif.com/msgspec/structs.html) or
+an `InvalidCustomContext` exception will be raised.
 
 ```python
 import strawberry
@@ -177,17 +186,24 @@ app = Litestar(route_handlers=[GraphQLController])
 
 ### Context typing
 
-In our previous example using class based context, the actual runtime context a `CustomContext` type. Because it inherits from `BaseContext`, the `request`, `socket` and `response` attributes are typed as optional.
+In our previous example using class based context, the actual runtime context a
+`CustomContext` type. Because it inherits from `BaseContext`, the `request`,
+`socket` and `response` attributes are typed as optional.
 
-When inside a query/mutation resolver, `request` and `response` are always set and `socket` is only set in subscriptions.
+When inside a query/mutation resolver, `request` and `response` are always set
+and `socket` is only set in subscriptions.
 
-To distinguish theses cases typing wise, the integration provides two classes that will help you to enforce strong typing:
+To distinguish theses cases typing wise, the integration provides two classes
+that will help you to enforce strong typing:
 
 ```python
 from strawberry.litestar import HTTPContextType, WebSocketContextType
 ```
 
-These classes does not actually exists at runtime, they are intended to be used to define a custom `Info` type with proper context typing. Taking over our previous example with class based custom context, here it how we can define two `Info` types for both queries/mutations and subscriptions:
+These classes does not actually exists at runtime, they are intended to be used
+to define a custom `Info` type with proper context typing. Taking over our
+previous example with class based custom context, here it how we can define two
+`Info` types for both queries/mutations and subscriptions:
 
 ```python
 import strawberry

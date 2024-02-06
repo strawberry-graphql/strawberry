@@ -6,8 +6,8 @@ title: Relay wrong resolver annotation Error
 
 ## Description
 
-This error is thrown when a field on a relay connection was defined with
-a resolver that returns something that is not compatible with pagination.
+This error is thrown when a field on a relay connection was defined with a
+resolver that returns something that is not compatible with pagination.
 
 For example, the following code would throw this error:
 
@@ -19,16 +19,19 @@ from strawberry import relay
 
 
 @strawberry.type
-class MyType(relay.Node): ...
+class MyType(relay.Node):
+    ...
 
 
 @strawberry.type
 class Query:
     @relay.connection(relay.Connection[MyType])
-    def some_connection_returning_mytype(self) -> MyType: ...
+    def some_connection_returning_mytype(self) -> MyType:
+        ...
 
     @relay.connection(relay.Connection[MyType])
-    def some_connection_returning_any(self) -> Any: ...
+    def some_connection_returning_any(self) -> Any:
+        ...
 ```
 
 This happens because the connection resolver needs to return something that can
@@ -57,20 +60,22 @@ from strawberry import relay
 
 
 @strawberry.type
-class MyType(relay.Node): ...
+class MyType(relay.Node):
+    ...
 
 
 @strawberry.type
 class Query:
     @relay.connection(relay.Connection[MyType])
-    def some_connection(self) -> Iterable[MyType]: ...
+    def some_connection(self) -> Iterable[MyType]:
+        ...
 ```
 
 <Note>
 
-Note that if you are returning a type different than the connection type,
-you will need to subclass the connection type and override its
-`resolve_node` method to convert it to the correct type, as explained in
-the [relay guide](../guides/relay).
+Note that if you are returning a type different than the connection type, you
+will need to subclass the connection type and override its `resolve_node` method
+to convert it to the correct type, as explained in the
+[relay guide](../guides/relay).
 
 <Note/>

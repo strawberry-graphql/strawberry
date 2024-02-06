@@ -126,9 +126,11 @@ class QueryCodegenPlugin:
         """
         self.query = query
 
-    def on_start(self) -> None: ...
+    def on_start(self) -> None:
+        ...
 
-    def on_end(self, result: CodegenResult) -> None: ...
+    def on_end(self, result: CodegenResult) -> None:
+        ...
 
     def generate_code(
         self, types: List[GraphQLType], operation: GraphQLOperation
@@ -145,8 +147,8 @@ class QueryCodegenPlugin:
 
 ### Console plugin
 
-There is also a plugin that helps to orchestrate the codegen process and notify the
-user about what the current codegen process is doing.
+There is also a plugin that helps to orchestrate the codegen process and notify
+the user about what the current codegen process is doing.
 
 The interface for the ConsolePlugin looks like:
 

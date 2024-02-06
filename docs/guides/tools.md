@@ -22,7 +22,8 @@ def create_type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
-) -> Type: ...
+) -> Type:
+    ...
 ```
 
 Example:

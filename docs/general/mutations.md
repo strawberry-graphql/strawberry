@@ -4,15 +4,15 @@ title: Mutations
 
 # Mutations
 
-As opposed to queries, mutations in GraphQL represent operations that modify server-side
-data and/or cause side effects on the server. For example, you can have a mutation that
-creates a new instance in your application or a mutation that sends an email. Like in
-queries, they accept parameters and can return anything a regular field can, including
-new types and existing object types. This can be useful for fetching the new state of an
-object after an update.
+As opposed to queries, mutations in GraphQL represent operations that modify
+server-side data and/or cause side effects on the server. For example, you can
+have a mutation that creates a new instance in your application or a mutation
+that sends an email. Like in queries, they accept parameters and can return
+anything a regular field can, including new types and existing object types.
+This can be useful for fetching the new state of an object after an update.
 
-Let's improve our books project from the [Getting started tutorial](../index.md) and
-implement a mutation that is supposed to add a book:
+Let's improve our books project from the [Getting started tutorial](../index.md)
+and implement a mutation that is supposed to add a book:
 
 ```python
 import strawberry
@@ -40,10 +40,11 @@ schema = strawberry.Schema(query=Query, mutation=Mutation)
 ```
 
 Like queries, mutations are defined in a class that is then passed to the Schema
-function. Here we create an `addBook` mutation that accepts a title and an author and
-returns a `Book` type.
+function. Here we create an `addBook` mutation that accepts a title and an
+author and returns a `Book` type.
 
-We would send the following GraphQL document to our server to execute the mutation:
+We would send the following GraphQL document to our server to execute the
+mutation:
 
 ```graphql
 mutation {
@@ -53,13 +54,14 @@ mutation {
 }
 ```
 
-The `addBook` mutation is a simplified example. In a real-world application mutations
-will often need to handle errors and communicate those errors back to the client. For
-example we might want to return an error if the book already exists.
+The `addBook` mutation is a simplified example. In a real-world application
+mutations will often need to handle errors and communicate those errors back to
+the client. For example we might want to return an error if the book already
+exists.
 
 You can checkout our documentation on
-[dealing with errors](/docs/guides/errors#expected-errors) to learn how to return a
-union of types from a mutation.
+[dealing with errors](/docs/guides/errors#expected-errors) to learn how to
+return a union of types from a mutation.
 
 ## Mutations without returned data
 
@@ -81,17 +83,18 @@ type Mutation {
 
 <Note>
 
-Mutations with void-result go against [this community-created guide on GQL best practices](https://graphql-rules.com/rules/mutation-payload).
+Mutations with void-result go against
+[this community-created guide on GQL best practices](https://graphql-rules.com/rules/mutation-payload).
 
 </Note>
 
 ### The Input Mutation Extension
 
-It is usually useful to use a pattern of defining a mutation that receives a single
-[input type](./input-types) argument called `input`.
+It is usually useful to use a pattern of defining a mutation that receives a
+single [input type](./input-types) argument called `input`.
 
-Strawberry provides a helper to create a mutation that automatically
-creates an input type for you, whose attributes are the same as the args in the resolver.
+Strawberry provides a helper to create a mutation that automatically creates an
+input type for you, whose attributes are the same as the args in the resolver.
 
 For example, suppose we want the mutation defined in the section above to be an
 input mutation. We can add the `InputMutationExtension` to the field like this:
@@ -137,7 +140,9 @@ type Mutation {
 
 ## Nested mutations
 
-To avoid a graph becoming too large and to improve discoverability, it can be helpful to group mutations in a namespace, as described by [Apollo's guide on Namespacing by separation of concerns](https://www.apollographql.com/docs/technotes/TN0012-namespacing-by-separation-of-concern/).
+To avoid a graph becoming too large and to improve discoverability, it can be
+helpful to group mutations in a namespace, as described by
+[Apollo's guide on Namespacing by separation of concerns](https://www.apollographql.com/docs/technotes/TN0012-namespacing-by-separation-of-concern/).
 
 ```graphql
 type Mutation {
@@ -150,7 +155,9 @@ type FruitMutations {
 }
 ```
 
-Since all GraphQL operations are fields, we can define a `FruitMutation` type and add mutation fields to it like we could add mutation fields to the root `Mutation` type.
+Since all GraphQL operations are fields, we can define a `FruitMutation` type
+and add mutation fields to it like we could add mutation fields to the root
+`Mutation` type.
 
 ```python
 import strawberry
@@ -177,8 +184,9 @@ class Mutation:
 <Note>
 Fields on the root `Mutation` type are resolved serially. Namespace types introduce the potential for mutations to be resolved asynchronously and in parallel because the mutation fields that mutate data are no longer at the root level.
 
-To guarantee serial execution when namespace types are used, clients should use aliases to select the root mutation field for each mutation.
-In the following example, once `addFruit` execution is complete, `updateFruitWeight` begins.
+To guarantee serial execution when namespace types are used, clients should use
+aliases to select the root mutation field for each mutation. In the following
+example, once `addFruit` execution is complete, `updateFruitWeight` begins.
 
 ```graphql
 mutation (
@@ -199,5 +207,8 @@ mutation (
 }
 ```
 
-For more details, see [Apollo's guide on Namespaces for serial mutations](https://www.apollographql.com/docs/technotes/TN0012-namespacing-by-separation-of-concern/#namespaces-for-serial-mutations) and [Rapid API's Interactive Guide to GraphQL Queries: Aliases and Variables](https://rapidapi.com/guides/graphql-aliases-variables).
+For more details, see
+[Apollo's guide on Namespaces for serial mutations](https://www.apollographql.com/docs/technotes/TN0012-namespacing-by-separation-of-concern/#namespaces-for-serial-mutations)
+and
+[Rapid API's Interactive Guide to GraphQL Queries: Aliases and Variables](https://rapidapi.com/guides/graphql-aliases-variables).
 </Note>

@@ -155,25 +155,24 @@ class Subscription:
                     )
 ```
 
-Explanation: `Info.context["ws"]` or `Info.context["request"]` is a pointer to the
-[`ChannelsConsumer`](#channelsconsumer) instance. Here we have first sent a
+Explanation: `Info.context["ws"]` or `Info.context["request"]` is a pointer to
+the [`ChannelsConsumer`](#channelsconsumer) instance. Here we have first sent a
 message to all the channel_layer groups (specified in the subscription argument
 `rooms`) that we have joined the chat.
 
 <Note>
 
-The `ChannelsConsumer` instance is shared between all subscriptions created in
-a single websocket connection. The `ws.listen_to_channel` context manager will return
-a function to yield all
-messages sent using the given message `type` (`chat.message` in the above example)
-but does not ensure that the message was sent to the same group or groups that
-it was called with - if another subscription using the same `ChannelsConsumer`
-also uses `ws.listen_to_channel` with some other group names, those will be returned
-as well.
+The `ChannelsConsumer` instance is shared between all subscriptions created in a
+single websocket connection. The `ws.listen_to_channel` context manager will
+return a function to yield all messages sent using the given message `type`
+(`chat.message` in the above example) but does not ensure that the message was
+sent to the same group or groups that it was called with - if another
+subscription using the same `ChannelsConsumer` also uses `ws.listen_to_channel`
+with some other group names, those will be returned as well.
 
-In the example we ensure `message["room_id"] in room_ids` before passing messages
-on to the subscription client to ensure subscriptions only receive messages for
-the chat rooms requested in that subscription.
+In the example we ensure `message["room_id"] in room_ids` before passing
+messages on to the subscription client to ensure subscriptions only receive
+messages for the chat rooms requested in that subscription.
 
 </Note>
 
@@ -409,9 +408,9 @@ after entering the `listen_to_channel` context manger.
 
 ## Testing
 
-We provide a minimal application communicator (`GraphQLWebsocketCommunicator`) for subscribing.
-Here is an example based on the tutorial above: _Make sure you have pytest-async
-installed_
+We provide a minimal application communicator (`GraphQLWebsocketCommunicator`)
+for subscribing. Here is an example based on the tutorial above: _Make sure you
+have pytest-async installed_
 
 ```python
 from channels.testing import WebsocketCommunicator
@@ -495,9 +494,9 @@ def test_send_message_via_channels_chat_joinChatRooms_recieves(self):
 
 ---
 
-The HTTP and WebSockets protocol are handled by different base classes. HTTP uses
-`GraphQLHTTPConsumer` and WebSockets uses `GraphQLWSConsumer`. Both of them can
-be extended:
+The HTTP and WebSockets protocol are handled by different base classes. HTTP
+uses `GraphQLHTTPConsumer` and WebSockets uses `GraphQLWSConsumer`. Both of them
+can be extended:
 
 ## GraphQLHTTPConsumer (HTTP)
 
@@ -506,7 +505,9 @@ be extended:
 `GraphQLHTTPConsumer` supports the same options as all other integrations:
 
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
-- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or to disable it by passing `None`.
+- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the
+  GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or
+  to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
 - `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
@@ -522,7 +523,8 @@ We allow to extend `GraphQLHTTPConsumer`, by overriding the following methods:
 
 ### Context
 
-The default context returned by `get_context()` is a `dict` that includes the following keys by default:
+The default context returned by `get_context()` is a `dict` that includes the
+following keys by default:
 
 - `request`: A `ChannelsRequest` object with the following fields and methods:
   - `consumer`: The `GraphQLHTTPConsumer` instance for this connection
@@ -530,8 +532,10 @@ The default context returned by `get_context()` is a `dict` that includes the fo
   - `headers`: A dict containing the headers of the request
   - `method`: The HTTP method of the request
   - `content_type`: The content type of the request
-- `response` A `TemporalResponse` object, that can be used to influence the HTTP response:
-  - `status_code`: The status code of the response, if there are no execution errors (defaults to `200`)
+- `response` A `TemporalResponse` object, that can be used to influence the HTTP
+  response:
+  - `status_code`: The status code of the response, if there are no execution
+    errors (defaults to `200`)
   - `headers`: Any additional headers that should be send with the response
 
 ## GraphQLWSConsumer (WebSockets / Subscriptions)
@@ -554,18 +558,22 @@ We allow to extend `GraphQLWSConsumer`, by overriding the following methods:
 
 ### Context
 
-The default context returned by `get_context()` is a `dict` and it includes the following keys by default:
+The default context returned by `get_context()` is a `dict` and it includes the
+following keys by default:
 
-- `request`: The `GraphQLWSConsumer` instance of the current connection. It can be used to access the connection
-  scope, e.g. `info.context["ws"].headers` allows access to any headers.
+- `request`: The `GraphQLWSConsumer` instance of the current connection. It can
+  be used to access the connection scope, e.g. `info.context["ws"].headers`
+  allows access to any headers.
 - `ws`: The same as `request`
-- `connection_params`: Any `connection_params`, see [Authenticating Subscriptions](/docs/general/subscriptions#authenticating-subscriptions)
+- `connection_params`: Any `connection_params`, see
+  [Authenticating Subscriptions](/docs/general/subscriptions#authenticating-subscriptions)
 
 ## Example for defining a custom context
 
-Here is an example for extending the base classes to offer a different context object in your resolvers.
-For the HTTP integration, you can also have properties to access the current user and the
-session. Both properties depend on the `AuthMiddlewareStack` wrapper.
+Here is an example for extending the base classes to offer a different context
+object in your resolvers. For the HTTP integration, you can also have properties
+to access the current user and the session. Both properties depend on the
+`AuthMiddlewareStack` wrapper.
 
 ```python
 from django.contrib.auth.models import AnonymousUser
@@ -630,8 +638,8 @@ class GraphQLWSConsumer(BaseGraphQLWSConsumer):
         )
 ```
 
-You can import and use the extended `GraphQLHTTPConsumer` and `GraphQLWSConsumer` classes in your
-`myproject.asgi.py` file as shown before.
+You can import and use the extended `GraphQLHTTPConsumer` and
+`GraphQLWSConsumer` classes in your `myproject.asgi.py` file as shown before.
 
 ---
 
@@ -664,9 +672,11 @@ everything else to the Django application.
 
 ### ChannelsConsumer
 
-Strawberries extended [`AsyncConsumer`](https://channels.readthedocs.io/en/stable/topics/consumers.html#consumers).
+Strawberries extended
+[`AsyncConsumer`](https://channels.readthedocs.io/en/stable/topics/consumers.html#consumers).
 
-Every graphql session will have an instance of this class inside `info.context["ws"]` (WebSockets) or `info.context["request"].consumer` (HTTP).
+Every graphql session will have an instance of this class inside
+`info.context["ws"]` (WebSockets) or `info.context["request"].consumer` (HTTP).
 
 #### properties
 
@@ -678,7 +688,8 @@ async def listen_to_channel(
     *,
     timeout: float | None = None,
     groups: Sequence[str] | None = None
-) -> AsyncGenerator[Any, None]: ...
+) -> AsyncGenerator[Any, None]:
+    ...
 ```
 
 - `type` - The type of the message to wait for, equivalent to `scope['type']`

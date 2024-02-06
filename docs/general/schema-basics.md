@@ -299,7 +299,8 @@ the following:
 @strawberry.type
 class Mutation:
     @strawberry.field
-    def add_book(self, title: str, author: str) -> Book: ...
+    def add_book(self, title: str, author: str) -> Book:
+        ...
 ```
 
 This Mutation type defines a single available mutation, `addBook`. The mutation
@@ -360,7 +361,8 @@ Consider our previous mutation to add a book:
 @strawberry.type
 class Mutation:
     @strawberry.field
-    def add_book(self, title: str, author: str) -> Book: ...
+    def add_book(self, title: str, author: str) -> Book:
+        ...
 ```
 
 Instead of accepting two arguments, this mutation could accept a single input
@@ -380,7 +382,8 @@ class AddBookInput:
 @strawberry.type
 class Mutation:
     @strawberry.field
-    def add_book(self, book: AddBookInput) -> Book: ...
+    def add_book(self, book: AddBookInput) -> Book:
+        ...
 ```
 
 Not only does this facilitate passing the AddBookInput type around within our

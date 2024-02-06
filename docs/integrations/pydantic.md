@@ -42,15 +42,15 @@ class UserType:
 ```
 
 The `strawberry.experimental.pydantic.type` decorator accepts a Pydantic model
-and wraps a class that contains dataclass style fields with `strawberry.auto` as the type
-annotation. The fields marked with `strawberry.auto` will inherit their types from the
-Pydantic model.
+and wraps a class that contains dataclass style fields with `strawberry.auto` as
+the type annotation. The fields marked with `strawberry.auto` will inherit their
+types from the Pydantic model.
 
 If you want to include all of the fields from your Pydantic model, you can
 instead pass `all_fields=True` to the decorator.
 
--> **Note** Care should be taken to avoid accidentally exposing fields that
--> weren't meant to be exposed on an API using this feature.
+-> **Note** Care should be taken to avoid accidentally exposing fields that ->
+weren't meant to be exposed on an API using this feature.
 
 ```python
 import strawberry
@@ -279,9 +279,10 @@ instance = input_data.to_pydantic()
 
 ### Constrained types
 
-Strawberry supports [pydantic constrained types](https://pydantic-docs.helpmanual.io/usage/types/#constrained-types).
-Note that constraint is not enforced in the graphql type. Thus, we recommend always working on the pydantic
-type such that the validation is enforced.
+Strawberry supports
+[pydantic constrained types](https://pydantic-docs.helpmanual.io/usage/types/#constrained-types).
+Note that constraint is not enforced in the graphql type. Thus, we recommend
+always working on the pydantic type such that the validation is enforced.
 
 ```python+schema
 from pydantic import BaseModel, conlist
@@ -318,9 +319,10 @@ type Query {
 
 ### Classes with `__get_validators__`
 
-Pydantic BaseModels may define a custom type with [`__get_validators__`](https://pydantic-docs.helpmanual.io/usage/types/#classes-with-__get_validators__)
-logic. You will need to add a scalar type and add the mapping to the `scalar_overrides`
-argument in the Schema class.
+Pydantic BaseModels may define a custom type with
+[`__get_validators__`](https://pydantic-docs.helpmanual.io/usage/types/#classes-with-__get_validators__)
+logic. You will need to add a scalar type and add the mapping to the
+`scalar_overrides` argument in the Schema class.
 
 ```python
 import strawberry
@@ -342,7 +344,8 @@ class Example(BaseModel):
 
 
 @strawberry.experimental.pydantic.type(model=Example, all_fields=True)
-class ExampleGQL: ...
+class ExampleGQL:
+    ...
 
 
 MyScalarType = strawberry.scalar(
