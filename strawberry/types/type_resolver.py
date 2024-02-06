@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Dict, List, Type
+from typing import TYPE_CHECKING, Dict, List, Optional, Type
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -15,8 +15,13 @@ from strawberry.private import is_private
 from strawberry.type import has_object_definition
 from strawberry.unset import UNSET
 
+if TYPE_CHECKING:
+    from strawberry.types.type_extension import TypeExtension
 
-def _get_fields(cls: Type) -> List[StrawberryField]:
+
+def _get_fields(
+    cls: Type, extension: Optional[TypeExtension] = None
+) -> List[StrawberryField]:
     """Get all the strawberry fields off a strawberry.type cls
 
     This function returns a list of StrawberryFields (one for each field item), while
@@ -74,8 +79,13 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                 if field.python_name in base.__annotations__:
                     origins.setdefault(field.name, base)
 
+    extension_hook = extension.on_field if extension else lambda field: field
+
     # then we can proceed with finding the fields for the current class
     for field in dataclasses.fields(cls):  # type: ignore
+        # Extension field hook
+        field = extension_hook(field=field)  # noqa: PLW2901 type: ignore
+
         if isinstance(field, StrawberryField):
             # Check that the field type is not Private
             if is_private(field.type):
