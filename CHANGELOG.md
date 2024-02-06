@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.219.2 - 2024-02-06
+--------------------
+
+This releases updates the dependency of `python-multipart` to be at least `0.0.7` (which includes a security fix).
+
+It also removes the upper bound for `python-multipart` so you can always install the latest version (if compatible) 😊
+
+Contributed by [Srikanth](https://github.com/XChikuX) via [PR #3375](https://github.com/strawberry-graphql/strawberry/pull/3375/)
+
+
 0.219.1 - 2024-01-28
 --------------------
 
