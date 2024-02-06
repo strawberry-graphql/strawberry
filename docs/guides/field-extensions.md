@@ -4,14 +4,15 @@ title: Field extensions
 
 # Field extensions
 
-Field extensions are a great way to implement reusable logic such as permissions or
-pagination outside your resolvers. They wrap the underlying resolver and are able to
-modify the field and all arguments passed to the resolver.
+Field extensions are a great way to implement reusable logic such as permissions
+or pagination outside your resolvers. They wrap the underlying resolver and are
+able to modify the field and all arguments passed to the resolver.
 
 <Note>
 
-The following examples only cover sync execution. To use extensions in async contexts,
-please have a look at [Async Extensions and Resolvers](#async-extensions-and-resolvers)
+The following examples only cover sync execution. To use extensions in async
+contexts, please have a look at
+[Async Extensions and Resolvers](#async-extensions-and-resolvers)
 
 </Note>
 
@@ -34,10 +35,10 @@ class Query:
 ```
 
 In this example, the `UpperCaseExtension` wraps the resolver of the `string`
-field (`next`) and modifies the resulting string to be uppercase.
-The extension will be called instead of the resolver and receives
-the resolver function as the `next` argument. Therefore, it is important
-to not modify any arguments that are passed to `next` in an incompatible way.
+field (`next`) and modifies the resulting string to be uppercase. The extension
+will be called instead of the resolver and receives the resolver function as the
+`next` argument. Therefore, it is important to not modify any arguments that are
+passed to `next` in an incompatible way.
 
 ```graphql+response
 query {
@@ -53,14 +54,16 @@ query {
 
 <Warning>
 
-The `StrawberryField` API is not stable and might change in the future without warning.
+The `StrawberryField` API is not stable and might change in the future without
+warning.
 
 </Warning>
 
-In some cases, the extended field needs to be compatible with the added extension.
-`FieldExtension` provides an `apply(field: StrawberryField)` method that can be
-overriden to modify the field. It is called during _Schema Conversion_.
-In the following example, we use `apply` to add a directive to the field:
+In some cases, the extended field needs to be compatible with the added
+extension. `FieldExtension` provides an `apply(field: StrawberryField)` method
+that can be overriden to modify the field. It is called during _Schema
+Conversion_. In the following example, we use `apply` to add a directive to the
+field:
 
 ```python
 import time
@@ -109,11 +112,11 @@ type Client {
 
 ## Combining multiple field extensions
 
-When chaining multiple field extensions, the last extension in the list is called first.
-Then, it calls the next extension until it reaches the resolver.
-The return value of each extension is passed as an argument to the next extension.
-This allows for creating a chain of field extensions that each perform a specific
-transformation on the data being passed through them.
+When chaining multiple field extensions, the last extension in the list is
+called first. Then, it calls the next extension until it reaches the resolver.
+The return value of each extension is passed as an argument to the next
+extension. This allows for creating a chain of field extensions that each
+perform a specific transformation on the data being passed through them.
 
 ```python
 @strawberry.field(extensions=[LowerCaseExtension(), UpperCaseExtension()])
@@ -123,35 +126,35 @@ def my_field():
 
 <Tip>
 
-**Order matters**: the last extension in the list will be executed first,
-while the first extension in the list extension will be applied to the field
-first. This enables cases like adding relay pagination in front of an extension
-that modifies the field's type.
+**Order matters**: the last extension in the list will be executed first, while
+the first extension in the list extension will be applied to the field first.
+This enables cases like adding relay pagination in front of an extension that
+modifies the field's type.
 
 </Tip>
 
 ## Async Extensions and Resolvers
 
-Field Extensions support async execution using the `resolve_async` method.
-A field extension can either support `sync`, `async`, or both. The appropriate resolve
-function will be automatically chosen based on the type of resolver and other
-extensions.
+Field Extensions support async execution using the `resolve_async` method. A
+field extension can either support `sync`, `async`, or both. The appropriate
+resolve function will be automatically chosen based on the type of resolver and
+other extensions.
 
-Since sync-only extensions cannot await the result of an async resolver,
-they are not compatible with async resolvers or extensions.
+Since sync-only extensions cannot await the result of an async resolver, they
+are not compatible with async resolvers or extensions.
 
 The other way around is possible: you can add an async-only extension to a sync
-resolver, or wrap sync-only extensions with it.
-This is enabled by an automatic use of the `SyncToAsyncExtension`. Note that after
-adding an async-only extension, you cannot wrap it with a sync-only extension anymore.
+resolver, or wrap sync-only extensions with it. This is enabled by an automatic
+use of the `SyncToAsyncExtension`. Note that after adding an async-only
+extension, you cannot wrap it with a sync-only extension anymore.
 
 <Tip>
 
-To optimize the performance of your resolvers, it's recommended that you implement both
-the `resolve` and `resolve_async` methods when using an extension on both sync and async
-fields.
-While the `SyncToAsyncExtension` is convenient, it may add unnecessary
-overhead to your sync resolvers, leading to slightly decreased performance.
+To optimize the performance of your resolvers, it's recommended that you
+implement both the `resolve` and `resolve_async` methods when using an extension
+on both sync and async fields. While the `SyncToAsyncExtension` is convenient,
+it may add unnecessary overhead to your sync resolvers, leading to slightly
+decreased performance.
 
 </Tip>
 

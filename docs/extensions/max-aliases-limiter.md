@@ -1,12 +1,14 @@
 ---
 title: MaxAliasesLimiter
-summary: Add a validator to limit the maximum number of aliases in a GraphQL document.
+summary:
+  Add a validator to limit the maximum number of aliases in a GraphQL document.
 tags: security
 ---
 
 # `MaxAliasesLimiter`
 
-This extension adds a validator to limit the maximum number of aliases in a GraphQL document.
+This extension adds a validator to limit the maximum number of aliases in a
+GraphQL document.
 
 ## Usage example:
 

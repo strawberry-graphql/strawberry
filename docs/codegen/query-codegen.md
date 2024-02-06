@@ -145,8 +145,8 @@ class QueryCodegenPlugin:
 
 ### Console plugin
 
-There is also a plugin that helps to orchestrate the codegen process and notify the
-user about what the current codegen process is doing.
+There is also a plugin that helps to orchestrate the codegen process and notify
+the user about what the current codegen process is doing.
 
 The interface for the ConsolePlugin looks like:
 

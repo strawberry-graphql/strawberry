@@ -59,7 +59,8 @@ _No arguments_
 
 ### Overriding the `create_span` method
 
-You can customize any of the spans or add tags to them by overriding the `create_span` method.
+You can customize any of the spans or add tags to them by overriding the
+`create_span` method.
 
 Example:
 
