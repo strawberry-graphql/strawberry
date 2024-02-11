@@ -60,7 +60,7 @@ The `make_graphql_controller` function accepts the following options:
 - `connection_init_wait_timeout` optional, default to `timedelta(minutes=1)`,
   the maximum time to wait for the connection initialization message when using
   `graphql-transport-ws`
-  [protocol](<[https://](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#connectioninit)>)
+  [protocol](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#connectioninit)
 
 ## context_getter
 
