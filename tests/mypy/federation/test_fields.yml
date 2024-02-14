@@ -26,8 +26,8 @@
     class Example:
         a: str
         b: str = strawberry.federation.field(name="b")
-        c: str = strawberry.federation.field(name="c", resolver=some_resolver)
-        d: str = strawberry.federation.field(resolver=some_resolver_2)
+        c: strawberry.Resolver[str] = strawberry.federation.field(name="c", resolver=some_resolver)
+        d: strawberry.Resolver[str] = strawberry.federation.field(resolver=some_resolver_2)
 
         @strawberry.federation.field(description="ABC")
         def e(self, info: Info) -> str:
@@ -46,8 +46,8 @@
   out: |
     main:25: note: Revealed type is "builtins.str"
     main:26: note: Revealed type is "builtins.str"
-    main:27: note: Revealed type is "builtins.str"
-    main:28: note: Revealed type is "builtins.str"
+    main:27: note: Revealed type is "strawberry.types.types.Resolver[builtins.str]"
+    main:28: note: Revealed type is "strawberry.types.types.Resolver[builtins.str]"
     main:29: note: Revealed type is "Any"
     main:30: note: Revealed type is "Any"
 
@@ -105,7 +105,7 @@
     @strawberry.type
     class Example:
         a: str = strawberry.federation.field(description="Example")
-        b: str = strawberry.federation.field(resolver=resolver)
+        b: strawberry.Resolver[str] = strawberry.federation.field(resolver=resolver)
         c: str
 
     i = Example(a="a", c="c")

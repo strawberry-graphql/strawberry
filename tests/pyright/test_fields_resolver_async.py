@@ -12,7 +12,7 @@ async def get_user_age() -> int:
 @strawberry.type
 class User:
     name: str
-    age: int = strawberry.field(resolver=get_user_age)
+    age: strawberry.Resolver[int] = strawberry.field(resolver=get_user_age)
 
 
 User(name="Patrick")

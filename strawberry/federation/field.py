@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from strawberry.extensions.field_extension import FieldExtension
     from strawberry.field import _RESOLVER_TYPE, StrawberryField
     from strawberry.permission import BasePermission
+    from strawberry.types.types import Resolver
 
 
 T = TypeVar("T")
@@ -51,7 +52,7 @@ def field(
     directives: Sequence[object] = (),
     extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-) -> T:
+) -> Resolver[T]:
     ...
 
 

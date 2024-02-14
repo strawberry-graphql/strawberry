@@ -23,8 +23,8 @@
     class Example:
         a: str
         b: str = strawberry.field(name="b")
-        c: str = strawberry.field(name="c", resolver=some_resolver)
-        d: str = strawberry.field(resolver=some_resolver)
+        c: strawberry.Resolver[str] = strawberry.field(name="c", resolver=some_resolver)
+        d: strawberry.Resolver[str] = strawberry.field(resolver=some_resolver)
 
         @strawberry.field(description="ABC")
         def e(self, info: Info) -> str:
@@ -43,8 +43,8 @@
   out: |
     main:22: note: Revealed type is "builtins.str"
     main:23: note: Revealed type is "builtins.str"
-    main:24: note: Revealed type is "builtins.str"
-    main:25: note: Revealed type is "builtins.str"
+    main:24: note: Revealed type is "strawberry.types.types.Resolver[builtins.str]"
+    main:25: note: Revealed type is "strawberry.types.types.Resolver[builtins.str]"
     main:26: note: Revealed type is "Any"
     main:27: note: Revealed type is "Any"
 
@@ -102,7 +102,7 @@
     @strawberry.type
     class Example:
         a: str = strawberry.field(description="Example")
-        b: str = strawberry.field(resolver=resolver)
+        b: strawberry.Resolver[str] = strawberry.field(resolver=resolver)
         c: str
 
     i = Example(a="a", c="c")
@@ -121,7 +121,7 @@
     @strawberry.type
     class Example:
         a: str = strawberry.field(description="Example")
-        b: str = strawberry.field(resolver=resolver)
+        b: strawberry.Resolver[str] = strawberry.field(resolver=resolver)
         c: str
 
     i = Example(a="a", c="c")
