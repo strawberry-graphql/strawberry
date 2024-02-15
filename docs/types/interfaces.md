@@ -146,7 +146,7 @@ class FieldError(Error):
 class PasswordTooShort(FieldError):
     message: str
     field: str
-    fix: str
+    minLength: int
 ---
 interface Error {
   message: String!
