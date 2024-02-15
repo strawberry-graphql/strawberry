@@ -20,6 +20,15 @@ User(n="Patrick")
 
 reveal_type(User)
 reveal_type(User.__init__)
+
+def test_reading(user: User) -> int:
+    return user.age
+
+def test_writing(user: User, value: int) -> None:
+    user.age = value
+
+def test_cant_instantiate_resolver() -> strawberry.Resolver[int]:
+    return strawberry.Resolver()
 """
 
 
@@ -50,5 +59,32 @@ def test_pyright():
             message='Type of "User.__init__" is "(self: User, *, name: str) -> None"',
             line=18,
             column=13,
+        ),
+        Result(
+            type="error",
+            message=(
+                'Expression of type "Resolver[int]" cannot be assigned to return type "int"'
+                '\n\xa0\xa0"Resolver[int]" is incompatible with "int"'
+            ),
+            line=21,
+            column=12,
+        ),
+        Result(
+            type="error",
+            message=(
+                'Cannot assign member "age" for type "User"'
+                '\n\xa0\xa0"int" is incompatible with "Resolver[int]"'
+            ),
+            line=24,
+            column=16,
+        ),
+        Result(
+            type="error",
+            message=(
+                'Cannot instantiate abstract class "Resolver"'
+                '\n\xa0\xa0"Resolver.__do_not_instantiate_this" is not implemented'
+            ),
+            line=27,
+            column=12,
         ),
     ]
