@@ -285,13 +285,11 @@ def _get_namespace_from_ast(
         and isinstance(expr.value, ast.Name)
         and expr.value.id in {"list", "List"}
     ):
-        expr_slice = expr.slice
-        cast(ast.Tuple, expr_slice)
-        extra.update(_get_namespace_from_ast(expr_slice, globalns, localns))
+        extra.update(_get_namespace_from_ast(expr.slice, globalns, localns))
     elif (
         isinstance(expr, ast.Subscript)
         and isinstance(expr.value, ast.Name)
-        and expr.value.id == "Annotated"
+        and expr.value.id in {"list", "List", "Annotated"}
     ):
         assert ast_unparse
 
