@@ -289,7 +289,7 @@ def _get_namespace_from_ast(
     elif (
         isinstance(expr, ast.Subscript)
         and isinstance(expr.value, ast.Name)
-        and expr.value.id in {"list", "List", "Annotated"}
+        and expr.value.id == "Annotated"
     ):
         assert ast_unparse
 
