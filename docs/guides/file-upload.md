@@ -24,8 +24,9 @@ runtime depends on the integration:
 | [Starlette](/docs/integrations/starlette) | [`starlette.datastructures.UploadFile`](https://www.starlette.io/requests/#request-files)                                                             |
 
 In order to have the correct runtime type in resolver type annotations you can
-set a scalar override based on the integrations above. For example with 
-Starlette: 
+set a scalar override based on the integrations above. For example with
+Starlette:
+
 ```python
 import strawberry
 from starlette.datastructures import UploadFile
