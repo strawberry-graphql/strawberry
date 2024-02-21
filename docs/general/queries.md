@@ -56,8 +56,9 @@ class Query:
 ```
 
 ## Arguments
-GraphQL fields can accept arguments, 
-usually to filter out or retrieve specific objects:
+
+GraphQL fields can accept arguments, usually to filter out or retrieve specific
+objects:
 
 ```python
 FRUITS = [
@@ -65,6 +66,7 @@ FRUITS = [
     "Apple",
     "Orange",
 ]
+
 
 @strawberry.type
 class Query:
@@ -76,9 +78,9 @@ class Query:
         return None
 ```
 
-Additional metadata can be added to arguments like a different name
-and description using `strawberry.argument` 
-with [typing.Annotated](https://docs.python.org/3/library/typing.html#typing.Annotated):
+Additional metadata can be added to arguments like a different name and
+description using `strawberry.argument` with
+[typing.Annotated](https://docs.python.org/3/library/typing.html#typing.Annotated):
 
 ```python
 @strawberry.type
