@@ -78,7 +78,7 @@ class Query:
         return None
 ```
 
-Additional metadata can be added to arguments like a different name and
+Additional metadata can be added to arguments, for example a custom name and
 description using `strawberry.argument` with
 [typing.Annotated](https://docs.python.org/3/library/typing.html#typing.Annotated):
 
