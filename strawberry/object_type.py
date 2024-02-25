@@ -187,7 +187,10 @@ def _process_type(
 
 @overload
 @dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_specifiers=(field, StrawberryField),
+    frozen_default=True,
 )
 def type(
     cls: T,
@@ -204,7 +207,10 @@ def type(
 
 @overload
 @dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_specifiers=(field, StrawberryField),
+    frozen_default=True,
 )
 def type(
     *,
@@ -266,7 +272,10 @@ def type(
 
 @overload
 @dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_specifiers=(field, StrawberryField),
+    frozen_default=True,
 )
 def input(
     cls: T,
@@ -280,7 +289,10 @@ def input(
 
 @overload
 @dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_specifiers=(field, StrawberryField),
+    frozen_default=True,
 )
 def input(
     *,
@@ -316,7 +328,10 @@ def input(
 
 @overload
 @dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_specifiers=(field, StrawberryField),
+    frozen_default=True,
 )
 def interface(
     cls: T,
@@ -330,7 +345,10 @@ def interface(
 
 @overload
 @dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_specifiers=(field, StrawberryField),
+    frozen_default=True,
 )
 def interface(
     *,
@@ -342,7 +360,10 @@ def interface(
 
 
 @dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_specifiers=(field, StrawberryField),
+    frozen_default=True,
 )
 def interface(
     cls: Optional[T] = None,
