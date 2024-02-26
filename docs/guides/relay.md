@@ -298,7 +298,10 @@ class FruitCustomPaginationConnection(relay.Connection[Fruit]):
 
 @strawberry.type
 class Query:
-    fruits: FruitCustomPaginationConnection
+    @relay.connection(FruitCustomPaginationConnection)
+    def fruits(self) -> Iterable[Fruit]:
+        # This can be a database query, a generator, an async generator, etc
+        return all_fruits.values()
 ```
 
 In the example above we specialized the `FruitCustomPaginationConnection` by
