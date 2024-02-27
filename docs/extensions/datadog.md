@@ -79,7 +79,7 @@ class DataDogExtension(DatadogTracingExtension):
         **kwargs,
     ) -> Span:
         span = super().create_span(lifecycle_step, name, **kwargs)
-        if lifecycle_step == LifeCycleStep.OPERATION:
+        if lifecycle_step == LifecycleStep.OPERATION:
             span.set_tag("graphql.query", self.execution_context.query)
         return span
 ```
