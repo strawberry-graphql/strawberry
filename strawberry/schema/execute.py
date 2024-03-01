@@ -18,12 +18,15 @@ from typing import (
 )
 
 from graphql import GraphQLError, parse, subscribe
-from graphql import execute as original_execute
+from graphql.execution.execute import ExperimentalIncrementalExecutionResults
+from graphql.execution.execute import (
+    experimental_execute_incrementally as original_execute,
+)
 from graphql.validation import validate
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.extensions.runner import SchemaExtensionsRunner
-from strawberry.types import ExecutionResult
+from strawberry.types import ExecutionResult, IncrementalExecutionResult
 from strawberry.types.graphql import OperationType
 
 from .exceptions import InvalidOperationTypeError
@@ -82,7 +85,7 @@ async def execute(
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
-) -> Union[ExecutionResult, SubscriptionExecutionResult]:
+) -> Union[ExecutionResult, IncrementalExecutionResult, SubscriptionExecutionResult]:
     extensions_runner = SchemaExtensionsRunner(
         execution_context=execution_context,
         extensions=list(extensions),
@@ -158,6 +161,15 @@ async def execute(
 
                 if isawaitable(result):
                     result = await cast(Awaitable["GraphQLExecutionResult"], result)
+
+                if isinstance(result, ExperimentalIncrementalExecutionResults):
+                    return IncrementalExecutionResult(
+                        initial_result=ExecutionResult(
+                            data=result.initial_result.data,
+                            errors=result.initial_result.errors,
+                        ),
+                        has_next=result.initial_result.has_next,
+                    )
 
                 result = cast("GraphQLExecutionResult", result)
                 execution_context.result = result

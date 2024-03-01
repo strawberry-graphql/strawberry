@@ -209,6 +209,8 @@ class AsyncBaseHTTPView(
         except MissingQueryError as e:
             raise HTTPException(400, "No GraphQL query found in the request") from e
 
+        # TODO: hook here for stream and defer
+
         if isinstance(result, SubscriptionExecutionResult):
             stream = self._get_stream(request, result)
 

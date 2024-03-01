@@ -93,6 +93,12 @@ class ExecutionResult:
     extensions: Optional[Dict[str, Any]] = None
 
 
+@dataclasses.dataclass
+class IncrementalExecutionResult:
+    initial_result: ExecutionResult
+    has_next: bool
+
+
 class ParseOptions(TypedDict):
     max_tokens: NotRequired[int]
 
