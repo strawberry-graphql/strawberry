@@ -8,8 +8,8 @@ All Strawberry integrations support multipart uploads as described in the
 [GraphQL multipart request specification](https://github.com/jaydenseric/graphql-multipart-request-spec).
 This includes support for uploading single files as well as lists of files.
 
-Uploads can be used in mutations via the `Upload` scalar.
-The type passed at runtime depends on the integration:
+Uploads can be used in mutations via the `Upload` scalar. The type passed at
+runtime depends on the integration:
 
 | Integration                               | Type                                                                                                                                                  |
 | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -25,12 +25,17 @@ The type passed at runtime depends on the integration:
 
 ## ASGI / FastAPI / Starlette
 
-Since these integrations use asyncio for communication, the resolver _must_ be async.
+Since these integrations use asyncio for communication, the resolver _must_ be
+async.
 
-Additionally, these servers rely on the `python-multipart` package, which is not included by Strawberry by default. It can be installed directly, or, for convenience, it is included in extras: `strawberry[asgi]` (for ASGI/Starlette) or `strawberry[fastapi]` (for FastAPI). For example:
+Additionally, these servers rely on the `python-multipart` package, which is not
+included by Strawberry by default. It can be installed directly, or, for
+convenience, it is included in extras: `strawberry[asgi]` (for ASGI/Starlette)
+or `strawberry[fastapi]` (for FastAPI). For example:
 
 - if using Pip, `pip install 'strawberry[fastapi]'`
-- if using Poetry, `strawberry = { version = "...", extras = ["fastapi"] }` in `pyproject.toml`.
+- if using Poetry, `strawberry = { version = "...", extras = ["fastapi"] }` in
+  `pyproject.toml`.
 
 Example:
 
@@ -107,7 +112,8 @@ class Mutation:
 
 ## Sending file upload requests
 
-The tricky part is sending the HTTP request from the client because it must follow the GraphQL multipart request specifications mentioned above.
+The tricky part is sending the HTTP request from the client because it must
+follow the GraphQL multipart request specifications mentioned above.
 
 The `multipart/form-data` POST request's data must include:
 
@@ -115,7 +121,8 @@ The `multipart/form-data` POST request's data must include:
 - `map` key with mapping some multipart-data to exact GraphQL variable
 - and other keys for multipart-data which contains binary data of files
 
-Assuming you have your schema up and running, here there are some requests examples:
+Assuming you have your schema up and running, here there are some requests
+examples:
 
 ### Sending one file
 

@@ -6,7 +6,6 @@ from typing import (
     Any,
     List,
     NamedTuple,
-    NoReturn,
     Set,
     Tuple,
     Type,
@@ -126,7 +125,7 @@ def get_default_factory_for_field(
 
 def ensure_all_auto_fields_in_pydantic(
     model: Type[BaseModel], auto_fields: Set[str], cls_name: str
-) -> Union[NoReturn, None]:
+) -> None:
     # Raise error if user defined a strawberry.auto field not present in the model
     non_existing_fields = list(auto_fields - get_model_fields(model).keys())
 
@@ -135,4 +134,4 @@ def ensure_all_auto_fields_in_pydantic(
             fields=non_existing_fields, cls_name=cls_name, model=model
         )
     else:
-        return None
+        return

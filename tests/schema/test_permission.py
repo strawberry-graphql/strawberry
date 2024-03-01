@@ -560,3 +560,35 @@ def test_permission_directives_not_added_on_field():
     }
     """
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_basic_permission_access_inputs():
+    class IsAuthorized(BasePermission):
+        message = "User is not authorized"
+
+        def has_permission(
+            self, source, info, **kwargs: typing.Any
+        ) -> bool:  # pragma: no cover
+            if kwargs["a_key"] == "secret":
+                return True
+
+            return False
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(permission_classes=[IsAuthorized])
+        def name(self, a_key: str) -> str:  # pragma: no cover
+            return "Erik"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = '{ name(aKey: "example") }'
+    result = schema.execute_sync(query)
+
+    assert result.errors[0].message == "User is not authorized"
+
+    query = '{ name(aKey: "secret") }'
+
+    result = schema.execute_sync(query)
+
+    assert result.data["name"] == "Erik"

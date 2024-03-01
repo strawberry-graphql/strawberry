@@ -78,7 +78,7 @@ async def test_renders_graphiql_disabled(http_client_class: Type[HttpClient]):
 
 
 async def test_renders_graphiql_disabled_deprecated(
-    http_client_class: Type[HttpClient]
+    http_client_class: Type[HttpClient],
 ):
     with pytest.deprecated_call(
         match=r"The `graphiql` argument is deprecated in favor of `graphql_ide`"

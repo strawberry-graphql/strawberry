@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.219.0"
+version = "0.219.2"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -50,7 +50,7 @@ opentelemetry-api = {version = "<2", optional = true}
 opentelemetry-sdk = {version = "<2", optional = true}
 chalice = {version = "^1.22", optional = true}
 pydantic = {version = ">1.6.1", optional = true}
-python-multipart = {version = ">=0.0.5,<0.0.7", optional = true}
+python-multipart = {version = ">=0.0.7", optional = true}
 sanic = {version = ">=20.12.2", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
 fastapi = {version = ">=0.65.2", optional = true}
@@ -83,7 +83,7 @@ pytest-emoji = "^0.2.0"
 pytest-mock = "^3.10"
 pytest-snapshot = "^0.9.0"
 pytest-xdist = {extras = ["psutil"], version = "^3.1.0"}
-python-multipart = ">=0.0.5,<0.0.7"
+python-multipart = ">=0.0.7"
 rich = {version = ">=12.5.1,<14.0.0", optional = false}
 sanic-testing = ">=22.9,<24.0"
 sentry-sdk = "^1.39.2"
@@ -198,8 +198,34 @@ stubPath = ""
 
 [tool.ruff]
 line-length = 88
-select = ["ALL"]
 target-version = "py38"
+fix = true
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "tests/codegen/snapshots"
+]
+src = ["strawberry", "tests"]
+
+[tool.ruff.lint]
+select = ["ALL"]
 ignore = [
     # https://github.com/astral-sh/ruff/pull/4427
     # equivalent to keep-runtime-typing
@@ -332,38 +358,14 @@ ignore = [
     "FIX002",
     "FA100",
 ]
-fix = true
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
-    "tests/codegen/snapshots"
-]
-src = ["strawberry", "tests"]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "strawberry/schema/types/concrete_type.py" = ["TCH002"]
 "tests/*" = ["RSE102", "SLF001", "TCH001", "TCH002", "TCH003", "ANN001", "ANN201", "PLW0603", "PLC1901", "S603", "S607", "B018"]
 "strawberry/extensions/tracing/__init__.py" = ["TCH004"]
 "tests/http/clients/__init__.py" = ["F401"]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["strawberry"]
 known-third-party = ["django", "graphql"]
 extra-standard-library = ["typing_extensions"]

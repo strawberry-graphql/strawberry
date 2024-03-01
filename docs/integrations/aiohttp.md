@@ -32,7 +32,9 @@ app.router.add_route("*", "/graphql", GraphQLView(schema=schema))
 The `GraphQLView` accepts two options at the moment:
 
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
-- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or to disable it by passing `None`.
+- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the
+  GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or
+  to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
 

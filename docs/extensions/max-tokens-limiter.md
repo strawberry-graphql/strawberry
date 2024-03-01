@@ -1,12 +1,14 @@
 ---
 title: MaxTokensLimiter
-summary: Add a validator to limit the maximum number of tokens in a GraphQL document.
+summary:
+  Add a validator to limit the maximum number of tokens in a GraphQL document.
 tags: security
 ---
 
 # `MaxTokensLimiter`
 
-This extension adds a validator to limit the maximum number of tokens in a GraphQL document sent to the server.
+This extension adds a validator to limit the maximum number of tokens in a
+GraphQL document sent to the server.
 
 ## Usage example:
 
@@ -22,13 +24,13 @@ schema = strawberry.Schema(
 )
 ```
 
-With the above configuration, if a client sends a query with more than 1000 tokens, the server will respond with an error message.
+With the above configuration, if a client sends a query with more than 1000
+tokens, the server will respond with an error message.
 
 ## API reference:
 
 ```python
-class MaxTokensLimiter(max_token_count):
-    ...
+class MaxTokensLimiter(max_token_count): ...
 ```
 
 #### `max_token_count: int`

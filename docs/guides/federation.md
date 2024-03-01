@@ -198,8 +198,8 @@ able to find them.
 <Note>
 
 If you don't need any custom logic for your resolve_reference, you can omit it
-and Strawberry will automatically instanciate the type for you. For example,
-if we had a `Book` type with only an `id` field, Strawberry would be able to
+and Strawberry will automatically instanciate the type for you. For example, if
+we had a `Book` type with only an `id` field, Strawberry would be able to
 instanciate it for us based on the data returned by the gateway.
 
 ```python
@@ -325,13 +325,18 @@ Strawberry and Federation. The repo is available here:
 
 ## Federated schema directives
 
-Strawberry provides implementations for [Apollo federation-specific GraphQL directives](https://www.apollographql.com/docs/federation/federated-types/federated-directives/).
+Strawberry provides implementations for
+[Apollo federation-specific GraphQL directives](https://www.apollographql.com/docs/federation/federated-types/federated-directives/).
 
-Some of these directives may not be necessary to directly include in your code, and are accessed through other means.
+Some of these directives may not be necessary to directly include in your code,
+and are accessed through other means.
 
-- `@interfaceObject` (for more details, see [Extending interfaces](https://strawberry.rocks/docs/federation/entity-interfaces))
-- `@key` (for more details, see [Entities (Apollo Federation)](https://strawberry.rocks/docs/federation/entities))
-- `@link` (is automatically be added to the schema when any other federated schema directive is used)
+- `@interfaceObject` (for more details, see
+  [Extending interfaces](https://strawberry.rocks/docs/federation/entity-interfaces))
+- `@key` (for more details, see
+  [Entities (Apollo Federation)](https://strawberry.rocks/docs/federation/entities))
+- `@link` (is automatically be added to the schema when any other federated
+  schema directive is used)
 
 Other directives you may need to specifically include when relevant.
 

@@ -20,8 +20,10 @@ urlpatterns = [
 ]
 ```
 
-Strawberry only provides a GraphQL view for Django, [Strawberry GraphQL Django](https://github.com/strawberry-graphql/strawberry-graphql-django) provides integration with the models.
-`import strawberry_django` should do the same as `import strawberry.django` if both libraries are installed.
+Strawberry only provides a GraphQL view for Django,
+[Strawberry GraphQL Django](https://github.com/strawberry-graphql/strawberry-graphql-django)
+provides integration with the models. `import strawberry_django` should do the
+same as `import strawberry.django` if both libraries are installed.
 
 You'd also need to add `strawberry_django` to the `INSTALLED_APPS` of your
 project, this is needed to provide the template for the GraphiQL interface.
@@ -31,7 +33,9 @@ project, this is needed to provide the template for the GraphiQL interface.
 The `GraphQLView` accepts the following arguments:
 
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
-- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or to disable it by passing `None`.
+- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the
+  GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or
+  to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
 - `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
@@ -168,7 +172,9 @@ project, this is needed to provide the template for the GraphiQL interface.
 The `AsyncGraphQLView` accepts the following arguments:
 
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
-- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or to disable it by passing `None`.
+- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the
+  GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or
+  to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
 - `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
