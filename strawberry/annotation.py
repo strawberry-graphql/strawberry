@@ -25,6 +25,7 @@ from strawberry.enum import EnumDefinition
 from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
+from strawberry.streamable import is_streamable
 from strawberry.type import (
     StrawberryList,
     StrawberryOptional,
@@ -123,8 +124,12 @@ class StrawberryAnnotation:
             return self._get_type_with_args(self._strip_async_type(evaled_type))
 
         if get_origin(evaled_type) is Annotated:
-            evaled_type, *args = get_args(evaled_type)
-            stripped_type, stripped_args = self._get_type_with_args(evaled_type)
+            stripped_type, *args = get_args(evaled_type)
+
+            if is_streamable(evaled_type):
+                stripped_type = List[stripped_type]
+
+            stripped_type, stripped_args = self._get_type_with_args(stripped_type)
             return stripped_type, args + stripped_args
 
         return evaled_type, []

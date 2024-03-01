@@ -14,6 +14,7 @@ from .private import Private
 from .scalars import ID
 from .schema import Schema
 from .schema_directive import schema_directive
+from .streamable import Streamable
 from .union import union
 from .unset import UNSET
 
@@ -40,6 +41,7 @@ __all__ = [
     "mutation",
     "scalar",
     "subscription",
+    "Streamable",
     "type",
     "union",
     "auto",

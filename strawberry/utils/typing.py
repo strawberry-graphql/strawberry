@@ -183,7 +183,7 @@ def is_classvar(cls: type, annotation: Union[ForwardRef, str]) -> bool:
     )
 
 
-def type_has_annotation(type_: object, annotation: Type) -> bool:
+def type_has_annotation(type_: object, annotation: Type[Any]) -> bool:
     """Returns True if the type_ has been annotated with annotation."""
     if get_origin(type_) is Annotated:
         return any(isinstance(argument, annotation) for argument in get_args(type_))

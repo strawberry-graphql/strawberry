@@ -19,6 +19,7 @@ from graphql import (
     GraphQLNamedType,
     GraphQLNonNull,
     GraphQLSchema,
+    GraphQLStreamDirective,
     get_introspection_query,
     parse,
     validate_schema,
@@ -144,7 +145,11 @@ class Schema(BaseSchema):
                 query=query_type,
                 mutation=mutation_type,
                 subscription=subscription_type if subscription else None,
-                directives=specified_directives + tuple(graphql_directives),
+                directives=(
+                    specified_directives
+                    + tuple(graphql_directives)
+                    + (GraphQLStreamDirective,)
+                ),
                 types=graphql_types,
                 extensions={
                     GraphQLCoreConverter.DEFINITION_BACKREF: self,

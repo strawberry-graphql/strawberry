@@ -20,6 +20,7 @@ from typing import (
 from graphql import is_union_type
 from graphql.language.printer import print_ast
 from graphql.type import (
+    GraphQLStreamDirective,
     is_enum_type,
     is_input_type,
     is_interface_type,
@@ -542,7 +543,7 @@ def is_builtin_directive(directive: GraphQLDirective) -> bool:
     # this allows to force print the builtin directives if there's a
     # directive that was implemented using the schema_directive
 
-    if is_specified_directive(directive):
+    if is_specified_directive(directive) or directive is GraphQLStreamDirective:
         strawberry_definition = directive.extensions.get("strawberry-definition")
 
         return strawberry_definition is None
