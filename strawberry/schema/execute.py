@@ -152,6 +152,12 @@ async def execute(
                         variable_values=execution_context.variables,
                         operation_name=execution_context.operation_name,
                     )
+
+                    if isawaitable(result):
+                        result = await cast(Awaitable["GraphQLExecutionResult"], result)
+
+                    return result
+
                 else:
                     result = original_execute(
                         schema,
