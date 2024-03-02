@@ -317,7 +317,7 @@ class Schema(BaseSchema):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
     ) -> Union[AsyncIterator[GraphQLExecutionResult], GraphQLExecutionResult]:
-        return await subscribe(
+        result = subscribe(
             self._schema,
             parse(query),
             root_value=root_value,
@@ -325,6 +325,11 @@ class Schema(BaseSchema):
             variable_values=variable_values,
             operation_name=operation_name,
         )
+
+        if isinstance(result, AsyncIterator):
+            return await result
+
+        return result
 
     def _resolve_node_ids(self):
         for concrete_type in self.schema_converter.type_map.values():
