@@ -144,7 +144,7 @@ async def execute(
                 if execution_context.operation_type == OperationType.SUBSCRIPTION:
                     # TODO: should we process errors here?
                     # TODO: make our own wrapper?
-                    return await subscribe(  # type: ignore
+                    result = subscribe(  # type: ignore
                         schema,
                         execution_context.graphql_document,
                         root_value=execution_context.root_value,
