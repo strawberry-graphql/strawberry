@@ -86,4 +86,4 @@ class BaseView(Generic[Request]):
         if params.get("boundary") != "graphql":
             return False
 
-        return params.get("subscriptionspec") == "1.0"
+        return params.get("subscriptionspec", "").startswith("1.0")
