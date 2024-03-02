@@ -4,6 +4,7 @@ from asyncio import ensure_future
 from inspect import isawaitable
 from typing import (
     TYPE_CHECKING,
+    AsyncGenerator,
     Awaitable,
     Callable,
     Iterable,
@@ -26,7 +27,11 @@ from graphql.validation import validate
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.extensions.runner import SchemaExtensionsRunner
-from strawberry.types import ExecutionResult, IncrementalExecutionResult
+from strawberry.types import (
+    ExecutionResult,
+    IncrementalExecutionResult,
+    MoreIncrementalExecutionResult,
+)
 from strawberry.types.graphql import OperationType
 
 from .exceptions import InvalidOperationTypeError
@@ -163,12 +168,29 @@ async def execute(
                     result = await cast(Awaitable["GraphQLExecutionResult"], result)
 
                 if isinstance(result, ExperimentalIncrementalExecutionResults):
+                    # TODO: reintroduce process errors
+                    async def more_results(
+                        result: ExperimentalIncrementalExecutionResults,
+                    ) -> AsyncGenerator[MoreIncrementalExecutionResult, None]:
+                        async for next_result in result.subsequent_results:
+                            if next_result.incremental:
+                                for incremental_update in next_result.incremental:
+                                    yield MoreIncrementalExecutionResult(
+                                        items=incremental_update.items,
+                                        errors=incremental_update.errors,
+                                        path=incremental_update.path,
+                                    )
+
+                            # TODO: next_result.extensions
+                            # TODO: next_result.has_next
+
                     return IncrementalExecutionResult(
                         initial_result=ExecutionResult(
                             data=result.initial_result.data,
                             errors=result.initial_result.errors,
                         ),
                         has_next=result.initial_result.has_next,
+                        more_results=more_results(result),
                     )
 
                 result = cast("GraphQLExecutionResult", result)

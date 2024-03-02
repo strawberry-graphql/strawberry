@@ -2,6 +2,7 @@ from .execution import (
     ExecutionContext,
     ExecutionResult,
     IncrementalExecutionResult,
+    MoreIncrementalExecutionResult,
     SubscriptionExecutionResult,
 )
 from .info import Info
@@ -11,5 +12,6 @@ __all__ = [
     "ExecutionResult",
     "SubscriptionExecutionResult",
     "IncrementalExecutionResult",
+    "MoreIncrementalExecutionResult",
     "Info",
 ]

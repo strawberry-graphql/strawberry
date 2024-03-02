@@ -4,6 +4,7 @@ import dataclasses
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     Dict,
     List,
     Optional,
@@ -94,9 +95,17 @@ class ExecutionResult:
 
 
 @dataclasses.dataclass
+class MoreIncrementalExecutionResult:
+    items: List[Any]
+    errors: Optional[List[GraphQLError]]
+    path: List[str | int]
+
+
+@dataclasses.dataclass
 class IncrementalExecutionResult:
     initial_result: ExecutionResult
     has_next: bool
+    more_results: AsyncGenerator[MoreIncrementalExecutionResult, None]
 
 
 class ParseOptions(TypedDict):
