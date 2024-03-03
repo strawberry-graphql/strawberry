@@ -69,6 +69,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         path: str,
         headers: Optional[List[Tuple[bytes, bytes]]] = None,
         protocol: str = GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        connection_params: dict = {},
         **kwargs: Any,
     ):
         """
@@ -81,6 +82,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         self.protocol = protocol
         subprotocols = kwargs.get("subprotocols", [])
         subprotocols.append(protocol)
+        self.connection_params = connection_params
         super().__init__(application, path, headers, subprotocols=subprotocols)
 
     async def __aenter__(self) -> Self:
@@ -99,7 +101,9 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         res = await self.connect()
         if self.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
             assert res == (True, GRAPHQL_TRANSPORT_WS_PROTOCOL)
-            await self.send_json_to(ConnectionInitMessage().as_dict())
+            initial_message = ConnectionInitMessage().as_dict()
+            initial_message.update({"payload": self.connection_params})
+            await self.send_json_to(initial_message)
             response = await self.receive_json_from()
             assert response == ConnectionAckMessage().as_dict()
         else:
