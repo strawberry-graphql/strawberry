@@ -13,6 +13,7 @@ from typing import (
 )
 
 from asgiref.sync import markcoroutinefunction
+from django.core.serializers.json import DjangoJSONEncoder
 from django.http import HttpRequest, HttpResponseNotAllowed, JsonResponse
 from django.http.response import HttpResponse
 from django.template import RequestContext, Template
@@ -159,8 +160,7 @@ class BaseView:
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: HttpResponse
     ) -> HttpResponse:
-        data = self.encode_json(response_data)  # type: ignore
-
+        data = self.encode_json(response_data)
         response = HttpResponse(
             data,
             content_type="application/json",
@@ -176,6 +176,9 @@ class BaseView:
             response.cookies[name] = value
 
         return response
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        return json.dumps(response_data, cls=DjangoJSONEncoder)
 
 
 class GraphQLView(

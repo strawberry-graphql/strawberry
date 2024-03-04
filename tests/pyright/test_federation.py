@@ -29,13 +29,13 @@ def test_federation_type():
     results = run_pyright(CODE)
 
     assert results == [
-        Result(type="error", message='No parameter named "n"', line=16, column=6),
         Result(
             type="error",
             message='Argument missing for parameter "name"',
             line=16,
             column=1,
         ),
+        Result(type="error", message='No parameter named "n"', line=16, column=6),
         Result(
             type="information",
             message='Type of "User" is "type[User]"',
@@ -75,15 +75,15 @@ def test_federation_interface():
     assert results == [
         Result(
             type="error",
-            message='No parameter named "n"',
-            line=12,
-            column=6,
-        ),
-        Result(
-            type="error",
             message='Argument missing for parameter "name"',
             line=12,
             column=1,
+        ),
+        Result(
+            type="error",
+            message='No parameter named "n"',
+            line=12,
+            column=6,
         ),
         Result(
             type="information",
@@ -122,15 +122,15 @@ def test_federation_input():
     assert results == [
         Result(
             type="error",
-            message='No parameter named "n"',
-            line=10,
-            column=6,
-        ),
-        Result(
-            type="error",
             message='Argument missing for parameter "name"',
             line=10,
             column=1,
+        ),
+        Result(
+            type="error",
+            message='No parameter named "n"',
+            line=10,
+            column=6,
         ),
         Result(
             type="information",

@@ -86,7 +86,7 @@ very small resolvers.
 
 The _self_ argument is a bit special here, when executing a GraphQL query, in
 case of resolvers defined with a decorator, the _self_ argument corresponds to
-the _root_ value that field. In this example the _root_ value is the value
+the _root_ value of that field. In this example the _root_ value is the value
 `Query` type, which is usually `None`. You can change the _root_ value when
 calling the `execute` method on a `Schema`. More on _root_ values below.
 
@@ -225,9 +225,9 @@ class User:
 For either decorated resolvers or Python functions, there is a third option
 which is to annotate one of the parameters with the type `Parent`. This is
 particularly useful if the parent resolver returns a type other than the
-strawberry type that the resolver is defined within, as it allows you to
-specify the type of the parent object. This comes up particularly often
-for resolvers that return ORMs:
+strawberry type that the resolver is defined within, as it allows you to specify
+the type of the parent object. This comes up particularly often for resolvers
+that return ORMs:
 
 ```python
 import dataclass

@@ -6,8 +6,9 @@ tags: tracing
 
 <Warning>
 
-As of Sentry 1.32.0, Strawberry is now supported by default. This extension is no longer necessary.
-For more details, please refer to the [release notes](https://github.com/getsentry/sentry-python/releases/tag/1.32.0).
+As of Sentry 1.32.0, Strawberry is now supported by default. This extension is
+no longer necessary. For more details, please refer to the
+[release notes](https://github.com/getsentry/sentry-python/releases/tag/1.32.0).
 
 Below is the revised usage example:
 
