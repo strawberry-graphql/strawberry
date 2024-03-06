@@ -10,6 +10,6 @@ This release adds support to allow passing `connection_params` as dictionary to 
 GraphQLWebsocketCommunicator(
     application=application,
     path="/graphql",
-    connection_params={"username": "strawberry"}
+    connection_params={"username": "strawberry"},
 )
 ```
