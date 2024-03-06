@@ -1,12 +1,12 @@
 Release type: minor
 
-Added support to pass connection_params as dictionary to GraphQLWebsocketCommunicator when testing [channels integration](https://strawberry.rocks/docs/integrations/channels#testing)
+This release adds support to allow passing `connection_params` as dictionary to `GraphQLWebsocketCommunicator` class when testing [channels integration](https://strawberry.rocks/docs/integrations/channels#testing)
 
 
-### sample code snippet
+### Example
 
 
-```
+```python
 GraphQLWebsocketCommunicator(
     application=application,
     path="/graphql",
