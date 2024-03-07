@@ -449,16 +449,15 @@ async def test_joinChatRooms_sends_welcome_message(gql_communicator):
         assert "hello" in data["message"]
 ```
 
-There is an option to pass connection_params when initializing (`GraphQLWebsocketCommunicator`)
-for subscribing.
+### Passing connection params
+Connection parameters can be passed using the `connection_params` parameter of the `GraphQLWebsocketCommunicator` class. This is particularily useful to test websocket authentication.
+
 ```python
-@pytest.fixture
-async def gql_communicator() -> GraphQLWebsocketCommunicator:
-    GraphQLWebsocketCommunicator(
-        application=application,
-        path="/graphql",
-        connection_params={"username": "strawberry"},
-    )
+GraphQLWebsocketCommunicator(
+    application=application,
+    path="/graphql",
+    connection_params={"token": "strawberry"},
+)
 ```
 
 In order to test a real server connection we can use python
