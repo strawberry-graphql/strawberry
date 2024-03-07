@@ -450,7 +450,8 @@ async def test_joinChatRooms_sends_welcome_message(gql_communicator):
 ```
 
 ### Passing connection params
-Connection parameters can be passed using the `connection_params` parameter of the `GraphQLWebsocketCommunicator` class. This is particularily useful to test websocket authentication.
+    
+Connection parameters can be passed using the `connection_params` parameter of the `GraphQLWebsocketCommunicator` class. This is particularily useful to test websocket authentication. 
 
 ```python
 GraphQLWebsocketCommunicator(
