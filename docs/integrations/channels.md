@@ -449,8 +449,9 @@ async def test_joinChatRooms_sends_welcome_message(gql_communicator):
         assert "hello" in data["message"]
 ```
 
-There is an option to pass connection_params when initializing (`GraphQLWebsocketCommunicator`)
-for subscribing.
+There is an option to pass connection_params when initializing
+(`GraphQLWebsocketCommunicator`) for subscribing.
+
 ```python
 @pytest.fixture
 async def gql_communicator() -> GraphQLWebsocketCommunicator:
