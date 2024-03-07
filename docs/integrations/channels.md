@@ -449,6 +449,18 @@ async def test_joinChatRooms_sends_welcome_message(gql_communicator):
         assert "hello" in data["message"]
 ```
 
+There is an option to pass connection_params when initializing (`GraphQLWebsocketCommunicator`)
+for subscribing.
+```python
+@pytest.fixture
+async def gql_communicator() -> GraphQLWebsocketCommunicator:
+    GraphQLWebsocketCommunicator(
+        application=application,
+        path="/graphql",
+        connection_params={"username": "strawberry"},
+    )
+```
+
 In order to test a real server connection we can use python
 [gql client](https://github.com/graphql-python/gql) and channels
 [`ChannelsLiveServerTestCase`](https://channels.readthedocs.io/en/latest/topics/testing.html#channelsliveservertestcase).
