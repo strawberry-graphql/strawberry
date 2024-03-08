@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+0.220.0 - 2024-03-08
+--------------------
+
+This release adds support to allow passing `connection_params` as dictionary to `GraphQLWebsocketCommunicator` class when testing [channels integration](https://strawberry.rocks/docs/integrations/channels#testing)
+
+
+### Example
+
+
+```python
+GraphQLWebsocketCommunicator(
+    application=application,
+    path="/graphql",
+    connection_params={"username": "strawberry"},
+)
+```
+
+Contributed by [selvarajrajkanna](https://github.com/selvarajrajkanna) via [PR #3403](https://github.com/strawberry-graphql/strawberry/pull/3403/)
+
+
 0.219.2 - 2024-02-06
 --------------------
 
