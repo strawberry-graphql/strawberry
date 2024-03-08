@@ -498,6 +498,20 @@ The HTTP and WebSockets protocol are handled by different base classes. HTTP
 uses `GraphQLHTTPConsumer` and WebSockets uses `GraphQLWSConsumer`. Both of them
 can be extended:
 
+### Passing connection params
+
+Connection parameters can be passed using the `connection_params` parameter of
+the `GraphQLWebsocketCommunicator` class. This is particularily useful to test
+websocket authentication.
+
+```python
+GraphQLWebsocketCommunicator(
+    application=application,
+    path="/graphql",
+    connection_params={"token": "strawberry"},
+)
+```
+
 ## GraphQLHTTPConsumer (HTTP)
 
 ### Options
