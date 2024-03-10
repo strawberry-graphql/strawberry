@@ -88,7 +88,7 @@ Mutations with void-result go against
 
 </Note>
 
-### The Input Mutation Extension
+## The Input Mutation Extension
 
 It is usually useful to use a pattern of defining a mutation that receives a
 single [input type](../types/input-types) argument called `input`.
