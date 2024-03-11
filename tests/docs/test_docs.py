@@ -1,5 +1,6 @@
 import dataclasses
 import inspect
+import json
 import re
 import typing
 from pathlib import Path
@@ -110,6 +111,7 @@ def find_examples(
     [
         *find_examples("docs/index.md"),
         *find_examples("docs/general/"),
+        *find_examples("docs/guides/field-extensions.md"),
     ],
     ids=str,
 )
@@ -144,6 +146,8 @@ def test_docs(example: CodeExample, eval_example: EvalExample):
 
         # Expected schema is likely to be a subset of the overall schema
         assert expected_schema in actual_schema
+    elif example.prefix == "graphql+response":
+        check_gql_and_response(example)
 
 
 def split_code_example(source_code: str) -> typing.Tuple[str, typing.Optional[str]]:
@@ -182,3 +186,16 @@ def construct_schema():
         subscription=DOC_GLOBALS.get("Subscription"),
         types=types,
     )
+
+
+def check_gql_and_response(example: CodeExample):
+    gql_query, expected_response_str = split_code_example(example.source)
+    expected_response = json.loads(expected_response_str)
+    schema = construct_schema()
+
+    result = schema.execute_sync(
+        query=gql_query,
+    )
+
+    assert result.errors is None
+    assert result.data == expected_response
