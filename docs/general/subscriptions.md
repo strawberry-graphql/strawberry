@@ -114,7 +114,9 @@ from typing import AsyncGenerator
 
 import strawberry
 
-from .auth import authenticate_token
+
+def authenticate_token(token: str) -> bool:
+    return token == "Bearer I_AM_A_VALID_AUTH_TOKEN"
 
 
 @strawberry.type
@@ -171,11 +173,12 @@ AsyncGenerator to the ASGI server which is responsible for streaming
 subscription results until the Generator exits.
 
 ```python
-import strawberry
 import asyncio
 import asyncio.subprocess as subprocess
 from asyncio import streams
 from typing import Any, AsyncGenerator, AsyncIterator, Coroutine, Optional
+
+import strawberry
 
 
 async def wait_for_call(coro: Coroutine[Any, Any, bytes]) -> Optional[bytes]:
@@ -226,12 +229,12 @@ async def tail(proc: subprocess.Process) -> AsyncGenerator[str, None]:
     # to read a line from stdout. This is a good example of why you need to
     # be defensive by using asyncio.wait_for in wait_for_call().
     while proc.returncode is None:
-        async for l in lines(proc.stdout):
-            yield l
-    else:
-        # read anything left on the pipe after the process has finished
-        async for l in lines(proc.stdout):
-            yield l
+        async for line in lines(proc.stdout):
+            yield line
+
+    # read anything left on the pipe after the process has finished
+    async for line in lines(proc.stdout):
+        yield line
 
 
 @strawberry.type
@@ -315,16 +318,19 @@ app = GraphQL(
 import os
 
 from django.core.asgi import get_asgi_application
+
 from strawberry.channels import GraphQLProtocolTypeRouter
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
 django_asgi_app = get_asgi_application()
+```
 
-# Import your Strawberry schema after creating the django ASGI application
-# This ensures django.setup() has been called before any ORM models are imported
-# for the schema.
-from mysite.graphql import schema
+Import your Strawberry schema after creating the django ASGI application
+This ensures django.setup() has been called before any ORM models are imported
+for the schema.
 
+```python
+from api.schema import schema
 
 application = GraphQLProtocolTypeRouter(
     schema,

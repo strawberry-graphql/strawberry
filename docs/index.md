@@ -76,7 +76,7 @@ files, etc). For this tutorial we will be using hard-coded data.
 Let’s create a function that returns some books.
 
 ```python
-def get_books():
+def get_books() -> typing.List[Book]:
     return [
         Book(
             title="The Great Gatsby",

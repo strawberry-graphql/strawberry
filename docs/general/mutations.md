@@ -101,6 +101,17 @@ input mutation. We can add the `InputMutationExtension` to the field like this:
 
 ```python
 from strawberry.field_extensions import InputMutationExtension
+from strawberry.types.info import Info
+
+
+@strawberry.type
+class Fruit:
+    id: strawberry.ID
+    weight: float
+
+
+# Mocking a database
+db = {"Strawberry": Fruit(id="Strawberry", weight=16.0)}
 
 
 @strawberry.type
@@ -110,14 +121,14 @@ class Mutation:
         self,
         info: strawberry.Info,
         id: strawberry.ID,
-        weight: Annotated[
+        weight: typing.Annotated[
             float,
             strawberry.argument(description="The fruit's new weight in grams"),
         ],
     ) -> Fruit:
-        fruit = ...  # retrieve the fruit with the given ID
+        fruit = db.get(id)  # retrieve the fruit with the given ID
         fruit.weight = weight
-        ...  # maybe save the fruit in the database
+        db[id] = fruit  # save the fruit in the database
         return fruit
 ```
 
@@ -161,17 +172,34 @@ and add mutation fields to it like we could add mutation fields to the root
 
 ```python
 import strawberry
+from strawberry.types.info import Info
+
+
+@strawberry.type
+class Fruit:
+    id: strawberry.ID
+    weight: float
+
+
+@strawberry.input
+class AddFruitInput:
+    id: strawberry.ID
+    weight: float
+
+
+@strawberry.input
+class UpdateFruitWeightInput:
+    id: strawberry.ID
+    weight: float
 
 
 @strawberry.type
 class FruitMutations:
     @strawberry.mutation
-    def add(self, info, input: AddFruitInput) -> Fruit:
-        # ...
+    def add(self, info: Info, input: AddFruitInput) -> Fruit: ...
 
     @strawberry.mutation
-    def update_weight(self, info, input: UpdateFruitWeightInput) -> Fruit:
-        # ...
+    def update_weight(self, info: Info, input: UpdateFruitWeightInput) -> Fruit: ...
 
 
 @strawberry.type
