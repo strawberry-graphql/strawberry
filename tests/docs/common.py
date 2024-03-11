@@ -17,12 +17,9 @@ class Query:
         return "world"
 
 
-schema = strawberry.Schema(query=Query)
-
 modules = {
     "typing": typing,
     "strawberry": strawberry,
     "Book": Book,
     "Query": Query,
-    "schema": schema,
 }
