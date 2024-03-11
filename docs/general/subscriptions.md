@@ -325,7 +325,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
 django_asgi_app = get_asgi_application()
 ```
 
-Import your Strawberry schema after creating the django ASGI application This
+Import your Strawberry schema after creating the django ASGI application. This
 ensures django.setup() has been called before any ORM models are imported for
 the schema.
 
