@@ -76,3 +76,29 @@ list of all the allowed locations:
 | ENUM_VALUE             | `strawberry.enum_value` | The definition of a enum value                           |
 | INPUT_OBJECT           | `strawberry.input`      | The definition of an input object type                   |
 | INPUT_FIELD_DEFINITION | `strawberry.field`      | The definition of a field on an input type               |
+
+## Supported directives
+
+### `OneOf`
+
+The `OneOf` schema directive is used to indicate that an input type is a `oneOf`
+Input Object, where exactly one of the input fields must be provided as input,
+or otherwise the server returns a validation error.
+
+```python
+import strawberry
+from strawberry.schema_directives import OneOf
+
+
+@strawberry.input(directives=[OneOf])
+class UserByInput:
+    id: strawberry.ID
+    name: str
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user(self, by: UserByInput) -> User:
+        ...
+```
