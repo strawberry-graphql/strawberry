@@ -1,5 +1,5 @@
 ---
-title: ValidationCache
+title: Validation Cache
 summary: Add in memory caching to the validation step of query execution.
 tags: performance,caching,validation
 ---
@@ -26,7 +26,8 @@ schema = strawberry.Schema(
 ## API reference:
 
 ```python
-class ValidationCache(maxsize=None): ...
+class ValidationCache(maxsize=None):
+    ...
 ```
 
 #### `maxsize: Optional[int] = None`

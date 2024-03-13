@@ -1,5 +1,5 @@
 ---
-title: MaxAliasesLimiter
+title: Max Aliases Limiter
 summary:
   Add a validator to limit the maximum number of aliases in a GraphQL document.
 tags: security
@@ -27,7 +27,8 @@ schema = strawberry.Schema(
 ## API reference:
 
 ```python
-class MaxAliasesLimiter(max_alias_count): ...
+class MaxAliasesLimiter(max_alias_count):
+    ...
 ```
 
 #### `max_alias_count: int`
