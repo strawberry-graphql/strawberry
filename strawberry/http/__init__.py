@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union
 from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
@@ -13,6 +13,35 @@ class GraphQLHTTPResponse(TypedDict, total=False):
     data: Optional[Dict[str, object]]
     errors: Optional[List[object]]
     extensions: Optional[Dict[str, object]]
+
+
+class GraphQLIncrementalHTTPResponse(TypedDict, total=False):
+    data: Optional[Dict[str, object]]
+    errors: Optional[List[object]]
+    extensions: Optional[Dict[str, object]]
+    incremental: List[GraphQLHTTPIncrementalResult]
+    label: Optional[str]
+    hasNext: Optional[bool]
+
+
+class GraphQLHTTPIncrementalStreamResult(TypedDict, total=False):
+    errors: Optional[List[object]]
+    items: Optional[List[object]]
+    path: Optional[List[Union[str, int]]]
+    label: Optional[str]
+    extensions: Optional[Dict[str, object]]
+
+
+class GraphQLHTTPIncrementalDeferResult(TypedDict, total=False):
+    errors: Optional[List[object]]
+    path: Optional[List[Union[str, int]]]
+    label: Optional[str]
+    extensions: Optional[Dict[str, object]]
+
+
+GraphQLHTTPIncrementalResult = Union[
+    GraphQLHTTPIncrementalStreamResult, GraphQLHTTPIncrementalDeferResult
+]
 
 
 def process_result(result: ExecutionResult) -> GraphQLHTTPResponse:

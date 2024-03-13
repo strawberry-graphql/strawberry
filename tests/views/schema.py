@@ -125,6 +125,11 @@ class Query:
 
         return name
 
+    @strawberry.field
+    def count(self) -> strawberry.Streamable[int]:
+        yield 1
+        yield 2
+
 
 @strawberry.type
 class Mutation:

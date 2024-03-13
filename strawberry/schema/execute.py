@@ -4,7 +4,6 @@ from asyncio import ensure_future
 from inspect import isawaitable
 from typing import (
     TYPE_CHECKING,
-    AsyncGenerator,
     Awaitable,
     Callable,
     Iterable,
@@ -27,11 +26,7 @@ from graphql.validation import validate
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.extensions.runner import SchemaExtensionsRunner
-from strawberry.types import (
-    ExecutionResult,
-    IncrementalExecutionResult,
-    MoreIncrementalExecutionResult,
-)
+from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 
 from .exceptions import InvalidOperationTypeError
@@ -90,7 +85,12 @@ async def execute(
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
-) -> Union[ExecutionResult, IncrementalExecutionResult, SubscriptionExecutionResult]:
+) -> Union[
+    ExecutionResult,
+    # TODO: do we want to introduce our type here again, for the experimental incremental execution?
+    ExperimentalIncrementalExecutionResults,
+    SubscriptionExecutionResult,
+]:
     extensions_runner = SchemaExtensionsRunner(
         execution_context=execution_context,
         extensions=list(extensions),
@@ -174,30 +174,7 @@ async def execute(
                     result = await cast(Awaitable["GraphQLExecutionResult"], result)
 
                 if isinstance(result, ExperimentalIncrementalExecutionResults):
-                    # TODO: reintroduce process errors
-                    async def more_results(
-                        result: ExperimentalIncrementalExecutionResults,
-                    ) -> AsyncGenerator[MoreIncrementalExecutionResult, None]:
-                        async for next_result in result.subsequent_results:
-                            if next_result.incremental:
-                                for incremental_update in next_result.incremental:
-                                    yield MoreIncrementalExecutionResult(
-                                        items=incremental_update.items,
-                                        errors=incremental_update.errors,
-                                        path=incremental_update.path,
-                                    )
-
-                            # TODO: next_result.extensions
-                            # TODO: next_result.has_next
-
-                    return IncrementalExecutionResult(
-                        initial_result=ExecutionResult(
-                            data=result.initial_result.data,
-                            errors=result.initial_result.errors,
-                        ),
-                        has_next=result.initial_result.has_next,
-                        more_results=more_results(result),
-                    )
+                    return result
 
                 result = cast("GraphQLExecutionResult", result)
                 execution_context.result = result

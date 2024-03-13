@@ -99,6 +99,7 @@ class MoreIncrementalExecutionResult:
     items: List[Any]
     errors: Optional[List[GraphQLError]]
     path: List[str | int]
+    # TODO: has next?
 
 
 @dataclasses.dataclass
