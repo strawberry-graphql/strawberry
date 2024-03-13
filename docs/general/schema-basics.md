@@ -157,7 +157,7 @@ Continuing with this example of books and authors, resolvers can be defined to
 provide values to the fields:
 
 ```python
-def get_author_for_book(root) -> "Author":
+def get_author_for_book() -> "Author":
     return Author(name="Michael Crichton")
 
 
@@ -167,7 +167,7 @@ class Book:
     author: "Author" = strawberry.field(resolver=get_author_for_book)
 
 
-def get_books_for_author(root):
+def get_books_for_author() -> typing.List[Book]:
     return [Book(title="Jurassic Park")]
 
 
@@ -177,7 +177,7 @@ class Author:
     books: typing.List[Book] = strawberry.field(resolver=get_books_for_author)
 
 
-def get_authors(root) -> typing.List[Author]:
+def get_authors() -> typing.List[Author]:
     return [Author(name="Michael Crichton")]
 
 
