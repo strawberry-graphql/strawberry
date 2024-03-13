@@ -26,8 +26,8 @@
     class Example:
         a: str
         b: str = strawberry.federation.field(name="b")
-        c: str = strawberry.federation.field(name="c", resolver=some_resolver)
-        d: str = strawberry.federation.field(resolver=some_resolver_2)
+        c: strawberry.Resolver[str] = strawberry.federation.field(name="c", resolver=some_resolver)
+        d: strawberry.Resolver[str] = strawberry.federation.field(resolver=some_resolver_2)
 
         @strawberry.federation.field(description="ABC")
         def e(self, info: Info) -> str:
@@ -46,8 +46,8 @@
   out: |
     main:25: note: Revealed type is "builtins.str"
     main:26: note: Revealed type is "builtins.str"
-    main:27: note: Revealed type is "builtins.str"
-    main:28: note: Revealed type is "builtins.str"
+    main:27: note: Revealed type is "strawberry.types.types.Resolver[builtins.str]"
+    main:28: note: Revealed type is "strawberry.types.types.Resolver[builtins.str]"
     main:29: note: Revealed type is "Any"
     main:30: note: Revealed type is "Any"
 
@@ -105,7 +105,7 @@
     @strawberry.type
     class Example:
         a: str = strawberry.federation.field(description="Example")
-        b: str = strawberry.federation.field(resolver=resolver)
+        b: strawberry.Resolver[str] = strawberry.federation.field(resolver=resolver)
         c: str
 
     i = Example(a="a", c="c")
@@ -113,3 +113,28 @@
     reveal_type(i.a)
   out: |
     main:14: note: Revealed type is "builtins.str"
+
+- case: test_does_not_mistake_fields_with_resolvers_for_attributes
+  main: |
+    import strawberry
+
+    def some_resolver() -> str:
+        return ""
+
+    @strawberry.federation.type
+    class Example:
+        a: strawberry.Resolver[str] = strawberry.federation.field(name="a", resolver=some_resolver)
+
+    def test_reading(example: Example) -> str:
+        return example.a
+
+    def test_writing(example: Example, value: str) -> None:
+        example.a = value
+
+    def test_cant_instantiate_resolver() -> strawberry.Resolver[str]:
+        return strawberry.Resolver()
+
+  out: |
+    main:11: error: Incompatible return value type (got "Resolver[str]", expected "str")  [return-value]
+    main:14: error: Incompatible types in assignment (expression has type "str", variable has type "Resolver[str]")  [assignment]
+    main:17: error: Cannot instantiate abstract class "Resolver" with abstract attribute "__do_not_instantiate_this"  [abstract]

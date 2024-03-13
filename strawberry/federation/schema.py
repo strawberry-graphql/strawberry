@@ -30,7 +30,7 @@ from graphql.type.definition import GraphQLArgument
 
 from strawberry.printer import print_schema
 from strawberry.schema import Schema as BaseSchema
-from strawberry.types.types import StrawberryObjectDefinition
+from strawberry.types.types import Resolver, StrawberryObjectDefinition
 from strawberry.utils.inspect import get_func_args
 
 from .schema_directive import StrawberryFederationSchemaDirective
@@ -122,7 +122,7 @@ class Schema(BaseSchema):
 
         @strawberry.type(name="_Service")
         class Service:
-            sdl: str = strawberry.field(
+            sdl: Resolver[str] = strawberry.field(
                 resolver=lambda: print_schema(self),
             )
 

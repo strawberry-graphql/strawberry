@@ -23,7 +23,7 @@
 
     @strawberry.type
     class Mutation:
-        set_name: None = strawberry.mutation(resolver=set_name)
+        set_name: strawberry.Resolver[None] = strawberry.mutation(resolver=set_name)
 
     Mutation()
     Mutation(n="Patrick")
