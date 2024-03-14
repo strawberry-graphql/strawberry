@@ -206,6 +206,29 @@ consider if it is possible to use alternative solutions like the `@skip` or
 without permission. Check the GraphQL documentation for more information on
 [directives](https://graphql.org/learn/queries/#directives).
 
+## Boolean Operations
+
+When using the `PermissionExtension`, it is possible to combine permissions 
+using the `&` and `|` operators to form boolean logic.  For example, if you 
+want a field to be accessible with either the `IsAdmin` or `IsOwner` permission
+you could define the field as follows:
+
+```python
+import strawberry
+from strawberry.permission import PermissionExtension, BasePermission
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(
+        extensions=[
+            PermissionExtension(permissions=[(IsAdmin() | IsOwner())], fail_silently=True)
+        ]
+    )
+    def name(self) -> str:
+        return "ABC"
+```
+
 ## Customizable Error Handling
 
 To customize the error handling, the `on_unauthorized` method on the
