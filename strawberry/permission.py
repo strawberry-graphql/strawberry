@@ -170,8 +170,9 @@ class OrPermission(BoolPermission):
 
         raise self.left.on_unauthorized()
 
-    async def resolve_permission_async(self, source: Any, info: Info,
-                                       **kwargs: Any) -> bool:
+    async def resolve_permission_async(
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> bool:
         if await await_maybe(self.left.has_permission(source, info, **kwargs)):
             return True
         if await await_maybe(self.right.has_permission(source, info, **kwargs)):
