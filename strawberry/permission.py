@@ -89,7 +89,6 @@ class BasePermission(abc.ABC):
     @property
     def schema_directive(self) -> List[object]:
         if not self._schema_directive:
-
             class AutoDirective:
                 __strawberry_directive__ = StrawberrySchemaDirective(
                     self.__class__.__name__,
@@ -247,14 +246,14 @@ class PermissionExtension(FieldExtension):
         Checks if the permission should be accepted and
         raises an exception if not
         """
-        for permission in self.permissions:
-            try:
+        try:
+            for permission in self.permissions:
                 permission.resolve_permission_sync(source, info, **kwargs)
-            except BaseException as e:
-                if self.fail_silently:
-                    return [] if self.return_empty_list else None
-                else:
-                    raise e
+        except BaseException as e:
+            if self.fail_silently:
+                return [] if self.return_empty_list else None
+            else:
+                raise e
         return next_(source, info, **kwargs)
 
     async def resolve_async(
@@ -264,14 +263,14 @@ class PermissionExtension(FieldExtension):
         info: Info,
         **kwargs: Dict[str, Any],
     ) -> Any:
-        for permission in self.permissions:
-            try:
+        try:
+            for permission in self.permissions:
                 await permission.resolve_permission_async(source, info, **kwargs)
-            except BaseException as e:
-                if self.fail_silently:
-                    return [] if self.return_empty_list else None
-                else:
-                    raise e
+        except BaseException as e:
+            if self.fail_silently:
+                return [] if self.return_empty_list else None
+            else:
+                raise e
         next = next_(source, info, **kwargs)
         if inspect.isasyncgen(next):
             return next
