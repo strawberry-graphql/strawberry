@@ -56,21 +56,21 @@ class BasePermission(abc.ABC):
             "Permission classes should override has_permission method"
         )
 
-    def resolve_permission_sync(self, source: Any, info: Info, **kwargs: Any) -> bool:
+    def resolve_permission_sync(self, source: Any, info: Info, **kwargs: Any) -> None:
         if self.has_permission(source, info, **kwargs):
-            return True
+            return
         else:
-            raise self.on_unauthorized()
+            return self.on_unauthorized()
 
     async def resolve_permission_async(
         self, source: Any, info: Info, **kwargs: Any
-    ) -> bool:
+    ) -> None:
         if await await_maybe(self.has_permission(source, info, **kwargs)):
-            return True
+            return
         else:
-            raise self.on_unauthorized()
+            return self.on_unauthorized()
 
-    def on_unauthorized(self) -> Exception:
+    def on_unauthorized(self) -> None:
         """
         Default error raising for permissions.
         This can be overridden to customize the behavior.
@@ -84,7 +84,7 @@ class BasePermission(abc.ABC):
                 error.extensions = dict()
             error.extensions.update(self.error_extensions)
 
-        return error
+        raise error
 
     @property
     def schema_directive(self) -> List[object]:
@@ -138,46 +138,43 @@ class AndPermission(BoolPermission):
     def __init__(self, left: BasePermission, right: BasePermission):
         super().__init__(left, right)
 
-    def resolve_permission_sync(self, source: Any, info: Info, **kwargs: Any) -> bool:
+    def resolve_permission_sync(self, source: Any, info: Info,
+                                **kwargs: Any) -> None:
         if not self.left.has_permission(source, info, **kwargs):
-            raise self.left.on_unauthorized()
+            return self.left.on_unauthorized()
         if not self.right.has_permission(source, info, **kwargs):
-            raise self.right.on_unauthorized()
-
-        return True
+            return self.right.on_unauthorized()
 
     async def resolve_permission_async(
         self, source: Any, info: Info, **kwargs: Any
-    ) -> bool:
+    ) -> None:
         if not await await_maybe(self.left.has_permission(source, info, **kwargs)):
-            raise self.left.on_unauthorized()
+            return self.left.on_unauthorized()
         if not await await_maybe(self.right.has_permission(source, info, **kwargs)):
-            raise self.right.on_unauthorized()
-
-        return True
+            return self.right.on_unauthorized()
 
 
 class OrPermission(BoolPermission):
     def __init__(self, left: BasePermission, right: BasePermission):
         super().__init__(left, right)
 
-    def resolve_permission_sync(self, source: Any, info: Info, **kwargs: Any) -> bool:
+    def resolve_permission_sync(self, source: Any, info: Info, **kwargs: Any) -> None:
         if self.left.has_permission(source, info, **kwargs):
-            return True
+            return
         if self.right.has_permission(source, info, **kwargs):
-            return True
+            return
 
-        raise self.left.on_unauthorized()
+        return self.left.on_unauthorized()
 
     async def resolve_permission_async(
         self, source: Any, info: Info, **kwargs: Any
-    ) -> bool:
+    ) -> None:
         if await await_maybe(self.left.has_permission(source, info, **kwargs)):
-            return True
+            return
         if await await_maybe(self.right.has_permission(source, info, **kwargs)):
-            return True
+            return
 
-        raise self.left.on_unauthorized()
+        return self.left.on_unauthorized()
 
 
 class PermissionExtension(FieldExtension):
@@ -230,11 +227,6 @@ class PermissionExtension(FieldExtension):
                 errror = PermissionFailSilentlyRequiresOptionalError(field)
                 raise errror
 
-    def _on_unauthorized(self, permission: BasePermission) -> Any:
-        if self.fail_silently:
-            return [] if self.return_empty_list else None
-        return permission.on_unauthorized()
-
     def resolve(
         self,
         next_: SyncExtensionResolver,
@@ -283,6 +275,6 @@ class PermissionExtension(FieldExtension):
         async_permissions = [
             True
             for permission in self.permissions
-            if iscoroutinefunction(permission.has_permission)
+            if permission.is_async
         ]
         return len(async_permissions) == 0
