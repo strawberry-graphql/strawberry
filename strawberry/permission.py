@@ -62,8 +62,9 @@ class BasePermission(abc.ABC):
         else:
             raise self.on_unauthorized()
 
-    async def resolve_permission_async(self, source: Any, info: Info,
-                                       **kwargs: Any) -> bool:
+    async def resolve_permission_async(
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> bool:
         if await await_maybe(self.has_permission(source, info, **kwargs)):
             return True
         else:
@@ -88,6 +89,7 @@ class BasePermission(abc.ABC):
     @property
     def schema_directive(self) -> List[object]:
         if not self._schema_directive:
+
             class AutoDirective:
                 __strawberry_directive__ = StrawberrySchemaDirective(
                     self.__class__.__name__,
@@ -108,7 +110,6 @@ class BasePermission(abc.ABC):
         return AndPermission(self, other)
 
     def __or__(self, other: BasePermission):
-
         return OrPermission(self, other)
 
 
@@ -120,8 +121,9 @@ class BoolPermission(BasePermission, abc.ABC):
         self.left = left
         self.right = right
 
-    def has_permission(self, source: Any, info: Info, **kwargs: Any) -> Union[
-        bool, Awaitable[bool]]:
+    def has_permission(
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> Union[bool, Awaitable[bool]]:
         pass
 
     @property
@@ -145,8 +147,9 @@ class AndPermission(BoolPermission):
 
         return True
 
-    async def resolve_permission_async(self, source: Any, info: Info,
-                                       **kwargs: Any) -> bool:
+    async def resolve_permission_async(
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> bool:
         if not await await_maybe(self.left.has_permission(source, info, **kwargs)):
             raise self.left.on_unauthorized()
         if not await await_maybe(self.right.has_permission(source, info, **kwargs)):
@@ -209,8 +212,12 @@ class PermissionExtension(FieldExtension):
         """
         if self.use_directives:
             field.directives.extend(
-                [directive for p in self.permissions for directive in p.schema_directive
-                 if p.schema_directive]
+                [
+                    directive
+                    for p in self.permissions
+                    for directive in p.schema_directive
+                    if p.schema_directive
+                ]
             )
         # We can only fail silently if the field is optional or a list
         if self.fail_silently:

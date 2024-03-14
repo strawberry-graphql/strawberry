@@ -208,10 +208,10 @@ without permission. Check the GraphQL documentation for more information on
 
 ## Boolean Operations
 
-When using the `PermissionExtension`, it is possible to combine permissions 
-using the `&` and `|` operators to form boolean logic.  For example, if you 
-want a field to be accessible with either the `IsAdmin` or `IsOwner` permission
-you could define the field as follows:
+When using the `PermissionExtension`, it is possible to combine permissions
+using the `&` and `|` operators to form boolean logic. For example, if you want
+a field to be accessible with either the `IsAdmin` or `IsOwner` permission you
+could define the field as follows:
 
 ```python
 import strawberry
@@ -222,7 +222,9 @@ from strawberry.permission import PermissionExtension, BasePermission
 class Query:
     @strawberry.field(
         extensions=[
-            PermissionExtension(permissions=[(IsAdmin() | IsOwner())], fail_silently=True)
+            PermissionExtension(
+                permissions=[(IsAdmin() | IsOwner())], fail_silently=True
+            )
         ]
     )
     def name(self) -> str:
