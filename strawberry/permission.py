@@ -56,12 +56,24 @@ class BasePermission(abc.ABC):
             "Permission classes should override has_permission method"
         )
 
-    def on_unauthorized(self) -> None:
+    def resolve_permission_sync(self, source: Any, info: Info, **kwargs: Any) -> bool:
+        if self.has_permission(source, info, **kwargs):
+            return True
+        else:
+            raise self.on_unauthorized()
+
+    async def resolve_permission_async(self, source: Any, info: Info,
+                                       **kwargs: Any) -> bool:
+        if await await_maybe(self.has_permission(source, info, **kwargs)):
+            return True
+        else:
+            raise self.on_unauthorized()
+
+    def on_unauthorized(self) -> Exception:
         """
         Default error raising for permissions.
         This can be overridden to customize the behavior.
         """
-
         # Instantiate error class
         error = self.error_class(self.message or "")
 
@@ -71,12 +83,11 @@ class BasePermission(abc.ABC):
                 error.extensions = dict()
             error.extensions.update(self.error_extensions)
 
-        raise error
+        return error
 
     @property
-    def schema_directive(self) -> object:
+    def schema_directive(self) -> List[object]:
         if not self._schema_directive:
-
             class AutoDirective:
                 __strawberry_directive__ = StrawberrySchemaDirective(
                     self.__class__.__name__,
@@ -87,7 +98,86 @@ class BasePermission(abc.ABC):
 
             self._schema_directive = AutoDirective()
 
-        return self._schema_directive
+        return [self._schema_directive]
+
+    @property
+    def is_async(self) -> bool:
+        return iscoroutinefunction(self.has_permission)
+
+    def __and__(self, other: BasePermission):
+        return AndPermission(self, other)
+
+    def __or__(self, other):
+        return OrPermission(self, other)
+
+
+class BoolPermission(BasePermission, abc.ABC):
+    left: BasePermission
+    right: BasePermission
+
+    def __init__(self, left: BasePermission, right: BasePermission):
+        self.left = left
+        self.right = right
+
+    def has_permission(self, source: Any, info: Info, **kwargs: Any) -> Union[
+        bool, Awaitable[bool]]:
+        pass
+
+    @property
+    def is_async(self) -> bool:
+        return self.left.is_async | self.right.is_async
+
+    @property
+    def schema_directive(self) -> List[object]:
+        return self.left.schema_directive + self.right.schema_directive
+
+
+class AndPermission(BoolPermission):
+    def resolve_permission_sync(self, source: Any, info: Info, **kwargs: Any) -> bool:
+        exceptions = []
+        if not self.left.has_permission(source, info, **kwargs):
+            exceptions.append(self.left.on_unauthorized())
+        if not self.right.has_permission(source, info, **kwargs):
+            exceptions.append(self.right.on_unauthorized())
+
+        if len(exceptions) == 0:
+            return True
+
+        raise ExceptionGroup("Permission Denied", exceptions)
+
+    async def resolve_permission_async(self, source: Any, info: Info,
+                                       **kwargs: Any) -> bool:
+        exceptions = []
+        if not await await_maybe(self.left.has_permission(source, info, **kwargs)):
+            exceptions.append(self.left.on_unauthorized())
+        if not await await_maybe(self.right.has_permission(source, info, **kwargs)):
+            exceptions.append(self.right.on_unauthorized())
+
+        if len(exceptions) == 0:
+            return True
+
+        raise ExceptionGroup("Permission Denied", exceptions)
+
+
+class OrPermission(BoolPermission):
+    def resolve_permission_sync(self, source: Any, info: Info, **kwargs: Any) -> bool:
+        if self.left.has_permission(source, info, **kwargs):
+            return True
+        if self.right.has_permission(source, info, **kwargs):
+            return True
+
+        raise ExceptionGroup("Permission Denied", [self.right.on_unauthorized(),
+                                                   self.left.on_unauthorized()])
+
+    async def resolve_permission_async(self, source: Any, info: Info,
+                                       **kwargs: Any) -> bool:
+        if await await_maybe(self.left.has_permission(source, info, **kwargs)):
+            return True
+        if await await_maybe(self.right.has_permission(source, info, **kwargs)):
+            return True
+
+        raise ExceptionGroup("Permission Denied", [self.right.on_unauthorized(),
+                                                   self.left.on_unauthorized()])
 
 
 class PermissionExtension(FieldExtension):
@@ -122,7 +212,8 @@ class PermissionExtension(FieldExtension):
         """
         if self.use_directives:
             field.directives.extend(
-                p.schema_directive for p in self.permissions if p.schema_directive
+                directive for directive in
+                (p.schema_directive for p in self.permissions if p.schema_directive)
             )
         # We can only fail silently if the field is optional or a list
         if self.fail_silently:
@@ -152,8 +243,13 @@ class PermissionExtension(FieldExtension):
         raises an exception if not
         """
         for permission in self.permissions:
-            if not permission.has_permission(source, info, **kwargs):
-                return self._on_unauthorized(permission)
+            try:
+                permission.resolve_permission_sync(source, info, **kwargs)
+            except BaseException as e:
+                if self.fail_silently:
+                    return [] if self.return_empty_list else None
+                else:
+                    raise e
         return next_(source, info, **kwargs)
 
     async def resolve_async(
@@ -164,12 +260,13 @@ class PermissionExtension(FieldExtension):
         **kwargs: Dict[str, Any],
     ) -> Any:
         for permission in self.permissions:
-            has_permission = await await_maybe(
-                permission.has_permission(source, info, **kwargs)
-            )
-
-            if not has_permission:
-                return self._on_unauthorized(permission)
+            try:
+                await permission.resolve_permission_async(source, info, **kwargs)
+            except BaseException as e:
+                if self.fail_silently:
+                    return [] if self.return_empty_list else None
+                else:
+                    raise e
         next = next_(source, info, **kwargs)
         if inspect.isasyncgen(next):
             return next
