@@ -107,7 +107,7 @@ class BasePermission(abc.ABC):
     def __and__(self, other: BasePermission):
         return AndPermission(self, other)
 
-    def __or__(self, other):
+    def __or__(self, other: BasePermission):
 
         return OrPermission(self, other)
 
@@ -167,15 +167,14 @@ class OrPermission(BoolPermission):
 
         raise self.left.on_unauthorized()
 
+    async def resolve_permission_async(self, source: Any, info: Info,
+                                       **kwargs: Any) -> bool:
+        if await await_maybe(self.left.has_permission(source, info, **kwargs)):
+            return True
+        if await await_maybe(self.right.has_permission(source, info, **kwargs)):
+            return True
 
-async def resolve_permission_async(self, source: Any, info: Info,
-                                   **kwargs: Any) -> bool:
-    if await await_maybe(self.left.has_permission(source, info, **kwargs)):
-        return True
-    if await await_maybe(self.right.has_permission(source, info, **kwargs)):
-        return True
-
-    raise self.left.on_unauthorized()
+        raise self.left.on_unauthorized()
 
 
 class PermissionExtension(FieldExtension):
