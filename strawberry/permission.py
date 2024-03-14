@@ -108,6 +108,7 @@ class BasePermission(abc.ABC):
         return AndPermission(self, other)
 
     def __or__(self, other):
+
         return OrPermission(self, other)
 
 
@@ -133,51 +134,48 @@ class BoolPermission(BasePermission, abc.ABC):
 
 
 class AndPermission(BoolPermission):
+    def __init__(self, left: BasePermission, right: BasePermission):
+        super().__init__(left, right)
+
     def resolve_permission_sync(self, source: Any, info: Info, **kwargs: Any) -> bool:
-        exceptions = []
         if not self.left.has_permission(source, info, **kwargs):
-            exceptions.append(self.left.on_unauthorized())
+            raise self.left.on_unauthorized()
         if not self.right.has_permission(source, info, **kwargs):
-            exceptions.append(self.right.on_unauthorized())
+            raise self.right.on_unauthorized()
 
-        if len(exceptions) == 0:
-            return True
-
-        raise ExceptionGroup("Permission Denied", exceptions)
+        return True
 
     async def resolve_permission_async(self, source: Any, info: Info,
                                        **kwargs: Any) -> bool:
-        exceptions = []
         if not await await_maybe(self.left.has_permission(source, info, **kwargs)):
-            exceptions.append(self.left.on_unauthorized())
+            raise self.left.on_unauthorized()
         if not await await_maybe(self.right.has_permission(source, info, **kwargs)):
-            exceptions.append(self.right.on_unauthorized())
+            raise self.right.on_unauthorized()
 
-        if len(exceptions) == 0:
-            return True
-
-        raise ExceptionGroup("Permission Denied", exceptions)
+        return True
 
 
 class OrPermission(BoolPermission):
+    def __init__(self, left: BasePermission, right: BasePermission):
+        super().__init__(left, right)
+
     def resolve_permission_sync(self, source: Any, info: Info, **kwargs: Any) -> bool:
         if self.left.has_permission(source, info, **kwargs):
             return True
         if self.right.has_permission(source, info, **kwargs):
             return True
 
-        raise ExceptionGroup("Permission Denied", [self.right.on_unauthorized(),
-                                                   self.left.on_unauthorized()])
+        raise self.left.on_unauthorized()
 
-    async def resolve_permission_async(self, source: Any, info: Info,
-                                       **kwargs: Any) -> bool:
-        if await await_maybe(self.left.has_permission(source, info, **kwargs)):
-            return True
-        if await await_maybe(self.right.has_permission(source, info, **kwargs)):
-            return True
 
-        raise ExceptionGroup("Permission Denied", [self.right.on_unauthorized(),
-                                                   self.left.on_unauthorized()])
+async def resolve_permission_async(self, source: Any, info: Info,
+                                   **kwargs: Any) -> bool:
+    if await await_maybe(self.left.has_permission(source, info, **kwargs)):
+        return True
+    if await await_maybe(self.right.has_permission(source, info, **kwargs)):
+        return True
+
+    raise self.left.on_unauthorized()
 
 
 class PermissionExtension(FieldExtension):
@@ -212,8 +210,8 @@ class PermissionExtension(FieldExtension):
         """
         if self.use_directives:
             field.directives.extend(
-                directive for directive in
-                (p.schema_directive for p in self.permissions if p.schema_directive)
+                [directive for p in self.permissions for directive in p.schema_directive
+                 if p.schema_directive]
             )
         # We can only fail silently if the field is optional or a list
         if self.fail_silently:
