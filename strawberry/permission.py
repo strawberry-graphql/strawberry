@@ -58,7 +58,7 @@ class BasePermission(abc.ABC):
 
     def resolve_permission_sync(self, source: Any, info: Info, **kwargs: Any) -> None:
         if self.has_permission(source, info, **kwargs):
-            return
+            return None
         else:
             return self.on_unauthorized()
 
@@ -66,7 +66,7 @@ class BasePermission(abc.ABC):
         self, source: Any, info: Info, **kwargs: Any
     ) -> None:
         if await await_maybe(self.has_permission(source, info, **kwargs)):
-            return
+            return None
         else:
             return self.on_unauthorized()
 
@@ -139,8 +139,7 @@ class AndPermission(BoolPermission):
     def __init__(self, left: BasePermission, right: BasePermission):
         super().__init__(left, right)
 
-    def resolve_permission_sync(self, source: Any, info: Info,
-                                **kwargs: Any) -> None:
+    def resolve_permission_sync(self, source: Any, info: Info, **kwargs: Any) -> None:
         if not self.left.has_permission(source, info, **kwargs):
             return self.left.on_unauthorized()
         if not self.right.has_permission(source, info, **kwargs):
@@ -161,9 +160,9 @@ class OrPermission(BoolPermission):
 
     def resolve_permission_sync(self, source: Any, info: Info, **kwargs: Any) -> None:
         if self.left.has_permission(source, info, **kwargs):
-            return
+            return None
         if self.right.has_permission(source, info, **kwargs):
-            return
+            return None
 
         return self.left.on_unauthorized()
 
@@ -171,9 +170,9 @@ class OrPermission(BoolPermission):
         self, source: Any, info: Info, **kwargs: Any
     ) -> None:
         if await await_maybe(self.left.has_permission(source, info, **kwargs)):
-            return
+            return None
         if await await_maybe(self.right.has_permission(source, info, **kwargs)):
-            return
+            return None
 
         return self.left.on_unauthorized()
 
@@ -274,8 +273,6 @@ class PermissionExtension(FieldExtension):
         """The Permission extension always supports async checking using await_maybe,
         but only supports sync checking if there are no async permissions"""
         async_permissions = [
-            True
-            for permission in self.permissions
-            if permission.is_async
+            True for permission in self.permissions if permission.is_async
         ]
         return len(async_permissions) == 0
