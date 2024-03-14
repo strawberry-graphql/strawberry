@@ -24,6 +24,7 @@ def test_raises_graphql_error_when_permission_method_is_missing():
     )
 
     with pytest.raises(TypeError, match=error_msg):
+
         @strawberry.type
         class Query:
             @strawberry.field(permission_classes=[IsAuthenticated])
@@ -65,8 +66,11 @@ def test_no_graphql_error_when_and_permission_is_allowed():
 
     @strawberry.type
     class Query:
-        @strawberry.field(extensions=[
-            PermissionExtension(permissions=[(TruePermission() & TruePermission())])])
+        @strawberry.field(
+            extensions=[
+                PermissionExtension(permissions=[(TruePermission() & TruePermission())])
+            ]
+        )
         def user(self) -> str:  # pragma: no cover
             return "patrick"
 
@@ -97,8 +101,13 @@ def test_raises_graphql_error_when_right_and_permission_is_denied():
 
     @strawberry.type
     class Query:
-        @strawberry.field(extensions=[
-            PermissionExtension(permissions=[(TruePermission() & FalsePermission())])])
+        @strawberry.field(
+            extensions=[
+                PermissionExtension(
+                    permissions=[(TruePermission() & FalsePermission())]
+                )
+            ]
+        )
         def user(self) -> str:  # pragma: no cover
             return "patrick"
 
@@ -129,8 +138,13 @@ def test_raises_graphql_error_when_left_and_permission_is_denied():
 
     @strawberry.type
     class Query:
-        @strawberry.field(extensions=[
-            PermissionExtension(permissions=[(FalsePermission() & TruePermission())])])
+        @strawberry.field(
+            extensions=[
+                PermissionExtension(
+                    permissions=[(FalsePermission() & TruePermission())]
+                )
+            ]
+        )
         def user(self) -> str:  # pragma: no cover
             return "patrick"
 
@@ -161,9 +175,13 @@ def test_raises_graphql_error_from_left_exception_when_both_and_permission_is_de
 
     @strawberry.type
     class Query:
-        @strawberry.field(extensions=[
-            PermissionExtension(
-                permissions=[(FalseLeftPermission() & FalseRightPermission())])])
+        @strawberry.field(
+            extensions=[
+                PermissionExtension(
+                    permissions=[(FalseLeftPermission() & FalseRightPermission())]
+                )
+            ]
+        )
         def user(self) -> str:  # pragma: no cover
             return "patrick"
 
@@ -186,8 +204,11 @@ def test_no_graphql_error_when_both_or_permission_is_allowed():
 
     @strawberry.type
     class Query:
-        @strawberry.field(extensions=[
-            PermissionExtension(permissions=[(TruePermission() | TruePermission())])])
+        @strawberry.field(
+            extensions=[
+                PermissionExtension(permissions=[(TruePermission() | TruePermission())])
+            ]
+        )
         def user(self) -> str:  # pragma: no cover
             return "patrick"
 
@@ -218,8 +239,13 @@ def test_no_graphql_error_when_left_or_permission_is_allowed():
 
     @strawberry.type
     class Query:
-        @strawberry.field(extensions=[
-            PermissionExtension(permissions=[(TruePermission() | FalsePermission())])])
+        @strawberry.field(
+            extensions=[
+                PermissionExtension(
+                    permissions=[(TruePermission() | FalsePermission())]
+                )
+            ]
+        )
         def user(self) -> str:  # pragma: no cover
             return "patrick"
 
@@ -250,8 +276,13 @@ def test_no_graphql_error_when_right_or_permission_is_allowed():
 
     @strawberry.type
     class Query:
-        @strawberry.field(extensions=[
-            PermissionExtension(permissions=[(FalsePermission()) | TruePermission()])])
+        @strawberry.field(
+            extensions=[
+                PermissionExtension(
+                    permissions=[(FalsePermission()) | TruePermission()]
+                )
+            ]
+        )
         def user(self) -> str:  # pragma: no cover
             return "patrick"
 
@@ -282,9 +313,13 @@ def test_raises_graphql_error_from_left_exception_when_both_or_permission_is_den
 
     @strawberry.type
     class Query:
-        @strawberry.field(extensions=[
-            PermissionExtension(
-                permissions=[(FalseLeftPermission() | FalseRightPermission())])])
+        @strawberry.field(
+            extensions=[
+                PermissionExtension(
+                    permissions=[(FalseLeftPermission() | FalseRightPermission())]
+                )
+            ]
+        )
         def user(self) -> str:  # pragma: no cover
             return "patrick"
 
