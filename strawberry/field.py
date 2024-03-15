@@ -221,7 +221,15 @@ class StrawberryField(dataclasses.Field):
         if self.base_resolver:
             return self.base_resolver(*args, **kwargs)
 
-        return self.default_resolver(source, self.python_name)
+        try:
+            return self.default_resolver(source, self.python_name)
+        except AttributeError as exc:
+            # fallback if source is not available or is not an proper instance
+            if self.default:
+                return self.default
+            if self.default_factory:
+                return self.default_factory()
+            raise exc
 
     @property
     def is_basic_field(self) -> bool:
