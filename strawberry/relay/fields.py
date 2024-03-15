@@ -310,9 +310,11 @@ if TYPE_CHECKING:
     node = field
 else:
 
-    def node(*args: Any, **kwargs: Any) -> StrawberryField:
+    def node(*args: Any, default: Any = None, **kwargs: Any) -> StrawberryField:
         kwargs["extensions"] = [*kwargs.get("extensions", []), NodeExtension()]
-        return field(*args, **kwargs)
+        # the default doesn't matter at all, it is only a stub for dataclasses
+        # so you can create nodes in sub objects
+        return field(*args, default=default, **kwargs)
 
 
 @overload

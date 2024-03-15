@@ -47,6 +47,39 @@ def test_query_node():
     }
 
 
+def test_query_node_sub():
+    result = schema.execute_sync(
+        """
+        query TestQuery ($id: GlobalID!) {
+            sub {
+                node (id: $id) {
+                    ... on Node {
+                        id
+                    }
+                    ... on Fruit {
+                        name
+                        color
+                    }
+                }
+            }
+        }
+        """,
+        variable_values={
+            "id": to_base64("Fruit", 2),
+        },
+    )
+    assert result.errors is None
+    assert result.data == {
+        "sub": {
+            "node": {
+                "id": to_base64("Fruit", 2),
+                "color": "red",
+                "name": "Apple",
+            },
+        }
+    }
+
+
 async def test_query_node_with_async_permissions():
     result = await schema.execute(
         """
@@ -184,6 +217,46 @@ def test_query_nodes():
                 "color": "purple",
             },
         ],
+    }
+
+
+def test_query_nodes_sub():
+    result = schema.execute_sync(
+        """
+        query TestQuery ($ids: [GlobalID!]!) {
+            sub {
+                nodes (ids: $ids) {
+                    ... on Node {
+                        id
+                    }
+                    ... on Fruit {
+                        name
+                        color
+                    }
+                }
+            }
+        }
+        """,
+        variable_values={
+            "ids": [to_base64("Fruit", 2), to_base64("Fruit", 4)],
+        },
+    )
+    assert result.errors is None
+    assert result.data == {
+        "sub": {
+            "nodes": [
+                {
+                    "id": to_base64("Fruit", 2),
+                    "name": "Apple",
+                    "color": "red",
+                },
+                {
+                    "id": to_base64("Fruit", 4),
+                    "name": "Grape",
+                    "color": "purple",
+                },
+            ],
+        }
     }
 
 
