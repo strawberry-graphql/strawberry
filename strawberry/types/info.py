@@ -19,7 +19,7 @@ from .nodes import convert_selections
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo, OperationDefinitionNode
-    from graphql.language import FieldNode
+    from graphql.language import FieldNode, FragmentDefinitionNode
     from graphql.pyutils.path import Path
 
     from strawberry.arguments import StrawberryArgument
@@ -72,6 +72,10 @@ class Info(Generic[ContextType, RootValueType]):
     @property
     def variable_values(self) -> Dict[str, Any]:
         return self._raw_info.variable_values
+
+    @property
+    def fragments(self) -> Dict[str, FragmentDefinitionNode]:
+        return self._raw_info.fragments
 
     @property
     def return_type(
