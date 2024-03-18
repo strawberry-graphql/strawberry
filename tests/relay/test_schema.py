@@ -52,7 +52,7 @@ def test_node_id_annotation(mocker: MockerFixture):
         '''
         type Fruit implements Node {
           """The Globally Unique ID of this object"""
-          id: GlobalID!
+          id: ID!
         }
 
         """A connection to a list of items."""
@@ -73,13 +73,10 @@ def test_node_id_annotation(mocker: MockerFixture):
           node: Fruit!
         }
 
-        """__GLOBAL_ID_DESC__"""
-        scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
-
         """An object with a Globally Unique ID"""
         interface Node {
           """The Globally Unique ID of this object"""
-          id: GlobalID!
+          id: ID!
         }
 
         """Information to aid in pagination."""
@@ -163,7 +160,7 @@ def test_node_id_annotation_in_superclass(mocker: MockerFixture):
         '''
         type Fruit implements Node {
           """The Globally Unique ID of this object"""
-          id: GlobalID!
+          id: ID!
         }
 
         """A connection to a list of items."""
@@ -184,13 +181,10 @@ def test_node_id_annotation_in_superclass(mocker: MockerFixture):
           node: Fruit!
         }
 
-        """__GLOBAL_ID_DESC__"""
-        scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
-
         """An object with a Globally Unique ID"""
         interface Node {
           """The Globally Unique ID of this object"""
-          id: GlobalID!
+          id: ID!
         }
 
         """Information to aid in pagination."""
@@ -274,7 +268,7 @@ def test_node_id_annotation_in_superclass_and_subclass(mocker: MockerFixture):
         '''
         type Fruit implements Node {
           """The Globally Unique ID of this object"""
-          id: GlobalID!
+          id: ID!
         }
 
         """A connection to a list of items."""
@@ -295,13 +289,10 @@ def test_node_id_annotation_in_superclass_and_subclass(mocker: MockerFixture):
           node: Fruit!
         }
 
-        """__GLOBAL_ID_DESC__"""
-        scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
-
         """An object with a Globally Unique ID"""
         interface Node {
           """The Globally Unique ID of this object"""
-          id: GlobalID!
+          id: ID!
         }
 
         """Information to aid in pagination."""
