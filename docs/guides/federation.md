@@ -372,7 +372,7 @@ Will result in the following GraphQL schema:
 ```graphql
 schema
   @link(
-    url: "https://specs.apollo.dev/federation/v2.3"
+    url: "https://specs.apollo.dev/federation/v2.6"
     import: ["@key", "@inaccessible", "@shareable", "@tag"]
   ) {
   query: Query
