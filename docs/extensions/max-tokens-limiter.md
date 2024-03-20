@@ -30,8 +30,7 @@ tokens, the server will respond with an error message.
 ## API reference:
 
 ```python
-class MaxTokensLimiter(max_token_count):
-    ...
+class MaxTokensLimiter(max_token_count): ...
 ```
 
 #### `max_token_count: int`
