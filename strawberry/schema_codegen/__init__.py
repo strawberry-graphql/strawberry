@@ -3,8 +3,8 @@ from __future__ import annotations
 import dataclasses
 import keyword
 from collections import defaultdict
-from typing import TYPE_CHECKING, Tuple
-from typing_extensions import Protocol
+from typing import TYPE_CHECKING, List, Tuple, Union
+from typing_extensions import Protocol, TypeAlias
 
 import libcst as cst
 from graphql import (
@@ -28,6 +28,11 @@ from graphql import (
     UnionTypeDefinitionNode,
     parse,
 )
+from graphql.language.ast import (
+    BooleanValueNode,
+    ConstValueNode,
+    ListValueNode,
+)
 
 from strawberry.utils.str_converters import to_snake_case
 
@@ -36,7 +41,7 @@ if TYPE_CHECKING:
 
 
 class HasDirectives(Protocol):
-    directives: Tuple[ConstDirectiveNode]
+    directives: Tuple[ConstDirectiveNode, ...]
 
 
 _SCALAR_MAP = {
@@ -69,6 +74,7 @@ def _is_federation_link_directive(directive: ConstDirectiveNode) -> bool:
             argument.value.value
             for argument in directive.arguments
             if argument.name.value == "url"
+            if isinstance(argument.value, StringValueNode)
         ),
         "",
     ).startswith("https://specs.apollo.dev/federation")
@@ -111,7 +117,7 @@ def _get_field_type(
     )
 
 
-def _sanitize_argument(value: str | bool) -> cst.SimpleString | cst.Name:
+def _sanitize_argument(value: ArgumentValue) -> cst.SimpleString | cst.Name:
     if isinstance(value, bool):
         return cst.Name(value=str(value))
 
@@ -135,7 +141,7 @@ def _get_argument(name: str, value: str | bool) -> cst.Arg:
     )
 
 
-def _get_argument_list(name: str, values: list[str]) -> cst.Arg:
+def _get_argument_list(name: str, values: list[ArgumentValue]) -> cst.Arg:
     value = cst.List(
         elements=[cst.Element(value=_sanitize_argument(value)) for value in values],
     )
@@ -220,15 +226,33 @@ def _get_field(
     )
 
 
-def _get_directives(definition: HasDirectives) -> dict[str, list[dict[str, str]]]:
-    directives = defaultdict(list)
+ArgumentValue: TypeAlias = Union[str, bool, List["ArgumentValue"]]
+
+
+def _get_argument_value(argument_value: ConstValueNode) -> ArgumentValue:
+    if isinstance(argument_value, StringValueNode):
+        return argument_value.value
+    elif isinstance(argument_value, EnumValueDefinitionNode):
+        return argument_value.name.value
+    elif isinstance(argument_value, ListValueNode):
+        return [_get_argument_value(arg) for arg in argument_value.values]
+    elif isinstance(argument_value, BooleanValueNode):
+        return argument_value.value
+    else:
+        raise NotImplementedError(f"Unknown argument value {argument_value}")
+
+
+def _get_directives(
+    definition: HasDirectives,
+) -> dict[str, list[dict[str, ArgumentValue]]]:
+    directives: dict[str, list[dict[str, ArgumentValue]]] = defaultdict(list)
 
     for directive in definition.directives:
         directive_name = directive.name.value
 
         directives[directive_name].append(
             {
-                argument.name.value: argument.value.value
+                argument.name.value: _get_argument_value(argument.value)
                 for argument in directive.arguments
             }
         )
@@ -237,7 +261,7 @@ def _get_directives(definition: HasDirectives) -> dict[str, list[dict[str, str]]
 
 
 def _get_federation_arguments(
-    directives: dict[str, list[dict[str, str]]],
+    directives: dict[str, list[dict[str, ArgumentValue]]],
 ) -> list[cst.Arg]:
     def append_arg_from_directive(
         directive: str, argument_name: str, keyword_name: str | None = None
