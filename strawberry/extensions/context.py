@@ -147,6 +147,8 @@ class ExtensionContextManagerBase:
             if is_exit
             else contextlib.nullcontext()
         )
+        # Reverse the order of the hooks if we are exiting the context
+        # to ensure LIFO order.
         hooks = reversed(self.hooks) if is_exit else self.hooks
         for hook in hooks:
             with ctx:
@@ -169,6 +171,8 @@ class ExtensionContextManagerBase:
             if is_exit
             else contextlib.nullcontext()
         )
+        # Reverse the order of the hooks if we are exiting the context
+        # to ensure LIFO order.
         hooks = reversed(self.hooks) if is_exit else self.hooks
         for hook in hooks:
             with ctx:
