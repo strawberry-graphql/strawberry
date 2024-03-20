@@ -5,7 +5,13 @@ from strawberry import directive_field
 from strawberry.schema_directive import Location, schema_directive
 from strawberry.unset import UNSET
 
-from .types import Federation__Policy, Federation__Scope, FieldSet, LinkImport, LinkPurpose
+from .types import (
+    Federation__Policy,
+    Federation__Scope,
+    FieldSet,
+    LinkImport,
+    LinkPurpose,
+)
 
 
 @dataclass
@@ -169,18 +175,32 @@ class InterfaceObject(FederationDirective):
         name="interfaceObject", url="https://specs.apollo.dev/federation/v2.6"
     )
 
+
 @schema_directive(
-    locations=[Location.FIELD_DEFINITION, Location.OBJECT, Location.INTERFACE, Location.SCALAR, Location.ENUM],
-    name="authenticated"
+    locations=[
+        Location.FIELD_DEFINITION,
+        Location.OBJECT,
+        Location.INTERFACE,
+        Location.SCALAR,
+        Location.ENUM,
+    ],
+    name="authenticated",
 )
 class Authenticated(FederationDirective):
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
         name="authenticated", url="https://specs.apollo.dev/federation/v2.7"
     )
 
+
 @schema_directive(
-    locations=[Location.FIELD_DEFINITION, Location.OBJECT, Location.INTERFACE, Location.SCALAR, Location.ENUM],
-    name="requiresScopes"
+    locations=[
+        Location.FIELD_DEFINITION,
+        Location.OBJECT,
+        Location.INTERFACE,
+        Location.SCALAR,
+        Location.ENUM,
+    ],
+    name="requiresScopes",
 )
 class RequiresScopes(FederationDirective):
     scopes: "list[list[Federation__Scope]]"
@@ -188,9 +208,16 @@ class RequiresScopes(FederationDirective):
         name="requiresScopes", url="https://specs.apollo.dev/federation/v2.7"
     )
 
+
 @schema_directive(
-    locations=[Location.FIELD_DEFINITION, Location.OBJECT, Location.INTERFACE, Location.SCALAR, Location.ENUM],
-    name="requiresScopes"
+    locations=[
+        Location.FIELD_DEFINITION,
+        Location.OBJECT,
+        Location.INTERFACE,
+        Location.SCALAR,
+        Location.ENUM,
+    ],
+    name="requiresScopes",
 )
 class Policy(FederationDirective):
     scopes: "list[list[Federation__Policy]]"
