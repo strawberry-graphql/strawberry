@@ -3,7 +3,8 @@ from __future__ import annotations
 import dataclasses
 import keyword
 from collections import defaultdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple
+from typing_extensions import Protocol
 
 import libcst as cst
 from graphql import (
@@ -32,6 +33,10 @@ from strawberry.utils.str_converters import to_snake_case
 
 if TYPE_CHECKING:
     from graphql.language.ast import ConstDirectiveNode
+
+
+class HasDirectives(Protocol):
+    directives: Tuple[ConstDirectiveNode]
 
 
 _SCALAR_MAP = {
@@ -141,7 +146,13 @@ def _get_argument_list(name: str, values: list[str]) -> cst.Arg:
     )
 
 
-def _get_field_value(description: str | None, alias: str | None) -> cst.Call | None:
+def _get_field_value(
+    field: FieldDefinitionNode | InputValueDefinitionNode,
+    alias: str | None,
+    is_apollo_federation: bool,
+) -> cst.Call | None:
+    description = field.description.value if field.description else None
+
     args = list(
         filter(
             None,
@@ -151,6 +162,24 @@ def _get_field_value(description: str | None, alias: str | None) -> cst.Call | N
             ],
         )
     )
+
+    directives = _get_directives(field)
+
+    apollo_federation_args = _get_federation_arguments(directives)
+
+    if is_apollo_federation and apollo_federation_args:
+        args.extend(apollo_federation_args)
+
+        return cst.Call(
+            func=cst.Attribute(
+                value=cst.Attribute(
+                    value=cst.Name("strawberry"),
+                    attr=cst.Name("federation"),
+                ),
+                attr=cst.Name("field"),
+            ),
+            args=args,
+        )
 
     if args:
         return cst.Call(
@@ -166,6 +195,7 @@ def _get_field_value(description: str | None, alias: str | None) -> cst.Call | N
 
 def _get_field(
     field: FieldDefinitionNode | InputValueDefinitionNode,
+    is_apollo_federation: bool,
 ) -> cst.SimpleStatementLine:
     name = to_snake_case(field.name.value)
     alias: str | None = None
@@ -182,20 +212,14 @@ def _get_field(
                     _get_field_type(field.type),
                 ),
                 value=_get_field_value(
-                    description=field.description.value if field.description else None,
-                    alias=alias if alias != name else None,
+                    field, alias=alias, is_apollo_federation=is_apollo_federation
                 ),
             )
         ]
     )
 
 
-def _get_directives(
-    definition: ObjectTypeDefinitionNode
-    | ObjectTypeExtensionNode
-    | InterfaceTypeDefinitionNode
-    | InputObjectTypeDefinitionNode,
-) -> dict[str, list[dict[str, str]]]:
+def _get_directives(definition: HasDirectives) -> dict[str, list[dict[str, str]]]:
     directives = defaultdict(list)
 
     for directive in definition.directives:
@@ -235,6 +259,26 @@ def _get_federation_arguments(
 
     if tags:
         arguments.append(_get_argument_list("tags", tags))
+
+    requires = [key["fields"] for key in directives.get("requires", [])]
+
+    if requires:
+        arguments.append(_get_argument_list("requires", requires))
+
+    provides = [key["fields"] for key in directives.get("provides", [])]
+
+    if provides:
+        arguments.append(_get_argument_list("provides", provides))
+
+    external = directives.get("external", False)
+
+    if external:
+        arguments.append(_get_argument("external", True))
+
+    override = directives.get("override", False)
+
+    if override:
+        arguments.append(_get_argument("override", True))
 
     return arguments
 
@@ -317,7 +361,11 @@ def _get_class_definition(
     return cst.ClassDef(
         name=cst.Name(definition.name.value),
         bases=bases,
-        body=cst.IndentedBlock(body=[_get_field(field) for field in definition.fields]),
+        body=cst.IndentedBlock(
+            body=[
+                _get_field(field, is_apollo_federation) for field in definition.fields
+            ]
+        ),
         decorators=[decorator],
     )
 

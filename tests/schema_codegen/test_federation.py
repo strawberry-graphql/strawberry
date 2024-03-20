@@ -121,3 +121,37 @@ def test_uses_federation_schema():
     ).strip()
 
     assert codegen(schema).strip() == expected
+
+
+def test_support_for_directives_on_fields():
+    schema = """
+    extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@requires", "@provides"])
+
+    type User {
+        a: String! @shareable
+        b: String! @inaccessible
+        c: String! @override
+        d: String! @external
+        e: String! @requires(fields: "id")
+        f: String! @provides(fields: "id")
+        g: String! @tag(name: "user")
+    }
+    """
+
+    expected = textwrap.dedent(
+        """
+        import strawberry
+
+        @strawberry.type
+        class User:
+            a: str = strawberry.federation.field(shareable=True)
+            b: str = strawberry.federation.field(inaccessible=True)
+            c: str = strawberry.federation.field(override=True)
+            d: str = strawberry.federation.field(external=True)
+            e: str = strawberry.federation.field(requires=["id"])
+            f: str = strawberry.federation.field(provides=["id"])
+            g: str = strawberry.federation.field(tags=["user"])
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
