@@ -97,3 +97,27 @@ def test_support_for_tags_directive():
     ).strip()
 
     assert codegen(schema).strip() == expected
+
+
+def test_uses_federation_schema():
+    schema = """
+    extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@inaccessible"])
+
+    type Query {
+        me: String!
+    }
+    """
+
+    expected = textwrap.dedent(
+        """
+        import strawberry
+
+        @strawberry.type
+        class Query:
+            me: str
+
+        schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected

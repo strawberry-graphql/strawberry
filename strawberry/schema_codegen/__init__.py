@@ -356,6 +356,7 @@ def _get_schema_definition(
     root_query_name: str | None,
     root_mutation_name: str | None,
     root_subscription_name: str | None,
+    is_apollo_federation: bool,
 ) -> cst.SimpleStatementLine | None:
     if not any([root_query_name, root_mutation_name, root_subscription_name]):
         return None
@@ -378,17 +379,40 @@ def _get_schema_definition(
     if root_subscription_name:
         args.append(_get_arg("subscription", root_subscription_name))
 
+    schema_call = cst.Call(
+        func=cst.Attribute(
+            value=cst.Name("strawberry"),
+            attr=cst.Name("Schema"),
+        ),
+        args=args,
+    )
+
+    if is_apollo_federation:
+        args.append(
+            cst.Arg(
+                keyword=cst.Name("enable_federation_2"),
+                value=cst.Name("True"),
+                equal=cst.AssignEqual(
+                    cst.SimpleWhitespace(""), cst.SimpleWhitespace("")
+                ),
+            )
+        )
+        schema_call = cst.Call(
+            func=cst.Attribute(
+                value=cst.Attribute(
+                    value=cst.Name(value="strawberry"),
+                    attr=cst.Name(value="federation"),
+                ),
+                attr=cst.Name(value="Schema"),
+            ),
+            args=args,
+        )
+
     return cst.SimpleStatementLine(
         body=[
             cst.Assign(
                 targets=[cst.AssignTarget(cst.Name("schema"))],
-                value=cst.Call(
-                    func=cst.Attribute(
-                        value=cst.Name("strawberry"),
-                        attr=cst.Name("Schema"),
-                    ),
-                    args=args,
-                ),
+                value=schema_call,
             )
         ]
     )
@@ -620,6 +644,7 @@ def codegen(schema: str) -> str:
         root_query_name=root_query_name,
         root_mutation_name=root_mutation_name,
         root_subscription_name=root_subscription_name,
+        is_apollo_federation=is_apollo_federation,
     )
 
     if schema_definition:
