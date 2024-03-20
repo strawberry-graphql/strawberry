@@ -238,47 +238,31 @@ def _get_directives(definition: HasDirectives) -> dict[str, list[dict[str, str]]
 def _get_federation_arguments(
     directives: dict[str, list[dict[str, str]]],
 ) -> list[cst.Arg]:
+    def append_arg_from_directive(
+        directive: str, argument_name: str, keyword_name: str | None = None
+    ):
+        keyword_name = keyword_name or directive
+
+        if directive in directives:
+            arguments.append(
+                _get_argument_list(
+                    keyword_name,
+                    [item[argument_name] for item in directives[directive]],
+                )
+            )
+
     arguments: list[cst.Arg] = []
 
-    keys = [key["fields"] for key in directives.get("key", [])]
+    append_arg_from_directive("key", "fields", "keys")
+    append_arg_from_directive("requires", "fields")
+    append_arg_from_directive("provides", "fields")
+    append_arg_from_directive("tag", "name", "tags")
 
-    if keys:
-        arguments.append(_get_argument_list("keys", keys))
+    boolean_keys = ("shareable", "inaccessible", "external", "override")
 
-    shareable = directives.get("shareable", False)
-
-    if shareable:
-        arguments.append(_get_argument("shareable", True))
-
-    inaccessible = directives.get("inaccessible", False)
-
-    if inaccessible:
-        arguments.append(_get_argument("inaccessible", True))
-
-    tags = [key["name"] for key in directives.get("tag", [])]
-
-    if tags:
-        arguments.append(_get_argument_list("tags", tags))
-
-    requires = [key["fields"] for key in directives.get("requires", [])]
-
-    if requires:
-        arguments.append(_get_argument_list("requires", requires))
-
-    provides = [key["fields"] for key in directives.get("provides", [])]
-
-    if provides:
-        arguments.append(_get_argument_list("provides", provides))
-
-    external = directives.get("external", False)
-
-    if external:
-        arguments.append(_get_argument("external", True))
-
-    override = directives.get("override", False)
-
-    if override:
-        arguments.append(_get_argument("override", True))
+    arguments.extend(
+        _get_argument(key, True) for key in boolean_keys if directives.get(key, False)
+    )
 
     return arguments
 
