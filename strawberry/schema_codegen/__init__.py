@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import dataclasses
 import keyword
+from collections import defaultdict
+from typing import TYPE_CHECKING
 
 import libcst as cst
 from graphql import (
@@ -19,6 +21,7 @@ from graphql import (
     OperationType,
     ScalarTypeDefinitionNode,
     SchemaDefinitionNode,
+    SchemaExtensionNode,
     StringValueNode,
     TypeNode,
     UnionTypeDefinitionNode,
@@ -26,6 +29,10 @@ from graphql import (
 )
 
 from strawberry.utils.str_converters import to_snake_case
+
+if TYPE_CHECKING:
+    from graphql.language.ast import ConstDirectiveNode
+
 
 _SCALAR_MAP = {
     "Int": cst.Name("int"),
@@ -46,6 +53,19 @@ _SCALAR_MAP = {
     "Time": cst.Name("time"),
     "DateTime": cst.Name("datetime"),
 }
+
+
+def _is_federation_link_directive(directive: ConstDirectiveNode) -> bool:
+    if directive.name.value != "link":
+        return False
+
+    for argument in directive.arguments:
+        if argument.name.value == "url":
+            return argument.value.value.startswith(
+                "https://specs.apollo.dev/federation"
+            )
+
+    return False
 
 
 def _get_field_type(
@@ -85,7 +105,10 @@ def _get_field_type(
     )
 
 
-def _get_argument(name: str, value: str) -> cst.Arg:
+def _sanitize_argument(value: str | bool) -> cst.SimpleString | cst.Name:
+    if isinstance(value, bool):
+        return cst.Name(value=str(value))
+
     if "\n" in value:
         argument_value = cst.SimpleString(f'"""\n{value}\n"""')
     elif '"' in value:
@@ -93,8 +116,26 @@ def _get_argument(name: str, value: str) -> cst.Arg:
     else:
         argument_value = cst.SimpleString(f'"{value}"')
 
+    return argument_value
+
+
+def _get_argument(name: str, value: str | bool) -> cst.Arg:
+    argument_value = _sanitize_argument(value)
+
     return cst.Arg(
         value=argument_value,
+        keyword=cst.Name(name),
+        equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
+    )
+
+
+def _get_argument_list(name: str, values: list[str]) -> cst.Arg:
+    value = cst.List(
+        elements=[cst.Element(value=_sanitize_argument(value)) for value in values],
+    )
+
+    return cst.Arg(
+        value=value,
         keyword=cst.Name(name),
         equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
     )
@@ -149,11 +190,61 @@ def _get_field(
     )
 
 
+def _get_directives(
+    definition: ObjectTypeDefinitionNode
+    | ObjectTypeExtensionNode
+    | InterfaceTypeDefinitionNode
+    | InputObjectTypeDefinitionNode,
+) -> dict[str, list[dict[str, str]]]:
+    directives = defaultdict(list)
+
+    for directive in definition.directives:
+        directive_name = directive.name.value
+
+        directives[directive_name].append(
+            {
+                argument.name.value: argument.value.value
+                for argument in directive.arguments
+            }
+        )
+
+    return directives
+
+
+def _get_federation_arguments(
+    directives: dict[str, list[dict[str, str]]],
+) -> list[cst.Arg]:
+    arguments: list[cst.Arg] = []
+
+    keys = [key["fields"] for key in directives.get("key", [])]
+
+    if keys:
+        arguments.append(_get_argument_list("keys", keys))
+
+    shareable = directives.get("shareable", False)
+
+    if shareable:
+        arguments.append(_get_argument("shareable", True))
+
+    inaccessible = directives.get("inaccessible", False)
+
+    if inaccessible:
+        arguments.append(_get_argument("inaccessible", True))
+
+    tags = [key["name"] for key in directives.get("tag", [])]
+
+    if tags:
+        arguments.append(_get_argument_list("tags", tags))
+
+    return arguments
+
+
 def _get_strawberry_decorator(
     definition: ObjectTypeDefinitionNode
     | ObjectTypeExtensionNode
     | InterfaceTypeDefinitionNode
     | InputObjectTypeDefinitionNode,
+    is_apollo_federation: bool,
 ) -> cst.Decorator:
     type_ = {
         ObjectTypeDefinitionNode: "type",
@@ -168,15 +259,36 @@ def _get_strawberry_decorator(
         else None
     )
 
+    directives = _get_directives(definition)
+
     decorator: cst.BaseExpression = cst.Attribute(
         value=cst.Name("strawberry"),
         attr=cst.Name(type_),
     )
 
+    arguments: list[cst.Arg] = []
+
     if description is not None:
+        arguments.append(_get_argument("description", description.value))
+
+    federation_arguments = _get_federation_arguments(directives)
+
+    # and has any directive that is a federation directive
+    if is_apollo_federation and federation_arguments:
+        decorator = cst.Attribute(
+            value=cst.Attribute(
+                value=cst.Name("strawberry"),
+                attr=cst.Name("federation"),
+            ),
+            attr=cst.Name(type_),
+        )
+
+        arguments.extend(federation_arguments)
+
+    if arguments:
         decorator = cst.Call(
             func=decorator,
-            args=[_get_argument("description", description.value)],
+            args=arguments,
         )
 
     return cst.Decorator(
@@ -189,8 +301,9 @@ def _get_class_definition(
     | ObjectTypeExtensionNode
     | InterfaceTypeDefinitionNode
     | InputObjectTypeDefinitionNode,
+    is_apollo_federation: bool,
 ) -> cst.ClassDef:
-    decorator = _get_strawberry_decorator(definition)
+    decorator = _get_strawberry_decorator(definition, is_apollo_federation)
 
     bases = (
         [cst.Arg(cst.Name(interface.name.value)) for interface in definition.interfaces]
@@ -430,6 +543,12 @@ def codegen(schema: str) -> str:
 
     object_types: dict[str, cst.ClassDef] = {}
 
+    # when we encounter a extend schema @link ..., we check if is an apollo federation schema
+    # and we use this variable to keep track of it, but at the moment the assumption is that
+    # the schema extension is always done at the top, this might not be the case all the
+    # time
+    is_apollo_federation = False
+
     for definition in document.definitions:
         if isinstance(
             definition,
@@ -440,7 +559,7 @@ def codegen(schema: str) -> str:
                 ObjectTypeExtensionNode,
             ),
         ):
-            class_definition = _get_class_definition(definition)
+            class_definition = _get_class_definition(definition, is_apollo_federation)
 
             object_types[definition.name.value] = class_definition
 
@@ -478,6 +597,11 @@ def codegen(schema: str) -> str:
                 definitions.append(cst.EmptyLine())
                 definitions.append(scalar_definition)
                 definitions.append(cst.EmptyLine())
+        elif isinstance(definition, SchemaExtensionNode):
+            is_apollo_federation = any(
+                _is_federation_link_directive(directive)
+                for directive in definition.directives
+            )
         else:
             raise NotImplementedError(f"Unknown definition {definition}")
 
