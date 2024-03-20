@@ -64,13 +64,14 @@ def _is_federation_link_directive(directive: ConstDirectiveNode) -> bool:
     if directive.name.value != "link":
         return False
 
-    for argument in directive.arguments:
-        if argument.name.value == "url":
-            return argument.value.value.startswith(
-                "https://specs.apollo.dev/federation"
-            )
-
-    return False
+    return next(
+        (
+            argument.value.value
+            for argument in directive.arguments
+            if argument.name.value == "url"
+        ),
+        "",
+    ).startswith("https://specs.apollo.dev/federation")
 
 
 def _get_field_type(
