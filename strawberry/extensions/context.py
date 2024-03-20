@@ -147,7 +147,8 @@ class ExtensionContextManagerBase:
             if is_exit
             else contextlib.nullcontext()
         )
-        for hook in self.hooks:
+        hooks = reversed(self.hooks) if is_exit else self.hooks
+        for hook in hooks:
             with ctx:
                 if hook.is_async:
                     raise RuntimeError(
@@ -168,8 +169,8 @@ class ExtensionContextManagerBase:
             if is_exit
             else contextlib.nullcontext()
         )
-
-        for hook in self.hooks:
+        hooks = reversed(self.hooks) if is_exit else self.hooks
+        for hook in hooks:
             with ctx:
                 if hook.is_async:
                     await hook.initialized_hook.__anext__()  # type: ignore[union-attr]
