@@ -23,9 +23,9 @@ class Query:
 ### Default TypeVars
 
 The `Info` type now has default TypeVars, so you can use it without having to
-specify the type arguments, just like we did in the example above. Make sure to
-use the latest version of Mypy or Pyright for this. It also means that you can
-only pass one value to it if you only care about the context type:
+specify the type arguments, like we did in the example above. Make sure to use
+the latest version of Mypy or Pyright for this. It also means that you can only
+pass one value to it if you only care about the context type:
 
 ```python
 import strawberry
