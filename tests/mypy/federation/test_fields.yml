@@ -43,12 +43,12 @@
     reveal_type(Example.e)
     reveal_type(Example.f_resolver)
   out: |
+    main:24: note: Revealed type is "builtins.str"
     main:25: note: Revealed type is "builtins.str"
     main:26: note: Revealed type is "builtins.str"
     main:27: note: Revealed type is "builtins.str"
-    main:28: note: Revealed type is "builtins.str"
+    main:28: note: Revealed type is "Any"
     main:29: note: Revealed type is "Any"
-    main:30: note: Revealed type is "Any"
 
 - case: test_private_field
   main: |
