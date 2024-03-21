@@ -1,12 +1,23 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Optional,
+    Union,
+    overload,
+)
 
 from strawberry.enum import _process_enum
 from strawberry.enum import enum_value as base_enum_value
 
 if TYPE_CHECKING:
     from strawberry.enum import EnumType, EnumValueDefinition
+
+    from .types import Federation__Policy, Federation__Scope
 
 
 def enum_value(
@@ -36,7 +47,10 @@ def enum(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Iterable[object] = (),
+    authenticated: bool = False,
     inaccessible: bool = False,
+    policies: Optional[List[List[Federation__Policy]]] = None,
+    requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> EnumType:
     ...
@@ -49,7 +63,10 @@ def enum(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Iterable[object] = (),
+    authenticated: bool = False,
     inaccessible: bool = False,
+    policies: Optional[List[List[Federation__Policy]]] = None,
+    requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> Callable[[EnumType], EnumType]:
     ...
@@ -61,8 +78,11 @@ def enum(
     name=None,
     description=None,
     directives=(),
-    inaccessible=False,
-    tags=(),
+    authenticated: bool = False,
+    inaccessible: bool = False,
+    policies: Optional[List[List[Federation__Policy]]] = None,
+    requires_scopes: Optional[List[List[Federation__Scope]]] = None,
+    tags: Optional[Iterable[str]] = (),
 ) -> Union[EnumType, Callable[[EnumType], EnumType]]:
     """Registers the enum in the GraphQL type system.
 
@@ -70,12 +90,27 @@ def enum(
     the value passed of name instead of the Enum class name.
     """
 
-    from strawberry.federation.schema_directives import Inaccessible, Tag
+    from strawberry.federation.schema_directives import (
+        Authenticated,
+        Inaccessible,
+        Policy,
+        RequiresScopes,
+        Tag,
+    )
 
     directives = list(directives)
 
+    if authenticated:
+        directives.append(Authenticated())
+
     if inaccessible:
         directives.append(Inaccessible())
+
+    if policies:
+        directives.append(Policy(policies=policies))
+
+    if requires_scopes:
+        directives.append(RequiresScopes(scopes=requires_scopes))
 
     if tags:
         directives.extend(Tag(name=tag) for tag in tags)

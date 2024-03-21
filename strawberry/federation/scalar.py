@@ -3,6 +3,7 @@ from typing import (
     Any,
     Callable,
     Iterable,
+    List,
     NewType,
     Optional,
     Type,
@@ -12,6 +13,8 @@ from typing import (
 )
 
 from strawberry.custom_scalar import _process_scalar
+
+from .types import Federation__Policy, Federation__Scope
 
 # in python 3.10+ NewType is a class
 if sys.version_info >= (3, 10):
@@ -34,7 +37,10 @@ def scalar(
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
+    authenticated: bool = False,
     inaccessible: bool = False,
+    policies: Optional[List[List[Federation__Policy]]] = None,
+    requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> Callable[[_T], _T]:
     ...
@@ -51,7 +57,10 @@ def scalar(
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
+    authenticated: bool = False,
     inaccessible: bool = False,
+    policies: Optional[List[List[Federation__Policy]]] = None,
+    requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> _T:
     ...
@@ -67,7 +76,10 @@ def scalar(
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
+    authenticated: bool = False,
     inaccessible: bool = False,
+    policies: Optional[List[List[Federation__Policy]]] = None,
+    requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> Any:
     """Annotates a class or type as a GraphQL custom scalar.
@@ -95,15 +107,30 @@ def scalar(
     >>>         self.items = items
 
     """
-    from strawberry.federation.schema_directives import Inaccessible, Tag
+    from strawberry.federation.schema_directives import (
+        Authenticated,
+        Inaccessible,
+        Policy,
+        RequiresScopes,
+        Tag,
+    )
 
     if parse_value is None:
         parse_value = cls
 
     directives = list(directives)
 
+    if authenticated:
+        directives.append(Authenticated())
+
     if inaccessible:
         directives.append(Inaccessible())
+
+    if policies:
+        directives.append(Policy(policies=policies))
+
+    if requires_scopes:
+        directives.append(RequiresScopes(scopes=requires_scopes))
 
     if tags:
         directives.extend(Tag(name=tag) for tag in tags)

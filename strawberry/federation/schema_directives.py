@@ -185,10 +185,11 @@ class InterfaceObject(FederationDirective):
         Location.ENUM,
     ],
     name="authenticated",
+    print_definition=False,
 )
 class Authenticated(FederationDirective):
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="authenticated", url="https://specs.apollo.dev/federation/v2.7"
+        name="authenticated", url="https://specs.apollo.dev/federation/v2.6"
     )
 
 
@@ -201,11 +202,12 @@ class Authenticated(FederationDirective):
         Location.ENUM,
     ],
     name="requiresScopes",
+    print_definition=False,
 )
 class RequiresScopes(FederationDirective):
-    scopes: "list[list[Federation__Scope]]"
+    scopes: "List[List[Federation__Scope]]"
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="requiresScopes", url="https://specs.apollo.dev/federation/v2.7"
+        name="requiresScopes", url="https://specs.apollo.dev/federation/v2.6"
     )
 
 
@@ -217,10 +219,11 @@ class RequiresScopes(FederationDirective):
         Location.SCALAR,
         Location.ENUM,
     ],
-    name="requiresScopes",
+    name="policy",
+    print_definition=False,
 )
 class Policy(FederationDirective):
-    scopes: "list[list[Federation__Policy]]"
+    policies: "List[List[Federation__Policy]]"
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="policy", url="https://specs.apollo.dev/federation/v2.7"
+        name="policy", url="https://specs.apollo.dev/federation/v2.6"
     )
