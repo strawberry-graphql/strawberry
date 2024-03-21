@@ -14,7 +14,6 @@
 - case: test_all_field_usage
   main: |
     import strawberry
-    from strawberry.types import Info
 
     def some_resolver() -> str:
         return ""
@@ -30,7 +29,7 @@
         d: str = strawberry.federation.field(resolver=some_resolver_2)
 
         @strawberry.federation.field(description="ABC")
-        def e(self, info: Info) -> str:
+        def e(self, info: strawberry.Info) -> str:
             return ""
 
         @strawberry.federation.field(name="f")

@@ -79,7 +79,7 @@ def custom_context_getter(request: Request):
 @strawberry.type
 class Query:
     @strawberry.field
-    def hello(self, info: Info[object, None]) -> str:
+    def hello(self, info: strawberry.Info[object, None]) -> str:
         return info.context["custom"]
 
 

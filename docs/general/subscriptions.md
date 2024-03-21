@@ -113,7 +113,6 @@ import asyncio
 from typing import AsyncGenerator
 
 import strawberry
-from strawberry.types import Info
 
 from .auth import authenticate_token
 
@@ -128,7 +127,9 @@ class Query:
 @strawberry.type
 class Subscription:
     @strawberry.subscription
-    async def count(self, info: Info, target: int = 100) -> AsyncGenerator[int, None]:
+    async def count(
+        self, info: strawberry.Info, target: int = 100
+    ) -> AsyncGenerator[int, None]:
         connection_params: dict = info.context.get("connection_params")
         token: str = connection_params.get(
             "authToken"

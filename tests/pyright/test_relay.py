@@ -19,7 +19,6 @@ from typing import (
 
 import strawberry
 from strawberry import relay
-from strawberry.types import Info
 from typing_extensions import Self
 
 
@@ -46,7 +45,7 @@ class FruitCustomPaginationConnection(relay.Connection[Fruit]):
             AsyncIterable[Fruit],
         ],
         *,
-        info: Optional[Info[Any, Any]] = None,
+        info: Optional[Info] = None,
         before: Optional[str] = None,
         after: Optional[str] = None,
         first: Optional[int] = None,
@@ -81,7 +80,7 @@ class Query:
     @relay.connection(relay.Connection[Fruit])
     def fruits_custom_resolver(
         self,
-        info: Info[Any, Any],
+        info: strawberry.Info,
         name_endswith: Optional[str] = None,
     ) -> List[Fruit]:
         ...
@@ -89,7 +88,7 @@ class Query:
     @relay.connection(relay.Connection[Fruit])
     def fruits_custom_resolver_iterator(
         self,
-        info: Info[Any, Any],
+        info: strawberry.Info,
         name_endswith: Optional[str] = None,
     ) -> Iterator[Fruit]:
         ...
@@ -97,7 +96,7 @@ class Query:
     @relay.connection(relay.Connection[Fruit])
     def fruits_custom_resolver_iterable(
         self,
-        info: Info[Any, Any],
+        info: strawberry.Info,
         name_endswith: Optional[str] = None,
     ) -> Iterable[Fruit]:
         ...
@@ -105,7 +104,7 @@ class Query:
     @relay.connection(relay.Connection[Fruit])
     def fruits_custom_resolver_generator(
         self,
-        info: Info[Any, Any],
+        info: strawberry.Info,
         name_endswith: Optional[str] = None,
     ) -> Generator[Fruit, None, None]:
         ...
@@ -113,7 +112,7 @@ class Query:
     @relay.connection(relay.Connection[Fruit])
     async def fruits_custom_resolver_async_iterator(
         self,
-        info: Info[Any, Any],
+        info: strawberry.Info,
         name_endswith: Optional[str] = None,
     ) -> AsyncIterator[Fruit]:
         ...
@@ -121,7 +120,7 @@ class Query:
     @relay.connection(relay.Connection[Fruit])
     async def fruits_custom_resolver_async_iterable(
         self,
-        info: Info[Any, Any],
+        info: strawberry.Info,
         name_endswith: Optional[str] = None,
     ) -> AsyncIterable[Fruit]:
         ...
@@ -129,7 +128,7 @@ class Query:
     @relay.connection(relay.Connection[Fruit])
     async def fruits_custom_resolver_async_generator(
         self,
-        info: Info[Any, Any],
+        info: strawberry.Info,
         name_endswith: Optional[str] = None,
     ) -> AsyncGenerator[Fruit, None]:
         ...
