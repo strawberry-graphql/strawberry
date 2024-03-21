@@ -7,7 +7,6 @@ import pytest
 import strawberry
 from strawberry.directive import DirectiveLocation, DirectiveValue
 from strawberry.extensions import SchemaExtension
-from strawberry.schema.config import StrawberryConfig
 from strawberry.type import get_object_definition
 from strawberry.utils.await_maybe import await_maybe
 
@@ -223,7 +222,7 @@ def test_runs_directives_camel_case_off():
     schema = strawberry.Schema(
         query=Query,
         directives=[turn_uppercase, replace],
-        config=StrawberryConfig(auto_camel_case=False),
+        config={"auto_camel_case": False},
     )
 
     query = """query People($identified: Boolean!){

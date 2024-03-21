@@ -54,6 +54,7 @@ if TYPE_CHECKING:
     from strawberry.enum import EnumDefinition
     from strawberry.extensions import SchemaExtension
     from strawberry.field import StrawberryField
+    from strawberry.schema.config import StrawberryConfigDict
     from strawberry.type import StrawberryType
     from strawberry.types import ExecutionResult
     from strawberry.union import StrawberryUnion
@@ -77,7 +78,7 @@ class Schema(BaseSchema):
         types: Iterable[Union[Type, StrawberryType]] = (),
         extensions: Iterable[Union[Type[SchemaExtension], SchemaExtension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
-        config: Optional[StrawberryConfig] = None,
+        config: Optional[StrawberryConfigDict] = None,
         scalar_overrides: Optional[
             Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]]
         ] = None,
@@ -89,7 +90,7 @@ class Schema(BaseSchema):
 
         self.extensions = extensions
         self.execution_context_class = execution_context_class
-        self.config = config or StrawberryConfig()
+        self.config = StrawberryConfig.from_dict(config)
 
         SCALAR_OVERRIDES_DICT_TYPE = Dict[
             object, Union["ScalarWrapper", "ScalarDefinition"]
