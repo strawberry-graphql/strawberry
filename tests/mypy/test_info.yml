@@ -1,0 +1,11 @@
+- case: test_field
+  main: |
+    import strawberry
+
+    info = strawberry.Info[None, None]
+
+    reveal_type(info.context)
+    reveal_type(info.root_value)
+  out: |
+    main:5: note: Revealed type is "def (self: strawberry.types.info.Info[ContextType`1, RootValueType`2]) -> ContextType`1"
+    main:6: note: Revealed type is "def (self: strawberry.types.info.Info[ContextType`1, RootValueType`2]) -> RootValueType`2"
