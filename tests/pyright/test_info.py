@@ -7,7 +7,7 @@ def test_with_params():
     CODE = """
 import strawberry
 
-def example(info: strawberry.Info) -> None:
+def example(info: strawberry.Info[None, None]) -> None:
     reveal_type(info.context)
     reveal_type(info.root_value)
 """
