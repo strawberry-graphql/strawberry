@@ -50,9 +50,9 @@ class Info(Generic[ContextType, RootValueType]):
         """
 
         if not isinstance(types, tuple):
-            types = (types, Any)
+            types = (types, Any)  # type: ignore
 
-        return super().__class_getitem__(types)
+        return super().__class_getitem__(types)  # type: ignore
 
     @property
     def field_name(self) -> str:
