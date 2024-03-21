@@ -59,7 +59,7 @@ def custom_context_getter(request: Request):
 @strawberry.type
 class Query:
     @strawberry.field
-    def hello(self, info: Info[object, None]) -> str:
+    def hello(self, info: strawberry.Info[object, None]) -> str:
         return info.context["custom"]
 
 
@@ -1192,7 +1192,7 @@ class MyDataType:
 class Subscription:
     @strawberry.subscription
     async def my_data_subscription(
-        self, info: Info, groups: list[str]
+        self, info: strawberry.Info, groups: list[str]
     ) -> AsyncGenerator[MyDataType | None, None]:
         yield None
         async for message in info.context["ws"].channel_listen(
@@ -1207,7 +1207,7 @@ class Subscription:
 class Subscription:
     @strawberry.subscription
     async def my_data_subscription(
-        self, info: Info, groups: list[str]
+        self, info: strawberry.Info, groups: list[str]
     ) -> AsyncGenerator[MyDataType | None, None]:
         async with info.context["ws"].listen_to_channel("my_data", groups=groups) as cm:
             yield None
@@ -1240,7 +1240,7 @@ class Query:
     @strawberry.field
     def get_testing(
         self,
-        info: Info[None, None],
+        info: strawberry.Info,
         id_: Annotated[uuid.UUID, strawberry.argument(name="id")],
     ) -> str | None:
         return None
@@ -1694,7 +1694,7 @@ class Mutation:
     @strawberry.mutation(extensions=[InputMutationExtension()])
     def update_fruit_weight(
         self,
-        info: Info,
+        info: strawberry.Info,
         id: strawberry.ID,
         weight: Annotated[
             float,
@@ -2188,7 +2188,9 @@ class MyInput:
 
 
 class MyFieldExtension(FieldExtension):
-    def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+    def resolve(
+        self, next_: Callable[..., Any], source: Any, info: strawberry.Info, **kwargs
+    ):
         # kwargs["my_input"] is instance of MyInput
         ...
 
@@ -2477,7 +2479,7 @@ def custom_context_getter(request: Request):
 @strawberry.type
 class Query:
     @strawberry.field
-    def hello(self, info: Info[object, None]) -> str:
+    def hello(self, info: strawberry.Info[object, None]) -> str:
         return info.context["custom"]
 
 
@@ -2680,7 +2682,11 @@ from strawberry.extensions import FieldExtension
 
 class UpperCaseExtension(FieldExtension):
     async def resolve_async(
-        self, next: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
+        self,
+        next: Callable[..., Awaitable[Any]],
+        source: Any,
+        info: strawberry.Info,
+        **kwargs
     ):
         result = await next(source, info, **kwargs)
         return str(result).upper()
@@ -4973,7 +4979,7 @@ and here's an example of how the new syntax works:
 from strawberry.types import Info
 
 
-def some_resolver(info: Info) -> str:
+def some_resolver(info: strawberry.Info) -> str:
     return info.context.get("some_key", "default")
 
 
@@ -5010,7 +5016,7 @@ class Query:
     locations=[DirectiveLocation.FIELD],
     description="Add frosting with ``value`` to a cake.",
 )
-def add_frosting(value: str, v: DirectiveValue[Cake], my_info: Info):
+def add_frosting(value: str, v: DirectiveValue[Cake], my_info: strawberry.Info):
     # Arbitrary argument name when using `DirectiveValue` is supported!
     assert isinstance(v, Cake)
     if (
@@ -5803,7 +5809,7 @@ Added the response object to `get_context` on the `flask` view. This means that 
 
 ```python
 @strawberry.field
-def response_check(self, info: Info) -> bool:
+def response_check(self, info: strawberry.Info) -> bool:
     response: Response = info.context["response"]
     response.status_code = 401
 
@@ -7459,7 +7465,7 @@ from starlette.background import BackgroundTask
 
 
 @strawberry.mutation
-def create_flavour(self, info: Info) -> str:
+def create_flavour(self, info: strawberry.Info) -> str:
     info.context["response"].background = BackgroundTask(...)
 ```
 
@@ -8551,7 +8557,7 @@ This release updates get_context in the django integration to also receive a tem
 @strawberry.type
 class Query:
     @strawberry.field
-    def abc(self, info: Info) -> str:
+    def abc(self, info: strawberry.Info) -> str:
         info.context.response.status_code = 418
 
         return "ABC"

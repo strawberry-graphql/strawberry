@@ -11,9 +11,9 @@ from typing import (
     List,
     Optional,
     Type,
-    TypeVar,
     Union,
 )
+from typing_extensions import TypeVar
 
 from .nodes import convert_selections
 
@@ -29,8 +29,8 @@ if TYPE_CHECKING:
 
     from .nodes import Selection
 
-ContextType = TypeVar("ContextType")
-RootValueType = TypeVar("RootValueType")
+ContextType = TypeVar("ContextType", default=Any)
+RootValueType = TypeVar("RootValueType", default=Any)
 
 
 @dataclasses.dataclass

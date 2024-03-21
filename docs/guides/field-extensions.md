@@ -22,7 +22,9 @@ from strawberry.extensions import FieldExtension
 
 
 class UpperCaseExtension(FieldExtension):
-    def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+    def resolve(
+        self, next_: Callable[..., Any], source: Any, info: strawberry.Info, **kwargs
+    ):
         result = next_(source, info, **kwargs)
         return str(result).upper()
 
@@ -88,7 +90,7 @@ class CachingExtension(FieldExtension):
         field.directives.append(Cached(time=self.caching_time))
 
     def resolve(
-        self, next_: Callable[..., Any], source: Any, info: Info, **kwargs
+        self, next_: Callable[..., Any], source: Any, info: strawberry.Info, **kwargs
     ) -> Any:
         current_time = time.time()
         if self.last_cached + self.caching_time > current_time:
@@ -164,12 +166,18 @@ from strawberry.extensions import FieldExtension
 
 
 class UpperCaseExtension(FieldExtension):
-    def resolve(self, next: Callable[..., Any], source: Any, info: Info, **kwargs):
+    def resolve(
+        self, next: Callable[..., Any], source: Any, info: strawberry.Info, **kwargs
+    ):
         result = next(source, info, **kwargs)
         return str(result).upper()
 
     async def resolve_async(
-        self, next: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
+        self,
+        next: Callable[..., Awaitable[Any]],
+        source: Any,
+        info: strawberry.Info,
+        **kwargs
     ):
         result = await next(source, info, **kwargs)
         return str(result).upper()

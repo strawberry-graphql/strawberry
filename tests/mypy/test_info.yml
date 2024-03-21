@@ -1,0 +1,35 @@
+- case: test_info_with_params
+  main: |
+    import strawberry
+
+    info: strawberry.Info[None, None]
+
+    reveal_type(info.context)
+    reveal_type(info.root_value)
+  out: |
+    main:5: note: Revealed type is "None"
+    main:6: note: Revealed type is "None"
+
+- case: test_info_with_one_param
+  main: |
+    import strawberry
+
+    info: strawberry.Info[None]
+
+    reveal_type(info.context)
+    reveal_type(info.root_value)
+  out: |
+    main:5: note: Revealed type is "None"
+    main:6: note: Revealed type is "Any"
+
+- case: test_info_without_params
+  main: |
+    import strawberry
+
+    info: strawberry.Info
+
+    reveal_type(info.context)
+    reveal_type(info.root_value)
+  out: |
+    main:5: note: Revealed type is "Any"
+    main:6: note: Revealed type is "Any"

@@ -112,15 +112,13 @@ import threading
 
 from typing import AsyncGenerator, List
 
-from strawberry.types import Info
-
 
 @strawberry.type
 class Subscription:
     @strawberry.subscription
     async def join_chat_rooms(
         self,
-        info: Info,
+        info: strawberry.Info,
         rooms: List[ChatRoom],
         user: str,
     ) -> AsyncGenerator[ChatRoomMessage, None]:
@@ -200,7 +198,7 @@ class Mutation:
     @strawberry.mutation
     async def send_chat_message(
         self,
-        info: Info,
+        info: strawberry.Info,
         room: ChatRoom,
         message: str,
     ) -> None:
@@ -387,7 +385,7 @@ class Subscription:
     @strawberry.subscription
     async def join_chat_rooms(
         self,
-        info: Info,
+        info: strawberry.Info,
         rooms: List[ChatRoom],
         user: str,
     ) -> AsyncGenerator[ChatRoomMessage | None, None]:

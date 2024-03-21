@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Dict
 
 import strawberry
 
@@ -15,12 +15,11 @@ def test_with_class_context_getter():
     from litestar.di import Provide
     from litestar.testing import TestClient
     from strawberry.litestar import BaseContext, make_graphql_controller
-    from strawberry.types import Info
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info[Any, Any]) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert isinstance(info.context, CustomContext)
             assert info.context.request is not None
             assert info.context.strawberry == "rocks"
@@ -60,12 +59,11 @@ def test_with_dict_context_getter():
     from litestar.di import Provide
     from litestar.testing import TestClient
     from strawberry.litestar import make_graphql_controller
-    from strawberry.types import Info
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info[Any, Any]) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert isinstance(info.context, dict)
             assert info.context.get("request") is not None
             assert info.context.get("strawberry") == "rocks"
@@ -100,12 +98,11 @@ def test_without_context_getter():
     from litestar import Litestar
     from litestar.testing import TestClient
     from strawberry.litestar import make_graphql_controller
-    from strawberry.types import Info
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info[Any, Any]) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert isinstance(info.context, dict)
             assert info.context.get("request") is not None
             assert info.context.get("strawberry") is None
@@ -128,12 +125,11 @@ def test_with_invalid_context_getter():
     from litestar.di import Provide
     from litestar.testing import TestClient
     from strawberry.litestar import make_graphql_controller
-    from strawberry.types import Info
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info[Any, Any]) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert info.context.get("request") is not None
             assert info.context.get("strawberry") is None
             return "abc"
@@ -171,13 +167,12 @@ def test_with_invalid_context_getter():
 
 def test_custom_context():
     from litestar.testing import TestClient
-    from strawberry.types import Info
     from tests.litestar.app import create_app
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def custom_context_value(self, info: Info[Any, Any]) -> str:
+        def custom_context_value(self, info: strawberry.Info) -> str:
             return info.context["custom_value"]
 
     schema = strawberry.Schema(query=Query)
@@ -192,7 +187,6 @@ def test_custom_context():
 
 def test_can_set_background_task():
     from litestar.testing import TestClient
-    from strawberry.types import Info
     from tests.litestar.app import create_app
 
     task_complete = False
@@ -204,7 +198,7 @@ def test_can_set_background_task():
     @strawberry.type
     class Query:
         @strawberry.field
-        def something(self, info: Info[Any, Any]) -> str:
+        def something(self, info: strawberry.Info) -> str:
             response = info.context["response"]
             response.background.tasks.append(task)
             return "foo"
