@@ -40,6 +40,15 @@ class Info(Generic[ContextType, RootValueType]):
     _field: StrawberryField
 
     def __class_getitem__(cls, types: Union[type, Tuple[type, ...]]) -> Type[Info]:
+        """Workaround for when passing only one type.
+
+        Python doesn't yet support directly passing only one type to a generic class
+        that has typevars with defaults. This is a workaround for that.
+
+        See:
+        https://discuss.python.org/t/passing-only-one-typevar-of-two-when-using-defaults/49134
+        """
+
         if not isinstance(types, tuple):
             types = (types, Any)
 
