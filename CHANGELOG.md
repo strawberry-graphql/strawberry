@@ -1,6 +1,33 @@
 CHANGELOG
 =========
 
+0.221.1 - 2024-03-21
+--------------------
+
+This release properly allows passing one argument to the `Info` class.
+
+This is now fully supported:
+
+```python
+import strawberry
+
+from typing import TypedDict
+
+
+class Context(TypedDict):
+    user_id: str
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def info(self, info: strawberry.Info[Context]) -> str:
+        return info.context["user_id"]
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3419](https://github.com/strawberry-graphql/strawberry/pull/3419/)
+
+
 0.221.0 - 2024-03-21
 --------------------
 
