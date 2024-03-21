@@ -10,6 +10,7 @@ from typing import (
     Generic,
     List,
     Optional,
+    Tuple,
     Type,
     Union,
 )
@@ -37,6 +38,12 @@ RootValueType = TypeVar("RootValueType", default=Any)
 class Info(Generic[ContextType, RootValueType]):
     _raw_info: GraphQLResolveInfo
     _field: StrawberryField
+
+    def __class_getitem__(cls, types: Union[type, Tuple[type, ...]]) -> Type[Info]:
+        if not isinstance(types, tuple):
+            types = (types, Any)
+
+        return super().__class_getitem__(types)
 
     @property
     def field_name(self) -> str:
