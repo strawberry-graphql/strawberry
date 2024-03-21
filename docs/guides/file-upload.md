@@ -23,6 +23,21 @@ runtime depends on the integration:
 | [Sanic](/docs/integrations/sanic)         | [`sanic.request.File`](https://sanic.readthedocs.io/en/stable/sanic/api/core.html#sanic.request.File)                                                 |
 | [Starlette](/docs/integrations/starlette) | [`starlette.datastructures.UploadFile`](https://www.starlette.io/requests/#request-files)                                                             |
 
+In order to have the correct runtime type in resolver type annotations you can
+set a scalar override based on the integrations above. For example with
+Starlette:
+
+```python
+import strawberry
+from starlette.datastructures import UploadFile
+from strawberry.file_uploads import Upload
+
+schema = strawberry.Schema(
+  ...
+  scalar_overrides={UploadFile: Upload}
+)
+```
+
 ## ASGI / FastAPI / Starlette
 
 Since these integrations use asyncio for communication, the resolver _must_ be
