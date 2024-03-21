@@ -1,4 +1,4 @@
-- case: test_field
+- case: test_info_with_params
   main: |
     import strawberry
 
@@ -7,5 +7,17 @@
     reveal_type(info.context)
     reveal_type(info.root_value)
   out: |
-    main:5: note: Revealed type is "def (self: strawberry.types.info.Info[ContextType`1, RootValueType`2]) -> ContextType`1"
-    main:6: note: Revealed type is "def (self: strawberry.types.info.Info[ContextType`1, RootValueType`2]) -> RootValueType`2"
+    main:5: note: Revealed type is "def (self: strawberry.types.info.Info[ContextType`1 = Any, RootValueType`2 = Any]) -> ContextType`1 = Any"
+    main:6: note: Revealed type is "def (self: strawberry.types.info.Info[ContextType`1 = Any, RootValueType`2 = Any]) -> RootValueType`2 = Any"
+
+- case: test_info_without_params
+  main: |
+    import strawberry
+
+    info = strawberry.Info
+
+    reveal_type(info.context)
+    reveal_type(info.root_value)
+  out: |
+    main:5: note: Revealed type is "def [ContextType = Any, RootValueType = Any] (self: strawberry.types.info.Info[ContextType`1 = Any, RootValueType`2 = Any]) -> ContextType`1 = Any"
+    main:6: note: Revealed type is "def [ContextType = Any, RootValueType = Any] (self: strawberry.types.info.Info[ContextType`1 = Any, RootValueType`2 = Any]) -> RootValueType`2 = Any"
