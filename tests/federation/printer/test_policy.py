@@ -8,21 +8,21 @@ import strawberry
 
 def test_field_policy_printed_correctly():
     @strawberry.federation.interface(
-        policies=[["client", "poweruser"], ["admin"], ["productowner"]]
+        policy=[["client", "poweruser"], ["admin"], ["productowner"]]
     )
     class SomeInterface:
         id: strawberry.ID
 
     @strawberry.federation.type(
-        policies=[["client", "poweruser"], ["admin"], ["productowner"]]
+        policy=[["client", "poweruser"], ["admin"], ["productowner"]]
     )
     class Product(SomeInterface):
-        upc: str = strawberry.federation.field(policies=[["productowner"]])
+        upc: str = strawberry.federation.field(policy=[["productowner"]])
 
     @strawberry.federation.type
     class Query:
         @strawberry.federation.field(
-            policies=[["client", "poweruser"], ["admin"], ["productowner"]]
+            policy=[["client", "poweruser"], ["admin"], ["productowner"]]
         )
         def top_products(
             self, first: Annotated[int, strawberry.federation.argument()]
@@ -62,7 +62,7 @@ def test_field_policy_printed_correctly():
 
 def test_field_policy_printed_correctly_on_scalar():
     @strawberry.federation.scalar(
-        policies=[["client", "poweruser"], ["admin"], ["productowner"]]
+        policy=[["client", "poweruser"], ["admin"], ["productowner"]]
     )
     class SomeScalar(str):
         __slots__ = ()
@@ -97,7 +97,7 @@ def test_field_policy_printed_correctly_on_scalar():
 
 def test_field_policy_printed_correctly_on_enum():
     @strawberry.federation.enum(
-        policies=[["client", "poweruser"], ["admin"], ["productowner"]]
+        policy=[["client", "poweruser"], ["admin"], ["productowner"]]
     )
     class SomeEnum(Enum):
         A = "A"

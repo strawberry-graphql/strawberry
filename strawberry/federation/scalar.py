@@ -39,7 +39,7 @@ def scalar(
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> Callable[[_T], _T]:
@@ -59,7 +59,7 @@ def scalar(
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> _T:
@@ -78,7 +78,7 @@ def scalar(
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> Any:
@@ -126,8 +126,8 @@ def scalar(
     if inaccessible:
         directives.append(Inaccessible())
 
-    if policies:
-        directives.append(Policy(policies=policies))
+    if policy:
+        directives.append(Policy(policies=policy))
 
     if requires_scopes:
         directives.append(RequiresScopes(scopes=requires_scopes))

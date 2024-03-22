@@ -49,7 +49,7 @@ def enum(
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> EnumType:
@@ -65,7 +65,7 @@ def enum(
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> Callable[[EnumType], EnumType]:
@@ -80,7 +80,7 @@ def enum(
     directives=(),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> Union[EnumType, Callable[[EnumType], EnumType]]:
@@ -106,8 +106,8 @@ def enum(
     if inaccessible:
         directives.append(Inaccessible())
 
-    if policies:
-        directives.append(Policy(policies=policies))
+    if policy:
+        directives.append(Policy(policies=policy))
 
     if requires_scopes:
         directives.append(RequiresScopes(scopes=requires_scopes))

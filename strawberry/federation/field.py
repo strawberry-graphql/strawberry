@@ -40,7 +40,7 @@ def field(
     authenticated: bool = False,
     external: bool = False,
     inaccessible: bool = False,
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     provides: Optional[List[str]] = None,
     override: Optional[str] = None,
     requires: Optional[List[str]] = None,
@@ -68,7 +68,7 @@ def field(
     authenticated: bool = False,
     external: bool = False,
     inaccessible: bool = False,
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     provides: Optional[List[str]] = None,
     override: Optional[str] = None,
     requires: Optional[List[str]] = None,
@@ -97,7 +97,7 @@ def field(
     authenticated: bool = False,
     external: bool = False,
     inaccessible: bool = False,
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     provides: Optional[List[str]] = None,
     override: Optional[str] = None,
     requires: Optional[List[str]] = None,
@@ -124,7 +124,7 @@ def field(
     authenticated: bool = False,
     external: bool = False,
     inaccessible: bool = False,
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     provides: Optional[List[str]] = None,
     override: Optional[str] = None,
     requires: Optional[List[str]] = None,
@@ -170,8 +170,8 @@ def field(
     if override:
         directives.append(Override(override_from=override))
 
-    if policies:
-        directives.append(Policy(policies=policies))
+    if policy:
+        directives.append(Policy(policies=policy))
 
     if provides:
         directives.append(Provides(fields=" ".join(provides)))

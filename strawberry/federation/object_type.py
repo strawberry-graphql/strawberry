@@ -38,7 +38,7 @@ def _impl_type(
     extend: bool = False,
     shareable: bool = False,
     inaccessible: bool = UNSET,
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Iterable[str] = (),
     is_input: bool = False,
@@ -69,8 +69,8 @@ def _impl_type(
     if inaccessible is not UNSET:
         directives.append(Inaccessible())
 
-    if policies:
-        directives.append(Policy(policies=policies))
+    if policy:
+        directives.append(Policy(policies=policy))
 
     if requires_scopes:
         directives.append(RequiresScopes(scopes=requires_scopes))
@@ -111,7 +111,7 @@ def type(
     extend: bool = False,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     shareable: bool = False,
     tags: Iterable[str] = (),
@@ -134,7 +134,7 @@ def type(
     extend: bool = False,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     shareable: bool = False,
     tags: Iterable[str] = (),
@@ -152,7 +152,7 @@ def type(
     extend: bool = False,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     shareable: bool = False,
     tags: Iterable[str] = (),
@@ -166,7 +166,7 @@ def type(
         keys=keys,
         extend=extend,
         inaccessible=inaccessible,
-        policies=policies,
+        policy=policy,
         requires_scopes=requires_scopes,
         shareable=shareable,
         tags=tags,
@@ -243,7 +243,7 @@ def interface(
     authenticated: bool = UNSET,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Iterable[str] = (),
 ) -> T:
@@ -264,7 +264,7 @@ def interface(
     authenticated: bool = UNSET,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Iterable[str] = (),
 ) -> Callable[[T], T]:
@@ -280,7 +280,7 @@ def interface(
     authenticated: bool = UNSET,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Iterable[str] = (),
 ):
@@ -292,7 +292,7 @@ def interface(
         authenticated=authenticated,
         keys=keys,
         inaccessible=inaccessible,
-        policies=policies,
+        policy=policy,
         requires_scopes=requires_scopes,
         tags=tags,
         is_interface=True,
@@ -314,7 +314,7 @@ def interface_object(
     authenticated: bool = UNSET,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Iterable[str] = (),
 ) -> T:
@@ -335,7 +335,7 @@ def interface_object(
     authenticated: bool = UNSET,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Iterable[str] = (),
 ) -> Callable[[T], T]:
@@ -351,7 +351,7 @@ def interface_object(
     authenticated: bool = UNSET,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policies: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[Federation__Policy]]] = None,
     requires_scopes: Optional[List[List[Federation__Scope]]] = None,
     tags: Iterable[str] = (),
 ):
@@ -363,7 +363,7 @@ def interface_object(
         authenticated=authenticated,
         keys=keys,
         inaccessible=inaccessible,
-        policies=policies,
+        policy=policy,
         requires_scopes=requires_scopes,
         tags=tags,
         is_interface=False,
