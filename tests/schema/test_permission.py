@@ -12,7 +12,6 @@ from strawberry.exceptions.permission_fail_silently_requires_optional import (
 )
 from strawberry.permission import BasePermission, PermissionExtension
 from strawberry.printer import print_schema
-from strawberry.types import Info
 
 
 def test_raises_graphql_error_when_permission_method_is_missing():
@@ -37,7 +36,7 @@ def test_raises_graphql_error_when_permission_is_denied():
         message = "User is not authenticated"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return False
 
@@ -337,7 +336,7 @@ async def test_raises_permission_error_for_subscription():
         message = "You are not authorized"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return False
 
@@ -397,7 +396,7 @@ def test_can_use_source_when_testing_permission():
         message = "Cannot see email for this user"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return source.name.lower() == "patrick"
 
@@ -433,7 +432,7 @@ def test_can_use_args_when_testing_permission():
         message = "Cannot see email for this user"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return kwargs.get("secure", False)
 
@@ -469,7 +468,7 @@ def test_can_use_on_simple_fields():
         message = "Cannot see email for this user"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return source.name.lower() == "patrick"
 

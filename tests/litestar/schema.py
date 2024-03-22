@@ -9,13 +9,14 @@ import strawberry
 from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
-from strawberry.types import Info
 
 
 class AlwaysFailPermission(BasePermission):
     message = "You are not authorized"
 
-    def has_permission(self, source: Any, info: Info, **kwargs: typing.Any) -> bool:
+    def has_permission(
+        self, source: Any, info: strawberry.Info, **kwargs: typing.Any
+    ) -> bool:
         return False
 
 
