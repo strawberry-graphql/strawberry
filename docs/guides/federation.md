@@ -348,6 +348,9 @@ Other directives you may need to specifically include when relevant.
 - `@requires`
 - `@shareable`
 - `@tag`
+- `@authenticated`
+- `@requiresScopes`
+- `@policy`
 
 For example, adding the following directives:
 
