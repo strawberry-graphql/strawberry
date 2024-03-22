@@ -59,7 +59,7 @@ def test_no_graphql_error_when_and_permission_is_allowed():
         message = "True Permission Failed"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return True
 
@@ -86,7 +86,7 @@ def test_raises_graphql_error_when_right_and_permission_is_denied():
         message = "False Permission Failed"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return False
 
@@ -94,7 +94,7 @@ def test_raises_graphql_error_when_right_and_permission_is_denied():
         message = "True Permission Failed"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return True
 
@@ -123,7 +123,7 @@ def test_raises_graphql_error_when_left_and_permission_is_denied():
         message = "False Permission Failed"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return False
 
@@ -131,7 +131,7 @@ def test_raises_graphql_error_when_left_and_permission_is_denied():
         message = "True Permission Failed"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return True
 
@@ -160,7 +160,7 @@ def test_raises_graphql_error_from_left_exception_when_both_and_permission_is_de
         message = "False Left Permission Failed"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return False
 
@@ -168,7 +168,7 @@ def test_raises_graphql_error_from_left_exception_when_both_and_permission_is_de
         message = "False Right Permission Failed"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return False
 
@@ -197,7 +197,7 @@ def test_no_graphql_error_when_both_or_permission_is_allowed():
         message = "True Permission Failed"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return True
 
@@ -224,7 +224,7 @@ def test_no_graphql_error_when_left_or_permission_is_allowed():
         message = "False Permission Failed"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return False
 
@@ -232,7 +232,7 @@ def test_no_graphql_error_when_left_or_permission_is_allowed():
         message = "True Permission Failed"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return True
 
@@ -261,7 +261,7 @@ def test_no_graphql_error_when_right_or_permission_is_allowed():
         message = "False Permission Failed"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return False
 
@@ -269,7 +269,7 @@ def test_no_graphql_error_when_right_or_permission_is_allowed():
         message = "True Permission Failed"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return True
 
@@ -298,7 +298,7 @@ def test_raises_graphql_error_from_left_exception_when_both_or_permission_is_den
         message = "False Left Permission Failed"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return False
 
@@ -306,7 +306,7 @@ def test_raises_graphql_error_from_left_exception_when_both_or_permission_is_den
         message = "False Right Permission Failed"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return False
 
