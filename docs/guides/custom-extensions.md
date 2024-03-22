@@ -39,12 +39,11 @@ check out [field extensions](field-extensions.md).
 Note that `resolve` can also be implemented asynchronously.
 
 ```python
-from strawberry.types import Info
 from strawberry.extensions import SchemaExtension
 
 
 class MyExtension(SchemaExtension):
-    def resolve(self, _next, root, info: Info, *args, **kwargs):
+    def resolve(self, _next, root, info: strawberry.Info, *args, **kwargs):
         return _next(root, info, *args, **kwargs)
 ```
 

@@ -155,7 +155,7 @@ class ReservedType(NamedTuple):
             # Handle annotated arguments such as Private[str] and DirectiveValue[str]
             return type_has_annotation(other, self.type)
         else:
-            # Handle both concrete and generic types (i.e Info, and Info[Any, Any])
+            # Handle both concrete and generic types (i.e Info, and Info)
             return (
                 issubclass(origin, self.type)
                 if isinstance(origin, type)
