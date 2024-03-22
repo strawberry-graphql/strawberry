@@ -76,6 +76,7 @@ class BasePermission(abc.ABC):
     @property
     def schema_directive(self) -> object:
         if not self._schema_directive:
+
             class AutoDirective:
                 __strawberry_directive__ = StrawberrySchemaDirective(
                     self.__class__.__name__,
@@ -109,8 +110,8 @@ class CompositePermission(BasePermission, abc.ABC):
         self, source: Any, info: Info, **kwargs: Any
     ) -> Union[bool, Awaitable[bool]]:
         raise NotImplementedError(
-            "Composite Permission classes should use the " +
-            "has_composite_permissions and has_composite_permission_async methods"
+            "Composite Permission classes should use the "
+            + "has_composite_permissions and has_composite_permission_async methods"
         )
 
     @abc.abstractmethod
@@ -135,27 +136,34 @@ class CompositePermission(BasePermission, abc.ABC):
 
     @property
     def schema_directive_set(self) -> List[object]:
-        composite_list = list(itertools.chain.from_iterable(
-            [x.schema_directive_set for x in self.child_permissions if
-             isinstance(x, CompositePermission)]))
-        return composite_list + [x.schema_directive for x in self.child_permissions if
-                                 not isinstance(x, CompositePermission)]
+        composite_list = list(
+            itertools.chain.from_iterable(
+                [
+                    x.schema_directive_set
+                    for x in self.child_permissions
+                    if isinstance(x, CompositePermission)
+                ]
+            )
+        )
+        return composite_list + [
+            x.schema_directive
+            for x in self.child_permissions
+            if not isinstance(x, CompositePermission)
+        ]
 
 
 class AndPermission(CompositePermission):
-    def has_composite_permission(self,
-                                 source: Any,
-                                 info: Info,
-                                 **kwargs: Any) -> (bool, int | None):
+    def has_composite_permission(
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> (bool, int | None):
         for permission in self.child_permissions:
             if not permission.has_permission(source, info, **kwargs):
                 return permission.on_unauthorized()
         return True, None
 
-    async def has_composite_permission_async(self,
-                                             source: Any,
-                                             info: Info,
-                                             **kwargs: Any) -> (bool, int | None):
+    async def has_composite_permission_async(
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> (bool, int | None):
         for permission in self.child_permissions:
             if not await await_maybe(permission.has_permission(source, info, **kwargs)):
                 return permission.on_unauthorized()
@@ -163,20 +171,18 @@ class AndPermission(CompositePermission):
 
 
 class OrPermission(CompositePermission):
-    def has_composite_permission(self,
-                                 source: Any,
-                                 info: Info,
-                                 **kwargs: Any) -> (bool, int | None):
+    def has_composite_permission(
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> (bool, int | None):
         for permission in self.child_permissions:
             if permission.has_permission(source, info, **kwargs):
                 return True, None
 
         return self.child_permissions[0].on_unauthorized()
 
-    async def has_composite_permission_async(self,
-                                             source: Any,
-                                             info: Info,
-                                             **kwargs: Any) -> (bool, int | None):
+    async def has_composite_permission_async(
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> (bool, int | None):
         for permission in self.child_permissions:
             if await await_maybe(permission.has_permission(source, info, **kwargs)):
                 return True, None
@@ -218,10 +224,15 @@ class PermissionExtension(FieldExtension):
             field.directives.extend(
                 [
                     directive
-                    for p in self.permissions if isinstance(p, CompositePermission)
+                    for p in self.permissions
+                    if isinstance(p, CompositePermission)
                     for directive in p.schema_directive_set
-                ] + [p.schema_directive for p in self.permissions if
-                     not isinstance(p, CompositePermission)]
+                ]
+                + [
+                    p.schema_directive
+                    for p in self.permissions
+                    if not isinstance(p, CompositePermission)
+                ]
             )
         # We can only fail silently if the field is optional or a list
         if self.fail_silently:
@@ -254,12 +265,13 @@ class PermissionExtension(FieldExtension):
         for permission in self.permissions:
             if isinstance(permission, CompositePermission):
                 has_permission, failed_index = permission.has_composite_permission(
-                    source, info,
-                    **kwargs)
+                    source, info, **kwargs
+                )
 
                 if not has_permission:
                     return self._on_unauthorized(
-                        permission.child_permissions[failed_index])
+                        permission.child_permissions[failed_index]
+                    )
             else:
                 has_permission = permission.has_permission(source, info, **kwargs)
 
@@ -282,7 +294,8 @@ class PermissionExtension(FieldExtension):
                 )
                 if not has_permission:
                     return self._on_unauthorized(
-                        permission.child_permissions[failed_index])
+                        permission.child_permissions[failed_index]
+                    )
             else:
                 has_permission = await await_maybe(
                     permission.has_permission(source, info, **kwargs)
