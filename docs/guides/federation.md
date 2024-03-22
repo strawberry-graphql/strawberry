@@ -326,7 +326,8 @@ Strawberry and Federation. The repo is available here:
 ## Federated schema directives
 
 Strawberry provides implementations for
-[Apollo federation-specific GraphQL directives](https://www.apollographql.com/docs/federation/federated-types/federated-directives/).
+[Apollo federation-specific GraphQL directives](https://www.apollographql.com/docs/federation/federated-types/federated-directives/)
+up to federation spec v2.6.
 
 Some of these directives may not be necessary to directly include in your code,
 and are accessed through other means.
