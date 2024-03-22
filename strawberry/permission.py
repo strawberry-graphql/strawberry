@@ -13,7 +13,7 @@ from typing import (
     List,
     Optional,
     Type,
-    Union,
+    Union, Tuple,
 )
 
 from strawberry.exceptions import StrawberryGraphQLError
@@ -76,7 +76,6 @@ class BasePermission(abc.ABC):
     @property
     def schema_directive(self) -> object:
         if not self._schema_directive:
-
             class AutoDirective:
                 __strawberry_directive__ = StrawberrySchemaDirective(
                     self.__class__.__name__,
@@ -111,13 +110,13 @@ class CompositePermission(BasePermission, abc.ABC):
     ) -> Union[bool, Awaitable[bool]]:
         raise NotImplementedError(
             "Composite Permission classes should use the "
-            + "has_composite_permissions and has_composite_permission_async methods"
+            "has_composite_permissions and has_composite_permission_async methods"
         )
 
     @abc.abstractmethod
     async def has_composite_permission_async(
         self, source: Any, info: Info, **kwargs: Any
-    ) -> (bool, int | None):
+    ) -> Tuple[bool, int | None]:
         raise NotImplementedError(
             "Permission classes should override has_permission method"
         )
@@ -125,7 +124,7 @@ class CompositePermission(BasePermission, abc.ABC):
     @abc.abstractmethod
     def has_composite_permission(
         self, source: Any, info: Info, **kwargs: Any
-    ) -> (bool, int | None):
+    ) -> Tuple[bool, int | None]:
         raise NotImplementedError(
             "Composite Permission classes should override has_permission method"
         )
@@ -155,34 +154,34 @@ class CompositePermission(BasePermission, abc.ABC):
 class AndPermission(CompositePermission):
     def has_composite_permission(
         self, source: Any, info: Info, **kwargs: Any
-    ) -> (bool, int | None):
-        for permission in self.child_permissions:
+    ) -> Tuple[bool, int | None]:
+        for index, permission in enumerate(self.child_permissions):
             if not permission.has_permission(source, info, **kwargs):
-                return permission.on_unauthorized()
+                return False, index
         return True, None
 
     async def has_composite_permission_async(
         self, source: Any, info: Info, **kwargs: Any
-    ) -> (bool, int | None):
-        for permission in self.child_permissions:
+    ) -> Tuple[bool, int | None]:
+        for index, permission in enumerate(self.child_permissions):
             if not await await_maybe(permission.has_permission(source, info, **kwargs)):
-                return permission.on_unauthorized()
+                return False, index
         return True, None
 
 
 class OrPermission(CompositePermission):
     def has_composite_permission(
         self, source: Any, info: Info, **kwargs: Any
-    ) -> (bool, int | None):
+    ) -> Tuple[bool, int | None]:
         for permission in self.child_permissions:
             if permission.has_permission(source, info, **kwargs):
                 return True, None
 
-        return self.child_permissions[0].on_unauthorized()
+        return False, 0
 
     async def has_composite_permission_async(
         self, source: Any, info: Info, **kwargs: Any
-    ) -> (bool, int | None):
+    ) -> Tuple[bool, int | None]:
         for permission in self.child_permissions:
             if await await_maybe(permission.has_permission(source, info, **kwargs)):
                 return True, None
