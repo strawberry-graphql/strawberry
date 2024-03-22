@@ -37,7 +37,7 @@ jobs:
         run: poetry run strawberry export-schema schema:schema > schema.graphql
         working-directory: federation-compatibility
 
-      - uses: apollographql/federation-subgraph-compatibility@v1
+      - uses: apollographql/federation-subgraph-compatibility@v2
         with:
           compose: 'federation-compatibility/docker-compose.yml'
           schema: 'federation-compatibility/schema.graphql'
