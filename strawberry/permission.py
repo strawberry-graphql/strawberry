@@ -12,8 +12,9 @@ from typing import (
     Dict,
     List,
     Optional,
+    Tuple,
     Type,
-    Union, Tuple,
+    Union,
 )
 
 from strawberry.exceptions import StrawberryGraphQLError
@@ -76,6 +77,7 @@ class BasePermission(abc.ABC):
     @property
     def schema_directive(self) -> object:
         if not self._schema_directive:
+
             class AutoDirective:
                 __strawberry_directive__ = StrawberrySchemaDirective(
                     self.__class__.__name__,
