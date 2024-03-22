@@ -1,4 +1,4 @@
-Release type: patch
+Release type: minor
 
 Update federation support for v2.6 which includes the @authenticated, @requiresScopes, and @policy directives.
 
