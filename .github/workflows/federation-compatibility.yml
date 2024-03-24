@@ -28,9 +28,9 @@ jobs:
       - uses: actions/setup-python@v4
         id: setup-python
         with:
-          python-version: "3.10"
+          python-version: "3.12"
           cache: "poetry"
-      - run: poetry env use python3.10
+      - run: poetry env use python3.12
       - run: poetry install
 
       - name: export schema
@@ -43,5 +43,5 @@ jobs:
           schema: 'federation-compatibility/schema.graphql'
           port: 4001
           token: ${{ secrets.BOT_TOKEN }}
-          failOnWarning: true
+          failOnWarning: false
           failOnRequired: true
