@@ -27,8 +27,7 @@ def test_get_object_definition_non_strawberry_type():
 
     assert get_object_definition(Fruit) is None
 
-    class OtherFruit:
-        ...
+    class OtherFruit: ...
 
     assert get_object_definition(OtherFruit) is None
 

@@ -130,8 +130,7 @@ class GlobalID:
         *,
         required: Literal[True] = ...,
         ensure_type: Type[_T],
-    ) -> _T:
-        ...
+    ) -> _T: ...
 
     @overload
     async def resolve_node(
@@ -140,8 +139,7 @@ class GlobalID:
         *,
         required: Literal[True],
         ensure_type: None = ...,
-    ) -> Node:
-        ...
+    ) -> Node: ...
 
     @overload
     async def resolve_node(
@@ -150,8 +148,7 @@ class GlobalID:
         *,
         required: bool = ...,
         ensure_type: None = ...,
-    ) -> Optional[Node]:
-        ...
+    ) -> Optional[Node]: ...
 
     async def resolve_node(self, info, *, required=False, ensure_type=None) -> Any:
         """Resolve the type name and node id info to the node itself.
@@ -235,8 +232,7 @@ class GlobalID:
         *,
         required: Literal[True] = ...,
         ensure_type: Type[_T],
-    ) -> _T:
-        ...
+    ) -> _T: ...
 
     @overload
     def resolve_node_sync(
@@ -245,8 +241,7 @@ class GlobalID:
         *,
         required: Literal[True],
         ensure_type: None = ...,
-    ) -> Node:
-        ...
+    ) -> Node: ...
 
     @overload
     def resolve_node_sync(
@@ -255,8 +250,7 @@ class GlobalID:
         *,
         required: bool = ...,
         ensure_type: None = ...,
-    ) -> Optional[Node]:
-        ...
+    ) -> Optional[Node]: ...
 
     def resolve_node_sync(self, info, *, required=False, ensure_type=None) -> Any:
         """Resolve the type name and node id info to the node itself.
@@ -485,8 +479,7 @@ class Node:
         info: Info,
         node_ids: Iterable[str],
         required: Literal[True],
-    ) -> AwaitableOrValue[Iterable[Self]]:
-        ...
+    ) -> AwaitableOrValue[Iterable[Self]]: ...
 
     @overload
     @classmethod
@@ -496,8 +489,7 @@ class Node:
         info: Info,
         node_ids: Iterable[str],
         required: Literal[False] = ...,
-    ) -> AwaitableOrValue[Iterable[Optional[Self]]]:
-        ...
+    ) -> AwaitableOrValue[Iterable[Optional[Self]]]: ...
 
     @overload
     @classmethod
@@ -510,8 +502,7 @@ class Node:
     ) -> Union[
         AwaitableOrValue[Iterable[Self]],
         AwaitableOrValue[Iterable[Optional[Self]]],
-    ]:
-        ...
+    ]: ...
 
     @classmethod
     def resolve_nodes(
@@ -555,8 +546,7 @@ class Node:
         *,
         info: Info,
         required: Literal[True],
-    ) -> AwaitableOrValue[Self]:
-        ...
+    ) -> AwaitableOrValue[Self]: ...
 
     @overload
     @classmethod
@@ -566,8 +556,7 @@ class Node:
         *,
         info: Info,
         required: Literal[False] = ...,
-    ) -> AwaitableOrValue[Optional[Self]]:
-        ...
+    ) -> AwaitableOrValue[Optional[Self]]: ...
 
     @overload
     @classmethod
@@ -577,8 +566,7 @@ class Node:
         *,
         info: Info,
         required: bool,
-    ) -> AwaitableOrValue[Optional[Self]]:
-        ...
+    ) -> AwaitableOrValue[Optional[Self]]: ...
 
     @classmethod
     def resolve_node(

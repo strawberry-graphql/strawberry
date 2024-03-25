@@ -50,8 +50,7 @@ def test_called_only_if_overriden(monkeypatch: pytest.MonkeyPatch):
         nonlocal called
         called = True
 
-    class ExtensionNoHooks(SchemaExtension):
-        ...
+    class ExtensionNoHooks(SchemaExtension): ...
 
     for hook in (
         ExtensionNoHooks.on_parse,
@@ -461,8 +460,7 @@ def test_raise_if_defined_both_legacy_and_new_style(default_query_types_and_quer
         def on_execute(self):
             yield
 
-        def on_executing_start(self):
-            ...
+        def on_executing_start(self): ...
 
     schema = strawberry.Schema(
         query=default_query_types_and_query.query_type, extensions=[WrongUsageExtension]

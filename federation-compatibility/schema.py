@@ -115,8 +115,7 @@ def get_product_by_sku_and_variation(sku: str, variation: dict) -> Optional["Pro
     compose=True,
     import_url="https://myspecs.dev/myCustomDirective/v1.0",
 )
-class Custom:
-    ...
+class Custom: ...
 
 
 @strawberry.federation.type(extend=True, keys=["email"])

@@ -49,8 +49,7 @@ def test_supports_generic_specialized():
         node_field: T
 
     @strawberry.type
-    class IntEdge(Edge[int]):
-        ...
+    class IntEdge(Edge[int]): ...
 
     @strawberry.type
     class Query:
@@ -85,12 +84,10 @@ def test_supports_generic_specialized_subclass():
         node_field: T
 
     @strawberry.type
-    class IntEdge(Edge[int]):
-        ...
+    class IntEdge(Edge[int]): ...
 
     @strawberry.type
-    class IntEdgeSubclass(IntEdge):
-        ...
+    class IntEdgeSubclass(IntEdge): ...
 
     @strawberry.type
     class Query:
@@ -129,8 +126,7 @@ def test_supports_generic_specialized_with_type():
         node_field: T
 
     @strawberry.type
-    class FruitEdge(Edge[Fruit]):
-        ...
+    class FruitEdge(Edge[Fruit]): ...
 
     @strawberry.type
     class Query:
@@ -175,8 +171,7 @@ def test_supports_generic_specialized_with_list_type():
         nodes: List[T]
 
     @strawberry.type
-    class FruitEdge(Edge[Fruit]):
-        ...
+    class FruitEdge(Edge[Fruit]): ...
 
     @strawberry.type
     class Query:
@@ -1132,8 +1127,7 @@ def test_self():
         fields: List[Self]
 
     @strawberry.type
-    class Node(INode):
-        ...
+    class Node(INode): ...
 
     schema = strawberry.Schema(query=Node)
 

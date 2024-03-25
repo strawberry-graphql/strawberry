@@ -2,8 +2,7 @@ from typing import TypeVar
 from typing_extensions import Annotated
 
 
-class StrawberryParent:
-    ...
+class StrawberryParent: ...
 
 
 T = TypeVar("T")

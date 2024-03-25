@@ -198,8 +198,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -214,8 +213,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
-) -> Callable[[T], T]:
-    ...
+) -> Callable[[T], T]: ...
 
 
 def type(
@@ -274,8 +272,7 @@ def input(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -287,8 +284,7 @@ def input(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-) -> Callable[[T], T]:
-    ...
+) -> Callable[[T], T]: ...
 
 
 def input(
@@ -324,8 +320,7 @@ def interface(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -337,8 +332,7 @@ def interface(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-) -> Callable[[T], T]:
-    ...
+) -> Callable[[T], T]: ...
 
 
 @dataclass_transform(
