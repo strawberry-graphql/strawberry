@@ -25,6 +25,8 @@ if TYPE_CHECKING:
     from strawberry.field import _RESOLVER_TYPE, StrawberryField
     from strawberry.permission import BasePermission
 
+    from .schema_directives import Override
+
 T = TypeVar("T")
 
 
@@ -40,7 +42,7 @@ def field(
     inaccessible: bool = False,
     policy: Optional[List[List[str]]] = None,
     provides: Optional[List[str]] = None,
-    override: Optional[str] = None,
+    override: Optional[Union[Override, str]] = None,
     requires: Optional[List[str]] = None,
     requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
@@ -68,7 +70,7 @@ def field(
     inaccessible: bool = False,
     policy: Optional[List[List[str]]] = None,
     provides: Optional[List[str]] = None,
-    override: Optional[str] = None,
+    override: Optional[Union[Override, str]] = None,
     requires: Optional[List[str]] = None,
     requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
@@ -97,7 +99,7 @@ def field(
     inaccessible: bool = False,
     policy: Optional[List[List[str]]] = None,
     provides: Optional[List[str]] = None,
-    override: Optional[str] = None,
+    override: Optional[Union[Override, str]] = None,
     requires: Optional[List[str]] = None,
     requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
@@ -124,7 +126,7 @@ def field(
     inaccessible: bool = False,
     policy: Optional[List[List[str]]] = None,
     provides: Optional[List[str]] = None,
-    override: Optional[str] = None,
+    override: Optional[Union[Override, str]] = None,
     requires: Optional[List[str]] = None,
     requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
@@ -166,7 +168,11 @@ def field(
         directives.append(Inaccessible())
 
     if override:
-        directives.append(Override(override_from=override))
+        directives.append(
+            Override(override_from=override, label=UNSET)
+            if isinstance(override, str)
+            else override
+        )
 
     if policy:
         directives.append(Policy(policies=policy))

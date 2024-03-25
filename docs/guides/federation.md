@@ -327,7 +327,7 @@ Strawberry and Federation. The repo is available here:
 
 Strawberry provides implementations for
 [Apollo federation-specific GraphQL directives](https://www.apollographql.com/docs/federation/federated-types/federated-directives/)
-up to federation spec v2.6.
+up to federation spec v2.7.
 
 Some of these directives may not be necessary to directly include in your code,
 and are accessed through other means.
@@ -376,7 +376,7 @@ Will result in the following GraphQL schema:
 ```graphql
 schema
   @link(
-    url: "https://specs.apollo.dev/federation/v2.6"
+    url: "https://specs.apollo.dev/federation/v2.7"
     import: ["@key", "@inaccessible", "@shareable", "@tag"]
   ) {
   query: Query
