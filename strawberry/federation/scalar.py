@@ -36,8 +36,7 @@ def scalar(
     directives: Iterable[object] = (),
     inaccessible: bool = False,
     tags: Optional[Iterable[str]] = (),
-) -> Callable[[_T], _T]:
-    ...
+) -> Callable[[_T], _T]: ...
 
 
 @overload
@@ -53,8 +52,7 @@ def scalar(
     directives: Iterable[object] = (),
     inaccessible: bool = False,
     tags: Optional[Iterable[str]] = (),
-) -> _T:
-    ...
+) -> _T: ...
 
 
 def scalar(

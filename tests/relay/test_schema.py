@@ -149,8 +149,7 @@ def test_node_id_annotation_in_superclass(mocker: MockerFixture):
         code: relay.NodeID[int]
 
     @strawberry.type
-    class Fruit(BaseFruit):
-        ...
+    class Fruit(BaseFruit): ...
 
     @strawberry.type
     class Query:

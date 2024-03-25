@@ -38,8 +38,7 @@ def enum(
     directives: Iterable[object] = (),
     inaccessible: bool = False,
     tags: Optional[Iterable[str]] = (),
-) -> EnumType:
-    ...
+) -> EnumType: ...
 
 
 @overload
@@ -51,8 +50,7 @@ def enum(
     directives: Iterable[object] = (),
     inaccessible: bool = False,
     tags: Optional[Iterable[str]] = (),
-) -> Callable[[EnumType], EnumType]:
-    ...
+) -> Callable[[EnumType], EnumType]: ...
 
 
 def enum(

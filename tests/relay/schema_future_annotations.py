@@ -347,8 +347,7 @@ class Mutation:
         info: strawberry.Info,
         name: str,
         color: str,
-    ) -> CreateFruitPayload:
-        ...
+    ) -> CreateFruitPayload: ...
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)

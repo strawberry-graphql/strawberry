@@ -8,8 +8,7 @@ from strawberry.utils.typing import eval_type, get_optional_annotation, is_class
 
 
 @strawberry.type
-class Fruit:
-    ...
+class Fruit: ...
 
 
 def test_get_optional_annotation():
@@ -24,8 +23,7 @@ def test_get_optional_annotation():
 
 
 def test_eval_type():
-    class Foo:
-        ...
+    class Foo: ...
 
     assert eval_type(ForwardRef("str")) is str
     assert eval_type(str) is str

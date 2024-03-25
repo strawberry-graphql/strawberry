@@ -14,5 +14,4 @@ class Query:
         self,
         info: strawberry.Info,
         id_: Annotated[UUID, strawberry.argument(name="id")],
-    ) -> Optional[str]:
-        ...
+    ) -> Optional[str]: ...

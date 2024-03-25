@@ -204,13 +204,11 @@ def get_parameters(annotation: Type) -> Union[Tuple[object], Tuple[()]]:
 
 
 @overload
-def _ast_replace_union_operation(expr: ast.expr) -> ast.expr:
-    ...
+def _ast_replace_union_operation(expr: ast.expr) -> ast.expr: ...
 
 
 @overload
-def _ast_replace_union_operation(expr: ast.Expr) -> ast.Expr:
-    ...
+def _ast_replace_union_operation(expr: ast.Expr) -> ast.Expr: ...
 
 
 def _ast_replace_union_operation(

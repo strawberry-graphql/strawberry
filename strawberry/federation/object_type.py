@@ -93,8 +93,7 @@ def type(
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
     extend: bool = False,
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -113,8 +112,7 @@ def type(
     extend: bool = False,
     shareable: bool = False,
     directives: Iterable[object] = (),
-) -> Callable[[T], T]:
-    ...
+) -> Callable[[T], T]: ...
 
 
 def type(
@@ -156,8 +154,7 @@ def input(
     directives: Sequence[object] = (),
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -173,8 +170,7 @@ def input(
     directives: Sequence[object] = (),
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
-) -> Callable[[T], T]:
-    ...
+) -> Callable[[T], T]: ...
 
 
 def input(
@@ -212,8 +208,7 @@ def interface(
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
     directives: Iterable[object] = (),
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -230,8 +225,7 @@ def interface(
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
     directives: Iterable[object] = (),
-) -> Callable[[T], T]:
-    ...
+) -> Callable[[T], T]: ...
 
 
 def interface(
@@ -271,8 +265,7 @@ def interface_object(
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
     directives: Iterable[object] = (),
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -289,8 +282,7 @@ def interface_object(
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
     directives: Iterable[object] = (),
-) -> Callable[[T], T]:
-    ...
+) -> Callable[[T], T]: ...
 
 
 def interface_object(

@@ -12,7 +12,7 @@ import pytest
 import strawberry
 
 if TYPE_CHECKING:
-    from tests.schema.test_lazy.type_a import TypeA  # noqa
+    from tests.schema.test_lazy.type_a import TypeA
 
 STRAWBERRY_EXECUTABLE = next(
     Path(sysconfig.get_path("scripts")).glob("strawberry*"), None

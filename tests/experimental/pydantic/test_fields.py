@@ -150,8 +150,7 @@ def test_constrained_list():
         friends: conlist(str, min_items=1)
 
     @strawberry.experimental.pydantic.type(model=User, all_fields=True)
-    class UserType:
-        ...
+    class UserType: ...
 
     assert UserType.__strawberry_definition__.fields[0].name == "friends"
     assert (
@@ -178,8 +177,7 @@ def test_constrained_list_nested():
         friends: conlist(conlist(int, min_items=1), min_items=1)
 
     @strawberry.experimental.pydantic.type(model=User, all_fields=True)
-    class UserType:
-        ...
+    class UserType: ...
 
     assert UserType.__strawberry_definition__.fields[0].name == "friends"
     assert (

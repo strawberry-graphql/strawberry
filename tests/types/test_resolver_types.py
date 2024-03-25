@@ -66,8 +66,7 @@ def test_object():
 
 
 def test_optional():
-    def stock_market_tool() -> Optional[str]:
-        ...
+    def stock_market_tool() -> Optional[str]: ...
 
     resolver = StrawberryResolver(stock_market_tool)
     assert resolver.type == Optional[str]
@@ -76,8 +75,7 @@ def test_optional():
 def test_type_var():
     T = TypeVar("T")
 
-    def caffeinated_drink() -> T:
-        ...
+    def caffeinated_drink() -> T: ...
 
     resolver = StrawberryResolver(caffeinated_drink)
     assert resolver.type == T
@@ -92,8 +90,7 @@ def test_union():
     class Diagram:
         bar: float
 
-    def get_overlap() -> Union[Venn, Diagram]:
-        ...
+    def get_overlap() -> Union[Venn, Diagram]: ...
 
     resolver = StrawberryResolver(get_overlap)
     assert resolver.type == Union[Venn, Diagram]
