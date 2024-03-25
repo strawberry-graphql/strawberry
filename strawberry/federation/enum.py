@@ -17,8 +17,6 @@ from strawberry.enum import enum_value as base_enum_value
 if TYPE_CHECKING:
     from strawberry.enum import EnumType, EnumValueDefinition
 
-    from .types import Federation__Policy, Federation__Scope
-
 
 def enum_value(
     value: Any,
@@ -49,8 +47,8 @@ def enum(
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policy: Optional[List[List[Federation__Policy]]] = None,
-    requires_scopes: Optional[List[List[Federation__Scope]]] = None,
+    policy: Optional[List[List[str]]] = None,
+    requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> EnumType:
     ...
@@ -65,8 +63,8 @@ def enum(
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policy: Optional[List[List[Federation__Policy]]] = None,
-    requires_scopes: Optional[List[List[Federation__Scope]]] = None,
+    policy: Optional[List[List[str]]] = None,
+    requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> Callable[[EnumType], EnumType]:
     ...
@@ -80,8 +78,8 @@ def enum(
     directives=(),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policy: Optional[List[List[Federation__Policy]]] = None,
-    requires_scopes: Optional[List[List[Federation__Scope]]] = None,
+    policy: Optional[List[List[str]]] = None,
+    requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> Union[EnumType, Callable[[EnumType], EnumType]]:
     """Registers the enum in the GraphQL type system.

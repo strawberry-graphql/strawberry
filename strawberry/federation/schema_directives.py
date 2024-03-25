@@ -6,8 +6,6 @@ from strawberry.schema_directive import Location, schema_directive
 from strawberry.unset import UNSET
 
 from .types import (
-    Federation__Policy,
-    Federation__Scope,
     FieldSet,
     LinkImport,
     LinkPurpose,
@@ -205,7 +203,7 @@ class Authenticated(FederationDirective):
     print_definition=False,
 )
 class RequiresScopes(FederationDirective):
-    scopes: "List[List[Federation__Scope]]"
+    scopes: "List[List[str]]"
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
         name="requiresScopes", url="https://specs.apollo.dev/federation/v2.6"
     )
@@ -223,7 +221,7 @@ class RequiresScopes(FederationDirective):
     print_definition=False,
 )
 class Policy(FederationDirective):
-    policies: "List[List[Federation__Policy]]"
+    policies: "List[List[str]]"
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
         name="policy", url="https://specs.apollo.dev/federation/v2.6"
     )

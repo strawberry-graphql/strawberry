@@ -14,8 +14,6 @@ from typing import (
 
 from strawberry.custom_scalar import _process_scalar
 
-from .types import Federation__Policy, Federation__Scope
-
 # in python 3.10+ NewType is a class
 if sys.version_info >= (3, 10):
     _T = TypeVar("_T", bound=Union[type, NewType])
@@ -39,8 +37,8 @@ def scalar(
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policy: Optional[List[List[Federation__Policy]]] = None,
-    requires_scopes: Optional[List[List[Federation__Scope]]] = None,
+    policy: Optional[List[List[str]]] = None,
+    requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> Callable[[_T], _T]:
     ...
@@ -59,8 +57,8 @@ def scalar(
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policy: Optional[List[List[Federation__Policy]]] = None,
-    requires_scopes: Optional[List[List[Federation__Scope]]] = None,
+    policy: Optional[List[List[str]]] = None,
+    requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> _T:
     ...
@@ -78,8 +76,8 @@ def scalar(
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policy: Optional[List[List[Federation__Policy]]] = None,
-    requires_scopes: Optional[List[List[Federation__Scope]]] = None,
+    policy: Optional[List[List[str]]] = None,
+    requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> Any:
     """Annotates a class or type as a GraphQL custom scalar.

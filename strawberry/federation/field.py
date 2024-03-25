@@ -25,8 +25,6 @@ if TYPE_CHECKING:
     from strawberry.field import _RESOLVER_TYPE, StrawberryField
     from strawberry.permission import BasePermission
 
-    from .types import Federation__Policy, Federation__Scope
-
 T = TypeVar("T")
 
 
@@ -40,11 +38,11 @@ def field(
     authenticated: bool = False,
     external: bool = False,
     inaccessible: bool = False,
-    policy: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[str]]] = None,
     provides: Optional[List[str]] = None,
     override: Optional[str] = None,
     requires: Optional[List[str]] = None,
-    requires_scopes: Optional[List[List[Federation__Scope]]] = None,
+    requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
     shareable: bool = False,
     init: Literal[False] = False,
@@ -68,11 +66,11 @@ def field(
     authenticated: bool = False,
     external: bool = False,
     inaccessible: bool = False,
-    policy: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[str]]] = None,
     provides: Optional[List[str]] = None,
     override: Optional[str] = None,
     requires: Optional[List[str]] = None,
-    requires_scopes: Optional[List[List[Federation__Scope]]] = None,
+    requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
     shareable: bool = False,
     init: Literal[True] = True,
@@ -97,11 +95,11 @@ def field(
     authenticated: bool = False,
     external: bool = False,
     inaccessible: bool = False,
-    policy: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[str]]] = None,
     provides: Optional[List[str]] = None,
     override: Optional[str] = None,
     requires: Optional[List[str]] = None,
-    requires_scopes: Optional[List[List[Federation__Scope]]] = None,
+    requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
     shareable: bool = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
@@ -124,11 +122,11 @@ def field(
     authenticated: bool = False,
     external: bool = False,
     inaccessible: bool = False,
-    policy: Optional[List[List[Federation__Policy]]] = None,
+    policy: Optional[List[List[str]]] = None,
     provides: Optional[List[str]] = None,
     override: Optional[str] = None,
     requires: Optional[List[str]] = None,
-    requires_scopes: Optional[List[List[Federation__Scope]]] = None,
+    requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
     shareable: bool = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
