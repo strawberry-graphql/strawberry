@@ -407,18 +407,18 @@ async def test_execution_order(default_query_types_and_query):
         "ExtensionB, on_operation Entered",
         "ExtensionA, on_parse Entered",
         "ExtensionB, on_parse Entered",
-        "ExtensionA, on_parse Exited",
         "ExtensionB, on_parse Exited",
+        "ExtensionA, on_parse Exited",
         "ExtensionA, on_validate Entered",
         "ExtensionB, on_validate Entered",
-        "ExtensionA, on_validate Exited",
         "ExtensionB, on_validate Exited",
+        "ExtensionA, on_validate Exited",
         "ExtensionA, on_execute Entered",
         "ExtensionB, on_execute Entered",
-        "ExtensionA, on_execute Exited",
         "ExtensionB, on_execute Exited",
-        "ExtensionA, on_operation Exited",
+        "ExtensionA, on_execute Exited",
         "ExtensionB, on_operation Exited",
+        "ExtensionA, on_operation Exited",
     ]
 
 
@@ -684,18 +684,19 @@ def test_extension_execution_order_sync():
         def on_execute(self):
             execution_order.append(type(self))
             yield
+            execution_order.append(type(self))
 
     class ExtensionC(SchemaExtension):
         def on_execute(self):
             execution_order.append(type(self))
             yield
+            execution_order.append(type(self))
 
     @strawberry.type
     class Query:
         food: str = "strawberry"
 
-    extensions = [ExtensionB, ExtensionC]
-    schema = strawberry.Schema(query=Query, extensions=extensions)
+    schema = strawberry.Schema(query=Query, extensions=[ExtensionB, ExtensionC])
 
     query = """
         query TestQuery {
@@ -707,7 +708,7 @@ def test_extension_execution_order_sync():
 
     assert not result.errors
     assert result.data == {"food": "strawberry"}
-    assert execution_order == extensions
+    assert execution_order == [ExtensionB, ExtensionC, ExtensionC, ExtensionB]
 
 
 def test_async_extension_in_sync_context():
