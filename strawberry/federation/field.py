@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from strawberry.field import _RESOLVER_TYPE, StrawberryField
     from strawberry.permission import BasePermission
 
+    from .schema_directives import Override
 
 T = TypeVar("T")
 
@@ -36,13 +37,16 @@ def field(
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
-    provides: Optional[List[str]] = None,
-    requires: Optional[List[str]] = None,
+    authenticated: bool = False,
     external: bool = False,
-    shareable: bool = False,
-    tags: Optional[Iterable[str]] = (),
-    override: Optional[str] = None,
     inaccessible: bool = False,
+    policy: Optional[List[List[str]]] = None,
+    provides: Optional[List[str]] = None,
+    override: Optional[Union[Override, str]] = None,
+    requires: Optional[List[str]] = None,
+    requires_scopes: Optional[List[List[str]]] = None,
+    tags: Optional[Iterable[str]] = (),
+    shareable: bool = False,
     init: Literal[False] = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
@@ -61,13 +65,16 @@ def field(
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
-    provides: Optional[List[str]] = None,
-    requires: Optional[List[str]] = None,
+    authenticated: bool = False,
     external: bool = False,
-    shareable: bool = False,
-    tags: Optional[Iterable[str]] = (),
-    override: Optional[str] = None,
     inaccessible: bool = False,
+    policy: Optional[List[List[str]]] = None,
+    provides: Optional[List[str]] = None,
+    override: Optional[Union[Override, str]] = None,
+    requires: Optional[List[str]] = None,
+    requires_scopes: Optional[List[List[str]]] = None,
+    tags: Optional[Iterable[str]] = (),
+    shareable: bool = False,
     init: Literal[True] = True,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
@@ -87,13 +94,16 @@ def field(
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
-    provides: Optional[List[str]] = None,
-    requires: Optional[List[str]] = None,
+    authenticated: bool = False,
     external: bool = False,
-    shareable: bool = False,
-    tags: Optional[Iterable[str]] = (),
-    override: Optional[str] = None,
     inaccessible: bool = False,
+    policy: Optional[List[List[str]]] = None,
+    provides: Optional[List[str]] = None,
+    override: Optional[Union[Override, str]] = None,
+    requires: Optional[List[str]] = None,
+    requires_scopes: Optional[List[List[str]]] = None,
+    tags: Optional[Iterable[str]] = (),
+    shareable: bool = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
@@ -111,13 +121,16 @@ def field(
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
-    provides: Optional[List[str]] = None,
-    requires: Optional[List[str]] = None,
+    authenticated: bool = False,
     external: bool = False,
-    shareable: bool = False,
-    tags: Optional[Iterable[str]] = (),
-    override: Optional[str] = None,
     inaccessible: bool = False,
+    policy: Optional[List[List[str]]] = None,
+    provides: Optional[List[str]] = None,
+    override: Optional[Union[Override, str]] = None,
+    requires: Optional[List[str]] = None,
+    requires_scopes: Optional[List[List[str]]] = None,
+    tags: Optional[Iterable[str]] = (),
+    shareable: bool = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
@@ -131,16 +144,38 @@ def field(
     init: Literal[True, False, None] = None,
 ) -> Any:
     from .schema_directives import (
+        Authenticated,
         External,
         Inaccessible,
         Override,
+        Policy,
         Provides,
         Requires,
+        RequiresScopes,
         Shareable,
         Tag,
     )
 
     directives = list(directives)
+
+    if authenticated:
+        directives.append(Authenticated())
+
+    if external:
+        directives.append(External())
+
+    if inaccessible:
+        directives.append(Inaccessible())
+
+    if override:
+        directives.append(
+            Override(override_from=override, label=UNSET)
+            if isinstance(override, str)
+            else override
+        )
+
+    if policy:
+        directives.append(Policy(policies=policy))
 
     if provides:
         directives.append(Provides(fields=" ".join(provides)))
@@ -148,20 +183,14 @@ def field(
     if requires:
         directives.append(Requires(fields=" ".join(requires)))
 
-    if external:
-        directives.append(External())
+    if requires_scopes:
+        directives.append(RequiresScopes(scopes=requires_scopes))
 
     if shareable:
         directives.append(Shareable())
 
     if tags:
         directives.extend(Tag(name=tag) for tag in tags)
-
-    if override:
-        directives.append(Override(override_from=override))
-
-    if inaccessible:
-        directives.append(Inaccessible())
 
     return base_field(  # type: ignore
         resolver=resolver,  # type: ignore
