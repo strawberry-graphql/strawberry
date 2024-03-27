@@ -38,10 +38,13 @@ async def test_errors_when_running_async_in_sync_mode():
         }
     """
 
-    with pytest.raises(RuntimeError) as e:
-        schema.execute_sync(query)
-
-    assert e.value.args[0] == "GraphQL execution failed to complete synchronously."
+    result = schema.execute_sync(query)
+    assert len(result.errors) == 1
+    assert isinstance(result.errors[0].original_error, RuntimeError)
+    assert (
+        result.errors[0].message
+        == "GraphQL execution failed to complete synchronously."
+    )
 
 
 @pytest.mark.asyncio

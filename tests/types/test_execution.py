@@ -1,5 +1,3 @@
-import pytest
-
 import strawberry
 from strawberry.extensions import SchemaExtension
 
@@ -150,8 +148,10 @@ def test_error_when_accessing_operation_type_before_parsing():
 
     schema = strawberry.Schema(Query, extensions=[MyExtension])
 
-    with pytest.raises(RuntimeError):
-        schema.execute_sync("mutation { myMutation }")
+    result = schema.execute_sync("mutation { myMutation }")
+    assert len(result.errors) == 1
+    assert isinstance(result.errors[0].original_error, RuntimeError)
+    assert result.errors[0].message == "No GraphQL document available"
 
 
 def test_error_when_accessing_operation_type_with_invalid_operation_name():
@@ -165,5 +165,7 @@ def test_error_when_accessing_operation_type_with_invalid_operation_name():
 
     schema = strawberry.Schema(Query, extensions=[MyExtension])
 
-    with pytest.raises(RuntimeError):
-        schema.execute_sync("query { ping }", operation_name="MyQuery")
+    result = schema.execute_sync("query { ping }", operation_name="MyQuery")
+    assert len(result.errors) == 1
+    assert isinstance(result.errors[0].original_error, RuntimeError)
+    assert result.errors[0].message == "Can't get GraphQL operation type"
