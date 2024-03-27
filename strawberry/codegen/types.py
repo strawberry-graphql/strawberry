@@ -7,6 +7,10 @@ if TYPE_CHECKING:
     from enum import EnumMeta
     from typing_extensions import Literal
 
+    from graphql.language.ast import Node
+
+    from strawberry.field import StrawberryField
+    from strawberry.type import StrawberryType
     from strawberry.unset import UnsetType
 
 
@@ -32,6 +36,8 @@ class GraphQLField:
     alias: Optional[str]
     type: GraphQLType
     default_value: Optional[GraphQLArgumentValue] = None
+    graphql_node: Optional[Node] = None
+    strawberry_field: Optional[StrawberryField] = None
 
 
 @dataclass
@@ -44,6 +50,8 @@ class GraphQLObjectType:
     name: str
     fields: List[GraphQLField] = field(default_factory=list)
     graphql_typename: Optional[str] = None
+    graphql_node: Optional[Node] = None
+    graphql_type: Optional[StrawberryType] = None
 
 
 # Subtype of GraphQLObjectType.
@@ -55,6 +63,8 @@ class GraphQLFragmentType(GraphQLObjectType):
     fields: List[GraphQLField] = field(default_factory=list)
     graphql_typename: Optional[str] = None
     on: str = ""
+    graphql_node: Optional[Node] = None
+    graphql_type: Optional[StrawberryType] = None
 
     def __post_init__(self) -> None:
         if not self.on:
