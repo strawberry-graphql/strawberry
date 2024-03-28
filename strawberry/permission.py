@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import inspect
+import itertools
 from functools import cached_property
 from inspect import iscoroutinefunction
 from typing import (
@@ -11,6 +12,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Tuple,
     Type,
     Union,
 )
@@ -61,7 +63,6 @@ class BasePermission(abc.ABC):
         Default error raising for permissions.
         This can be overridden to customize the behavior.
         """
-
         # Instantiate error class
         error = self.error_class(self.message or "")
 
@@ -88,6 +89,106 @@ class BasePermission(abc.ABC):
             self._schema_directive = AutoDirective()
 
         return self._schema_directive
+
+    @property
+    def is_async(self) -> bool:
+        return iscoroutinefunction(self.has_permission)
+
+    def __and__(self, other: BasePermission):
+        return AndPermission([self, other])
+
+    def __or__(self, other: BasePermission):
+        return OrPermission([self, other])
+
+
+class CompositePermission(BasePermission, abc.ABC):
+    child_permissions: List[BasePermission]
+
+    def __init__(self, child_permissions: List[BasePermission]):
+        self.child_permissions = child_permissions
+
+    def has_permission(
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> Union[bool, Awaitable[bool]]:
+        raise NotImplementedError(
+            "Composite Permission classes should use the "
+            "has_composite_permissions and has_composite_permission_async methods"
+        )
+
+    @abc.abstractmethod
+    async def has_composite_permission_async(
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> Tuple[bool, int | None]:
+        raise NotImplementedError(
+            "Permission classes should override has_permission method"
+        )
+
+    @abc.abstractmethod
+    def has_composite_permission(
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> Tuple[bool, int | None]:
+        raise NotImplementedError(
+            "Composite Permission classes should override has_permission method"
+        )
+
+    @property
+    def is_async(self) -> bool:
+        return any(x.is_async for x in self.child_permissions)
+
+    @property
+    def schema_directive_set(self) -> List[object]:
+        composite_list = list(
+            itertools.chain.from_iterable(
+                [
+                    x.schema_directive_set
+                    for x in self.child_permissions
+                    if isinstance(x, CompositePermission)
+                ]
+            )
+        )
+        return composite_list + [
+            x.schema_directive
+            for x in self.child_permissions
+            if not isinstance(x, CompositePermission)
+        ]
+
+
+class AndPermission(CompositePermission):
+    def has_composite_permission(
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> Tuple[bool, int | None]:
+        for index, permission in enumerate(self.child_permissions):
+            if not permission.has_permission(source, info, **kwargs):
+                return False, index
+        return True, None
+
+    async def has_composite_permission_async(
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> Tuple[bool, int | None]:
+        for index, permission in enumerate(self.child_permissions):
+            if not await await_maybe(permission.has_permission(source, info, **kwargs)):
+                return False, index
+        return True, None
+
+
+class OrPermission(CompositePermission):
+    def has_composite_permission(
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> Tuple[bool, int | None]:
+        for permission in self.child_permissions:
+            if permission.has_permission(source, info, **kwargs):
+                return True, None
+
+        return False, 0
+
+    async def has_composite_permission_async(
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> Tuple[bool, int | None]:
+        for permission in self.child_permissions:
+            if await await_maybe(permission.has_permission(source, info, **kwargs)):
+                return True, None
+
+        return False, 0
 
 
 class PermissionExtension(FieldExtension):
@@ -122,7 +223,17 @@ class PermissionExtension(FieldExtension):
         """
         if self.use_directives:
             field.directives.extend(
-                p.schema_directive for p in self.permissions if p.schema_directive
+                [
+                    directive
+                    for p in self.permissions
+                    if isinstance(p, CompositePermission)
+                    for directive in p.schema_directive_set
+                ]
+                + [
+                    p.schema_directive
+                    for p in self.permissions
+                    if not isinstance(p, CompositePermission)
+                ]
             )
         # We can only fail silently if the field is optional or a list
         if self.fail_silently:
@@ -151,9 +262,23 @@ class PermissionExtension(FieldExtension):
         Checks if the permission should be accepted and
         raises an exception if not
         """
+
         for permission in self.permissions:
-            if not permission.has_permission(source, info, **kwargs):
-                return self._on_unauthorized(permission)
+            if isinstance(permission, CompositePermission):
+                has_permission, failed_index = permission.has_composite_permission(
+                    source, info, **kwargs
+                )
+
+                if not has_permission:
+                    return self._on_unauthorized(
+                        permission.child_permissions[failed_index]
+                    )
+            else:
+                has_permission = permission.has_permission(source, info, **kwargs)
+
+                if not has_permission:
+                    return self._on_unauthorized(permission)
+
         return next_(source, info, **kwargs)
 
     async def resolve_async(
@@ -164,12 +289,20 @@ class PermissionExtension(FieldExtension):
         **kwargs: Dict[str, Any],
     ) -> Any:
         for permission in self.permissions:
-            has_permission = await await_maybe(
-                permission.has_permission(source, info, **kwargs)
-            )
-
-            if not has_permission:
-                return self._on_unauthorized(permission)
+            if isinstance(permission, CompositePermission):
+                has_permission, failed_index = await await_maybe(
+                    permission.has_composite_permission_async(source, info, **kwargs)
+                )
+                if not has_permission:
+                    return self._on_unauthorized(
+                        permission.child_permissions[failed_index]
+                    )
+            else:
+                has_permission = await await_maybe(
+                    permission.has_permission(source, info, **kwargs)
+                )
+                if not has_permission:
+                    return self._on_unauthorized(permission)
         next = next_(source, info, **kwargs)
         if inspect.isasyncgen(next):
             return next
@@ -180,8 +313,6 @@ class PermissionExtension(FieldExtension):
         """The Permission extension always supports async checking using await_maybe,
         but only supports sync checking if there are no async permissions"""
         async_permissions = [
-            True
-            for permission in self.permissions
-            if iscoroutinefunction(permission.has_permission)
+            True for permission in self.permissions if permission.is_async
         ]
         return len(async_permissions) == 0
