@@ -122,6 +122,7 @@ def test_uses_federation_schema():
 
     assert codegen(schema).strip() == expected
 
+
 def test_supports_authenticated_directive():
     schema = """
     extend schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@authenticated"])
@@ -151,7 +152,8 @@ def test_support_for_directives_on_fields():
     type User {
         a: String! @shareable
         b: String! @inaccessible
-        c: String! @override
+        c: String! @override(from: "mySubGraph")
+        c1: String! @override(from: "mySubGraph", label: "some.label")
         d: String! @external
         e: String! @requires(fields: "id")
         f: String! @provides(fields: "id")
@@ -162,12 +164,14 @@ def test_support_for_directives_on_fields():
     expected = textwrap.dedent(
         """
         import strawberry
+        from strawberry.federation.schema_directives import Override
 
         @strawberry.type
         class User:
             a: str = strawberry.federation.field(shareable=True)
             b: str = strawberry.federation.field(inaccessible=True)
-            c: str = strawberry.federation.field(override=True)
+            c: str = strawberry.federation.field(override="mySubGraph")
+            c1: str = strawberry.federation.field(override=Override(override_from="mySubGraph", label="some.label"))
             d: str = strawberry.federation.field(external=True)
             e: str = strawberry.federation.field(requires=["id"])
             f: str = strawberry.federation.field(provides=["id"])
@@ -176,4 +180,3 @@ def test_support_for_directives_on_fields():
     ).strip()
 
     assert codegen(schema).strip() == expected
-

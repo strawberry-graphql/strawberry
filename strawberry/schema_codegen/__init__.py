@@ -65,6 +65,33 @@ _SCALAR_MAP = {
 }
 
 
+@dataclasses.dataclass(frozen=True)
+class Import:
+    module: str | None
+    imports: tuple[str]
+
+    def module_path_to_cst(self, module_path: str) -> cst.Name | cst.Attribute:
+        parts = module_path.split(".")
+
+        module_name = cst.Name(parts[0])
+
+        for part in parts[1:]:
+            module_name = cst.Attribute(value=module_name, attr=cst.Name(part))
+
+        return module_name
+
+    def to_cst(self) -> cst.Import | cst.ImportFrom:
+        if self.module is None:
+            return cst.Import(
+                names=[cst.ImportAlias(name=cst.Name(name)) for name in self.imports]
+            )
+
+        return cst.ImportFrom(
+            module=self.module_path_to_cst(self.module),
+            names=[cst.ImportAlias(name=cst.Name(name)) for name in self.imports],
+        )
+
+
 def _is_federation_link_directive(directive: ConstDirectiveNode) -> bool:
     if directive.name.value != "link":
         return False
@@ -157,6 +184,7 @@ def _get_field_value(
     field: FieldDefinitionNode | InputValueDefinitionNode,
     alias: str | None,
     is_apollo_federation: bool,
+    imports: set[Import],
 ) -> cst.Call | None:
     description = field.description.value if field.description else None
 
@@ -172,7 +200,7 @@ def _get_field_value(
 
     directives = _get_directives(field)
 
-    apollo_federation_args = _get_federation_arguments(directives)
+    apollo_federation_args = _get_federation_arguments(directives, imports)
 
     if is_apollo_federation and apollo_federation_args:
         args.extend(apollo_federation_args)
@@ -203,6 +231,7 @@ def _get_field_value(
 def _get_field(
     field: FieldDefinitionNode | InputValueDefinitionNode,
     is_apollo_federation: bool,
+    imports: set[Import],
 ) -> cst.SimpleStatementLine:
     name = to_snake_case(field.name.value)
     alias: str | None = None
@@ -219,7 +248,10 @@ def _get_field(
                     _get_field_type(field.type),
                 ),
                 value=_get_field_value(
-                    field, alias=alias, is_apollo_federation=is_apollo_federation
+                    field,
+                    alias=alias,
+                    is_apollo_federation=is_apollo_federation,
+                    imports=imports,
                 ),
             )
         ]
@@ -262,6 +294,7 @@ def _get_directives(
 
 def _get_federation_arguments(
     directives: dict[str, list[dict[str, ArgumentValue]]],
+    imports: set[Import],
 ) -> list[cst.Arg]:
     def append_arg_from_directive(
         directive: str, argument_name: str, keyword_name: str | None = None
@@ -283,11 +316,45 @@ def _get_federation_arguments(
     append_arg_from_directive("provides", "fields")
     append_arg_from_directive("tag", "name", "tags")
 
-    boolean_keys = ("shareable", "inaccessible", "external", "override", "authenticated")
+    boolean_keys = (
+        "shareable",
+        "inaccessible",
+        "external",
+        "authenticated",
+    )
 
     arguments.extend(
         _get_argument(key, True) for key in boolean_keys if directives.get(key, False)
     )
+
+    if override := directives.get("override"):
+        override = override[0]
+
+        if "label" not in override:
+            arguments.append(_get_argument("override", override["from"]))
+        else:
+            imports.add(
+                Import(
+                    module="strawberry.federation.schema_directives",
+                    imports=("Override",),
+                )
+            )
+
+            arguments.append(
+                cst.Arg(
+                    keyword=cst.Name("override"),
+                    value=cst.Call(
+                        func=cst.Name("Override"),
+                        args=[
+                            _get_argument("override_from", override["from"]),
+                            _get_argument("label", override["label"]),
+                        ],
+                    ),
+                    equal=cst.AssignEqual(
+                        cst.SimpleWhitespace(""), cst.SimpleWhitespace("")
+                    ),
+                )
+            )
 
     return arguments
 
@@ -298,6 +365,7 @@ def _get_strawberry_decorator(
     | InterfaceTypeDefinitionNode
     | InputObjectTypeDefinitionNode,
     is_apollo_federation: bool,
+    imports: set[Import],
 ) -> cst.Decorator:
     type_ = {
         ObjectTypeDefinitionNode: "type",
@@ -324,7 +392,7 @@ def _get_strawberry_decorator(
     if description is not None:
         arguments.append(_get_argument("description", description.value))
 
-    federation_arguments = _get_federation_arguments(directives)
+    federation_arguments = _get_federation_arguments(directives, imports)
 
     # and has any directive that is a federation directive
     if is_apollo_federation and federation_arguments:
@@ -355,8 +423,9 @@ def _get_class_definition(
     | InterfaceTypeDefinitionNode
     | InputObjectTypeDefinitionNode,
     is_apollo_federation: bool,
+    imports: set[Import],
 ) -> cst.ClassDef:
-    decorator = _get_strawberry_decorator(definition, is_apollo_federation)
+    decorator = _get_strawberry_decorator(definition, is_apollo_federation, imports)
 
     bases = (
         [cst.Arg(cst.Name(interface.name.value)) for interface in definition.interfaces]
@@ -372,7 +441,8 @@ def _get_class_definition(
         bases=bases,
         body=cst.IndentedBlock(
             body=[
-                _get_field(field, is_apollo_federation) for field in definition.fields
+                _get_field(field, is_apollo_federation, imports)
+                for field in definition.fields
             ]
         ),
         decorators=[decorator],
@@ -473,23 +543,6 @@ def _get_schema_definition(
             )
         ]
     )
-
-
-@dataclasses.dataclass(frozen=True)
-class Import:
-    module: str | None
-    imports: tuple[str]
-
-    def to_cst(self) -> cst.Import | cst.ImportFrom:
-        if self.module is None:
-            return cst.Import(
-                names=[cst.ImportAlias(name=cst.Name(name)) for name in self.imports]
-            )
-
-        return cst.ImportFrom(
-            module=cst.Name(self.module),
-            names=[cst.ImportAlias(name=cst.Name(name)) for name in self.imports],
-        )
 
 
 def _get_union_definition(definition: UnionTypeDefinitionNode) -> cst.Assign:
@@ -640,7 +693,9 @@ def codegen(schema: str) -> str:
                 ObjectTypeExtensionNode,
             ),
         ):
-            class_definition = _get_class_definition(definition, is_apollo_federation)
+            class_definition = _get_class_definition(
+                definition, is_apollo_federation, imports
+            )
 
             object_types[definition.name.value] = class_definition
 
