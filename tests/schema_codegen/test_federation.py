@@ -122,6 +122,27 @@ def test_uses_federation_schema():
 
     assert codegen(schema).strip() == expected
 
+def test_supports_authenticated_directive():
+    schema = """
+    extend schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@authenticated"])
+
+    type User @authenticated {
+        name: String! @authenticated
+    }
+    """
+
+    expected = textwrap.dedent(
+        """
+        import strawberry
+
+        @strawberry.federation.type(authenticated=True)
+        class User:
+            name: str = strawberry.federation.field(authenticated=True)
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
+
 
 def test_support_for_directives_on_fields():
     schema = """
@@ -155,3 +176,4 @@ def test_support_for_directives_on_fields():
     ).strip()
 
     assert codegen(schema).strip() == expected
+

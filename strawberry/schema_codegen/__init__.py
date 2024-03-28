@@ -283,7 +283,7 @@ def _get_federation_arguments(
     append_arg_from_directive("provides", "fields")
     append_arg_from_directive("tag", "name", "tags")
 
-    boolean_keys = ("shareable", "inaccessible", "external", "override")
+    boolean_keys = ("shareable", "inaccessible", "external", "override", "authenticated")
 
     arguments.extend(
         _get_argument(key, True) for key in boolean_keys if directives.get(key, False)
