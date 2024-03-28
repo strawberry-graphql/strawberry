@@ -330,6 +330,7 @@ def _get_federation_arguments(
     append_arg_from_directive(
         "requiresScopes", "scopes", "requires_scopes", flatten=False
     )
+    append_arg_from_directive("policy", "policies", "policy", flatten=False)
     append_arg_from_directive("tag", "name", "tags")
 
     boolean_keys = (

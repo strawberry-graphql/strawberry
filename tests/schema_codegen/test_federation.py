@@ -167,6 +167,28 @@ def test_requires_scope():
     assert codegen(schema).strip() == expected
 
 
+def test_policy_directive():
+    schema = """
+    extend schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@policy"])
+
+    type User @policy(policies: ["userPolicy", [["client", "poweruser"], ["admin"], ["productowner"]]]){
+        name: String!
+    }
+    """
+
+    expected = textwrap.dedent(
+        """
+        import strawberry
+
+        @strawberry.federation.type(policy=["userPolicy", [["client", "poweruser"], ["admin"], ["productowner"]]])
+        class User:
+            name: str
+        """
+    ).strip()
+
+    assert codegen(schema).strip() == expected
+
+
 def test_support_for_directives_on_fields():
     schema = """
     extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@requires", "@provides"])
