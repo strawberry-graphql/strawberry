@@ -148,6 +148,15 @@ def _sanitize_argument(value: ArgumentValue) -> cst.SimpleString | cst.Name:
     if isinstance(value, bool):
         return cst.Name(value=str(value))
 
+    if isinstance(value, list):
+        return cst.List(
+            elements=[
+                cst.Element(value=_sanitize_argument(item))
+                for item in value
+                if item is not None
+            ],
+        )
+
     if "\n" in value:
         argument_value = cst.SimpleString(f'"""\n{value}\n"""')
     elif '"' in value:
@@ -158,7 +167,7 @@ def _sanitize_argument(value: ArgumentValue) -> cst.SimpleString | cst.Name:
     return argument_value
 
 
-def _get_argument(name: str, value: str | bool) -> cst.Arg:
+def _get_argument(name: str, value: ArgumentValue) -> cst.Arg:
     argument_value = _sanitize_argument(value)
 
     return cst.Arg(
@@ -168,6 +177,7 @@ def _get_argument(name: str, value: str | bool) -> cst.Arg:
     )
 
 
+# TODO: this might be removed now
 def _get_argument_list(name: str, values: list[ArgumentValue]) -> cst.Arg:
     value = cst.List(
         elements=[cst.Element(value=_sanitize_argument(value)) for value in values],
@@ -297,23 +307,29 @@ def _get_federation_arguments(
     imports: set[Import],
 ) -> list[cst.Arg]:
     def append_arg_from_directive(
-        directive: str, argument_name: str, keyword_name: str | None = None
+        directive: str,
+        argument_name: str,
+        keyword_name: str | None = None,
+        flatten: bool = True,
     ):
         keyword_name = keyword_name or directive
 
         if directive in directives:
-            arguments.append(
-                _get_argument_list(
-                    keyword_name,
-                    [item[argument_name] for item in directives[directive]],
-                )
-            )
+            values = [item[argument_name] for item in directives[directive]]
+
+            if flatten:
+                arguments.append(_get_argument(keyword_name, values))
+            else:
+                arguments.extend(_get_argument(keyword_name, value) for value in values)
 
     arguments: list[cst.Arg] = []
 
     append_arg_from_directive("key", "fields", "keys")
     append_arg_from_directive("requires", "fields")
     append_arg_from_directive("provides", "fields")
+    append_arg_from_directive(
+        "requiresScopes", "scopes", "requires_scopes", flatten=False
+    )
     append_arg_from_directive("tag", "name", "tags")
 
     boolean_keys = (
