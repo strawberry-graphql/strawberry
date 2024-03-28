@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Callable, Dict, List, Optional
 
-from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
@@ -20,6 +19,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
+from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 from strawberry.unset import UNSET
 from strawberry.utils.debug import pretty_print_graphql_operation
@@ -259,12 +259,11 @@ class BaseGraphQLTransportWSHandler(ABC):
         operation = Operation(self, message.id, operation_type)
 
         # Handle initial validation errors
-        if isinstance(result_source, GraphQLExecutionResult):
+        if isinstance(result_source, ExecutionResult):
             assert operation_type == OperationType.SUBSCRIPTION
             assert result_source.errors
             payload = [err.formatted for err in result_source.errors]
             await self.send_message(ErrorMessage(id=message.id, payload=payload))
-            self.schema.process_errors(result_source.errors)
             return
 
         # Create task to handle this subscription, reserve the operation ID
@@ -314,16 +313,15 @@ class BaseGraphQLTransportWSHandler(ABC):
                     error_payload = [err.formatted for err in result.errors]
                     error_message = ErrorMessage(id=operation.id, payload=error_payload)
                     await operation.send_message(error_message)
-                    # don't need to call schema.process_errors() here because
-                    # it was already done by schema.execute()
                     return
                 else:
                     next_payload = {"data": result.data}
                     if result.errors:
-                        self.schema.process_errors(result.errors)
                         next_payload["errors"] = [
                             err.formatted for err in result.errors
                         ]
+                    if result.extensions:
+                        next_payload["extensions"] = result.extensions
                     next_message = NextMessage(id=operation.id, payload=next_payload)
                     await operation.send_message(next_message)
         except Exception as error:

@@ -15,7 +15,8 @@ from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHand
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
-from tests.views.schema import Query, schema
+from tests.views.schema import Query
+from tests.views.schema import async_schema as schema
 
 from ..context import get_context
 from .asgi import AsgiWebSocketClient
