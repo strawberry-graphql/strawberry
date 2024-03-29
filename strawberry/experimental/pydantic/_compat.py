@@ -24,21 +24,28 @@ class CompatModelField:
     allow_none: bool
     has_alias: bool
     description: Optional[str]
+    _missing_type: Any
+
+    @property
+    def has_default_factory(self) -> bool:
+        return self.default_factory is not self._missing_type
+
+    @property
+    def has_default(self) -> bool:
+        return self.default is not self._missing_type
 
 
-if IS_PYDANTIC_V2:
-    from typing_extensions import get_args, get_origin
-
-    from pydantic._internal._typing_extra import is_new_type
-    from pydantic._internal._utils import lenient_issubclass, smart_deepcopy
-    from pydantic_core import PydanticUndefined
-
-    PYDANTIC_MISSING_TYPE = PydanticUndefined
-
-    def new_type_supertype(type_: Any) -> Any:
+class PydanticV2Compat:
+    def new_type_supertype(self, type_: Any) -> Any:
         return type_.__supertype__
 
-    def get_model_fields(model: Type[BaseModel]) -> Dict[str, CompatModelField]:
+    @property
+    def PYDANTIC_MISSING_TYPE(self) -> Any:
+        from pydantic_core import PydanticUndefined
+
+        return PydanticUndefined
+
+    def get_model_fields(self, model: Type[BaseModel]) -> Dict[str, CompatModelField]:
         field_info: dict[str, FieldInfo] = model.model_fields
         new_fields = {}
         # Convert it into CompatModelField
@@ -55,24 +62,17 @@ if IS_PYDANTIC_V2:
                 allow_none=False,
                 has_alias=field is not None,
                 description=field.description,
+                _missing_type=self.PYDANTIC_MISSING_TYPE,
             )
         return new_fields
 
-else:
-    from pydantic.typing import (  # type: ignore[no-redef]
-        get_args,
-        get_origin,
-        is_new_type,
-        new_type_supertype,
-    )
-    from pydantic.utils import (  # type: ignore[no-redef]
-        lenient_issubclass,
-        smart_deepcopy,
-    )
 
-    PYDANTIC_MISSING_TYPE = dataclasses.MISSING  # type: ignore[assignment]
+class PydanticV1Compat:
+    @property
+    def PYDANTIC_MISSING_TYPE(self) -> Any:
+        return dataclasses.MISSING
 
-    def get_model_fields(model: Type[BaseModel]) -> Dict[str, CompatModelField]:
+    def get_model_fields(self, model: Type[BaseModel]) -> Dict[str, CompatModelField]:
         new_fields = {}
         # Convert it into CompatModelField
         for name, field in model.__fields__.items():  # type: ignore[attr-defined]
@@ -87,17 +87,49 @@ else:
                 allow_none=field.allow_none,
                 has_alias=field.has_alias,
                 description=field.field_info.description,
+                _missing_type=self.PYDANTIC_MISSING_TYPE,
             )
         return new_fields
 
+    def new_type_supertype(self, type_: Any) -> Any:
+        return type_
+
+
+class PydanticCompat:
+    # proxy based on v1 or v2
+    def __init__(self):
+        if IS_PYDANTIC_V2:
+            self._compat = PydanticV2Compat()
+        else:
+            self._compat = PydanticV1Compat()
+
+    @classmethod
+    def from_model(cls, model: Type[BaseModel]) -> "PydanticCompat":
+        return cls()
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._compat, name)
+
+
+if IS_PYDANTIC_V2:
+    from typing_extensions import get_args, get_origin
+
+    from pydantic._internal._typing_extra import is_new_type
+    from pydantic._internal._utils import lenient_issubclass, smart_deepcopy
+
+    def new_type_supertype(type_: Any) -> Any:
+        return type_.__supertype__
+else:
+    from pydantic.typing import get_args, get_origin, is_new_type
+    from pydantic.utils import lenient_issubclass, smart_deepcopy
+
 
 __all__ = [
-    "smart_deepcopy",
-    "lenient_issubclass",
-    "get_args",
-    "get_origin",
+    "PydanticCompat",
     "is_new_type",
+    "lenient_issubclass",
+    "get_origin",
+    "get_args",
     "new_type_supertype",
-    "get_model_fields",
-    "PYDANTIC_MISSING_TYPE",
+    "smart_deepcopy",
 ]

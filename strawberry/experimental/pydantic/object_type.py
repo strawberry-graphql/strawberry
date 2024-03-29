@@ -21,7 +21,7 @@ from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic._compat import (
     IS_PYDANTIC_V1,
     CompatModelField,
-    get_model_fields,
+    PydanticCompat,
 )
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
@@ -129,7 +129,8 @@ def type(
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
-        model_fields = get_model_fields(model)
+        compat = PydanticCompat.from_model(model)
+        model_fields = compat.get_model_fields(model)
         original_fields_set = set(fields) if fields else set()
 
         if fields:

@@ -19,7 +19,7 @@ from pydantic import BaseModel
 from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic._compat import (
     CompatModelField,
-    get_model_fields,
+    PydanticCompat,
     lenient_issubclass,
 )
 from strawberry.experimental.pydantic.utils import (
@@ -72,7 +72,8 @@ def error_type(
     all_fields: bool = False,
 ) -> Callable[..., Type]:
     def wrap(cls: Type) -> Type:
-        model_fields = get_model_fields(model)
+        compat = PydanticCompat.from_model(model)
+        model_fields = compat.get_model_fields(model)
         fields_set = set(fields) if fields else set()
 
         if fields:
