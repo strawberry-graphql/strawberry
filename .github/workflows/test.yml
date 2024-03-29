@@ -51,7 +51,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: |
             3.8
@@ -101,7 +101,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: pipx install poetry
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         id: setup-python
         with:
           python-version: "3.12"
@@ -157,7 +157,7 @@ jobs:
       - uses: actions/checkout@v3
       - run: pipx install poetry
       - run: pipx install coverage
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         id: setup-python
         with:
           python-version: "3.11"
