@@ -232,7 +232,7 @@ class PydanticCompat:
         if is_v2:
             self._compat = PydanticV2Compat()
         else:
-            self._compat = PydanticV1Compat()
+            self._compat = PydanticV1Compat()  # type: ignore[assignment]
 
     @classmethod
     def from_model(cls, model: Type[BaseModel]) -> "PydanticCompat":
@@ -254,8 +254,16 @@ if IS_PYDANTIC_V2:
     def new_type_supertype(type_: Any) -> Any:
         return type_.__supertype__
 else:
-    from pydantic.typing import get_args, get_origin, is_new_type, new_type_supertype
-    from pydantic.utils import lenient_issubclass, smart_deepcopy
+    from pydantic.typing import (  # type: ignore[no-redef]
+        get_args,
+        get_origin,
+        is_new_type,
+        new_type_supertype,
+    )
+    from pydantic.utils import (  # type: ignore[no-redef]
+        lenient_issubclass,
+        smart_deepcopy,
+    )
 
 
 __all__ = [
