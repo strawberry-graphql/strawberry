@@ -1,6 +1,7 @@
 import dataclasses
 from dataclasses import dataclass
 from decimal import Decimal
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type
 from uuid import UUID
 
@@ -39,62 +40,6 @@ class CompatModelField:
     @property
     def has_default(self) -> bool:
         return self.default is not self._missing_type
-
-
-class PydanticV2Compat:
-    @property
-    def PYDANTIC_MISSING_TYPE(self) -> Any:
-        from pydantic_core import PydanticUndefined
-
-        return PydanticUndefined
-
-    def get_model_fields(self, model: Type[BaseModel]) -> Dict[str, CompatModelField]:
-        field_info: dict[str, FieldInfo] = model.model_fields
-        new_fields = {}
-        # Convert it into CompatModelField
-        for name, field in field_info.items():
-            new_fields[name] = CompatModelField(
-                name=name,
-                type_=field.annotation,
-                outer_type_=field.annotation,
-                default=field.default,
-                default_factory=field.default_factory,
-                required=field.is_required(),
-                alias=field.alias,
-                # v2 doesn't have allow_none
-                allow_none=False,
-                has_alias=field is not None,
-                description=field.description,
-                _missing_type=self.PYDANTIC_MISSING_TYPE,
-                is_v1=False,
-            )
-        return new_fields
-
-
-class PydanticV1Compat:
-    @property
-    def PYDANTIC_MISSING_TYPE(self) -> Any:
-        return dataclasses.MISSING
-
-    def get_model_fields(self, model: Type[BaseModel]) -> Dict[str, CompatModelField]:
-        new_fields = {}
-        # Convert it into CompatModelField
-        for name, field in model.__fields__.items():  # type: ignore[attr-defined]
-            new_fields[name] = CompatModelField(
-                name=name,
-                type_=field.type_,
-                outer_type_=field.outer_type_,
-                default=field.default,
-                default_factory=field.default_factory,
-                required=field.required,
-                alias=field.alias,
-                allow_none=field.allow_none,
-                has_alias=field.has_alias,
-                description=field.field_info.description,
-                _missing_type=self.PYDANTIC_MISSING_TYPE,
-                is_v1=True,
-            )
-        return new_fields
 
 
 ATTR_TO_TYPE_MAP = {
@@ -172,15 +117,107 @@ def get_fields_map_for_v2() -> Dict[Any, Any]:
     return fields_map
 
 
-FIELDS_MAP = (
-    {
-        getattr(pydantic, field_name): type
-        for field_name, type in ATTR_TO_TYPE_MAP.items()
-        if hasattr(pydantic, field_name)
-    }
-    if IS_PYDANTIC_V1
-    else get_fields_map_for_v2()
-)
+class PydanticV2Compat:
+    @property
+    def PYDANTIC_MISSING_TYPE(self) -> Any:
+        from pydantic_core import PydanticUndefined
+
+        return PydanticUndefined
+
+    def get_model_fields(self, model: Type[BaseModel]) -> Dict[str, CompatModelField]:
+        field_info: dict[str, FieldInfo] = model.model_fields
+        new_fields = {}
+        # Convert it into CompatModelField
+        for name, field in field_info.items():
+            new_fields[name] = CompatModelField(
+                name=name,
+                type_=field.annotation,
+                outer_type_=field.annotation,
+                default=field.default,
+                default_factory=field.default_factory,
+                required=field.is_required(),
+                alias=field.alias,
+                # v2 doesn't have allow_none
+                allow_none=False,
+                has_alias=field is not None,
+                description=field.description,
+                _missing_type=self.PYDANTIC_MISSING_TYPE,
+                is_v1=False,
+            )
+        return new_fields
+
+    @cached_property
+    def fields_map(self) -> Dict[Any, Any]:
+        return get_fields_map_for_v2()
+
+    def get_basic_type(self, type_: Any) -> Type[Any]:
+        if type_ in self.fields_map:
+            type_ = self.fields_map[type_]
+
+            if type_ is None:
+                raise UnsupportedTypeError()
+
+        if is_new_type(type_):
+            return new_type_supertype(type_)
+
+        return type_
+
+
+class PydanticV1Compat:
+    @property
+    def PYDANTIC_MISSING_TYPE(self) -> Any:
+        return dataclasses.MISSING
+
+    def get_model_fields(self, model: Type[BaseModel]) -> Dict[str, CompatModelField]:
+        new_fields = {}
+        # Convert it into CompatModelField
+        for name, field in model.__fields__.items():  # type: ignore[attr-defined]
+            new_fields[name] = CompatModelField(
+                name=name,
+                type_=field.type_,
+                outer_type_=field.outer_type_,
+                default=field.default,
+                default_factory=field.default_factory,
+                required=field.required,
+                alias=field.alias,
+                allow_none=field.allow_none,
+                has_alias=field.has_alias,
+                description=field.field_info.description,
+                _missing_type=self.PYDANTIC_MISSING_TYPE,
+                is_v1=True,
+            )
+        return new_fields
+
+    @cached_property
+    def fields_map(self) -> Dict[Any, Any]:
+        return {
+            getattr(pydantic, field_name): type
+            for field_name, type in ATTR_TO_TYPE_MAP.items()
+            if hasattr(pydantic, field_name)
+        }
+
+    def get_basic_type(self, type_: Any) -> Type[Any]:
+        if IS_PYDANTIC_V1:
+            # only pydantic v1 has these
+            if lenient_issubclass(type_, pydantic.ConstrainedInt):
+                return int
+            if lenient_issubclass(type_, pydantic.ConstrainedFloat):
+                return float
+            if lenient_issubclass(type_, pydantic.ConstrainedStr):
+                return str
+            if lenient_issubclass(type_, pydantic.ConstrainedList):
+                return List[self.get_basic_type(type_.item_type)]  # type: ignore
+
+        if type_ in self.fields_map:
+            type_ = self.fields_map[type_]
+
+            if type_ is None:
+                raise UnsupportedTypeError()
+
+        if is_new_type(type_):
+            return new_type_supertype(type_)
+
+        return type_
 
 
 class PydanticCompat:
@@ -197,28 +234,6 @@ class PydanticCompat:
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self._compat, name)
-
-    def get_basic_type(self, type_: Any) -> Type[Any]:
-        if IS_PYDANTIC_V1:
-            # only pydantic v1 has these
-            if lenient_issubclass(type_, pydantic.ConstrainedInt):
-                return int
-            if lenient_issubclass(type_, pydantic.ConstrainedFloat):
-                return float
-            if lenient_issubclass(type_, pydantic.ConstrainedStr):
-                return str
-            if lenient_issubclass(type_, pydantic.ConstrainedList):
-                return List[self.get_basic_type(type_.item_type)]  # type: ignore
-
-        if type_ in FIELDS_MAP:
-            type_ = FIELDS_MAP.get(type_)
-            if type_ is None:
-                raise UnsupportedTypeError()
-
-        if is_new_type(type_):
-            return new_type_supertype(type_)
-
-        return type_
 
 
 if IS_PYDANTIC_V2:
