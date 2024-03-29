@@ -190,6 +190,13 @@ class PydanticV1Compat:
 
     @cached_property
     def fields_map(self) -> Dict[Any, Any]:
+        if IS_PYDANTIC_V2:
+            return {
+                getattr(pydantic.v1, field_name): type
+                for field_name, type in ATTR_TO_TYPE_MAP.items()
+                if hasattr(pydantic.v1, field_name)
+            }
+
         return {
             getattr(pydantic, field_name): type
             for field_name, type in ATTR_TO_TYPE_MAP.items()
@@ -221,16 +228,18 @@ class PydanticV1Compat:
 
 
 class PydanticCompat:
-    # proxy based on v1 or v2
-    def __init__(self):
-        if IS_PYDANTIC_V2:
+    def __init__(self, is_v2: bool):
+        if is_v2:
             self._compat = PydanticV2Compat()
         else:
             self._compat = PydanticV1Compat()
 
     @classmethod
     def from_model(cls, model: Type[BaseModel]) -> "PydanticCompat":
-        return cls()
+        if hasattr(model, "model_fields"):
+            return cls(is_v2=True)
+
+        return cls(is_v2=False)
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self._compat, name)
