@@ -73,7 +73,7 @@ class Import:
     def module_path_to_cst(self, module_path: str) -> cst.Name | cst.Attribute:
         parts = module_path.split(".")
 
-        module_name = cst.Name(parts[0])
+        module_name: cst.Name | cst.Attribute = cst.Name(parts[0])
 
         for part in parts[1:]:
             module_name = cst.Attribute(value=module_name, attr=cst.Name(part))
@@ -144,7 +144,7 @@ def _get_field_type(
     )
 
 
-def _sanitize_argument(value: ArgumentValue) -> cst.SimpleString | cst.Name:
+def _sanitize_argument(value: ArgumentValue) -> cst.SimpleString | cst.Name | cst.List:
     if isinstance(value, bool):
         return cst.Name(value=str(value))
 
@@ -344,8 +344,8 @@ def _get_federation_arguments(
         _get_argument(key, True) for key in boolean_keys if directives.get(key, False)
     )
 
-    if override := directives.get("override"):
-        override = override[0]
+    if overrides := directives.get("override"):
+        override = overrides[0]
 
         if "label" not in override:
             arguments.append(_get_argument("override", override["from"]))
