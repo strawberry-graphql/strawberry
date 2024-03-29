@@ -23,11 +23,6 @@ from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import StrawberryObjectDefinition
 from tests.experimental.pydantic.utils import needs_pydantic_v1
 
-if IS_PYDANTIC_V2:
-    pass
-else:
-    pass
-
 
 def test_can_use_type_standalone():
     class User(BaseModel):
