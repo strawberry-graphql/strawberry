@@ -19,7 +19,6 @@ from typing import (
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic._compat import (
-    IS_PYDANTIC_V1,
     CompatModelField,
     PydanticCompat,
 )
@@ -47,7 +46,7 @@ if TYPE_CHECKING:
 def get_type_for_field(field: CompatModelField, is_input: bool):  # noqa: ANN201
     outer_type = field.outer_type_
     replaced_type = replace_types_recursively(outer_type, is_input)
-    if IS_PYDANTIC_V1:
+    if field.is_v1:
         # only pydantic v1 has this Optional logic
         should_add_optional: bool = field.allow_none
         if should_add_optional:
