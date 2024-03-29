@@ -8,7 +8,7 @@ import pydantic
 from pydantic import BaseModel
 from pydantic.version import VERSION as PYDANTIC_VERSION
 
-from strawberry.exceptions import UnsupportedTypeError
+from strawberry.experimental.pydantic.exceptions import UnsupportedTypeError
 
 if TYPE_CHECKING:
     from pydantic.fields import FieldInfo
@@ -97,58 +97,6 @@ class PydanticV1Compat:
         return new_fields
 
 
-class PydanticCompat:
-    # proxy based on v1 or v2
-    def __init__(self):
-        if IS_PYDANTIC_V2:
-            self._compat = PydanticV2Compat()
-        else:
-            self._compat = PydanticV1Compat()
-
-    @classmethod
-    def from_model(cls, model: Type[BaseModel]) -> "PydanticCompat":
-        return cls()
-
-    def __getattr__(self, name: str) -> Any:
-        return getattr(self._compat, name)
-
-
-if IS_PYDANTIC_V2:
-    from typing_extensions import get_args, get_origin
-
-    from pydantic._internal._typing_extra import is_new_type
-    from pydantic._internal._utils import lenient_issubclass, smart_deepcopy
-
-    def new_type_supertype(type_: Any) -> Any:
-        return type_.__supertype__
-else:
-    from pydantic.typing import get_args, get_origin, is_new_type, new_type_supertype
-    from pydantic.utils import lenient_issubclass, smart_deepcopy
-
-
-def get_basic_type(type_: Any) -> Type[Any]:
-    if IS_PYDANTIC_V1:
-        # only pydantic v1 has these
-        if lenient_issubclass(type_, pydantic.ConstrainedInt):
-            return int
-        if lenient_issubclass(type_, pydantic.ConstrainedFloat):
-            return float
-        if lenient_issubclass(type_, pydantic.ConstrainedStr):
-            return str
-        if lenient_issubclass(type_, pydantic.ConstrainedList):
-            return List[get_basic_type(type_.item_type)]  # type: ignore
-
-    if type_ in FIELDS_MAP:
-        type_ = FIELDS_MAP.get(type_)
-        if type_ is None:
-            raise UnsupportedTypeError()
-
-    if is_new_type(type_):
-        return new_type_supertype(type_)
-
-    return type_
-
-
 ATTR_TO_TYPE_MAP = {
     "NoneStr": Optional[str],
     "NoneBytes": Optional[bytes],
@@ -233,6 +181,57 @@ FIELDS_MAP = (
     if IS_PYDANTIC_V1
     else get_fields_map_for_v2()
 )
+
+
+class PydanticCompat:
+    # proxy based on v1 or v2
+    def __init__(self):
+        if IS_PYDANTIC_V2:
+            self._compat = PydanticV2Compat()
+        else:
+            self._compat = PydanticV1Compat()
+
+    @classmethod
+    def from_model(cls, model: Type[BaseModel]) -> "PydanticCompat":
+        return cls()
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._compat, name)
+
+    def get_basic_type(self, type_: Any) -> Type[Any]:
+        if IS_PYDANTIC_V1:
+            # only pydantic v1 has these
+            if lenient_issubclass(type_, pydantic.ConstrainedInt):
+                return int
+            if lenient_issubclass(type_, pydantic.ConstrainedFloat):
+                return float
+            if lenient_issubclass(type_, pydantic.ConstrainedStr):
+                return str
+            if lenient_issubclass(type_, pydantic.ConstrainedList):
+                return List[self.get_basic_type(type_.item_type)]  # type: ignore
+
+        if type_ in FIELDS_MAP:
+            type_ = FIELDS_MAP.get(type_)
+            if type_ is None:
+                raise UnsupportedTypeError()
+
+        if is_new_type(type_):
+            return new_type_supertype(type_)
+
+        return type_
+
+
+if IS_PYDANTIC_V2:
+    from typing_extensions import get_args, get_origin
+
+    from pydantic._internal._typing_extra import is_new_type
+    from pydantic._internal._utils import lenient_issubclass, smart_deepcopy
+
+    def new_type_supertype(type_: Any) -> Any:
+        return type_.__supertype__
+else:
+    from pydantic.typing import get_args, get_origin, is_new_type, new_type_supertype
+    from pydantic.utils import lenient_issubclass, smart_deepcopy
 
 
 __all__ = [

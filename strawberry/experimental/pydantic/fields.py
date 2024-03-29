@@ -5,8 +5,8 @@ from typing_extensions import Annotated
 from pydantic import BaseModel
 
 from strawberry.experimental.pydantic._compat import (
+    PydanticCompat,
     get_args,
-    get_basic_type,
     get_origin,
     lenient_issubclass,
 )
@@ -48,17 +48,21 @@ def replace_pydantic_types(type_: Any, is_input: bool) -> Any:
     return type_
 
 
-def replace_types_recursively(type_: Any, is_input: bool) -> Any:
+def replace_types_recursively(
+    type_: Any, is_input: bool, compat: PydanticCompat
+) -> Any:
     """Runs the conversions recursively into the arguments of generic types if any"""
-    basic_type = get_basic_type(type_)
+    basic_type = compat.get_basic_type(type_)
     replaced_type = replace_pydantic_types(basic_type, is_input)
 
     origin = get_origin(type_)
+
     if not origin or not hasattr(type_, "__args__"):
         return replaced_type
 
     converted = tuple(
-        replace_types_recursively(t, is_input=is_input) for t in get_args(replaced_type)
+        replace_types_recursively(t, is_input=is_input, compat=compat)
+        for t in get_args(replaced_type)
     )
 
     if isinstance(replaced_type, TypingGenericAlias):

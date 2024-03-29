@@ -43,9 +43,11 @@ if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
 
 
-def get_type_for_field(field: CompatModelField, is_input: bool):  # noqa: ANN201
+def get_type_for_field(field: CompatModelField, is_input: bool, compat: PydanticCompat):  # noqa: ANN201
     outer_type = field.outer_type_
-    replaced_type = replace_types_recursively(outer_type, is_input)
+
+    replaced_type = replace_types_recursively(outer_type, is_input, compat=compat)
+
     if field.is_v1:
         # only pydantic v1 has this Optional logic
         should_add_optional: bool = field.allow_none
@@ -61,9 +63,10 @@ def _build_dataclass_creation_fields(
     existing_fields: Dict[str, StrawberryField],
     auto_fields_set: Set[str],
     use_pydantic_alias: bool,
+    compat: PydanticCompat,
 ) -> DataclassCreationFields:
     field_type = (
-        get_type_for_field(field, is_input)
+        get_type_for_field(field, is_input, compat=compat)
         if field.name in auto_fields_set
         else existing_fields[field.name].type
     )
@@ -182,7 +185,12 @@ def type(
 
         all_model_fields: List[DataclassCreationFields] = [
             _build_dataclass_creation_fields(
-                field, is_input, extra_fields_dict, auto_fields_set, use_pydantic_alias
+                field,
+                is_input,
+                extra_fields_dict,
+                auto_fields_set,
+                use_pydantic_alias,
+                compat=compat,
             )
             for field_name, field in model_fields.items()
             if field_name in fields_set
