@@ -73,7 +73,10 @@ jobs:
             ${{ runner.os }}-nox-${{ matrix.session.session }}-
             ${{ runner.os }}-nox-
 
+      - run: echo ${{ runner.os }}-nox-${{ matrix.session.session }}-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
       - run: pip install coverage poetry nox nox-poetry
+      - run: poetry --help
+      - run: which poetry
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
 
       - name: coverage xml
