@@ -68,7 +68,7 @@ jobs:
             .nox
           key:
             ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
-            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
+            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}-2
           restore-keys: |
             ${{ runner.os }}-nox-${{ matrix.session.session }}-
             ${{ runner.os }}-nox-
