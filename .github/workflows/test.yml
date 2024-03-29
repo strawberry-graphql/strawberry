@@ -58,22 +58,7 @@ jobs:
             3.11
             3.12
 
-      - name: Pip and nox cache
-        id: cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache
-            ~/.nox
-            .nox
-          key:
-            ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
-            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}-2
-          restore-keys: |
-            ${{ runner.os }}-nox-${{ matrix.session.session }}-
-            ${{ runner.os }}-nox-
 
-      - run: echo ${{ runner.os }}-nox-${{ matrix.session.session }}-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
       - run: pip install coverage poetry nox nox-poetry
       - run: poetry --help
       - run: which poetry
