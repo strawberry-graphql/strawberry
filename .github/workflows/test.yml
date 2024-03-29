@@ -24,7 +24,10 @@ jobs:
       sessions: ${{ steps.set-matrix.outputs.sessions }}
     steps:
       - uses: actions/checkout@v3
-      - uses: wntrblm/nox@main
+      - id: install-nox
+        uses: wntrblm/nox@main
+      - name: debug
+        run: echo ${{join(steps.install-nox.outputs.*, '\n')}}
       - run: pipx install poetry
       - run: pip install nox-poetry
       - id: set-matrix
