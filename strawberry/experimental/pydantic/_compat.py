@@ -36,9 +36,6 @@ class CompatModelField:
 
 
 class PydanticV2Compat:
-    def new_type_supertype(self, type_: Any) -> Any:
-        return type_.__supertype__
-
     @property
     def PYDANTIC_MISSING_TYPE(self) -> Any:
         from pydantic_core import PydanticUndefined
@@ -91,9 +88,6 @@ class PydanticV1Compat:
             )
         return new_fields
 
-    def new_type_supertype(self, type_: Any) -> Any:
-        return type_
-
 
 class PydanticCompat:
     # proxy based on v1 or v2
@@ -120,7 +114,7 @@ if IS_PYDANTIC_V2:
     def new_type_supertype(type_: Any) -> Any:
         return type_.__supertype__
 else:
-    from pydantic.typing import get_args, get_origin, is_new_type
+    from pydantic.typing import get_args, get_origin, is_new_type, new_type_supertype
     from pydantic.utils import lenient_issubclass, smart_deepcopy
 
 
