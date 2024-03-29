@@ -151,6 +151,7 @@ jobs:
             ${{ runner.os }}-lint-nox-
 
       - run: pipx install poetry
+      - run: pipx install nox
       - run: pipx inject nox nox-poetry
       - run: nox -r -t lint
 
