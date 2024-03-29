@@ -150,9 +150,8 @@ jobs:
             ${{ runner.os }}-lint-nox-${{ matrix.session.session }}-
             ${{ runner.os }}-lint-nox-
 
-      - run: pipx install poetry
-      - run: pipx install nox
-      - run: pipx inject nox nox-poetry
+      - run: pip install poetry
+      - run: pip install nox nox-poetry
       - run: nox -r -t lint
 
   unit-tests-on-windows:
