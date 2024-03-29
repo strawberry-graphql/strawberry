@@ -24,12 +24,9 @@ jobs:
       sessions: ${{ steps.set-matrix.outputs.sessions }}
     steps:
       - uses: actions/checkout@v3
-      - id: install-nox
-        uses: wntrblm/nox@main
-      - name: debug
-        run: echo ${{join(steps.install-nox.outputs.*, '\n')}}
       - run: pipx install poetry
-      - run: pip install nox-poetry
+      - run: pipx install nox
+      - run: pipx inject nox nox-poetry
       - id: set-matrix
         shell: bash
         run: |
@@ -54,9 +51,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: wntrblm/nox@main
+      - uses: setup-python@v5
         with:
-          python-versions: "3.8, 3.9, 3.10, 3.11, 3.12"
+          python-version: |
+            3.8
+            3.9
+            3.10
+            3.11
+            3.12
 
       - name: Pip and nox cache
         id: cache
@@ -66,7 +68,8 @@ jobs:
             ~/.cache
             ~/.nox
             .nox
-          key: ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
+          key:
+            ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
             hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
           restore-keys: |
             ${{ runner.os }}-nox-${{ matrix.session.session }}-
@@ -74,7 +77,8 @@ jobs:
 
       - run: pipx install coverage
       - run: pipx install poetry
-      - run: pip install nox-poetry
+      - run: pipx install nox
+      - run: pipx inject nox nox-poetry
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
 
       - name: coverage xml
@@ -134,7 +138,8 @@ jobs:
             ~/.cache
             ~/.nox
             .nox
-          key: ${{ runner.os }}-nox-lint-${{ matrix.session.session }}-${{
+          key:
+            ${{ runner.os }}-nox-lint-${{ matrix.session.session }}-${{
             hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
           restore-keys: |
             ${{ runner.os }}-lint-nox-${{ matrix.session.session }}-
