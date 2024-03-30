@@ -70,17 +70,24 @@ jobs:
             ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
             hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}-2
 
-      - run: pip install coverage poetry nox nox-poetry
+      - run: pip install poetry nox nox-poetry
       - run: poetry --help
       - run: which poetry
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
-
-      - name: coverage xml
-        run: coverage xml -i
+      - uses: actions/upload-artifact@v4
         if: ${{ always() }}
+        with:
+          name: coverage-${{ matrix.session.session }}
+          path: coverage.xml
 
+  upload-coverage:
+    name: 🆙 Upload Coverage
+    needs: [unit-tests]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v4
       - uses: codecov/codecov-action@v4
-        if: ${{ always() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
