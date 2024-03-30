@@ -458,6 +458,7 @@ def _get_class_definition(
 
 def _get_enum_value(enum_value: EnumValueDefinitionNode) -> cst.SimpleStatementLine:
     name = enum_value.name.value
+
     return cst.SimpleStatementLine(
         body=[
             cst.Assign(
@@ -468,7 +469,7 @@ def _get_enum_value(enum_value: EnumValueDefinitionNode) -> cst.SimpleStatementL
     )
 
 
-def _get_enum_definition(definition: EnumTypeDefinitionNode) -> cst.ClassDef:
+def _get_enum_definition(definition: EnumTypeDefinitionNode) -> Definition:
     decorator = cst.Decorator(
         decorator=cst.Attribute(
             value=cst.Name("strawberry"),
@@ -476,13 +477,19 @@ def _get_enum_definition(definition: EnumTypeDefinitionNode) -> cst.ClassDef:
         ),
     )
 
-    return cst.ClassDef(
+    class_definition = cst.ClassDef(
         name=cst.Name(definition.name.value),
         bases=[cst.Arg(cst.Name("Enum"))],
         body=cst.IndentedBlock(
             body=[_get_enum_value(value) for value in definition.values]
         ),
         decorators=[decorator],
+    )
+
+    return Definition(
+        class_definition,
+        [],
+        definition.name.value,
     )
 
 
@@ -559,16 +566,14 @@ class Definition:
     name: str
 
 
-def _get_union_definition(
-    definition: UnionTypeDefinitionNode,
-) -> cst.SimpleStatementLine:
+def _get_union_definition(definition: UnionTypeDefinitionNode) -> Definition:
     name = definition.name.value
 
     types = cst.parse_expression(
         " | ".join([type_.name.value for type_ in definition.types])
     )
 
-    return cst.SimpleStatementLine(
+    simple_statement = cst.SimpleStatementLine(
         body=[
             cst.Assign(
                 targets=[cst.AssignTarget(cst.Name(name))],
@@ -592,11 +597,16 @@ def _get_union_definition(
             )
         ]
     )
+    return Definition(
+        simple_statement,
+        [],
+        definition.name.value,
+    )
 
 
 def _get_scalar_definition(
     definition: ScalarTypeDefinitionNode, imports: set[Import]
-) -> cst.SimpleStatementLine | None:
+) -> Definition | None:
     name = definition.name.value
 
     if name == "Date":
@@ -655,7 +665,7 @@ def _get_scalar_definition(
         ),
     ]
 
-    return cst.SimpleStatementLine(
+    statement_definition = cst.SimpleStatementLine(
         body=[
             cst.Assign(
                 targets=[cst.AssignTarget(cst.Name(name))],
@@ -680,6 +690,7 @@ def _get_scalar_definition(
             )
         ]
     )
+    return Definition(statement_definition, [], name=definition.name.value)
 
 
 def codegen(schema: str) -> str:
@@ -720,11 +731,7 @@ def codegen(schema: str) -> str:
         elif isinstance(graphql_definition, EnumTypeDefinitionNode):
             imports.add(Import(module="enum", imports=("Enum",)))
 
-            definition = Definition(
-                _get_enum_definition(graphql_definition),
-                [],
-                graphql_definition.name.value,
-            )
+            definition = _get_enum_definition(graphql_definition)
 
         elif isinstance(graphql_definition, SchemaDefinitionNode):
             for operation_type_definition in graphql_definition.operation_types:
@@ -741,18 +748,10 @@ def codegen(schema: str) -> str:
         elif isinstance(graphql_definition, UnionTypeDefinitionNode):
             imports.add(Import(module="typing", imports=("Annotated",)))
 
-            definition = Definition(
-                _get_union_definition(graphql_definition),
-                [],
-                graphql_definition.name.value,
-            )
+            definition = _get_union_definition(graphql_definition)
         elif isinstance(graphql_definition, ScalarTypeDefinitionNode):
-            scalar_definition = _get_scalar_definition(graphql_definition, imports)
+            definition = _get_scalar_definition(graphql_definition, imports)
 
-            if scalar_definition is not None:
-                definition = Definition(
-                    scalar_definition, [], name=graphql_definition.name.value
-                )
         elif isinstance(graphql_definition, SchemaExtensionNode):
             is_apollo_federation = any(
                 _is_federation_link_directive(directive)
