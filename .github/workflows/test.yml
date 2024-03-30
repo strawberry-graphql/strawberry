@@ -76,7 +76,7 @@ jobs:
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
       - uses: actions/upload-artifact@v4
         with:
-          name: coverage-${{ matrix.sessions.session }}
+          name: coverage-${{ matrix.session.session }}
           path: coverage.xml
 
   upload-coverage:
