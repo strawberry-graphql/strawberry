@@ -784,7 +784,7 @@ def codegen(schema: str) -> str:
     if schema_definition:
         definitions["Schema"] = Definition(schema_definition, [], "schema")
 
-    body = [
+    body: list[cst.CSTNode] = [
         cst.SimpleStatementLine(body=[import_.to_cst()])
         for import_ in sorted(imports, key=lambda i: (i.module or "", i.imports))
     ]
@@ -799,6 +799,6 @@ def codegen(schema: str) -> str:
         body.append(cst.EmptyLine())
         body.append(definition.code)
 
-    module = cst.Module(body=body)
+    module = cst.Module(body=body)  # type: ignore
 
     return module.code
