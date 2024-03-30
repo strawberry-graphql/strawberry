@@ -75,12 +75,8 @@ jobs:
       - run: which poetry
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
 
-      - name: coverage xml
-        run: coverage xml -i
-        if: ${{ always() }}
-
-  unit-tests:
-    name: 🔬 ${{ matrix.session.name }}
+  upload-coverage:
+    name: 🆙 Upload Coverage
     needs: [unit-tests]
     runs-on: ubuntu-latest
 
