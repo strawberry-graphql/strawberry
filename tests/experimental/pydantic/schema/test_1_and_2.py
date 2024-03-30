@@ -22,11 +22,13 @@ def test_can_use_both_pydantic_1_and_2():
     class LegacyUserModel(pydantic_v1.BaseModel):
         age: int
         name: Optional[str]
+        int_field: pydantic.v1.NonNegativeInt = 1
 
     @strawberry.experimental.pydantic.type(LegacyUserModel)
     class LegacyUser:
         age: strawberry.auto
         name: strawberry.auto
+        int_field: strawberry.auto
 
     @strawberry.type
     class Query:
@@ -43,6 +45,7 @@ def test_can_use_both_pydantic_1_and_2():
     type LegacyUser {
       age: Int!
       name: String
+      intField: Int!
     }
 
     type Query {

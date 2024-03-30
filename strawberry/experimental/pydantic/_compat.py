@@ -205,15 +205,24 @@ class PydanticV1Compat:
 
     def get_basic_type(self, type_: Any) -> Type[Any]:
         if IS_PYDANTIC_V1:
-            # only pydantic v1 has these
-            if lenient_issubclass(type_, pydantic.ConstrainedInt):
-                return int
-            if lenient_issubclass(type_, pydantic.ConstrainedFloat):
-                return float
-            if lenient_issubclass(type_, pydantic.ConstrainedStr):
-                return str
-            if lenient_issubclass(type_, pydantic.ConstrainedList):
-                return List[self.get_basic_type(type_.item_type)]  # type: ignore
+            ConstrainedInt = pydantic.ConstrainedInt
+            ConstrainedFloat = pydantic.ConstrainedFloat
+            ConstrainedStr = pydantic.ConstrainedStr
+            ConstrainedList = pydantic.ConstrainedList
+        else:
+            ConstrainedInt = pydantic.v1.ConstrainedInt
+            ConstrainedFloat = pydantic.v1.ConstrainedFloat
+            ConstrainedStr = pydantic.v1.ConstrainedStr
+            ConstrainedList = pydantic.v1.ConstrainedList
+
+        if lenient_issubclass(type_, ConstrainedInt):
+            return int
+        if lenient_issubclass(type_, ConstrainedFloat):
+            return float
+        if lenient_issubclass(type_, ConstrainedStr):
+            return str
+        if lenient_issubclass(type_, ConstrainedList):
+            return List[self.get_basic_type(type_.item_type)]  # type: ignore
 
         if type_ in self.fields_map:
             type_ = self.fields_map[type_]
