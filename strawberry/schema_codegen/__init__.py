@@ -565,26 +565,6 @@ def _get_schema_definition(
     )
 
 
-<<<<<<< HEAD
-def _get_union_definition(definition: UnionTypeDefinitionNode) -> cst.Assign:
-=======
-@dataclasses.dataclass(frozen=True)
-class Import:
-    module: str | None
-    imports: tuple[str]
-
-    def to_cst(self) -> cst.Import | cst.ImportFrom:
-        if self.module is None:
-            return cst.Import(
-                names=[cst.ImportAlias(name=cst.Name(name)) for name in self.imports]
-            )
-
-        return cst.ImportFrom(
-            module=cst.Name(self.module),
-            names=[cst.ImportAlias(name=cst.Name(name)) for name in self.imports],
-        )
-
-
 @dataclasses.dataclass(frozen=True)
 class Definition:
     code: cst.CSTNode
@@ -718,7 +698,6 @@ def _get_scalar_definition(
 def codegen(schema: str) -> str:
     document = parse(schema)
 
-    # TODO: check if we can have the same name for multiple things
     definitions: dict[str, Definition] = {}
 
     root_query_name: str | None = None
@@ -729,16 +708,15 @@ def codegen(schema: str) -> str:
         Import(module=None, imports=("strawberry",)),
     }
 
-    for graphql_definition in document.definitions:
-        definition: Definition | None = None
-
     # when we encounter a extend schema @link ..., we check if is an apollo federation schema
     # and we use this variable to keep track of it, but at the moment the assumption is that
     # the schema extension is always done at the top, this might not be the case all the
     # time
     is_apollo_federation = False
 
-    for definition in document.definitions:
+    for graphql_definition in document.definitions:
+        definition: Definition | None = None
+
         if isinstance(
             graphql_definition,
             (
@@ -748,10 +726,9 @@ def codegen(schema: str) -> str:
                 ObjectTypeExtensionNode,
             ),
         ):
-            class_definition = _get_class_definition(
-                definition, is_apollo_federation, imports
+            definition = _get_class_definition(
+                graphql_definition, is_apollo_federation, imports
             )
-            definition = _get_class_definition(graphql_definition)
 
         elif isinstance(graphql_definition, EnumTypeDefinitionNode):
             imports.add(Import(module="enum", imports=("Enum",)))
@@ -762,24 +739,6 @@ def codegen(schema: str) -> str:
                 graphql_definition.name.value,
             )
 
-        elif isinstance(graphql_definition, UnionTypeDefinitionNode):
-            imports.add(Import(module="typing", imports=("Annotated",)))
-
-            definition = Definition(
-                _get_union_definition(graphql_definition),
-                [],
-                graphql_definition.name.value,
-            )
-
-        elif isinstance(graphql_definition, ScalarTypeDefinitionNode):
-            scalar_definition = _get_scalar_definition(graphql_definition, imports)
-
-            if scalar_definition is not None:
-                definition = Definition(
-                    scalar_definition, [], name=graphql_definition.name.value
-                )
-            else:
-                continue
         elif isinstance(graphql_definition, SchemaDefinitionNode):
             for operation_type_definition in graphql_definition.operation_types:
                 if operation_type_definition.operation == OperationType.QUERY:
@@ -792,23 +751,31 @@ def codegen(schema: str) -> str:
                     raise NotImplementedError(
                         f"Unknown operation {operation_type_definition.operation}"
                     )
+        elif isinstance(graphql_definition, UnionTypeDefinitionNode):
+            imports.add(Import(module="typing", imports=("Annotated",)))
 
-            continue
-
-        if definition is not None:
-            definitions[definition.name] = definition
+            definition = Definition(
+                _get_union_definition(graphql_definition),
+                [],
+                graphql_definition.name.value,
+            )
+        elif isinstance(graphql_definition, ScalarTypeDefinitionNode):
+            scalar_definition = _get_scalar_definition(graphql_definition, imports)
 
             if scalar_definition is not None:
-                definitions.append(cst.EmptyLine())
-                definitions.append(scalar_definition)
-                definitions.append(cst.EmptyLine())
-        elif isinstance(definition, SchemaExtensionNode):
+                definition = Definition(
+                    scalar_definition, [], name=graphql_definition.name.value
+                )
+        elif isinstance(graphql_definition, SchemaExtensionNode):
             is_apollo_federation = any(
                 _is_federation_link_directive(directive)
-                for directive in definition.directives
+                for directive in graphql_definition.directives
             )
         else:
             raise NotImplementedError(f"Unknown definition {definition}")
+
+        if definition is not None:
+            definitions[definition.name] = definition
 
     if root_query_name is None:
         root_query_name = "Query" if "Query" in definitions else None
