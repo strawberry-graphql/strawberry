@@ -12,6 +12,8 @@ import strawberry
 from strawberry.experimental.pydantic._compat import (
     IS_PYDANTIC_V2,
     CompatModelField,
+    PydanticV1Compat,
+    PydanticV2Compat,
 )
 from strawberry.experimental.pydantic.exceptions import (
     AutoFieldsNotInBaseModelError,
@@ -840,11 +842,15 @@ def test_can_convert_pydantic_type_to_strawberry_newtype_list():
     assert user.passwords == ["hunter2"]
 
 
-@pytest.mark.xfail
 def test_get_default_factory_for_field():
+    if IS_PYDANTIC_V2:
+        MISSING_TYPE = PydanticV2Compat().PYDANTIC_MISSING_TYPE
+    else:
+        MISSING_TYPE = PydanticV1Compat().PYDANTIC_MISSING_TYPE
+
     def _get_field(
-        default: Any = PYDANTIC_MISSING_TYPE,
-        default_factory: Any = PYDANTIC_MISSING_TYPE,
+        default: Any = MISSING_TYPE,
+        default_factory: Any = MISSING_TYPE,
     ) -> CompatModelField:
         return CompatModelField(
             name="a",
@@ -857,6 +863,8 @@ def test_get_default_factory_for_field():
             description="",
             has_alias=False,
             required=True,
+            _missing_type=MISSING_TYPE,
+            is_v1=not IS_PYDANTIC_V2,
         )
 
     field = _get_field()
