@@ -79,6 +79,12 @@ jobs:
         run: coverage xml -i
         if: ${{ always() }}
 
+  unit-tests:
+    name: 🔬 ${{ matrix.session.name }}
+    needs: [unit-tests]
+    runs-on: ubuntu-latest
+
+    steps:
       - uses: codecov/codecov-action@v4
         if: ${{ always() }}
         with:
