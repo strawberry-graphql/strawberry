@@ -20,8 +20,10 @@ urlpatterns = [
 ]
 ```
 
-Strawberry only provides a GraphQL view for Django, [Strawberry GraphQL Django](https://github.com/strawberry-graphql/strawberry-graphql-django) provides integration with the models.
-`import strawberry_django` should do the same as `import strawberry.django` if both libraries are installed.
+Strawberry only provides a GraphQL view for Django,
+[Strawberry GraphQL Django](https://github.com/strawberry-graphql/strawberry-graphql-django)
+provides integration with the models. `import strawberry_django` should do the
+same as `import strawberry.django` if both libraries are installed.
 
 You'd also need to add `strawberry_django` to the `INSTALLED_APPS` of your
 project, this is needed to provide the template for the GraphiQL interface.
@@ -31,8 +33,9 @@ project, this is needed to provide the template for the GraphiQL interface.
 The `GraphQLView` accepts the following arguments:
 
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
-- `graphiql`: optional, defaults to `True`, whether to enable the GraphiQL
-  interface.
+- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the
+  GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or
+  to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
 - `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
@@ -70,7 +73,7 @@ resolver. You can return anything here, by default we return a
 @strawberry.type
 class Query:
     @strawberry.field
-    def user(self, info: Info) -> str:
+    def user(self, info: strawberry.Info) -> str:
         return str(info.context.request.user)
 ```
 
@@ -85,7 +88,7 @@ class MyGraphQLView(GraphQLView):
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info: Info) -> str:
+    def example(self, info: strawberry.Info) -> str:
         return str(info.context["example"])
 ```
 
@@ -169,8 +172,9 @@ project, this is needed to provide the template for the GraphiQL interface.
 The `AsyncGraphQLView` accepts the following arguments:
 
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
-- `graphiql`: optional, defaults to `True`, whether to enable the GraphiQL
-  interface.
+- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the
+  GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or
+  to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
 - `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
@@ -201,7 +205,7 @@ class MyGraphQLView(AsyncGraphQLView):
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info: Info) -> str:
+    def example(self, info: strawberry.Info) -> str:
         return str(info.context["example"])
 ```
 

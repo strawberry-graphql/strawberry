@@ -18,6 +18,7 @@ COMMON_PYTEST_OPTIONS = [
     "--ignore=tests/mypy",
     "--ignore=tests/pyright",
     "--ignore=tests/cli",
+    "--ignore=tests/benchmarks",
     "--ignore=tests/experimental/pydantic",
 ]
 
@@ -29,8 +30,10 @@ INTEGRATIONS = [
     "django",
     "fastapi",
     "flask",
+    "quart",
     "sanic",
     "starlite",
+    "litestar",
     "pydantic",
 ]
 
@@ -82,8 +85,10 @@ def tests_starlette(session: Session, starlette: str) -> None:
         "channels",
         "fastapi",
         "flask",
+        "quart",
         "sanic",
         "starlite",
+        "litestar",
     ],
 )
 def tests_integrations(session: Session, integration: str) -> None:
@@ -93,10 +98,6 @@ def tests_integrations(session: Session, integration: str) -> None:
 
     if integration == "aiohttp":
         session._session.install("pytest-aiohttp")  # type: ignore
-    elif integration == "flask":
-        session._session.install("pytest-flask")  # type: ignore
-        # TODO: pytest-flask doesn't support Flask 3.0 yet
-        session._session.install("flask<3")  # type: ignore
     elif integration == "channels":
         session._session.install("pytest-django")  # type: ignore
         session._session.install("daphne")  # type: ignore
@@ -106,7 +107,7 @@ def tests_integrations(session: Session, integration: str) -> None:
     session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", integration)
 
 
-@session(python=PYTHON_VERSIONS, name="Pydantic tests", tags=["tests"])
+@session(python=PYTHON_VERSIONS, name="Pydantic tests", tags=["tests", "pydantic"])
 @nox.parametrize("pydantic", ["1.10", "2.0.3"])
 def test_pydantic(session: Session, pydantic: str) -> None:
     session.run_always("poetry", "install", external=True)
@@ -127,7 +128,6 @@ def test_pydantic(session: Session, pydantic: str) -> None:
 @session(python=PYTHON_VERSIONS, name="Mypy tests")
 def tests_mypy(session: Session) -> None:
     session.run_always("poetry", "install", "--with", "integrations", external=True)
-    session._session.install("pydantic~=2.0.3")  # type: ignore
 
     session.run(
         "pytest",
@@ -157,7 +157,6 @@ def tests_pyright(session: Session) -> None:
 @session(name="Mypy", tags=["lint"])
 def mypy(session: Session) -> None:
     session.run_always("poetry", "install", "--with", "integrations", external=True)
-    session._session.install("pydantic~=2.0.3")  # type: ignore
 
     session.run("mypy", "--config-file", "mypy.ini")
 

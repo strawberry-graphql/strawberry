@@ -25,8 +25,7 @@ schema = strawberry.Schema(
 ## API reference:
 
 ```python
-class PyInstrument(report_Path=Path("pyinstrument.html")):
-    ...
+class PyInstrument(report_Path=Path("pyinstrument.html")): ...
 ```
 
 #### `report_path: Path = Path("pyinstrument.html")`

@@ -155,7 +155,7 @@ class ReservedType(NamedTuple):
             # Handle annotated arguments such as Private[str] and DirectiveValue[str]
             return type_has_annotation(other, self.type)
         else:
-            # Handle both concrete and generic types (i.e Info, and Info[Any, Any])
+            # Handle both concrete and generic types (i.e Info, and Info)
             return (
                 issubclass(origin, self.type)
                 if isinstance(origin, type)
@@ -335,6 +335,18 @@ class StrawberryResolver(Generic[T]):
             return None
         return self.type_annotation.resolve()
 
+    @property
+    def is_graphql_generic(self) -> bool:
+        from strawberry.schema.compat import is_graphql_generic
+
+        has_generic_arguments = any(
+            argument.is_graphql_generic for argument in self.arguments
+        )
+
+        return has_generic_arguments or bool(
+            self.type and is_graphql_generic(self.type)
+        )
+
     @cached_property
     def is_async(self) -> bool:
         return iscoroutinefunction(self._unbound_wrapped_func) or isasyncgenfunction(
@@ -361,7 +373,10 @@ class StrawberryResolver(Generic[T]):
         )
         # Resolve generic arguments
         for argument in other.arguments:
-            if isinstance(argument.type, StrawberryType) and argument.type.is_generic:
+            if (
+                isinstance(argument.type, StrawberryType)
+                and argument.type.is_graphql_generic
+            ):
                 argument.type_annotation = StrawberryAnnotation(
                     annotation=argument.type.copy_with(type_var_map),
                     namespace=argument.type_annotation.namespace,

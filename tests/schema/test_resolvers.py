@@ -176,10 +176,10 @@ def test_optional_info_and_root_params():
 
 
 def test_only_info_function_resolvers():
-    def function_resolver(info: Info) -> str:
+    def function_resolver(info: strawberry.Info) -> str:
         return f"I'm a function resolver for {info.field_name}"
 
-    def function_resolver_with_params(info: Info, x: str) -> str:
+    def function_resolver_with_params(info: strawberry.Info, x: str) -> str:
         return f"I'm {x} for {info.field_name}"
 
     @strawberry.type
@@ -499,11 +499,11 @@ def name_based_info(info, icon: str) -> str:
     return f"I'm a resolver for {icon} {info.field_name}"
 
 
-def type_based_info(info: Info, icon: str) -> str:
+def type_based_info(info: strawberry.Info, icon: str) -> str:
     return f"I'm a resolver for {icon} {info.field_name}"
 
 
-def generic_type_based_info(icon: str, info: Info[Any, Any]) -> str:
+def generic_type_based_info(icon: str, info: strawberry.Info) -> str:
     return f"I'm a resolver for {icon} {info.field_name}"
 
 

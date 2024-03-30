@@ -6,7 +6,6 @@ from typing import (
     Any,
     List,
     NamedTuple,
-    NoReturn,
     Set,
     Tuple,
     Type,
@@ -15,9 +14,8 @@ from typing import (
 )
 
 from strawberry.experimental.pydantic._compat import (
-    PYDANTIC_MISSING_TYPE,
     CompatModelField,
-    get_model_fields,
+    PydanticCompat,
     smart_deepcopy,
 )
 from strawberry.experimental.pydantic.exceptions import (
@@ -84,12 +82,8 @@ def get_default_factory_for_field(
     Returns optionally a NoArgAnyCallable representing a default_factory parameter
     """
     # replace dataclasses.MISSING with our own UNSET to make comparisons easier
-    default_factory = (
-        field.default_factory
-        if field.default_factory is not PYDANTIC_MISSING_TYPE
-        else UNSET
-    )
-    default = field.default if field.default is not PYDANTIC_MISSING_TYPE else UNSET
+    default_factory = field.default_factory if field.has_default_factory else UNSET
+    default = field.default if field.has_default else UNSET
 
     has_factory = default_factory is not None and default_factory is not UNSET
     has_default = default is not None and default is not UNSET
@@ -126,13 +120,14 @@ def get_default_factory_for_field(
 
 def ensure_all_auto_fields_in_pydantic(
     model: Type[BaseModel], auto_fields: Set[str], cls_name: str
-) -> Union[NoReturn, None]:
+) -> None:
+    compat = PydanticCompat.from_model(model)
     # Raise error if user defined a strawberry.auto field not present in the model
-    non_existing_fields = list(auto_fields - get_model_fields(model).keys())
+    non_existing_fields = list(auto_fields - compat.get_model_fields(model).keys())
 
     if non_existing_fields:
         raise AutoFieldsNotInBaseModelError(
             fields=non_existing_fields, cls_name=cls_name, model=model
         )
     else:
-        return None
+        return

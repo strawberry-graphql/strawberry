@@ -45,7 +45,7 @@ class EnumDefinition(StrawberryType):
         return self
 
     @property
-    def is_generic(self) -> bool:
+    def is_graphql_generic(self) -> bool:
         return False
 
 
@@ -89,8 +89,6 @@ def _process_enum(
 
     if not name:
         name = cls.__name__
-
-    description = description
 
     values = []
     for item in cls:  # type: ignore
@@ -137,7 +135,7 @@ def enum(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    directives: Iterable[object] = ()
+    directives: Iterable[object] = (),
 ) -> EnumType:
     ...
 
@@ -148,7 +146,7 @@ def enum(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    directives: Iterable[object] = ()
+    directives: Iterable[object] = (),
 ) -> Callable[[EnumType], EnumType]:
     ...
 
@@ -158,7 +156,7 @@ def enum(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    directives: Iterable[object] = ()
+    directives: Iterable[object] = (),
 ) -> Union[EnumType, Callable[[EnumType], EnumType]]:
     """Registers the enum in the GraphQL type system.
 

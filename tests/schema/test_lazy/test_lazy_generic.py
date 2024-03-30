@@ -4,15 +4,12 @@ import sys
 import sysconfig
 import textwrap
 from pathlib import Path
-from typing import TYPE_CHECKING, Generic, List, Optional, Sequence, TypeVar
+from typing import Generic, List, Optional, Sequence, TypeVar
 from typing_extensions import Annotated
 
 import pytest
 
 import strawberry
-
-if TYPE_CHECKING:
-    from tests.schema.test_lazy.type_a import TypeA  # noqa
 
 STRAWBERRY_EXECUTABLE = next(
     Path(sysconfig.get_path("scripts")).glob("strawberry*"), None
@@ -107,8 +104,8 @@ def test_lazy_types_loaded_from_same_module(commands: Sequence[str]):
         args=[*commands],
         env=os.environ,
         capture_output=True,
+        check=True,
     )
-    result.check_returncode()
 
     expected = """\
     type Query {

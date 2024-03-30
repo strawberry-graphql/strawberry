@@ -34,6 +34,9 @@ from strawberry.subscriptions.protocols.graphql_ws import (
 from strawberry.types import ExecutionResult
 
 if TYPE_CHECKING:
+    from types import TracebackType
+    from typing_extensions import Self
+
     from asgiref.typing import ASGIApplication
 
 
@@ -66,6 +69,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         path: str,
         headers: Optional[List[Tuple[bytes, bytes]]] = None,
         protocol: str = GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        connection_params: dict = {},
         **kwargs: Any,
     ):
         """
@@ -78,20 +82,28 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         self.protocol = protocol
         subprotocols = kwargs.get("subprotocols", [])
         subprotocols.append(protocol)
+        self.connection_params = connection_params
         super().__init__(application, path, headers, subprotocols=subprotocols)
 
-    async def __aenter__(self) -> GraphQLWebsocketCommunicator:
+    async def __aenter__(self) -> Self:
         await self.gql_init()
         return self
 
-    async def __aexit__(self, exc_type: Type, exc_val: Any, exc_tb: Any) -> None:
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
         await self.disconnect()
 
     async def gql_init(self) -> None:
         res = await self.connect()
         if self.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
             assert res == (True, GRAPHQL_TRANSPORT_WS_PROTOCOL)
-            await self.send_json_to(ConnectionInitMessage().as_dict())
+            await self.send_json_to(
+                ConnectionInitMessage(payload=self.connection_params).as_dict()
+            )
             response = await self.receive_json_from()
             assert response == ConnectionAckMessage().as_dict()
         else:

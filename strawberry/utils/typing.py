@@ -141,7 +141,8 @@ def is_concrete_generic(annotation: type) -> bool:
 
 def is_generic_subclass(annotation: type) -> bool:
     return isinstance(annotation, type) and issubclass(
-        annotation, Generic  # type:ignore
+        annotation,
+        Generic,  # type:ignore
     )
 
 
@@ -213,7 +214,7 @@ def _ast_replace_union_operation(expr: ast.Expr) -> ast.Expr:
 
 
 def _ast_replace_union_operation(
-    expr: Union[ast.Expr, ast.expr]
+    expr: Union[ast.Expr, ast.expr],
 ) -> Union[ast.Expr, ast.expr]:
     if isinstance(expr, ast.Expr) and isinstance(
         expr.value, (ast.BinOp, ast.Subscript)

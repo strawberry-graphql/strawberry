@@ -14,7 +14,6 @@
 - case: test_all_field_usage
   main: |
     import strawberry
-    from strawberry.types import Info
 
     def some_resolver() -> str:
         return ""
@@ -30,7 +29,7 @@
         d: str = strawberry.federation.field(resolver=some_resolver_2)
 
         @strawberry.federation.field(description="ABC")
-        def e(self, info: Info) -> str:
+        def e(self, info: strawberry.Info) -> str:
             return ""
 
         @strawberry.federation.field(name="f")
@@ -44,12 +43,12 @@
     reveal_type(Example.e)
     reveal_type(Example.f_resolver)
   out: |
+    main:24: note: Revealed type is "builtins.str"
     main:25: note: Revealed type is "builtins.str"
     main:26: note: Revealed type is "builtins.str"
     main:27: note: Revealed type is "builtins.str"
-    main:28: note: Revealed type is "builtins.str"
+    main:28: note: Revealed type is "Any"
     main:29: note: Revealed type is "Any"
-    main:30: note: Revealed type is "Any"
 
 - case: test_private_field
   main: |

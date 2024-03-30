@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import warnings
 from functools import cached_property
 from inspect import isawaitable
 from typing import TYPE_CHECKING, Any, Callable, Generator, Optional
@@ -22,6 +23,12 @@ class SentryTracingExtension(SchemaExtension):
         *,
         execution_context: Optional[ExecutionContext] = None,
     ):
+        warnings.warn(
+            "The Sentry tracing extension is deprecated, please update to sentry>=1.32.0",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         if execution_context:
             self.execution_context = execution_context
 

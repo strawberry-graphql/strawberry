@@ -18,11 +18,11 @@ jobs:
       change_type: ${{ steps.release-check.outputs.change_type }}
 
     steps:
-    - uses: actions/checkout@v1
+      - uses: actions/checkout@v1
 
-    - name: Release file check
-      uses: ./.github/release-check-action
-      id: release-check
+      - name: Release file check
+        uses: ./.github/release-check-action
+        id: release-check
 
   release:
     name: Release
@@ -99,7 +99,7 @@ jobs:
     steps:
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: "3.9"
       - name: Install dependencies
         run: pip install httpx
       - name: Update release on GitHub
@@ -156,61 +156,37 @@ jobs:
 
     outputs:
       tweet: ${{ steps.extract.outputs.tweet }}
-      card-text: ${{ steps.extract.outputs.card-text }}
       has-tweet-file: ${{ steps.extract.outputs.has-tweet-file }}
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Extract tweet message and changelog
-      id: extract
-      uses: strawberry-graphql/tweet-actions/read-tweet@v4
-      with:
-        changelog: ${{ needs.release-file-check.outputs.changelog }}
-        version: ${{ needs.release.outputs.version }}
-        contributor_name: ${{ needs.get-contributor-info.outputs.contributor-name }}
-        contributor_twitter_username: ${{ needs.get-contributor-info.outputs.contributor-twitter-username }}
-
-  generate-preview:
-    name: Generate Preview
-    runs-on: ubuntu-latest
-    needs: [release-file-check, read-tweet-md, release, get-contributor-info]
-    if: ${{ needs.release-file-check.outputs.status == 'OK' }}
-
-    steps:
-    - name: Generate Twitter card preview
-      uses: strawberry-graphql/release-cards@main
-      if: ${{ needs.release-file-check.outputs.status == 'OK' }}
-      with:
-        version: ${{ needs.release.outputs.version }}
-        contributor: ${{ needs.get-contributor-info.outputs.contributor-name }}
-        description_base64: ${{ needs.read-tweet-md.outputs.card-text }}
-    - name: Store card in artificats
-      uses: actions/upload-artifact@v2
-      with:
-        name: card
-        path: screenshot.png
-        retention-days: 1
+      - uses: actions/checkout@v1
+      - name: Extract tweet message and changelog
+        id: extract
+        uses: strawberry-graphql/tweet-actions/read-tweet@v6
+        with:
+          changelog: ${{ needs.release-file-check.outputs.changelog }}
+          version: ${{ needs.release.outputs.version }}
+          contributor_name: ${{ needs.get-contributor-info.outputs.contributor-name }}
+          contributor_twitter_username: ${{ needs.get-contributor-info.outputs.contributor-twitter-username }}
 
   send-tweet:
     name: Send tweet
     runs-on: ubuntu-latest
-    needs: [release, read-tweet-md, get-contributor-info, generate-preview]
+    needs: [release, read-tweet-md, get-contributor-info]
     if: ${{ needs.release-file-check.outputs.status == 'OK' }}
 
     steps:
-      - uses: actions/download-artifact@v2
-        with:
-          name: card
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: "3.9"
       - name: Install dependencies
-        run: pip install tweepy==4.0.0
+        run: pip install tweepy==4.14.0
       - name: Send tweet
         shell: python
         run: |
-          import os
           import base64
+          import os
+
           import tweepy
 
           TWITTER_CONSUMER_KEY = os.environ["TWITTER_API_KEY"]
@@ -219,14 +195,7 @@ jobs:
           TWITTER_ACCESS_TOKEN_SECRET = os.environ["TWITTER_ACCESS_TOKEN_SECRET"]
           TWITTER_BEARER_TOKEN = os.environ["TWITTER_BEARER_TOKEN"]
 
-          tweepy_auth = tweepy.OAuth1UserHandler(
-              consumer_key=TWITTER_CONSUMER_KEY,
-              consumer_secret=TWITTER_CONSUMER_SECRET,
-              access_token=TWITTER_ACCESS_TOKEN,
-              access_token_secret=TWITTER_ACCESS_TOKEN_SECRET,
-          )
 
-          tweepy_v1 = tweepy.API(tweepy_auth)
           tweepy_v2 = tweepy.Client(
               TWITTER_BEARER_TOKEN,
               consumer_key=TWITTER_CONSUMER_KEY,
@@ -235,18 +204,13 @@ jobs:
               access_token_secret=TWITTER_ACCESS_TOKEN_SECRET,
           )
 
-          def upload_media() -> str:
-              post = tweepy_v1.simple_upload("screenshot.png")
 
-              return post.media_id_string
-
-          def post_tweet(media_id: str):
+          def post_tweet() -> None:
               text = base64.b64decode(os.environ["TWEET"]).decode("utf-8")
-              tweepy_v2.create_tweet(text=text, media_ids=[media_id])
+              tweepy_v2.create_tweet(text=text)
 
-          media = upload_media()
 
-          post_tweet(media)
+          post_tweet()
 
         env:
           TWEET: ${{ needs.read-tweet-md.outputs.tweet }}
@@ -263,17 +227,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-      with:
-        persist-credentials: false
-    - name: Remove TWEET.md and commit
-      env:
-        GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
-      run: |
-        git config --global user.name 'Strawberry GraphQL Bot'
-        git config --global user.email 'bot@strawberry.rocks'
-        git remote set-url origin https://${{ secrets.BOT_TOKEN }}@github.com/${{ github.repository }}
-        git pull
-        git rm TWEET.md
-        git commit -m "Remove TWEET.md"
-        git push
+      - uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+      - name: Remove TWEET.md and commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: |
+          git config --global user.name 'Strawberry GraphQL Bot'
+          git config --global user.email 'bot@strawberry.rocks'
+          git remote set-url origin https://${{ secrets.BOT_TOKEN }}@github.com/${{ github.repository }}
+          git pull
+          git rm TWEET.md
+          git commit -m "Remove TWEET.md"
+          git push

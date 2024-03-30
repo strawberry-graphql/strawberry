@@ -23,10 +23,8 @@ jobs:
     outputs:
       sessions: ${{ steps.set-matrix.outputs.sessions }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: wntrblm/nox@main
-      - run: pipx install poetry
-      - run: pipx inject nox nox-poetry
+      - uses: actions/checkout@v4
+      - run: pip install poetry nox nox-poetry
       - id: set-matrix
         shell: bash
         run: |
@@ -50,36 +48,46 @@ jobs:
         session: ${{ fromJson(needs.generate-jobs-tests.outputs.sessions) }}
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: wntrblm/nox@main
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-versions: "3.8, 3.9, 3.10, 3.11, 3.12"
+          python-version: |
+            3.8
+            3.9
+            3.10
+            3.11
+            3.12
 
       - name: Pip and nox cache
         id: cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache
             ~/.nox
             .nox
-          key: ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
-            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
-          restore-keys: |
-            ${{ runner.os }}-nox-${{ matrix.session.session }}-
-            ${{ runner.os }}-nox-
+          key:
+            ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
+            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}-2
 
-      - run: pipx install coverage
-      - run: pipx install poetry
-      - run: pipx inject nox nox-poetry
+      - run: pip install poetry nox nox-poetry
+      - run: poetry --help
+      - run: which poetry
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
-
-      - name: coverage xml
-        run: coverage xml -i
+      - uses: actions/upload-artifact@v4
         if: ${{ always() }}
+        with:
+          name: coverage-${{ matrix.session.session }}
+          path: coverage.xml
 
-      - uses: codecov/codecov-action@v3
-        if: ${{ always() }}
+  upload-coverage:
+    name: 🆙 Upload Coverage
+    needs: [unit-tests]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v4
+      - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
@@ -92,16 +100,16 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: pipx install poetry
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         id: setup-python
         with:
-          python-version: "3.12.0-beta.3"
+          python-version: "3.12"
           architecture: x64
           cache: "poetry"
 
-      - run: poetry env use 3.12.0-beta.3
+      - run: poetry env use 3.12
       - run: poetry install
         if: steps.setup-python.outputs.cache-hit != 'true'
 
@@ -118,27 +126,33 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: wntrblm/nox@main
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-versions: "3.8, 3.9, 3.10, 3.11, 3.12"
+          python-version: |
+            3.8
+            3.9
+            3.10
+            3.11
+            3.12
 
       - name: Pip and nox cache
         id: cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache
             ~/.nox
             .nox
-          key: ${{ runner.os }}-nox-lint-${{ matrix.session.session }}-${{
+          key:
+            ${{ runner.os }}-nox-lint-${{ matrix.session.session }}-${{
             hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
           restore-keys: |
             ${{ runner.os }}-lint-nox-${{ matrix.session.session }}-
             ${{ runner.os }}-lint-nox-
 
-      - run: pipx install poetry
-      - run: pipx inject nox nox-poetry
+      - run: pip install poetry
+      - run: pip install nox nox-poetry
       - run: nox -r -t lint
 
   unit-tests-on-windows:
@@ -146,10 +160,10 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: pipx install poetry
       - run: pipx install coverage
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         id: setup-python
         with:
           python-version: "3.11"
@@ -170,7 +184,7 @@ jobs:
         run: coverage xml -i
         if: ${{ always() }}
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         if: ${{ always() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
