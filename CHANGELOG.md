@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.224.1 - 2024-03-30
+--------------------
+
+This release fixes a deprecation warning when using the Apollo Tracing
+Extension.
+
+Contributed by [A. Coady](https://github.com/coady) via [PR #3410](https://github.com/strawberry-graphql/strawberry/pull/3410/)
+
+
 0.224.0 - 2024-03-30
 --------------------
 
