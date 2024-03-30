@@ -178,19 +178,6 @@ def _get_argument(name: str, value: ArgumentValue) -> cst.Arg:
     )
 
 
-# TODO: this might be removed now
-def _get_argument_list(name: str, values: list[ArgumentValue]) -> cst.Arg:
-    value = cst.List(
-        elements=[cst.Element(value=_sanitize_argument(value)) for value in values],
-    )
-
-    return cst.Arg(
-        value=value,
-        keyword=cst.Name(name),
-        equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
-    )
-
-
 def _get_field_value(
     field: FieldDefinitionNode | InputValueDefinitionNode,
     alias: str | None,
