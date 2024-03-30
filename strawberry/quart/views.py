@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Optional, cast
 
@@ -5,36 +6,14 @@ from quart import Request, Response, request
 from quart.views import View
 from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
 from strawberry.http.exceptions import HTTPException
+from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import Context, RootValue
-from strawberry.utils.graphiql import get_graphiql_html
 
 if TYPE_CHECKING:
     from quart.typing import ResponseReturnValue
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.schema.base import BaseSchema
-
-
-class BaseGraphQLView:
-    def __init__(
-        self,
-        schema: "BaseSchema",
-        graphiql: bool = True,
-        allow_queries_via_get: bool = True,
-    ):
-        self.schema = schema
-        self.graphiql = graphiql
-        self.allow_queries_via_get = allow_queries_via_get
-
-    def render_graphiql(self, request: Request) -> Response:
-        template = get_graphiql_html(False)
-        return Response(template)
-
-    def create_response(
-        self, response_data: "GraphQLHTTPResponse", sub_response: Response
-    ) -> Response:
-        sub_response.set_data(self.encode_json(response_data))  # type: ignore
-        return sub_response
 
 
 class QuartHTTPRequestAdapter(AsyncHTTPRequestAdapter):
@@ -67,13 +46,44 @@ class QuartHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class GraphQLView(
-    BaseGraphQLView,
     AsyncBaseHTTPView[Request, Response, Response, Context, RootValue],
     View,
 ):
+    _ide_subscription_enabled = False
+
     methods = ["GET", "POST"]
     allow_queries_via_get: bool = True
     request_adapter_class = QuartHTTPRequestAdapter
+
+    def __init__(
+        self,
+        schema: "BaseSchema",
+        graphiql: Optional[bool] = None,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        allow_queries_via_get: bool = True,
+    ):
+        self.schema = schema
+        self.allow_queries_via_get = allow_queries_via_get
+
+        if graphiql is not None:
+            warnings.warn(
+                "The `graphiql` argument is deprecated in favor of `graphql_ide`",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.graphql_ide = "graphiql" if graphiql else None
+        else:
+            self.graphql_ide = graphql_ide
+
+    async def render_graphql_ide(self, request: Request) -> Response:
+        return Response(self.graphql_ide_html)
+
+    def create_response(
+        self, response_data: "GraphQLHTTPResponse", sub_response: Response
+    ) -> Response:
+        sub_response.set_data(self.encode_json(response_data))
+
+        return sub_response
 
     async def get_context(self, request: Request, response: Response) -> Context:
         return {"request": request, "response": response}  # type: ignore

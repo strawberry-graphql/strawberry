@@ -1,6 +1,6 @@
 try:
     from . import pydantic
-except ImportError:
+except ModuleNotFoundError:
     pass
 else:
     __all__ = ["pydantic"]

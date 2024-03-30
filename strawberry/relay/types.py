@@ -198,7 +198,11 @@ class GlobalID:
                 ensure_type = tuple(get_args(ensure_type))
 
             if not isinstance(node, ensure_type):
-                raise TypeError(f"{ensure_type} expected, found {node!r}")
+                msg = (
+                    f"Cannot resolve. GlobalID requires {ensure_type}, received {node!r}. "
+                    "Verify that the supplied ID is intended for this Query/Mutation/Subscription."
+                )
+                raise TypeError(msg)
 
         return node
 
@@ -213,7 +217,6 @@ class GlobalID:
             The resolved GraphQL type for the execution info
 
         """
-        schema = info.schema
         type_def = info.schema.get_type_by_name(self.type_name)
         assert isinstance(type_def, StrawberryObjectDefinition)
 
@@ -294,7 +297,11 @@ class GlobalID:
                 ensure_type = tuple(get_args(ensure_type))
 
             if not isinstance(node, ensure_type):
-                raise TypeError(f"{ensure_type} expected, found {node!r}")
+                msg = (
+                    f"Cannot resolve. GlobalID requires {ensure_type}, received {node!r}. "
+                    "Verify that the supplied ID is intended for this Query/Mutation/Subscription."
+                )
+                raise TypeError(msg)
 
         return node
 
@@ -801,11 +808,20 @@ class ListConnection(Connection[NodeType]):
 
         if after:
             after_type, after_parsed = from_base64(after)
-            assert after_type == PREFIX
+            if after_type != PREFIX:
+                # When the base64 hash doesnt exist, the after_type seems to return
+                # arrayconnEction instead of PREFIX. Let's raise a predictable
+                # instead of "An unknown error occurred."
+                raise TypeError("Argument 'after' contains a non-existing value.")
+
             start = int(after_parsed) + 1
         if before:
             before_type, before_parsed = from_base64(before)
-            assert before_type == PREFIX
+            if before_type != PREFIX:
+                # When the base64 hash doesnt exist, the after_type seems to return
+                # arrayconnEction instead of PREFIX. Let's raise a predictable
+                # instead of "An unknown error occurred.
+                raise TypeError("Argument 'before' contains a non-existing value.")
             end = int(before_parsed)
 
         if isinstance(first, int):

@@ -4,15 +4,12 @@ import sys
 import sysconfig
 import textwrap
 from pathlib import Path
-from typing import TYPE_CHECKING, Generic, List, Optional, Sequence, TypeVar
+from typing import Generic, List, Optional, Sequence, TypeVar
 from typing_extensions import Annotated
 
 import pytest
 
 import strawberry
-
-if TYPE_CHECKING:
-    from tests.schema.test_lazy.type_a import TypeA  # noqa
 
 STRAWBERRY_EXECUTABLE = next(
     Path(sysconfig.get_path("scripts")).glob("strawberry*"), None

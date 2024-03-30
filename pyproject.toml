@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.212.0"
+version = "0.224.0"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -50,11 +50,12 @@ opentelemetry-api = {version = "<2", optional = true}
 opentelemetry-sdk = {version = "<2", optional = true}
 chalice = {version = "^1.22", optional = true}
 pydantic = {version = ">1.6.1", optional = true}
-python-multipart = {version = ">=0.0.5,<0.0.7", optional = true}
+python-multipart = {version = ">=0.0.7", optional = true}
 sanic = {version = ">=20.12.2", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
 fastapi = {version = ">=0.65.2", optional = true}
 starlite = {version = ">=1.48.0", optional = true, python = ">=3.8"}
+litestar = {version = ">=2", optional = true, python = ">=3.8"}
 channels = {version = ">=3.0.5", optional = true}
 astunparse = {version = "^1.6.3", python = "<3.9"}
 libcst = {version = ">=0.4.7", optional = true}
@@ -69,23 +70,23 @@ freezegun = "^1.2.1"
 libcst = {version = ">=0.4.7,<1.2.0", optional = false}
 MarkupSafe = "2.1.3"
 nox = "^2023.4.22"
-nox-poetry = "^1.0.2"
+nox-poetry = "^1.0.3"
 opentelemetry-api = "<2"
 opentelemetry-sdk = "<2"
 pygments = "^2.3"
 pyinstrument = {version = ">=4.0.0", optional = false}
 pytest = "^7.2"
-pytest-asyncio = ">=0.20.3,<0.22.0"
+pytest-asyncio = ">=0.20.3,<0.24.0"
 pytest-codspeed = "^2.0.1"
 pytest-cov = "^4.0.0"
 pytest-emoji = "^0.2.0"
 pytest-mock = "^3.10"
 pytest-snapshot = "^0.9.0"
 pytest-xdist = {extras = ["psutil"], version = "^3.1.0"}
-python-multipart = ">=0.0.5,<0.0.7"
+python-multipart = ">=0.0.7"
 rich = {version = ">=12.5.1,<14.0.0", optional = false}
 sanic-testing = ">=22.9,<24.0"
-sentry-sdk = "^1.14.0"
+sentry-sdk = "^1.39.2"
 typer = {version = ">=0.7.0", optional = false}
 types-aiofiles = ">=22.1,<24.0"
 types-certifi = "^2021.10.8"
@@ -95,11 +96,12 @@ types-python-dateutil = "^2.8.19"
 types-toml = "^0.10.8"
 types-typed-ast = "^1.5.8"
 types-ujson = "^5.6.0"
-# added this here manually because poetry doesn't seem to be able to handle it =(
-botocore = "1.31.75"
-mypy = "1.6.1"
-pytest-mypy-plugins = ">=1.10,<4.0"
 types-protobuf = "^4.23.0.1"
+mypy = "1.9.0"
+pytest-mypy-plugins = ">=1.10,<4.0"
+poetry-plugin-export = "^1.6.0"
+# another bug in poetry
+urllib3 = "<2"
 
 [tool.poetry.group.integrations]
 optional = true
@@ -112,12 +114,13 @@ Django = ">=3.2"
 fastapi = {version = ">=0.65.0", optional = false}
 flask = ">=1.1"
 quart = ">=0.19.3"
-pydantic = {version = ">1.6.1,<2.0", optional = false}
+pydantic = {version = ">=2.0", optional = false}
 pytest-aiohttp = "^1.0.3"
 pytest-django = {version = "^4.5"}
 sanic = ">=20.12.2"
 starlette = ">=0.13.6"
 starlite = {version = ">=1.48.0", optional = false, python = ">=3.8", extras = ["testing"]}
+litestar = {version = ">=2", optional = false, python = ">=3.8"}
 uvicorn = ">=0.11.6"
 daphne = "^4.0.0"
 
@@ -137,6 +140,7 @@ fastapi = ["fastapi", "python-multipart"]
 chalice = ["chalice"]
 cli = ["typer", "pygments", "rich", "libcst"]
 starlite = ["starlite"]
+litestar = ["litestar"]
 pyinstrument = ["pyinstrument"]
 
 [tool.poetry.scripts]
@@ -188,8 +192,34 @@ stubPath = ""
 
 [tool.ruff]
 line-length = 88
-select = ["ALL"]
 target-version = "py38"
+fix = true
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "tests/codegen/snapshots"
+]
+src = ["strawberry", "tests"]
+
+[tool.ruff.lint]
+select = ["ALL"]
 ignore = [
     # https://github.com/astral-sh/ruff/pull/4427
     # equivalent to keep-runtime-typing
@@ -322,38 +352,14 @@ ignore = [
     "FIX002",
     "FA100",
 ]
-fix = true
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
-    "tests/codegen/snapshots"
-]
-src = ["strawberry", "tests"]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "strawberry/schema/types/concrete_type.py" = ["TCH002"]
 "tests/*" = ["RSE102", "SLF001", "TCH001", "TCH002", "TCH003", "ANN001", "ANN201", "PLW0603", "PLC1901", "S603", "S607", "B018"]
 "strawberry/extensions/tracing/__init__.py" = ["TCH004"]
 "tests/http/clients/__init__.py" = ["F401"]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["strawberry"]
 known-third-party = ["django", "graphql"]
 extra-standard-library = ["typing_extensions"]

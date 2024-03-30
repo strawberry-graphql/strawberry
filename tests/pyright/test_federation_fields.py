@@ -44,6 +44,12 @@ def test_pyright():
     assert results == [
         Result(
             type="error",
+            message='Argument missing for parameter "name"',
+            line=24,
+            column=1,
+        ),
+        Result(
+            type="error",
             message='No parameter named "n"',
             line=24,
             column=6,
@@ -51,7 +57,7 @@ def test_pyright():
         Result(
             type="error",
             message='Argument missing for parameter "name"',
-            line=24,
+            line=27,
             column=1,
         ),
         Result(
@@ -59,12 +65,6 @@ def test_pyright():
             message='No parameter named "n"',
             line=27,
             column=11,
-        ),
-        Result(
-            type="error",
-            message='Argument missing for parameter "name"',
-            line=27,
-            column=1,
         ),
         Result(
             type="information",

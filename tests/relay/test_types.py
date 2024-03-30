@@ -241,3 +241,21 @@ async def test_resolve_async_list_connection_but_sync_after_sliced():
             ],
         }
     }
+
+
+def test_overwrite_resolve_id_and_no_node_id():
+    @strawberry.type
+    class Fruit(relay.Node):
+        color: str
+
+        @classmethod
+        def resolve_id(cls, root) -> str:
+            return "test"  # pragma: no cover
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def fruit(self) -> Fruit:
+            return Fruit(color="red")  # pragma: no cover
+
+    strawberry.Schema(query=Query)

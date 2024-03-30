@@ -65,7 +65,7 @@ class InputMutationExtension(FieldExtension):
         self,
         next_: SyncExtensionResolver,
         source: Any,
-        info: Info[Any, Any],
+        info: Info,
         **kwargs: Any,
     ) -> Any:
         input_args = kwargs.pop("input")
