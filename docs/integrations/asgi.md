@@ -64,7 +64,7 @@ class MyGraphQL(GraphQL):
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info: Info) -> str:
+    def example(self, info: strawberry.Info) -> str:
         return str(info.context["example"])
 ```
 
@@ -87,7 +87,7 @@ the `Info` object.
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def login(self, info: Info) -> bool:
+    def login(self, info: strawberry.Info) -> bool:
         token = do_login()
         info.context["response"].set_cookie(key="token", value=token)
         return True
@@ -108,7 +108,7 @@ async def notify_new_flavour(name: str): ...
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def create_flavour(self, name: str, info: Info) -> bool:
+    def create_flavour(self, name: str, info: strawberry.Info) -> bool:
         info.context["response"].background = BackgroundTask(notify_new_flavour, name)
 ```
 
