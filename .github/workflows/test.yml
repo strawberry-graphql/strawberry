@@ -75,6 +75,7 @@ jobs:
       - run: which poetry
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
       - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
         with:
           name: coverage-${{ matrix.session.session }}
           path: coverage.xml
@@ -86,7 +87,6 @@ jobs:
 
     steps:
       - uses: actions/download-artifact@v4
-      - run: ls -laR
       - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
