@@ -34,15 +34,15 @@ from ..http.clients.base import WebSocketClient
 
 try:
     from ..http.clients.fastapi import FastAPIHttpClient
-except ImportError:
+except ImportError:  # pragma: no cover
     FastAPIHttpClient = None
 try:
     from ..http.clients.starlite import StarliteHttpClient
-except ImportError:
+except ImportError:  # pragma: no cover
     StarliteHttpClient = None
 try:
     from ..http.clients.litestar import LitestarHttpClient
-except ImportError:
+except ImportError:  # pragma: no cover
     LitestarHttpClient = None
 
 if TYPE_CHECKING:
