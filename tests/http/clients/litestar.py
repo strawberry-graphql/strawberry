@@ -17,7 +17,7 @@ from strawberry.litestar.controller import GraphQLTransportWSHandler, GraphQLWSH
 from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
-from ..context import get_context
+from ..context import get_context_async as get_context
 from .base import (
     JSON,
     DebuggableGraphQLTransportWSMixin,
@@ -35,7 +35,7 @@ def custom_context_dependency() -> str:
 
 
 async def litestar_get_context(request: Request = None):
-    return get_context({"request": request})
+    return await get_context({"request": request})
 
 
 async def get_root_value(request: Request = None):
