@@ -37,6 +37,10 @@ class StrawberryType(ABC):
     def type_params(self) -> List[TypeVar]:
         return []
 
+    @property
+    def is_one_of(self) -> bool:
+        return False
+
     @abstractmethod
     def copy_with(
         self,
