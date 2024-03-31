@@ -412,6 +412,13 @@ class GraphQLCoreConverter:
                     f"OneOf Input Object '{type_name}' must specify exactly one key."
                 )
 
+            first_key, first_value = next(iter(value.items()))
+
+            if first_value is None or first_value is UNSET:
+                raise GraphQLError(
+                    f"Value for member field '{first_key}' must be non-null"
+                )
+
             return value
 
         out_type = (
