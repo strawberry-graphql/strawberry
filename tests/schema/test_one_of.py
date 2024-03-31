@@ -6,8 +6,8 @@ from strawberry.schema_directives import OneOf
 
 @strawberry.input(directives=[OneOf()])
 class TestInputObject:
-    a: str | None = None
-    b: int | None = None
+    a: str | None = strawberry.UNSET
+    b: int | None = strawberry.UNSET
 
 
 @strawberry.type

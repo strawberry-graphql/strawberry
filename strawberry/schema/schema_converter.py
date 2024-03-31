@@ -26,6 +26,7 @@ from graphql import (
     GraphQLDirective,
     GraphQLEnumType,
     GraphQLEnumValue,
+    GraphQLError,
     GraphQLField,
     GraphQLInputField,
     GraphQLInputObjectType,
@@ -405,6 +406,14 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_object_type, GraphQLInputObjectType)  # For mypy
             return graphql_object_type
 
+        def check_one_of(value: dict[str, Any]) -> dict[str, Any]:
+            if len(value) != 1:
+                raise GraphQLError(
+                    f"OneOf Input Object '{type_name}' must specify exactly one key."
+                )
+
+            return value
+
         graphql_object_type = GraphQLInputObjectType(
             name=type_name,
             fields=lambda: self.get_graphql_input_fields(type_definition),
@@ -413,6 +422,9 @@ class GraphQLCoreConverter:
                 GraphQLCoreConverter.DEFINITION_BACKREF: type_definition,
             },
         )
+
+        if type_definition.is_input and type_definition.is_one_of:
+            graphql_object_type.out_type = check_one_of
 
         self.type_map[type_name] = ConcreteType(
             definition=type_definition, implementation=graphql_object_type
