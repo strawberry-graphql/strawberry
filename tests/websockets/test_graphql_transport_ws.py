@@ -40,6 +40,10 @@ try:
     from ..http.clients.starlite import StarliteHttpClient
 except ImportError:
     StarliteHttpClient = None
+try:
+    from ..http.clients.litestar import LitestarHttpClient
+except ImportError:
+    LitestarHttpClient = None
 
 if TYPE_CHECKING:
     from ..http.clients.base import HttpClient
@@ -1108,7 +1112,7 @@ async def test_long_custom_context(
     """
     Test that the websocket is not blocked evaluating the context
     """
-    if http_client_class in (FastAPIHttpClient, StarliteHttpClient):
+    if http_client_class in (FastAPIHttpClient, StarliteHttpClient, LitestarHttpClient):
         pytest.skip("Client evaluates the context only once per connection")
 
     counter = 0
