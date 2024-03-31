@@ -67,7 +67,7 @@ class OneOfInputValidationRule(ValidationRule):
             return
 
         if is_variable:
-            variable_name = value.name.value
+            variable_name = value.name.value  # type: ignore
             definition = self.variable_definitions[variable_name]
             is_nullable_variable = definition.type.kind != "NonNullType"
 

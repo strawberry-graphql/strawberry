@@ -414,6 +414,12 @@ class GraphQLCoreConverter:
 
             return value
 
+        out_type = (
+            check_one_of
+            if type_definition.is_input and type_definition.is_one_of
+            else None
+        )
+
         graphql_object_type = GraphQLInputObjectType(
             name=type_name,
             fields=lambda: self.get_graphql_input_fields(type_definition),
@@ -421,10 +427,8 @@ class GraphQLCoreConverter:
             extensions={
                 GraphQLCoreConverter.DEFINITION_BACKREF: type_definition,
             },
+            out_type=out_type,
         )
-
-        if type_definition.is_input and type_definition.is_one_of:
-            graphql_object_type.out_type = check_one_of
 
         self.type_map[type_name] = ConcreteType(
             definition=type_definition, implementation=graphql_object_type
