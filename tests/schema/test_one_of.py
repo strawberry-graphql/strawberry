@@ -177,9 +177,6 @@ def test_value_must_be_non_null_variable():
 def test_works(value: str, variables: dict[str, Any], expected: dict[str, Any]):
     variables_definitions = []
 
-    if "$a" in value:
-        variables_definitions.append("$a: String")
-
     if "$b" in value:
         variables_definitions.append("$b: Int!")
 
