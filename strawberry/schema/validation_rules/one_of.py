@@ -53,8 +53,8 @@ class OneOfInputValidationRule(ValidationRule):
             return
 
         value = field_node_map[keys[0]].value
-        is_null_literal = not value or value.kind == "NullValue"
-        is_variable = value.kind == "Variable"
+        is_null_literal = not value or value.kind == "null_value"
+        is_variable = value.kind == "variable"
 
         if is_null_literal:
             self.report_error(
@@ -69,7 +69,7 @@ class OneOfInputValidationRule(ValidationRule):
         if is_variable:
             variable_name = value.name.value  # type: ignore
             definition = self.variable_definitions[variable_name]
-            is_nullable_variable = definition.type.kind != "NonNullType"
+            is_nullable_variable = definition.type.kind != "non_null_type"
 
             if is_nullable_variable:
                 self.report_error(

@@ -112,45 +112,56 @@ def test_must_specify_at_least_one_key_literal(value: str, variables: dict[str, 
     )
 
 
-@pytest.mark.parametrize(
-    ("value", "variables", "key"),
-    [
-        ("{ a: null }", {}, "a"),
-        ("{ b: $b }", {"b": None}, "b"),
-        ("$input", {"input": {"a": None}}, "a"),
-    ],
-)
-def test_value_must_be_non_null(value: str, variables: dict[str, Any], key: str):
-    variables_definitions = []
-
-    if "$a" in value:
-        variables_definitions.append("$a: String")
-
-    if "$b" in value:
-        variables_definitions.append("$b: Int")
-
-    if "$input" in value:
-        variables_definitions.append("$input: ExampleInputTagged!")
-
-    variables_definition_str = (
-        f'({", ".join(variables_definitions)})' if variables_definitions else ""
-    )
-
-    query = f"""
-        query {variables_definition_str} {{
-          test(input: {value}) {{
+def test_value_must_be_non_null_input():
+    query = """
+        query ($input: ExampleInputTagged!) {
+          test(input: $input) {
             a
             b
-          }}
-        }}
+          }
+        }
     """
 
-    result = schema.execute_sync(query, variable_values=variables)
+    result = schema.execute_sync(query, variable_values={"input": {"a": None}})
+
+    assert result.errors
+    assert len(result.errors) == 1
+    assert result.errors[0].message == "Value for member field 'a' must be non-null"
+
+
+def test_value_must_be_non_null_literal():
+    query = """
+        query {
+          test(input: { a: null }) {
+            a
+            b
+          }
+        }
+    """
+
+    result = schema.execute_sync(query, variable_values={"input": {"a": None}})
+
+    assert result.errors
+    assert len(result.errors) == 1
+    assert result.errors[0].message == "Field 'ExampleInputTagged.a' must be non-null."
+
+
+def test_value_must_be_non_null_variable():
+    query = """
+        query ($b: Int) {
+            test(input: { b: $b }) {
+                b
+            }
+        }
+    """
+
+    result = schema.execute_sync(query, variable_values={})
 
     assert result.errors
     assert len(result.errors) == 1
     assert (
-        result.errors[0].message == f"Value for member field '{key}' must be non-null"
+        result.errors[0].message
+        == "Variable 'b' must be non-nullable to be used for OneOf Input Object 'ExampleInputTagged'."
     )
 
 
@@ -170,7 +181,7 @@ def test_works(value: str, variables: dict[str, Any], expected: dict[str, Any]):
         variables_definitions.append("$a: String")
 
     if "$b" in value:
-        variables_definitions.append("$b: Int")
+        variables_definitions.append("$b: Int!")
 
     if "$input" in value:
         variables_definitions.append("$input: ExampleInputTagged!")
