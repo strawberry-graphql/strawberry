@@ -193,3 +193,41 @@ def test_works(value: str, variables: dict[str, Any], expected: dict[str, Any]):
 
     assert not result.errors
     assert result.data["test"] == expected
+
+
+def test_works_with_camelcasing():
+    global ExampleWithLongerNames, Result
+
+    @strawberry.input(directives=[OneOf()])
+    class ExampleWithLongerNames:
+        a_field: str | None
+        b_field: int | None
+
+    @strawberry.type
+    class Result:
+        a_field: str | None
+        b_field: int | None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def test(self, input: ExampleWithLongerNames) -> Result:
+            return input  # type: ignore
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+        query ($input: ExampleWithLongerNames!) {
+          test(input: $input) {
+            aField
+            bField
+          }
+        }
+    """
+
+    result = schema.execute_sync(query, variable_values={"input": {"aField": "abc"}})
+
+    assert not result.errors
+    assert result.data["test"] == {"aField": "abc", "bField": None}
+
+    del ExampleWithLongerNames, Result

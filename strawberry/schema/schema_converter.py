@@ -424,11 +424,10 @@ class GraphQLCoreConverter:
             # The alternative is to tell them to use `UNSET`, but it looks
             # a bit unfriendly to use
 
-            missing_keys = []
-
             for field in type_definition.fields:
-                if field.name not in value:
-                    value[field.name] = None
+                name = self.config.name_converter.from_field(field)
+                if name not in value:
+                    value[name] = None
 
             return value
 
