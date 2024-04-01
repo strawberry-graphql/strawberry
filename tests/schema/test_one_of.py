@@ -10,8 +10,8 @@ from strawberry.schema_directives import OneOf
 
 @strawberry.input(directives=[OneOf()])
 class ExampleInputTagged:
-    a: str | None = strawberry.UNSET
-    b: int | None = strawberry.UNSET
+    a: str | None
+    b: int | None
 
 
 @strawberry.type

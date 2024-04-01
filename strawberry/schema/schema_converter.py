@@ -419,6 +419,17 @@ class GraphQLCoreConverter:
                     f"Value for member field '{first_key}' must be non-null"
                 )
 
+            # We are populating all missing keys with `None`, so users
+            # don't have to set an explicit default for the input type
+            # The alternative is to tell them to use `UNSET`, but it looks
+            # a bit unfriendly to use
+
+            missing_keys = []
+
+            for field in type_definition.fields:
+                if field.name not in value:
+                    value[field.name] = None
+
             return value
 
         out_type = (
