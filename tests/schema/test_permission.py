@@ -23,7 +23,6 @@ def test_raises_graphql_error_when_permission_method_is_missing():
     )
 
     with pytest.raises(TypeError, match=error_msg):
-
         @strawberry.type
         class Query:
             @strawberry.field(permission_classes=[IsAuthenticated])
@@ -54,7 +53,8 @@ def test_raises_graphql_error_when_permission_is_denied():
     assert result.errors[0].message == "User is not authenticated"
 
 
-def test_no_graphql_error_when_and_permission_is_allowed():
+@pytest.mark.asyncio
+async def test_no_graphql_error_when_and_permission_is_allowed():
     class TruePermission(BasePermission):
         message = "True Permission Failed"
 
@@ -79,9 +79,12 @@ def test_no_graphql_error_when_and_permission_is_allowed():
 
     result = schema.execute_sync(query)
     assert result.data["user"] == "patrick"
+    result = await schema.execute(query)
+    assert result.data["user"] == "patrick"
 
 
-def test_raises_graphql_error_when_right_and_permission_is_denied():
+@pytest.mark.asyncio
+async def test_raises_graphql_error_when_right_and_permission_is_denied():
     class FalsePermission(BasePermission):
         message = "False Permission Failed"
 
@@ -116,9 +119,12 @@ def test_raises_graphql_error_when_right_and_permission_is_denied():
 
     result = schema.execute_sync(query)
     assert result.errors[0].message == "False Permission Failed"
+    result = await schema.execute(query)
+    assert result.errors[0].message == "False Permission Failed"
 
 
-def test_raises_graphql_error_when_left_and_permission_is_denied():
+@pytest.mark.asyncio
+async def test_raises_graphql_error_when_left_and_permission_is_denied():
     class FalsePermission(BasePermission):
         message = "False Permission Failed"
 
@@ -132,7 +138,7 @@ def test_raises_graphql_error_when_left_and_permission_is_denied():
 
         def has_permission(
             self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
-        ) -> bool:
+        ) -> bool:  # pragma: no cover
             return True
 
     @strawberry.type
@@ -153,9 +159,12 @@ def test_raises_graphql_error_when_left_and_permission_is_denied():
 
     result = schema.execute_sync(query)
     assert result.errors[0].message == "False Permission Failed"
+    result = await schema.execute(query)
+    assert result.errors[0].message == "False Permission Failed"
 
 
-def test_raises_graphql_error_from_left_exception_when_both_and_permission_is_denied():
+@pytest.mark.asyncio
+async def test_raises_graphql_error_from_left_exception_when_both_and_permission_is_denied():
     class FalseLeftPermission(BasePermission):
         message = "False Left Permission Failed"
 
@@ -169,7 +178,7 @@ def test_raises_graphql_error_from_left_exception_when_both_and_permission_is_de
 
         def has_permission(
             self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
-        ) -> bool:
+        ) -> bool:  # pragma: no cover
             return False
 
     @strawberry.type
@@ -191,8 +200,12 @@ def test_raises_graphql_error_from_left_exception_when_both_and_permission_is_de
     result = schema.execute_sync(query)
     assert result.errors[0].message == "False Left Permission Failed"
 
+    result = await schema.execute(query)
+    assert result.errors[0].message == "False Left Permission Failed"
 
-def test_no_graphql_error_when_both_or_permission_is_allowed():
+
+@pytest.mark.asyncio
+async def test_no_graphql_error_when_both_or_permission_is_allowed():
     class TruePermission(BasePermission):
         message = "True Permission Failed"
 
@@ -218,14 +231,18 @@ def test_no_graphql_error_when_both_or_permission_is_allowed():
     result = schema.execute_sync(query)
     assert result.data["user"] == "patrick"
 
+    result = await schema.execute(query)
+    assert result.data["user"] == "patrick"
 
-def test_no_graphql_error_when_left_or_permission_is_allowed():
+
+@pytest.mark.asyncio
+async def test_no_graphql_error_when_left_or_permission_is_allowed():
     class FalsePermission(BasePermission):
         message = "False Permission Failed"
 
         def has_permission(
             self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
-        ) -> bool:
+        ) -> bool:  # pragma: no cover
             return False
 
     class TruePermission(BasePermission):
@@ -255,8 +272,12 @@ def test_no_graphql_error_when_left_or_permission_is_allowed():
     result = schema.execute_sync(query)
     assert result.data["user"] == "patrick"
 
+    result = await schema.execute(query)
+    assert result.data["user"] == "patrick"
 
-def test_no_graphql_error_when_right_or_permission_is_allowed():
+
+@pytest.mark.asyncio
+async def test_no_graphql_error_when_right_or_permission_is_allowed():
     class FalsePermission(BasePermission):
         message = "False Permission Failed"
 
@@ -292,8 +313,12 @@ def test_no_graphql_error_when_right_or_permission_is_allowed():
     result = schema.execute_sync(query)
     assert result.data["user"] == "patrick"
 
+    result = await schema.execute(query)
+    assert result.data["user"] == "patrick"
 
-def test_raises_graphql_error_from_left_exception_when_both_or_permission_is_denied():
+
+@pytest.mark.asyncio
+async def test_raises_graphql_error_from_left_exception_when_both_or_permission_is_denied():
     class FalseLeftPermission(BasePermission):
         message = "False Left Permission Failed"
 
@@ -327,6 +352,9 @@ def test_raises_graphql_error_from_left_exception_when_both_or_permission_is_den
     query = "{ user }"
 
     result = schema.execute_sync(query)
+    assert result.errors[0].message == "False Left Permission Failed"
+
+    result = await schema.execute(query)
     assert result.errors[0].message == "False Left Permission Failed"
 
 
