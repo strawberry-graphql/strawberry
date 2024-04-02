@@ -1,6 +1,100 @@
 CHANGELOG
 =========
 
+0.224.1 - 2024-03-30
+--------------------
+
+This release fixes a deprecation warning when using the Apollo Tracing
+Extension.
+
+Contributed by [A. Coady](https://github.com/coady) via [PR #3410](https://github.com/strawberry-graphql/strawberry/pull/3410/)
+
+
+0.224.0 - 2024-03-30
+--------------------
+
+This release adds support for using both Pydantic v1 and v2, when importing from
+`pydantic.v1`.
+
+This is automatically detected and the correct version is used.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3426](https://github.com/strawberry-graphql/strawberry/pull/3426/)
+
+
+0.223.0 - 2024-03-29
+--------------------
+
+This release adds support for Apollo Federation in the schema codegen. Now you
+can convert a schema like this:
+
+```graphql
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.3",
+        import: ["@key", "@shareable"])
+
+type Query {
+  me: User
+}
+
+type User @key(fields: "id") {
+  id: ID!
+  username: String! @shareable
+}
+```
+
+to a Strawberry powered schema like this:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Query:
+    me: User | None
+
+
+@strawberry.federation.type(keys=["id"])
+class User:
+    id: strawberry.ID
+    username: str = strawberry.federation.field(shareable=True)
+
+
+schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+```
+
+By running the following command:
+
+```bash
+strawberry schema-codegen example.graphql
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3417](https://github.com/strawberry-graphql/strawberry/pull/3417/)
+
+
+0.222.0 - 2024-03-27
+--------------------
+
+This release adds support for Apollo Federation v2.7 which includes the `@authenticated`, `@requiresScopes`, `@policy` directives, as well as the `label` argument for `@override`.
+As usual, we have first class support for them in the `strawberry.federation` namespace, here's an example:
+
+```python
+from strawberry.federation.schema_directives import Override
+
+
+@strawberry.federation.type(
+    authenticated=True,
+    policy=[["client", "poweruser"], ["admin"]],
+    requires_scopes=[["client", "poweruser"], ["admin"]],
+)
+class Product:
+    upc: str = strawberry.federation.field(
+        override=Override(override_from="mySubGraph", label="percent(1)")
+    )
+```
+
+Contributed by [Tyger Taco](https://github.com/TygerTaco) via [PR #3420](https://github.com/strawberry-graphql/strawberry/pull/3420/)
+
+
 0.221.1 - 2024-03-21
 --------------------
 
