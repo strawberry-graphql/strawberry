@@ -23,6 +23,7 @@ def test_raises_graphql_error_when_permission_method_is_missing():
     )
 
     with pytest.raises(TypeError, match=error_msg):
+
         @strawberry.type
         class Query:
             @strawberry.field(permission_classes=[IsAuthenticated])

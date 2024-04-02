@@ -3,7 +3,6 @@ from __future__ import annotations
 import abc
 import inspect
 import itertools
-import typing
 from functools import cached_property
 from inspect import iscoroutinefunction
 from typing import (
@@ -78,6 +77,7 @@ class BasePermission(abc.ABC):
     @property
     def schema_directive(self) -> object:
         if not self._schema_directive:
+
             class AutoDirective:
                 __strawberry_directive__ = StrawberrySchemaDirective(
                     self.__class__.__name__,
@@ -290,9 +290,12 @@ class PermissionExtension(FieldExtension):
     ) -> Any:
         for permission in self.permissions:
             if isinstance(permission, CompositePermission):
-                has_permission, failed_index = \
-                    await permission.has_composite_permission_async(source, info,
-                                                                    **kwargs)
+                (
+                    has_permission,
+                    failed_index,
+                ) = await permission.has_composite_permission_async(
+                    source, info, **kwargs
+                )
 
                 if not has_permission:
                     return self._on_unauthorized(
