@@ -6,18 +6,16 @@ import json
 import time
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Type
-from unittest.mock import Mock, patch
-
-try:
-    from unittest.mock import AsyncMock
-except ImportError:
-    AsyncMock = None
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import pytest_asyncio
 from pytest_mock import MockerFixture
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
+from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
+    BaseGraphQLTransportWSHandler,
+)
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
@@ -32,8 +30,23 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
 from tests.http.clients.base import DebuggableGraphQLTransportWSMixin
 from tests.views.schema import Schema
 
+from ..http.clients.base import WebSocketClient
+
+try:
+    from ..http.clients.fastapi import FastAPIHttpClient
+except ImportError:  # pragma: no cover
+    FastAPIHttpClient = None
+try:
+    from ..http.clients.starlite import StarliteHttpClient
+except ImportError:  # pragma: no cover
+    StarliteHttpClient = None
+try:
+    from ..http.clients.litestar import LitestarHttpClient
+except ImportError:  # pragma: no cover
+    LitestarHttpClient = None
+
 if TYPE_CHECKING:
-    from ..http.clients.base import HttpClient, WebSocketClient
+    from ..http.clients.base import HttpClient
 
 
 @pytest_asyncio.fixture
@@ -406,6 +419,28 @@ async def test_subscription_field_errors(ws: WebSocketClient):
             == "The subscription field 'notASubscriptionField' is not defined."
         )
         process_errors.assert_called_once()
+
+
+async def test_query_field_errors(ws: WebSocketClient):
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="query { notASubscriptionField }",
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == ErrorMessage.type
+    assert response["id"] == "sub1"
+    assert len(response["payload"]) == 1
+    assert response["payload"][0].get("path") is None
+    assert response["payload"][0]["locations"] == [{"line": 1, "column": 9}]
+    assert (
+        response["payload"][0]["message"]
+        == "Cannot query field 'notASubscriptionField' on type 'Query'."
+    )
 
 
 async def test_subscription_cancellation(ws: WebSocketClient):
@@ -900,9 +935,6 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
         if isinstance(http_client, ChannelsHttpClient):
             pytest.skip("Can't patch on_init for this client")
 
-    if not AsyncMock:
-        pytest.skip("Don't have AsyncMock")
-
     ws = ws_raw
     handler = None
     errorhandler = AsyncMock()
@@ -972,3 +1004,207 @@ async def test_subscription_errors_continue(ws: WebSocketClient):
         response = await ws.receive_json()
         assert response["type"] == CompleteMessage.type
         assert response["id"] == "sub1"
+
+
+async def test_validation_query(ws: WebSocketClient):
+    """
+    Test validation for query
+    """
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="query { conditionalFail(fail:true) }"
+            ),
+        ).as_dict()
+    )
+
+    # We expect an error message directly
+    response = await ws.receive_json()
+    assert response["type"] == ErrorMessage.type
+    assert response["id"] == "sub1"
+    assert len(response["payload"]) == 1
+    assert response["payload"][0].get("path") == ["conditionalFail"]
+    assert response["payload"][0]["message"] == "failed after sleep None"
+
+
+async def test_validation_subscription(ws: WebSocketClient):
+    """
+    Test validation for subscription
+    """
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="subscription { conditionalFail(fail:true) }"
+            ),
+        ).as_dict()
+    )
+
+    # We expect an error message directly
+    response = await ws.receive_json()
+    assert response["type"] == ErrorMessage.type
+    assert response["id"] == "sub1"
+    assert len(response["payload"]) == 1
+    assert response["payload"][0].get("path") == ["conditionalFail"]
+    assert response["payload"][0]["message"] == "failed after sleep None"
+
+
+async def test_long_validation_concurrent_query(ws: WebSocketClient):
+    """
+    Test that the websocket is not blocked while validating a
+    single-result-operation
+    """
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="query { conditionalFail(sleep:0.1) }"
+            ),
+        ).as_dict()
+    )
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub2",
+            payload=SubscribeMessagePayload(
+                query="query { conditionalFail(fail:false) }"
+            ),
+        ).as_dict()
+    )
+
+    # we expect the second query to arrive first, because the
+    # first query is stuck in validation
+    response = await ws.receive_json()
+    assert (
+        response
+        == NextMessage(
+            id="sub2", payload={"data": {"conditionalFail": "Hey"}}
+        ).as_dict()
+    )
+
+
+async def test_long_validation_concurrent_subscription(ws: WebSocketClient):
+    """
+    Test that the websocket is not blocked while validating a
+    subscription
+    """
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query="subscription { conditionalFail(sleep:0.1) }"
+            ),
+        ).as_dict()
+    )
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub2",
+            payload=SubscribeMessagePayload(
+                query="query { conditionalFail(fail:false) }"
+            ),
+        ).as_dict()
+    )
+
+    # we expect the second query to arrive first, because the
+    # first operation is stuck in validation
+    response = await ws.receive_json()
+    assert (
+        response
+        == NextMessage(
+            id="sub2", payload={"data": {"conditionalFail": "Hey"}}
+        ).as_dict()
+    )
+
+
+async def test_long_custom_context(
+    ws: WebSocketClient, http_client_class: Type[HttpClient]
+):
+    """
+    Test that the websocket is not blocked evaluating the context
+    """
+    if http_client_class in (FastAPIHttpClient, StarliteHttpClient, LitestarHttpClient):
+        pytest.skip("Client evaluates the context only once per connection")
+
+    counter = 0
+
+    async def slow_get_context(ctxt):
+        nonlocal counter
+        old = counter
+        counter += 1
+        if old == 0:
+            await asyncio.sleep(0.1)
+            ctxt["custom_value"] = "slow"
+        else:
+            ctxt["custom_value"] = "fast"
+        return ctxt
+
+    with patch("tests.http.context.get_context_async_inner", slow_get_context):
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query="query { valueFromContext }"),
+            ).as_dict()
+        )
+
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub2",
+                payload=SubscribeMessagePayload(
+                    query="query { valueFromContext }",
+                ),
+            ).as_dict()
+        )
+
+        # we expect the second query to arrive first, because the
+        # first operation is stuck getting context
+        response = await ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub2", payload={"data": {"valueFromContext": "fast"}}
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        if response == CompleteMessage(id="sub2").as_dict():
+            response = await ws.receive_json()  # ignore the complete message
+        assert (
+            response
+            == NextMessage(
+                id="sub1", payload={"data": {"valueFromContext": "slow"}}
+            ).as_dict()
+        )
+
+
+async def test_task_error_handler(ws: WebSocketClient):
+    """
+    Test that error handling works
+    """
+    # can't use a simple Event here, because the handler may run
+    # on a different thread
+    wakeup = False
+
+    # a replacement method which causes an error in th eTask
+    async def op(*args: Any, **kwargs: Any):
+        nonlocal wakeup
+        wakeup = True
+        raise ZeroDivisionError("test")
+
+    with patch.object(BaseGraphQLTransportWSHandler, "task_logger") as logger:
+        with patch.object(BaseGraphQLTransportWSHandler, "handle_operation", op):
+            # send any old subscription request.  It will raise an error
+            await ws.send_json(
+                SubscribeMessage(
+                    id="sub1",
+                    payload=SubscribeMessagePayload(
+                        query="subscription { conditionalFail(sleep:0) }"
+                    ),
+                ).as_dict()
+            )
+
+            # wait for the error to be logged
+            while not wakeup:
+                await asyncio.sleep(0.01)
+            # and another little bit, for the thread to finish
+            await asyncio.sleep(0.01)
+            assert logger.exception.called

@@ -20,6 +20,19 @@ class AlwaysFailPermission(BasePermission):
         return False
 
 
+class ConditionalFailPermission(BasePermission):
+    @property
+    def message(self):
+        return f"failed after sleep {self.sleep}"
+
+    async def has_permission(self, source, info, **kwargs: Any) -> bool:
+        self.sleep = kwargs.get("sleep", None)
+        self.fail = kwargs.get("fail", True)
+        if self.sleep is not None:
+            await asyncio.sleep(kwargs["sleep"])
+        return not self.fail
+
+
 class MyExtension(SchemaExtension):
     def get_results(self) -> Dict[str, str]:
         return {"example": "example"}
@@ -70,7 +83,7 @@ class DebugInfo:
 @strawberry.type
 class Query:
     @strawberry.field
-    def greetings(self) -> str:
+    def greetings(self) -> str:  # pragma: no cover
         return "hello"
 
     @strawberry.field
@@ -84,7 +97,13 @@ class Query:
 
     @strawberry.field(permission_classes=[AlwaysFailPermission])
     def always_fail(self) -> Optional[str]:
-        return "Hey"
+        return "Hey"  # pragma: no cover
+
+    @strawberry.field(permission_classes=[ConditionalFailPermission])
+    def conditional_fail(
+        self, sleep: Optional[float] = None, fail: bool = False
+    ) -> str:
+        return "Hey"  # pragma: no cover
 
     @strawberry.field
     async def error(self, message: str) -> AsyncGenerator[str, None]:
@@ -95,7 +114,7 @@ class Query:
         raise ValueError(message)
 
     @strawberry.field
-    def teapot(self, info: strawberry.Info[Any, None]) -> str:
+    def teapot(self, info: strawberry.Info[Any, None]) -> str:  # pragma: no cover
         info.context["response"].status_code = 418
 
         return "🫖"
@@ -129,7 +148,7 @@ class Query:
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def echo(self, string_to_echo: str) -> str:
+    def echo(self, string_to_echo: str) -> str:  # pragma: no cover
         return string_to_echo
 
     @strawberry.mutation
@@ -149,7 +168,7 @@ class Mutation:
         return list(map(_read_file, folder.files))
 
     @strawberry.mutation
-    def match_text(self, text_file: Upload, pattern: str) -> str:
+    def match_text(self, text_file: Upload, pattern: str) -> str:  # pragma: no cover
         text = text_file.read().decode()
         return pattern if pattern in text else ""
 
@@ -186,7 +205,7 @@ class Subscription:
         raise ValueError(message)
 
         # Without this yield, the method is not recognised as an async generator
-        yield "Hi"
+        yield "Hi"  # pragma: no cover
 
     @strawberry.subscription
     async def flavors(self) -> AsyncGenerator[Flavor, None]:
@@ -267,6 +286,12 @@ class Subscription:
                 await asyncio.sleep(0.01)
         finally:
             await asyncio.sleep(delay)
+
+    @strawberry.subscription(permission_classes=[ConditionalFailPermission])
+    async def conditional_fail(
+        self, sleep: Optional[float] = None, fail: bool = False
+    ) -> AsyncGenerator[str, None]:
+        yield "Hey"  # pragma: no cover
 
 
 class Schema(strawberry.Schema):
