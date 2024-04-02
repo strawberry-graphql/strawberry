@@ -77,6 +77,7 @@ class BasePermission(abc.ABC):
     @property
     def schema_directive(self) -> object:
         if not self._schema_directive:
+
             class AutoDirective:
                 __strawberry_directive__ = StrawberrySchemaDirective(
                     self.__class__.__name__,
@@ -265,7 +266,8 @@ class PermissionExtension(FieldExtension):
         for permission in self.permissions:
             if isinstance(permission, CompositePermission):
                 has_comp_permission, failed_index = permission.has_composite_permission(
-                    source, info, **kwargs)
+                    source, info, **kwargs
+                )
 
                 if not has_comp_permission:
                     return self._on_unauthorized(
