@@ -77,7 +77,7 @@ class DebugInfo:
 @strawberry.type
 class Query:
     @strawberry.field
-    def greetings(self) -> str:
+    def greetings(self) -> str:  # pragma: no cover
         return "hello"
 
     @strawberry.field
@@ -108,7 +108,7 @@ class Query:
         raise ValueError(message)
 
     @strawberry.field
-    def teapot(self, info: strawberry.Info[Any, None]) -> str:
+    def teapot(self, info: strawberry.Info[Any, None]) -> str:  # pragma: no cover
         info.context["response"].status_code = 418
 
         return "🫖"
@@ -142,7 +142,7 @@ class Query:
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def echo(self, string_to_echo: str) -> str:
+    def echo(self, string_to_echo: str) -> str:  # pragma: no cover
         return string_to_echo
 
     @strawberry.mutation
@@ -162,7 +162,7 @@ class Mutation:
         return list(map(_read_file, folder.files))
 
     @strawberry.mutation
-    def match_text(self, text_file: Upload, pattern: str) -> str:
+    def match_text(self, text_file: Upload, pattern: str) -> str:  # pragma: no cover
         text = text_file.read().decode()
         return pattern if pattern in text else ""
 
@@ -199,7 +199,7 @@ class Subscription:
         raise ValueError(message)
 
         # Without this yield, the method is not recognised as an async generator
-        yield "Hi"
+        yield "Hi"  # pragma: no cover
 
     @strawberry.subscription
     async def flavors(self) -> AsyncGenerator[Flavor, None]:
