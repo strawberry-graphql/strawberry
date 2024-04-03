@@ -17,14 +17,20 @@ contexts, please have a look at
 </Note>
 
 ```python
+import typing
+
 import strawberry
 from strawberry.extensions import FieldExtension
 
 
 class UpperCaseExtension(FieldExtension):
     def resolve(
-        self, next_: Callable[..., Any], source: Any, info: strawberry.Info, **kwargs
-    ):
+        self,
+        next_: typing.Callable[..., typing.Any],
+        source: typing.Any,
+        info: strawberry.Info,
+        **kwargs: typing.Dict[str, typing.Any],
+    ) -> str:
         result = next_(source, info, **kwargs)
         return str(result).upper()
 
@@ -69,10 +75,12 @@ field:
 
 ```python
 import time
+import typing
+
 import strawberry
 from strawberry.extensions import FieldExtension
-from strawberry.schema_directive import Location
 from strawberry.field import StrawberryField
+from strawberry.schema_directive import Location
 
 
 @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
@@ -81,7 +89,7 @@ class Cached:
 
 
 class CachingExtension(FieldExtension):
-    def __init__(self, caching_time=100):
+    def __init__(self, caching_time: int = 100):
         self.caching_time = caching_time
         self.last_cached = 0.0
         self.cached_result = None
@@ -90,8 +98,12 @@ class CachingExtension(FieldExtension):
         field.directives.append(Cached(time=self.caching_time))
 
     def resolve(
-        self, next_: Callable[..., Any], source: Any, info: strawberry.Info, **kwargs
-    ) -> Any:
+        self,
+        next_: typing.Callable[..., typing.Any],
+        source: typing.Any,
+        info: strawberry.Info,
+        **kwargs: typing.Dict[str, typing.Any],
+    ) -> typing.Any:
         current_time = time.time()
         if self.last_cached + self.caching_time > current_time:
             return self.cached_result
@@ -103,12 +115,13 @@ class CachingExtension(FieldExtension):
 @strawberry.type
 class Client:
 
-    @strawberry.field(extensions=[CachingExtensions(caching_time=200)])
-    def analyzed_hours(self, info) -> int:
-        return do_expensive_computation()
+    @strawberry.field(extensions=[CachingExtension(caching_time=200)])
+    def analyzed_hours(self, info: strawberry.types.Info) -> int:
+        # Do some expensive computation
+        ...
 ---
 type Client {
-    analyzedHours: Int! @Cached(time=200)
+    analyzedHours: Int! @cached(time: 200)
 }
 ```
 
@@ -121,8 +134,20 @@ extension. This allows for creating a chain of field extensions that each
 perform a specific transformation on the data being passed through them.
 
 ```python
+class LowerCaseExtension(FieldExtension):
+    def resolve(
+        self,
+        next_: typing.Callable[..., typing.Any],
+        source: typing.Any,
+        info: strawberry.types.Info,
+        **kwargs: typing.Dict[str, typing.Any],
+    ) -> str:
+        result = next_(source, info, **kwargs)
+        return str(result).lower()
+
+
 @strawberry.field(extensions=[LowerCaseExtension(), UpperCaseExtension()])
-def my_field():
+def my_field() -> str:
     return "My Result"
 ```
 
@@ -167,18 +192,22 @@ from strawberry.extensions import FieldExtension
 
 class UpperCaseExtension(FieldExtension):
     def resolve(
-        self, next: Callable[..., Any], source: Any, info: strawberry.Info, **kwargs
-    ):
+        self,
+        next_: typing.Callable[..., typing.Any],
+        source: typing.Any,
+        info: strawberry.Info,
+        **kwargs: typing.Dict[str, typing.Any],
+    ) -> str:
         result = next(source, info, **kwargs)
         return str(result).upper()
 
     async def resolve_async(
         self,
-        next: Callable[..., Awaitable[Any]],
-        source: Any,
+        next_: typing.Callable[..., typing.Any],
+        source: typing.Any,
         info: strawberry.Info,
-        **kwargs
-    ):
+        **kwargs: typing.Dict[str, typing.Any],
+    ) -> str:
         result = await next(source, info, **kwargs)
         return str(result).upper()
 
