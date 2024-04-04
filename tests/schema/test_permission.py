@@ -378,7 +378,7 @@ async def test_no_graphql_error_when_left_or_permission_is_allowed():
                 )
             ]
         )
-        def user(self) -> str:  # pragma: no cover
+        def user_async(self) -> str:  # pragma: no cover
             return "patrick"
 
     schema = strawberry.Schema(query=Query)
