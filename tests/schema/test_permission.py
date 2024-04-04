@@ -23,6 +23,7 @@ def test_raises_graphql_error_when_permission_method_is_missing():
     )
 
     with pytest.raises(TypeError, match=error_msg):
+
         @strawberry.type
         class Query:
             @strawberry.field(permission_classes=[IsAuthenticated])
@@ -84,7 +85,8 @@ async def test_no_graphql_error_when_and_permission_is_allowed():
         @strawberry.field(
             extensions=[
                 PermissionExtension(
-                    permissions=[(TrueAsyncPermission() & TrueAsyncPermission())])
+                    permissions=[(TrueAsyncPermission() & TrueAsyncPermission())]
+                )
             ]
         )
         def user_async(self) -> str:  # pragma: no cover
@@ -314,7 +316,8 @@ async def test_no_graphql_error_when_both_or_permission_is_allowed():
         @strawberry.field(
             extensions=[
                 PermissionExtension(
-                    permissions=[(TrueAsyncPermission() | TrueAsyncPermission())])
+                    permissions=[(TrueAsyncPermission() | TrueAsyncPermission())]
+                )
             ]
         )
         def user_async(self) -> str:  # pragma: no cover
@@ -501,7 +504,6 @@ async def test_raises_graphql_error_from_left_exception_when_both_or_permission_
         )
         def user_async(self) -> str:  # pragma: no cover
             return "patrick"
-
 
     schema = strawberry.Schema(query=Query)
 
