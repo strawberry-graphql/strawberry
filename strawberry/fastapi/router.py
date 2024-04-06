@@ -42,8 +42,6 @@ from strawberry.http.typevars import (
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from starlette.types import ASGIApp
-
     from strawberry.fastapi.context import MergedContext
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
@@ -160,15 +158,9 @@ class GraphQLRouter(
             GRAPHQL_WS_PROTOCOL,
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
-        default: Optional[ASGIApp] = None,
-        on_startup: Optional[Sequence[Callable[[], Any]]] = None,
-        on_shutdown: Optional[Sequence[Callable[[], Any]]] = None,
+        **kwargs: Any,
     ):
-        super().__init__(
-            default=default,
-            on_startup=on_startup,
-            on_shutdown=on_shutdown,
-        )
+        super().__init__(**kwargs)
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
