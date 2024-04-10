@@ -379,15 +379,15 @@ context so that it only caches results with a single request. Let's see an
 example of this using our ASGI view:
 
 ```python
-from typing import List, Union, Any, Optional
+from typing import Any, List, Optional, Union
 
 import strawberry
+from starlette.requests import Request
+from starlette.responses import Response
+from starlette.websockets import WebSocket
 from strawberry.asgi import GraphQL
 from strawberry.dataloader import DataLoader
-
-from starlette.requests import Request
-from starlette.websockets import WebSocket
-from starlette.responses import Response
+from strawberry.types import Info
 
 
 @strawberry.type
@@ -409,7 +409,7 @@ class MyGraphQL(GraphQL):
 @strawberry.type
 class Query:
     @strawberry.field
-    async def get_user(self, info: strawberry.Info, id: strawberry.ID) -> User:
+    async def get_user(self, info: Info, id: strawberry.ID) -> User:
         return await info.context["user_loader"].load(id)
 
 
