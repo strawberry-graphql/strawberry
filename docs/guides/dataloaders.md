@@ -256,6 +256,7 @@ from strawberry.dataloader import DataLoader, AbstractCache
 from starlette.requests import Request
 from starlette.websockets import WebSocket
 from starlette.responses import Response
+from strawberry.types import Info
 
 
 class UserCache(AbstractCache):
@@ -295,7 +296,7 @@ class MyGraphQL(GraphQL):
 @strawberry.type
 class Query:
     @strawberry.field
-    async def get_user(self, info: strawberry.Info, id: strawberry.ID) -> User:
+    async def get_user(self, info: Info, id: strawberry.ID) -> User:
         return await info.context["user_loader"].load(id)
 
 
