@@ -247,15 +247,14 @@ The `cache_map` parameter overrides the `cache_key_fn` if both arguments are
 provided.
 
 ```python
-from typing import List, Union, Any, Optional
+from typing import Any, List, Optional, Union
 
 import strawberry
-from strawberry.asgi import GraphQL
-from strawberry.dataloader import DataLoader, AbstractCache
-
 from starlette.requests import Request
-from starlette.websockets import WebSocket
 from starlette.responses import Response
+from starlette.websockets import WebSocket
+from strawberry.asgi import GraphQL
+from strawberry.dataloader import AbstractCache, DataLoader
 from strawberry.types import Info
 
 
