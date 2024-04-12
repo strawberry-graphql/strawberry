@@ -153,7 +153,7 @@ class ExtensionContextManagerBase:
 
             return WrappedHook(extension, iterator, False)
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         self.exit_stack = contextlib.ExitStack()
 
         self.exit_stack.__enter__()
@@ -175,7 +175,7 @@ class ExtensionContextManagerBase:
     ):
         self.exit_stack.__exit__(exc_type, exc_val, exc_tb)
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> None:
         self.async_exit_stack = contextlib.AsyncExitStack()
 
         await self.async_exit_stack.__aenter__()
