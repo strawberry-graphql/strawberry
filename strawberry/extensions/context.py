@@ -8,9 +8,9 @@ from asyncio import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
+    AsyncContextManager,
     Callable,
-    Iterator,
+    ContextManager,
     List,
     NamedTuple,
     Optional,
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 class WrappedHook(NamedTuple):
     extension: SchemaExtension
-    initialized_hook: Union[AsyncIterator[None], Iterator[None]]
+    hook: Union[AsyncContextManager[None], ContextManager[None]]
     is_async: bool
 
 
@@ -83,13 +83,13 @@ class ExtensionContextManagerBase:
                 hook_fn = types.MethodType(
                     contextlib.contextmanager(hook_fn), extension
                 )
-                return WrappedHook(extension, hook_fn, False)
+                return WrappedHook(extension=extension, hook=hook_fn, is_async=False)
 
             if inspect.isasyncgenfunction(hook_fn):
                 hook_fn = contextlib.asynccontextmanager(
                     types.MethodType(hook_fn, extension)
                 )
-                return WrappedHook(extension, hook_fn, True)
+                return WrappedHook(extension=extension, hook=hook_fn, is_async=True)
 
             if callable(hook_fn):
                 return self.from_callable(extension, hook_fn)
@@ -117,7 +117,7 @@ class ExtensionContextManagerBase:
                 if on_end:
                     await await_maybe(on_end())
 
-            return WrappedHook(extension, iterator, True)
+            return WrappedHook(extension=extension, hook=iterator, is_async=True)
 
         else:
 
@@ -129,7 +129,7 @@ class ExtensionContextManagerBase:
                 if on_end:
                     on_end()
 
-            return WrappedHook(extension, iterator, False)
+            return WrappedHook(extension=extension, hook=iterator, is_async=False)
 
     @staticmethod
     def from_callable(
@@ -143,7 +143,7 @@ class ExtensionContextManagerBase:
                 await func(extension)
                 yield
 
-            return WrappedHook(extension, iterator, True)
+            return WrappedHook(extension=extension, hook=iterator, is_async=True)
         else:
 
             @contextlib.contextmanager
@@ -151,7 +151,7 @@ class ExtensionContextManagerBase:
                 func(extension)
                 yield
 
-            return WrappedHook(extension, iterator, False)
+            return WrappedHook(extension=extension, hook=iterator, is_async=False)
 
     def __enter__(self) -> None:
         self.exit_stack = contextlib.ExitStack()
@@ -165,7 +165,7 @@ class ExtensionContextManagerBase:
                     "failed to complete synchronously."
                 )
             else:
-                self.exit_stack.enter_context(hook.initialized_hook())
+                self.exit_stack.enter_context(hook.hook())
 
     def __exit__(
         self,
@@ -182,9 +182,9 @@ class ExtensionContextManagerBase:
 
         for hook in self.hooks:
             if hook.is_async:
-                await self.async_exit_stack.enter_async_context(hook.initialized_hook())  # type: ignore[union-attr]
+                await self.async_exit_stack.enter_async_context(hook.hook())  # type: ignore[union-attr]
             else:
-                self.async_exit_stack.enter_context(hook.initialized_hook())
+                self.async_exit_stack.enter_context(hook.hook())
 
     async def __aexit__(
         self,
@@ -192,8 +192,6 @@ class ExtensionContextManagerBase:
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ):
-        # if exc_type is None:
-        #     self.async_exit_stack.push_async_callback(self.run_hooks_async)
         await self.async_exit_stack.__aexit__(exc_type, exc_val, exc_tb)
 
 
