@@ -84,14 +84,12 @@ class ExtensionContextManagerBase:
                     contextlib.contextmanager(hook_fn), extension
                 )
                 return WrappedHook(extension, hook_fn, False)
-                return WrappedHook(extension, hook_fn(extension), False)
 
             if inspect.isasyncgenfunction(hook_fn):
                 hook_fn = contextlib.asynccontextmanager(
                     types.MethodType(hook_fn, extension)
                 )
                 return WrappedHook(extension, hook_fn, True)
-                return WrappedHook(extension, hook_fn(extension), True)
 
             if callable(hook_fn):
                 return self.from_callable(extension, hook_fn)
@@ -145,7 +143,7 @@ class ExtensionContextManagerBase:
                 await func(extension)
                 yield
 
-            return WrappedHook(extension, iterator(), True)
+            return WrappedHook(extension, iterator, True)
         else:
 
             @contextlib.contextmanager
@@ -184,7 +182,7 @@ class ExtensionContextManagerBase:
 
         for hook in self.hooks:
             if hook.is_async:
-                self.async_exit_stack.enter_async_context(hook.initialized_hook())  # type: ignore[union-attr]
+                await self.async_exit_stack.enter_async_context(hook.initialized_hook())  # type: ignore[union-attr]
             else:
                 self.async_exit_stack.enter_context(hook.initialized_hook())
 
