@@ -1025,3 +1025,51 @@ def test_raise_if_hook_is_not_callable():
         ValueError, match="Hook on_operation on <(.*)> must be callable, received 'ABC'"
     ):
         schema.execute_sync(query)
+
+
+@pytest.mark.asyncio
+async def test_calls_hooks_even_when_there_are_errors(async_extension):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hi(self) -> str:
+            raise Exception("This is an error")
+
+    schema = strawberry.Schema(query=Query, extensions=[async_extension])
+
+    query = "{ hi }"
+
+    result = await schema.execute(query)
+    assert result.errors
+    async_extension.perform_test()
+
+
+@pytest.mark.asyncio
+async def test_calls_extension_hooks_even_when_there_error_in_one():
+    called_hooks = []
+
+    class MyExtension(SchemaExtension):
+        async def on_operation(self):
+            called_hooks.append("on_operation")
+            yield
+            called_hooks.append("on_operation_end")
+
+    class MyErrorExtension(SchemaExtension):
+        async def on_operation(self):
+            raise Exception("This is an error")
+            yield
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hi(self) -> str:
+            return "👋"
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension, MyErrorExtension])
+
+    query = "{ hi }"
+
+    with pytest.raises(Exception, match="This is an error"):
+        await schema.execute(query)
+
+    assert called_hooks == ["on_operation", "on_operation_end"]
