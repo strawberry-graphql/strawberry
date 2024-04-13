@@ -407,18 +407,18 @@ async def test_execution_order(default_query_types_and_query):
         "ExtensionB, on_operation Entered",
         "ExtensionA, on_parse Entered",
         "ExtensionB, on_parse Entered",
-        "ExtensionA, on_parse Exited",
         "ExtensionB, on_parse Exited",
+        "ExtensionA, on_parse Exited",
         "ExtensionA, on_validate Entered",
         "ExtensionB, on_validate Entered",
-        "ExtensionA, on_validate Exited",
         "ExtensionB, on_validate Exited",
+        "ExtensionA, on_validate Exited",
         "ExtensionA, on_execute Entered",
         "ExtensionB, on_execute Entered",
-        "ExtensionA, on_execute Exited",
         "ExtensionB, on_execute Exited",
-        "ExtensionA, on_operation Exited",
+        "ExtensionA, on_execute Exited",
         "ExtensionB, on_operation Exited",
+        "ExtensionA, on_operation Exited",
     ]
 
 
