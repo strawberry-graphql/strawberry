@@ -1,4 +1,3 @@
 Release type: patch
 
-Hot fix for #3413.
-With this release, schema extensions are guaranteed to run in LIFO order.
+This releases fixes a bug where schema extensions where not running a LIFO order.
