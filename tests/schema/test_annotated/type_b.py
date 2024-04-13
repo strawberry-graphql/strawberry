@@ -5,7 +5,6 @@ from typing_extensions import Annotated
 from uuid import UUID
 
 import strawberry
-from strawberry.types import Info
 
 
 @strawberry.type
@@ -14,6 +13,6 @@ class Query:
     def get_testing(
         self,
         id_: Annotated[UUID, strawberry.argument(name="id")],
-        info: Info[None, None],
+        info: strawberry.Info,
     ) -> Optional[str]:
         ...

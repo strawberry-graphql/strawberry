@@ -74,7 +74,9 @@ def _serialize_dataclasses(value: Dict[_T, object]) -> Dict[_T, object]:
 
 
 @overload
-def _serialize_dataclasses(value: Union[List[object], Tuple[object]]) -> List[object]:
+def _serialize_dataclasses(
+    value: Union[List[object], Tuple[object]],
+) -> List[object]:
     ...
 
 

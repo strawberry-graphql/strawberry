@@ -73,7 +73,7 @@ resolver. You can return anything here, by default we return a
 @strawberry.type
 class Query:
     @strawberry.field
-    def user(self, info: Info) -> str:
+    def user(self, info: strawberry.Info) -> str:
         return str(info.context.request.user)
 ```
 
@@ -88,7 +88,7 @@ class MyGraphQLView(GraphQLView):
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info: Info) -> str:
+    def example(self, info: strawberry.Info) -> str:
         return str(info.context["example"])
 ```
 
@@ -205,7 +205,7 @@ class MyGraphQLView(AsyncGraphQLView):
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info: Info) -> str:
+    def example(self, info: strawberry.Info) -> str:
         return str(info.context["example"])
 ```
 

@@ -108,7 +108,7 @@ class Mutation:
     @strawberry.mutation(extensions=[InputMutationExtension()])
     def update_fruit_weight(
         self,
-        info: Info,
+        info: strawberry.Info,
         id: strawberry.ID,
         weight: Annotated[
             float,

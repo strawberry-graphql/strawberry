@@ -9,6 +9,7 @@ If a node has only one useful value, it's value is inlined.
 If a list of nodes have unique names, it's transformed into a mapping.
 Note Python dicts maintain ordering (for all supported versions).
 """
+
 from __future__ import annotations
 
 import dataclasses

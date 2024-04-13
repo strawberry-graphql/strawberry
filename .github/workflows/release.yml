@@ -162,7 +162,7 @@ jobs:
       - uses: actions/checkout@v1
       - name: Extract tweet message and changelog
         id: extract
-        uses: strawberry-graphql/tweet-actions/read-tweet@v5
+        uses: strawberry-graphql/tweet-actions/read-tweet@v6
         with:
           changelog: ${{ needs.release-file-check.outputs.changelog }}
           version: ${{ needs.release.outputs.version }}
