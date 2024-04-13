@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.219.2"
+version = "0.224.2"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -97,7 +97,7 @@ types-toml = "^0.10.8"
 types-typed-ast = "^1.5.8"
 types-ujson = "^5.6.0"
 types-protobuf = "^4.23.0.1"
-mypy = "1.8.0"
+mypy = "1.9.0"
 pytest-mypy-plugins = ">=1.10,<4.0"
 poetry-plugin-export = "^1.6.0"
 # another bug in poetry

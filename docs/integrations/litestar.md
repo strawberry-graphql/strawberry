@@ -81,7 +81,7 @@ async def custom_context_getter():
 @strawberry.type
 class Query:
     @strawberry.field
-    def hello(self, info: Info[dict, None]) -> str:
+    def hello(self, info: strawberry.Info[dict, None]) -> str:
         return info.context["custom"]
 
 
@@ -116,7 +116,7 @@ async def custom_context_getter(request: Request, db_session: AsyncSession):
 @strawberry.type
 class Query:
     @strawberry.field
-    async def hello(self, info: Info[dict, None]) -> str:
+    async def hello(self, info: strawberry.Info[dict, None]) -> str:
         session: AsyncSession = info.context["session"]
         user: User = info.context["user"]
 
@@ -164,7 +164,7 @@ async def custom_context_getter(
 @strawberry.type
 class Query:
     @strawberry.field
-    async def hello(self, info: Info[CustomContext, None]) -> str:
+    async def hello(self, info: strawberry.Info[CustomContext, None]) -> str:
         session: AsyncSession = info.context.session
         user: User = info.context.user
 
@@ -244,7 +244,7 @@ async def custom_context_getter(
 @strawberry.type
 class Query:
     @strawberry.field
-    async def hello(self, info: Info[CustomHTTPContextType, None]) -> str:
+    async def hello(self, info: strawberry.Info[CustomHTTPContextType, None]) -> str:
         session: AsyncSession = info.context.session
         user: User = info.context.user
 
@@ -257,7 +257,7 @@ class Query:
 class Subscription:
     @strawberry.subscription
     async def count(
-        self, info: Info[CustomWSContextType, None], target: int = 100
+        self, info: strawberry.Info[CustomWSContextType, None], target: int = 100
     ) -> AsyncGenerator[int, None]:
         import devtools
 

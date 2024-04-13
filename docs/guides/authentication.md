@@ -67,8 +67,6 @@ from functools import cached_property
 import strawberry
 from fastapi import FastAPI
 from strawberry.fastapi import BaseContext, GraphQLRouter
-from strawberry.types import Info as _Info
-from strawberry.types.info import RootValueType
 
 
 @strawberry.type
@@ -85,13 +83,10 @@ class Context(BaseContext):
         return authorization_service.authorize(authorization)
 
 
-Info = _Info[Context, RootValueType]
-
-
 @strawberry.type
 class Query:
     @strawberry.field
-    def get_authenticated_user(self, info: Info) -> User | None:
+    def get_authenticated_user(self, info: strawberry.Info[Context]) -> User | None:
         return info.context.user
 
 

@@ -1,5 +1,5 @@
 ---
-title: ApolloTracingExtension
+title: Apollo Tracing
 summary: Add Apollo tracing to your GraphQL server.
 tags: tracing
 ---

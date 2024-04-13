@@ -2,6 +2,7 @@
 
 A consumer to provide a graphql endpoint, and optionally graphiql.
 """
+
 from __future__ import annotations
 
 import dataclasses

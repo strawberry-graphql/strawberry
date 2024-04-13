@@ -13,7 +13,7 @@ def test_interface_object():
     )
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@interfaceObject", "@key"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@interfaceObject", "@key"]) {
           query: Query
         }
 

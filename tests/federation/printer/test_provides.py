@@ -39,7 +39,7 @@ def test_field_provides_are_printed_correctly_camel_case_on():
     )
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@external", "@key", "@provides"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@external", "@key", "@provides"]) {
           query: Query
         }
 
@@ -111,7 +111,7 @@ def test_field_provides_are_printed_correctly_camel_case_off():
     )
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@external", "@key", "@provides"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@external", "@key", "@provides"]) {
           query: Query
         }
 

@@ -1,5 +1,4 @@
 import strawberry
-from strawberry.types import Info
 
 
 # TODO: move this to common tests
@@ -11,7 +10,7 @@ def test_set_response_headers():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert info.context.get("response") is not None
             info.context["response"].headers["X-Strawberry"] = "rocks"
             return "abc"
@@ -37,7 +36,7 @@ def test_set_cookie_headers():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert info.context.get("response") is not None
             info.context["response"].set_cookie(
                 key="strawberry",
