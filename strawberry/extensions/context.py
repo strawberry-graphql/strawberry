@@ -40,6 +40,7 @@ class ExtensionContextManagerBase:
         "default_hook",
         "async_exit_stack",
         "exit_stack",
+        "exceptions",
     )
 
     def __init_subclass__(cls):
@@ -57,6 +58,7 @@ class ExtensionContextManagerBase:
     def __init__(self, extensions: List[SchemaExtension]):
         self.hooks: List[WrappedHook] = []
         self.default_hook: Hook = getattr(SchemaExtension, self.HOOK_NAME)
+        self.exceptions: List[Exception] = []
         for extension in extensions:
             hook = self.get_hook(extension)
             if hook:
@@ -113,7 +115,9 @@ class ExtensionContextManagerBase:
             async def iterator():
                 if on_start:
                     await await_maybe(on_start())
+
                 yield
+
                 if on_end:
                     await await_maybe(on_end())
 
@@ -125,7 +129,9 @@ class ExtensionContextManagerBase:
             def iterator():
                 if on_start:
                     on_start()
+
                 yield
+
                 if on_end:
                     on_end()
 
@@ -180,11 +186,15 @@ class ExtensionContextManagerBase:
 
         await self.async_exit_stack.__aenter__()
 
-        for hook in self.hooks:
-            if hook.is_async:
-                await self.async_exit_stack.enter_async_context(hook.hook())  # type: ignore[union-attr]
-            else:
-                self.async_exit_stack.enter_context(hook.hook())
+        try:
+            for hook in self.hooks:
+                if hook.is_async:
+                    await self.async_exit_stack.enter_async_context(hook.hook())  # type: ignore[union-attr]
+                else:
+                    self.async_exit_stack.enter_context(hook.hook())
+
+        except Exception as e:
+            self.exceptions.append(e)
 
     async def __aexit__(
         self,
@@ -193,6 +203,9 @@ class ExtensionContextManagerBase:
         exc_tb: Optional[TracebackType],
     ):
         await self.async_exit_stack.__aexit__(exc_type, exc_val, exc_tb)
+
+        if self.exceptions:
+            raise self.exceptions[0]
 
 
 class OperationContextManager(ExtensionContextManagerBase):
