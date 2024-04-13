@@ -1042,34 +1042,3 @@ async def test_calls_hooks_when_there_are_errors(async_extension):
     result = await schema.execute(query)
     assert result.errors
     async_extension.perform_test()
-
-
-@pytest.mark.asyncio
-async def test_calls_extension_hooks_even_when_there_error_in_one():
-    called_hooks = []
-
-    class MyExtension(SchemaExtension):
-        async def on_operation(self):
-            called_hooks.append("on_operation")
-            yield
-            called_hooks.append("on_operation_end")
-
-    class MyErrorExtension(SchemaExtension):
-        async def on_operation(self):
-            raise Exception("This is an error")
-            yield
-
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def hi(self) -> str:
-            return "👋"
-
-    schema = strawberry.Schema(query=Query, extensions=[MyExtension, MyErrorExtension])
-
-    query = "{ hi }"
-
-    with pytest.raises(Exception, match="This is an error"):
-        await schema.execute(query)
-
-    assert called_hooks == ["on_operation", "on_operation_end"]

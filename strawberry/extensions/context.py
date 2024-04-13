@@ -186,15 +186,11 @@ class ExtensionContextManagerBase:
 
         await self.async_exit_stack.__aenter__()
 
-        try:
-            for hook in self.hooks:
-                if hook.is_async:
-                    await self.async_exit_stack.enter_async_context(hook.hook())  # type: ignore[union-attr]
-                else:
-                    self.async_exit_stack.enter_context(hook.hook())
-
-        except Exception as e:
-            self.exceptions.append(e)
+        for hook in self.hooks:
+            if hook.is_async:
+                await self.async_exit_stack.enter_async_context(hook.hook())  # type: ignore[union-attr]
+            else:
+                self.async_exit_stack.enter_context(hook.hook())
 
     async def __aexit__(
         self,
