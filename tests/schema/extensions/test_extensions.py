@@ -883,7 +883,7 @@ def test_extension_execution_order_sync():
 
     assert not result.errors
     assert result.data == {"food": "strawberry"}
-    assert execution_order == extensions
+    assert execution_order == [ExtensionB, ExtensionC, ExtensionC, ExtensionB]
 
 
 def test_async_extension_in_sync_context():
