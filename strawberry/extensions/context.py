@@ -40,7 +40,6 @@ class ExtensionContextManagerBase:
         "default_hook",
         "async_exit_stack",
         "exit_stack",
-        "exceptions",
     )
 
     def __init_subclass__(cls):
@@ -58,7 +57,6 @@ class ExtensionContextManagerBase:
     def __init__(self, extensions: List[SchemaExtension]):
         self.hooks: List[WrappedHook] = []
         self.default_hook: Hook = getattr(SchemaExtension, self.HOOK_NAME)
-        self.exceptions: List[Exception] = []
         for extension in extensions:
             hook = self.get_hook(extension)
             if hook:
@@ -203,9 +201,6 @@ class ExtensionContextManagerBase:
         exc_tb: Optional[TracebackType],
     ):
         await self.async_exit_stack.__aexit__(exc_type, exc_val, exc_tb)
-
-        if self.exceptions:
-            raise self.exceptions[0]
 
 
 class OperationContextManager(ExtensionContextManagerBase):
