@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.224.2 - 2024-04-13
+--------------------
+
+This releases fixes a bug where schema extensions where not running a LIFO order.
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #3416](https://github.com/strawberry-graphql/strawberry/pull/3416/)
+
+
 0.224.1 - 2024-03-30
 --------------------
 
