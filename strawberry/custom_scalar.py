@@ -67,10 +67,10 @@ class ScalarDefinition(StrawberryType):
 class ScalarWrapper:
     _scalar_definition: ScalarDefinition
 
-    def __init__(self, wrap: Callable[[Any], Any]):
+    def __init__(self, wrap: Callable[[Any], Any]) -> None:
         self.wrap = wrap
 
-    def __call__(self, *args: str, **kwargs: Any):
+    def __call__(self, *args: str, **kwargs: Any) -> Any:
         return self.wrap(*args, **kwargs)
 
     def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:

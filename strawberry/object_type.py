@@ -133,7 +133,7 @@ def _process_type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
-):
+) -> Type:
     name = name or to_camel_case(cls.__name__)
 
     interfaces = _get_interfaces(cls)
@@ -237,7 +237,7 @@ def type(
     >>>     field_abc: str = "ABC"
     """
 
-    def wrap(cls: Type):
+    def wrap(cls: Type) -> Type:
         if not inspect.isclass(cls):
             if is_input:
                 exc = ObjectIsNotClassError.input

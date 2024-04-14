@@ -21,12 +21,12 @@ class DatadogTracingExtension(SchemaExtension):
         self,
         *,
         execution_context: Optional[ExecutionContext] = None,
-    ):
+    ) -> None:
         if execution_context:
             self.execution_context = execution_context
 
     @cached_property
-    def _resource_name(self):
+    def _resource_name(self) -> str:
         assert self.execution_context.query
 
         query_hash = self.hash_query(self.execution_context.query)

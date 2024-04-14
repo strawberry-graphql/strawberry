@@ -68,7 +68,7 @@ class ChannelsConsumer(AsyncConsumer):
     channel_layer: Optional[ChannelsLayer]
     channel_receive: Callable[[], Awaitable[dict]]
 
-    def __init__(self, *args: str, **kwargs: Any):
+    def __init__(self, *args: str, **kwargs: Any) -> None:
         self.listen_queues: DefaultDict[str, WeakSet[asyncio.Queue]] = defaultdict(
             WeakSet
         )

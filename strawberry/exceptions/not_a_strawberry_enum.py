@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class NotAStrawberryEnumError(StrawberryException):
-    def __init__(self, enum: EnumMeta):
+    def __init__(self, enum: EnumMeta) -> None:
         self.enum = enum
 
         self.message = f'Enum "{enum.__name__}" is not a Strawberry enum.'

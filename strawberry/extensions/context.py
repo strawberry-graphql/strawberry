@@ -9,8 +9,10 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncContextManager,
+    AsyncIterator,
     Callable,
     ContextManager,
+    Iterator,
     List,
     NamedTuple,
     Optional,
@@ -42,7 +44,7 @@ class ExtensionContextManagerBase:
         "exit_stack",
     )
 
-    def __init_subclass__(cls):
+    def __init_subclass__(cls) -> None:
         cls.DEPRECATION_MESSAGE = (
             f"Event driven styled extensions for "
             f"{cls.LEGACY_ENTER} or {cls.LEGACY_EXIT}"
@@ -54,7 +56,7 @@ class ExtensionContextManagerBase:
     LEGACY_ENTER: str
     LEGACY_EXIT: str
 
-    def __init__(self, extensions: List[SchemaExtension]):
+    def __init__(self, extensions: List[SchemaExtension]) -> None:
         self.hooks: List[WrappedHook] = []
         self.default_hook: Hook = getattr(SchemaExtension, self.HOOK_NAME)
         for extension in extensions:
@@ -114,7 +116,7 @@ class ExtensionContextManagerBase:
         if iscoroutinefunction(on_start) or iscoroutinefunction(on_end):
 
             @contextlib.asynccontextmanager
-            async def iterator():
+            async def iterator() -> AsyncIterator:
                 if on_start:
                     await await_maybe(on_start())
 
@@ -128,7 +130,7 @@ class ExtensionContextManagerBase:
         else:
 
             @contextlib.contextmanager
-            def iterator_async():
+            def iterator_async() -> Iterator[None]:
                 if on_start:
                     on_start()
 
@@ -147,7 +149,7 @@ class ExtensionContextManagerBase:
         if iscoroutinefunction(func):
 
             @contextlib.asynccontextmanager
-            async def iterator():
+            async def iterator() -> AsyncIterator[None]:
                 await func(extension)
                 yield
 
@@ -155,7 +157,7 @@ class ExtensionContextManagerBase:
         else:
 
             @contextlib.contextmanager
-            def iterator():
+            def iterator() -> Iterator[None]:
                 func(extension)
                 yield
 
@@ -180,7 +182,7 @@ class ExtensionContextManagerBase:
         exc_type: Optional[Type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
-    ):
+    ) -> None:
         self.exit_stack.__exit__(exc_type, exc_val, exc_tb)
 
     async def __aenter__(self) -> None:
@@ -199,7 +201,7 @@ class ExtensionContextManagerBase:
         exc_type: Optional[Type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
-    ):
+    ) -> None:
         await self.async_exit_stack.__aexit__(exc_type, exc_val, exc_tb)
 
 

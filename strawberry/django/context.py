@@ -12,7 +12,7 @@ class StrawberryDjangoContext:
     request: HttpRequest
     response: HttpResponse
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> Any:
         # __getitem__ override needed to avoid issues for who's
         # using info.context["request"]
         return super().__getattribute__(key)

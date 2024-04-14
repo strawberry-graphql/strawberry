@@ -15,7 +15,11 @@ if TYPE_CHECKING:
 class MissingArgumentsAnnotationsError(StrawberryException):
     """The field is missing the annotation for one or more arguments"""
 
-    def __init__(self, resolver: StrawberryResolver, arguments: List[str]):
+    def __init__(
+        self,
+        resolver: StrawberryResolver,
+        arguments: List[str],
+    ) -> None:
         self.missing_arguments = arguments
         self.function = resolver.wrapped_func
         self.argument_name = arguments[0]

@@ -4,7 +4,16 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Callable, Dict, List, Optional
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    AsyncIterator,
+    Callable,
+    Dict,
+    List,
+    Optional,
+)
 
 from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError, GraphQLSyntaxError, parse
@@ -32,6 +41,8 @@ if TYPE_CHECKING:
     from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
         GraphQLTransportMessage,
     )
+    from strawberry.types import ExecutionResult
+
 
 
 class BaseGraphQLTransportWSHandler(ABC):
@@ -42,7 +53,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         schema: BaseSchema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
-    ):
+    ) -> None:
         self.schema = schema
         self.debug = debug
         self.connection_init_wait_timeout = connection_init_wait_timeout
@@ -245,7 +256,7 @@ class BaseGraphQLTransportWSHandler(ABC):
             )
         else:
             # create AsyncGenerator returning a single result
-            async def get_result_source():
+            async def get_result_source() -> AsyncIterator[ExecutionResult]:
                 yield await self.schema.execute(
                     query=message.payload.query,
                     variable_values=message.payload.variables,
@@ -383,7 +394,7 @@ class Operation:
         handler: BaseGraphQLTransportWSHandler,
         id: str,
         operation_type: OperationType,
-    ):
+    ) -> None:
         self.handler = handler
         self.id = id
         self.operation_type = operation_type

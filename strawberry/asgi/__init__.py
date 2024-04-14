@@ -117,7 +117,7 @@ class GraphQL(
         else:
             self.graphql_ide = graphql_ide
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
             return await self.handle_http(scope, receive, send)
 

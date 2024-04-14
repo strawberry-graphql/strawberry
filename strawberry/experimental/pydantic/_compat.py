@@ -237,7 +237,7 @@ class PydanticV1Compat:
 
 
 class PydanticCompat:
-    def __init__(self, is_v2: bool):
+    def __init__(self, is_v2: bool) -> None:
         if is_v2:
             self._compat = PydanticV2Compat()
         else:
