@@ -44,7 +44,6 @@ if TYPE_CHECKING:
     from strawberry.types import ExecutionResult
 
 
-
 class BaseGraphQLTransportWSHandler(ABC):
     task_logger: logging.Logger = logging.getLogger("strawberry.ws.task")
 
