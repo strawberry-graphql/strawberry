@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 
 class SanicHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request):
+    def __init__(self, request: Request) -> None:
         self.request = request
 
     @property
@@ -107,7 +107,7 @@ class GraphQLView(
         allow_queries_via_get: bool = True,
         json_encoder: Optional[Type[json.JSONEncoder]] = None,
         json_dumps_params: Optional[Dict[str, Any]] = None,
-    ):
+    ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.json_encoder = json_encoder

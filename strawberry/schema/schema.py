@@ -82,7 +82,7 @@ class Schema(BaseSchema):
             Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]]
         ] = None,
         schema_directives: Iterable[object] = (),
-    ):
+    ) -> None:
         self.query = query
         self.mutation = mutation
         self.subscription = subscription

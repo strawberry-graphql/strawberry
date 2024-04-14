@@ -16,7 +16,7 @@ class StrawberryTypeFromPydantic(Protocol[PydanticModel]):
     """This class does not exist in runtime.
     It only makes the methods below visible for IDEs"""
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs: Any) -> None:
         ...
 
     @staticmethod

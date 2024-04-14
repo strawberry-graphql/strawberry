@@ -20,7 +20,7 @@ class InvalidArgumentTypeError(StrawberryException):
         self,
         resolver: StrawberryResolver,
         argument: StrawberryArgument,
-    ):
+    ) -> None:
         from strawberry.union import StrawberryUnion
 
         self.function = resolver.wrapped_func

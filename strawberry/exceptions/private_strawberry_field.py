@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class PrivateStrawberryFieldError(StrawberryException):
-    def __init__(self, field_name: str, cls: Type):
+    def __init__(self, field_name: str, cls: Type) -> None:
         self.cls = cls
         self.field_name = field_name
 

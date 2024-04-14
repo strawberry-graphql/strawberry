@@ -119,7 +119,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
 
 
 class StarliteRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request[Any, Any]):
+    def __init__(self, request: Request[Any, Any]) -> None:
         self.request = request
 
     @property
@@ -148,7 +148,7 @@ class StarliteRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class BaseContext:
-    def __init__(self):
+    def __init__(self) -> None:
         self.request: Optional[Union[Request, WebSocket]] = None
         self.response: Optional[Response] = None
 
@@ -176,7 +176,7 @@ def make_graphql_controller(
 
     if context_getter is None:
 
-        def custom_context_getter_():
+        def custom_context_getter_() -> None:
             return None
 
     else:
@@ -184,7 +184,7 @@ def make_graphql_controller(
 
     if root_value_getter is None:
 
-        def root_value_getter_():
+        def root_value_getter_() -> None:
             return None
 
     else:
@@ -331,10 +331,10 @@ def make_graphql_controller(
             context: CustomContext,
             root_value: Any,
         ) -> None:
-            async def _get_context():
+            async def _get_context() -> CustomContext:
                 return context
 
-            async def _get_root_value():
+            async def _get_root_value() -> Any:
                 return root_value
 
             preferred_protocol = self.pick_preferred_protocol(socket)

@@ -21,7 +21,7 @@ class LifecycleStep(Enum):
 class SchemaExtension:
     execution_context: ExecutionContext
 
-    def __init__(self, *, execution_context: ExecutionContext):
+    def __init__(self, *, execution_context: ExecutionContext) -> None:
         self.execution_context = execution_context
 
     def on_operation(
