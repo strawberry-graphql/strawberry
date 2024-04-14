@@ -8,9 +8,12 @@ from typing import (
     Any,
     Awaitable,
     Callable,
+    Dict,
+    List,
     Mapping,
     Optional,
     Sequence,
+    Type,
     Union,
     cast,
 )
@@ -20,12 +23,16 @@ from starlette.background import BackgroundTasks  # noqa: TCH002
 from starlette.requests import HTTPConnection, Request
 from starlette.responses import (
     HTMLResponse,
+    JSONResponse,
     PlainTextResponse,
     Response,
 )
 from starlette.websockets import WebSocket
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, params
+from fastapi.datastructures import Default
+from fastapi.routing import APIRoute
+from fastapi.utils import generate_unique_id
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi.context import BaseContext, CustomContext
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
@@ -42,7 +49,10 @@ from strawberry.http.typevars import (
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from starlette.types import ASGIApp
+    from enum import Enum
+
+    from starlette.routing import BaseRoute
+    from starlette.types import ASGIApp, Lifespan
 
     from strawberry.fastapi.context import MergedContext
     from strawberry.http import GraphQLHTTPResponse
@@ -160,14 +170,46 @@ class GraphQLRouter(
             GRAPHQL_WS_PROTOCOL,
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
+        prefix: str = "",
+        tags: Optional[List[Union[str, Enum]]] = None,
+        dependencies: Optional[Sequence[params.Depends]] = None,
+        default_response_class: Type[Response] = Default(JSONResponse),
+        responses: Optional[Dict[Union[int, str], Dict[str, Any]]] = None,
+        callbacks: Optional[List[BaseRoute]] = None,
+        routes: Optional[List[BaseRoute]] = None,
+        redirect_slashes: bool = True,
         default: Optional[ASGIApp] = None,
+        dependency_overrides_provider: Optional[Any] = None,
+        route_class: Type[APIRoute] = APIRoute,
         on_startup: Optional[Sequence[Callable[[], Any]]] = None,
         on_shutdown: Optional[Sequence[Callable[[], Any]]] = None,
+        lifespan: Optional[Lifespan[Any]] = None,
+        deprecated: Optional[bool] = None,
+        include_in_schema: bool = True,
+        generate_unique_id_function: Callable[[APIRoute], str] = Default(
+            generate_unique_id
+        ),
+        **kwargs: Any,
     ) -> None:
         super().__init__(
+            prefix=prefix,
+            tags=tags,
+            dependencies=dependencies,
+            default_response_class=default_response_class,
+            responses=responses,
+            callbacks=callbacks,
+            routes=routes,
+            redirect_slashes=redirect_slashes,
             default=default,
+            dependency_overrides_provider=dependency_overrides_provider,
+            route_class=route_class,
             on_startup=on_startup,
             on_shutdown=on_shutdown,
+            lifespan=lifespan,
+            deprecated=deprecated,
+            include_in_schema=include_in_schema,
+            generate_unique_id_function=generate_unique_id_function,
+            **kwargs,
         )
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
