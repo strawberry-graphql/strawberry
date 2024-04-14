@@ -61,7 +61,7 @@ class StrawberryAnnotation:
         annotation: Union[object, str],
         *,
         namespace: Optional[Dict[str, Any]] = None,
-    ):
+    ) -> None:
         self.raw_annotation = annotation
         self.namespace = namespace
 

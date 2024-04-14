@@ -62,7 +62,7 @@ if TYPE_CHECKING:
 
 
 class FastAPIRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request):
+    def __init__(self, request: Request) -> None:
         self.request = request
 
     @property
@@ -99,7 +99,7 @@ class GraphQLRouter(
     request_adapter_class = FastAPIRequestAdapter
 
     @staticmethod
-    async def __get_root_value():
+    async def __get_root_value() -> None:
         return None
 
     @staticmethod
@@ -190,7 +190,7 @@ class GraphQLRouter(
             generate_unique_id
         ),
         **kwargs: Any,
-    ):
+    ) -> None:
         super().__init__(
             prefix=prefix,
             tags=tags,

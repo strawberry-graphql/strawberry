@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class ChaliceHTTPRequestAdapter(SyncHTTPRequestAdapter):
-    def __init__(self, request: Request):
+    def __init__(self, request: Request) -> None:
         self.request = request
 
     @property
@@ -62,7 +62,7 @@ class GraphQLView(
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
-    ):
+    ) -> None:
         self.allow_queries_via_get = allow_queries_via_get
         self.schema = schema
         if graphiql is not None:

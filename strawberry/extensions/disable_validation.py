@@ -21,7 +21,7 @@ class DisableValidation(SchemaExtension):
 
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # There aren't any arguments to this extension yet but we might add
         # some in the future
         pass
