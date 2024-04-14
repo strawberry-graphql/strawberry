@@ -28,7 +28,7 @@ class StrawberryAutoMeta(type):
         self._instance: Optional[StrawberryAuto] = None
         super().__init__(*args, **kwargs)
 
-    def __call__(cls, *args: str, **kwargs: Any) -> None:
+    def __call__(cls, *args: str, **kwargs: Any) -> Any:
         if cls._instance is None:
             cls._instance = super().__call__(*args, **kwargs)
 

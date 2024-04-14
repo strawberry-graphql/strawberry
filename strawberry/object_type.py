@@ -125,7 +125,7 @@ def _wrap_dataclass(cls: Type[Any]):
 
 
 def _process_type(
-    cls: Type,
+    cls: T,
     *,
     name: Optional[str] = None,
     is_input: bool = False,
@@ -133,7 +133,7 @@ def _process_type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
-) -> Type:
+) -> T:
     name = name or to_camel_case(cls.__name__)
 
     interfaces = _get_interfaces(cls)
@@ -237,7 +237,7 @@ def type(
     >>>     field_abc: str = "ABC"
     """
 
-    def wrap(cls: Type) -> Type:
+    def wrap(cls: Type) -> T:
         if not inspect.isclass(cls):
             if is_input:
                 exc = ObjectIsNotClassError.input
