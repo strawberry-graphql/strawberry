@@ -138,7 +138,7 @@ class CompositePermission(BasePermission, abc.ABC):
 
 class AndPermission(CompositePermission):
     def has_permission(
-        self, source: Any, info: Info, **kwargs: Any
+        self, source: Any, info: Info, **kwargs: dict
     ) -> Union[bool, Awaitable[bool], (False, dict), Awaitable[(False, dict)]]:
         if self.is_async:
             return self._has_permission_async(source, info, **kwargs)
@@ -149,7 +149,7 @@ class AndPermission(CompositePermission):
         return True
 
     async def _has_permission_async(
-        self, source: Any, info: Info, **kwargs: Any
+        self, source: Any, info: Info, **kwargs: dict
     ) -> Union[bool, (False, dict)]:
         for permission in self.child_permissions:
             if not await await_maybe(permission.has_permission(source, info, **kwargs)):
