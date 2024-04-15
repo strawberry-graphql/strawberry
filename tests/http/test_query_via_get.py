@@ -14,7 +14,7 @@ async def test_sending_get_with_content_type_passes(http_client_class):
     data = response.json["data"]
 
     assert response.status_code == 200
-    assert data["hello"] == "strawberry"
+    assert data["hello"] == "Hello world"
 
 
 async def test_sending_empty_query(http_client_class):
