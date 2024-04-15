@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.225.1 - 2024-04-15
+--------------------
+
+This change fixes GET request queries returning a 400 if a content_type header is supplied
+
+Contributed by [Nathan John](https://github.com/vethan) via [PR #3452](https://github.com/strawberry-graphql/strawberry/pull/3452/)
+
+
 0.225.0 - 2024-04-14
 --------------------
 
