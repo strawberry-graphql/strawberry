@@ -5,7 +5,8 @@ async def test_sending_get_with_content_type_passes(http_client_class):
     http_client = http_client_class()
 
     response = await http_client.query(
-        method="get", query="query {hello}",
+        method="get",
+        query="query {hello}",
         headers={
             "Content-Type": "application/json",
         },
