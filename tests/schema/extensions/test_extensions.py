@@ -640,7 +640,8 @@ class ExceptionTestingExtension(SchemaExtension):
             raise Exception(self.failing_hook)
         self.called_hooks.add(1)
 
-        yield
+        with contextlib.suppress(Exception):
+            yield
 
         if self.failing_hook == "on_operation_end":
             raise Exception(self.failing_hook)
@@ -651,7 +652,8 @@ class ExceptionTestingExtension(SchemaExtension):
             raise Exception(self.failing_hook)
         self.called_hooks.add(2)
 
-        yield
+        with contextlib.suppress(Exception):
+            yield
 
         if self.failing_hook == "on_parse_end":
             raise Exception(self.failing_hook)
@@ -662,7 +664,8 @@ class ExceptionTestingExtension(SchemaExtension):
             raise Exception(self.failing_hook)
         self.called_hooks.add(4)
 
-        yield
+        with contextlib.suppress(Exception):
+            yield
 
         if self.failing_hook == "on_validate_end":
             raise Exception(self.failing_hook)
@@ -673,7 +676,8 @@ class ExceptionTestingExtension(SchemaExtension):
             raise Exception(self.failing_hook)
         self.called_hooks.add(6)
 
-        yield
+        with contextlib.suppress(Exception):
+            yield
 
         if self.failing_hook == "on_execute_end":
             raise Exception(self.failing_hook)
@@ -721,7 +725,7 @@ async def test_exceptions_are_included_in_the_execution_result(failing_hook):
 @pytest.mark.parametrize(
     ("failing_hook", "expected_hooks"),
     (
-        ("on_operation_start", set()),
+        ("on_operation_start", {2, 3, 4, 5, 6, 7}),
         ("on_parse_start", {1, 8}),
         ("on_parse_end", {1, 2, 8}),
         ("on_validate_start", {1, 2, 3, 8}),
