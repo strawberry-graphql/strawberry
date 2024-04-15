@@ -57,8 +57,7 @@ def test_extension_changing_field_return_value():
     @strawberry.type
     class Query:
         @strawberry.field(extensions=[ChangeReturnTypeExtension()])
-        def test_changing_return_type(self) -> bool:
-            ...
+        def test_changing_return_type(self) -> bool: ...
 
     schema = strawberry.Schema(query=Query)
     expected = """\

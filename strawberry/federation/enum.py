@@ -50,8 +50,7 @@ def enum(
     policy: Optional[List[List[str]]] = None,
     requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
-) -> EnumType:
-    ...
+) -> EnumType: ...
 
 
 @overload
@@ -66,8 +65,7 @@ def enum(
     policy: Optional[List[List[str]]] = None,
     requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
-) -> Callable[[EnumType], EnumType]:
-    ...
+) -> Callable[[EnumType], EnumType]: ...
 
 
 def enum(
