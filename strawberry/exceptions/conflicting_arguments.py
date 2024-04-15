@@ -17,7 +17,7 @@ class ConflictingArgumentsError(StrawberryException):
         self,
         resolver: StrawberryResolver,
         arguments: List[str],
-    ):
+    ) -> None:
         self.function = resolver.wrapped_func
         self.argument_names = arguments
 

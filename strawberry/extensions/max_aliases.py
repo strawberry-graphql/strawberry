@@ -37,14 +37,14 @@ class MaxAliasesLimiter(AddValidationRules):
     def __init__(
         self,
         max_alias_count: int,
-    ):
+    ) -> None:
         validator = create_validator(max_alias_count)
         super().__init__([validator])
 
 
 def create_validator(max_alias_count: int) -> Type[ValidationRule]:
     class MaxAliasesValidator(ValidationRule):
-        def __init__(self, validation_context: ValidationContext):
+        def __init__(self, validation_context: ValidationContext) -> None:
             document = validation_context.document
             def_that_can_contain_alias = (
                 def_

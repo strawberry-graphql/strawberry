@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.224.1"
+version = "0.225.0"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -102,6 +102,7 @@ pytest-mypy-plugins = ">=1.10,<4.0"
 poetry-plugin-export = "^1.6.0"
 # another bug in poetry
 urllib3 = "<2"
+ruff = "^0.3.7"
 
 [tool.poetry.group.integrations]
 optional = true
@@ -239,8 +240,6 @@ ignore = [
     # definitely enable these, maybe not in tests
     "ANN102",
     "ANN202",
-    "ANN204",
-    "ANN205",
     "ANN401",
     "PGH003",
     "PGH004",
@@ -355,7 +354,22 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "strawberry/schema/types/concrete_type.py" = ["TCH002"]
-"tests/*" = ["RSE102", "SLF001", "TCH001", "TCH002", "TCH003", "ANN001", "ANN201", "PLW0603", "PLC1901", "S603", "S607", "B018"]
+"tests/*" = [
+    "RSE102",
+    "SLF001",
+    "TCH001",
+    "TCH002",
+    "TCH003",
+    "ANN001",
+    "ANN201",
+    "ANN202",
+    "ANN204",
+    "PLW0603",
+    "PLC1901",
+    "S603",
+    "S607",
+    "B018",
+]
 "strawberry/extensions/tracing/__init__.py" = ["TCH004"]
 "tests/http/clients/__init__.py" = ["F401"]
 

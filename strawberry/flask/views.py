@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
-    def __init__(self, request: Request):
+    def __init__(self, request: Request) -> None:
         self.request = request
 
     @property
@@ -64,7 +64,7 @@ class BaseGraphQLView:
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
-    ):
+    ) -> None:
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
@@ -119,7 +119,7 @@ class GraphQLView(
 
 
 class AsyncFlaskHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request):
+    def __init__(self, request: Request) -> None:
         self.request = request
 
     @property

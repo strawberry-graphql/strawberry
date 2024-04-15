@@ -114,7 +114,7 @@ class QueryDepthLimiter(AddValidationRules):
         max_depth: int,
         callback: Optional[Callable[[Dict[str, int]], None]] = None,
         should_ignore: Optional[ShouldIgnoreType] = None,
-    ):
+    ) -> None:
         if should_ignore is not None and not callable(should_ignore):
             raise TypeError(
                 "The `should_ignore` argument to "
@@ -130,7 +130,7 @@ def create_validator(
     callback: Optional[Callable[[Dict[str, int]], None]] = None,
 ) -> Type[ValidationRule]:
     class DepthLimitValidator(ValidationRule):
-        def __init__(self, validation_context: ValidationContext):
+        def __init__(self, validation_context: ValidationContext) -> None:
             document = validation_context.document
             definitions = document.definitions
 

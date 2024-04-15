@@ -66,7 +66,7 @@ class Schema(BaseSchema):
         ] = None,
         schema_directives: Iterable[object] = (),
         enable_federation_2: bool = False,
-    ):
+    ) -> None:
         query = self._get_federation_query_type(query)
 
         super().__init__(

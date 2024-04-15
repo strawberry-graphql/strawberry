@@ -80,7 +80,7 @@ class ApolloTracingStats:
 
 
 class ApolloTracingExtension(SchemaExtension):
-    def __init__(self, execution_context: ExecutionContext):
+    def __init__(self, execution_context: ExecutionContext) -> None:
         self._resolver_stats: List[ApolloResolverStats] = []
         self.execution_context = execution_context
 
