@@ -864,11 +864,13 @@ def test_extension_execution_order_sync():
         def on_execute(self):
             execution_order.append(type(self))
             yield
+            execution_order.append(type(self))
 
     class ExtensionC(SchemaExtension):
         def on_execute(self):
             execution_order.append(type(self))
             yield
+            execution_order.append(type(self))
 
     @strawberry.type
     class Query:
