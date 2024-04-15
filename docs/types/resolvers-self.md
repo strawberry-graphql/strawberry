@@ -212,3 +212,7 @@ class User:
     def full_name(parent: strawberry.Parent[User]) -> str:
         return f"{parent.first_name} {parent.last_name}"
 ```
+
+Combining `@staticmethod` with `strawberry.Parent` is a good way to make sure
+that your code is clear and that you are aware of what's happening under the
+hood, and it will keep your linters and type checkers happy!
