@@ -40,7 +40,6 @@ class ExtensionContextManagerBase:
         "default_hook",
         "async_exit_stack",
         "exit_stack",
-        "pending_exception",
     )
 
     def __init_subclass__(cls):
@@ -58,7 +57,6 @@ class ExtensionContextManagerBase:
     def __init__(self, extensions: List[SchemaExtension]):
         self.hooks: List[WrappedHook] = []
         self.default_hook: Hook = getattr(SchemaExtension, self.HOOK_NAME)
-        self.pending_exception: Optional[BaseException] = None
         for extension in extensions:
             hook = self.get_hook(extension)
             if hook:
@@ -168,19 +166,14 @@ class ExtensionContextManagerBase:
 
         self.exit_stack.__enter__()
 
-        try:
-            for hook in self.hooks:
-                if hook.is_async:
-                    raise RuntimeError(
-                        f"SchemaExtension hook {hook.extension}.{self.HOOK_NAME} "
-                        "failed to complete synchronously."
-                    )
-                else:
-                    self.exit_stack.enter_context(hook.hook())  # type: ignore
-        except Exception as e:
-            self.pending_exception = e
-
-            return
+        for hook in self.hooks:
+            if hook.is_async:
+                raise RuntimeError(
+                    f"SchemaExtension hook {hook.extension}.{self.HOOK_NAME} "
+                    "failed to complete synchronously."
+                )
+            else:
+                self.exit_stack.enter_context(hook.hook())  # type: ignore
 
     def __exit__(
         self,
@@ -190,24 +183,16 @@ class ExtensionContextManagerBase:
     ):
         self.exit_stack.__exit__(exc_type, exc_val, exc_tb)
 
-        if self.pending_exception:
-            raise self.pending_exception
-
     async def __aenter__(self) -> None:
         self.async_exit_stack = contextlib.AsyncExitStack()
 
         await self.async_exit_stack.__aenter__()
 
-        try:
-            for hook in self.hooks:
-                if hook.is_async:
-                    await self.async_exit_stack.enter_async_context(hook.hook())  # type: ignore
-                else:
-                    self.async_exit_stack.enter_context(hook.hook())  # type: ignore
-        except Exception as e:
-            self.pending_exception = e
-
-            return
+        for hook in self.hooks:
+            if hook.is_async:
+                await self.async_exit_stack.enter_async_context(hook.hook())  # type: ignore
+            else:
+                self.async_exit_stack.enter_context(hook.hook())  # type: ignore
 
     async def __aexit__(
         self,
@@ -216,9 +201,6 @@ class ExtensionContextManagerBase:
         exc_tb: Optional[TracebackType],
     ):
         await self.async_exit_stack.__aexit__(exc_type, exc_val, exc_tb)
-
-        if self.pending_exception:
-            raise self.pending_exception
 
 
 class OperationContextManager(ExtensionContextManagerBase):
