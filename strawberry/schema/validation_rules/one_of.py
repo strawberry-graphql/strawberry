@@ -13,7 +13,7 @@ from graphql import (
 
 
 class OneOfInputValidationRule(ValidationRule):
-    def __init__(self, validation_context: ValidationContext):
+    def __init__(self, validation_context: ValidationContext) -> None:
         super().__init__(validation_context)
 
     def enter_operation_definition(
