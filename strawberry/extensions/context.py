@@ -40,7 +40,7 @@ class ExtensionContextManagerBase:
         "default_hook",
         "async_exit_stack",
         "exit_stack",
-        "pending_exceptions",
+        "pending_exception",
     )
 
     def __init_subclass__(cls):
@@ -58,7 +58,7 @@ class ExtensionContextManagerBase:
     def __init__(self, extensions: List[SchemaExtension]):
         self.hooks: List[WrappedHook] = []
         self.default_hook: Hook = getattr(SchemaExtension, self.HOOK_NAME)
-        self.pending_exceptions: List[BaseException] = []
+        self.pending_exception: Optional[BaseException] = []
         for extension in extensions:
             hook = self.get_hook(extension)
             if hook:
@@ -178,7 +178,9 @@ class ExtensionContextManagerBase:
                 else:
                     self.exit_stack.enter_context(hook.hook())  # type: ignore
         except Exception as e:
-            self.pending_exceptions.append(e)
+            self.pending_exception = e
+
+            return
 
     def __exit__(
         self,
@@ -188,8 +190,8 @@ class ExtensionContextManagerBase:
     ):
         self.exit_stack.__exit__(exc_type, exc_val, exc_tb)
 
-        if self.pending_exceptions:
-            raise self.pending_exceptions[0]
+        if self.pending_exception:
+            raise self.pending_exception
 
     async def __aenter__(self) -> None:
         self.async_exit_stack = contextlib.AsyncExitStack()
@@ -203,7 +205,9 @@ class ExtensionContextManagerBase:
                 else:
                     self.async_exit_stack.enter_context(hook.hook())  # type: ignore
         except Exception as e:
-            self.pending_exceptions.append(e)
+            self.pending_exception = e
+
+            return
 
     async def __aexit__(
         self,
@@ -213,8 +217,8 @@ class ExtensionContextManagerBase:
     ):
         await self.async_exit_stack.__aexit__(exc_type, exc_val, exc_tb)
 
-        if self.pending_exceptions:
-            raise self.pending_exceptions[0]
+        if self.pending_exception:
+            raise self.pending_exception
 
 
 class OperationContextManager(ExtensionContextManagerBase):
