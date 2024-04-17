@@ -383,8 +383,8 @@ class Schema(BaseSchema):
             return obj.extensions["strawberry-definition"].is_one_of
 
         instrospection_type = self._schema.type_map["__Type"]
-        instrospection_type.fields["isOneOf"] = GraphQLField(GraphQLBoolean)
-        instrospection_type.fields["isOneOf"].resolve = _resolve_is_one_of
+        instrospection_type.fields["isOneOf"] = GraphQLField(GraphQLBoolean)  # type: ignore[attr-defined]
+        instrospection_type.fields["isOneOf"].resolve = _resolve_is_one_of  # type: ignore[attr-defined]
 
     def as_str(self) -> str:
         return print_schema(self)
