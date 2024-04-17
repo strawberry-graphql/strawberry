@@ -147,7 +147,12 @@ def _get_thunk_mapping(
 # subclass the GraphQLEnumType class to enable returning Enum members from
 # resolvers.
 class CustomGraphQLEnumType(GraphQLEnumType):
-    def __init__(self, enum: EnumDefinition, *args: Any, **kwargs: Any):
+    def __init__(
+        self,
+        enum: EnumDefinition,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.wrapped_cls = enum.wrapped_cls
 
@@ -183,7 +188,7 @@ class GraphQLCoreConverter:
         config: StrawberryConfig,
         scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
         get_fields: Callable[[StrawberryObjectDefinition], List[StrawberryField]],
-    ):
+    ) -> None:
         self.type_map: Dict[str, ConcreteType] = {}
         self.config = config
         self.scalar_registry = scalar_registry

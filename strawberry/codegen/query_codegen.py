@@ -152,7 +152,7 @@ class QueryCodegenPlugin:
 
 
 class ConsolePlugin:
-    def __init__(self, output_dir: Path):
+    def __init__(self, output_dir: Path) -> None:
         self.output_dir = output_dir
         self.files_generated: List[Path] = []
 
@@ -305,7 +305,7 @@ class QueryCodegen:
         schema: Schema,
         plugins: List[QueryCodegenPlugin],
         console_plugin: Optional[ConsolePlugin] = None,
-    ):
+    ) -> None:
         self.schema = schema
         self.plugin_manager = QueryCodegenPluginManager(plugins, console_plugin)
         self.types: List[GraphQLType] = []

@@ -1,6 +1,80 @@
 CHANGELOG
 =========
 
+0.226.0 - 2024-04-17
+--------------------
+
+Starting with this release, any error raised from within schema
+extensions will abort the operation and is returned to the client.
+
+This corresponds to the way we already handle field extension errors
+and resolver errors.
+
+This is particular useful for schema extensions performing checks early
+in the request lifecycle, for example:
+
+```python
+class MaxQueryLengthExtension(SchemaExtension):
+    MAX_QUERY_LENGTH = 8192
+
+    async def on_operation(self):
+        if len(self.execution_context.query) > self.MAX_QUERY_LENGTH:
+            raise StrawberryGraphQLError(message="Query too large")
+        yield
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3217](https://github.com/strawberry-graphql/strawberry/pull/3217/)
+
+
+0.225.1 - 2024-04-15
+--------------------
+
+This change fixes GET request queries returning a 400 if a content_type header is supplied
+
+Contributed by [Nathan John](https://github.com/vethan) via [PR #3452](https://github.com/strawberry-graphql/strawberry/pull/3452/)
+
+
+0.225.0 - 2024-04-14
+--------------------
+
+This release adds support for using FastAPI APIRouter arguments in GraphQLRouter.
+
+Now you have the opportunity to specify parameters such as `tags`, `route_class`,
+`deprecated`, `include_in_schema`, etc:
+
+```python
+import strawberry
+
+from fastapi import FastAPI
+from strawberry.fastapi import GraphQLRouter
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello World"
+
+
+schema = strawberry.Schema(Query)
+
+graphql_app = GraphQLRouter(schema, tags=["graphql"])
+
+app = FastAPI()
+app.include_router(graphql_app, prefix="/graphql")
+```
+
+Contributed by [Nikita Paramonov](https://github.com/nparamonov) via [PR #3442](https://github.com/strawberry-graphql/strawberry/pull/3442/)
+
+
+0.224.2 - 2024-04-13
+--------------------
+
+This releases fixes a bug where schema extensions where not running a LIFO order.
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #3416](https://github.com/strawberry-graphql/strawberry/pull/3416/)
+
+
 0.224.1 - 2024-03-30
 --------------------
 

@@ -22,7 +22,7 @@ class SentryTracingExtension(SchemaExtension):
         self,
         *,
         execution_context: Optional[ExecutionContext] = None,
-    ):
+    ) -> None:
         warnings.warn(
             "The Sentry tracing extension is deprecated, please update to sentry>=1.32.0",
             DeprecationWarning,
@@ -33,7 +33,7 @@ class SentryTracingExtension(SchemaExtension):
             self.execution_context = execution_context
 
     @cached_property
-    def _resource_name(self):
+    def _resource_name(self) -> str:
         assert self.execution_context.query
 
         query_hash = self.hash_query(self.execution_context.query)

@@ -16,6 +16,6 @@ class StrawberryConfig:
     def __post_init__(
         self,
         auto_camel_case: bool,
-    ):
+    ) -> None:
         if auto_camel_case is not None:
             self.name_converter.auto_camel_case = auto_camel_case

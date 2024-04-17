@@ -48,7 +48,7 @@ class GraphQLProtocolTypeRouter(ProtocolTypeRouter):
         schema: BaseSchema,
         django_application: Optional[str] = None,
         url_pattern: str = "^graphql",
-    ):
+    ) -> None:
         http_urls = [re_path(url_pattern, GraphQLHTTPConsumer.as_asgi(schema=schema))]
         if django_application is not None:
             http_urls.append(re_path("^", django_application))

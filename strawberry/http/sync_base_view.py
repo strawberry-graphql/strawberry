@@ -146,12 +146,12 @@ class SyncBaseHTTPView(
     def parse_http_body(self, request: SyncHTTPRequestAdapter) -> GraphQLRequestData:
         content_type = request.content_type or ""
 
-        if "application/json" in content_type:
+        if request.method == "GET":
+            data = self.parse_query_params(request.query_params)
+        elif "application/json" in content_type:
             data = self.parse_json(request.body)
         elif content_type.startswith("multipart/form-data"):
             data = self.parse_multipart(request)
-        elif request.method == "GET":
-            data = self.parse_query_params(request.query_params)
         else:
             raise HTTPException(400, "Unsupported content type")
 

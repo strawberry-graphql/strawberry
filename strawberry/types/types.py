@@ -61,7 +61,7 @@ class StrawberryObjectDefinition(StrawberryType):
         default_factory=dict
     )
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # resolve `Self` annotation with the origin type
         for index, field in enumerate(self.fields):
             if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):  # type: ignore
