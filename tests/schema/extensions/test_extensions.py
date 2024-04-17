@@ -467,8 +467,10 @@ def test_raise_if_defined_both_legacy_and_new_style(default_query_types_and_quer
     schema = strawberry.Schema(
         query=default_query_types_and_query.query_type, extensions=[WrongUsageExtension]
     )
-    with pytest.raises(ValueError):
-        schema.execute_sync(default_query_types_and_query.query)
+
+    result = schema.execute_sync(default_query_types_and_query.query)
+    assert len(result.errors) == 1
+    assert isinstance(result.errors[0].original_error, ValueError)
 
 
 async def test_legacy_extension_supported():
@@ -628,8 +630,184 @@ def test_warning_about_async_get_results_hooks_in_sync_context():
         schema.execute_sync(query)
 
 
+class ExceptionTestingExtension(SchemaExtension):
+    def __init__(self, failing_hook: str):
+        self.failing_hook = failing_hook
+        self.called_hooks = set()
+
+    def on_operation(self):
+        if self.failing_hook == "on_operation_start":
+            raise Exception(self.failing_hook)
+        self.called_hooks.add(1)
+
+        with contextlib.suppress(Exception):
+            yield
+
+        if self.failing_hook == "on_operation_end":
+            raise Exception(self.failing_hook)
+        self.called_hooks.add(8)
+
+    def on_parse(self):
+        if self.failing_hook == "on_parse_start":
+            raise Exception(self.failing_hook)
+        self.called_hooks.add(2)
+
+        with contextlib.suppress(Exception):
+            yield
+
+        if self.failing_hook == "on_parse_end":
+            raise Exception(self.failing_hook)
+        self.called_hooks.add(3)
+
+    def on_validate(self):
+        if self.failing_hook == "on_validate_start":
+            raise Exception(self.failing_hook)
+        self.called_hooks.add(4)
+
+        with contextlib.suppress(Exception):
+            yield
+
+        if self.failing_hook == "on_validate_end":
+            raise Exception(self.failing_hook)
+        self.called_hooks.add(5)
+
+    def on_execute(self):
+        if self.failing_hook == "on_execute_start":
+            raise Exception(self.failing_hook)
+        self.called_hooks.add(6)
+
+        with contextlib.suppress(Exception):
+            yield
+
+        if self.failing_hook == "on_execute_end":
+            raise Exception(self.failing_hook)
+        self.called_hooks.add(7)
+
+
+@pytest.mark.parametrize(
+    "failing_hook",
+    (
+        "on_operation_start",
+        "on_operation_end",
+        "on_parse_start",
+        "on_parse_end",
+        "on_validate_start",
+        "on_validate_end",
+        "on_execute_start",
+        "on_execute_end",
+    ),
+)
 @pytest.mark.asyncio
-async def test_dont_swallow_errors_in_parsing_hooks():
+async def test_exceptions_are_included_in_the_execution_result(failing_hook):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def ping(self) -> str:
+            return "pong"
+
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[ExceptionTestingExtension(failing_hook)],
+    )
+    document = "query { ping }"
+
+    sync_result = schema.execute_sync(document)
+    assert sync_result.errors is not None
+    assert len(sync_result.errors) == 1
+    assert sync_result.errors[0].message == failing_hook
+
+    async_result = await schema.execute(document)
+    assert async_result.errors is not None
+    assert len(async_result.errors) == 1
+    assert sync_result.errors[0].message == failing_hook
+
+
+@pytest.mark.parametrize(
+    ("failing_hook", "expected_hooks"),
+    (
+        ("on_operation_start", set()),
+        ("on_parse_start", {1, 8}),
+        ("on_parse_end", {1, 2, 8}),
+        ("on_validate_start", {1, 2, 3, 8}),
+        ("on_validate_end", {1, 2, 3, 4, 8}),
+        ("on_execute_start", {1, 2, 3, 4, 5, 8}),
+        ("on_execute_end", {1, 2, 3, 4, 5, 6, 8}),
+        ("on_operation_end", {1, 2, 3, 4, 5, 6, 7}),
+    ),
+)
+@pytest.mark.asyncio
+async def test_exceptions_abort_evaluation(failing_hook, expected_hooks):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def ping(self) -> str:
+            return "pong"
+
+    extension = ExceptionTestingExtension(failing_hook)
+    schema = strawberry.Schema(query=Query, extensions=[extension])
+    document = "query { ping }"
+
+    extension.called_hooks = set()
+    schema.execute_sync(document)
+    assert extension.called_hooks == expected_hooks
+
+    extension.called_hooks = set()
+    await schema.execute(document)
+    assert extension.called_hooks == expected_hooks
+
+
+async def test_generic_exceptions_get_wrapped_in_a_graphql_error():
+    exception = Exception("This should be wrapped in a GraphQL error")
+
+    class MyExtension(SchemaExtension):
+        def on_parse(self):
+            raise exception
+
+    @strawberry.type
+    class Query:
+        ping: str = "pong"
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+    query = "query { ping }"
+
+    sync_result = schema.execute_sync(query)
+    assert len(sync_result.errors) == 1
+    assert isinstance(sync_result.errors[0], GraphQLError)
+    assert sync_result.errors[0].original_error == exception
+
+    async_result = await schema.execute(query)
+    assert len(async_result.errors) == 1
+    assert isinstance(async_result.errors[0], GraphQLError)
+    assert async_result.errors[0].original_error == exception
+
+
+async def test_graphql_errors_get_not_wrapped_in_a_graphql_error():
+    exception = GraphQLError("This should not be wrapped in a GraphQL error")
+
+    class MyExtension(SchemaExtension):
+        def on_parse(self):
+            raise exception
+
+    @strawberry.type
+    class Query:
+        ping: str = "pong"
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+    query = "query { ping }"
+
+    sync_result = schema.execute_sync(query)
+    assert len(sync_result.errors) == 1
+    assert sync_result.errors[0] == exception
+    assert sync_result.errors[0].original_error is None
+
+    async_result = await schema.execute(query)
+    assert len(async_result.errors) == 1
+    assert async_result.errors[0] == exception
+    assert async_result.errors[0].original_error is None
+
+
+@pytest.mark.asyncio
+async def test_non_parsing_errors_are_not_swallowed_by_parsing_hooks():
     class MyExtension(SchemaExtension):
         def on_parse(self):
             raise Exception("This shouldn't be swallowed")
@@ -643,14 +821,16 @@ async def test_dont_swallow_errors_in_parsing_hooks():
     schema = strawberry.Schema(query=Query, extensions=[MyExtension])
     query = "query { string }"
 
-    with pytest.raises(Exception, match="This shouldn't be swallowed"):
-        schema.execute_sync(query)
+    sync_result = schema.execute_sync(query)
+    assert len(sync_result.errors) == 1
+    assert sync_result.errors[0].message == "This shouldn't be swallowed"
 
-    with pytest.raises(Exception, match="This shouldn't be swallowed"):
-        await schema.execute(query)
+    async_result = await schema.execute(query)
+    assert len(async_result.errors) == 1
+    assert async_result.errors[0].message == "This shouldn't be swallowed"
 
 
-def test_on_parsing_end_called_when_errors():
+def test_on_parsing_end_is_called_with_parsing_errors():
     execution_errors = False
 
     class MyExtension(SchemaExtension):
@@ -696,7 +876,8 @@ def test_extension_execution_order_sync():
     class Query:
         food: str = "strawberry"
 
-    schema = strawberry.Schema(query=Query, extensions=[ExtensionB, ExtensionC])
+    extensions = [ExtensionB, ExtensionC]
+    schema = strawberry.Schema(query=Query, extensions=extensions)
 
     query = """
         query TestQuery {
@@ -722,8 +903,9 @@ def test_async_extension_in_sync_context():
 
     schema = strawberry.Schema(query=Query, extensions=[ExtensionA])
 
-    with pytest.raises(RuntimeError, match="failed to complete synchronously"):
-        schema.execute_sync("query { food }")
+    result = schema.execute_sync("query { food }")
+    assert len(result.errors) == 1
+    assert result.errors[0].message.endswith("failed to complete synchronously.")
 
 
 def test_extension_override_execution():
@@ -1021,24 +1203,8 @@ def test_raise_if_hook_is_not_callable():
     # Query not set on input
     query = "{ hi }"
 
-    with pytest.raises(
-        ValueError, match="Hook on_operation on <(.*)> must be callable, received 'ABC'"
-    ):
-        schema.execute_sync(query)
-
-
-@pytest.mark.asyncio
-async def test_calls_hooks_when_there_are_errors(async_extension):
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def hi(self) -> str:
-            raise Exception("This is an error")
-
-    schema = strawberry.Schema(query=Query, extensions=[async_extension])
-
-    query = "{ hi }"
-
-    result = await schema.execute(query)
-    assert result.errors
-    async_extension.perform_test()
+    result = schema.execute_sync(query)
+    assert len(result.errors) == 1
+    assert isinstance(result.errors[0].original_error, ValueError)
+    assert result.errors[0].message.startswith("Hook on_operation on <")
+    assert result.errors[0].message.endswith("> must be callable, received 'ABC'")
