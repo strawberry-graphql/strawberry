@@ -725,7 +725,7 @@ async def test_exceptions_are_included_in_the_execution_result(failing_hook):
 @pytest.mark.parametrize(
     ("failing_hook", "expected_hooks"),
     (
-        ("on_operation_start", {2, 3, 4, 5, 6, 7}),
+        ("on_operation_start", set()),
         ("on_parse_start", {1, 8}),
         ("on_parse_end", {1, 2, 8}),
         ("on_validate_start", {1, 2, 3, 8}),
