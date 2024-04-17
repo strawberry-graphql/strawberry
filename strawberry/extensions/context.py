@@ -58,7 +58,7 @@ class ExtensionContextManagerBase:
     def __init__(self, extensions: List[SchemaExtension]):
         self.hooks: List[WrappedHook] = []
         self.default_hook: Hook = getattr(SchemaExtension, self.HOOK_NAME)
-        self.pending_exception: Optional[BaseException] = []
+        self.pending_exception: Optional[BaseException] = None
         for extension in extensions:
             hook = self.get_hook(extension)
             if hook:
