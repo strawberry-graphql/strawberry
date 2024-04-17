@@ -239,3 +239,20 @@ def test_works_with_camelcasing():
     assert result.data["test"] == {"aField": "abc", "bField": None}
 
     del ExampleWithLongerNames, Result
+
+
+def test_introspection():
+    query = """
+        query {
+          __type(name: "ExampleInputTagged") {
+            name
+            isOneOf
+          }
+        }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+
+    assert result.data == {"__type": {"name": "ExampleInputTagged", "isOneOf": True}}
