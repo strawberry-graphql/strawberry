@@ -123,10 +123,10 @@ class User:
         return f"{self.first_name} {self.last_name}"
 ```
 
-Much better, no? `self` on resolver methods is pretty convenient, and it works like
-it should in Python, but there might be cases where it doesn't follow Python's
-semantics. This is because under the hood resolvers are actually called as if they
-were static methods by Strawberry.
+Much better, no? `self` on resolver methods is pretty convenient, and it works
+like it should in Python, but there might be cases where it doesn't follow
+Python's semantics. This is because under the hood resolvers are actually called
+as if they were static methods by Strawberry.
 
 Let's see a simplified version of what happens when you request the `full_name`
 field, to do that we also need a field that allows to fetch a user:
