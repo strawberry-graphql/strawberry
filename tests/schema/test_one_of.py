@@ -8,7 +8,7 @@ import strawberry
 from strawberry.schema_directives import OneOf
 
 
-@strawberry.input(directives=[OneOf()])
+@strawberry.one_of_input
 class ExampleInputTagged:
     a: str | None
     b: int | None
