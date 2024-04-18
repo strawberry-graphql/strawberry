@@ -83,7 +83,7 @@ def get_full_name(user: strawberry.Parent[User]) -> str:
 
 ## Accessing parent's data in a method resolver
 
-Both method also work when defining a method resolver, so we can still use
+Both options also work when defining a method resolver, so we can still use
 `strawberry.Parent` in a resolver defined as a method:
 
 ```python
