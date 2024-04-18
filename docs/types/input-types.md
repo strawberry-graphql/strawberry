@@ -109,13 +109,13 @@ Strawberry also supports defining input types that can have only one field set.
 This is based on the
 [OneOf Input Objects RFC](https://github.com/graphql/graphql-spec/pull/825)
 
-To define a one of input type you can use the `@strawberry.one_of_input`
-decorator:
+To define a one of input type you can use the `one_of` flag on the
+`@strawberry.input` decorator:
 
 ```python+schema
 import strawberry
 
-@strawberry.one_of_input
+@strawberry.input(one_of=True)
 class SearchBy:
     name: str | None
     email: str | None
@@ -124,18 +124,4 @@ input SearchBy @oneOf {
   name: String
   email: String
 }
-```
-
-You can also use the `OneOf` directive to define a one of input type, for
-example when using `strawberry.federation.input` or
-`strawberry.experimenta.pydantic.input`:
-
-```python+schema
-import strawberry
-from strawberry.schema_directives import OneOf
-
-@strawberry.input(directives=[OneOf()])
-class SearchBy:
-    name: str | None
-    email: str | None
 ```

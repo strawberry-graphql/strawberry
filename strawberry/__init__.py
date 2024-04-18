@@ -7,7 +7,7 @@ from .enum import enum, enum_value
 from .field import field
 from .lazy_type import LazyType, lazy
 from .mutation import mutation, subscription
-from .object_type import asdict, input, interface, one_of_input, type
+from .object_type import asdict, input, interface, type
 from .parent import Parent
 from .permission import BasePermission
 from .private import Private
@@ -38,7 +38,6 @@ __all__ = [
     "federation",
     "field",
     "input",
-    "one_of_input",
     "interface",
     "mutation",
     "scalar",

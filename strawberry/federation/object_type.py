@@ -31,6 +31,7 @@ def _impl_type(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
+    one_of: Optional[bool] = None,
     directives: Iterable[object] = (),
     authenticated: bool = False,
     keys: Iterable[Union["Key", str]] = (),
@@ -54,6 +55,7 @@ def _impl_type(
         Shareable,
         Tag,
     )
+    from strawberry.schema_directives import OneOf
 
     directives = list(directives)
 
@@ -82,6 +84,9 @@ def _impl_type(
 
     if is_interface_object:
         directives.append(InterfaceObject())
+
+    if one_of:
+        directives.append(OneOf())
 
     return base_type(  # type: ignore
         cls,
@@ -182,6 +187,7 @@ def input(
     cls: T,
     *,
     name: Optional[str] = None,
+    one_of: Optional[bool] = None,
     description: Optional[str] = None,
     directives: Sequence[object] = (),
     inaccessible: bool = UNSET,
@@ -200,6 +206,7 @@ def input(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
+    one_of: Optional[bool] = None,
     directives: Sequence[object] = (),
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
@@ -211,6 +218,7 @@ def input(
     cls: Optional[T] = None,
     *,
     name: Optional[str] = None,
+    one_of: Optional[bool] = None,
     description: Optional[str] = None,
     directives: Sequence[object] = (),
     inaccessible: bool = UNSET,
@@ -223,6 +231,7 @@ def input(
         directives=directives,
         inaccessible=inaccessible,
         is_input=True,
+        one_of=one_of,
         tags=tags,
     )
 

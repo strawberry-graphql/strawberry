@@ -268,64 +268,11 @@ def type(
 @dataclass_transform(
     order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
-def one_of_input(
-    cls: T,
-    *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
-) -> T:
-    ...
-
-
-@overload
-@dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
-)
-def one_of_input(
-    *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
-) -> Callable[[T], T]:
-    ...
-
-
-def one_of_input(
-    cls: Optional[T] = None,
-    *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
-):
-    """Annotates a class as a GraphQL Input type with the @oneOf directive.
-    Example usage:
-    >>> @strawberry.one_of_input
-    >>> class X:
-    >>>     field_abc: str = "ABC"
-    """
-
-    from strawberry.schema_directives import OneOf
-
-    directives = (*(directives or tuple()), OneOf())
-
-    return type(  # type: ignore # not sure why mypy complains here
-        cls,
-        name=name,
-        description=description,
-        directives=directives,
-        is_input=True,
-    )
-
-
-@overload
-@dataclass_transform(
-    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
-)
 def input(
     cls: T,
     *,
     name: Optional[str] = None,
+    one_of: Optional[bool] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
 ) -> T:
@@ -339,6 +286,7 @@ def input(
 def input(
     *,
     name: Optional[str] = None,
+    one_of: Optional[bool] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
 ) -> Callable[[T], T]:
@@ -349,6 +297,7 @@ def input(
     cls: Optional[T] = None,
     *,
     name: Optional[str] = None,
+    one_of: Optional[bool] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
 ):
@@ -358,6 +307,11 @@ def input(
     >>> class X:
     >>>     field_abc: str = "ABC"
     """
+
+    from strawberry.schema_directives import OneOf
+
+    if one_of:
+        directives = (*(directives or ()), OneOf())
 
     return type(  # type: ignore # not sure why mypy complains here
         cls,
