@@ -72,7 +72,7 @@ def get_full_name(root: User) -> str:
 ```
 
 This is still supported, but we recommend using `strawberry.Parent`, since it
-follows Strawberry's philosofy of using type annotations. Also, with
+follows Strawberry's philosophy of using type annotations. Also, with
 `strawberry.Parent` your argument can be named anything, for example this will
 still work:
 
@@ -100,7 +100,7 @@ class User:
         return f"{parent.first_name} {parent.last_name}"
 ```
 
-But, here's where things get more interesting. If this were a pure Python class,
+But, here's where things get more interesting. If this was a pure Python class,
 we would use `self` directly. Well, turns out we can!
 
 Strawberry also passes the parent value to the `self` parameter, this is purely
@@ -123,9 +123,9 @@ class User:
         return f"{self.first_name} {self.last_name}"
 ```
 
-Much better no? `self` on resolver methods is pretty convient, and it works like
+Much better, no? `self` on resolver methods is pretty convenient, and it works like
 it should in Python, but there might be cases where it doesn't follow Python's
-semantics. This is because under the hood resolvers are actually called if they
+semantics. This is because under the hood resolvers are actually called as if they
 were static methods by Strawberry.
 
 Let's see a simplified version of what happens when you request the `full_name`
