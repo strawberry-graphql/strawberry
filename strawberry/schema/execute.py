@@ -56,7 +56,10 @@ def validate_document(
     document: DocumentNode,
     validation_rules: Tuple[Type[ASTValidationRule], ...],
 ) -> List[GraphQLError]:
-    validation_rules += (OneOfInputValidationRule,)
+    validation_rules = (
+        *validation_rules,
+        OneOfInputValidationRule,
+    )
     return validate(
         schema,
         document,
