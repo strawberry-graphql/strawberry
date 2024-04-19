@@ -115,7 +115,10 @@ Django = ">=3.2"
 fastapi = {version = ">=0.65.0", optional = false}
 flask = ">=1.1"
 quart = ">=0.19.3"
-pydantic = {version = ">=2.0", optional = false}
+pydantic = [
+    {version = ">=2.0", optional = false, python = ">=3.9"},
+    {version = "<=2.0", optional = false, python = "<3.9"}
+]
 pytest-aiohttp = "^1.0.3"
 pytest-django = {version = "^4.5"}
 sanic = ">=20.12.2"
