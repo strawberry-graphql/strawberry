@@ -11,6 +11,7 @@ from typing import (
     List,
     Optional,
     Set,
+    Tuple,
     Union,
     cast,
 )
@@ -59,10 +60,15 @@ try:
 except ImportError:
     TypeVarDef = TypeVarType
 
+PYDANTIC_VERSION: Optional[Tuple[int, ...]] = None
+
 # To be compatible with user who don't use pydantic
 try:
+    import pydantic
     from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY
     from pydantic.mypy import PydanticModelField
+
+    PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))
 
     from strawberry.experimental.pydantic._compat import IS_PYDANTIC_V1
 except ImportError:
@@ -464,6 +470,11 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                     return_type=model_type,
                 )
             else:
+                extra = {}
+
+                if PYDANTIC_VERSION and PYDANTIC_VERSION >= (2, 7, 0):
+                    extra["api"] = ctx.api
+
                 add_method(
                     ctx,
                     "to_pydantic",
@@ -474,6 +485,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                             typed=True,
                             force_optional=False,
                             use_alias=True,
+                            **extra,
                         )
                         for f in missing_pydantic_fields
                     ],
