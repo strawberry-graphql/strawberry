@@ -101,11 +101,8 @@ class User:
 ```
 
 But, here's where things get more interesting. If this was a pure Python class,
-we would use `self` directly. Well, turns out we can!
-
-Strawberry also passes the parent value to the `self` parameter, this is purely
-provided as a shortcut, since there's a few things happening under the hood that
-might make this not fully correct. (NOT SURE ABOUT THIS WORDING)
+we would use `self` directly, right? Turns out that Strawberry also supports
+this!
 
 Let's update our resolver:
 
@@ -124,9 +121,9 @@ class User:
 ```
 
 Much better, no? `self` on resolver methods is pretty convenient, and it works
-like it should in Python, but there might be cases where it doesn't follow
-Python's semantics. This is because under the hood resolvers are actually called
-as if they were static methods by Strawberry.
+like it should in Python, but there might be cases where it doesn't properly
+follow Python's semantics. This is because under the hood resolvers are actually
+called as if they were static methods by Strawberry.
 
 Let's see a simplified version of what happens when you request the `full_name`
 field, to do that we also need a field that allows to fetch a user:
