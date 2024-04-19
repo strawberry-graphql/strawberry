@@ -259,7 +259,7 @@ class Schema(BaseSchema):
             root_value=root_value,
             variables=variable_values,
             provided_operation_name=operation_name,
-            protocol_extensions=protocol_extensions
+            protocol_extensions=protocol_extensions,
         )
 
         result = await execute(
@@ -293,7 +293,7 @@ class Schema(BaseSchema):
             root_value=root_value,
             variables=variable_values,
             provided_operation_name=operation_name,
-            protocol_extensions=protocol_extensions
+            protocol_extensions=protocol_extensions,
         )
 
         result = execute_sync(
