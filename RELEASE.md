@@ -1,3 +1,4 @@
 Release type: patch
 
-Fix mypy plugin - `from_pydantic` method correctly has the `extra` argument typed.
+This releases fixes a bug in the mypy plugin where the `from_pydantic` method
+was not correctly typed.
