@@ -79,16 +79,14 @@ class Query:
         return User(name="Marco")
 ```
 
-this is useful when you want to colocate resolvers and types or when you have
+This is useful when you want to co-locate resolvers and types or when you have
 very small resolvers.
 
 <Note>
 
-The _self_ argument is a bit special here, when executing a GraphQL query, in
-case of resolvers defined with a decorator, the _self_ argument corresponds to
-the _root_ value of that field. In this example the _root_ value is the value
-`Query` type, which is usually `None`. You can change the _root_ value when
-calling the `execute` method on a `Schema`. More on _root_ values below.
+If you're curious how the `self` parameter works in the resolver, you can read
+more about it in the
+[accessing parent data guide](../guides/accessing-parent-data.md).
 
 </Note>
 
@@ -177,7 +175,7 @@ Like this you will get the following responses:
 
 Sometimes it is useful to access the information for the current execution
 context. Strawberry allows to declare a parameter of type `Info` that will be
-automatically passed to the resolver. This parameter containes the information
+automatically passed to the resolver. This parameter contains the information
 for the current execution context.
 
 ```python
@@ -220,8 +218,3 @@ Info objects contain information for the current execution context:
 | path            | `Path`                    | The path for the current field                                        |
 | selected_fields | `List[SelectedField]`     | Additional information related to the current field                   |
 | schema          | `Schema`                  | The Strawberry schema instance                                        |
-
-[^1]:
-    see
-    [this discussion](https://github.com/strawberry-graphql/strawberry/discussions/515)
-    for more context around the self parameter.
