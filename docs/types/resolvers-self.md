@@ -58,7 +58,7 @@ def get_full_name(parent: strawberry.Parent[User]) -> str:
 `strawberry.Parent` tells Strawberry to pass the parent value of the field, in
 this case it would be the `User`.
 
-> **Note:** `strawberry.Parent` accept a type argument, which will then be used
+> **Note:** `strawberry.Parent` accepts a type argument, which will then be used
 > by your type checker to check your code!
 
 ### Using root
@@ -73,8 +73,8 @@ def get_full_name(root: User) -> str:
 
 This is still supported, but we recommend using `strawberry.Parent`, since it
 follows Strawberry's philosophy of using type annotations. Also, with
-`strawberry.Parent` your argument can be named anything, for example this will
-still work:
+`strawberry.Parent` your argument can have any name, for example this will still
+work:
 
 ```python
 def get_full_name(user: strawberry.Parent[User]) -> str:
@@ -152,7 +152,7 @@ When we do a query like this:
 }
 ```
 
-we are pretty much asking to call the `user` function on the `Query` class, and
+We are pretty much asking to call the `user` function on the `Query` class, and
 then call the `full_name` function on the `User` class, similar to this code:
 
 ```python
@@ -187,7 +187,7 @@ As mentioned, this is because Strawberry class the resolvers as if they were
 plain functions (not bound to the class), similar to this:
 
 ```python
-# note, we are not instanciating the Query anymore!
+# note, we are not instantiating the Query any more!
 user = Query.user()  # note: this is a `UserModel` now
 
 full_name = User.full_name(user)
