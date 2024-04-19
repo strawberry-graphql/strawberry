@@ -15,7 +15,6 @@ from typing_extensions import Annotated
 import pytest
 
 import strawberry
-from strawberry.types import Info
 
 
 @pytest.mark.asyncio
@@ -48,7 +47,9 @@ async def test_subscription_with_permission():
     class IsAuthenticated(BasePermission):
         message = "Unauthorized"
 
-        async def has_permission(self, source: Any, info: Info, **kwargs: Any) -> bool:
+        async def has_permission(
+            self, source: Any, info: strawberry.Info, **kwargs: Any
+        ) -> bool:
             return True
 
     @strawberry.type

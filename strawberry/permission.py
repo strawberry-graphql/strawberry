@@ -109,7 +109,7 @@ class PermissionExtension(FieldExtension):
         permissions: List[BasePermission],
         use_directives: bool = True,
         fail_silently: bool = False,
-    ):
+    ) -> None:
         self.permissions = permissions
         self.fail_silently = fail_silently
         self.return_empty_list = False

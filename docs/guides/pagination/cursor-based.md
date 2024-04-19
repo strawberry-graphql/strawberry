@@ -6,8 +6,8 @@ title: Pagination - Cursor based
 
 Make sure to check our introduction to pagination [here](./overview.md)!
 
-Let us implement cursor based pagination in GraphQL. By the end of this tutorial, we
-should be able to return a paginated list of users when requested.
+Let us implement cursor based pagination in GraphQL. By the end of this
+tutorial, we should be able to return a paginated list of users when requested.
 
 ```graphql+response
 query getUsers {
@@ -49,9 +49,9 @@ query getUsers {
 }
 ```
 
-The server needs to return a `cursor` along with the sliced user data, so that our client
-can know what to query for next. The client could also provide a `limit` value, to specify
-how much users it wants at a time.
+The server needs to return a `cursor` along with the sliced user data, so that
+our client can know what to query for next. The client could also provide a
+`limit` value, to specify how much users it wants at a time.
 
 Let us model our schema like this:
 
@@ -180,17 +180,21 @@ class Query:
 schema = strawberry.Schema(query=Query)
 ```
 
-Now is a good time to think of what we could use as a cursor for our dataset. Our cursor needs to be an opaque value,
-which doesn't usually change over time. It makes sense to use base64 encoded IDs of users as our cursor, as they fit both criteria.
+Now is a good time to think of what we could use as a cursor for our dataset.
+Our cursor needs to be an opaque value, which doesn't usually change over time.
+It makes sense to use base64 encoded IDs of users as our cursor, as they fit
+both criteria.
 
 <Tip>
 
-It is good practice to base64-encode cursors, to provide a unified interface to the end user. API clients need not
-bother about the type of data to paginate, and can pass unique IDs during pagination. It also makes the cursor opaque.
+It is good practice to base64-encode cursors, to provide a unified interface to
+the end user. API clients need not bother about the type of data to paginate,
+and can pass unique IDs during pagination. It also makes the cursor opaque.
 
 </Tip>
 
-Let us define a couple of helper functions to encode and decode cursors as follows:
+Let us define a couple of helper functions to encode and decode cursors as
+follows:
 
 ```py line=3,35-43
 # example.py
@@ -291,9 +295,9 @@ class Query:
 schema = strawberry.Schema(query=Query)
 ```
 
-We're going to use the dataset we defined in our `get_users` field resolver.
-Our field is going to accept two arguments, `limit` and `cursor`, to control pagination.
-Let us implement the pagination logic as follows.
+We're going to use the dataset we defined in our `get_users` field resolver. Our
+field is going to accept two arguments, `limit` and `cursor`, to control
+pagination. Let us implement the pagination logic as follows.
 
 Now, let us implement the pagination logic.
 
@@ -427,8 +431,8 @@ schema = strawberry.Schema(query=Query)
 
 <Note>
 
-Did you notice that cursor argument we defined is optional? That's because the client doesn't know
-the cursor initially, when it makes the first request.
+Did you notice that cursor argument we defined is optional? That's because the
+client doesn't know the cursor initially, when it makes the first request.
 
 </Note>
 
@@ -438,7 +442,8 @@ Now, let us start a debug server with our schema!
 strawberry server example:schema
 ```
 
-We should be able to query for users on the GraphiQL explorer. Here's a sample query for you!
+We should be able to query for users on the GraphiQL explorer. Here's a sample
+query for you!
 
 ```graphql
 query getUsers {

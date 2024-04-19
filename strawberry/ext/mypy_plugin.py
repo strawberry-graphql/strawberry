@@ -113,7 +113,7 @@ def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
     return type_
 
 
-def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface):
+def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface) -> Any:
     if "." in name:
         return api.named_type_or_none(name)
 

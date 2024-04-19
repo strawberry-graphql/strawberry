@@ -6,8 +6,8 @@ title: Relay wrong resolver annotation Error
 
 ## Description
 
-This error is thrown when a field on a relay connection was defined with
-a resolver that returns something that is not compatible with pagination.
+This error is thrown when a field on a relay connection was defined with a
+resolver that returns something that is not compatible with pagination.
 
 For example, the following code would throw this error:
 
@@ -68,9 +68,9 @@ class Query:
 
 <Note>
 
-Note that if you are returning a type different than the connection type,
-you will need to subclass the connection type and override its
-`resolve_node` method to convert it to the correct type, as explained in
-the [relay guide](../guides/relay).
+Note that if you are returning a type different than the connection type, you
+will need to subclass the connection type and override its `resolve_node` method
+to convert it to the correct type, as explained in the
+[relay guide](../guides/relay).
 
 <Note/>

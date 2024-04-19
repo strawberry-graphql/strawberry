@@ -45,7 +45,9 @@ app.include_router(graphql_app, prefix="/graphql")
 The `GraphQLRouter` accepts the following options:
 
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
-- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or to disable it by passing `None`.
+- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the
+  GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or
+  to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
 - `context_getter`: optional FastAPI dependency for providing custom context
@@ -79,7 +81,6 @@ For dictionary-based custom contexts, an example might look like the following.
 import strawberry
 
 from fastapi import FastAPI, Depends, Request, WebSocket, BackgroundTasks
-from strawberry.types import Info
 from strawberry.fastapi import GraphQLRouter
 
 
@@ -98,7 +99,7 @@ async def get_context(
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info: Info) -> str:
+    def example(self, info: strawberry.Info) -> str:
         return f"Hello {info.context['custom_value']}"
 
 
@@ -127,7 +128,6 @@ For class-based custom contexts, an example might look like the following.
 import strawberry
 
 from fastapi import FastAPI, Depends, Request, WebSocket, BackgroundTasks
-from strawberry.types import Info
 from strawberry.fastapi import BaseContext, GraphQLRouter
 
 
@@ -150,7 +150,7 @@ async def get_context(
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info: Info) -> str:
+    def example(self, info: strawberry.Info) -> str:
         return f"Hello {info.context.name}, {info.context.greeting}"
 
 
@@ -184,7 +184,6 @@ can be added via the context:
 import strawberry
 
 from fastapi import FastAPI, BackgroundTasks
-from strawberry.types import Info
 from strawberry.fastapi import GraphQLRouter
 
 
@@ -202,7 +201,7 @@ class Query:
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def create_flavour(self, name: str, info: Info) -> bool:
+    def create_flavour(self, name: str, info: strawberry.Info) -> bool:
         info.context["background_tasks"].add_task(notify_new_flavour, name)
         return True
 

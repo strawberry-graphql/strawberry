@@ -163,7 +163,7 @@ async def test_sentry_tracer(
 
 @pytest.mark.asyncio
 async def test_uses_operation_name(
-    sentry_extension: Tuple[SentryTracingExtension, MagicMock]
+    sentry_extension: Tuple[SentryTracingExtension, MagicMock],
 ):
     extension, mock = sentry_extension
 
@@ -189,7 +189,7 @@ async def test_uses_operation_name(
 
 @pytest.mark.asyncio
 async def test_uses_operation_type(
-    sentry_extension: Tuple[SentryTracingExtension, MagicMock]
+    sentry_extension: Tuple[SentryTracingExtension, MagicMock],
 ):
     extension, mock = sentry_extension
 
@@ -213,7 +213,7 @@ async def test_uses_operation_type(
 
 @pytest.mark.asyncio
 async def test_uses_operation_subscription(
-    sentry_extension: Tuple[SentryTracingExtension, MagicMock]
+    sentry_extension: Tuple[SentryTracingExtension, MagicMock],
 ):
     extension, mock = sentry_extension
 
@@ -321,7 +321,7 @@ def test_sentry_tracer_sync(
 
 
 def test_uses_operation_name_sync(
-    sentry_extension_sync: Tuple[SentryTracingExtensionSync, MagicMock]
+    sentry_extension_sync: Tuple[SentryTracingExtensionSync, MagicMock],
 ):
     extension, mock = sentry_extension_sync
 
@@ -346,7 +346,7 @@ def test_uses_operation_name_sync(
 
 
 def test_uses_operation_type_sync(
-    sentry_extension_sync: Tuple[SentryTracingExtensionSync, MagicMock]
+    sentry_extension_sync: Tuple[SentryTracingExtensionSync, MagicMock],
 ):
     extension, mock = sentry_extension_sync
 

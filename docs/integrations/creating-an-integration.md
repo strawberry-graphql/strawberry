@@ -65,8 +65,8 @@ The methods above are the bare minimum that you need to implement to create a
 view. They are all required, but you can also override other methods to change
 the behaviour of the view.
 
-On top of that we also need a request adapter, here's the base class for the async
-version:
+On top of that we also need a request adapter, here's the base class for the
+async version:
 
 ```python
 from strawberry.http.types import HTTPMethod, QueryParams, FormData

@@ -6,8 +6,8 @@ title: Relay wrong annotation Error
 
 ## Description
 
-This error is thrown when a field on a relay connection has a wrong
-type annotation. For example, the following code will throw this error:
+This error is thrown when a field on a relay connection has a wrong type
+annotation. For example, the following code will throw this error:
 
 ```python
 from typing import List
@@ -36,8 +36,8 @@ class Query:
 
 ## How to fix this error
 
-You can fix this error by properly annotating your attribute or resolver
-with `relay.Connection` type subclass.
+You can fix this error by properly annotating your attribute or resolver with
+`relay.Connection` type subclass.
 
 For example:
 

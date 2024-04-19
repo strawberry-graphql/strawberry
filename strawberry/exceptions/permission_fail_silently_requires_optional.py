@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class PermissionFailSilentlyRequiresOptionalError(StrawberryException):
-    def __init__(self, field: StrawberryField):
+    def __init__(self, field: StrawberryField) -> None:
         self.field = field
         self.message = (
             "Cannot use fail_silently=True with a non-optional " "or non-list field"

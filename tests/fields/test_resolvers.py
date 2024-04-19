@@ -17,7 +17,6 @@ from strawberry.types.fields.resolver import (
     StrawberryResolver,
     UncallableResolverError,
 )
-from strawberry.types.info import Info
 
 
 def test_resolver_as_argument():
@@ -362,7 +361,7 @@ def root_and_info(
     foo: str,
     bar: float,
     info: str,
-    strawberry_info: Info,
+    strawberry_info: strawberry.Info,
 ) -> str:
     raise AssertionError("Unreachable code.")
 
@@ -372,7 +371,7 @@ def self_and_info(
     foo: str,
     bar: float,
     info: str,
-    strawberry_info: Info,
+    strawberry_info: strawberry.Info,
 ) -> str:
     raise AssertionError("Unreachable code.")
 
@@ -382,7 +381,7 @@ def parent_and_info(
     foo: str,
     bar: float,
     info: str,
-    strawberry_info: Info,
+    strawberry_info: strawberry.Info,
 ) -> str:
     raise AssertionError("Unreachable code.")
 

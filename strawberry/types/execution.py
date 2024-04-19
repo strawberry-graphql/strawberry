@@ -52,7 +52,7 @@ class ExecutionContext:
     errors: Optional[List[GraphQLError]] = None
     result: Optional[GraphQLExecutionResult] = None
 
-    def __post_init__(self, provided_operation_name: str | None):
+    def __post_init__(self, provided_operation_name: str | None) -> None:
         self._provided_operation_name = provided_operation_name
 
     @property

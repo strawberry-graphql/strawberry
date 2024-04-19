@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 
 
 class Parameter(inspect.Parameter):
-    def __hash__(self):
+    def __hash__(self) -> int:
         """Override to exclude default value from hash.
 
         This adds compatibility for using unhashable default values in resolvers such as
@@ -155,7 +155,7 @@ class ReservedType(NamedTuple):
             # Handle annotated arguments such as Private[str] and DirectiveValue[str]
             return type_has_annotation(other, self.type)
         else:
-            # Handle both concrete and generic types (i.e Info, and Info[Any, Any])
+            # Handle both concrete and generic types (i.e Info, and Info)
             return (
                 issubclass(origin, self.type)
                 if isinstance(origin, type)
@@ -187,7 +187,7 @@ class StrawberryResolver(Generic[T]):
         *,
         description: Optional[str] = None,
         type_override: Optional[Union[StrawberryType, type]] = None,
-    ):
+    ) -> None:
         self.wrapped_func = func
         self._description = description
         self._type_override = type_override
@@ -396,7 +396,7 @@ class StrawberryResolver(Generic[T]):
 
 
 class UncallableResolverError(Exception):
-    def __init__(self, resolver: StrawberryResolver):
+    def __init__(self, resolver: StrawberryResolver) -> None:
         message = (
             f"Attempted to call resolver {resolver} with uncallable function "
             f"{resolver.wrapped_func}"

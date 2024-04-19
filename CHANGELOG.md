@@ -1,6 +1,277 @@
 CHANGELOG
 =========
 
+0.226.0 - 2024-04-17
+--------------------
+
+Starting with this release, any error raised from within schema
+extensions will abort the operation and is returned to the client.
+
+This corresponds to the way we already handle field extension errors
+and resolver errors.
+
+This is particular useful for schema extensions performing checks early
+in the request lifecycle, for example:
+
+```python
+class MaxQueryLengthExtension(SchemaExtension):
+    MAX_QUERY_LENGTH = 8192
+
+    async def on_operation(self):
+        if len(self.execution_context.query) > self.MAX_QUERY_LENGTH:
+            raise StrawberryGraphQLError(message="Query too large")
+        yield
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3217](https://github.com/strawberry-graphql/strawberry/pull/3217/)
+
+
+0.225.1 - 2024-04-15
+--------------------
+
+This change fixes GET request queries returning a 400 if a content_type header is supplied
+
+Contributed by [Nathan John](https://github.com/vethan) via [PR #3452](https://github.com/strawberry-graphql/strawberry/pull/3452/)
+
+
+0.225.0 - 2024-04-14
+--------------------
+
+This release adds support for using FastAPI APIRouter arguments in GraphQLRouter.
+
+Now you have the opportunity to specify parameters such as `tags`, `route_class`,
+`deprecated`, `include_in_schema`, etc:
+
+```python
+import strawberry
+
+from fastapi import FastAPI
+from strawberry.fastapi import GraphQLRouter
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello World"
+
+
+schema = strawberry.Schema(Query)
+
+graphql_app = GraphQLRouter(schema, tags=["graphql"])
+
+app = FastAPI()
+app.include_router(graphql_app, prefix="/graphql")
+```
+
+Contributed by [Nikita Paramonov](https://github.com/nparamonov) via [PR #3442](https://github.com/strawberry-graphql/strawberry/pull/3442/)
+
+
+0.224.2 - 2024-04-13
+--------------------
+
+This releases fixes a bug where schema extensions where not running a LIFO order.
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #3416](https://github.com/strawberry-graphql/strawberry/pull/3416/)
+
+
+0.224.1 - 2024-03-30
+--------------------
+
+This release fixes a deprecation warning when using the Apollo Tracing
+Extension.
+
+Contributed by [A. Coady](https://github.com/coady) via [PR #3410](https://github.com/strawberry-graphql/strawberry/pull/3410/)
+
+
+0.224.0 - 2024-03-30
+--------------------
+
+This release adds support for using both Pydantic v1 and v2, when importing from
+`pydantic.v1`.
+
+This is automatically detected and the correct version is used.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3426](https://github.com/strawberry-graphql/strawberry/pull/3426/)
+
+
+0.223.0 - 2024-03-29
+--------------------
+
+This release adds support for Apollo Federation in the schema codegen. Now you
+can convert a schema like this:
+
+```graphql
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.3",
+        import: ["@key", "@shareable"])
+
+type Query {
+  me: User
+}
+
+type User @key(fields: "id") {
+  id: ID!
+  username: String! @shareable
+}
+```
+
+to a Strawberry powered schema like this:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Query:
+    me: User | None
+
+
+@strawberry.federation.type(keys=["id"])
+class User:
+    id: strawberry.ID
+    username: str = strawberry.federation.field(shareable=True)
+
+
+schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+```
+
+By running the following command:
+
+```bash
+strawberry schema-codegen example.graphql
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3417](https://github.com/strawberry-graphql/strawberry/pull/3417/)
+
+
+0.222.0 - 2024-03-27
+--------------------
+
+This release adds support for Apollo Federation v2.7 which includes the `@authenticated`, `@requiresScopes`, `@policy` directives, as well as the `label` argument for `@override`.
+As usual, we have first class support for them in the `strawberry.federation` namespace, here's an example:
+
+```python
+from strawberry.federation.schema_directives import Override
+
+
+@strawberry.federation.type(
+    authenticated=True,
+    policy=[["client", "poweruser"], ["admin"]],
+    requires_scopes=[["client", "poweruser"], ["admin"]],
+)
+class Product:
+    upc: str = strawberry.federation.field(
+        override=Override(override_from="mySubGraph", label="percent(1)")
+    )
+```
+
+Contributed by [Tyger Taco](https://github.com/TygerTaco) via [PR #3420](https://github.com/strawberry-graphql/strawberry/pull/3420/)
+
+
+0.221.1 - 2024-03-21
+--------------------
+
+This release properly allows passing one argument to the `Info` class.
+
+This is now fully supported:
+
+```python
+import strawberry
+
+from typing import TypedDict
+
+
+class Context(TypedDict):
+    user_id: str
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def info(self, info: strawberry.Info[Context]) -> str:
+        return info.context["user_id"]
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3419](https://github.com/strawberry-graphql/strawberry/pull/3419/)
+
+
+0.221.0 - 2024-03-21
+--------------------
+
+This release improves the `Info` type, by adding support for default TypeVars
+and by exporting it from the main module. This makes it easier to use `Info` in
+your own code, without having to import it from `strawberry.types.info`.
+
+### New export
+
+By exporting `Info` from the main module, now you can do the follwing:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def info(self, info: strawberry.Info) -> str:
+        # do something with info
+        return "hello"
+```
+
+### Default TypeVars
+
+The `Info` type now has default TypeVars, so you can use it without having to
+specify the type arguments, like we did in the example above. Make sure to use
+the latest version of Mypy or Pyright for this. It also means that you can only
+pass one value to it if you only care about the context type:
+
+```python
+import strawberry
+
+from .context import Context
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def info(self, info: strawberry.Info[Context]) -> str:
+        return info.context.user_id
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3418](https://github.com/strawberry-graphql/strawberry/pull/3418/)
+
+
+0.220.0 - 2024-03-08
+--------------------
+
+This release adds support to allow passing `connection_params` as dictionary to `GraphQLWebsocketCommunicator` class when testing [channels integration](https://strawberry.rocks/docs/integrations/channels#testing)
+
+
+### Example
+
+
+```python
+GraphQLWebsocketCommunicator(
+    application=application,
+    path="/graphql",
+    connection_params={"username": "strawberry"},
+)
+```
+
+Contributed by [selvarajrajkanna](https://github.com/selvarajrajkanna) via [PR #3403](https://github.com/strawberry-graphql/strawberry/pull/3403/)
+
+
+0.219.2 - 2024-02-06
+--------------------
+
+This releases updates the dependency of `python-multipart` to be at least `0.0.7` (which includes a security fix).
+
+It also removes the upper bound for `python-multipart` so you can always install the latest version (if compatible) 😊
+
+Contributed by [Srikanth](https://github.com/XChikuX) via [PR #3375](https://github.com/strawberry-graphql/strawberry/pull/3375/)
+
+
 0.219.1 - 2024-01-28
 --------------------
 
@@ -29,7 +300,7 @@ def custom_context_getter(request: Request):
 @strawberry.type
 class Query:
     @strawberry.field
-    def hello(self, info: Info[object, None]) -> str:
+    def hello(self, info: strawberry.Info[object, None]) -> str:
         return info.context["custom"]
 
 
@@ -136,6 +407,32 @@ class Query:
 
 The old way of adding permissions using `permission_classes` is still
 supported via the automatic addition of a `PermissionExtension` on the field.
+
+### ⚠️ Breaking changes
+
+Previously the `kwargs` argument keys for the `has_permission` method were
+using camel casing (depending on your schema configuration), now they will
+always follow the python name defined in your resolvers.
+
+```python
+class IsAuthorized(BasePermission):
+    message = "User is not authorized"
+
+    def has_permission(
+        self, source, info, **kwargs: typing.Any
+    ) -> bool:  # pragma: no cover
+        # kwargs will have a key called "a_key"
+        # instead of `aKey`
+
+        return False
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(permission_classes=[IsAuthorized])
+    def name(self, a_key: str) -> str:  # pragma: no cover
+        return "Erik"
+```
 
 Using the new `PermissionExtension` API, permissions support even more features:
 
@@ -1136,7 +1433,7 @@ class MyDataType:
 class Subscription:
     @strawberry.subscription
     async def my_data_subscription(
-        self, info: Info, groups: list[str]
+        self, info: strawberry.Info, groups: list[str]
     ) -> AsyncGenerator[MyDataType | None, None]:
         yield None
         async for message in info.context["ws"].channel_listen(
@@ -1151,7 +1448,7 @@ class Subscription:
 class Subscription:
     @strawberry.subscription
     async def my_data_subscription(
-        self, info: Info, groups: list[str]
+        self, info: strawberry.Info, groups: list[str]
     ) -> AsyncGenerator[MyDataType | None, None]:
         async with info.context["ws"].listen_to_channel("my_data", groups=groups) as cm:
             yield None
@@ -1184,7 +1481,7 @@ class Query:
     @strawberry.field
     def get_testing(
         self,
-        info: Info[None, None],
+        info: strawberry.Info,
         id_: Annotated[uuid.UUID, strawberry.argument(name="id")],
     ) -> str | None:
         return None
@@ -1638,7 +1935,7 @@ class Mutation:
     @strawberry.mutation(extensions=[InputMutationExtension()])
     def update_fruit_weight(
         self,
-        info: Info,
+        info: strawberry.Info,
         id: strawberry.ID,
         weight: Annotated[
             float,
@@ -2132,7 +2429,9 @@ class MyInput:
 
 
 class MyFieldExtension(FieldExtension):
-    def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+    def resolve(
+        self, next_: Callable[..., Any], source: Any, info: strawberry.Info, **kwargs
+    ):
         # kwargs["my_input"] is instance of MyInput
         ...
 
@@ -2421,7 +2720,7 @@ def custom_context_getter(request: Request):
 @strawberry.type
 class Query:
     @strawberry.field
-    def hello(self, info: Info[object, None]) -> str:
+    def hello(self, info: strawberry.Info[object, None]) -> str:
         return info.context["custom"]
 
 
@@ -2624,7 +2923,11 @@ from strawberry.extensions import FieldExtension
 
 class UpperCaseExtension(FieldExtension):
     async def resolve_async(
-        self, next: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
+        self,
+        next: Callable[..., Awaitable[Any]],
+        source: Any,
+        info: strawberry.Info,
+        **kwargs
     ):
         result = await next(source, info, **kwargs)
         return str(result).upper()
@@ -4917,7 +5220,7 @@ and here's an example of how the new syntax works:
 from strawberry.types import Info
 
 
-def some_resolver(info: Info) -> str:
+def some_resolver(info: strawberry.Info) -> str:
     return info.context.get("some_key", "default")
 
 
@@ -4954,7 +5257,7 @@ class Query:
     locations=[DirectiveLocation.FIELD],
     description="Add frosting with ``value`` to a cake.",
 )
-def add_frosting(value: str, v: DirectiveValue[Cake], my_info: Info):
+def add_frosting(value: str, v: DirectiveValue[Cake], my_info: strawberry.Info):
     # Arbitrary argument name when using `DirectiveValue` is supported!
     assert isinstance(v, Cake)
     if (
@@ -5747,7 +6050,7 @@ Added the response object to `get_context` on the `flask` view. This means that 
 
 ```python
 @strawberry.field
-def response_check(self, info: Info) -> bool:
+def response_check(self, info: strawberry.Info) -> bool:
     response: Response = info.context["response"]
     response.status_code = 401
 
@@ -7403,7 +7706,7 @@ from starlette.background import BackgroundTask
 
 
 @strawberry.mutation
-def create_flavour(self, info: Info) -> str:
+def create_flavour(self, info: strawberry.Info) -> str:
     info.context["response"].background = BackgroundTask(...)
 ```
 
@@ -8495,7 +8798,7 @@ This release updates get_context in the django integration to also receive a tem
 @strawberry.type
 class Query:
     @strawberry.field
-    def abc(self, info: Info) -> str:
+    def abc(self, info: strawberry.Info) -> str:
         info.context.response.status_code = 418
 
         return "ABC"
