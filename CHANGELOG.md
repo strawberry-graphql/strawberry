@@ -1,6 +1,20 @@
 CHANGELOG
 =========
 
+0.227.0 - 2024-04-19
+--------------------
+
+This release improves the schema codegen, making it more robust and easier to
+use.
+
+It does this by introducing a directed acyclic graph for the schema codegen,
+which should reduce the amount of edits needed to make the generated code work,
+since it will be able to generate the code in the correct order (based on the
+dependencies of each type).
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3116](https://github.com/strawberry-graphql/strawberry/pull/3116/)
+
+
 0.226.2 - 2024-04-19
 --------------------
 
