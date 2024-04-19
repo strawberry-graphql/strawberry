@@ -121,6 +121,7 @@ class AsyncBaseHTTPView(
             context_value=context,
             operation_name=request_data.operation_name,
             allowed_operation_types=allowed_operation_types,
+            protocol_extensions=request_data.extensions
         )
 
     async def parse_multipart(self, request: AsyncHTTPRequestAdapter) -> Dict[str, str]:

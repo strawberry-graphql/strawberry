@@ -35,6 +35,7 @@ class ExecutionContext:
     schema: Schema
     context: Any = None
     variables: Optional[Dict[str, Any]] = None
+    protocol_extensions: Optional[Dict[str, Any]] = None
     parse_options: ParseOptions = dataclasses.field(
         default_factory=lambda: ParseOptions()
     )

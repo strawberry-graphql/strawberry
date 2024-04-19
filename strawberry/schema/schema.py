@@ -246,6 +246,7 @@ class Schema(BaseSchema):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
+        protocol_extensions: Optional[Dict[str, Any]] = None,
     ) -> ExecutionResult:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
@@ -258,6 +259,7 @@ class Schema(BaseSchema):
             root_value=root_value,
             variables=variable_values,
             provided_operation_name=operation_name,
+            protocol_extensions=protocol_extensions
         )
 
         result = await execute(
@@ -279,6 +281,7 @@ class Schema(BaseSchema):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
+        protocol_extensions: Optional[Dict[str, Any]] = None,
     ) -> ExecutionResult:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
@@ -290,6 +293,7 @@ class Schema(BaseSchema):
             root_value=root_value,
             variables=variable_values,
             provided_operation_name=operation_name,
+            protocol_extensions=protocol_extensions
         )
 
         result = execute_sync(

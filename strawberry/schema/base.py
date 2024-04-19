@@ -39,6 +39,7 @@ class BaseSchema(Protocol):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
+        protocol_extensions: Optional[Dict[str, Any]] = None,
     ) -> ExecutionResult:
         raise NotImplementedError
 
