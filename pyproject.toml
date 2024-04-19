@@ -98,7 +98,7 @@ types-typed-ast = "^1.5.8"
 types-ujson = "^5.6.0"
 types-protobuf = "^4.23.0.1"
 mypy = "1.9.0"
-pytest-mypy-plugins = ">=1.10,<4.0"
+pytest-mypy-plugins = "3.0.0"
 poetry-plugin-export = "^1.6.0"
 # another bug in poetry
 urllib3 = "<2"
@@ -115,10 +115,7 @@ Django = ">=3.2"
 fastapi = {version = ">=0.65.0", optional = false}
 flask = ">=1.1"
 quart = ">=0.19.3"
-pydantic = [
-    {version = ">=2.0", optional = false, python = ">=3.9"},
-    {version = "<=2.0", optional = false, python = "<3.9"}
-]
+pydantic = {version = ">=2.0", optional = false}
 pytest-aiohttp = "^1.0.3"
 pytest-django = {version = "^4.5"}
 sanic = ">=20.12.2"
