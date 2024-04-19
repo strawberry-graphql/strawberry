@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class NodeIDAnnotationError(StrawberryException):
-    def __init__(self, message: str, cls: Type):
+    def __init__(self, message: str, cls: Type) -> None:
         self.cls = cls
 
         self.message = message
@@ -41,7 +41,7 @@ class NodeIDAnnotationError(StrawberryException):
 
 
 class RelayWrongAnnotationError(StrawberryException):
-    def __init__(self, field_name: str, cls: Type):
+    def __init__(self, field_name: str, cls: Type) -> None:
         self.cls = cls
         self.field_name = field_name
 
@@ -71,7 +71,7 @@ class RelayWrongAnnotationError(StrawberryException):
 
 
 class RelayWrongResolverAnnotationError(StrawberryException):
-    def __init__(self, field_name: str, resolver: StrawberryResolver):
+    def __init__(self, field_name: str, resolver: StrawberryResolver) -> None:
         self.function = resolver.wrapped_func
         self.field_name = field_name
 

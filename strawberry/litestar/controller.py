@@ -325,10 +325,10 @@ class GraphQLController(
         context_ws: Any,
         root_value: Any,
     ) -> None:
-        async def _get_context():
+        async def _get_context() -> Any:
             return context_ws
 
-        async def _get_root_value():
+        async def _get_root_value() -> Any:
             return root_value
 
         preferred_protocol = self.pick_preferred_protocol(socket)

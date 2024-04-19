@@ -92,7 +92,7 @@ class Link:
         as_: Optional[str] = UNSET,
         for_: Optional[LinkPurpose] = UNSET,
         import_: Optional[List[Optional[LinkImport]]] = UNSET,
-    ):
+    ) -> None:
         self.url = url
         self.as_ = as_
         self.for_ = for_

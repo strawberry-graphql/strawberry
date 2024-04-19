@@ -24,11 +24,11 @@ class StrawberryAutoMeta(type):
 
     """
 
-    def __init__(self, *args: str, **kwargs: Any):
+    def __init__(self, *args: str, **kwargs: Any) -> None:
         self._instance: Optional[StrawberryAuto] = None
         super().__init__(*args, **kwargs)
 
-    def __call__(cls, *args: str, **kwargs: Any):
+    def __call__(cls, *args: str, **kwargs: Any) -> Any:
         if cls._instance is None:
             cls._instance = super().__call__(*args, **kwargs)
 
@@ -37,7 +37,7 @@ class StrawberryAutoMeta(type):
     def __instancecheck__(
         self,
         instance: Union[StrawberryAuto, StrawberryAnnotation, StrawberryType, type],
-    ):
+    ) -> bool:
         if isinstance(instance, StrawberryAnnotation):
             resolved = instance.raw_annotation
             if isinstance(resolved, str):
@@ -69,10 +69,10 @@ class StrawberryAutoMeta(type):
 
 
 class StrawberryAuto(metaclass=StrawberryAutoMeta):
-    def __str__(self):
+    def __str__(self) -> str:
         return "auto"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<auto>"
 
 

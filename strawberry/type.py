@@ -80,7 +80,7 @@ class StrawberryType(ABC):
 class StrawberryContainer(StrawberryType):
     def __init__(
         self, of_type: Union[StrawberryType, Type[WithStrawberryObjectDefinition], type]
-    ):
+    ) -> None:
         self.of_type = of_type
 
     def __hash__(self) -> int:
@@ -152,7 +152,7 @@ class StrawberryOptional(StrawberryContainer):
 
 
 class StrawberryTypeVar(StrawberryType):
-    def __init__(self, type_var: TypeVar):
+    def __init__(self, type_var: TypeVar) -> None:
         self.type_var = type_var
 
     def copy_with(
@@ -179,7 +179,7 @@ class StrawberryTypeVar(StrawberryType):
 
         return super().__eq__(other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.type_var)
 
 

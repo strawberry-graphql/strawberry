@@ -299,7 +299,7 @@ def _get_federation_arguments(
         argument_name: str,
         keyword_name: str | None = None,
         flatten: bool = True,
-    ):
+    ) -> None:
         keyword_name = keyword_name or directive
 
         if directive in directives:
@@ -504,7 +504,7 @@ def _get_schema_definition(
 
     args: list[cst.Arg] = []
 
-    def _get_arg(name: str, value: str):
+    def _get_arg(name: str, value: str) -> cst.Arg:
         return cst.Arg(
             keyword=cst.Name(name),
             value=cst.Name(value),

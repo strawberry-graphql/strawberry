@@ -60,7 +60,7 @@ class StrawberryUnion(StrawberryType):
         type_annotations: Tuple[StrawberryAnnotation, ...] = tuple(),
         description: Optional[str] = None,
         directives: Iterable[object] = (),
-    ):
+    ) -> None:
         self.graphql_name = name
         self.type_annotations = type_annotations
         self.description = description
@@ -102,7 +102,7 @@ class StrawberryUnion(StrawberryType):
 
     @property
     def type_params(self) -> List[TypeVar]:
-        def _get_type_params(type_: StrawberryType):
+        def _get_type_params(type_: StrawberryType) -> list[TypeVar]:
             if isinstance(type_, LazyType):
                 type_ = cast("StrawberryType", type_.resolve_type())
 

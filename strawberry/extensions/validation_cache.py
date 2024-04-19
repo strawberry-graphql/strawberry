@@ -30,7 +30,7 @@ class ValidationCache(SchemaExtension):
 
     """
 
-    def __init__(self, maxsize: Optional[int] = None):
+    def __init__(self, maxsize: Optional[int] = None) -> None:
         self.cached_validate_document = lru_cache(maxsize=maxsize)(validate_document)
 
     def on_validate(self) -> Iterator[None]:

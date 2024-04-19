@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 
 
 class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: web.Request):
+    def __init__(self, request: web.Request) -> None:
         self.request = request
 
     @property
@@ -100,7 +100,7 @@ class GraphQLView(
             GRAPHQL_WS_PROTOCOL,
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
-    ):
+    ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive

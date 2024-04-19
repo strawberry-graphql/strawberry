@@ -71,7 +71,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         protocol: str = GRAPHQL_TRANSPORT_WS_PROTOCOL,
         connection_params: dict = {},
         **kwargs: Any,
-    ):
+    ) -> None:
         """
 
         Args:

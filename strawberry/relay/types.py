@@ -86,7 +86,7 @@ class GlobalID:
     type_name: str
     node_id: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not isinstance(self.type_name, str):
             raise GlobalIDValueError(
                 f"type_name is expected to be a string, found {self.type_name!r}"
@@ -96,7 +96,7 @@ class GlobalID:
                 f"node_id is expected to be a string, found {self.node_id!r}"
             )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return to_base64(self.type_name, self.node_id)
 
     @classmethod
