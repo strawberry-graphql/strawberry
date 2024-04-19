@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.226.2 - 2024-04-19
+--------------------
+
+This release updates our Mypy plugin to add support for Pydantic >= 2.7.0
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3462](https://github.com/strawberry-graphql/strawberry/pull/3462/)
+
+
 0.226.1 - 2024-04-19
 --------------------
 
