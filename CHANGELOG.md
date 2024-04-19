@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.226.1 - 2024-04-19
+--------------------
+
+This releases fixes a bug in the mypy plugin where the `from_pydantic` method
+was not correctly typed.
+
+Contributed by [Corentin-Br](https://github.com/Corentin-Br) via [PR #3368](https://github.com/strawberry-graphql/strawberry/pull/3368/)
+
+
 0.226.0 - 2024-04-17
 --------------------
 

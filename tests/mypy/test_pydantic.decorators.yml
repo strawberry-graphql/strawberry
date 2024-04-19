@@ -80,7 +80,21 @@
     reveal_type(UserStrawberry.from_pydantic(UserPydantic(age=123)))
   out: |
      main:11: note: Revealed type is "main.UserStrawberry"
+- case: test_converted_from_pydantic_with_extra
+  main: |
+    from pydantic import BaseModel
+    import strawberry
 
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.input(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+        extra_field: int
+
+    UserStrawberry.from_pydantic(UserPydantic(age=123), extra={'extra_field': 2})
+  out: |
 - case: test_converted_to_pydantic_interface
   main: |
     from pydantic import BaseModel
