@@ -159,6 +159,7 @@ class SyncBaseHTTPView(
             query=data.get("query"),
             variables=data.get("variables"),
             operation_name=data.get("operationName"),
+            extensions=data.get("extensions"),
         )
 
     def _handle_errors(

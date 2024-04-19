@@ -220,6 +220,7 @@ class AsyncBaseHTTPView(
             query=data.get("query"),
             variables=data.get("variables"),
             operation_name=data.get("operationName"),
+            extensions=data.get("extensions"),
         )
 
     async def process_result(
