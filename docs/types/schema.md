@@ -30,8 +30,7 @@ schema = strawberry.Schema(Query)
 ## API reference
 
 ```python
-class Schema(Query, mutation=None, subscription=None, **kwargs):
-    ...
+class Schema(Query, mutation=None, subscription=None, **kwargs): ...
 ```
 
 <!-- TODO: add docs on directives, types, extensions and execution context class -->
@@ -123,8 +122,9 @@ Override the implementation of the built in scalars.
 Executes a GraphQL operation against a schema (async)
 
 ```python
-async def execute(query, variable_values, context_value, root_value, operation_name):
-    ...
+async def execute(
+    query, variable_values, context_value, root_value, operation_name
+): ...
 ```
 
 #### `query: str`
@@ -154,8 +154,7 @@ operation in the document will be executed.
 Executes a GraphQL operation against a schema
 
 ```python
-def execute_sync(query, variable_values, context_value, root_value, operation_name):
-    ...
+def execute_sync(query, variable_values, context_value, root_value, operation_name): ...
 ```
 
 #### `query: str`
@@ -229,10 +228,47 @@ class StrawberryLogger:
         if logger_kwargs.get("stack_info") is None:
             logger_kwargs["stack_info"] = True
 
-        # stacklevel was added in version 3.8
-        # https://docs.python.org/3/library/logging.html#logging.Logger.debug
-        if sys.version_info >= (3, 8):
-            logger_kwargs["stacklevel"] = 3
+        logger_kwargs["stacklevel"] = 3
 
         cls.logger.error(error, exc_info=error.original_error, **logger_kwargs)
 ```
+
+## Filtering/customising fields
+
+You can customise the fields that are exposed on a schema by subclassing the
+`Schema` class and overriding the `get_fields` method, for example you can use
+this to create different GraphQL APIs, such as a public and an internal API.
+Here's an example of this:
+
+```python
+@strawberry.type
+class User:
+    name: str
+    email: str = strawberry.field(metadata={"tags": ["internal"]})
+
+
+@strawberry.type
+class Query:
+    user: User
+
+
+def public_field_filter(field: StrawberryField) -> bool:
+    return "internal" not in field.metadata.get("tags", [])
+
+
+class PublicSchema(strawberry.Schema):
+    def get_fields(
+        self, type_definition: StrawberryObjectDefinition
+    ) -> List[StrawberryField]:
+        return list(filter(public_field_filter, type_definition.fields))
+
+
+schema = PublicSchema(query=Query)
+```
+
+<Note>
+
+The `get_fields` method is only called once when creating the schema, this is
+not intended to be used to dynamically customise the schema.
+
+</Note>

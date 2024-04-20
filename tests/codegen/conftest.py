@@ -2,7 +2,7 @@ import datetime
 import decimal
 import enum
 import random
-from typing import TYPE_CHECKING, List, NewType, Optional, Union
+from typing import TYPE_CHECKING, Generic, List, NewType, Optional, TypeVar, Union
 from typing_extensions import Annotated
 from uuid import UUID
 
@@ -35,6 +35,16 @@ class Animal:
     age: int
 
 
+LivingThing1 = TypeVar("LivingThing1")
+LivingThing2 = TypeVar("LivingThing2")
+
+
+@strawberry.type
+class LifeContainer(Generic[LivingThing1, LivingThing2]):
+    items1: List[LivingThing1]
+    items2: List[LivingThing2]
+
+
 PersonOrAnimal = Annotated[Union[Person, Animal], strawberry.union("PersonOrAnimal")]
 
 
@@ -60,6 +70,7 @@ class Image(Node):
 @strawberry.input
 class PersonInput:
     name: str
+    age: Optional[int] = strawberry.UNSET
 
 
 @strawberry.input
@@ -108,6 +119,13 @@ class Query:
         p_or_a.name = "Howard"
         p_or_a.age = 7
         return p_or_a
+
+    @strawberry.field
+    def list_life() -> LifeContainer[Person, Animal]:
+        """Get lists of living things."""
+        person = Person(name="Henry", age=10)
+        dinosaur = Animal(name="rex", age=66_000_000)
+        return LifeContainer([person], [dinosaur])
 
 
 @strawberry.input

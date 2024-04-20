@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from functools import cached_property
 from typing import TYPE_CHECKING, Optional
 
-from strawberry.utils.cached_property import cached_property
 from strawberry.utils.str_converters import to_kebab_case
 
 if TYPE_CHECKING:

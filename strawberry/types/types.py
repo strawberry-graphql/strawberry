@@ -23,9 +23,7 @@ from strawberry.type import (
 )
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.inspect import get_specialized_type_var_map
-from strawberry.utils.typing import (
-    is_generic as is_type_generic,
-)
+from strawberry.utils.typing import is_generic as is_type_generic
 
 if TYPE_CHECKING:
     from graphql import GraphQLAbstractType, GraphQLResolveInfo
@@ -55,7 +53,7 @@ class StrawberryObjectDefinition(StrawberryType):
         Callable[[Any, GraphQLResolveInfo, GraphQLAbstractType], str]
     ]
 
-    _fields: List[StrawberryField]
+    fields: List[StrawberryField]
 
     concrete_of: Optional[StrawberryObjectDefinition] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
@@ -63,11 +61,11 @@ class StrawberryObjectDefinition(StrawberryType):
         default_factory=dict
     )
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # resolve `Self` annotation with the origin type
         for index, field in enumerate(self.fields):
-            if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):  # type: ignore  # noqa: E501
-                self.fields[index] = field.copy_with({Self.__name__: self.origin})  # type: ignore  # noqa: E501
+            if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):  # type: ignore
+                self.fields[index] = field.copy_with({Self.__name__: self.origin})  # type: ignore
 
     def resolve_generic(self, wrapped_cls: type) -> type:
         from strawberry.annotation import StrawberryAnnotation
@@ -101,7 +99,7 @@ class StrawberryObjectDefinition(StrawberryType):
             extend=self.extend,
             is_type_of=self.is_type_of,
             resolve_type=self.resolve_type,
-            _fields=fields,
+            fields=fields,
             concrete_of=self,
             type_var_map=type_var_map,
         )
@@ -128,17 +126,20 @@ class StrawberryObjectDefinition(StrawberryType):
         )
 
     @property
-    def fields(self) -> List[StrawberryField]:
-        # TODO: rename _fields to fields and remove this property
-        return self._fields
+    def is_graphql_generic(self) -> bool:
+        if not is_type_generic(self.origin):
+            return False
 
-    @property
-    def is_generic(self) -> bool:
-        return is_type_generic(self.origin)
+        # here we are checking if any exposed field is generic
+        # a Strawberry class can be "generic", but not expose any
+        # generic field to GraphQL
+        return any(field.is_graphql_generic for field in self.fields)
 
     @property
     def is_specialized_generic(self) -> bool:
-        return self.is_generic and not getattr(self.origin, "__parameters__", None)
+        return self.is_graphql_generic and not getattr(
+            self.origin, "__parameters__", None
+        )
 
     @property
     def specialized_type_var_map(self) -> Optional[Dict[str, type]]:
@@ -201,8 +202,7 @@ class StrawberryObjectDefinition(StrawberryType):
 if TYPE_CHECKING:
 
     @deprecated("Use StrawberryObjectDefinition instead")
-    class TypeDefinition(StrawberryObjectDefinition):
-        ...
+    class TypeDefinition(StrawberryObjectDefinition): ...
 
 else:
     TypeDefinition = StrawberryObjectDefinition

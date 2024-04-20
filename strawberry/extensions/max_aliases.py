@@ -37,14 +37,14 @@ class MaxAliasesLimiter(AddValidationRules):
     def __init__(
         self,
         max_alias_count: int,
-    ):
+    ) -> None:
         validator = create_validator(max_alias_count)
         super().__init__([validator])
 
 
 def create_validator(max_alias_count: int) -> Type[ValidationRule]:
     class MaxAliasesValidator(ValidationRule):
-        def __init__(self, validation_context: ValidationContext):
+        def __init__(self, validation_context: ValidationContext) -> None:
             document = validation_context.document
             def_that_can_contain_alias = (
                 def_
@@ -65,7 +65,7 @@ def create_validator(max_alias_count: int) -> Type[ValidationRule]:
 
 
 def count_fields_with_alias(
-    selection_set_owner: Union[ExecutableDefinitionNode, FieldNode, InlineFragmentNode]
+    selection_set_owner: Union[ExecutableDefinitionNode, FieldNode, InlineFragmentNode],
 ) -> int:
     if selection_set_owner.selection_set is None:
         return 0

@@ -11,6 +11,7 @@ from typing import (
     List,
     Optional,
     Set,
+    Tuple,
     Union,
     cast,
 )
@@ -59,12 +60,20 @@ try:
 except ImportError:
     TypeVarDef = TypeVarType
 
+PYDANTIC_VERSION: Optional[Tuple[int, ...]] = None
+
 # To be compatible with user who don't use pydantic
 try:
+    import pydantic
     from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY
     from pydantic.mypy import PydanticModelField
+
+    PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))
+
+    from strawberry.experimental.pydantic._compat import IS_PYDANTIC_V1
 except ImportError:
     PYDANTIC_METADATA_KEY = ""
+    IS_PYDANTIC_V1 = False
 
 
 if TYPE_CHECKING:
@@ -110,7 +119,7 @@ def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
     return type_
 
 
-def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface):
+def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface) -> Any:
     if "." in name:
         return api.named_type_or_none(name)
 
@@ -409,10 +418,14 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
 
         pydantic_fields: Set[PydanticModelField] = set()
         try:
-            for data in model_type.type.metadata[PYDANTIC_METADATA_KEY][
-                "fields"
-            ].values():
-                field = PydanticModelField.deserialize(ctx.cls.info, data)
+            fields = model_type.type.metadata[PYDANTIC_METADATA_KEY]["fields"]
+            for data in fields.items():
+                if IS_PYDANTIC_V1:
+                    field = PydanticModelField.deserialize(ctx.cls.info, data[1])  # type:ignore[call-arg]
+                else:
+                    field = PydanticModelField.deserialize(
+                        info=ctx.cls.info, data=data[1], api=ctx.api
+                    )
                 pydantic_fields.add(field)
         except KeyError:
             # this will happen if the user didn't add the pydantic plugin
@@ -440,21 +453,44 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
 
         # Add the default to_pydantic if undefined by the user
         if "to_pydantic" not in ctx.cls.info.names:
-            add_method(
-                ctx,
-                "to_pydantic",
-                args=[
-                    f.to_argument(
-                        # TODO: use_alias should depend on config?
-                        info=model_type.type,
-                        typed=True,
-                        force_optional=False,
-                        use_alias=True,
-                    )
-                    for f in missing_pydantic_fields
-                ],
-                return_type=model_type,
-            )
+            if IS_PYDANTIC_V1:
+                add_method(
+                    ctx,
+                    "to_pydantic",
+                    args=[
+                        f.to_argument(
+                            # TODO: use_alias should depend on config?
+                            info=model_type.type,  # type:ignore[call-arg]
+                            typed=True,
+                            force_optional=False,
+                            use_alias=True,
+                        )
+                        for f in missing_pydantic_fields
+                    ],
+                    return_type=model_type,
+                )
+            else:
+                extra = {}
+
+                if PYDANTIC_VERSION and PYDANTIC_VERSION >= (2, 7, 0):
+                    extra["api"] = ctx.api
+
+                add_method(
+                    ctx,
+                    "to_pydantic",
+                    args=[
+                        f.to_argument(
+                            # TODO: use_alias should depend on config?
+                            current_info=model_type.type,
+                            typed=True,
+                            force_optional=False,
+                            use_alias=True,
+                            **extra,
+                        )
+                        for f in missing_pydantic_fields
+                    ],
+                    return_type=model_type,
+                )
 
         # Add from_pydantic
         model_argument = Argument(
@@ -463,12 +499,23 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
             initializer=None,
             kind=ARG_OPT,
         )
+        extra_type = ctx.api.named_type(
+            "builtins.dict",
+            [ctx.api.named_type("builtins.str"), AnyType(TypeOfAny.explicit)],
+        )
+
+        extra_argument = Argument(
+            variable=Var(name="extra", type=UnionType([NoneType(), extra_type])),
+            type_annotation=UnionType([NoneType(), extra_type]),
+            initializer=None,
+            kind=ARG_OPT,
+        )
 
         add_static_method_to_class(
             ctx.api,
             ctx.cls,
             name="from_pydantic",
-            args=[model_argument],
+            args=[model_argument, extra_argument],
             return_type=fill_typevars(ctx.cls.info),
         )
 

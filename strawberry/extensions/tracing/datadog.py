@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from functools import cached_property
 from inspect import isawaitable
 from typing import TYPE_CHECKING, Any, Callable, Generator, Iterator, Optional
 
@@ -8,7 +9,6 @@ from ddtrace import Span, tracer
 
 from strawberry.extensions import LifecycleStep, SchemaExtension
 from strawberry.extensions.tracing.utils import should_skip_tracing
-from strawberry.utils.cached_property import cached_property
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
@@ -21,12 +21,12 @@ class DatadogTracingExtension(SchemaExtension):
         self,
         *,
         execution_context: Optional[ExecutionContext] = None,
-    ):
+    ) -> None:
         if execution_context:
             self.execution_context = execution_context
 
     @cached_property
-    def _resource_name(self):
+    def _resource_name(self) -> str:
         assert self.execution_context.query
 
         query_hash = self.hash_query(self.execution_context.query)

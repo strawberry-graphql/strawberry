@@ -40,7 +40,7 @@ def test_codegen(
     snapshot: Snapshot,
     schema,
 ):
-    generator = QueryCodegen(schema, plugins=[plugin_class()])
+    generator = QueryCodegen(schema, plugins=[plugin_class(query)])
 
     result = generator.run(query.read_text())
 
@@ -50,22 +50,37 @@ def test_codegen(
     snapshot.assert_match(code, f"{query.with_suffix('').stem}.{extension}")
 
 
-def test_codegen_fails_if_no_operation_name(schema):
-    generator = QueryCodegen(schema, plugins=[PythonPlugin()])
+def test_codegen_fails_if_no_operation_name(schema, tmp_path):
+    query = tmp_path / "query.graphql"
+    data = "query { hello }"
+    with query.open("w") as f:
+        f.write(data)
+
+    generator = QueryCodegen(schema, plugins=[PythonPlugin(query)])
 
     with pytest.raises(NoOperationNameProvidedError):
-        generator.run("query { hello }")
+        generator.run(data)
 
 
-def test_codegen_fails_if_no_operation(schema):
-    generator = QueryCodegen(schema, plugins=[PythonPlugin()])
+def test_codegen_fails_if_no_operation(schema, tmp_path):
+    query = tmp_path / "query.graphql"
+    data = "type X { hello: String }"
+    with query.open("w") as f:
+        f.write(data)
+
+    generator = QueryCodegen(schema, plugins=[PythonPlugin(query)])
 
     with pytest.raises(NoOperationProvidedError):
-        generator.run("type X { hello: String }")
+        generator.run(data)
 
 
-def test_fails_with_multiple_operations(schema):
-    generator = QueryCodegen(schema, plugins=[PythonPlugin()])
+def test_fails_with_multiple_operations(schema, tmp_path):
+    query = tmp_path / "query.graphql"
+    data = "query { hello } query { world }"
+    with query.open("w") as f:
+        f.write(data)
+
+    generator = QueryCodegen(schema, plugins=[PythonPlugin(query)])
 
     with pytest.raises(MultipleOperationsProvidedError):
-        generator.run("query { hello } query { world }")
+        generator.run(data)

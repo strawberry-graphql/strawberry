@@ -127,7 +127,7 @@ def _wrap_dataclass(cls: Type[Any]):
 
 
 def _process_type(
-    cls: Type[Any],
+    cls: T,
     *,
     name: Optional[str] = None,
     is_input: bool = False,
@@ -136,7 +136,7 @@ def _process_type(
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
     original_type_annotations: Optional[Dict[str, Any]] = None,
-):
+) -> T:
     name = name or to_camel_case(cls.__name__)
     original_type_annotations = original_type_annotations or {}
 
@@ -154,7 +154,7 @@ def _process_type(
         directives=directives,
         origin=cls,
         extend=extend,
-        _fields=fields,
+        fields=fields,
         is_type_of=is_type_of,
         resolve_type=resolve_type,
     )
@@ -202,8 +202,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -218,8 +217,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
-) -> Callable[[T], T]:
-    ...
+) -> Callable[[T], T]: ...
 
 
 def type(
@@ -241,7 +239,7 @@ def type(
     >>>     field_abc: str = "ABC"
     """
 
-    def wrap(cls: Type[Any]):
+    def wrap(cls: Type) -> T:
         if not inspect.isclass(cls):
             if is_input:
                 exc = ObjectIsNotClassError.input
@@ -295,8 +293,7 @@ def input(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -308,8 +305,7 @@ def input(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-) -> Callable[[T], T]:
-    ...
+) -> Callable[[T], T]: ...
 
 
 def input(
@@ -345,8 +341,7 @@ def interface(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -358,8 +353,7 @@ def interface(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-) -> Callable[[T], T]:
-    ...
+) -> Callable[[T], T]: ...
 
 
 @dataclass_transform(

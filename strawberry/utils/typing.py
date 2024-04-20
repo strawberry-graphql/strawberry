@@ -37,7 +37,7 @@ if not TYPE_CHECKING and ast_unparse is None:
     ast_unparse = astunparse.unparse
 
 
-@lru_cache()
+@lru_cache
 def get_generic_alias(type_: Type) -> Type:
     """Get the generic alias for a type.
 
@@ -141,7 +141,8 @@ def is_concrete_generic(annotation: type) -> bool:
 
 def is_generic_subclass(annotation: type) -> bool:
     return isinstance(annotation, type) and issubclass(
-        annotation, Generic  # type:ignore
+        annotation,
+        Generic,  # type:ignore
     )
 
 
@@ -182,6 +183,14 @@ def is_classvar(cls: type, annotation: Union[ForwardRef, str]) -> bool:
     )
 
 
+def type_has_annotation(type_: object, annotation: Type) -> bool:
+    """Returns True if the type_ has been annotated with annotation."""
+    if get_origin(type_) is Annotated:
+        return any(isinstance(argument, annotation) for argument in get_args(type_))
+
+    return False
+
+
 def get_parameters(annotation: Type) -> Union[Tuple[object], Tuple[()]]:
     if (
         isinstance(annotation, _GenericAlias)
@@ -195,17 +204,15 @@ def get_parameters(annotation: Type) -> Union[Tuple[object], Tuple[()]]:
 
 
 @overload
-def _ast_replace_union_operation(expr: ast.expr) -> ast.expr:
-    ...
+def _ast_replace_union_operation(expr: ast.expr) -> ast.expr: ...
 
 
 @overload
-def _ast_replace_union_operation(expr: ast.Expr) -> ast.Expr:
-    ...
+def _ast_replace_union_operation(expr: ast.Expr) -> ast.Expr: ...
 
 
 def _ast_replace_union_operation(
-    expr: Union[ast.Expr, ast.expr]
+    expr: Union[ast.Expr, ast.expr],
 ) -> Union[ast.Expr, ast.expr]:
     if isinstance(expr, ast.Expr) and isinstance(
         expr.value, (ast.BinOp, ast.Subscript)

@@ -18,6 +18,10 @@ from typing import (
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.auto import StrawberryAuto
+from strawberry.experimental.pydantic._compat import (
+    CompatModelField,
+    PydanticCompat,
+)
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
     convert_strawberry_class_to_pydantic_model,
@@ -37,28 +41,32 @@ from strawberry.utils.dataclasses import add_custom_init_fn
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
-    from pydantic.fields import ModelField
 
 
-def get_type_for_field(field: ModelField, is_input: bool):  # noqa: ANN201
+def get_type_for_field(field: CompatModelField, is_input: bool, compat: PydanticCompat):  # noqa: ANN201
     outer_type = field.outer_type_
-    replaced_type = replace_types_recursively(outer_type, is_input)
-    should_add_optional: bool = field.allow_none
-    if should_add_optional:
-        return Optional[replaced_type]
-    else:
-        return replaced_type
+
+    replaced_type = replace_types_recursively(outer_type, is_input, compat=compat)
+
+    if field.is_v1:
+        # only pydantic v1 has this Optional logic
+        should_add_optional: bool = field.allow_none
+        if should_add_optional:
+            return Optional[replaced_type]
+
+    return replaced_type
 
 
 def _build_dataclass_creation_fields(
-    field: ModelField,
+    field: CompatModelField,
     is_input: bool,
     existing_fields: Dict[str, StrawberryField],
     auto_fields_set: Set[str],
     use_pydantic_alias: bool,
+    compat: PydanticCompat,
 ) -> DataclassCreationFields:
     field_type = (
-        get_type_for_field(field, is_input)
+        get_type_for_field(field, is_input, compat=compat)
         if field.name in auto_fields_set
         else existing_fields[field.name].type
     )
@@ -85,7 +93,7 @@ def _build_dataclass_creation_fields(
             default=dataclasses.MISSING,
             default_factory=get_default_factory_for_field(field),
             type_annotation=StrawberryAnnotation.from_annotation(field_type),
-            description=field.field_info.description,
+            description=field.description,
             deprecation_reason=(
                 existing_field.deprecation_reason if existing_field else None
             ),
@@ -123,7 +131,8 @@ def type(
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
-        model_fields = model.__fields__
+        compat = PydanticCompat.from_model(model)
+        model_fields = compat.get_model_fields(model)
         original_fields_set = set(fields) if fields else set()
 
         if fields:
@@ -176,7 +185,12 @@ def type(
 
         all_model_fields: List[DataclassCreationFields] = [
             _build_dataclass_creation_fields(
-                field, is_input, extra_fields_dict, auto_fields_set, use_pydantic_alias
+                field,
+                is_input,
+                extra_fields_dict,
+                auto_fields_set,
+                use_pydantic_alias,
+                compat=compat,
             )
             for field_name, field in model_fields.items()
             if field_name in fields_set

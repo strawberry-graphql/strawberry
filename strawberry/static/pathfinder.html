@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Strawberry Pathfinder</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,
+        <svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22>
+            <!-- Strawberry Emoji as a HTML Entity (hex)  -->
+            <text y=%22.9em%22 font-size=%2280%22>&#x1f353;</text>
+        </svg>"
+    />
+    <link
+      rel="stylesheet"
+      href="https://esm.sh/@pathfinder-ide/react@0.2.6/dist/style.css"
+    />
+
+    <style>
+      body {
+        height: 100%;
+        margin: 0;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      #pathfinder {
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="pathfinder"></div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@18.2.0",
+          "react-dom": "https://esm.sh/react-dom@18.2.0",
+          "@pathfinder-ide/react": "https://esm.sh/@pathfinder-ide/react@0.2.6"
+        }
+      }
+    </script>
+    <script type="module">
+      import React from "react";
+      import ReactDOM from "react-dom";
+      import { Pathfinder } from "@pathfinder-ide/react";
+
+      const root = ReactDOM.createRoot(document.getElementById("pathfinder"));
+      const fetcherOptions = {
+        endpoint: window.location.href,
+      };
+
+      root.render(
+        React.createElement(Pathfinder, {
+          fetcherOptions,
+          schemaPollingOptions: {
+            enabled: true,
+          },
+        })
+      );
+    </script>
+  </body>
+</html>

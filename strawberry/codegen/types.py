@@ -7,6 +7,8 @@ if TYPE_CHECKING:
     from enum import EnumMeta
     from typing_extensions import Literal
 
+    from strawberry.unset import UnsetType
+
 
 @dataclass
 class GraphQLOptional:
@@ -134,7 +136,7 @@ class GraphQLBoolValue:
 class GraphQLNullValue:
     """A class that represents a GraphQLNull value."""
 
-    value: None = None
+    value: None | UnsetType = None
 
 
 @dataclass

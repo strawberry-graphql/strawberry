@@ -28,7 +28,7 @@ class SchemaExtensionsRunner:
         extensions: Optional[
             List[Union[Type[SchemaExtension], SchemaExtension]]
         ] = None,
-    ):
+    ) -> None:
         self.execution_context = execution_context
 
         if not extensions:

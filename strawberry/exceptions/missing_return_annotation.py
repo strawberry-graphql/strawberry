@@ -1,8 +1,7 @@
 from __future__ import annotations
 
+from functools import cached_property
 from typing import TYPE_CHECKING, Optional
-
-from strawberry.utils.cached_property import cached_property
 
 from .exception import StrawberryException
 from .utils.source_finder import SourceFinder
@@ -16,7 +15,11 @@ if TYPE_CHECKING:
 class MissingReturnAnnotationError(StrawberryException):
     """The field is missing the return annotation"""
 
-    def __init__(self, field_name: str, resolver: StrawberryResolver):
+    def __init__(
+        self,
+        field_name: str,
+        resolver: StrawberryResolver,
+    ) -> None:
         self.function = resolver.wrapped_func
 
         self.message = (

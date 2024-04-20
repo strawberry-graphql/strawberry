@@ -54,7 +54,7 @@ class StrawberryArgumentAnnotation:
         deprecation_reason: Optional[str] = None,
         directives: Iterable[object] = (),
         metadata: Optional[Mapping[Any, Any]] = None,
-    ):
+    ) -> None:
         self.description = description
         self.name = name
         self.deprecation_reason = deprecation_reason
@@ -126,6 +126,13 @@ class StrawberryArgument:
     @property
     def type(self) -> Union[StrawberryType, type]:
         return self.type_annotation.resolve()
+
+    @property
+    def is_graphql_generic(self) -> bool:
+        # TODO: double check this
+        from strawberry.schema.compat import is_graphql_generic
+
+        return is_graphql_generic(self.type)
 
 
 def convert_argument(

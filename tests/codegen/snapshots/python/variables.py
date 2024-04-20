@@ -5,6 +5,7 @@ class OperationNameResult:
 
 class PersonInput:
     name: str
+    age: Optional[int] = None
 
 class ExampleInput:
     id: str

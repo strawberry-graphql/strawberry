@@ -23,7 +23,6 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
     GQL_STOP,
 )
-from strawberry.types import Info
 
 
 def test_base_context():
@@ -43,7 +42,7 @@ def test_with_explicit_class_context_getter():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info[Any, None]) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert info.context.request is not None
             assert info.context.strawberry == "explicitly rocks"
             assert info.context.connection_params is None
@@ -79,7 +78,7 @@ def test_with_implicit_class_context_getter():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info[Any, None]) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert info.context.request is not None
             assert info.context.strawberry == "implicitly rocks"
             assert info.context.connection_params is None
@@ -113,9 +112,9 @@ def test_with_dict_context_getter():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info[Any, None]) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert info.context.get("request") is not None
-            assert "connection_params" not in info.context.keys()
+            assert "connection_params" not in info.context
             assert info.context.get("strawberry") == "rocks"
             return "abc"
 
@@ -145,7 +144,7 @@ def test_without_context_getter():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info[Any, None]) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert info.context.get("request") is not None
             assert info.context.get("strawberry") is None
             return "abc"
@@ -170,7 +169,7 @@ def test_with_invalid_context_getter():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info[Any, None]) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert info.context.get("request") is not None
             assert info.context.get("strawberry") is None
             return "abc"
@@ -210,7 +209,7 @@ def test_class_context_injects_connection_params_over_transport_ws():
     class Subscription:
         @strawberry.subscription
         async def connection_params(
-            self, info: Info[Any, None], delay: float = 0
+            self, info: strawberry.Info, delay: float = 0
         ) -> AsyncGenerator[str, None]:
             assert info.context.request is not None
             await asyncio.sleep(delay)
@@ -276,7 +275,7 @@ def test_class_context_injects_connection_params_over_ws():
     class Subscription:
         @strawberry.subscription
         async def connection_params(
-            self, info: Info[Any, None], delay: float = 0
+            self, info: strawberry.Info, delay: float = 0
         ) -> AsyncGenerator[str, None]:
             assert info.context.request is not None
             await asyncio.sleep(delay)

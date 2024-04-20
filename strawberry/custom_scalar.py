@@ -60,17 +60,17 @@ class ScalarDefinition(StrawberryType):
         return super().copy_with(type_var_map)  # type: ignore[safe-super]
 
     @property
-    def is_generic(self) -> bool:
+    def is_graphql_generic(self) -> bool:
         return False
 
 
 class ScalarWrapper:
     _scalar_definition: ScalarDefinition
 
-    def __init__(self, wrap: Callable[[Any], Any]):
+    def __init__(self, wrap: Callable[[Any], Any]) -> None:
         self.wrap = wrap
 
-    def __call__(self, *args: str, **kwargs: Any):
+    def __call__(self, *args: str, **kwargs: Any) -> Any:
         return self.wrap(*args, **kwargs)
 
     def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
@@ -134,8 +134,7 @@ def scalar(
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
-) -> Callable[[_T], _T]:
-    ...
+) -> Callable[[_T], _T]: ...
 
 
 @overload
@@ -149,8 +148,7 @@ def scalar(
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
-) -> _T:
-    ...
+) -> _T: ...
 
 
 # TODO: We are tricking pyright into thinking that we are returning the given type

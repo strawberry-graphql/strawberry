@@ -1,25 +1,23 @@
 from __future__ import annotations
 
+import functools
 import importlib
 import inspect
 from pathlib import Path  # noqa: TCH003
-from typing import TYPE_CHECKING, List, Optional, Type
+from typing import List, Optional, Type
 
 import rich
 import typer
 
 from strawberry.cli.app import app
 from strawberry.cli.utils import load_schema
-from strawberry.codegen import QueryCodegen, QueryCodegenPlugin
-
-if TYPE_CHECKING:
-    from strawberry.codegen import CodegenResult
+from strawberry.codegen import ConsolePlugin, QueryCodegen, QueryCodegenPlugin
 
 
 def _is_codegen_plugin(obj: object) -> bool:
     return (
         inspect.isclass(obj)
-        and issubclass(obj, QueryCodegenPlugin)
+        and issubclass(obj, (QueryCodegenPlugin, ConsolePlugin))
         and obj is not QueryCodegenPlugin
     )
 
@@ -62,6 +60,7 @@ def _import_plugin(plugin: str) -> Optional[Type[QueryCodegenPlugin]]:
     return None
 
 
+@functools.lru_cache
 def _load_plugin(plugin_path: str) -> Type[QueryCodegenPlugin]:
     # try to import plugin_name from current folder
     # then try to import from strawberry.codegen.plugins
@@ -78,43 +77,21 @@ def _load_plugin(plugin_path: str) -> Type[QueryCodegenPlugin]:
     return plugin
 
 
-def _load_plugins(plugins: List[str]) -> List[QueryCodegenPlugin]:
-    return [_load_plugin(plugin)() for plugin in plugins]
+def _load_plugins(plugin_ids: List[str], query: Path) -> List[QueryCodegenPlugin]:
+    plugins = []
+    for ptype_id in plugin_ids:
+        ptype = _load_plugin(ptype_id)
+        plugin = ptype(query)
+        plugins.append(plugin)
 
-
-class ConsolePlugin(QueryCodegenPlugin):
-    def __init__(
-        self, query: Path, output_dir: Path, plugins: List[QueryCodegenPlugin]
-    ):
-        self.query = query
-        self.output_dir = output_dir
-        self.plugins = plugins
-
-    def on_start(self) -> None:
-        rich.print(
-            "[bold yellow]The codegen is experimental. Please submit any bug at "
-            "https://github.com/strawberry-graphql/strawberry\n",
-        )
-
-        plugin_names = [plugin.__class__.__name__ for plugin in self.plugins]
-
-        rich.print(
-            f"[green]Generating code for {self.query} using "
-            f"{', '.join(plugin_names)} plugin(s)",
-        )
-
-    def on_end(self, result: CodegenResult) -> None:
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-        result.write(self.output_dir)
-
-        rich.print(
-            f"[green] Generated {len(result.files)} files in {self.output_dir}",
-        )
+    return plugins
 
 
 @app.command(help="Generate code from a query")
 def codegen(
-    query: Path = typer.Argument(..., exists=True, dir_okay=False),
+    query: Optional[List[Path]] = typer.Argument(
+        default=None, exists=True, dir_okay=False
+    ),
     schema: str = typer.Option(..., help="Python path to the schema file"),
     app_dir: str = typer.Option(
         ".",
@@ -143,12 +120,22 @@ def codegen(
     ),
     cli_plugin: Optional[str] = None,
 ) -> None:
+    if not query:
+        return
+
     schema_symbol = load_schema(schema, app_dir)
 
-    console_plugin = _load_plugin(cli_plugin) if cli_plugin else ConsolePlugin
+    console_plugin_type = _load_plugin(cli_plugin) if cli_plugin else ConsolePlugin
+    console_plugin = console_plugin_type(output_dir)
+    console_plugin.before_any_start()
 
-    plugins = _load_plugins(selected_plugins)
-    plugins.append(console_plugin(query, output_dir, plugins))
+    for q in query:
+        plugins = _load_plugins(selected_plugins, q)
+        console_plugin.query = q  # update the query in the console plugin.
 
-    code_generator = QueryCodegen(schema_symbol, plugins=plugins)
-    code_generator.run(query.read_text())
+        code_generator = QueryCodegen(
+            schema_symbol, plugins=plugins, console_plugin=console_plugin
+        )
+        code_generator.run(q.read_text())
+
+    console_plugin.after_all_finished()

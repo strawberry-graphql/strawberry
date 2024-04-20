@@ -52,8 +52,7 @@ def test_supports_generic_specialized():
         node_field: T
 
     @strawberry.type
-    class IntEdge(Edge[int]):
-        ...
+    class IntEdge(Edge[int]): ...
 
     @strawberry.type
     class Query:
@@ -86,12 +85,10 @@ def test_supports_generic_specialized_subclass():
         node_field: T
 
     @strawberry.type
-    class IntEdge(Edge[int]):
-        ...
+    class IntEdge(Edge[int]): ...
 
     @strawberry.type
-    class IntEdgeSubclass(IntEdge):
-        ...
+    class IntEdgeSubclass(IntEdge): ...
 
     @strawberry.type
     class Query:
@@ -128,8 +125,7 @@ def test_supports_generic_specialized_with_type():
         node_field: T
 
     @strawberry.type
-    class FruitEdge(Edge[Fruit]):
-        ...
+    class FruitEdge(Edge[Fruit]): ...
 
     @strawberry.type
     class Query:
@@ -172,8 +168,7 @@ def test_supports_generic_specialized_with_list_type():
         nodes: List[T]
 
     @strawberry.type
-    class FruitEdge(Edge[Fruit]):
-        ...
+    class FruitEdge(Edge[Fruit]): ...
 
     @strawberry.type
     class Query:
@@ -1029,8 +1024,7 @@ def test_self():
         fields: List[Self]
 
     @strawberry.type
-    class Node(INode):
-        ...
+    class Node(INode): ...
 
     schema = strawberry.Schema(query=Node)
 
@@ -1172,3 +1166,57 @@ def test_generic_interface_extra_types():
 
     assert not query_result.errors
     assert query_result.data == {"real": {"__typename": "IntReal", "x": ""}}
+
+
+def test_generics_via_anonymous_union():
+    @strawberry.type
+    class Edge[T]:
+        cursor: str
+        node: T
+
+    @strawberry.type
+    class Connection[T]:
+        edges: list[Edge[T]]
+
+    @strawberry.type
+    class Entity1:
+        id: int
+
+    @strawberry.type
+    class Entity2:
+        id: int
+
+    @strawberry.type
+    class Query:
+        entities: Connection[Union[Entity1, Entity2]]
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = textwrap.dedent(
+        """
+        type Entity1 {
+          id: Int!
+        }
+
+        union Entity1Entity2 = Entity1 | Entity2
+
+        type Entity1Entity2Connection {
+          edges: [Entity1Entity2Edge!]!
+        }
+
+        type Entity1Entity2Edge {
+          cursor: String!
+          node: Entity1Entity2!
+        }
+
+        type Entity2 {
+          id: Int!
+        }
+
+        type Query {
+          entities: Entity1Entity2Connection!
+        }
+        """
+    ).strip()
+
+    assert str(schema) == expected_schema

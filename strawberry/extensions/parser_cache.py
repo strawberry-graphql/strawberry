@@ -30,13 +30,13 @@ class ParserCache(SchemaExtension):
 
     """
 
-    def __init__(self, maxsize: Optional[int] = None):
+    def __init__(self, maxsize: Optional[int] = None) -> None:
         self.cached_parse_document = lru_cache(maxsize=maxsize)(parse_document)
 
     def on_parse(self) -> Iterator[None]:
         execution_context = self.execution_context
 
         execution_context.graphql_document = self.cached_parse_document(
-            execution_context.query,
+            execution_context.query, **execution_context.parse_options
         )
         yield

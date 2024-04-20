@@ -18,6 +18,7 @@ COMMON_PYTEST_OPTIONS = [
     "--ignore=tests/mypy",
     "--ignore=tests/pyright",
     "--ignore=tests/cli",
+    "--ignore=tests/benchmarks",
     "--ignore=tests/experimental/pydantic",
 ]
 
@@ -29,8 +30,10 @@ INTEGRATIONS = [
     "django",
     "fastapi",
     "flask",
+    "quart",
     "sanic",
     "starlite",
+    "litestar",
     "pydantic",
 ]
 
@@ -52,7 +55,7 @@ def tests(session: Session) -> None:
     )
 
 
-@session(python=["3.11"], name="Django tests", tags=["tests"])
+@session(python=["3.11", "3.12"], name="Django tests", tags=["tests"])
 @nox.parametrize("django", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"])
 def tests_django(session: Session, django: str) -> None:
     session.run_always("poetry", "install", external=True)
@@ -82,8 +85,10 @@ def tests_starlette(session: Session, starlette: str) -> None:
         "channels",
         "fastapi",
         "flask",
+        "quart",
         "sanic",
         "starlite",
+        "litestar",
     ],
 )
 def tests_integrations(session: Session, integration: str) -> None:
@@ -93,8 +98,6 @@ def tests_integrations(session: Session, integration: str) -> None:
 
     if integration == "aiohttp":
         session._session.install("pytest-aiohttp")  # type: ignore
-    elif integration == "flask":
-        session._session.install("pytest-flask")  # type: ignore
     elif integration == "channels":
         session._session.install("pytest-django")  # type: ignore
         session._session.install("daphne")  # type: ignore
@@ -104,9 +107,8 @@ def tests_integrations(session: Session, integration: str) -> None:
     session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", integration)
 
 
-@session(python=["3.11"], name="Pydantic tests", tags=["tests"])
-# TODO: add pydantic 2.0 here :)
-@nox.parametrize("pydantic", ["1.10"])
+@session(python=PYTHON_VERSIONS, name="Pydantic tests", tags=["tests", "pydantic"])
+@nox.parametrize("pydantic", ["1.10", "2.7.0"])
 def test_pydantic(session: Session, pydantic: str) -> None:
     session.run_always("poetry", "install", external=True)
 

@@ -1,0 +1,12 @@
+query ListLifeGeneric {
+  listLife {
+    items1 {
+      name
+      age
+    }
+    items2 {
+      name
+      age
+    }
+  }
+}

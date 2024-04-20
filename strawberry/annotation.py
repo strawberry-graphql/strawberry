@@ -12,6 +12,7 @@ from typing import (
     ForwardRef,
     List,
     Optional,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -28,6 +29,7 @@ from strawberry.type import (
     StrawberryList,
     StrawberryOptional,
     StrawberryTypeVar,
+    get_object_definition,
     has_object_definition,
 )
 from strawberry.types.types import StrawberryObjectDefinition
@@ -59,7 +61,7 @@ class StrawberryAnnotation:
         annotation: Union[object, str],
         *,
         namespace: Optional[Dict[str, Any]] = None,
-    ):
+    ) -> None:
         self.raw_annotation = annotation
         self.namespace = namespace
 
@@ -114,6 +116,19 @@ class StrawberryAnnotation:
         self.__eval_cache__ = evaled_type
         return evaled_type
 
+    def _get_type_with_args(
+        self, evaled_type: Type[Any]
+    ) -> Tuple[Type[Any], List[Any]]:
+        if self._is_async_type(evaled_type):
+            return self._get_type_with_args(self._strip_async_type(evaled_type))
+
+        if get_origin(evaled_type) is Annotated:
+            evaled_type, *args = get_args(evaled_type)
+            stripped_type, stripped_args = self._get_type_with_args(evaled_type)
+            return stripped_type, args + stripped_args
+
+        return evaled_type, []
+
     def resolve(self) -> Union[StrawberryType, type]:
         """Return resolved (transformed) annotation."""
         evaled_type = cast(Any, self.evaluate())
@@ -122,15 +137,15 @@ class StrawberryAnnotation:
             return evaled_type
 
         args: List[Any] = []
-        if get_origin(evaled_type) is Annotated:
-            evaled_type, *args = get_args(evaled_type)
 
-        if self._is_async_type(evaled_type):
-            evaled_type = self._strip_async_type(evaled_type)
+        evaled_type, args = self._get_type_with_args(evaled_type)
+
         if self._is_lazy_type(evaled_type):
             return evaled_type
+        if self._is_list(evaled_type):
+            return self.create_list(evaled_type)
 
-        if self._is_generic(evaled_type):
+        if self._is_graphql_generic(evaled_type):
             if any(is_type_var(type_) for type_ in get_args(evaled_type)):
                 return evaled_type
             return self.create_concrete_type(evaled_type)
@@ -139,8 +154,6 @@ class StrawberryAnnotation:
         # a StrawberryType
         if self._is_enum(evaled_type):
             return self.create_enum(evaled_type)
-        if self._is_list(evaled_type):
-            return self.create_list(evaled_type)
         elif self._is_optional(evaled_type, args):
             return self.create_optional(evaled_type)
         elif self._is_union(evaled_type, args):
@@ -258,8 +271,11 @@ class StrawberryAnnotation:
         return issubclass(annotation, Enum)
 
     @classmethod
-    def _is_generic(cls, annotation: Any) -> bool:
+    def _is_graphql_generic(cls, annotation: Any) -> bool:
         if hasattr(annotation, "__origin__"):
+            if definition := get_object_definition(annotation.__origin__):
+                return definition.is_graphql_generic
+
             return is_generic(annotation.__origin__)
 
         return False
@@ -286,8 +302,14 @@ class StrawberryAnnotation:
         """Returns True if annotation is a List"""
 
         annotation_origin = get_origin(annotation)
+        annotation_mro = getattr(annotation, "__mro__", [])
+        is_list = any(x is list for x in annotation_mro)
 
-        return (annotation_origin in (list, tuple)) or annotation_origin is abc.Sequence
+        return (
+            (annotation_origin in (list, tuple))
+            or annotation_origin is abc.Sequence
+            or is_list
+        )
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:
@@ -342,11 +364,11 @@ class StrawberryAnnotation:
         return any(isinstance(arg, StrawberryUnion) for arg in args)
 
     @classmethod
-    def _strip_async_type(cls, annotation: Type) -> type:
+    def _strip_async_type(cls, annotation: Type[Any]) -> type:
         return annotation.__args__[0]
 
     @classmethod
-    def _strip_lazy_type(cls, annotation: LazyType) -> type:
+    def _strip_lazy_type(cls, annotation: LazyType[Any, Any]) -> type:
         return annotation.resolve_type()
 
 

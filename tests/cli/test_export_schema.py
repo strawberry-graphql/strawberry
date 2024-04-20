@@ -67,3 +67,25 @@ def test_invalid_schema_instance(cli_app: Typer, cli_runner: CliRunner):
 
     assert result.exit_code == 2
     assert expected_error in result.stdout.replace("\n", "")
+
+
+def test_output_option(cli_app: Typer, cli_runner: CliRunner, tmp_path):
+    selector = "tests.fixtures.sample_package.sample_module:schema"
+    output = tmp_path / "schema.graphql"
+    output_commands = ["--output", "-o"]
+    for output_command in output_commands:
+        result = cli_runner.invoke(
+            cli_app, ["export-schema", selector, output_command, str(output)]
+        )
+
+        assert result.exit_code == 0
+        assert output.read_text() == (
+            "type Query {\n"
+            "  user: User!\n"
+            "}\n"
+            "\n"
+            "type User {\n"
+            "  name: String!\n"
+            "  age: Int!\n"
+            "}"
+        )

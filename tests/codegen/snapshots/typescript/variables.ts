@@ -4,6 +4,7 @@ type OperationNameResult = {
 
 type PersonInput = {
     name: string
+    age: number | undefined
 }
 
 type ExampleInput = {

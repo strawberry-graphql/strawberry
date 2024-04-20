@@ -44,28 +44,27 @@ def test_pyright():
     assert results == [
         Result(
             type="error",
-            message='No parameter named "n" (reportGeneralTypeIssues)',
+            message='Argument missing for parameter "name"',
+            line=24,
+            column=1,
+        ),
+        Result(
+            type="error",
+            message='No parameter named "n"',
             line=24,
             column=6,
         ),
         Result(
             type="error",
-            message='Argument missing for parameter "name" (reportGeneralTypeIssues)',
-            line=24,
+            message='Argument missing for parameter "name"',
+            line=27,
             column=1,
         ),
         Result(
             type="error",
-            message='No parameter named "n" (reportGeneralTypeIssues)',
+            message='No parameter named "n"',
             line=27,
             column=11,
-        ),
-        Result(
-            type="error",
-            message='Argument missing for parameter "name" '
-            "(reportGeneralTypeIssues)",
-            line=27,
-            column=1,
         ),
         Result(
             type="information",
@@ -75,8 +74,10 @@ def test_pyright():
         ),
         Result(
             type="information",
-            message='Type of "User.__init__" is "(self: User, *, age: int, name: str) '
-            '-> None"',
+            message=(
+                'Type of "User.__init__" is "(self: User, *, age: int, name: str) '
+                '-> None"'
+            ),
             line=30,
             column=13,
         ),

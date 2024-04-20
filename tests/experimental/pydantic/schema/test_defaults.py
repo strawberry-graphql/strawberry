@@ -5,6 +5,7 @@ import pydantic
 
 import strawberry
 from strawberry.printer import print_schema
+from tests.experimental.pydantic.utils import needs_pydantic_v2
 
 
 def test_field_type_default():
@@ -13,8 +14,7 @@ def test_field_type_default():
         nickname: Optional[str] = "Jim"
 
     @strawberry.experimental.pydantic.type(User, all_fields=True)
-    class PydanticUser:
-        ...
+    class PydanticUser: ...
 
     @strawberry.type
     class StrawberryUser:
@@ -57,8 +57,7 @@ def test_pydantic_type_default_none():
         name: Optional[str] = None
 
     @strawberry.experimental.pydantic.type(UserPydantic, all_fields=True)
-    class User:
-        ...
+    class User: ...
 
     @strawberry.type
     class Query:
@@ -89,8 +88,7 @@ def test_pydantic_type_no_default_but_optional():
         name: Optional[str]
 
     @strawberry.experimental.pydantic.type(UserPydantic, all_fields=True)
-    class User:
-        ...
+    class User: ...
 
     @strawberry.type
     class Query:
@@ -120,8 +118,7 @@ def test_input_type_default():
         name: str = "James"
 
     @strawberry.experimental.pydantic.type(User, all_fields=True, is_input=True)
-    class PydanticUser:
-        ...
+    class PydanticUser: ...
 
     @strawberry.type(is_input=True)
     class StrawberryUser:
@@ -152,6 +149,36 @@ def test_input_type_default():
 
     input StrawberryUser {
       name: String! = "James"
+    }
+    """
+
+    assert print_schema(schema) == textwrap.dedent(expected).strip()
+
+
+@needs_pydantic_v2
+def test_v2_explicit_default():
+    class User(pydantic.BaseModel):
+        name: Optional[str]
+
+    @strawberry.experimental.pydantic.type(User, all_fields=True)
+    class PydanticUser: ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def a(self) -> PydanticUser:
+            raise NotImplementedError
+
+    schema = strawberry.Schema(Query)
+
+    # name should have no default
+    expected = """
+    type PydanticUser {
+      name: String
+    }
+
+    type Query {
+      a: PydanticUser!
     }
     """
 
