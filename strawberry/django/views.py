@@ -54,7 +54,7 @@ class TemporalHttpResponse(JsonResponse):
         if self.status_code is not None:
             return super().__repr__()
 
-        return "<{cls} status_code={status_code}{content_type}>".format(
+        return "<{cls} status_code={status_code}{content_type}>".format(  # noqa: UP032
             cls=self.__class__.__name__,
             status_code=self.status_code,
             content_type=self._content_type_for_repr,  # pyright: ignore
