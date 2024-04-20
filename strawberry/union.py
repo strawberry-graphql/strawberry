@@ -194,7 +194,6 @@ class StrawberryUnion(StrawberryType):
             # Union in case a nested generic object matches against more than one type.
             concrete_types_for_union = (type_map[x.name] for x in type_.types)
 
-            # TODO: do we still need to iterate over all types in `type_map`?
             for possible_concrete_type in chain(
                 concrete_types_for_union, type_map.values()
             ):

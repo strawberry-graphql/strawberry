@@ -17,6 +17,7 @@ from typing import (
 from typing_extensions import Self, deprecated
 
 from strawberry.type import (
+    StrawberryList,
     StrawberryType,
     StrawberryTypeVar,
     WithStrawberryObjectDefinition,
@@ -170,20 +171,52 @@ class StrawberryObjectDefinition(StrawberryType):
 
         # Check the mapping of all fields' TypeVars
         for generic_field in type_definition.fields:
+            # here we want to check if the field is generic, and fields can be
+            # generic by either being a TypeVar, or containers of TypeVars
+            # for example List[TypeVar] is a generic field
+            # TODO: There might be multiple cases, but I think we might have covered them
+            # somewhere else?
+            if not generic_field.is_graphql_generic:
+                continue
+
             generic_field_type = generic_field.type
-            if not isinstance(generic_field_type, StrawberryTypeVar):
+
+            while isinstance(generic_field_type, StrawberryList):
+                # TODO: List of List of List of ... might not be supported
+                # not if what I'm doing is good, we might need to check lists
+                # again below... :)
+                generic_field_type = generic_field_type.of_type
+                # TODO: we need support for this
+
+            if isinstance(generic_field_type, StrawberryTypeVar):
+                type_var = generic_field_type.type_var
+            # TODO: here we might have nested types, but skipping them
+            # seems to be fine? Why?
+            else:
                 continue
 
             # For each TypeVar found, get the expected type from the copy's type map
-            expected_concrete_type = self.type_var_map.get(
-                generic_field_type.type_var.__name__
-            )
+            expected_concrete_type = self.type_var_map.get(type_var.__name__)
+
+            # TODO: check when this happens, if it actually does?
             if expected_concrete_type is None:
                 # TODO: Should this return False?
                 continue
 
             # Check if the expected type matches the type found on the type_map
-            real_concrete_type = type(getattr(root, generic_field.name))
+            value = getattr(root, generic_field.name)
+            real_concrete_type = type(value)
+
+            # TODO: should we actually check if we have a list field here?
+            # we could kinda unify this with the check above, so we can
+            # return early too
+            while issubclass(real_concrete_type, (list, tuple)):
+                if len(value) == 0:
+                    # TODO: wild guess, but if the list is empty, we can't really
+                    # check the type of the elements, so we just assume it's correct
+                    return True
+                value = value[0]
+                real_concrete_type = type(value)
 
             # TODO: uniform type var map, at the moment we map object types
             # to their class (not to TypeDefinition) while we map enum to
