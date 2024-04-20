@@ -1,6 +1,48 @@
 CHANGELOG
 =========
 
+0.227.1 - 2024-04-20
+--------------------
+
+This release fixes an issue where annotations on `@strawberry.type`s were overridden
+by our code. With release all annotations should be preserved.
+
+This is useful for libraries that use annotations to introspect Strawberry types.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3003](https://github.com/strawberry-graphql/strawberry/pull/3003/)
+
+
+0.227.0 - 2024-04-19
+--------------------
+
+This release improves the schema codegen, making it more robust and easier to
+use.
+
+It does this by introducing a directed acyclic graph for the schema codegen,
+which should reduce the amount of edits needed to make the generated code work,
+since it will be able to generate the code in the correct order (based on the
+dependencies of each type).
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3116](https://github.com/strawberry-graphql/strawberry/pull/3116/)
+
+
+0.226.2 - 2024-04-19
+--------------------
+
+This release updates our Mypy plugin to add support for Pydantic >= 2.7.0
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3462](https://github.com/strawberry-graphql/strawberry/pull/3462/)
+
+
+0.226.1 - 2024-04-19
+--------------------
+
+This releases fixes a bug in the mypy plugin where the `from_pydantic` method
+was not correctly typed.
+
+Contributed by [Corentin-Br](https://github.com/Corentin-Br) via [PR #3368](https://github.com/strawberry-graphql/strawberry/pull/3368/)
+
+
 0.226.0 - 2024-04-17
 --------------------
 

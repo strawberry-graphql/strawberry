@@ -119,8 +119,7 @@ def type(
     requires_scopes: Optional[List[List[str]]] = None,
     shareable: bool = False,
     tags: Iterable[str] = (),
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -142,8 +141,7 @@ def type(
     requires_scopes: Optional[List[List[str]]] = None,
     shareable: bool = False,
     tags: Iterable[str] = (),
-) -> Callable[[T], T]:
-    ...
+) -> Callable[[T], T]: ...
 
 
 def type(
@@ -192,8 +190,7 @@ def input(
     directives: Sequence[object] = (),
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -210,8 +207,7 @@ def input(
     directives: Sequence[object] = (),
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
-) -> Callable[[T], T]:
-    ...
+) -> Callable[[T], T]: ...
 
 
 def input(
@@ -254,8 +250,7 @@ def interface(
     policy: Optional[List[List[str]]] = None,
     requires_scopes: Optional[List[List[str]]] = None,
     tags: Iterable[str] = (),
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -275,8 +270,7 @@ def interface(
     policy: Optional[List[List[str]]] = None,
     requires_scopes: Optional[List[List[str]]] = None,
     tags: Iterable[str] = (),
-) -> Callable[[T], T]:
-    ...
+) -> Callable[[T], T]: ...
 
 
 def interface(
@@ -325,8 +319,7 @@ def interface_object(
     policy: Optional[List[List[str]]] = None,
     requires_scopes: Optional[List[List[str]]] = None,
     tags: Iterable[str] = (),
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -346,8 +339,7 @@ def interface_object(
     policy: Optional[List[List[str]]] = None,
     requires_scopes: Optional[List[List[str]]] = None,
     tags: Iterable[str] = (),
-) -> Callable[[T], T]:
-    ...
+) -> Callable[[T], T]: ...
 
 
 def interface_object(

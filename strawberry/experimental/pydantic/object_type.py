@@ -177,7 +177,7 @@ def type(
         )
 
         wrapped = _wrap_dataclass(cls)
-        extra_strawberry_fields = _get_fields(wrapped)
+        extra_strawberry_fields = _get_fields(wrapped, {})
         extra_fields = cast(List[dataclasses.Field], extra_strawberry_fields)
         private_fields = get_private_fields(wrapped)
 

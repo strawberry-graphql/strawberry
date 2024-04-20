@@ -566,8 +566,7 @@ def test_named_based_directive_value_is_deprecated():
             hello: str = "hello"
 
         @strawberry.directive(locations=[DirectiveLocation.FIELD])
-        def deprecated_value(value):
-            ...
+        def deprecated_value(value): ...
 
         strawberry.Schema(query=Query, directives=[deprecated_value])
 

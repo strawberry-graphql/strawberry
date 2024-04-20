@@ -147,12 +147,10 @@ class StrawberryContainer(StrawberryType):
         return False
 
 
-class StrawberryList(StrawberryContainer):
-    ...
+class StrawberryList(StrawberryContainer): ...
 
 
-class StrawberryOptional(StrawberryContainer):
-    ...
+class StrawberryOptional(StrawberryContainer): ...
 
 
 class StrawberryTypeVar(StrawberryType):
@@ -212,8 +210,7 @@ def get_object_definition(
     obj: Any,
     *,
     strict: Literal[True],
-) -> StrawberryObjectDefinition:
-    ...
+) -> StrawberryObjectDefinition: ...
 
 
 @overload
@@ -221,8 +218,7 @@ def get_object_definition(
     obj: Any,
     *,
     strict: bool = False,
-) -> Optional[StrawberryObjectDefinition]:
-    ...
+) -> Optional[StrawberryObjectDefinition]: ...
 
 
 def get_object_definition(

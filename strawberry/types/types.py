@@ -211,8 +211,7 @@ class StrawberryObjectDefinition(StrawberryType):
 if TYPE_CHECKING:
 
     @deprecated("Use StrawberryObjectDefinition instead")
-    class TypeDefinition(StrawberryObjectDefinition):
-        ...
+    class TypeDefinition(StrawberryObjectDefinition): ...
 
 else:
     TypeDefinition = StrawberryObjectDefinition
