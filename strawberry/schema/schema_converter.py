@@ -31,6 +31,7 @@ from graphql import (
     GraphQLInputObjectType,
     GraphQLInterfaceType,
     GraphQLList,
+    GraphQLNamedType,
     GraphQLNonNull,
     GraphQLObjectType,
     GraphQLType,
@@ -470,7 +471,8 @@ class GraphQLCoreConverter:
                             return_type = possible_concrete_type.implementation
                             break
 
-                    if return_type:
+                        assert isinstance(possible_type, GraphQLNamedType)
+
                         return return_type.name
 
                 # Revert to calling is_type_of for cases where a direct subclass
