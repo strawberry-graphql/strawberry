@@ -212,13 +212,9 @@ class StrawberryUnion(StrawberryType):
                     info.field_name, str(type(root)), set(type_.types)
                 )
 
-            # Return the name of the type. Returning the actual type is now deprecated
-            if isinstance(return_type, GraphQLNamedType):
-                # TODO: Can return_type ever _not_ be a GraphQLNamedType?
-                return return_type.name
-            else:
-                # TODO: check if this is correct
-                return return_type.__name__  # type: ignore
+            assert isinstance(return_type, GraphQLNamedType)
+
+            return return_type.name
 
         return _resolve_union_type
 
