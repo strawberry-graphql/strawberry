@@ -171,11 +171,6 @@ class StrawberryObjectDefinition(StrawberryType):
 
         # Check the mapping of all fields' TypeVars
         for generic_field in type_definition.fields:
-            # here we want to check if the field is generic, and fields can be
-            # generic by either being a TypeVar, or containers of TypeVars
-            # for example List[TypeVar] is a generic field
-            # TODO: There might be multiple cases, but I think we might have covered them
-            # somewhere else?
             if not generic_field.is_graphql_generic:
                 continue
 
@@ -186,8 +181,10 @@ class StrawberryObjectDefinition(StrawberryType):
 
             if isinstance(generic_field_type, StrawberryTypeVar):
                 type_var = generic_field_type.type_var
-            # TODO: here we might have nested types, but skipping them
-            # seems to be fine? Why?
+            # TODO: I don't think we support nested types properly
+            # if there's a union that has two nested types that
+            # are have the same field with different types, we might
+            # not be able to differentiate them
             else:
                 continue
 
