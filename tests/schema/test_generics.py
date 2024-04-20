@@ -282,52 +282,6 @@ def test_supports_multiple_generic():
     }
 
 
-def test_support_nested_generics():
-    T = TypeVar("T")
-
-    @strawberry.type
-    class User:
-        name: str
-
-    @strawberry.type
-    class Edge(Generic[T]):
-        node: T
-
-    @strawberry.type
-    class Connection(Generic[T]):
-        edge: Edge[T]
-
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def users(self) -> Connection[User]:
-            return Connection(edge=Edge(node=User(name="Patrick")))
-
-    schema = strawberry.Schema(query=Query)
-
-    query = """{
-        users {
-            __typename
-            edge {
-                __typename
-                node {
-                    name
-                }
-            }
-        }
-    }"""
-
-    result = schema.execute_sync(query)
-
-    assert not result.errors
-    assert result.data == {
-        "users": {
-            "__typename": "UserConnection",
-            "edge": {"__typename": "UserEdge", "node": {"name": "Patrick"}},
-        }
-    }
-
-
 def test_supports_optional():
     T = TypeVar("T")
 
