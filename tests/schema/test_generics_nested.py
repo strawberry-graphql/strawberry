@@ -1,0 +1,216 @@
+import textwrap
+from typing import Generic, List, Optional, TypeVar, Union
+
+import pytest
+
+import strawberry
+from strawberry.scalars import JSON
+
+
+def test_unions_nested_inside_a_list():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class JsonBlock:
+        data: JSON
+
+    @strawberry.type
+    class BlockRowType(Generic[T]):
+        total: int
+        items: List[T]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def blocks(
+            self,
+        ) -> List[Union[BlockRowType[int], BlockRowType[str], JsonBlock]]:
+            return [
+                BlockRowType(total=3, items=["a", "b", "c"]),
+                BlockRowType(total=1, items=[1, 2, 3, 4]),
+                JsonBlock(data=JSON({"a": 1})),
+            ]
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync(
+        """query {
+        blocks {
+            __typename
+            ... on IntBlockRowType {
+                a: items
+            }
+            ... on StrBlockRowType {
+                b: items
+            }
+            ... on JsonBlock {
+                data
+            }
+        }
+    }"""
+    )
+
+    assert not result.errors
+
+    assert result.data == {
+        "blocks": [
+            {"__typename": "StrBlockRowType", "b": ["a", "b", "c"]},
+            {"__typename": "IntBlockRowType", "a": [1, 2, 3, 4]},
+            {"__typename": "JsonBlock", "data": {"a": 1}},
+        ]
+    }
+
+
+def test_unions_nested_inside_a_list_of_lists():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class JsonBlock:
+        data: JSON
+
+    @strawberry.type
+    class BlockRowType(Generic[T]):
+        total: int
+        items: List[List[T]]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def blocks(
+            self,
+        ) -> List[Union[BlockRowType[int], BlockRowType[str], JsonBlock]]:
+            return [
+                BlockRowType(total=3, items=[["a", "b", "c"]]),
+                BlockRowType(total=1, items=[[1, 2, 3, 4]]),
+                JsonBlock(data=JSON({"a": 1})),
+            ]
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync(
+        """query {
+        blocks {
+            __typename
+            ... on IntBlockRowType {
+                a: items
+            }
+            ... on StrBlockRowType {
+                b: items
+            }
+            ... on JsonBlock {
+                data
+            }
+        }
+    }"""
+    )
+
+    assert not result.errors
+
+    assert result.data == {
+        "blocks": [
+            {"__typename": "StrBlockRowType", "b": [["a", "b", "c"]]},
+            {"__typename": "IntBlockRowType", "a": [[1, 2, 3, 4]]},
+            {"__typename": "JsonBlock", "data": {"a": 1}},
+        ]
+    }
+
+
+@pytest.mark.xfail(reason="Not implemented yet")
+def test_using_generics_with_an_interface():
+    T = TypeVar("T")
+
+    @strawberry.interface
+    class BlockInterface:
+        id: strawberry.ID
+        disclaimer: Optional[str] = strawberry.field(default=None)
+
+    @strawberry.type
+    class JsonBlock(BlockInterface):
+        data: JSON
+
+    @strawberry.type
+    class BlockRowType(BlockInterface, Generic[T]):
+        total: int
+        items: List[T]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def blocks(self) -> List[BlockInterface]:
+            return [
+                BlockRowType(id=strawberry.ID("3"), total=3, items=["a", "b", "c"]),
+                BlockRowType(id=strawberry.ID("1"), total=1, items=[1, 2, 3, 4]),
+                JsonBlock(id=strawberry.ID("2"), data=JSON({"a": 1})),
+            ]
+
+    schema = strawberry.Schema(
+        query=Query, types=[BlockRowType[int], JsonBlock, BlockRowType[str]]
+    )
+
+    expected_schema = textwrap.dedent(
+        '''
+        interface BlockInterface {
+          id: ID!
+          disclaimer: String
+        }
+
+        type IntBlockRowType implements BlockInterface {
+          id: ID!
+          disclaimer: String
+          total: Int!
+          items: [Int!]!
+        }
+
+        """
+        The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+        """
+        scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
+
+        type JsonBlock implements BlockInterface {
+          id: ID!
+          disclaimer: String
+          data: JSON!
+        }
+
+        type Query {
+          blocks: [BlockInterface!]!
+        }
+
+        type StrBlockRowType implements BlockInterface {
+          id: ID!
+          disclaimer: String
+          total: Int!
+          items: [String!]!
+        }
+    '''
+    ).strip()
+
+    assert str(schema) == expected_schema
+
+    result = schema.execute_sync(
+        """query {
+        blocks {
+            id
+            __typename
+            ... on IntBlockRowType {
+                a: items
+            }
+            ... on StrBlockRowType {
+                b: items
+            }
+            ... on JsonBlock {
+                data
+            }
+        }
+    }"""
+    )
+
+    assert not result.errors
+
+    assert result.data == {
+        "blocks": [
+            {"id": "3", "__typename": "StrBlockRowType", "b": ["a", "b", "c"]},
+            {"id": "1", "__typename": "IntBlockRowType", "a": [1, 2, 3, 4]},
+            {"id": "2", "__typename": "JsonBlock", "data": {"a": 1}},
+        ]
+    }
