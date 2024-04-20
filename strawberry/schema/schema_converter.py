@@ -101,8 +101,7 @@ class FieldConverterProtocol(Generic[FieldType], Protocol):
         field: StrawberryField,
         *,
         type_definition: Optional[StrawberryObjectDefinition] = None,
-    ) -> FieldType:
-        ...
+    ) -> FieldType: ...
 
 
 def _get_thunk_mapping(
@@ -496,8 +495,6 @@ class GraphQLCoreConverter:
             return graphql_object_type
 
         def _get_is_type_of() -> Optional[Callable[[Any, GraphQLResolveInfo], bool]]:
-            # TODO: this doesn't seem to be fully working when using unions or
-            # interfaces
             if object_type.is_type_of:
                 return object_type.is_type_of
 
