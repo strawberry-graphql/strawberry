@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.227.1 - 2024-04-20
+--------------------
+
+This release fixes an issue where annotations on `@strawberry.type`s were overridden
+by our code. With release all annotations should be preserved.
+
+This is useful for libraries that use annotations to introspect Strawberry types.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3003](https://github.com/strawberry-graphql/strawberry/pull/3003/)
+
+
 0.227.0 - 2024-04-19
 --------------------
 
