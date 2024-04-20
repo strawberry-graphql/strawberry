@@ -67,7 +67,8 @@ def _check_field_annotations(cls: Type[Any]):
             # If the field has a type override then use that instead of using
             # the class annotations or resolver annotation
             if field_.type_annotation is not None:
-                cls_annotations[field_name] = field_.type_annotation.annotation
+                if field_name not in cls_annotations:
+                    cls_annotations[field_name] = field_.type_annotation.annotation
                 continue
 
             # Make sure the cls has an annotation
@@ -85,7 +86,8 @@ def _check_field_annotations(cls: Type[Any]):
                         field_name, resolver=field_.base_resolver
                     )
 
-                cls_annotations[field_name] = field_.base_resolver.type_annotation
+                if field_name not in cls_annotations:
+                    cls_annotations[field_name] = field_.base_resolver.type_annotation
 
             # TODO: Make sure the cls annotation agrees with the field's type
             # >>> if cls_annotations[field_name] != field.base_resolver.type:
@@ -133,11 +135,13 @@ def _process_type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
+    original_type_annotations: Optional[Dict[str, Any]] = None,
 ) -> T:
     name = name or to_camel_case(cls.__name__)
+    original_type_annotations = original_type_annotations or {}
 
     interfaces = _get_interfaces(cls)
-    fields = _get_fields(cls)
+    fields = _get_fields(cls, original_type_annotations)
     is_type_of = getattr(cls, "is_type_of", None)
     resolve_type = getattr(cls, "resolve_type", None)
 
@@ -245,7 +249,25 @@ def type(
                 exc = ObjectIsNotClassError.type
             raise exc(cls)
 
+        # when running `_wrap_dataclass` we lose some of the information about the
+        # the passed types, especially the type_annotation inside the StrawberryField
+        # this makes it impossible to customise the field type, like this:
+        # >>> @strawberry.type
+        # >>> class Query:
+        # >>>     a: int = strawberry.field(graphql_type=str)
+        # so we need to extract the information before running `_wrap_dataclass`
+        original_type_annotations: Dict[str, Any] = {}
+
+        annotations = getattr(cls, "__annotations__", {})
+
+        for field_name in annotations:
+            field = getattr(cls, field_name, None)
+
+            if field and isinstance(field, StrawberryField) and field.type_annotation:
+                original_type_annotations[field_name] = field.type_annotation.annotation
+
         wrapped = _wrap_dataclass(cls)
+
         return _process_type(
             wrapped,
             name=name,
@@ -254,6 +276,7 @@ def type(
             description=description,
             directives=directives,
             extend=extend,
+            original_type_annotations=original_type_annotations,
         )
 
     if cls is None:
