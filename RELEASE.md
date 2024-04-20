@@ -9,17 +9,17 @@ import strawberry
 
 
 @strawberry.type
-class BlockRowType[T]:
+class BlockRow[T]:
     items: list[T]
 
 
 @strawberry.type
 class Query:
     @strawberry.field
-    def blocks(self) -> list[BlockRowType[str] | BlockRowType[int]]:
+    def blocks(self) -> list[BlockRow[str] | BlockRow[int]]:
         return [
-            BlockRowType(id=strawberry.ID("3"), items=["a", "b", "c"]),
-            BlockRowType(id=strawberry.ID("1"), items=[1, 2, 3, 4]),
+            BlockRow(items=["a", "b", "c"]),
+            BlockRow(items=[1, 2, 3, 4]),
         ]
 
 
