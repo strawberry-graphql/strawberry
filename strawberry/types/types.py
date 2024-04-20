@@ -204,9 +204,7 @@ class StrawberryObjectDefinition(StrawberryType):
         if not self.is_input or not self.directives:
             return False
 
-        return any(
-            isinstance(directive, OneOf) for directive in self.directives
-        )
+        return any(isinstance(directive, OneOf) for directive in self.directives)
 
 
 # TODO: remove when deprecating _type_definition
