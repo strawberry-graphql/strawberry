@@ -182,11 +182,7 @@ class StrawberryObjectDefinition(StrawberryType):
             generic_field_type = generic_field.type
 
             while isinstance(generic_field_type, StrawberryList):
-                # TODO: List of List of List of ... might not be supported
-                # not if what I'm doing is good, we might need to check lists
-                # again below... :)
                 generic_field_type = generic_field_type.of_type
-                # TODO: we need support for this
 
             if isinstance(generic_field_type, StrawberryTypeVar):
                 type_var = generic_field_type.type_var
