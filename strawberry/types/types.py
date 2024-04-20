@@ -205,7 +205,7 @@ class StrawberryObjectDefinition(StrawberryType):
             return False
 
         return any(
-            directive for directive in self.directives if isinstance(directive, OneOf)
+            isinstance(directive, OneOf) for directive in self.directives
         )
 
 
