@@ -311,3 +311,55 @@ def test_using_generics_with_an_interface():
             {"id": "2", "__typename": "JsonBlock", "data": {"a": 1}},
         ]
     }
+
+
+def test_supports_generic_in_unions_with_nesting():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Edge(Generic[T]):
+        node: T
+
+    @strawberry.type
+    class Connection(Generic[T]):
+        edge: Edge[T]
+
+    @strawberry.type
+    class Fallback:
+        node: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def users(self) -> Union[Connection[User], Fallback]:
+            return Connection(edge=Edge(node=User(name="Patrick")))
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        users {
+            __typename
+            ... on UserConnection {
+                edge {
+                    __typename
+                    node {
+                        name
+                    }
+                }
+            }
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {
+        "users": {
+            "__typename": "UserConnection",
+            "edge": {"__typename": "UserEdge", "node": {"name": "Patrick"}},
+        }
+    }
