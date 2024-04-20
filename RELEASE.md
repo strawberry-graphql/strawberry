@@ -10,6 +10,6 @@ import strawberry
 
 @strawberry.input(one_of=True)
 class ExampleInputTagged:
-    a: str | None
-    b: int | None
+    a: str | None = strawberry.UNSET
+    b: int | None = strawberry.UNSET
 ```

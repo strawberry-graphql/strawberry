@@ -10,8 +10,8 @@ from strawberry.schema_directives import OneOf
 
 @strawberry.input(one_of=True)
 class ExampleInputTagged:
-    a: str | None
-    b: int | None
+    a: str | None = strawberry.UNSET
+    b: int | None = strawberry.UNSET
 
 
 @strawberry.type
@@ -208,8 +208,8 @@ def test_works_with_camelcasing():
 
     @strawberry.input(directives=[OneOf()])
     class ExampleWithLongerNames:
-        a_field: str | None
-        b_field: int | None
+        a_field: str | None = strawberry.UNSET
+        b_field: int | None = strawberry.UNSET
 
     @strawberry.type
     class Result:
@@ -220,7 +220,10 @@ def test_works_with_camelcasing():
     class Query:
         @strawberry.field
         def test(self, input: ExampleWithLongerNames) -> Result:
-            return input  # type: ignore
+            return Result(  # noqa
+                a_field=None if input.a_field is strawberry.UNSET else input.a_field,
+                b_field=None if input.b_field is strawberry.UNSET else input.b_field,
+            )
 
     schema = strawberry.Schema(query=Query)
 

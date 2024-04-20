@@ -117,8 +117,8 @@ import strawberry
 
 @strawberry.input(one_of=True)
 class SearchBy:
-    name: str | None
-    email: str | None
+    name: str | None = strawberry.UNSET
+    email: str | None = strawberry.UNSET
 ---
 input SearchBy @oneOf {
   name: String

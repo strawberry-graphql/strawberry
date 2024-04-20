@@ -7,8 +7,8 @@ import strawberry
 def test_prints_one_of_directive():
     @strawberry.federation.input(one_of=True, tags=["myTag", "anotherTag"])
     class Input:
-        a: Optional[str]
-        b: Optional[int]
+        a: Optional[str] = strawberry.UNSET
+        b: Optional[int] = strawberry.UNSET
 
     @strawberry.federation.type
     class Query:
