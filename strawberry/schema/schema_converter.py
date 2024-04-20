@@ -459,7 +459,8 @@ class GraphQLCoreConverter:
                     # all the types in the schema, but we should probably
                     # optimize this
 
-                    return_type = Optional[GraphQLType]
+                    return_type: Optional[GraphQLType] = None
+
                     for possible_concrete_type in self.type_map.values():
                         possible_type = possible_concrete_type.definition
 
