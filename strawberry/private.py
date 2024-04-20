@@ -4,8 +4,7 @@ from typing_extensions import Annotated
 from strawberry.utils.typing import type_has_annotation
 
 
-class StrawberryPrivate:
-    ...
+class StrawberryPrivate: ...
 
 
 T = TypeVar("T")

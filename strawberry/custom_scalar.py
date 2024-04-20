@@ -134,8 +134,7 @@ def scalar(
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
-) -> Callable[[_T], _T]:
-    ...
+) -> Callable[[_T], _T]: ...
 
 
 @overload
@@ -149,8 +148,7 @@ def scalar(
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
-) -> _T:
-    ...
+) -> _T: ...
 
 
 # TODO: We are tricking pyright into thinking that we are returning the given type
