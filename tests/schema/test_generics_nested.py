@@ -1,8 +1,6 @@
 import textwrap
 from typing import Generic, List, Optional, TypeVar, Union
 
-import pytest
-
 import strawberry
 from strawberry.scalars import JSON
 
@@ -215,7 +213,6 @@ def test_unions_nested_inside_a_list_of_lists():
     }
 
 
-@pytest.mark.xfail(reason="Not implemented yet")
 def test_using_generics_with_an_interface():
     T = TypeVar("T")
 
