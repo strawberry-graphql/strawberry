@@ -471,7 +471,8 @@ class GraphQLCoreConverter:
                             return_type = possible_concrete_type.implementation
                             break
 
-                        assert isinstance(possible_type, GraphQLNamedType)
+                    if return_type:
+                        assert isinstance(return_type, GraphQLNamedType)
 
                         return return_type.name
 
