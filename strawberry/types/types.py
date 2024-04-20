@@ -170,12 +170,12 @@ class StrawberryObjectDefinition(StrawberryType):
             return False
 
         # Check the mapping of all fields' TypeVars
-        for generic_field in type_definition.fields:
-            if not generic_field.is_graphql_generic:
+        for field in type_definition.fields:
+            if not field.is_graphql_generic:
                 continue
 
-            value = getattr(root, generic_field.name)
-            generic_field_type = generic_field.type
+            value = getattr(root, field.name)
+            generic_field_type = field.type
 
             while isinstance(generic_field_type, StrawberryList):
                 generic_field_type = generic_field_type.of_type
