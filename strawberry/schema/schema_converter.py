@@ -465,8 +465,11 @@ class GraphQLCoreConverter:
                     for possible_concrete_type in self.type_map.values():
                         possible_type = possible_concrete_type.definition
 
-                        if not isinstance(possible_type, StrawberryObjectDefinition):
+                        if not isinstance(
+                            possible_type, StrawberryObjectDefinition
+                        ):  # pragma: no cover
                             continue
+
                         if possible_type.is_implemented_by(obj):
                             return_type = possible_concrete_type.implementation
                             break
