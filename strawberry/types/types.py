@@ -174,10 +174,20 @@ class StrawberryObjectDefinition(StrawberryType):
             if not generic_field.is_graphql_generic:
                 continue
 
+            value = getattr(root, generic_field.name)
             generic_field_type = generic_field.type
 
             while isinstance(generic_field_type, StrawberryList):
                 generic_field_type = generic_field_type.of_type
+
+                assert isinstance(value, (list, tuple))
+
+                if len(value) == 0:
+                    # We can't infer the type of an empty list, so we just
+                    # return the first one we find
+                    return True
+
+                value = value[0]
 
             if isinstance(generic_field_type, StrawberryTypeVar):
                 type_var = generic_field_type.type_var
@@ -196,19 +206,7 @@ class StrawberryObjectDefinition(StrawberryType):
                 continue
 
             # Check if the expected type matches the type found on the type_map
-            value = getattr(root, generic_field.name)
             real_concrete_type = type(value)
-
-            # TODO: should we actually check if we have a list field here?
-            # we could kinda unify this with the check above, so we can
-            # return early too
-            while issubclass(real_concrete_type, (list, tuple)):
-                if len(value) == 0:
-                    # TODO: wild guess, but if the list is empty, we can't really
-                    # check the type of the elements, so we just assume it's correct
-                    return True
-                value = value[0]
-                real_concrete_type = type(value)
 
             # TODO: uniform type var map, at the moment we map object types
             # to their class (not to TypeDefinition) while we map enum to
