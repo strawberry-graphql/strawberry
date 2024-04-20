@@ -61,6 +61,60 @@ def test_unions_nested_inside_a_list():
     }
 
 
+def test_unions_nested_inside_a_list_with_no_items():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class JsonBlock:
+        data: JSON
+
+    @strawberry.type
+    class BlockRowType(Generic[T]):
+        total: int
+        items: List[T]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def blocks(
+            self,
+        ) -> List[Union[BlockRowType[int], BlockRowType[str], JsonBlock]]:
+            return [
+                BlockRowType(total=3, items=[]),
+                BlockRowType(total=1, items=[]),
+                JsonBlock(data=JSON({"a": 1})),
+            ]
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync(
+        """query {
+        blocks {
+            __typename
+            ... on IntBlockRowType {
+                a: items
+            }
+            ... on StrBlockRowType {
+                b: items
+            }
+            ... on JsonBlock {
+                data
+            }
+        }
+    }"""
+    )
+
+    assert not result.errors
+
+    assert result.data == {
+        "blocks": [
+            {"__typename": "IntBlockRowType", "a": []},
+            {"__typename": "IntBlockRowType", "a": []},
+            {"__typename": "JsonBlock", "data": {"a": 1}},
+        ]
+    }
+
+
 def test_unions_nested_inside_a_list_of_lists():
     T = TypeVar("T")
 
