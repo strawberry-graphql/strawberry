@@ -191,10 +191,7 @@ class StrawberryObjectDefinition(StrawberryType):
             # For each TypeVar found, get the expected type from the copy's type map
             expected_concrete_type = self.type_var_map.get(type_var.__name__)
 
-            # TODO: check when this happens, if it actually does?
-            if expected_concrete_type is None:
-                # TODO: Should this return False?
-                continue
+            assert expected_concrete_type is not None
 
             # Check if the expected type matches the type found on the type_map
             value = getattr(root, generic_field.name)
