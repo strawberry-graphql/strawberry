@@ -222,9 +222,9 @@ def make_graphql_controller(
             "response": Provide(response_getter),
         }
         graphql_ws_handler_class: Type[GraphQLWSHandler] = GraphQLWSHandler
-        graphql_transport_ws_handler_class: Type[
+        graphql_transport_ws_handler_class: Type[GraphQLTransportWSHandler] = (
             GraphQLTransportWSHandler
-        ] = GraphQLTransportWSHandler
+        )
 
         _keep_alive: bool = keep_alive
         _keep_alive_interval: float = keep_alive_interval

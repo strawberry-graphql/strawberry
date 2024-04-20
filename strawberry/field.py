@@ -432,8 +432,7 @@ def field(
     directives: Optional[Sequence[object]] = (),
     extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -451,8 +450,7 @@ def field(
     directives: Optional[Sequence[object]] = (),
     extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-) -> Any:
-    ...
+) -> Any: ...
 
 
 @overload
@@ -470,8 +468,7 @@ def field(
     directives: Optional[Sequence[object]] = (),
     extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-) -> StrawberryField:
-    ...
+) -> StrawberryField: ...
 
 
 def field(

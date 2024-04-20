@@ -28,8 +28,7 @@ def test_raises_error_on_missing_node_id_annotation():
     @strawberry.type
     class Query:
         @relay.connection(relay.ListConnection[Fruit])
-        def fruits(self) -> List[Fruit]:
-            ...
+        def fruits(self) -> List[Fruit]: ...
 
     strawberry.Schema(query=Query)
 
@@ -47,8 +46,7 @@ def test_raises_error_on_multiple_node_id_annotation():
     @strawberry.type
     class Query:
         @relay.connection(relay.ListConnection[Fruit])
-        def fruits(self) -> List[Fruit]:
-            ...
+        def fruits(self) -> List[Fruit]: ...
 
     strawberry.Schema(query=Query)
 
@@ -87,8 +85,7 @@ def test_raises_error_on_connection_wrong_annotation():
     @strawberry.type
     class Query:
         @relay.connection(List[Fruit])  # type: ignore
-        def custom_resolver(self) -> List[Fruit]:
-            ...
+        def custom_resolver(self) -> List[Fruit]: ...
 
     strawberry.Schema(query=Query)
 
@@ -108,7 +105,6 @@ def test_raises_error_on_connection_resolver_wrong_annotation():
     @strawberry.type
     class Query:
         @relay.connection(relay.Connection[Fruit])  # type: ignore
-        def custom_resolver(self):
-            ...
+        def custom_resolver(self): ...
 
     strawberry.Schema(query=Query)

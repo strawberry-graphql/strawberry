@@ -101,8 +101,7 @@ class FieldConverterProtocol(Generic[FieldType], Protocol):
         field: StrawberryField,
         *,
         type_definition: Optional[StrawberryObjectDefinition] = None,
-    ) -> FieldType:
-        ...
+    ) -> FieldType: ...
 
 
 def _get_thunk_mapping(

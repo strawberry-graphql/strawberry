@@ -40,8 +40,7 @@ def scalar(
     policy: Optional[List[List[str]]] = None,
     requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
-) -> Callable[[_T], _T]:
-    ...
+) -> Callable[[_T], _T]: ...
 
 
 @overload
@@ -60,8 +59,7 @@ def scalar(
     policy: Optional[List[List[str]]] = None,
     requires_scopes: Optional[List[List[str]]] = None,
     tags: Optional[Iterable[str]] = (),
-) -> _T:
-    ...
+) -> _T: ...
 
 
 def scalar(

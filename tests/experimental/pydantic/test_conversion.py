@@ -145,8 +145,7 @@ def test_convert_alias_name():
     @strawberry.experimental.pydantic.type(
         UserModel, all_fields=True, use_pydantic_alias=True
     )
-    class User:
-        ...
+    class User: ...
 
     origin_user = UserModel(age=1, password="abc")
     user = User.from_pydantic(origin_user)
@@ -164,8 +163,7 @@ def test_do_not_convert_alias_name():
     @strawberry.experimental.pydantic.type(
         UserModel, all_fields=True, use_pydantic_alias=False
     )
-    class User:
-        ...
+    class User: ...
 
     origin_user = UserModel(age=1, password="abc")
     user = User.from_pydantic(origin_user)
