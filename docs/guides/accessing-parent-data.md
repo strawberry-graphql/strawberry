@@ -1,5 +1,5 @@
 ---
-Title: Accessing parent's data in resolvers
+title: Accessing parent's data in resolvers
 ---
 
 # Accessing parent's data in resolvers
