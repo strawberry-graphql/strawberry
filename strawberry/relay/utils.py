@@ -41,7 +41,7 @@ def to_base64(type_: Union[str, type, StrawberryObjectDefinition], node_id: Any)
             The node id itself
 
     Returns:
-        A tuple of (TypeName, NodeID).
+        A GlobalID, which is a string resulting from base64 encoding <TypeName>:<NodeID>.
 
     Raises:
         ValueError:
