@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.227.2 - 2024-04-21
+--------------------
+
+This release fixes a minor issue where the docstring for the relay util `to_base64` described the return type incorrectly.
+
+Contributed by [Gavin Bannerman](https://github.com/gbannerman) via [PR #3467](https://github.com/strawberry-graphql/strawberry/pull/3467/)
+
+
 0.227.1 - 2024-04-20
 --------------------
 
