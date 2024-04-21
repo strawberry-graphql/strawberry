@@ -950,7 +950,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers
 
 def test_can_override_pydantic_with_strawberry_definition():
     # Set variable override=False to pydantic type
-    # That's disable overriding pydantic fields with strawberry fields
+    # That's override pydantic fields with strawberry fields
     class UserModel(BaseModel):
         new_name: Optional[str] = None
         new_age: Optional[int] = None
