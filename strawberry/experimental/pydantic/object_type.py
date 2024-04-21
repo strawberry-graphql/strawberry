@@ -72,10 +72,8 @@ def _build_dataclass_creation_fields(
         else existing_fields[field.name].type
     )
 
-    if (
-        field.name in existing_fields
-        and (existing_fields[field.name].base_resolver is not None
-             or not override)
+    if field.name in existing_fields and (
+        existing_fields[field.name].base_resolver is not None or not override
     ):
         # if the user has defined a resolver for this field, always use it
         strawberry_field = existing_fields[field.name]
