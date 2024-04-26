@@ -112,7 +112,7 @@ jobs:
         if: steps.setup-python.outputs.cache-hit != 'true'
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v1
+        uses: CodSpeedHQ/action@v2
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: poetry run pytest tests/benchmarks --codspeed
