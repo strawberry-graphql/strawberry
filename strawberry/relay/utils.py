@@ -2,6 +2,8 @@ import base64
 from typing import Any, Tuple, Union
 from typing_extensions import assert_never
 
+from strawberry.types.info import Info
+from strawberry.types.nodes import InlineFragment
 from strawberry.types.types import StrawberryObjectDefinition
 
 
@@ -61,3 +63,25 @@ def to_base64(type_: Union[str, type, StrawberryObjectDefinition], node_id: Any)
         raise ValueError(f"{type_} is not a valid GraphQL type or name") from e
 
     return base64.b64encode(f"{type_name}:{node_id}".encode()).decode()
+
+
+def should_resolve_list_connection_edges(info: Info) -> bool:
+    """Check if the user requested to resolve the `edges` field of a connection.
+
+    Args:
+        info:
+            The strawberry execution info resolve the type name from
+
+    Returns:
+        True if the user requested to resolve the `edges` field of a connection, False otherwise.
+
+    """
+    resolve_for_field_names = {"edges", "pageInfo"}
+    for selection_field in info.selected_fields:
+        for selection in selection_field.selections:
+            if (
+                not isinstance(selection, InlineFragment)
+                and selection.name in resolve_for_field_names
+            ):
+                return True
+    return False
