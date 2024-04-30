@@ -50,7 +50,8 @@ There are several built-in scalars, and you can define custom scalars too.
   standard, maps to Python’s `dict`
 - `Base16`, `Base32`, `Base64`, represents hexadecimal strings encoded with
   `Base16`/`Base32`/`Base64`. As specified in
-  [RFC4648](https://datatracker.ietf.org/doc/html/rfc4648.html)
+  [RFC4648](https://datatracker.ietf.org/doc/html/rfc4648.html). Maps to
+  Python’s `str`
 
 Fields can return built-in scalars by using the Python equivalent:
 
