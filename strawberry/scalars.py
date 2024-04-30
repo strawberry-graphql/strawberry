@@ -16,10 +16,10 @@ JSON = scalar(
     description=(
         "The `JSON` scalar type represents JSON values as specified by "
         "[ECMA-404]"
-        "(http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf)."
+        "(https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf)."
     ),
     specified_by_url=(
-        "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf"
+        "https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf"
     ),
     serialize=lambda v: v,
     parse_value=lambda v: v,
