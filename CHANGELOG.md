@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.227.3 - 2024-05-01
+--------------------
+
+This release adds an optimization to `ListConnection` such that only queries with
+`edges` or `pageInfo` in their selected fields triggers `resolve_edges`.
+
+This change is particularly useful for the `strawberry-django` extension's
+`ListConnectionWithTotalCount` and the only selected field is `totalCount`. An
+extraneous SQL query is prevented with this optimization.
+
+Contributed by [Eric Uriostigue](https://github.com/euriostigue) via [PR #3480](https://github.com/strawberry-graphql/strawberry/pull/3480/)
+
+
 0.227.2 - 2024-04-21
 --------------------
 
