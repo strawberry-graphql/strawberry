@@ -1,5 +1,6 @@
 from typing import Any, AsyncGenerator, AsyncIterable, Optional, Union, cast
 from typing_extensions import assert_type
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -8,7 +9,7 @@ from strawberry import relay
 from strawberry.relay.utils import to_base64
 from strawberry.types.info import Info
 
-from .schema import Fruit, FruitAsync, schema
+from .schema import Fruit, FruitAsync, fruits_resolver, schema
 
 
 class FakeInfo:
@@ -255,3 +256,36 @@ def test_overwrite_resolve_id_and_no_node_id():
             return Fruit(color="red")  # pragma: no cover
 
     strawberry.Schema(query=Query)
+
+
+def test_list_connection_without_edges_or_page_info(mocker: MagicMock):
+    @strawberry.type(name="Connection", description="A connection to a list of items.")
+    class DummyListConnectionWithTotalCount(relay.ListConnection[relay.NodeType]):
+        @strawberry.field(description="Total quantity of existing nodes.")
+        def total_count(self) -> int:
+            return -1
+
+    @strawberry.type
+    class Query:
+        fruits: DummyListConnectionWithTotalCount[Fruit] = relay.connection(
+            resolver=fruits_resolver
+        )
+
+    mock = mocker.patch("strawberry.relay.types.Edge.resolve_edge")
+    schema = strawberry.Schema(query=Query)
+    ret = schema.execute_sync(
+        """
+    query {
+      fruits {
+        totalCount
+      }
+    }
+    """
+    )
+    mock.assert_not_called()
+    assert ret.errors is None
+    assert ret.data == {
+        "fruits": {
+            "totalCount": -1,
+        }
+    }
