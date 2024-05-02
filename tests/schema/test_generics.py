@@ -1,7 +1,8 @@
 import textwrap
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Generic, List, Optional, TypeVar, Union
-from typing_extensions import Self
+from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
+from typing_extensions import Annotated, Self, get_args, get_origin
 
 import pytest
 
@@ -1275,3 +1276,105 @@ def test_generic_interface_extra_types():
 
     assert not query_result.errors
     assert query_result.data == {"real": {"__typename": "IntReal", "x": ""}}
+
+
+@dataclass
+class TypeNarrowDefinition:
+    cls: type
+    value: Any
+    selection: str
+    expected: Any
+
+
+@strawberry.type
+class Foo:
+    name: str = "foo"
+
+
+@strawberry.type
+class Bar:
+    name: str = "bar"
+
+
+@strawberry.type
+class Spam:
+    name: str = "spam"
+
+
+@pytest.mark.parametrize(
+    "cases",
+    [
+        pytest.param(
+            {
+                "int": TypeNarrowDefinition(
+                    cls=int,
+                    value=0,
+                    selection="{ __typename ... on IntReal { y }}",
+                    expected={"__typename": "IntReal", "y": 0},
+                ),
+                "str": TypeNarrowDefinition(
+                    cls=str,
+                    value="hello",
+                    selection="{ __typename ... on StrReal { y }}",
+                    expected={"__typename": "StrReal", "y": "hello"},
+                ),
+                "bool": TypeNarrowDefinition(
+                    cls=bool,
+                    value=True,
+                    selection="{ __typename ... on BoolReal { y }}",
+                    expected={"__typename": "BoolReal", "y": True},
+                ),
+            },
+            id="scalars",
+        ),
+        pytest.param(
+            {
+                "foobar": TypeNarrowDefinition(
+                    cls=Annotated[Union[Foo, Bar], strawberry.union(name="FooBar")],
+                    value=Bar(),
+                    selection="{ __typename ... on FooBarReal { y { __typename } } }",
+                    expected={
+                        "__typename": "FooBarReal",
+                        "y": {"__typename": "Bar"},
+                    },
+                ),
+                "barspam": TypeNarrowDefinition(
+                    cls=Annotated[Union[Bar, Spam], strawberry.union(name="BarSpam")],
+                    value=Spam(),
+                    selection="{ __typename ... on BarSpamReal { y { __typename } } }",
+                    expected={
+                        "__typename": "BarSpamReal",
+                        "y": {"__typename": "Spam"},
+                    },
+                ),
+            },
+            id="unions",
+        ),
+    ],
+)
+def test_generic_interface_type_narrowing(cases: Dict[str, TypeNarrowDefinition]):
+    T = TypeVar("T")
+
+    @strawberry.interface
+    class Abstract:
+        x: str = ""
+
+    @strawberry.type
+    class Real(Generic[T], Abstract):
+        y: T
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def real(self, arg: str) -> Abstract:
+            case = cases[arg]
+            cls = case.cls
+            if get_origin(cls) is Annotated:  # Ensure annotated arg is not used
+                cls, *_ = get_args(cls)
+            return Real[cls](y=case.value)  # type: ignore
+
+    schema = strawberry.Schema(Query, types=[Real[case.cls] for case in cases.values()])
+
+    for name, case in cases.items():
+        result = schema.execute_sync(f'{{ real (arg: "{name}") {case.selection}}}')
+        assert result.data == {"real": case.expected}
