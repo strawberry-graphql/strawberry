@@ -76,7 +76,7 @@ class BasePermission(abc.ABC):
             "Permission classes should override has_permission method"
         )
 
-    def on_unauthorized(self, **kwargs: dict) -> None:
+    def on_unauthorized(self, **kwargs: Any) -> None:
         """
         Default error raising for permissions.
         This can be overridden to customize the behavior.
@@ -126,7 +126,7 @@ class CompositePermission(BasePermission, abc.ABC):
     def __init__(self, child_permissions: List[BasePermission]):
         self.child_permissions = child_permissions
 
-    def on_unauthorized(self, **kwargs: dict) -> Any:
+    def on_unauthorized(self, **kwargs: Any) -> Any:
         failed_permissions = kwargs.get("failed_permissions", [])
         for permission in failed_permissions:
             permission.on_unauthorized()
@@ -157,8 +157,7 @@ class AndPermission(CompositePermission):
         return True
 
     def __and__(self, other: BasePermission):
-        self.child_permissions.append(other)
-        return self
+        return AndPermission([*self.child_permissions, other])
 
 
 class OrPermission(CompositePermission):
@@ -187,8 +186,7 @@ class OrPermission(CompositePermission):
         return False, {"failed_permissions": failed_permissions}
 
     def __or__(self, other: BasePermission):
-        self.child_permissions.append(other)
-        return self
+        return OrPermission([*self.child_permissions, other])
 
 
 class PermissionExtension(FieldExtension):
@@ -239,7 +237,7 @@ class PermissionExtension(FieldExtension):
             else:
                 raise PermissionFailSilentlyRequiresOptionalError(field)
 
-    def _on_unauthorized(self, permission: BasePermission, **kwargs: dict) -> Any:
+    def _on_unauthorized(self, permission: BasePermission, **kwargs: Any) -> Any:
         if self.fail_silently:
             return [] if self.return_empty_list else None
 
