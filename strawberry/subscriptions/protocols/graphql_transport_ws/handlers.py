@@ -8,7 +8,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncGenerator,
-    AsyncIterator,
     Callable,
     Dict,
     List,
@@ -255,7 +254,7 @@ class BaseGraphQLTransportWSHandler(ABC):
             )
         else:
             # create AsyncGenerator returning a single result
-            async def get_result_source() -> AsyncIterator[ExecutionResult]:
+            async def get_result_source() -> AsyncGenerator[ExecutionResult, None]:
                 raise SubscribeSingleResult(
                     await self.schema.execute(
                         query=message.payload.query,
