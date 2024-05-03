@@ -23,10 +23,9 @@ from .exceptions import (
 )
 from .field import StrawberryField, field
 from .type import get_object_definition
+from .types.type_extension import TypeExtension
 from .types.type_resolver import _get_fields
-from .types.types import (
-    StrawberryObjectDefinition,
-)
+from .types.types import StrawberryObjectDefinition
 from .utils.dataclasses import add_custom_init_fn
 from .utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from .utils.str_converters import to_camel_case
@@ -135,17 +134,19 @@ def _process_type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
+    extension: Optional[TypeExtension] = None,
     original_type_annotations: Optional[Dict[str, Any]] = None,
 ) -> T:
     name = name or to_camel_case(cls.__name__)
+    extension = extension or TypeExtension()
     original_type_annotations = original_type_annotations or {}
 
     interfaces = _get_interfaces(cls)
-    fields = _get_fields(cls, original_type_annotations)
+    fields = _get_fields(cls, extension, original_type_annotations)
     is_type_of = getattr(cls, "is_type_of", None)
     resolve_type = getattr(cls, "resolve_type", None)
 
-    cls.__strawberry_definition__ = StrawberryObjectDefinition(
+    cls.__strawberry_definition__ = extension.create_object_definition(
         name=name,
         is_input=is_input,
         is_interface=is_interface,
@@ -186,7 +187,7 @@ def _process_type(
 
             setattr(cls, field_.python_name, wrapped_func)
 
-    return cls
+    return extension.after_process(cls)  # type: ignore
 
 
 @overload
@@ -202,6 +203,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
+    extension: Optional[TypeExtension] = None,
 ) -> T: ...
 
 
@@ -217,6 +219,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
+    extension: Optional[TypeExtension] = None,
 ) -> Callable[[T], T]: ...
 
 
@@ -229,6 +232,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
+    extension: Optional[TypeExtension] = None,
 ) -> Union[T, Callable[[T], T]]:
     """Annotates a class as a GraphQL type.
 
@@ -238,6 +242,8 @@ def type(
     >>> class X:
     >>>     field_abc: str = "ABC"
     """
+    if extension is None:
+        extension = TypeExtension()
 
     def wrap(cls: T) -> T:
         if not inspect.isclass(cls):
@@ -266,6 +272,7 @@ def type(
             if field and isinstance(field, StrawberryField) and field.type_annotation:
                 original_type_annotations[field_name] = field.type_annotation.annotation
 
+        extension.before_wrap_dataclass(cls)
         wrapped = _wrap_dataclass(cls)
 
         return _process_type(  # type: ignore
@@ -276,6 +283,7 @@ def type(
             description=description,
             directives=directives,
             extend=extend,
+            extension=extension,
             original_type_annotations=original_type_annotations,
         )
 
@@ -296,6 +304,7 @@ def input(
     one_of: Optional[bool] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extension: Optional[TypeExtension] = None,
 ) -> T: ...
 
 
@@ -309,6 +318,7 @@ def input(
     one_of: Optional[bool] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extension: Optional[TypeExtension] = None,
 ) -> Callable[[T], T]: ...
 
 
@@ -319,6 +329,7 @@ def input(
     one_of: Optional[bool] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extension: Optional[TypeExtension] = None,
 ):
     """Annotates a class as a GraphQL Input type.
     Example usage:
@@ -338,6 +349,7 @@ def input(
         description=description,
         directives=directives,
         is_input=True,
+        extension=extension,
     )
 
 
@@ -351,6 +363,7 @@ def interface(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extension: Optional[TypeExtension] = None,
 ) -> T: ...
 
 
@@ -363,6 +376,7 @@ def interface(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extension: Optional[TypeExtension] = None,
 ) -> Callable[[T], T]: ...
 
 
@@ -375,6 +389,7 @@ def interface(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extension: Optional[TypeExtension] = None,
 ):
     """Annotates a class as a GraphQL Interface.
     Example usage:
@@ -389,6 +404,7 @@ def interface(
         description=description,
         directives=directives,
         is_interface=True,
+        extension=extension,
     )
 
 

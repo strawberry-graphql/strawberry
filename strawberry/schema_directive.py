@@ -4,6 +4,7 @@ from typing import Callable, List, Optional, Type, TypeVar
 from typing_extensions import dataclass_transform
 
 from strawberry.object_type import _wrap_dataclass
+from strawberry.types.type_extension import TypeExtension
 from strawberry.types.type_resolver import _get_fields
 
 from .directive import directive_field
@@ -54,7 +55,7 @@ def schema_directive(
 ) -> Callable[..., T]:
     def _wrap(cls: T) -> T:
         cls = _wrap_dataclass(cls)  # type: ignore
-        fields = _get_fields(cls, {})
+        fields = _get_fields(cls, TypeExtension(), {})
 
         cls.__strawberry_directive__ = StrawberrySchemaDirective(
             python_name=cls.__name__,
