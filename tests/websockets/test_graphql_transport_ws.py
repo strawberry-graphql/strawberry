@@ -250,11 +250,8 @@ async def test_can_send_payload_with_additional_things(ws_raw: WebSocketClient):
 
     data = await ws.receive(timeout=2)
 
-    assert json.loads(data.data) == {
-        "type": "next",
-        "id": "1",
-        "payload": {"data": {"echo": "Hi"}},
-    }
+    result = json.loads(data.data)
+    assert_next(result, "1", {"echo": "Hi"})
 
 
 async def test_server_sent_ping(ws: WebSocketClient):

@@ -64,11 +64,9 @@ async def test_subscription_with_permission():
 
     query = "subscription { example }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
-
-    assert not result.errors
-    assert result.data["example"] == "Hi"
+    async for result in schema.subscribe(query):
+        assert not result.errors
+        assert result.data["example"] == "Hi"
 
 
 @pytest.mark.asyncio
