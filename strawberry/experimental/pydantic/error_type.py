@@ -28,6 +28,7 @@ from strawberry.experimental.pydantic.utils import (
     normalize_type,
 )
 from strawberry.object_type import _process_type, _wrap_dataclass
+from strawberry.types.type_extension import TypeExtension
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.typing import get_list_annotation, is_list
 
@@ -114,7 +115,9 @@ def error_type(
         ]
 
         wrapped = _wrap_dataclass(cls)
-        extra_fields = cast(List[dataclasses.Field], _get_fields(wrapped, {}))
+        extra_fields = cast(
+            List[dataclasses.Field], _get_fields(wrapped, TypeExtension(), {})
+        )
         private_fields = get_private_fields(wrapped)
 
         all_model_fields.extend(
