@@ -1,4 +1,5 @@
-Release type: patch
+Release type: minor
 
-Add description of scalar types JSON, Base16, Base32, Base64.
-All scalar types are documented after this release.
+This releases updates the JSON scalar definition to have the updated `specifiedBy` URL.
+
+The release is marked as minor because it will change the generated schema if you're using the JSON scalar.
