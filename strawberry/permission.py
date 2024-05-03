@@ -8,9 +8,10 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Awaitable,
-    Dict,
     List,
+    Literal,
     Optional,
+    Tuple,
     Type,
     Union,
 )
@@ -52,7 +53,12 @@ class BasePermission(abc.ABC):
     @abc.abstractmethod
     def has_permission(
         self, source: Any, info: Info, **kwargs: Any
-    ) -> Union[bool, Awaitable[bool], (False, dict), Awaitable[(False, dict)]]:
+    ) -> Union[
+        bool,
+        Awaitable[bool],
+        Tuple[Literal[False], dict],
+        Awaitable[Tuple[Literal[False], dict]],
+    ]:
         """
         This method is a required override in the permission class. It checks if the user has the necessary permissions to access a specific field.
 
@@ -138,8 +144,13 @@ class CompositePermission(BasePermission, abc.ABC):
 
 class AndPermission(CompositePermission):
     def has_permission(
-        self, source: Any, info: Info, **kwargs: dict
-    ) -> Union[bool, Awaitable[bool], (False, dict), Awaitable[(False, dict)]]:
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> Union[
+        bool,
+        Awaitable[bool],
+        Tuple[Literal[False], dict],
+        Awaitable[Tuple[Literal[False], dict]],
+    ]:
         if self.is_async:
             return self._has_permission_async(source, info, **kwargs)
 
@@ -149,8 +160,8 @@ class AndPermission(CompositePermission):
         return True
 
     async def _has_permission_async(
-        self, source: Any, info: Info, **kwargs: dict
-    ) -> Union[bool, (False, dict)]:
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> Union[bool, Tuple[Literal[False], dict]]:
         for permission in self.child_permissions:
             if not await await_maybe(permission.has_permission(source, info, **kwargs)):
                 return False, {"failed_permissions": [permission]}
@@ -162,8 +173,13 @@ class AndPermission(CompositePermission):
 
 class OrPermission(CompositePermission):
     def has_permission(
-        self, source: Any, info: Info, **kwargs: dict
-    ) -> Union[bool, Awaitable[bool], (False, dict), Awaitable[(False, dict)]]:
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> Union[
+        bool,
+        Awaitable[bool],
+        Tuple[Literal[False], dict],
+        Awaitable[Tuple[Literal[False], dict]],
+    ]:
         if self.is_async:
             return self._has_permission_async(source, info, **kwargs)
         failed_permissions = []
@@ -175,8 +191,8 @@ class OrPermission(CompositePermission):
         return False, {"failed_permissions": failed_permissions}
 
     async def _has_permission_async(
-        self, source: Any, info: Info, **kwargs: dict
-    ) -> Union[bool, (False, dict)]:
+        self, source: Any, info: Info, **kwargs: Any
+    ) -> Union[bool, Tuple[Literal[False], dict]]:
         failed_permissions = []
         for permission in self.child_permissions:
             if await await_maybe(permission.has_permission(source, info, **kwargs)):
@@ -250,7 +266,7 @@ class PermissionExtension(FieldExtension):
         next_: SyncExtensionResolver,
         source: Any,
         info: Info,
-        **kwargs: Dict[str, Any],
+        **kwargs: Any[str, Any],
     ) -> Any:
         """
         Checks if the permission should be accepted and
@@ -276,7 +292,7 @@ class PermissionExtension(FieldExtension):
         next_: AsyncExtensionResolver,
         source: Any,
         info: Info,
-        **kwargs: Dict[str, Any],
+        **kwargs: Any[str, Any],
     ) -> Any:
         for permission in self.permissions:
             permission_response = await await_maybe(
