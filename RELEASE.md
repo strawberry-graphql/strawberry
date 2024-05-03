@@ -7,5 +7,5 @@ The datadog extension would throw an `AssertionError` whenever there was no quer
 for example, a user POSTed something to `/graphql` with a JSON that doesn't contain a `query` field as per the
 GraphQL spec.
 
-The fix consists of adding `invalid` to the `operation_type` tag, and also adding `invalid` to the resource name.
-It also makes it easier to look for logs of users making invalid queries by searching for `invalid` in Datadog.
+The fix consists of adding `query_missing` to the `operation_type` tag, and also adding `query_missing` to the resource name.
+It also makes it easier to look for logs of users making invalid queries by searching for `query_missing` in Datadog.

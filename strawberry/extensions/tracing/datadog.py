@@ -28,7 +28,7 @@ class DatadogTracingExtension(SchemaExtension):
     @cached_property
     def _resource_name(self) -> str:
         if self.execution_context.query is None:
-            return "invalid"
+            return "query_missing"
 
         query_hash = self.hash_query(self.execution_context.query)
 
@@ -86,7 +86,7 @@ class DatadogTracingExtension(SchemaExtension):
             elif self.execution_context.query.strip().startswith("subscription"):
                 operation_type = "subscription"
         else:
-            operation_type = "invalid"
+            operation_type = "query_missing"
 
         self.request_span.set_tag("graphql.operation_type", operation_type)
         yield

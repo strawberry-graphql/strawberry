@@ -292,7 +292,7 @@ async def test_create_span_override(datadog_extension):
 
 
 @pytest.mark.asyncio
-async def test_uses_invalid_operation_if_no_query(datadog_extension, mocker):
+async def test_uses_query_missing_operation_if_no_query(datadog_extension, mocker):
     """Avoid regression of https://github.com/strawberry-graphql/strawberry/issues/3150"""
     extension, mock = datadog_extension
 
@@ -306,11 +306,11 @@ async def test_uses_invalid_operation_if_no_query(datadog_extension, mocker):
         [
             mocker.call.trace(
                 "Anonymous Query",
-                resource="invalid",
+                resource="query_missing",
                 span_type="graphql",
                 service="strawberry",
             ),
             mocker.call.trace().set_tag("graphql.operation_name", None),
-            mocker.call.trace().set_tag("graphql.operation_type", "invalid"),
+            mocker.call.trace().set_tag("graphql.operation_type", "query_missing"),
         ]
     )
