@@ -45,8 +45,8 @@ class MyExtension(SchemaExtension):
         return _next(root, info, *args, **kwargs)
 ```
 
-Note that `resolve` can also be implemented asynchronously, in which
-case the result from `_next` must be optionally awaited:
+Note that `resolve` can also be implemented asynchronously, in which case the
+result from `_next` must be optionally awaited:
 
 ```python
 from inspect import isawaitable

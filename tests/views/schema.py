@@ -91,7 +91,9 @@ class MyAsyncExtension(SchemaExtension):
     def get_results(self) -> Dict[str, str]:
         return {"example": "example"}
 
-    async def resolve(self, _next, root, info: strawberry.Info, *args: Any, **kwargs: Any):
+    async def resolve(
+        self, _next, root, info: strawberry.Info, *args: Any, **kwargs: Any
+    ):
         self.resolve_called()
         self.active_counter += 1
         try:
