@@ -1,5 +1,7 @@
 from typing import Dict
 
+import pytest
+
 import strawberry
 
 try:
@@ -181,3 +183,22 @@ def test_can_set_background_task():
 
     assert response.json() == {"data": {"something": "foo"}}
     assert task_complete
+
+
+def test_starlite_usage_triggers_deprecation_warning():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def abc(self, info: strawberry.Info) -> str:
+            assert info.context.get("request") is not None
+            assert info.context.get("strawberry") is None
+            return "abc"
+
+    schema = strawberry.Schema(query=Query)
+
+    with pytest.deprecated_call():
+        graphql_controller = make_graphql_controller(
+            path="/graphql", schema=schema, context_getter=None
+        )
+    with pytest.deprecated_call():
+        app = Starlite(route_handlers=[graphql_controller])
