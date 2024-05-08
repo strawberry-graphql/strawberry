@@ -184,7 +184,3 @@ Check out the following resources to learn more about GraphQL and Strawberry.
 - [Schema Basics](/docs/general/schema-basics.md)
 - [Resolvers](/docs/types/resolvers.md)
 - [Deployment](/docs/operations/deployment.md)
-
-## Plug-and-play
-
-Here is the full snippet for your example. Take and run it
