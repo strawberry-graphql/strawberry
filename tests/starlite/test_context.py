@@ -196,9 +196,13 @@ def test_starlite_usage_triggers_deprecation_warning():
 
     schema = strawberry.Schema(query=Query)
 
-    with pytest.deprecated_call():
+    with pytest.deprecated_call(
+        match=r"The `starlite` integration is deprecated in favor of `litestar` integration."
+    ):
         graphql_controller = make_graphql_controller(
             path="/graphql", schema=schema, context_getter=None
         )
-    with pytest.deprecated_call():
-        app = Starlite(route_handlers=[graphql_controller])
+    with pytest.deprecated_call(
+        match=r"The `starlite` integration is deprecated in favor of `litestar` integration."
+    ):
+        _ = Starlite(route_handlers=[graphql_controller])

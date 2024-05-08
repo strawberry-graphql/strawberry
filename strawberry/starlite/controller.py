@@ -120,7 +120,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
 
 
 @deprecated(
-    "The `starlite` integration is deprecated, please use `litestar` instead.",
+    "The `starlite` integration is deprecated in favor of `litestar` integration",
     stacklevel=2,
 )
 class StarliteRequestAdapter(AsyncHTTPRequestAdapter):
@@ -159,7 +159,7 @@ class BaseContext:
 
 
 @deprecated(
-    "The `starlite` integration is deprecated, please use `litestar` instead.",
+    "The `starlite` integration is deprecated in favor of `litestar` integration",
     stacklevel=2,
 )
 def make_graphql_controller(
