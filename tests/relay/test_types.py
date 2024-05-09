@@ -289,3 +289,35 @@ def test_list_connection_without_edges_or_page_info(mocker: MagicMock):
             "totalCount": -1,
         }
     }
+
+
+def test_list_connection_with_nested_fragments():
+    ret = schema.execute_sync(
+        """
+    query {
+      fruits {
+        ...FruitFragment
+      }
+    }
+
+    fragment FruitFragment on FruitConnection {
+        edges {
+            node {
+                id
+            }
+        }
+    }
+    """
+    )
+    assert ret.errors is None
+    assert ret.data == {
+        "fruits": {
+            "edges": [
+                {"node": {"id": "RnJ1aXQ6MQ=="}},
+                {"node": {"id": "RnJ1aXQ6Mg=="}},
+                {"node": {"id": "RnJ1aXQ6Mw=="}},
+                {"node": {"id": "RnJ1aXQ6NA=="}},
+                {"node": {"id": "RnJ1aXQ6NQ=="}},
+            ]
+        }
+    }
