@@ -1,6 +1,28 @@
 CHANGELOG
 =========
 
+0.227.5 - 2024-05-11
+--------------------
+
+**Deprecations:** This release deprecates the `Starlite` integration in favour of the `LiteStar` integration.
+Refer to the [LiteStar](./litestar.md) integration for more information.
+LiteStar is a [renamed](https://litestar.dev/about/organization.html#litestar-and-starlite) and upgraded version of Starlite.
+
+Before:
+
+```python
+from strawberry.starlite import make_graphql_controller
+```
+
+After:
+
+```python
+from strawberry.litestar import make_graphql_controller
+```
+
+Contributed by [Egor](https://github.com/Birdi7) via [PR #3492](https://github.com/strawberry-graphql/strawberry/pull/3492/)
+
+
 0.227.4 - 2024-05-09
 --------------------
 
