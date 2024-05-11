@@ -1,6 +1,22 @@
 CHANGELOG
 =========
 
+0.227.6 - 2024-05-11
+--------------------
+
+Fix `AssertionError` caused by the `DatadogTracingExtension` whenever the query is unavailable.
+
+The bug in question was reported by issue [#3150](https://github.com/strawberry-graphql/strawberry/issues/3150).
+The datadog extension would throw an `AssertionError` whenever there was no query available. This could happen if,
+for example, a user POSTed something to `/graphql` with a JSON that doesn't contain a `query` field as per the
+GraphQL spec.
+
+The fix consists of adding `query_missing` to the `operation_type` tag, and also adding `query_missing` to the resource name.
+It also makes it easier to look for logs of users making invalid queries by searching for `query_missing` in Datadog.
+
+Contributed by [Lucas Valente](https://github.com/serramatutu) via [PR #3483](https://github.com/strawberry-graphql/strawberry/pull/3483/)
+
+
 0.227.5 - 2024-05-11
 --------------------
 
