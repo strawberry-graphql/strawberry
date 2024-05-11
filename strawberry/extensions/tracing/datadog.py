@@ -82,9 +82,10 @@ class DatadogTracingExtension(SchemaExtension):
         query = self.execution_context.query
 
         if query is not None:
+            query = query.strip()
             operation_type = "query"
 
-            if query.strip().startswith("mutation"):
+            if query.startswith("mutation"):
                 operation_type = "mutation"
             elif query.startswith("subscription"):  # pragma: no cover
                 operation_type = "subscription"
