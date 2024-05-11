@@ -6,6 +6,7 @@ import warnings
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Union, cast
+from typing_extensions import deprecated
 
 from starlite import (
     BackgroundTasks,
@@ -118,6 +119,10 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         return await self._get_root_value()
 
 
+@deprecated(
+    "The `starlite` integration is deprecated in favor of `litestar` integration",
+    stacklevel=2,
+)
 class StarliteRequestAdapter(AsyncHTTPRequestAdapter):
     def __init__(self, request: Request[Any, Any]) -> None:
         self.request = request
@@ -153,6 +158,10 @@ class BaseContext:
         self.response: Optional[Response] = None
 
 
+@deprecated(
+    "The `starlite` integration is deprecated in favor of `litestar` integration",
+    stacklevel=2,
+)
 def make_graphql_controller(
     schema: BaseSchema,
     path: str = "",
