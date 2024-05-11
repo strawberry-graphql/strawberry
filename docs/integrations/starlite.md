@@ -4,6 +4,16 @@ title: Starlite
 
 # Starlite
 
+## Deprecation Notice
+
+This integration has been deprecated in favor of the `Litestar` integration.
+Refer to the [Litestar](./litestar.md) integration for more information.
+Litestar is a
+[renamed](https://litestar.dev/about/organization.html#litestar-and-starlite)
+and upgraded version of Starlite.
+
+## How to use
+
 Strawberry comes with an integration for
 [Starlite](https://starliteproject.dev/) by providing a
 `make_graphql_controller` function that can be used to create a GraphQL
