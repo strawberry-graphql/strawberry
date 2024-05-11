@@ -86,7 +86,7 @@ class DatadogTracingExtension(SchemaExtension):
 
             if query.strip().startswith("mutation"):
                 operation_type = "mutation"
-            elif query.startswith("subscription"):
+            elif query.startswith("subscription"):  # pragma: no cover
                 operation_type = "subscription"
         else:
             operation_type = "query_missing"
