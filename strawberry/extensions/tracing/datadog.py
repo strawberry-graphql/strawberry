@@ -79,17 +79,22 @@ class DatadogTracingExtension(SchemaExtension):
         )
         self.request_span.set_tag("graphql.operation_name", self._operation_name)
 
-        if self.execution_context.query is not None:
+        query = self.execution_context.query
+
+        if query is not None:
             operation_type = "query"
-            if self.execution_context.query.strip().startswith("mutation"):
+
+            if query.strip().startswith("mutation"):
                 operation_type = "mutation"
-            elif self.execution_context.query.strip().startswith("subscription"):
+            elif query.startswith("subscription"):
                 operation_type = "subscription"
         else:
             operation_type = "query_missing"
 
         self.request_span.set_tag("graphql.operation_type", operation_type)
+
         yield
+
         self.request_span.finish()
 
     def on_validate(self) -> Generator[None, None, None]:
