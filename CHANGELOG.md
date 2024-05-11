@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.227.4 - 2024-05-09
+--------------------
+
+This release fixes a bug in release 0.227.3 where FragmentSpread nodes
+were not resolving edges.
+
+Contributed by [Eric Uriostigue](https://github.com/euriostigue) via [PR #3487](https://github.com/strawberry-graphql/strawberry/pull/3487/)
+
+
 0.227.3 - 2024-05-01
 --------------------
 
