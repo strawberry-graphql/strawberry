@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.227.7 - 2024-05-12
+--------------------
+
+This releases updates the `field-extensions` documentation's `StrawberryField` stability warning to include stable features.
+
+The release is marked as patch because it only changes documentation.
+
+Contributed by [Ray Sy](https://github.com/fireteam99) via [PR #3496](https://github.com/strawberry-graphql/strawberry/pull/3496/)
+
+
 0.227.6 - 2024-05-11
 --------------------
 
