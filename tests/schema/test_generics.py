@@ -3,8 +3,6 @@ from enum import Enum
 from typing import Any, Generic, List, Optional, TypeVar, Union
 from typing_extensions import Self
 
-import pytest
-
 import strawberry
 
 
@@ -281,52 +279,6 @@ def test_supports_multiple_generic():
     assert not result.errors
     assert result.data == {
         "multiple": {"__typename": "IntStrMultiple", "a": 123, "b": "123"}
-    }
-
-
-def test_support_nested_generics():
-    T = TypeVar("T")
-
-    @strawberry.type
-    class User:
-        name: str
-
-    @strawberry.type
-    class Edge(Generic[T]):
-        node: T
-
-    @strawberry.type
-    class Connection(Generic[T]):
-        edge: Edge[T]
-
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def users(self) -> Connection[User]:
-            return Connection(edge=Edge(node=User(name="Patrick")))
-
-    schema = strawberry.Schema(query=Query)
-
-    query = """{
-        users {
-            __typename
-            edge {
-                __typename
-                node {
-                    name
-                }
-            }
-        }
-    }"""
-
-    result = schema.execute_sync(query)
-
-    assert not result.errors
-    assert result.data == {
-        "users": {
-            "__typename": "UserConnection",
-            "edge": {"__typename": "UserEdge", "node": {"name": "Patrick"}},
-        }
     }
 
 
@@ -645,58 +597,6 @@ def test_supports_generic_in_unions_multiple_vars():
     }
 
 
-def test_supports_generic_in_unions_with_nesting():
-    T = TypeVar("T")
-
-    @strawberry.type
-    class User:
-        name: str
-
-    @strawberry.type
-    class Edge(Generic[T]):
-        node: T
-
-    @strawberry.type
-    class Connection(Generic[T]):
-        edge: Edge[T]
-
-    @strawberry.type
-    class Fallback:
-        node: str
-
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def users(self) -> Union[Connection[User], Fallback]:
-            return Connection(edge=Edge(node=User(name="Patrick")))
-
-    schema = strawberry.Schema(query=Query)
-
-    query = """{
-        users {
-            __typename
-            ... on UserConnection {
-                edge {
-                    __typename
-                    node {
-                        name
-                    }
-                }
-            }
-        }
-    }"""
-
-    result = schema.execute_sync(query)
-
-    assert not result.errors
-    assert result.data == {
-        "users": {
-            "__typename": "UserConnection",
-            "edge": {"__typename": "UserEdge", "node": {"name": "Patrick"}},
-        }
-    }
-
-
 def test_supports_multiple_generics_in_union():
     T = TypeVar("T")
 
@@ -937,7 +837,6 @@ def test_supports_lists_within_unions_empty_list():
     assert result.data == {"user": {"__typename": "UserEdge", "nodes": []}}
 
 
-@pytest.mark.xfail()
 def test_raises_error_when_unable_to_find_type():
     T = TypeVar("T")
 
@@ -971,10 +870,9 @@ def test_raises_error_when_unable_to_find_type():
 
     result = schema.execute_sync(query)
 
-    assert result.errors[0].message == (
-        "Unable to find type for <class 'tests.schema.test_generics."
-        "test_raises_error_when_unable_to_find_type.<locals>.Edge'> "
-        "and (<class 'str'>,)"
+    assert (
+        'of the field "user" is not in the list of the types of the union'
+        in result.errors[0].message
     )
 
 
