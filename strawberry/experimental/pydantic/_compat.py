@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 IS_PYDANTIC_V2: bool = PYDANTIC_VERSION.startswith("2.")
 IS_PYDANTIC_V1: bool = not IS_PYDANTIC_V2
 
-if IS_PYDANTIC_V2:
+if IS_PYDANTIC_V2 and TYPE_CHECKING:
     import pydantic.v1
 
 
@@ -165,7 +165,7 @@ class PydanticV2Compat:
 
         return type_
 
-    def model_dump(self, model_instance: pydantic.BaseModel) -> Dict[Any, Any]:
+    def model_dump(self, model_instance: BaseModel) -> Dict[Any, Any]:
         return model_instance.model_dump()
 
 
@@ -241,7 +241,7 @@ class PydanticV1Compat:
 
         return type_
 
-    def model_dump(self, model_instance: pydantic.BaseModel) -> Dict[Any, Any]:
+    def model_dump(self, model_instance: BaseModel) -> Dict[Any, Any]:
         return model_instance.dict()
 
 

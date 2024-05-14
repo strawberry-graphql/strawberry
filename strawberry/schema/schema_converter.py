@@ -362,6 +362,7 @@ class GraphQLCoreConverter:
             ),
         )
         default_value: object
+
         if field.default_value is UNSET or field.default_value is dataclasses.MISSING:
             default_value = Undefined
         else:

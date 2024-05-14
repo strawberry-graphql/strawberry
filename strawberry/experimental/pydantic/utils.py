@@ -13,8 +13,6 @@ from typing import (
     cast,
 )
 
-import pydantic
-
 from strawberry.experimental.pydantic._compat import (
     CompatModelField,
     PydanticCompat,
@@ -112,7 +110,7 @@ def get_default_factory_for_field(
         # if the default value is a pydantic base model
         # we should return the serialized version of that default for
         # printing the value.
-        if isinstance(default, pydantic.BaseModel):
+        if isinstance(default, BaseModel):
             return lambda: compat.model_dump(default)
         else:
             return lambda: smart_deepcopy(default)
