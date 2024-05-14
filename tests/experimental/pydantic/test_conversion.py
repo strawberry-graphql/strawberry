@@ -842,6 +842,7 @@ def test_can_convert_pydantic_type_to_strawberry_newtype_list():
 def test_get_default_factory_for_field():
     class User(BaseModel):
         pass
+
     compat = PydanticCompat.from_model(User)
     MISSING_TYPE = compat.PYDANTIC_MISSING_TYPE
 
