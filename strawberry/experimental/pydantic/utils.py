@@ -13,6 +13,8 @@ from typing import (
     cast,
 )
 
+import pydantic
+
 from strawberry.experimental.pydantic._compat import (
     CompatModelField,
     PydanticCompat,
@@ -72,6 +74,7 @@ class DataclassCreationFields(NamedTuple):
 
 def get_default_factory_for_field(
     field: CompatModelField,
+    compat: PydanticCompat,
 ) -> Union[NoArgAnyCallable, dataclasses._MISSING_TYPE]:
     """
     Gets the default factory for a pydantic field.
@@ -105,9 +108,15 @@ def get_default_factory_for_field(
         return default_factory
 
     # if we have a default, we should return it
-
     if has_default:
-        return lambda: smart_deepcopy(default)
+        # if the default value is a pydantic base model
+        # we should return the serialized version of that default for
+        # printing the value.
+        if isinstance(default, pydantic.BaseModel):
+            default = cast(pydantic.BaseModel, default)
+            return lambda: compat.model_dump(default)
+        else:
+            return lambda: smart_deepcopy(default)
 
     # if we don't have default or default_factory, but the field is not required,
     # we should return a factory that returns None
