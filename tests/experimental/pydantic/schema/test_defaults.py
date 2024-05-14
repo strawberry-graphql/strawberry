@@ -185,7 +185,6 @@ def test_v2_explicit_default():
     assert print_schema(schema) == textwrap.dedent(expected).strip()
 
 
-@needs_pydantic_v2
 def test_v2_input_with_nonscalar_default():
     class NonScalarType(pydantic.BaseModel):
         id: int = 10
