@@ -13,6 +13,8 @@ from typing import (
     cast,
 )
 
+from pydantic import BaseModel
+
 from strawberry.experimental.pydantic._compat import (
     CompatModelField,
     PydanticCompat,
@@ -33,7 +35,6 @@ from strawberry.utils.typing import (
 )
 
 if TYPE_CHECKING:
-    from pydantic import BaseModel
     from pydantic.typing import NoArgAnyCallable
 
 
