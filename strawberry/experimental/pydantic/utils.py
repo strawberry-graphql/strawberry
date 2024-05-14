@@ -113,7 +113,6 @@ def get_default_factory_for_field(
         # we should return the serialized version of that default for
         # printing the value.
         if isinstance(default, pydantic.BaseModel):
-            default = cast(pydantic.BaseModel, default)
             return lambda: compat.model_dump(default)
         else:
             return lambda: smart_deepcopy(default)
