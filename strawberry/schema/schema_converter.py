@@ -362,9 +362,16 @@ class GraphQLCoreConverter:
             ),
         )
         default_value: object
-
+        model_dump = getattr(field.default_value, "model_dump", None)
+        is_not_type = not isinstance(field.default_value, type)
         if field.default_value is UNSET or field.default_value is dataclasses.MISSING:
             default_value = Undefined
+        elif dataclasses.is_dataclass(field.default_value) and is_not_type:
+            dataclass_instance = cast(Any, field.default_value)
+            default_value = dataclasses.asdict(dataclass_instance)
+        elif model_dump and callable(model_dump) and is_not_type:
+            # pydantic instance
+            default_value = model_dump()
         else:
             default_value = field.default_value
 

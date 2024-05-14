@@ -17,6 +17,9 @@ if TYPE_CHECKING:
 IS_PYDANTIC_V2: bool = PYDANTIC_VERSION.startswith("2.")
 IS_PYDANTIC_V1: bool = not IS_PYDANTIC_V2
 
+if IS_PYDANTIC_V2:
+    import pydantic.v1
+
 
 @dataclass
 class CompatModelField:
