@@ -243,8 +243,6 @@ def test_v2_input_with_nonscalar_default():
     }
     """
 
-    print_schema(schema)
-
     assert print_schema(schema) == textwrap.dedent(expected).strip()
 
     query = """
