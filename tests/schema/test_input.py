@@ -1,4 +1,3 @@
-import dataclasses
 import textwrap
 from typing import Optional
 
@@ -56,7 +55,7 @@ def test_input_with_nonscalar_field_default():
             return ExampleOutput(
                 input_id=data.id,
                 non_scalar_id=data.non_scalar_field.id,
-                non_scalar_nullable_field=data.non_scalar_field.nullable_field
+                non_scalar_nullable_field=data.non_scalar_field.nullable_field,
             )
 
     schema = strawberry.Schema(query=Query)
@@ -98,7 +97,5 @@ def test_input_with_nonscalar_field_default():
     )
 
     assert not result.errors
-    expected_result = {
-        'inputId': 10, 'nonScalarId': 10,  'nonScalarNullableField': None
-    }
-    assert result.data['example'] == expected_result
+    expected_result = {"inputId": 10, "nonScalarId": 10, "nonScalarNullableField": None}
+    assert result.data["example"] == expected_result

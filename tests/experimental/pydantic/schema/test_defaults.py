@@ -196,16 +196,12 @@ def test_v2_input_with_nonscalar_default():
         id: int = 10
 
     @strawberry.experimental.pydantic.type(
-        model=NonScalarType,
-        all_fields=True,
-        is_input=True
+        model=NonScalarType, all_fields=True, is_input=True
     )
-    class NonScalarTypeInput:
-        ...
+    class NonScalarTypeInput: ...
 
     @strawberry.experimental.pydantic.type(model=Owning, all_fields=True, is_input=True)
-    class OwningInput:
-        ...
+    class OwningInput: ...
 
     @strawberry.type
     class ExampleOutput:
@@ -220,7 +216,7 @@ def test_v2_input_with_nonscalar_default():
             return ExampleOutput(
                 owning_id=x.id,
                 non_scalar_id=x.non_scalar_type.id,
-                non_scalar_nullable_field=x.non_scalar_type.nullable_field
+                non_scalar_nullable_field=x.non_scalar_type.nullable_field,
             )
 
     schema = strawberry.Schema(Query)
@@ -265,6 +261,8 @@ def test_v2_input_with_nonscalar_default():
 
     assert not result.errors
     expected_result = {
-        'owningId': 10, 'nonScalarId': 10,  'nonScalarNullableField': None
+        "owningId": 10,
+        "nonScalarId": 10,
+        "nonScalarNullableField": None,
     }
-    assert result.data['test'] == expected_result
+    assert result.data["test"] == expected_result
