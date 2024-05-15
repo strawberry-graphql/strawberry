@@ -205,7 +205,6 @@ jobs:
 
       - uses: codecov/codecov-action@v4
         if: ${{ always() }}
-        working-directory: ${{ env.DEV_DRIVE }}/strawberry
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
