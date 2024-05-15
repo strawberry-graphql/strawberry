@@ -179,7 +179,6 @@ jobs:
       - run: pipx install coverage
 
       - uses: actions/setup-python@v5
-        working-directory: ${{ env.DEV_DRIVE }}/strawberry
         id: setup-python
         with:
           python-version: "3.11"
