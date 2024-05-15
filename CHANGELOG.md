@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.229.1 - 2024-05-15
+--------------------
+
+This release fixes a regression from 0.229.0 where using a generic interface
+inside a union would return an error.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3502](https://github.com/strawberry-graphql/strawberry/pull/3502/)
+
+
 0.229.0 - 2024-05-12
 --------------------
 
