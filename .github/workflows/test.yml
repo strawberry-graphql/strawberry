@@ -158,32 +158,55 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      - name: Create Dev Drive using ReFS
+        run: |
+          $Volume = New-VHD -Path C:/uv_dev_drive.vhdx -SizeBytes 10GB |
+                    Mount-VHD -Passthru |
+                    Initialize-Disk -Passthru |
+                    New-Partition -AssignDriveLetter -UseMaximumSize |
+                    Format-Volume -FileSystem ReFS -Confirm:$false -Force
+          Write-Output $Volume
+          Write-Output "DEV_DRIVE=$($Volume.DriveLetter):" >> $env:GITHUB_ENV
+
       - uses: actions/checkout@v4
+
+      # actions/checkout does not let us clone into anywhere outside ${{ github.workspace }}, so we have to copy the clone...
+      - name: Copy Git Repo to Dev Drive
+        run: |
+          Copy-Item -Path "${{ github.workspace }}" -Destination "${{ env.DEV_DRIVE }}/uv" -Recurse
+
       - run: pipx install poetry
       - run: pipx install coverage
+
       - uses: actions/setup-python@v5
+        working-directory: ${{ env.DEV_DRIVE }}/strawberry
         id: setup-python
         with:
           python-version: "3.11"
           cache: "poetry"
 
       - run: poetry install --with integrations
+        working-directory: ${{ env.DEV_DRIVE }}/strawberry
         if: steps.setup-python.outputs.cache-hit != 'true'
       # Since we are running all the integrations at once, we can't use
       # pydantic v2. It is not compatible with starlette yet
       - run: poetry run pip install pydantic==1.10
+        working-directory: ${{ env.DEV_DRIVE }}/strawberry
 
       # we use poetry directly instead of nox since we want to
       # test all integrations at once on windows
       # but we want to exclude tests/mypy since we are using an old version of pydantic
       - run: |
           poetry run pytest --cov=. --cov-append --cov-report=xml -n auto --showlocals --ignore tests/mypy -vv
+        working-directory: ${{ env.DEV_DRIVE }}/strawberry
       - name: coverage xml
         run: coverage xml -i
         if: ${{ always() }}
+        working-directory: ${{ env.DEV_DRIVE }}/strawberry
 
       - uses: codecov/codecov-action@v4
         if: ${{ always() }}
+        working-directory: ${{ env.DEV_DRIVE }}/strawberry
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
