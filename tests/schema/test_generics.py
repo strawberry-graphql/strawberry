@@ -1180,7 +1180,7 @@ def test_generic_with_interface():
 
     @strawberry.type
     class Pagination(Generic[T]):
-        items: list[T]
+        items: List[T]
 
     @strawberry.interface
     class TestInterface:
