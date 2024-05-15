@@ -1173,3 +1173,40 @@ def test_generic_interface_extra_types():
 
     assert not query_result.errors
     assert query_result.data == {"real": {"__typename": "IntReal", "x": ""}}
+
+
+def test_generic_with_interface():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Pagination(Generic[T]):
+        items: List[T]
+
+    @strawberry.interface
+    class TestInterface:
+        data: str
+
+    @strawberry.type
+    class Test1(TestInterface):
+        pass
+
+    @strawberry.type
+    class TestError:
+        reason: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(
+            self, info: strawberry.Info
+        ) -> Union[Pagination[TestInterface], TestError]:
+            return Pagination(items=[Test1(data="test1")])
+
+    schema = strawberry.Schema(Query, types=[Test1])
+
+    query_result = schema.execute_sync(
+        "{ hello { ... on TestInterfacePagination { items { data }} } }"
+    )
+
+    assert not query_result.errors
+    assert query_result.data == {"hello": {"items": [{"data": "test1"}]}}
