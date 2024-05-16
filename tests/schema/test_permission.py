@@ -333,7 +333,7 @@ async def test_no_graphql_error_when_both_or_permission_is_allowed():
     query = "{ userAsync }"
 
     result = await schema.execute(query)
-    assert result.data["user"] == "patrick"
+    assert result.data["userAsync"] == "patrick"
 
 
 @pytest.mark.asyncio
@@ -394,7 +394,7 @@ async def test_no_graphql_error_when_left_or_permission_is_allowed():
     query = "{ userAsync }"
 
     result = await schema.execute(query)
-    assert result.data["user"] == "patrick"
+    assert result.data["userAsync"] == "patrick"
 
 
 @pytest.mark.asyncio
