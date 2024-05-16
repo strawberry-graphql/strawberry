@@ -14,9 +14,10 @@ from typing import (
     Tuple,
     Type,
     TypedDict,
+    TypeVar,
     Union,
 )
-from typing_extensions import deprecated
+from typing_extensions import NotRequired, Unpack, deprecated
 
 from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.exceptions.permission_fail_silently_requires_optional import (
@@ -37,14 +38,15 @@ if TYPE_CHECKING:
     from strawberry.field import StrawberryField
     from strawberry.types import Info
 
+T = TypeVar("T")
+U = TypeVar("U")
 
-def unpack_maybe(
-    value: Union[object, Tuple[bool, object]], default: object = None
-) -> Tuple[object, object]:
+
+def unpack_maybe(value: Union[T, Tuple[T, U]], default: U) -> Tuple[T, U]:
     if isinstance(value, tuple) and len(value) == 2:
         return value
     else:
-        return value, default
+        return value, default  # type: ignore
 
 
 class BasePermission(abc.ABC):
@@ -131,22 +133,27 @@ class BasePermission(abc.ABC):
     def is_async(self) -> bool:
         return iscoroutinefunction(self.has_permission)
 
-    def __and__(self, other: BasePermission):
+    def __and__(self, other: BasePermission) -> AndPermission:
         return AndPermission([self, other])
 
-    def __or__(self, other: BasePermission):
+    def __or__(self, other: BasePermission) -> OrPermission:
         return OrPermission([self, other])
 
 
 class CompositePermissionContext(TypedDict):
-    failed_permissions: List[Tuple[BasePermission, dict]]
+    failed_permissions: NotRequired[List[Tuple[BasePermission, dict]]]
 
 
 class CompositePermission(BasePermission, abc.ABC):
-    def __init__(self, child_permissions: List[BasePermission]):
+    def __init__(self, child_permissions: List[BasePermission]) -> None:
         self.child_permissions = child_permissions
 
-    def on_unauthorized(self, **kwargs: object) -> Any:
+    def on_unauthorized(
+        self,
+        **kwargs: Unpack[  # type: ignore
+            CompositePermissionContext
+        ],
+    ) -> Any:
         failed_permissions = kwargs.get("failed_permissions", [])
         for permission, context in failed_permissions:
             permission.on_unauthorized(**context)
@@ -157,7 +164,7 @@ class CompositePermission(BasePermission, abc.ABC):
 
 
 class AndPermission(CompositePermission):
-    def has_permission(
+    def has_permission(  # type: ignore
         self, source: Any, info: Info, **kwargs: object
     ) -> Union[
         bool,
@@ -166,12 +173,13 @@ class AndPermission(CompositePermission):
         Awaitable[Tuple[Literal[False], CompositePermissionContext]],
     ]:
         if self.is_async:
-            return self._has_permission_async(source, info, **kwargs)
+            return self._has_permission_async(source, info, **kwargs)  # type: ignore
 
         for permission in self.child_permissions:
-            has_permission, context = unpack_maybe(
-                permission.has_permission(source, info, **kwargs), {}
-            )
+            permission_result: bool | Tuple[Literal[False], dict] = (
+                permission.has_permission(source, info, **kwargs)
+            )  # type: ignore
+            has_permission, context = unpack_maybe(permission_result, {})
             if not has_permission:
                 return False, {"failed_permissions": [(permission, context)]}
         return True
@@ -180,7 +188,7 @@ class AndPermission(CompositePermission):
         self, source: Any, info: Info, **kwargs: object
     ) -> Union[bool, Tuple[Literal[False], CompositePermissionContext]]:
         for permission in self.child_permissions:
-            permission_response = await await_maybe(
+            permission_response: bool | Tuple[Literal[False], dict] = await await_maybe(
                 permission.has_permission(source, info, **kwargs)
             )
             has_permission, context = unpack_maybe(permission_response, {})
@@ -188,7 +196,7 @@ class AndPermission(CompositePermission):
                 return False, {"failed_permissions": [(permission, context)]}
         return True
 
-    def __and__(self, other: BasePermission):
+    def __and__(self, other: BasePermission) -> AndPermission:
         return AndPermission([*self.child_permissions, other])
 
 
@@ -202,12 +210,13 @@ class OrPermission(CompositePermission):
         Awaitable[Tuple[Literal[False], dict]],
     ]:
         if self.is_async:
-            return self._has_permission_async(source, info, **kwargs)
+            return self._has_permission_async(source, info, **kwargs)  # type: ignore
         failed_permissions = []
         for permission in self.child_permissions:
-            has_permission, context = unpack_maybe(
-                permission.has_permission(source, info, **kwargs), {}
-            )
+            permission_response: bool | Tuple[Literal[False], dict] = (
+                permission.has_permission(source, info, **kwargs)
+            )  # type: ignore
+            has_permission, context = unpack_maybe(permission_response, {})
             if has_permission:
                 return True
             failed_permissions.append((permission, context))
@@ -219,7 +228,7 @@ class OrPermission(CompositePermission):
     ) -> Union[bool, Tuple[Literal[False], dict]]:
         failed_permissions = []
         for permission in self.child_permissions:
-            permission_response = await await_maybe(
+            permission_response: bool | Tuple[Literal[False], dict] = await await_maybe(
                 permission.has_permission(source, info, **kwargs)
             )
             has_permission, context = unpack_maybe(permission_response, {})
@@ -229,7 +238,7 @@ class OrPermission(CompositePermission):
 
         return False, {"failed_permissions": failed_permissions}
 
-    def __or__(self, other: BasePermission):
+    def __or__(self, other: BasePermission) -> OrPermission:
         return OrPermission([*self.child_permissions, other])
 
 
@@ -294,7 +303,7 @@ class PermissionExtension(FieldExtension):
         next_: SyncExtensionResolver,
         source: Any,
         info: Info,
-        **kwargs: object[str, Any],
+        **kwargs: object,
     ) -> Any:
         """
         Checks if the permission should be accepted and
@@ -302,9 +311,10 @@ class PermissionExtension(FieldExtension):
         """
 
         for permission in self.permissions:
-            has_permission, context = unpack_maybe(
-                permission.has_permission(source, info, **kwargs), {}
-            )
+            permission_response: bool | Tuple[Literal[False], dict] = (
+                permission.has_permission(source, info, **kwargs)
+            )  # type: ignore
+            has_permission, context = unpack_maybe(permission_response, {})
 
             if not has_permission:
                 return self._on_unauthorized(permission, **context)
@@ -316,7 +326,7 @@ class PermissionExtension(FieldExtension):
         next_: AsyncExtensionResolver,
         source: Any,
         info: Info,
-        **kwargs: object[str, Any],
+        **kwargs: object,
     ) -> Any:
         for permission in self.permissions:
             permission_response = await await_maybe(
