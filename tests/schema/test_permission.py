@@ -165,6 +165,58 @@ async def test_raises_graphql_error_when_right_and_permission_is_denied():
 
 
 @pytest.mark.asyncio
+async def test_raises_graphql_error_when_nested():
+    class FalsePermission(BasePermission):
+        message = "False Permission Failed"
+
+        def has_permission(
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
+        ) -> bool:
+            return False
+
+    class TruePermission(BasePermission):
+        message = "True Permission Failed"
+
+        def has_permission(
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
+        ) -> bool:
+            return True
+
+    class FalseAsyncPermission(BasePermission):
+        message = "False Permission Failed"
+
+        async def has_permission(
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
+        ) -> bool:
+            return False
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(
+            extensions=[
+                PermissionExtension(
+                    permissions=[
+                        (
+                            (TruePermission() & FalsePermission())
+                            | FalseAsyncPermission()
+                        )
+                        & TruePermission()
+                    ]
+                )
+            ]
+        )
+        def user(self) -> str:  # pragma: no cover
+            return "patrick"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ user }"
+
+    result = await schema.execute(query)
+    assert result.errors[0].message == "False Permission Failed"
+
+
+@pytest.mark.asyncio
 async def test_raises_graphql_error_when_left_and_permission_is_denied():
     class FalsePermission(BasePermission):
         message = "False Permission Failed"
