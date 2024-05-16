@@ -17,6 +17,7 @@ from typing import (
 from typing_extensions import Self, deprecated
 
 from strawberry.type import (
+    StrawberryList,
     StrawberryType,
     StrawberryTypeVar,
     WithStrawberryObjectDefinition,
@@ -169,27 +170,54 @@ class StrawberryObjectDefinition(StrawberryType):
             return False
 
         # Check the mapping of all fields' TypeVars
-        for generic_field in type_definition.fields:
-            generic_field_type = generic_field.type
-            if not isinstance(generic_field_type, StrawberryTypeVar):
+        for field in type_definition.fields:
+            if not field.is_graphql_generic:
+                continue
+
+            value = getattr(root, field.name)
+            generic_field_type = field.type
+
+            while isinstance(generic_field_type, StrawberryList):
+                generic_field_type = generic_field_type.of_type
+
+                assert isinstance(value, (list, tuple))
+
+                if len(value) == 0:
+                    # We can't infer the type of an empty list, so we just
+                    # return the first one we find
+                    return True
+
+                value = value[0]
+
+            if isinstance(generic_field_type, StrawberryTypeVar):
+                type_var = generic_field_type.type_var
+            # TODO: I don't think we support nested types properly
+            # if there's a union that has two nested types that
+            # are have the same field with different types, we might
+            # not be able to differentiate them
+            else:
                 continue
 
             # For each TypeVar found, get the expected type from the copy's type map
-            expected_concrete_type = self.type_var_map.get(
-                generic_field_type.type_var.__name__
-            )
+            expected_concrete_type = self.type_var_map.get(type_var.__name__)
+
+            # this shouldn't happen, but we do a defensive check just in case
             if expected_concrete_type is None:
-                # TODO: Should this return False?
                 continue
 
             # Check if the expected type matches the type found on the type_map
-            real_concrete_type = type(getattr(root, generic_field.name))
+            real_concrete_type = type(value)
 
             # TODO: uniform type var map, at the moment we map object types
             # to their class (not to TypeDefinition) while we map enum to
             # the EnumDefinition class. This is why we do this check here:
             if hasattr(real_concrete_type, "_enum_definition"):
                 real_concrete_type = real_concrete_type._enum_definition
+
+            if isinstance(expected_concrete_type, type) and issubclass(
+                real_concrete_type, expected_concrete_type
+            ):
+                return True
 
             if real_concrete_type is not expected_concrete_type:
                 return False
@@ -202,8 +230,7 @@ class StrawberryObjectDefinition(StrawberryType):
 if TYPE_CHECKING:
 
     @deprecated("Use StrawberryObjectDefinition instead")
-    class TypeDefinition(StrawberryObjectDefinition):
-        ...
+    class TypeDefinition(StrawberryObjectDefinition): ...
 
 else:
     TypeDefinition = StrawberryObjectDefinition

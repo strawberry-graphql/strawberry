@@ -278,8 +278,7 @@ def test_raises_error_when_missing_type_on_longish_class():
 
 def test_raises_error_calling_uncallable_resolver():
     @classmethod  # type: ignore
-    def class_func(cls) -> int:
-        ...
+    def class_func(cls) -> int: ...
 
     # Note that class_func is a raw classmethod object because it has not been bound
     # to a class at this point

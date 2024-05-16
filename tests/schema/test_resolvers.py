@@ -538,8 +538,7 @@ def test_name_based_info_is_deprecated():
         @strawberry.type
         class Query:
             @strawberry.field
-            def foo(info: Any) -> str:
-                ...
+            def foo(info: Any) -> str: ...
 
         strawberry.Schema(query=Query)
 
