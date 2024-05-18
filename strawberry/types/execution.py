@@ -31,23 +31,21 @@ if TYPE_CHECKING:
 
 
 class Executor(abc.ABC):
-    def __init__(self, schema: Schema):
+    def __init__(self, schema: Schema) -> None:
         self.schema = schema
 
     @abc.abstractmethod
-    def parse(self, execution_context: ExecutionContext) -> None:
-        ...
+    def parse(self, execution_context: ExecutionContext) -> None: ...
 
     @abc.abstractmethod
     def validate(
         self,
         execution_context: ExecutionContext,
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
 class GraphQlCoreExecutor(Executor):
-    def __init__(self, schema: Schema):
+    def __init__(self, schema: Schema) -> None:
         super().__init__(schema)
 
     def parse(self, execution_context: ExecutionContext) -> None:
@@ -94,7 +92,7 @@ class ExecutionContext:
     errors: Optional[List[GraphQLError]] = None
     result: Optional[GraphQLExecutionResult] = None
 
-    def __post_init__(self, provided_operation_name: str | None):
+    def __post_init__(self, provided_operation_name: str | None) -> None:
         self._provided_operation_name = provided_operation_name
 
     @property

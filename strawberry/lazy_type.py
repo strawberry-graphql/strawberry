@@ -4,7 +4,20 @@ import sys
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, ForwardRef, Generic, Optional, Tuple, Type, TypeVar, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ForwardRef,
+    Generic,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    cast,
+)
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 TypeName = TypeVar("TypeName")
 Module = TypeVar("Module")
@@ -16,7 +29,7 @@ class LazyType(Generic[TypeName, Module]):
     module: str
     package: Optional[str] = None
 
-    def __class_getitem__(cls, params: Tuple[str, str]):
+    def __class_getitem__(cls, params: Tuple[str, str]) -> "Self":
         warnings.warn(
             (
                 "LazyType is deprecated, use "
@@ -63,7 +76,7 @@ class LazyType(Generic[TypeName, Module]):
     # this empty call method allows LazyTypes to be used in generic types
     # for example: List[LazyType["A", "module"]]
 
-    def __call__(self):  # pragma: no cover
+    def __call__(self) -> None:  # pragma: no cover
         return None
 
 

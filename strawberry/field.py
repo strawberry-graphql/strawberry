@@ -90,7 +90,7 @@ class StrawberryField(dataclasses.Field):
         deprecation_reason: Optional[str] = None,
         directives: Sequence[object] = (),
         extensions: List[FieldExtension] = (),  # type: ignore
-    ):
+    ) -> None:
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
 
@@ -242,7 +242,7 @@ class StrawberryField(dataclasses.Field):
         return self._arguments
 
     @arguments.setter
-    def arguments(self, value: List[StrawberryArgument]):
+    def arguments(self, value: List[StrawberryArgument]) -> None:
         self._arguments = value
 
     @property
@@ -432,8 +432,7 @@ def field(
     directives: Optional[Sequence[object]] = (),
     extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -451,8 +450,7 @@ def field(
     directives: Optional[Sequence[object]] = (),
     extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-) -> Any:
-    ...
+) -> Any: ...
 
 
 @overload
@@ -470,8 +468,7 @@ def field(
     directives: Optional[Sequence[object]] = (),
     extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-) -> StrawberryField:
-    ...
+) -> StrawberryField: ...
 
 
 def field(

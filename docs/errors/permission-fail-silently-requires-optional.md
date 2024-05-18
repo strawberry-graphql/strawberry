@@ -6,8 +6,8 @@ title: Using silent permissions on optional fields
 
 ## Description
 
-This error is thrown when a permission extension is configured to use silent permissions on a field that is
-required and not a list:
+This error is thrown when a permission extension is configured to use silent
+permissions on a field that is required and not a list:
 
 ```python
 import strawberry
@@ -28,9 +28,10 @@ class Query:
 schema = strawberry.Schema(query=Query)
 ```
 
-This happens because fail_silently is suppsed to hide the field from a user without an error in case of no permissions.
-However, non-nullable fields always raise an error when they are set to null.
-The only exception to that is a list, because an empty list can be returned.
+This happens because fail_silently is suppsed to hide the field from a user
+without an error in case of no permissions. However, non-nullable fields always
+raise an error when they are set to null. The only exception to that is a list,
+because an empty list can be returned.
 
 ## How to fix this error
 

@@ -84,7 +84,7 @@ class Schema(BaseSchema):
         ] = None,
         schema_directives: Iterable[object] = (),
         executor_class: Optional[Type[Executor]] = None,
-    ):
+    ) -> None:
         self.query = query
         self.mutation = mutation
         self.subscription = subscription
@@ -102,7 +102,9 @@ class Schema(BaseSchema):
             # TODO: check that the overrides are valid
             scalar_registry.update(cast(SCALAR_OVERRIDES_DICT_TYPE, scalar_overrides))
 
-        self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
+        self.schema_converter = GraphQLCoreConverter(
+            self.config, scalar_registry, self.get_fields
+        )
         self.directives = directives
         self.schema_directives = list(schema_directives)
 
@@ -237,6 +239,11 @@ class Schema(BaseSchema):
             ),
             None,
         )
+
+    def get_fields(
+        self, type_definition: StrawberryObjectDefinition
+    ) -> List[StrawberryField]:
+        return type_definition.fields
 
     async def execute(
         self,

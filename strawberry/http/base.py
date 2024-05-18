@@ -12,16 +12,13 @@ from .typevars import Request
 
 class BaseRequestProtocol(Protocol):
     @property
-    def query_params(self) -> Mapping[str, Optional[Union[str, List[str]]]]:
-        ...
+    def query_params(self) -> Mapping[str, Optional[Union[str, List[str]]]]: ...
 
     @property
-    def method(self) -> HTTPMethod:
-        ...
+    def method(self) -> HTTPMethod: ...
 
     @property
-    def headers(self) -> Mapping[str, str]:
-        ...
+    def headers(self) -> Mapping[str, str]: ...
 
 
 class BaseView(Generic[Request]):

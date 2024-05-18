@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union, cast
 
 from chalice.app import Request, Response
 from strawberry.http.exceptions import HTTPException
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class ChaliceHTTPRequestAdapter(SyncHTTPRequestAdapter):
-    def __init__(self, request: Request):
+    def __init__(self, request: Request) -> None:
         self.request = request
 
     @property
@@ -62,7 +62,7 @@ class GraphQLView(
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
-    ):
+    ) -> None:
         self.allow_queries_via_get = allow_queries_via_get
         self.schema = schema
         if graphiql is not None:
@@ -92,7 +92,7 @@ class GraphQLView(
         message: str,
         error_code: str,
         http_status_code: int,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[Dict[str, str | List[str]]] = None,
     ) -> Response:
         """
         A wrapper for error responses
@@ -117,7 +117,7 @@ class GraphQLView(
         return Response(
             body=self.encode_json(response_data),
             status_code=status_code,
-            headers=sub_response.headers,
+            headers=sub_response.headers,  # type: ignore[arg-type]
         )
 
     def execute_request(self, request: Request) -> Response:

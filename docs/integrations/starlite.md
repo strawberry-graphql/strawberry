@@ -4,6 +4,16 @@ title: Starlite
 
 # Starlite
 
+## Deprecation Notice
+
+This integration has been deprecated in favor of the `Litestar` integration.
+Refer to the [Litestar](./litestar.md) integration for more information.
+Litestar is a
+[renamed](https://litestar.dev/about/organization.html#litestar-and-starlite)
+and upgraded version of Starlite.
+
+## How to use
+
 Strawberry comes with an integration for
 [Starlite](https://starliteproject.dev/) by providing a
 `make_graphql_controller` function that can be used to create a GraphQL
@@ -44,7 +54,9 @@ The `make_graphql_controller` function accepts the following options:
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
 - `path`: optional, defaults to ``, the path where the GraphQL endpoint will be
   mounted.
-- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or to disable it by passing `None`.
+- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the
+  GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or
+  to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
 - `context_getter`: optional Starlite dependency for providing custom context
@@ -77,7 +89,7 @@ def custom_context_getter(request: Request):
 @strawberry.type
 class Query:
     @strawberry.field
-    def hello(self, info: Info[object, None]) -> str:
+    def hello(self, info: strawberry.Info[object, None]) -> str:
         return info.context["custom"]
 
 

@@ -4,9 +4,9 @@ title: Scalars
 
 # Scalars
 
-Scalar types represent concrete values at the leaves of a query. For example
-in the following query the name field will resolve to a scalar type
-(in this case it's a `String` type):
+Scalar types represent concrete values at the leaves of a query. For example in
+the following query the name field will resolve to a scalar type (in this case
+it's a `String` type):
 
 ```graphql+response
 {
@@ -29,15 +29,29 @@ There are several built-in scalars, and you can define custom scalars too.
 
 - `String`, maps to Python’s `str`
 - `Int`, a signed 32-bit integer, maps to Python’s `int`
-- `Float`, a signed double-precision floating-point value, maps to Python’s `float`
+- `Float`, a signed double-precision floating-point value, maps to Python’s
+  `float`
 - `Boolean`, true or false, maps to Python’s `bool`
 - `ID`, a specialised `String` for representing unique object identifiers
-- `Date`, an ISO-8601 encoded [date](https://docs.python.org/3/library/datetime.html#date-objects)
-- `DateTime`, an ISO-8601 encoded [datetime](https://docs.python.org/3/library/datetime.html#datetime-objects)
-- `Time`, an ISO-8601 encoded [time](https://docs.python.org/3/library/datetime.html#time-objects)
-- `Decimal`, a [Decimal](https://docs.python.org/3/library/decimal.html#decimal.Decimal) value serialized as a string
-- `UUID`, a [UUID](https://docs.python.org/3/library/uuid.html#uuid.UUID) value serialized as a string
+- `Date`, an ISO-8601 encoded
+  [date](https://docs.python.org/3/library/datetime.html#date-objects)
+- `DateTime`, an ISO-8601 encoded
+  [datetime](https://docs.python.org/3/library/datetime.html#datetime-objects)
+- `Time`, an ISO-8601 encoded
+  [time](https://docs.python.org/3/library/datetime.html#time-objects)
+- `Decimal`, a
+  [Decimal](https://docs.python.org/3/library/decimal.html#decimal.Decimal)
+  value serialized as a string
+- `UUID`, a [UUID](https://docs.python.org/3/library/uuid.html#uuid.UUID) value
+  serialized as a string
 - `Void`, always null, maps to Python’s `None`
+- `JSON`, a JSON value as specified in
+  [ECMA-404](https://ecma-international.org/publications-and-standards/standards/ecma-404/)
+  standard, maps to Python’s `dict`
+- `Base16`, `Base32`, `Base64`, represents hexadecimal strings encoded with
+  `Base16`/`Base32`/`Base64`. As specified in
+  [RFC4648](https://datatracker.ietf.org/doc/html/rfc4648.html). Maps to
+  Python’s `str`
 
 Fields can return built-in scalars by using the Python equivalent:
 
@@ -106,7 +120,7 @@ import strawberry
 Base64 = strawberry.scalar(
     NewType("Base64", bytes),
     serialize=lambda v: base64.b64encode(v).decode("utf-8"),
-    parse_value=lambda v: base64.b64decode(v).encode("utf-8"),
+    parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
 )
 
 
@@ -126,7 +140,8 @@ assert results.data == {"base64": "aGk="}
 
 <Note>
 
-The `Base16`, `Base32` and `Base64` scalar types are available in `strawberry.scalars`
+The `Base16`, `Base32` and `Base64` scalar types are available in
+`strawberry.scalars`
 
 ```python
 from strawberry.scalars import Base16, Base32, Base64
@@ -228,7 +243,8 @@ To override with a pendulum instance you'd want to serialize and parse_value
 like the above example. Let's throw them in a class this time.
 
 In addition we'll be using the `Union` clause to combine possible input types.
-Since pendulum isn't typed yet, we'll have to silence mypy's errors using `# type: ignore`
+Since pendulum isn't typed yet, we'll have to silence mypy's errors using
+`# type: ignore`
 
 ```python
 import pendulum
@@ -264,10 +280,11 @@ date_time = strawberry.scalar(
 
 ## BigInt (64-bit integers)
 
-Python by default allows, integer size to be 2^64. However the graphql spec has capped it to 2^32.
+Python by default allows, integer size to be 2^64. However the graphql spec has
+capped it to 2^32.
 
-This will inevitably raise errors. Instead of using strings on the client as a workaround,
-you could use the following scalar:
+This will inevitably raise errors. Instead of using strings on the client as a
+workaround, you could use the following scalar:
 
 ```python
 # This is needed because GraphQL does not support 64 bit integers
@@ -279,7 +296,8 @@ BigInt = strawberry.scalar(
 )
 ```
 
-You can adapt your schema to automatically use this scalar for all integers by using the `scalar_overrides` parameter
+You can adapt your schema to automatically use this scalar for all integers by
+using the `scalar_overrides` parameter
 
 <Tip>
 Only use this override if you expect most of your integers to be 64-bit. Since most GraphQL schemas

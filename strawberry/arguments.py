@@ -54,7 +54,7 @@ class StrawberryArgumentAnnotation:
         deprecation_reason: Optional[str] = None,
         directives: Iterable[object] = (),
         metadata: Optional[Mapping[Any, Any]] = None,
-    ):
+    ) -> None:
         self.description = description
         self.name = name
         self.deprecation_reason = deprecation_reason

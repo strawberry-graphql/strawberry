@@ -35,12 +35,12 @@ if TYPE_CHECKING:
 
 
 class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: web.Request):
+    def __init__(self, request: web.Request) -> None:
         self.request = request
 
     @property
     def query_params(self) -> QueryParams:
-        return self.request.query.copy()
+        return self.request.query.copy()  # type: ignore[attr-defined]
 
     async def get_body(self) -> str:
         return (await self.request.content.read()).decode()
@@ -100,7 +100,7 @@ class GraphQLView(
             GRAPHQL_WS_PROTOCOL,
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
-    ):
+    ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive

@@ -11,6 +11,7 @@ from typing import (
     List,
     Optional,
     Set,
+    Tuple,
     Union,
     cast,
 )
@@ -59,10 +60,15 @@ try:
 except ImportError:
     TypeVarDef = TypeVarType
 
+PYDANTIC_VERSION: Optional[Tuple[int, ...]] = None
+
 # To be compatible with user who don't use pydantic
 try:
+    import pydantic
     from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY
     from pydantic.mypy import PydanticModelField
+
+    PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))
 
     from strawberry.experimental.pydantic._compat import IS_PYDANTIC_V1
 except ImportError:
@@ -113,7 +119,7 @@ def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
     return type_
 
 
-def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface):
+def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface) -> Any:
     if "." in name:
         return api.named_type_or_none(name)
 
@@ -464,6 +470,11 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                     return_type=model_type,
                 )
             else:
+                extra = {}
+
+                if PYDANTIC_VERSION and PYDANTIC_VERSION >= (2, 7, 0):
+                    extra["api"] = ctx.api
+
                 add_method(
                     ctx,
                     "to_pydantic",
@@ -474,6 +485,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                             typed=True,
                             force_optional=False,
                             use_alias=True,
+                            **extra,
                         )
                         for f in missing_pydantic_fields
                     ],
@@ -487,12 +499,23 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
             initializer=None,
             kind=ARG_OPT,
         )
+        extra_type = ctx.api.named_type(
+            "builtins.dict",
+            [ctx.api.named_type("builtins.str"), AnyType(TypeOfAny.explicit)],
+        )
+
+        extra_argument = Argument(
+            variable=Var(name="extra", type=UnionType([NoneType(), extra_type])),
+            type_annotation=UnionType([NoneType(), extra_type]),
+            initializer=None,
+            kind=ARG_OPT,
+        )
 
         add_static_method_to_class(
             ctx.api,
             ctx.cls,
             name="from_pydantic",
-            args=[model_argument],
+            args=[model_argument, extra_argument],
             return_type=fill_typevars(ctx.cls.info),
         )
 

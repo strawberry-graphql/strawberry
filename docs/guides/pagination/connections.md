@@ -4,11 +4,14 @@ title: Pagination - Implementing the Relay Connection Specification
 
 # Implementing the Relay Connection Specification
 
-We naively implemented cursor based pagination in the [previous tutorial](./cursor-based.md). To ensure a consistent implementation
-of this pattern, the Relay project has a formal [specification](https://relay.dev/graphql/connections.htm) you can follow for building
-GraphQL APIs which use a cursor based connection pattern.
+We naively implemented cursor based pagination in the
+[previous tutorial](./cursor-based.md). To ensure a consistent implementation of
+this pattern, the Relay project has a formal
+[specification](https://relay.dev/graphql/connections.htm) you can follow for
+building GraphQL APIs which use a cursor based connection pattern.
 
-By the end of this tutorial, we should be able to return a connection of users when requested.
+By the end of this tutorial, we should be able to return a connection of users
+when requested.
 
 ```graphql+response
 query getUsers {
@@ -67,8 +70,9 @@ query getUsers {
 
 ## Connections
 
-A Connection represents a paginated relationship between two entities. This pattern is used when the relationship
-itself has attributes. For example, we might have a connection of users to represent a paginated list of users.
+A Connection represents a paginated relationship between two entities. This
+pattern is used when the relationship itself has attributes. For example, we
+might have a connection of users to represent a paginated list of users.
 
 Let us define a Connection type which takes in a Generic ObjectType.
 
@@ -96,8 +100,8 @@ class Connection(Generic[GenericType]):
 
 Connections must have atleast two fields: `edges` and `page_info`.
 
-The `page_info` field contains metadata about the connection.
-Following the Relay specification, we can define a `PageInfo` type like this:
+The `page_info` field contains metadata about the connection. Following the
+Relay specification, we can define a `PageInfo` type like this:
 
 ```py line=22-38
 # example.py
@@ -147,8 +151,8 @@ You can read more about the `PageInfo` type at:
 
 The `edges` field must return a list type that wraps an edge type.
 
-Following the Relay specification, let us define an Edge that takes
-in a generic ObjectType.
+Following the Relay specification, let us define an Edge that takes in a generic
+ObjectType.
 
 ```py line=41-49
 # example.py
@@ -198,11 +202,12 @@ class Edge(Generic[GenericType]):
     cursor: str = strawberry.field(description="A cursor for use in pagination.")
 ```
 
-EdgeTypes must have atleast two fields - `cursor` and `node`.
-Each edge has it's own cursor and item (represented by the `node` field).
+EdgeTypes must have atleast two fields - `cursor` and `node`. Each edge has it's
+own cursor and item (represented by the `node` field).
 
-Now that we have the types needed to implement pagination using Relay Connections, let
-us use them to paginate a list of users. For simplicity's sake, let our dataset be a list of dictionaries.
+Now that we have the types needed to implement pagination using Relay
+Connections, let us use them to paginate a list of users. For simplicity's sake,
+let our dataset be a list of dictionaries.
 
 ```py line=7-32
 # example.py
@@ -279,19 +284,22 @@ class Edge(Generic[GenericType]):
     cursor: str = strawberry.field(description="A cursor for use in pagination.")
 ```
 
-Now is a good time to think of what we could use as a cursor for our dataset. Our cursor
-needs to be an opaque value, which doesn't usually change over time. It makes sense to use
-base64 encoded IDs of users as our cursor, as they fit both criteria.
+Now is a good time to think of what we could use as a cursor for our dataset.
+Our cursor needs to be an opaque value, which doesn't usually change over time.
+It makes sense to use base64 encoded IDs of users as our cursor, as they fit
+both criteria.
 
 <Tip>
 
-While working with Connections, it is a convention to base64-encode cursors. It provides a unified interface to the
-end user. API clients need not bother about the type of data to paginate, and can pass unique IDs during pagination.
-It also makes the cursors opaque.
+While working with Connections, it is a convention to base64-encode cursors. It
+provides a unified interface to the end user. API clients need not bother about
+the type of data to paginate, and can pass unique IDs during pagination. It also
+makes the cursors opaque.
 
 </Tip>
 
-Let us define a couple of helper functions to encode and decode cursors as follows:
+Let us define a couple of helper functions to encode and decode cursors as
+follows:
 
 ```py line=3,35-43
 # example.py
@@ -392,8 +400,8 @@ class Edge(Generic[GenericType]):
     cursor: str = strawberry.field(description="A cursor for use in pagination.")
 ```
 
-Let us define a `get_users` field which returns a connection of users, as well as an `UserType`.
-Let us also plug our query into a schema.
+Let us define a `get_users` field which returns a connection of users, as well
+as an `UserType`. Let us also plug our query into a schema.
 
 ```python line=104-174
 # example.py

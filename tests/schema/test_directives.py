@@ -9,7 +9,6 @@ from strawberry.directive import DirectiveLocation, DirectiveValue
 from strawberry.extensions import SchemaExtension
 from strawberry.schema.config import StrawberryConfig
 from strawberry.type import get_object_definition
-from strawberry.types.info import Info
 from strawberry.utils.await_maybe import await_maybe
 
 
@@ -416,9 +415,9 @@ def info_directive_schema() -> strawberry.Schema:
         locations=[DirectiveLocation.FIELD],
         description="Interpolate string on the server from context data",
     )
-    def interpolate(value: str, info: Info):
+    def interpolate(value: str, info: strawberry.Info):
         try:
-            assert isinstance(info, Info)
+            assert isinstance(info, strawberry.Info)
             assert info._field is field
             return value.format(**info.context["userdata"])
         except KeyError:
@@ -567,8 +566,7 @@ def test_named_based_directive_value_is_deprecated():
             hello: str = "hello"
 
         @strawberry.directive(locations=[DirectiveLocation.FIELD])
-        def deprecated_value(value):
-            ...
+        def deprecated_value(value): ...
 
         strawberry.Schema(query=Query, directives=[deprecated_value])
 

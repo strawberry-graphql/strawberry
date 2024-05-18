@@ -19,7 +19,7 @@ class ScalarAlreadyRegisteredError(StrawberryException):
         self,
         scalar_definition: ScalarDefinition,
         other_scalar_definition: ScalarDefinition,
-    ):
+    ) -> None:
         self.scalar_definition = scalar_definition
 
         scalar_name = scalar_definition.name

@@ -12,7 +12,6 @@ from strawberry.exceptions.permission_fail_silently_requires_optional import (
 )
 from strawberry.permission import BasePermission, PermissionExtension
 from strawberry.printer import print_schema
-from strawberry.types import Info
 
 
 def test_raises_graphql_error_when_permission_method_is_missing():
@@ -37,7 +36,7 @@ def test_raises_graphql_error_when_permission_is_denied():
         message = "User is not authenticated"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return False
 
@@ -61,7 +60,7 @@ async def test_raises_permission_error_for_subscription():
         message = "You are not authorized"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return False
 
@@ -121,7 +120,7 @@ def test_can_use_source_when_testing_permission():
         message = "Cannot see email for this user"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return source.name.lower() == "patrick"
 
@@ -157,7 +156,7 @@ def test_can_use_args_when_testing_permission():
         message = "Cannot see email for this user"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return kwargs.get("secure", False)
 
@@ -193,7 +192,7 @@ def test_can_use_on_simple_fields():
         message = "Cannot see email for this user"
 
         def has_permission(
-            self, source: typing.Any, info: Info, **kwargs: typing.Any
+            self, source: typing.Any, info: strawberry.Info, **kwargs: typing.Any
         ) -> bool:
             return source.name.lower() == "patrick"
 
@@ -560,3 +559,35 @@ def test_permission_directives_not_added_on_field():
     }
     """
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_basic_permission_access_inputs():
+    class IsAuthorized(BasePermission):
+        message = "User is not authorized"
+
+        def has_permission(
+            self, source, info, **kwargs: typing.Any
+        ) -> bool:  # pragma: no cover
+            if kwargs["a_key"] == "secret":
+                return True
+
+            return False
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(permission_classes=[IsAuthorized])
+        def name(self, a_key: str) -> str:  # pragma: no cover
+            return "Erik"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = '{ name(aKey: "example") }'
+    result = schema.execute_sync(query)
+
+    assert result.errors[0].message == "User is not authorized"
+
+    query = '{ name(aKey: "secret") }'
+
+    result = schema.execute_sync(query)
+
+    assert result.data["name"] == "Erik"
