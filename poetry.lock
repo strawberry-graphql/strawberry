@@ -3749,21 +3749,21 @@ dev = ["flake8", "flake8-docstrings", "mypy", "packaging", "pre-commit", "pytest
 
 [[package]]
 name = "rustberry"
-version = "0.0.10"
+version = "0.0.12"
 description = ""
 category = "main"
 optional = false
 python-versions = ">=3.11"
 files = [
-    {file = "rustberry-0.0.10-cp311-cp311-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:a26a81d9366568785f4e593460f68edd47edaba2bd014a4bf1b9957e0bbcd68c"},
-    {file = "rustberry-0.0.10-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:21be523e144099fd1b5f5487854b5cee4a01d7009100b76677f5af1fe3c4cb85"},
-    {file = "rustberry-0.0.10-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d9a6c90b29eae72eb6b2e01a4d5018a4ca2bc36af6ba2fd899bc142708f9ed62"},
-    {file = "rustberry-0.0.10-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:41fc0e97510e261ef944998be0447504f5de03bf931c51d4e0ee68bb1d73409b"},
-    {file = "rustberry-0.0.10-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:a4adc476dfdd655b1e0a1a179e87d8c24932759d3d5d7db601875cccf60e2f64"},
-    {file = "rustberry-0.0.10-cp311-none-win32.whl", hash = "sha256:46421f50c09981f61b46692931e71c936e47c607630069711c4e3990accfd46f"},
-    {file = "rustberry-0.0.10-cp311-none-win_amd64.whl", hash = "sha256:acc48cd1821e1441237178b6e7f56957baff4c32d7fb443d0fcb84b72016d82b"},
-    {file = "rustberry-0.0.10-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:edc5360311e532f4464f1482c5c151bfc66114b1bb4c1795cf8f6f00999f10d7"},
-    {file = "rustberry-0.0.10-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:6822b76455c7759b8e6dad756bd53bb9f5b756905f9e1bae7fc4db34d946a44b"},
+    {file = "rustberry-0.0.12-cp311-cp311-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:bc5d20ba2572dda238e69693d80e71de39c020480295e75d55eb3e64c0c9b41d"},
+    {file = "rustberry-0.0.12-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:6f8a7bd5cd46cbe6a22daf250e019822eab4136c9596adfc66357b896feaea62"},
+    {file = "rustberry-0.0.12-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1c9674c0be91ef5daf627c7fe7d310aa804ee00ed84d7ba669b4a9bface4f32f"},
+    {file = "rustberry-0.0.12-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f4326d85ad791c17534acfccb289d242520fd4091534c718a64f7129e0e73486"},
+    {file = "rustberry-0.0.12-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:8deda7957ca62d73576fb5e4dda28c52aa1bdac8ec768f9769a663f4113676cf"},
+    {file = "rustberry-0.0.12-cp311-none-win32.whl", hash = "sha256:c03d04d5df1779fce8e8375fb2fa5b978683c5dd7f8ebeb3e49e06a5b561b3f2"},
+    {file = "rustberry-0.0.12-cp311-none-win_amd64.whl", hash = "sha256:abf75739004c90e812497039e400bf157b17f1a5d939d3c91b31997c20d6a5f6"},
+    {file = "rustberry-0.0.12-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3a108c3340a137522986882ea69941b5b34231a2f619568ecb0d710cc5b03fd8"},
+    {file = "rustberry-0.0.12-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:cb469479bcade5e5909a5fc80658836c246a55f7037aff2cbe1f4260352e24db"},
 ]
 
 [[package]]
@@ -5045,4 +5045,4 @@ starlite = ["starlite"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "ce6056c904abf1f1ef98ae4f8954b9462f6236502dabdde34c803d0ace22fd44"
+content-hash = "be4010d53e66f66216caac9dc02682b004d44de96df53c9f3129f6258f90b399"
