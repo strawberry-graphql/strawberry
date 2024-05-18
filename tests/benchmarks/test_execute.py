@@ -9,6 +9,7 @@ from pytest_codspeed.plugin import BenchmarkFixture
 
 import strawberry
 from strawberry.scalars import ID
+from strawberry.schema.executors import RustberryExecutor
 
 
 @pytest.mark.benchmark
@@ -54,7 +55,7 @@ def test_execute(benchmark: BenchmarkFixture):
                 for i in range(1000)
             ]
 
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(query=Query, executor_class=RustberryExecutor)
 
     query = """
         query something{
@@ -92,7 +93,9 @@ def test_interface_performance(benchmark: BenchmarkFixture, ntypes: int):
     class Query:
         items: List[Item]
 
-    schema = strawberry.Schema(query=Query, types=CONCRETE_TYPES)
+    schema = strawberry.Schema(
+        query=Query, types=CONCRETE_TYPES, executor_class=RustberryExecutor
+    )
     query = "query { items { id } }"
 
     def run():

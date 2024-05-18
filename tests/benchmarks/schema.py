@@ -5,6 +5,7 @@ from typing import List, Union
 from typing_extensions import Annotated
 
 import strawberry
+from strawberry.schema.executors import RustberryExecutor
 
 
 @strawberry.enum
@@ -178,4 +179,4 @@ class Query:
         ]
 
 
-schema = strawberry.Schema(query=Query)
+schema = strawberry.Schema(query=Query, executor_class=RustberryExecutor)
