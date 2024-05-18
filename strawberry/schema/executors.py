@@ -7,31 +7,29 @@ from strawberry import Schema
 from strawberry.types.execution import ExecutionContext, Executor
 
 if TYPE_CHECKING:
-    from rustberry._rustberry import FileId
+    from rustberry._rustberry import Document
 
-
-RUSTBERRY_FILE_ID_FIELD = "__rustberry_file_id"
+RUSTBERRY_DOCUMENT_FIELD = "__rustberry_document"
 
 
 class RustberryExecutor(Executor):
-    def __init__(self, schema: Schema):
+    def __init__(self, schema: Schema) -> None:
         super().__init__(schema)
-        self.compiler = QueryCompiler()
-        self.compiler.set_schema(schema.as_str())
+        self.compiler = QueryCompiler(schema.as_str())
 
     def parse(self, execution_context: ExecutionContext) -> None:
-        file_id = self.compiler.add_executable(execution_context.query)
-        setattr(execution_context, RUSTBERRY_FILE_ID_FIELD, file_id)
-        execution_context.graphql_document = self.compiler.gql_core_ast_mirror(file_id)
+        document = self.compiler.parse(execution_context.query)
+        setattr(execution_context, RUSTBERRY_DOCUMENT_FIELD, document)
+        execution_context.graphql_document = self.compiler.gql_core_ast_mirror(document)
 
     def validate(
         self,
         execution_context: ExecutionContext,
     ) -> None:
         assert execution_context.graphql_document
-        file_id: FileId = getattr(execution_context, RUSTBERRY_FILE_ID_FIELD, None)
-        assert file_id, "File ID not set - Required for Rustberry use"
-        validation_successful = self.compiler.validate_file(file_id)
+        document: Document = getattr(execution_context, RUSTBERRY_DOCUMENT_FIELD, None)
+        assert document, "Document not set - Required for Rustberry use"
+        validation_successful = self.compiler.validate(document)
         if not validation_successful:
             execution_context.errors = execution_context.errors or []
             execution_context.errors.append(GraphQLError("Validation failed"))
