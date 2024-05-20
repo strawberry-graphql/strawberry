@@ -208,7 +208,7 @@ class Schema(BaseSchema):
                 # check explicitly for type __name__ instead of checking `isinstance`
                 # so clients can raise custom TypeErrors to avoid this wrapper
                 if type(e).__name__ == "TypeError":
-                    result = Exception(
+                    result = TypeError(
                         f"Unable to resolve reference for {type_.definition.name}"
                     )
                 else:

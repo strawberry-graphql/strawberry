@@ -176,6 +176,49 @@ def test_does_not_need_custom_resolve_reference_nested():
     }
 
 
+def test_fails_properly_when_wrong_key_is_passed():
+    @strawberry.type
+    class Something:
+        id: str
+
+    @strawberry.federation.type(keys=["upc"])
+    class Product:
+        upc: str
+        something: Something
+
+    @strawberry.federation.type(extend=True)
+    class Query:
+        @strawberry.field
+        def top_products(self, first: int) -> typing.List[Product]:
+            return []
+
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+
+    query = """
+        query ($representations: [_Any!]!) {
+            _entities(representations: $representations) {
+                ... on Product {
+                    upc
+                    something {
+                        id
+                    }
+                }
+            }
+        }
+    """
+
+    result = schema.execute_sync(
+        query,
+        variable_values={
+            "representations": [{"__typename": "Product", "not_upc": "B00005N5PF"}]
+        },
+    )
+
+    assert result.errors
+
+    assert result.errors[0].message == "Unable to resolve reference for Product"
+
+
 def test_fails_properly_when_wrong_data_is_passed():
     @strawberry.federation.type(keys=["id"])
     class Something:
@@ -270,6 +313,57 @@ def test_propagates_original_error_message_with_auto_graphql_error_metadata():
     assert error["path"] == ["_entities", 0]
     assert error["locations"] == [{"column": 13, "line": 3}]
     assert "extensions" not in error
+
+
+def test_raises_generic_type_error_on_specific_type_error_in_resolver():
+    """
+    Noting this case to make clear that raising a raw TypeError will result
+    in the generic "Unable to resolve reference for <entity>" message
+    If you want to raise a TypeError in your entity resolver, you must create
+    your own custom TypeError wrapper (see next test below)
+    """
+
+    @strawberry.federation.type(keys=["id"])
+    class Product:
+        id: strawberry.ID
+
+        @classmethod
+        def resolve_reference(cls, id: strawberry.ID) -> "Product":
+            raise TypeError("Foo bar")
+
+    @strawberry.federation.type(extend=True)
+    class Query:
+        @strawberry.field
+        def mock(self) -> typing.Optional[Product]:
+            return None
+
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+
+    query = """
+        query ($representations: [_Any!]!) {
+            _entities(representations: $representations) {
+                ... on Product {
+                    id
+                }
+            }
+        }
+    """
+
+    result = schema.execute_sync(
+        query,
+        variable_values={
+            "representations": [
+                {
+                    "__typename": "Product",
+                    "id": "B00005N5PF",
+                }
+            ]
+        },
+    )
+
+    assert result.errors
+
+    assert result.errors[0].message == "Unable to resolve reference for Product"
 
 
 def test_propagates_custom_type_error_message_with_auto_graphql_error_metadata():
