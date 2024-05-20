@@ -213,11 +213,9 @@ class Schema(BaseSchema):
                 result = get_result()
             except Exception as e:
                 if type(e).__name__ == "TypeError":
-                    # check explicitly for type name instead of `isinstance` so
+                    # check explicitly for exception name instead of `isinstance` so
                     # clients can raise custom TypeErrors to avoid this wrapper
-                    result = TypeError(
-                        f"Unable to resolve reference for {type_.definition.name}"
-                    )
+                    result = TypeError(f"Unable to resolve reference for {type_name}")
                 else:
                     result = e
 
