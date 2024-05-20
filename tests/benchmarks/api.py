@@ -2,7 +2,7 @@ from typing import AsyncIterator, List
 
 import strawberry
 from strawberry.directive import DirectiveLocation
-from strawberry.schema.executors import RustberryExecutor
+from strawberry.schema.executors import RustberryExecutor, RustberryExecutorV2
 
 
 @strawberry.type
@@ -87,5 +87,5 @@ schema_with_directives = strawberry.Schema(
     query=Query,
     directives=[uppercase],
     subscription=Subscription,
-    executor_class=RustberryExecutor,
+    executor_class=RustberryExecutorV2,
 )
