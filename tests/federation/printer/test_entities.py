@@ -33,7 +33,7 @@ def test_entities_type_when_no_type_has_keys():
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@external"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@external"]) {
           query: Query
         }
 
@@ -96,7 +96,7 @@ def test_entities_type_when_one_type_has_keys():
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@external", "@key"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@external", "@key"]) {
           query: Query
         }
 

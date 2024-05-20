@@ -39,7 +39,7 @@ class BaseGraphQLWSHandler(ABC):
         debug: bool,
         keep_alive: bool,
         keep_alive_interval: float,
-    ):
+    ) -> None:
         self.schema = schema
         self.debug = debug
         self.keep_alive = keep_alive

@@ -60,7 +60,7 @@ class StrawberryUnion(StrawberryType):
         type_annotations: Tuple[StrawberryAnnotation, ...] = tuple(),
         description: Optional[str] = None,
         directives: Iterable[object] = (),
-    ):
+    ) -> None:
         self.graphql_name = name
         self.type_annotations = type_annotations
         self.description = description
@@ -102,7 +102,7 @@ class StrawberryUnion(StrawberryType):
 
     @property
     def type_params(self) -> List[TypeVar]:
-        def _get_type_params(type_: StrawberryType):
+        def _get_type_params(type_: StrawberryType) -> list[TypeVar]:
             if isinstance(type_, LazyType):
                 type_ = cast("StrawberryType", type_.resolve_type())
 
@@ -120,13 +120,13 @@ class StrawberryUnion(StrawberryType):
         )
 
     @property
-    def is_generic(self) -> bool:
+    def is_graphql_generic(self) -> bool:
         def _is_generic(type_: object) -> bool:
             if has_object_definition(type_):
                 type_ = type_.__strawberry_definition__
 
             if isinstance(type_, StrawberryType):
-                return type_.is_generic
+                return type_.is_graphql_generic
 
             return False
 
@@ -135,7 +135,7 @@ class StrawberryUnion(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[str, Union[StrawberryType, type]]
     ) -> StrawberryType:
-        if not self.is_generic:
+        if not self.is_graphql_generic:
             return self
 
         new_types = []
@@ -145,9 +145,9 @@ class StrawberryUnion(StrawberryType):
             if has_object_definition(type_):
                 type_definition = type_.__strawberry_definition__
 
-                if type_definition.is_generic:
+                if type_definition.is_graphql_generic:
                     new_type = type_definition.copy_with(type_var_map)
-            if isinstance(type_, StrawberryType) and type_.is_generic:
+            if isinstance(type_, StrawberryType) and type_.is_graphql_generic:
                 new_type = type_.copy_with(type_var_map)
             else:
                 new_type = type_
@@ -194,7 +194,6 @@ class StrawberryUnion(StrawberryType):
             # Union in case a nested generic object matches against more than one type.
             concrete_types_for_union = (type_map[x.name] for x in type_.types)
 
-            # TODO: do we still need to iterate over all types in `type_map`?
             for possible_concrete_type in chain(
                 concrete_types_for_union, type_map.values()
             ):
@@ -213,13 +212,9 @@ class StrawberryUnion(StrawberryType):
                     info.field_name, str(type(root)), set(type_.types)
                 )
 
-            # Return the name of the type. Returning the actual type is now deprecated
-            if isinstance(return_type, GraphQLNamedType):
-                # TODO: Can return_type ever _not_ be a GraphQLNamedType?
-                return return_type.name
-            else:
-                # TODO: check if this is correct
-                return return_type.__name__  # type: ignore
+            assert isinstance(return_type, GraphQLNamedType)
+
+            return return_type.name
 
         return _resolve_union_type
 

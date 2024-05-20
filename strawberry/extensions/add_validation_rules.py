@@ -38,7 +38,7 @@ class AddValidationRules(SchemaExtension):
 
     validation_rules: List[Type[ASTValidationRule]]
 
-    def __init__(self, validation_rules: List[Type[ASTValidationRule]]):
+    def __init__(self, validation_rules: List[Type[ASTValidationRule]]) -> None:
         self.validation_rules = validation_rules
 
     def on_operation(self) -> Iterator[None]:

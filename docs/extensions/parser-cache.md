@@ -1,5 +1,5 @@
 ---
-title: ParserCache
+title: Parser Cache
 summary: Add in memory caching to the parsing step of query execution.
 tags: performance,caching,parsing
 ---
@@ -26,8 +26,7 @@ schema = strawberry.Schema(
 ## API reference:
 
 ```python
-class ParserCache(maxsize=None):
-    ...
+class ParserCache(maxsize=None): ...
 ```
 
 #### `maxsize: Optional[int] = None`

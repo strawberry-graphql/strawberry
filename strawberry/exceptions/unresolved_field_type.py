@@ -19,7 +19,7 @@ class UnresolvedFieldTypeError(StrawberryException):
         self,
         type_definition: StrawberryObjectDefinition,
         field: StrawberryField,
-    ):
+    ) -> None:
         self.type_definition = type_definition
         self.field = field
 

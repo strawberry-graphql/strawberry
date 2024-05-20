@@ -8,8 +8,8 @@ All Strawberry integrations support multipart uploads as described in the
 [GraphQL multipart request specification](https://github.com/jaydenseric/graphql-multipart-request-spec).
 This includes support for uploading single files as well as lists of files.
 
-Uploads can be used in mutations via the `Upload` scalar.
-The type passed at runtime depends on the integration:
+Uploads can be used in mutations via the `Upload` scalar. The type passed at
+runtime depends on the integration:
 
 | Integration                               | Type                                                                                                                                                  |
 | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -19,17 +19,38 @@ The type passed at runtime depends on the integration:
 | [Django](/docs/integrations/django)       | [`django.core.files.uploadedfile.UploadedFile`](https://docs.djangoproject.com/en/3.2/ref/files/uploads/#django.core.files.uploadedfile.UploadedFile) |
 | [FastAPI](/docs/integrations/fastapi)     | [`fastapi.UploadFile`](https://fastapi.tiangolo.com/tutorial/request-files/#file-parameters-with-uploadfile)                                          |
 | [Flask](/docs/integrations/flask)         | [`werkzeug.datastructures.FileStorage`](https://werkzeug.palletsprojects.com/en/2.0.x/datastructures/#werkzeug.datastructures.FileStorage)            |
+| [Quart](/docs/integrations/quart)         | [`quart.datastructures.FileStorage`](https://github.com/pallets/quart/blob/main/src/quart/datastructures.py)                                          |
 | [Sanic](/docs/integrations/sanic)         | [`sanic.request.File`](https://sanic.readthedocs.io/en/stable/sanic/api/core.html#sanic.request.File)                                                 |
 | [Starlette](/docs/integrations/starlette) | [`starlette.datastructures.UploadFile`](https://www.starlette.io/requests/#request-files)                                                             |
 
+In order to have the correct runtime type in resolver type annotations you can
+set a scalar override based on the integrations above. For example with
+Starlette:
+
+```python
+import strawberry
+from starlette.datastructures import UploadFile
+from strawberry.file_uploads import Upload
+
+schema = strawberry.Schema(
+  ...
+  scalar_overrides={UploadFile: Upload}
+)
+```
+
 ## ASGI / FastAPI / Starlette
 
-Since these integrations use asyncio for communication, the resolver _must_ be async.
+Since these integrations use asyncio for communication, the resolver _must_ be
+async.
 
-Additionally, these servers rely on the `python-multipart` package, which is not included by Strawberry by default. It can be installed directly, or, for convenience, it is included in extras: `strawberry[asgi]` (for ASGI/Starlette) or `strawberry[fastapi]` (for FastAPI). For example:
+Additionally, these servers rely on the `python-multipart` package, which is not
+included by Strawberry by default. It can be installed directly, or, for
+convenience, it is included in extras: `strawberry[asgi]` (for ASGI/Starlette)
+or `strawberry[fastapi]` (for FastAPI). For example:
 
 - if using Pip, `pip install 'strawberry[fastapi]'`
-- if using Poetry, `strawberry = { version = "...", extras = ["fastapi"] }` in `pyproject.toml`.
+- if using Poetry, `strawberry = { version = "...", extras = ["fastapi"] }` in
+  `pyproject.toml`.
 
 Example:
 
@@ -106,7 +127,8 @@ class Mutation:
 
 ## Sending file upload requests
 
-The tricky part is sending the HTTP request from the client because it must follow the GraphQL multipart request specifications mentioned above.
+The tricky part is sending the HTTP request from the client because it must
+follow the GraphQL multipart request specifications mentioned above.
 
 The `multipart/form-data` POST request's data must include:
 
@@ -114,7 +136,8 @@ The `multipart/form-data` POST request's data must include:
 - `map` key with mapping some multipart-data to exact GraphQL variable
 - and other keys for multipart-data which contains binary data of files
 
-Assuming you have your schema up and running, here there are some requests examples:
+Assuming you have your schema up and running, here there are some requests
+examples:
 
 ### Sending one file
 

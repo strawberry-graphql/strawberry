@@ -21,7 +21,6 @@ from typing import (
     Sequence,
     Tuple,
     Type,
-    TypeVar,
     Union,
     cast,
     overload,
@@ -52,8 +51,6 @@ if TYPE_CHECKING:
 
     from strawberry.permission import BasePermission
     from strawberry.types.info import Info
-
-_T = TypeVar("_T")
 
 
 class NodeExtension(FieldExtension):
@@ -334,8 +331,7 @@ def connection(
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
     extensions: List[FieldExtension] = (),  # type: ignore
-) -> Any:
-    ...
+) -> Any: ...
 
 
 @overload
@@ -352,8 +348,7 @@ def connection(
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
     extensions: List[FieldExtension] = (),  # type: ignore
-) -> StrawberryField:
-    ...
+) -> StrawberryField: ...
 
 
 def connection(

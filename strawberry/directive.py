@@ -32,8 +32,7 @@ def directive_field(name: str, default: object = UNSET) -> Any:
 T = TypeVar("T")
 
 
-class StrawberryDirectiveValue:
-    ...
+class StrawberryDirectiveValue: ...
 
 
 DirectiveValue = Annotated[T, StrawberryDirectiveValue()]

@@ -24,7 +24,7 @@ def test_pyright():
     assert results == [
         Result(
             type="error",
-            message="Expected 0 positional arguments (reportGeneralTypeIssues)",
+            message="Expected 0 positional arguments",
             line=10,
             column=6,
         ),

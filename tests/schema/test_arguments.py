@@ -14,7 +14,7 @@ def test_argument_descriptions():
         def hello(  # type: ignore
             name: Annotated[
                 str, strawberry.argument(description="Your name")
-            ] = "Patrick"
+            ] = "Patrick",
         ) -> str:
             return f"Hi {name}"
 
@@ -38,7 +38,7 @@ def test_argument_deprecation_reason():
         def hello(  # type: ignore
             name: Annotated[
                 str, strawberry.argument(deprecation_reason="Your reason")
-            ] = "Patrick"
+            ] = "Patrick",
         ) -> str:
             return f"Hi {name}"
 

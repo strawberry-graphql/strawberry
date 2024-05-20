@@ -1,10 +1,10 @@
 from unittest.mock import patch
 
 import pytest
-from graphql import parse
+from graphql import SourceLocation, parse
 
 import strawberry
-from strawberry.extensions import ParserCache
+from strawberry.extensions import MaxTokensLimiter, ParserCache
 
 
 @patch("strawberry.schema.execute.parse", wraps=parse)
@@ -47,6 +47,52 @@ def test_parser_cache_extension(mock_parse):
     assert result.data == {"ping": "pong"}
 
     assert mock_parse.call_count == 2
+
+
+@patch("strawberry.schema.execute.parse", wraps=parse)
+def test_parser_cache_extension_arguments(mock_parse):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self) -> str:
+            return "world"
+
+        @strawberry.field
+        def ping(self) -> str:
+            return "pong"
+
+    schema = strawberry.Schema(
+        query=Query, extensions=[MaxTokensLimiter(max_token_count=20), ParserCache()]
+    )
+
+    query = "query { hello }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"hello": "world"}
+
+    mock_parse.assert_called_with("query { hello }", max_tokens=20)
+
+
+@patch("strawberry.schema.execute.parse", wraps=parse)
+def test_parser_cache_extension_syntax_error(mock_parse):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self) -> str:  # pragma: no cover
+            return "world"
+
+    schema = strawberry.Schema(query=Query, extensions=[ParserCache()])
+
+    query = "query { hello"
+
+    result = schema.execute_sync(query)
+
+    assert len(result.errors) == 1
+    assert result.errors[0].message == "Syntax Error: Expected Name, found <EOF>."
+    assert result.errors[0].locations == [SourceLocation(line=1, column=14)]
+    assert mock_parse.call_count == 1
 
 
 @patch("strawberry.schema.execute.parse", wraps=parse)

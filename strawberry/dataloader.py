@@ -105,8 +105,7 @@ class DataLoader(Generic[K, T]):
         loop: Optional[AbstractEventLoop] = None,
         cache_map: Optional[AbstractCache[K, T]] = None,
         cache_key_fn: Optional[Callable[[K], Hashable]] = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     # fallback if load_fn is untyped and there's no other info for inference
     @overload
@@ -118,8 +117,7 @@ class DataLoader(Generic[K, T]):
         loop: Optional[AbstractEventLoop] = None,
         cache_map: Optional[AbstractCache[K, T]] = None,
         cache_key_fn: Optional[Callable[[K], Hashable]] = None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     def __init__(
         self,

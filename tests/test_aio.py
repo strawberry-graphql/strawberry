@@ -26,7 +26,7 @@ async def test_aslice():
 
     res = []
     async for v in aislice(gen(), 0, 2):
-        res.append(v)  # noqa: PERF402
+        res.append(v)  # noqa: PERF401
 
     assert res == ["a", "b"]
 
@@ -39,7 +39,7 @@ async def test_aislice_empty_generator():
 
     res = []
     async for v in aislice(gen(), 0, 2):
-        res.append(v)  # noqa: PERF402
+        res.append(v)  # noqa: PERF401
 
     assert res == []
 
@@ -52,7 +52,7 @@ async def test_aislice_empty_slice():
 
     res = []
     async for v in aislice(gen(), 0, 0):
-        res.append(v)  # noqa: PERF402
+        res.append(v)  # noqa: PERF401
 
     assert res == []
 
@@ -68,7 +68,7 @@ async def test_aislice_with_step():
 
     res = []
     async for v in aislice(gen(), 0, 4, 2):
-        res.append(v)  # noqa: PERF402
+        res.append(v)  # noqa: PERF401
 
     assert res == ["a", "c"]
 

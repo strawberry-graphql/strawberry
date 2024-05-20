@@ -14,8 +14,7 @@ import strawberry
 
 
 @strawberry.type
-def a_function():
-    ...
+def a_function(): ...
 
 
 @strawberry.type

@@ -149,8 +149,7 @@ def test_node_id_annotation_in_superclass(mocker: MockerFixture):
         code: relay.NodeID[int]
 
     @strawberry.type
-    class Fruit(BaseFruit):
-        ...
+    class Fruit(BaseFruit): ...
 
     @strawberry.type
     class Query:
@@ -356,3 +355,50 @@ def test_node_id_annotation_in_superclass_and_subclass(mocker: MockerFixture):
             "edges": [{"node": {"id": to_base64("Fruit", i)}} for i in range(10)]
         }
     }
+
+
+def test_overwrite_resolve_id_and_no_node_id(mocker: MockerFixture):
+    mocker.patch.object(
+        DEFAULT_SCALAR_REGISTRY[relay.GlobalID],
+        "description",
+        "__GLOBAL_ID_DESC__",
+    )
+
+    @strawberry.type
+    class Fruit(relay.Node):
+        color: str
+
+        @classmethod
+        def resolve_id(cls, root) -> str:
+            return "test"  # pragma: no cover
+
+    @strawberry.type
+    class Query:
+        fruit: Fruit
+
+    expected_type = textwrap.dedent(
+        '''
+          type Fruit implements Node {
+          """The Globally Unique ID of this object"""
+          id: GlobalID!
+          color: String!
+        }
+
+        """__GLOBAL_ID_DESC__"""
+        scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
+
+        """An object with a Globally Unique ID"""
+        interface Node {
+          """The Globally Unique ID of this object"""
+          id: GlobalID!
+        }
+
+        type Query {
+          fruit: Fruit!
+        }
+        '''
+    )
+
+    schema = strawberry.Schema(query=Query)
+
+    assert str(schema) == textwrap.dedent(expected_type).strip()

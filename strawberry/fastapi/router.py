@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from datetime import timedelta
 from inspect import signature
 from typing import (
@@ -7,9 +8,12 @@ from typing import (
     Any,
     Awaitable,
     Callable,
+    Dict,
+    List,
     Mapping,
     Optional,
     Sequence,
+    Type,
     Union,
     cast,
 )
@@ -19,12 +23,16 @@ from starlette.background import BackgroundTasks  # noqa: TCH002
 from starlette.requests import HTTPConnection, Request
 from starlette.responses import (
     HTMLResponse,
+    JSONResponse,
     PlainTextResponse,
     Response,
 )
 from starlette.websockets import WebSocket
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, params
+from fastapi.datastructures import Default
+from fastapi.routing import APIRoute
+from fastapi.utils import generate_unique_id
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi.context import BaseContext, CustomContext
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
@@ -39,19 +47,22 @@ from strawberry.http.typevars import (
     RootValue,
 )
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from strawberry.utils.graphiql import get_graphiql_html
 
 if TYPE_CHECKING:
-    from starlette.types import ASGIApp
+    from enum import Enum
+
+    from starlette.routing import BaseRoute
+    from starlette.types import ASGIApp, Lifespan
 
     from strawberry.fastapi.context import MergedContext
     from strawberry.http import GraphQLHTTPResponse
+    from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
     from strawberry.types import ExecutionResult
 
 
 class FastAPIRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request):
+    def __init__(self, request: Request) -> None:
         self.request = request
 
     @property
@@ -88,14 +99,14 @@ class GraphQLRouter(
     request_adapter_class = FastAPIRequestAdapter
 
     @staticmethod
-    async def __get_root_value():
+    async def __get_root_value() -> None:
         return None
 
     @staticmethod
     def __get_context_getter(
         custom_getter: Callable[
             ..., Union[Optional[CustomContext], Awaitable[Optional[CustomContext]]]
-        ]
+        ],
     ) -> Callable[..., Awaitable[CustomContext]]:
         async def dependency(
             custom_context: Optional[CustomContext],
@@ -146,7 +157,8 @@ class GraphQLRouter(
         self,
         schema: BaseSchema,
         path: str = "",
-        graphiql: bool = True,
+        graphiql: Optional[bool] = None,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
@@ -158,17 +170,48 @@ class GraphQLRouter(
             GRAPHQL_WS_PROTOCOL,
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
+        prefix: str = "",
+        tags: Optional[List[Union[str, Enum]]] = None,
+        dependencies: Optional[Sequence[params.Depends]] = None,
+        default_response_class: Type[Response] = Default(JSONResponse),
+        responses: Optional[Dict[Union[int, str], Dict[str, Any]]] = None,
+        callbacks: Optional[List[BaseRoute]] = None,
+        routes: Optional[List[BaseRoute]] = None,
+        redirect_slashes: bool = True,
         default: Optional[ASGIApp] = None,
+        dependency_overrides_provider: Optional[Any] = None,
+        route_class: Type[APIRoute] = APIRoute,
         on_startup: Optional[Sequence[Callable[[], Any]]] = None,
         on_shutdown: Optional[Sequence[Callable[[], Any]]] = None,
-    ):
+        lifespan: Optional[Lifespan[Any]] = None,
+        deprecated: Optional[bool] = None,
+        include_in_schema: bool = True,
+        generate_unique_id_function: Callable[[APIRoute], str] = Default(
+            generate_unique_id
+        ),
+        **kwargs: Any,
+    ) -> None:
         super().__init__(
+            prefix=prefix,
+            tags=tags,
+            dependencies=dependencies,
+            default_response_class=default_response_class,
+            responses=responses,
+            callbacks=callbacks,
+            routes=routes,
+            redirect_slashes=redirect_slashes,
             default=default,
+            dependency_overrides_provider=dependency_overrides_provider,
+            route_class=route_class,
             on_startup=on_startup,
             on_shutdown=on_shutdown,
+            lifespan=lifespan,
+            deprecated=deprecated,
+            include_in_schema=include_in_schema,
+            generate_unique_id_function=generate_unique_id_function,
+            **kwargs,
         )
         self.schema = schema
-        self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
@@ -180,6 +223,16 @@ class GraphQLRouter(
         )
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
+
+        if graphiql is not None:
+            warnings.warn(
+                "The `graphiql` argument is deprecated in favor of `graphql_ide`",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.graphql_ide = "graphiql" if graphiql else None
+        else:
+            self.graphql_ide = graphql_ide
 
         @self.get(
             path,
@@ -278,8 +331,8 @@ class GraphQLRouter(
             default=None,
         )
 
-    def render_graphiql(self, request: Request) -> HTMLResponse:
-        return HTMLResponse(get_graphiql_html())
+    async def render_graphql_ide(self, request: Request) -> HTMLResponse:
+        return HTMLResponse(self.graphql_ide_html)
 
     async def process_result(
         self, request: Request, result: ExecutionResult

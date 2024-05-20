@@ -71,7 +71,9 @@ def test_union_with_generic_with_deprecated_api_using_types_parameter():
     assert strawberry_union.graphql_name == "Result"
     assert strawberry_union.types[0] == Error
 
-    assert strawberry_union.types[1].__strawberry_definition__.is_generic is False
+    assert (
+        strawberry_union.types[1].__strawberry_definition__.is_graphql_generic is False
+    )
 
 
 def test_cannot_use_union_directly():

@@ -54,7 +54,7 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
             GRAPHQL_WS_PROTOCOL,
         ),
         connection_init_wait_timeout: Optional[datetime.timedelta] = None,
-    ):
+    ) -> None:
         if connection_init_wait_timeout is None:
             connection_init_wait_timeout = datetime.timedelta(minutes=1)
         self.connection_init_wait_timeout = connection_init_wait_timeout

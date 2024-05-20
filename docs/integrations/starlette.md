@@ -4,7 +4,8 @@ title: Starlette
 
 # Starlette
 
-Strawberry provides support for [Starlette](https://www.starlette.io/) with the ASGI integration.
+Strawberry provides support for [Starlette](https://www.starlette.io/) with the
+ASGI integration.
 
 See below example for integrating Starlette with Strawberry:
 
@@ -21,4 +22,5 @@ app.add_route("/graphql", graphql_app)
 app.add_websocket_route("/graphql", graphql_app)
 ```
 
-For more information about Strawberry ASGI refer to [the documentation on ASGI](./asgi.md)
+For more information about Strawberry ASGI refer to
+[the documentation on ASGI](./asgi.md)

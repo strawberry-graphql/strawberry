@@ -21,7 +21,10 @@ async def communicator(
     application = GraphQLWSConsumer.as_asgi(schema=schema, keep_alive_interval=50)
 
     async with GraphQLWebsocketCommunicator(
-        protocol=request.param, application=application, path="/graphql"
+        protocol=request.param,
+        application=application,
+        path="/graphql",
+        connection_params={"strawberry": "Hi"},
     ) as client:
         yield client
 
@@ -45,3 +48,8 @@ async def test_graphql_error(communicator):
         query='subscription { error(message: "Hi") }'
     ):
         assert res.errors[0].message == "Hi"
+
+
+async def test_simple_connection_params(communicator):
+    async for res in communicator.subscribe(query="subscription { connectionParams }"):
+        assert res.data["connectionParams"] == "Hi"

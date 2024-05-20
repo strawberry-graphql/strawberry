@@ -32,8 +32,9 @@ app with `uvicorn server:app`
 The `GraphQL` app accepts two options at the moment:
 
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
-- `graphiql`: optional, defaults to `True`, whether to enable the GraphiQL
-  interface.
+- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the
+  GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or
+  to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
 
@@ -63,7 +64,7 @@ class MyGraphQL(GraphQL):
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info: Info) -> str:
+    def example(self, info: strawberry.Info) -> str:
         return str(info.context["example"])
 ```
 
@@ -86,7 +87,7 @@ the `Info` object.
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def login(self, info: Info) -> bool:
+    def login(self, info: strawberry.Info) -> bool:
         token = do_login()
         info.context["response"].set_cookie(key="token", value=token)
         return True
@@ -101,14 +102,13 @@ on the response via the context:
 from starlette.background import BackgroundTask
 
 
-async def notify_new_flavour(name: str):
-    ...
+async def notify_new_flavour(name: str): ...
 
 
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def create_flavour(self, name: str, info: Info) -> bool:
+    def create_flavour(self, name: str, info: strawberry.Info) -> bool:
         info.context["response"].background = BackgroundTask(notify_new_flavour, name)
 ```
 

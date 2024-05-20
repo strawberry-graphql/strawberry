@@ -23,7 +23,11 @@ class Body(TypedDict, total=False):
 
 
 class BaseGraphQLTestClient(ABC):
-    def __init__(self, client, url: str = "/graphql/"):  # noqa: ANN001
+    def __init__(
+        self,
+        client: Any,
+        url: str = "/graphql/",
+    ) -> None:
         self._client = client
         self.url = url
 
@@ -159,7 +163,7 @@ class BaseGraphQLTestClient(ABC):
         map_without_vars = {k: v for k, v in map.items() if k in files}
         return map_without_vars
 
-    def _decode(self, response: Any, type: Literal["multipart", "json"]):
+    def _decode(self, response: Any, type: Literal["multipart", "json"]) -> Any:
         if type == "multipart":
             return json.loads(response.content.decode())
         return response.json()

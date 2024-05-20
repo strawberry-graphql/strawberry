@@ -44,7 +44,7 @@ def test_field_inaccessible_printed_correctly():
     )
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@external", "@inaccessible", "@key"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@external", "@inaccessible", "@key"]) {
           query: Query
         }
 
@@ -107,7 +107,7 @@ def test_inaccessible_on_mutation():
     )
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@inaccessible"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@inaccessible"]) {
           query: Query
           mutation: Mutation
         }
@@ -144,7 +144,7 @@ def test_inaccessible_on_scalar():
     )
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@inaccessible"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@inaccessible"]) {
           query: Query
         }
 
@@ -180,7 +180,7 @@ def test_inaccessible_on_enum():
     )
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@inaccessible"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@inaccessible"]) {
           query: Query
         }
 
@@ -218,7 +218,7 @@ def test_inaccessible_on_enum_value():
     )
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@inaccessible"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@inaccessible"]) {
           query: Query
         }
 
@@ -259,7 +259,7 @@ def test_field_tag_printed_correctly_on_union():
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@inaccessible"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@inaccessible"]) {
           query: Query
         }
 

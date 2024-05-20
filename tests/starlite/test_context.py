@@ -1,4 +1,6 @@
-from typing import Any, Dict
+from typing import Dict
+
+import pytest
 
 import strawberry
 
@@ -6,7 +8,6 @@ try:
     from starlite import Provide, Starlite
     from starlite.testing import TestClient
     from strawberry.starlite import BaseContext, make_graphql_controller
-    from strawberry.types import Info
     from tests.starlite.app import create_app
 except ModuleNotFoundError:
     pass
@@ -21,7 +22,7 @@ def test_with_class_context_getter():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info[Any, Any]) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert info.context.request is not None
             assert info.context.strawberry == "rocks"
             return "abc"
@@ -56,7 +57,7 @@ def test_with_dict_context_getter():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info[Any, Any]) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert info.context.get("request") is not None
             assert info.context.get("strawberry") == "rocks"
             return "abc"
@@ -86,7 +87,7 @@ def test_without_context_getter():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info[Any, Any]) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert info.context.get("request") is not None
             assert info.context.get("strawberry") is None
             return "abc"
@@ -107,7 +108,7 @@ def test_with_invalid_context_getter():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info[Any, Any]) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert info.context.get("request") is not None
             assert info.context.get("strawberry") is None
             return "abc"
@@ -146,7 +147,7 @@ def test_custom_context():
     @strawberry.type
     class Query:
         @strawberry.field
-        def custom_context_value(self, info: Info[Any, Any]) -> str:
+        def custom_context_value(self, info: strawberry.Info) -> str:
             return info.context["custom_value"]
 
     schema = strawberry.Schema(query=Query)
@@ -169,7 +170,7 @@ def test_can_set_background_task():
     @strawberry.type
     class Query:
         @strawberry.field
-        def something(self, info: Info[Any, Any]) -> str:
+        def something(self, info: strawberry.Info) -> str:
             response = info.context["response"]
             response.background.tasks.append(task)
             return "foo"
@@ -182,3 +183,20 @@ def test_can_set_background_task():
 
     assert response.json() == {"data": {"something": "foo"}}
     assert task_complete
+
+
+def test_starlite_usage_triggers_deprecation_warning():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def abc(self, info: strawberry.Info) -> str:
+            assert info.context.get("request") is not None
+            assert info.context.get("strawberry") is None
+            return "abc"
+
+    schema = strawberry.Schema(query=Query)
+
+    with pytest.deprecated_call(
+        match="The `starlite` integration is deprecated in favor of `litestar` integration"
+    ):
+        make_graphql_controller(path="/graphql", schema=schema, context_getter=None)

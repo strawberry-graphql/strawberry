@@ -45,13 +45,13 @@ class Query:
 
 ### MissingTypesForGenericError
 
-This exception is raised when a `Generic` type is added to the Strawberry Schema without
-passing any type to make it concrete.
+This exception is raised when a `Generic` type is added to the Strawberry Schema
+without passing any type to make it concrete.
 
 ### MultipleStrawberryArgumentsError
 
-This exception is raised when `strawberry.argument` is used multiple times in a type
-annotation.
+This exception is raised when `strawberry.argument` is used multiple times in a
+type annotation.
 
 ```python
 import strawberry

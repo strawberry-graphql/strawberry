@@ -5,11 +5,14 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Union
 
 if TYPE_CHECKING:
+    from typing_extensions import TypeAlias
+
     from strawberry.field import StrawberryField
     from strawberry.types import Info
 
-SyncExtensionResolver = Callable[..., Any]
-AsyncExtensionResolver = Callable[..., Awaitable[Any]]
+
+SyncExtensionResolver: TypeAlias = Callable[..., Any]
+AsyncExtensionResolver: TypeAlias = Callable[..., Awaitable[Any]]
 
 
 class FieldExtension:

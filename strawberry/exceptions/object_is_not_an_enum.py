@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class ObjectIsNotAnEnumError(StrawberryException):
-    def __init__(self, cls: Type[Enum]):
+    def __init__(self, cls: Type[Enum]) -> None:
         self.cls = cls
         self.message = (
             "strawberry.enum can only be used with subclasses of Enum. "

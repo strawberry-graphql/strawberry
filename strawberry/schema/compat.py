@@ -42,11 +42,12 @@ def is_schema_directive(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     return hasattr(type_, "__strawberry_directive__")
 
 
-def is_generic(type_: Union[StrawberryType, type]) -> bool:
+# TODO: do we still need this?
+def is_graphql_generic(type_: Union[StrawberryType, type]) -> bool:
     if has_object_definition(type_):
-        return type_.__strawberry_definition__.is_generic
+        return type_.__strawberry_definition__.is_graphql_generic
 
     if isinstance(type_, StrawberryType):
-        return type_.is_generic
+        return type_.is_graphql_generic
 
     return False

@@ -65,7 +65,7 @@ class Schema(BaseSchema):
         ] = None,
         schema_directives: Iterable[object] = (),
         enable_federation_2: bool = False,
-    ):
+    ) -> None:
         query = self._get_federation_query_type(query)
 
         super().__init__(
@@ -164,13 +164,16 @@ class Schema(BaseSchema):
         fields.update(query_type.fields)
 
         query_type = copy(query_type)
-        query_type._fields = fields
+        query_type.fields = fields
 
         self._schema.query_type = query_type
         self._schema.type_map[query_type.name] = query_type
 
     def entities_resolver(
-        self, root, info, representations  # noqa: ANN001
+        self,
+        root,  # noqa: ANN001
+        info,  # noqa: ANN001
+        representations,  # noqa: ANN001
     ) -> List[object]:
         results = []
 
@@ -213,7 +216,7 @@ class Schema(BaseSchema):
                     # check explicitly for type name instead of `isinstance` so
                     # clients can raise custom TypeErrors to avoid this wrapper
                     result = Exception(
-                        f"Unable to resolve reference for {type_.definition.name}"
+                        f"Unable to resolve reference for {definition.origin}"
                     )
                 else:
                     result = e
@@ -395,7 +398,7 @@ def _has_federation_keys(
         "ScalarDefinition",
         "EnumDefinition",
         "StrawberryUnion",
-    ]
+    ],
 ) -> bool:
     if isinstance(definition, StrawberryObjectDefinition):
         return any(_is_key(directive) for directive in definition.directives or [])

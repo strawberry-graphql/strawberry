@@ -32,7 +32,7 @@ def _get_handler(exception_type: Type[BaseException]) -> ExceptionHandler:
                 exception_type: Type[BaseException],
                 exception: BaseException,
                 traceback: Optional[TracebackType],
-            ):
+            ) -> None:
                 try:
                     rich.print(exception)
 
@@ -60,7 +60,7 @@ def strawberry_threading_exception_handler(
         Optional[BaseException],
         Optional[TracebackType],
         Optional[threading.Thread],
-    ]
+    ],
 ) -> None:
     (exception_type, exception, traceback, _) = args
 

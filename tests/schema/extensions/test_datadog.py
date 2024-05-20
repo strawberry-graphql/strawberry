@@ -289,3 +289,28 @@ async def test_create_span_override(datadog_extension):
     await schema.execute(query)
 
     mock.tracer.trace().set_tag.assert_any_call("graphql.query", query)
+
+
+@pytest.mark.asyncio
+async def test_uses_query_missing_operation_if_no_query(datadog_extension, mocker):
+    """Avoid regression of https://github.com/strawberry-graphql/strawberry/issues/3150"""
+    extension, mock = datadog_extension
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation, extensions=[extension])
+
+    # A missing query error is expected here, but the extension will run anyways
+    with pytest.raises(strawberry.exceptions.MissingQueryError):
+        await schema.execute(None)
+
+    mock.tracer.assert_has_calls(
+        [
+            mocker.call.trace(
+                "Anonymous Query",
+                resource="query_missing",
+                span_type="graphql",
+                service="strawberry",
+            ),
+            mocker.call.trace().set_tag("graphql.operation_name", None),
+            mocker.call.trace().set_tag("graphql.operation_type", "query_missing"),
+        ]
+    )

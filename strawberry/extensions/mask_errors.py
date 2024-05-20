@@ -18,7 +18,7 @@ class MaskErrors(SchemaExtension):
         self,
         should_mask_error: Callable[[GraphQLError], bool] = default_should_mask_error,
         error_message: str = "Unexpected error.",
-    ):
+    ) -> None:
         self.should_mask_error = should_mask_error
         self.error_message = error_message
 

@@ -26,5 +26,5 @@ graphql_app = GraphQL[Any, Any](schema_symbol, debug=log_operations)
 
 paths = ["/", "/graphql"]
 for path in paths:
-    app.add_route(path, graphql_app)
-    app.add_websocket_route(path, graphql_app)
+    app.add_route(path, graphql_app)  # type: ignore
+    app.add_websocket_route(path, graphql_app)  # type: ignore

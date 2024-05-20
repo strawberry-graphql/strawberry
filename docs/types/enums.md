@@ -19,8 +19,7 @@ First, create a new class for the new type, which extends class Enum:
 from enum import Enum
 
 
-class IceCreamFlavour(Enum):
-    ...
+class IceCreamFlavour(Enum): ...
 ```
 
 Then, list options as variables in that class:

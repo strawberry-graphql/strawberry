@@ -17,7 +17,7 @@ class ConflictingArgumentsError(StrawberryException):
         self,
         resolver: StrawberryResolver,
         arguments: List[str],
-    ):
+    ) -> None:
         self.function = resolver.wrapped_func
         self.argument_names = arguments
 
@@ -50,5 +50,6 @@ class ConflictingArgumentsError(StrawberryException):
         source_finder = SourceFinder()
 
         return source_finder.find_argument_from_object(
-            self.function, self.argument_names[1]  # type: ignore
+            self.function,  # type: ignore
+            self.argument_names[1],
         )

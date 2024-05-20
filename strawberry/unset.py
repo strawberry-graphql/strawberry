@@ -17,13 +17,13 @@ class UnsetType:
         else:
             return cls.__instance
 
-    def __str__(self):
+    def __str__(self) -> str:
         return ""
 
     def __repr__(self) -> str:
         return "UNSET"
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return False
 
 

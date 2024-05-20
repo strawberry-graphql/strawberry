@@ -17,5 +17,5 @@ class FakeProgress:
     def __enter__(self) -> "FakeProgress":
         return self
 
-    def __exit__(self, *args: Any, **kwargs: Any) -> None:
+    def __exit__(self, *args: object, **kwargs: Any) -> None:
         pass

@@ -17,15 +17,14 @@ from typing import (
 from typing_extensions import Self, deprecated
 
 from strawberry.type import (
+    StrawberryList,
     StrawberryType,
     StrawberryTypeVar,
     WithStrawberryObjectDefinition,
 )
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.inspect import get_specialized_type_var_map
-from strawberry.utils.typing import (
-    is_generic as is_type_generic,
-)
+from strawberry.utils.typing import is_generic as is_type_generic
 
 if TYPE_CHECKING:
     from graphql import GraphQLAbstractType, GraphQLResolveInfo
@@ -55,7 +54,7 @@ class StrawberryObjectDefinition(StrawberryType):
         Callable[[Any, GraphQLResolveInfo, GraphQLAbstractType], str]
     ]
 
-    _fields: List[StrawberryField]
+    fields: List[StrawberryField]
 
     concrete_of: Optional[StrawberryObjectDefinition] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
@@ -63,7 +62,7 @@ class StrawberryObjectDefinition(StrawberryType):
         default_factory=dict
     )
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # resolve `Self` annotation with the origin type
         for index, field in enumerate(self.fields):
             if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):  # type: ignore
@@ -101,7 +100,7 @@ class StrawberryObjectDefinition(StrawberryType):
             extend=self.extend,
             is_type_of=self.is_type_of,
             resolve_type=self.resolve_type,
-            _fields=fields,
+            fields=fields,
             concrete_of=self,
             type_var_map=type_var_map,
         )
@@ -128,17 +127,20 @@ class StrawberryObjectDefinition(StrawberryType):
         )
 
     @property
-    def fields(self) -> List[StrawberryField]:
-        # TODO: rename _fields to fields and remove this property
-        return self._fields
+    def is_graphql_generic(self) -> bool:
+        if not is_type_generic(self.origin):
+            return False
 
-    @property
-    def is_generic(self) -> bool:
-        return is_type_generic(self.origin)
+        # here we are checking if any exposed field is generic
+        # a Strawberry class can be "generic", but not expose any
+        # generic field to GraphQL
+        return any(field.is_graphql_generic for field in self.fields)
 
     @property
     def is_specialized_generic(self) -> bool:
-        return self.is_generic and not getattr(self.origin, "__parameters__", None)
+        return self.is_graphql_generic and not getattr(
+            self.origin, "__parameters__", None
+        )
 
     @property
     def specialized_type_var_map(self) -> Optional[Dict[str, type]]:
@@ -168,27 +170,54 @@ class StrawberryObjectDefinition(StrawberryType):
             return False
 
         # Check the mapping of all fields' TypeVars
-        for generic_field in type_definition.fields:
-            generic_field_type = generic_field.type
-            if not isinstance(generic_field_type, StrawberryTypeVar):
+        for field in type_definition.fields:
+            if not field.is_graphql_generic:
+                continue
+
+            value = getattr(root, field.name)
+            generic_field_type = field.type
+
+            while isinstance(generic_field_type, StrawberryList):
+                generic_field_type = generic_field_type.of_type
+
+                assert isinstance(value, (list, tuple))
+
+                if len(value) == 0:
+                    # We can't infer the type of an empty list, so we just
+                    # return the first one we find
+                    return True
+
+                value = value[0]
+
+            if isinstance(generic_field_type, StrawberryTypeVar):
+                type_var = generic_field_type.type_var
+            # TODO: I don't think we support nested types properly
+            # if there's a union that has two nested types that
+            # are have the same field with different types, we might
+            # not be able to differentiate them
+            else:
                 continue
 
             # For each TypeVar found, get the expected type from the copy's type map
-            expected_concrete_type = self.type_var_map.get(
-                generic_field_type.type_var.__name__
-            )
+            expected_concrete_type = self.type_var_map.get(type_var.__name__)
+
+            # this shouldn't happen, but we do a defensive check just in case
             if expected_concrete_type is None:
-                # TODO: Should this return False?
                 continue
 
             # Check if the expected type matches the type found on the type_map
-            real_concrete_type = type(getattr(root, generic_field.name))
+            real_concrete_type = type(value)
 
             # TODO: uniform type var map, at the moment we map object types
             # to their class (not to TypeDefinition) while we map enum to
             # the EnumDefinition class. This is why we do this check here:
             if hasattr(real_concrete_type, "_enum_definition"):
                 real_concrete_type = real_concrete_type._enum_definition
+
+            if isinstance(expected_concrete_type, type) and issubclass(
+                real_concrete_type, expected_concrete_type
+            ):
+                return True
 
             if real_concrete_type is not expected_concrete_type:
                 return False
@@ -201,8 +230,7 @@ class StrawberryObjectDefinition(StrawberryType):
 if TYPE_CHECKING:
 
     @deprecated("Use StrawberryObjectDefinition instead")
-    class TypeDefinition(StrawberryObjectDefinition):
-        ...
+    class TypeDefinition(StrawberryObjectDefinition): ...
 
 else:
     TypeDefinition = StrawberryObjectDefinition

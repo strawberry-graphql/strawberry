@@ -57,7 +57,7 @@ def upgrade(
     for path in paths:
         if path.is_dir():
             glob_path = str(path / "**/*.py")
-            files.extend(glob.glob(glob_path, recursive=True))
+            files.extend(glob.glob(glob_path, recursive=True))  # noqa: PTH207
         else:
             files.append(str(path))
 

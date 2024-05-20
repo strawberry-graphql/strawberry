@@ -110,7 +110,8 @@ services:
     healthcheck:
       interval: 10s
       retries: 12
-      test: curl -s http://localhost:9200/_cluster/health | grep -vq
+      test:
+        curl -s http://localhost:9200/_cluster/health | grep -vq
         '"status":"red"'
 
   kibana:

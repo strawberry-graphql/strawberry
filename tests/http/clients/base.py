@@ -15,6 +15,7 @@ from typing import (
 from typing_extensions import Literal
 
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
 
 JSON = Dict[str, object]
@@ -40,11 +41,11 @@ class HttpClient(abc.ABC):
     @abc.abstractmethod
     def __init__(
         self,
-        graphiql: bool = True,
+        graphiql: Optional[bool] = None,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
-    ):
-        ...
+    ): ...
 
     @abc.abstractmethod
     async def _graphql_request(
@@ -55,8 +56,7 @@ class HttpClient(abc.ABC):
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
         **kwargs: Any,
-    ) -> Response:
-        ...
+    ) -> Response: ...
 
     @abc.abstractmethod
     async def request(
@@ -64,16 +64,14 @@ class HttpClient(abc.ABC):
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
         headers: Optional[Dict[str, str]] = None,
-    ) -> Response:
-        ...
+    ) -> Response: ...
 
     @abc.abstractmethod
     async def get(
         self,
         url: str,
         headers: Optional[Dict[str, str]] = None,
-    ) -> Response:
-        ...
+    ) -> Response: ...
 
     @abc.abstractmethod
     async def post(
@@ -82,8 +80,7 @@ class HttpClient(abc.ABC):
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
         headers: Optional[Dict[str, str]] = None,
-    ) -> Response:
-        ...
+    ) -> Response: ...
 
     async def query(
         self,
@@ -205,37 +202,29 @@ class WebSocketClient(abc.ABC):
         return ""
 
     @abc.abstractmethod
-    async def send_json(self, payload: Dict[str, Any]) -> None:
-        ...
+    async def send_json(self, payload: Dict[str, Any]) -> None: ...
 
     @abc.abstractmethod
-    async def send_bytes(self, payload: bytes) -> None:
-        ...
+    async def send_bytes(self, payload: bytes) -> None: ...
 
     @abc.abstractmethod
-    async def receive(self, timeout: Optional[float] = None) -> Message:
-        ...
+    async def receive(self, timeout: Optional[float] = None) -> Message: ...
 
-    async def receive_json(self, timeout: Optional[float] = None) -> Any:
-        ...
+    async def receive_json(self, timeout: Optional[float] = None) -> Any: ...
 
     @abc.abstractmethod
-    async def close(self) -> None:
-        ...
+    async def close(self) -> None: ...
 
     @property
     @abc.abstractmethod
-    def closed(self) -> bool:
-        ...
+    def closed(self) -> bool: ...
 
     @property
     @abc.abstractmethod
-    def close_code(self) -> int:
-        ...
+    def close_code(self) -> int: ...
 
     @abc.abstractmethod
-    def assert_reason(self, reason: str) -> None:
-        ...
+    def assert_reason(self, reason: str) -> None: ...
 
     async def __aiter__(self) -> AsyncGenerator[Message, None]:
         while not self.closed:
@@ -244,7 +233,7 @@ class WebSocketClient(abc.ABC):
 
 class DebuggableGraphQLTransportWSMixin:
     @staticmethod
-    def on_init(self):
+    def on_init(self) -> None:
         """
         This method can be patched by unittests to get the instance of the
         transport handler when it is initialized

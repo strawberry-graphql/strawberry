@@ -1,12 +1,13 @@
 ---
-title: ValidationCache
+title: Validation Cache
 summary: Add in memory caching to the validation step of query execution.
 tags: performance,caching,validation
 ---
 
 # `ValidationCache`
 
-This extension adds LRU caching to the validation step of query execution to improve performance by caching the validation errors in memory.
+This extension adds LRU caching to the validation step of query execution to
+improve performance by caching the validation errors in memory.
 
 ## Usage example:
 
@@ -25,13 +26,13 @@ schema = strawberry.Schema(
 ## API reference:
 
 ```python
-class ValidationCache(maxsize=None):
-    ...
+class ValidationCache(maxsize=None): ...
 ```
 
 #### `maxsize: Optional[int] = None`
 
-Set the maxsize of the cache. If `maxsize` is set to `None` then the cache will grow without bound.
+Set the maxsize of the cache. If `maxsize` is set to `None` then the cache will
+grow without bound.
 
 More info: https://docs.python.org/3/library/functools.html#functools.lru_cache
 

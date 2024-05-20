@@ -6,8 +6,8 @@ title: Node ID annotation error
 
 ## Description
 
-This error is thrown when a `relay.Node` implemented type can't resolve its
-`id` field, due to it being missing or multiple annotated fields being found.
+This error is thrown when a `relay.Node` implemented type can't resolve its `id`
+field, due to it being missing or multiple annotated fields being found.
 
 The following code will throw this error:
 
@@ -25,8 +25,8 @@ class Fruit(relay.Node):
 This happens because `relay.Node` don't know which field should be used to
 resolve to generate its `GlobalID` field.
 
-The following would also throw this errors because multiple candidates
-were found:
+The following would also throw this errors because multiple candidates were
+found:
 
 ```python
 import strawberry

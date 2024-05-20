@@ -2,14 +2,15 @@ from typing import Any
 
 import strawberry
 from strawberry.permission import BasePermission
-from strawberry.types import Info
 
 
 def test_permission_classes_basic_fields():
     class IsAuthenticated(BasePermission):
         message = "User is not authenticated"
 
-        def has_permission(self, source: Any, info: Info, **kwargs: Any) -> bool:
+        def has_permission(
+            self, source: Any, info: strawberry.Info, **kwargs: Any
+        ) -> bool:
             return False
 
     @strawberry.type
@@ -30,7 +31,9 @@ def test_permission_classes():
     class IsAuthenticated(BasePermission):
         message = "User is not authenticated"
 
-        def has_permission(self, source: Any, info: Info, **kwargs: Any) -> bool:
+        def has_permission(
+            self, source: Any, info: strawberry.Info, **kwargs: Any
+        ) -> bool:
             return False
 
     @strawberry.type

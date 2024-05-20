@@ -139,11 +139,9 @@ class QueryCodegenPlugin:
         """
         self.query = query
 
-    def on_start(self) -> None:
-        ...
+    def on_start(self) -> None: ...
 
-    def on_end(self, result: CodegenResult) -> None:
-        ...
+    def on_end(self, result: CodegenResult) -> None: ...
 
     def generate_code(
         self, types: List[GraphQLType], operation: GraphQLOperation
@@ -152,7 +150,7 @@ class QueryCodegenPlugin:
 
 
 class ConsolePlugin:
-    def __init__(self, output_dir: Path):
+    def __init__(self, output_dir: Path) -> None:
         self.output_dir = output_dir
         self.files_generated: List[Path] = []
 
@@ -305,7 +303,7 @@ class QueryCodegen:
         schema: Schema,
         plugins: List[QueryCodegenPlugin],
         console_plugin: Optional[ConsolePlugin] = None,
-    ):
+    ) -> None:
         self.schema = schema
         self.plugin_manager = QueryCodegenPluginManager(plugins, console_plugin)
         self.types: List[GraphQLType] = []
@@ -660,9 +658,7 @@ class QueryCodegen:
         elif isinstance(type_, StrawberryList):
             type_, wrapper = self._unwrap_type(type_.of_type)
             wrapper = (
-                GraphQLList
-                if wrapper is None
-                else lambda t: GraphQLList(wrapper(t))  # type: ignore[misc]
+                GraphQLList if wrapper is None else lambda t: GraphQLList(wrapper(t))
             )
 
         elif isinstance(type_, LazyType):

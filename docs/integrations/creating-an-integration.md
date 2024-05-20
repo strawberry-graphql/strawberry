@@ -23,7 +23,7 @@ Both views are provides the same API, with the main difference being that the
 
 To create a view, you need to create a class that inherits from either
 `SyncBaseHTTPView` or `AsyncBaseHTTPView` and implement the `get_root_value`
-method. Here is an example of a view that inherits from `ASyncBaseHTTPView`:
+method. Here is an example of a view that inherits from `AsyncBaseHTTPView`:
 
 ```python
 from strawberry.http.async_base_view import AsyncBaseHTTPView
@@ -54,21 +54,19 @@ class MyView(
     async def get_root_value(self, request: Request) -> Optional[RootValue]:
         return None
 
-    def render_graphiql(self, request: Request) -> Response:
-        ...
+    def render_graphql_ide(self, request: Request) -> Response: ...
 
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: SubResponse
-    ) -> Response:
-        ...
+    ) -> Response: ...
 ```
 
 The methods above are the bare minimum that you need to implement to create a
 view. They are all required, but you can also override other methods to change
 the behaviour of the view.
 
-On top of that we also need a request adapter, here's the base class for the async
-version:
+On top of that we also need a request adapter, here's the base class for the
+async version:
 
 ```python
 from strawberry.http.types import HTTPMethod, QueryParams, FormData
@@ -76,26 +74,20 @@ from strawberry.http.types import HTTPMethod, QueryParams, FormData
 
 class AsyncHTTPRequestAdapter:
     @property
-    def query_params(self) -> Mapping[str, Optional[Union[str, List[str]]]]:
-        ...
+    def query_params(self) -> Mapping[str, Optional[Union[str, List[str]]]]: ...
 
     @property
-    def method(self) -> HTTPMethod:
-        ...
+    def method(self) -> HTTPMethod: ...
 
     @property
-    def headers(self) -> Mapping[str, str]:
-        ...
+    def headers(self) -> Mapping[str, str]: ...
 
     @property
-    def content_type(self) -> Optional[str]:
-        ...
+    def content_type(self) -> Optional[str]: ...
 
-    async def get_body(self) -> Union[bytes, str]:
-        ...
+    async def get_body(self) -> Union[bytes, str]: ...
 
-    async def get_form_data(self) -> FormData:
-        ...
+    async def get_form_data(self) -> FormData: ...
 ```
 
 This request adapter will be used to get the request data from the request

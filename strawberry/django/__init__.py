@@ -1,3 +1,5 @@
+from typing import Any
+
 try:
     # import modules and objects from external strawberry-graphql-django
     # package so that it can be used through strawberry.django namespace
@@ -5,7 +7,7 @@ try:
 except ModuleNotFoundError:
     import importlib
 
-    def __getattr__(name: str):
+    def __getattr__(name: str) -> Any:
         # try to import submodule and raise exception only if it does not exist
         import_symbol = f"{__name__}.{name}"
         try:

@@ -16,6 +16,7 @@ from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData, process_result
+from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
@@ -30,31 +31,25 @@ from .typevars import Context, Request, Response, RootValue, SubResponse
 class AsyncHTTPRequestAdapter(abc.ABC):
     @property
     @abc.abstractmethod
-    def query_params(self) -> QueryParams:
-        ...
+    def query_params(self) -> QueryParams: ...
 
     @property
     @abc.abstractmethod
-    def method(self) -> HTTPMethod:
-        ...
+    def method(self) -> HTTPMethod: ...
 
     @property
     @abc.abstractmethod
-    def headers(self) -> Mapping[str, str]:
-        ...
+    def headers(self) -> Mapping[str, str]: ...
 
     @property
     @abc.abstractmethod
-    def content_type(self) -> Optional[str]:
-        ...
+    def content_type(self) -> Optional[str]: ...
 
     @abc.abstractmethod
-    async def get_body(self) -> Union[str, bytes]:
-        ...
+    async def get_body(self) -> Union[str, bytes]: ...
 
     @abc.abstractmethod
-    async def get_form_data(self) -> FormData:
-        ...
+    async def get_form_data(self) -> FormData: ...
 
 
 class AsyncBaseHTTPView(
@@ -63,37 +58,29 @@ class AsyncBaseHTTPView(
     Generic[Request, Response, SubResponse, Context, RootValue],
 ):
     schema: BaseSchema
-    graphiql: bool
+    graphql_ide: Optional[GraphQL_IDE]
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
 
     @property
     @abc.abstractmethod
-    def allow_queries_via_get(self) -> bool:
-        ...
+    def allow_queries_via_get(self) -> bool: ...
 
     @abc.abstractmethod
-    async def get_sub_response(self, request: Request) -> SubResponse:
-        ...
+    async def get_sub_response(self, request: Request) -> SubResponse: ...
 
     @abc.abstractmethod
-    async def get_context(self, request: Request, response: SubResponse) -> Context:
-        ...
+    async def get_context(self, request: Request, response: SubResponse) -> Context: ...
 
     @abc.abstractmethod
-    async def get_root_value(self, request: Request) -> Optional[RootValue]:
-        ...
-
-    @abc.abstractmethod
-    def render_graphiql(self, request: Request) -> Response:
-        # TODO: this could be non abstract
-        # maybe add a get template function?
-        ...
+    async def get_root_value(self, request: Request) -> Optional[RootValue]: ...
 
     @abc.abstractmethod
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: SubResponse
-    ) -> Response:
-        ...
+    ) -> Response: ...
+
+    @abc.abstractmethod
+    async def render_graphql_ide(self, request: Request) -> Response: ...
 
     async def execute_operation(
         self, request: Request, context: Context, root_value: Optional[RootValue]
@@ -164,9 +151,9 @@ class AsyncBaseHTTPView(
         if not self.is_request_allowed(request_adapter):
             raise HTTPException(405, "GraphQL only supports GET and POST requests.")
 
-        if self.should_render_graphiql(request_adapter):
-            if self.graphiql:
-                return self.render_graphiql(request)
+        if self.should_render_graphql_ide(request_adapter):
+            if self.graphql_ide:
+                return await self.render_graphql_ide(request)
             else:
                 raise HTTPException(404, "Not Found")
 
@@ -207,18 +194,18 @@ class AsyncBaseHTTPView(
     ) -> GraphQLRequestData:
         content_type = request.content_type or ""
 
-        if "application/json" in content_type:
+        if request.method == "GET":
+            data = self.parse_query_params(request.query_params)
+        elif "application/json" in content_type:
             data = self.parse_json(await request.get_body())
         elif content_type.startswith("multipart/form-data"):
             data = await self.parse_multipart(request)
-        elif request.method == "GET":
-            data = self.parse_query_params(request.query_params)
         else:
             raise HTTPException(400, "Unsupported content type")
 
         return GraphQLRequestData(
             query=data.get("query"),
-            variables=data.get("variables"),  # type: ignore
+            variables=data.get("variables"),
             operation_name=data.get("operationName"),
         )
 

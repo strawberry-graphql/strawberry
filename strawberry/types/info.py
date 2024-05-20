@@ -10,10 +10,11 @@ from typing import (
     Generic,
     List,
     Optional,
+    Tuple,
     Type,
-    TypeVar,
     Union,
 )
+from typing_extensions import TypeVar
 
 from .nodes import convert_selections
 
@@ -29,14 +30,29 @@ if TYPE_CHECKING:
 
     from .nodes import Selection
 
-ContextType = TypeVar("ContextType")
-RootValueType = TypeVar("RootValueType")
+ContextType = TypeVar("ContextType", default=Any)
+RootValueType = TypeVar("RootValueType", default=Any)
 
 
 @dataclasses.dataclass
 class Info(Generic[ContextType, RootValueType]):
     _raw_info: GraphQLResolveInfo
     _field: StrawberryField
+
+    def __class_getitem__(cls, types: Union[type, Tuple[type, ...]]) -> Type[Info]:
+        """Workaround for when passing only one type.
+
+        Python doesn't yet support directly passing only one type to a generic class
+        that has typevars with defaults. This is a workaround for that.
+
+        See:
+        https://discuss.python.org/t/passing-only-one-typevar-of-two-when-using-defaults/49134
+        """
+
+        if not isinstance(types, tuple):
+            types = (types, Any)  # type: ignore
+
+        return super().__class_getitem__(types)  # type: ignore
 
     @property
     def field_name(self) -> str:

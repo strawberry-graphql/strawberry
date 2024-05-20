@@ -179,3 +179,19 @@ def test_positional_args_not_allowed():
         match=re.escape("__init__() takes 1 positional argument but 2 were given"),
     ):
         Thing("something")
+
+
+def test_object_preserves_annotations():
+    @strawberry.type
+    class Object:
+        a: bool
+        b: Annotated[str, "something"]
+        c: bool = strawberry.field(graphql_type=int)
+        d: Annotated[str, "something"] = strawberry.field(graphql_type=int)
+
+    assert Object.__annotations__ == {
+        "a": bool,
+        "b": Annotated[str, "something"],
+        "c": bool,
+        "d": Annotated[str, "something"],
+    }

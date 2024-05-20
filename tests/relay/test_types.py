@@ -1,5 +1,6 @@
 from typing import Any, AsyncGenerator, AsyncIterable, Optional, Union, cast
 from typing_extensions import assert_type
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -8,7 +9,7 @@ from strawberry import relay
 from strawberry.relay.utils import to_base64
 from strawberry.types.info import Info
 
-from .schema import Fruit, FruitAsync, schema
+from .schema import Fruit, FruitAsync, fruits_resolver, schema
 
 
 class FakeInfo:
@@ -80,8 +81,7 @@ def test_global_id_resolve_node_sync_ensure_type():
 
 
 def test_global_id_resolve_node_sync_ensure_type_with_union():
-    class Foo:
-        ...
+    class Foo: ...
 
     gid = relay.GlobalID(type_name="Fruit", node_id="1")
     fruit = gid.resolve_node_sync(fake_info, ensure_type=Union[Fruit, Foo])
@@ -92,8 +92,7 @@ def test_global_id_resolve_node_sync_ensure_type_with_union():
 
 
 def test_global_id_resolve_node_sync_ensure_type_wrong_type():
-    class Foo:
-        ...
+    class Foo: ...
 
     gid = relay.GlobalID(type_name="Fruit", node_id="1")
     with pytest.raises(TypeError):
@@ -132,8 +131,7 @@ async def test_global_id_resolve_node_ensure_type():
 
 
 async def test_global_id_resolve_node_ensure_type_with_union():
-    class Foo:
-        ...
+    class Foo: ...
 
     gid = relay.GlobalID(type_name="FruitAsync", node_id="1")
     fruit = await gid.resolve_node(fake_info, ensure_type=Union[FruitAsync, Foo])
@@ -144,8 +142,7 @@ async def test_global_id_resolve_node_ensure_type_with_union():
 
 
 async def test_global_id_resolve_node_ensure_type_wrong_type():
-    class Foo:
-        ...
+    class Foo: ...
 
     gid = relay.GlobalID(type_name="FruitAsync", node_id="1")
     with pytest.raises(TypeError):
@@ -239,5 +236,88 @@ async def test_resolve_async_list_connection_but_sync_after_sliced():
                 {"node": {"id": to_base64("SomeType", 1)}},
                 {"node": {"id": to_base64("SomeType", 2)}},
             ],
+        }
+    }
+
+
+def test_overwrite_resolve_id_and_no_node_id():
+    @strawberry.type
+    class Fruit(relay.Node):
+        color: str
+
+        @classmethod
+        def resolve_id(cls, root) -> str:
+            return "test"  # pragma: no cover
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def fruit(self) -> Fruit:
+            return Fruit(color="red")  # pragma: no cover
+
+    strawberry.Schema(query=Query)
+
+
+def test_list_connection_without_edges_or_page_info(mocker: MagicMock):
+    @strawberry.type(name="Connection", description="A connection to a list of items.")
+    class DummyListConnectionWithTotalCount(relay.ListConnection[relay.NodeType]):
+        @strawberry.field(description="Total quantity of existing nodes.")
+        def total_count(self) -> int:
+            return -1
+
+    @strawberry.type
+    class Query:
+        fruits: DummyListConnectionWithTotalCount[Fruit] = relay.connection(
+            resolver=fruits_resolver
+        )
+
+    mock = mocker.patch("strawberry.relay.types.Edge.resolve_edge")
+    schema = strawberry.Schema(query=Query)
+    ret = schema.execute_sync(
+        """
+    query {
+      fruits {
+        totalCount
+      }
+    }
+    """
+    )
+    mock.assert_not_called()
+    assert ret.errors is None
+    assert ret.data == {
+        "fruits": {
+            "totalCount": -1,
+        }
+    }
+
+
+def test_list_connection_with_nested_fragments():
+    ret = schema.execute_sync(
+        """
+    query {
+      fruits {
+        ...FruitFragment
+      }
+    }
+
+    fragment FruitFragment on FruitConnection {
+        edges {
+            node {
+                id
+            }
+        }
+    }
+    """
+    )
+    assert ret.errors is None
+    assert ret.data == {
+        "fruits": {
+            "edges": [
+                {"node": {"id": "RnJ1aXQ6MQ=="}},
+                {"node": {"id": "RnJ1aXQ6Mg=="}},
+                {"node": {"id": "RnJ1aXQ6Mw=="}},
+                {"node": {"id": "RnJ1aXQ6NA=="}},
+                {"node": {"id": "RnJ1aXQ6NQ=="}},
+            ]
         }
     }

@@ -15,9 +15,8 @@ community with people using GraphQL in Python.
 
 <Note>
 
-At the moment Strawberry is still in early development, so there's a
-chance of things suddenly changing, but hopefully the public API is stable
-enough.
+At the moment Strawberry is still in early development, so there's a chance of
+things suddenly changing, but hopefully the public API is stable enough.
 
 </Note>
 

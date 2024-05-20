@@ -91,7 +91,10 @@ async def test_sentry_tracer(
         }
     """
 
-    await schema.execute(query)
+    with pytest.warns(
+        DeprecationWarning, match="The Sentry tracing extension is deprecated"
+    ):
+        await schema.execute(query)
 
     assert mock.configure_scope.mock_calls == [
         mocker.call(),
@@ -160,7 +163,7 @@ async def test_sentry_tracer(
 
 @pytest.mark.asyncio
 async def test_uses_operation_name(
-    sentry_extension: Tuple[SentryTracingExtension, MagicMock]
+    sentry_extension: Tuple[SentryTracingExtension, MagicMock],
 ):
     extension, mock = sentry_extension
 
@@ -174,7 +177,10 @@ async def test_uses_operation_name(
         }
     """
 
-    await schema.execute(query, operation_name="MyExampleQuery")
+    with pytest.warns(
+        DeprecationWarning, match="The Sentry tracing extension is deprecated"
+    ):
+        await schema.execute(query, operation_name="MyExampleQuery")
 
     mock.configure_scope().__enter__().span.start_child.assert_any_call(
         op="gql", description="MyExampleQuery"
@@ -183,7 +189,7 @@ async def test_uses_operation_name(
 
 @pytest.mark.asyncio
 async def test_uses_operation_type(
-    sentry_extension: Tuple[SentryTracingExtension, MagicMock]
+    sentry_extension: Tuple[SentryTracingExtension, MagicMock],
 ):
     extension, mock = sentry_extension
 
@@ -195,7 +201,11 @@ async def test_uses_operation_type(
         }
     """
 
-    await schema.execute(query, operation_name="MyMutation")
+    with pytest.warns(
+        DeprecationWarning, match="The Sentry tracing extension is deprecated"
+    ):
+        await schema.execute(query, operation_name="MyMutation")
+
     mock.configure_scope().__enter__().span.start_child().set_tag.assert_any_call(
         "graphql.operation_type", "mutation"
     )
@@ -203,7 +213,7 @@ async def test_uses_operation_type(
 
 @pytest.mark.asyncio
 async def test_uses_operation_subscription(
-    sentry_extension: Tuple[SentryTracingExtension, MagicMock]
+    sentry_extension: Tuple[SentryTracingExtension, MagicMock],
 ):
     extension, mock = sentry_extension
 
@@ -215,7 +225,11 @@ async def test_uses_operation_subscription(
         }
     """
 
-    await schema.execute(query, operation_name="MySubscription")
+    with pytest.warns(
+        DeprecationWarning, match="The Sentry tracing extension is deprecated"
+    ):
+        await schema.execute(query, operation_name="MySubscription")
+
     mock.configure_scope().__enter__().span.start_child().set_tag.assert_any_call(
         "graphql.operation_type", "subscription"
     )
@@ -236,7 +250,10 @@ def test_sentry_tracer_sync(
         }
     """
 
-    schema.execute_sync(query)
+    with pytest.warns(
+        DeprecationWarning, match="The Sentry tracing extension is deprecated"
+    ):
+        schema.execute_sync(query)
 
     assert mock.configure_scope.mock_calls == [
         mocker.call(),
@@ -304,7 +321,7 @@ def test_sentry_tracer_sync(
 
 
 def test_uses_operation_name_sync(
-    sentry_extension_sync: Tuple[SentryTracingExtensionSync, MagicMock]
+    sentry_extension_sync: Tuple[SentryTracingExtensionSync, MagicMock],
 ):
     extension, mock = sentry_extension_sync
 
@@ -318,7 +335,10 @@ def test_uses_operation_name_sync(
         }
     """
 
-    schema.execute_sync(query, operation_name="MyExampleQuery")
+    with pytest.warns(
+        DeprecationWarning, match="The Sentry tracing extension is deprecated"
+    ):
+        schema.execute_sync(query, operation_name="MyExampleQuery")
 
     mock.configure_scope().__enter__().span.start_child.assert_any_call(
         op="gql", description="MyExampleQuery"
@@ -326,7 +346,7 @@ def test_uses_operation_name_sync(
 
 
 def test_uses_operation_type_sync(
-    sentry_extension_sync: Tuple[SentryTracingExtensionSync, MagicMock]
+    sentry_extension_sync: Tuple[SentryTracingExtensionSync, MagicMock],
 ):
     extension, mock = sentry_extension_sync
 
@@ -338,7 +358,10 @@ def test_uses_operation_type_sync(
         }
     """
 
-    schema.execute_sync(query, operation_name="MyMutation")
+    with pytest.warns(
+        DeprecationWarning, match="The Sentry tracing extension is deprecated"
+    ):
+        schema.execute_sync(query, operation_name="MyMutation")
 
     mock.configure_scope().__enter__().span.start_child().set_tag.assert_any_call(
         "graphql.operation_type", "mutation"

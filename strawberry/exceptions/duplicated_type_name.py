@@ -20,7 +20,7 @@ class DuplicatedTypeName(StrawberryException):
         first_cls: Optional[Type],
         second_cls: Optional[Type],
         duplicated_type_name: str,
-    ):
+    ) -> None:
         self.first_cls = first_cls
         self.second_cls = second_cls
 

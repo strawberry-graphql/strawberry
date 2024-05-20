@@ -1,5 +1,5 @@
 ---
-title: MaskErrors
+title: Mask Errors
 summary: Hide error messages from the client.
 tags: security
 ---
@@ -28,8 +28,7 @@ schema = strawberry.Schema(
 ```python
 class MaskErrors(
     should_mask_error=default_should_mask_error, error_message="Unexpected error."
-):
-    ...
+): ...
 ```
 
 #### `should_mask_error: Callable[[GraphQLError], bool] = default_should_mask_error`

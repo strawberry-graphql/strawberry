@@ -14,8 +14,7 @@ def test_field_type_default():
         nickname: Optional[str] = "Jim"
 
     @strawberry.experimental.pydantic.type(User, all_fields=True)
-    class PydanticUser:
-        ...
+    class PydanticUser: ...
 
     @strawberry.type
     class StrawberryUser:
@@ -58,8 +57,7 @@ def test_pydantic_type_default_none():
         name: Optional[str] = None
 
     @strawberry.experimental.pydantic.type(UserPydantic, all_fields=True)
-    class User:
-        ...
+    class User: ...
 
     @strawberry.type
     class Query:
@@ -90,8 +88,7 @@ def test_pydantic_type_no_default_but_optional():
         name: Optional[str]
 
     @strawberry.experimental.pydantic.type(UserPydantic, all_fields=True)
-    class User:
-        ...
+    class User: ...
 
     @strawberry.type
     class Query:
@@ -121,8 +118,7 @@ def test_input_type_default():
         name: str = "James"
 
     @strawberry.experimental.pydantic.type(User, all_fields=True, is_input=True)
-    class PydanticUser:
-        ...
+    class PydanticUser: ...
 
     @strawberry.type(is_input=True)
     class StrawberryUser:
@@ -165,8 +161,7 @@ def test_v2_explicit_default():
         name: Optional[str]
 
     @strawberry.experimental.pydantic.type(User, all_fields=True)
-    class PydanticUser:
-        ...
+    class PydanticUser: ...
 
     @strawberry.type
     class Query:
