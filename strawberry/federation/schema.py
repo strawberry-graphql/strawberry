@@ -204,7 +204,7 @@ class Schema(BaseSchema):
 
             try:
                 result = get_result()
-            except Exception as e:  # noqa: PERF203
+            except Exception as e:
                 # check explicitly for type __name__ instead of checking `isinstance`
                 # so clients can raise custom TypeErrors to avoid this wrapper
                 if type(e).__name__ == "TypeError":
