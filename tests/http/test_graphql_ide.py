@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Type, Union
 from typing_extensions import Literal
 
 import pytest
@@ -11,12 +11,9 @@ from .clients.base import HttpClient
 async def test_renders_graphql_ide(
     header_value: str,
     http_client_class: Type[HttpClient],
-    graphql_ide: Literal["graphiql", "apollo-sandbox", "pathfinder", None],
+    graphql_ide: Literal["graphiql", "apollo-sandbox", "pathfinder"],
 ):
-    if graphql_ide is None:
-        http_client = http_client_class()
-    else:
-        http_client = http_client_class(graphql_ide=graphql_ide)
+    http_client = http_client_class(graphql_ide=graphql_ide)
 
     response = await http_client.get("/graphql", headers={"Accept": header_value})
     content_type = response.headers.get(
@@ -33,7 +30,7 @@ async def test_renders_graphql_ide(
     if graphql_ide == "pathfinder":
         assert "@pathfinder-ide/react" in response.text
 
-    if graphql_ide == "graphiql" or graphql_ide is None:
+    if graphql_ide == "graphiql":
         assert "unpkg.com/graphiql" in response.text
 
 
@@ -70,8 +67,12 @@ async def test_does_not_render_graphiql_if_wrong_accept(
     assert response.status_code == 400
 
 
-async def test_renders_graphiql_disabled(http_client_class: Type[HttpClient]):
-    http_client = http_client_class(graphql_ide=None)
+@pytest.mark.parametrize("graphql_ide", [False, None])
+async def test_renders_graphiql_disabled(
+    http_client_class: Type[HttpClient],
+    graphql_ide: Union[bool, None],
+):
+    http_client = http_client_class(graphql_ide=graphql_ide)
     response = await http_client.get("/graphql", headers={"Accept": "text/html"})
 
     assert response.status_code == 404

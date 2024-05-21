@@ -44,7 +44,6 @@ class WrongReturnTypeForUnion(Exception):
         super().__init__(message)
 
 
-# TODO: this doesn't seem to be tested
 class UnallowedReturnTypeForUnion(Exception):
     """The return type is not in the list of Union types"""
 

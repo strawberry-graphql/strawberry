@@ -1,6 +1,135 @@
 CHANGELOG
 =========
 
+0.229.1 - 2024-05-15
+--------------------
+
+This release fixes a regression from 0.229.0 where using a generic interface
+inside a union would return an error.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3502](https://github.com/strawberry-graphql/strawberry/pull/3502/)
+
+
+0.229.0 - 2024-05-12
+--------------------
+
+This release improves our support for generic types, now using the same the same
+generic multiple times with a list inside an interface or union is supported,
+for example the following will work:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class BlockRow[T]:
+    items: list[T]
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def blocks(self) -> list[BlockRow[str] | BlockRow[int]]:
+        return [
+            BlockRow(items=["a", "b", "c"]),
+            BlockRow(items=[1, 2, 3, 4]),
+        ]
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3463](https://github.com/strawberry-graphql/strawberry/pull/3463/)
+
+
+0.228.0 - 2024-05-12
+--------------------
+
+This releases updates the JSON scalar definition to have the updated `specifiedBy` URL.
+
+The release is marked as minor because it will change the generated schema if you're using the JSON scalar.
+
+Contributed by [Egor](https://github.com/Birdi7) via [PR #3478](https://github.com/strawberry-graphql/strawberry/pull/3478/)
+
+
+0.227.7 - 2024-05-12
+--------------------
+
+This releases updates the `field-extensions` documentation's `StrawberryField` stability warning to include stable features.
+
+The release is marked as patch because it only changes documentation.
+
+Contributed by [Ray Sy](https://github.com/fireteam99) via [PR #3496](https://github.com/strawberry-graphql/strawberry/pull/3496/)
+
+
+0.227.6 - 2024-05-11
+--------------------
+
+Fix `AssertionError` caused by the `DatadogTracingExtension` whenever the query is unavailable.
+
+The bug in question was reported by issue [#3150](https://github.com/strawberry-graphql/strawberry/issues/3150).
+The datadog extension would throw an `AssertionError` whenever there was no query available. This could happen if,
+for example, a user POSTed something to `/graphql` with a JSON that doesn't contain a `query` field as per the
+GraphQL spec.
+
+The fix consists of adding `query_missing` to the `operation_type` tag, and also adding `query_missing` to the resource name.
+It also makes it easier to look for logs of users making invalid queries by searching for `query_missing` in Datadog.
+
+Contributed by [Lucas Valente](https://github.com/serramatutu) via [PR #3483](https://github.com/strawberry-graphql/strawberry/pull/3483/)
+
+
+0.227.5 - 2024-05-11
+--------------------
+
+**Deprecations:** This release deprecates the `Starlite` integration in favour of the `LiteStar` integration.
+Refer to the [LiteStar](./litestar.md) integration for more information.
+LiteStar is a [renamed](https://litestar.dev/about/organization.html#litestar-and-starlite) and upgraded version of Starlite.
+
+Before:
+
+```python
+from strawberry.starlite import make_graphql_controller
+```
+
+After:
+
+```python
+from strawberry.litestar import make_graphql_controller
+```
+
+Contributed by [Egor](https://github.com/Birdi7) via [PR #3492](https://github.com/strawberry-graphql/strawberry/pull/3492/)
+
+
+0.227.4 - 2024-05-09
+--------------------
+
+This release fixes a bug in release 0.227.3 where FragmentSpread nodes
+were not resolving edges.
+
+Contributed by [Eric Uriostigue](https://github.com/euriostigue) via [PR #3487](https://github.com/strawberry-graphql/strawberry/pull/3487/)
+
+
+0.227.3 - 2024-05-01
+--------------------
+
+This release adds an optimization to `ListConnection` such that only queries with
+`edges` or `pageInfo` in their selected fields triggers `resolve_edges`.
+
+This change is particularly useful for the `strawberry-django` extension's
+`ListConnectionWithTotalCount` and the only selected field is `totalCount`. An
+extraneous SQL query is prevented with this optimization.
+
+Contributed by [Eric Uriostigue](https://github.com/euriostigue) via [PR #3480](https://github.com/strawberry-graphql/strawberry/pull/3480/)
+
+
+0.227.2 - 2024-04-21
+--------------------
+
+This release fixes a minor issue where the docstring for the relay util `to_base64` described the return type incorrectly.
+
+Contributed by [Gavin Bannerman](https://github.com/gbannerman) via [PR #3467](https://github.com/strawberry-graphql/strawberry/pull/3467/)
+
+
 0.227.1 - 2024-04-20
 --------------------
 
@@ -4633,11 +4762,11 @@ will print the following SDL:
 directive @specifiedBy(name: String!) on SCALAR
 
 """
-The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf).
 """
 scalar JSON
   @specifiedBy(
-    url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf"
+    url: "https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf"
   )
 
 type Query {

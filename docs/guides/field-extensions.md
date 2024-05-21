@@ -56,8 +56,9 @@ query {
 
 <Warning>
 
-The `StrawberryField` API is not stable and might change in the future without
-warning.
+Most of the `StrawberryField` API is not stable and might change in the future
+without warning. Stable features include: `StrawberryField.type`,
+`StrawberryField.python_name`, and `StrawberryField.arguments`.
 
 </Warning>
 

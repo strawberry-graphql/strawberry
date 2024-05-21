@@ -38,7 +38,7 @@ from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
 from strawberry.utils.inspect import in_async_context
 from strawberry.utils.typing import eval_type, is_classvar
 
-from .utils import from_base64, to_base64
+from .utils import from_base64, should_resolve_list_connection_edges, to_base64
 
 if TYPE_CHECKING:
     from strawberry.scalars import ID
@@ -931,6 +931,17 @@ class ListConnection(Connection[NodeType]):
                 nodes,
                 start,
                 overfetch,
+            )
+
+        if not should_resolve_list_connection_edges(info):
+            return cls(
+                edges=[],
+                page_info=PageInfo(
+                    start_cursor=None,
+                    end_cursor=None,
+                    has_previous_page=False,
+                    has_next_page=False,
+                ),
             )
 
         edges = [
