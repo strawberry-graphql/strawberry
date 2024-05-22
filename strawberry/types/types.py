@@ -225,6 +225,15 @@ class StrawberryObjectDefinition(StrawberryType):
         # All field mappings succeeded. This is a match
         return True
 
+    @property
+    def is_one_of(self) -> bool:
+        from strawberry.schema_directives import OneOf
+
+        if not self.is_input or not self.directives:
+            return False
+
+        return any(isinstance(directive, OneOf) for directive in self.directives)
+
 
 # TODO: remove when deprecating _type_definition
 if TYPE_CHECKING:

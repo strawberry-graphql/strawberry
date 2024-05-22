@@ -293,6 +293,7 @@ def input(
     cls: T,
     *,
     name: Optional[str] = None,
+    one_of: Optional[bool] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
 ) -> T: ...
@@ -305,6 +306,7 @@ def input(
 def input(
     *,
     name: Optional[str] = None,
+    one_of: Optional[bool] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
 ) -> Callable[[T], T]: ...
@@ -314,6 +316,7 @@ def input(
     cls: Optional[T] = None,
     *,
     name: Optional[str] = None,
+    one_of: Optional[bool] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
 ):
@@ -323,6 +326,11 @@ def input(
     >>> class X:
     >>>     field_abc: str = "ABC"
     """
+
+    from strawberry.schema_directives import OneOf
+
+    if one_of:
+        directives = (*(directives or ()), OneOf())
 
     return type(  # type: ignore # not sure why mypy complains here
         cls,
