@@ -1,6 +1,32 @@
 CHANGELOG
 =========
 
+0.229.2 - 2024-05-22
+--------------------
+
+This release fixes an issue when using `Annotated` + `strawberry.lazy` +
+deferred annotations such as:
+
+```python
+from __future__ import annotations
+import strawberry
+from typing import Annotated
+
+
+@strawberry.type
+class Query:
+    a: Annotated["datetime", strawberry.lazy("datetime")]
+
+
+schema = strawberry.Schema(Query)
+```
+
+Before this would only work if `datetime` was not inside quotes. Now it should
+work as expected!
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3507](https://github.com/strawberry-graphql/strawberry/pull/3507/)
+
+
 0.229.1 - 2024-05-15
 --------------------
 
