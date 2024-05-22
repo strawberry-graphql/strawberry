@@ -1,4 +1,6 @@
+import sys
 import typing
+import pytest
 from typing import ClassVar, ForwardRef, Optional, Union
 from typing_extensions import Annotated
 
@@ -61,6 +63,79 @@ def test_eval_type():
             None,
         )
         == Annotated[strawberry.auto, "foobar"]
+    )
+    assert (
+        eval_type(
+            ForwardRef("Annotated[datetime, strawberry.lazy('datetime')]"),
+            {"strawberry": strawberry, "Annotated": Annotated},
+            None,
+        )
+        == Annotated[
+            LazyType("datetime", "datetime"),
+            strawberry.lazy("datetime"),
+        ]
+    )
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 9),
+    reason="python 3.8 resolves Annotated differently",
+)
+def test_eval_type_with_deferred_annotations():
+    assert (
+        eval_type(
+            ForwardRef(
+                "Annotated['Fruit', strawberry.lazy('tests.utils.test_typing')]"
+            ),
+            {"strawberry": strawberry, "Annotated": Annotated},
+            None,
+        )
+        == Annotated[
+            LazyType("Fruit", "tests.utils.test_typing"),
+            strawberry.lazy("tests.utils.test_typing"),
+        ]
+    )
+    assert (
+        eval_type(
+            ForwardRef("Annotated['datetime', strawberry.lazy('datetime')]"),
+            {"strawberry": strawberry, "Annotated": Annotated},
+            None,
+        )
+        == Annotated[
+            LazyType("datetime", "datetime"),
+            strawberry.lazy("datetime"),
+        ]
+    )
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 9),
+    reason="python 3.8 resolves Annotated differently",
+)
+def test_eval_type_with_deferred_annotations_3_8():
+    assert (
+        eval_type(
+            ForwardRef(
+                "Annotated['Fruit', strawberry.lazy('tests.utils.test_typing')]"
+            ),
+            {"strawberry": strawberry, "Annotated": Annotated},
+            None,
+        )
+        == Annotated[
+            ForwardRef("Fruit"),
+            strawberry.lazy("tests.utils.test_typing"),
+        ]
+    )
+    assert (
+        eval_type(
+            ForwardRef("Annotated['datetime', strawberry.lazy('datetime')]"),
+            {"strawberry": strawberry, "Annotated": Annotated},
+            None,
+        )
+        == Annotated[
+            ForwardRef("datetime"),
+            strawberry.lazy("datetime"),
+        ]
     )
 
 
