@@ -1,8 +1,9 @@
 import sys
 import typing
-import pytest
 from typing import ClassVar, ForwardRef, Optional, Union
 from typing_extensions import Annotated
+
+import pytest
 
 import strawberry
 from strawberry.lazy_type import LazyType
