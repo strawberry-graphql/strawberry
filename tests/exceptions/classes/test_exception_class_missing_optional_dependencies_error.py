@@ -7,7 +7,7 @@ def test_missing_optional_dependencies_error():
     with pytest.raises(MissingOptionalDependenciesError) as exc_info:
         raise MissingOptionalDependenciesError()
 
-    assert str(exc_info.value) == "Some optional dependencies are missing"
+    assert exc_info.value.message == "Some optional dependencies are missing"
 
 
 def test_missing_optional_dependencies_error_packages():
@@ -15,9 +15,16 @@ def test_missing_optional_dependencies_error_packages():
         raise MissingOptionalDependenciesError(packages=["a", "b"])
 
     assert (
-        str(exc_info.value)
+        exc_info.value.message
         == "Some optional dependencies are missing (hint: pip install a b)"
     )
+
+
+def test_missing_optional_dependencies_error_empty_packages():
+    with pytest.raises(MissingOptionalDependenciesError) as exc_info:
+        raise MissingOptionalDependenciesError(packages=[])
+
+    assert exc_info.value.message == "Some optional dependencies are missing"
 
 
 def test_missing_optional_dependencies_error_extras():
@@ -25,9 +32,16 @@ def test_missing_optional_dependencies_error_extras():
         raise MissingOptionalDependenciesError(extras=["dev", "test"])
 
     assert (
-        str(exc_info.value)
+        exc_info.value.message
         == "Some optional dependencies are missing (hint: pip install 'strawberry-graphql[dev,test]')"
     )
+
+
+def test_missing_optional_dependencies_error_empty_extras():
+    with pytest.raises(MissingOptionalDependenciesError) as exc_info:
+        raise MissingOptionalDependenciesError(extras=[])
+
+    assert exc_info.value.message == "Some optional dependencies are missing"
 
 
 def test_missing_optional_dependencies_error_packages_and_extras():
@@ -38,6 +52,6 @@ def test_missing_optional_dependencies_error_packages_and_extras():
         )
 
     assert (
-        str(exc_info.value)
+        exc_info.value.message
         == "Some optional dependencies are missing (hint: pip install a b 'strawberry-graphql[dev,test]')"
     )
