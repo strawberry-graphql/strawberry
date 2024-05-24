@@ -12,6 +12,7 @@ from .handler import setup_exception_handler
 from .invalid_argument_type import InvalidArgumentTypeError
 from .invalid_union_type import InvalidTypeForUnionMergeError, InvalidUnionTypeError
 from .missing_arguments_annotations import MissingArgumentsAnnotationsError
+from .missing_dependencies import MissingOptionalDependenciesError
 from .missing_field_annotation import MissingFieldAnnotationError
 from .missing_return_annotation import MissingReturnAnnotationError
 from .not_a_strawberry_enum import NotAStrawberryEnumError
@@ -186,4 +187,5 @@ __all__ = [
     "MissingFieldAnnotationError",
     "DuplicatedTypeName",
     "StrawberryGraphQLError",
+    "MissingOptionalDependenciesError",
 ]
