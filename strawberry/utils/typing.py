@@ -204,17 +204,15 @@ def get_parameters(annotation: Type) -> Union[Tuple[object], Tuple[()]]:
 
 
 @overload
-def _ast_replace_union_operation(expr: ast.expr) -> ast.expr:
-    ...
+def _ast_replace_union_operation(expr: ast.expr) -> ast.expr: ...
 
 
 @overload
-def _ast_replace_union_operation(expr: ast.Expr) -> ast.Expr:
-    ...
+def _ast_replace_union_operation(expr: ast.Expr) -> ast.Expr: ...
 
 
 def _ast_replace_union_operation(
-    expr: Union[ast.Expr, ast.expr]
+    expr: Union[ast.Expr, ast.expr],
 ) -> Union[ast.Expr, ast.expr]:
     if isinstance(expr, ast.Expr) and isinstance(
         expr.value, (ast.BinOp, ast.Subscript)
@@ -283,6 +281,12 @@ def _get_namespace_from_ast(
     elif (
         isinstance(expr, ast.Subscript)
         and isinstance(expr.value, ast.Name)
+        and expr.value.id in {"list", "List"}
+    ):
+        extra.update(_get_namespace_from_ast(expr.slice, globalns, localns))
+    elif (
+        isinstance(expr, ast.Subscript)
+        and isinstance(expr.value, ast.Name)
         and expr.value.id == "Annotated"
     ):
         assert ast_unparse
@@ -304,7 +308,7 @@ def _get_namespace_from_ast(
         # here to resolve lazy types by execing the annotated args, resolving the
         # type directly and then adding it to extra namespace, so that _eval_type
         # can properly resolve it later
-        type_name = args[0].strip()
+        type_name = args[0].strip(" '\"\n")
         for arg in args[1:]:
             evaled_arg = eval(arg, globalns, localns)  # noqa: PGH001, S307
             if isinstance(evaled_arg, StrawberryLazyReference):

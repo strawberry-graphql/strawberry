@@ -12,16 +12,13 @@ from .typevars import Request
 
 class BaseRequestProtocol(Protocol):
     @property
-    def query_params(self) -> Mapping[str, Optional[Union[str, List[str]]]]:
-        ...
+    def query_params(self) -> Mapping[str, Optional[Union[str, List[str]]]]: ...
 
     @property
-    def method(self) -> HTTPMethod:
-        ...
+    def method(self) -> HTTPMethod: ...
 
     @property
-    def headers(self) -> Mapping[str, str]:
-        ...
+    def headers(self) -> Mapping[str, str]: ...
 
 
 class BaseView(Generic[Request]):
@@ -44,7 +41,7 @@ class BaseView(Generic[Request]):
     def is_request_allowed(self, request: BaseRequestProtocol) -> bool:
         return request.method in ("GET", "POST")
 
-    def parse_json(self, data: Union[str, bytes]) -> Dict[str, str]:
+    def parse_json(self, data: Union[str, bytes]) -> Any:
         try:
             return json.loads(data)
         except json.JSONDecodeError as e:
@@ -65,7 +62,7 @@ class BaseView(Generic[Request]):
                 variables = variables[0]
 
             if variables:
-                params["variables"] = json.loads(variables)
+                params["variables"] = self.parse_json(variables)
 
         return params
 

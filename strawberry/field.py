@@ -3,7 +3,6 @@ from __future__ import annotations
 import contextlib
 import copy
 import dataclasses
-import inspect
 import sys
 from functools import cached_property
 from typing import (
@@ -91,7 +90,7 @@ class StrawberryField(dataclasses.Field):
         deprecation_reason: Optional[str] = None,
         directives: Sequence[object] = (),
         extensions: List[FieldExtension] = (),  # type: ignore
-    ):
+    ) -> None:
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
 
@@ -143,6 +142,19 @@ class StrawberryField(dataclasses.Field):
         self.directives = list(directives)
         self.extensions: List[FieldExtension] = list(extensions)
 
+        # Automatically add the permissions extension
+        if len(self.permission_classes):
+            from .permission import PermissionExtension
+
+            if not self.extensions:
+                self.extensions = []
+            permission_instances = [
+                permission_class() for permission_class in permission_classes
+            ]
+            # Append to make it run first (last is outermost)
+            self.extensions.append(
+                PermissionExtension(permission_instances, use_directives=False)
+            )
         self.deprecation_reason = deprecation_reason
 
     def __copy__(self) -> Self:
@@ -220,11 +232,7 @@ class StrawberryField(dataclasses.Field):
         an `Info` object and running any permission checks in the resolver
         which improves performance.
         """
-        return (
-            not self.base_resolver
-            and not self.permission_classes
-            and not self.extensions
-        )
+        return not self.base_resolver and not self.extensions
 
     @property
     def arguments(self) -> List[StrawberryArgument]:
@@ -234,7 +242,7 @@ class StrawberryField(dataclasses.Field):
         return self._arguments
 
     @arguments.setter
-    def arguments(self, value: List[StrawberryArgument]):
+    def arguments(self, value: List[StrawberryArgument]) -> None:
         self._arguments = value
 
     @property
@@ -400,19 +408,12 @@ class StrawberryField(dataclasses.Field):
         return new_field
 
     @property
-    def _has_async_permission_classes(self) -> bool:
-        for permission_class in self.permission_classes:
-            if inspect.iscoroutinefunction(permission_class.has_permission):
-                return True
-        return False
-
-    @property
     def _has_async_base_resolver(self) -> bool:
         return self.base_resolver is not None and self.base_resolver.is_async
 
     @cached_property
     def is_async(self) -> bool:
-        return self._has_async_permission_classes or self._has_async_base_resolver
+        return self._has_async_base_resolver
 
 
 @overload
@@ -431,8 +432,7 @@ def field(
     directives: Optional[Sequence[object]] = (),
     extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
@@ -450,8 +450,7 @@ def field(
     directives: Optional[Sequence[object]] = (),
     extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-) -> Any:
-    ...
+) -> Any: ...
 
 
 @overload
@@ -469,8 +468,7 @@ def field(
     directives: Optional[Sequence[object]] = (),
     extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-) -> StrawberryField:
-    ...
+) -> StrawberryField: ...
 
 
 def field(

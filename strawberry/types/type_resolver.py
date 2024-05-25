@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Dict, List, Type
+from typing import Any, Dict, List, Type
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -16,7 +16,9 @@ from strawberry.type import has_object_definition
 from strawberry.unset import UNSET
 
 
-def _get_fields(cls: Type) -> List[StrawberryField]:
+def _get_fields(
+    cls: Type[Any], original_type_annotations: Dict[str, Type[Any]]
+) -> List[StrawberryField]:
     """Get all the strawberry fields off a strawberry.type cls
 
     This function returns a list of StrawberryFields (one for each field item), while
@@ -49,6 +51,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     passing a named function (i.e. not an anonymous lambda) to strawberry.field
     (typically as a decorator).
     """
+
     fields: Dict[str, StrawberryField] = {}
 
     # before trying to find any fields, let's first add the fields defined in
@@ -151,6 +154,10 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
 
         assert_message = "Field must have a name by the time the schema is generated"
         assert field_name is not None, assert_message
+
+        if field.name in original_type_annotations:
+            field.type = original_type_annotations[field.name]
+            field.type_annotation = StrawberryAnnotation(annotation=field.type)
 
         # TODO: Raise exception if field_name already in fields
         fields[field_name] = field

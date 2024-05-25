@@ -17,7 +17,6 @@ from strawberry.types.fields.resolver import (
     StrawberryResolver,
     UncallableResolverError,
 )
-from strawberry.types.info import Info
 
 
 def test_resolver_as_argument():
@@ -279,8 +278,7 @@ def test_raises_error_when_missing_type_on_longish_class():
 
 def test_raises_error_calling_uncallable_resolver():
     @classmethod  # type: ignore
-    def class_func(cls) -> int:
-        ...
+    def class_func(cls) -> int: ...
 
     # Note that class_func is a raw classmethod object because it has not been bound
     # to a class at this point
@@ -362,7 +360,7 @@ def root_and_info(
     foo: str,
     bar: float,
     info: str,
-    strawberry_info: Info,
+    strawberry_info: strawberry.Info,
 ) -> str:
     raise AssertionError("Unreachable code.")
 
@@ -372,7 +370,7 @@ def self_and_info(
     foo: str,
     bar: float,
     info: str,
-    strawberry_info: Info,
+    strawberry_info: strawberry.Info,
 ) -> str:
     raise AssertionError("Unreachable code.")
 
@@ -382,7 +380,7 @@ def parent_and_info(
     foo: str,
     bar: float,
     info: str,
-    strawberry_info: Info,
+    strawberry_info: strawberry.Info,
 ) -> str:
     raise AssertionError("Unreachable code.")
 

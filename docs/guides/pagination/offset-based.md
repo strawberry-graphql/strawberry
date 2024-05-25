@@ -6,10 +6,12 @@ title: Pagination - Offset based
 
 Make sure to check our introduction to pagination [here](./overview.md)!
 
-Let us implement offset-based pagination in GraphQL. By the end of this tutorial, we
-should be able to return a sorted, filtered, and paginated list of users.
+Let us implement offset-based pagination in GraphQL. By the end of this
+tutorial, we should be able to return a sorted, filtered, and paginated list of
+users.
 
-Let us model the `User` type, which represents one user, with a name, occupation, and age.
+Let us model the `User` type, which represents one user, with a name,
+occupation, and age.
 
 ```python
 # example.py
@@ -28,7 +30,8 @@ class User:
         return User(name=row["name"], occupation=row["occupation"], age=row["age"])
 ```
 
-Let us now model the `PaginationWindow`, which represents one "slice" of sorted, filtered, and paginated items.
+Let us now model the `PaginationWindow`, which represents one "slice" of sorted,
+filtered, and paginated items.
 
 ```python
 Item = TypeVar("Item")
@@ -45,11 +48,12 @@ class PaginationWindow(Generic[Item]):
     )
 ```
 
-Note that `PaginationWindow` is generic - it can represent a slice of users, or a slice of any other type of
-items that we might want to paginate.
+Note that `PaginationWindow` is generic - it can represent a slice of users, or
+a slice of any other type of items that we might want to paginate.
 
-`PaginationWindow` also contains `total_items_count`, which specifies how many items there are in total in the filtered
-dataset, so that the client knows what the highest offset value can be.
+`PaginationWindow` also contains `total_items_count`, which specifies how many
+items there are in total in the filtered dataset, so that the client knows what
+the highest offset value can be.
 
 Let's define the query:
 
@@ -86,9 +90,11 @@ class Query:
 schema = strawberry.Schema(query=Query)
 ```
 
-Now we'll define a mock dataset and implement the `get_pagination_window` function, which is used by the `users` query.
+Now we'll define a mock dataset and implement the `get_pagination_window`
+function, which is used by the `users` query.
 
-For the sake of simplicity, our dataset will be an in-memory list containing four users:
+For the sake of simplicity, our dataset will be an in-memory list containing
+four users:
 
 ```python
 user_data = [
@@ -119,8 +125,8 @@ user_data = [
 ]
 ```
 
-Here's the implementation of the `get_pagination_window` function. Note that it is generic and should work for all item types,
-not only for the `User` type.
+Here's the implementation of the `get_pagination_window` function. Note that it
+is generic and should work for all item types, not only for the `User` type.
 
 ```python
 def get_pagination_window(
@@ -169,21 +175,23 @@ def matches(item, filters):
     return True
 ```
 
-The above code first filters the dataset according to the given filters, then sorts the dataset according to the
-given `order_by` field.
+The above code first filters the dataset according to the given filters, then
+sorts the dataset according to the given `order_by` field.
 
-It then calculates `total_items_count` (this must be done after filtering), and then slices the relevant items
-according to `offset` and `limit`.
+It then calculates `total_items_count` (this must be done after filtering), and
+then slices the relevant items according to `offset` and `limit`.
 
-Finally, it converts the items to the given strawberry type, and returns a `PaginationWindow` containing these items,
-as well as the `total_items_count`.
+Finally, it converts the items to the given strawberry type, and returns a
+`PaginationWindow` containing these items, as well as the `total_items_count`.
 
-In a real project, you would probably replace this with code that fetches from a database using `offset` and `limit`.
+In a real project, you would probably replace this with code that fetches from a
+database using `offset` and `limit`.
 
 <Tip>
 
-If you're using Strawberry with the Django web framework, you might want to make use of the
-Django pagination API. You can check it out [here](https://docs.djangoproject.com/en/4.0/topics/pagination/).
+If you're using Strawberry with the Django web framework, you might want to make
+use of the Django pagination API. You can check it out
+[here](https://docs.djangoproject.com/en/4.0/topics/pagination/).
 
 </Tip>
 
@@ -201,9 +209,9 @@ You will get the following message:
 Running strawberry on http://0.0.0.0:8000/graphql 🍓
 ```
 
-Go to [http://0.0.0.0:8000/graphql](http://0.0.0.0:8000/graphql) to
-open **GraphiQL**, and run the following query to get first two users,
-ordered by name:
+Go to [http://0.0.0.0:8000/graphql](http://0.0.0.0:8000/graphql) to open
+**GraphiQL**, and run the following query to get first two users, ordered by
+name:
 
 ```graphql
 {
@@ -245,8 +253,9 @@ The result should look like this:
 The result contains:
 
 - `items` - A list of the users in this pagination window
-- `totalItemsCount` - The total number of items in the filtered dataset. In this case, since no filter was given
-  in the request, `totalItemsCount` is 4, which is equal to the total number of users in the in-memory dataset.
+- `totalItemsCount` - The total number of items in the filtered dataset. In this
+  case, since no filter was given in the request, `totalItemsCount` is 4, which
+  is equal to the total number of users in the in-memory dataset.
 
 Get the next page of users by running the same query, after incrementing
 `offset` by `limit`.
@@ -255,7 +264,8 @@ Repeat until `offset` reaches `totalItemsCount`.
 
 ## Running a Filtered Query
 
-Let's run the query again, but this time we'll filter out some users based on their occupation.
+Let's run the query again, but this time we'll filter out some users based on
+their occupation.
 
 ```graphql
 {
@@ -270,8 +280,8 @@ Let's run the query again, but this time we'll filter out some users based on th
 }
 ```
 
-By supplying `occupation: "ie"` in the query, we are requesting only users whose occupation
-contains the substring "ie".
+By supplying `occupation: "ie"` in the query, we are requesting only users whose
+occupation contains the substring "ie".
 
 This is the result:
 

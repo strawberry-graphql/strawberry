@@ -23,8 +23,8 @@ class Query:
 schema = strawberry.Schema(query=Query)
 ```
 
-This happens because Strawberry needs to know the type of every argument to be able to
-generate the correct GraphQL type.
+This happens because Strawberry needs to know the type of every argument to be
+able to generate the correct GraphQL type.
 
 ## How to fix this error
 

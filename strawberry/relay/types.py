@@ -38,7 +38,7 @@ from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
 from strawberry.utils.inspect import in_async_context
 from strawberry.utils.typing import eval_type, is_classvar
 
-from .utils import from_base64, to_base64
+from .utils import from_base64, should_resolve_list_connection_edges, to_base64
 
 if TYPE_CHECKING:
     from strawberry.scalars import ID
@@ -86,7 +86,7 @@ class GlobalID:
     type_name: str
     node_id: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not isinstance(self.type_name, str):
             raise GlobalIDValueError(
                 f"type_name is expected to be a string, found {self.type_name!r}"
@@ -96,7 +96,7 @@ class GlobalID:
                 f"node_id is expected to be a string, found {self.node_id!r}"
             )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return to_base64(self.type_name, self.node_id)
 
     @classmethod
@@ -130,8 +130,7 @@ class GlobalID:
         *,
         required: Literal[True] = ...,
         ensure_type: Type[_T],
-    ) -> _T:
-        ...
+    ) -> _T: ...
 
     @overload
     async def resolve_node(
@@ -140,8 +139,7 @@ class GlobalID:
         *,
         required: Literal[True],
         ensure_type: None = ...,
-    ) -> Node:
-        ...
+    ) -> Node: ...
 
     @overload
     async def resolve_node(
@@ -150,8 +148,7 @@ class GlobalID:
         *,
         required: bool = ...,
         ensure_type: None = ...,
-    ) -> Optional[Node]:
-        ...
+    ) -> Optional[Node]: ...
 
     async def resolve_node(self, info, *, required=False, ensure_type=None) -> Any:
         """Resolve the type name and node id info to the node itself.
@@ -198,7 +195,11 @@ class GlobalID:
                 ensure_type = tuple(get_args(ensure_type))
 
             if not isinstance(node, ensure_type):
-                raise TypeError(f"{ensure_type} expected, found {node!r}")
+                msg = (
+                    f"Cannot resolve. GlobalID requires {ensure_type}, received {node!r}. "
+                    "Verify that the supplied ID is intended for this Query/Mutation/Subscription."
+                )
+                raise TypeError(msg)
 
         return node
 
@@ -213,7 +214,6 @@ class GlobalID:
             The resolved GraphQL type for the execution info
 
         """
-        schema = info.schema
         type_def = info.schema.get_type_by_name(self.type_name)
         assert isinstance(type_def, StrawberryObjectDefinition)
 
@@ -232,8 +232,7 @@ class GlobalID:
         *,
         required: Literal[True] = ...,
         ensure_type: Type[_T],
-    ) -> _T:
-        ...
+    ) -> _T: ...
 
     @overload
     def resolve_node_sync(
@@ -242,8 +241,7 @@ class GlobalID:
         *,
         required: Literal[True],
         ensure_type: None = ...,
-    ) -> Node:
-        ...
+    ) -> Node: ...
 
     @overload
     def resolve_node_sync(
@@ -252,8 +250,7 @@ class GlobalID:
         *,
         required: bool = ...,
         ensure_type: None = ...,
-    ) -> Optional[Node]:
-        ...
+    ) -> Optional[Node]: ...
 
     def resolve_node_sync(self, info, *, required=False, ensure_type=None) -> Any:
         """Resolve the type name and node id info to the node itself.
@@ -294,7 +291,11 @@ class GlobalID:
                 ensure_type = tuple(get_args(ensure_type))
 
             if not isinstance(node, ensure_type):
-                raise TypeError(f"{ensure_type} expected, found {node!r}")
+                msg = (
+                    f"Cannot resolve. GlobalID requires {ensure_type}, received {node!r}. "
+                    "Verify that the supplied ID is intended for this Query/Mutation/Subscription."
+                )
+                raise TypeError(msg)
 
         return node
 
@@ -478,8 +479,7 @@ class Node:
         info: Info,
         node_ids: Iterable[str],
         required: Literal[True],
-    ) -> AwaitableOrValue[Iterable[Self]]:
-        ...
+    ) -> AwaitableOrValue[Iterable[Self]]: ...
 
     @overload
     @classmethod
@@ -489,8 +489,7 @@ class Node:
         info: Info,
         node_ids: Iterable[str],
         required: Literal[False] = ...,
-    ) -> AwaitableOrValue[Iterable[Optional[Self]]]:
-        ...
+    ) -> AwaitableOrValue[Iterable[Optional[Self]]]: ...
 
     @overload
     @classmethod
@@ -503,8 +502,7 @@ class Node:
     ) -> Union[
         AwaitableOrValue[Iterable[Self]],
         AwaitableOrValue[Iterable[Optional[Self]]],
-    ]:
-        ...
+    ]: ...
 
     @classmethod
     def resolve_nodes(
@@ -548,8 +546,7 @@ class Node:
         *,
         info: Info,
         required: Literal[True],
-    ) -> AwaitableOrValue[Self]:
-        ...
+    ) -> AwaitableOrValue[Self]: ...
 
     @overload
     @classmethod
@@ -559,8 +556,7 @@ class Node:
         *,
         info: Info,
         required: Literal[False] = ...,
-    ) -> AwaitableOrValue[Optional[Self]]:
-        ...
+    ) -> AwaitableOrValue[Optional[Self]]: ...
 
     @overload
     @classmethod
@@ -570,8 +566,7 @@ class Node:
         *,
         info: Info,
         required: bool,
-    ) -> AwaitableOrValue[Optional[Self]]:
-        ...
+    ) -> AwaitableOrValue[Optional[Self]]: ...
 
     @classmethod
     def resolve_node(
@@ -801,11 +796,20 @@ class ListConnection(Connection[NodeType]):
 
         if after:
             after_type, after_parsed = from_base64(after)
-            assert after_type == PREFIX
+            if after_type != PREFIX:
+                # When the base64 hash doesnt exist, the after_type seems to return
+                # arrayconnEction instead of PREFIX. Let's raise a predictable
+                # instead of "An unknown error occurred."
+                raise TypeError("Argument 'after' contains a non-existing value.")
+
             start = int(after_parsed) + 1
         if before:
             before_type, before_parsed = from_base64(before)
-            assert before_type == PREFIX
+            if before_type != PREFIX:
+                # When the base64 hash doesnt exist, the after_type seems to return
+                # arrayconnEction instead of PREFIX. Let's raise a predictable
+                # instead of "An unknown error occurred.
+                raise TypeError("Argument 'before' contains a non-existing value.")
             end = int(before_parsed)
 
         if isinstance(first, int):
@@ -927,6 +931,17 @@ class ListConnection(Connection[NodeType]):
                 nodes,
                 start,
                 overfetch,
+            )
+
+        if not should_resolve_list_connection_edges(info):
+            return cls(
+                edges=[],
+                page_info=PageInfo(
+                    start_cursor=None,
+                    end_cursor=None,
+                    has_previous_page=False,
+                    has_next_page=False,
+                ),
             )
 
         edges = [

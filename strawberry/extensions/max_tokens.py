@@ -36,7 +36,7 @@ class MaxTokensLimiter(SchemaExtension):
     def __init__(
         self,
         max_token_count: int,
-    ):
+    ) -> None:
         self.max_token_count = max_token_count
 
     def on_operation(self) -> Iterator[None]:

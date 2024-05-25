@@ -250,7 +250,6 @@ provided.
 from typing import List, Union, Any, Optional
 
 import strawberry
-from strawberry.types import Info
 from strawberry.asgi import GraphQL
 from strawberry.dataloader import DataLoader, AbstractCache
 
@@ -296,7 +295,7 @@ class MyGraphQL(GraphQL):
 @strawberry.type
 class Query:
     @strawberry.field
-    async def get_user(self, info: Info, id: strawberry.ID) -> User:
+    async def get_user(self, info: strawberry.Info, id: strawberry.ID) -> User:
         return await info.context["user_loader"].load(id)
 
 
@@ -383,7 +382,6 @@ example of this using our ASGI view:
 from typing import List, Union, Any, Optional
 
 import strawberry
-from strawberry.types import Info
 from strawberry.asgi import GraphQL
 from strawberry.dataloader import DataLoader
 
@@ -411,7 +409,7 @@ class MyGraphQL(GraphQL):
 @strawberry.type
 class Query:
     @strawberry.field
-    async def get_user(self, info: Info, id: strawberry.ID) -> User:
+    async def get_user(self, info: strawberry.Info, id: strawberry.ID) -> User:
         return await info.context["user_loader"].load(id)
 
 

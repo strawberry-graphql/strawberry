@@ -32,38 +32,31 @@ from .typevars import Context, Request, Response, RootValue, SubResponse
 class SyncHTTPRequestAdapter(abc.ABC):
     @property
     @abc.abstractmethod
-    def query_params(self) -> QueryParams:
-        ...
+    def query_params(self) -> QueryParams: ...
 
     @property
     @abc.abstractmethod
-    def body(self) -> Union[str, bytes]:
-        ...
+    def body(self) -> Union[str, bytes]: ...
 
     @property
     @abc.abstractmethod
-    def method(self) -> HTTPMethod:
-        ...
+    def method(self) -> HTTPMethod: ...
 
     @property
     @abc.abstractmethod
-    def headers(self) -> Mapping[str, str]:
-        ...
+    def headers(self) -> Mapping[str, str]: ...
 
     @property
     @abc.abstractmethod
-    def content_type(self) -> Optional[str]:
-        ...
+    def content_type(self) -> Optional[str]: ...
 
     @property
     @abc.abstractmethod
-    def post_data(self) -> Mapping[str, Union[str, bytes]]:
-        ...
+    def post_data(self) -> Mapping[str, Union[str, bytes]]: ...
 
     @property
     @abc.abstractmethod
-    def files(self) -> Mapping[str, Any]:
-        ...
+    def files(self) -> Mapping[str, Any]: ...
 
 
 class SyncBaseHTTPView(
@@ -80,30 +73,24 @@ class SyncBaseHTTPView(
 
     @property
     @abc.abstractmethod
-    def allow_queries_via_get(self) -> bool:
-        ...
+    def allow_queries_via_get(self) -> bool: ...
 
     @abc.abstractmethod
-    def get_sub_response(self, request: Request) -> SubResponse:
-        ...
+    def get_sub_response(self, request: Request) -> SubResponse: ...
 
     @abc.abstractmethod
-    def get_context(self, request: Request, response: SubResponse) -> Context:
-        ...
+    def get_context(self, request: Request, response: SubResponse) -> Context: ...
 
     @abc.abstractmethod
-    def get_root_value(self, request: Request) -> Optional[RootValue]:
-        ...
+    def get_root_value(self, request: Request) -> Optional[RootValue]: ...
 
     @abc.abstractmethod
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: SubResponse
-    ) -> Response:
-        ...
+    ) -> Response: ...
 
     @abc.abstractmethod
-    def render_graphql_ide(self, request: Request) -> Response:
-        ...
+    def render_graphql_ide(self, request: Request) -> Response: ...
 
     def execute_operation(
         self, request: Request, context: Context, root_value: Optional[RootValue]
@@ -146,18 +133,18 @@ class SyncBaseHTTPView(
     def parse_http_body(self, request: SyncHTTPRequestAdapter) -> GraphQLRequestData:
         content_type = request.content_type or ""
 
-        if "application/json" in content_type:
+        if request.method == "GET":
+            data = self.parse_query_params(request.query_params)
+        elif "application/json" in content_type:
             data = self.parse_json(request.body)
         elif content_type.startswith("multipart/form-data"):
             data = self.parse_multipart(request)
-        elif request.method == "GET":
-            data = self.parse_query_params(request.query_params)
         else:
             raise HTTPException(400, "Unsupported content type")
 
         return GraphQLRequestData(
             query=data.get("query"),
-            variables=data.get("variables"),  # type: ignore
+            variables=data.get("variables"),
             operation_name=data.get("operationName"),
         )
 

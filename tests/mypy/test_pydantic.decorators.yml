@@ -80,7 +80,21 @@
     reveal_type(UserStrawberry.from_pydantic(UserPydantic(age=123)))
   out: |
      main:11: note: Revealed type is "main.UserStrawberry"
+- case: test_converted_from_pydantic_with_extra
+  main: |
+    from pydantic import BaseModel
+    import strawberry
 
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.input(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+        extra_field: int
+
+    UserStrawberry.from_pydantic(UserPydantic(age=123), extra={'extra_field': 2})
+  out: |
 - case: test_converted_to_pydantic_interface
   main: |
     from pydantic import BaseModel
@@ -185,7 +199,7 @@
 
     MyModelStrawberry(email="").to_pydantic()
   out: |
-- case: test_to_pydantic_kwargs_with_optional_default
+- case: test_to_pydantic_kwargs_with_default_none
   main: |
     from pydantic import BaseModel
     from typing import Optional
@@ -194,7 +208,7 @@
 
     class MyModel(BaseModel):
         email: str
-        password: Optional[str] # pydantic makes this implicit = None default
+        password: Optional[str] = None
 
 
     @strawberry.experimental.pydantic.input(model=MyModel)

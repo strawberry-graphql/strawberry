@@ -17,7 +17,7 @@ class ObjectIsNotClassError(StrawberryException):
         INTERFACE = "interface"
         TYPE = "type"
 
-    def __init__(self, obj: object, method_type: MethodType):
+    def __init__(self, obj: object, method_type: MethodType) -> None:
         self.obj = obj
         self.function = obj
 

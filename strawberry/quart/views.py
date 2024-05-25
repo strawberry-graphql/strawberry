@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class QuartHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request):
+    def __init__(self, request: Request) -> None:
         self.request = request
 
     @property
@@ -61,7 +61,7 @@ class GraphQLView(
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
-    ):
+    ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
 

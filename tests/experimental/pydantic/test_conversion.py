@@ -11,8 +11,9 @@ from pydantic import BaseModel, Field, ValidationError
 import strawberry
 from strawberry.experimental.pydantic._compat import (
     IS_PYDANTIC_V2,
-    PYDANTIC_MISSING_TYPE,
     CompatModelField,
+    PydanticV1Compat,
+    PydanticV2Compat,
 )
 from strawberry.experimental.pydantic.exceptions import (
     AutoFieldsNotInBaseModelError,
@@ -22,11 +23,6 @@ from strawberry.experimental.pydantic.utils import get_default_factory_for_field
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import StrawberryObjectDefinition
 from tests.experimental.pydantic.utils import needs_pydantic_v1
-
-if IS_PYDANTIC_V2:
-    pass
-else:
-    pass
 
 
 def test_can_use_type_standalone():
@@ -149,8 +145,7 @@ def test_convert_alias_name():
     @strawberry.experimental.pydantic.type(
         UserModel, all_fields=True, use_pydantic_alias=True
     )
-    class User:
-        ...
+    class User: ...
 
     origin_user = UserModel(age=1, password="abc")
     user = User.from_pydantic(origin_user)
@@ -168,8 +163,7 @@ def test_do_not_convert_alias_name():
     @strawberry.experimental.pydantic.type(
         UserModel, all_fields=True, use_pydantic_alias=False
     )
-    class User:
-        ...
+    class User: ...
 
     origin_user = UserModel(age=1, password="abc")
     user = User.from_pydantic(origin_user)
@@ -847,9 +841,14 @@ def test_can_convert_pydantic_type_to_strawberry_newtype_list():
 
 
 def test_get_default_factory_for_field():
+    if IS_PYDANTIC_V2:
+        MISSING_TYPE = PydanticV2Compat().PYDANTIC_MISSING_TYPE
+    else:
+        MISSING_TYPE = PydanticV1Compat().PYDANTIC_MISSING_TYPE
+
     def _get_field(
-        default: Any = PYDANTIC_MISSING_TYPE,
-        default_factory: Any = PYDANTIC_MISSING_TYPE,
+        default: Any = MISSING_TYPE,
+        default_factory: Any = MISSING_TYPE,
     ) -> CompatModelField:
         return CompatModelField(
             name="a",
@@ -862,6 +861,8 @@ def test_get_default_factory_for_field():
             description="",
             has_alias=False,
             required=True,
+            _missing_type=MISSING_TYPE,
+            is_v1=not IS_PYDANTIC_V2,
         )
 
     field = _get_field()
