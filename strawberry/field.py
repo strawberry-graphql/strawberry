@@ -49,7 +49,7 @@ T = TypeVar("T")
 _RESOLVER_TYPE = Union[
     StrawberryResolver[T],
     Callable[..., T],
-    Callable[..., Coroutine[T, Any, Any]],
+    Callable[..., Coroutine[Any, Any, T]],
     Callable[..., Awaitable[T]],
     "staticmethod[Any, T]",
     "classmethod[Any, Any, T]",

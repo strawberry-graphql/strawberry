@@ -13,6 +13,7 @@ async def get_user_age() -> int:
 class User:
     name: str
     age: int = strawberry.field(resolver=get_user_age)
+    something: str = strawberry.field(resolver=get_user_age)
 
 
 User(name="Patrick")
@@ -29,26 +30,36 @@ def test_pyright():
     assert results == [
         Result(
             type="error",
+            message=(
+                'Expression of type "StrawberryField" is incompatible with '
+                'declared type "str"\n'
+                '\xa0\xa0"StrawberryField" is incompatible with "str"'
+            ),
+            line=12,
+            column=22,
+        ),
+        Result(
+            type="error",
             message='Argument missing for parameter "name"',
-            line=15,
+            line=16,
             column=1,
         ),
         Result(
             type="error",
             message='No parameter named "n"',
-            line=15,
+            line=16,
             column=6,
         ),
         Result(
             type="information",
             message='Type of "User" is "type[User]"',
-            line=17,
+            line=18,
             column=13,
         ),
         Result(
             type="information",
             message='Type of "User.__init__" is "(self: User, *, name: str) -> None"',
-            line=18,
+            line=19,
             column=13,
         ),
     ]
