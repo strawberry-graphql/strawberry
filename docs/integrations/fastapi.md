@@ -290,9 +290,10 @@ tweaked based on your needs.
 
 `encode_json` allows to customize the encoding of the JSON response. By default
 we use `json.dumps` but you can override this method to use a different encoder.
+For example, the `orjson` library from pypi has blazing fast speeds.
 
 ```python
 class MyGraphQLRouter(GraphQLRouter):
-    def encode_json(self, data: GraphQLHTTPResponse) -> str:
-        return json.dumps(data, indent=2)
+    def encode_json(self, data: GraphQLHTTPResponse) -> bytes:
+        return orjson.dumps(data)
 ```
