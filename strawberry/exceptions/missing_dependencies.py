@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from typing import Optional
 
-from .exception import StrawberryException
 
-
-class MissingOptionalDependenciesError(StrawberryException):
+class MissingOptionalDependenciesError(Exception):
     """Some optional dependencies that are required for a particular
     task are missing."""
 
