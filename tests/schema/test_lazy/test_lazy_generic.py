@@ -68,10 +68,16 @@ def test_no_generic_type_duplication_with_lazy():
 
         type TypeB {
           typeA: TypeA!
+          typeAList: [TypeA!]!
+          typeCList: [TypeC!]!
         }
 
         type TypeBEdge {
           node: TypeB!
+        }
+
+        type TypeC {
+          name: String!
         }
         """
     ).strip()
