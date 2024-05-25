@@ -1,6 +1,31 @@
 CHANGELOG
 =========
 
+0.232.0 - 2024-05-25
+--------------------
+
+This release improves type checking for async resolver functions when used as
+`strawberry.field(resolver=resolver_func)`.
+
+Now doing this will raise a type error:
+
+```python
+import strawberry
+
+
+def some_resolver() -> int:
+    return 0
+
+
+@strawberry.type
+class User:
+    # Note the field being typed as str instead of int
+    name: str = strawberry.field(resolver=some_resolver)
+```
+
+Contributed by [Bryan Ricker](https://github.com/bricker) via [PR #3241](https://github.com/strawberry-graphql/strawberry/pull/3241/)
+
+
 0.231.1 - 2024-05-25
 --------------------
 
