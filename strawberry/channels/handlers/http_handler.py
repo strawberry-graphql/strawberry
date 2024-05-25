@@ -2,6 +2,7 @@
 
 A consumer to provide a graphql endpoint, and optionally graphiql.
 """
+
 from __future__ import annotations
 
 import dataclasses
@@ -101,7 +102,7 @@ class ChannelsRequest:
 
 
 class BaseChannelsRequestAdapter:
-    def __init__(self, request: ChannelsRequest):
+    def __init__(self, request: ChannelsRequest) -> None:
         self.request = request
 
     @property
@@ -155,7 +156,7 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         allow_queries_via_get: bool = True,
         subscriptions_enabled: bool = True,
         **kwargs: Any,
-    ):
+    ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.subscriptions_enabled = subscriptions_enabled

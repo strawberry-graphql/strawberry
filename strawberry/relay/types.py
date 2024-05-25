@@ -38,7 +38,7 @@ from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
 from strawberry.utils.inspect import in_async_context
 from strawberry.utils.typing import eval_type, is_classvar
 
-from .utils import from_base64, to_base64
+from .utils import from_base64, should_resolve_list_connection_edges, to_base64
 
 if TYPE_CHECKING:
     from strawberry.scalars import ID
@@ -86,7 +86,7 @@ class GlobalID:
     type_name: str
     node_id: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not isinstance(self.type_name, str):
             raise GlobalIDValueError(
                 f"type_name is expected to be a string, found {self.type_name!r}"
@@ -96,7 +96,7 @@ class GlobalID:
                 f"node_id is expected to be a string, found {self.node_id!r}"
             )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return to_base64(self.type_name, self.node_id)
 
     @classmethod
@@ -130,8 +130,7 @@ class GlobalID:
         *,
         required: Literal[True] = ...,
         ensure_type: Type[_T],
-    ) -> _T:
-        ...
+    ) -> _T: ...
 
     @overload
     async def resolve_node(
@@ -140,8 +139,7 @@ class GlobalID:
         *,
         required: Literal[True],
         ensure_type: None = ...,
-    ) -> Node:
-        ...
+    ) -> Node: ...
 
     @overload
     async def resolve_node(
@@ -150,8 +148,7 @@ class GlobalID:
         *,
         required: bool = ...,
         ensure_type: None = ...,
-    ) -> Optional[Node]:
-        ...
+    ) -> Optional[Node]: ...
 
     async def resolve_node(self, info, *, required=False, ensure_type=None) -> Any:
         """Resolve the type name and node id info to the node itself.
@@ -235,8 +232,7 @@ class GlobalID:
         *,
         required: Literal[True] = ...,
         ensure_type: Type[_T],
-    ) -> _T:
-        ...
+    ) -> _T: ...
 
     @overload
     def resolve_node_sync(
@@ -245,8 +241,7 @@ class GlobalID:
         *,
         required: Literal[True],
         ensure_type: None = ...,
-    ) -> Node:
-        ...
+    ) -> Node: ...
 
     @overload
     def resolve_node_sync(
@@ -255,8 +250,7 @@ class GlobalID:
         *,
         required: bool = ...,
         ensure_type: None = ...,
-    ) -> Optional[Node]:
-        ...
+    ) -> Optional[Node]: ...
 
     def resolve_node_sync(self, info, *, required=False, ensure_type=None) -> Any:
         """Resolve the type name and node id info to the node itself.
@@ -485,8 +479,7 @@ class Node:
         info: Info,
         node_ids: Iterable[str],
         required: Literal[True],
-    ) -> AwaitableOrValue[Iterable[Self]]:
-        ...
+    ) -> AwaitableOrValue[Iterable[Self]]: ...
 
     @overload
     @classmethod
@@ -496,8 +489,7 @@ class Node:
         info: Info,
         node_ids: Iterable[str],
         required: Literal[False] = ...,
-    ) -> AwaitableOrValue[Iterable[Optional[Self]]]:
-        ...
+    ) -> AwaitableOrValue[Iterable[Optional[Self]]]: ...
 
     @overload
     @classmethod
@@ -510,8 +502,7 @@ class Node:
     ) -> Union[
         AwaitableOrValue[Iterable[Self]],
         AwaitableOrValue[Iterable[Optional[Self]]],
-    ]:
-        ...
+    ]: ...
 
     @classmethod
     def resolve_nodes(
@@ -555,8 +546,7 @@ class Node:
         *,
         info: Info,
         required: Literal[True],
-    ) -> AwaitableOrValue[Self]:
-        ...
+    ) -> AwaitableOrValue[Self]: ...
 
     @overload
     @classmethod
@@ -566,8 +556,7 @@ class Node:
         *,
         info: Info,
         required: Literal[False] = ...,
-    ) -> AwaitableOrValue[Optional[Self]]:
-        ...
+    ) -> AwaitableOrValue[Optional[Self]]: ...
 
     @overload
     @classmethod
@@ -577,8 +566,7 @@ class Node:
         *,
         info: Info,
         required: bool,
-    ) -> AwaitableOrValue[Optional[Self]]:
-        ...
+    ) -> AwaitableOrValue[Optional[Self]]: ...
 
     @classmethod
     def resolve_node(
@@ -943,6 +931,17 @@ class ListConnection(Connection[NodeType]):
                 nodes,
                 start,
                 overfetch,
+            )
+
+        if not should_resolve_list_connection_edges(info):
+            return cls(
+                edges=[],
+                page_info=PageInfo(
+                    start_cursor=None,
+                    end_cursor=None,
+                    has_previous_page=False,
+                    has_next_page=False,
+                ),
             )
 
         edges = [

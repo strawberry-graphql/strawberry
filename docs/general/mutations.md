@@ -88,10 +88,10 @@ Mutations with void-result go against
 
 </Note>
 
-### The Input Mutation Extension
+## The input mutation extension
 
 It is usually useful to use a pattern of defining a mutation that receives a
-single [input type](./input-types) argument called `input`.
+single [input type](../types/input-types) argument called `input`.
 
 Strawberry provides a helper to create a mutation that automatically creates an
 input type for you, whose attributes are the same as the args in the resolver.
@@ -108,7 +108,7 @@ class Mutation:
     @strawberry.mutation(extensions=[InputMutationExtension()])
     def update_fruit_weight(
         self,
-        info: Info,
+        info: strawberry.Info,
         id: strawberry.ID,
         weight: Annotated[
             float,

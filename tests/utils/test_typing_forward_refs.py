@@ -11,8 +11,7 @@ from strawberry.utils.typing import eval_type, is_classvar
 
 
 def test_eval_type():
-    class Foo:
-        ...
+    class Foo: ...
 
     assert eval_type(ForwardRef("Foo | None"), globals(), locals()) == Optional[Foo]
     assert eval_type(ForwardRef("Foo | str"), globals(), locals()) == Union[Foo, str]
@@ -36,8 +35,7 @@ def test_eval_type():
     reason="generic type alias only available on python 3.9+",
 )
 def test_eval_type_generic_type_alias():
-    class Foo:
-        ...
+    class Foo: ...
 
     assert eval_type(ForwardRef("Foo | None"), globals(), locals()) == Optional[Foo]
     assert eval_type(ForwardRef("Foo | str"), globals(), locals()) == Union[Foo, str]

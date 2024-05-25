@@ -161,8 +161,7 @@ def test_object_types():
     @strawberry.type()
     class Query:
         @strawberry.field
-        def hello(self, input: Input) -> str:
-            ...
+        def hello(self, input: Input) -> str: ...
 
     schema = strawberry.Schema(query=Query)
     graphql_schema: GraphQLSchema = schema._schema

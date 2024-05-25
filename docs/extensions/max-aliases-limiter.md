@@ -1,5 +1,5 @@
 ---
-title: MaxAliasesLimiter
+title: Max Aliases Limiter
 summary:
   Add a validator to limit the maximum number of aliases in a GraphQL document.
 tags: security

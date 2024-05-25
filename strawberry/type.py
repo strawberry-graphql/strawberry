@@ -37,6 +37,10 @@ class StrawberryType(ABC):
     def type_params(self) -> List[TypeVar]:
         return []
 
+    @property
+    def is_one_of(self) -> bool:
+        return False
+
     @abstractmethod
     def copy_with(
         self,
@@ -80,7 +84,7 @@ class StrawberryType(ABC):
 class StrawberryContainer(StrawberryType):
     def __init__(
         self, of_type: Union[StrawberryType, Type[WithStrawberryObjectDefinition], type]
-    ):
+    ) -> None:
         self.of_type = of_type
 
     def __hash__(self) -> int:
@@ -143,16 +147,14 @@ class StrawberryContainer(StrawberryType):
         return False
 
 
-class StrawberryList(StrawberryContainer):
-    ...
+class StrawberryList(StrawberryContainer): ...
 
 
-class StrawberryOptional(StrawberryContainer):
-    ...
+class StrawberryOptional(StrawberryContainer): ...
 
 
 class StrawberryTypeVar(StrawberryType):
-    def __init__(self, type_var: TypeVar):
+    def __init__(self, type_var: TypeVar) -> None:
         self.type_var = type_var
 
     def copy_with(
@@ -179,7 +181,7 @@ class StrawberryTypeVar(StrawberryType):
 
         return super().__eq__(other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.type_var)
 
 
@@ -208,8 +210,7 @@ def get_object_definition(
     obj: Any,
     *,
     strict: Literal[True],
-) -> StrawberryObjectDefinition:
-    ...
+) -> StrawberryObjectDefinition: ...
 
 
 @overload
@@ -217,8 +218,7 @@ def get_object_definition(
     obj: Any,
     *,
     strict: bool = False,
-) -> Optional[StrawberryObjectDefinition]:
-    ...
+) -> Optional[StrawberryObjectDefinition]: ...
 
 
 def get_object_definition(

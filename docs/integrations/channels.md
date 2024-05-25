@@ -112,15 +112,13 @@ import threading
 
 from typing import AsyncGenerator, List
 
-from strawberry.types import Info
-
 
 @strawberry.type
 class Subscription:
     @strawberry.subscription
     async def join_chat_rooms(
         self,
-        info: Info,
+        info: strawberry.Info,
         rooms: List[ChatRoom],
         user: str,
     ) -> AsyncGenerator[ChatRoomMessage, None]:
@@ -200,7 +198,7 @@ class Mutation:
     @strawberry.mutation
     async def send_chat_message(
         self,
-        info: Info,
+        info: strawberry.Info,
         room: ChatRoom,
         message: str,
     ) -> None:
@@ -387,7 +385,7 @@ class Subscription:
     @strawberry.subscription
     async def join_chat_rooms(
         self,
-        info: Info,
+        info: strawberry.Info,
         rooms: List[ChatRoom],
         user: str,
     ) -> AsyncGenerator[ChatRoomMessage | None, None]:
@@ -497,6 +495,20 @@ def test_send_message_via_channels_chat_joinChatRooms_recieves(self):
 The HTTP and WebSockets protocol are handled by different base classes. HTTP
 uses `GraphQLHTTPConsumer` and WebSockets uses `GraphQLWSConsumer`. Both of them
 can be extended:
+
+### Passing connection params
+
+Connection parameters can be passed using the `connection_params` parameter of
+the `GraphQLWebsocketCommunicator` class. This is particularily useful to test
+websocket authentication.
+
+```python
+GraphQLWebsocketCommunicator(
+    application=application,
+    path="/graphql",
+    connection_params={"token": "strawberry"},
+)
+```
 
 ## GraphQLHTTPConsumer (HTTP)
 

@@ -1,5 +1,5 @@
 ---
-title: MaxTokensLimiter
+title: Max Tokens Limiter
 summary:
   Add a validator to limit the maximum number of tokens in a GraphQL document.
 tags: security

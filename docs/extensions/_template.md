@@ -1,5 +1,5 @@
 ---
-title: ExtensionName
+title: Extension Name
 summary: A summary of the extension.
 tags: comma,separated,list,of,tags
 ---

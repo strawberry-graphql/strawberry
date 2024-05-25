@@ -1,5 +1,5 @@
 ---
-title: QueryDepthLimiter
+title: Query Depth Limiter
 summary: Add a validator to limit the query depth of GraphQL operations.
 tags: security
 ---

@@ -48,7 +48,7 @@ class Fruit(relay.Node):
     def resolve_nodes(
         cls,
         *,
-        info: Info,
+        info: strawberry.Info,
         node_ids: Iterable[str],
         required: bool = False,
     ):
@@ -298,7 +298,10 @@ class FruitCustomPaginationConnection(relay.Connection[Fruit]):
 
 @strawberry.type
 class Query:
-    fruits: FruitCustomPaginationConnection
+    @relay.connection(FruitCustomPaginationConnection)
+    def fruits(self) -> Iterable[Fruit]:
+        # This can be a database query, a generator, an async generator, etc
+        return all_fruits.values()
 ```
 
 In the example above we specialized the `FruitCustomPaginationConnection` by
@@ -327,7 +330,7 @@ class Query:
     @relay.connection(relay.ListConnection[Fruit])
     def fruits_with_filter(
         self,
-        info: Info,
+        info: strawberry.Info,
         name_endswith: str,
     ) -> Iterable[Fruit]:
         for f in fruits.values():
@@ -376,7 +379,7 @@ class Fruit(relay.Node):
 @strawberry.type
 class FruitDBConnection(relay.ListConnection[Fruit]):
     @classmethod
-    def resolve_node(cls, node: FruitDB, *, info: Info, **kwargs) -> Fruit:
+    def resolve_node(cls, node: FruitDB, *, info: strawberry.Info, **kwargs) -> Fruit:
         return Fruit(
             code=node.code,
             name=node.name,
@@ -389,7 +392,7 @@ class Query:
     @relay.connection(FruitDBConnection)
     def fruits_with_filter(
         self,
-        info: Info,
+        info: strawberry.Info,
         name_endswith: str,
     ) -> Iterable[models.Fruit]:
         return models.Fruit.objects.filter(name__endswith=name_endswith)
@@ -418,7 +421,7 @@ class Mutation:
     @strawberry.mutation
     async def update_fruit_weight(
         self,
-        info: Info,
+        info: strawberry.Info,
         id: relay.GlobalID,
         weight: float,
     ) -> Fruit:
@@ -430,7 +433,7 @@ class Mutation:
     @strawberry.mutation
     def update_fruit_weight_sync(
         self,
-        info: Info,
+        info: strawberry.Info,
         id: relay.GlobalID,
         weight: float,
     ) -> Fruit:

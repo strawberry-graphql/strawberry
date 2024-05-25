@@ -16,6 +16,8 @@ from typing import (
 )
 
 from graphql import (
+    GraphQLBoolean,
+    GraphQLField,
     GraphQLNamedType,
     GraphQLNonNull,
     GraphQLSchema,
@@ -82,7 +84,7 @@ class Schema(BaseSchema):
             Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]]
         ] = None,
         schema_directives: Iterable[object] = (),
-    ):
+    ) -> None:
         self.query = query
         self.mutation = mutation
         self.subscription = subscription
@@ -168,6 +170,7 @@ class Schema(BaseSchema):
 
         self._warn_for_federation_directives()
         self._resolve_node_ids()
+        self._extend_introspection()
 
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible
@@ -374,6 +377,14 @@ class Schema(BaseSchema):
                 UserWarning,
                 stacklevel=3,
             )
+
+    def _extend_introspection(self):
+        def _resolve_is_one_of(obj: Any, info: Any) -> bool:
+            return obj.extensions["strawberry-definition"].is_one_of
+
+        instrospection_type = self._schema.type_map["__Type"]
+        instrospection_type.fields["isOneOf"] = GraphQLField(GraphQLBoolean)  # type: ignore[attr-defined]
+        instrospection_type.fields["isOneOf"].resolve = _resolve_is_one_of  # type: ignore[attr-defined]
 
     def as_str(self) -> str:
         return print_schema(self)

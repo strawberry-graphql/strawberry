@@ -54,7 +54,7 @@ class TemporalHttpResponse(JsonResponse):
         if self.status_code is not None:
             return super().__repr__()
 
-        return "<{cls} status_code={status_code}{content_type}>".format(
+        return "<{cls} status_code={status_code}{content_type}>".format(  # noqa: UP032
             cls=self.__class__.__name__,
             status_code=self.status_code,
             content_type=self._content_type_for_repr,  # pyright: ignore
@@ -62,7 +62,7 @@ class TemporalHttpResponse(JsonResponse):
 
 
 class DjangoHTTPRequestAdapter(SyncHTTPRequestAdapter):
-    def __init__(self, request: HttpRequest):
+    def __init__(self, request: HttpRequest) -> None:
         self.request = request
 
     @property
@@ -97,7 +97,7 @@ class DjangoHTTPRequestAdapter(SyncHTTPRequestAdapter):
 
 
 class AsyncDjangoHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: HttpRequest):
+    def __init__(self, request: HttpRequest) -> None:
         self.request = request
 
     @property
@@ -140,7 +140,7 @@ class BaseView:
         allow_queries_via_get: bool = True,
         subscriptions_enabled: bool = False,
         **kwargs: Any,
-    ):
+    ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.subscriptions_enabled = subscriptions_enabled

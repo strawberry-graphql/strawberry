@@ -24,7 +24,7 @@ async def aenumerate(
     i = 0
     async for element in iterable:
         yield i, element
-        i += 1  # noqa: SIM113
+        i += 1
 
 
 async def aislice(

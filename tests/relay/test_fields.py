@@ -13,7 +13,6 @@ from strawberry.relay.fields import ConnectionExtension
 from strawberry.relay.utils import to_base64
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types.fields.resolver import StrawberryResolver
-from strawberry.types.info import Info
 
 from .schema import FruitAsync, schema
 
@@ -1479,8 +1478,7 @@ def test_parameters(mocker: MockerFixture):
     class Fruit(relay.Node):
         code: relay.NodeID[str]
 
-    def resolver(info: Info) -> List[Fruit]:
-        ...
+    def resolver(info: strawberry.Info) -> List[Fruit]: ...
 
     @strawberry.type
     class Query:

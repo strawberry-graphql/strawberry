@@ -30,7 +30,7 @@ class ParserCache(SchemaExtension):
 
     """
 
-    def __init__(self, maxsize: Optional[int] = None):
+    def __init__(self, maxsize: Optional[int] = None) -> None:
         self.cached_parse_document = lru_cache(maxsize=maxsize)(parse_document)
 
     def on_parse(self) -> Iterator[None]:

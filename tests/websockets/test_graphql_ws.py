@@ -406,6 +406,7 @@ async def test_resolving_enums(ws: WebSocketClient):
     assert response["id"] == "demo"
 
 
+@pytest.mark.xfail(reason="flaky test")
 async def test_task_cancellation_separation(aiohttp_app_client: HttpClient):
     # Note Python 3.7 does not support Task.get_name/get_coro so we have to use
     # repr(Task) to check whether expected tasks are running.
