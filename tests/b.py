@@ -20,7 +20,9 @@ class B:
         return A(id=self.id)
 
     @strawberry.field
-    async def a_list(self) -> List[Annotated[A, strawberry.lazy("tests.a")]]:
+    async def a_list(
+        self,
+    ) -> List[Annotated[A, strawberry.lazy("tests.a")]]:  # pragma: no cover
         from tests.a import A
 
         return [A(id=self.id)]

@@ -97,7 +97,7 @@ def test_lazy_forward_reference_schema_with_a_list_only():
     @strawberry.type
     class Query:
         @strawberry.field
-        async def d(self) -> D:
+        async def d(self) -> D:  # pragma: no cover
             return D(id=strawberry.ID("1"))
 
     expected_representation = """

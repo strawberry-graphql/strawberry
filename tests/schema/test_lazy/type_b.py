@@ -32,7 +32,7 @@ class TypeB:
     @strawberry.field()
     def type_a_list(
         self,
-    ) -> ListTypeA:
+    ) -> ListTypeA:  # pragma: no cover
         from .type_a import TypeA
 
         return [TypeA()]
@@ -40,7 +40,7 @@ class TypeB:
     @strawberry.field()
     def type_c_list(
         self,
-    ) -> ListTypeC:
+    ) -> ListTypeC:  # pragma: no cover
         from .type_c import TypeC
 
         return [TypeC()]
