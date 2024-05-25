@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.231.0 - 2024-05-25
+--------------------
+
+When calling the CLI without all the necessary dependencies installed,
+a `MissingOptionalDependenciesError` will be raised instead of a
+`ModuleNotFoundError`. This new exception will provide a more helpful
+hint regarding how to fix the problem.
+
+Contributed by [Ethan Henderson](https://github.com/parafoxia) via [PR #3511](https://github.com/strawberry-graphql/strawberry/pull/3511/)
+
+
 0.230.0 - 2024-05-22
 --------------------
 
