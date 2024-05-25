@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.231.1 - 2024-05-25
+--------------------
+
+Fixes an issue where lazy annotations raised an error when used together with a List
+
+Contributed by [jeich](https://github.com/jeich) via [PR #3388](https://github.com/strawberry-graphql/strawberry/pull/3388/)
+
+
 0.231.0 - 2024-05-25
 --------------------
 
