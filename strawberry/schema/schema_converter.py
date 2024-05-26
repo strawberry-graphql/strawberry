@@ -873,7 +873,7 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_type, GraphQLObjectType | GraphQLUnionType)
 
             if isinstance(graphql_type, GraphQLUnionType):
-                # merge child types
+                # Add the child types of the GraphQLUnionType to the list of graphql_types
                 graphql_types.extend(graphql_type.types)
             else:
                 graphql_types.append(graphql_type)
