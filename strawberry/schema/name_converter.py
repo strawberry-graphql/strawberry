@@ -106,7 +106,7 @@ class NameConverter:
             return union.graphql_name
 
         name = ""
-        types = union.types
+        types: List[Union[StrawberryType, type]] = union.types
 
         if union.concrete_of and union.concrete_of.graphql_name:
             concrete_of_types = set(union.concrete_of.types)
