@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, Tuple, Union, cast
 from typing_extensions import Protocol
 
 from strawberry.directive import StrawberryDirective
@@ -106,12 +106,12 @@ class NameConverter:
             return union.graphql_name
 
         name = ""
-        types: List[Union[StrawberryType, type]] = union.types
+        types: Tuple[StrawberryType, ...] = union.types
 
         if union.concrete_of and union.concrete_of.graphql_name:
             concrete_of_types = set(union.concrete_of.types)
 
-            types = [type_ for type_ in types if type_ not in concrete_of_types]
+            types = tuple(type_ for type_ in types if type_ not in concrete_of_types)
 
         for type_ in types:
             if isinstance(type_, LazyType):
