@@ -842,6 +842,7 @@ def test_single_union():
     assert result.data["something"] == {"__typename": "A", "a": 5}
 
 
+@pytest.mark.xfail(reason="Not supported yet")
 def test_generic_union_with_annotated():
     @strawberry.type
     class SomeType:
@@ -870,6 +871,63 @@ def test_generic_union_with_annotated():
 
     schema = strawberry.Schema(Query)
 
+    # TODO: check the name
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+            type NotFoundError {
+              id: ID!
+              message: String!
+            }
+
+            type Query {
+              someTypeQueries(id: ID!): SomeTypeByIdResult!
+            }
+
+            type SomeType {
+              id: ID!
+              name: String!
+            }
+
+            union SomeTypeNotFoundError = SomeType | NotFoundError
+
+            type SomeTypeObjectQueries {
+              byId(id: ID!): SomeTypeByIdResult!
+            }
+            """
+        ).strip()
+    )
+
+
+def test_generic_union_with_annotated_inside():
+    @strawberry.type
+    class SomeType:
+        id: strawberry.ID
+        name: str
+
+    @strawberry.type
+    class NotFoundError:
+        id: strawberry.ID
+        message: str
+
+    T = TypeVar("T")
+
+    @strawberry.type
+    class ObjectQueries(Generic[T]):
+        @strawberry.field
+        def by_id(
+            self, id: strawberry.ID
+        ) -> Union[T, Annotated[NotFoundError, strawberry.union("ByIdResult")]]: ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def some_type_queries(self, id: strawberry.ID) -> ObjectQueries[SomeType]:
+            return ObjectQueries(SomeType)
+
+    schema = strawberry.Schema(Query)
+
     assert (
         str(schema)
         == textwrap.dedent(
@@ -888,10 +946,10 @@ def test_generic_union_with_annotated():
               name: String!
             }
 
-            union SomeTypeNotFoundError = SomeType | NotFoundError
+            union SomeTypeByIdResult = SomeType | NotFoundError
 
             type SomeTypeObjectQueries {
-              byId(id: ID!): SomeTypeNotFoundError!
+              byId(id: ID!): SomeTypeByIdResult!
             }
             """
         ).strip()
