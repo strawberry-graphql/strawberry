@@ -42,6 +42,7 @@ from strawberry.types.graphql import OperationType
 from strawberry.types.types import StrawberryObjectDefinition
 
 from ..printer import print_schema
+from ..types.execution import Executor, GraphQlCoreExecutor
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
@@ -84,6 +85,7 @@ class Schema(BaseSchema):
             Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]]
         ] = None,
         schema_directives: Iterable[object] = (),
+        executor_class: Optional[Type[Executor]] = None,
     ) -> None:
         self.query = query
         self.mutation = mutation
@@ -179,6 +181,11 @@ class Schema(BaseSchema):
             formatted_errors = "\n\n".join(f"❌ {error.message}" for error in errors)
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
+        if executor_class:
+            self.executor = executor_class(self)
+        else:
+            self.executor = GraphQlCoreExecutor(self)
+
     def get_extensions(
         self, sync: bool = False
     ) -> List[Union[Type[SchemaExtension], SchemaExtension]]:
@@ -270,6 +277,7 @@ class Schema(BaseSchema):
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
             process_errors=self.process_errors,
+            executor=self.executor,
         )
 
         return result
@@ -302,6 +310,7 @@ class Schema(BaseSchema):
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
             process_errors=self.process_errors,
+            executor=self.executor,
         )
 
         return result

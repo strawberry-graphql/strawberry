@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import abc
 import dataclasses
 from typing import (
     TYPE_CHECKING,
@@ -12,7 +13,7 @@ from typing import (
 )
 from typing_extensions import TypedDict
 
-from graphql import specified_rules
+from graphql import parse, specified_rules, validate
 
 from strawberry.utils.operation import get_first_operation, get_operation_type
 
@@ -27,6 +28,45 @@ if TYPE_CHECKING:
     from strawberry.schema import Schema
 
     from .graphql import OperationType
+
+
+class Executor(abc.ABC):
+    def __init__(self, schema: Schema) -> None:
+        self.schema = schema
+
+    @abc.abstractmethod
+    def parse(self, execution_context: ExecutionContext) -> None: ...
+
+    @abc.abstractmethod
+    def validate(
+        self,
+        execution_context: ExecutionContext,
+    ) -> None: ...
+
+
+class GraphQlCoreExecutor(Executor):
+    def __init__(self, schema: Schema) -> None:
+        super().__init__(schema)
+
+    def parse(self, execution_context: ExecutionContext) -> None:
+        execution_context.graphql_document = parse(
+            execution_context.query, **execution_context.parse_options
+        )
+
+    def validate(
+        self,
+        execution_context: ExecutionContext,
+    ) -> None:
+        if (
+            len(execution_context.validation_rules) > 0
+            and execution_context.errors is None
+        ):
+            assert execution_context.graphql_document
+            execution_context.errors = validate(
+                execution_context.schema._schema,
+                execution_context.graphql_document,
+                execution_context.validation_rules,
+            )
 
 
 @dataclasses.dataclass

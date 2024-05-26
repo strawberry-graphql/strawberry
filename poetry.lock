@@ -3612,6 +3612,24 @@ typing-extensions = "*"
 dev = ["flake8", "flake8-docstrings", "mypy", "packaging", "pre-commit", "pytest", "pytest-cov", "types-setuptools"]
 
 [[package]]
+name = "rustberry"
+version = "0.0.14"
+description = ""
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "rustberry-0.0.14-cp311-cp311-macosx_10_12_x86_64.macosx_11_0_arm64.macosx_10_12_universal2.whl", hash = "sha256:afcde10419392e4f1c9be5114afdec821917add92d12751765e1b1932a6f57ed"},
+    {file = "rustberry-0.0.14-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:54545317941ca0c8c3566fbcc4ea7c3968459f7d259c27dce08e8313761d627d"},
+    {file = "rustberry-0.0.14-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a6c55b7e966698f4eed211bdbd6e978a8a0350886aecd48b1fe4adf49a9dd82d"},
+    {file = "rustberry-0.0.14-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ff9672deac947fcb47ba4f001329c75f93ec483b993c2a0737c8dd0a956ef12c"},
+    {file = "rustberry-0.0.14-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:1cda938e46cd429d6a2878aff06001610731dc86f1c8b64a05763b4a38fd4f40"},
+    {file = "rustberry-0.0.14-cp311-none-win32.whl", hash = "sha256:e7b0b0c66373f032c7d53f1f9aa0f0451b5481e6fc691480bc4eefc06bc661df"},
+    {file = "rustberry-0.0.14-cp311-none-win_amd64.whl", hash = "sha256:229782618feefedd98beaab12db45e5ef0ea7c5c6546d75bbff0c54fb45e33f7"},
+    {file = "rustberry-0.0.14-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9272de768502c889eff7643f9468e97ace706d563e809d126822a546db10e986"},
+    {file = "rustberry-0.0.14-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:9a4b6ef204a73459be06a5a2775948d0ae6a75139661cc3b6e9348c1878ec8b6"},
+]
+
+[[package]]
 name = "sanic"
 version = "23.12.1"
 description = "A web server and web framework that's written to go fast. Build fast. Run fast."
@@ -4840,4 +4858,4 @@ starlite = ["starlite"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "3adcc49a22af2f096570400d4a9e8687423f8fad1014a234e8e5668f6059ac31"
+content-hash = "c78cbc096d5ae8d64936328fea42e3be94e724ca8a79e1399be98a2be9ee4ad2"

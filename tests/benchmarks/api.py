@@ -2,6 +2,7 @@ from typing import AsyncIterator, List
 
 import strawberry
 from strawberry.directive import DirectiveLocation
+from strawberry.schema.executors import RustberryExecutor, RustberryExecutorV2
 
 
 @strawberry.type
@@ -79,7 +80,12 @@ def uppercase(value: str) -> str:
     return value.upper()
 
 
-schema = strawberry.Schema(query=Query, subscription=Subscription)
+schema = strawberry.Schema(
+    query=Query, subscription=Subscription, executor_class=RustberryExecutor
+)
 schema_with_directives = strawberry.Schema(
-    query=Query, directives=[uppercase], subscription=Subscription
+    query=Query,
+    directives=[uppercase],
+    subscription=Subscription,
+    executor_class=RustberryExecutorV2,
 )
