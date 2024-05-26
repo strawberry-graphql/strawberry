@@ -870,7 +870,7 @@ class GraphQLCoreConverter:
 
             if isinstance(graphql_type, GraphQLInputObjectType):
                 raise InvalidTypeInputForUnion(graphql_type)
-            assert isinstance(graphql_type, GraphQLObjectType | GraphQLUnionType)
+            assert isinstance(graphql_type, (GraphQLObjectType, GraphQLUnionType))
 
             # If the graphql_type is a GraphQLUnionType, merge its child types
             if isinstance(graphql_type, GraphQLUnionType):
