@@ -840,3 +840,59 @@ def test_single_union():
 
     assert not result.errors
     assert result.data["something"] == {"__typename": "A", "a": 5}
+
+
+def test_generic_union_with_annotated():
+    @strawberry.type
+    class SomeType:
+        id: strawberry.ID
+        name: str
+
+    @strawberry.type
+    class NotFoundError:
+        id: strawberry.ID
+        message: str
+
+    T = TypeVar("T")
+
+    @strawberry.type
+    class ObjectQueries(Generic[T]):
+        @strawberry.field
+        def by_id(
+            self, id: strawberry.ID
+        ) -> Annotated[Union[T, NotFoundError], strawberry.union("ByIdResult")]: ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def some_type_queries(self, id: strawberry.ID) -> ObjectQueries[SomeType]:
+            raise NotImplementedError()
+
+    schema = strawberry.Schema(Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+            type NotFoundError {
+              id: ID!
+              message: String!
+            }
+
+            type Query {
+              someTypeQueries(id: ID!): SomeTypeObjectQueries!
+            }
+
+            type SomeType {
+              id: ID!
+              name: String!
+            }
+
+            union SomeTypeNotFoundError = SomeType | NotFoundError
+
+            type SomeTypeObjectQueries {
+              byId(id: ID!): SomeTypeNotFoundError!
+            }
+            """
+        ).strip()
+    )
