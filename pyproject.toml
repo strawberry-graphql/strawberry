@@ -98,12 +98,11 @@ types-toml = "^0.10.8"
 types-typed-ast = "^1.5.8"
 types-ujson = "^5.6.0"
 types-protobuf = "^4.23.0.1"
-mypy = "1.9.0"
-pytest-mypy-plugins = "3.0.0"
 poetry-plugin-export = "^1.6.0"
 # another bug in poetry
 urllib3 = "<2"
 graphlib_backport = {version = "*", python = "<3.9", optional = false}
+inline-snapshot = "^0.10.1"
 
 [tool.poetry.group.integrations]
 optional = true
@@ -149,7 +148,7 @@ pyinstrument = ["pyinstrument"]
 strawberry = "strawberry.cli:run"
 
 [tool.pytest.ini_options]
-addopts = "--emoji --mypy-ini-file=mypy.ini"
+addopts = "--emoji"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
 markers = [

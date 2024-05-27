@@ -46,14 +46,19 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 
-_RESOLVER_TYPE = Union[
+_RESOLVER_TYPE_SYNC = Union[
     StrawberryResolver[T],
     Callable[..., T],
-    Callable[..., Coroutine[Any, Any, T]],
-    Callable[..., Awaitable[T]],
     "staticmethod[Any, T]",
     "classmethod[Any, Any, T]",
 ]
+
+_RESOLVER_TYPE_ASYNC = Union[
+    Callable[..., Coroutine[Any, Any, T]],
+    Callable[..., Awaitable[T]],
+]
+
+_RESOLVER_TYPE = Union[_RESOLVER_TYPE_SYNC[T], _RESOLVER_TYPE_ASYNC[T]]
 
 UNRESOLVED = object()
 
@@ -416,10 +421,33 @@ class StrawberryField(dataclasses.Field):
         return self._has_async_base_resolver
 
 
+# NOTE: we are separating the sync and async resolvers because using both
+# in the same function will cause mypy to raise an error. Not sure if it is a bug
+
+
 @overload
 def field(
     *,
-    resolver: _RESOLVER_TYPE[T],
+    resolver: _RESOLVER_TYPE_ASYNC[T],
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    init: Literal[False] = False,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
+    directives: Optional[Sequence[object]] = (),
+    extensions: Optional[List[FieldExtension]] = None,
+    graphql_type: Optional[Any] = None,
+) -> T: ...
+
+
+@overload
+def field(
+    *,
+    resolver: _RESOLVER_TYPE_SYNC[T],
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
@@ -455,7 +483,25 @@ def field(
 
 @overload
 def field(
-    resolver: _RESOLVER_TYPE[T],
+    resolver: _RESOLVER_TYPE_ASYNC[T],
+    *,
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
+    directives: Optional[Sequence[object]] = (),
+    extensions: Optional[List[FieldExtension]] = None,
+    graphql_type: Optional[Any] = None,
+) -> StrawberryField: ...
+
+
+@overload
+def field(
+    resolver: _RESOLVER_TYPE_SYNC[T],
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
