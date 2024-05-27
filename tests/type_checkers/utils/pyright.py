@@ -2,17 +2,11 @@ from __future__ import annotations
 
 import json
 import os
-import shutil
 import subprocess
-import sys
 import tempfile
-from dataclasses import dataclass
 from typing import List, TypedDict, cast
-from typing_extensions import Literal
 
-import pytest
-
-ResultType = Literal["error", "information"]
+from .result import Result, ResultType
 
 
 class PyrightCLIResult(TypedDict):
@@ -47,14 +41,6 @@ class Summary(TypedDict):
     timeInSec: float
 
 
-@dataclass
-class Result:
-    type: ResultType
-    message: str
-    line: int
-    column: int
-
-
 def run_pyright(code: str, strict: bool = True) -> List[Result]:
     if strict:
         code = "# pyright: strict\n" + code
@@ -84,18 +70,3 @@ def run_pyright(code: str, strict: bool = True) -> List[Result]:
     result.sort(key=lambda x: (x.line, x.column, x.message))
 
     return result
-
-
-def pyright_exist() -> bool:
-    return shutil.which("pyright") is not None
-
-
-skip_on_windows = pytest.mark.skipif(
-    sys.platform == "win32",
-    reason="Do not run pyright on windows due to path issues",
-)
-
-requires_pyright = pytest.mark.skipif(
-    not pyright_exist(),
-    reason="These tests require pyright",
-)
