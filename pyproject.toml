@@ -103,7 +103,6 @@ poetry-plugin-export = "^1.6.0"
 urllib3 = "<2"
 graphlib_backport = {version = "*", python = "<3.9", optional = false}
 inline-snapshot = "^0.10.1"
-mypy = ">=1.10.0"
 
 [tool.poetry.group.integrations]
 optional = true
