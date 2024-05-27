@@ -124,7 +124,7 @@ def test_pydantic(session: Session, pydantic: str) -> None:
     )
 
 
-@session(python=PYTHON_VERSIONS, name="Typechekers tests", tags=["tests"])
+@session(python=PYTHON_VERSIONS, name="Type checkers tests", tags=["tests"])
 def tests_typecheckers(session: Session) -> None:
     session.run_always("poetry", "install", external=True)
 
