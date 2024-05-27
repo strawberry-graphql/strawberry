@@ -125,3 +125,28 @@ input SearchBy @oneOf {
   email: String
 }
 ```
+
+## Deprecating fields
+
+Input type fields can be deprecated using the argument `deprecation_reason`.
+Note: this does not prevent the field to be used, it's only for documentation.
+See: GraphQL field deprecation.
+
+```python+schema
+import strawberry
+from typing import Optional
+
+@strawberry.input
+class Point2D:
+    x: float
+    y: float
+    z: Optional[float] = strawberry.field(deprecation_reason="3D coordinates are deprecated")
+    label: Optional[str] = strawberry.UNSET
+---
+input Point2D {
+  x: Float!
+  y: Float!
+  z: Float @deprecated(reason: "3D coordinates are deprecated")
+  label: String
+}
+```
