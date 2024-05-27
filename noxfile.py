@@ -124,26 +124,13 @@ def test_pydantic(session: Session, pydantic: str) -> None:
     )
 
 
-@session(python=PYTHON_VERSIONS, name="Mypy tests")
-def tests_mypy(session: Session) -> None:
-    session.run_always("poetry", "install", "--with", "integrations", external=True)
-
-    session.run(
-        "pytest",
-        "--cov=.",
-        "--cov-append",
-        "--cov-report=xml",
-        "tests/mypy",
-        "-vv",
-    )
-
-
-@session(python=PYTHON_VERSIONS, name="Pyright tests", tags=["tests"])
+@session(python=PYTHON_VERSIONS, name="Typechekers tests", tags=["tests"])
 def tests_typecheckers(session: Session) -> None:
     session.run_always("poetry", "install", external=True)
 
     session.install("pyright")
-    session.install("mypy@git+https://github.com/python/mypy.git#master")
+    session.install("pydantic")
+    session.install("git+https://github.com/python/mypy.git#master")
 
     session.run(
         "pytest",
