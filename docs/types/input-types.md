@@ -128,9 +128,14 @@ input SearchBy @oneOf {
 
 ## Deprecating fields
 
-Input type fields can be deprecated using the argument `deprecation_reason`.
-Note: this does not prevent the field to be used, it's only for documentation.
+Fields can be deprecated using the argument `deprecation_reason`.
+
+<Note>
+
+This does not prevent the field from being used, it's only for documentation.
 See: [GraphQL field deprecation](https://spec.graphql.org/June2018/#sec-Field-Deprecation).
+
+</Note>
 
 ```python+schema
 import strawberry
