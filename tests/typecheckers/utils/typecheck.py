@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import concurrent.futures
 from dataclasses import dataclass
 
 from .mypy import run_mypy
@@ -14,7 +15,11 @@ class TypecheckResult:
 
 
 def typecheck(code: str, strict: bool = True) -> TypecheckResult:
-    pyright_results = run_pyright(code, strict=strict)
-    mypy_results = run_mypy(code, strict=strict)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        pyright_future = executor.submit(run_pyright, code, strict=strict)
+        mypy_future = executor.submit(run_mypy, code, strict=strict)
+
+        pyright_results = pyright_future.result()
+        mypy_results = mypy_future.result()
 
     return TypecheckResult(pyright=pyright_results, mypy=mypy_results)
