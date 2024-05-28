@@ -21,7 +21,7 @@ def _convert_from_pydantic_to_strawberry_type(
     type_: Union[StrawberryType, type],
     data_from_model=None,  # noqa: ANN001
     extra=None,  # noqa: ANN001
-):
+) -> Any:
     data = data_from_model if data_from_model is not None else extra
 
     if isinstance(type_, StrawberryOptional):

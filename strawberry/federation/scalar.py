@@ -63,7 +63,7 @@ def scalar(
 
 
 def scalar(
-    cls=None,
+    cls: Optional[_T] = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -131,8 +131,8 @@ def scalar(
     if tags:
         directives.extend(Tag(name=tag) for tag in tags)
 
-    def wrap(cls: Type):
-        return _process_scalar(
+    def wrap(cls: Type[_T]) -> Type[_T]:
+        return _process_scalar(  # type: ignore
             cls,
             name=name,
             description=description,

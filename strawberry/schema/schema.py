@@ -324,7 +324,7 @@ class Schema(BaseSchema):
             operation_name=operation_name,
         )
 
-    def _resolve_node_ids(self):
+    def _resolve_node_ids(self) -> None:
         for concrete_type in self.schema_converter.type_map.values():
             type_def = concrete_type.definition
 
@@ -355,7 +355,7 @@ class Schema(BaseSchema):
                 if not has_custom_resolve_id:
                     origin.resolve_id_attr()
 
-    def _warn_for_federation_directives(self):
+    def _warn_for_federation_directives(self) -> None:
         """Raises a warning if the schema has any federation directives."""
         from strawberry.federation.schema_directives import FederationDirective
 
@@ -378,7 +378,7 @@ class Schema(BaseSchema):
                 stacklevel=3,
             )
 
-    def _extend_introspection(self):
+    def _extend_introspection(self) -> None:
         def _resolve_is_one_of(obj: Any, info: Any) -> bool:
             return obj.extensions["strawberry-definition"].is_one_of
 

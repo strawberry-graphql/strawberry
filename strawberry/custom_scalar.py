@@ -94,7 +94,7 @@ def _process_scalar(
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
-):
+) -> ScalarWrapper:
     from strawberry.exceptions.handler import should_use_rich_exceptions
 
     name = name or to_camel_case(cls.__name__)
@@ -155,7 +155,7 @@ def scalar(
 # here or else it won't let us use any custom scalar to annotate attributes in
 # dataclasses/types. This should be properly solved when implementing StrawberryScalar
 def scalar(
-    cls=None,
+    cls: Optional[_T] = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -194,8 +194,8 @@ def scalar(
     if parse_value is None:
         parse_value = cls
 
-    def wrap(cls: Type):
-        return _process_scalar(
+    def wrap(cls: Type[_T]) -> Type[_T]:
+        return _process_scalar(  # type: ignore
             cls,
             name=name,
             description=description,

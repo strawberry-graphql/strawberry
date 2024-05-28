@@ -44,7 +44,7 @@ def _get_interfaces(cls: Type[Any]) -> List[StrawberryObjectDefinition]:
     return interfaces
 
 
-def _check_field_annotations(cls: Type[Any]):
+def _check_field_annotations(cls: Type[Any]) -> None:
     """Are any of the dataclass Fields missing type annotations?
 
     This is similar to the check that dataclasses do during creation, but allows us to
@@ -102,7 +102,7 @@ def _check_field_annotations(cls: Type[Any]):
             raise MissingFieldAnnotationError(field_name, cls)
 
 
-def _wrap_dataclass(cls: Type[Any]):
+def _wrap_dataclass(cls: Type[T]) -> Type[T]:
     """Wrap a strawberry.type class with a dataclass and check for any issues
     before doing so"""
 
