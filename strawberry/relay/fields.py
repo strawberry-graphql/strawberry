@@ -139,11 +139,7 @@ class NodeExtension(FieldExtension):
 
             if awaitable_nodes or asyncgen_nodes:
 
-                async def resolve(
-                    resolved: Dict[
-                        Type[Node], Union[Node, None, Awaitable[Union[Node, None]]]
-                    ] = resolved_nodes,
-                ) -> List[Node]:
+                async def resolve(resolved: Any = resolved_nodes) -> List[Node]:
                     resolved.update(
                         zip(
                             [

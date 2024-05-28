@@ -10,7 +10,6 @@ from typing import (
     Mapping,
     NewType,
     Optional,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -85,7 +84,7 @@ class ScalarWrapper:
 
 
 def _process_scalar(
-    cls: Type[_T],
+    cls: _T,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -97,7 +96,7 @@ def _process_scalar(
 ) -> ScalarWrapper:
     from strawberry.exceptions.handler import should_use_rich_exceptions
 
-    name = name or to_camel_case(cls.__name__)
+    name = name or to_camel_case(cls.__name__)  # type: ignore[union-attr]
 
     _source_file = None
     _source_line = None
@@ -194,8 +193,8 @@ def scalar(
     if parse_value is None:
         parse_value = cls
 
-    def wrap(cls: Type[_T]) -> Type[_T]:
-        return _process_scalar(  # type: ignore
+    def wrap(cls: _T) -> ScalarWrapper:
+        return _process_scalar(
             cls,
             name=name,
             description=description,
