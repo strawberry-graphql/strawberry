@@ -255,7 +255,7 @@ class ConnectionExtension(FieldExtension):
         ):
             raise RelayWrongResolverAnnotationError(field.name, field.base_resolver)
 
-        self.connection_type = cast(Type[Connection[Node]], f_type)
+        self.connection_type = cast(Type[Connection[Node]], field.type)
 
     def resolve(
         self,
