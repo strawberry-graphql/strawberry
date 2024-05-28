@@ -3,17 +3,7 @@ from __future__ import annotations
 import dataclasses
 import warnings
 from functools import cached_property
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Tuple, Type, Union
 from typing_extensions import TypeVar
 
 from .nodes import convert_selections
@@ -35,9 +25,8 @@ RootValueType = TypeVar("RootValueType", default=Any)
 
 
 @dataclasses.dataclass
-class Info(Generic[ContextType, RootValueType]):
+class PartialInfo(Generic[ContextType, RootValueType]):
     _raw_info: GraphQLResolveInfo
-    _field: StrawberryField
 
     def __class_getitem__(cls, types: Union[type, Tuple[type, ...]]) -> Type[Info]:
         """Workaround for when passing only one type.
@@ -89,6 +78,21 @@ class Info(Generic[ContextType, RootValueType]):
     def variable_values(self) -> Dict[str, Any]:
         return self._raw_info.variable_values
 
+    # TODO: create an abstraction on these fields
+    @property
+    def operation(self) -> OperationDefinitionNode:
+        return self._raw_info.operation
+
+    @property
+    def path(self) -> Path:
+        return self._raw_info.path
+
+
+@dataclasses.dataclass
+class Info(PartialInfo, Generic[ContextType, RootValueType]):
+    _raw_info: GraphQLResolveInfo
+    _field: StrawberryField
+
     @property
     def return_type(
         self,
@@ -98,15 +102,6 @@ class Info(Generic[ContextType, RootValueType]):
     @property
     def python_name(self) -> str:
         return self._field.python_name
-
-    # TODO: create an abstraction on these fields
-    @property
-    def operation(self) -> OperationDefinitionNode:
-        return self._raw_info.operation
-
-    @property
-    def path(self) -> Path:
-        return self._raw_info.path
 
     # TODO: parent_type as strawberry types
 

@@ -30,6 +30,7 @@ from graphql.type.definition import GraphQLArgument
 
 from strawberry.printer import print_schema
 from strawberry.schema import Schema as BaseSchema
+from strawberry.types.info import PartialInfo
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.utils.inspect import get_func_args
 
@@ -37,7 +38,7 @@ from .schema_directive import StrawberryFederationSchemaDirective
 
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
-    from graphql import GraphQLObjectType
+    from graphql import GraphQLObjectType, GraphQLResolveInfo
 
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.enum import EnumDefinition
@@ -173,7 +174,7 @@ class Schema(BaseSchema):
     def entities_resolver(
         self,
         root,  # noqa: ANN001
-        info,  # noqa: ANN001
+        info: "GraphQLResolveInfo",
         representations,  # noqa: ANN001
     ) -> List[object]:
         results = []
@@ -192,7 +193,7 @@ class Schema(BaseSchema):
 
                 # TODO: use the same logic we use for other resolvers
                 if "info" in func_args:
-                    kwargs["info"] = info
+                    kwargs["info"] = PartialInfo(_raw_info=info)
 
                 get_result = partial(resolve_reference, **kwargs)
             else:
