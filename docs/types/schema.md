@@ -280,7 +280,8 @@ Fields can be deprecated using the argument `deprecation_reason`.
 <Note>
 
 This does not prevent the field from being used, it's only for documentation.
-See: [GraphQL field deprecation](https://spec.graphql.org/June2018/#sec-Field-Deprecation).
+See:
+[GraphQL field deprecation](https://spec.graphql.org/June2018/#sec-Field-Deprecation).
 
 </Note>
 
