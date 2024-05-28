@@ -8,16 +8,20 @@ For example, this should now work correctly:
 ```python
 # types.py
 
+
 @strawberry.type
-class Fruit:
-    ...
+class Fruit: ...
+
 
 FruitConnection: TypeAlias = ListConnection[Fruit]
 
 
 # schema.py
 
+
 @strawberry.type
 class Query:
-    fruits: Annotated["FruitConnection", strawberry.lazy("types")] = strawberry.connection()
+    fruits: Annotated["FruitConnection", strawberry.lazy("types")] = (
+        strawberry.connection()
+    )
 ```
