@@ -8,6 +8,7 @@ For example, this should now work correctly:
 ```python
 # types.py
 
+
 @strawberry.type
 class Fruit: ...
 
@@ -17,6 +18,7 @@ FruitConnection: TypeAlias = ListConnection[Fruit]
 
 ```python
 # schema.py
+
 
 @strawberry.type
 class Query:
