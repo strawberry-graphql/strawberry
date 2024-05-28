@@ -1,6 +1,39 @@
 CHANGELOG
 =========
 
+0.232.2 - 2024-05-28
+--------------------
+
+This release fixes an issue that would prevent using lazy aliased connections to
+annotate a connection field.
+
+For example, this should now work correctly:
+
+```python
+# types.py
+
+
+@strawberry.type
+class Fruit: ...
+
+
+FruitConnection: TypeAlias = ListConnection[Fruit]
+```
+
+```python
+# schema.py
+
+
+@strawberry.type
+class Query:
+    fruits: Annotated["FruitConnection", strawberry.lazy("types")] = (
+        strawberry.connection()
+    )
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3524](https://github.com/strawberry-graphql/strawberry/pull/3524/)
+
+
 0.232.1 - 2024-05-27
 --------------------
 
