@@ -859,7 +859,7 @@ class ListConnection(Connection[NodeType]):
 
         if isinstance(nodes, (AsyncIterator, AsyncIterable)) and in_async_context():
 
-            async def resolver():
+            async def resolver() -> Self:
                 try:
                     iterator = cast(
                         Union[AsyncIterator[NodeType], AsyncIterable[NodeType]],

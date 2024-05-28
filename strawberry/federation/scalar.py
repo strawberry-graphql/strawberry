@@ -6,13 +6,12 @@ from typing import (
     List,
     NewType,
     Optional,
-    Type,
     TypeVar,
     Union,
     overload,
 )
 
-from strawberry.custom_scalar import _process_scalar
+from strawberry.custom_scalar import ScalarWrapper, _process_scalar
 
 # in python 3.10+ NewType is a class
 if sys.version_info >= (3, 10):
@@ -63,7 +62,7 @@ def scalar(
 
 
 def scalar(
-    cls=None,
+    cls: Optional[_T] = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -131,7 +130,7 @@ def scalar(
     if tags:
         directives.extend(Tag(name=tag) for tag in tags)
 
-    def wrap(cls: Type):
+    def wrap(cls: _T) -> ScalarWrapper:
         return _process_scalar(
             cls,
             name=name,

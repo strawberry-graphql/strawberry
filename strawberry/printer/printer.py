@@ -566,7 +566,7 @@ def print_schema(schema: BaseSchema) -> str:
         None, [print_directive(directive, schema=schema) for directive in directives]
     )
 
-    def _name_getter(type_: Any):
+    def _name_getter(type_: Any) -> str:
         if hasattr(type_, "name"):
             return type_.name
         if isinstance(type_, ScalarWrapper):

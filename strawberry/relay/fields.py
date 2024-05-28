@@ -9,6 +9,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncIterator,
+    Awaitable,
     Callable,
     DefaultDict,
     Dict,
@@ -86,7 +87,7 @@ class NodeExtension(FieldExtension):
         def resolver(
             info: Info,
             id: Annotated[GlobalID, argument(description="The ID of the object.")],
-        ):
+        ) -> Union[Node, None, Awaitable[Union[Node, None]]]:
             return id.resolve_type(info).resolve_node(
                 id.node_id,
                 info=info,
@@ -105,7 +106,7 @@ class NodeExtension(FieldExtension):
             ids: Annotated[
                 List[GlobalID], argument(description="The IDs of the objects.")
             ],
-        ):
+        ) -> Union[List[Node], Awaitable[List[Node]]]:
             nodes_map: DefaultDict[Type[Node], List[str]] = defaultdict(list)
             # Store the index of the node in the list of nodes of the same type
             # so that we can return them in the same order while also supporting
@@ -138,7 +139,7 @@ class NodeExtension(FieldExtension):
 
             if awaitable_nodes or asyncgen_nodes:
 
-                async def resolve(resolved=resolved_nodes):  # noqa: ANN001
+                async def resolve(resolved: Any = resolved_nodes) -> List[Node]:
                     resolved.update(
                         zip(
                             [

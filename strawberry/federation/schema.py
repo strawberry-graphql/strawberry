@@ -151,7 +151,7 @@ class Schema(BaseSchema):
 
         return query_type
 
-    def _add_entities_to_query(self):
+    def _add_entities_to_query(self) -> None:
         entity_type = _get_entity_type(self.schema_converter.type_map)
 
         if not entity_type:
@@ -222,7 +222,7 @@ class Schema(BaseSchema):
 
         return results
 
-    def _add_scalars(self):
+    def _add_scalars(self) -> None:
         self.Any = GraphQLScalarType("_Any")
 
         self._schema.type_map["_Any"] = self.Any
@@ -283,7 +283,7 @@ class Schema(BaseSchema):
 
     def _add_link_directives(
         self, additional_directives: Optional[List[object]] = None
-    ):
+    ) -> None:
         from .schema_directives import FederationDirective, Link
 
         directive_by_url: DefaultDict[str, Set[str]] = defaultdict(set)
@@ -354,7 +354,7 @@ class Schema(BaseSchema):
         pass
 
 
-def _get_entity_type(type_map: "TypeMap"):
+def _get_entity_type(type_map: "TypeMap") -> Optional[GraphQLUnionType]:
     # https://www.apollographql.com/docs/apollo-server/federation/federation-spec/#resolve-requests-for-entities
 
     # To implement the _Entity union, each type annotated with @key
@@ -375,7 +375,7 @@ def _get_entity_type(type_map: "TypeMap"):
 
     entity_type = GraphQLUnionType("_Entity", federation_key_types)  # type: ignore
 
-    def _resolve_type(self, value, _type):  # noqa: ANN001
+    def _resolve_type(self: Any, value: Any, info: Any) -> str:
         return self.__strawberry_definition__.name
 
     entity_type.resolve_type = _resolve_type

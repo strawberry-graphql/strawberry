@@ -462,7 +462,12 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_interface, GraphQLInterfaceType)  # For mypy
             return graphql_interface
 
-        def _get_resolve_type():
+        def _get_resolve_type() -> (
+            Callable[
+                [Any, GraphQLResolveInfo, GraphQLAbstractType],
+                Union[Awaitable[Optional[str]], str, None],
+            ]
+        ):
             if interface.resolve_type:
                 return interface.resolve_type
 
@@ -594,7 +599,7 @@ class GraphQLCoreConverter:
 
         if field.is_basic_field:
 
-            def _get_basic_result(_source: Any, *args: str, **kwargs: Any):
+            def _get_basic_result(_source: Any, *args: str, **kwargs: Any) -> Any:
                 # Call `get_result` without an info object or any args or
                 # kwargs because this is a basic field with no resolver.
                 return field.get_result(_source, info=None, args=[], kwargs={})
@@ -664,7 +669,7 @@ class GraphQLCoreConverter:
             info: Info,
             field_args: List[Any],
             field_kwargs: Dict[str, Any],
-        ):
+        ) -> Any:
             return field.get_result(
                 _source, info=info, args=field_args, kwargs=field_kwargs
             )
@@ -681,7 +686,7 @@ class GraphQLCoreConverter:
                 _source: Any,
                 info: Info,
                 **kwargs: Any,
-            ):
+            ) -> Any:
                 # parse field arguments into Strawberry input types and convert
                 # field names to Python equivalents
                 field_args, field_kwargs = _get_arguments(
@@ -698,7 +703,7 @@ class GraphQLCoreConverter:
                 # `_get_result` expects `field_args` and `field_kwargs` as
                 # separate arguments so we have to wrap the function so that we
                 # can pass them in
-                def wrapped_get_result(_source: Any, info: Info, **kwargs: Any):
+                def wrapped_get_result(_source: Any, info: Info, **kwargs: Any) -> Any:
                     # if the resolver function requested the info object info
                     # then put it back in the kwargs dictionary
                     if resolver_requested_info:
@@ -719,7 +724,7 @@ class GraphQLCoreConverter:
 
         _get_result_with_extensions = wrap_field_extensions()
 
-        def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs: Any):
+        def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs: Any) -> Any:
             strawberry_info = _strawberry_info_from_graphql(info)
 
             return _get_result_with_extensions(
@@ -730,7 +735,7 @@ class GraphQLCoreConverter:
 
         async def _async_resolver(
             _source: Any, info: GraphQLResolveInfo, **kwargs: Any
-        ):
+        ) -> Any:
             strawberry_info = _strawberry_info_from_graphql(info)
 
             return await await_maybe(

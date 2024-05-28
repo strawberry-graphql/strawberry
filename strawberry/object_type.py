@@ -44,7 +44,7 @@ def _get_interfaces(cls: Type[Any]) -> List[StrawberryObjectDefinition]:
     return interfaces
 
 
-def _check_field_annotations(cls: Type[Any]):
+def _check_field_annotations(cls: Type[Any]) -> None:
     """Are any of the dataclass Fields missing type annotations?
 
     This is similar to the check that dataclasses do during creation, but allows us to
@@ -102,7 +102,7 @@ def _check_field_annotations(cls: Type[Any]):
             raise MissingFieldAnnotationError(field_name, cls)
 
 
-def _wrap_dataclass(cls: Type[Any]):
+def _wrap_dataclass(cls: Type[T]) -> Type[T]:
     """Wrap a strawberry.type class with a dataclass and check for any issues
     before doing so"""
 
@@ -239,7 +239,7 @@ def type(
     >>>     field_abc: str = "ABC"
     """
 
-    def wrap(cls: Type) -> T:
+    def wrap(cls: T) -> T:
         if not inspect.isclass(cls):
             if is_input:
                 exc = ObjectIsNotClassError.input
@@ -268,7 +268,7 @@ def type(
 
         wrapped = _wrap_dataclass(cls)
 
-        return _process_type(
+        return _process_type(  # type: ignore
             wrapped,
             name=name,
             is_input=is_input,
