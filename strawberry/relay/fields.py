@@ -36,6 +36,7 @@ from strawberry.extensions.field_extension import (
     SyncExtensionResolver,
 )
 from strawberry.field import _RESOLVER_TYPE, StrawberryField, field
+from strawberry.lazy_type import LazyType
 from strawberry.relay.exceptions import (
     RelayWrongAnnotationError,
     RelayWrongResolverAnnotationError,
@@ -43,7 +44,7 @@ from strawberry.relay.exceptions import (
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.fields.resolver import StrawberryResolver
 from strawberry.utils.aio import asyncgen_to_list
-from strawberry.utils.typing import eval_type
+from strawberry.utils.typing import eval_type, is_generic_alias
 
 from .types import Connection, GlobalID, Node, NodeIterableType, NodeType
 
@@ -223,7 +224,13 @@ class ConnectionExtension(FieldExtension):
         ]
 
         f_type = field.type
-        if not isinstance(f_type, type) or not issubclass(f_type, Connection):
+
+        if isinstance(f_type, LazyType):
+            f_type = f_type.resolve_type()
+            field.type = f_type
+
+        type_origin = get_origin(f_type) if is_generic_alias(f_type) else f_type
+        if not isinstance(type_origin, type) or not issubclass(type_origin, Connection):
             raise RelayWrongAnnotationError(field.name, cast(type, field.origin))
 
         assert field.base_resolver

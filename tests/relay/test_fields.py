@@ -363,6 +363,8 @@ query TestQuery (
 attrs = [
     "fruits",
     "fruitsLazy",
+    "fruitsAlias",
+    "fruitsAliasLazy",
     "fruitsConcreteResolver",
     "fruitsCustomResolver",
     "fruitsCustomResolverLazy",

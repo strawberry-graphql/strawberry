@@ -1,7 +1,7 @@
 # type: ignore
 import enum
 from typing import Generic, TypeVar
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypeAlias
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
@@ -11,11 +11,21 @@ from strawberry.type import get_object_definition
 from strawberry.types.fields.resolver import StrawberryResolver
 from strawberry.union import StrawberryUnion, union
 
+T = TypeVar("T")
+
 
 # This type is in the same file but should adequately test the logic.
 @strawberry.type
 class LaziestType:
     something: bool
+
+
+@strawberry.type
+class LazyGenericType(Generic[T]):
+    something: T
+
+
+LazyTypeAlias: TypeAlias = LazyGenericType[int]
 
 
 @strawberry.enum
@@ -36,6 +46,22 @@ def test_lazy_type():
     assert isinstance(resolved, LazyType)
     assert resolved is LazierType
     assert resolved.resolve_type() is LaziestType
+
+
+def test_lazy_type_alias():
+    # Module path is short and relative because of the way pytest runs the file
+    LazierType = LazyType("LazyTypeAlias", "test_lazy_types")
+
+    annotation = StrawberryAnnotation(LazierType)
+    resolved = annotation.resolve()
+
+    # Currently StrawberryAnnotation(LazyType).resolve() returns the unresolved
+    # LazyType. We may want to find a way to directly return the referenced object
+    # without a second resolving step.
+    assert isinstance(resolved, LazyType)
+    resolved_type = resolved.resolve_type()
+    assert resolved_type.__origin__ is LazyGenericType
+    assert resolved_type.__args__ == (int,)
 
 
 def test_lazy_type_function():

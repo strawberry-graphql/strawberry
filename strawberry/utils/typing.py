@@ -23,7 +23,7 @@ from typing import (  # type: ignore
     cast,
     overload,
 )
-from typing_extensions import Annotated, get_args, get_origin
+from typing_extensions import Annotated, TypeGuard, get_args, get_origin
 
 ast_unparse = getattr(ast, "unparse", None)
 # ast.unparse is only available on python 3.9+. For older versions we will
@@ -63,13 +63,18 @@ def get_generic_alias(type_: Type) -> Type:
             continue
 
         attr = getattr(typing, attr_name)
-        # _GenericAlias overrides all the methods that we can use to know if
-        # this is a subclass of it. But if it has an "_inst" attribute
-        # then it for sure is a _GenericAlias
-        if hasattr(attr, "_inst") and attr.__origin__ is type_:
+        if is_generic_alias(attr) and attr.__origin__ is type_:
             return attr
 
     raise AssertionError(f"No GenericAlias available for {type_}")  # pragma: no cover
+
+
+def is_generic_alias(type_: Any) -> TypeGuard[_GenericAlias]:
+    """Returns True if the type is a generic alias."""
+    # _GenericAlias overrides all the methods that we can use to know if
+    # this is a subclass of it. But if it has an "_inst" attribute
+    # then it for sure is a _GenericAlias
+    return hasattr(type_, "_inst")
 
 
 def is_list(annotation: object) -> bool:
