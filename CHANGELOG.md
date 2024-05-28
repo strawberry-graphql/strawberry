@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.232.1 - 2024-05-27
+--------------------
+
+This release fixes an issue where mypy would complain when using a typed async
+resolver with `strawberry.field(resolver=...)`.
+
+Now the code will type check correctly. We also updated our test suite to make
+we catch similar issues in the future.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3516](https://github.com/strawberry-graphql/strawberry/pull/3516/)
+
+
 0.232.0 - 2024-05-25
 --------------------
 
