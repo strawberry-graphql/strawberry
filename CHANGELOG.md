@@ -1,6 +1,39 @@
 CHANGELOG
 =========
 
+0.233.0 - 2024-05-29
+--------------------
+
+This release refactors our Federation integration to create types using
+Strawberry directly, instead of using low level types from GraphQL-core.
+
+The only user facing change is that now the `info` object passed to the
+`resolve_reference` function is the `strawberry.Info` object instead of the one
+coming coming from GraphQL-core. This is a **breaking change** for users that
+were using the `info` object directly.
+
+If you need to access the original `info` object you can do so by accessing the
+`_raw_info` attribute.
+
+```python
+import strawberry
+
+
+@strawberry.federation.type(keys=["upc"])
+class Product:
+    upc: str
+
+    @classmethod
+    def resolve_reference(cls, info: strawberry.Info, upc: str) -> "Product":
+        # Access the original info object
+        original_info = info._raw_info
+
+        return Product(upc=upc)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3525](https://github.com/strawberry-graphql/strawberry/pull/3525/)
+
+
 0.232.2 - 2024-05-28
 --------------------
 
