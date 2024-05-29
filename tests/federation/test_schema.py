@@ -23,6 +23,28 @@ def test_entities_type_when_no_type_has_keys():
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
+    expected_sdl = textwrap.dedent("""
+        type Product {
+          upc: String!
+          name: String
+          price: Int
+          weight: Int
+        }
+
+        extend type Query {
+          _service: _Service!
+          topProducts(first: Int!): [Product!]!
+        }
+
+        scalar _Any
+
+        type _Service {
+          sdl: String!
+        }
+    """).strip()
+
+    assert str(schema) == expected_sdl
+
     query = """
         query {
             __type(name: "_Entity") {
@@ -56,6 +78,35 @@ def test_entities_type():
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+
+    expected_sdl = textwrap.dedent("""
+        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key"]) {
+          query: Query
+        }
+
+        type Product @key(fields: "upc") {
+          upc: String!
+          name: String
+          price: Int
+          weight: Int
+        }
+
+        extend type Query {
+          _entities(representations: [_Any!]!): [_Entity]!
+          _service: _Service!
+          topProducts(first: Int!): [Product!]!
+        }
+
+        scalar _Any
+
+        union _Entity = Product
+
+        type _Service {
+          sdl: String!
+        }
+    """).strip()
+
+    assert str(schema) == expected_sdl
 
     query = """
         query {
