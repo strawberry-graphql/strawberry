@@ -46,11 +46,11 @@ def test_info_param_in_resolve_reference():
     @strawberry.federation.type(keys=["upc"])
     class Product:
         upc: str
-        info: str
+        debug_field_name: str
 
         @classmethod
-        def resolve_reference(cls, info, upc) -> "Product":
-            return Product(upc=upc, info=info)
+        def resolve_reference(cls, info: strawberry.Info, upc: str) -> "Product":
+            return Product(upc=upc, debug_field_name=info.field_name)
 
     @strawberry.federation.type(extend=True)
     class Query:
@@ -65,7 +65,7 @@ def test_info_param_in_resolve_reference():
             _entities(representations: $representations) {
                 ... on Product {
                     upc
-                    info
+                    debugFieldName
                 }
             }
         }
@@ -80,10 +80,15 @@ def test_info_param_in_resolve_reference():
 
     assert not result.errors
 
-    assert (
-        "GraphQLResolveInfo(field_name='_entities', field_nodes=[FieldNode"
-        in result.data["_entities"][0]["info"]
-    )
+    assert result.data == {
+        "_entities": [
+            {
+                "upc": "B00005N5PF",
+                # _entities is the field that's called by federation
+                "debugFieldName": "_entities",
+            }
+        ]
+    }
 
 
 def test_does_not_need_custom_resolve_reference_for_basic_things():
