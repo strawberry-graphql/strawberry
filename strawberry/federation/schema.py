@@ -348,10 +348,10 @@ def _get_entity_type(
         while isinstance(type_, StrawberryContainer):
             type_ = type_.of_type
 
-        if not hasattr(type_, "__strawberry_definition__"):
-            continue
+        type_definition = get_object_definition(type_, strict=False)
 
-        type_definition = get_object_definition(type_, strict=True)
+        if type_definition is None:
+            continue
 
         if type_definition.is_object_type and _has_federation_keys(type_definition):
             entity_types.add(type_)
