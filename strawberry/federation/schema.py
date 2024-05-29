@@ -113,10 +113,6 @@ class Schema(BaseSchema):
         added if the schema contains an entity type.
         """
 
-        # note we don't add the _entities field here, as we need to know if the
-        # schema contains an entity type first and we do that by leveraging
-        # the schema converter type map, so we don't have to do that twice
-
         import strawberry
         from strawberry.tools.create_type import create_type
         from strawberry.tools.merge_types import merge_types
