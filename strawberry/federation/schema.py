@@ -46,7 +46,7 @@ if TYPE_CHECKING:
     from strawberry.schema_directive import StrawberrySchemaDirective
 
 
-FederationAny = scalar(NewType("_Any", object), name="_Any")
+FederationAny = scalar(NewType("_Any", object), name="_Any")  # type: ignore
 
 
 class Schema(BaseSchema):
@@ -133,7 +133,7 @@ class Schema(BaseSchema):
 
         if entity_type:
             self.entities_resolver.__annotations__["return"] = List[
-                Optional[entity_type]
+                Optional[entity_type]  # type: ignore
             ]
 
             entities_field = strawberry.field(
