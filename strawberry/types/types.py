@@ -147,6 +147,10 @@ class StrawberryObjectDefinition(StrawberryType):
         return get_specialized_type_var_map(self.origin)
 
     @property
+    def is_object_type(self) -> bool:
+        return not self.is_input and not self.is_interface
+
+    @property
     def type_params(self) -> List[TypeVar]:
         type_params: List[TypeVar] = []
         for field in self.fields:
