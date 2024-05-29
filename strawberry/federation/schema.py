@@ -68,7 +68,7 @@ class Schema(BaseSchema):
         enable_federation_2: bool = False,
     ) -> None:
         query = self._get_federation_query_type(query, mutation, subscription, types)
-        types = [*list(types), FederationAny]
+        types = [*types, FederationAny]
 
         super().__init__(
             query=query,
