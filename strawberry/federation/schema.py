@@ -357,9 +357,11 @@ def _get_entity_type(
             entity_types.add(type_)
 
         for field in type_definition.fields:
-            if field.type and field.type not in seen:
-                seen.add(field.type)
-                stack.append(field.type)
+            if field.type and field.type in seen:
+                continue
+
+            seen.add(field.type)
+            stack.append(field.type)
 
     if not entity_types:
         return None
