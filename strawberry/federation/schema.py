@@ -368,7 +368,7 @@ def _get_entity_type(
 
     return StrawberryUnion(
         "_Entity",
-        type_annotations=[StrawberryAnnotation(type_) for type_ in sorted_types],
+        type_annotations=tuple(StrawberryAnnotation(type_) for type_ in sorted_types),
     )
 
 
