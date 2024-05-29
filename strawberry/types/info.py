@@ -25,8 +25,9 @@ RootValueType = TypeVar("RootValueType", default=Any)
 
 
 @dataclasses.dataclass
-class PartialInfo(Generic[ContextType, RootValueType]):
+class Info(Generic[ContextType, RootValueType]):
     _raw_info: GraphQLResolveInfo
+    _field: Optional[StrawberryField] = None
 
     def __class_getitem__(cls, types: Union[type, Tuple[type, ...]]) -> Type[Info]:
         """Workaround for when passing only one type.
@@ -78,6 +79,16 @@ class PartialInfo(Generic[ContextType, RootValueType]):
     def variable_values(self) -> Dict[str, Any]:
         return self._raw_info.variable_values
 
+    @property
+    def return_type(
+        self,
+    ) -> Optional[Union[Type[WithStrawberryObjectDefinition], StrawberryType]]:
+        return self._field.type if self._field else None
+
+    @property
+    def python_name(self) -> Optional[str]:
+        return self._field.python_name if self._field else None
+
     # TODO: create an abstraction on these fields
     @property
     def operation(self) -> OperationDefinitionNode:
@@ -87,22 +98,6 @@ class PartialInfo(Generic[ContextType, RootValueType]):
     def path(self) -> Path:
         return self._raw_info.path
 
-
-@dataclasses.dataclass
-class Info(PartialInfo, Generic[ContextType, RootValueType]):
-    _raw_info: GraphQLResolveInfo
-    _field: StrawberryField
-
-    @property
-    def return_type(
-        self,
-    ) -> Optional[Union[Type[WithStrawberryObjectDefinition], StrawberryType]]:
-        return self._field.type
-
-    @property
-    def python_name(self) -> str:
-        return self._field.python_name
-
     # TODO: parent_type as strawberry types
 
     # Helper functions
@@ -110,6 +105,9 @@ class Info(PartialInfo, Generic[ContextType, RootValueType]):
         """
         Get the StrawberryArgument definition for the current field by name.
         """
+        if not self._field:
+            return None
+
         try:
             return next(arg for arg in self._field.arguments if arg.python_name == name)
         except StopIteration:

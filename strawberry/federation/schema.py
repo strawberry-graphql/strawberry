@@ -30,7 +30,7 @@ from graphql.type.definition import GraphQLArgument
 
 from strawberry.printer import print_schema
 from strawberry.schema import Schema as BaseSchema
-from strawberry.types.info import PartialInfo
+from strawberry.types.info import Info
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.utils.inspect import get_func_args
 
@@ -193,7 +193,7 @@ class Schema(BaseSchema):
 
                 # TODO: use the same logic we use for other resolvers
                 if "info" in func_args:
-                    kwargs["info"] = PartialInfo(_raw_info=info)
+                    kwargs["info"] = Info(_raw_info=info)
 
                 get_result = partial(resolve_reference, **kwargs)
             else:
