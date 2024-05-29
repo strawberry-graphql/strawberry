@@ -861,8 +861,7 @@ class GraphQLCoreConverter:
 
             if isinstance(graphql_type, GraphQLInputObjectType):
                 raise InvalidTypeInputForUnion(graphql_type)
-            if not isinstance(graphql_type, GraphQLObjectType):
-                ...
+            assert isinstance(graphql_type, GraphQLObjectType)
 
             graphql_types.append(graphql_type)
 
