@@ -178,6 +178,61 @@ class CustomGraphQLEnumType(GraphQLEnumType):
         return self.wrapped_cls(super().parse_literal(value_node, _variables))
 
 
+def get_arguments(
+    *,
+    field: StrawberryField,
+    source: Any,
+    info: Info,
+    kwargs: Any,
+    config: StrawberryConfig,
+    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+) -> Tuple[List[Any], Dict[str, Any]]:
+    # TODO: An extension might have changed the resolver arguments,
+    # but we need them here since we are calling it.
+    # This is a bit of a hack, but it's the easiest way to get the arguments
+    # This happens in mutation.InputMutationExtension
+    field_arguments = field.arguments[:]
+    if field.base_resolver:
+        existing = {arg.python_name for arg in field_arguments}
+        field_arguments.extend(
+            [
+                arg
+                for arg in field.base_resolver.arguments
+                if arg.python_name not in existing
+            ]
+        )
+
+    kwargs = convert_arguments(
+        kwargs,
+        field_arguments,
+        scalar_registry=scalar_registry,
+        config=config,
+    )
+
+    # the following code allows to omit info and root arguments
+    # by inspecting the original resolver arguments,
+    # if it asks for self, the source will be passed as first argument
+    # if it asks for root or parent, the source will be passed as kwarg
+    # if it asks for info, the info will be passed as kwarg
+
+    args = []
+
+    if field.base_resolver:
+        if field.base_resolver.self_parameter:
+            args.append(source)
+
+        if parent_parameter := field.base_resolver.parent_parameter:
+            kwargs[parent_parameter.name] = source
+
+        if root_parameter := field.base_resolver.root_parameter:
+            kwargs[root_parameter.name] = source
+
+        if info_parameter := field.base_resolver.info_parameter:
+            kwargs[info_parameter.name] = info
+
+    return args, kwargs
+
+
 class GraphQLCoreConverter:
     # TODO: Make abstract
 
@@ -608,56 +663,6 @@ class GraphQLCoreConverter:
 
             return _get_basic_result
 
-        def _get_arguments(
-            source: Any,
-            info: Info,
-            kwargs: Any,
-        ) -> Tuple[List[Any], Dict[str, Any]]:
-            # TODO: An extension might have changed the resolver arguments,
-            # but we need them here since we are calling it.
-            # This is a bit of a hack, but it's the easiest way to get the arguments
-            # This happens in mutation.InputMutationExtension
-            field_arguments = field.arguments[:]
-            if field.base_resolver:
-                existing = {arg.python_name for arg in field_arguments}
-                field_arguments.extend(
-                    [
-                        arg
-                        for arg in field.base_resolver.arguments
-                        if arg.python_name not in existing
-                    ]
-                )
-
-            kwargs = convert_arguments(
-                kwargs,
-                field_arguments,
-                scalar_registry=self.scalar_registry,
-                config=self.config,
-            )
-
-            # the following code allows to omit info and root arguments
-            # by inspecting the original resolver arguments,
-            # if it asks for self, the source will be passed as first argument
-            # if it asks for root or parent, the source will be passed as kwarg
-            # if it asks for info, the info will be passed as kwarg
-
-            args = []
-
-            if field.base_resolver:
-                if field.base_resolver.self_parameter:
-                    args.append(source)
-
-                if parent_parameter := field.base_resolver.parent_parameter:
-                    kwargs[parent_parameter.name] = source
-
-                if root_parameter := field.base_resolver.root_parameter:
-                    kwargs[root_parameter.name] = source
-
-                if info_parameter := field.base_resolver.info_parameter:
-                    kwargs[info_parameter.name] = info
-
-            return args, kwargs
-
         def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
             return Info(
                 _raw_info=info,
@@ -689,8 +694,13 @@ class GraphQLCoreConverter:
             ) -> Any:
                 # parse field arguments into Strawberry input types and convert
                 # field names to Python equivalents
-                field_args, field_kwargs = _get_arguments(
-                    source=_source, info=info, kwargs=kwargs
+                field_args, field_kwargs = get_arguments(
+                    field=field,
+                    source=_source,
+                    info=info,
+                    kwargs=kwargs,
+                    config=self.config,
+                    scalar_registry=self.scalar_registry,
                 )
 
                 resolver_requested_info = False
