@@ -4,7 +4,7 @@ import logging
 import sys
 import typing
 from collections import abc
-from enum import Enum
+from enum import Enum, EnumMeta
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -179,13 +179,13 @@ class StrawberryAnnotation:
             return evaled_type.__strawberry_definition__.resolve_generic(evaled_type)
         raise ValueError(f"Not supported {evaled_type}")
 
-    def create_enum(self, evaled_type: Any) -> EnumDefinition:
+    def create_enum(self, evaled_type: EnumMeta) -> EnumDefinition:
         try:
             return evaled_type._enum_definition
         except AttributeError:
             raise NotAStrawberryEnumError(evaled_type)
 
-    def create_list(self, evaled_type: Any) -> StrawberryList:
+    def create_list(self, evaled_type: TypeVar) -> StrawberryList:
         item_type, *_ = get_args(evaled_type)
         of_type = StrawberryAnnotation(
             annotation=item_type,
@@ -194,7 +194,7 @@ class StrawberryAnnotation:
 
         return StrawberryList(of_type)
 
-    def create_optional(self, evaled_type: Any) -> StrawberryOptional:
+    def create_optional(self, evaled_type: TypeVar) -> StrawberryOptional:
         types = get_args(evaled_type)
         non_optional_types = tuple(
             filter(
@@ -263,7 +263,7 @@ class StrawberryAnnotation:
         return origin in ASYNC_TYPES
 
     @classmethod
-    def _is_enum(cls, annotation: Any) -> bool:
+    def _is_enum(cls, annotation: TypeVar) -> bool:
         # Type aliases are not types so we need to make sure annotation can go into
         # issubclass
         if not isinstance(annotation, type):
@@ -271,7 +271,7 @@ class StrawberryAnnotation:
         return issubclass(annotation, Enum)
 
     @classmethod
-    def _is_graphql_generic(cls, annotation: Any) -> bool:
+    def _is_graphql_generic(cls, annotation: type) -> bool:
         if hasattr(annotation, "__origin__"):
             if definition := get_object_definition(annotation.__origin__):
                 return definition.is_graphql_generic
@@ -281,11 +281,11 @@ class StrawberryAnnotation:
         return False
 
     @classmethod
-    def _is_lazy_type(cls, annotation: Any) -> bool:
+    def _is_lazy_type(cls, annotation: TypeVar) -> bool:
         return isinstance(annotation, LazyType)
 
     @classmethod
-    def _is_optional(cls, annotation: Any, args: List[Any]) -> bool:
+    def _is_optional(cls, annotation: TypeVar, args: List[type]) -> bool:
         """Returns True if the annotation is Optional[SomeType]"""
 
         # Optionals are represented as unions
@@ -298,7 +298,7 @@ class StrawberryAnnotation:
         return any(x is type(None) for x in types)
 
     @classmethod
-    def _is_list(cls, annotation: Any) -> bool:
+    def _is_list(cls, annotation: TypeVar) -> bool:
         """Returns True if annotation is a List"""
 
         annotation_origin = get_origin(annotation)
@@ -312,7 +312,7 @@ class StrawberryAnnotation:
         )
 
     @classmethod
-    def _is_strawberry_type(cls, evaled_type: Any) -> bool:
+    def _is_strawberry_type(cls, evaled_type: TypeVar) -> bool:
         # Prevent import cycles
         from strawberry.union import StrawberryUnion
 
@@ -339,7 +339,7 @@ class StrawberryAnnotation:
         return False
 
     @classmethod
-    def _is_union(cls, annotation: Any, args: List[Any]) -> bool:
+    def _is_union(cls, annotation: TypeVar, args: List[type]) -> bool:
         """Returns True if annotation is a Union"""
 
         # this check is needed because unions declared with the new syntax `A | B`
@@ -364,7 +364,7 @@ class StrawberryAnnotation:
         return any(isinstance(arg, StrawberryUnion) for arg in args)
 
     @classmethod
-    def _strip_async_type(cls, annotation: Type[Any]) -> type:
+    def _strip_async_type(cls, annotation: Type) -> type:
         return annotation.__args__[0]
 
     @classmethod
@@ -377,7 +377,7 @@ class StrawberryAnnotation:
 ################################################################################
 
 
-def _is_input_type(type_: Any) -> bool:
+def _is_input_type(type_: TypeVar) -> bool:
     if not has_object_definition(type_):
         return False
 
