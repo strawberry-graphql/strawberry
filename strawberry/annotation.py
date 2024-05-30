@@ -185,7 +185,7 @@ class StrawberryAnnotation:
         except AttributeError:
             raise NotAStrawberryEnumError(evaled_type)
 
-    def create_list(self, evaled_type: TypeVar) -> StrawberryList:
+    def create_list(self, evaled_type: type) -> StrawberryList:
         item_type, *_ = get_args(evaled_type)
         of_type = StrawberryAnnotation(
             annotation=item_type,
@@ -194,7 +194,7 @@ class StrawberryAnnotation:
 
         return StrawberryList(of_type)
 
-    def create_optional(self, evaled_type: TypeVar) -> StrawberryOptional:
+    def create_optional(self, evaled_type: type) -> StrawberryOptional:
         types = get_args(evaled_type)
         non_optional_types = tuple(
             filter(
@@ -217,7 +217,7 @@ class StrawberryAnnotation:
 
         return StrawberryOptional(of_type)
 
-    def create_type_var(self, evaled_type: TypeVar) -> StrawberryTypeVar:
+    def create_type_var(self, evaled_type: type) -> StrawberryTypeVar:
         return StrawberryTypeVar(evaled_type)
 
     def create_union(self, evaled_type: Type[Any], args: list[Any]) -> StrawberryUnion:
@@ -263,7 +263,7 @@ class StrawberryAnnotation:
         return origin in ASYNC_TYPES
 
     @classmethod
-    def _is_enum(cls, annotation: TypeVar) -> bool:
+    def _is_enum(cls, annotation: type) -> bool:
         # Type aliases are not types so we need to make sure annotation can go into
         # issubclass
         if not isinstance(annotation, type):
@@ -281,11 +281,11 @@ class StrawberryAnnotation:
         return False
 
     @classmethod
-    def _is_lazy_type(cls, annotation: TypeVar) -> bool:
+    def _is_lazy_type(cls, annotation: type) -> bool:
         return isinstance(annotation, LazyType)
 
     @classmethod
-    def _is_optional(cls, annotation: TypeVar, args: List[type]) -> bool:
+    def _is_optional(cls, annotation: type, args: List[type]) -> bool:
         """Returns True if the annotation is Optional[SomeType]"""
 
         # Optionals are represented as unions
@@ -298,7 +298,7 @@ class StrawberryAnnotation:
         return any(x is type(None) for x in types)
 
     @classmethod
-    def _is_list(cls, annotation: TypeVar) -> bool:
+    def _is_list(cls, annotation: type) -> bool:
         """Returns True if annotation is a List"""
 
         annotation_origin = get_origin(annotation)
@@ -339,7 +339,7 @@ class StrawberryAnnotation:
         return False
 
     @classmethod
-    def _is_union(cls, annotation: TypeVar, args: List[type]) -> bool:
+    def _is_union(cls, annotation: type, args: List[type]) -> bool:
         """Returns True if annotation is a Union"""
 
         # this check is needed because unions declared with the new syntax `A | B`
