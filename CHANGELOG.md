@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.233.1 - 2024-05-30
+--------------------
+
+This release exposes `get_arguments` in the schema_converter module to allow
+integrations, such as strawberry-django, to reuse that functionality if needed.
+
+This is an internal change with no impact for end users.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3527](https://github.com/strawberry-graphql/strawberry/pull/3527/)
+
+
 0.233.0 - 2024-05-29
 --------------------
 
