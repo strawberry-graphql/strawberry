@@ -380,6 +380,9 @@ class Schema(BaseSchema):
 
     def _extend_introspection(self) -> None:
         def _resolve_is_one_of(obj: Any, info: Any) -> bool:
+            if "strawberry-definition" not in obj.extensions:
+                return False
+
             return obj.extensions["strawberry-definition"].is_one_of
 
         instrospection_type = self._schema.type_map["__Type"]
