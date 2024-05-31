@@ -6,6 +6,7 @@ This release fixes a typing issue where trying to type a `root` argument with
 ```python
 import strawberry
 
+
 @strawberry.type
 class SomeType:
     @strawberry.field
