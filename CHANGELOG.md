@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.233.2 - 2024-05-31
+--------------------
+
+This release fixes an introspection issue when requesting `isOneOf` on built-in
+scalars, like `String`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3528](https://github.com/strawberry-graphql/strawberry/pull/3528/)
+
+
 0.233.1 - 2024-05-30
 --------------------
 
