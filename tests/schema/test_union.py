@@ -975,7 +975,9 @@ def test_annoted_union_with_two_generics():
         @strawberry.field
         def by_id(
             self, id: strawberry.ID
-        ) -> T | Annotated[U | NotFoundError, strawberry.union("ByIdResult")]: ...
+        ) -> Union[
+            T, Annotated[Union[U, NotFoundError], strawberry.union("ByIdResult")]
+        ]: ...
 
     @strawberry.type
     class Query:
