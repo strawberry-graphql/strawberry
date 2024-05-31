@@ -952,3 +952,66 @@ def test_generic_union_with_annotated_inside():
             """
         ).strip()
     )
+
+
+def test_annoted_union_with_two_generics():
+    @strawberry.type
+    class SomeType:
+        a: str
+
+    @strawberry.type
+    class OtherType:
+        b: str
+
+    @strawberry.type
+    class NotFoundError:
+        message: str
+
+    T = TypeVar("T")
+    U = TypeVar("U")
+
+    @strawberry.type
+    class UnionObjectQueries(Generic[T, U]):
+        @strawberry.field
+        def by_id(
+            self, id: strawberry.ID
+        ) -> T | Annotated[U | NotFoundError, strawberry.union("ByIdResult")]: ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def some_type_queries(
+            self, id: strawberry.ID
+        ) -> UnionObjectQueries[SomeType, OtherType]:
+            return UnionObjectQueries()
+
+    schema = strawberry.Schema(Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+            type NotFoundError {
+              message: String!
+            }
+
+            type OtherType {
+              b: String!
+            }
+
+            type Query {
+              someTypeQueries(id: ID!): SomeTypeOtherTypeUnionObjectQueries!
+            }
+
+            type SomeType {
+              a: String!
+            }
+
+            union SomeTypeOtherTypeByIdResult = SomeType | OtherType | NotFoundError
+
+            type SomeTypeOtherTypeUnionObjectQueries {
+              byId(id: ID!): SomeTypeOtherTypeByIdResult!
+            }
+            """
+        ).strip()
+    )
