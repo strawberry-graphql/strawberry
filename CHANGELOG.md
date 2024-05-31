@@ -1,6 +1,28 @@
 CHANGELOG
 =========
 
+0.233.3 - 2024-05-31
+--------------------
+
+This release fixes a typing issue where trying to type a `root` argument with
+`strawberry.Parent` would fail, like in the following example:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class SomeType:
+    @strawberry.field
+    def hello(self, root: strawberry.Parent[str]) -> str:
+        return "world"
+```
+
+This should now work as intended.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3529](https://github.com/strawberry-graphql/strawberry/pull/3529/)
+
+
 0.233.2 - 2024-05-31
 --------------------
 
