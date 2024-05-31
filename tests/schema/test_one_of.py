@@ -259,3 +259,20 @@ def test_introspection():
     assert not result.errors
 
     assert result.data == {"__type": {"name": "ExampleInputTagged", "isOneOf": True}}
+
+
+def test_introspection_builtin():
+    query = """
+        query {
+          __type(name: "String") {
+            name
+            isOneOf
+          }
+        }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+
+    assert result.data == {"__type": {"name": "String", "isOneOf": False}}
