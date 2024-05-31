@@ -921,8 +921,7 @@ def test_generic_union_with_annotated_inside():
     @strawberry.type
     class Query:
         @strawberry.field
-        def some_type_queries(self, id: strawberry.ID) -> ObjectQueries[SomeType]:
-            return ObjectQueries(SomeType)
+        def some_type_queries(self, id: strawberry.ID) -> ObjectQueries[SomeType]: ...
 
     schema = strawberry.Schema(Query)
 
@@ -984,8 +983,7 @@ def test_annoted_union_with_two_generics():
         @strawberry.field
         def some_type_queries(
             self, id: strawberry.ID
-        ) -> UnionObjectQueries[SomeType, OtherType]:
-            return UnionObjectQueries()
+        ) -> UnionObjectQueries[SomeType, OtherType]: ...
 
     schema = strawberry.Schema(Query)
 
