@@ -231,30 +231,25 @@ class StrawberryResolver(Generic[T]):
     @cached_property
     def arguments(self) -> List[StrawberryArgument]:
         """Resolver arguments exposed in the GraphQL Schema."""
-        parameters = self.signature.parameters.values()
-        reserved_parameters = set(self.reserved_parameters.values())
-        populated_reserved_parameters = set(
-            key for key, value in self.reserved_parameters.items() if value is not None
-        )
+        root_parameter = self.reserved_parameters.get(ROOT_PARAMSPEC)
+        parent_parameter = self.reserved_parameters.get(PARENT_PARAMSPEC)
 
+        # TODO: Maybe use SELF_PARAMSPEC in the future? Right now
+        # it would prevent some common pattern for integrations
+        # (e.g. django) of typing the `root` parameters as the
+        # type of the real object being used
         if (
-            conflicting_arguments := (
-                populated_reserved_parameters
-                # TODO: Maybe use SELF_PARAMSPEC in the future? Right now
-                # it would prevent some common pattern for integrations
-                # (e.g. django) of typing the `root` parameters as the
-                # type of the real object being used
-                & {ROOT_PARAMSPEC, PARENT_PARAMSPEC}
-            )
-        ) and len(conflicting_arguments) > 1:
+            root_parameter is not None
+            and parent_parameter is not None
+            and root_parameter.name != parent_parameter.name
+        ):
             raise ConflictingArgumentsError(
                 self,
-                [
-                    cast(Parameter, self.reserved_parameters[key]).name
-                    for key in conflicting_arguments
-                ],
+                [root_parameter.name, parent_parameter.name],
             )
 
+        parameters = self.signature.parameters.values()
+        reserved_parameters = set(self.reserved_parameters.values())
         missing_annotations: List[str] = []
         arguments: List[StrawberryArgument] = []
         user_parameters = (p for p in parameters if p not in reserved_parameters)
