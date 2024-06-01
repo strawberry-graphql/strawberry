@@ -1,6 +1,22 @@
 CHANGELOG
 =========
 
+0.234.0 - 2024-06-01
+--------------------
+
+This release separates the `relay.ListConnection` logic that calculates the
+slice of the nodes into a separate function.
+
+This allows for easier reuse of that logic for other places/libraries.
+
+The new function lives in the `strawberry.relay.utils` and can be used by
+calling `SliceMetadata.from_arguments`.
+
+This has no implications to end users.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3530](https://github.com/strawberry-graphql/strawberry/pull/3530/)
+
+
 0.233.3 - 2024-05-31
 --------------------
 
