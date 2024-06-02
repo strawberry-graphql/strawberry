@@ -8,6 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Collection,
+    Dict,
     Iterable,
     List,
     Mapping,
@@ -159,7 +160,7 @@ class StrawberryUnion(StrawberryType):
             description=self.description,
         )
 
-    def __call__(self, *args: str, **kwargs: Any) -> NoReturn:
+    def __call__(self, *args: str, **kwargs: Dict) -> NoReturn:
         """Do not use.
 
         Used to bypass
@@ -169,7 +170,7 @@ class StrawberryUnion(StrawberryType):
 
     def get_type_resolver(self, type_map: TypeMap) -> GraphQLTypeResolver:
         def _resolve_union_type(
-            root: Any, info: GraphQLResolveInfo, type_: GraphQLAbstractType
+            root: type, info: GraphQLResolveInfo, type_: GraphQLAbstractType
         ) -> str:
             assert isinstance(type_, GraphQLUnionType)
 

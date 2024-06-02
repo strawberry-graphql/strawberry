@@ -190,7 +190,7 @@ class WithStrawberryObjectDefinition(Protocol):
 
 
 def has_object_definition(
-    obj: Any,
+    obj: type,
 ) -> TypeGuard[Type[WithStrawberryObjectDefinition]]:
     if hasattr(obj, "__strawberry_definition__"):
         return True
@@ -207,7 +207,7 @@ def has_object_definition(
 
 @overload
 def get_object_definition(
-    obj: Any,
+    obj: object,
     *,
     strict: Literal[True],
 ) -> StrawberryObjectDefinition: ...
@@ -215,14 +215,14 @@ def get_object_definition(
 
 @overload
 def get_object_definition(
-    obj: Any,
+    obj: object,
     *,
     strict: bool = False,
 ) -> Optional[StrawberryObjectDefinition]: ...
 
 
 def get_object_definition(
-    obj: Any,
+    obj: object,
     *,
     strict: bool = False,
 ) -> Optional[StrawberryObjectDefinition]:

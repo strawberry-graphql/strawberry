@@ -32,7 +32,7 @@ Directives = Dict[str, Arguments]
 Selection = Union["SelectedField", "FragmentSpread", "InlineFragment"]
 
 
-def convert_value(info: GraphQLResolveInfo, node: GQLValueNode) -> Any:
+def convert_value(info: GraphQLResolveInfo, node: GQLValueNode) -> object:
     """Return useful value from any node."""
     if isinstance(node, GQLVariableNode):
         # Look up variable
