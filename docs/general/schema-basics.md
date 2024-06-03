@@ -49,8 +49,6 @@ The `!` sign specifies that a field is non-nullable.
 Notice that the schema doesn’t specify how to get the data. That comes later
 when defining the resolvers.
 
-<!-- TODO: plug Ariadne for a schema-first alternative -->
-
 ## Code first approach
 
 As mentioned Strawberry uses a code first approach. The previous schema would
