@@ -16,6 +16,7 @@ from typing import (
     Iterable,
     Iterator,
     List,
+    NewType,
     Optional,
     Sequence,
     Type,
@@ -26,6 +27,7 @@ from typing import (
 )
 from typing_extensions import Annotated, Literal, Self, TypeAlias, get_args, get_origin
 
+from strawberry.custom_scalar import scalar
 from strawberry.field import field
 from strawberry.lazy_type import LazyType
 from strawberry.object_type import interface, type
@@ -46,7 +48,6 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from strawberry.scalars import ID
     from strawberry.utils.await_maybe import AwaitableOrValue
 
 _T = TypeVar("_T")
@@ -305,6 +306,17 @@ class GlobalID:
         return node
 
 
+ID = scalar(
+    NewType("ID", GlobalID),
+    description="ID in the Global ID format, a base64 encoded string that"
+    "wraps the type and the internal id of the object."
+    "This is a specialization of the strawberry.ID type, which can be any string.",
+    specified_by_url="https://graphql.org/learn/global-object-identification/",
+    serialize=str,
+    parse_value=GlobalID.from_id,
+)
+
+
 class NodeIDPrivate(StrawberryPrivate):
     """Annotate a type attribute as its id.
 
@@ -361,7 +373,7 @@ class Node:
 
     @field(name="id", description="The Globally Unique ID of this object")
     @classmethod
-    def _id(cls, root: Node, info: Info) -> GlobalID:
+    def _id(cls, root: Node, info: Info) -> ID:
         # NOTE: root might not be a Node instance when using integrations which
         # return an object that is compatible with the type (e.g. the django one).
         # In that case, we can retrieve the type itself from info
