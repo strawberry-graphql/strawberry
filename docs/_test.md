@@ -57,19 +57,26 @@ class X:
 You can show two different code blocks next to each other (useful when comparing
 the GraphQL schema against the Python definition):
 
-```python+schema
+<CodeGrid>
+
+```python
 import strawberry
+
 
 @strawberry.type
 class Query:
     @strawberry.field
     def ping(self) -> str:
         return "pong"
----
+```
+
+```graphql
 type Query {
-    ping: String!
+  ping: String!
 }
 ```
+
+</CodeGrid>
 
 or when showing the request and response to a query:
 
