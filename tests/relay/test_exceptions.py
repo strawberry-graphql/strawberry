@@ -3,7 +3,7 @@ from typing import List
 import pytest
 
 import strawberry
-from strawberry import relay, Info
+from strawberry import Info, relay
 from strawberry.relay import GlobalID
 from strawberry.relay.exceptions import (
     NodeIDAnnotationError,
@@ -22,7 +22,7 @@ def test_raises_error_on_unknown_node_type_in_global_id():
     class Query:
         @strawberry.field()
         def test(self, info: Info) -> GlobalID:
-            _id = GlobalID('foo', 'bar')
+            _id = GlobalID("foo", "bar")
             _id.resolve_type(info)
             return _id
 
@@ -34,7 +34,10 @@ def test_raises_error_on_unknown_node_type_in_global_id():
         }
     """)
     assert len(result.errors) == 1
-    assert result.errors[0].message == 'Cannot resolve. GlobalID requires a GraphQL type, received foo.'
+    assert (
+        result.errors[0].message
+        == "Cannot resolve. GlobalID requires a GraphQL type, received foo."
+    )
 
 
 @pytest.mark.raises_strawberry_exception(
