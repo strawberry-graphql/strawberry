@@ -36,7 +36,7 @@ def test_raises_error_on_unknown_node_type_in_global_id():
     assert len(result.errors) == 1
     assert (
         result.errors[0].message
-        == "Cannot resolve. GlobalID requires a GraphQL type, received foo."
+        == "Cannot resolve. GlobalID requires a GraphQL type, received `foo`."
     )
 
 

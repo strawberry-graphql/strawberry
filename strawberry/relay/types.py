@@ -234,7 +234,7 @@ class GlobalID:
         if not issubclass(origin, Node):
             raise GlobalIDValueError(
                 f"Cannot resolve. GlobalID requires a GraphQL Node type, "
-                f"received {self.type_name}."
+                f"received `{self.type_name}`."
             )
         return origin
 
