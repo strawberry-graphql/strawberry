@@ -223,7 +223,7 @@ class GlobalID:
         if not isinstance(type_def, StrawberryObjectDefinition):
             raise GlobalIDValueError(
                 f"Cannot resolve. GlobalID requires a GraphQL type, "
-                f"received {self.type_name}."
+                f"received `{self.type_name}`."
             )
 
         origin = (
