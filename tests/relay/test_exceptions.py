@@ -49,7 +49,7 @@ def test_raises_error_on_non_node_type_in_global_id():
             _id.resolve_type(info)
             return _id
 
-    schema = strawberry.Schema(query=Query, types=(NonNodeType, ))
+    schema = strawberry.Schema(query=Query, types=(NonNodeType,))
 
     result = schema.execute_sync("""
         query TestQuery {
@@ -59,7 +59,7 @@ def test_raises_error_on_non_node_type_in_global_id():
     assert len(result.errors) == 1
     assert (
         result.errors[0].message == "Cannot resolve. GlobalID requires a GraphQL Node "
-                                    "type, received `NonNodeType`."
+        "type, received `NonNodeType`."
     )
 
 
