@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.234.1 - 2024-06-06
+--------------------
+
+Improved error message when supplying GlobalID with invalid or unknown type name component
+
+Contributed by [Take Weiland](https://github.com/diesieben07) via [PR #3533](https://github.com/strawberry-graphql/strawberry/pull/3533/)
+
+
 0.234.0 - 2024-06-01
 --------------------
 
