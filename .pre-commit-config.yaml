@@ -35,3 +35,4 @@ repos:
     hooks:
       - id: blacken-docs
         args: [--skip-errors]
+        files: '\.(rst|md|markdown|py|mdx)$'
