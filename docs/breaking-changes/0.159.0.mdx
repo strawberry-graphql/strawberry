@@ -1,0 +1,47 @@
+---
+title: 0.159.0 Deprecations
+slug: breaking-changes/0.159.0
+---
+
+# v0.159.0 Introduces changes how extension hooks are defined
+
+This release changes how extension hooks are defined. The new style hooks are
+more flexible and allow to run code before and after the execution.
+
+The old style hooks are still supported but will be removed in future releases.
+
+# How to upgrade
+
+## Before:
+
+```python
+class MyExtension(Extension):
+    def on_executing_start(self): ...
+
+    def on_executing_end(self): ...
+```
+
+## After
+
+```python
+class MyExtension(Extension):
+    def on_execute(self):
+        # code before the execution starts
+        yield
+        # code after the execution ends
+```
+
+# Migration guide
+
+See the following table for a mapping between the old and new hooks.
+
+| Old hook            | New hook     |
+| ------------------- | ------------ |
+| on_request_start    | on_operation |
+| on_request_end      | on_operation |
+| on_validation_start | on_validate  |
+| on_validation_end   | on_validate  |
+| on_parsing_start    | on_parse     |
+| on_parsing_end      | on_parse     |
+| on_executing_start  | on_execute   |
+| on_executing_end    | on_execute   |
