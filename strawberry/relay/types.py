@@ -220,14 +220,22 @@ class GlobalID:
 
         """
         type_def = info.schema.get_type_by_name(self.type_name)
-        assert isinstance(type_def, StrawberryObjectDefinition)
+        if not isinstance(type_def, StrawberryObjectDefinition):
+            raise GlobalIDValueError(
+                f"Cannot resolve. GlobalID requires a GraphQL type, "
+                f"received `{self.type_name}`."
+            )
 
         origin = (
             type_def.origin.resolve_type
             if isinstance(type_def.origin, LazyType)
             else type_def.origin
         )
-        assert issubclass(origin, Node)
+        if not issubclass(origin, Node):
+            raise GlobalIDValueError(
+                f"Cannot resolve. GlobalID requires a GraphQL Node type, "
+                f"received `{self.type_name}`."
+            )
         return origin
 
     @overload
