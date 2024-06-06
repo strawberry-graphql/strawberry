@@ -285,20 +285,27 @@ See:
 
 </Note>
 
-```python+schema
+<CodeGrid>
+
+```python
 import strawberry
 import datetime
 from typing import Optional
+
 
 @strawberry.type
 class User:
     name: str
     dob: datetime.date
     age: Optional[int] = strawberry.field(deprecation_reason="Age is deprecated")
----
+```
+
+```graphql
 type User {
   name: String!
   dob: Date!
   age: Int @deprecated(reason: "Age is deprecated")
 }
 ```
+
+</CodeGrid>

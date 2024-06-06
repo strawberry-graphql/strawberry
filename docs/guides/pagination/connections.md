@@ -13,7 +13,9 @@ building GraphQL APIs which use a cursor based connection pattern.
 By the end of this tutorial, we should be able to return a connection of users
 when requested.
 
-```graphql+response
+<CodeGrid>
+
+```graphql
 query getUsers {
   getUsers(first: 2) {
     users {
@@ -33,7 +35,9 @@ query getUsers {
     }
   }
 }
----
+```
+
+```json
 {
   "data": {
     "getUsers": {
@@ -60,13 +64,15 @@ query getUsers {
         ]
       },
       "pageInfo": {
-          "endCursor": "dXNlcjoz",
-          "hasNextPage": true
+        "endCursor": "dXNlcjoz",
+        "hasNextPage": true
       }
     }
   }
 }
 ```
+
+</CodeGrid>
 
 ## Connections
 

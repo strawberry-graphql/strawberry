@@ -8,7 +8,9 @@ It is quite common to want to be able to access the data from the field's parent
 in a resolver. For example let's say that we want to define a `fullName` field
 on our `User`. This would be our code:
 
-```python+schema
+<CodeGrid>
+
+```python
 import strawberry
 
 
@@ -17,13 +19,17 @@ class User:
     first_name: str
     last_name: str
     full_name: str
----
+```
+
+```graphql
 type User {
-    firstName: String!
-    lastName: String!
-    fullName: String!
+  firstName: String!
+  lastName: String!
+  fullName: String!
 }
 ```
+
+</CodeGrid>
 
 In this case `full_name` will need to access the `first_name` and `last_name`
 fields, and depending on whether we define the resolver as a function or as a

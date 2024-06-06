@@ -42,15 +42,21 @@ will be called instead of the resolver and receives the resolver function as the
 `next` argument. Therefore, it is important to not modify any arguments that are
 passed to `next` in an incompatible way.
 
-```graphql+response
+<CodeGrid>
+
+```graphql
 query {
-    string
+  string
 }
----
+```
+
+```json
 {
   "string": "THIS IS A TEST!!"
 }
 ```
+
+</CodeGrid>
 
 ## Modifying the field
 
@@ -100,18 +106,24 @@ class CachingExtension(FieldExtension):
         return self.cached_result
 ```
 
-```python+schema
+<CodeGrid>
+
+```python
 @strawberry.type
 class Client:
 
     @strawberry.field(extensions=[CachingExtensions(caching_time=200)])
     def analyzed_hours(self, info) -> int:
         return do_expensive_computation()
----
+```
+
+```graphql
 type Client {
     analyzedHours: Int! @Cached(time=200)
 }
 ```
+
+</CodeGrid>
 
 ## Combining multiple field extensions
 

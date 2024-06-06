@@ -27,17 +27,23 @@ GraphQL APIs while also helping finding bugs when using type checkers like MyPy.
 Here's a basic example of a type and how it compares to the equivalent type in
 GraphQL:
 
-```python+schema
+<CodeGrid>
+
+```python
 @strawberry.type
 class User:
     id: strawberry.ID
     name: str
----
+```
+
+```graphql
 type User {
   id: ID!
   name: String!
 }
 ```
+
+</CodeGrid>
 
 As you can see the code is very similar to what you would write using the
 GraphQL SDL. Thanks to this, we think Strawberry hits a perfect middle ground

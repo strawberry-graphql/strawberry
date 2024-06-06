@@ -20,11 +20,15 @@ GraphQL is strongly typed and so Strawberry validates all queries before
 executing them. If a query is invalid it isn’t executed and instead the response
 contains an `errors` list:
 
-```graphql+response
+<CodeGrid>
+
+```graphql
 {
   hi
 }
----
+```
+
+```json
 {
   "data": null,
   "errors": [
@@ -41,6 +45,8 @@ contains an `errors` list:
   ]
 }
 ```
+
+</CodeGrid>
 
 Each error has a message, line, column and path to help you identify what part
 of the query caused the error.
@@ -69,11 +75,15 @@ class Query:
 schema = strawberry.Schema(query=Query)
 ```
 
-```graphql+response
+<CodeGrid>
+
+```graphql
 {
   hello
 }
----
+```
+
+```json
 {
   "data": null,
   "errors": [
@@ -85,13 +95,13 @@ schema = strawberry.Schema(query=Query)
           "column": 3
         }
       ],
-      "path": [
-        "hello"
-      ]
+      "path": ["hello"]
     }
   ]
 }
 ```
+
+</CodeGrid>
 
 Each error has a message, line, column and path to help you identify what part
 of the query caused the error.
@@ -121,13 +131,17 @@ class Query:
 schema = strawberry.Schema(query=Query)
 ```
 
-```graphql+response
+<CodeGrid>
+
+```graphql
 {
   user {
     name
   }
 }
----
+```
+
+```json
 {
   "data": null,
   "errors": [
@@ -139,13 +153,13 @@ schema = strawberry.Schema(query=Query)
           "column": 2
         }
       ],
-      "path": [
-        "user"
-      ]
+      "path": ["user"]
     }
   ]
 }
 ```
+
+</CodeGrid>
 
 ## Expected errors
 

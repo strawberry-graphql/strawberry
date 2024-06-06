@@ -60,7 +60,7 @@ subscription {
 
 In this example, the data looks like this as it passes over the websocket:
 
-<img src="../images/subscriptions-count-websocket.png" alt="A view of the data that's been passed via websocket" width="1013" height="267" />
+![A view of the data that's been passed via websocket](../images/subscriptions-count-websocket.png)
 
 This is a very short example of what is possible. Like with queries and
 mutations the subscription can return any GraphQL type, not only scalars as

@@ -129,9 +129,12 @@ In addition to object types and input types, Strawberry allows you to create
 "error types". You can use these error types to have a typed representation of
 Pydantic errors in GraphQL. Let's see an example:
 
-```python+schema
+<CodeGrid>
+
+```python
 from pydantic import BaseModel, constr
 import strawberry
+
 
 class User(BaseModel):
     id: int
@@ -139,20 +142,23 @@ class User(BaseModel):
     signup_ts: Optional[datetime] = None
     friends: List[int] = []
 
+
 @strawberry.experimental.pydantic.error_type(model=User)
 class UserError:
     id: strawberry.auto
     name: strawberry.auto
     friends: strawberry.auto
+```
 
----
-
+```graphql
 type UserError {
   id: [String!]
   name: [String!]
   friends: [[String!]]
 }
 ```
+
+</CodeGrid>
 
 where each field will hold a list of error messages
 
@@ -161,30 +167,36 @@ where each field will hold a list of error messages
 You can use the usual Strawberry syntax to add additional new fields to the
 GraphQL type that aren't defined in the pydantic model
 
-```python+schema
+<CodeGrid>
+
+```python
 import strawberry
 from pydantic import BaseModel
 
 from .models import User
 
+
 class User(BaseModel):
     id: int
     name: str
+
 
 @strawberry.experimental.pydantic.type(model=User)
 class User:
     id: strawberry.auto
     name: strawberry.auto
     age: int
+```
 
----
-
+```graphql
 type User {
-    id: Int!
-    name: String!
-    age: Int!
+  id: Int!
+  name: String!
+  age: Int!
 }
 ```
+
+</CodeGrid>
 
 ### Converting types
 
@@ -284,16 +296,20 @@ Strawberry supports
 Note that constraint is not enforced in the graphql type. Thus, we recommend
 always working on the pydantic type such that the validation is enforced.
 
-```python+schema
+<CodeGrid>
+
+```python
 from pydantic import BaseModel, conlist
 import strawberry
+
 
 class Example(BaseModel):
     friends: conlist(str, min_items=1)
 
+
 @strawberry.experimental.pydantic.input(model=Example, all_fields=True)
-class ExampleGQL:
-    ...
+class ExampleGQL: ...
+
 
 @strawberry.type
 class Query:
@@ -305,9 +321,11 @@ class Query:
         # an error if friends is empty
         print(example.to_pydantic().friends)
 
-schema = strawberry.Schema(query=Query)
 
----
+schema = strawberry.Schema(query=Query)
+```
+
+```graphql
 input ExampleGQL {
   friends: [String!]!
 }
@@ -316,6 +334,8 @@ type Query {
   test(example: ExampleGQL!): Void
 }
 ```
+
+</CodeGrid>
 
 ### Classes with `__get_validators__`
 

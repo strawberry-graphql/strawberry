@@ -197,7 +197,9 @@ the dataloader, in order to avoid reloading data afterwards.
 
 For example:
 
-```python+graphql
+<CodeGrid>
+
+```python
 @strawberry.type
 class Person:
     id: strawberry.ID
@@ -205,7 +207,8 @@ class Person:
 
     @strawberry.field
     async def friends(self) -> List[Person]:
-      return await loader.load_many(self.friends_ids)
+        return await loader.load_many(self.friends_ids)
+
 
 @strawberry.type
 class Query:
@@ -220,7 +223,9 @@ class Query:
         loader.prime_many({person.id: person for person in people})
 
         return people
----
+```
+
+```graphql
 {
   getAllPeople {
     id
@@ -230,6 +235,8 @@ class Query:
   }
 }
 ```
+
+</CodeGrid>
 
 ### Custom Cache
 
@@ -341,7 +348,9 @@ that allows to fetch a single user by id.
 
 We can use this query by doing the following request:
 
-```graphql+response
+<CodeGrid>
+
+```graphql
 {
   first: getUser(id: 1) {
     id
@@ -350,7 +359,9 @@ We can use this query by doing the following request:
     id
   }
 }
----
+```
+
+```json
 {
   "data": {
     "first": {
@@ -362,6 +373,8 @@ We can use this query by doing the following request:
   }
 }
 ```
+
+</CodeGrid>
 
 Even if this query is fetching two users, it still results in one call to
 `load_users`.
