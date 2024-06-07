@@ -1,6 +1,23 @@
 CHANGELOG
 =========
 
+0.234.2 - 2024-06-07
+--------------------
+
+This release fixes an issue when trying to retrieve specialized type vars from a
+generic type that has been aliased to a name, in cases like:
+
+```python
+@strawberry.type
+class Fruit(Generic[T]): ...
+
+
+SpecializedFruit = Fruit[str]
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3535](https://github.com/strawberry-graphql/strawberry/pull/3535/)
+
+
 0.234.1 - 2024-06-06
 --------------------
 
