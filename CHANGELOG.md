@@ -1,6 +1,28 @@
 CHANGELOG
 =========
 
+0.235.0 - 2024-06-10
+--------------------
+
+This release adds a new configuration to disable field suggestions in the error
+response.
+
+```python
+@strawberry.type
+class Query:
+    name: str
+
+
+schema = strawberry.Schema(
+    query=Query, config=StrawberryConfig(disable_field_suggestions=True)
+)
+```
+
+Trying to query `{ nam }` will not suggest to query `name` instead.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3537](https://github.com/strawberry-graphql/strawberry/pull/3537/)
+
+
 0.234.3 - 2024-06-10
 --------------------
 
