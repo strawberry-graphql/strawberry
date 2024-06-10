@@ -162,6 +162,9 @@ class PydanticV2Compat:
 
         return type_
 
+    def model_dump(self, model_instance: BaseModel) -> Dict[Any, Any]:
+        return model_instance.model_dump()
+
 
 class PydanticV1Compat:
     @property
@@ -234,6 +237,9 @@ class PydanticV1Compat:
             return new_type_supertype(type_)
 
         return type_
+
+    def model_dump(self, model_instance: BaseModel) -> Dict[Any, Any]:
+        return model_instance.dict()
 
 
 class PydanticCompat:
