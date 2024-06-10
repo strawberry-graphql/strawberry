@@ -87,6 +87,25 @@ class BaseSchema(Protocol):
     def as_str(self) -> str:
         raise NotImplementedError
 
+    @staticmethod
+    def remove_field_suggestion(error: GraphQLError) -> None:
+        if (
+            error.message.startswith("Cannot query field")
+            and "Did you mean" in error.message
+        ):
+            error.message = error.message.split("Did you mean")[0].strip()
+
+    def _process_errors(
+        self,
+        errors: List[GraphQLError],
+        execution_context: Optional[ExecutionContext] = None,
+    ) -> None:
+        if self.config.disable_field_suggestions:
+            for error in errors:
+                self.remove_field_suggestion(error)
+
+        self.process_errors(errors, execution_context)
+
     def process_errors(
         self,
         errors: List[GraphQLError],
