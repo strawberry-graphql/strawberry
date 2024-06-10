@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.234.3 - 2024-06-10
+--------------------
+
+Fixes a bug where pydantic models as the default value for an input did not print the proper schema.
+See [this issue](https://github.com/strawberry-graphql/strawberry/issues/3285).
+
+Contributed by [ppease](https://github.com/ppease) via [PR #3499](https://github.com/strawberry-graphql/strawberry/pull/3499/)
+
+
 0.234.2 - 2024-06-07
 --------------------
 
