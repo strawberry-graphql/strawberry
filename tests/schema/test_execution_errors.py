@@ -1,6 +1,7 @@
 import pytest
 
 import strawberry
+from strawberry.schema.config import StrawberryConfig
 
 
 def test_runs_parsing():
@@ -64,3 +65,46 @@ async def test_runs_parsing_async():
 
     assert len(result.errors) == 1
     assert result.errors[0].message == "Syntax Error: Expected Name, found <EOF>."
+
+
+def test_suggests_fields_by_default():
+    @strawberry.type
+    class Query:
+        name: str
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+        query {
+            ample
+        }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert len(result.errors) == 1
+    assert (
+        result.errors[0].message
+        == "Cannot query field 'ample' on type 'Query'. Did you mean 'name'?"
+    )
+
+
+def test_can_disable_field_suggestions():
+    @strawberry.type
+    class Query:
+        name: str
+
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(suggest_field=False)
+    )
+
+    query = """
+        query {
+            ample
+        }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert len(result.errors) == 1
+    assert result.errors[0].message == "Cannot query field 'ample' on type 'Query'."
