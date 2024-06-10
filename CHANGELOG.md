@@ -1,6 +1,266 @@
 CHANGELOG
 =========
 
+0.234.2 - 2024-06-07
+--------------------
+
+This release fixes an issue when trying to retrieve specialized type vars from a
+generic type that has been aliased to a name, in cases like:
+
+```python
+@strawberry.type
+class Fruit(Generic[T]): ...
+
+
+SpecializedFruit = Fruit[str]
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3535](https://github.com/strawberry-graphql/strawberry/pull/3535/)
+
+
+0.234.1 - 2024-06-06
+--------------------
+
+Improved error message when supplying GlobalID with invalid or unknown type name component
+
+Contributed by [Take Weiland](https://github.com/diesieben07) via [PR #3533](https://github.com/strawberry-graphql/strawberry/pull/3533/)
+
+
+0.234.0 - 2024-06-01
+--------------------
+
+This release separates the `relay.ListConnection` logic that calculates the
+slice of the nodes into a separate function.
+
+This allows for easier reuse of that logic for other places/libraries.
+
+The new function lives in the `strawberry.relay.utils` and can be used by
+calling `SliceMetadata.from_arguments`.
+
+This has no implications to end users.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3530](https://github.com/strawberry-graphql/strawberry/pull/3530/)
+
+
+0.233.3 - 2024-05-31
+--------------------
+
+This release fixes a typing issue where trying to type a `root` argument with
+`strawberry.Parent` would fail, like in the following example:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class SomeType:
+    @strawberry.field
+    def hello(self, root: strawberry.Parent[str]) -> str:
+        return "world"
+```
+
+This should now work as intended.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3529](https://github.com/strawberry-graphql/strawberry/pull/3529/)
+
+
+0.233.2 - 2024-05-31
+--------------------
+
+This release fixes an introspection issue when requesting `isOneOf` on built-in
+scalars, like `String`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3528](https://github.com/strawberry-graphql/strawberry/pull/3528/)
+
+
+0.233.1 - 2024-05-30
+--------------------
+
+This release exposes `get_arguments` in the schema_converter module to allow
+integrations, such as strawberry-django, to reuse that functionality if needed.
+
+This is an internal change with no impact for end users.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3527](https://github.com/strawberry-graphql/strawberry/pull/3527/)
+
+
+0.233.0 - 2024-05-29
+--------------------
+
+This release refactors our Federation integration to create types using
+Strawberry directly, instead of using low level types from GraphQL-core.
+
+The only user facing change is that now the `info` object passed to the
+`resolve_reference` function is the `strawberry.Info` object instead of the one
+coming coming from GraphQL-core. This is a **breaking change** for users that
+were using the `info` object directly.
+
+If you need to access the original `info` object you can do so by accessing the
+`_raw_info` attribute.
+
+```python
+import strawberry
+
+
+@strawberry.federation.type(keys=["upc"])
+class Product:
+    upc: str
+
+    @classmethod
+    def resolve_reference(cls, info: strawberry.Info, upc: str) -> "Product":
+        # Access the original info object
+        original_info = info._raw_info
+
+        return Product(upc=upc)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3525](https://github.com/strawberry-graphql/strawberry/pull/3525/)
+
+
+0.232.2 - 2024-05-28
+--------------------
+
+This release fixes an issue that would prevent using lazy aliased connections to
+annotate a connection field.
+
+For example, this should now work correctly:
+
+```python
+# types.py
+
+
+@strawberry.type
+class Fruit: ...
+
+
+FruitConnection: TypeAlias = ListConnection[Fruit]
+```
+
+```python
+# schema.py
+
+
+@strawberry.type
+class Query:
+    fruits: Annotated["FruitConnection", strawberry.lazy("types")] = (
+        strawberry.connection()
+    )
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3524](https://github.com/strawberry-graphql/strawberry/pull/3524/)
+
+
+0.232.1 - 2024-05-27
+--------------------
+
+This release fixes an issue where mypy would complain when using a typed async
+resolver with `strawberry.field(resolver=...)`.
+
+Now the code will type check correctly. We also updated our test suite to make
+we catch similar issues in the future.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3516](https://github.com/strawberry-graphql/strawberry/pull/3516/)
+
+
+0.232.0 - 2024-05-25
+--------------------
+
+This release improves type checking for async resolver functions when used as
+`strawberry.field(resolver=resolver_func)`.
+
+Now doing this will raise a type error:
+
+```python
+import strawberry
+
+
+def some_resolver() -> int:
+    return 0
+
+
+@strawberry.type
+class User:
+    # Note the field being typed as str instead of int
+    name: str = strawberry.field(resolver=some_resolver)
+```
+
+Contributed by [Bryan Ricker](https://github.com/bricker) via [PR #3241](https://github.com/strawberry-graphql/strawberry/pull/3241/)
+
+
+0.231.1 - 2024-05-25
+--------------------
+
+Fixes an issue where lazy annotations raised an error when used together with a List
+
+Contributed by [jeich](https://github.com/jeich) via [PR #3388](https://github.com/strawberry-graphql/strawberry/pull/3388/)
+
+
+0.231.0 - 2024-05-25
+--------------------
+
+When calling the CLI without all the necessary dependencies installed,
+a `MissingOptionalDependenciesError` will be raised instead of a
+`ModuleNotFoundError`. This new exception will provide a more helpful
+hint regarding how to fix the problem.
+
+Contributed by [Ethan Henderson](https://github.com/parafoxia) via [PR #3511](https://github.com/strawberry-graphql/strawberry/pull/3511/)
+
+
+0.230.0 - 2024-05-22
+--------------------
+
+This release adds support for `@oneOf` on input types! 🎉 You can use
+`one_of=True` on input types to create an input type that should only have one
+of the fields set.
+
+```python
+import strawberry
+
+
+@strawberry.input(one_of=True)
+class ExampleInputTagged:
+    a: str | None = strawberry.UNSET
+    b: int | None = strawberry.UNSET
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3429](https://github.com/strawberry-graphql/strawberry/pull/3429/)
+
+
+0.229.2 - 2024-05-22
+--------------------
+
+This release fixes an issue when using `Annotated` + `strawberry.lazy` +
+deferred annotations such as:
+
+```python
+from __future__ import annotations
+import strawberry
+from typing import Annotated
+
+
+@strawberry.type
+class Query:
+    a: Annotated["datetime", strawberry.lazy("datetime")]
+
+
+schema = strawberry.Schema(Query)
+```
+
+Before this would only work if `datetime` was not inside quotes. Now it should
+work as expected!
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3507](https://github.com/strawberry-graphql/strawberry/pull/3507/)
+
+
+0.229.1 - 2024-05-15
+--------------------
+
+This release fixes a regression from 0.229.0 where using a generic interface
+inside a union would return an error.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3502](https://github.com/strawberry-graphql/strawberry/pull/3502/)
+
+
 0.229.0 - 2024-05-12
 --------------------
 

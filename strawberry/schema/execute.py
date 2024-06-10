@@ -23,6 +23,7 @@ from graphql.validation import validate
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.extensions.runner import SchemaExtensionsRunner
+from strawberry.schema.validation_rules.one_of import OneOfInputValidationRule
 from strawberry.types import ExecutionResult
 
 from .exceptions import InvalidOperationTypeError
@@ -55,6 +56,10 @@ def validate_document(
     document: DocumentNode,
     validation_rules: Tuple[Type[ASTValidationRule], ...],
 ) -> List[GraphQLError]:
+    validation_rules = (
+        *validation_rules,
+        OneOfInputValidationRule,
+    )
     return validate(
         schema,
         document,

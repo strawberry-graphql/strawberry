@@ -147,6 +147,10 @@ class StrawberryObjectDefinition(StrawberryType):
         return get_specialized_type_var_map(self.origin)
 
     @property
+    def is_object_type(self) -> bool:
+        return not self.is_input and not self.is_interface
+
+    @property
     def type_params(self) -> List[TypeVar]:
         type_params: List[TypeVar] = []
         for field in self.fields:
@@ -214,11 +218,25 @@ class StrawberryObjectDefinition(StrawberryType):
             if hasattr(real_concrete_type, "_enum_definition"):
                 real_concrete_type = real_concrete_type._enum_definition
 
+            if isinstance(expected_concrete_type, type) and issubclass(
+                real_concrete_type, expected_concrete_type
+            ):
+                return True
+
             if real_concrete_type is not expected_concrete_type:
                 return False
 
         # All field mappings succeeded. This is a match
         return True
+
+    @property
+    def is_one_of(self) -> bool:
+        from strawberry.schema_directives import OneOf
+
+        if not self.is_input or not self.directives:
+            return False
+
+        return any(isinstance(directive, OneOf) for directive in self.directives)
 
 
 # TODO: remove when deprecating _type_definition

@@ -12,7 +12,7 @@ from typing import (
     Optional,
     cast,
 )
-from typing_extensions import Annotated, Self
+from typing_extensions import Annotated, Self, TypeAlias
 
 import strawberry
 from strawberry import relay
@@ -191,6 +191,9 @@ class DummyPermission(BasePermission):
         return True
 
 
+FruitsListConnectionAlias: TypeAlias = relay.ListConnection[Fruit]
+
+
 @strawberry.type
 class Query:
     node: relay.Node = relay.node()
@@ -203,6 +206,11 @@ class Query:
     fruits: relay.ListConnection[Fruit] = relay.connection(resolver=fruits_resolver)
     fruits_lazy: relay.ListConnection[
         Annotated["Fruit", strawberry.lazy("tests.relay.schema")]
+    ] = relay.connection(resolver=fruits_resolver)
+    fruits_alias: FruitsListConnectionAlias = relay.connection(resolver=fruits_resolver)
+    fruits_alias_lazy: Annotated[
+        "FruitsListConnectionAlias",
+        strawberry.lazy("tests.relay.schema"),
     ] = relay.connection(resolver=fruits_resolver)
     fruits_async: relay.ListConnection[FruitAsync] = relay.connection(
         resolver=fruits_async_resolver

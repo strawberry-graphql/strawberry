@@ -1,0 +1,29 @@
+---
+title: 0.233.0 Breaking Changes
+slug: breaking-changes/0.233.0
+---
+
+# v0.233.0 changes the `info` argument in `resolve_reference` in Federation
+
+In this release we have updated the `info` object passed to the
+`resolve_reference` function in Federation to be a `strawberry.Info` object
+instead of the one coming from GraphQL-core.
+
+If you need to access the original `info` object you can do so by accessing the
+`_raw_info` attribute.
+
+```python
+import strawberry
+
+
+@strawberry.federation.type(keys=["upc"])
+class Product:
+    upc: str
+
+    @classmethod
+    def resolve_reference(cls, info: strawberry.Info, upc: str) -> "Product":
+        # Access the original info object
+        original_info = info._raw_info
+
+        return Product(upc=upc)
+```

@@ -15,8 +15,7 @@ COMMON_PYTEST_OPTIONS = [
     "auto",
     "--showlocals",
     "-vv",
-    "--ignore=tests/mypy",
-    "--ignore=tests/pyright",
+    "--ignore=tests/typecheckers",
     "--ignore=tests/cli",
     "--ignore=tests/benchmarks",
     "--ignore=tests/experimental/pydantic",
@@ -125,40 +124,22 @@ def test_pydantic(session: Session, pydantic: str) -> None:
     )
 
 
-@session(python=PYTHON_VERSIONS, name="Mypy tests")
-def tests_mypy(session: Session) -> None:
-    session.run_always("poetry", "install", "--with", "integrations", external=True)
-
-    session.run(
-        "pytest",
-        "--cov=.",
-        "--cov-append",
-        "--cov-report=xml",
-        "tests/mypy",
-        "-vv",
-    )
-
-
-@session(python=PYTHON_VERSIONS, name="Pyright tests", tags=["tests"])
-def tests_pyright(session: Session) -> None:
+@session(python=PYTHON_VERSIONS, name="Type checkers tests", tags=["tests"])
+def tests_typecheckers(session: Session) -> None:
     session.run_always("poetry", "install", external=True)
+
     session.install("pyright")
+    session.install("pydantic")
+    session.install("git+https://github.com/python/mypy.git#master")
 
     session.run(
         "pytest",
         "--cov=.",
         "--cov-append",
         "--cov-report=xml",
-        "tests/pyright",
+        "tests/typecheckers",
         "-vv",
     )
-
-
-@session(name="Mypy", tags=["lint"])
-def mypy(session: Session) -> None:
-    session.run_always("poetry", "install", "--with", "integrations", external=True)
-
-    session.run("mypy", "--config-file", "mypy.ini")
 
 
 @session(python=PYTHON_VERSIONS, name="CLI tests", tags=["tests"])
@@ -176,3 +157,11 @@ def tests_cli(session: Session) -> None:
         "tests/cli",
         "-vv",
     )
+
+
+@session(name="Mypy", tags=["lint"])
+def mypy(session: Session) -> None:
+    session.run_always("poetry", "install", "--with", "integrations", external=True)
+    session.install("mypy")
+
+    session.run("mypy", "--config-file", "mypy.ini")

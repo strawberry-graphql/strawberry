@@ -10,7 +10,6 @@ from typing import (
     Mapping,
     NewType,
     Optional,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -85,7 +84,7 @@ class ScalarWrapper:
 
 
 def _process_scalar(
-    cls: Type[_T],
+    cls: _T,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -94,10 +93,10 @@ def _process_scalar(
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
-):
+) -> ScalarWrapper:
     from strawberry.exceptions.handler import should_use_rich_exceptions
 
-    name = name or to_camel_case(cls.__name__)
+    name = name or to_camel_case(cls.__name__)  # type: ignore[union-attr]
 
     _source_file = None
     _source_line = None
@@ -155,7 +154,7 @@ def scalar(
 # here or else it won't let us use any custom scalar to annotate attributes in
 # dataclasses/types. This should be properly solved when implementing StrawberryScalar
 def scalar(
-    cls=None,
+    cls: Optional[_T] = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -194,7 +193,7 @@ def scalar(
     if parse_value is None:
         parse_value = cls
 
-    def wrap(cls: Type):
+    def wrap(cls: _T) -> ScalarWrapper:
         return _process_scalar(
             cls,
             name=name,

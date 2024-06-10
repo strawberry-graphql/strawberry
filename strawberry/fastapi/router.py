@@ -291,11 +291,11 @@ class GraphQLRouter(
             websocket: WebSocket,
             context: Context = Depends(self.context_getter),
             root_value: RootValue = Depends(self.root_value_getter),
-        ):
-            async def _get_context():
+        ) -> None:
+            async def _get_context() -> Context:
                 return context
 
-            async def _get_root_value():
+            async def _get_root_value() -> RootValue:
                 return root_value
 
             preferred_protocol = self.pick_preferred_protocol(websocket)

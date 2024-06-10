@@ -1,0 +1,23 @@
+---
+title: 0.180.0 Breaking changes
+slug: breaking-changes/0.180.0
+---
+
+# v0.180.0 introduces a breaking change for the Django Channels HTTP integration
+
+The context object is now a `dict`. This means that you should access the
+context value using the `["key"]` syntax instead of the `.key` syntax.
+
+For the HTTP integration, there is also no `ws` key anymore and `request` is a
+custom request object containing the full request instead of a
+`GraphQLHTTPConsumer` instance. If you need to access the `GraphQLHTTPConsumer`
+instance in a HTTP connection, you can access it via
+`info.context["request"].consumer`.
+
+For the WebSockets integration, the context keys did not change, e.g. the values
+for `info.context["ws"]`, `info.context["request"]` and
+`info.context["connection_params"]` are the same as before.
+
+If you still want to use the `.key` syntax, you can override `get_context()` to
+return a custom dataclass there. See the Channels integration documentation for
+an example.

@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.4
+    rev: v0.4.7
     hooks:
       - id: ruff-format
         exclude: ^tests/\w+/snapshots/
@@ -35,3 +35,4 @@ repos:
     hooks:
       - id: blacken-docs
         args: [--skip-errors]
+        files: '\.(rst|md|markdown|py|mdx)$'
