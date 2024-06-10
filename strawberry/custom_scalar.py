@@ -14,6 +14,7 @@ from typing import (
     Union,
     overload,
 )
+from typing_extensions import Annotated, Doc
 
 from strawberry.exceptions import InvalidUnionTypeError
 from strawberry.type import StrawberryType
@@ -154,15 +155,25 @@ def scalar(
 # here or else it won't let us use any custom scalar to annotate attributes in
 # dataclasses/types. This should be properly solved when implementing StrawberryScalar
 def scalar(
-    cls: Optional[_T] = None,
+    cls: Annotated[Optional[_T], Doc("The class or type to be annotated")] = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    specified_by_url: Optional[str] = None,
-    serialize: Callable = identity,
-    parse_value: Optional[Callable] = None,
-    parse_literal: Optional[Callable] = None,
-    directives: Iterable[object] = (),
+    name: Annotated[Optional[str], Doc("The GraphQL name of the scalar")] = None,
+    description: Annotated[Optional[str], Doc("The description of the scalar")] = None,
+    specified_by_url: Annotated[
+        Optional[str], Doc("The URL of the specification")
+    ] = None,
+    serialize: Annotated[
+        Callable, Doc("The function to serialize the scalar")
+    ] = identity,
+    parse_value: Annotated[
+        Optional[Callable], Doc("The function to parse the value")
+    ] = None,
+    parse_literal: Annotated[
+        Optional[Callable], Doc("The function to parse the literal")
+    ] = None,
+    directives: Annotated[
+        Iterable[object], Doc("The directives to apply to the scalar")
+    ] = (),
 ) -> Any:
     """Annotates a class or type as a GraphQL custom scalar.
 
