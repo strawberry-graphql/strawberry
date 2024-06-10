@@ -9,7 +9,9 @@ class Query:
     name: str
 
 
-schema = strawberry.Schema(query=Query, config=StrawberryConfig(suggest_field=False))
+schema = strawberry.Schema(
+    query=Query, config=StrawberryConfig(disable_field_suggestions=True)
+)
 ```
 
 Trying to query `{ nam }` will not suggest to query `name` instead.

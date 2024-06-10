@@ -95,7 +95,7 @@ def test_can_disable_field_suggestions():
         name: str
 
     schema = strawberry.Schema(
-        query=Query, config=StrawberryConfig(suggest_field=False)
+        query=Query, config=StrawberryConfig(disable_field_suggestions=True)
     )
 
     query = """

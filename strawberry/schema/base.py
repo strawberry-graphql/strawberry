@@ -100,7 +100,7 @@ class BaseSchema(Protocol):
         errors: List[GraphQLError],
         execution_context: Optional[ExecutionContext] = None,
     ) -> None:
-        if not self.config.suggest_field:
+        if self.config.disable_field_suggestions:
             for error in errors:
                 self.remove_field_suggestion(error)
 

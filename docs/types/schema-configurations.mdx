@@ -35,6 +35,8 @@ type Query {
 
 ## Available configurations
 
+Here's a list of the available configurations:
+
 ### auto_camel_case
 
 By default Strawberry will convert the field names to camel case, so a field
@@ -92,11 +94,14 @@ customise this by setting the `relay_max_results` configuration.
 schema = strawberry.Schema(query=Query, config=StrawberryConfig(relay_max_results=50))
 ```
 
-### suggest_field
+### disable_field_suggestions
 
 By default Strawberry will suggest fields when a field is not found in the
-schema. You can disable this feature by setting `suggest_field` to `False`.
+schema. You can disable this feature by setting `disable_field_suggestions` to
+`True`.
 
 ```python
-schema = strawberry.Schema(query=Query, config=StrawberryConfig(suggest_field=False))
+schema = strawberry.Schema(
+    query=Query, config=StrawberryConfig(disable_field_suggestions=True)
+)
 ```
