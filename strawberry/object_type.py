@@ -22,7 +22,7 @@ from .exceptions import (
     ObjectIsNotClassError,
 )
 from .field import StrawberryField, field
-from .type import get_object_definition
+from .strawberry_type import get_object_definition
 from .types.type_resolver import _get_fields
 from .types.types import (
     StrawberryObjectDefinition,

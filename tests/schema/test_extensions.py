@@ -14,7 +14,7 @@ import strawberry
 from strawberry.scalars import JSON
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema_directive import Location
-from strawberry.type import get_object_definition
+from strawberry.strawberry_type import get_object_definition
 
 DEFINITION_BACKREF = GraphQLCoreConverter.DEFINITION_BACKREF
 

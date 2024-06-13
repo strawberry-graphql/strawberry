@@ -11,7 +11,7 @@ from strawberry.field import StrawberryField
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.name_converter import NameConverter
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
-from strawberry.type import StrawberryType
+from strawberry.strawberry_type import StrawberryType
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.union import StrawberryUnion
 

@@ -12,7 +12,7 @@ from strawberry.exceptions import (
 )
 from strawberry.field import StrawberryField
 from strawberry.private import is_private
-from strawberry.type import has_object_definition
+from strawberry.strawberry_type import has_object_definition
 from strawberry.unset import UNSET
 
 

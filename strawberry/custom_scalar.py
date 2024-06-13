@@ -17,7 +17,7 @@ from typing import (
 from typing_extensions import Annotated, Doc
 
 from strawberry.exceptions import InvalidUnionTypeError
-from strawberry.type import StrawberryType
+from strawberry.strawberry_type import StrawberryType
 
 from .utils.str_converters import to_camel_case
 

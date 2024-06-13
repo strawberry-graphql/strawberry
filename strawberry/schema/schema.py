@@ -36,7 +36,7 @@ from strawberry.extensions.directives import (
 )
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
-from strawberry.type import has_object_definition
+from strawberry.strawberry_type import has_object_definition
 from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
 from strawberry.types.types import StrawberryObjectDefinition
@@ -56,7 +56,7 @@ if TYPE_CHECKING:
     from strawberry.enum import EnumDefinition
     from strawberry.extensions import SchemaExtension
     from strawberry.field import StrawberryField
-    from strawberry.type import StrawberryType
+    from strawberry.strawberry_type import StrawberryType
     from strawberry.types import ExecutionResult
     from strawberry.union import StrawberryUnion
 

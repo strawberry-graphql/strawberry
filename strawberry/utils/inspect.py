@@ -12,7 +12,7 @@ from typing import (
 )
 from typing_extensions import get_args
 
-from strawberry.type import has_object_definition
+from strawberry.strawberry_type import has_object_definition
 from strawberry.utils.typing import is_generic_alias
 
 

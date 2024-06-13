@@ -29,7 +29,7 @@ from strawberry.exceptions import (
     MissingArgumentsAnnotationsError,
 )
 from strawberry.parent import StrawberryParent
-from strawberry.type import StrawberryType, has_object_definition
+from strawberry.strawberry_type import StrawberryType, has_object_definition
 from strawberry.types.info import Info
 from strawberry.utils.typing import type_has_annotation
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import cached_property
 from typing import TYPE_CHECKING, Optional
 
-from strawberry.type import get_object_definition
+from strawberry.strawberry_type import get_object_definition
 
 from .exception import StrawberryException
 from .utils.source_finder import SourceFinder

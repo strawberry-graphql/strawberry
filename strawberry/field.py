@@ -24,7 +24,7 @@ from typing import (
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidArgumentTypeError, InvalidDefaultFactoryError
-from strawberry.type import (
+from strawberry.strawberry_type import (
     StrawberryType,
     WithStrawberryObjectDefinition,
     has_object_definition,

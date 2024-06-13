@@ -12,7 +12,7 @@ from typing import (
     overload,
 )
 
-from strawberry.type import StrawberryType
+from strawberry.strawberry_type import StrawberryType
 
 from .exceptions import ObjectIsNotAnEnumError
 

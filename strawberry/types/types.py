@@ -16,7 +16,7 @@ from typing import (
 )
 from typing_extensions import Self, deprecated
 
-from strawberry.type import (
+from strawberry.strawberry_type import (
     StrawberryList,
     StrawberryType,
     StrawberryTypeVar,

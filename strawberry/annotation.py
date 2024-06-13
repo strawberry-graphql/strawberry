@@ -25,7 +25,7 @@ from strawberry.enum import EnumDefinition
 from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
-from strawberry.type import (
+from strawberry.strawberry_type import (
     StrawberryList,
     StrawberryOptional,
     StrawberryTypeVar,
@@ -38,7 +38,7 @@ from strawberry.utils.typing import eval_type, is_generic, is_type_var
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
-    from strawberry.type import StrawberryType
+    from strawberry.strawberry_type import StrawberryType
     from strawberry.union import StrawberryUnion
 
 

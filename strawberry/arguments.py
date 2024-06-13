@@ -18,7 +18,11 @@ from typing_extensions import Annotated, get_args, get_origin
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType, StrawberryLazyReference
-from strawberry.type import StrawberryList, StrawberryOptional, has_object_definition
+from strawberry.strawberry_type import (
+    StrawberryList,
+    StrawberryOptional,
+    has_object_definition,
+)
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
@@ -28,7 +32,7 @@ from .unset import _deprecated_is_unset  # noqa # type: ignore
 if TYPE_CHECKING:
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.schema.config import StrawberryConfig
-    from strawberry.type import StrawberryType
+    from strawberry.strawberry_type import StrawberryType
 
 
 DEPRECATED_NAMES: Dict[str, str] = {

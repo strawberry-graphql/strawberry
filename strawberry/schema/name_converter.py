@@ -8,7 +8,7 @@ from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.lazy_type import LazyType
 from strawberry.schema_directive import StrawberrySchemaDirective
-from strawberry.type import (
+from strawberry.strawberry_type import (
     StrawberryList,
     StrawberryOptional,
     has_object_definition,
@@ -21,7 +21,7 @@ from strawberry.utils.typing import eval_type
 if TYPE_CHECKING:
     from strawberry.arguments import StrawberryArgument
     from strawberry.field import StrawberryField
-    from strawberry.type import StrawberryType
+    from strawberry.strawberry_type import StrawberryType
 
 
 class HasGraphQLName(Protocol):

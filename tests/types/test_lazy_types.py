@@ -7,7 +7,7 @@ import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
-from strawberry.type import get_object_definition
+from strawberry.strawberry_type import get_object_definition
 from strawberry.types.fields.resolver import StrawberryResolver
 from strawberry.union import StrawberryUnion, union
 

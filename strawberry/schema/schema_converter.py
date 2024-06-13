@@ -59,7 +59,7 @@ from strawberry.field import UNRESOLVED
 from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
 from strawberry.schema.types.scalar import _make_scalar_type
-from strawberry.type import (
+from strawberry.strawberry_type import (
     StrawberryList,
     StrawberryOptional,
     StrawberryType,

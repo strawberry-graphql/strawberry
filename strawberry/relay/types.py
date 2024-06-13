@@ -31,7 +31,7 @@ from strawberry.lazy_type import LazyType
 from strawberry.object_type import interface, type
 from strawberry.private import StrawberryPrivate
 from strawberry.relay.exceptions import NodeIDAnnotationError
-from strawberry.type import StrawberryContainer, get_object_definition
+from strawberry.strawberry_type import StrawberryContainer, get_object_definition
 from strawberry.types.info import Info  # noqa: TCH001
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable

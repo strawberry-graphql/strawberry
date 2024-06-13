@@ -45,7 +45,7 @@ from graphql import (
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
-from strawberry.type import (
+from strawberry.strawberry_type import (
     StrawberryList,
     StrawberryOptional,
     StrawberryType,

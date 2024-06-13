@@ -32,7 +32,7 @@ from strawberry.exceptions import (
 )
 from strawberry.exceptions.handler import should_use_rich_exceptions
 from strawberry.lazy_type import LazyType
-from strawberry.type import (
+from strawberry.strawberry_type import (
     StrawberryOptional,
     StrawberryType,
     has_object_definition,

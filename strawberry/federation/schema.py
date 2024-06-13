@@ -23,7 +23,7 @@ from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import scalar
 from strawberry.printer import print_schema
 from strawberry.schema import Schema as BaseSchema
-from strawberry.type import (
+from strawberry.strawberry_type import (
     StrawberryContainer,
     WithStrawberryObjectDefinition,
     get_object_definition,

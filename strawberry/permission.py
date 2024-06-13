@@ -21,7 +21,7 @@ from strawberry.exceptions.permission_fail_silently_requires_optional import (
 )
 from strawberry.extensions import FieldExtension
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
-from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.strawberry_type import StrawberryList, StrawberryOptional
 from strawberry.utils.await_maybe import await_maybe
 
 if TYPE_CHECKING:
