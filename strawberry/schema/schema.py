@@ -70,7 +70,25 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 
 
 class Schema(BaseSchema):
-    """A GraphQL Schema"""
+    """
+    A GraphQL Schema class used to define the structure and configuration of GraphQL queries, mutations, and subscriptions.
+
+    This class allows the creation of a GraphQL schema by specifying the types for queries, mutations, and subscriptions, along with various configuration options such as directives, extensions, and scalar overrides.
+
+    Example:
+
+    ```python
+    import strawberry
+
+
+    @strawberry.type
+    class Query:
+        name: str = "Patrick"
+
+
+    schema = strawberry.Schema(query=Query)
+    ```
+    """
 
     def __init__(
         self,
@@ -115,22 +133,6 @@ class Schema(BaseSchema):
             Doc("A list of schema directives for the schema"),
         ] = (),
     ) -> None:
-        """Create a new schema by passing the query, mutation and subscription types.
-
-        Example:
-
-        ```python
-        import strawberry
-
-
-        @strawberry.type
-        class Query:
-            name: str = "Patrick"
-
-
-        schema = strawberry.Schema(query=Query)
-        ```
-        """
         self.query = query
         self.mutation = mutation
         self.subscription = subscription
