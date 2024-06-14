@@ -86,7 +86,7 @@ class Schema(BaseSchema):
         directives: Annotated[
             Iterable[StrawberryDirective],
             Doc(
-                "A list of operation directives that clients can use, @include, @skip are included by default"
+                "A list of operation directives that clients can use, `@include`, `@skip` are included by default"
             ),
         ] = (),
         types: Annotated[
