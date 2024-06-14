@@ -2,6 +2,7 @@ import dataclasses
 import inspect
 import sys
 import types
+from contextlib import contextmanager
 from typing import (
     Any,
     Callable,
@@ -187,7 +188,7 @@ def _process_type(
 
             setattr(cls, field_.python_name, wrapped_func)
 
-    return extension.after_process(cls)  # type: ignore
+    return cls
 
 
 @overload
@@ -272,20 +273,20 @@ def type(
             if field and isinstance(field, StrawberryField) and field.type_annotation:
                 original_type_annotations[field_name] = field.type_annotation.annotation
 
-        extension.before_wrap_dataclass(cls)
-        wrapped = _wrap_dataclass(cls)
+        with contextmanager(extension.on_wrap_dataclass)(cls):
+            wrapped = _wrap_dataclass(cls)
 
-        return _process_type(  # type: ignore
-            wrapped,
-            name=name,
-            is_input=is_input,
-            is_interface=is_interface,
-            description=description,
-            directives=directives,
-            extend=extend,
-            extension=extension,
-            original_type_annotations=original_type_annotations,
-        )
+            return _process_type(  # type: ignore
+                wrapped,
+                name=name,
+                is_input=is_input,
+                is_interface=is_interface,
+                description=description,
+                directives=directives,
+                extend=extend,
+                extension=extension,
+                original_type_annotations=original_type_annotations,
+            )
 
     if cls is None:
         return wrap
