@@ -115,6 +115,22 @@ class Schema(BaseSchema):
             Doc("A list of schema directives for the schema"),
         ] = (),
     ) -> None:
+        """Create a new schema by passing the query, mutation and subscription types.
+
+        Example:
+
+        ```python
+        import strawberry
+
+
+        @strawberry.type
+        class Query:
+            name: str = "Patrick"
+
+
+        schema = strawberry.Schema(query=Query)
+        ```
+        """
         self.query = query
         self.mutation = mutation
         self.subscription = subscription
