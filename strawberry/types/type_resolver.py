@@ -89,7 +89,7 @@ def _get_fields(
             field.type = original_type_annotations[field.name]
 
         # Extension field hook
-        field = extension_hook(field=field)  # noqa: PLW2901
+        field = extension_hook(field=field)  # type: ignore # noqa: PLW2901
 
         if isinstance(field, StrawberryField):
             # Check that the field type is not Private

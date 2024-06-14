@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Iterator, List, Optional, Sequence
 
 from strawberry.types.types import StrawberryObjectDefinition
 
@@ -10,21 +10,16 @@ if TYPE_CHECKING:
     from graphql import GraphQLAbstractType, GraphQLResolveInfo
 
     from strawberry.field import StrawberryField
-    from strawberry.type import WithStrawberryObjectDefinition
 
 
 class TypeExtension:
-    def on_field(self, field: Field | StrawberryField) -> Field | StrawberryField:
+    def on_wrap_dataclass(self, cls: type[Any]) -> Iterator[None]:
+        "Called before and after strawberry wrapping process"
+        yield None
+
+    def on_field(self, field: Field[Any]) -> Field[Any]:
         """Called for each field, _MUST_ return valid field"""
         return field
-
-    def before_wrap_dataclass(self, cls: type) -> None:
-        """Called before class is wrapped as dataclass"""
-        return
-
-    def after_process(self, cls: type[WithStrawberryObjectDefinition]) -> type:
-        """Called after entire process finishes"""
-        return cls
 
     def create_object_definition(
         self,
