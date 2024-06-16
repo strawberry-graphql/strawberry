@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, Callable, Generic, List, Optional, TypeVar
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Doc
 
 from graphql import DirectiveLocation
 
@@ -21,7 +21,25 @@ if TYPE_CHECKING:
     from strawberry.arguments import StrawberryArgument
 
 
-def directive_field(name: str, default: object = UNSET) -> Any:
+# TODO: should this be directive argument?
+def directive_field(
+    name: Annotated[str, Doc("The GraphQL name of the directive argument")],
+    default: Annotated[object, Doc("The default value of the argument")] = UNSET,
+) -> Any:
+    """Function to add metadata to a directive argument, like the GraphQL name.o
+
+    Example:
+    ```python
+    import strawberry
+    from strawberry.schema_directive import Location
+
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Sensitive:
+        reason: str = strawberry.directive_field(name="as")
+    ```
+    """
+
     return StrawberryField(
         python_name=None,
         graphql_name=name,
@@ -70,10 +88,30 @@ class StrawberryDirective(Generic[T]):
 
 def directive(
     *,
-    locations: List[DirectiveLocation],
-    description: Optional[str] = None,
-    name: Optional[str] = None,
+    locations: Annotated[
+        List[DirectiveLocation], Doc("The locations where the directive can be used")
+    ],
+    description: Annotated[
+        Optional[str], Doc("The GraphQL description of the directive")
+    ],
+    name: Annotated[Optional[str], Doc("The GraphQL name of the directive")],
 ) -> Callable[[Callable[..., T]], StrawberryDirective[T]]:
+    """Decorator to create a GraphQL operation directive.
+
+    Example:
+    ```python
+    import strawberry
+    from strawberry.directive import DirectiveLocation
+
+
+    @strawberry.directive(
+        locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+    )
+    def turn_uppercase(value: str):
+        return value.upper()
+    ```
+    """
+
     def _wrap(f: Callable[..., T]) -> StrawberryDirective[T]:
         return StrawberryDirective(
             python_name=f.__name__,
