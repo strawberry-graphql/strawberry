@@ -93,8 +93,8 @@ def directive(
     ],
     description: Annotated[
         Optional[str], Doc("The GraphQL description of the directive")
-    ],
-    name: Annotated[Optional[str], Doc("The GraphQL name of the directive")],
+    ] = None,
+    name: Annotated[Optional[str], Doc("The GraphQL name of the directive")] = None,
 ) -> Callable[[Callable[..., T]], StrawberryDirective[T]]:
     """Decorator to create a GraphQL operation directive.
 

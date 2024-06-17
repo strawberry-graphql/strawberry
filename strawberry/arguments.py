@@ -234,8 +234,8 @@ def convert_arguments(
 def argument(
     description: Annotated[
         Optional[str], Doc("The GraphQL description of the argument")
-    ],
-    name: Annotated[Optional[str], Doc("The GraphQL name of the argument")],
+    ] = None,
+    name: Annotated[Optional[str], Doc("The GraphQL name of the argument")] = None,
     deprecation_reason: Annotated[
         Optional[str],
         Doc(
