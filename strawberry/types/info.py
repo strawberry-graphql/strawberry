@@ -39,6 +39,37 @@ RootValueType = TypeVar("RootValueType", default=Any)
 
 @dataclasses.dataclass
 class Info(Generic[ContextType, RootValueType]):
+    """Class containing information about the current execution.
+
+    This class is passed to resolvers when there's an argument with type `Info`.
+
+    Example:
+
+    ```python
+    import strawberry
+
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, info: strawberry.Info) -> str:
+            return f"Hello, {info.context['name']}!"
+    ```
+
+    It also supports passing the type of the context and root value:
+
+    ```python
+    import strawberry
+
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, info: strawberry.Info[str, str]) -> str:
+            return f"Hello, {info.context}!"
+    ```
+    """
+
     _raw_info: GraphQLResolveInfo
     _field: StrawberryField
 
@@ -59,10 +90,12 @@ class Info(Generic[ContextType, RootValueType]):
 
     @property
     def field_name(self) -> str:
+        """The name of the current field being resolved."""
         return self._raw_info.field_name
 
     @property
     def schema(self) -> Schema:
+        """The schema of the current execution."""
         return self._raw_info.schema._strawberry_schema  # type: ignore
 
     @property
@@ -77,47 +110,53 @@ class Info(Generic[ContextType, RootValueType]):
 
     @cached_property
     def selected_fields(self) -> List[Selection]:
+        """The fields that were selected in the current field."""
         info = self._raw_info
         return convert_selections(info, info.field_nodes)
 
     @property
     def context(self) -> ContextType:
+        """The context passed to the query execution."""
         return self._raw_info.context
 
     @property
     def root_value(self) -> RootValueType:
+        """The root value passed to the query execution."""
         return self._raw_info.root_value
 
     @property
     def variable_values(self) -> Dict[str, Any]:
+        """The variable values passed to the query execution."""
         return self._raw_info.variable_values
 
     @property
     def return_type(
         self,
     ) -> Optional[Union[Type[WithStrawberryObjectDefinition], StrawberryType]]:
+        """The return type of the current field being resolved."""
         return self._field.type
 
     @property
     def python_name(self) -> str:
+        """The name of the current field being resolved in Python format."""
         return self._field.python_name
 
     # TODO: create an abstraction on these fields
     @property
     def operation(self) -> OperationDefinitionNode:
+        """The operation being executed."""
         return self._raw_info.operation
 
     @property
     def path(self) -> Path:
+        """The path of the current field being resolved."""
         return self._raw_info.path
 
     # TODO: parent_type as strawberry types
 
     # Helper functions
     def get_argument_definition(self, name: str) -> Optional[StrawberryArgument]:
-        """
-        Get the StrawberryArgument definition for the current field by name.
-        """
+        """Get the StrawberryArgument definition for the current field by name."""
         try:
             return next(arg for arg in self._field.arguments if arg.python_name == name)
         except StopIteration:
