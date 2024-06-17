@@ -36,8 +36,20 @@ if TYPE_CHECKING:
 
 
 class BasePermission(abc.ABC):
-    """
-    Base class for creating permissions
+    """Base class for permissions. All permissions should inherit from this class.
+
+    Example:
+
+    ```python
+    from strawberry.permission import BasePermission
+
+
+    class IsAuthenticated(BasePermission):
+        message = "User is not authenticated"
+
+        def has_permission(self, source, info, **kwargs):
+            return info.context["user"].is_authenticated
+    ```
     """
 
     message: Optional[str] = None
@@ -52,14 +64,19 @@ class BasePermission(abc.ABC):
     def has_permission(
         self, source: Any, info: Info, **kwargs: Any
     ) -> Union[bool, Awaitable[bool]]:
+        """Check if the permission should be accepted.
+
+        This method should be overridden by the subclasses.
+        """
         raise NotImplementedError(
             "Permission classes should override has_permission method"
         )
 
+    # TODO: show an example of how to override this method
     def on_unauthorized(self) -> None:
-        """
-        Default error raising for permissions.
-        This can be overridden to customize the behavior.
+        """Default error raising for permissions.
+
+        This method can be overridden to customize the error raised when the permission is not granted.
         """
 
         # Instantiate error class
