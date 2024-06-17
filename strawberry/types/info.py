@@ -56,7 +56,7 @@ class Info(Generic[ContextType, RootValueType]):
             return f"Hello, {info.context['name']}!"
     ```
 
-    It also supports passing the type of the context and root value:
+    It also supports passing the type of the context and root types:
 
     ```python
     import strawberry
