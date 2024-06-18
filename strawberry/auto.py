@@ -77,3 +77,5 @@ class StrawberryAuto(metaclass=StrawberryAutoMeta):
 
 
 auto = Annotated[Any, StrawberryAuto()]
+
+__all__ = ["auto"]

@@ -1,5 +1,5 @@
 from typing import TypeVar
-from typing_extensions import Annotated, Doc
+from typing_extensions import Annotated
 
 
 class StrawberryParent: ...
@@ -7,12 +7,8 @@ class StrawberryParent: ...
 
 T = TypeVar("T")
 
-Parent = Annotated[
-    T,
-    StrawberryParent(),
-    Doc("Example"),
-]
-Parent.__doc__ = """Represents a parameter holding the parent resolver's value.
+Parent = Annotated[T, StrawberryParent()]
+"""Represents a parameter holding the parent resolver's value.
 
 This can be used when defining a resolver on a type when the parent isn't expected
 to return the type itself.
