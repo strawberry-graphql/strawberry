@@ -1,3 +1,9 @@
+"""Strawberry is a Python library for GraphQL.
+
+Strawberry is a Python library for GraphQL that aims to stay close to the GraphQL
+specification and allow for a more natural way of defining GraphQL schemas.
+"""
+
 from . import experimental, federation, relay
 from .arguments import argument
 from .auto import auto
