@@ -3,9 +3,8 @@ from __future__ import annotations
 from typing import Any, Optional, Union, cast
 from typing_extensions import Annotated, get_args, get_origin
 
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.strawberry_type import StrawberryType
-
-from .annotation import StrawberryAnnotation
 
 
 class StrawberryAutoMeta(type):

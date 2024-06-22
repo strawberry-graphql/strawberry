@@ -328,9 +328,9 @@ def eval_type(
     localns: Optional[Dict] = None,
 ) -> Type:
     """Evaluates a type, resolving forward references."""
-    from strawberry.auto import StrawberryAuto
     from strawberry.lazy_type import StrawberryLazyReference
     from strawberry.private import StrawberryPrivate
+    from strawberry.types.auto import StrawberryAuto
 
     globalns = globalns or {}
     # If this is not a string, maybe its args are (e.g. List["Foo"])
