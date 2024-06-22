@@ -55,11 +55,11 @@ if TYPE_CHECKING:
 
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.directive import StrawberryDirective
-    from strawberry.enum import EnumDefinition
     from strawberry.extensions import SchemaExtension
     from strawberry.field import StrawberryField
     from strawberry.strawberry_type import StrawberryType
     from strawberry.types import ExecutionResult
+    from strawberry.types.enum import EnumDefinition
     from strawberry.union import StrawberryUnion
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {

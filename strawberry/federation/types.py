@@ -1,7 +1,7 @@
 from enum import Enum
 
 from strawberry.custom_scalar import scalar
-from strawberry.enum import enum
+from strawberry.types.enum import enum
 
 FieldSet = scalar(str, name="_FieldSet")
 

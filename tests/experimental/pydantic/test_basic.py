@@ -7,10 +7,10 @@ import pydantic
 import pytest
 
 import strawberry
-from strawberry.enum import EnumDefinition
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.schema_directive import Location
 from strawberry.strawberry_type import StrawberryList, StrawberryOptional
+from strawberry.types.enum import EnumDefinition
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.union import StrawberryUnion
 

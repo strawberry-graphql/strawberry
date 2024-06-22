@@ -5,7 +5,6 @@ from typing_extensions import Protocol
 
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
-from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.lazy_type import LazyType
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.strawberry_type import (
@@ -13,6 +12,7 @@ from strawberry.strawberry_type import (
     StrawberryOptional,
     has_object_definition,
 )
+from strawberry.types.enum import EnumDefinition, EnumValue
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case

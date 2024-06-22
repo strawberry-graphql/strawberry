@@ -13,9 +13,8 @@ from typing import (
 )
 from typing_extensions import Annotated, Doc
 
+from strawberry.exceptions import ObjectIsNotAnEnumError
 from strawberry.strawberry_type import StrawberryType
-
-from .exceptions import ObjectIsNotAnEnumError
 
 
 @dataclasses.dataclass

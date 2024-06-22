@@ -5,7 +5,6 @@ import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.enum import EnumDefinition
 from strawberry.field import StrawberryField
 from strawberry.strawberry_type import (
     StrawberryList,
@@ -14,6 +13,7 @@ from strawberry.strawberry_type import (
     get_object_definition,
     has_object_definition,
 )
+from strawberry.types.enum import EnumDefinition
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.union import StrawberryUnion
 

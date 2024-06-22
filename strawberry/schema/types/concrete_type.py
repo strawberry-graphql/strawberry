@@ -7,7 +7,7 @@ from graphql import GraphQLField, GraphQLInputField, GraphQLType
 
 if TYPE_CHECKING:
     from strawberry.custom_scalar import ScalarDefinition
-    from strawberry.enum import EnumDefinition
+    from strawberry.types.enum import EnumDefinition
     from strawberry.types.types import StrawberryObjectDefinition
     from strawberry.union import StrawberryUnion
 

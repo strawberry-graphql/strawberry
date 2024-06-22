@@ -11,8 +11,8 @@ from typing import (
     overload,
 )
 
-from strawberry.enum import _process_enum
-from strawberry.enum import enum_value as base_enum_value
+from strawberry.types.enum import _process_enum
+from strawberry.types.enum import enum_value as base_enum_value
 
 if TYPE_CHECKING:
     from strawberry.enum import EnumType, EnumValueDefinition

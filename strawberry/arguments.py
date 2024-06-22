@@ -16,13 +16,13 @@ from typing import (
 from typing_extensions import Annotated, Doc, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType, StrawberryLazyReference
 from strawberry.strawberry_type import (
     StrawberryList,
     StrawberryOptional,
     has_object_definition,
 )
+from strawberry.types.enum import EnumDefinition
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar

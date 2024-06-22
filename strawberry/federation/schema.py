@@ -39,11 +39,11 @@ if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
 
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-    from strawberry.enum import EnumDefinition
     from strawberry.extensions import SchemaExtension
     from strawberry.federation.schema_directives import ComposeDirective
     from strawberry.schema.config import StrawberryConfig
     from strawberry.schema_directive import StrawberrySchemaDirective
+    from strawberry.types.enum import EnumDefinition
 
 
 FederationAny = scalar(NewType("_Any", object), name="_Any")  # type: ignore

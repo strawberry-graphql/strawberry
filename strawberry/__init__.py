@@ -8,7 +8,6 @@ from . import experimental, federation, relay
 from .arguments import argument
 from .custom_scalar import scalar
 from .directive import directive, directive_field
-from .enum import enum, enum_value
 from .field import field
 from .lazy_type import LazyType, lazy
 from .mutation import mutation, subscription
@@ -20,6 +19,7 @@ from .scalars import ID
 from .schema import Schema
 from .schema_directive import schema_directive
 from .types.auto import auto
+from .types.enum import enum, enum_value
 from .types.info import Info
 from .union import union
 from .unset import UNSET
