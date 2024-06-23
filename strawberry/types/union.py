@@ -252,11 +252,17 @@ def union(
 
     Example usages:
 
-    >>> @strawberry.type
-    ... class A: ...
-    >>> @strawberry.type
-    ... class B: ...
-    >>> Annotated[A | B, strawberry.union("Name")]
+    ```python
+    import strawberry
+    from typing import Annotated
+
+    @strawberry.type
+    class A: ...
+
+    @strawberry.type
+    class B: ...
+
+    MyUnion = Annotated[A | B, strawberry.union("Name")]
     """
 
     if types is None:

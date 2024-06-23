@@ -13,7 +13,7 @@ from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.strawberry_type import StrawberryType
 from strawberry.types.enum import EnumDefinition, EnumValue
 from strawberry.types.types import StrawberryObjectDefinition
-from strawberry.union import StrawberryUnion
+from strawberry.types.union import StrawberryUnion
 
 
 class AppendsNameConverter(NameConverter):

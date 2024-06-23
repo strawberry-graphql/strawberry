@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from strawberry.types.enum import EnumDefinition
     from strawberry.types.graphql import OperationType
     from strawberry.types.types import StrawberryObjectDefinition
-    from strawberry.union import StrawberryUnion
+    from strawberry.types.union import StrawberryUnion
 
     from .config import StrawberryConfig
 

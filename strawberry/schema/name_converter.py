@@ -14,7 +14,7 @@ from strawberry.strawberry_type import (
 )
 from strawberry.types.enum import EnumDefinition, EnumValue
 from strawberry.types.types import StrawberryObjectDefinition
-from strawberry.union import StrawberryUnion
+from strawberry.types.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 from strawberry.utils.typing import eval_type
 

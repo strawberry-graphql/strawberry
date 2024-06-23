@@ -53,7 +53,7 @@ from strawberry.strawberry_type import (
 )
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.types import StrawberryObjectDefinition
-from strawberry.union import StrawberryUnion
+from strawberry.types.union import StrawberryUnion
 from strawberry.unset import UNSET
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 

@@ -11,7 +11,7 @@ from strawberry.strawberry_type import (
     StrawberryTypeVar,
     get_object_definition,
 )
-from strawberry.union import StrawberryUnion
+from strawberry.types.union import StrawberryUnion
 
 T = TypeVar("T")
 

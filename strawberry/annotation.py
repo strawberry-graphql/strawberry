@@ -39,7 +39,7 @@ from strawberry.utils.typing import eval_type, is_generic, is_type_var
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
     from strawberry.strawberry_type import StrawberryType
-    from strawberry.union import StrawberryUnion
+    from strawberry.types.union import StrawberryUnion
 
 
 ASYNC_TYPES = (
@@ -226,7 +226,7 @@ class StrawberryAnnotation:
 
     def create_union(self, evaled_type: Type[Any], args: list[Any]) -> StrawberryUnion:
         # Prevent import cycles
-        from strawberry.union import StrawberryUnion
+        from strawberry.types.union import StrawberryUnion
 
         # TODO: Deal with Forward References/origin
         if isinstance(evaled_type, StrawberryUnion):
@@ -318,7 +318,7 @@ class StrawberryAnnotation:
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:
         # Prevent import cycles
-        from strawberry.union import StrawberryUnion
+        from strawberry.types.union import StrawberryUnion
 
         if isinstance(evaled_type, EnumDefinition):
             return True
@@ -363,7 +363,7 @@ class StrawberryAnnotation:
         if annotation_origin is typing.Union:
             return True
 
-        from strawberry.union import StrawberryUnion
+        from strawberry.types.union import StrawberryUnion
 
         return any(isinstance(arg, StrawberryUnion) for arg in args)
 

@@ -68,7 +68,7 @@ from strawberry.types.enum import EnumDefinition
 from strawberry.types.info import Info
 from strawberry.types.private import is_private
 from strawberry.types.types import StrawberryObjectDefinition
-from strawberry.union import StrawberryUnion
+from strawberry.types.union import StrawberryUnion
 from strawberry.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
 

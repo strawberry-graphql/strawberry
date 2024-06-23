@@ -10,7 +10,7 @@ from strawberry.exceptions.utils.source_finder import SourceFinder
 from .exception import StrawberryException
 
 if TYPE_CHECKING:
-    from strawberry.union import StrawberryUnion
+    from strawberry.types.union import StrawberryUnion
 
     from .exception_source import ExceptionSource
 

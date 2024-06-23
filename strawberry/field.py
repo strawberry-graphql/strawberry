@@ -30,7 +30,7 @@ from strawberry.strawberry_type import (
     WithStrawberryObjectDefinition,
     has_object_definition,
 )
-from strawberry.union import StrawberryUnion
+from strawberry.types.union import StrawberryUnion
 
 from .types.fields.resolver import StrawberryResolver
 

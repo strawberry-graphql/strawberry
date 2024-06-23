@@ -15,7 +15,7 @@ from strawberry.strawberry_type import (
 )
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.types import StrawberryObjectDefinition
-from strawberry.union import StrawberryUnion
+from strawberry.types.union import StrawberryUnion
 
 
 def test_basic_generic():

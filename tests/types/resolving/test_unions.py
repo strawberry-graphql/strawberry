@@ -8,7 +8,7 @@ import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidUnionTypeError
 from strawberry.strawberry_type import get_object_definition
-from strawberry.union import StrawberryUnion, union
+from strawberry.types.union import StrawberryUnion, union
 
 
 def test_python_union():

@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from strawberry.custom_scalar import ScalarDefinition
     from strawberry.types.enum import EnumDefinition
     from strawberry.types.types import StrawberryObjectDefinition
-    from strawberry.union import StrawberryUnion
+    from strawberry.types.union import StrawberryUnion
 
 Field = Union[GraphQLInputField, GraphQLField]
 

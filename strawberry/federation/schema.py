@@ -30,7 +30,7 @@ from strawberry.strawberry_type import (
 )
 from strawberry.types.info import Info
 from strawberry.types.types import StrawberryObjectDefinition
-from strawberry.union import StrawberryUnion
+from strawberry.types.union import StrawberryUnion
 from strawberry.utils.inspect import get_func_args
 
 from .schema_directive import StrawberryFederationSchemaDirective

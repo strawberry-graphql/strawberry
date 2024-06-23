@@ -9,7 +9,7 @@ from strawberry.lazy_type import LazyType
 from strawberry.schema.config import StrawberryConfig
 from strawberry.strawberry_type import StrawberryList, StrawberryOptional
 from strawberry.types.enum import EnumDefinition
-from strawberry.union import StrawberryUnion
+from strawberry.types.union import StrawberryUnion
 
 T = TypeVar("T")
 K = TypeVar("K")

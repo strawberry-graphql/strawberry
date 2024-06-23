@@ -60,7 +60,7 @@ if TYPE_CHECKING:
     from strawberry.strawberry_type import StrawberryType
     from strawberry.types import ExecutionResult
     from strawberry.types.enum import EnumDefinition
-    from strawberry.union import StrawberryUnion
+    from strawberry.types.union import StrawberryUnion
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.QUERY,

@@ -21,7 +21,7 @@ from .types.auto import auto
 from .types.enum import enum, enum_value
 from .types.info import Info
 from .types.private import Private
-from .union import union
+from .types.union import union
 from .unset import UNSET
 
 __all__ = [

@@ -10,7 +10,7 @@ from strawberry.strawberry_type import (
     has_object_definition,
 )
 from strawberry.types.enum import EnumDefinition
-from strawberry.union import StrawberryUnion
+from strawberry.types.union import StrawberryUnion
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField

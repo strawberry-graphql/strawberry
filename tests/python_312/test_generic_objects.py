@@ -14,7 +14,7 @@ from strawberry.strawberry_type import (
     StrawberryTypeVar,
     get_object_definition,
 )
-from strawberry.union import StrawberryUnion
+from strawberry.types.union import StrawberryUnion
 
 pytestmark = pytest.mark.skipif(
     sys.version_info < (3, 12), reason="These are tests for Python 3.12+"

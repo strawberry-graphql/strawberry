@@ -1,7 +1,7 @@
 from typing import Any, Collection, Iterable, Optional, Type
 
-from strawberry.union import StrawberryUnion
-from strawberry.union import union as base_union
+from strawberry.types.union import StrawberryUnion
+from strawberry.types.union import union as base_union
 
 
 def union(
