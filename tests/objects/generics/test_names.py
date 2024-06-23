@@ -5,10 +5,10 @@ from typing_extensions import Annotated
 import pytest
 
 import strawberry
-from strawberry.lazy_type import LazyType
 from strawberry.schema.config import StrawberryConfig
 from strawberry.strawberry_type import StrawberryList, StrawberryOptional
 from strawberry.types.enum import EnumDefinition
+from strawberry.types.lazy_type import LazyType
 from strawberry.types.union import StrawberryUnion
 
 T = TypeVar("T")

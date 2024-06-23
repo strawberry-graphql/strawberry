@@ -259,7 +259,7 @@ def _get_namespace_from_ast(
     globalns: Optional[Dict] = None,
     localns: Optional[Dict] = None,
 ) -> Dict[str, Type]:
-    from strawberry.lazy_type import StrawberryLazyReference
+    from strawberry.types.lazy_type import StrawberryLazyReference
 
     extra = {}
 
@@ -328,8 +328,8 @@ def eval_type(
     localns: Optional[Dict] = None,
 ) -> Type:
     """Evaluates a type, resolving forward references."""
-    from strawberry.lazy_type import StrawberryLazyReference
     from strawberry.types.auto import StrawberryAuto
+    from strawberry.types.lazy_type import StrawberryLazyReference
     from strawberry.types.private import StrawberryPrivate
 
     globalns = globalns or {}

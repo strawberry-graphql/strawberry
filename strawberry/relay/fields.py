@@ -36,13 +36,13 @@ from strawberry.extensions.field_extension import (
     SyncExtensionResolver,
 )
 from strawberry.field import _RESOLVER_TYPE, StrawberryField, field
-from strawberry.lazy_type import LazyType
 from strawberry.relay.exceptions import (
     RelayWrongAnnotationError,
     RelayWrongResolverAnnotationError,
 )
 from strawberry.strawberry_type import StrawberryList, StrawberryOptional
 from strawberry.types.fields.resolver import StrawberryResolver
+from strawberry.types.lazy_type import LazyType
 from strawberry.utils.aio import asyncgen_to_list
 from strawberry.utils.typing import eval_type, is_generic_alias
 

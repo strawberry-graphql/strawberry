@@ -9,7 +9,7 @@ import pytest
 
 import strawberry
 from strawberry.exceptions import InvalidUnionTypeError
-from strawberry.lazy_type import lazy
+from strawberry.types.lazy_type import lazy
 
 
 def test_union_as_field():

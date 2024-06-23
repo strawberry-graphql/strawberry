@@ -31,12 +31,12 @@ from strawberry.exceptions import (
     WrongReturnTypeForUnion,
 )
 from strawberry.exceptions.handler import should_use_rich_exceptions
-from strawberry.lazy_type import LazyType
 from strawberry.strawberry_type import (
     StrawberryOptional,
     StrawberryType,
     has_object_definition,
 )
+from strawberry.types.lazy_type import LazyType
 
 if TYPE_CHECKING:
     from graphql import (
