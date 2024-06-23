@@ -457,7 +457,7 @@ def interface(
 
     Parameters:
         cls: The class we want to create a GraphQL interface from
-        name: THe name of the GraphQL interface
+        name: The name of the GraphQL interface
         description: The description of the GraphQL interface
         directives: The directives of the GraphQL interface
     """
