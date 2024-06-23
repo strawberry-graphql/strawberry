@@ -10,15 +10,19 @@ class StrawberryPrivate: ...
 T = TypeVar("T")
 
 Private = Annotated[T, StrawberryPrivate()]
-Private.__doc__ = """Represents a field that won't be exposed in the GraphQL schema
+"""Represents a field that won't be exposed in the GraphQL schema
 
 Example:
 
->>> import strawberry
->>> @strawberry.type
-... class User:
-...     name: str
-...     age: strawberry.Private[int]
+```python
+import strawberry
+
+
+@strawberry.type
+class User:
+    name: str
+    age: strawberry.Private[int]
+```
 """
 
 
