@@ -16,7 +16,7 @@ from typing import (
 )
 
 from strawberry.field import field as base_field
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
 
 if TYPE_CHECKING:
     from typing_extensions import Literal

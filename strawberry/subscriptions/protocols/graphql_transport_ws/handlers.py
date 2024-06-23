@@ -30,7 +30,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessagePayload,
 )
 from strawberry.types.graphql import OperationType
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.operation import get_operation_type
 

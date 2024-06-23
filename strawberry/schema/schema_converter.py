@@ -69,7 +69,7 @@ from strawberry.types.lazy_type import LazyType
 from strawberry.types.private import is_private
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.types.union import StrawberryUnion
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
 
 from ..extensions.field_extension import build_field_extension_resolvers

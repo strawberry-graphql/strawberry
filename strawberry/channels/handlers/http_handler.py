@@ -25,7 +25,7 @@ from strawberry.http.sync_base_view import SyncBaseHTTPView, SyncHTTPRequestAdap
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.types import FormData
 from strawberry.http.typevars import Context, RootValue
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
 
 from .base import ChannelsConsumer
 

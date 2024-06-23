@@ -11,7 +11,7 @@ from strawberry.exceptions import UnsupportedTypeError
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types.lazy_type import LazyType
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
 
 
 def test_simple_types():

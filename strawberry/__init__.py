@@ -22,7 +22,7 @@ from .types.info import Info
 from .types.lazy_type import LazyType, lazy
 from .types.private import Private
 from .types.union import union
-from .unset import UNSET
+from .types.unset import UNSET
 
 __all__ = [
     "BasePermission",

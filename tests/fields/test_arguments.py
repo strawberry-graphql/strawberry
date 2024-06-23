@@ -489,7 +489,7 @@ def test_unset_deprecation_warning():
 
 def test_deprecated_unset():
     with pytest.deprecated_call():
-        from strawberry.unset import is_unset
+        from strawberry.types.unset import is_unset
 
     with warnings.catch_warnings(record=False):
         assert is_unset(UNSET)

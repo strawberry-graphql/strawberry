@@ -23,11 +23,11 @@ from strawberry.strawberry_type import (
 )
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.lazy_type import LazyType, StrawberryLazyReference
+from strawberry.types.unset import UNSET as _deprecated_UNSET
+from strawberry.types.unset import _deprecated_is_unset  # noqa # type: ignore
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
-from .unset import UNSET as _deprecated_UNSET
-from .unset import _deprecated_is_unset  # noqa # type: ignore
 
 if TYPE_CHECKING:
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper

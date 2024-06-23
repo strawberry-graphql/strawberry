@@ -13,7 +13,7 @@ from strawberry.types.fields.resolver import (
     ReservedType,
     StrawberryResolver,
 )
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
 
 if TYPE_CHECKING:
     import inspect

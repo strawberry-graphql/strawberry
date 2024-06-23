@@ -15,7 +15,7 @@ from typing_extensions import dataclass_transform
 from strawberry.field import StrawberryField
 from strawberry.field import field as base_field
 from strawberry.object_type import type as base_type
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
 
 from .field import field
 

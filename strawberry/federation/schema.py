@@ -209,7 +209,8 @@ class Schema(BaseSchema):
     def _remove_resolvable_field(self) -> None:
         # this might be removed when we remove support for federation 1
         # or when we improve how we print the directives
-        from ..unset import UNSET
+        from strawberry.types.unset import UNSET
+
         from .schema_directives import Key
 
         for directive in self.schema_directives_in_use:

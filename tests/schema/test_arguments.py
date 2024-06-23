@@ -4,7 +4,7 @@ from typing import Optional
 from typing_extensions import Annotated
 
 import strawberry
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
 
 
 def test_argument_descriptions():
