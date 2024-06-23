@@ -56,7 +56,6 @@ from strawberry.exceptions import (
 )
 from strawberry.field import UNRESOLVED
 from strawberry.lazy_type import LazyType
-from strawberry.private import is_private
 from strawberry.schema.types.scalar import _make_scalar_type
 from strawberry.strawberry_type import (
     StrawberryList,
@@ -67,6 +66,7 @@ from strawberry.strawberry_type import (
 )
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.info import Info
+from strawberry.types.private import is_private
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.unset import UNSET

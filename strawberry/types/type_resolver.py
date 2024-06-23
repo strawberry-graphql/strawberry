@@ -11,8 +11,8 @@ from strawberry.exceptions import (
     PrivateStrawberryFieldError,
 )
 from strawberry.field import StrawberryField
-from strawberry.private import is_private
 from strawberry.strawberry_type import has_object_definition
+from strawberry.types.private import is_private
 from strawberry.unset import UNSET
 
 

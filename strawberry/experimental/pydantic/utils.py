@@ -25,7 +25,7 @@ from strawberry.experimental.pydantic.exceptions import (
     BothDefaultAndDefaultFactoryDefinedError,
     UnregisteredTypeException,
 )
-from strawberry.private import is_private
+from strawberry.types.private import is_private
 from strawberry.unset import UNSET
 from strawberry.utils.typing import (
     get_list_annotation,

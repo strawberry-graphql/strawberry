@@ -23,7 +23,6 @@ from typing_extensions import Annotated, Self, get_args, get_origin
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 from strawberry.lazy_type import LazyType
-from strawberry.private import is_private
 from strawberry.strawberry_type import (
     StrawberryList,
     StrawberryOptional,
@@ -32,6 +31,7 @@ from strawberry.strawberry_type import (
     has_object_definition,
 )
 from strawberry.types.enum import EnumDefinition
+from strawberry.types.private import is_private
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.unset import UNSET
 from strawberry.utils.typing import eval_type, is_generic, is_type_var
