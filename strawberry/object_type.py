@@ -431,7 +431,7 @@ def interface(
 def interface(
     cls: Optional[T] = None,
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
 ):
