@@ -429,17 +429,11 @@ def interface(
     order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def interface(
-    cls: Annotated[
-        Optional[T], Doc("The class we want to create a GraphQL interface from")
-    ] = None,
+    cls: Optional[T] = None,
     *,
-    name: Annotated[Optional[str], Doc("The name of the GraphQL interface")] = None,
-    description: Annotated[
-        Optional[str], Doc("The description of the GraphQL interface")
-    ] = None,
-    directives: Annotated[
-        Optional[Sequence[object]], Doc("The directives of the GraphQL interface")
-    ] = (),
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
 ):
     """Annotates a class as a GraphQL Interface.
 
@@ -459,6 +453,12 @@ def interface(
     @strawberry.interface(name="NodeType", description="A node type")
     class MyNode:
         id: str
+
+    Parameters:
+        cls: The class we want to create a GraphQL interface from
+        name: THe name of the GraphQL interface
+        description: The description of the GraphQL interface
+        directives: The directives of the GraphQL interface
     ```
     """
 
