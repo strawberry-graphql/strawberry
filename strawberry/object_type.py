@@ -453,13 +453,13 @@ def interface(
     @strawberry.interface(name="NodeType", description="A node type")
     class MyNode:
         id: str
+    ```
 
     Parameters:
         cls: The class we want to create a GraphQL interface from
         name: THe name of the GraphQL interface
         description: The description of the GraphQL interface
         directives: The directives of the GraphQL interface
-    ```
     """
 
     return type(  # type: ignore # not sure why mypy complains here
