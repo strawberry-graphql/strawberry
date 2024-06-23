@@ -11,7 +11,6 @@ from typing import (
     Union,
     overload,
 )
-from typing_extensions import Annotated, Doc
 
 from strawberry.exceptions import ObjectIsNotAnEnumError
 from strawberry.strawberry_type import StrawberryType
@@ -62,21 +61,21 @@ class EnumValueDefinition:
 
 
 def enum_value(
-    value: Annotated[Any, Doc("The value of the enum member")],
-    deprecation_reason: Annotated[
-        Optional[str],
-        Doc(
-            "The deprecation reason of the enum member, setting this will mark the enum member as deprecated"
-        ),
-    ] = None,
-    directives: Annotated[
-        Iterable[object], Doc("The directives to attach to the enum member")
-    ] = (),
-    description: Annotated[
-        Optional[str], Doc("The GraphQL description of the enum member")
-    ] = None,
+    value: Any,
+    deprecation_reason: Optional[str] = None,
+    directives: Iterable[object] = (),
+    description: Optional[str] = None,
 ) -> EnumValueDefinition:
     """Function to customise an enum value, for example to add a description or deprecation reason.
+
+    Parameters:
+        value: The value of the enum member
+        deprecation_reason: The deprecation reason of the enum member, setting this will mark the enum member as deprecated
+        directives: The directives to attach to the enum member
+        description: The GraphQL description of the enum member
+
+    Returns:
+        An EnumValueDefinition object that can be used to customise an enum member
 
     Example:
 
@@ -175,21 +174,25 @@ def enum(
 
 
 def enum(
-    cls: Annotated[Optional[EnumType], Doc("The enum class to register")] = None,
+    cls: Optional[EnumType] = None,
     *,
-    name: Annotated[Optional[str], Doc("The GraphQL name of the enum")] = None,
-    description: Annotated[
-        Optional[str], Doc("The GraphQL description of the enum")
-    ] = None,
-    directives: Annotated[
-        Iterable[object], Doc("The directives to attach to the enum")
-    ] = (),
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Iterable[object] = (),
 ) -> Union[EnumType, Callable[[EnumType], EnumType]]:
     """Annotates an Enum class a GraphQL enum.
 
     GraphQL enums only have names, while Python enums have names and values,
     Strawberry will use the names of the Python enum as the names of the
     GraphQL enum values.
+
+    Parameters:
+        name: The name of the GraphQL enum
+        description: The description of the GraphQL enum
+        directives: The directives to attach to the GraphQL enum
+
+    Returns:
+        The decorated Enum class
 
     Example:
 

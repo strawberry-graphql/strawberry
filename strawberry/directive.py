@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, Callable, Generic, List, Optional, TypeVar
-from typing_extensions import Annotated, Doc
+from typing_extensions import Annotated
 
 from graphql import DirectiveLocation
 
@@ -23,10 +23,17 @@ if TYPE_CHECKING:
 
 # TODO: should this be directive argument?
 def directive_field(
-    name: Annotated[str, Doc("The GraphQL name of the directive argument")],
-    default: Annotated[object, Doc("The default value of the argument")] = UNSET,
+    name: str,
+    default: object = UNSET,
 ) -> Any:
     """Function to add metadata to a directive argument, like the GraphQL name.o
+
+    Parameters:
+        name: The GraphQL name of the directive argument
+        default: The default value of the argument
+
+    Returns:
+        A StrawberryField object that can be used to customise a directive argument
 
     Example:
     ```python
@@ -88,15 +95,19 @@ class StrawberryDirective(Generic[T]):
 
 def directive(
     *,
-    locations: Annotated[
-        List[DirectiveLocation], Doc("The locations where the directive can be used")
-    ],
-    description: Annotated[
-        Optional[str], Doc("The GraphQL description of the directive")
-    ] = None,
-    name: Annotated[Optional[str], Doc("The GraphQL name of the directive")] = None,
+    locations: List[DirectiveLocation],
+    description: Optional[str] = None,
+    name: Optional[str] = None,
 ) -> Callable[[Callable[..., T]], StrawberryDirective[T]]:
     """Decorator to create a GraphQL operation directive.
+
+    Parameters:
+        locations: The locations where the directive can be used
+        description: The GraphQL description of the directive
+        name: The GraphQL name of the directive
+
+    Returns:
+        A StrawberryDirective object that can be used to customise a directive
 
     Example:
     ```python

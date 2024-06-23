@@ -13,7 +13,7 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import Annotated, Doc, get_args, get_origin
+from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.strawberry_type import (
@@ -232,27 +232,23 @@ def convert_arguments(
 
 
 def argument(
-    description: Annotated[
-        Optional[str], Doc("The GraphQL description of the argument")
-    ] = None,
-    name: Annotated[Optional[str], Doc("The GraphQL name of the argument")] = None,
-    deprecation_reason: Annotated[
-        Optional[str],
-        Doc(
-            "The reason why this argument is deprecated, setting this will mark the argument as deprecated"
-        ),
-    ] = None,
-    directives: Annotated[
-        Iterable[object], Doc("The directives to attach to the argument")
-    ] = (),
-    metadata: Annotated[
-        Optional[Mapping[Any, Any]],
-        Doc(
-            "Metadata to attach to the argument, this can be used to store custom data that can be used by custom logic or plugins"
-        ),
-    ] = None,
+    description: Optional[str] = None,
+    name: Optional[str] = None,
+    deprecation_reason: Optional[str] = None,
+    directives: Iterable[object] = (),
+    metadata: Optional[Mapping[Any, Any]] = None,
 ) -> StrawberryArgumentAnnotation:
     """Function to add metadata to an argument, like a description or deprecation reason.
+
+    Parameters:
+        description: The GraphQL description of the argument
+        name: The GraphQL name of the argument
+        deprecation_reason: The reason why this argument is deprecated, setting this will mark the argument as deprecated
+        directives: The directives to attach to the argument
+        metadata: Metadata to attach to the argument, this can be used to store custom data that can be used by custom logic or plugins
+
+    Returns:
+        A StrawberryArgumentAnnotation object that can be used to customise an argument
 
     Example:
 

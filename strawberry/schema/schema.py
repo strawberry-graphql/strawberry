@@ -4,7 +4,6 @@ import warnings
 from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
-    Annotated,
     Any,
     AsyncIterator,
     Dict,
@@ -15,7 +14,6 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import Doc
 
 from graphql import (
     GraphQLBoolean,
@@ -75,6 +73,18 @@ class Schema(BaseSchema):
 
     This class allows the creation of a GraphQL schema by specifying the types for queries, mutations, and subscriptions, along with various configuration options such as directives, extensions, and scalar overrides.
 
+    Paramaters:
+        query: The entry point for queries
+        mutation: The entry point for mutations
+        subscription: The entry point for subscriptions
+        directives: A list of operation directives that clients can use, `@include`, `@skip` are included by default
+        types: A list of additional types that will be included in the schema
+        extensions: A list of Strawberry extensions
+        execution_context_class: The execution context class
+        config: The configuration for the schema
+        scalar_overrides: A dictionary of overrides for scalars
+        schema_directives: A list of schema directives for the schema
+
     Example:
 
     ```python
@@ -94,44 +104,18 @@ class Schema(BaseSchema):
         self,
         # TODO: can we make sure we only allow to pass
         # something that has been decorated?
-        query: Annotated[Type, Doc("The entry point for queries")],
-        mutation: Optional[
-            Annotated[Type, Doc("The entry point for mutations")]
-        ] = None,
-        subscription: Optional[
-            Annotated[Type, Doc("The entry point for subscriptions")]
-        ] = None,
-        directives: Annotated[
-            Iterable[StrawberryDirective],
-            Doc(
-                "A list of operation directives that clients can use, `@include`, `@skip` are included by default"
-            ),
-        ] = (),
-        types: Annotated[
-            Iterable[Union[Type, StrawberryType]],
-            Doc("A list of additional types that will be included in the schema"),
-        ] = (),
-        extensions: Annotated[
-            Iterable[Union[Type[SchemaExtension], SchemaExtension]],
-            Doc("A list of Strawberry extensions"),
-        ] = (),
-        execution_context_class: Optional[
-            Annotated[Type[GraphQLExecutionContext], Doc("The execution context class")]
-        ] = None,
-        config: Optional[
-            Annotated[StrawberryConfig, Doc("The configuration for the schema")]
-        ] = None,
+        query: Type,
+        mutation: Optional[Type] = None,
+        subscription: Optional[Type] = None,
+        directives: Iterable[StrawberryDirective] = (),
+        types: Iterable[Union[Type, StrawberryType]] = (),
+        extensions: Iterable[Union[Type[SchemaExtension], SchemaExtension]] = (),
+        execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+        config: Optional[StrawberryConfig] = None,
         scalar_overrides: Optional[
-            Annotated[
-                Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]],
-                # TODO: maybe add an example of this
-                Doc("A dictionary of overrides for scalars"),
-            ]
+            Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]],
         ] = None,
-        schema_directives: Annotated[
-            Iterable[object],
-            Doc("A list of schema directives for the schema"),
-        ] = (),
+        schema_directives: Iterable[object] = (),
     ) -> None:
         self.query = query
         self.mutation = mutation

@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
-    Annotated,
     Any,
     ForwardRef,
     Generic,
@@ -16,7 +15,6 @@ from typing import (
     TypeVar,
     cast,
 )
-from typing_extensions import Doc
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -122,15 +120,16 @@ class StrawberryLazyReference:
         return hash((self.__class__, self.module, self.package))
 
 
-def lazy(
-    module_path: Annotated[
-        str,
-        Doc(
-            "The path to the module containing the type, supports relative paths starting with `.`"
-        ),
-    ],
-) -> StrawberryLazyReference:
+def lazy(module_path: str) -> StrawberryLazyReference:
     """Creates a lazy reference to a type in another module.
+
+    Parameters:
+        module_path: The path to the module containing the type, supports relative paths
+            starting with `.`
+
+    Returns:
+        A `StrawberryLazyReference` object that can be used to reference a type in another
+        module.
 
     This is useful when you have circular dependencies between types.
 
