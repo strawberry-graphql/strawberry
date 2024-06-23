@@ -21,7 +21,6 @@ from typing import (
     cast,
     overload,
 )
-from typing_extensions import Annotated, Doc
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidArgumentTypeError, InvalidDefaultFactoryError
@@ -519,54 +518,43 @@ def field(
 
 
 def field(
-    resolver: Annotated[
-        Optional[_RESOLVER_TYPE[Any]], Doc("Resolver for the field")
-    ] = None,
+    resolver: Optional[_RESOLVER_TYPE[Any]] = None,
     *,
-    name: Annotated[Optional[str], Doc("The GraphQL name of the field")] = None,
-    is_subscription: Annotated[
-        bool,
-        Doc(
-            "Whether the field is a subscription field, used internally by Strawberry, you can use `strandberry.subscription` instead"
-        ),
-    ] = False,
-    description: Annotated[
-        Optional[str], Doc("The GraphQL description of the field")
-    ] = None,
-    permission_classes: Annotated[
-        Optional[List[Type[BasePermission]]],
-        Doc("The permission classes required to access the field"),
-    ] = None,
-    deprecation_reason: Annotated[
-        Optional[str], Doc("The deprecation reason for the field")
-    ] = None,
-    default: Annotated[
-        Any, Doc("The default value for the field")
-    ] = dataclasses.MISSING,
-    default_factory: Annotated[
-        Union[Callable[..., object], object], Doc("The default factory for the field")
-    ] = dataclasses.MISSING,
-    metadata: Annotated[
-        Optional[Mapping[Any, Any]], Doc("The metadata for the field")
-    ] = None,
-    directives: Annotated[
-        Optional[Sequence[object]], Doc("The directives for the field")
-    ] = (),
-    extensions: Annotated[
-        Optional[List[FieldExtension]], Doc("The extensions for the field")
-    ] = None,
-    graphql_type: Annotated[
-        Optional[Any],
-        Doc(
-            "The GraphQL type for the field, useful when you want to use a different type in the resolver than the one in the schema"
-        ),
-    ] = None,
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
+    directives: Optional[Sequence[object]] = (),
+    extensions: Optional[List[FieldExtension]] = None,
+    graphql_type: Optional[Any] = None,
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
     init: Literal[True, False, None] = None,
 ) -> Any:
     """Annotates a method or property as a GraphQL field.
+
+    Parameters:
+        resolver: The resolver for the field. This can be a function or a `StrawberryResolver`.
+        name: The GraphQL name of the field.
+        is_subscription: Whether the field is a subscription field.
+        description: The GraphQL description of the field.
+        permission_classes: The permission classes required to access the field.
+        deprecation_reason: The deprecation reason for the field.
+        default: The default value for the field.
+        default_factory: The default factory for the field.
+        metadata: The metadata for the field.
+        directives: The directives for the field.
+        extensions: The extensions for the field.
+        graphql_type: The GraphQL type for the field, useful when you want to use a different type in the resolver than the one in the schema.
+        init: This parameter is used by PyRight to determine whether this field is added in the constructor or not. It is not used to change any behavior at the moment.
+
+    Returns:
+        The field.
 
     This is normally used inside a type declaration:
 
