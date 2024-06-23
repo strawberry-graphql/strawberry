@@ -26,8 +26,8 @@ class InvalidUnionTypeError(StrawberryException):
         invalid_type: object,
         union_definition: Optional[StrawberryUnion] = None,
     ) -> None:
-        from strawberry.custom_scalar import ScalarWrapper
         from strawberry.strawberry_type import StrawberryList
+        from strawberry.types.scalar import ScalarWrapper
 
         self.union_name = union_name
         self.invalid_type = invalid_type

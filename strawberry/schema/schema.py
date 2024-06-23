@@ -53,13 +53,13 @@ if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
     from graphql import ExecutionResult as GraphQLExecutionResult
 
-    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.directive import StrawberryDirective
     from strawberry.extensions import SchemaExtension
     from strawberry.field import StrawberryField
     from strawberry.strawberry_type import StrawberryType
     from strawberry.types import ExecutionResult
     from strawberry.types.enum import EnumDefinition
+    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
     from strawberry.types.union import StrawberryUnion
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {

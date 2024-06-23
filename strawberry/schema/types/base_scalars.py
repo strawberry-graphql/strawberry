@@ -7,7 +7,7 @@ from typing import Callable
 import dateutil.parser
 from graphql import GraphQLError
 
-from strawberry.custom_scalar import scalar
+from strawberry.types.scalar import scalar
 
 
 def wrap_parser(parser: Callable, type_: str) -> Callable:

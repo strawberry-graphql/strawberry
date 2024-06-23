@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, Optional, Union, cast
 from typing_extensions import Protocol
 
-from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.strawberry_type import (
@@ -13,6 +12,7 @@ from strawberry.strawberry_type import (
 )
 from strawberry.types.enum import EnumDefinition, EnumValue
 from strawberry.types.lazy_type import LazyType
+from strawberry.types.scalar import ScalarDefinition
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.types.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case

@@ -20,7 +20,6 @@ from typing import (
 from graphql import GraphQLError
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.custom_scalar import scalar
 from strawberry.printer import print_schema
 from strawberry.schema import Schema as BaseSchema
 from strawberry.strawberry_type import (
@@ -29,6 +28,7 @@ from strawberry.strawberry_type import (
     get_object_definition,
 )
 from strawberry.types.info import Info
+from strawberry.types.scalar import scalar
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.types.union import StrawberryUnion
 from strawberry.utils.inspect import get_func_args
@@ -38,12 +38,12 @@ from .schema_directive import StrawberryFederationSchemaDirective
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
 
-    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.extensions import SchemaExtension
     from strawberry.federation.schema_directives import ComposeDirective
     from strawberry.schema.config import StrawberryConfig
     from strawberry.schema_directive import StrawberrySchemaDirective
     from strawberry.types.enum import EnumDefinition
+    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
 FederationAny = scalar(NewType("_Any", object), name="_Any")  # type: ignore

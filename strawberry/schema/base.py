@@ -10,12 +10,12 @@ from strawberry.utils.logging import StrawberryLogger
 if TYPE_CHECKING:
     from graphql import GraphQLError
 
-    from strawberry.custom_scalar import ScalarDefinition
     from strawberry.directive import StrawberryDirective
     from strawberry.schema.schema_converter import GraphQLCoreConverter
     from strawberry.types import ExecutionContext, ExecutionResult
     from strawberry.types.enum import EnumDefinition
     from strawberry.types.graphql import OperationType
+    from strawberry.types.scalar import ScalarDefinition
     from strawberry.types.types import StrawberryObjectDefinition
     from strawberry.types.union import StrawberryUnion
 

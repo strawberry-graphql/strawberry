@@ -18,8 +18,7 @@ from typing_extensions import Annotated, Doc
 
 from strawberry.exceptions import InvalidUnionTypeError
 from strawberry.strawberry_type import StrawberryType
-
-from .utils.str_converters import to_camel_case
+from strawberry.utils.str_converters import to_camel_case
 
 if TYPE_CHECKING:
     from graphql import GraphQLScalarType

@@ -12,7 +12,7 @@ from strawberry.strawberry_type import StrawberryType, has_object_definition
 if TYPE_CHECKING:
     from typing_extensions import TypeGuard
 
-    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
 def is_input_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:

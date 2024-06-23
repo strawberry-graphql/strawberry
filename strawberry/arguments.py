@@ -30,9 +30,9 @@ from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
 
 if TYPE_CHECKING:
-    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.schema.config import StrawberryConfig
     from strawberry.strawberry_type import StrawberryType
+    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
 DEPRECATED_NAMES: Dict[str, str] = {

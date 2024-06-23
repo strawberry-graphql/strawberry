@@ -4,7 +4,6 @@ from typing import Generic, List, Optional, TypeVar, Union
 
 import strawberry
 from strawberry.arguments import StrawberryArgument
-from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
 from strawberry.field import StrawberryField
 from strawberry.schema.config import StrawberryConfig
@@ -12,6 +11,7 @@ from strawberry.schema.name_converter import NameConverter
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.strawberry_type import StrawberryType
 from strawberry.types.enum import EnumDefinition, EnumValue
+from strawberry.types.scalar import ScalarDefinition
 from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.types.union import StrawberryUnion
 

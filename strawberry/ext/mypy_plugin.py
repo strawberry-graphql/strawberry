@@ -555,22 +555,22 @@ class StrawberryPlugin(Plugin):
         return None
 
     def _is_strawberry_union(self, fullname: str) -> bool:
-        return fullname == "strawberry.union.union" or fullname.endswith(
+        return fullname == "strawberry.types.union.union" or fullname.endswith(
             "strawberry.union"
         )
 
     def _is_strawberry_enum(self, fullname: str) -> bool:
-        return fullname == "strawberry.enum.enum" or fullname.endswith(
+        return fullname == "strawberry.types.enum.enum" or fullname.endswith(
             "strawberry.enum"
         )
 
     def _is_strawberry_scalar(self, fullname: str) -> bool:
-        return fullname == "strawberry.custom_scalar.scalar" or fullname.endswith(
+        return fullname == "strawberry.types.scalar.scalar" or fullname.endswith(
             "strawberry.scalar"
         )
 
     def _is_strawberry_lazy_type(self, fullname: str) -> bool:
-        return fullname == "strawberry.lazy_type.LazyType"
+        return fullname == "strawberry.types.lazy_type.LazyType"
 
     def _is_strawberry_create_type(self, fullname: str) -> bool:
         # using endswith(.create_type) is not ideal as there might be

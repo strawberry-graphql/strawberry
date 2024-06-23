@@ -6,7 +6,6 @@ specification and allow for a more natural way of defining GraphQL schemas.
 
 from . import experimental, federation, relay
 from .arguments import argument
-from .custom_scalar import scalar
 from .directive import directive, directive_field
 from .field import field
 from .mutation import mutation, subscription
@@ -21,6 +20,7 @@ from .types.enum import enum, enum_value
 from .types.info import Info
 from .types.lazy_type import LazyType, lazy
 from .types.private import Private
+from .types.scalar import scalar
 from .types.union import union
 from .types.unset import UNSET
 

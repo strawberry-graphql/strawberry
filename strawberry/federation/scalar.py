@@ -11,7 +11,7 @@ from typing import (
     overload,
 )
 
-from strawberry.custom_scalar import ScalarWrapper, _process_scalar
+from strawberry.types.scalar import ScalarWrapper, _process_scalar
 
 # in python 3.10+ NewType is a class
 if sys.version_info >= (3, 10):
