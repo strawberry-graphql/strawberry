@@ -43,7 +43,7 @@ class Book:
 def get_books():
     return [
         Book(title="The Great Gatsby"),
-    ] * 10000
+    ] * 1000
 
 
 @strawberry.type
