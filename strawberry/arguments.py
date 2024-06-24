@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import warnings
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -123,7 +124,7 @@ class StrawberryArgument:
                             arg.resolve_forward_ref(first)
                         )
 
-    @property
+    @cached_property
     def type(self) -> Union[StrawberryType, type]:
         return self.type_annotation.resolve()
 
