@@ -192,6 +192,21 @@ async def test_query_context(method: Literal["get", "post"], http_client: HttpCl
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
+async def test_query_extensions(
+    method: Literal["get", "post"], http_client: HttpClient
+):
+    response = await http_client.query(
+        method=method,
+        query='{ valueFromExtensions(key:"test") }',
+        extensions={"test": "hello"}
+    )
+    data = response.json["data"]
+
+    assert response.status_code == 200
+    assert data["valueFromExtensions"] == "hello"
+
+
+@pytest.mark.parametrize("method", ["get", "post"])
 async def test_returning_status_code(
     method: Literal["get", "post"], http_client: HttpClient
 ):
