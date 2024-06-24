@@ -32,8 +32,10 @@ from .base import (
 
 
 def generate_get_path(
-    path, query: str, variables: Optional[Dict[str, Any]] = None,
-    extensions: Optional[Dict[str, Any]] = None
+    path,
+    query: str,
+    variables: Optional[Dict[str, Any]] = None,
+    extensions: Optional[Dict[str, Any]] = None,
 ) -> str:
     body: Dict[str, Any] = {"query": query}
     if variables is not None:
@@ -174,8 +176,11 @@ class ChannelsHttpClient(HttpClient):
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
-            query=query, variables=variables, files=files, method=method,
-            extensions=extensions
+            query=query,
+            variables=variables,
+            files=files,
+            method=method,
+            extensions=extensions,
         )
 
         headers = self._get_headers(method=method, headers=headers, files=files)
@@ -190,9 +195,7 @@ class ChannelsHttpClient(HttpClient):
             endpoint_url = "/graphql"
         else:
             body = b""
-            endpoint_url = generate_get_path(
-                "/graphql", query, variables, extensions
-            )
+            endpoint_url = generate_get_path("/graphql", query, variables, extensions)
 
         return await self.request(
             url=endpoint_url, method=method, body=body, headers=headers

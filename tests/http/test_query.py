@@ -198,7 +198,7 @@ async def test_query_extensions(
     response = await http_client.query(
         method=method,
         query='{ valueFromExtensions(key:"test") }',
-        extensions={"test": "hello"}
+        extensions={"test": "hello"},
     )
     data = response.json["data"]
 
