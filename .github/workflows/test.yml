@@ -68,7 +68,7 @@ jobs:
             .nox
           key:
             ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
-            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}-3
+            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}-4
 
       - run: pip install poetry nox nox-poetry
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
