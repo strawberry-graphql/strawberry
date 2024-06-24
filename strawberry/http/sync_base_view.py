@@ -27,6 +27,7 @@ from .base import BaseView
 from .exceptions import HTTPException
 from .types import HTTPMethod, QueryParams
 from .typevars import Context, Request, Response, RootValue, SubResponse
+from ..types.context_wrapper import ContextWrapper
 
 
 class SyncHTTPRequestAdapter(abc.ABC):
@@ -125,11 +126,14 @@ class SyncBaseHTTPView(
 
         assert self.schema
 
+        context_wrapper = ContextWrapper(context=context,
+                                         extensions=request_data.extensions)
+
         return self.schema.execute_sync(
             request_data.query,
             root_value=root_value,
             variable_values=request_data.variables,
-            context_value=context,
+            context_value=context_wrapper,
             operation_name=request_data.operation_name,
             allowed_operation_types=allowed_operation_types,
         )

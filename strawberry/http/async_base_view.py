@@ -26,6 +26,7 @@ from .base import BaseView
 from .exceptions import HTTPException
 from .types import FormData, HTTPMethod, QueryParams
 from .typevars import Context, Request, Response, RootValue, SubResponse
+from ..types.context_wrapper import ContextWrapper
 
 
 class AsyncHTTPRequestAdapter(abc.ABC):
@@ -114,11 +115,14 @@ class AsyncBaseHTTPView(
 
         assert self.schema
 
+        context_wrapper = ContextWrapper(context=context,
+                                         extensions=request_data.extensions)
+
         return await self.schema.execute(
             request_data.query,
             root_value=root_value,
             variable_values=request_data.variables,
-            context_value=context,
+            context_value=context_wrapper,
             operation_name=request_data.operation_name,
             allowed_operation_types=allowed_operation_types,
         )
