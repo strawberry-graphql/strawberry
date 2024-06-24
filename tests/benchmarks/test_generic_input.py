@@ -35,7 +35,7 @@ class Book:
     @strawberry.field
     async def authors(
         self,
-        name: GraphQLFilter[str] | None = None,
+        name: Optional[GraphQLFilter[str]] = None,
     ) -> List[Author]:
         return [Author(name="F. Scott Fitzgerald")]
 
