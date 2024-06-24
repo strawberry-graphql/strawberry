@@ -22,11 +22,11 @@ from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 
+from ..types.context_wrapper import ContextWrapper
 from .base import BaseView
 from .exceptions import HTTPException
 from .types import FormData, HTTPMethod, QueryParams
 from .typevars import Context, Request, Response, RootValue, SubResponse
-from ..types.context_wrapper import ContextWrapper
 
 
 class AsyncHTTPRequestAdapter(abc.ABC):
@@ -115,8 +115,9 @@ class AsyncBaseHTTPView(
 
         assert self.schema
 
-        context_wrapper = ContextWrapper(context=context,
-                                         extensions=request_data.extensions)
+        context_wrapper = ContextWrapper(
+            context=context, extensions=request_data.extensions
+        )
 
         return await self.schema.execute(
             request_data.query,

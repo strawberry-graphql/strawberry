@@ -23,11 +23,11 @@ from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 
+from ..types.context_wrapper import ContextWrapper
 from .base import BaseView
 from .exceptions import HTTPException
 from .types import HTTPMethod, QueryParams
 from .typevars import Context, Request, Response, RootValue, SubResponse
-from ..types.context_wrapper import ContextWrapper
 
 
 class SyncHTTPRequestAdapter(abc.ABC):
@@ -126,8 +126,9 @@ class SyncBaseHTTPView(
 
         assert self.schema
 
-        context_wrapper = ContextWrapper(context=context,
-                                         extensions=request_data.extensions)
+        context_wrapper = ContextWrapper(
+            context=context, extensions=request_data.extensions
+        )
 
         return self.schema.execute_sync(
             request_data.query,
