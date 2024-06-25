@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import inspect
 import warnings
-from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -124,13 +123,12 @@ class StrawberryArgument:
                             arg.resolve_forward_ref(first)
                         )
 
-    @cached_property
+    @property
     def type(self) -> Union[StrawberryType, type]:
         return self.type_annotation.resolve()
 
     @property
     def is_graphql_generic(self) -> bool:
-        # TODO: double check this
         from strawberry.schema.compat import is_graphql_generic
 
         return is_graphql_generic(self.type)

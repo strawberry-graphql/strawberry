@@ -54,7 +54,7 @@ ASYNC_TYPES = (
 
 
 class StrawberryAnnotation:
-    __slots__ = "raw_annotation", "namespace", "__eval_cache__"
+    __slots__ = "raw_annotation", "namespace", "__eval_cache__", "_resolved"
 
     def __init__(
         self,
@@ -66,6 +66,7 @@ class StrawberryAnnotation:
         self.namespace = namespace
 
         self.__eval_cache__: Optional[Type[Any]] = None
+        self._resolved = None
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, StrawberryAnnotation):
@@ -131,6 +132,12 @@ class StrawberryAnnotation:
 
     def resolve(self) -> Union[StrawberryType, type]:
         """Return resolved (transformed) annotation."""
+        if self._resolved is None:
+            self._resolved = self._resolve()
+
+        return self._resolved
+
+    def _resolve(self) -> Union[StrawberryType, type]:
         evaled_type = cast(Any, self.evaluate())
 
         if is_private(evaled_type):
