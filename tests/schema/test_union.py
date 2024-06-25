@@ -856,3 +856,61 @@ def test_single_union():
 
     assert not result.errors
     assert result.data["something"] == {"__typename": "A", "a": 5}
+
+
+def test_union_inside_generic():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class User:
+        name: str
+        age: int
+
+    @strawberry.type
+    class ProUser:
+        name: str
+        age: float
+
+    @strawberry.type
+    class GenType(Generic[T]):
+        data: T
+
+    GeneralUser = Annotated[Union[User, ProUser], strawberry.union("GeneralUser")]
+
+    @strawberry.type
+    class Response(GenType[GeneralUser]):
+        ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> Response:
+            return Response(data=User(age=1, name="John"))
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = textwrap.dedent(
+        """
+        union GeneralUser = User | ProUser
+
+        type ProUser {
+          name: String!
+          age: Float!
+        }
+
+        type Query {
+          user: Response!
+        }
+
+        type Response {
+          data: GeneralUser!
+        }
+
+        type User {
+          name: String!
+          age: Int!
+        }
+        """
+    ).strip()
+
+    assert str(schema) == expected_schema
