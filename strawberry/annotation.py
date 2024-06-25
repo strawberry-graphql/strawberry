@@ -138,6 +138,9 @@ class StrawberryAnnotation:
         return self._resolved
 
     def _resolve(self) -> Union[StrawberryType, type]:
+        # TODO: I wonder if this resolve should be creating types?
+        # types should only be created once, in the schema converter maybe?
+        # but maybe the cache above is fine
         evaled_type = cast(Any, self.evaluate())
 
         if is_private(evaled_type):
