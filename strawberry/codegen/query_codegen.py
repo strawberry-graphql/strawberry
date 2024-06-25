@@ -33,6 +33,7 @@ from graphql import (
     ListTypeNode,
     ListValueNode,
     NamedTypeNode,
+    Node,
     NonNullTypeNode,
     NullValueNode,
     ObjectValueNode,
@@ -360,6 +361,8 @@ class QueryCodegen:
                 GraphQLFragmentType,
                 on=typename,
                 graphql_typename=typename,
+                graphql_node=fd,
+                graphql_type=query_type,
             )
 
             self._collect_types(
@@ -485,6 +488,28 @@ class QueryCodegen:
         variables, variables_type = self._convert_variable_definitions(
             operation_definition.variable_definitions, operation_name=operation_name
         )
+        if variables_type:
+            # There are multiple nodes in the `operation_definition.variable_definitions`
+            # list and collectively they are used to make the `variables_type`, so the
+            # closest node to the variable definition is the full operation definition node.
+            if variables_type.graphql_node is not None:  # pragma: no cover
+                raise ValueError(
+                    "Internal codegen error.  graphql_node should NOT be set."
+                )
+            variables_type.graphql_node = operation_definition
+
+            # There isn't actually a class in the strawberry schema that represents the
+            # variables in a query (it's _usually_ a wrapper-class around some
+            # `@strawberry.input` types that are referenced in the resolver function's
+            # arguments, however, the query variable could also be an input to some
+            # directive).  To this end, we currently just use the containing operation type
+            # (e.g. the ``Query`` or ``Mutation`` class and then we'll let consumers sort
+            # out how they want to use this metadata).
+            if variables_type.graphql_type is not None:  # pragma: no cover
+                raise ValueError(
+                    "Internal codegen error.  graphql_type should NOT be set."
+                )
+            variables_type.graphql_type = query_type
 
         return GraphQLOperation(
             operation_definition.name.value,
@@ -517,7 +542,27 @@ class QueryCodegen:
                 variable_type,
             )
 
-            type_.fields.append(GraphQLField(variable.name, None, variable_type))
+            # This field generally represents arguments to resolver functions.  e.g.:
+            #
+            # class Query:
+            #     @strawberry.field
+            #     def some_resolver(self, id: int) -> ReturnType:
+            #         ...
+            #
+            # In this case, there is no `strawberry.type` with `StrawberryField` members
+            # that represent the `id` argument to the query.  Because of that, we do not
+            # set the `strawberry_field` member of the `GraphQLField`. We could potentially
+            # also allow the `GraphQLField` to have an additional field that would hold
+            # an `inspect.Parameter` field that could be used in this case if we feel like
+            # that would be valuable to support in the future.
+            type_.fields.append(
+                GraphQLField(
+                    variable.name,
+                    None,
+                    variable_type,
+                    graphql_node=variable_definition,
+                )
+            )
             variables.append(variable)
 
         return variables, type_
@@ -582,6 +627,7 @@ class QueryCodegen:
             type_ = GraphQLObjectType(
                 strawberry_type.name,
                 [],
+                graphql_type=strawberry_type,
             )
 
             for field in strawberry_type.fields:
@@ -590,7 +636,13 @@ class QueryCodegen:
                 if field.default is not MISSING:
                     default = _py_to_graphql_value(field.default)
                 type_.fields.append(
-                    GraphQLField(field.name, None, field_type, default_value=default)
+                    GraphQLField(
+                        name=field.name,
+                        alias=None,
+                        type=field_type,
+                        default_value=default,
+                        strawberry_field=field,
+                    )
                 )
 
             self._collect_type(type_)
@@ -637,7 +689,11 @@ class QueryCodegen:
         field_type = self._get_field_type(field.type)
 
         return GraphQLField(
-            field.name, selection.alias.value if selection.alias else None, field_type
+            field.name,
+            selection.alias.value if selection.alias else None,
+            field_type,
+            graphql_node=selection,
+            strawberry_field=field,
         )
 
     def _unwrap_type(
@@ -686,10 +742,7 @@ class QueryCodegen:
         # should be pretty safe.
         if parent_type.type_var_map:
             parent_type_name = (
-                "".join(
-                    c.__name__  # type: ignore[union-attr]
-                    for c in parent_type.type_var_map.values()
-                )
+                "".join(c.__name__ for c in parent_type.type_var_map.values())  # type: ignore[union-attr]
                 + parent_type.name
             )
 
@@ -722,6 +775,8 @@ class QueryCodegen:
             selected_field.name,
             selection.alias.value if selection.alias else None,
             field_type,
+            graphql_node=selection,
+            strawberry_field=selected_field,
         )
 
     def _get_field(
@@ -775,6 +830,11 @@ class QueryCodegen:
             )
 
         current_type = graph_ql_object_type_factory(class_name)
+        if isinstance(selection, Node):
+            current_type.graphql_node = selection
+        if current_type.graphql_type is None:
+            current_type.graphql_type = parent_type
+
         fields: List[Union[GraphQLFragmentSpread, GraphQLField]] = []
 
         for sub_selection in selection_set.selections:
@@ -840,11 +900,13 @@ class QueryCodegen:
         for fragment in fragments:
             type_condition_name = fragment.type_condition.name.value
             fragment_class_name = class_name + type_condition_name
-
+            strawberry_type = self.schema.get_type_by_name(type_condition_name)
             current_type = GraphQLObjectType(
                 fragment_class_name,
                 list(common_fields),
                 graphql_typename=type_condition_name,
+                graphql_type=strawberry_type,
+                graphql_node=fragment,
             )
             fields: List[Union[GraphQLFragmentSpread, GraphQLField]] = []
 

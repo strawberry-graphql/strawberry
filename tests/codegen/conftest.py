@@ -2,7 +2,17 @@ import datetime
 import decimal
 import enum
 import random
-from typing import TYPE_CHECKING, Generic, List, NewType, Optional, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generic,
+    List,
+    NewType,
+    Optional,
+    TypeVar,
+    Union,
+)
 from typing_extensions import Annotated
 from uuid import UUID
 
@@ -26,7 +36,7 @@ class Color(enum.Enum):
 @strawberry.type
 class Person:
     name: str
-    age: int
+    age: int = 7
 
 
 @strawberry.type
@@ -121,6 +131,16 @@ class Query:
         return p_or_a
 
     @strawberry.field
+    def get_person_with_inputs(
+        self, name: str, age: int = 72
+    ) -> Person:  # pragma: no cover
+        """Get a person."""
+        p_or_a = Person()
+        p_or_a.name = name
+        p_or_a.age = age
+        return p_or_a
+
+    @strawberry.field
     def list_life() -> LifeContainer[Person, Animal]:
         """Get lists of living things."""
         person = Person(name="Henry", age=10)
@@ -166,3 +186,8 @@ class Mutation:
 @pytest.fixture
 def schema() -> strawberry.Schema:
     return strawberry.Schema(query=Query, mutation=Mutation, types=[BlogPost, Image])
+
+
+@pytest.fixture
+def conftest_globals() -> Dict[str, Any]:
+    return globals()
