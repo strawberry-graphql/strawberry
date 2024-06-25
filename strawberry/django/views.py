@@ -18,7 +18,7 @@ from django.http import HttpRequest, HttpResponseNotAllowed, JsonResponse
 from django.http.response import HttpResponse
 from django.template import RequestContext, Template
 from django.template.exceptions import TemplateDoesNotExist
-from django.template.loader import render_to_string
+from django.template.loader import get_template
 from django.template.response import TemplateResponse
 from django.utils.decorators import classonlymethod, method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -218,7 +218,7 @@ class GraphQLView(
 
     def render_graphql_ide(self, request: HttpRequest) -> HttpResponse:
         try:
-            template = Template(render_to_string("graphql/graphiql.html"))
+            template = get_template("graphql/graphiql.html").template
         except TemplateDoesNotExist:
             template = Template(self.graphql_ide_html)
 
@@ -277,7 +277,7 @@ class AsyncGraphQLView(
 
     async def render_graphql_ide(self, request: HttpRequest) -> HttpResponse:
         try:
-            template = Template(render_to_string("graphql/graphiql.html"))
+            template = get_template("graphql/graphiql.html").template
         except TemplateDoesNotExist:
             template = Template(self.graphql_ide_html)
 
