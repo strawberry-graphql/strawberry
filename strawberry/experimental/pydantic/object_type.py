@@ -64,6 +64,7 @@ def _build_dataclass_creation_fields(
     auto_fields_set: Set[str],
     use_pydantic_alias: bool,
     compat: PydanticCompat,
+    override: bool = True,
 ) -> DataclassCreationFields:
     field_type = (
         get_type_for_field(field, is_input, compat=compat)
@@ -71,9 +72,8 @@ def _build_dataclass_creation_fields(
         else existing_fields[field.name].type
     )
 
-    if (
-        field.name in existing_fields
-        and existing_fields[field.name].base_resolver is not None
+    if field.name in existing_fields and (
+        existing_fields[field.name].base_resolver is not None or not override
     ):
         # if the user has defined a resolver for this field, always use it
         strawberry_field = existing_fields[field.name]
@@ -129,6 +129,7 @@ def type(
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
+    override: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
         compat = PydanticCompat.from_model(model)
@@ -191,6 +192,7 @@ def type(
                 auto_fields_set,
                 use_pydantic_alias,
                 compat=compat,
+                override=override,
             )
             for field_name, field in model_fields.items()
             if field_name in fields_set

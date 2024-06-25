@@ -948,6 +948,27 @@ def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers
     assert User.__strawberry_definition__.fields[2].base_resolver() == 84
 
 
+def test_can_override_pydantic_with_strawberry_definition():
+    # Set variable override=False to pydantic type
+    # That's override pydantic fields with strawberry fields
+    class UserModel(BaseModel):
+        new_name: Optional[str] = None
+        new_age: Optional[int] = None
+
+    @strawberry.experimental.pydantic.type(UserModel, override=False)
+    class User:
+        new_name: Optional[str] = None
+        new_age: Optional[int] = strawberry.UNSET
+
+    origin_user = UserModel()
+    user = User()
+    assert origin_user.new_name is None
+    assert origin_user.new_age is None
+
+    assert user.new_name is None
+    assert user.new_age is strawberry.UNSET
+
+
 def test_can_convert_both_output_and_input_type():
     class Work(BaseModel):
         time: float
