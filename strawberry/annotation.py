@@ -54,7 +54,7 @@ ASYNC_TYPES = (
 
 
 class StrawberryAnnotation:
-    __slots__ = "raw_annotation", "namespace", "__eval_cache__"
+    __slots__ = "raw_annotation", "namespace", "__resolve_cache__"
 
     def __init__(
         self,
@@ -65,7 +65,7 @@ class StrawberryAnnotation:
         self.raw_annotation = annotation
         self.namespace = namespace
 
-        self.__eval_cache__: Optional[Type[Any]] = None
+        self.__resolve_cache__: Optional[Union[StrawberryType, type]] = None
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, StrawberryAnnotation):
@@ -101,19 +101,17 @@ class StrawberryAnnotation:
     def annotation(self, value: Union[object, str]) -> None:
         self.raw_annotation = value
 
+        self.__resolve_cache__ = None
+
     def evaluate(self) -> type:
         """Return evaluated annotation using `strawberry.util.typing.eval_type`."""
-        evaled_type = self.__eval_cache__
-        if evaled_type:
-            return evaled_type
-
         annotation = self.raw_annotation
+
         if isinstance(annotation, str):
             annotation = ForwardRef(annotation)
 
         evaled_type = eval_type(annotation, self.namespace, None)
 
-        self.__eval_cache__ = evaled_type
         return evaled_type
 
     def _get_type_with_args(
@@ -131,6 +129,12 @@ class StrawberryAnnotation:
 
     def resolve(self) -> Union[StrawberryType, type]:
         """Return resolved (transformed) annotation."""
+        if self.__resolve_cache__ is None:
+            self.__resolve_cache__ = self._resolve()
+
+        return self.__resolve_cache__
+
+    def _resolve(self) -> Union[StrawberryType, type]:
         evaled_type = cast(Any, self.evaluate())
 
         if is_private(evaled_type):
@@ -172,7 +176,7 @@ class StrawberryAnnotation:
         module = sys.modules[field.origin.__module__]
         self.namespace = module.__dict__
 
-        self.__eval_cache__ = None  # Invalidate cache to allow re-evaluation
+        self.__resolve_cache__ = None  # Invalidate cache to allow re-evaluation
 
     def create_concrete_type(self, evaled_type: type) -> type:
         if has_object_definition(evaled_type):

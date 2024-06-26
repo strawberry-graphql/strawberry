@@ -129,7 +129,6 @@ class StrawberryArgument:
 
     @property
     def is_graphql_generic(self) -> bool:
-        # TODO: double check this
         from strawberry.schema.compat import is_graphql_generic
 
         return is_graphql_generic(self.type)
