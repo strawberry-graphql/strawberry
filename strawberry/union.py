@@ -67,6 +67,7 @@ class StrawberryUnion(StrawberryType):
         self.directives = directives
         self._source_file = None
         self._source_line = None
+        self.concrete_of: Optional[StrawberryUnion] = None
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryType):
@@ -139,6 +140,7 @@ class StrawberryUnion(StrawberryType):
             return self
 
         new_types = []
+
         for type_ in self.types:
             new_type: Union[StrawberryType, type]
 
@@ -154,10 +156,13 @@ class StrawberryUnion(StrawberryType):
 
             new_types.append(new_type)
 
-        return StrawberryUnion(
+        new_union = StrawberryUnion(
             type_annotations=tuple(map(StrawberryAnnotation, new_types)),
             description=self.description,
         )
+        new_union.concrete_of = self
+
+        return new_union
 
     def __call__(self, *args: str, **kwargs: Any) -> NoReturn:
         """Do not use.
