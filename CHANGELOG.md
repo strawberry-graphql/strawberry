@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.235.1 - 2024-06-26
+--------------------
+
+This release improves the performance when returning a lot of data, especially
+when using generic inputs (where we got a 7x speedup in our benchmark!).
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3549](https://github.com/strawberry-graphql/strawberry/pull/3549/)
+
+
 0.235.0 - 2024-06-10
 --------------------
 
