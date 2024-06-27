@@ -29,7 +29,7 @@ from strawberry.type import (
     get_object_definition,
 )
 from strawberry.types.info import Info
-from strawberry.types.types import StrawberryObjectDefinition
+from strawberry.types.types import Resolver, StrawberryObjectDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.inspect import get_func_args
 
@@ -119,7 +119,7 @@ class Schema(BaseSchema):
 
         @strawberry.type(name="_Service")
         class Service:
-            sdl: str = strawberry.field(
+            sdl: Resolver[str] = strawberry.field(
                 resolver=lambda: print_schema(self),
             )
 

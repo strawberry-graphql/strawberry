@@ -15,8 +15,8 @@ async def get_user_age() -> int:
 @strawberry.type
 class User:
     name: str
-    age: int = strawberry.field(resolver=get_user_age)
-    something: str = strawberry.field(resolver=get_user_age)
+    age: strawberry.Resolver[int] = strawberry.field(resolver=get_user_age)
+    something: strawberry.Resolver[str] = strawberry.field(resolver=get_user_age)
 
 
 User(name="Patrick")
@@ -35,11 +35,11 @@ def test():
             Result(
                 type="error",
                 message="""\
-Expression of type "StrawberryField" is incompatible with declared type "str"
-\xa0\xa0"StrawberryField" is incompatible with "str"\
+Expression of type "StrawberryField" is incompatible with declared type "Resolver[str]"
+\xa0\xa0"StrawberryField" is incompatible with "Resolver[str]"\
 """,
                 line=12,
-                column=22,
+                column=43,
             ),
             Result(
                 type="error",
@@ -66,9 +66,9 @@ Expression of type "StrawberryField" is incompatible with declared type "str"
         [
             Result(
                 type="error",
-                message='Incompatible types in assignment (expression has type "int", variable has type "str")',
+                message='Incompatible types in assignment (expression has type "StrawberryField", variable has type "Resolver[str]")',
                 line=12,
-                column=22,
+                column=43,
             ),
             Result(
                 type="error",
