@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Optional, Type
+from typing import Optional, Type
 
 
 class DEPRECATION_MESSAGES:
@@ -19,7 +19,7 @@ class DeprecatedDescriptor:
     def warn(self) -> None:
         warnings.warn(self.msg, stacklevel=2)
 
-    def __get__(self, obj: Optional[object], type: Optional[Type] = None) -> Any:
+    def __get__(self, obj: Optional[object], type: Optional[Type] = None) -> object:
         self.warn()
         return self.alias
 

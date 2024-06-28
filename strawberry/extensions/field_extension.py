@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Union
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Union
 
 if TYPE_CHECKING:
     from typing_extensions import TypeAlias
@@ -20,14 +20,22 @@ class FieldExtension:
         pass
 
     def resolve(
-        self, next_: SyncExtensionResolver, source: Any, info: Info, **kwargs: Any
+        self,
+        next_: SyncExtensionResolver,
+        source: Any,
+        info: Info,
+        **kwargs: Dict[Any, Any],
     ) -> Any:  # pragma: no cover
         raise NotImplementedError(
             "Sync Resolve is not supported for this Field Extension"
         )
 
     async def resolve_async(
-        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs: Any
+        self,
+        next_: AsyncExtensionResolver,
+        source: Any,
+        info: Info,
+        **kwargs: Dict[Any, Any],
     ) -> Any:  # pragma: no cover
         raise NotImplementedError(
             "Async Resolve is not supported for this Field Extension"
@@ -47,7 +55,11 @@ class SyncToAsyncExtension(FieldExtension):
     Applied automatically"""
 
     async def resolve_async(
-        self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs: Any
+        self,
+        next_: AsyncExtensionResolver,
+        source: Any,
+        info: Info,
+        **kwargs: Dict[Any, Any],
     ) -> Any:
         return next_(source, info, **kwargs)
 

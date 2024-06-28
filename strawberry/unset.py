@@ -30,12 +30,12 @@ class UnsetType:
 UNSET: Any = UnsetType()
 
 
-def _deprecated_is_unset(value: Any) -> bool:
+def _deprecated_is_unset(value: object) -> bool:
     warnings.warn(DEPRECATED_NAMES["is_unset"], DeprecationWarning, stacklevel=2)
     return value is UNSET
 
 
-def __getattr__(name: str) -> Any:
+def __getattr__(name: str) -> object:
     if name in DEPRECATED_NAMES:
         warnings.warn(DEPRECATED_NAMES[name], DeprecationWarning, stacklevel=2)
         return globals()[f"_deprecated_{name}"]

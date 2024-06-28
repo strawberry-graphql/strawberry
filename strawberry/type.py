@@ -3,7 +3,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
-    Any,
     ClassVar,
     List,
     Mapping,
@@ -190,7 +189,7 @@ class WithStrawberryObjectDefinition(Protocol):
 
 
 def has_object_definition(
-    obj: Any,
+    obj: type,
 ) -> TypeGuard[Type[WithStrawberryObjectDefinition]]:
     if hasattr(obj, "__strawberry_definition__"):
         return True
@@ -207,7 +206,7 @@ def has_object_definition(
 
 @overload
 def get_object_definition(
-    obj: Any,
+    obj: object,
     *,
     strict: Literal[True],
 ) -> StrawberryObjectDefinition: ...
@@ -215,14 +214,14 @@ def get_object_definition(
 
 @overload
 def get_object_definition(
-    obj: Any,
+    obj: object,
     *,
     strict: bool = False,
 ) -> Optional[StrawberryObjectDefinition]: ...
 
 
 def get_object_definition(
-    obj: Any,
+    obj: object,
     *,
     strict: bool = False,
 ) -> Optional[StrawberryObjectDefinition]:

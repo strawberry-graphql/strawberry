@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Dict
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
 from aiohttp import http, web
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
@@ -11,6 +11,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
 if TYPE_CHECKING:
     from datetime import timedelta
 
+    from strawberry.http.typevars import RootValue
     from strawberry.schema import BaseSchema
 
 
@@ -21,7 +22,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         debug: bool,
         connection_init_wait_timeout: timedelta,
         get_context: Callable[..., Dict[str, Any]],
-        get_root_value: Any,
+        get_root_value: Callable[..., Optional[RootValue]],
         request: web.Request,
     ) -> None:
         super().__init__(schema, debug, connection_init_wait_timeout)
@@ -30,10 +31,10 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         self._request = request
         self._ws = web.WebSocketResponse(protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL])
 
-    async def get_context(self) -> Any:
+    async def get_context(self) -> Dict[str, Any]:
         return await self._get_context(request=self._request, response=self._ws)  # type: ignore
 
-    async def get_root_value(self) -> Any:
+    async def get_root_value(self) -> Optional[RootValue]:
         return await self._get_root_value(request=self._request)
 
     async def send_json(self, data: dict) -> None:

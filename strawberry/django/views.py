@@ -6,6 +6,8 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
+    List,
     Mapping,
     Optional,
     Union,
@@ -139,7 +141,7 @@ class BaseView:
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         subscriptions_enabled: bool = False,
-        **kwargs: Any,
+        **kwargs: Dict[Any, Any],
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
@@ -198,7 +200,9 @@ class GraphQLView(
     def get_root_value(self, request: HttpRequest) -> Optional[RootValue]:
         return None
 
-    def get_context(self, request: HttpRequest, response: HttpResponse) -> Any:
+    def get_context(
+        self, request: HttpRequest, response: HttpResponse
+    ) -> StrawberryDjangoContext:
         return StrawberryDjangoContext(request=request, response=response)
 
     def get_sub_response(self, request: HttpRequest) -> TemporalHttpResponse:
@@ -206,7 +210,7 @@ class GraphQLView(
 
     @method_decorator(csrf_exempt)
     def dispatch(
-        self, request: HttpRequest, *args: Any, **kwargs: Any
+        self, request: HttpRequest, *args: List[Any], **kwargs: Dict[Any, Any]
     ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
         try:
             return self.run(request=request)
@@ -245,7 +249,7 @@ class AsyncGraphQLView(
     request_adapter_class = AsyncDjangoHTTPRequestAdapter
 
     @classonlymethod  # pyright: ignore[reportIncompatibleMethodOverride]
-    def as_view(cls, **initkwargs: Any) -> Callable[..., HttpResponse]:
+    def as_view(cls, **initkwargs: Dict[Any, Any]) -> Callable[..., HttpResponse]:
         # This code tells django that this view is async, see docs here:
         # https://docs.djangoproject.com/en/3.1/topics/async/#async-views
 
@@ -254,10 +258,12 @@ class AsyncGraphQLView(
 
         return view
 
-    async def get_root_value(self, request: HttpRequest) -> Any:
+    async def get_root_value(self, request: HttpRequest) -> None:
         return None
 
-    async def get_context(self, request: HttpRequest, response: HttpResponse) -> Any:
+    async def get_context(
+        self, request: HttpRequest, response: HttpResponse
+    ) -> StrawberryDjangoContext:
         return StrawberryDjangoContext(request=request, response=response)
 
     async def get_sub_response(self, request: HttpRequest) -> TemporalHttpResponse:
@@ -265,7 +271,7 @@ class AsyncGraphQLView(
 
     @method_decorator(csrf_exempt)
     async def dispatch(  # pyright: ignore
-        self, request: HttpRequest, *args: Any, **kwargs: Any
+        self, request: HttpRequest, *args: List[Any], **kwargs: Dict[Any, Any]
     ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
         try:
             return await self.run(request=request)

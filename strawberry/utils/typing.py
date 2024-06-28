@@ -69,7 +69,7 @@ def get_generic_alias(type_: Type) -> Type:
     raise AssertionError(f"No GenericAlias available for {type_}")  # pragma: no cover
 
 
-def is_generic_alias(type_: Any) -> TypeGuard[_GenericAlias]:
+def is_generic_alias(type_: TypeVar) -> TypeGuard[_GenericAlias]:
     """Returns True if the type is a generic alias."""
     # _GenericAlias overrides all the methods that we can use to know if
     # this is a subclass of it. But if it has an "_inst" attribute
@@ -323,7 +323,7 @@ def _get_namespace_from_ast(
 
 
 def eval_type(
-    type_: Any,
+    type_: TypeVar,
     globalns: Optional[Dict] = None,
     localns: Optional[Dict] = None,
 ) -> Type:

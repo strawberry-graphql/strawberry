@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 
 
 class StrawberryJSONEncoder(JSONEncoder):
-    def default(self, o: Any) -> Any:
+    def default(self, o: object) -> str:
         return repr(o)
 
 
