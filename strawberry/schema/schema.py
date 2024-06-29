@@ -73,7 +73,7 @@ class Schema(BaseSchema):
 
     This class allows the creation of a GraphQL schema by specifying the types for queries, mutations, and subscriptions, along with various configuration options such as directives, extensions, and scalar overrides.
 
-    Paramaters:
+    Parameters:
         query: The entry point for queries
         mutation: The entry point for mutations
         subscription: The entry point for subscriptions
