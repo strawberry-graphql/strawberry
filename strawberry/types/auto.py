@@ -76,5 +76,19 @@ class StrawberryAuto(metaclass=StrawberryAutoMeta):
 
 
 auto = Annotated[Any, StrawberryAuto()]
+"""A special value that can be used to automatically infer the type of a field when using integrations like Strawberry Django or Strawberry Pydantic.
+
+Example:
+```python
+import strawberry
+
+from my_user_app import models
+
+
+@strawberry.django.type(models.User)
+class User:
+    name: strawberry.auto
+```
+"""
 
 __all__ = ["auto"]
