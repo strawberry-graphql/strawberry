@@ -30,7 +30,7 @@ class User:
     @strawberry.field
     @staticmethod
     async def name(parent: strawberry.Parent[UserRow]) -> str:
-        return f"User Number {parent.id}"
+        return f"User Number {parent.id_}"
 
 
 @strawberry.type
