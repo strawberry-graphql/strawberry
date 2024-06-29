@@ -68,38 +68,6 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 
 
 class Schema(BaseSchema):
-    """
-    A GraphQL Schema class used to define the structure and configuration of GraphQL queries, mutations, and subscriptions.
-
-    This class allows the creation of a GraphQL schema by specifying the types for queries, mutations, and subscriptions, along with various configuration options such as directives, extensions, and scalar overrides.
-
-    Parameters:
-        query: The entry point for queries
-        mutation: The entry point for mutations
-        subscription: The entry point for subscriptions
-        directives: A list of operation directives that clients can use, `@include`, `@skip` are included by default
-        types: A list of additional types that will be included in the schema
-        extensions: A list of Strawberry extensions
-        execution_context_class: The execution context class
-        config: The configuration for the schema
-        scalar_overrides: A dictionary of overrides for scalars
-        schema_directives: A list of schema directives for the schema
-
-    Example:
-
-    ```python
-    import strawberry
-
-
-    @strawberry.type
-    class Query:
-        name: str = "Patrick"
-
-
-    schema = strawberry.Schema(query=Query)
-    ```
-    """
-
     def __init__(
         self,
         # TODO: can we make sure we only allow to pass
@@ -117,6 +85,37 @@ class Schema(BaseSchema):
         ] = None,
         schema_directives: Iterable[object] = (),
     ) -> None:
+        """
+        A GraphQL Schema class used to define the structure and configuration of GraphQL queries, mutations, and subscriptions.
+
+        This class allows the creation of a GraphQL schema by specifying the types for queries, mutations, and subscriptions, along with various configuration options such as directives, extensions, and scalar overrides.
+
+        Parameters:
+            query: The entry point for queries
+            mutation: The entry point for mutations
+            subscription: The entry point for subscriptions
+            directives: A list of operation directives that clients can use, `@include`, `@skip` are included by default
+            types: A list of additional types that will be included in the schema
+            extensions: A list of Strawberry extensions
+            execution_context_class: The execution context class
+            config: The configuration for the schema
+            scalar_overrides: A dictionary of overrides for scalars
+            schema_directives: A list of schema directives for the schema
+
+        Example:
+
+        ```python
+        import strawberry
+
+
+        @strawberry.type
+        class Query:
+            name: str = "Patrick"
+
+
+        schema = strawberry.Schema(query=Query)
+        ```
+        """
         self.query = query
         self.mutation = mutation
         self.subscription = subscription
