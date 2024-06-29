@@ -26,7 +26,7 @@ def directive_field(
     name: str,
     default: object = UNSET,
 ) -> Any:
-    """Function to add metadata to a directive argument, like the GraphQL name.o
+    """Function to add metadata to a directive argument, like the GraphQL name.
 
     Parameters:
         name: The GraphQL name of the directive argument

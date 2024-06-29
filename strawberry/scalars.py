@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 
 ID = NewType("ID", str)
+"""Represent the GraphQL `ID` scalar type."""
 
 JSON = scalar(
     NewType("JSON", object),  # mypy doesn't like `NewType("name", Any)`
