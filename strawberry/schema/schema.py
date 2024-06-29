@@ -68,6 +68,29 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 
 
 class Schema(BaseSchema):
+    query: Type
+    """The entry point for queries"""
+    mutation: Optional[Type]
+    """The entry point for mutations"""
+    subscription: Optional[Type]
+    """The entry point for subscriptions"""
+    directives: Iterable[StrawberryDirective]
+    """A list of operation directives that clients can use, `@include`, `@skip` are included by default"""
+    types: Iterable[Union[Type, StrawberryType]]
+    """A list of additional types that will be included in the schema"""
+    extensions: Iterable[Union[Type[SchemaExtension], SchemaExtension]]
+    """A list of Strawberry extensions"""
+    execution_context_class: Optional[Type[GraphQLExecutionContext]]
+    """The execution context class"""
+    config: StrawberryConfig
+    """The configuration for the schema"""
+    scalar_overrides: Optional[
+        Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]]
+    ]
+    """A dictionary of overrides for scalars"""
+    schema_directives: Iterable[object]
+    """A list of schema directives for the schema"""
+
     def __init__(
         self,
         # TODO: can we make sure we only allow to pass
