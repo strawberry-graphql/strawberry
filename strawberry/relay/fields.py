@@ -390,48 +390,66 @@ def connection(
     case for this is to provide a filtered iterable of nodes by using some custom
     filter arguments.
 
+    Parameters:
+        graphql_type: The type of the nodes in the connection. This is used to
+            determine the type of the edges and the node field in the connection.
+        resolver: The resolver for the connection. This is expected to return an
+            iterable of the expected node type.
+        name: The GraphQL name of the field.
+        is_subscription: Whether the field is a subscription.
+        description: The GraphQL description of the field.
+        permission_classes: The permission classes to apply to the field.
+        deprecation_reason: The deprecation reason of the field.
+        default: The default value of the field.
+        default_factory: The default factory of the field.
+        metadata: The metadata of the field.
+        directives: The directives to apply to the field.
+        extensions: The extensions to apply to the field.
+
     Examples:
-        Annotating something like this:
 
-        >>> @strawberry.type
-        >>> class X:
-        ...     some_node: relay.Connection[SomeType] = relay.connection(
-                    resolver=get_some_nodes,
-        ...         description="ABC",
-        ...     )
-        ...
-        ...     @relay.connection(relay.Connection[SomeType], description="ABC")
-        ...     def get_some_nodes(self, age: int) -> Iterable[SomeType]:
-        ...         ...
+    Annotating something like this:
 
-        Will produce a query like this:
+    ```python
+    @strawberry.type
+    class X:
+        some_node: relay.Connection[SomeType] = relay.connection(
+            resolver=get_some_nodes,
+            description="ABC",
+        )
 
-        ```
-        query {
-            someNode (
-                before: String
-                after: String
-                first: String
-                after: String
-                age: Int
-            ) {
-                totalCount
-                pageInfo {
-                    hasNextPage
-                    hasPreviousPage
-                    startCursor
-                    endCursor
-                }
-                edges {
-                    cursor
-                    node {
-                        id
-                        ...
-                    }
+        @relay.connection(relay.Connection[SomeType], description="ABC")
+        def get_some_nodes(self, age: int) -> Iterable[SomeType]: ...
+    ```
+
+    Will produce a query like this:
+
+    ```graphql
+    query {
+        someNode (
+            before: String
+            after: String
+            first: String
+            after: String
+            age: Int
+        ) {
+            totalCount
+            pageInfo {
+                hasNextPage
+                hasPreviousPage
+                startCursor
+                endCursor
+            }
+            edges {
+                cursor
+                node {
+                    id
+                    ...
                 }
             }
         }
-        ```
+    }
+    ```
 
     .. _Relay connections:
         https://relay.dev/graphql/connections.htm

@@ -201,7 +201,6 @@ def scalar(
         def __init__(self, items):
             self.items = items
     ```
-
     """
 
     if parse_value is None:

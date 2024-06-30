@@ -11,26 +11,28 @@ class ValidationCache(SchemaExtension):
 
     Example:
 
-    >>> import strawberry
-    >>> from strawberry.extensions import ValidationCache
-    >>>
-    >>> schema = strawberry.Schema(
-    ...     Query,
-    ...     extensions=[
-    ...         ValidationCache(maxsize=100),
-    ...     ]
-    ... )
+    ```python
+    import strawberry
+    from strawberry.extensions import ValidationCache
 
-    Arguments:
-
-    `maxsize: Optional[int]`
-        Set the maxsize of the cache. If `maxsize` is set to `None` then the
-        cache will grow without bound.
-        More info: https://docs.python.org/3/library/functools.html#functools.lru_cache
-
+    schema = strawberry.Schema(
+        Query,
+        extensions=[
+            ValidationCache(maxsize=100),
+        ],
+    )
+    ```
     """
 
     def __init__(self, maxsize: Optional[int] = None) -> None:
+        """
+        Parameters:
+
+        maxsize: Set the maxsize of the cache. If `maxsize` is set to `None` then the
+            cache will grow without bound.
+            More info: https://docs.python.org/3/library/functools.html#functools.lru_cache
+        """
+
         self.cached_validate_document = lru_cache(maxsize=maxsize)(validate_document)
 
     def on_validate(self) -> Iterator[None]:

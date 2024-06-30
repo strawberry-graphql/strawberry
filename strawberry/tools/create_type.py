@@ -16,11 +16,27 @@ def create_type(
 ) -> Type:
     """Create a Strawberry type from a list of StrawberryFields
 
-    >>> @strawberry.field
-    >>> def hello(info) -> str:
-    >>>     return "World"
-    >>>
-    >>> Query = create_type(name="Query", fields=[hello])
+    Parameters:
+        name: The GraphQL name of the type.
+        fields: The fields of the type.
+        is_input: Whether the type is an input type.
+        is_interface: Whether the type is an interface.
+        description: The GraphQL description of the type.
+        directives: The directives to attach to the type.
+
+    Example usage:
+
+    ```python
+    import strawberry
+
+
+    @strawberry.field
+    def hello(info) -> str:
+        return "World"
+
+
+    Query = create_type(name="Query", fields=[hello])
+    ```
     """
 
     if not fields:
