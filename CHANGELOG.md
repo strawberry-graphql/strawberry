@@ -4189,7 +4189,7 @@ the original type was already used with that generic in the schema.
 
 Example:
 
-```python3
+```python
 @strawberry.type
 class Query:
     regular: Edge[User]
