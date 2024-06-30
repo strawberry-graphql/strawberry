@@ -60,3 +60,6 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
                 await self.cleanup_operation(operation_id)
 
         return self._ws
+
+
+__all__ = ["GraphQLWSHandler"]
