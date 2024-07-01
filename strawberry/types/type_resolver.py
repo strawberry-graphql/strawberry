@@ -27,16 +27,19 @@ def _get_fields(
     StrawberryFields can be defined on a strawberry.type class as either a dataclass-
     style field or using strawberry.field as a decorator.
 
-    >>> import strawberry
-    >>> @strawberry.type
-    ... class Query:
-    ...     type_1a: int = 5
-    ...     type_1b: int = strawberry.field(...)
-    ...     type_1c: int = strawberry.field(resolver=...)
-    ...
-    ...     @strawberry.field
-    ...     def type_2(self) -> int:
-    ...         ...
+    ```python
+    import strawberry
+
+
+    @strawberry.type
+    class Query:
+        type_1a: int = 5
+        type_1b: int = strawberry.field(...)
+        type_1c: int = strawberry.field(resolver=...)
+
+        @strawberry.field
+        def type_2(self) -> int: ...
+    ```
 
     Type #1:
         A pure dataclass-style field. Will not have a StrawberryField; one will need to

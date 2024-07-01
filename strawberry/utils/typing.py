@@ -44,10 +44,13 @@ def get_generic_alias(type_: Type) -> Type:
     Given a type, its generic alias from `typing` module will be returned
     if it exists. For example:
 
-        >>> get_generic_alias(list)
-        typing.List
-        >>> get_generic_alias(dict)
-        typing.Dict
+    ```python
+    get_generic_alias(list)
+    # typing.List
+
+    get_generic_alias(dict)
+    # typing.Dict
+    ```
 
     This is mostly useful for python versions prior to 3.9, to get a version
     of a concrete type which supports `__class_getitem__`. In 3.9+ types like

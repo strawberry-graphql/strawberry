@@ -9,20 +9,12 @@ class MaxTokensLimiter(SchemaExtension):
 
     Example:
 
-    >>> import strawberry
-    >>> from strawberry.extensions import MaxTokensLimiter
-    >>>
-    >>> schema = strawberry.Schema(
-    ...     Query,
-    ...     extensions=[
-    ...         MaxTokensLimiter(max_token_count=1000)
-    ...     ]
-    ... )
+    ```python
+    import strawberry
+    from strawberry.extensions import MaxTokensLimiter
 
-    Arguments:
-
-    `max_token_count: int`
-        The maximum number of tokens allowed in a GraphQL document.
+    schema = strawberry.Schema(Query, extensions=[MaxTokensLimiter(max_token_count=1000)])
+    ```
 
     The following things are counted as tokens:
     * various brackets: "{", "}", "(", ")"
@@ -37,8 +29,16 @@ class MaxTokensLimiter(SchemaExtension):
         self,
         max_token_count: int,
     ) -> None:
+        """
+        Parameters:
+            max_token_count: The maximum number of tokens allowed in a GraphQL document.
+        """
+
         self.max_token_count = max_token_count
 
     def on_operation(self) -> Iterator[None]:
         self.execution_context.parse_options["max_tokens"] = self.max_token_count
         yield
+
+
+__all__ = ["MaxTokensLimiter"]

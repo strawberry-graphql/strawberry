@@ -9,16 +9,17 @@ class DisableValidation(SchemaExtension):
 
     Example:
 
-    >>> import strawberry
-    >>> from strawberry.extensions import DisableValidation
-    >>>
-    >>> schema = strawberry.Schema(
-    ...     Query,
-    ...     extensions=[
-    ...         DisableValidation,
-    ...     ]
-    ... )
+    ```python
+    import strawberry
+    from strawberry.extensions import DisableValidation
 
+    schema = strawberry.Schema(
+        Query,
+        extensions=[
+            DisableValidation,
+        ],
+    )
+    ```
     """
 
     def __init__(self) -> None:

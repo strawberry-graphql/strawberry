@@ -45,37 +45,43 @@ def get_specialized_type_var_map(cls: type) -> Optional[Dict[str, type]]:
 
     Consider the following:
 
-        >>> class Foo(Generic[T]):
-        ...     ...
-        ...
-        >>> class Bar(Generic[K]):
-        ...     ...
-        ...
-        >>> class IntBar(Bar[int]):
-        ...     ...
-        ...
-        >>> class IntBarSubclass(IntBar):
-        ...     ...
-        ...
-        >>> class IntBarFoo(IntBar, Foo[str]):
-        ...     ...
-        ...
+    ```python
+    class Foo(Generic[T]): ...
+
+
+    class Bar(Generic[K]): ...
+
+
+    class IntBar(Bar[int]): ...
+
+
+    class IntBarSubclass(IntBar): ...
+
+
+    class IntBarFoo(IntBar, Foo[str]): ...
+    ```
 
     This would return:
 
-        >>> get_specialized_type_var_map(object)
-        None
-        >>> get_specialized_type_var_map(Foo)
-        {}
-        >>> get_specialized_type_var_map(Bar)
-        {~T: ~T}
-        >>> get_specialized_type_var_map(IntBar)
-        {~T: int}
-        >>> get_specialized_type_var_map(IntBarSubclass)
-        {~T: int}
-        >>> get_specialized_type_var_map(IntBarFoo)
-        {~T: int, ~K: str}
+    ```python
+    get_specialized_type_var_map(object)
+    # None
 
+    get_specialized_type_var_map(Foo)
+    # {}
+
+    get_specialized_type_var_map(Bar)
+    # {~T: ~T}
+
+    get_specialized_type_var_map(IntBar)
+    # {~T: int}
+
+    get_specialized_type_var_map(IntBarSubclass)
+    # {~T: int}
+
+    get_specialized_type_var_map(IntBarFoo)
+    # {~T: int, ~K: str}
+    ```
     """
     orig_bases = getattr(cls, "__orig_bases__", None)
     if orig_bases is None:
