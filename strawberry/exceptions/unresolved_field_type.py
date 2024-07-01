@@ -9,7 +9,7 @@ from .exception import StrawberryException
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
-    from strawberry.object_type import StrawberryObjectDefinition
+    from strawberry.types.object_type import StrawberryObjectDefinition
 
     from .exception_source import ExceptionSource
 

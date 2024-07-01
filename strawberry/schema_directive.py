@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Callable, List, Optional, Type, TypeVar
 from typing_extensions import dataclass_transform
 
-from strawberry.object_type import _wrap_dataclass
+from strawberry.types.object_type import _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 
 from .directive import directive_field

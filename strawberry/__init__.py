@@ -9,7 +9,6 @@ from .arguments import argument
 from .directive import directive, directive_field
 from .field import field
 from .mutation import mutation, subscription
-from .object_type import asdict, input, interface, type
 from .parent import Parent
 from .permission import BasePermission
 from .scalars import ID
@@ -19,6 +18,7 @@ from .types.auto import auto
 from .types.enum import enum, enum_value
 from .types.info import Info
 from .types.lazy_type import LazyType, lazy
+from .types.object_type import asdict, input, interface, type
 from .types.private import Private
 from .types.scalar import scalar
 from .types.union import union

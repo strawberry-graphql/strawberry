@@ -16,20 +16,19 @@ from typing import (
 )
 from typing_extensions import dataclass_transform
 
-from .exceptions import (
+from strawberry.exceptions import (
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
     ObjectIsNotClassError,
 )
-from .field import StrawberryField, field
-from .strawberry_type import get_object_definition
-from .types.type_resolver import _get_fields
-from .types.types import (
-    StrawberryObjectDefinition,
-)
-from .utils.dataclasses import add_custom_init_fn
-from .utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
-from .utils.str_converters import to_camel_case
+from strawberry.field import StrawberryField, field
+from strawberry.strawberry_type import get_object_definition
+from strawberry.utils.dataclasses import add_custom_init_fn
+from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
+from strawberry.utils.str_converters import to_camel_case
+
+from .type_resolver import _get_fields
+from .types import StrawberryObjectDefinition
 
 T = TypeVar("T", bound=Type)
 
