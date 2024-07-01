@@ -1,6 +1,4 @@
-"""
-These tests are for Generics that don't expose any generic parts to the schema.
-"""
+"""These tests are for Generics that don't expose any generic parts to the schema."""
 
 import sys
 import textwrap

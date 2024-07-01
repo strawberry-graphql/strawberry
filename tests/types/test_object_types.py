@@ -9,7 +9,7 @@ import pytest
 
 import strawberry
 from strawberry.field import StrawberryField
-from strawberry.type import get_object_definition
+from strawberry.strawberry_type import get_object_definition
 
 
 def test_enum():

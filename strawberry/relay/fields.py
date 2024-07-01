@@ -36,13 +36,13 @@ from strawberry.extensions.field_extension import (
     SyncExtensionResolver,
 )
 from strawberry.field import _RESOLVER_TYPE, StrawberryField, field
-from strawberry.lazy_type import LazyType
 from strawberry.relay.exceptions import (
     RelayWrongAnnotationError,
     RelayWrongResolverAnnotationError,
 )
-from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.strawberry_type import StrawberryList, StrawberryOptional
 from strawberry.types.fields.resolver import StrawberryResolver
+from strawberry.types.lazy_type import LazyType
 from strawberry.utils.aio import asyncgen_to_list
 from strawberry.utils.typing import eval_type, is_generic_alias
 
@@ -390,48 +390,66 @@ def connection(
     case for this is to provide a filtered iterable of nodes by using some custom
     filter arguments.
 
+    Args:
+        graphql_type: The type of the nodes in the connection. This is used to
+            determine the type of the edges and the node field in the connection.
+        resolver: The resolver for the connection. This is expected to return an
+            iterable of the expected node type.
+        name: The GraphQL name of the field.
+        is_subscription: Whether the field is a subscription.
+        description: The GraphQL description of the field.
+        permission_classes: The permission classes to apply to the field.
+        deprecation_reason: The deprecation reason of the field.
+        default: The default value of the field.
+        default_factory: The default factory of the field.
+        metadata: The metadata of the field.
+        directives: The directives to apply to the field.
+        extensions: The extensions to apply to the field.
+        init: Used only for type checking purposes.
+
     Examples:
-        Annotating something like this:
+    Annotating something like this:
 
-        >>> @strawberry.type
-        >>> class X:
-        ...     some_node: relay.Connection[SomeType] = relay.connection(
-                    resolver=get_some_nodes,
-        ...         description="ABC",
-        ...     )
-        ...
-        ...     @relay.connection(relay.Connection[SomeType], description="ABC")
-        ...     def get_some_nodes(self, age: int) -> Iterable[SomeType]:
-        ...         ...
+    ```python
+    @strawberry.type
+    class X:
+        some_node: relay.Connection[SomeType] = relay.connection(
+            resolver=get_some_nodes,
+            description="ABC",
+        )
 
-        Will produce a query like this:
+        @relay.connection(relay.Connection[SomeType], description="ABC")
+        def get_some_nodes(self, age: int) -> Iterable[SomeType]: ...
+    ```
 
-        ```
-        query {
-            someNode (
-                before: String
-                after: String
-                first: String
-                after: String
-                age: Int
-            ) {
-                totalCount
-                pageInfo {
-                    hasNextPage
-                    hasPreviousPage
-                    startCursor
-                    endCursor
-                }
-                edges {
-                    cursor
-                    node {
-                        id
-                        ...
-                    }
+    Will produce a query like this:
+
+    ```graphql
+    query {
+        someNode (
+            before: String
+            after: String
+            first: String
+            after: String
+            age: Int
+        ) {
+            totalCount
+            pageInfo {
+                hasNextPage
+                hasPreviousPage
+                startCursor
+                endCursor
+            }
+            edges {
+                cursor
+                node {
+                    id
+                    ...
                 }
             }
         }
-        ```
+    }
+    ```
 
     .. _Relay connections:
         https://relay.dev/graphql/connections.htm

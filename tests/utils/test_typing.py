@@ -6,7 +6,7 @@ from typing_extensions import Annotated
 import pytest
 
 import strawberry
-from strawberry.lazy_type import LazyType
+from strawberry.types.lazy_type import LazyType
 from strawberry.utils.typing import eval_type, get_optional_annotation, is_classvar
 
 

@@ -4,21 +4,20 @@ from strawberry.extensions.base_extension import SchemaExtension
 
 
 class DisableValidation(SchemaExtension):
-    """
-    Disable query validation
+    """Disable query validation.
 
     Example:
+    ```python
+    import strawberry
+    from strawberry.extensions import DisableValidation
 
-    >>> import strawberry
-    >>> from strawberry.extensions import DisableValidation
-    >>>
-    >>> schema = strawberry.Schema(
-    ...     Query,
-    ...     extensions=[
-    ...         DisableValidation,
-    ...     ]
-    ... )
-
+    schema = strawberry.Schema(
+        Query,
+        extensions=[
+            DisableValidation,
+        ],
+    )
+    ```
     """
 
     def __init__(self) -> None:

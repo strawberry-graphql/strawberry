@@ -37,11 +37,11 @@ from graphql.utilities.print_schema import (
 )
 from graphql.utilities.print_schema import print_type as original_print_type
 
-from strawberry.custom_scalar import ScalarWrapper
-from strawberry.enum import EnumDefinition
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
-from strawberry.type import StrawberryContainer, has_object_definition
-from strawberry.unset import UNSET
+from strawberry.strawberry_type import StrawberryContainer, has_object_definition
+from strawberry.types.enum import EnumDefinition
+from strawberry.types.scalar import ScalarWrapper
+from strawberry.types.unset import UNSET
 
 from .ast_from_value import ast_from_value
 

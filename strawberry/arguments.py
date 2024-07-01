@@ -16,19 +16,23 @@ from typing import (
 from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.enum import EnumDefinition
-from strawberry.lazy_type import LazyType, StrawberryLazyReference
-from strawberry.type import StrawberryList, StrawberryOptional, has_object_definition
+from strawberry.strawberry_type import (
+    StrawberryList,
+    StrawberryOptional,
+    has_object_definition,
+)
+from strawberry.types.enum import EnumDefinition
+from strawberry.types.lazy_type import LazyType, StrawberryLazyReference
+from strawberry.types.unset import UNSET as _deprecated_UNSET
+from strawberry.types.unset import _deprecated_is_unset  # noqa # type: ignore
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
-from .unset import UNSET as _deprecated_UNSET
-from .unset import _deprecated_is_unset  # noqa # type: ignore
 
 if TYPE_CHECKING:
-    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.schema.config import StrawberryConfig
-    from strawberry.type import StrawberryType
+    from strawberry.strawberry_type import StrawberryType
+    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
 DEPRECATED_NAMES: Dict[str, str] = {
@@ -202,8 +206,8 @@ def convert_arguments(
     """Converts a nested dictionary to a dictionary of actual types.
 
     It deals with conversion of input types to proper dataclasses and
-    also uses a sentinel value for unset values."""
-
+    also uses a sentinel value for unset values.
+    """
     if not arguments:
         return {}
 
@@ -234,6 +238,32 @@ def argument(
     directives: Iterable[object] = (),
     metadata: Optional[Mapping[Any, Any]] = None,
 ) -> StrawberryArgumentAnnotation:
+    """Function to add metadata to an argument, like a description or deprecation reason.
+
+    Args:
+        description: The GraphQL description of the argument
+        name: The GraphQL name of the argument
+        deprecation_reason: The reason why this argument is deprecated, setting this will mark the argument as deprecated
+        directives: The directives to attach to the argument
+        metadata: Metadata to attach to the argument, this can be used to store custom data that can be used by custom logic or plugins
+
+    Returns:
+        A StrawberryArgumentAnnotation object that can be used to customise an argument
+
+    Example:
+    ```python
+    import strawberry
+
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(
+            self, info, value: int = strawberry.argument(description="The value")
+        ) -> int:
+            return value
+    ```
+    """
     return StrawberryArgumentAnnotation(
         description=description,
         name=name,

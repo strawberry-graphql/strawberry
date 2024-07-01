@@ -3,13 +3,14 @@ from __future__ import annotations
 import base64
 from typing import TYPE_CHECKING, Any, Dict, NewType, Union
 
-from .custom_scalar import scalar
+from strawberry.types.scalar import scalar
 
 if TYPE_CHECKING:
-    from .custom_scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
 ID = NewType("ID", str)
+"""Represent the GraphQL `ID` scalar type."""
 
 JSON = scalar(
     NewType("JSON", object),  # mypy doesn't like `NewType("name", Any)`

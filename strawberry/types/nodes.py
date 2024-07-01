@@ -1,5 +1,4 @@
-"""
-Abstraction layer for graphql-core field nodes.
+"""Abstraction layer for graphql-core field nodes.
 
 Call `convert_sections` on a list of GraphQL `FieldNode`s,
 such as in `info.field_nodes`.

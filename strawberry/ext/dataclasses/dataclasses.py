@@ -21,7 +21,8 @@ def dataclass_init_fn(
     self_name: str,
     globals_: Dict[str, Any],
 ) -> Any:
-    """
+    """Create an __init__ function for a dataclass.
+
     We create a custom __init__ function for the dataclasses that back
     Strawberry object types to only accept keyword arguments. This allows us to
     avoid the problem where a type cannot define a field with a default value

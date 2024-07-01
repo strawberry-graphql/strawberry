@@ -7,7 +7,7 @@ from typing_extensions import Annotated
 import pytest
 
 import strawberry
-from strawberry.lazy_type import lazy
+from strawberry.types.lazy_type import lazy
 
 
 def test_enum_resolver():

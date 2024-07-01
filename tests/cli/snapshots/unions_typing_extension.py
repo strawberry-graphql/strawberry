@@ -1,5 +1,6 @@
-import strawberry
 from typing_extensions import Annotated
+
+import strawberry
 
 # create a few types and then a union type
 

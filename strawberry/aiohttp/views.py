@@ -177,3 +177,6 @@ class GraphQLView(
         sub_response.content_type = "application/json"
 
         return sub_response
+
+
+__all__ = ["GraphQLView"]

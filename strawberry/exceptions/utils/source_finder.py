@@ -15,8 +15,8 @@ if TYPE_CHECKING:
 
     from libcst import BinaryOperation, Call, CSTNode, FunctionDef
 
-    from strawberry.custom_scalar import ScalarDefinition
-    from strawberry.union import StrawberryUnion
+    from strawberry.types.scalar import ScalarDefinition
+    from strawberry.types.union import StrawberryUnion
 
 
 @dataclass

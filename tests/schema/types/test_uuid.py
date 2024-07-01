@@ -36,8 +36,7 @@ def test_uuid_as_input():
 
 
 def test_serialization_of_incorrect_uuid_string():
-    """
-    Test GraphQLError is raised for an invalid UUID.
+    """Test GraphQLError is raised for an invalid UUID.
     The error should exclude "original_error".
     """
 

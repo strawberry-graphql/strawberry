@@ -9,7 +9,7 @@ from strawberry.exceptions.utils.source_finder import SourceFinder
 from .exception import StrawberryException
 
 if TYPE_CHECKING:
-    from strawberry.custom_scalar import ScalarDefinition
+    from strawberry.types.scalar import ScalarDefinition
 
     from .exception_source import ExceptionSource
 

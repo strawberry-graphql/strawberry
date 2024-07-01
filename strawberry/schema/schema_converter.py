@@ -45,8 +45,6 @@ from graphql.language.directive_locations import DirectiveLocation
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument, convert_arguments
-from strawberry.custom_scalar import ScalarWrapper
-from strawberry.enum import EnumDefinition
 from strawberry.exceptions import (
     DuplicatedTypeName,
     InvalidTypeInputForUnion,
@@ -56,20 +54,22 @@ from strawberry.exceptions import (
     UnresolvedFieldTypeError,
 )
 from strawberry.field import UNRESOLVED
-from strawberry.lazy_type import LazyType
-from strawberry.private import is_private
 from strawberry.schema.types.scalar import _make_scalar_type
-from strawberry.type import (
+from strawberry.strawberry_type import (
     StrawberryList,
     StrawberryOptional,
     StrawberryType,
     get_object_definition,
     has_object_definition,
 )
+from strawberry.types.enum import EnumDefinition
 from strawberry.types.info import Info
+from strawberry.types.lazy_type import LazyType
+from strawberry.types.private import is_private
+from strawberry.types.scalar import ScalarWrapper
 from strawberry.types.types import StrawberryObjectDefinition
-from strawberry.union import StrawberryUnion
-from strawberry.unset import UNSET
+from strawberry.types.union import StrawberryUnion
+from strawberry.types.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
 
 from ..extensions.field_extension import build_field_extension_resolvers
@@ -85,12 +85,12 @@ if TYPE_CHECKING:
         GraphQLScalarType,
     )
 
-    from strawberry.custom_scalar import ScalarDefinition
     from strawberry.directive import StrawberryDirective
-    from strawberry.enum import EnumValue
     from strawberry.field import StrawberryField
     from strawberry.schema.config import StrawberryConfig
     from strawberry.schema_directive import StrawberrySchemaDirective
+    from strawberry.types.enum import EnumValue
+    from strawberry.types.scalar import ScalarDefinition
 
 
 FieldType = TypeVar(
@@ -681,7 +681,6 @@ class GraphQLCoreConverter:
 
         def wrap_field_extensions() -> Callable[..., Any]:
             """Wrap the provided field resolver with the middleware."""
-
             for extension in field.extensions:
                 extension.apply(field)
 

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class GraphQLWSConsumer(ChannelsWSConsumer):
-    """A channels websocket consumer for GraphQL
+    """A channels websocket consumer for GraphQL.
 
     This handles the connections, then hands off to the appropriate
     handler based on the subprotocol.

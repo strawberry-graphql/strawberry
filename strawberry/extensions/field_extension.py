@@ -44,7 +44,9 @@ class FieldExtension:
 
 class SyncToAsyncExtension(FieldExtension):
     """Helper class for mixing async extensions with sync resolvers.
-    Applied automatically"""
+
+    Applied automatically.
+    """
 
     async def resolve_async(
         self, next_: AsyncExtensionResolver, source: Any, info: Info, **kwargs: Any
@@ -67,11 +69,12 @@ def _get_async_resolvers(
 def build_field_extension_resolvers(
     field: StrawberryField,
 ) -> list[Union[SyncExtensionResolver, AsyncExtensionResolver]]:
-    """
+    """Builds a list of resolvers for a field with extensions.
+
     Verifies that all of the field extensions for a given field support
     sync or async depending on the field resolver.
-    Inserts a SyncToAsyncExtension to be able to
-    use Async extensions on sync resolvers
+
+    Inserts a SyncToAsyncExtension to be able to use Async extensions on sync resolvers
     Throws a TypeError otherwise.
 
     Returns True if resolving should be async, False on sync resolving

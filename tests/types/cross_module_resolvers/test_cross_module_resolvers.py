@@ -1,5 +1,4 @@
-"""
-The following tests ensure that the types are resolved using the correct
+"""The following tests ensure that the types are resolved using the correct
 module. Concrete types should be non-problematic and are only included
 here for completeness. A problematic case is when a type is a string
 (forward reference) and can only be resolved at schema construction.

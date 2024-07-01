@@ -173,9 +173,7 @@ class HttpClient(abc.ABC):
         return files_map
 
     def create_app(self, **kwargs: Any) -> None:
-        """
-        For use by websocket tests
-        """
+        """For use by websocket tests"""
         raise NotImplementedError
 
     async def ws_connect(
@@ -234,8 +232,7 @@ class WebSocketClient(abc.ABC):
 class DebuggableGraphQLTransportWSMixin:
     @staticmethod
     def on_init(self) -> None:
-        """
-        This method can be patched by unittests to get the instance of the
+        """This method can be patched by unittests to get the instance of the
         transport handler when it is initialized
         """
 

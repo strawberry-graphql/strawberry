@@ -136,9 +136,7 @@ class AsyncBaseHTTPView(
     def _handle_errors(
         self, errors: List[GraphQLError], response_data: GraphQLHTTPResponse
     ) -> None:
-        """
-        Hook to allow custom handling of errors, used by the Sentry Integration
-        """
+        """Hook to allow custom handling of errors, used by the Sentry Integration."""
 
     async def run(
         self,

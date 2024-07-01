@@ -84,9 +84,7 @@ def test_field_metadata():
 
 
 def test_field_type_priority():
-    """
-    Prioritise the field annotation on the class over the resolver annotation.
-    """
+    """Prioritise the field annotation on the class over the resolver annotation."""
 
     def my_resolver() -> str:
         return "1.33"

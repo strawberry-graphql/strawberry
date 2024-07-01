@@ -222,7 +222,8 @@ def test_raises_error_when_missing_annotation_and_resolver():
 def test_raises_error_when_missing_type():
     """Test to make sure that if somehow a non-StrawberryField field is added to the cls
     without annotations it raises an exception. This would occur if someone manually
-    uses dataclasses.field"""
+    uses dataclasses.field
+    """
 
     @strawberry.type
     class Query:

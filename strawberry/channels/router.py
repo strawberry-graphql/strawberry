@@ -1,4 +1,4 @@
-"""GraphQLWebSocketRouter
+"""GraphQLWebSocketRouter.
 
 This is a simple router class that might be better placed as part of Channels itself.
 It's a simple "SubProtocolRouter" that selects the websocket subprotocol based
@@ -21,11 +21,9 @@ if TYPE_CHECKING:
 
 
 class GraphQLProtocolTypeRouter(ProtocolTypeRouter):
-    """
-    Convenience class to set up GraphQL on both HTTP and Websocket, optionally with a
-    Django application for all other HTTP routes:
+    """Convenience class to set up GraphQL on both HTTP and Websocket, optionally with a Django application for all other HTTP routes.
 
-    ```
+    ```python
     from strawberry.channels import GraphQLProtocolTypeRouter
     from django.core.asgi import get_asgi_application
 

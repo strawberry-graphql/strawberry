@@ -27,25 +27,25 @@ class SchemaExtension:
     def on_operation(  # type: ignore
         self,
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
-        """Called before and after a GraphQL operation (query / mutation) starts"""
+        """Called before and after a GraphQL operation (query / mutation) starts."""
         yield None
 
     def on_validate(  # type: ignore
         self,
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
-        """Called before and after the validation step"""
+        """Called before and after the validation step."""
         yield None
 
     def on_parse(  # type: ignore
         self,
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
-        """Called before and after the parsing step"""
+        """Called before and after the parsing step."""
         yield None
 
     def on_execute(  # type: ignore
         self,
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
-        """Called before and after the execution step"""
+        """Called before and after the execution step."""
         yield None
 
     def resolve(

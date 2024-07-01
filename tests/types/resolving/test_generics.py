@@ -5,17 +5,17 @@ import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.enum import EnumDefinition
 from strawberry.field import StrawberryField
-from strawberry.type import (
+from strawberry.strawberry_type import (
     StrawberryList,
     StrawberryOptional,
     StrawberryTypeVar,
     get_object_definition,
     has_object_definition,
 )
+from strawberry.types.enum import EnumDefinition
 from strawberry.types.types import StrawberryObjectDefinition
-from strawberry.union import StrawberryUnion
+from strawberry.types.union import StrawberryUnion
 
 
 def test_basic_generic():

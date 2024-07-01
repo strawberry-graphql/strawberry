@@ -11,7 +11,7 @@ import pytest
 import strawberry
 from strawberry.printer import print_schema
 from strawberry.scalars import JSON
-from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.strawberry_type import StrawberryList, StrawberryOptional
 from tests.a import A
 from tests.d import D
 

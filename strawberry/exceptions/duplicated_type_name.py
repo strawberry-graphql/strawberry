@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class DuplicatedTypeName(StrawberryException):
-    """Raised when the same type with different definition is reused inside a schema"""
+    """Raised when the same type with different definition is reused inside a schema."""
 
     def __init__(
         self,

@@ -25,8 +25,8 @@ from strawberry.experimental.pydantic.exceptions import (
     BothDefaultAndDefaultFactoryDefinedError,
     UnregisteredTypeException,
 )
-from strawberry.private import is_private
-from strawberry.unset import UNSET
+from strawberry.types.private import is_private
+from strawberry.types.unset import UNSET
 from strawberry.utils.typing import (
     get_list_annotation,
     get_optional_annotation,
@@ -60,7 +60,7 @@ def get_private_fields(cls: Type) -> List[dataclasses.Field]:
 
 
 class DataclassCreationFields(NamedTuple):
-    """Fields required for the fields parameter of make_dataclass"""
+    """Fields required for the fields parameter of make_dataclass."""
 
     name: str
     field_type: Type
@@ -75,8 +75,7 @@ def get_default_factory_for_field(
     field: CompatModelField,
     compat: PydanticCompat,
 ) -> Union[NoArgAnyCallable, dataclasses._MISSING_TYPE]:
-    """
-    Gets the default factory for a pydantic field.
+    """Gets the default factory for a pydantic field.
 
     Handles mutable defaults when making the dataclass by
     using pydantic's smart_deepcopy

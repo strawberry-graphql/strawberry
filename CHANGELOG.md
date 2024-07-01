@@ -1333,7 +1333,7 @@ class User:
     @strawberry.field
     @staticmethod
     async def name(parent: strawberry.Parent[UserRow]) -> str:
-        return f"User Number {parent.id}"
+        return f"User Number {parent.id_}"
 
 
 @strawberry.type
@@ -4189,7 +4189,7 @@ the original type was already used with that generic in the schema.
 
 Example:
 
-```python3
+```python
 @strawberry.type
 class Query:
     regular: Edge[User]

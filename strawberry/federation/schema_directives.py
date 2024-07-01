@@ -3,7 +3,7 @@ from typing import ClassVar, List, Optional
 
 from strawberry import directive_field
 from strawberry.schema_directive import Location, schema_directive
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
 
 from .types import (
     FieldSet,

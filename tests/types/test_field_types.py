@@ -4,7 +4,7 @@ from typing import List, Optional, TypeVar
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.field import StrawberryField
-from strawberry.union import StrawberryUnion
+from strawberry.types.union import StrawberryUnion
 
 
 def test_enum():

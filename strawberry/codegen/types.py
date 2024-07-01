@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from enum import EnumMeta
     from typing_extensions import Literal
 
-    from strawberry.unset import UnsetType
+    from strawberry.types.unset import UnsetType
 
 
 @dataclass

@@ -28,6 +28,25 @@ class UnsetType:
 
 
 UNSET: Any = UnsetType()
+"""A special value that can be used to represent an unset value in a field or argument.
+Similar to `undefined` in JavaScript, this value can be used to differentiate between
+a field that was not set and a field that was set to `None` or `null`.
+
+Example:
+
+```python
+import strawberry
+
+
+@strawberry.input
+class UserInput:
+    name: str | None = strawberry.UNSET
+    age: int | None = strawberry.UNSET
+```
+
+In the example above, if `name` or `age` are not provided when creating a `UserInput`
+object, they will be set to `UNSET` instead of `None`.
+"""
 
 
 def _deprecated_is_unset(value: Any) -> bool:

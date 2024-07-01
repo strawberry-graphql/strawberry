@@ -7,7 +7,7 @@ import strawberry
 from strawberry.printer import print_schema
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema_directive import Location
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
 
 
 def test_print_simple_directive():
