@@ -390,7 +390,7 @@ def connection(
     case for this is to provide a filtered iterable of nodes by using some custom
     filter arguments.
 
-    Parameters:
+    Args:
         graphql_type: The type of the nodes in the connection. This is used to
             determine the type of the edges and the node field in the connection.
         resolver: The resolver for the connection. This is expected to return an
@@ -405,6 +405,7 @@ def connection(
         metadata: The metadata of the field.
         directives: The directives to apply to the field.
         extensions: The extensions to apply to the field.
+        init: Used only for type checking purposes.
 
     Examples:
     Annotating something like this:

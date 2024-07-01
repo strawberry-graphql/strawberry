@@ -125,7 +125,7 @@ class PermissionExtension(FieldExtension):
     ) -> None:
         """Initialize the permission extension.
 
-        Parameters:
+        Args:
             permissions: List of permissions to apply.
             fail_silently: If True, return None or [] instead of raising an exception.
                 This is only valid for optional or list fields.

@@ -93,7 +93,7 @@ class BaseGraphQLTestClient(ABC):
     ) -> Dict[str, List[str]]:
         """Creates the file mapping between the variables and the files objects passed as key arguments.
 
-        Parameters:
+        Args:
             variables: A dictionary with the variables that are going to be passed to the
                 query
             files: A dictionary with the files that are going to be passed to the query

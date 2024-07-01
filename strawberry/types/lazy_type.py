@@ -123,7 +123,7 @@ class StrawberryLazyReference:
 def lazy(module_path: str) -> StrawberryLazyReference:
     """Creates a lazy reference to a type in another module.
 
-    Parameters:
+    Args:
         module_path: The path to the module containing the type, supports relative paths
             starting with `.`
 

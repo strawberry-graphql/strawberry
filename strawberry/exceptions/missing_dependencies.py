@@ -14,7 +14,7 @@ class MissingOptionalDependenciesError(Exception):
     ) -> None:
         """Initialize the error.
 
-        Parameters:
+        Args:
             packages: List of packages that are required.
             extras: List of extras that are required.
         """

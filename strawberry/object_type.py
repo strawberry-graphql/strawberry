@@ -233,7 +233,7 @@ def type(
     Similar to `dataclasses.dataclass`, but with additional functionality for
     defining GraphQL types.
 
-    Parameters:
+    Args:
         cls: The class we want to create a GraphQL type from
         name: The name of the GraphQL type
         is_input: Whether the class is an input type, used internally, use `@strawerry.input` instead of passing this flag
@@ -347,7 +347,7 @@ def input(
 
     Similar to `@strawberry.type`, but for input types.
 
-    Parameters:
+    Args:
         cls: The class we want to create a GraphQL input type from
         name: The name of the GraphQL input type
         description: The description of the GraphQL input type
@@ -426,7 +426,7 @@ def interface(
 
     Similar to `@strawberry.type`, but for interfaces.
 
-    Parameters:
+    Args:
         cls: The class we want to create a GraphQL interface from
         name: The name of the GraphQL interface
         description: The description of the GraphQL interface
@@ -465,7 +465,7 @@ def asdict(obj: Any) -> Dict[str, object]:
 
     This wraps the dataclasses.asdict function to strawberry.
 
-    Parameters:
+    Args:
         obj: The object to convert into a dictionary
 
     Returns:

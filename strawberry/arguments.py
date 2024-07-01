@@ -240,7 +240,7 @@ def argument(
 ) -> StrawberryArgumentAnnotation:
     """Function to add metadata to an argument, like a description or deprecation reason.
 
-    Parameters:
+    Args:
         description: The GraphQL description of the argument
         name: The GraphQL name of the argument
         deprecation_reason: The reason why this argument is deprecated, setting this will mark the argument as deprecated

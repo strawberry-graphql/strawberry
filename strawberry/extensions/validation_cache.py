@@ -25,7 +25,7 @@ class ValidationCache(SchemaExtension):
     def __init__(self, maxsize: Optional[int] = None) -> None:
         """Initialize the ValidationCache.
 
-        Parameters:
+        Args:
             maxsize: Set the maxsize of the cache. If `maxsize` is set to `None` then the
                 cache will grow without bound.
 

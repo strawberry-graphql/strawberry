@@ -165,7 +165,8 @@ def scalar(
 ) -> Any:
     """Annotates a class or type as a GraphQL custom scalar.
 
-    Parameters:
+    Args:
+        cls: The class or type to annotate
         name: The GraphQL name of the scalar
         description: The description of the scalar
         specified_by_url: The URL of the specification

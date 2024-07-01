@@ -142,7 +142,7 @@ def mutation(
 ) -> Any:
     """Annotates a method or property as a GraphQL mutation.
 
-    Parameters:
+    Args:
         resolver: The resolver for the field. It can be a sync or async function.
         name: The GraphQL name of the field.
         description: The GraphQL description of the field.
@@ -299,7 +299,7 @@ def subscription(
 ) -> Any:
     """Annotates a method or property as a GraphQL subscription.
 
-    Parameters:
+    Args:
         resolver: The resolver for the field.
         name: The GraphQL name of the field.
         description: The GraphQL description of the field.

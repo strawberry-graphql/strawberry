@@ -16,13 +16,14 @@ def create_type(
 ) -> Type:
     """Create a Strawberry type from a list of StrawberryFields.
 
-    Parameters:
+    Args:
         name: The GraphQL name of the type.
         fields: The fields of the type.
         is_input: Whether the type is an input type.
         is_interface: Whether the type is an interface.
         description: The GraphQL description of the type.
         directives: The directives to attach to the type.
+        extend: Whether the type is an extension.
 
     Example usage:
 

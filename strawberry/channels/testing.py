@@ -74,13 +74,14 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
     ) -> None:
         """Create a new communicator.
 
-        Parameters:
+        Args:
             application: Your asgi application that encapsulates the strawberry schema.
             path: the url endpoint for the schema.
             protocol: currently this supports `graphql-transport-ws` only.
             connection_params: a dictionary of connection parameters to send to the server.
             headers: a list of tuples to be sent as headers to the server.
             subprotocols: a list of subprotocols to be sent to the server.
+            **kwargs: additional arguments to be passed to the `WebsocketCommunicator` constructor.
         """
         self.protocol = protocol
         subprotocols = kwargs.get("subprotocols", [])

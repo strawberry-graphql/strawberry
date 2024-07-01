@@ -92,7 +92,7 @@ class ChannelsConsumer(AsyncConsumer):
         Utility to listen for channels messages for this consumer inside
         a resolver (usually inside a subscription).
 
-        Parameters:
+        Args:
             type:
                 The type of the message to wait for.
             timeout:
@@ -151,7 +151,7 @@ class ChannelsConsumer(AsyncConsumer):
         Utility to listen for channels messages for this consumer inside
         a resolver (usually inside a subscription).
 
-        Parameters:
+        Args:
             type:
                 The type of the message to wait for.
             timeout:

@@ -28,7 +28,7 @@ def directive_field(
 ) -> Any:
     """Function to add metadata to a directive argument, like the GraphQL name.
 
-    Parameters:
+    Args:
         name: The GraphQL name of the directive argument
         default: The default value of the argument
 
@@ -100,7 +100,7 @@ def directive(
 ) -> Callable[[Callable[..., T]], StrawberryDirective[T]]:
     """Decorator to create a GraphQL operation directive.
 
-    Parameters:
+    Args:
         locations: The locations where the directive can be used
         description: The GraphQL description of the directive
         name: The GraphQL name of the directive

@@ -29,7 +29,7 @@ class MaxTokensLimiter(SchemaExtension):
     ) -> None:
         """Initialize the MaxTokensLimiter.
 
-        Parameters:
+        Args:
             max_token_count: The maximum number of tokens allowed in a GraphQL document.
         """
         self.max_token_count = max_token_count

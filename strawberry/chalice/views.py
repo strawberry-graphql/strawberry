@@ -96,7 +96,7 @@ class GraphQLView(
     ) -> Response:
         """A wrapper for error responses.
 
-        Parameters:
+        Args:
             message: The error message.
             error_code: The error code.
             http_status_code: The HTTP status code.

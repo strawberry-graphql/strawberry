@@ -537,7 +537,7 @@ def field(
 ) -> Any:
     """Annotates a method or property as a GraphQL field.
 
-    Parameters:
+    Args:
         resolver: The resolver for the field. This can be a function or a `StrawberryResolver`.
         name: The GraphQL name of the field.
         is_subscription: Whether the field is a subscription field.

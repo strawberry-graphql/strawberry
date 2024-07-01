@@ -68,7 +68,7 @@ def enum_value(
 ) -> EnumValueDefinition:
     """Function to customise an enum value, for example to add a description or deprecation reason.
 
-    Parameters:
+    Args:
         value: The value of the enum member
         deprecation_reason: The deprecation reason of the enum member, setting this will mark the enum member as deprecated
         directives: The directives to attach to the enum member
@@ -184,7 +184,8 @@ def enum(
     Strawberry will use the names of the Python enum as the names of the
     GraphQL enum values.
 
-    Parameters:
+    Args:
+        cls: The Enum class to be annotated
         name: The name of the GraphQL enum
         description: The description of the GraphQL enum
         directives: The directives to attach to the GraphQL enum
