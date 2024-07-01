@@ -81,16 +81,14 @@ def is_generic_alias(type_: Any) -> TypeGuard[_GenericAlias]:
 
 
 def is_list(annotation: object) -> bool:
-    """Returns True if annotation is a List"""
-
+    """Returns True if annotation is a List."""
     annotation_origin = getattr(annotation, "__origin__", None)
 
     return annotation_origin == list
 
 
 def is_union(annotation: object) -> bool:
-    """Returns True if annotation is a Union"""
-
+    """Returns True if annotation is a Union."""
     # this check is needed because unions declared with the new syntax `A | B`
     # don't have a `__origin__` property on them, but they are instances of
     # `UnionType`, which is only available in Python 3.10+
@@ -108,8 +106,7 @@ def is_union(annotation: object) -> bool:
 
 
 def is_optional(annotation: Type) -> bool:
-    """Returns True if the annotation is Optional[SomeType]"""
-
+    """Returns True if the annotation is Optional[SomeType]."""
     # Optionals are represented as unions
 
     if not is_union(annotation):
@@ -156,7 +153,6 @@ def is_generic_subclass(annotation: type) -> bool:
 
 def is_generic(annotation: type) -> bool:
     """Returns True if the annotation is or extends a generic."""
-
     return (
         # TODO: These two lines appear to have the same effect. When will an
         #       annotation have parameters but not satisfy the first condition?
@@ -167,7 +163,6 @@ def is_generic(annotation: type) -> bool:
 
 def is_type_var(annotation: Type) -> bool:
     """Returns True if the annotation is a TypeVar."""
-
     return isinstance(annotation, TypeVar)
 
 

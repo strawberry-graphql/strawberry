@@ -19,7 +19,7 @@ from strawberry.types.unset import UNSET
 def _get_fields(
     cls: Type[Any], original_type_annotations: Dict[str, Type[Any]]
 ) -> List[StrawberryField]:
-    """Get all the strawberry fields off a strawberry.type cls
+    """Get all the strawberry fields off a strawberry.type cls.
 
     This function returns a list of StrawberryFields (one for each field item), while
     also paying attention the name and typing of the field.
@@ -54,7 +54,6 @@ def _get_fields(
     passing a named function (i.e. not an anonymous lambda) to strawberry.field
     (typically as a decorator).
     """
-
     fields: Dict[str, StrawberryField] = {}
 
     # before trying to find any fields, let's first add the fields defined in

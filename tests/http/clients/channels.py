@@ -131,9 +131,7 @@ class DebuggableSyncGraphQLHTTPConsumer(SyncGraphQLHTTPConsumer):
 
 
 class ChannelsHttpClient(HttpClient):
-    """
-    A client to test websockets over channels
-    """
+    """A client to test websockets over channels"""
 
     def __init__(
         self,

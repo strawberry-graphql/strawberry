@@ -173,7 +173,6 @@ def mutation(
 
     it can be used both as decorator and as a normal function.
     """
-
     return field(
         resolver=resolver,  # type: ignore
         name=name,
@@ -331,7 +330,6 @@ def subscription(
 
     it can be used both as decorator and as a normal function.
     """
-
     return field(
         resolver=resolver,  # type: ignore
         name=name,

@@ -312,8 +312,7 @@ async def test_duplicated_operation_ids(ws: WebSocketClient):
 
 
 async def test_reused_operation_ids(ws: WebSocketClient):
-    """
-    Test that an operation id can be re-used after it has been
+    """Test that an operation id can be re-used after it has been
     previously used for a completed operation
     """
     # Use sub1 as an id for an operation
@@ -480,9 +479,7 @@ async def test_subscription_errors(ws: WebSocketClient):
 
 
 async def test_operation_error_no_complete(ws: WebSocketClient):
-    """
-    Test that an "error" message is not followed by "complete"
-    """
+    """Test that an "error" message is not followed by "complete" """
     # get an "error" message
     await ws.send_json(
         SubscribeMessage(
@@ -553,8 +550,7 @@ async def test_single_result_query_operation(ws: WebSocketClient):
 
 
 async def test_single_result_query_operation_async(ws: WebSocketClient):
-    """
-    Test a single result query operation on an
+    """Test a single result query operation on an
     `async` method in the schema, including an artificial
     async delay
     """
@@ -580,8 +576,7 @@ async def test_single_result_query_operation_async(ws: WebSocketClient):
 
 
 async def test_single_result_query_operation_overlapped(ws: WebSocketClient):
-    """
-    Test that two single result queries can be in flight at the same time,
+    """Test that two single result queries can be in flight at the same time,
     just like regular queries.  Start two queries with separate ids. The
     first query has a delay, so we expect the response to the second
     query to be delivered first.
@@ -705,8 +700,7 @@ async def test_single_result_operation_error(ws: WebSocketClient):
 
 
 async def test_single_result_operation_exception(ws: WebSocketClient):
-    """
-    Test that single-result-operations which raise exceptions
+    """Test that single-result-operations which raise exceptions
     behave in the same way as streaming operations
     """
     process_errors = Mock()
@@ -730,8 +724,7 @@ async def test_single_result_operation_exception(ws: WebSocketClient):
 
 
 async def test_single_result_duplicate_ids_sub(ws: WebSocketClient):
-    """
-    Test that single-result-operations and streaming operations
+    """Test that single-result-operations and streaming operations
     share the same ID namespace.  Start a regular subscription,
     then issue a single-result operation with same ID and expect an
     error due to already existing ID
@@ -762,8 +755,7 @@ async def test_single_result_duplicate_ids_sub(ws: WebSocketClient):
 
 
 async def test_single_result_duplicate_ids_query(ws: WebSocketClient):
-    """
-    Test that single-result-operations don't allow duplicate
+    """Test that single-result-operations don't allow duplicate
     IDs for two asynchronous queries.  Issue one async query
     with delay, then another with same id.  Expect error.
     """
@@ -890,8 +882,7 @@ async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
 
 
 async def test_error_handler_for_timeout(http_client: HttpClient):
-    """
-    Test that the error handler is called when the timeout
+    """Test that the error handler is called when the timeout
     task encounters an error
     """
     with contextlib.suppress(ImportError):
@@ -936,8 +927,7 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
 
 
 async def test_subscription_errors_continue(ws: WebSocketClient):
-    """
-    Verify that an ExecutionResult with errors during subscription does not terminate
+    """Verify that an ExecutionResult with errors during subscription does not terminate
     the subscription
     """
     process_errors = Mock()

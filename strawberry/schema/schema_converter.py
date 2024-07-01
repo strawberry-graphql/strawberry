@@ -681,7 +681,6 @@ class GraphQLCoreConverter:
 
         def wrap_field_extensions() -> Callable[..., Any]:
             """Wrap the provided field resolver with the middleware."""
-
             for extension in field.extensions:
                 extension.apply(field)
 

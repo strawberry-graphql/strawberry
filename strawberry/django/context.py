@@ -18,5 +18,5 @@ class StrawberryDjangoContext:
         return super().__getattribute__(key)
 
     def get(self, key: str) -> Any:
-        """Enable .get notation for accessing the request"""
+        """Enable .get notation for accessing the request."""
         return super().__getattribute__(key)

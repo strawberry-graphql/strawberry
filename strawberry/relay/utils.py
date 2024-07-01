@@ -86,6 +86,7 @@ def should_resolve_list_connection_edges(info: Info) -> bool:
 
     def _check_selection(selection: Selection) -> bool:
         """Recursively inspect the selection to check if the user requested to resolve the `edges` field.
+
         Args:
             selection (Selection): The selection to check.
 

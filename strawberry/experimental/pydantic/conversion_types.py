@@ -14,7 +14,9 @@ PydanticModel = TypeVar("PydanticModel", bound=BaseModel)
 
 class StrawberryTypeFromPydantic(Protocol[PydanticModel]):
     """This class does not exist in runtime.
-    It only makes the methods below visible for IDEs"""
+
+    It only makes the methods below visible for IDEs.
+    """
 
     def __init__(self, **kwargs: Any) -> None: ...
 

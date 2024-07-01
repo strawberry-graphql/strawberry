@@ -92,7 +92,7 @@ FALLBACK_VERSION = Decimal("0.800")
 
 
 class MypyVersion:
-    """Stores the mypy version to be used by the plugin"""
+    """Stores the mypy version to be used by the plugin."""
 
     VERSION: Decimal
 
@@ -330,9 +330,11 @@ def add_static_method_to_class(
     return_type: Type,
     tvar_def: Optional[TypeVarType] = None,
 ) -> None:
-    """Adds a static method
-    Edited add_method_to_class to incorporate static method logic
-    https://github.com/python/mypy/blob/9c05d3d19/mypy/plugins/common.py
+    """Adds a static method.
+
+    Edited `add_method_to_class` to incorporate static method logic
+
+    https://github.com/python/mypy/blob/9c05d3d19/mypy/plugins/common.py.
     """
     info = cls.info
 

@@ -215,8 +215,7 @@ def test_union_explicit_type_resolution():
     reason="pipe syntax for union is only available on python 3.10+",
 )
 def test_union_optional_with_or_operator():
-    """
-    Verify that the `|` operator is supported when annotating unions as
+    """Verify that the `|` operator is supported when annotating unions as
     optional in schemas.
     """
 

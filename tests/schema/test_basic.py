@@ -365,7 +365,8 @@ def test_parent_class_fields_are_inherited():
 
 def test_can_return_compatible_type():
     """Test that we can return a different type that has the same fields,
-    for example when returning a Django Model."""
+    for example when returning a Django Model.
+    """
 
     @dataclass
     class Example:

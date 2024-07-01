@@ -13,11 +13,9 @@ from strawberry.extensions.add_validation_rules import AddValidationRules
 
 
 class MaxAliasesLimiter(AddValidationRules):
-    """
-    Add a validator to limit the number of aliases used.
+    """Add a validator to limit the number of aliases used.
 
     Example:
-
     ```python
     import strawberry
     from strawberry.extensions import MaxAliasesLimiter
@@ -30,7 +28,8 @@ class MaxAliasesLimiter(AddValidationRules):
         self,
         max_alias_count: int,
     ) -> None:
-        """
+        """Initialize the MaxAliasesLimiter.
+
         Parameters:
             max_alias_count:  The maximum number of aliases allowed in a GraphQL document.
         """

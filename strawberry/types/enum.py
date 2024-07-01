@@ -78,7 +78,6 @@ def enum_value(
         An EnumValueDefinition object that can be used to customise an enum member
 
     Example:
-
     ```python
     from enum import Enum
     import strawberry
@@ -90,7 +89,6 @@ def enum_value(
         SECOND_VALUE = strawberry.enum_value(description="The second value")
     ```
     """
-
     return EnumValueDefinition(
         value=value,
         deprecation_reason=deprecation_reason,
@@ -195,7 +193,6 @@ def enum(
         The decorated Enum class
 
     Example:
-
     ```python
     from enum import Enum
     import strawberry

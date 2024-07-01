@@ -6,11 +6,9 @@ from strawberry.schema.execute import parse_document
 
 
 class ParserCache(SchemaExtension):
-    """
-    Add LRU caching the parsing step during execution to improve performance.
+    """Add LRU caching the parsing step during execution to improve performance.
 
     Example:
-
     ```python
     import strawberry
     from strawberry.extensions import ParserCache
@@ -25,7 +23,8 @@ class ParserCache(SchemaExtension):
     """
 
     def __init__(self, maxsize: Optional[int] = None) -> None:
-        """
+        """Initialize the ParserCache.
+
         Parameters:
 
         maxsize: Set the maxsize of the cache. If `maxsize` is set to `None` then the

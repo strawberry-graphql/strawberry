@@ -6,11 +6,9 @@ from strawberry.schema.execute import validate_document
 
 
 class ValidationCache(SchemaExtension):
-    """
-    Add LRU caching the validation step during execution to improve performance.
+    """Add LRU caching the validation step during execution to improve performance.
 
     Example:
-
     ```python
     import strawberry
     from strawberry.extensions import ValidationCache
@@ -25,14 +23,14 @@ class ValidationCache(SchemaExtension):
     """
 
     def __init__(self, maxsize: Optional[int] = None) -> None:
-        """
+        """Initialize the ValidationCache.
+
         Parameters:
+            maxsize: Set the maxsize of the cache. If `maxsize` is set to `None` then the
+                cache will grow without bound.
 
-        maxsize: Set the maxsize of the cache. If `maxsize` is set to `None` then the
-            cache will grow without bound.
-            More info: https://docs.python.org/3/library/functools.html#functools.lru_cache
+        More info: https://docs.python.org/3/library/functools.html#functools.lru_cache
         """
-
         self.cached_validate_document = lru_cache(maxsize=maxsize)(validate_document)
 
     def on_validate(self) -> Iterator[None]:

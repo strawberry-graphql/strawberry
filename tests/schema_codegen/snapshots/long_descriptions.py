@@ -1,5 +1,6 @@
 import strawberry
 
+
 @strawberry.type(description="A connection to a list of items.")
 class FilmCharactersConnection:
     page_info: PageInfo = strawberry.field(description="Information to aid in pagination.")

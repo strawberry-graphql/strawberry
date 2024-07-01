@@ -121,7 +121,6 @@ def scalar(
             self.items = items
     ```
     """
-
     from strawberry.federation.schema_directives import (
         Authenticated,
         Inaccessible,

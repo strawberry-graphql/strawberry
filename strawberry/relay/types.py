@@ -357,7 +357,6 @@ class Node:
             single node id.
 
     Example:
-
     ```python
     import strawberry
 
@@ -697,6 +696,8 @@ class Connection(Generic[NodeType]):
                 connection's `NodeType`
             info:
                 The strawberry execution info resolve the type name from
+            **kwargs:
+                Additional arguments passed to the resolver
 
         """
         return node

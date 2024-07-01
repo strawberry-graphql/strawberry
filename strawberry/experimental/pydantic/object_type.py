@@ -312,8 +312,10 @@ def input(
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     """Convenience decorator for creating an input type from a Pydantic model.
-    Equal to partial(type, is_input=True)
-    See https://github.com/strawberry-graphql/strawberry/issues/1830
+
+    Equal to `partial(type, is_input=True)`
+
+    See https://github.com/strawberry-graphql/strawberry/issues/1830.
     """
     return type(
         model=model,
@@ -340,8 +342,10 @@ def interface(
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     """Convenience decorator for creating an interface type from a Pydantic model.
-    Equal to partial(type, is_interface=True)
-    See https://github.com/strawberry-graphql/strawberry/issues/1830
+
+    Equal to `partial(type, is_interface=True)`
+
+    See https://github.com/strawberry-graphql/strawberry/issues/1830.
     """
     return type(
         model=model,

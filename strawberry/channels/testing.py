@@ -41,12 +41,12 @@ if TYPE_CHECKING:
 
 
 class GraphQLWebsocketCommunicator(WebsocketCommunicator):
-    """
-    Usage:
+    """A test communicator for GraphQL over Websockets.
+
     ```python
     import pytest
     from strawberry.channels.testing import GraphQLWebsocketCommunicator
-    from myapp.asgi import application
+    from myapp.asgi import application.
 
 
     @pytest.fixture
@@ -72,12 +72,15 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         connection_params: dict = {},
         **kwargs: Any,
     ) -> None:
-        """
+        """Create a new communicator.
 
-        Args:
+        Parameters:
             application: Your asgi application that encapsulates the strawberry schema.
             path: the url endpoint for the schema.
             protocol: currently this supports `graphql-transport-ws` only.
+            connection_params: a dictionary of connection parameters to send to the server.
+            headers: a list of tuples to be sent as headers to the server.
+            subprotocols: a list of subprotocols to be sent to the server.
         """
         self.protocol = protocol
         subprotocols = kwargs.get("subprotocols", [])
@@ -155,7 +158,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
                 return
 
     def process_errors(self, errors: List[GraphQLFormattedError]) -> List[GraphQLError]:
-        """Reconst a GraphQLError from a FormattedGraphQLError"""
+        """Reconst a GraphQLError from a FormattedGraphQLError."""
         result = []
         for f_error in errors:
             error = GraphQLError(

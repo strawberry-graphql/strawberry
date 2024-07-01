@@ -85,7 +85,6 @@ def enum(
     If name is passed, the name of the GraphQL type will be
     the value passed of name instead of the Enum class name.
     """
-
     from strawberry.federation.schema_directives import (
         Authenticated,
         Inaccessible,

@@ -91,8 +91,7 @@ class BaseGraphQLTestClient(ABC):
     def _build_multipart_file_map(
         variables: Dict[str, Mapping], files: Dict[str, object]
     ) -> Dict[str, List[str]]:
-        """Creates the file mapping between the variables and the files objects passed
-        as key arguments
+        """Creates the file mapping between the variables and the files objects passed as key arguments.
 
         Parameters:
             variables: A dictionary with the variables that are going to be passed to the
@@ -145,7 +144,6 @@ class BaseGraphQLTestClient(ABC):
         # }
         ```
         """
-
         map: Dict[str, List[str]] = {}
         for key, values in variables.items():
             reference = key

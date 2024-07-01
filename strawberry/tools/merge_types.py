@@ -8,7 +8,7 @@ from strawberry.strawberry_type import has_object_definition
 
 
 def merge_types(name: str, types: Tuple[type, ...]) -> type:
-    """Merge multiple Strawberry types into one
+    """Merge multiple Strawberry types into one.
 
     For example, given two queries `A` and `B`, one can merge them into a
     super type as follows:
@@ -20,7 +20,6 @@ def merge_types(name: str, types: Tuple[type, ...]) -> type:
         class SuperQuery(B, A):
             ...
     """
-
     if not types:
         raise ValueError("Can't merge types if none are supplied")
 

@@ -4,11 +4,9 @@ from strawberry.extensions.base_extension import SchemaExtension
 
 
 class MaxTokensLimiter(SchemaExtension):
-    """
-    Add a validator to limit the number of tokens in a GraphQL document.
+    """Add a validator to limit the number of tokens in a GraphQL document.
 
     Example:
-
     ```python
     import strawberry
     from strawberry.extensions import MaxTokensLimiter
@@ -29,11 +27,11 @@ class MaxTokensLimiter(SchemaExtension):
         self,
         max_token_count: int,
     ) -> None:
-        """
+        """Initialize the MaxTokensLimiter.
+
         Parameters:
             max_token_count: The maximum number of tokens allowed in a GraphQL document.
         """
-
         self.max_token_count = max_token_count
 
     def on_operation(self) -> Iterator[None]:

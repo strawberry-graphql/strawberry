@@ -81,8 +81,7 @@ ShouldIgnoreType = Callable[[IgnoreContext], bool]
 
 
 class QueryDepthLimiter(AddValidationRules):
-    """
-    Add a validator to limit the query depth of GraphQL operations
+    """Add a validator to limit the query depth of GraphQL operations.
 
     Example:
 
@@ -103,14 +102,14 @@ class QueryDepthLimiter(AddValidationRules):
         callback: Optional[Callable[[Dict[str, int]], None]] = None,
         should_ignore: Optional[ShouldIgnoreType] = None,
     ) -> None:
-        """
+        """Initialize the QueryDepthLimiter.
+
         Parameters:
             max_depth: The maximum allowed depth for any operation in a GraphQL document.
             callback: Called each time validation runs. Receives an Object which is a map of the depths for each operation.
             should_ignore: Stops recursive depth checking based on a field name and arguments.
                 A function that returns a boolean and conforms to the ShouldIgnoreType function signature.
         """
-
         if should_ignore is not None and not callable(should_ignore):
             raise TypeError(
                 "The `should_ignore` argument to "
@@ -313,3 +312,6 @@ def is_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -> bo
             raise TypeError(f"Invalid ignore option: {rule}")
 
     return False
+
+
+__all__ = ["QueryDepthLimiter"]

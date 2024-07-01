@@ -206,8 +206,8 @@ def convert_arguments(
     """Converts a nested dictionary to a dictionary of actual types.
 
     It deals with conversion of input types to proper dataclasses and
-    also uses a sentinel value for unset values."""
-
+    also uses a sentinel value for unset values.
+    """
     if not arguments:
         return {}
 
@@ -251,7 +251,6 @@ def argument(
         A StrawberryArgumentAnnotation object that can be used to customise an argument
 
     Example:
-
     ```python
     import strawberry
 
@@ -265,7 +264,6 @@ def argument(
             return value
     ```
     """
-
     return StrawberryArgumentAnnotation(
         description=description,
         name=name,

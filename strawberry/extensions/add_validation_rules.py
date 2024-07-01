@@ -9,11 +9,9 @@ if TYPE_CHECKING:
 
 
 class AddValidationRules(SchemaExtension):
-    """
-    Add graphql-core validation rules
+    """Add graphql-core validation rules.
 
     Example:
-
     ```python
     import strawberry
     from strawberry.extensions import AddValidationRules

@@ -34,7 +34,7 @@ setup_exception_handler()
 
 # TODO: this doesn't seem to be tested
 class WrongReturnTypeForUnion(Exception):
-    """The Union type cannot be resolved because it's not a field"""
+    """The Union type cannot be resolved because it's not a field."""
 
     def __init__(self, field_name: str, result_type: str) -> None:
         message = (
@@ -46,7 +46,7 @@ class WrongReturnTypeForUnion(Exception):
 
 
 class UnallowedReturnTypeForUnion(Exception):
-    """The return type is not in the list of Union types"""
+    """The return type is not in the list of Union types."""
 
     def __init__(
         self, field_name: str, result_type: str, allowed_types: Set[GraphQLObjectType]
@@ -144,7 +144,7 @@ class InvalidDefaultFactoryError(Exception):
 
 
 class InvalidCustomContext(Exception):
-    """Raised when a custom context object is of the wrong python type"""
+    """Raised when a custom context object is of the wrong python type."""
 
     def __init__(self) -> None:
         message = (
@@ -155,7 +155,7 @@ class InvalidCustomContext(Exception):
 
 
 class StrawberryGraphQLError(GraphQLError):
-    """Use it when you want to override the graphql.GraphQLError in custom extensions"""
+    """Use it when you want to override the graphql.GraphQLError in custom extensions."""
 
 
 __all__ = [

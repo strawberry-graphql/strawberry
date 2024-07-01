@@ -108,8 +108,7 @@ class Schema(BaseSchema):
         ] = None,
         schema_directives: Iterable[object] = (),
     ) -> None:
-        """
-        A GraphQL Schema class used to define the structure and configuration of GraphQL queries, mutations, and subscriptions.
+        """A GraphQL Schema class used to define the structure and configuration of GraphQL queries, mutations, and subscriptions.
 
         This class allows the creation of a GraphQL schema by specifying the types for queries, mutations, and subscriptions, along with various configuration options such as directives, extensions, and scalar overrides.
 
@@ -126,7 +125,6 @@ class Schema(BaseSchema):
             schema_directives: A list of schema directives for the schema
 
         Example:
-
         ```python
         import strawberry
 
@@ -449,7 +447,7 @@ class Schema(BaseSchema):
     __str__ = as_str
 
     def introspect(self) -> Dict[str, Any]:
-        """Return the introspection query result for the current schema
+        """Return the introspection query result for the current schema.
 
         Raises:
             ValueError: If the introspection query fails due to an invalid schema

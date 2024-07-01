@@ -202,7 +202,6 @@ def scalar(
             self.items = items
     ```
     """
-
     if parse_value is None:
         parse_value = cls
 

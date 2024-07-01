@@ -103,9 +103,7 @@ def _check_field_annotations(cls: Type[Any]) -> None:
 
 
 def _wrap_dataclass(cls: Type[T]) -> Type[T]:
-    """Wrap a strawberry.type class with a dataclass and check for any issues
-    before doing so"""
-
+    """Wrap a strawberry.type class with a dataclass and check for any issues before doing so."""
     # Ensure all Fields have been properly type-annotated
     _check_field_annotations(cls)
 
@@ -375,7 +373,6 @@ def input(
         name: str
     ```
     """
-
     from strawberry.schema_directives import OneOf
 
     if one_of:
@@ -454,7 +451,6 @@ def interface(
         id: str
     ```
     """
-
     return type(  # type: ignore # not sure why mypy complains here
         cls,
         name=name,

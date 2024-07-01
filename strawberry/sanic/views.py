@@ -78,8 +78,7 @@ class GraphQLView(
     AsyncBaseHTTPView[Request, HTTPResponse, TemporalResponse, Context, RootValue],
     HTTPMethodView,
 ):
-    """
-    Class based view to handle GraphQL HTTP Requests
+    """Class based view to handle GraphQL HTTP Requests.
 
     Args:
         schema: strawberry.Schema

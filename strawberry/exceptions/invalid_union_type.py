@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 class InvalidUnionTypeError(StrawberryException):
-    """The union is constructed with an invalid type"""
+    """The union is constructed with an invalid type."""
 
     invalid_type: object
 
@@ -78,8 +78,7 @@ class InvalidUnionTypeError(StrawberryException):
 
 
 class InvalidTypeForUnionMergeError(StrawberryException):
-    """A specialized version of InvalidUnionTypeError for when trying
-    to merge unions using the pipe operator."""
+    """A specialized version of InvalidUnionTypeError for when trying to merge unions using the pipe operator."""
 
     invalid_type: Type
 

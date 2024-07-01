@@ -24,7 +24,8 @@ if TYPE_CHECKING:
 
 
 class StrawberryType(ABC):
-    """
+    """The base class for all types that Strawberry uses.
+
     Every type that is decorated by strawberry should have a dunder
     `__strawberry_definition__` with instance of a StrawberryType that contains
     the parsed information that strawberry created.

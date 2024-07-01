@@ -271,7 +271,6 @@ def union(
 
     MyUnion = Annotated[A | B, strawberry.union("Name")]
     """
-
     if types is None:
         union = StrawberryUnion(
             name=name,

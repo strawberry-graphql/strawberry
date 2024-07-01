@@ -1,4 +1,4 @@
-"""GraphQLHTTPHandler
+"""GraphQLHTTPHandler.
 
 A consumer to provide a graphql endpoint, and optionally graphiql.
 """

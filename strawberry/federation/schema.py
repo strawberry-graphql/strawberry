@@ -112,7 +112,6 @@ class Schema(BaseSchema):
         The _service field is added by default, but the _entities field is only
         added if the schema contains an entity type.
         """
-
         import strawberry
         from strawberry.tools.create_type import create_type
         from strawberry.tools.merge_types import merge_types

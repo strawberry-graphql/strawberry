@@ -14,7 +14,7 @@ def create_type(
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
 ) -> Type:
-    """Create a Strawberry type from a list of StrawberryFields
+    """Create a Strawberry type from a list of StrawberryFields.
 
     Parameters:
         name: The GraphQL name of the type.
@@ -38,7 +38,6 @@ def create_type(
     Query = create_type(name="Query", fields=[hello])
     ```
     """
-
     if not fields:
         raise ValueError(f'Can\'t create type "{name}" with no fields')
 

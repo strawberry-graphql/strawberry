@@ -40,7 +40,6 @@ def union(
 
     MyUnion = Annotated[A | B, strawberry.federation.union("Name", tags=["tag"])]
     """
-
     from strawberry.federation.schema_directives import Inaccessible, Tag
 
     directives = list(directives)

@@ -407,7 +407,6 @@ def connection(
         extensions: The extensions to apply to the field.
 
     Examples:
-
     Annotating something like this:
 
     ```python

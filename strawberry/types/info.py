@@ -44,7 +44,6 @@ class Info(Generic[ContextType, RootValueType]):
     This class is passed to resolvers when there's an argument with type `Info`.
 
     Example:
-
     ```python
     import strawberry
 
@@ -82,7 +81,6 @@ class Info(Generic[ContextType, RootValueType]):
         See:
         https://discuss.python.org/t/passing-only-one-typevar-of-two-when-using-defaults/49134
         """
-
         if not isinstance(types, tuple):
             types = (types, Any)  # type: ignore
 

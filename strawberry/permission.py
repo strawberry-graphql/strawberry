@@ -78,7 +78,6 @@ class BasePermission(abc.ABC):
 
         This method can be overridden to customize the error raised when the permission is not granted.
         """
-
         # Instantiate error class
         error = self.error_class(self.message or "")
 
@@ -108,17 +107,14 @@ class BasePermission(abc.ABC):
 
 
 class PermissionExtension(FieldExtension):
-    """
-    Handles permissions for a field
-    Instantiate this as a field extension with all of the permissions you want to apply
+    """Handles permissions for a field.
 
-    fail_silently: bool = False will return None or [] if the permission fails
-    instead of raising an exception. This is only valid for optional or list fields.
+    Instantiate this as a field extension with all of the permissions you want to apply.
 
-    NOTE:
-    Currently, this is automatically added to the field, when using
-    field.permission_classes
-    This is deprecated behavior, please manually add the extension to field.extensions
+    Note:
+        Currently, this is automatically added to the field, when using field.permission_classes
+
+    This is deprecated behaviour, please manually add the extension to field.extensions
     """
 
     def __init__(
@@ -127,16 +123,21 @@ class PermissionExtension(FieldExtension):
         use_directives: bool = True,
         fail_silently: bool = False,
     ) -> None:
+        """Initialize the permission extension.
+
+        Parameters:
+            permissions: List of permissions to apply.
+            fail_silently: If True, return None or [] instead of raising an exception.
+                This is only valid for optional or list fields.
+            use_directives: If True, add schema directives to the field.
+        """
         self.permissions = permissions
         self.fail_silently = fail_silently
         self.return_empty_list = False
         self.use_directives = use_directives
 
     def apply(self, field: StrawberryField) -> None:
-        """
-        Applies all of the permission directives to the schema
-        and sets up silent permissions
-        """
+        """Applies all of the permission directives to the schema and sets up silent permissions."""
         if self.use_directives:
             field.directives.extend(
                 p.schema_directive for p in self.permissions if p.schema_directive
@@ -164,10 +165,7 @@ class PermissionExtension(FieldExtension):
         info: Info,
         **kwargs: Dict[str, Any],
     ) -> Any:
-        """
-        Checks if the permission should be accepted and
-        raises an exception if not
-        """
+        """Checks if the permission should be accepted and raises an exception if not."""
         for permission in self.permissions:
             if not permission.has_permission(source, info, **kwargs):
                 return self._on_unauthorized(permission)
@@ -194,8 +192,7 @@ class PermissionExtension(FieldExtension):
 
     @cached_property
     def supports_sync(self) -> bool:
-        """The Permission extension always supports async checking using await_maybe,
-        but only supports sync checking if there are no async permissions"""
+        """The Permission extension always supports async checking using await_maybe, but only supports sync checking if there are no async permissions."""
         async_permissions = [
             True
             for permission in self.permissions

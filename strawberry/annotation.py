@@ -290,8 +290,7 @@ class StrawberryAnnotation:
 
     @classmethod
     def _is_optional(cls, annotation: Any, args: List[Any]) -> bool:
-        """Returns True if the annotation is Optional[SomeType]"""
-
+        """Returns True if the annotation is Optional[SomeType]."""
         # Optionals are represented as unions
         if not cls._is_union(annotation, args):
             return False
@@ -303,8 +302,7 @@ class StrawberryAnnotation:
 
     @classmethod
     def _is_list(cls, annotation: Any) -> bool:
-        """Returns True if annotation is a List"""
-
+        """Returns True if annotation is a List."""
         annotation_origin = get_origin(annotation)
         annotation_mro = getattr(annotation, "__mro__", [])
         is_list = any(x is list for x in annotation_mro)
@@ -344,8 +342,7 @@ class StrawberryAnnotation:
 
     @classmethod
     def _is_union(cls, annotation: Any, args: List[Any]) -> bool:
-        """Returns True if annotation is a Union"""
-
+        """Returns True if annotation is a Union."""
         # this check is needed because unions declared with the new syntax `A | B`
         # don't have a `__origin__` property on them, but they are instances of
         # `UnionType`, which is only available in Python 3.10+

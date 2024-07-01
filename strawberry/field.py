@@ -64,7 +64,7 @@ UNRESOLVED = object()
 
 
 def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
-    """Returns True if `resolver_type` is generic else False"""
+    """Returns True if `resolver_type` is generic else False."""
     if isinstance(resolver_type, StrawberryType):
         return resolver_type.is_graphql_generic
 
@@ -189,8 +189,7 @@ class StrawberryField(dataclasses.Field):
         return new_field
 
     def __call__(self, resolver: _RESOLVER_TYPE) -> Self:
-        """Add a resolver to the field"""
-
+        """Add a resolver to the field."""
         # Allow for StrawberryResolvers or bare functions to be provided
         if not isinstance(resolver, StrawberryResolver):
             resolver = StrawberryResolver(resolver)
@@ -217,12 +216,11 @@ class StrawberryField(dataclasses.Field):
     def get_result(
         self, source: Any, info: Optional[Info], args: List[Any], kwargs: Any
     ) -> Union[Awaitable[Any], Any]:
-        """
-        Calls the resolver defined for the StrawberryField.
+        """Calls the resolver defined for the StrawberryField.
+
         If the field doesn't have a resolver defined we default
         to using the default resolver specified in StrawberryConfig.
         """
-
         if self.base_resolver:
             return self.base_resolver(*args, **kwargs)
 
@@ -230,8 +228,9 @@ class StrawberryField(dataclasses.Field):
 
     @property
     def is_basic_field(self) -> bool:
-        """
-        Flag indicating if this is a "basic" field that has no resolver or
+        """Returns a boolean indicating if the field is a basic field.
+
+        A "basic" field us a field that has no resolver or
         permission classes, i.e. it just returns the relevant attribute from
         the source object. If it is a basic field we can avoid constructing
         an `Info` object and running any permission checks in the resolver
@@ -573,7 +572,6 @@ def field(
 
     it can be used both as decorator and as a normal function.
     """
-
     type_annotation = StrawberryAnnotation.from_annotation(graphql_type)
 
     field_ = StrawberryField(

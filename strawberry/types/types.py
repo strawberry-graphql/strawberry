@@ -34,8 +34,7 @@ if TYPE_CHECKING:
 
 @dataclasses.dataclass(eq=False)
 class StrawberryObjectDefinition(StrawberryType):
-    """
-    Encapsulates definitions for Input / Object / interface GraphQL Types.
+    """Encapsulates definitions for Input / Object / interface GraphQL Types.
 
     In order get the definition from a decorated object you can use
     `has_object_definition` or `get_object_definition` as a shortcut.

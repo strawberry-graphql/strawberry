@@ -152,5 +152,4 @@ def lazy(module_path: str) -> StrawberryLazyReference:
         author: Annotated["User", strawberry.lazy(".users")]
     ```
     """
-
     return StrawberryLazyReference(module_path)

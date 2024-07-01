@@ -29,8 +29,7 @@ def in_async_context() -> bool:
 
 @lru_cache(maxsize=250)
 def get_func_args(func: Callable[[Any], Any]) -> List[str]:
-    """Returns a list of arguments for the function"""
-
+    """Returns a list of arguments for the function."""
     sig = inspect.signature(func)
 
     return [

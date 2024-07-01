@@ -46,7 +46,6 @@ def directive_field(
         reason: str = strawberry.directive_field(name="as")
     ```
     """
-
     return StrawberryField(
         python_name=None,
         graphql_name=name,

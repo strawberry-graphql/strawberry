@@ -164,9 +164,7 @@ async def test_can_use_sync_before_async_extensions():
 
 
 async def test_can_use_sync_only_and_sync_before_async_extensions():
-    """
-    Use Sync - Sync + Async - Sync - Async possible
-    """
+    """Use Sync - Sync + Async - Sync - Async possible"""
 
     @strawberry.type
     class Query:
@@ -266,8 +264,7 @@ def test_extension_order_respected():
 
 
 def test_extension_argument_parsing():
-    """
-    Check that kwargs passed to field extensions have been converted into
+    """Check that kwargs passed to field extensions have been converted into
     Strawberry types
     """
 
