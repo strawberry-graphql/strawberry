@@ -42,6 +42,12 @@ class SchemaExtension:
         """Called before and after the parsing step"""
         yield None
 
+    def on_execute(  # type: ignore
+        self,
+    ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
+        """Called before and after the execution step"""
+        yield None
+
     def resolve(
         self,
         _next: Callable,
@@ -51,12 +57,6 @@ class SchemaExtension:
         **kwargs: Any,
     ) -> AwaitableOrValue[object]:
         return _next(root, info, *args, **kwargs)
-
-    def on_execute(  # type: ignore
-        self,
-    ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
-        """Called before and after the execution step"""
-        yield None
 
     def get_results(self) -> AwaitableOrValue[Dict[str, Any]]:
         return {}
