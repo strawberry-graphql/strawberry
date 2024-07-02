@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, AsyncGenerator, Optional, Union
+from typing import TYPE_CHECKING, AsyncGenerator, Union
 
 from graphql import ExecutionResult as OriginalExecutionResult
 from graphql import subscribe as original_subscribe
 
-from strawberry.schema.execute import AsyncExecutionBase, AsyncExecutionKwargs
+from strawberry.schema.execute import AsyncExecutionBase, AsyncExecutionOptions
 from strawberry.types.execution import ExecutionResultError
 
 if TYPE_CHECKING:
@@ -13,17 +13,18 @@ if TYPE_CHECKING:
 
 
 class Subscription(AsyncExecutionBase):
-    def __init__(self, kwargs: AsyncExecutionKwargs) -> None:
+    def __init__(self, kwargs: AsyncExecutionOptions) -> None:
         super().__init__(kwargs)
         self._operation_cm = self.extensions_runner.operation()
-        self._original_generator: Optional[
-            AsyncGenerator[OriginalExecutionResult, None]
-        ] = None
+        self._original_generator: (
+            AsyncGenerator[OriginalExecutionResult, None] | None
+        ) = None
 
     async def subscribe(self) -> Union[ExecutionResultError, Subscription]:
         initial_error = await self._parse_and_validate_runner()
         generator_or_result = None
         if not initial_error:
+            # TODO: what if this raises an error?
             await self._operation_cm.__aenter__()
             assert self.execution_context.graphql_document
             generator_or_result = await original_subscribe(
@@ -71,10 +72,8 @@ class Subscription(AsyncExecutionBase):
                 except StopAsyncIteration as exc:
                     await self._operation_cm.exit(exc)
                     raise StopAsyncIteration from exc
-                except Exception as exc:
-                    await self._operation_cm.exit(exc)
-                    raise exc
-
+                finally:
+                    await self._operation_cm.__aexit__(None, None, None)
                 return await self._handle_execution_result(result=result)
             else:
                 return await self._handle_execution_result(

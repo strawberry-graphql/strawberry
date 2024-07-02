@@ -1164,7 +1164,9 @@ def test_raise_if_hook_is_not_callable(default_query_types_and_query):
         schema.execute_sync(default_query_types_and_query.query)
 
 
-async def test_subscription(default_query_types_and_query, async_extension):
+async def test_subscription(
+    default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
+) -> None:
     # `resolve` extension is not supported yet see https://github.com/graphql-python/graphql-core/issues/188
     async_extension.expected = {1, 2, 3, 4, 5, 6, 7, 8, 9}
     schema = strawberry.Schema(

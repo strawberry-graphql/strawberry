@@ -42,7 +42,7 @@ from ..printer import print_schema
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
-from .execute import AsyncExecution, AsyncExecutionKwargs, execute_sync
+from .execute import AsyncExecution, AsyncExecutionOptions, execute_sync
 from .subscribe import Subscription
 
 if TYPE_CHECKING:
@@ -323,7 +323,7 @@ class Schema(BaseSchema):
         )
 
         return await AsyncExecution(
-            AsyncExecutionKwargs(
+            AsyncExecutionOptions(
                 schema=self._schema,
                 extensions=self.get_extensions(),
                 execution_context_class=self.execution_context_class,
@@ -346,7 +346,7 @@ class Schema(BaseSchema):
         )
 
         return await Subscription(
-            AsyncExecutionKwargs(
+            AsyncExecutionOptions(
                 schema=self._schema,
                 extensions=self.get_extensions(),
                 execution_context=execution_context,

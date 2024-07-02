@@ -176,7 +176,7 @@ def execute_sync(
     )
 
 
-class AsyncExecutionKwargs(NamedTuple):
+class AsyncExecutionOptions(NamedTuple):
     schema: GraphQLSchema
     allowed_operation_types: Iterable[OperationType]
     extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]]
@@ -186,7 +186,7 @@ class AsyncExecutionKwargs(NamedTuple):
 
 
 class AsyncExecutionBase:
-    def __init__(self, kwargs: AsyncExecutionKwargs) -> None:
+    def __init__(self, kwargs: AsyncExecutionOptions) -> None:
         self.schema = kwargs.schema
         self.execution_context = kwargs.execution_context
         self.extensions = kwargs.extensions
