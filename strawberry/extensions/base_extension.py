@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, Protocol, Set
+from typing import TYPE_CHECKING, Any, Callable, Dict, Set
 
 from strawberry.utils.await_maybe import AsyncIteratorOrIterator, AwaitableOrValue
 
@@ -18,19 +18,7 @@ class LifecycleStep(Enum):
     RESOLVE = "resolve"
 
 
-class SupportsResolve(Protocol):
-    def resolve(
-        self,
-        _next: Callable,
-        root: Any,
-        info: GraphQLResolveInfo,
-        *args: str,
-        **kwargs: Any,
-    ) -> AwaitableOrValue[object]:
-        return _next(root, info, *args, **kwargs)
-
-
-class SchemaExtension(SupportsResolve):
+class SchemaExtension:
     execution_context: ExecutionContext
 
     def __init__(self, *, execution_context: ExecutionContext) -> None:
@@ -53,6 +41,16 @@ class SchemaExtension(SupportsResolve):
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
         """Called before and after the parsing step"""
         yield None
+
+    def resolve(
+        self,
+        _next: Callable,
+        root: Any,
+        info: GraphQLResolveInfo,
+        *args: str,
+        **kwargs: Any,
+    ) -> AwaitableOrValue[object]:
+        return _next(root, info, *args, **kwargs)
 
     def on_execute(  # type: ignore
         self,

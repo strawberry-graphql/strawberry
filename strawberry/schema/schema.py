@@ -13,7 +13,6 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import TypeGuard
 
 from graphql import (
     GraphQLBoolean,
@@ -54,7 +53,6 @@ if TYPE_CHECKING:
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.directive import StrawberryDirective
     from strawberry.enum import EnumDefinition
-    from strawberry.extensions.base_extension import SupportsResolve
     from strawberry.field import StrawberryField
     from strawberry.type import StrawberryType
     from strawberry.types import ExecutionResult
@@ -68,7 +66,8 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 }
 
 
-def _implements_resolve(obj: object) -> TypeGuard[SupportsResolve]:
+def _implements_resolve(obj: SchemaExtension) -> bool:
+    """Return whether the extension implements the resolve method."""
     if (ret := getattr(obj, "resolve", None)) and ret is not SchemaExtension.resolve:
         return True
     return False
