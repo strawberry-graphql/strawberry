@@ -92,5 +92,8 @@ class ExecutionResult:
     extensions: Optional[Dict[str, Any]] = None
 
 
+class ExecutionResultError(ExecutionResult): ...
+
+
 class ParseOptions(TypedDict):
     max_tokens: NotRequired[int]

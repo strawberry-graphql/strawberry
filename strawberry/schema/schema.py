@@ -5,7 +5,6 @@ from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
     Dict,
     Iterable,
     List,
@@ -22,10 +21,9 @@ from graphql import (
     GraphQLNonNull,
     GraphQLSchema,
     get_introspection_query,
-    parse,
     validate_schema,
 )
-from graphql.execution import subscribe
+from graphql.execution.middleware import MiddlewareManager
 from graphql.type.directives import specified_directives
 
 from strawberry import relay
@@ -41,23 +39,24 @@ from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
 from strawberry.types.types import StrawberryObjectDefinition
 
+from ..extensions import SchemaExtension
 from ..printer import print_schema
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
-from .execute import execute, execute_sync
+from .execute import AsyncExecution, AsyncExecutionOptions, execute_sync
+from .subscribe import Subscription
 
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
-    from graphql import ExecutionResult as GraphQLExecutionResult
 
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.directive import StrawberryDirective
     from strawberry.enum import EnumDefinition
-    from strawberry.extensions import SchemaExtension
     from strawberry.field import StrawberryField
     from strawberry.type import StrawberryType
     from strawberry.types import ExecutionResult
+    from strawberry.types.execution import ExecutionResultError
     from strawberry.union import StrawberryUnion
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
@@ -65,6 +64,13 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.MUTATION,
     OperationType.SUBSCRIPTION,
 }
+
+
+def _implements_resolve(obj: SchemaExtension) -> bool:
+    """Return whether the extension implements the resolve method."""
+    if (ret := getattr(obj, "resolve", None)) and ret is not SchemaExtension.resolve:
+        return True
+    return False
 
 
 class Schema(BaseSchema):
@@ -179,6 +185,7 @@ class Schema(BaseSchema):
             formatted_errors = "\n\n".join(f"❌ {error.message}" for error in errors)
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
+    # TODO: can this get cached?
     def get_extensions(
         self, sync: bool = False
     ) -> List[Union[Type[SchemaExtension], SchemaExtension]]:
@@ -188,6 +195,13 @@ class Schema(BaseSchema):
             extensions.append(DirectivesExtensionSync if sync else DirectivesExtension)
 
         return extensions
+
+    # TODO: can this get cached?
+    def _get_middleware_manager(self, sync: bool = False) -> MiddlewareManager:
+        # create a middleware manager with all the extensions that support resolve
+        return MiddlewareManager(
+            *(ext for ext in self.get_extensions(sync) if _implements_resolve(ext))
+        )
 
     @lru_cache
     def get_type_by_name(
@@ -241,20 +255,38 @@ class Schema(BaseSchema):
     ) -> List[StrawberryField]:
         return type_definition.fields
 
-    async def execute(
+    def _warn_for_federation_directives(self) -> None:
+        """Raises a warning if the schema has any federation directives."""
+        from strawberry.federation.schema_directives import FederationDirective
+
+        all_types = self.schema_converter.type_map.values()
+        all_type_defs = (type_.definition for type_ in all_types)
+
+        all_directives = (
+            directive
+            for type_def in all_type_defs
+            for directive in (type_def.directives or [])
+        )
+
+        if any(
+            isinstance(directive, FederationDirective) for directive in all_directives
+        ):
+            warnings.warn(
+                "Federation directive found in schema. "
+                "Use `strawberry.federation.Schema` instead of `strawberry.Schema`.",
+                UserWarning,
+                stacklevel=3,
+            )
+
+    def _create_execution_context(
         self,
         query: Optional[str],
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-        allowed_operation_types: Optional[Iterable[OperationType]] = None,
-    ) -> ExecutionResult:
-        if allowed_operation_types is None:
-            allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
-
-        # Create execution context
-        execution_context = ExecutionContext(
+    ) -> ExecutionContext:
+        return ExecutionContext(
             query=query,
             schema=self,
             context=context_value,
@@ -262,17 +294,6 @@ class Schema(BaseSchema):
             variables=variable_values,
             provided_operation_name=operation_name,
         )
-
-        result = await execute(
-            self._schema,
-            extensions=self.get_extensions(),
-            execution_context_class=self.execution_context_class,
-            execution_context=execution_context,
-            allowed_operation_types=allowed_operation_types,
-            process_errors=self._process_errors,
-        )
-
-        return result
 
     def execute_sync(
         self,
@@ -286,43 +307,89 @@ class Schema(BaseSchema):
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
 
-        execution_context = ExecutionContext(
-            query=query,
-            schema=self,
-            context=context_value,
-            root_value=root_value,
-            variables=variable_values,
-            provided_operation_name=operation_name,
+        execution_context = self._create_execution_context(
+            query, variable_values, context_value, root_value, operation_name
         )
 
         result = execute_sync(
             self._schema,
             extensions=self.get_extensions(sync=True),
+            middleware_manager=self._get_middleware_manager(sync=True),
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
-            process_errors=self._process_errors,
+            process_errors=self.process_errors,
         )
 
         return result
 
-    async def subscribe(
+    async def execute(
         self,
-        # TODO: make this optional when we support extensions
-        query: str,
+        query: Optional[str],
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ) -> Union[AsyncIterator[GraphQLExecutionResult], GraphQLExecutionResult]:
-        return await subscribe(
-            self._schema,
-            parse(query),
-            root_value=root_value,
-            context_value=context_value,
-            variable_values=variable_values,
-            operation_name=operation_name,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
+    ) -> ExecutionResult:
+        if allowed_operation_types is None:
+            allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
+
+        execution_context = self._create_execution_context(
+            query, variable_values, context_value, root_value, operation_name
         )
+
+        return await AsyncExecution(
+            AsyncExecutionOptions(
+                schema=self._schema,
+                middleware_manager=self._get_middleware_manager(),
+                extensions=self.get_extensions(),
+                execution_context_class=self.execution_context_class,
+                execution_context=execution_context,
+                allowed_operation_types=allowed_operation_types,
+                process_errors=self.process_errors,
+            )
+        ).execute()
+
+    async def subscribe(
+        self,
+        query: Optional[str],
+        variable_values: Optional[Dict[str, Any]] = None,
+        context_value: Optional[Any] = None,
+        root_value: Optional[Any] = None,
+        operation_name: Optional[str] = None,
+    ) -> Union[ExecutionResultError, Subscription]:
+        execution_context = self._create_execution_context(
+            query, variable_values, context_value, root_value, operation_name
+        )
+
+        return await Subscription(
+            AsyncExecutionOptions(
+                schema=self._schema,
+                middleware_manager=self._get_middleware_manager(),
+                extensions=self.get_extensions(),
+                execution_context=execution_context,
+                allowed_operation_types=[OperationType.SUBSCRIPTION],
+                process_errors=self.process_errors,
+            )
+        ).subscribe()
+
+    def as_str(self) -> str:
+        return print_schema(self)
+
+    __str__ = as_str
+
+    def introspect(self) -> Dict[str, Any]:
+        """Return the introspection query result for the current schema
+
+        Raises:
+            ValueError: If the introspection query fails due to an invalid schema
+        """
+        introspection = self.execute_sync(get_introspection_query())
+        if introspection.errors or not introspection.data:
+            raise ValueError(f"Invalid Schema. Errors {introspection.errors!r}")
+
+        return introspection.data
 
     def _resolve_node_ids(self) -> None:
         for concrete_type in self.schema_converter.type_map.values():
@@ -355,29 +422,6 @@ class Schema(BaseSchema):
                 if not has_custom_resolve_id:
                     origin.resolve_id_attr()
 
-    def _warn_for_federation_directives(self) -> None:
-        """Raises a warning if the schema has any federation directives."""
-        from strawberry.federation.schema_directives import FederationDirective
-
-        all_types = self.schema_converter.type_map.values()
-        all_type_defs = (type_.definition for type_ in all_types)
-
-        all_directives = (
-            directive
-            for type_def in all_type_defs
-            for directive in (type_def.directives or [])
-        )
-
-        if any(
-            isinstance(directive, FederationDirective) for directive in all_directives
-        ):
-            warnings.warn(
-                "Federation directive found in schema. "
-                "Use `strawberry.federation.Schema` instead of `strawberry.Schema`.",
-                UserWarning,
-                stacklevel=3,
-            )
-
     def _extend_introspection(self) -> None:
         def _resolve_is_one_of(obj: Any, info: Any) -> bool:
             if "strawberry-definition" not in obj.extensions:
@@ -388,20 +432,3 @@ class Schema(BaseSchema):
         instrospection_type = self._schema.type_map["__Type"]
         instrospection_type.fields["isOneOf"] = GraphQLField(GraphQLBoolean)  # type: ignore[attr-defined]
         instrospection_type.fields["isOneOf"].resolve = _resolve_is_one_of  # type: ignore[attr-defined]
-
-    def as_str(self) -> str:
-        return print_schema(self)
-
-    __str__ = as_str
-
-    def introspect(self) -> Dict[str, Any]:
-        """Return the introspection query result for the current schema
-
-        Raises:
-            ValueError: If the introspection query fails due to an invalid schema
-        """
-        introspection = self.execute_sync(get_introspection_query())
-        if introspection.errors or not introspection.data:
-            raise ValueError(f"Invalid Schema. Errors {introspection.errors!r}")
-
-        return introspection.data

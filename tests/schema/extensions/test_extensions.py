@@ -2,7 +2,7 @@ import contextlib
 import dataclasses
 import json
 import warnings
-from typing import Any, List, Optional, Set, Type
+from typing import Any, AsyncGenerator, List, Optional, Set, Type
 from unittest.mock import patch
 
 import pytest
@@ -185,9 +185,11 @@ def test_extension_access_to_root_value():
 
 
 @dataclasses.dataclass
-class DefaultSchemaQuery:
+class SchemaHelper:
     query_type: type
+    subscription_type: type
     query: str
+    subscription: str
 
 
 class ExampleExtension(SchemaExtension):
@@ -199,12 +201,12 @@ class ExampleExtension(SchemaExtension):
     called_hooks: Set[int]
 
     @classmethod
-    def perform_test(cls) -> None:
+    def assert_expected(cls) -> None:
         assert cls.called_hooks == cls.expected
 
 
 @pytest.fixture()
-def default_query_types_and_query() -> DefaultSchemaQuery:
+def default_query_types_and_query() -> SchemaHelper:
     @strawberry.type
     class Person:
         name: str = "Jess"
@@ -215,8 +217,21 @@ def default_query_types_and_query() -> DefaultSchemaQuery:
         def person(self) -> Person:
             return Person()
 
+    @strawberry.type
+    class Subscription:
+        @strawberry.subscription
+        async def count(self) -> AsyncGenerator[int, None]:
+            for i in range(5):
+                yield i
+
+    subscription = "subscription TestSubscribe { count }"
     query = "query TestQuery { person { name } }"
-    return DefaultSchemaQuery(query_type=Query, query=query)
+    return SchemaHelper(
+        query_type=Query,
+        query=query,
+        subscription_type=Subscription,
+        subscription=subscription,
+    )
 
 
 def test_can_initialize_extension(default_query_types_and_query):
@@ -308,7 +323,9 @@ def sync_extension() -> Type[ExampleExtension]:
 
 
 @pytest.mark.asyncio
-async def test_async_extension_hooks(default_query_types_and_query, async_extension):
+async def test_async_extension_hooks(
+    default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
+):
     schema = strawberry.Schema(
         query=default_query_types_and_query.query_type, extensions=[async_extension]
     )
@@ -316,7 +333,7 @@ async def test_async_extension_hooks(default_query_types_and_query, async_extens
     result = await schema.execute(default_query_types_and_query.query)
     assert result.errors is None
 
-    async_extension.perform_test()
+    async_extension.assert_expected()
 
 
 @pytest.mark.asyncio
@@ -349,7 +366,7 @@ async def test_mixed_sync_and_async_extension_hooks(
     )
     result = await schema.execute(default_query_types_and_query.query)
     assert result.errors is None
-    MyExtension.perform_test()
+    MyExtension.assert_expected()
 
 
 async def test_execution_order(default_query_types_and_query):
@@ -432,7 +449,7 @@ async def test_sync_extension_hooks(default_query_types_and_query, sync_extensio
     result = schema.execute_sync(default_query_types_and_query.query)
     assert result.errors is None
 
-    sync_extension.perform_test()
+    sync_extension.assert_expected()
 
 
 async def test_extension_no_yield(default_query_types_and_query):
@@ -452,7 +469,7 @@ async def test_extension_no_yield(default_query_types_and_query):
     result = await schema.execute(default_query_types_and_query.query)
     assert result.errors is None
 
-    SyncExt.perform_test()
+    SyncExt.assert_expected()
 
 
 def test_raise_if_defined_both_legacy_and_new_style(default_query_types_and_query):
@@ -754,58 +771,8 @@ async def test_exceptions_abort_evaluation(failing_hook, expected_hooks):
     assert extension.called_hooks == expected_hooks
 
 
-async def test_generic_exceptions_get_wrapped_in_a_graphql_error():
-    exception = Exception("This should be wrapped in a GraphQL error")
-
-    class MyExtension(SchemaExtension):
-        def on_parse(self):
-            raise exception
-
-    @strawberry.type
-    class Query:
-        ping: str = "pong"
-
-    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
-    query = "query { ping }"
-
-    sync_result = schema.execute_sync(query)
-    assert len(sync_result.errors) == 1
-    assert isinstance(sync_result.errors[0], GraphQLError)
-    assert sync_result.errors[0].original_error == exception
-
-    async_result = await schema.execute(query)
-    assert len(async_result.errors) == 1
-    assert isinstance(async_result.errors[0], GraphQLError)
-    assert async_result.errors[0].original_error == exception
-
-
-async def test_graphql_errors_get_not_wrapped_in_a_graphql_error():
-    exception = GraphQLError("This should not be wrapped in a GraphQL error")
-
-    class MyExtension(SchemaExtension):
-        def on_parse(self):
-            raise exception
-
-    @strawberry.type
-    class Query:
-        ping: str = "pong"
-
-    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
-    query = "query { ping }"
-
-    sync_result = schema.execute_sync(query)
-    assert len(sync_result.errors) == 1
-    assert sync_result.errors[0] == exception
-    assert sync_result.errors[0].original_error is None
-
-    async_result = await schema.execute(query)
-    assert len(async_result.errors) == 1
-    assert async_result.errors[0] == exception
-    assert async_result.errors[0].original_error is None
-
-
 @pytest.mark.asyncio
-async def test_non_parsing_errors_are_not_swallowed_by_parsing_hooks():
+async def test_dont_swallow_errors_in_parsing_hooks():
     class MyExtension(SchemaExtension):
         def on_parse(self):
             raise Exception("This shouldn't be swallowed")
@@ -1186,23 +1153,31 @@ async def test_extension_can_set_query_async():
     assert result.data == {"hi": "👋"}
 
 
-def test_raise_if_hook_is_not_callable():
+def test_raise_if_hook_is_not_callable(default_query_types_and_query):
     class MyExtension(SchemaExtension):
         on_operation = "ABC"  # type: ignore
 
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def hi(self) -> str:
-            return "👋"
+    schema = strawberry.Schema(
+        query=default_query_types_and_query.query_type, extensions=[MyExtension]
+    )
+    with pytest.raises(
+        ValueError, match="Hook on_operation on <(.*)> must be callable, received 'ABC'"
+    ):
+        schema.execute_sync(default_query_types_and_query.query)
 
-    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
 
-    # Query not set on input
-    query = "{ hi }"
+async def test_subscription(
+    default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
+) -> None:
+    # `resolve` extension is not supported yet see https://github.com/graphql-python/graphql-core/issues/188
+    schema = strawberry.Schema(
+        query=default_query_types_and_query.query_type,
+        subscription=default_query_types_and_query.subscription_type,
+        extensions=[async_extension],
+    )
 
-    result = schema.execute_sync(query)
-    assert len(result.errors) == 1
-    assert isinstance(result.errors[0].original_error, ValueError)
-    assert result.errors[0].message.startswith("Hook on_operation on <")
-    assert result.errors[0].message.endswith("> must be callable, received 'ABC'")
+    async for res in await schema.subscribe(default_query_types_and_query.subscription):
+        assert res.data
+        assert not res.errors
+
+    async_extension.assert_expected()
