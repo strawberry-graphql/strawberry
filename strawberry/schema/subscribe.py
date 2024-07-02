@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, AsyncGenerator, Union
 
-from graphql import ExecutionResult as OriginalExecutionResult
-from graphql import subscribe as original_subscribe
+from graphql import (
+    ExecutionResult as OriginalExecutionResult,
+)
+from graphql.execution import subscribe as original_subscribe
 
 from strawberry.schema.execute import AsyncExecutionBase, AsyncExecutionOptions
 from strawberry.types.execution import ExecutionResultError
@@ -34,6 +36,7 @@ class Subscription(AsyncExecutionBase):
                 variable_values=self.execution_context.variables,
                 operation_name=self.execution_context.operation_name,
                 context_value=self.execution_context.context,
+                middleware=self.middleware_manager,
             )
 
         # permission errors would return here.

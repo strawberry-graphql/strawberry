@@ -34,6 +34,7 @@ from .exceptions import InvalidOperationTypeError
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
     from graphql import GraphQLSchema
+    from graphql.execution.middleware import MiddlewareManager
     from graphql.language import DocumentNode
     from graphql.validation import ASTValidationRule
 
@@ -81,6 +82,7 @@ def _run_validation(execution_context: ExecutionContext) -> None:
 
 def execute_sync(
     schema: GraphQLSchema,
+    middleware_manager: MiddlewareManager,
     *,
     allowed_operation_types: Iterable[OperationType],
     extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]],
@@ -142,7 +144,7 @@ def execute_sync(
                     schema,
                     execution_context.graphql_document,
                     root_value=execution_context.root_value,
-                    middleware=extensions_runner.as_middleware_manager(),
+                    middleware=middleware_manager,
                     variable_values=execution_context.variables,
                     operation_name=execution_context.operation_name,
                     context_value=execution_context.context,
@@ -178,6 +180,7 @@ def execute_sync(
 
 class AsyncExecutionOptions(NamedTuple):
     schema: GraphQLSchema
+    middleware_manager: MiddlewareManager
     allowed_operation_types: Iterable[OperationType]
     extensions: Sequence[Union[Type[SchemaExtension], SchemaExtension]]
     execution_context: ExecutionContext
@@ -193,6 +196,7 @@ class AsyncExecutionBase:
         self.execution_context_class = kwargs.execution_context_class
         self.process_errors = kwargs.process_errors
         self.allowed_operation_types = kwargs.allowed_operation_types
+        self.middleware_manager = kwargs.middleware_manager
         self.extensions_runner = SchemaExtensionsRunner(
             execution_context=self.execution_context,
             extensions=list(self.extensions),
@@ -271,7 +275,7 @@ class AsyncExecution(AsyncExecutionBase):
                         self.schema,
                         self.execution_context.graphql_document,
                         root_value=self.execution_context.root_value,
-                        middleware=self.extensions_runner.as_middleware_manager(),
+                        middleware=self.middleware_manager,
                         variable_values=self.execution_context.variables,
                         operation_name=self.execution_context.operation_name,
                         context_value=self.execution_context.context,

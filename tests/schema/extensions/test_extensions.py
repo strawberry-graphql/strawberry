@@ -201,7 +201,7 @@ class ExampleExtension(SchemaExtension):
     called_hooks: Set[int]
 
     @classmethod
-    def perform_test(cls) -> None:
+    def assert_expected(cls) -> None:
         assert cls.called_hooks == cls.expected
 
 
@@ -331,7 +331,7 @@ async def test_async_extension_hooks(default_query_types_and_query, async_extens
     result = await schema.execute(default_query_types_and_query.query)
     assert result.errors is None
 
-    async_extension.perform_test()
+    async_extension.assert_expected()
 
 
 @pytest.mark.asyncio
@@ -364,7 +364,7 @@ async def test_mixed_sync_and_async_extension_hooks(
     )
     result = await schema.execute(default_query_types_and_query.query)
     assert result.errors is None
-    MyExtension.perform_test()
+    MyExtension.assert_expected()
 
 
 async def test_execution_order(default_query_types_and_query):
@@ -447,7 +447,7 @@ async def test_sync_extension_hooks(default_query_types_and_query, sync_extensio
     result = schema.execute_sync(default_query_types_and_query.query)
     assert result.errors is None
 
-    sync_extension.perform_test()
+    sync_extension.assert_expected()
 
 
 async def test_extension_no_yield(default_query_types_and_query):
@@ -467,7 +467,7 @@ async def test_extension_no_yield(default_query_types_and_query):
     result = await schema.execute(default_query_types_and_query.query)
     assert result.errors is None
 
-    SyncExt.perform_test()
+    SyncExt.assert_expected()
 
 
 def test_raise_if_defined_both_legacy_and_new_style(default_query_types_and_query):
@@ -1168,7 +1168,6 @@ async def test_subscription(
     default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
 ) -> None:
     # `resolve` extension is not supported yet see https://github.com/graphql-python/graphql-core/issues/188
-    async_extension.expected = {1, 2, 3, 4, 5, 6, 7, 8, 9}
     schema = strawberry.Schema(
         query=default_query_types_and_query.query_type,
         subscription=default_query_types_and_query.subscription_type,
@@ -1179,4 +1178,4 @@ async def test_subscription(
         assert res.data
         assert not res.errors
 
-    async_extension.perform_test()
+    async_extension.assert_expected()

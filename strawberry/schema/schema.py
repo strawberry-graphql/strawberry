@@ -13,6 +13,7 @@ from typing import (
     Union,
     cast,
 )
+from typing_extensions import TypeGuard
 
 from graphql import (
     GraphQLBoolean,
@@ -23,6 +24,7 @@ from graphql import (
     get_introspection_query,
     validate_schema,
 )
+from graphql.execution.middleware import MiddlewareManager
 from graphql.type.directives import specified_directives
 
 from strawberry import relay
@@ -52,6 +54,7 @@ if TYPE_CHECKING:
     from strawberry.directive import StrawberryDirective
     from strawberry.enum import EnumDefinition
     from strawberry.extensions import SchemaExtension
+    from strawberry.extensions.base_extension import SupportsResolve
     from strawberry.field import StrawberryField
     from strawberry.type import StrawberryType
     from strawberry.types import ExecutionResult
@@ -63,6 +66,14 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.MUTATION,
     OperationType.SUBSCRIPTION,
 }
+
+
+def _create_middleware_manager(*middlewares: SupportsResolve) -> MiddlewareManager:
+    return MiddlewareManager(*middlewares)
+
+
+def _supports_resolve(obj: object) -> TypeGuard[SupportsResolve]:
+    return bool(hasattr(obj, "resolve"))
 
 
 class Schema(BaseSchema):
@@ -177,6 +188,7 @@ class Schema(BaseSchema):
             formatted_errors = "\n\n".join(f"❌ {error.message}" for error in errors)
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
+    # TODO: can this get cached?
     def get_extensions(
         self, sync: bool = False
     ) -> List[Union[Type[SchemaExtension], SchemaExtension]]:
@@ -186,6 +198,12 @@ class Schema(BaseSchema):
             extensions.append(DirectivesExtensionSync if sync else DirectivesExtension)
 
         return extensions
+
+    def _get_middleware_manager(self, sync: bool = False) -> MiddlewareManager:
+        # create a middleware manager with all the extensions that support resolve
+        return _create_middleware_manager(
+            *(ext for ext in self.get_extensions(sync) if _supports_resolve(ext))
+        )
 
     @lru_cache
     def get_type_by_name(
@@ -298,6 +316,7 @@ class Schema(BaseSchema):
         result = execute_sync(
             self._schema,
             extensions=self.get_extensions(sync=True),
+            middleware_manager=self._get_middleware_manager(sync=True),
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
@@ -325,6 +344,7 @@ class Schema(BaseSchema):
         return await AsyncExecution(
             AsyncExecutionOptions(
                 schema=self._schema,
+                middleware_manager=self._get_middleware_manager(),
                 extensions=self.get_extensions(),
                 execution_context_class=self.execution_context_class,
                 execution_context=execution_context,
@@ -348,6 +368,7 @@ class Schema(BaseSchema):
         return await Subscription(
             AsyncExecutionOptions(
                 schema=self._schema,
+                middleware_manager=self._get_middleware_manager(),
                 extensions=self.get_extensions(),
                 execution_context=execution_context,
                 allowed_operation_types=[OperationType.SUBSCRIPTION],

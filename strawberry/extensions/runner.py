@@ -3,8 +3,6 @@ from __future__ import annotations
 import inspect
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
-from graphql import MiddlewareManager
-
 from strawberry.extensions.context import (
     ExecutingContextManager,
     OperationContextManager,
@@ -79,8 +77,3 @@ class SchemaExtensionsRunner:
             data.update(results)
 
         return data
-
-    def as_middleware_manager(self, *additional_middlewares: Any) -> MiddlewareManager:
-        middlewares = tuple(self.extensions) + additional_middlewares
-
-        return MiddlewareManager(*middlewares)
