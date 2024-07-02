@@ -16,7 +16,7 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import NamedTuple
+from typing_extensions import NamedTuple, NotRequired, Unpack
 
 from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError, parse
@@ -32,10 +32,7 @@ from strawberry.types.execution import ExecutionResultError
 from .exceptions import InvalidOperationTypeError
 
 if TYPE_CHECKING:
-    from typing_extensions import NotRequired, Unpack
-
     from graphql import ExecutionContext as GraphQLExecutionContext
-    from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql import GraphQLSchema
     from graphql.language import DocumentNode
     from graphql.validation import ASTValidationRule
@@ -189,7 +186,7 @@ class AsyncExecutionKwargs(NamedTuple):
 
 
 class AsyncExecutionBase:
-    def __init__(self, kwargs: AsyncExecutionKwargs):
+    def __init__(self, kwargs: AsyncExecutionKwargs) -> None:
         self.schema = kwargs.schema
         self.execution_context = kwargs.execution_context
         self.extensions = kwargs.extensions

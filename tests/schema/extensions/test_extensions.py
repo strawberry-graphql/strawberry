@@ -192,7 +192,7 @@ class SchemaHelper:
     subscription: str
 
 
-class TestAbleExtension(SchemaExtension):
+class ExampleExtension(SchemaExtension):
     def __init_subclass__(cls, **kwargs: Any):
         super().__init_subclass__(**kwargs)
         cls.called_hooks = set()
@@ -255,8 +255,8 @@ def test_can_initialize_extension(default_query_types_and_query):
 
 
 @pytest.fixture()
-def async_extension() -> Type[TestAbleExtension]:
-    class MyExtension(TestAbleExtension):
+def async_extension() -> Type[ExampleExtension]:
+    class MyExtension(ExampleExtension):
         async def on_operation(self):
             self.called_hooks.add(1)
             yield
@@ -289,8 +289,8 @@ def async_extension() -> Type[TestAbleExtension]:
 
 
 @pytest.fixture()
-def sync_extension() -> Type[TestAbleExtension]:
-    class MyExtension(TestAbleExtension):
+def sync_extension() -> Type[ExampleExtension]:
+    class MyExtension(ExampleExtension):
         def on_operation(self):
             self.called_hooks.add(1)
             yield
@@ -376,7 +376,7 @@ async def test_execution_order(default_query_types_and_query):
         yield
         called_hooks.append(f"{klass.__name__}, {hook_name} Exited")
 
-    class ExtensionA(TestAbleExtension):
+    class ExtensionA(ExampleExtension):
         async def on_operation(self):
             with register_hook(SchemaExtension.on_operation.__name__, ExtensionA):
                 yield
@@ -393,7 +393,7 @@ async def test_execution_order(default_query_types_and_query):
             with register_hook(SchemaExtension.on_execute.__name__, ExtensionA):
                 yield
 
-    class ExtensionB(TestAbleExtension):
+    class ExtensionB(ExampleExtension):
         async def on_operation(self):
             with register_hook(SchemaExtension.on_operation.__name__, ExtensionB):
                 yield
@@ -451,7 +451,7 @@ async def test_sync_extension_hooks(default_query_types_and_query, sync_extensio
 
 
 async def test_extension_no_yield(default_query_types_and_query):
-    class SyncExt(TestAbleExtension):
+    class SyncExt(ExampleExtension):
         expected = {1, 2}
 
         def on_operation(self):
@@ -494,7 +494,7 @@ async def test_legacy_extension_supported():
             message=r"'.*' is deprecated and slated for removal in Python 3\.\d+",
         )
 
-        class CompatExtension(TestAbleExtension):
+        class CompatExtension(ExampleExtension):
             async def on_request_start(self):
                 self.called_hooks.add(1)
 
@@ -547,7 +547,7 @@ async def test_legacy_only_start():
             message=r"'.*' is deprecated and slated for removal in Python 3\.\d+",
         )
 
-        class CompatExtension(TestAbleExtension):
+        class CompatExtension(ExampleExtension):
             expected = {1, 2, 3, 4}
 
             async def on_request_start(self):
@@ -590,7 +590,7 @@ async def test_legacy_only_end():
             message=r"'.*' is deprecated and slated for removal in Python 3\.\d+",
         )
 
-        class CompatExtension(TestAbleExtension):
+        class CompatExtension(ExampleExtension):
             async def on_request_end(self):
                 self.called_hooks.add(1)
 

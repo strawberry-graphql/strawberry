@@ -234,7 +234,12 @@ class Schema(BaseSchema):
             None,
         )
 
-    def _warn_for_federation_directives(self):
+    def get_fields(
+        self, type_definition: StrawberryObjectDefinition
+    ) -> List[StrawberryField]:
+        return type_definition.fields
+
+    def _warn_for_federation_directives(self) -> None:
         """Raises a warning if the schema has any federation directives."""
         from strawberry.federation.schema_directives import FederationDirective
 
@@ -264,7 +269,7 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ):
+    ) -> ExecutionContext:
         return ExecutionContext(
             query=query,
             schema=self,

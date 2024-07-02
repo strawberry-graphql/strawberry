@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class Subscription(AsyncExecutionBase):
-    def __init__(self, kwargs: AsyncExecutionKwargs):
+    def __init__(self, kwargs: AsyncExecutionKwargs) -> None:
         super().__init__(kwargs)
         self._operation_cm = self.extensions_runner.operation()
         self._original_generator: Optional[
