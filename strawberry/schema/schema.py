@@ -40,6 +40,7 @@ from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
 from strawberry.types.types import StrawberryObjectDefinition
 
+from ..extensions import SchemaExtension
 from ..printer import print_schema
 from . import compat
 from .base import BaseSchema
@@ -53,7 +54,6 @@ if TYPE_CHECKING:
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.directive import StrawberryDirective
     from strawberry.enum import EnumDefinition
-    from strawberry.extensions import SchemaExtension
     from strawberry.extensions.base_extension import SupportsResolve
     from strawberry.field import StrawberryField
     from strawberry.type import StrawberryType
@@ -68,12 +68,10 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 }
 
 
-def _create_middleware_manager(*middlewares: SupportsResolve) -> MiddlewareManager:
-    return MiddlewareManager(*middlewares)
-
-
-def _supports_resolve(obj: object) -> TypeGuard[SupportsResolve]:
-    return bool(hasattr(obj, "resolve"))
+def _implements_resolve(obj: object) -> TypeGuard[SupportsResolve]:
+    if (ret := getattr(obj, "resolve", None)) and ret is not SchemaExtension.resolve:
+        return True
+    return False
 
 
 class Schema(BaseSchema):
@@ -199,10 +197,11 @@ class Schema(BaseSchema):
 
         return extensions
 
+    # TODO: can this get cached?
     def _get_middleware_manager(self, sync: bool = False) -> MiddlewareManager:
         # create a middleware manager with all the extensions that support resolve
-        return _create_middleware_manager(
-            *(ext for ext in self.get_extensions(sync) if _supports_resolve(ext))
+        return MiddlewareManager(
+            *(ext for ext in self.get_extensions(sync) if _implements_resolve(ext))
         )
 
     @lru_cache

@@ -323,7 +323,9 @@ def sync_extension() -> Type[ExampleExtension]:
 
 
 @pytest.mark.asyncio
-async def test_async_extension_hooks(default_query_types_and_query, async_extension):
+async def test_async_extension_hooks(
+    default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
+):
     schema = strawberry.Schema(
         query=default_query_types_and_query.query_type, extensions=[async_extension]
     )

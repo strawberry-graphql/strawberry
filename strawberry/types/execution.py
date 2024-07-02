@@ -92,7 +92,6 @@ class ExecutionResult:
     extensions: Optional[Dict[str, Any]] = None
 
 
-# TODO: should errors field live here?
 class ExecutionResultError(ExecutionResult): ...
 
 

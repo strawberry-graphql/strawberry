@@ -204,9 +204,6 @@ class ExtensionContextManagerBase:
     ) -> None:
         await self.async_exit_stack.__aexit__(exc_type, exc_val, exc_tb)
 
-    async def exit(self, exc: Exception) -> None:
-        await self.__aexit__(type(exc), exc.args, exc.__traceback__)
-
 
 class OperationContextManager(ExtensionContextManagerBase):
     HOOK_NAME = SchemaExtension.on_operation.__name__
