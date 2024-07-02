@@ -11,7 +11,7 @@ from strawberry.custom_scalar import scalar
 
 
 def wrap_parser(parser: Callable, type_: str) -> Callable:
-    def inner(value: str):
+    def inner(value: str) -> object:
         try:
             return parser(value)
         except ValueError as e:

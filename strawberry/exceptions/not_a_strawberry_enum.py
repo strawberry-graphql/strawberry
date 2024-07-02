@@ -1,8 +1,7 @@
 from __future__ import annotations
 
+from functools import cached_property
 from typing import TYPE_CHECKING, Optional
-
-from strawberry.utils.cached_property import cached_property
 
 from .exception import StrawberryException
 from .utils.source_finder import SourceFinder
@@ -14,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class NotAStrawberryEnumError(StrawberryException):
-    def __init__(self, enum: EnumMeta):
+    def __init__(self, enum: EnumMeta) -> None:
         self.enum = enum
 
         self.message = f'Enum "{enum.__name__}" is not a Strawberry enum.'

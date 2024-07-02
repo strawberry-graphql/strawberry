@@ -18,6 +18,7 @@ class AsyncGraphQLView(BaseAsyncGraphQLView):
     result_override: ResultOverrideFunction = None
 
     async def get_root_value(self, request: HttpRequest) -> Query:
+        await super().get_root_value(request)  # for coverage
         return Query()
 
     async def get_context(self, request: HttpRequest, response: HttpResponse) -> object:
@@ -39,6 +40,7 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
         view = AsyncGraphQLView.as_view(
             schema=schema,
             graphiql=self.graphiql,
+            graphql_ide=self.graphql_ide,
             allow_queries_via_get=self.allow_queries_via_get,
             result_override=self.result_override,
         )

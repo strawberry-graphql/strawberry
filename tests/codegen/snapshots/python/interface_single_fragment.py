@@ -1,4 +1,5 @@
 class OperationNameResultInterfaceBlogPost:
+    # typename: BlogPost
     id: str
     title: str
 

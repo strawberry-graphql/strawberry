@@ -1,4 +1,5 @@
 class PersonName:
+    # typename: Person
     name: str
 
 class OperationNameResult:

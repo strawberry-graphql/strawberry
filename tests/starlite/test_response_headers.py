@@ -1,9 +1,4 @@
-import sys
-
-import pytest
-
 import strawberry
-from strawberry.types import Info
 
 try:
     from starlite import Starlite
@@ -13,17 +8,12 @@ except ModuleNotFoundError:
     pass
 
 
-pytestmark = pytest.mark.skipif(
-    sys.version_info < (3, 8), reason="requires python3.8 or higher"
-)
-
-
 # TODO: move this to common tests
 def test_set_response_headers():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert info.context.get("response") is not None
             info.context["response"].headers["X-Strawberry"] = "rocks"
             return "abc"
@@ -45,7 +35,7 @@ def test_set_cookie_headers():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert info.context.get("response") is not None
             info.context["response"].set_cookie(
                 key="strawberry",

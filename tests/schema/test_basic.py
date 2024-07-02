@@ -14,8 +14,7 @@ from strawberry.type import StrawberryList
 
 
 def test_raises_exception_with_unsupported_types():
-    class SomeType:
-        ...
+    class SomeType: ...
 
     @strawberry.type
     class Query:

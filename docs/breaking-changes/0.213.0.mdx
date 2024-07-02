@@ -1,0 +1,23 @@
+---
+title: 0.213.0 Deprecation
+slug: breaking-changes/0.213.0
+---
+
+# v0.213.0 introduces a deprecation for `graphiql` parameter
+
+All HTTP integration now will use `graphql_ide` instead of `graphiql` parameter.
+If you're not using the `graphiql` parameter, you can safely ignore this
+deprecation.
+
+If you're using the `graphiql` parameter, you should change it to `graphql_ide`
+instead.
+
+Here's an example of the changes:
+
+```diff
+-graphql_app = GraphQLRouter(schema, graphiql=True)
++graphql_app = GraphQLRouter(schema, graphql_ide="graphiql")
+
+-graphql_app = GraphQLRouter(schema, graphiql=False)
++graphql_app = GraphQLRouter(schema, graphql_ide=None)
+```

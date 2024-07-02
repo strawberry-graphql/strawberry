@@ -1,4 +1,4 @@
-FROM python:3.7-alpine
+FROM docker.io/python:3.8-alpine
 
 RUN pip install httpx==0.7.*
 

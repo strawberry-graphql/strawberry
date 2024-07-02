@@ -1,7 +1,8 @@
 import datetime
 import decimal
 import enum
-from typing import TYPE_CHECKING, List, NewType, Optional
+import random
+from typing import TYPE_CHECKING, Generic, List, NewType, Optional, TypeVar, Union
 from typing_extensions import Annotated
 from uuid import UUID
 
@@ -34,7 +35,17 @@ class Animal:
     age: int
 
 
-PersonOrAnimal = strawberry.union("PersonOrAnimal", (Person, Animal))
+LivingThing1 = TypeVar("LivingThing1")
+LivingThing2 = TypeVar("LivingThing2")
+
+
+@strawberry.type
+class LifeContainer(Generic[LivingThing1, LivingThing2]):
+    items1: List[LivingThing1]
+    items2: List[LivingThing2]
+
+
+PersonOrAnimal = Annotated[Union[Person, Animal], strawberry.union("PersonOrAnimal")]
 
 
 @strawberry.interface
@@ -59,6 +70,7 @@ class Image(Node):
 @strawberry.input
 class PersonInput:
     name: str
+    age: Optional[int] = strawberry.UNSET
 
 
 @strawberry.input
@@ -100,12 +112,55 @@ class Query:
     def with_inputs(self, id: Optional[strawberry.ID], input: ExampleInput) -> bool:
         return True
 
+    @strawberry.field
+    def get_person_or_animal(self) -> Union[Person, Animal]:
+        """Randomly get a person or an animal."""
+        p_or_a = random.choice([Person, Animal])()  # noqa: S311
+        p_or_a.name = "Howard"
+        p_or_a.age = 7
+        return p_or_a
+
+    @strawberry.field
+    def list_life() -> LifeContainer[Person, Animal]:
+        """Get lists of living things."""
+        person = Person(name="Henry", age=10)
+        dinosaur = Animal(name="rex", age=66_000_000)
+        return LifeContainer([person], [dinosaur])
+
+
+@strawberry.input
+class BlogPostInput:
+    title: str = "I replaced my doorbell.  You wouldn't believe what happened next!"
+    color: Color = Color.RED
+    pi: float = 3.14159
+    a_bool: bool = True
+    an_int: int = 42
+    an_optional_int: Optional[int] = None
+
+
+@strawberry.input
+class AddBlogPostsInput:
+    posts: List[BlogPostInput]
+
+
+@strawberry.type
+class AddBlogPostsOutput:
+    posts: List[BlogPost]
+
 
 @strawberry.type
 class Mutation:
     @strawberry.mutation
     def add_book(self, name: str) -> BlogPost:
         return BlogPost(id="c6f1c3ce-5249-4570-9182-c2836b836d14", name=name)
+
+    @strawberry.mutation
+    def add_blog_posts(self, input: AddBlogPostsInput) -> AddBlogPostsOutput:
+        output = AddBlogPostsOutput()
+        output.posts = []
+        for i, title in enumerate(input.posts):
+            output.posts.append(BlogPost(str(i), title))
+        return output
 
 
 @pytest.fixture

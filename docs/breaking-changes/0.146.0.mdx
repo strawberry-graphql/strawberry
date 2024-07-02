@@ -1,0 +1,65 @@
+---
+title: 0.146.0 Breaking Changes
+slug: breaking-changes/0.146.0
+---
+
+# v0.146.0 Breaking Changes - 5 December 2022
+
+This release introduces a couple of breaking changes to the Sanic integration.
+
+## `process_result` is now async and accepts the request as the first argument
+
+If you customized the `process_result` function, you will need to update your
+code to make it async and accept the request as the first argument.
+
+For example:
+
+```python
+from strawberry.sanic.views import GraphQLView
+from strawberry.http import GraphQLHTTPResponse, process_result
+from strawberry.types import ExecutionResult
+from sanic.request import Request
+from graphql.error.graphql_error import format_error as format_graphql_error
+
+
+class MyGraphQLView(GraphQLView):
+    async def process_result(
+        self, request: Request, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
+        if result.errors:
+            result.errors = [format_graphql_error(err) for err in result.errors]
+
+        return process_result(data)
+```
+
+## `get_context` now receives also the response as the second argument
+
+If you customized the `get_context` function, you will need to update your code
+to accept the response as the second argument. The response argument allows you
+to set cookies and other headers.
+
+For example:
+
+```python
+from strawberry.sanic.views import GraphQLView
+from strawberry.sanic.context import StrawberrySanicContext
+from strawberry.http.temporal_response import TemporalResponse
+from sanic.request import Request
+
+
+class MyGraphQLView(GraphQLView):
+    async def get_context(
+        self, request: Request, response: TemporalResponse
+    ) -> StrawberrySanicContext:
+        return {"request": request, "response": response}
+```
+
+# Deprecations
+
+## Context value is now a dictionary
+
+The context value is now a dictionary instead of a custom class. This means that
+you should access the context value using the `["key"]` syntax instead of the
+`.key` syntax.
+
+The `.key` syntax is still supported but will be removed in future releases.

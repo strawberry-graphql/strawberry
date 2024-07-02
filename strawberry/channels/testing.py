@@ -14,7 +14,7 @@ from typing import (
     Union,
 )
 
-from graphql import GraphQLError
+from graphql import GraphQLError, GraphQLFormattedError
 
 from channels.testing.websocket import WebsocketCommunicator
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
@@ -34,6 +34,9 @@ from strawberry.subscriptions.protocols.graphql_ws import (
 from strawberry.types import ExecutionResult
 
 if TYPE_CHECKING:
+    from types import TracebackType
+    from typing_extensions import Self
+
     from asgiref.typing import ASGIApplication
 
 
@@ -66,8 +69,9 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         path: str,
         headers: Optional[List[Tuple[bytes, bytes]]] = None,
         protocol: str = GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        connection_params: dict = {},
         **kwargs: Any,
-    ):
+    ) -> None:
         """
 
         Args:
@@ -78,20 +82,28 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         self.protocol = protocol
         subprotocols = kwargs.get("subprotocols", [])
         subprotocols.append(protocol)
+        self.connection_params = connection_params
         super().__init__(application, path, headers, subprotocols=subprotocols)
 
-    async def __aenter__(self) -> GraphQLWebsocketCommunicator:
+    async def __aenter__(self) -> Self:
         await self.gql_init()
         return self
 
-    async def __aexit__(self, exc_type: Type, exc_val: Any, exc_tb: Any) -> None:
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
         await self.disconnect()
 
     async def gql_init(self) -> None:
         res = await self.connect()
         if self.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
             assert res == (True, GRAPHQL_TRANSPORT_WS_PROTOCOL)
-            await self.send_json_to(ConnectionInitMessage().as_dict())
+            await self.send_json_to(
+                ConnectionInitMessage(payload=self.connection_params).as_dict()
+            )
             response = await self.receive_json_from()
             assert response == ConnectionAckMessage().as_dict()
         else:
@@ -100,6 +112,9 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
             response = await self.receive_json_from()
             assert response["type"] == GQL_CONNECTION_ACK
 
+    # Actual `ExecutionResult`` objects are not available client-side, since they
+    # get transformed into `FormattedExecutionResult` on the wire, but we attempt
+    # to do a limited representation of them here, to make testing simpler.
     async def subscribe(
         self, query: str, variables: Optional[Dict] = None
     ) -> Union[ExecutionResult, AsyncIterator[ExecutionResult]]:
@@ -125,22 +140,28 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
             message_type = response["type"]
             if message_type == NextMessage.type:
                 payload = NextMessage(**response).payload
-                ret = ExecutionResult(None, None)
-                for field in dataclasses.fields(ExecutionResult):
-                    setattr(ret, field.name, payload.get(field.name, None))
-                    yield ret
+                ret = ExecutionResult(payload["data"], None)
+                if "errors" in payload:
+                    ret.errors = self.process_errors(payload["errors"])
+                ret.extensions = payload.get("extensions", None)
+                yield ret
             elif message_type == ErrorMessage.type:
                 error_payload = ErrorMessage(**response).payload
                 yield ExecutionResult(
-                    data=None,
-                    errors=[
-                        GraphQLError(
-                            message=message["message"],
-                            extensions=message.get("extensions", None),
-                        )
-                        for message in error_payload
-                    ],
+                    data=None, errors=self.process_errors(error_payload)
                 )
                 return  # an error message is the last message for a subscription
             else:
                 return
+
+    def process_errors(self, errors: List[GraphQLFormattedError]) -> List[GraphQLError]:
+        """Reconst a GraphQLError from a FormattedGraphQLError"""
+        result = []
+        for f_error in errors:
+            error = GraphQLError(
+                message=f_error["message"],
+                extensions=f_error.get("extensions", None),
+            )
+            error.path = f_error.get("path", None)
+            result.append(error)
+        return result

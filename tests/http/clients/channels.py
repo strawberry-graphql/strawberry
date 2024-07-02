@@ -16,6 +16,7 @@ from strawberry.channels import (
 )
 from strawberry.channels.handlers.base import ChannelsConsumer
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.typevars import Context, RootValue
 from tests.views.schema import Query, schema
 
@@ -63,10 +64,16 @@ def create_multipart_request_body(
 
 
 class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
+    def get_tasks(self) -> List[Any]:
+        if hasattr(self._handler, "operations"):
+            return [op.task for op in self._handler.operations.values()]
+        else:
+            return list(self._handler.tasks.values())
+
     async def get_context(self, *args: str, **kwargs: Any) -> object:
         context = await super().get_context(*args, **kwargs)
         context["ws"] = self._handler._ws
-        context["tasks"] = self._handler.tasks
+        context["get_tasks"] = self.get_tasks
         context["connectionInitTimeoutTask"] = getattr(
             self._handler, "connection_init_timeout_task", None
         )
@@ -130,7 +137,8 @@ class ChannelsHttpClient(HttpClient):
 
     def __init__(
         self,
-        graphiql: bool = True,
+        graphiql: Optional[bool] = None,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
@@ -142,6 +150,7 @@ class ChannelsHttpClient(HttpClient):
         self.http_app = DebuggableGraphQLHTTPConsumer.as_asgi(
             schema=schema,
             graphiql=graphiql,
+            graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
         )
@@ -249,13 +258,15 @@ class ChannelsHttpClient(HttpClient):
 class SyncChannelsHttpClient(ChannelsHttpClient):
     def __init__(
         self,
-        graphiql: bool = True,
+        graphiql: Optional[bool] = None,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
         self.http_app = DebuggableSyncGraphQLHTTPConsumer.as_asgi(
             schema=schema,
             graphiql=graphiql,
+            graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
         )

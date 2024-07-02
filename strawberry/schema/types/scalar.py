@@ -12,8 +12,9 @@ from graphql import (
     GraphQLString,
 )
 
-from strawberry.custom_scalar import ScalarDefinition
+from strawberry.custom_scalar import ScalarDefinition, scalar
 from strawberry.file_uploads.scalars import Upload
+from strawberry.relay.types import GlobalID
 from strawberry.scalars import ID
 from strawberry.schema.types import base_scalars
 
@@ -62,4 +63,18 @@ DEFAULT_SCALAR_REGISTRY: Dict[object, ScalarDefinition] = {
     datetime.datetime: _get_scalar_definition(base_scalars.DateTime),
     datetime.time: _get_scalar_definition(base_scalars.Time),
     decimal.Decimal: _get_scalar_definition(base_scalars.Decimal),
+    # We can't wrap GLobalID with @scalar because it has custom attributes/methods
+    GlobalID: _get_scalar_definition(
+        scalar(
+            GlobalID,
+            name="GlobalID",
+            description=GraphQLID.description,
+            parse_literal=lambda v, vars=None: GlobalID.from_id(
+                GraphQLID.parse_literal(v, vars)
+            ),
+            parse_value=GlobalID.from_id,
+            serialize=str,
+            specified_by_url=("https://relay.dev/graphql/objectidentification.htm"),
+        )
+    ),
 }

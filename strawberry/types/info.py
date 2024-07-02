@@ -2,9 +2,19 @@ from __future__ import annotations
 
 import dataclasses
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, TypeVar, Union
-
-from strawberry.utils.cached_property import cached_property
+from functools import cached_property
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
+from typing_extensions import TypeVar
 
 from .nodes import convert_selections
 
@@ -16,18 +26,33 @@ if TYPE_CHECKING:
     from strawberry.arguments import StrawberryArgument
     from strawberry.field import StrawberryField
     from strawberry.schema import Schema
-    from strawberry.type import StrawberryType
+    from strawberry.type import StrawberryType, WithStrawberryObjectDefinition
 
     from .nodes import Selection
 
-ContextType = TypeVar("ContextType")
-RootValueType = TypeVar("RootValueType")
+ContextType = TypeVar("ContextType", default=Any)
+RootValueType = TypeVar("RootValueType", default=Any)
 
 
 @dataclasses.dataclass
 class Info(Generic[ContextType, RootValueType]):
     _raw_info: GraphQLResolveInfo
     _field: StrawberryField
+
+    def __class_getitem__(cls, types: Union[type, Tuple[type, ...]]) -> Type[Info]:
+        """Workaround for when passing only one type.
+
+        Python doesn't yet support directly passing only one type to a generic class
+        that has typevars with defaults. This is a workaround for that.
+
+        See:
+        https://discuss.python.org/t/passing-only-one-typevar-of-two-when-using-defaults/49134
+        """
+
+        if not isinstance(types, tuple):
+            types = (types, Any)  # type: ignore
+
+        return super().__class_getitem__(types)  # type: ignore
 
     @property
     def field_name(self) -> str:
@@ -64,9 +89,10 @@ class Info(Generic[ContextType, RootValueType]):
     def variable_values(self) -> Dict[str, Any]:
         return self._raw_info.variable_values
 
-    # TODO: merge type with StrawberryType when StrawberryObject is implemented
     @property
-    def return_type(self) -> Optional[Union[type, StrawberryType]]:
+    def return_type(
+        self,
+    ) -> Optional[Union[Type[WithStrawberryObjectDefinition], StrawberryType]]:
         return self._field.type
 
     @property

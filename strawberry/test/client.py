@@ -23,7 +23,11 @@ class Body(TypedDict, total=False):
 
 
 class BaseGraphQLTestClient(ABC):
-    def __init__(self, client, url: str = "/graphql/"):  # noqa: ANN001
+    def __init__(
+        self,
+        client: Any,
+        url: str = "/graphql/",
+    ) -> None:
         self._client = client
         self.url = url
 
@@ -136,7 +140,7 @@ class BaseGraphQLTestClient(ABC):
             # In case of folders the variables will look like
             # `{"folder": {"files": ...]}}`
             if isinstance(values, dict):
-                folder_key = list(values.keys())[0]
+                folder_key = next(iter(values.keys()))
                 reference += f".{folder_key}"
                 # the list of file is inside the folder keyword
                 variable_values = variable_values[folder_key]
@@ -146,7 +150,7 @@ class BaseGraphQLTestClient(ABC):
                 # copying `files` as when we map a file we must discard from the dict
                 _kwargs = files.copy()
                 for index, _ in enumerate(variable_values):
-                    k = list(_kwargs.keys())[0]
+                    k = next(iter(_kwargs.keys()))
                     _kwargs.pop(k)
                     map.setdefault(k, [])
                     map[k].append(f"variables.{reference}.{index}")
@@ -159,7 +163,7 @@ class BaseGraphQLTestClient(ABC):
         map_without_vars = {k: v for k, v in map.items() if k in files}
         return map_without_vars
 
-    def _decode(self, response: Any, type: Literal["multipart", "json"]):
+    def _decode(self, response: Any, type: Literal["multipart", "json"]) -> Any:
         if type == "multipart":
             return json.loads(response.content.decode())
         return response.json()

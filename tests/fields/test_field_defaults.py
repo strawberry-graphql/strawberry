@@ -8,6 +8,7 @@ from strawberry.exceptions import (
     FieldWithResolverAndDefaultValueError,
     InvalidDefaultFactoryError,
 )
+from strawberry.field import StrawberryField
 
 
 def test_field_with_default():
@@ -35,10 +36,15 @@ def test_field_with_default_factory():
         the_int: int = strawberry.field(default_factory=lambda: 3)
 
     instance = Query()
-    [int_field] = Query._type_definition.fields
+    [int_field] = Query.__strawberry_definition__.fields
 
     assert instance.the_int == 3
     assert int_field.default_value == 3
+
+
+def test_field_default_extensions_value_set():
+    field = StrawberryField(python_name="test", default="test")
+    assert field.extensions == []
 
 
 def test_field_default_factory_executed_each_time():

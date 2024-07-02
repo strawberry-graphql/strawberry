@@ -17,179 +17,172 @@ on:
       - ".github/workflows/test.yml"
 
 jobs:
-  unit-tests:
-    strategy:
-      matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+  generate-jobs-tests:
+    name: 💻 Generate test matrix
+    runs-on: ubuntu-latest
+    outputs:
+      sessions: ${{ steps.set-matrix.outputs.sessions }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install poetry nox nox-poetry
+      - id: set-matrix
+        shell: bash
+        run: |
+          echo sessions=$(
+            nox --json -t tests -l |
+            jq 'map(
+              {
+                session,
+                name: "\( .name ) on \( .python )\( if .call_spec != {} then " (\(.call_spec | to_entries | map("\(.key)=\(.value)") | join(", ")))" else "" end )"
+              }
+            )'
+          ) | tee --append $GITHUB_OUTPUT
 
-    name: Python ${{ matrix.python-version }}
+  unit-tests:
+    name: 🔬 ${{ matrix.session.name }}
+    needs: [generate-jobs-tests]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        session: ${{ fromJson(needs.generate-jobs-tests.outputs.sessions) }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: |
+            3.8
+            3.9
+            3.10
+            3.11
+            3.12
+
+      - name: Pip and nox cache
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache
+            ~/.nox
+            .nox
+          key:
+            ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
+            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}-4
+
+      - run: pip install poetry nox nox-poetry
+      - run: nox -r -t tests -s "${{ matrix.session.session }}"
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: coverage-${{ matrix.session.session }}
+          path: coverage.xml
+
+  upload-coverage:
+    name: 🆙 Upload Coverage
+    needs: [unit-tests]
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-      - run: pipx install poetry
-      - uses: actions/setup-python@v4
-        id: setup-python
+      - uses: actions/download-artifact@v4
+      - uses: codecov/codecov-action@v4
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: "poetry"
-
-      - run: poetry env use ${{ matrix.python-version }}
-      - run: poetry install
-        if: steps.setup-python.outputs.cache-hit != 'true'
-
-      - name: pytest
-        run:
-          poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m "not
-          starlette" -m "not django" -m "not starlite" --ignore=tests/mypy --ignore=tests/pyright
-
-        if: ${{ always() }}
-      - uses: codecov/codecov-action@v3
-        if: ${{ always() }}
-        with:
-          token: c0eec83c-17c8-4e8a-adf9-a34e4c22ef6a
+          token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           verbose: true
 
+  benchmarks:
+    name: 📈 Benchmarks
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: pipx install poetry
+      - uses: actions/setup-python@v5
+        id: setup-python
+        with:
+          python-version: "3.12"
+          architecture: x64
+          cache: "poetry"
+
+      - run: poetry env use 3.12
+      - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
+
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v2
+        with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
+          run: poetry run pytest tests/benchmarks --codspeed
+
+  lint:
+    name: ✨ Lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: |
+            3.8
+            3.9
+            3.10
+            3.11
+            3.12
+
+      - name: Pip and nox cache
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache
+            ~/.nox
+            .nox
+          key:
+            ${{ runner.os }}-nox-lint-${{ matrix.session.session }}-${{
+            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
+          restore-keys: |
+            ${{ runner.os }}-lint-nox-${{ matrix.session.session }}-
+            ${{ runner.os }}-lint-nox-
+
+      - run: pip install poetry
+      - run: pip install nox nox-poetry
+      - run: nox -r -t lint
+
   unit-tests-on-windows:
-    name: Python 3.10.0 on Windows
+    name: 🪟 Tests on Windows
     runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: pipx install poetry
-      - uses: actions/setup-python@v4
+      - run: pipx install coverage
+      - uses: actions/setup-python@v5
         id: setup-python
         with:
-          python-version: "3.10.0"
+          python-version: "3.11"
           cache: "poetry"
 
-      - run: poetry install
+      - run: poetry install --with integrations
         if: steps.setup-python.outputs.cache-hit != 'true'
+      # Since we are running all the integrations at once, we can't use
+      # pydantic v2. It is not compatible with starlette yet
+      - run: poetry run pip install pydantic==1.10
 
-      - name: pytest
-        run:
-          poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m "not
-          django" --ignore=tests/mypy --ignore=tests/pyright
-
-        if: ${{ always() }}
-      - uses: codecov/codecov-action@v3
-        if: ${{ always() }}
-        with:
-          token: c0eec83c-17c8-4e8a-adf9-a34e4c22ef6a
-          fail_ci_if_error: true
-          verbose: true
-
-  django-unit-tests:
-    strategy:
-      matrix:
-        django: ["4.0", "3.2"]
-
-    name: Django ${{ matrix.django }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - run: pipx install poetry
-      - uses: actions/setup-python@v4
-        id: setup-python
-        with:
-          python-version: "3.10"
-          cache: "poetry"
-
-      - run: poetry env use python3.10
-      - run: poetry install
-        if: steps.setup-python.outputs.cache-hit != 'true'
-
-      - name: Install django ${{ matrix.django }}
-        run: poetry add --python ^3.10 django@^${{ matrix.django }}
-
-      - name: pytest
-        run:
-          poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m django
-
-        if: ${{ always() }}
-      - uses: codecov/codecov-action@v3
-        if: ${{ always() }}
-        with:
-          token: c0eec83c-17c8-4e8a-adf9-a34e4c22ef6a
-          fail_ci_if_error: true
-          verbose: true
-
-  starlette-unit-tests:
-    strategy:
-      matrix:
-        starlette: ["0.23.1", "0.24.0", "0.25.0", "0.26.1"]
-
-    name: Starlette ${{ matrix.starlette }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - run: pipx install poetry
-      - uses: actions/setup-python@v4
-        id: setup-python
-        with:
-          python-version: "3.10"
-          cache: "poetry"
-
-      - run: poetry env use python3.10
-      - run: poetry install
-        if: steps.setup-python.outputs.cache-hit != 'true'
-
-      - name: Install starlette ${{ matrix.starlette }}
-        run: poetry run pip install starlette==${{ matrix.starlette }}
-
-      - name: Install fastapi less than 0.92.0
-        run: poetry run pip install "fastapi<0.92.0"
-        if: ${{ matrix.starlette == '0.23.1' || matrix.starlette == '0.24.0' }}
-
-      - name: Install fastapi 0.92.0
-        run: poetry run pip install "fastapi==0.92.0"
-        if: ${{ matrix.starlette == '0.25.0' }}
-
-      - name: pytest
-        run:
-          poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m
-          starlette
-
-        if: ${{ always() }}
-      - uses: codecov/codecov-action@v3
-        if: ${{ always() }}
-        with:
-          token: c0eec83c-17c8-4e8a-adf9-a34e4c22ef6a
-          fail_ci_if_error: true
-          verbose: true
-
-  starlite-unit-tests:
-    strategy:
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
-
-    name: Python ${{ matrix.python-version }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - run: pipx install poetry
-      - uses: actions/setup-python@v4
-        id: setup-python
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: "poetry"
-
-      - run: poetry env use ${{ matrix.python-version }}
-      - run: poetry install
-        if: steps.setup-python.outputs.cache-hit != 'true'
-
-      - name: pytest
-        run:
-          poetry run coverage run -m pytest --showlocals -vv -m starlite
-
+      # we use poetry directly instead of nox since we want to
+      # test all integrations at once on windows
+      # but we want to exclude tests/mypy since we are using an old version of pydantic
+      - run: |
+          poetry run pytest --cov=. --cov-append --cov-report=xml -n auto --showlocals --ignore tests/mypy -vv
       - name: coverage xml
-        run: poetry run coverage xml -i
+        run: coverage xml -i
         if: ${{ always() }}
-      - uses: codecov/codecov-action@v3
+
+      - uses: codecov/codecov-action@v4
         if: ${{ always() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

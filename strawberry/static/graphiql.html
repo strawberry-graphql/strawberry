@@ -43,13 +43,13 @@
 
     <script
       crossorigin
-      src="https://unpkg.com/react@17.0.2/umd/react.development.js"
-      integrity="sha384-xQwCoNcK/7P3Lpv50IZSEbJdpqbToWEODAUyI/RECaRXmOE2apWt7htari8kvKa/"
+      src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"
+      integrity="sha384-tMH8h3BGESGckSAVGZ82T9n90ztNXxvdwvdM6UoR56cYcf+0iGXBliJ29D+wZ/x8"
     ></script>
     <script
       crossorigin
-      src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.development.js"
-      integrity="sha384-E9IgxDsnjKgh0777N3lXen7NwXeTsOpLLJhI01SW7idG046SRqJpsW2rJwsOYk0L"
+      src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"
+      integrity="sha384-bm7MnzvK++ykSwVJ2tynSE5TRdN+xL418osEVF2DE/L/gfWHj91J2Sphe582B1Bh"
     ></script>
 
     <script
@@ -61,15 +61,15 @@
     <link
       crossorigin
       rel="stylesheet"
-      href="https://unpkg.com/graphiql@2.4.7/graphiql.min.css"
-      integrity="sha384-486GcFFVcFN0yj7LIp/vn7DVsuf2CTytJlNuqjHg0zF2g72zra2gWCNV2HBxJgC6"
+      href="https://unpkg.com/graphiql@3.0.9/graphiql.min.css"
+      integrity="sha384-yz3/sqpuplkA7msMo0FE4ekg0xdwdvZ8JX9MVZREsxipqjU4h8IRfmAMRcb1QpUy"
     />
 
     <link
       crossorigin
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@graphiql/plugin-explorer@0.1.15/dist/style.css"
-      integrity="sha384-kOrlMT58B3t0hTVIPFqWyg1oL4DKvxHNcC1X2qugv4fXd9ehKULhhjDLvBi3HoEK"
+      href="https://unpkg.com/@graphiql/plugin-explorer@1.0.2/dist/style.css"
+      integrity="sha384-5DFJlDPW2tSATRbM8kzoP1j194jexLswuNmClWoRr2Q0x7R68JIQzPHZ02Faktwi"
     />
   </head>
 
@@ -77,13 +77,13 @@
     <div id="graphiql" class="graphiql-container">Loading...</div>
     <script
       crossorigin
-      src="https://unpkg.com/graphiql@2.4.7/graphiql.min.js"
-      integrity="sha384-8da92RVD56z/pbOOnJ4Ud5qlhqEzDtJI6qVZjN88SCbOatpo4xVDeP3T0nmfTf+9"
+      src="https://unpkg.com/graphiql@3.0.9/graphiql.min.js"
+      integrity="sha384-Mjte+vxCWz1ZYCzszGHiJqJa5eAxiqI4mc3BErq7eDXnt+UGLXSEW7+i0wmfPiji"
     ></script>
     <script
       crossorigin
-      src="https://unpkg.com/@graphiql/plugin-explorer@0.1.15/dist/graphiql-plugin-explorer.umd.js"
-      integrity="sha384-730PslzMVMN3EMJOKuh/WVRaRwhaBbWE43IOXyR+DMDlQiYx0BjiPmoPZ+6qEa0C"
+      src="https://unpkg.com/@graphiql/plugin-explorer@1.0.2/dist/index.umd.js"
+      integrity="sha384-2oonKe47vfHIZnmB6ZZ10vl7T0Y+qrHQF2cmNTaFDuPshpKqpUMGMc9jgj9MLDZ9"
     ></script>
     <script>
       const EXAMPLE_QUERY = `# Welcome to GraphiQL 🍓
@@ -142,25 +142,17 @@
         subscriptionUrl,
       });
 
-      function GraphiQLWithExplorer() {
-        const [query, setQuery] = React.useState(EXAMPLE_QUERY);
-        const explorerPlugin = GraphiQLPluginExplorer.useExplorerPlugin({
-          query: query,
-          onEdit: setQuery,
-        });
-        return React.createElement(GraphiQL, {
+      const explorerPlugin = GraphiQLPluginExplorer.explorerPlugin();
+
+      const root = ReactDOM.createRoot(document.getElementById("graphiql"));
+
+      root.render(
+        React.createElement(GraphiQL, {
           fetcher: fetcher,
           defaultEditorToolsVisibility: true,
           plugins: [explorerPlugin],
-          query: query,
-          onEditQuery: setQuery,
           inputValueDeprecation: true,
-        });
-      }
-
-      ReactDOM.render(
-        React.createElement(GraphiQLWithExplorer),
-        document.getElementById("graphiql")
+        }),
       );
     </script>
   </body>

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import TYPE_CHECKING, Dict, List, Type, TypeVar
+from typing import Any, Dict, List, Type
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -10,15 +10,15 @@ from strawberry.exceptions import (
     FieldWithResolverAndDefaultValueError,
     PrivateStrawberryFieldError,
 )
+from strawberry.field import StrawberryField
 from strawberry.private import is_private
+from strawberry.type import has_object_definition
 from strawberry.unset import UNSET
-from strawberry.utils.inspect import get_specialized_type_var_map
-
-if TYPE_CHECKING:
-    from strawberry.field import StrawberryField
 
 
-def _get_fields(cls: Type) -> List[StrawberryField]:
+def _get_fields(
+    cls: Type[Any], original_type_annotations: Dict[str, Type[Any]]
+) -> List[StrawberryField]:
     """Get all the strawberry fields off a strawberry.type cls
 
     This function returns a list of StrawberryFields (one for each field item), while
@@ -51,19 +51,16 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     passing a named function (i.e. not an anonymous lambda) to strawberry.field
     (typically as a decorator).
     """
-    # Deferred import to avoid import cycles
-    from strawberry.field import StrawberryField
 
     fields: Dict[str, StrawberryField] = {}
 
     # before trying to find any fields, let's first add the fields defined in
     # parent classes, we do this by checking if parents have a type definition
     for base in cls.__bases__:
-        if hasattr(base, "_type_definition"):
+        if has_object_definition(base):
             base_fields = {
                 field.python_name: field
-                # TODO: we need to rename _fields to something else
-                for field in base._type_definition._fields
+                for field in base.__strawberry_definition__.fields
             }
 
             # Add base's fields to cls' fields
@@ -75,13 +72,13 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     origins: Dict[str, type] = {field_name: cls for field_name in cls.__annotations__}
 
     for base in cls.__mro__:
-        if hasattr(base, "_type_definition"):
-            for field in base._type_definition._fields:
+        if has_object_definition(base):
+            for field in base.__strawberry_definition__.fields:
                 if field.python_name in base.__annotations__:
                     origins.setdefault(field.name, base)
 
     # then we can proceed with finding the fields for the current class
-    for field in dataclasses.fields(cls):
+    for field in dataclasses.fields(cls):  # type: ignore
         if isinstance(field, StrawberryField):
             # Check that the field type is not Private
             if is_private(field.type):
@@ -126,10 +123,11 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # Note: We do this here rather in the `Strawberry.type` setter
             # function because at that point we don't have a link to the object
             # type that the field as attached to.
-            if isinstance(field.type_annotation, StrawberryAnnotation):
-                type_annotation = field.type_annotation
-                if type_annotation.namespace is None:
-                    type_annotation.set_namespace_from_field(field)
+            if (
+                isinstance(field.type_annotation, StrawberryAnnotation)
+                and field.type_annotation.namespace is None
+            ):
+                field.type_annotation.set_namespace_from_field(field)
 
         # Create a StrawberryField for fields that didn't use strawberry.field
         else:
@@ -137,31 +135,15 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             if is_private(field.type):
                 continue
 
-            field_type = field.type
-
             origin = origins.get(field.name, cls)
             module = sys.modules[origin.__module__]
-
-            if isinstance(field_type, TypeVar):
-                specialized_type_var_map = get_specialized_type_var_map(cls)
-                # If field_type is specialized and a TypeVar, replace it with its
-                # mapped type
-                if specialized_type_var_map and field_type in specialized_type_var_map:
-                    field_type = specialized_type_var_map[field_type]
-            else:
-                specialized_type_var_map = get_specialized_type_var_map(field_type)
-                # If field_type is specialized, copy its type_var_map to the definition
-                if specialized_type_var_map:
-                    field_type = field_type._type_definition.copy_with(
-                        specialized_type_var_map
-                    )
 
             # Create a StrawberryField, for fields of Types #1 and #2a
             field = StrawberryField(  # noqa: PLW2901
                 python_name=field.name,
                 graphql_name=None,
                 type_annotation=StrawberryAnnotation(
-                    annotation=field_type,
+                    annotation=field.type,
                     namespace=module.__dict__,
                 ),
                 origin=origin,
@@ -172,6 +154,10 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
 
         assert_message = "Field must have a name by the time the schema is generated"
         assert field_name is not None, assert_message
+
+        if field.name in original_type_annotations:
+            field.type = original_type_annotations[field.name]
+            field.type_annotation = StrawberryAnnotation(annotation=field.type)
 
         # TODO: Raise exception if field_name already in fields
         fields[field_name] = field

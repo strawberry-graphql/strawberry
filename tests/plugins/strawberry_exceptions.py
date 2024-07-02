@@ -32,7 +32,7 @@ def suppress_output(verbosity_level: int = 0) -> Generator[None, None, None]:
 
         return
 
-    with Path(os.devnull).open("w") as devnull:
+    with Path(os.devnull).open("w", encoding="utf-8") as devnull:
         with contextlib.redirect_stdout(devnull):
             yield
 
@@ -126,7 +126,7 @@ class StrawberryExceptionsPlugin:
         else:
             text += f"\n``````\n{exception_text.strip()}\n``````\n\n"
 
-        documentation_path = DOCS_FOLDER / f"{raised_exception.documentation_path}.md"
+        documentation_path = DOCS_FOLDER / f"{raised_exception.documentation_path}.mdx"
 
         if not documentation_path.exists():
             pytest.fail(

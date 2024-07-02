@@ -1,21 +1,31 @@
 # type: ignore
 import enum
 from typing import Generic, TypeVar
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypeAlias
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
+from strawberry.type import get_object_definition
 from strawberry.types.fields.resolver import StrawberryResolver
-from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion, union
+
+T = TypeVar("T")
 
 
 # This type is in the same file but should adequately test the logic.
 @strawberry.type
 class LaziestType:
     something: bool
+
+
+@strawberry.type
+class LazyGenericType(Generic[T]):
+    something: T
+
+
+LazyTypeAlias: TypeAlias = LazyGenericType[int]
 
 
 @strawberry.enum
@@ -36,6 +46,22 @@ def test_lazy_type():
     assert isinstance(resolved, LazyType)
     assert resolved is LazierType
     assert resolved.resolve_type() is LaziestType
+
+
+def test_lazy_type_alias():
+    # Module path is short and relative because of the way pytest runs the file
+    LazierType = LazyType("LazyTypeAlias", "test_lazy_types")
+
+    annotation = StrawberryAnnotation(LazierType)
+    resolved = annotation.resolve()
+
+    # Currently StrawberryAnnotation(LazyType).resolve() returns the unresolved
+    # LazyType. We may want to find a way to directly return the referenced object
+    # without a second resolving step.
+    assert isinstance(resolved, LazyType)
+    resolved_type = resolved.resolve_type()
+    assert resolved_type.__origin__ is LazyGenericType
+    assert resolved_type.__args__ == (int,)
 
 
 def test_lazy_type_function():
@@ -104,12 +130,9 @@ def test_lazy_type_generic():
     annotation = StrawberryAnnotation(ResolvedType)
     resolved = annotation.resolve()
 
-    # TODO: Simplify with StrawberryObject
-    assert isinstance(resolved, type)
-    assert hasattr(resolved, "_type_definition")
-    assert isinstance(resolved._type_definition, TypeDefinition)
-
-    items_field: StrawberryField = resolved._type_definition.fields[0]
+    definition = get_object_definition(resolved)
+    assert definition
+    items_field: StrawberryField = definition.fields[0]
     assert items_field.type is LazierType
     assert items_field.type.resolve_type() is LaziestType
 
@@ -122,8 +145,7 @@ def test_lazy_type_object():
     class WaterParkFeature:
         river: LazierType
 
-    # TODO: Remove reference to ._type_definition with StrawberryObject
-    field: StrawberryField = WaterParkFeature._type_definition.fields[0]
+    field: StrawberryField = WaterParkFeature.__strawberry_definition__.fields[0]
 
     assert isinstance(field.type, LazyType)
     assert field.type is LazierType

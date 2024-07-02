@@ -12,9 +12,9 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    cast,
     overload,
 )
+from typing_extensions import dataclass_transform
 
 from .exceptions import (
     MissingFieldAnnotationError,
@@ -22,28 +22,29 @@ from .exceptions import (
     ObjectIsNotClassError,
 )
 from .field import StrawberryField, field
+from .type import get_object_definition
 from .types.type_resolver import _get_fields
-from .types.types import TypeDefinition
+from .types.types import (
+    StrawberryObjectDefinition,
+)
 from .utils.dataclasses import add_custom_init_fn
+from .utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from .utils.str_converters import to_camel_case
-from .utils.typing import __dataclass_transform__
 
 T = TypeVar("T", bound=Type)
 
 
-def _get_interfaces(cls: Type[Any]) -> List[TypeDefinition]:
-    interfaces: List[TypeDefinition] = []
+def _get_interfaces(cls: Type[Any]) -> List[StrawberryObjectDefinition]:
+    interfaces: List[StrawberryObjectDefinition] = []
     for base in cls.__mro__[1:]:  # Exclude current class
-        type_definition = cast(
-            Optional[TypeDefinition], getattr(base, "_type_definition", None)
-        )
+        type_definition = get_object_definition(base)
         if type_definition and type_definition.is_interface:
             interfaces.append(type_definition)
 
     return interfaces
 
 
-def _check_field_annotations(cls: Type[Any]):
+def _check_field_annotations(cls: Type[Any]) -> None:
     """Are any of the dataclass Fields missing type annotations?
 
     This is similar to the check that dataclasses do during creation, but allows us to
@@ -66,7 +67,8 @@ def _check_field_annotations(cls: Type[Any]):
             # If the field has a type override then use that instead of using
             # the class annotations or resolver annotation
             if field_.type_annotation is not None:
-                cls_annotations[field_name] = field_.type_annotation.annotation
+                if field_name not in cls_annotations:
+                    cls_annotations[field_name] = field_.type_annotation.annotation
                 continue
 
             # Make sure the cls has an annotation
@@ -84,7 +86,8 @@ def _check_field_annotations(cls: Type[Any]):
                         field_name, resolver=field_.base_resolver
                     )
 
-                cls_annotations[field_name] = field_.base_resolver.type_annotation
+                if field_name not in cls_annotations:
+                    cls_annotations[field_name] = field_.base_resolver.type_annotation
 
             # TODO: Make sure the cls annotation agrees with the field's type
             # >>> if cls_annotations[field_name] != field.base_resolver.type:
@@ -99,7 +102,7 @@ def _check_field_annotations(cls: Type[Any]):
             raise MissingFieldAnnotationError(field_name, cls)
 
 
-def _wrap_dataclass(cls: Type[Any]):
+def _wrap_dataclass(cls: Type[T]) -> Type[T]:
     """Wrap a strawberry.type class with a dataclass and check for any issues
     before doing so"""
 
@@ -124,7 +127,7 @@ def _wrap_dataclass(cls: Type[Any]):
 
 
 def _process_type(
-    cls: Type,
+    cls: T,
     *,
     name: Optional[str] = None,
     is_input: bool = False,
@@ -132,14 +135,17 @@ def _process_type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
-):
+    original_type_annotations: Optional[Dict[str, Any]] = None,
+) -> T:
     name = name or to_camel_case(cls.__name__)
+    original_type_annotations = original_type_annotations or {}
 
     interfaces = _get_interfaces(cls)
-    fields = _get_fields(cls)
+    fields = _get_fields(cls, original_type_annotations)
     is_type_of = getattr(cls, "is_type_of", None)
+    resolve_type = getattr(cls, "resolve_type", None)
 
-    cls._type_definition = TypeDefinition(
+    cls.__strawberry_definition__ = StrawberryObjectDefinition(
         name=name,
         is_input=is_input,
         is_interface=is_interface,
@@ -148,9 +154,16 @@ def _process_type(
         directives=directives,
         origin=cls,
         extend=extend,
-        _fields=fields,
+        fields=fields,
         is_type_of=is_type_of,
+        resolve_type=resolve_type,
     )
+    # TODO: remove when deprecating _type_definition
+    DeprecatedDescriptor(
+        DEPRECATION_MESSAGES._TYPE_DEFINITION,
+        cls.__strawberry_definition__,
+        "_type_definition",
+    ).inject(cls)
 
     # dataclasses removes attributes from the class here:
     # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
@@ -177,8 +190,8 @@ def _process_type(
 
 
 @overload
-@__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def type(
     cls: T,
@@ -189,13 +202,12 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
-@__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def type(
     *,
@@ -205,8 +217,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
-) -> Callable[[T], T]:
-    ...
+) -> Callable[[T], T]: ...
 
 
 def type(
@@ -228,7 +239,7 @@ def type(
     >>>     field_abc: str = "ABC"
     """
 
-    def wrap(cls: Type):
+    def wrap(cls: T) -> T:
         if not inspect.isclass(cls):
             if is_input:
                 exc = ObjectIsNotClassError.input
@@ -238,8 +249,26 @@ def type(
                 exc = ObjectIsNotClassError.type
             raise exc(cls)
 
+        # when running `_wrap_dataclass` we lose some of the information about the
+        # the passed types, especially the type_annotation inside the StrawberryField
+        # this makes it impossible to customise the field type, like this:
+        # >>> @strawberry.type
+        # >>> class Query:
+        # >>>     a: int = strawberry.field(graphql_type=str)
+        # so we need to extract the information before running `_wrap_dataclass`
+        original_type_annotations: Dict[str, Any] = {}
+
+        annotations = getattr(cls, "__annotations__", {})
+
+        for field_name in annotations:
+            field = getattr(cls, field_name, None)
+
+            if field and isinstance(field, StrawberryField) and field.type_annotation:
+                original_type_annotations[field_name] = field.type_annotation.annotation
+
         wrapped = _wrap_dataclass(cls)
-        return _process_type(
+
+        return _process_type(  # type: ignore
             wrapped,
             name=name,
             is_input=is_input,
@@ -247,6 +276,7 @@ def type(
             description=description,
             directives=directives,
             extend=extend,
+            original_type_annotations=original_type_annotations,
         )
 
     if cls is None:
@@ -256,36 +286,37 @@ def type(
 
 
 @overload
-@__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def input(
     cls: T,
     *,
     name: Optional[str] = None,
+    one_of: Optional[bool] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
-@__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def input(
     *,
     name: Optional[str] = None,
+    one_of: Optional[bool] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-) -> Callable[[T], T]:
-    ...
+) -> Callable[[T], T]: ...
 
 
 def input(
     cls: Optional[T] = None,
     *,
     name: Optional[str] = None,
+    one_of: Optional[bool] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
 ):
@@ -295,6 +326,11 @@ def input(
     >>> class X:
     >>>     field_abc: str = "ABC"
     """
+
+    from strawberry.schema_directives import OneOf
+
+    if one_of:
+        directives = (*(directives or ()), OneOf())
 
     return type(  # type: ignore # not sure why mypy complains here
         cls,
@@ -306,8 +342,8 @@ def input(
 
 
 @overload
-@__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def interface(
     cls: T,
@@ -315,25 +351,23 @@ def interface(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-) -> T:
-    ...
+) -> T: ...
 
 
 @overload
-@__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def interface(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-) -> Callable[[T], T]:
-    ...
+) -> Callable[[T], T]: ...
 
 
-@__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+@dataclass_transform(
+    order_default=True, kw_only_default=True, field_specifiers=(field, StrawberryField)
 )
 def interface(
     cls: Optional[T] = None,
@@ -374,7 +408,7 @@ def asdict(obj: Any) -> Dict[str, object]:
 
 
 __all__ = [
-    "TypeDefinition",
+    "StrawberryObjectDefinition",
     "input",
     "interface",
     "type",

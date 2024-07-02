@@ -1,58 +1,61 @@
-import sys
-from typing import Type
+import importlib
+from typing import Any, Generator, Type
 
 import pytest
 
-from .clients import (
-    AioHttpClient,
-    AsgiHttpClient,
-    AsyncDjangoHttpClient,
-    AsyncFlaskHttpClient,
-    ChaliceHttpClient,
-    ChannelsHttpClient,
-    DjangoHttpClient,
-    FastAPIHttpClient,
-    FlaskHttpClient,
-    HttpClient,
-    SanicHttpClient,
-    StarliteHttpClient,
-    SyncChannelsHttpClient,
-)
+from .clients.base import HttpClient
 
 
-@pytest.fixture(
-    params=[
-        pytest.param(AioHttpClient, marks=pytest.mark.aiohttp),
-        pytest.param(AsgiHttpClient, marks=pytest.mark.asgi),
-        pytest.param(AsyncDjangoHttpClient, marks=pytest.mark.django),
-        pytest.param(AsyncFlaskHttpClient, marks=pytest.mark.flask),
-        pytest.param(ChaliceHttpClient, marks=pytest.mark.chalice),
-        pytest.param(DjangoHttpClient, marks=pytest.mark.django),
-        pytest.param(FastAPIHttpClient, marks=pytest.mark.fastapi),
-        pytest.param(FlaskHttpClient, marks=pytest.mark.flask),
-        pytest.param(SanicHttpClient, marks=pytest.mark.sanic),
-        pytest.param(ChannelsHttpClient, marks=pytest.mark.channels),
-        pytest.param(
-            # SyncChannelsHttpClient uses @database_sync_to_async and therefore
-            # needs pytest.mark.django_db
-            SyncChannelsHttpClient,
-            marks=[pytest.mark.channels, pytest.mark.django_db],
+def _get_http_client_classes() -> Generator[Any, None, None]:
+    for client, module, marks in [
+        ("AioHttpClient", "aiohttp", [pytest.mark.aiohttp]),
+        ("AsgiHttpClient", "asgi", [pytest.mark.asgi]),
+        ("AsyncDjangoHttpClient", "async_django", [pytest.mark.django]),
+        ("AsyncFlaskHttpClient", "async_flask", [pytest.mark.flask]),
+        ("ChannelsHttpClient", "channels", [pytest.mark.channels]),
+        ("ChaliceHttpClient", "chalice", [pytest.mark.chalice]),
+        ("DjangoHttpClient", "django", [pytest.mark.django]),
+        ("FastAPIHttpClient", "fastapi", [pytest.mark.fastapi]),
+        ("FlaskHttpClient", "flask", [pytest.mark.flask]),
+        ("QuartHttpClient", "quart", [pytest.mark.quart]),
+        ("SanicHttpClient", "sanic", [pytest.mark.sanic]),
+        ("StarliteHttpClient", "starlite", [pytest.mark.starlite]),
+        ("LitestarHttpClient", "litestar", [pytest.mark.litestar]),
+        (
+            "SyncChannelsHttpClient",
+            "channels",
+            [pytest.mark.channels, pytest.mark.django_db],
         ),
-        pytest.param(
-            StarliteHttpClient,
+    ]:
+        try:
+            client_class = getattr(
+                importlib.import_module(f".{module}", package="tests.http.clients"),
+                client,
+            )
+        except ImportError as e:
+            client_class = None
+        except Exception as e:
+            # Starlite is not compatible with Pydantic 2 so we get an error
+            # when importing it, for now we skip it, in future we'll remove
+            # Starlite in favour of Litestar
+            client_class = None
+
+        yield pytest.param(
+            client_class,
             marks=[
-                pytest.mark.starlite,
+                *marks,
                 pytest.mark.skipif(
-                    sys.version_info < (3, 8), reason="Starlite requires Python 3.8+"
+                    client_class is None, reason=f"Client {client} not found"
                 ),
             ],
-        ),
-    ]
-)
-def http_client_class(request) -> Type[HttpClient]:
+        )
+
+
+@pytest.fixture(params=_get_http_client_classes())
+def http_client_class(request: Any) -> Type[HttpClient]:
     return request.param
 
 
 @pytest.fixture()
-def http_client(http_client_class) -> HttpClient:
+def http_client(http_client_class: Type[HttpClient]) -> HttpClient:
     return http_client_class()

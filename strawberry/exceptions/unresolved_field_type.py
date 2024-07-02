@@ -1,15 +1,15 @@
 from __future__ import annotations
 
+from functools import cached_property
 from typing import TYPE_CHECKING, Optional
 
 from strawberry.exceptions.utils.source_finder import SourceFinder
-from strawberry.utils.cached_property import cached_property
 
 from .exception import StrawberryException
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
-    from strawberry.object_type import TypeDefinition
+    from strawberry.object_type import StrawberryObjectDefinition
 
     from .exception_source import ExceptionSource
 
@@ -17,9 +17,9 @@ if TYPE_CHECKING:
 class UnresolvedFieldTypeError(StrawberryException):
     def __init__(
         self,
-        type_definition: TypeDefinition,
+        type_definition: StrawberryObjectDefinition,
         field: StrawberryField,
-    ):
+    ) -> None:
         self.type_definition = type_definition
         self.field = field
 

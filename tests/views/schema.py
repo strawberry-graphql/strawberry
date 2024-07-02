@@ -1,7 +1,7 @@
 import asyncio
 import contextlib
 from enum import Enum
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 from graphql import GraphQLError
 
@@ -10,13 +10,13 @@ from strawberry.extensions import SchemaExtension
 from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
-from strawberry.types import Info
+from strawberry.types import ExecutionContext
 
 
 class AlwaysFailPermission(BasePermission):
     message = "You are not authorized"
 
-    def has_permission(self, source: Any, info: Info[Any, Any], **kwargs: Any) -> bool:
+    def has_permission(self, source: Any, info: strawberry.Info, **kwargs: Any) -> bool:
         return False
 
 
@@ -26,17 +26,24 @@ class MyExtension(SchemaExtension):
 
 
 def _read_file(text_file: Upload) -> str:
-    from starlette.datastructures import UploadFile
-
-    # allow to keep this function synchronous, starlette's files have
-    # async methods for reading
-    if isinstance(text_file, UploadFile):
-        text_file = text_file.file._file  # type: ignore
-
     with contextlib.suppress(ModuleNotFoundError):
+        from starlette.datastructures import UploadFile
+
+        # allow to keep this function synchronous, starlette's files have
+        # async methods for reading
+        if isinstance(text_file, UploadFile):
+            text_file = text_file.file._file  # type: ignore
+
+    with contextlib.suppress(Exception):
         from starlite import UploadFile as StarliteUploadFile
 
         if isinstance(text_file, StarliteUploadFile):
+            text_file = text_file.file  # type: ignore
+
+    with contextlib.suppress(ModuleNotFoundError):
+        from litestar.datastructures import UploadFile as LitestarUploadFile
+
+        if isinstance(text_file, LitestarUploadFile):
             text_file = text_file.file  # type: ignore
 
     return text_file.read().decode()
@@ -80,11 +87,15 @@ class Query:
         return "Hey"
 
     @strawberry.field
+    async def error(self, message: str) -> AsyncGenerator[str, None]:
+        yield GraphQLError(message)  # type: ignore
+
+    @strawberry.field
     async def exception(self, message: str) -> str:
         raise ValueError(message)
 
     @strawberry.field
-    def teapot(self, info: Info[Any, None]) -> str:
+    def teapot(self, info: strawberry.Info[Any, None]) -> str:
         info.context["response"].status_code = 418
 
         return "🫖"
@@ -94,11 +105,11 @@ class Query:
         return type(self).__name__
 
     @strawberry.field
-    def value_from_context(self, info: Info[Any, Any]) -> str:
+    def value_from_context(self, info: strawberry.Info) -> str:
         return info.context["custom_value"]
 
     @strawberry.field
-    def returns_401(self, info: Info[Any, Any]) -> str:
+    def returns_401(self, info: strawberry.Info) -> str:
         response = info.context["response"]
         if hasattr(response, "set_status"):
             response.set_status(401)
@@ -108,7 +119,7 @@ class Query:
         return "hey"
 
     @strawberry.field
-    def set_header(self, info: Info[Any, Any], name: str) -> str:
+    def set_header(self, info: strawberry.Info, name: str) -> str:
         response = info.context["response"]
         response.headers["X-Name"] = name
 
@@ -151,7 +162,7 @@ class Subscription:
         yield message
 
     @strawberry.subscription
-    async def request_ping(self, info: Info[Any, Any]) -> AsyncGenerator[bool, None]:
+    async def request_ping(self, info: strawberry.Info) -> AsyncGenerator[bool, None]:
         ws = info.context["ws"]
         await ws.send_json(PingMessage().as_dict())
         yield True
@@ -163,7 +174,7 @@ class Subscription:
             await asyncio.sleep(1)
 
     @strawberry.subscription
-    async def context(self, info: Info[Any, Any]) -> AsyncGenerator[str, None]:
+    async def context(self, info: strawberry.Info) -> AsyncGenerator[str, None]:
         yield info.context["custom_value"]
 
     @strawberry.subscription
@@ -184,9 +195,15 @@ class Subscription:
         yield Flavor.CHOCOLATE
 
     @strawberry.subscription
-    async def debug(self, info: Info[Any, Any]) -> AsyncGenerator[DebugInfo, None]:
+    async def flavors_invalid(self) -> AsyncGenerator[Flavor, None]:
+        yield Flavor.VANILLA
+        yield "invalid type"  # type: ignore
+        yield Flavor.CHOCOLATE
+
+    @strawberry.subscription
+    async def debug(self, info: strawberry.Info) -> AsyncGenerator[DebugInfo, None]:
         active_result_handlers = [
-            task for task in info.context["tasks"].values() if not task.done()
+            task for task in info.context["get_tasks"]() if not task.done()
         ]
 
         connection_init_timeout_task = info.context["connectionInitTimeoutTask"]
@@ -204,7 +221,7 @@ class Subscription:
     @strawberry.subscription
     async def listener(
         self,
-        info: Info[Any, Any],
+        info: strawberry.Info,
         timeout: Optional[float] = None,
         group: Optional[str] = None,
     ) -> AsyncGenerator[str, None]:
@@ -218,14 +235,31 @@ class Subscription:
             yield message["text"]
 
     @strawberry.subscription
+    async def listener_with_confirmation(
+        self,
+        info: strawberry.Info,
+        timeout: Optional[float] = None,
+        group: Optional[str] = None,
+    ) -> AsyncGenerator[Union[str, None], None]:
+        async with info.context["request"].listen_to_channel(
+            type="test.message",
+            timeout=timeout,
+            groups=[group] if group is not None else [],
+        ) as cm:
+            yield None
+            yield info.context["request"].channel_name
+            async for message in cm:
+                yield message["text"]
+
+    @strawberry.subscription
     async def connection_params(
-        self, info: Info[Any, Any]
+        self, info: strawberry.Info
     ) -> AsyncGenerator[str, None]:
         yield info.context["connection_params"]["strawberry"]
 
     @strawberry.subscription
     async def long_finalizer(
-        self, info: Info[Any, Any], delay: float = 0
+        self, info: strawberry.Info, delay: float = 0
     ) -> AsyncGenerator[str, None]:
         try:
             for _i in range(100):
@@ -235,7 +269,17 @@ class Subscription:
             await asyncio.sleep(delay)
 
 
-schema = strawberry.Schema(
+class Schema(strawberry.Schema):
+    def process_errors(
+        self, errors: List, execution_context: Optional[ExecutionContext] = None
+    ) -> None:
+        import traceback
+
+        traceback.print_stack()
+        return super().process_errors(errors, execution_context)
+
+
+schema = Schema(
     query=Query,
     mutation=Mutation,
     subscription=Subscription,

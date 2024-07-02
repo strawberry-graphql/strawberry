@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from strawberry.exceptions.utils.source_finder import SourceFinder
-from strawberry.utils.cached_property import cached_property
 
 from .exception import StrawberryException
 
@@ -19,7 +19,7 @@ class ScalarAlreadyRegisteredError(StrawberryException):
         self,
         scalar_definition: ScalarDefinition,
         other_scalar_definition: ScalarDefinition,
-    ):
+    ) -> None:
         self.scalar_definition = scalar_definition
 
         scalar_name = scalar_definition.name

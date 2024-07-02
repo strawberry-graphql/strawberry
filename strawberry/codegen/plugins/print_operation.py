@@ -16,6 +16,7 @@ from strawberry.codegen.types import (
     GraphQLList,
     GraphQLListValue,
     GraphQLObjectType,
+    GraphQLObjectValue,
     GraphQLOptional,
     GraphQLStringValue,
     GraphQLVariableReference,
@@ -61,7 +62,7 @@ class PrintOperationPlugin(QueryCodegenPlugin):
         if isinstance(field.type, GraphQLObjectType):
             code_lines.append(f"{indent}{field.name} {{")
             for subfield in field.type.fields:
-                code_lines.append(
+                code_lines.append(  # noqa: PERF401
                     self._print_fragment_field(subfield, indent=indent + "  ")
                 )
             code_lines.append(f"{indent}}}")
@@ -73,7 +74,9 @@ class PrintOperationPlugin(QueryCodegenPlugin):
         code_lines = []
         code_lines.append(f"fragment {fragment.name} on {fragment.on} {{")
         for field in fragment.fields:
-            code_lines.append(self._print_fragment_field(field, indent="  "))
+            code_lines.append(  # noqa: PERF401
+                self._print_fragment_field(field, indent="  ")
+            )
         code_lines.append("}")
         code_lines.append("")
         return "\n".join(code_lines)
@@ -123,6 +126,16 @@ class PrintOperationPlugin(QueryCodegenPlugin):
 
         if isinstance(value, GraphQLBoolValue):
             return str(value.value).lower()
+
+        if isinstance(value, GraphQLObjectValue):
+            return (
+                "{"
+                + ", ".join(
+                    f"{name}: {self._print_argument_value(v)}"
+                    for name, v in value.values.items()
+                )
+                + "}"
+            )
 
         raise ValueError(f"not supported: {type(value)}")  # pragma: no cover
 

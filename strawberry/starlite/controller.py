@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Union, cast
+from typing_extensions import deprecated
 
 from starlite import (
     BackgroundTasks,
@@ -35,7 +37,6 @@ from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_P
 from strawberry.subscriptions.protocols.graphql_transport_ws import (
     WS_4406_PROTOCOL_NOT_ACCEPTABLE,
 )
-from strawberry.utils.graphiql import get_graphiql_html
 
 from .handlers.graphql_transport_ws_handler import (
     GraphQLTransportWSHandler as BaseGraphQLTransportWSHandler,
@@ -47,6 +48,7 @@ if TYPE_CHECKING:
 
     from starlite.types import AnyCallable, Dependencies
     from strawberry.http import GraphQLHTTPResponse
+    from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
 
     MergedContext = Union[
@@ -117,8 +119,12 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         return await self._get_root_value()
 
 
+@deprecated(
+    "The `starlite` integration is deprecated in favor of `litestar` integration",
+    stacklevel=2,
+)
 class StarliteRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request[Any, Any]):
+    def __init__(self, request: Request[Any, Any]) -> None:
         self.request = request
 
     @property
@@ -147,15 +153,20 @@ class StarliteRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class BaseContext:
-    def __init__(self):
+    def __init__(self) -> None:
         self.request: Optional[Union[Request, WebSocket]] = None
         self.response: Optional[Response] = None
 
 
+@deprecated(
+    "The `starlite` integration is deprecated in favor of `litestar` integration",
+    stacklevel=2,
+)
 def make_graphql_controller(
     schema: BaseSchema,
     path: str = "",
-    graphiql: bool = True,
+    graphiql: Optional[bool] = None,
+    graphql_ide: Optional[GraphQL_IDE] = "graphiql",
     allow_queries_via_get: bool = True,
     keep_alive: bool = False,
     keep_alive_interval: float = 1,
@@ -174,7 +185,7 @@ def make_graphql_controller(
 
     if context_getter is None:
 
-        def custom_context_getter_():
+        def custom_context_getter_() -> None:
             return None
 
     else:
@@ -182,7 +193,7 @@ def make_graphql_controller(
 
     if root_value_getter is None:
 
-        def root_value_getter_():
+        def root_value_getter_() -> None:
             return None
 
     else:
@@ -193,7 +204,17 @@ def make_graphql_controller(
 
     schema_ = schema
     allow_queries_via_get_ = allow_queries_via_get
-    graphiql_ = graphiql
+    graphql_ide_: Optional[GraphQL_IDE]
+
+    if graphiql is not None:
+        warnings.warn(
+            "The `graphiql` argument is deprecated in favor of `graphql_ide`",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        graphql_ide_ = "graphiql" if graphiql else None
+    else:
+        graphql_ide_ = graphql_ide
 
     class GraphQLController(
         Controller,
@@ -210,9 +231,9 @@ def make_graphql_controller(
             "response": Provide(response_getter),
         }
         graphql_ws_handler_class: Type[GraphQLWSHandler] = GraphQLWSHandler
-        graphql_transport_ws_handler_class: Type[
+        graphql_transport_ws_handler_class: Type[GraphQLTransportWSHandler] = (
             GraphQLTransportWSHandler
-        ] = GraphQLTransportWSHandler
+        )
 
         _keep_alive: bool = keep_alive
         _keep_alive_interval: float = keep_alive_interval
@@ -223,7 +244,7 @@ def make_graphql_controller(
 
         schema: BaseSchema = schema_
         allow_queries_via_get = allow_queries_via_get_
-        graphiql = graphiql_
+        graphql_ide = graphql_ide_
 
         async def execute_request(
             self,
@@ -246,9 +267,8 @@ def make_graphql_controller(
                     media_type=MediaType.TEXT,
                 )
 
-        def render_graphiql(self, request: Request[Any, Any]) -> Response[str]:
-            html = get_graphiql_html()
-            return Response(html, media_type=MediaType.HTML)
+        async def render_graphql_ide(self, request: Request[Any, Any]) -> Response[str]:
+            return Response(self.graphql_ide_html, media_type=MediaType.HTML)
 
         def create_response(
             self, response_data: GraphQLHTTPResponse, sub_response: Response[bytes]
@@ -320,10 +340,10 @@ def make_graphql_controller(
             context: CustomContext,
             root_value: Any,
         ) -> None:
-            async def _get_context():
+            async def _get_context() -> CustomContext:
                 return context
 
-            async def _get_root_value():
+            async def _get_root_value() -> Any:
                 return root_value
 
             preferred_protocol = self.pick_preferred_protocol(socket)

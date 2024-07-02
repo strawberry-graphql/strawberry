@@ -12,7 +12,7 @@ from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.name_converter import NameConverter
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.type import StrawberryType
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.union import StrawberryUnion
 
 
@@ -34,11 +34,13 @@ class AppendsNameConverter(NameConverter):
         return super().from_union(union) + self.suffix
 
     def from_generic(
-        self, generic_type: TypeDefinition, types: List[Union[StrawberryType, type]]
+        self,
+        generic_type: StrawberryObjectDefinition,
+        types: List[Union[StrawberryType, type]],
     ) -> str:
         return super().from_generic(generic_type, types) + self.suffix
 
-    def from_interface(self, interface: TypeDefinition) -> str:
+    def from_interface(self, interface: StrawberryObjectDefinition) -> str:
         return super().from_interface(interface) + self.suffix
 
     def from_directive(
@@ -46,10 +48,10 @@ class AppendsNameConverter(NameConverter):
     ) -> str:
         return super().from_directive(directive) + self.suffix
 
-    def from_input_object(self, input_type: TypeDefinition) -> str:
+    def from_input_object(self, input_type: StrawberryObjectDefinition) -> str:
         return super().from_object(input_type) + self.suffix
 
-    def from_object(self, object_type: TypeDefinition) -> str:
+    def from_object(self, object_type: StrawberryObjectDefinition) -> str:
         return super().from_object(object_type) + self.suffix
 
     def from_enum(self, enum: EnumDefinition) -> str:

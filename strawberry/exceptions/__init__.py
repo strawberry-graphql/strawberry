@@ -1,17 +1,18 @@
 from __future__ import annotations
 
+from functools import cached_property
 from typing import TYPE_CHECKING, Optional, Set, Union
 
 from graphql import GraphQLError
 
-from strawberry.utils.cached_property import cached_property
-
+from .conflicting_arguments import ConflictingArgumentsError
 from .duplicated_type_name import DuplicatedTypeName
 from .exception import StrawberryException, UnableToFindExceptionSource
 from .handler import setup_exception_handler
 from .invalid_argument_type import InvalidArgumentTypeError
 from .invalid_union_type import InvalidTypeForUnionMergeError, InvalidUnionTypeError
 from .missing_arguments_annotations import MissingArgumentsAnnotationsError
+from .missing_dependencies import MissingOptionalDependenciesError
 from .missing_field_annotation import MissingFieldAnnotationError
 from .missing_return_annotation import MissingReturnAnnotationError
 from .not_a_strawberry_enum import NotAStrawberryEnumError
@@ -35,7 +36,7 @@ setup_exception_handler()
 class WrongReturnTypeForUnion(Exception):
     """The Union type cannot be resolved because it's not a field"""
 
-    def __init__(self, field_name: str, result_type: str):
+    def __init__(self, field_name: str, result_type: str) -> None:
         message = (
             f'The type "{result_type}" cannot be resolved for the field "{field_name}" '
             ", are you using a strawberry.field?"
@@ -44,13 +45,12 @@ class WrongReturnTypeForUnion(Exception):
         super().__init__(message)
 
 
-# TODO: this doesn't seem to be tested
 class UnallowedReturnTypeForUnion(Exception):
     """The return type is not in the list of Union types"""
 
     def __init__(
         self, field_name: str, result_type: str, allowed_types: Set[GraphQLObjectType]
-    ):
+    ) -> None:
         formatted_allowed_types = list(sorted(type_.name for type_ in allowed_types))
 
         message = (
@@ -63,7 +63,7 @@ class UnallowedReturnTypeForUnion(Exception):
 
 # TODO: this doesn't seem to be tested
 class InvalidTypeInputForUnion(Exception):
-    def __init__(self, annotation: GraphQLInputObjectType):
+    def __init__(self, annotation: GraphQLInputObjectType) -> None:
         message = f"Union for {annotation} is not supported because it is an Input type"
         super().__init__(message)
 
@@ -72,16 +72,14 @@ class InvalidTypeInputForUnion(Exception):
 class MissingTypesForGenericError(Exception):
     """Raised when a generic types was used without passing any type."""
 
-    def __init__(self, annotation: Union[StrawberryType, type]):
-        message = (
-            f'The type "{repr(annotation)}" is generic, but no type has been passed'
-        )
+    def __init__(self, annotation: Union[StrawberryType, type]) -> None:
+        message = f'The type "{annotation!r}" is generic, but no type has been passed'
 
         super().__init__(message)
 
 
 class UnsupportedTypeError(StrawberryException):
-    def __init__(self, annotation: Union[StrawberryType, type]):
+    def __init__(self, annotation: Union[StrawberryType, type]) -> None:
         message = f"{annotation} conversion is not supported"
 
         super().__init__(message)
@@ -92,7 +90,7 @@ class UnsupportedTypeError(StrawberryException):
 
 
 class MultipleStrawberryArgumentsError(Exception):
-    def __init__(self, argument_name: str):
+    def __init__(self, argument_name: str) -> None:
         message = (
             f"Annotation for argument `{argument_name}` cannot have multiple "
             f"`strawberry.argument`s"
@@ -102,7 +100,7 @@ class MultipleStrawberryArgumentsError(Exception):
 
 
 class WrongNumberOfResultsReturned(Exception):
-    def __init__(self, expected: int, received: int):
+    def __init__(self, expected: int, received: int) -> None:
         message = (
             "Received wrong number of results in dataloader, "
             f"expected: {expected}, received: {received}"
@@ -112,7 +110,7 @@ class WrongNumberOfResultsReturned(Exception):
 
 
 class FieldWithResolverAndDefaultValueError(Exception):
-    def __init__(self, field_name: str, type_name: str):
+    def __init__(self, field_name: str, type_name: str) -> None:
         message = (
             f'Field "{field_name}" on type "{type_name}" cannot define a default '
             "value and a resolver."
@@ -122,7 +120,7 @@ class FieldWithResolverAndDefaultValueError(Exception):
 
 
 class FieldWithResolverAndDefaultFactoryError(Exception):
-    def __init__(self, field_name: str, type_name: str):
+    def __init__(self, field_name: str, type_name: str) -> None:
         message = (
             f'Field "{field_name}" on type "{type_name}" cannot define a '
             "default_factory and a resolver."
@@ -132,14 +130,14 @@ class FieldWithResolverAndDefaultFactoryError(Exception):
 
 
 class MissingQueryError(Exception):
-    def __init__(self):
+    def __init__(self) -> None:
         message = 'Request data is missing a "query" value'
 
         super().__init__(message)
 
 
 class InvalidDefaultFactoryError(Exception):
-    def __init__(self):
+    def __init__(self) -> None:
         message = "`default_factory` must be a callable that requires no arguments"
 
         super().__init__(message)
@@ -148,7 +146,7 @@ class InvalidDefaultFactoryError(Exception):
 class InvalidCustomContext(Exception):
     """Raised when a custom context object is of the wrong python type"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         message = (
             "The custom context must be either a class "
             "that inherits from BaseContext or a dictionary"
@@ -181,6 +179,7 @@ __all__ = [
     "WrongNumberOfResultsReturned",
     "FieldWithResolverAndDefaultValueError",
     "FieldWithResolverAndDefaultFactoryError",
+    "ConflictingArgumentsError",
     "MissingQueryError",
     "InvalidArgumentTypeError",
     "InvalidDefaultFactoryError",
@@ -188,4 +187,5 @@ __all__ = [
     "MissingFieldAnnotationError",
     "DuplicatedTypeName",
     "StrawberryGraphQLError",
+    "MissingOptionalDependenciesError",
 ]

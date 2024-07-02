@@ -1,4 +1,5 @@
 import warnings
+from typing import Type
 
 from .add_validation_rules import AddValidationRules
 from .base_extension import LifecycleStep, SchemaExtension
@@ -12,7 +13,7 @@ from .query_depth_limiter import IgnoreContext, QueryDepthLimiter
 from .validation_cache import ValidationCache
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> Type[SchemaExtension]:
     if name == "Extension":
         warnings.warn(
             (

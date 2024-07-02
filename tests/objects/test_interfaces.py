@@ -6,7 +6,7 @@ def test_defining_interface():
     class Node:
         id: strawberry.ID
 
-    definition = Node._type_definition
+    definition = Node.__strawberry_definition__
 
     assert definition.name == "Node"
     assert len(definition.fields) == 1
@@ -27,7 +27,7 @@ def test_implementing_interfaces():
     class User(Node):
         name: str
 
-    definition = User._type_definition
+    definition = User.__strawberry_definition__
 
     assert definition.name == "User"
     assert len(definition.fields) == 2
@@ -41,7 +41,7 @@ def test_implementing_interfaces():
     assert definition.fields[1].type == str
 
     assert definition.is_interface is False
-    assert definition.interfaces == [Node._type_definition]
+    assert definition.interfaces == [Node.__strawberry_definition__]
 
 
 def test_implementing_interface_twice():
@@ -57,7 +57,7 @@ def test_implementing_interface_twice():
     class Person(Node):
         name: str
 
-    definition = User._type_definition
+    definition = User.__strawberry_definition__
 
     assert definition.name == "User"
     assert len(definition.fields) == 2
@@ -71,9 +71,9 @@ def test_implementing_interface_twice():
     assert definition.fields[1].type == str
 
     assert definition.is_interface is False
-    assert definition.interfaces == [Node._type_definition]
+    assert definition.interfaces == [Node.__strawberry_definition__]
 
-    definition = Person._type_definition
+    definition = Person.__strawberry_definition__
 
     assert definition.name == "Person"
     assert len(definition.fields) == 2
@@ -87,7 +87,7 @@ def test_implementing_interface_twice():
     assert definition.fields[1].type == str
 
     assert definition.is_interface is False
-    assert definition.interfaces == [Node._type_definition]
+    assert definition.interfaces == [Node.__strawberry_definition__]
 
 
 def test_interfaces_can_implement_other_interfaces():
@@ -105,12 +105,14 @@ def test_interfaces_can_implement_other_interfaces():
         id: strawberry.ID
         name: str
 
-    assert UserNodeInterface._type_definition.is_interface is True
-    assert UserNodeInterface._type_definition.interfaces == [Node._type_definition]
+    assert UserNodeInterface.__strawberry_definition__.is_interface is True
+    assert UserNodeInterface.__strawberry_definition__.interfaces == [
+        Node.__strawberry_definition__
+    ]
 
-    definition = Person._type_definition
+    definition = Person.__strawberry_definition__
     assert definition.is_interface is False
     assert definition.interfaces == [
-        UserNodeInterface._type_definition,
-        Node._type_definition,
+        UserNodeInterface.__strawberry_definition__,
+        Node.__strawberry_definition__,
     ]

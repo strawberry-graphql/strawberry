@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from enum import Enum
+from functools import cached_property
 from typing import TYPE_CHECKING, Optional
-
-from strawberry.utils.cached_property import cached_property
 
 from .exception import StrawberryException
 from .utils.source_finder import SourceFinder
@@ -18,7 +17,7 @@ class ObjectIsNotClassError(StrawberryException):
         INTERFACE = "interface"
         TYPE = "type"
 
-    def __init__(self, obj: object, method_type: MethodType):
+    def __init__(self, obj: object, method_type: MethodType) -> None:
         self.obj = obj
         self.function = obj
 

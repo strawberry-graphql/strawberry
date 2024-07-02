@@ -10,7 +10,6 @@ from typing import (
     Mapping,
     NewType,
     Optional,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -55,22 +54,22 @@ class ScalarDefinition(StrawberryType):
     _source_line: Optional[int] = None
 
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+        self, type_var_map: Mapping[str, Union[StrawberryType, type]]
     ) -> Union[StrawberryType, type]:
         return super().copy_with(type_var_map)  # type: ignore[safe-super]
 
     @property
-    def is_generic(self) -> bool:
+    def is_graphql_generic(self) -> bool:
         return False
 
 
 class ScalarWrapper:
     _scalar_definition: ScalarDefinition
 
-    def __init__(self, wrap: Callable[[Any], Any]):
+    def __init__(self, wrap: Callable[[Any], Any]) -> None:
         self.wrap = wrap
 
-    def __call__(self, *args: str, **kwargs: Any):
+    def __call__(self, *args: str, **kwargs: Any) -> Any:
         return self.wrap(*args, **kwargs)
 
     def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
@@ -85,7 +84,7 @@ class ScalarWrapper:
 
 
 def _process_scalar(
-    cls: Type[_T],
+    cls: _T,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -94,10 +93,10 @@ def _process_scalar(
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
-):
+) -> ScalarWrapper:
     from strawberry.exceptions.handler import should_use_rich_exceptions
 
-    name = name or to_camel_case(cls.__name__)
+    name = name or to_camel_case(cls.__name__)  # type: ignore[union-attr]
 
     _source_file = None
     _source_line = None
@@ -134,8 +133,7 @@ def scalar(
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
-) -> Callable[[_T], _T]:
-    ...
+) -> Callable[[_T], _T]: ...
 
 
 @overload
@@ -149,15 +147,14 @@ def scalar(
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
-) -> _T:
-    ...
+) -> _T: ...
 
 
-# FIXME: We are tricking pyright into thinking that we are returning the given type
+# TODO: We are tricking pyright into thinking that we are returning the given type
 # here or else it won't let us use any custom scalar to annotate attributes in
 # dataclasses/types. This should be properly solved when implementing StrawberryScalar
 def scalar(
-    cls=None,
+    cls: Optional[_T] = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -196,7 +193,7 @@ def scalar(
     if parse_value is None:
         parse_value = cls
 
-    def wrap(cls: Type):
+    def wrap(cls: _T) -> ScalarWrapper:
         return _process_scalar(
             cls,
             name=name,

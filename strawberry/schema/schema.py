@@ -5,6 +5,7 @@ from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
     Dict,
     Iterable,
     List,
@@ -15,14 +16,19 @@ from typing import (
 )
 
 from graphql import (
+    GraphQLBoolean,
+    GraphQLField,
     GraphQLNamedType,
     GraphQLNonNull,
     GraphQLSchema,
     get_introspection_query,
+    parse,
     validate_schema,
 )
+from graphql.execution import subscribe
 from graphql.type.directives import specified_directives
 
+from strawberry import relay
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.extensions.directives import (
     DirectivesExtension,
@@ -30,9 +36,10 @@ from strawberry.extensions.directives import (
 )
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
+from strawberry.type import has_object_definition
 from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import StrawberryObjectDefinition
 
 from ..printer import print_schema
 from . import compat
@@ -43,6 +50,7 @@ from .subscribe import Subscription
 
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
+    from graphql import ExecutionResult as GraphQLExecutionResult
 
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.directive import StrawberryDirective
@@ -78,7 +86,7 @@ class Schema(BaseSchema):
             Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]]
         ] = None,
         schema_directives: Iterable[object] = (),
-    ):
+    ) -> None:
         self.query = query
         self.mutation = mutation
         self.subscription = subscription
@@ -96,18 +104,20 @@ class Schema(BaseSchema):
             # TODO: check that the overrides are valid
             scalar_registry.update(cast(SCALAR_OVERRIDES_DICT_TYPE, scalar_overrides))
 
-        self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
+        self.schema_converter = GraphQLCoreConverter(
+            self.config, scalar_registry, self.get_fields
+        )
         self.directives = directives
         self.schema_directives = list(schema_directives)
 
-        query_type = self.schema_converter.from_object(query._type_definition)
+        query_type = self.schema_converter.from_object(query.__strawberry_definition__)
         mutation_type = (
-            self.schema_converter.from_object(mutation._type_definition)
+            self.schema_converter.from_object(mutation.__strawberry_definition__)
             if mutation
             else None
         )
         subscription_type = (
-            self.schema_converter.from_object(subscription._type_definition)
+            self.schema_converter.from_object(subscription.__strawberry_definition__)
             if subscription
             else None
         )
@@ -123,8 +133,8 @@ class Schema(BaseSchema):
                     self.schema_converter.from_schema_directive(type_)
                 )
             else:
-                if hasattr(type_, "_type_definition"):
-                    if type_._type_definition.is_generic:
+                if has_object_definition(type_):
+                    if type_.__strawberry_definition__.is_graphql_generic:
                         type_ = StrawberryAnnotation(type_).resolve()  # noqa: PLW2901
                 graphql_type = self.schema_converter.from_maybe_optional(type_)
                 if isinstance(graphql_type, GraphQLNonNull):
@@ -161,6 +171,8 @@ class Schema(BaseSchema):
         self._schema._strawberry_schema = self  # type: ignore
 
         self._warn_for_federation_directives()
+        self._resolve_node_ids()
+        self._extend_introspection()
 
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible
@@ -179,11 +191,16 @@ class Schema(BaseSchema):
 
         return extensions
 
-    @lru_cache()
+    @lru_cache
     def get_type_by_name(
         self, name: str
     ) -> Optional[
-        Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
+        Union[
+            StrawberryObjectDefinition,
+            ScalarDefinition,
+            EnumDefinition,
+            StrawberryUnion,
+        ]
     ]:
         # TODO: respect auto_camel_case
         if name in self.schema_converter.type_map:
@@ -199,7 +216,7 @@ class Schema(BaseSchema):
         if not type_:
             return None  # pragma: no cover
 
-        assert isinstance(type_, TypeDefinition)
+        assert isinstance(type_, StrawberryObjectDefinition)
 
         return next(
             (
@@ -210,7 +227,7 @@ class Schema(BaseSchema):
             None,
         )
 
-    @lru_cache()
+    @lru_cache
     def get_directive_by_name(self, graphql_name: str) -> Optional[StrawberryDirective]:
         return next(
             (
@@ -337,6 +354,7 @@ class Schema(BaseSchema):
             )
         ).subscribe()
 
+
     def as_str(self) -> str:
         return print_schema(self)
 
@@ -353,3 +371,43 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors {introspection.errors!r}")
 
         return introspection.data
+    def _resolve_node_ids(self) -> None:
+        for concrete_type in self.schema_converter.type_map.values():
+            type_def = concrete_type.definition
+
+            # This can be a TypeDefinition, EnumDefinition, ScalarDefinition
+            # or UnionDefinition
+            if not isinstance(type_def, StrawberryObjectDefinition):
+                continue
+
+            # Do not validate id_attr for interfaces. relay.Node itself and
+            # any other interfdace that implements it are not required to
+            # provide a NodeID annotation, only the concrete type implementing
+            # them needs to do that.
+            if type_def.is_interface:
+                continue
+
+            # Call resolve_id_attr in here to make sure we raise provide
+            # early feedback for missing NodeID annotations
+            origin = type_def.origin
+            if issubclass(origin, relay.Node):
+                has_custom_resolve_id = False
+                for base in origin.__mro__:
+                    if base is relay.Node:
+                        break
+                    if "resolve_id" in base.__dict__:
+                        has_custom_resolve_id = True
+                        break
+
+                if not has_custom_resolve_id:
+                    origin.resolve_id_attr()
+    def _extend_introspection(self) -> None:
+        def _resolve_is_one_of(obj: Any, info: Any) -> bool:
+            if "strawberry-definition" not in obj.extensions:
+                return False
+
+            return obj.extensions["strawberry-definition"].is_one_of
+
+        instrospection_type = self._schema.type_map["__Type"]
+        instrospection_type.fields["isOneOf"] = GraphQLField(GraphQLBoolean)  # type: ignore[attr-defined]
+        instrospection_type.fields["isOneOf"].resolve = _resolve_is_one_of  # type: ignore[attr-defined]

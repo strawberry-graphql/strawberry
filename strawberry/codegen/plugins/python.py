@@ -8,7 +8,9 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set
 from strawberry.codegen import CodegenFile, QueryCodegenPlugin
 from strawberry.codegen.types import (
     GraphQLEnum,
+    GraphQLEnumValue,
     GraphQLList,
+    GraphQLNullValue,
     GraphQLObjectType,
     GraphQLOptional,
     GraphQLScalar,
@@ -16,7 +18,14 @@ from strawberry.codegen.types import (
 )
 
 if TYPE_CHECKING:
-    from strawberry.codegen.types import GraphQLField, GraphQLOperation, GraphQLType
+    from pathlib import Path
+
+    from strawberry.codegen.types import (
+        GraphQLArgumentValue,
+        GraphQLField,
+        GraphQLOperation,
+        GraphQLType,
+    )
 
 
 @dataclass
@@ -26,7 +35,7 @@ class PythonType:
 
 
 class PythonPlugin(QueryCodegenPlugin):
-    SCALARS_TO_PYTHON_TYPES = {
+    SCALARS_TO_PYTHON_TYPES: Dict[str, PythonType] = {
         "ID": PythonType("str"),
         "Int": PythonType("int"),
         "String": PythonType("str"),
@@ -39,8 +48,10 @@ class PythonPlugin(QueryCodegenPlugin):
         "Decimal": PythonType("Decimal", "decimal"),
     }
 
-    def __init__(self) -> None:
+    def __init__(self, query: Path) -> None:
         self.imports: Dict[str, Set[str]] = defaultdict(set)
+        self.outfile_name: str = query.with_suffix(".py").name
+        self.query = query
 
     def generate_code(
         self, types: List[GraphQLType], operation: GraphQLOperation
@@ -50,7 +61,7 @@ class PythonPlugin(QueryCodegenPlugin):
 
         code = imports + "\n\n" + "\n\n".join(printed_types)
 
-        return [CodegenFile("types.py", code.strip())]
+        return [CodegenFile(self.outfile_name, code.strip())]
 
     def _print_imports(self) -> str:
         imports = [
@@ -104,7 +115,42 @@ class PythonPlugin(QueryCodegenPlugin):
         if field.alias:
             name = f"# alias for {field.name}\n{field.alias}"
 
-        return f"{name}: {self._get_type_name(field.type)}"
+        default_value = ""
+        if field.default_value is not None:
+            default_value = f" = {self._print_argument_value(field.default_value)}"
+        return f"{name}: {self._get_type_name(field.type)}{default_value}"
+
+    def _print_argument_value(self, argval: GraphQLArgumentValue) -> str:
+        if hasattr(argval, "values"):
+            if isinstance(argval.values, list):
+                return (
+                    "["
+                    + ", ".join(self._print_argument_value(v) for v in argval.values)
+                    + "]"
+                )
+            elif isinstance(argval.values, dict):
+                return (
+                    "{"
+                    + ", ".join(
+                        f"{k!r}: {self._print_argument_value(v)}"
+                        for k, v in argval.values.items()
+                    )
+                    + "}"
+                )
+            else:
+                raise TypeError(f"Unrecognized values type: {argval}")
+        if isinstance(argval, GraphQLEnumValue):
+            # This is an enum.  It needs the namespace alongside the name.
+            if argval.enum_type is None:
+                raise ValueError(
+                    "GraphQLEnumValue must have a type for python code gen. {argval}"
+                )
+            return f"{argval.enum_type}.{argval.name}"
+        if isinstance(argval, GraphQLNullValue):
+            return "None"
+        if not hasattr(argval, "value"):
+            raise TypeError(f"Unrecognized values type: {argval}")
+        return repr(argval.value)
 
     def _print_enum_value(self, value: str) -> str:
         return f'{value} = "{value}"'
@@ -116,12 +162,17 @@ class PythonPlugin(QueryCodegenPlugin):
             if field.name != "__typename"
         )
 
-        return "\n".join(
-            [
-                f"class {type_.name}:",
-                textwrap.indent(fields, " " * 4),
-            ]
-        )
+        indent = 4 * " "
+        lines = [
+            f"class {type_.name}:",
+        ]
+        if type_.graphql_typename:
+            lines.append(
+                textwrap.indent(f"# typename: {type_.graphql_typename}", indent)
+            )
+        lines.append(textwrap.indent(fields, indent))
+
+        return "\n".join(lines)
 
     def _print_enum_type(self, type_: GraphQLEnum) -> str:
         values = "\n".join(self._print_enum_value(value) for value in type_.values)

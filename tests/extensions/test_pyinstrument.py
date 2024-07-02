@@ -42,7 +42,8 @@ def test_basic_pyinstrument():
     assert result.data["theField"] == 4
 
     content = Path(REPORT_PATH, encoding="utf-8").read_text()
-    assert "a()" in content
-    assert "b()" in content
-    assert "c()" in content
+    assert '"function": "a"' in content
+    assert '"function": "b"' in content
+    assert '"function": "c"' in content
+
     assert content.count('"function": "sleep"') == 3

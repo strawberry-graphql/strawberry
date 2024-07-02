@@ -1,6 +1,5 @@
 from collections import defaultdict
-from copy import copy
-from functools import partial
+from functools import cached_property, partial
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -10,6 +9,7 @@ from typing import (
     Iterable,
     List,
     Mapping,
+    NewType,
     Optional,
     Set,
     Type,
@@ -17,37 +17,36 @@ from typing import (
     cast,
 )
 
-from graphql import (
-    GraphQLError,
-    GraphQLField,
-    GraphQLInterfaceType,
-    GraphQLList,
-    GraphQLNonNull,
-    GraphQLScalarType,
-    GraphQLUnionType,
-)
-from graphql.type.definition import GraphQLArgument
+from graphql import GraphQLError
 
+from strawberry.annotation import StrawberryAnnotation
+from strawberry.custom_scalar import scalar
 from strawberry.printer import print_schema
 from strawberry.schema import Schema as BaseSchema
-from strawberry.types.types import TypeDefinition
-from strawberry.utils.cached_property import cached_property
+from strawberry.type import (
+    StrawberryContainer,
+    WithStrawberryObjectDefinition,
+    get_object_definition,
+)
+from strawberry.types.info import Info
+from strawberry.types.types import StrawberryObjectDefinition
+from strawberry.union import StrawberryUnion
 from strawberry.utils.inspect import get_func_args
 
 from .schema_directive import StrawberryFederationSchemaDirective
 
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
-    from graphql import GraphQLObjectType
 
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.enum import EnumDefinition
     from strawberry.extensions import SchemaExtension
     from strawberry.federation.schema_directives import ComposeDirective
     from strawberry.schema.config import StrawberryConfig
-    from strawberry.schema.types.concrete_type import TypeMap
     from strawberry.schema_directive import StrawberrySchemaDirective
-    from strawberry.union import StrawberryUnion
+
+
+FederationAny = scalar(NewType("_Any", object), name="_Any")  # type: ignore
 
 
 class Schema(BaseSchema):
@@ -67,8 +66,9 @@ class Schema(BaseSchema):
         ] = None,
         schema_directives: Iterable[object] = (),
         enable_federation_2: bool = False,
-    ):
-        query = self._get_federation_query_type(query)
+    ) -> None:
+        query = self._get_federation_query_type(query, mutation, subscription, types)
+        types = [*types, FederationAny]
 
         super().__init__(
             query=query,
@@ -85,16 +85,19 @@ class Schema(BaseSchema):
 
         self.schema_directives = list(schema_directives)
 
-        self._add_scalars()
-        self._add_entities_to_query()
-
         if enable_federation_2:
             composed_directives = self._add_compose_directives()
             self._add_link_directives(composed_directives)  # type: ignore
         else:
             self._remove_resolvable_field()
 
-    def _get_federation_query_type(self, query: Optional[Type]) -> Type:
+    def _get_federation_query_type(
+        self,
+        query: Optional[Type[WithStrawberryObjectDefinition]],
+        mutation: Optional[Type[WithStrawberryObjectDefinition]],
+        subscription: Optional[Type[WithStrawberryObjectDefinition]],
+        additional_types: Iterable[Type[WithStrawberryObjectDefinition]],
+    ) -> Type:
         """Returns a new query type that includes the _service field.
 
         If the query type is provided, it will be used as the base for the new
@@ -109,13 +112,6 @@ class Schema(BaseSchema):
         The _service field is added by default, but the _entities field is only
         added if the schema contains an entity type.
         """
-
-        # note we don't add the _entities field here, as we need to know if the
-        # schema contains an entity type first and we do that by leveraging
-        # the schema converter type map, so we don't have to do that twice
-        # TODO: ideally we should be able to do this without using the schema
-        # converter, but for now this is the easiest way to do it
-        # see `_add_entities_to_query`
 
         import strawberry
         from strawberry.tools.create_type import create_type
@@ -133,6 +129,19 @@ class Schema(BaseSchema):
 
         fields = [service]
 
+        entity_type = _get_entity_type(query, mutation, subscription, additional_types)
+
+        if entity_type:
+            self.entities_resolver.__annotations__["return"] = List[
+                Optional[entity_type]  # type: ignore
+            ]
+
+            entities_field = strawberry.field(
+                name="_entities", resolver=self.entities_resolver
+            )
+
+            fields.insert(0, entities_field)
+
         FederationQuery = create_type(name="Query", fields=fields)
 
         if query is None:
@@ -140,47 +149,25 @@ class Schema(BaseSchema):
 
         query_type = merge_types(
             "Query",
-            (
-                FederationQuery,
-                query,
-            ),
+            (FederationQuery, query),
         )
 
         # TODO: this should be probably done in merge_types
-        if query._type_definition.extend:
-            query_type._type_definition.extend = True  # type: ignore
+        if query.__strawberry_definition__.extend:
+            query_type.__strawberry_definition__.extend = True  # type: ignore
 
         return query_type
 
-    def _add_entities_to_query(self):
-        entity_type = _get_entity_type(self.schema_converter.type_map)
-
-        if not entity_type:
-            return
-
-        self._schema.type_map[entity_type.name] = entity_type
-        fields = {"_entities": self._get_entities_field(entity_type)}
-
-        # Copy the query type, update it to use the modified fields
-        query_type = cast("GraphQLObjectType", self._schema.query_type)
-        fields.update(query_type.fields)
-
-        query_type = copy(query_type)
-        query_type._fields = fields
-
-        self._schema.query_type = query_type
-        self._schema.type_map[query_type.name] = query_type
-
     def entities_resolver(
-        self, root, info, representations  # noqa: ANN001
-    ) -> List[object]:
+        self, info: Info, representations: List[FederationAny]
+    ) -> List[FederationAny]:
         results = []
 
         for representation in representations:
             type_name = representation.pop("__typename")
             type_ = self.schema_converter.type_map[type_name]
 
-            definition = cast(TypeDefinition, type_.definition)
+            definition = cast(StrawberryObjectDefinition, type_.definition)
 
             if hasattr(definition.origin, "resolve_reference"):
                 resolve_reference = definition.origin.resolve_reference
@@ -196,9 +183,8 @@ class Schema(BaseSchema):
             else:
                 from strawberry.arguments import convert_argument
 
-                strawberry_schema = info.schema.extensions["strawberry-definition"]
-                config = strawberry_schema.config
-                scalar_registry = strawberry_schema.schema_converter.scalar_registry
+                config = info.schema.config
+                scalar_registry = info.schema.schema_converter.scalar_registry
 
                 get_result = partial(
                     convert_argument,
@@ -219,11 +205,6 @@ class Schema(BaseSchema):
             results.append(result)
 
         return results
-
-    def _add_scalars(self):
-        self.Any = GraphQLScalarType("_Any")
-
-        self._schema.type_map["_Any"] = self.Any
 
     def _remove_resolvable_field(self) -> None:
         # this might be removed when we remove support for federation 1
@@ -281,7 +262,7 @@ class Schema(BaseSchema):
 
     def _add_link_directives(
         self, additional_directives: Optional[List[object]] = None
-    ):
+    ) -> None:
         from .schema_directives import FederationDirective, Link
 
         directive_by_url: DefaultDict[str, Set[str]] = defaultdict(set)
@@ -333,17 +314,6 @@ class Schema(BaseSchema):
 
         return compose_directives
 
-    def _get_entities_field(self, entity_type: GraphQLUnionType) -> GraphQLField:
-        return GraphQLField(
-            GraphQLNonNull(GraphQLList(entity_type)),
-            args={
-                "representations": GraphQLArgument(
-                    GraphQLNonNull(GraphQLList(GraphQLNonNull(self.Any)))
-                )
-            },
-            resolve=self.entities_resolver,
-        )
-
     def _warn_for_federation_directives(self) -> None:
         # this is used in the main schema to raise if there's a directive
         # that's for federation, but in this class we don't want to warn,
@@ -352,33 +322,56 @@ class Schema(BaseSchema):
         pass
 
 
-def _get_entity_type(type_map: "TypeMap"):
-    # https://www.apollographql.com/docs/apollo-server/federation/federation-spec/#resolve-requests-for-entities
+def _get_entity_type(
+    query: Optional[Type[WithStrawberryObjectDefinition]],
+    mutation: Optional[Type[WithStrawberryObjectDefinition]],
+    subscription: Optional[Type[WithStrawberryObjectDefinition]],
+    additional_types: Iterable[Type[WithStrawberryObjectDefinition]],
+) -> Optional[StrawberryUnion]:
+    # recursively iterate over the schema to find all types annotated with @key
+    # if no types are annotated with @key, then the _Entity union and Query._entities
+    # field should not be added to the schema
 
-    # To implement the _Entity union, each type annotated with @key
-    # should be added to the _Entity union.
+    entity_types = set()
 
-    federation_key_types = [
-        type.implementation
-        for type in type_map.values()
-        if _has_federation_keys(type.definition)
-        # TODO: check this
-        and not isinstance(type.implementation, GraphQLInterfaceType)
-    ]
+    # need a stack to keep track of the types we need to visit
+    stack: List[Any] = [query, mutation, subscription, *additional_types]
 
-    # If no types are annotated with the key directive, then the _Entity
-    # union and Query._entities field should be removed from the schema.
-    if not federation_key_types:
+    seen = set()
+
+    while stack:
+        type_ = stack.pop()
+
+        if type_ is None:
+            continue
+
+        while isinstance(type_, StrawberryContainer):
+            type_ = type_.of_type
+
+        type_definition = get_object_definition(type_, strict=False)
+
+        if type_definition is None:
+            continue
+
+        if type_definition.is_object_type and _has_federation_keys(type_definition):
+            entity_types.add(type_)
+
+        for field in type_definition.fields:
+            if field.type and field.type in seen:
+                continue
+
+            seen.add(field.type)
+            stack.append(field.type)
+
+    if not entity_types:
         return None
 
-    entity_type = GraphQLUnionType("_Entity", federation_key_types)  # type: ignore
+    sorted_types = sorted(entity_types, key=lambda t: t.__strawberry_definition__.name)
 
-    def _resolve_type(self, value, _type):  # noqa: ANN001
-        return self._type_definition.name
-
-    entity_type.resolve_type = _resolve_type
-
-    return entity_type
+    return StrawberryUnion(
+        "_Entity",
+        type_annotations=tuple(StrawberryAnnotation(type_) for type_ in sorted_types),
+    )
 
 
 def _is_key(directive: Any) -> bool:
@@ -389,10 +382,13 @@ def _is_key(directive: Any) -> bool:
 
 def _has_federation_keys(
     definition: Union[
-        TypeDefinition, "ScalarDefinition", "EnumDefinition", "StrawberryUnion"
-    ]
+        StrawberryObjectDefinition,
+        "ScalarDefinition",
+        "EnumDefinition",
+        "StrawberryUnion",
+    ],
 ) -> bool:
-    if isinstance(definition, TypeDefinition):
+    if isinstance(definition, StrawberryObjectDefinition):
         return any(_is_key(directive) for directive in definition.directives or [])
 
     return False

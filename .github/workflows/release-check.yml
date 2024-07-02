@@ -4,10 +4,10 @@ on:
   pull_request_target:
     types: [synchronize, reopened, opened, ready_for_review]
     branches:
-    - main
+      - main
     paths:
-    - "strawberry/**"
-    - "pyproject.toml"
+      - "strawberry/**"
+      - "pyproject.toml"
 
 jobs:
   get-contributor-info:
@@ -65,16 +65,15 @@ jobs:
       change_type: ${{ steps.release-check.outputs.change_type }}
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-      with:
-        ref: "refs/pull/${{ github.event.number }}/merge"
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: "refs/pull/${{ github.event.number }}/merge"
 
-    - name: Release file check
-      uses: ./.github/release-check-action
-      id: release-check
-      if: github.event.pull_request.draft == false
-
+      - name: Release file check
+        uses: ./.github/release-check-action
+        id: release-check
+        if: github.event.pull_request.draft == false
 
   read-tweet-md:
     name: Read TWEET.md
@@ -83,20 +82,19 @@ jobs:
 
     outputs:
       tweet: ${{ steps.extract.outputs.tweet }}
-      card-text: ${{ steps.extract.outputs.card-text }}
 
     steps:
-    - uses: actions/checkout@v2
-      with:
-        ref: "refs/pull/${{ github.event.number }}/merge"
-    - name: Extract tweet message and changelog
-      id: extract
-      uses: strawberry-graphql/tweet-actions/read-tweet@v4
-      with:
-        changelog: ${{ needs.release-file-check.outputs.changelog }}
-        version: "(next)"
-        contributor_name: ${{ needs.get-contributor-info.outputs.contributor-name }}
-        contributor_twitter_username: ${{ needs.get-contributor-info.outputs.contributor-twitter-username }}
+      - uses: actions/checkout@v2
+        with:
+          ref: "refs/pull/${{ github.event.number }}/merge"
+      - name: Extract tweet message and changelog
+        id: extract
+        uses: strawberry-graphql/tweet-actions/read-tweet@v6
+        with:
+          changelog: ${{ needs.release-file-check.outputs.changelog }}
+          version: "(next)"
+          contributor_name: ${{ needs.get-contributor-info.outputs.contributor-name }}
+          contributor_twitter_username: ${{ needs.get-contributor-info.outputs.contributor-twitter-username }}
 
   validate-tweet:
     runs-on: ubuntu-latest
@@ -104,64 +102,34 @@ jobs:
     if: ${{ needs.read-tweet-md.outputs.tweet != '' }}
     steps:
       - name: Validate tweet
-        uses: strawberry-graphql/tweet-actions/validate-tweet@v4
+        uses: strawberry-graphql/tweet-actions/validate-tweet@v6
         with:
           tweet: ${{ needs.read-tweet-md.outputs.tweet }}
 
-  generate-preview:
-    runs-on: ubuntu-latest
-    needs: [release-file-check, read-tweet-md, get-contributor-info]
-    if: github.event.pull_request.draft == false
-
-    outputs:
-      url: ${{ steps.upload.outputs.url }}
-
-    steps:
-    - name: Generate Twitter card preview
-      uses: strawberry-graphql/release-cards@main
-      if: ${{ needs.release-file-check.outputs.status == 'OK' }}
-      with:
-        version: "(next)"
-        contributor: ${{ needs.get-contributor-info.outputs.contributor-name }}
-        description_base64: ${{ needs.read-tweet-md.outputs.card-text }}
-
-    - name: Uploads preview
-      id: upload
-      if: ${{ needs.release-file-check.outputs.status == 'OK' }}
-      run: |
-        echo ::set-output name=url::$(curl --location --request POST "https://api.imgur.com/3/image" \
-          --fail \
-          --header "Authorization: Client-ID $IMGUR_CLIENT_ID" \
-          --form "image=@screenshot.png;filename=screenshot.png;type=image/png" \
-          | jq  --raw-output '.data.link')
-      env:
-        IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
-
   send-comment:
     runs-on: ubuntu-latest
-    needs: [release-file-check, generate-preview, read-tweet-md]
+    needs: [release-file-check, read-tweet-md]
     if: github.event.pull_request.draft == false
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Send comment
-      uses: ./.github/bot-action
-      env:
-        BOT_API_URL: ${{ secrets.BOT_API_URL }}
-        API_SECRET: ${{ secrets.API_SECRET }}
-      with:
-        pr_number: ${{ github.event.number }}
-        status: ${{ needs.release-file-check.outputs.status }}
-        change_type: ${{ needs.release-file-check.outputs.change_type }}
-        changelog_base64: ${{ needs.release-file-check.outputs.changelog }}
-        release_card_url: ${{ needs.generate-preview.outputs.url }}
-        tweet: ${{ needs.read-tweet-md.outputs.tweet }}
+      - uses: actions/checkout@v2
+      - name: Send comment
+        uses: ./.github/bot-action
+        env:
+          BOT_API_URL: ${{ secrets.BOT_API_URL }}
+          API_SECRET: ${{ secrets.API_SECRET }}
+        with:
+          pr_number: ${{ github.event.number }}
+          status: ${{ needs.release-file-check.outputs.status }}
+          change_type: ${{ needs.release-file-check.outputs.change_type }}
+          changelog_base64: ${{ needs.release-file-check.outputs.changelog }}
+          tweet: ${{ needs.read-tweet-md.outputs.tweet }}
 
   fail-if-status-is-not-ok:
     runs-on: ubuntu-latest
     needs: [release-file-check, send-comment]
 
     steps:
-    - name: Fail if status is not ok
-      if: ${{ needs.release-file-check.outputs.status != 'OK' }}
-      run: exit 1
+      - name: Fail if status is not ok
+        if: ${{ needs.release-file-check.outputs.status != 'OK' }}
+        run: exit 1

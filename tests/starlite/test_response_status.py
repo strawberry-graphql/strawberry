@@ -1,10 +1,4 @@
-import sys
-
-import pytest
-from starlette import status
-
 import strawberry
-from strawberry.types import Info
 
 try:
     from starlite import Starlite
@@ -14,19 +8,14 @@ except ModuleNotFoundError:
     pass
 
 
-pytestmark = pytest.mark.skipif(
-    sys.version_info < (3, 8), reason="requires python3.8 or higher"
-)
-
-
 # TODO: move this to common tests
 def test_set_custom_http_response_status():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info: Info) -> str:
+        def abc(self, info: strawberry.Info) -> str:
             assert info.context.get("response") is not None
-            info.context["response"].status_code = status.HTTP_418_IM_A_TEAPOT
+            info.context["response"].status_code = 418
             return "abc"
 
     schema = strawberry.Schema(query=Query)

@@ -1,16 +1,17 @@
 import ast
+import dataclasses
 import sys
 import typing
-from collections.abc import AsyncGenerator
 from functools import lru_cache
 from typing import (  # type: ignore
     TYPE_CHECKING,
     Any,
-    Callable,
+    AsyncGenerator,
     ClassVar,
     Dict,
     ForwardRef,
     Generic,
+    List,
     Optional,
     Tuple,
     Type,
@@ -22,7 +23,7 @@ from typing import (  # type: ignore
     cast,
     overload,
 )
-from typing_extensions import Annotated, get_args, get_origin
+from typing_extensions import Annotated, TypeGuard, get_args, get_origin
 
 ast_unparse = getattr(ast, "unparse", None)
 # ast.unparse is only available on python 3.9+. For older versions we will
@@ -36,7 +37,7 @@ if not TYPE_CHECKING and ast_unparse is None:
     ast_unparse = astunparse.unparse
 
 
-@lru_cache()
+@lru_cache
 def get_generic_alias(type_: Type) -> Type:
     """Get the generic alias for a type.
 
@@ -62,13 +63,18 @@ def get_generic_alias(type_: Type) -> Type:
             continue
 
         attr = getattr(typing, attr_name)
-        # _GenericAlias overrides all the methods that we can use to know if
-        # this is a subclass of it. But if it has an "_inst" attribute
-        # then it for sure is a _GenericAlias
-        if hasattr(attr, "_inst") and attr.__origin__ is type_:
+        if is_generic_alias(attr) and attr.__origin__ is type_:
             return attr
 
     raise AssertionError(f"No GenericAlias available for {type_}")  # pragma: no cover
+
+
+def is_generic_alias(type_: Any) -> TypeGuard[_GenericAlias]:
+    """Returns True if the type is a generic alias."""
+    # _GenericAlias overrides all the methods that we can use to know if
+    # this is a subclass of it. But if it has an "_inst" attribute
+    # then it for sure is a _GenericAlias
+    return hasattr(type_, "_inst")
 
 
 def is_list(annotation: object) -> bool:
@@ -140,7 +146,8 @@ def is_concrete_generic(annotation: type) -> bool:
 
 def is_generic_subclass(annotation: type) -> bool:
     return isinstance(annotation, type) and issubclass(
-        annotation, Generic  # type:ignore
+        annotation,
+        Generic,  # type:ignore
     )
 
 
@@ -161,6 +168,34 @@ def is_type_var(annotation: Type) -> bool:
     return isinstance(annotation, TypeVar)
 
 
+def is_classvar(cls: type, annotation: Union[ForwardRef, str]) -> bool:
+    """Returns True if the annotation is a ClassVar."""
+    # This code was copied from the dataclassses cpython implementation to check
+    # if a field is annotated with ClassVar or not, taking future annotations
+    # in consideration.
+    if dataclasses._is_classvar(annotation, typing):  # type: ignore
+        return True
+
+    annotation_str = (
+        annotation.__forward_arg__ if isinstance(annotation, ForwardRef) else annotation
+    )
+    return isinstance(annotation_str, str) and dataclasses._is_type(  # type: ignore
+        annotation_str,
+        cls,
+        typing,
+        typing.ClassVar,
+        dataclasses._is_classvar,  # type: ignore
+    )
+
+
+def type_has_annotation(type_: object, annotation: Type) -> bool:
+    """Returns True if the type_ has been annotated with annotation."""
+    if get_origin(type_) is Annotated:
+        return any(isinstance(argument, annotation) for argument in get_args(type_))
+
+    return False
+
+
 def get_parameters(annotation: Type) -> Union[Tuple[object], Tuple[()]]:
     if (
         isinstance(annotation, _GenericAlias)
@@ -174,17 +209,15 @@ def get_parameters(annotation: Type) -> Union[Tuple[object], Tuple[()]]:
 
 
 @overload
-def _ast_replace_union_operation(expr: ast.expr) -> ast.expr:
-    ...
+def _ast_replace_union_operation(expr: ast.expr) -> ast.expr: ...
 
 
 @overload
-def _ast_replace_union_operation(expr: ast.Expr) -> ast.Expr:
-    ...
+def _ast_replace_union_operation(expr: ast.Expr) -> ast.Expr: ...
 
 
 def _ast_replace_union_operation(
-    expr: Union[ast.Expr, ast.expr]
+    expr: Union[ast.Expr, ast.expr],
 ) -> Union[ast.Expr, ast.expr]:
     if isinstance(expr, ast.Expr) and isinstance(
         expr.value, (ast.BinOp, ast.Subscript)
@@ -221,6 +254,74 @@ def _ast_replace_union_operation(
     return expr
 
 
+def _get_namespace_from_ast(
+    expr: Union[ast.Expr, ast.expr],
+    globalns: Optional[Dict] = None,
+    localns: Optional[Dict] = None,
+) -> Dict[str, Type]:
+    from strawberry.lazy_type import StrawberryLazyReference
+
+    extra = {}
+
+    if isinstance(expr, ast.Expr) and isinstance(
+        expr.value, (ast.BinOp, ast.Subscript)
+    ):
+        extra.update(_get_namespace_from_ast(expr.value, globalns, localns))
+    elif isinstance(expr, ast.BinOp):
+        for elt in (expr.left, expr.right):
+            extra.update(_get_namespace_from_ast(elt, globalns, localns))
+    elif (
+        isinstance(expr, ast.Subscript)
+        and isinstance(expr.value, ast.Name)
+        and expr.value.id == "Union"
+    ):
+        if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
+            # The cast is required for mypy on python 3.7 and 3.8
+            expr_slice = cast(Any, expr.slice).value
+        else:
+            expr_slice = expr.slice
+
+        for elt in cast(ast.Tuple, expr_slice).elts:
+            extra.update(_get_namespace_from_ast(elt, globalns, localns))
+    elif (
+        isinstance(expr, ast.Subscript)
+        and isinstance(expr.value, ast.Name)
+        and expr.value.id in {"list", "List"}
+    ):
+        extra.update(_get_namespace_from_ast(expr.slice, globalns, localns))
+    elif (
+        isinstance(expr, ast.Subscript)
+        and isinstance(expr.value, ast.Name)
+        and expr.value.id == "Annotated"
+    ):
+        assert ast_unparse
+
+        if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
+            # The cast is required for mypy on python 3.7 and 3.8
+            expr_slice = cast(Any, expr.slice).value
+        else:
+            expr_slice = expr.slice
+
+        args: List[str] = []
+        for elt in cast(ast.Tuple, expr_slice).elts:
+            extra.update(_get_namespace_from_ast(elt, globalns, localns))
+            args.append(ast_unparse(elt))
+
+        # When using forward refs, the whole
+        # Annotated[SomeType, strawberry.lazy("type.module")] is a forward ref,
+        # and trying to _eval_type on it will fail. Take a different approach
+        # here to resolve lazy types by execing the annotated args, resolving the
+        # type directly and then adding it to extra namespace, so that _eval_type
+        # can properly resolve it later
+        type_name = args[0].strip(" '\"\n")
+        for arg in args[1:]:
+            evaled_arg = eval(arg, globalns, localns)  # noqa: PGH001, S307
+            if isinstance(evaled_arg, StrawberryLazyReference):
+                extra[type_name] = evaled_arg.resolve_forward_ref(ForwardRef(type_name))
+
+    return extra
+
+
 def eval_type(
     type_: Any,
     globalns: Optional[Dict] = None,
@@ -234,20 +335,22 @@ def eval_type(
     globalns = globalns or {}
     # If this is not a string, maybe its args are (e.g. List["Foo"])
     if isinstance(type_, ForwardRef):
+        ast_obj = cast(ast.Expr, ast.parse(type_.__forward_arg__).body[0])
+
         # For Python 3.10+, we can use the built-in _eval_type function directly.
         # It will handle "|" notations properly
         if sys.version_info < (3, 10):
-            parsed = _ast_replace_union_operation(
-                cast(ast.Expr, ast.parse(type_.__forward_arg__).body[0])
-            )
+            ast_obj = _ast_replace_union_operation(ast_obj)
 
             # We replaced "a | b" with "Union[a, b], so make sure Union can be resolved
             # at globalns because it may not be there
             if "Union" not in globalns:
                 globalns["Union"] = Union
 
-            assert ast_unparse
-            type_ = ForwardRef(ast_unparse(parsed))
+        globalns.update(_get_namespace_from_ast(ast_obj, globalns, localns))
+
+        assert ast_unparse
+        type_ = ForwardRef(ast_unparse(ast_obj))
 
         return _eval_type(type_, globalns, localns)
 
@@ -263,15 +366,20 @@ def eval_type(
                     remaining_args = [
                         a
                         for a in args[1:]
-                        if not isinstance(arg, StrawberryLazyReference)
+                        if not isinstance(a, StrawberryLazyReference)
                     ]
-                    args = (arg.resolve_forward_ref(args[0]), *remaining_args)
+                    type_arg = (
+                        arg.resolve_forward_ref(args[0])
+                        if isinstance(args[0], ForwardRef)
+                        else args[0]
+                    )
+                    args = (type_arg, *remaining_args)
                     break
                 if isinstance(arg, StrawberryAuto):
                     remaining_args = [
-                        a for a in args[1:] if not isinstance(arg, StrawberryAuto)
+                        a for a in args[1:] if not isinstance(a, StrawberryAuto)
                     ]
-                    args = (arg, *remaining_args)
+                    args = (args[0], arg, *remaining_args)
                     break
 
             # If we have only a StrawberryLazyReference and no more annotations,
@@ -303,16 +411,3 @@ def eval_type(
         )
 
     return type_
-
-
-_T = TypeVar("_T")
-
-
-def __dataclass_transform__(
-    *,
-    eq_default: bool = True,
-    order_default: bool = False,
-    kw_only_default: bool = False,
-    field_descriptors: Tuple[Union[type, Callable[..., Any]], ...] = (()),
-) -> Callable[[_T], _T]:
-    return lambda a: a

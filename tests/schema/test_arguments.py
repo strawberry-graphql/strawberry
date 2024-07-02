@@ -1,3 +1,4 @@
+import textwrap
 from textwrap import dedent
 from typing import Optional
 from typing_extensions import Annotated
@@ -13,7 +14,7 @@ def test_argument_descriptions():
         def hello(  # type: ignore
             name: Annotated[
                 str, strawberry.argument(description="Your name")
-            ] = "Patrick"
+            ] = "Patrick",
         ) -> str:
             return f"Hi {name}"
 
@@ -37,7 +38,7 @@ def test_argument_deprecation_reason():
         def hello(  # type: ignore
             name: Annotated[
                 str, strawberry.argument(deprecation_reason="Your reason")
-            ] = "Patrick"
+            ] = "Patrick",
         ) -> str:
             return f"Hi {name}"
 
@@ -199,3 +200,40 @@ def test_setting_metadata_on_argument():
     assert field_definition.arguments[0].metadata == {
         "test": "foo",
     }
+
+
+def test_argument_parse_order():
+    """Check early early exit from argument parsing due to finding ``info``.
+
+    Reserved argument parsing, which interally also resolves annotations, exits early
+    after detecting the ``info`` argumnent. As a result, the annotation of the ``id_``
+    argument in `tests.schema.test_annotated.type_a.Query` is never resolved. This
+    results in `StrawberryArgument` not being able to detect that ``id_`` makes use of
+    `typing.Annotated` and `strawberry.argument`.
+
+    This behavior is fixed by by ensuring that `StrawberryArgument` makes use of the new
+    `StrawberryAnnotation.evaluate` method instead of consuming the raw annotation.
+
+    An added benefit of this fix is that by removing annotation resolving code from
+    `StrawberryResolver` and making it a part of `StrawberryAnnotation`, it makes it
+    possible for `StrawberryArgument` and `StrawberryResolver` to share the same type
+    evaluation cache.
+
+    Refer to: https://github.com/strawberry-graphql/strawberry/issues/2855
+    """
+
+    from tests.schema.test_annotated import type_a, type_b
+
+    expected = """
+    type Query {
+      getTesting(id: UUID!): String
+    }
+
+    scalar UUID
+    """
+
+    schema_a = strawberry.Schema(type_a.Query)
+    schema_b = strawberry.Schema(type_b.Query)
+
+    assert str(schema_a) == str(schema_b)
+    assert str(schema_a) == textwrap.dedent(expected).strip()

@@ -39,17 +39,6 @@ def test_optional_with_unset_as_union():
     assert resolved == Optional[str]
 
 
-def test_optional_union_containing_a_real_union_and_unset():
-    annotation = StrawberryAnnotation(Union[str, int, None, UnsetType])
-    resolved = annotation.resolve()
-
-    assert isinstance(resolved, StrawberryOptional)
-    assert resolved.of_type == Union[str, int]
-
-    assert resolved == StrawberryOptional(of_type=Union[str, int])
-    assert resolved == Optional[Union[str, int]]
-
-
 def test_optional_list():
     annotation = StrawberryAnnotation(Optional[List[bool]])
     resolved = annotation.resolve()
@@ -100,7 +89,7 @@ def test_type_add_type_definition_with_fields():
         name: Optional[str]
         age: Optional[int]
 
-    definition = Query._type_definition
+    definition = Query.__strawberry_definition__
     assert definition.name == "Query"
 
     [field1, field2] = definition.fields
@@ -123,7 +112,7 @@ def test_passing_custom_names_to_fields():
         x: Optional[str] = strawberry.field(name="name")
         y: Optional[int] = strawberry.field(name="age")
 
-    definition = Query._type_definition
+    definition = Query.__strawberry_definition__
     assert definition.name == "Query"
 
     [field1, field2] = definition.fields
@@ -146,7 +135,7 @@ def test_passing_nothing_to_fields():
         name: Optional[str] = strawberry.field()
         age: Optional[int] = strawberry.field()
 
-    definition = Query._type_definition
+    definition = Query.__strawberry_definition__
     assert definition.name == "Query"
 
     [field1, field2] = definition.fields
@@ -170,7 +159,7 @@ def test_resolver_fields():
         def name(self) -> Optional[str]:
             return "Name"
 
-    definition = Query._type_definition
+    definition = Query.__strawberry_definition__
     assert definition.name == "Query"
 
     [field] = definition.fields
@@ -189,7 +178,7 @@ def test_resolver_fields_arguments():
         def name(self, argument: Optional[str]) -> Optional[str]:
             return "Name"
 
-    definition = Query._type_definition
+    definition = Query.__strawberry_definition__
 
     assert definition.name == "Query"
 

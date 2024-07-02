@@ -1,5 +1,5 @@
 [tool.ruff]
 extend = "../pyproject.toml"
-extend-ignore = [
-    "T201",
-]
+
+[tool.ruff.lint]
+extend-ignore = ["T201"]

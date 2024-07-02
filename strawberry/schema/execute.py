@@ -12,6 +12,7 @@ from typing import (
     Sequence,
     Tuple,
     Type,
+    TypedDict,
     Union,
     cast,
 )
@@ -24,23 +25,29 @@ from graphql.validation import validate
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.extensions.runner import SchemaExtensionsRunner
+from strawberry.schema.validation_rules.one_of import OneOfInputValidationRule
 from strawberry.types import ExecutionResult
 from strawberry.types.execution import ExecutionResultError
 
 from .exceptions import InvalidOperationTypeError
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing_extensions import NotRequired, Unpack
 
     from graphql import ExecutionContext as GraphQLExecutionContext
+    from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql import GraphQLSchema
     from graphql.language import DocumentNode
     from graphql.validation import ASTValidationRule
 
     from strawberry.extensions import SchemaExtension
     from strawberry.types import ExecutionContext
-    from strawberry.types.execution import ParseOptions
     from strawberry.types.graphql import OperationType
+
+
+# duplicated because of https://github.com/mkdocstrings/griffe-typingdoc/issues/7
+class ParseOptions(TypedDict):
+    max_tokens: NotRequired[int]
 
 
 def parse_document(query: str, **kwargs: Unpack[ParseOptions]) -> DocumentNode:
@@ -52,6 +59,10 @@ def validate_document(
     document: DocumentNode,
     validation_rules: Tuple[Type[ASTValidationRule], ...],
 ) -> List[GraphQLError]:
+    validation_rules = (
+        *validation_rules,
+        OneOfInputValidationRule,
+    )
     return validate(
         schema,
         document,

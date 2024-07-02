@@ -12,7 +12,8 @@ import pytest
 import strawberry
 
 if TYPE_CHECKING:
-    from tests.schema.test_lazy.type_a import TypeA  # noqa
+    from tests.schema.test_lazy.type_a import TypeA
+    from tests.schema.test_lazy.type_c import TypeC
 
 STRAWBERRY_EXECUTABLE = next(
     Path(sysconfig.get_path("scripts")).glob("strawberry*"), None
@@ -36,7 +37,6 @@ def test_lazy_types_with_generic():
 
 
 def test_no_generic_type_duplication_with_lazy():
-    from tests.schema.test_lazy.type_a import TypeB_abs, TypeB_rel
     from tests.schema.test_lazy.type_b import TypeB
 
     @strawberry.type
@@ -46,8 +46,10 @@ def test_no_generic_type_duplication_with_lazy():
     @strawberry.type
     class Query:
         users: Edge[TypeB]
-        relatively_lazy_users: Edge[TypeB_rel]
-        absolutely_lazy_users: Edge[TypeB_abs]
+        relatively_lazy_users: Edge[Annotated["TypeB", strawberry.lazy(".type_b")]]
+        absolutely_lazy_users: Edge[
+            Annotated["TypeB", strawberry.lazy("tests.schema.test_lazy.type_b")]
+        ]
 
     schema = strawberry.Schema(query=Query)
 
@@ -66,10 +68,16 @@ def test_no_generic_type_duplication_with_lazy():
 
         type TypeB {
           typeA: TypeA!
+          typeAList: [TypeA!]!
+          typeCList: [TypeC!]!
         }
 
         type TypeBEdge {
           node: TypeB!
+        }
+
+        type TypeC {
+          name: String!
         }
         """
     ).strip()
@@ -107,8 +115,8 @@ def test_lazy_types_loaded_from_same_module(commands: Sequence[str]):
         args=[*commands],
         env=os.environ,
         capture_output=True,
+        check=True,
     )
-    result.check_returncode()
 
     expected = """\
     type Query {
@@ -157,6 +165,26 @@ def test_lazy_types_declared_within_optional():
 
         type TypeCOptionalEdge {
           node: TypeC
+        }
+        """
+    ).strip()
+
+    assert str(schema) == expected_schema
+
+
+def test_lazy_with_already_specialized_generic():
+    from tests.schema.test_lazy.type_d import Query
+
+    schema = strawberry.Schema(query=Query)
+    expected_schema = textwrap.dedent(
+        """
+        type Query {
+          typeD1: TypeD!
+          typeD: TypeD!
+        }
+
+        type TypeD {
+          name: String!
         }
         """
     ).strip()

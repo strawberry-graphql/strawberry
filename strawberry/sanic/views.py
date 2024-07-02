@@ -25,15 +25,15 @@ from strawberry.http.typevars import (
     RootValue,
 )
 from strawberry.sanic.utils import convert_request_to_files_dict
-from strawberry.utils.graphiql import get_graphiql_html
 
 if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse
+    from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
 
 
 class SanicHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request):
+    def __init__(self, request: Request) -> None:
         self.request = request
 
     @property
@@ -102,25 +102,25 @@ class GraphQLView(
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: bool = True,
+        graphiql: Optional[bool] = None,
+        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         json_encoder: Optional[Type[json.JSONEncoder]] = None,
         json_dumps_params: Optional[Dict[str, Any]] = None,
-    ):
+    ) -> None:
         self.schema = schema
-        self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.json_encoder = json_encoder
         self.json_dumps_params = json_dumps_params
 
-        if self.json_encoder is not None:
+        if self.json_encoder is not None:  # pragma: no cover
             warnings.warn(
                 "json_encoder is deprecated, override encode_json instead",
                 DeprecationWarning,
                 stacklevel=2,
             )
 
-        if self.json_dumps_params is not None:
+        if self.json_dumps_params is not None:  # pragma: no cover
             warnings.warn(
                 "json_dumps_params is deprecated, override encode_json instead",
                 DeprecationWarning,
@@ -128,6 +128,16 @@ class GraphQLView(
             )
 
             self.json_encoder = json.JSONEncoder
+
+        if graphiql is not None:
+            warnings.warn(
+                "The `graphiql` argument is deprecated in favor of `graphql_ide`",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.graphql_ide = "graphiql" if graphiql else None
+        else:
+            self.graphql_ide = graphql_ide
 
     async def get_root_value(self, request: Request) -> Optional[RootValue]:
         return None
@@ -137,10 +147,8 @@ class GraphQLView(
     ) -> Context:
         return {"request": request, "response": response}  # type: ignore
 
-    def render_graphiql(self, request: Request) -> HTTPResponse:
-        template = get_graphiql_html()
-
-        return html(template)
+    async def render_graphql_ide(self, request: Request) -> HTTPResponse:
+        return html(self.graphql_ide_html)
 
     async def get_sub_response(self, request: Request) -> TemporalResponse:
         return TemporalResponse()
@@ -165,7 +173,7 @@ class GraphQLView(
         except HTTPException as e:
             return HTTPResponse(e.reason, status=e.status_code)
 
-    async def get(self, request: Request) -> HTTPResponse:
+    async def get(self, request: Request) -> HTTPResponse:  # type: ignore[override]
         try:
             return await self.run(request)
         except HTTPException as e:

@@ -29,9 +29,7 @@ def test_uuid_as_input():
 
     schema = strawberry.Schema(Query)
 
-    result = schema.execute_sync(
-        f'{{ exampleUuidIn(uid: "{str(uuid.NAMESPACE_DNS)}") }}'
-    )
+    result = schema.execute_sync(f'{{ exampleUuidIn(uid: "{uuid.NAMESPACE_DNS!s}") }}')
 
     assert not result.errors
     assert result.data["exampleUuidIn"] == str(uuid.NAMESPACE_DNS)

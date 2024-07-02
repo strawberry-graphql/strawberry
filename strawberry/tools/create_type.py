@@ -1,11 +1,19 @@
 import types
-from typing import List, Type
+from typing import List, Optional, Sequence, Type
 
 import strawberry
 from strawberry.field import StrawberryField
 
 
-def create_type(name: str, fields: List[StrawberryField]) -> Type:
+def create_type(
+    name: str,
+    fields: List[StrawberryField],
+    is_input: bool = False,
+    is_interface: bool = False,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+    extend: bool = False,
+) -> Type:
     """Create a Strawberry type from a list of StrawberryFields
 
     >>> @strawberry.field
@@ -39,4 +47,11 @@ def create_type(name: str, fields: List[StrawberryField]) -> Type:
 
     cls = types.new_class(name, (), {}, lambda ns: ns.update(namespace))
 
-    return strawberry.type(cls)
+    return strawberry.type(
+        cls,
+        is_input=is_input,
+        is_interface=is_interface,
+        description=description,
+        directives=directives,
+        extend=extend,
+    )

@@ -1,4 +1,5 @@
 class IdFragment:
+    # typename: BlogPost
     id: str
 
 class addBookResult:

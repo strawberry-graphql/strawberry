@@ -63,7 +63,7 @@ async def test_max_batch_size(mocker: MockerFixture):
         loader.load(3),
     )
 
-    mock_loader.assert_has_calls([mocker.call([1, 2]), mocker.call([3])])  # type: ignore  # noqa: E501
+    mock_loader.assert_has_calls([mocker.call([1, 2]), mocker.call([3])])  # type: ignore
 
     assert value_a == 1
     assert value_b == 2
@@ -363,7 +363,7 @@ async def test_dont_dispatch_cancelled():
 async def test_cache_override():
     class TestCache(AbstractCache[int, int]):
         def __init__(self):
-            self.cache: Dict[int, "Future[int]"] = {}
+            self.cache: Dict[int, Future[int]] = {}
 
         def get(self, key: int) -> Optional["Future[int]"]:
             return self.cache.get(key)

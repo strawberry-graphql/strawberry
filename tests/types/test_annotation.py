@@ -29,7 +29,6 @@ types = [
     None,
     Optional[str],
     UnsetType,
-    Union[int, str],
     "int",
     T,
     Bleh,
@@ -48,3 +47,29 @@ def test_annotation_hash(type1: Union[object, str], type2: Union[object, str]):
         if annotation1 == annotation2
         else hash(annotation1) != hash(annotation2)
     ), "Equal type must imply equal hash"
+
+
+def test_eq_on_other_type():
+    class Foo:
+        def __eq__(self, other):
+            # Anything that is a strawberry annotation is equal to Foo
+            return isinstance(other, StrawberryAnnotation)
+
+    assert Foo() != object()
+    assert object() != Foo()
+    assert Foo() != 123 != Foo()
+    assert 123 != Foo()
+    assert Foo() == StrawberryAnnotation(int)
+    assert StrawberryAnnotation(int) == Foo()
+
+
+def test_eq_on_non_annotation():
+    assert StrawberryAnnotation(int) != int
+    assert StrawberryAnnotation(int) != 123
+
+
+def test_set_anntation():
+    annotation = StrawberryAnnotation(int)
+    annotation.annotation = str
+
+    assert annotation.annotation == str

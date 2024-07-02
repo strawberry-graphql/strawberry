@@ -1,0 +1,23 @@
+fragment AnimalProjection on Animal {
+  age
+}
+
+query OperationName {
+  __typename
+  union {
+    ... on Animal {
+      ...AnimalProjection
+    }
+    ... on Person {
+      name
+    }
+  }
+  optionalUnion {
+    ... on Animal {
+      ...AnimalProjection
+    }
+    ... on Person {
+      name
+    }
+  }
+}

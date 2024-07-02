@@ -9,13 +9,14 @@ import strawberry
 from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
-from strawberry.types import Info
 
 
 class AlwaysFailPermission(BasePermission):
     message = "You are not authorized"
 
-    def has_permission(self, source: Any, info: Info, **kwargs: typing.Any) -> bool:
+    def has_permission(
+        self, source: Any, info: strawberry.Info, **kwargs: typing.Any
+    ) -> bool:
         return False
 
 
@@ -134,7 +135,7 @@ class Subscription:
     @strawberry.subscription
     async def debug(self, info) -> typing.AsyncGenerator[DebugInfo, None]:
         active_result_handlers = [
-            task for task in info.context["tasks"].values() if not task.done()
+            task for task in info.context["get_tasks"]() if not task.done()
         ]
 
         connection_init_timeout_task = info.context["connectionInitTimeoutTask"]

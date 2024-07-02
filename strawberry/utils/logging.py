@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import logging
-import sys
 from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
-    from typing_extensions import Final
+    from typing import Final
 
     from graphql.error import GraphQLError
 
@@ -23,13 +22,4 @@ class StrawberryLogger:
         # https://www.python.org/dev/peps/pep-0484/#arbitrary-argument-lists-and-default-argument-values
         **logger_kwargs: Any,
     ) -> None:
-        # "stack_info" is a boolean; check for None explicitly
-        if logger_kwargs.get("stack_info") is None:
-            logger_kwargs["stack_info"] = True
-
-        # stacklevel was added in version 3.8
-        # https://docs.python.org/3/library/logging.html#logging.Logger.debug
-        if sys.version_info >= (3, 8):
-            logger_kwargs["stacklevel"] = 3
-
         cls.logger.error(error, exc_info=error.original_error, **logger_kwargs)

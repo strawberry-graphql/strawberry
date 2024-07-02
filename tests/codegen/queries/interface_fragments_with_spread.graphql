@@ -1,0 +1,15 @@
+fragment PartialBlogPost on BlogPost {
+  title
+}
+
+query OperationName {
+  interface {
+    id
+    ... on BlogPost {
+      ...PartialBlogPost
+    }
+    ... on Image {
+      url
+    }
+  }
+}

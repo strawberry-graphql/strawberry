@@ -22,7 +22,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         get_context: Callable,
         get_root_value: Callable,
         ws: ChannelsWSConsumer,
-    ):
+    ) -> None:
         super().__init__(schema, debug, keep_alive, keep_alive_interval)
         self._get_context = get_context
         self._get_root_value = get_root_value
@@ -40,7 +40,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         await self._ws.send_json(data)
 
     async def close(self, code: int = 1000, reason: Optional[str] = None) -> None:
-        # FIXME: We are using `self._ws.base_send` directly instead of `self._ws.close`
+        # TODO: We are using `self._ws.base_send` directly instead of `self._ws.close`
         # because the latler doesn't accept the `reason` argument.
         await self._ws.base_send(
             {

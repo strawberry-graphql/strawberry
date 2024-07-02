@@ -85,7 +85,7 @@ class NextMessage(GraphQLTransportMessage):
     """
 
     id: str
-    payload: Dict[str, Any]  # TODO: shape like ExecutionResult
+    payload: Dict[str, Any]  # TODO: shape like FormattedExecutionResult
     type: str = "next"
 
     def as_dict(self) -> dict:
