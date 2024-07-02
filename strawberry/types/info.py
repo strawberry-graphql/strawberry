@@ -16,6 +16,7 @@ from typing import (
 )
 from typing_extensions import TypeVar
 
+from .context_wrapper import ContextWrapper
 from .nodes import convert_selections
 
 if TYPE_CHECKING:
@@ -79,7 +80,15 @@ class Info(Generic[ContextType, RootValueType]):
 
     @property
     def context(self) -> ContextType:
+        if type(self._raw_info.context) is ContextWrapper:
+            return self._raw_info.context.context
         return self._raw_info.context
+
+    @property
+    def input_extensions(self) -> Dict[str, Any]:
+        if type(self._raw_info.context) is ContextWrapper:
+            return self._raw_info.context.extensions
+        return {}
 
     @property
     def root_value(self) -> RootValueType:
