@@ -748,7 +748,6 @@ async def test_exceptions_are_included_in_the_execution_result(failing_hook):
         ("on_operation_end", {1, 2, 3, 4, 5, 6, 7}),
     ),
 )
-
 @pytest.mark.asyncio
 async def test_exceptions_abort_evaluation(failing_hook, expected_hooks):
     @strawberry.type

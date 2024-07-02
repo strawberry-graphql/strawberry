@@ -93,8 +93,7 @@ class ExecutionResult:
 
 
 # TODO: should errors field live here?
-class ExecutionResultError(ExecutionResult):
-    ...
+class ExecutionResultError(ExecutionResult): ...
 
 
 class ParseOptions(TypedDict):

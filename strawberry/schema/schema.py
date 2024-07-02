@@ -5,7 +5,6 @@ from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
     Dict,
     Iterable,
     List,
@@ -22,10 +21,8 @@ from graphql import (
     GraphQLNonNull,
     GraphQLSchema,
     get_introspection_query,
-    parse,
     validate_schema,
 )
-from graphql.execution import subscribe
 from graphql.type.directives import specified_directives
 
 from strawberry import relay
@@ -50,7 +47,6 @@ from .subscribe import Subscription
 
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
-    from graphql import ExecutionResult as GraphQLExecutionResult
 
     from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.directive import StrawberryDirective
@@ -354,7 +350,6 @@ class Schema(BaseSchema):
             )
         ).subscribe()
 
-
     def as_str(self) -> str:
         return print_schema(self)
 
@@ -371,6 +366,7 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors {introspection.errors!r}")
 
         return introspection.data
+
     def _resolve_node_ids(self) -> None:
         for concrete_type in self.schema_converter.type_map.values():
             type_def = concrete_type.definition
@@ -401,6 +397,7 @@ class Schema(BaseSchema):
 
                 if not has_custom_resolve_id:
                     origin.resolve_id_attr()
+
     def _extend_introspection(self) -> None:
         def _resolve_is_one_of(obj: Any, info: Any) -> bool:
             if "strawberry-definition" not in obj.extensions:
