@@ -66,11 +66,11 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 }
 
 
-def _implements_resolve(obj: SchemaExtension) -> bool:
+def _implements_resolve(obj: SchemaExtension | type[SchemaExtension]) -> bool:
     """Return whether the extension implements the resolve method."""
-    if (ret := getattr(obj, "resolve", None)) and ret is not SchemaExtension.resolve:
-        return True
-    return False
+    return bool(
+        (ret := getattr(obj, "resolve", None)) and ret is not SchemaExtension.resolve
+    )
 
 
 class Schema(BaseSchema):
@@ -255,29 +255,6 @@ class Schema(BaseSchema):
     ) -> List[StrawberryField]:
         return type_definition.fields
 
-    def _warn_for_federation_directives(self) -> None:
-        """Raises a warning if the schema has any federation directives."""
-        from strawberry.federation.schema_directives import FederationDirective
-
-        all_types = self.schema_converter.type_map.values()
-        all_type_defs = (type_.definition for type_ in all_types)
-
-        all_directives = (
-            directive
-            for type_def in all_type_defs
-            for directive in (type_def.directives or [])
-        )
-
-        if any(
-            isinstance(directive, FederationDirective) for directive in all_directives
-        ):
-            warnings.warn(
-                "Federation directive found in schema. "
-                "Use `strawberry.federation.Schema` instead of `strawberry.Schema`.",
-                UserWarning,
-                stacklevel=3,
-            )
-
     def _create_execution_context(
         self,
         query: Optional[str],
@@ -374,23 +351,6 @@ class Schema(BaseSchema):
             )
         ).subscribe()
 
-    def as_str(self) -> str:
-        return print_schema(self)
-
-    __str__ = as_str
-
-    def introspect(self) -> Dict[str, Any]:
-        """Return the introspection query result for the current schema
-
-        Raises:
-            ValueError: If the introspection query fails due to an invalid schema
-        """
-        introspection = self.execute_sync(get_introspection_query())
-        if introspection.errors or not introspection.data:
-            raise ValueError(f"Invalid Schema. Errors {introspection.errors!r}")
-
-        return introspection.data
-
     def _resolve_node_ids(self) -> None:
         for concrete_type in self.schema_converter.type_map.values():
             type_def = concrete_type.definition
@@ -422,6 +382,29 @@ class Schema(BaseSchema):
                 if not has_custom_resolve_id:
                     origin.resolve_id_attr()
 
+    def _warn_for_federation_directives(self) -> None:
+        """Raises a warning if the schema has any federation directives."""
+        from strawberry.federation.schema_directives import FederationDirective
+
+        all_types = self.schema_converter.type_map.values()
+        all_type_defs = (type_.definition for type_ in all_types)
+
+        all_directives = (
+            directive
+            for type_def in all_type_defs
+            for directive in (type_def.directives or [])
+        )
+
+        if any(
+            isinstance(directive, FederationDirective) for directive in all_directives
+        ):
+            warnings.warn(
+                "Federation directive found in schema. "
+                "Use `strawberry.federation.Schema` instead of `strawberry.Schema`.",
+                UserWarning,
+                stacklevel=3,
+            )
+
     def _extend_introspection(self) -> None:
         def _resolve_is_one_of(obj: Any, info: Any) -> bool:
             if "strawberry-definition" not in obj.extensions:
@@ -432,3 +415,20 @@ class Schema(BaseSchema):
         instrospection_type = self._schema.type_map["__Type"]
         instrospection_type.fields["isOneOf"] = GraphQLField(GraphQLBoolean)  # type: ignore[attr-defined]
         instrospection_type.fields["isOneOf"].resolve = _resolve_is_one_of  # type: ignore[attr-defined]
+
+    def as_str(self) -> str:
+        return print_schema(self)
+
+    __str__ = as_str
+
+    def introspect(self) -> Dict[str, Any]:
+        """Return the introspection query result for the current schema
+
+        Raises:
+            ValueError: If the introspection query fails due to an invalid schema
+        """
+        introspection = self.execute_sync(get_introspection_query())
+        if introspection.errors or not introspection.data:
+            raise ValueError(f"Invalid Schema. Errors {introspection.errors!r}")
+
+        return introspection.data
