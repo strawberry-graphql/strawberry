@@ -186,15 +186,20 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
     # TODO: can this get cached?
-    def get_extensions(
-        self, sync: bool = False
-    ) -> List[Union[Type[SchemaExtension], SchemaExtension]]:
-        extensions = list(self.extensions)
-
-        if self.directives:
-            extensions.append(DirectivesExtensionSync if sync else DirectivesExtension)
-
-        return extensions
+    def get_extensions(self, sync: bool = False) -> List[SchemaExtension]:
+        init_extensions = []
+        extensions = (
+            *self.extensions,
+            DirectivesExtensionSync if sync else DirectivesExtension,
+        )
+        for extension in extensions:
+            # If the extension has already been instantiated then set the
+            # `execution_context` attribute
+            if isinstance(extension, SchemaExtension):
+                init_extensions.append(extension)
+            else:
+                init_extensions.append(extension(execution_context=None))
+        return init_extensions
 
     # TODO: can this get cached?
     def _get_middleware_manager(self, sync: bool = False) -> MiddlewareManager:

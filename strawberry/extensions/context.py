@@ -28,6 +28,8 @@ if TYPE_CHECKING:
 
     from strawberry.extensions.base_extension import Hook
 
+    from ..types.execution import ExecutionContext
+
 
 class WrappedHook(NamedTuple):
     extension: SchemaExtension
@@ -56,10 +58,13 @@ class ExtensionContextManagerBase:
     LEGACY_ENTER: str
     LEGACY_EXIT: str
 
-    def __init__(self, extensions: List[SchemaExtension]) -> None:
+    def __init__(
+        self, extensions: List[SchemaExtension], execution_ctx: ExecutionContext
+    ) -> None:
         self.hooks: List[WrappedHook] = []
         self.default_hook: Hook = getattr(SchemaExtension, self.HOOK_NAME)
         for extension in extensions:
+            extension.execution_context = execution_ctx
             hook = self.get_hook(extension)
             if hook:
                 self.hooks.append(hook)

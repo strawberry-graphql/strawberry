@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from strawberry.extensions.context import (
     ExecutingContextManager,
@@ -11,10 +11,10 @@ from strawberry.extensions.context import (
 )
 from strawberry.utils.await_maybe import await_maybe
 
-from . import SchemaExtension
-
 if TYPE_CHECKING:
     from strawberry.types import ExecutionContext
+
+    from . import SchemaExtension
 
 
 class SchemaExtensionsRunner:
@@ -23,39 +23,22 @@ class SchemaExtensionsRunner:
     def __init__(
         self,
         execution_context: ExecutionContext,
-        extensions: Optional[
-            List[Union[Type[SchemaExtension], SchemaExtension]]
-        ] = None,
+        extensions: Optional[List[SchemaExtension]] = None,
     ) -> None:
         self.execution_context = execution_context
-
-        if not extensions:
-            extensions = []
-
-        init_extensions: List[SchemaExtension] = []
-
-        for extension in extensions:
-            # If the extension has already been instantiated then set the
-            # `execution_context` attribute
-            if isinstance(extension, SchemaExtension):
-                extension.execution_context = execution_context
-                init_extensions.append(extension)
-            else:
-                init_extensions.append(extension(execution_context=execution_context))
-
-        self.extensions = init_extensions
+        self.extensions = extensions if extensions is not None else []
 
     def operation(self) -> OperationContextManager:
-        return OperationContextManager(self.extensions)
+        return OperationContextManager(self.extensions, self.execution_context)
 
     def validation(self) -> ValidationContextManager:
-        return ValidationContextManager(self.extensions)
+        return ValidationContextManager(self.extensions, self.execution_context)
 
     def parsing(self) -> ParsingContextManager:
-        return ParsingContextManager(self.extensions)
+        return ParsingContextManager(self.extensions, self.execution_context)
 
     def executing(self) -> ExecutingContextManager:
-        return ExecutingContextManager(self.extensions)
+        return ExecutingContextManager(self.extensions, self.execution_context)
 
     def get_extensions_results_sync(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {}

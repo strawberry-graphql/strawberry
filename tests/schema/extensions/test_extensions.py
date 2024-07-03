@@ -771,6 +771,56 @@ async def test_exceptions_abort_evaluation(failing_hook, expected_hooks):
     assert extension.called_hooks == expected_hooks
 
 
+async def test_generic_exceptions_get_wrapped_in_a_graphql_error():
+    exception = Exception("This should be wrapped in a GraphQL error")
+
+    class MyExtension(SchemaExtension):
+        def on_parse(self):
+            raise exception
+
+    @strawberry.type
+    class Query:
+        ping: str = "pong"
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+    query = "query { ping }"
+
+    sync_result = schema.execute_sync(query)
+    assert len(sync_result.errors) == 1
+    assert isinstance(sync_result.errors[0], GraphQLError)
+    assert sync_result.errors[0].original_error == exception
+
+    async_result = await schema.execute(query)
+    assert len(async_result.errors) == 1
+    assert isinstance(async_result.errors[0], GraphQLError)
+    assert async_result.errors[0].original_error == exception
+
+
+async def test_graphql_errors_get_not_wrapped_in_a_graphql_error():
+    exception = GraphQLError("This should not be wrapped in a GraphQL error")
+
+    class MyExtension(SchemaExtension):
+        def on_parse(self):
+            raise exception
+
+    @strawberry.type
+    class Query:
+        ping: str = "pong"
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+    query = "query { ping }"
+
+    sync_result = schema.execute_sync(query)
+    assert len(sync_result.errors) == 1
+    assert sync_result.errors[0] == exception
+    assert sync_result.errors[0].original_error is None
+
+    async_result = await schema.execute(query)
+    assert len(async_result.errors) == 1
+    assert async_result.errors[0] == exception
+    assert async_result.errors[0].original_error is None
+
+
 @pytest.mark.asyncio
 async def test_dont_swallow_errors_in_parsing_hooks():
     class MyExtension(SchemaExtension):
@@ -1153,7 +1203,7 @@ async def test_extension_can_set_query_async():
     assert result.data == {"hi": "👋"}
 
 
-def test_raise_if_hook_is_not_callable(default_query_types_and_query):
+def test_raise_if_hook_is_not_callable(default_query_types_and_query: SchemaHelper):
     class MyExtension(SchemaExtension):
         on_operation = "ABC"  # type: ignore
 
