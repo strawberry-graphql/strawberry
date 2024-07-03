@@ -482,10 +482,9 @@ def test_raise_if_defined_both_legacy_and_new_style(default_query_types_and_quer
     schema = strawberry.Schema(
         query=default_query_types_and_query.query_type, extensions=[WrongUsageExtension]
     )
-
-    result = schema.execute_sync(default_query_types_and_query.query)
-    assert len(result.errors) == 1
-    assert isinstance(result.errors[0].original_error, ValueError)
+    with pytest.raises(ValueError) as err:
+        schema.execute_sync(default_query_types_and_query.query)
+        assert "defines both legacy and new style extension hooks for" in str(err.value)
 
 
 async def test_legacy_extension_supported():

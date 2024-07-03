@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import warnings
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from strawberry.extensions.context import (
@@ -52,11 +53,18 @@ class SchemaExtensionsRunner:
 
         return data
 
-    async def get_extensions_results(self) -> Dict[str, Any]:
+    async def get_extensions_results(self, ctx: ExecutionContext) -> Dict[str, Any]:
         data: Dict[str, Any] = {}
 
         for extension in self.extensions:
-            results = await await_maybe(extension.get_results())
-            data.update(results)
+            if (get_results := extension.get_results) is not None:
+                warnings.warn(
+                    "get_results is deprecated, you can use the `execution_context.extensions_results` attribute instead",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+                results = await await_maybe(get_results())
+                data.update(results)
 
+        data.update(ctx.extensions_results)
         return data

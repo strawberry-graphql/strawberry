@@ -28,6 +28,7 @@ class SchemaExtension:
         self,
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
         """Called before and after a GraphQL operation (query / mutation) starts"""
+        self.execution_context.result
         yield None
 
     def on_validate(  # type: ignore
@@ -58,8 +59,7 @@ class SchemaExtension:
     ) -> AwaitableOrValue[object]:
         return _next(root, info, *args, **kwargs)
 
-    def get_results(self) -> AwaitableOrValue[Dict[str, Any]]:
-        return {}
+    get_results: Callable[[], AwaitableOrValue[Dict[str, Any]]] | None = None
 
 
 Hook = Callable[[SchemaExtension], AsyncIteratorOrIterator[None]]

@@ -73,7 +73,7 @@ class Subscription(AsyncExecutionBase):
                 try:
                     result = await self._original_generator.__anext__()
                 except StopAsyncIteration as exc:
-                    await self._operation_cm.exit(exc)
+                    await self._operation_cm.__aexit__(None, None, None)
                     raise StopAsyncIteration from exc
                 finally:
                     await self._operation_cm.__aexit__(None, None, None)

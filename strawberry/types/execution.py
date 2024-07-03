@@ -13,6 +13,7 @@ from typing import (
 from typing_extensions import TypedDict
 
 from graphql import specified_rules
+from graphql.execution.middleware import MiddlewareManager
 
 from strawberry.utils.operation import get_first_operation, get_operation_type
 
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired
 
     from graphql import ASTValidationRule
+    from graphql import ExecutionContext as GraphQLExecutionContext
     from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql.error.graphql_error import GraphQLError
     from graphql.language import DocumentNode, OperationDefinitionNode
@@ -33,6 +35,7 @@ if TYPE_CHECKING:
 class ExecutionContext:
     query: Optional[str]
     schema: Schema
+    allowed_operations: Tuple[OperationType, ...]
     context: Any = None
     variables: Optional[Dict[str, Any]] = None
     parse_options: ParseOptions = dataclasses.field(
@@ -42,6 +45,7 @@ class ExecutionContext:
     validation_rules: Tuple[Type[ASTValidationRule], ...] = dataclasses.field(
         default_factory=lambda: tuple(specified_rules)
     )
+    middleware_manager: Optional[MiddlewareManager] = None
 
     # The operation name that is provided by the request
     provided_operation_name: dataclasses.InitVar[Optional[str]] = None
@@ -51,6 +55,8 @@ class ExecutionContext:
     graphql_document: Optional[DocumentNode] = None
     errors: Optional[List[GraphQLError]] = None
     result: Optional[GraphQLExecutionResult] = None
+    extensions_results: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    context_class: Optional[Type[GraphQLExecutionContext]] = None
 
     def __post_init__(self, provided_operation_name: str | None) -> None:
         self._provided_operation_name = provided_operation_name
