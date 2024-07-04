@@ -1,88 +1,78 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, AsyncGenerator, Union
+from typing import AsyncGenerator, Union
+from typing_extensions import TypeAlias
 
 from graphql import (
     ExecutionResult as OriginalExecutionResult,
 )
 from graphql.execution import subscribe as original_subscribe
+from graphql.execution.middleware import MiddlewareManager
+from graphql.type.schema import GraphQLSchema
 
-from strawberry.schema.execute import AsyncExecutionBase, AsyncExecutionOptions
-from strawberry.types.execution import ExecutionResultError
+from strawberry.types import ExecutionResult
+from strawberry.types.execution import ExecutionContext, ExecutionResultError
 
-if TYPE_CHECKING:
-    from strawberry.types import ExecutionResult
+from ..extensions.runner import SchemaExtensionsRunner
+from .execute import ProccessErrors, _handle_execution_result, _parse_and_validate_async
+
+SubscriptionResult: TypeAlias = AsyncGenerator[
+    Union[ExecutionResultError, ExecutionResult], None
+]
 
 
-class Subscription(AsyncExecutionBase):
-    def __init__(self, kwargs: AsyncExecutionOptions) -> None:
-        super().__init__(kwargs)
-        self._operation_cm = self.extensions_runner.operation()
-        self._original_generator: (
-            AsyncGenerator[OriginalExecutionResult, None] | None
-        ) = None
-
-    async def subscribe(self) -> Union[ExecutionResultError, Subscription]:
-        initial_error = await self._parse_and_validate_runner()
-        generator_or_result = None
-        if not initial_error:
-            # TODO: what if this raises an error?
-            await self._operation_cm.__aenter__()
-            assert self.execution_context.graphql_document
-            generator_or_result = await original_subscribe(
-                self.schema,
-                self.execution_context.graphql_document,
-                root_value=self.execution_context.root_value,
-                variable_values=self.execution_context.variables,
-                operation_name=self.execution_context.operation_name,
-                context_value=self.execution_context.context,
-                middleware=self.middleware_manager,
+async def subscribe(
+    schema: GraphQLSchema,
+    execution_context: ExecutionContext,
+    extensions_runner: SchemaExtensionsRunner,
+    process_errors: ProccessErrors,
+    middleware_manager: MiddlewareManager,
+) -> SubscriptionResult:
+    async with extensions_runner.operation():
+        if initial_error := await _parse_and_validate_async(
+            context=execution_context,
+            extensions_runner=extensions_runner,
+        ):
+            initial_error.extensions = await extensions_runner.get_extensions_results(
+                execution_context
             )
-
-        # permission errors would return here.
-        if isinstance(generator_or_result, OriginalExecutionResult):
-            initial_error = ExecutionResultError(
-                data=generator_or_result.data, errors=generator_or_result.errors
+            yield await _handle_execution_result(
+                execution_context, initial_error, extensions_runner, process_errors
             )
-        if initial_error:
-            initial_error.extensions = (
-                await self.extensions_runner.get_extensions_results()
-            )
-            return initial_error
-
-        generator = generator_or_result
-        # there should not be any validation errors so the result is async generator
-        assert hasattr(generator, "__aiter__")
-        # mypy couldn't catch the assertion before.
-        self._original_generator = generator.__aiter__()  # type: ignore
-        return self
-
-    def __aiter__(self) -> Subscription:
-        return self
-
-    async def _collect_and_return(self, result: ExecutionResult) -> ExecutionResult:
-        result.extensions = await self.extensions_runner.get_extensions_results()
-        return result
-
-    async def __anext__(self) -> ExecutionResult:
-        assert self._original_generator
-        # clean result on every iteration
-        self.execution_context.result = None
-        async with self.extensions_runner.executing():
-            if not self.execution_context.result:
-                try:
-                    result = await self._original_generator.__anext__()
-                except StopAsyncIteration as exc:
-                    await self._operation_cm.__aexit__(None, None, None)
-                    raise StopAsyncIteration from exc
-                finally:
-                    await self._operation_cm.__aexit__(None, None, None)
-                return await self._handle_execution_result(result=result)
-            else:
-                return await self._handle_execution_result(
-                    result=self.execution_context.result
+        else:
+            async with extensions_runner.executing():
+                agen_or_result: Union[
+                    OriginalExecutionResult,
+                    AsyncGenerator[OriginalExecutionResult, None],
+                ] = await original_subscribe(
+                    schema,
+                    execution_context.graphql_document,
+                    root_value=execution_context.root_value,
+                    variable_values=execution_context.variables,
+                    operation_name=execution_context.operation_name,
+                    context_value=execution_context.context,
+                    middleware=middleware_manager,
                 )
 
-    async def aclose(self) -> None:
-        assert self._original_generator
-        await self._original_generator.aclose()
+                # permission errors i.e would return here.
+                if isinstance(agen_or_result, OriginalExecutionResult):
+                    yield await _handle_execution_result(
+                        execution_context,
+                        agen_or_result,
+                        extensions_runner,
+                        process_errors,
+                    )
+                else:
+                    agen = agen_or_result.__aiter__()
+                    try:
+                        while True:
+                            async with extensions_runner.executing():
+                                origin_result = await agen.__anext__()
+                                yield await _handle_execution_result(
+                                    execution_context,
+                                    origin_result,
+                                    extensions_runner,
+                                    process_errors,
+                                )
+                    except StopAsyncIteration:
+                        ...

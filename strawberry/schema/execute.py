@@ -9,7 +9,6 @@ from typing import (
     Iterable,
     List,
     Optional,
-    Sequence,
     Tuple,
     Type,
     TypedDict,
@@ -38,7 +37,6 @@ if TYPE_CHECKING:
     from graphql.language import DocumentNode
     from graphql.validation import ASTValidationRule
 
-    from strawberry.extensions import SchemaExtension
     from strawberry.types import ExecutionContext
     from strawberry.types.graphql import OperationType
 
@@ -48,7 +46,9 @@ class ParseOptions(TypedDict):
     max_tokens: NotRequired[int]
 
 
-ProccessErrors: TypeAlias = "Callable[[List[GraphQLError], Optional[ExecutionContext]], None]"
+ProccessErrors: TypeAlias = (
+    "Callable[[List[GraphQLError], Optional[ExecutionContext]], None]"
+)
 
 
 def parse_document(query: str, **kwargs: Unpack[ParseOptions]) -> DocumentNode:
@@ -93,8 +93,6 @@ def execute_sync(
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: ProccessErrors,
 ) -> ExecutionResult:
-    
-
     with extensions_runner.operation():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
@@ -148,7 +146,6 @@ def execute_sync(
                     variable_values=execution_context.variables,
                     operation_name=execution_context.operation_name,
                     context_value=execution_context.context,
-                    context_class=execution_context,
                 )
 
                 if isawaitable(result):
@@ -235,6 +232,7 @@ async def _handle_execution_result(
 
 
 async def execute(
+    schema: GraphQLSchema,
     execution_context: ExecutionContext,
     extensions_runner: SchemaExtensionsRunner,
     process_errors: ProccessErrors,
@@ -256,14 +254,13 @@ async def execute(
         async with extensions_runner.executing():
             if not execution_context.result:
                 awaitable_or_res = original_execute(
-                    execution_context.schema,
+                    schema,
                     execution_context.graphql_document,
                     root_value=execution_context.root_value,
                     middleware=execution_context.middleware_manager,
                     variable_values=execution_context.variables,
                     operation_name=execution_context.operation_name,
                     context_value=execution_context.context,
-                    context_class=execution_context.context_class,
                 )
 
                 if isawaitable(awaitable_or_res):

@@ -49,11 +49,11 @@ class SchemaExtensionsRunner:
                     "get_results is deprecated, use `execution_context.update_extensions_result()` instead.",
                     DeprecationWarning,
                     stacklevel=2,
-            )
-            if inspect.iscoroutinefunction(get_results):
-                msg = "Cannot use async extension hook during sync execution"
-                raise RuntimeError(msg)
-            data.update(extension.get_results())  # type: ignore
+                )
+                if inspect.iscoroutinefunction(get_results):
+                    msg = "Cannot use async extension hook during sync execution"
+                    raise RuntimeError(msg)
+                data.update(extension.get_results())  # type: ignore
 
         return data
 
