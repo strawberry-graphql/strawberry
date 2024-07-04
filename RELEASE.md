@@ -1,11 +1,18 @@
 Release type: minor
 
-Initial schema-extensions support for subscriptions operations.
+Support for schema-extensions in subscriptions.
+
 i.e:
 ```python
-def on_execute(self):
-    #  This part is called before the async-generator yields
-    yield
-    #  This part is called after the async-generator yields
+class MyExtension(SchemaExtension):
+
+    async def on_operation(self, execution_context: ExecutionContext):
+        #  This part is called before the subscription started
+        yield
+        #  This part is called after the subscription ended
+
+    async def on_execute(self):
+        #  This part is called before a new result is comming from the subscription
+        yield
+        #  This part is called after the subscription yielded a result
 ```
-Note that the `resolve` hook is not yet supported due to [lack of support from graphql-core](https://github.com/graphql-python/graphql-core/issues/188).

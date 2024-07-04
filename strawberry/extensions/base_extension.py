@@ -28,7 +28,6 @@ class SchemaExtension:
         self,
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
         """Called before and after a GraphQL operation (query / mutation) starts"""
-        self.execution_context.result
         yield None
 
     def on_validate(  # type: ignore

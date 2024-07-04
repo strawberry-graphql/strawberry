@@ -1,5 +1,6 @@
 import contextlib
 import dataclasses
+import enum
 import json
 import warnings
 from typing import Any, AsyncGenerator, List, Optional, Set, Type
@@ -232,6 +233,19 @@ def default_query_types_and_query() -> SchemaHelper:
         subscription_type=Subscription,
         subscription=subscription,
     )
+
+
+class ExecType(enum.Enum):
+    SYNC = enum.auto()
+    ASYNC = enum.auto()
+
+    def is_async(self) -> bool:
+        return self == ExecType.ASYNC
+
+
+@pytest.fixture(params=[ExecType.ASYNC, ExecType.SYNC])
+def exec_type(request: pytest.FixtureRequest) -> ExecType:
+    return request.param
 
 
 def test_can_initialize_extension(default_query_types_and_query):
@@ -770,7 +784,9 @@ async def test_exceptions_abort_evaluation(failing_hook, expected_hooks):
     assert extension.called_hooks == expected_hooks
 
 
-async def test_generic_exceptions_get_wrapped_in_a_graphql_error():
+async def test_generic_exceptions_get_wrapped_in_a_graphql_error(
+    exec_type: ExecType,
+) -> None:
     exception = Exception("This should be wrapped in a GraphQL error")
 
     class MyExtension(SchemaExtension):
@@ -783,19 +799,20 @@ async def test_generic_exceptions_get_wrapped_in_a_graphql_error():
 
     schema = strawberry.Schema(query=Query, extensions=[MyExtension])
     query = "query { ping }"
+    if exec_type.is_async():
+        res = await schema.execute(query)
+    else:
+        res = schema.execute_sync(query)
 
-    sync_result = schema.execute_sync(query)
-    assert len(sync_result.errors) == 1
-    assert isinstance(sync_result.errors[0], GraphQLError)
-    assert sync_result.errors[0].original_error == exception
-
-    async_result = await schema.execute(query)
-    assert len(async_result.errors) == 1
-    assert isinstance(async_result.errors[0], GraphQLError)
-    assert async_result.errors[0].original_error == exception
+    res = await schema.execute(query)
+    assert len(res.errors) == 1
+    assert isinstance(res.errors[0], GraphQLError)
+    assert res.errors[0].original_error == exception
 
 
-async def test_graphql_errors_get_not_wrapped_in_a_graphql_error():
+async def test_graphql_errors_get_not_wrapped_in_a_graphql_error(
+    exec_type: ExecType,
+) -> None:
     exception = GraphQLError("This should not be wrapped in a GraphQL error")
 
     class MyExtension(SchemaExtension):
@@ -808,16 +825,13 @@ async def test_graphql_errors_get_not_wrapped_in_a_graphql_error():
 
     schema = strawberry.Schema(query=Query, extensions=[MyExtension])
     query = "query { ping }"
-
-    sync_result = schema.execute_sync(query)
-    assert len(sync_result.errors) == 1
-    assert sync_result.errors[0] == exception
-    assert sync_result.errors[0].original_error is None
-
-    async_result = await schema.execute(query)
-    assert len(async_result.errors) == 1
-    assert async_result.errors[0] == exception
-    assert async_result.errors[0].original_error is None
+    if exec_type.is_async():
+        res = await schema.execute(query)
+    else:
+        res = schema.execute_sync(query)
+    assert len(res.errors) == 1
+    assert res.errors[0] == exception
+    assert res.errors[0].original_error is None
 
 
 @pytest.mark.asyncio

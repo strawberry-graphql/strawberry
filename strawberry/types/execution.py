@@ -14,7 +14,6 @@ from typing import (
 from typing_extensions import TypedDict
 
 from graphql import specified_rules
-from graphql.execution.middleware import MiddlewareManager
 
 from strawberry.utils.operation import get_first_operation, get_operation_type
 
@@ -25,6 +24,7 @@ if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
     from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql.error.graphql_error import GraphQLError
+    from graphql.execution.middleware import MiddlewareManager
     from graphql.language import DocumentNode, OperationDefinitionNode
 
     from strawberry.schema import Schema

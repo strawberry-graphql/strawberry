@@ -1,20 +1,24 @@
 from __future__ import annotations
 
-from typing import AsyncGenerator, Union
-from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, AsyncGenerator, Union
 
 from graphql import (
     ExecutionResult as OriginalExecutionResult,
 )
 from graphql.execution import subscribe as original_subscribe
-from graphql.execution.middleware import MiddlewareManager
-from graphql.type.schema import GraphQLSchema
 
 from strawberry.types import ExecutionResult
 from strawberry.types.execution import ExecutionContext, ExecutionResultError
 
-from ..extensions.runner import SchemaExtensionsRunner
 from .execute import ProccessErrors, _handle_execution_result, _parse_and_validate_async
+
+if TYPE_CHECKING:
+    from typing_extensions import TypeAlias
+
+    from graphql.execution.middleware import MiddlewareManager
+    from graphql.type.schema import GraphQLSchema
+
+    from ..extensions.runner import SchemaExtensionsRunner
 
 SubscriptionResult: TypeAlias = AsyncGenerator[
     Union[ExecutionResultError, ExecutionResult], None

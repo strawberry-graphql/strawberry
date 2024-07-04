@@ -15,7 +15,6 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import NotRequired, TypeAlias, Unpack
 
 from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError, parse
@@ -23,7 +22,6 @@ from graphql import execute as original_execute
 from graphql.validation import validate
 
 from strawberry.exceptions import MissingQueryError
-from strawberry.extensions.runner import SchemaExtensionsRunner
 from strawberry.schema.validation_rules.one_of import OneOfInputValidationRule
 from strawberry.types import ExecutionResult
 from strawberry.types.execution import ExecutionResultError
@@ -31,12 +29,15 @@ from strawberry.types.execution import ExecutionResultError
 from .exceptions import InvalidOperationTypeError
 
 if TYPE_CHECKING:
+    from typing_extensions import NotRequired, TypeAlias, Unpack
+
     from graphql import ExecutionContext as GraphQLExecutionContext
     from graphql import GraphQLSchema
     from graphql.execution.middleware import MiddlewareManager
     from graphql.language import DocumentNode
     from graphql.validation import ASTValidationRule
 
+    from strawberry.extensions.runner import SchemaExtensionsRunner
     from strawberry.types import ExecutionContext
     from strawberry.types.graphql import OperationType
 
@@ -93,81 +94,96 @@ def execute_sync(
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: ProccessErrors,
 ) -> ExecutionResult:
-    with extensions_runner.operation():
-        # Note: In graphql-core the schema would be validated here but in
-        # Strawberry we are validating it at initialisation time instead
-        if not execution_context.query:
-            raise MissingQueryError()
+    try:
+        with extensions_runner.operation():
+            # Note: In graphql-core the schema would be validated here but in
+            # Strawberry we are validating it at initialisation time instead
+            if not execution_context.query:
+                raise MissingQueryError()
 
-        with extensions_runner.parsing():
-            try:
-                if not execution_context.graphql_document:
-                    execution_context.graphql_document = parse_document(
-                        execution_context.query, **execution_context.parse_options
+            with extensions_runner.parsing():
+                try:
+                    if not execution_context.graphql_document:
+                        execution_context.graphql_document = parse_document(
+                            execution_context.query, **execution_context.parse_options
+                        )
+
+                except GraphQLError as error:
+                    execution_context.errors = [error]
+                    process_errors([error], execution_context)
+                    return ExecutionResult(
+                        data=None,
+                        errors=[error],
+                        extensions=extensions_runner.get_extensions_results_sync(),
                     )
 
-            except GraphQLError as error:
-                execution_context.errors = [error]
-                process_errors([error], execution_context)
-                return ExecutionResult(
-                    data=None,
-                    errors=[error],
-                    extensions=extensions_runner.get_extensions_results_sync(),
-                )
+                except Exception as error:  # pragma: no cover
+                    error = GraphQLError(str(error), original_error=error)
 
-            except Exception as error:  # pragma: no cover
-                error = GraphQLError(str(error), original_error=error)
+                    execution_context.errors = [error]
+                    process_errors([error], execution_context)
 
-                execution_context.errors = [error]
-                process_errors([error], execution_context)
-
-                return ExecutionResult(
-                    data=None,
-                    errors=[error],
-                    extensions=extensions_runner.get_extensions_results_sync(),
-                )
-
-        if execution_context.operation_type not in allowed_operation_types:
-            raise InvalidOperationTypeError(execution_context.operation_type)
-
-        with extensions_runner.validation():
-            _run_validation(execution_context)
-            if execution_context.errors:
-                process_errors(execution_context.errors, execution_context)
-                return ExecutionResult(data=None, errors=execution_context.errors)
-
-        with extensions_runner.executing():
-            if not execution_context.result:
-                result = original_execute(
-                    schema,
-                    execution_context.graphql_document,
-                    root_value=execution_context.root_value,
-                    middleware=middleware_manager,
-                    variable_values=execution_context.variables,
-                    operation_name=execution_context.operation_name,
-                    context_value=execution_context.context,
-                )
-
-                if isawaitable(result):
-                    result = cast(Awaitable[GraphQLExecutionResult], result)
-                    ensure_future(result).cancel()
-                    raise RuntimeError(
-                        "GraphQL execution failed to complete synchronously."
+                    return ExecutionResult(
+                        data=None,
+                        errors=[error],
+                        extensions=extensions_runner.get_extensions_results_sync(),
                     )
 
-                result = cast("GraphQLExecutionResult", result)
-                execution_context.result = result
-                # Also set errors on the context so that it's easier
-                # to access in extensions
-                if result.errors:
-                    execution_context.errors = result.errors
+            if execution_context.operation_type not in allowed_operation_types:
+                raise InvalidOperationTypeError(execution_context.operation_type)
 
-                    # Run the `Schema.process_errors` function here before
-                    # extensions have a chance to modify them (see the MaskErrors
-                    # extension). That way we can log the original errors but
-                    # only return a sanitised version to the client.
-                    process_errors(result.errors, execution_context)
+            with extensions_runner.validation():
+                _run_validation(execution_context)
+                if execution_context.errors:
+                    process_errors(execution_context.errors, execution_context)
+                    return ExecutionResult(data=None, errors=execution_context.errors)
 
+            with extensions_runner.executing():
+                if not execution_context.result:
+                    result = original_execute(
+                        schema,
+                        execution_context.graphql_document,
+                        root_value=execution_context.root_value,
+                        middleware=middleware_manager,
+                        variable_values=execution_context.variables,
+                        operation_name=execution_context.operation_name,
+                        context_value=execution_context.context,
+                    )
+
+                    if isawaitable(result):
+                        result = cast(Awaitable[GraphQLExecutionResult], result)
+                        ensure_future(result).cancel()
+                        raise RuntimeError(
+                            "GraphQL execution failed to complete synchronously."
+                        )
+
+                    result = cast("GraphQLExecutionResult", result)
+                    execution_context.result = result
+                    # Also set errors on the context so that it's easier
+                    # to access in extensions
+                    if result.errors:
+                        execution_context.errors = result.errors
+
+                        # Run the `Schema.process_errors` function here before
+                        # extensions have a chance to modify them (see the MaskErrors
+                        # extension). That way we can log the original errors but
+                        # only return a sanitised version to the client.
+                        process_errors(result.errors, execution_context)
+    except (MissingQueryError, InvalidOperationTypeError) as e:
+        raise e
+    except Exception as exc:
+        error = (
+            exc
+            if isinstance(exc, GraphQLError)
+            else GraphQLError(str(exc), original_error=exc)
+        )
+        execution_context.errors = [error]
+        process_errors([error], execution_context)
+        return ExecutionResult(
+            data=None,
+            errors=[error],
+            extensions=extensions_runner.get_extensions_results_sync(),
+        )
     return ExecutionResult(
         data=execution_context.result.data,
         errors=execution_context.result.errors,
@@ -237,38 +253,56 @@ async def execute(
     extensions_runner: SchemaExtensionsRunner,
     process_errors: ProccessErrors,
 ) -> Union[ExecutionResult, ExecutionResultError]:
-    async with extensions_runner.operation():
-        # Note: In graphql-core the schema would be validated here but in
-        # Strawberry we are validating it at initialisation time instead
+    try:
+        async with extensions_runner.operation():
+            # Note: In graphql-core the schema would be validated here but in
+            # Strawberry we are validating it at initialisation time instead
 
-        errors = await _parse_and_validate_async(execution_context, extensions_runner)
-        if errors:
-            return cast(
-                ExecutionResultError,
-                await _handle_execution_result(
-                    execution_context, errors, extensions_runner, process_errors
-                ),
+            errors = await _parse_and_validate_async(
+                execution_context, extensions_runner
             )
-        assert execution_context.graphql_document
-        # if there was no parsing error
-        async with extensions_runner.executing():
-            if not execution_context.result:
-                awaitable_or_res = original_execute(
-                    schema,
-                    execution_context.graphql_document,
-                    root_value=execution_context.root_value,
-                    middleware=execution_context.middleware_manager,
-                    variable_values=execution_context.variables,
-                    operation_name=execution_context.operation_name,
-                    context_value=execution_context.context,
+            if errors:
+                return cast(
+                    ExecutionResultError,
+                    await _handle_execution_result(
+                        execution_context, errors, extensions_runner, process_errors
+                    ),
                 )
+            assert execution_context.graphql_document
+            # if there was no parsing error
+            async with extensions_runner.executing():
+                if not execution_context.result:
+                    awaitable_or_res = original_execute(
+                        schema,
+                        execution_context.graphql_document,
+                        root_value=execution_context.root_value,
+                        middleware=execution_context.middleware_manager,
+                        variable_values=execution_context.variables,
+                        operation_name=execution_context.operation_name,
+                        context_value=execution_context.context,
+                    )
 
-                if isawaitable(awaitable_or_res):
-                    res = await awaitable_or_res
+                    if isawaitable(awaitable_or_res):
+                        res = await awaitable_or_res
+                    else:
+                        res = awaitable_or_res
                 else:
-                    res = awaitable_or_res
-            else:
-                res = execution_context.result
+                    res = execution_context.result
+    except (MissingQueryError, InvalidOperationTypeError) as e:
+        raise e
+    except Exception as exc:
+        error = (
+            exc
+            if isinstance(exc, GraphQLError)
+            else GraphQLError(str(exc), original_error=exc)
+        )
+        return await _handle_execution_result(
+            execution_context,
+            ExecutionResult(data=None, errors=[error]),
+            extensions_runner,
+            process_errors,
+        )
+
     # return results after all the operation completed.
     return await _handle_execution_result(
         execution_context, res, extensions_runner, process_errors
