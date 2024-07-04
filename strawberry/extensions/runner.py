@@ -43,12 +43,16 @@ class SchemaExtensionsRunner:
 
     def get_extensions_results_sync(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {}
-
         for extension in self.extensions:
-            if inspect.iscoroutinefunction(extension.get_results):
+            if (get_results := extension.get_results) is not None:
+                warnings.warn(
+                    "get_results is deprecated, use `execution_context.update_extensions_result()` instead.",
+                    DeprecationWarning,
+                    stacklevel=2,
+            )
+            if inspect.iscoroutinefunction(get_results):
                 msg = "Cannot use async extension hook during sync execution"
                 raise RuntimeError(msg)
-
             data.update(extension.get_results())  # type: ignore
 
         return data
@@ -59,7 +63,7 @@ class SchemaExtensionsRunner:
         for extension in self.extensions:
             if (get_results := extension.get_results) is not None:
                 warnings.warn(
-                    "get_results is deprecated, you can use the `execution_context.extensions_results` attribute instead",
+                    "get_results is deprecated, use `execution_context.update_extensions_result()` instead.",
                     DeprecationWarning,
                     stacklevel=2,
                 )

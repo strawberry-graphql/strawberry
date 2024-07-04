@@ -5,6 +5,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Iterable,
     List,
     Optional,
     Tuple,
@@ -35,7 +36,7 @@ if TYPE_CHECKING:
 class ExecutionContext:
     query: Optional[str]
     schema: Schema
-    allowed_operations: Tuple[OperationType, ...]
+    allowed_operations: Iterable[OperationType]
     context: Any = None
     variables: Optional[Dict[str, Any]] = None
     parse_options: ParseOptions = dataclasses.field(
@@ -57,6 +58,9 @@ class ExecutionContext:
     result: Optional[GraphQLExecutionResult] = None
     extensions_results: Dict[str, Any] = dataclasses.field(default_factory=dict)
     context_class: Optional[Type[GraphQLExecutionContext]] = None
+
+    def update_extensions_result(self, data: Dict[str, Any]) -> None:
+        self.extensions_results.update(data)
 
     def __post_init__(self, provided_operation_name: str | None) -> None:
         self._provided_operation_name = provided_operation_name

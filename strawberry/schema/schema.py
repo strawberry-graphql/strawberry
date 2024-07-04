@@ -9,6 +9,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Tuple,
     Type,
     Union,
     cast,
@@ -38,13 +39,13 @@ from strawberry.type import has_object_definition
 from strawberry.types import ExecutionContext
 from strawberry.types.graphql import OperationType
 from strawberry.types.types import StrawberryObjectDefinition
-
+from ..extensions.runner import SchemaExtensionsRunner
 from ..extensions import SchemaExtension
 from ..printer import print_schema
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
-from .execute import AsyncExecution, AsyncExecutionOptions, execute_sync
+from .execute import  execute_sync, execute
 from .subscribe import Subscription
 
 if TYPE_CHECKING:
@@ -201,6 +202,12 @@ class Schema(BaseSchema):
                 init_extensions.append(extension(execution_context=None))
         return init_extensions
 
+    def create_extensions_runner(self, execution_context: ExecutionContext, sync: bool = False) -> SchemaExtensionsRunner:
+        return SchemaExtensionsRunner(
+        execution_context=execution_context,
+        extensions=self.get_extensions(sync=sync),
+    )
+
     # TODO: can this get cached?
     def _get_middleware_manager(self, sync: bool = False) -> MiddlewareManager:
         # create a middleware manager with all the extensions that support resolve
@@ -263,6 +270,7 @@ class Schema(BaseSchema):
     def _create_execution_context(
         self,
         query: Optional[str],
+        allowed_operation_types: Iterable[OperationType],
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
@@ -271,6 +279,7 @@ class Schema(BaseSchema):
         return ExecutionContext(
             query=query,
             schema=self,
+            allowed_operations=allowed_operation_types,
             context=context_value,
             root_value=root_value,
             variables=variable_values,
@@ -290,15 +299,15 @@ class Schema(BaseSchema):
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
 
         execution_context = self._create_execution_context(
-            query, variable_values, context_value, root_value, operation_name
+            query, allowed_operation_types, variable_values, context_value, root_value, operation_name
         )
 
         result = execute_sync(
             self._schema,
-            extensions=self.get_extensions(sync=True),
+            execution_context=execution_context,
+            extensions_runner=self.create_extensions_runner(execution_context, sync=True),
             middleware_manager=self._get_middleware_manager(sync=True),
             execution_context_class=self.execution_context_class,
-            execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
             process_errors=self.process_errors,
         )
@@ -318,20 +327,14 @@ class Schema(BaseSchema):
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
 
         execution_context = self._create_execution_context(
-            query, variable_values, context_value, root_value, operation_name
+            query, allowed_operation_types, variable_values, context_value, root_value, operation_name
         )
 
-        return await AsyncExecution(
-            AsyncExecutionOptions(
-                schema=self._schema,
-                middleware_manager=self._get_middleware_manager(),
-                extensions=self.get_extensions(),
-                execution_context_class=self.execution_context_class,
-                execution_context=execution_context,
-                allowed_operation_types=allowed_operation_types,
-                process_errors=self.process_errors,
-            )
-        ).execute()
+        return await execute(
+         execution_context=execution_context,
+         extensions_runner=self.create_extensions_runner(execution_context),
+         process_errors=self.process_errors,
+        )
 
     async def subscribe(
         self,
