@@ -211,15 +211,11 @@ class ExampleExtension(SchemaExtension):
         "on_operation Exited",
         "get_results",
     ]
-    called_hooks: list[str]
+    called_hooks: List[str]
 
     @classmethod
     def assert_expected(cls) -> None:
         assert cls.called_hooks == cls.expected
-
-    @classmethod
-    def clear(cls) -> None:
-        cls.called_hooks.clear()
 
 
 @pytest.fixture()
