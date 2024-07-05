@@ -119,10 +119,10 @@ class GraphQL(
 
     async def __call__(self, scope: Request, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
-            return await self.handle_http(scope, receive, send)
+            return await self.handle_http(scope, receive, send)  # type: ignore
 
         elif scope["type"] == "websocket":
-            ws = WebSocket(scope=scope, receive=receive, send=send)
+            ws = WebSocket(scope=scope, receive=receive, send=send)  # type: ignore
             preferred_protocol = self.pick_preferred_protocol(ws)
 
             if preferred_protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
