@@ -37,9 +37,9 @@ if TYPE_CHECKING:
     import builtins
     from typing_extensions import Literal, Self
 
-    from strawberry.arguments import StrawberryArgument
     from strawberry.extensions.field_extension import FieldExtension
     from strawberry.permission import BasePermission
+    from strawberry.types.arguments import StrawberryArgument
     from strawberry.types.info import Info
     from strawberry.types.types import StrawberryObjectDefinition
 

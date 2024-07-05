@@ -23,12 +23,12 @@ if TYPE_CHECKING:
     from graphql.language import FieldNode
     from graphql.pyutils.path import Path
 
-    from strawberry.arguments import StrawberryArgument
     from strawberry.schema import Schema
     from strawberry.strawberry_type import (
         StrawberryType,
         WithStrawberryObjectDefinition,
     )
+    from strawberry.types.arguments import StrawberryArgument
     from strawberry.types.field import StrawberryField
 
     from .nodes import Selection

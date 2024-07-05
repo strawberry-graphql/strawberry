@@ -180,7 +180,7 @@ class Schema(BaseSchema):
 
                 get_result = partial(resolve_reference, **kwargs)
             else:
-                from strawberry.arguments import convert_argument
+                from strawberry.types.arguments import convert_argument
 
                 config = info.schema.config
                 scalar_registry = info.schema.schema_converter.scalar_registry

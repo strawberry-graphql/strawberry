@@ -29,7 +29,6 @@ from typing import (
 from typing_extensions import Annotated, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument, argument
 from strawberry.extensions.field_extension import (
     AsyncExtensionResolver,
     FieldExtension,
@@ -40,6 +39,7 @@ from strawberry.relay.exceptions import (
     RelayWrongResolverAnnotationError,
 )
 from strawberry.strawberry_type import StrawberryList, StrawberryOptional
+from strawberry.types.arguments import StrawberryArgument, argument
 from strawberry.types.field import _RESOLVER_TYPE, StrawberryField, field
 from strawberry.types.fields.resolver import StrawberryResolver
 from strawberry.types.lazy_type import LazyType

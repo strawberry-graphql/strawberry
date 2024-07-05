@@ -19,8 +19,8 @@ from strawberry.utils.str_converters import capitalize_first, to_camel_case
 from strawberry.utils.typing import eval_type
 
 if TYPE_CHECKING:
-    from strawberry.arguments import StrawberryArgument
     from strawberry.strawberry_type import StrawberryType
+    from strawberry.types.arguments import StrawberryArgument
     from strawberry.types.field import StrawberryField
 
 

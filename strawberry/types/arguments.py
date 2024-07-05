@@ -16,6 +16,8 @@ from typing import (
 from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
+from strawberry.exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
+from strawberry.scalars import is_scalar
 from strawberry.strawberry_type import (
     StrawberryList,
     StrawberryOptional,
@@ -26,9 +28,6 @@ from strawberry.types.lazy_type import LazyType, StrawberryLazyReference
 from strawberry.types.unset import UNSET as _deprecated_UNSET
 from strawberry.types.unset import _deprecated_is_unset  # noqa # type: ignore
 
-from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
-from .scalars import is_scalar
-
 if TYPE_CHECKING:
     from strawberry.schema.config import StrawberryConfig
     from strawberry.strawberry_type import StrawberryType
@@ -38,7 +37,7 @@ if TYPE_CHECKING:
 DEPRECATED_NAMES: Dict[str, str] = {
     "UNSET": (
         "importing `UNSET` from `strawberry.arguments` is deprecated, "
-        "import instead from `strawberry` or from `strawberry.unset`"
+        "import instead from `strawberry` or from `strawberry.types.unset`"
     ),
     "is_unset": "`is_unset` is deprecated use `value is UNSET` instead",
 }

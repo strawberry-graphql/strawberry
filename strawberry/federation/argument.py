@@ -1,6 +1,6 @@
 from typing import Iterable, Optional
 
-from strawberry.arguments import StrawberryArgumentAnnotation
+from strawberry.types.arguments import StrawberryArgumentAnnotation
 
 
 def argument(

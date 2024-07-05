@@ -23,13 +23,13 @@ from typing import (
 from typing_extensions import Annotated, Protocol, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import (
     ConflictingArgumentsError,
     MissingArgumentsAnnotationsError,
 )
 from strawberry.parent import StrawberryParent
 from strawberry.strawberry_type import StrawberryType, has_object_definition
+from strawberry.types.arguments import StrawberryArgument
 from strawberry.types.info import Info
 from strawberry.utils.typing import type_has_annotation
 

@@ -5,13 +5,13 @@ specification and allow for a more natural way of defining GraphQL schemas.
 """
 
 from . import experimental, federation, relay
-from .arguments import argument
 from .directive import directive, directive_field
 from .parent import Parent
 from .permission import BasePermission
 from .scalars import ID
 from .schema import Schema
 from .schema_directive import schema_directive
+from .types.arguments import argument
 from .types.auto import auto
 from .types.enum import enum, enum_value
 from .types.field import field

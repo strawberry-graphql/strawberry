@@ -7,10 +7,10 @@ from pytest_mock import MockerFixture
 import strawberry
 from strawberry import relay
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument
 from strawberry.relay.fields import ConnectionExtension
 from strawberry.relay.utils import to_base64
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
+from strawberry.types.arguments import StrawberryArgument
 from strawberry.types.field import StrawberryField
 from strawberry.types.fields.resolver import StrawberryResolver
 

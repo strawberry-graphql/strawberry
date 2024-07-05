@@ -482,9 +482,9 @@ def test_resolver_with_invalid_field_argument_type():
 
 def test_unset_deprecation_warning():
     with pytest.deprecated_call():
-        from strawberry.arguments import UNSET  # noqa: F401
+        from strawberry.types.arguments import UNSET  # noqa: F401
     with pytest.deprecated_call():
-        from strawberry.arguments import is_unset  # noqa: F401
+        from strawberry.types.arguments import is_unset  # noqa: F401
 
 
 def test_deprecated_unset():

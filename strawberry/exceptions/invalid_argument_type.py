@@ -9,7 +9,7 @@ from .exception import StrawberryException
 from .utils.source_finder import SourceFinder
 
 if TYPE_CHECKING:
-    from strawberry.arguments import StrawberryArgument
+    from strawberry.types.arguments import StrawberryArgument
     from strawberry.types.fields.resolver import StrawberryResolver
 
     from .exception_source import ExceptionSource

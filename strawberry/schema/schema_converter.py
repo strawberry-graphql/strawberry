@@ -44,7 +44,6 @@ from graphql import (
 from graphql.language.directive_locations import DirectiveLocation
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument, convert_arguments
 from strawberry.exceptions import (
     DuplicatedTypeName,
     InvalidTypeInputForUnion,
@@ -61,6 +60,7 @@ from strawberry.strawberry_type import (
     get_object_definition,
     has_object_definition,
 )
+from strawberry.types.arguments import StrawberryArgument, convert_arguments
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.field import UNRESOLVED
 from strawberry.types.info import Info

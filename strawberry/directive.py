@@ -18,7 +18,7 @@ from strawberry.types.unset import UNSET
 if TYPE_CHECKING:
     import inspect
 
-    from strawberry.arguments import StrawberryArgument
+    from strawberry.types.arguments import StrawberryArgument
 
 
 # TODO: should this be directive argument?
