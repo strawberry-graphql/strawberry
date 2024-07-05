@@ -186,6 +186,7 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
     # TODO: can this get cached?
+
     def get_extensions(self, sync: bool = False) -> List[SchemaExtension]:
         init_extensions = []
         extensions = (
@@ -202,18 +203,20 @@ class Schema(BaseSchema):
         return init_extensions
 
     def create_extensions_runner(
-        self, execution_context: ExecutionContext, sync: bool = False
+        self, execution_context: ExecutionContext, extensions: list[SchemaExtension]
     ) -> SchemaExtensionsRunner:
         return SchemaExtensionsRunner(
             execution_context=execution_context,
-            extensions=self.get_extensions(sync=sync),
+            extensions=extensions,
         )
 
     # TODO: can this get cached?
-    def _get_middleware_manager(self, sync: bool = False) -> MiddlewareManager:
+    def _get_middleware_manager(
+        self, extensions: list[SchemaExtension]
+    ) -> MiddlewareManager:
         # create a middleware manager with all the extensions that support resolve
         return MiddlewareManager(
-            *(ext for ext in self.get_extensions(sync) if _implements_resolve(ext))
+            *(ext for ext in extensions if _implements_resolve(ext))
         )
 
     @lru_cache
@@ -307,17 +310,18 @@ class Schema(BaseSchema):
             root_value,
             operation_name,
         )
+        extensions = self.get_extensions(sync=True)
 
         result = execute_sync(
             self._schema,
             execution_context=execution_context,
             extensions_runner=self.create_extensions_runner(
-                execution_context, sync=True
+                execution_context, extensions
             ),
             execution_context_class=self.execution_context_class,
             allowed_operation_types=allowed_operation_types,
             process_errors=self.process_errors,
-            middleware_manager=self._get_middleware_manager(sync=True),
+            middleware_manager=self._get_middleware_manager(extensions),
         )
 
         return result
@@ -342,13 +346,15 @@ class Schema(BaseSchema):
             root_value,
             operation_name,
         )
-
+        extensions = self.get_extensions()
         return await execute(
             self._schema,
             execution_context=execution_context,
-            extensions_runner=self.create_extensions_runner(execution_context),
+            extensions_runner=self.create_extensions_runner(
+                execution_context, extensions
+            ),
             process_errors=self.process_errors,
-            middleware_manager=self._get_middleware_manager(),
+            middleware_manager=self._get_middleware_manager(extensions),
         )
 
     async def subscribe(
@@ -367,13 +373,16 @@ class Schema(BaseSchema):
             root_value,
             operation_name,
         )
+        extensions = self.get_extensions()
 
         return subscribe(
             self._schema,
             execution_context=execution_context,
-            extensions_runner=self.create_extensions_runner(execution_context),
+            extensions_runner=self.create_extensions_runner(
+                execution_context, extensions
+            ),
             process_errors=self.process_errors,
-            middleware_manager=self._get_middleware_manager(),
+            middleware_manager=self._get_middleware_manager(extensions),
         )
 
     def _resolve_node_ids(self) -> None:
