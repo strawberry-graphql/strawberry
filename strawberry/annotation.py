@@ -21,24 +21,24 @@ from typing import (
 from typing_extensions import Annotated, Self, get_args, get_origin
 
 from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
-from strawberry.strawberry_type import (
+from strawberry.types.enum import EnumDefinition
+from strawberry.types.lazy_type import LazyType
+from strawberry.types.private import is_private
+from strawberry.types.scalar import ScalarDefinition
+from strawberry.types.types import (
     StrawberryList,
+    StrawberryObjectDefinition,
     StrawberryOptional,
     StrawberryTypeVar,
     get_object_definition,
     has_object_definition,
 )
-from strawberry.types.enum import EnumDefinition
-from strawberry.types.lazy_type import LazyType
-from strawberry.types.private import is_private
-from strawberry.types.scalar import ScalarDefinition
-from strawberry.types.types import StrawberryObjectDefinition
 from strawberry.types.unset import UNSET
 from strawberry.utils.typing import eval_type, is_generic, is_type_var
 
 if TYPE_CHECKING:
-    from strawberry.strawberry_type import StrawberryType
     from strawberry.types.field import StrawberryField
+    from strawberry.types.types import StrawberryType
     from strawberry.types.union import StrawberryUnion
 
 

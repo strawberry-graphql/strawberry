@@ -6,7 +6,7 @@ import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.strawberry_type import StrawberryList
+from strawberry.types.types import StrawberryList
 
 
 def test_basic_list():

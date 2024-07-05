@@ -2,7 +2,7 @@ from typing import List, Optional, TypeVar
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.strawberry_type import (
+from strawberry.types.types import (
     StrawberryList,
     StrawberryOptional,
     StrawberryTypeVar,

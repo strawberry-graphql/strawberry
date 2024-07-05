@@ -11,7 +11,7 @@ from strawberry.exceptions import (
     InvalidArgumentTypeError,
     MultipleStrawberryArgumentsError,
 )
-from strawberry.strawberry_type import StrawberryList, StrawberryOptional
+from strawberry.types.types import StrawberryList, StrawberryOptional
 
 
 def test_basic_arguments():

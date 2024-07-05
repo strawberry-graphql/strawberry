@@ -4,7 +4,7 @@ from itertools import chain
 from typing import Tuple
 
 import strawberry
-from strawberry.strawberry_type import has_object_definition
+from strawberry.types.types import has_object_definition
 
 
 def merge_types(name: str, types: Tuple[type, ...]) -> type:

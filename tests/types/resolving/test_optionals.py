@@ -2,7 +2,7 @@ from typing import List, Optional, Union
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.strawberry_type import StrawberryOptional
+from strawberry.types.types import StrawberryOptional
 from strawberry.types.unset import UnsetType
 
 

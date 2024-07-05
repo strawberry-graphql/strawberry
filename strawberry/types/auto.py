@@ -4,7 +4,7 @@ from typing import Any, Optional, Union, cast
 from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.strawberry_type import StrawberryType
+from strawberry.types.types import StrawberryType
 
 
 class StrawberryAutoMeta(type):

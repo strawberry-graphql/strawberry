@@ -7,7 +7,7 @@ pytestmark = [skip_on_windows, requires_pyright, requires_mypy]
 
 CODE = """
 import strawberry
-from strawberry.strawberry_type import StrawberryOptional, StrawberryList
+from strawberry.types.types import StrawberryOptional, StrawberryList
 
 
 @strawberry.type

@@ -21,7 +21,7 @@ from strawberry.exceptions import (
     MissingReturnAnnotationError,
     ObjectIsNotClassError,
 )
-from strawberry.strawberry_type import get_object_definition
+from strawberry.types.types import get_object_definition
 from strawberry.utils.dataclasses import add_custom_init_fn
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.str_converters import to_camel_case

@@ -13,7 +13,7 @@ from strawberry.relay.utils import (
     to_base64,
 )
 from strawberry.schema.config import StrawberryConfig
-from strawberry.strawberry_type import get_object_definition
+from strawberry.types.types import get_object_definition
 
 from .schema import Fruit
 

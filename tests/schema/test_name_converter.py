@@ -7,12 +7,11 @@ from strawberry.directive import StrawberryDirective
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.name_converter import NameConverter
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
-from strawberry.strawberry_type import StrawberryType
 from strawberry.types.arguments import StrawberryArgument
 from strawberry.types.enum import EnumDefinition, EnumValue
 from strawberry.types.field import StrawberryField
 from strawberry.types.scalar import ScalarDefinition
-from strawberry.types.types import StrawberryObjectDefinition
+from strawberry.types.types import StrawberryObjectDefinition, StrawberryType
 from strawberry.types.union import StrawberryUnion
 
 

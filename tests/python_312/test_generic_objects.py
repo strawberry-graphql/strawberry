@@ -8,7 +8,7 @@ from typing_extensions import Annotated
 import pytest
 
 import strawberry
-from strawberry.strawberry_type import (
+from strawberry.types.types import (
     StrawberryList,
     StrawberryOptional,
     StrawberryTypeVar,

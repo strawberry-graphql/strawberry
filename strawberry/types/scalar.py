@@ -16,7 +16,7 @@ from typing import (
 )
 
 from strawberry.exceptions import InvalidUnionTypeError
-from strawberry.strawberry_type import StrawberryType
+from strawberry.types.types import StrawberryType
 from strawberry.utils.str_converters import to_camel_case
 
 if TYPE_CHECKING:

@@ -3,8 +3,8 @@ from typing_extensions import Annotated, get_args
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.strawberry_type import StrawberryList
 from strawberry.types.auto import StrawberryAuto, auto
+from strawberry.types.types import StrawberryList
 
 
 @strawberry.type

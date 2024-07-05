@@ -8,8 +8,8 @@ from typing_extensions import Annotated
 import pytest
 
 import strawberry
-from strawberry.strawberry_type import get_object_definition
 from strawberry.types.field import StrawberryField
+from strawberry.types.types import get_object_definition
 
 
 def test_enum():
