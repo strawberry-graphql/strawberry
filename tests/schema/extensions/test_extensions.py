@@ -1342,7 +1342,7 @@ async def test_subscription_first_yields_error(
     async_extension.assert_expected()
 
 
-async def test_extensino_results_are_cleared_between_yields(
+async def test_extensions_results_are_cleared_between_subscription_yields(
     default_query_types_and_query: SchemaHelper,
 ) -> None:
     class MyExtension(SchemaExtension):
