@@ -314,10 +314,10 @@ class Schema(BaseSchema):
             extensions_runner=self.create_extensions_runner(
                 execution_context, sync=True
             ),
-            middleware_manager=self._get_middleware_manager(sync=True),
             execution_context_class=self.execution_context_class,
             allowed_operation_types=allowed_operation_types,
             process_errors=self.process_errors,
+            middleware_manager=self._get_middleware_manager(sync=True),
         )
 
         return result
@@ -348,6 +348,7 @@ class Schema(BaseSchema):
             execution_context=execution_context,
             extensions_runner=self.create_extensions_runner(execution_context),
             process_errors=self.process_errors,
+            middleware_manager=self._get_middleware_manager(),
         )
 
     async def subscribe(
@@ -371,8 +372,8 @@ class Schema(BaseSchema):
             self._schema,
             execution_context=execution_context,
             extensions_runner=self.create_extensions_runner(execution_context),
-            middleware_manager=self._get_middleware_manager(),
             process_errors=self.process_errors,
+            middleware_manager=self._get_middleware_manager(),
         )
 
     def _resolve_node_ids(self) -> None:

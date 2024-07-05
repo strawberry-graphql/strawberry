@@ -496,9 +496,9 @@ def test_raise_if_defined_both_legacy_and_new_style(default_query_types_and_quer
     schema = strawberry.Schema(
         query=default_query_types_and_query.query_type, extensions=[WrongUsageExtension]
     )
-    with pytest.raises(ValueError) as err:
-        schema.execute_sync(default_query_types_and_query.query)
-        assert "defines both legacy and new style extension hooks for" in str(err.value)
+    result = schema.execute_sync(default_query_types_and_query.query)
+    assert len(result.errors) == 1
+    assert isinstance(result.errors[0].original_error, ValueError)
 
 
 async def test_legacy_extension_supported():
@@ -1223,10 +1223,11 @@ def test_raise_if_hook_is_not_callable(default_query_types_and_query: SchemaHelp
     schema = strawberry.Schema(
         query=default_query_types_and_query.query_type, extensions=[MyExtension]
     )
-    with pytest.raises(
-        ValueError, match="Hook on_operation on <(.*)> must be callable, received 'ABC'"
-    ):
-        schema.execute_sync(default_query_types_and_query.query)
+    result = schema.execute_sync(default_query_types_and_query.query)
+    assert len(result.errors) == 1
+    assert isinstance(result.errors[0].original_error, ValueError)
+    assert result.errors[0].message.startswith("Hook on_operation on <")
+    assert result.errors[0].message.endswith("> must be callable, received 'ABC'")
 
 
 async def test_subscription(

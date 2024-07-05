@@ -88,11 +88,11 @@ def execute_sync(
     schema: GraphQLSchema,
     *,
     allowed_operation_types: Iterable[OperationType],
-    middleware_manager: MiddlewareManager,
     extensions_runner: SchemaExtensionsRunner,
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: ProccessErrors,
+    middleware_manager: MiddlewareManager,
 ) -> ExecutionResult:
     try:
         with extensions_runner.operation():
@@ -252,6 +252,7 @@ async def execute(
     execution_context: ExecutionContext,
     extensions_runner: SchemaExtensionsRunner,
     process_errors: ProccessErrors,
+    middleware_manager: MiddlewareManager,
 ) -> Union[ExecutionResult, ExecutionResultError]:
     try:
         async with extensions_runner.operation():
@@ -276,7 +277,7 @@ async def execute(
                         schema,
                         execution_context.graphql_document,
                         root_value=execution_context.root_value,
-                        middleware=execution_context.middleware_manager,
+                        middleware=middleware_manager,
                         variable_values=execution_context.variables,
                         operation_name=execution_context.operation_name,
                         context_value=execution_context.context,

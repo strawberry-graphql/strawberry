@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
     from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql.error.graphql_error import GraphQLError
-    from graphql.execution.middleware import MiddlewareManager
     from graphql.language import DocumentNode, OperationDefinitionNode
 
     from strawberry.schema import Schema
@@ -46,7 +45,6 @@ class ExecutionContext:
     validation_rules: Tuple[Type[ASTValidationRule], ...] = dataclasses.field(
         default_factory=lambda: tuple(specified_rules)
     )
-    middleware_manager: Optional[MiddlewareManager] = None
 
     # The operation name that is provided by the request
     provided_operation_name: dataclasses.InitVar[Optional[str]] = None
