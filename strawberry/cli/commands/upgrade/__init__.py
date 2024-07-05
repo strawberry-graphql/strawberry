@@ -48,6 +48,8 @@ def upgrade(
 
     python_target_version = tuple(int(x) for x in python_target.split("."))
 
+    transformer: ConvertUnionToAnnotatedUnion | UpdateImportsCodemod
+
     if codemod == "update-imports":
         transformer = UpdateImportsCodemod(context=CodemodContext())
 

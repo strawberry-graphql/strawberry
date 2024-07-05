@@ -1,42 +1,32 @@
 from __future__ import annotations
 
+import dataclasses
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     ClassVar,
+    Dict,
     List,
     Mapping,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
     overload,
 )
-from typing_extensions import Literal, Protocol, Self
+from typing_extensions import Literal, Protocol, Self, deprecated
 
+from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
+from strawberry.utils.inspect import get_specialized_type_var_map
 from strawberry.utils.typing import is_concrete_generic
+from strawberry.utils.typing import is_generic as is_type_generic
 
 if TYPE_CHECKING:
     from typing_extensions import TypeGuard
 
-    from strawberry.types.types import StrawberryObjectDefinition
-
-
-import dataclasses
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Dict,
-    Sequence,
-)
-from typing_extensions import deprecated
-
-from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
-from strawberry.utils.inspect import get_specialized_type_var_map
-from strawberry.utils.typing import is_generic as is_type_generic
-
-if TYPE_CHECKING:
     from graphql import GraphQLAbstractType, GraphQLResolveInfo
 
     from strawberry.types.field import StrawberryField
@@ -467,3 +457,17 @@ if TYPE_CHECKING:
 
 else:
     TypeDefinition = StrawberryObjectDefinition
+
+
+__all__ = [
+    "StrawberryContainer",
+    "StrawberryList",
+    "StrawberryObjectDefinition",
+    "StrawberryOptional",
+    "StrawberryType",
+    "StrawberryTypeVar",
+    "TypeDefinition",
+    "WithStrawberryObjectDefinition",
+    "get_object_definition",
+    "has_object_definition",
+]
