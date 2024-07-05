@@ -29,7 +29,7 @@ from strawberry.utils.typing import is_generic as is_type_generic
 if TYPE_CHECKING:
     from graphql import GraphQLAbstractType, GraphQLResolveInfo
 
-    from strawberry.field import StrawberryField
+    from strawberry.types.field import StrawberryField
 
 
 @dataclasses.dataclass(eq=False)

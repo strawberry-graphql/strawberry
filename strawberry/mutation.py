@@ -15,7 +15,7 @@ from typing import (
 )
 from typing_extensions import Literal
 
-from .field import (
+from strawberry.types.field import (
     _RESOLVER_TYPE,
     _RESOLVER_TYPE_ASYNC,
     _RESOLVER_TYPE_SYNC,

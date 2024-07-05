@@ -55,8 +55,8 @@ if TYPE_CHECKING:
     )
     from graphql.type.directives import GraphQLDirective
 
-    from strawberry.field import StrawberryField
     from strawberry.schema import BaseSchema
+    from strawberry.types.field import StrawberryField
 
 
 _T = TypeVar("_T")

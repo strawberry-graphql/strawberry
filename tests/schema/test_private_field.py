@@ -6,7 +6,7 @@ import pytest
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import PrivateStrawberryFieldError
-from strawberry.field import StrawberryField
+from strawberry.types.field import StrawberryField
 
 
 def test_private_field():

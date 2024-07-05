@@ -20,8 +20,8 @@ from strawberry.utils.typing import eval_type
 
 if TYPE_CHECKING:
     from strawberry.arguments import StrawberryArgument
-    from strawberry.field import StrawberryField
     from strawberry.strawberry_type import StrawberryType
+    from strawberry.types.field import StrawberryField
 
 
 class HasGraphQLName(Protocol):

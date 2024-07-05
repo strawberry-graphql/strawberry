@@ -3,8 +3,8 @@ from typing import Callable, List, Optional, Type, TypeVar
 from typing_extensions import dataclass_transform
 
 from strawberry.directive import directive_field
-from strawberry.field import StrawberryField, field
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
+from strawberry.types.field import StrawberryField, field
 from strawberry.types.object_type import _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 

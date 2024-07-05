@@ -14,7 +14,7 @@ from strawberry.extensions.field_extension import (
     FieldExtension,
     SyncExtensionResolver,
 )
-from strawberry.field import StrawberryField
+from strawberry.types.field import StrawberryField
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
 if TYPE_CHECKING:

@@ -2,7 +2,7 @@ import types
 from typing import List, Optional, Sequence, Type
 
 import strawberry
-from strawberry.field import StrawberryField
+from strawberry.types.field import StrawberryField
 
 
 def create_type(

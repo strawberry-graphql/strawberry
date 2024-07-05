@@ -33,8 +33,8 @@ from strawberry.experimental.pydantic.utils import (
     get_default_factory_for_field,
     get_private_fields,
 )
-from strawberry.field import StrawberryField
 from strawberry.types.auto import StrawberryAuto
+from strawberry.types.field import StrawberryField
 from strawberry.types.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.dataclasses import add_custom_init_fn

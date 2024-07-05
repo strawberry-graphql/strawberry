@@ -3,9 +3,9 @@ import textwrap
 from operator import getitem
 
 import strawberry
-from strawberry.field import StrawberryField
 from strawberry.printer import print_schema
 from strawberry.schema.config import StrawberryConfig
+from strawberry.types.field import StrawberryField
 
 
 def test_custom_field():

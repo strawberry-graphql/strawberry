@@ -7,7 +7,7 @@ from typing_extensions import Annotated
 
 from graphql import DirectiveLocation
 
-from strawberry.field import StrawberryField
+from strawberry.types.field import StrawberryField
 from strawberry.types.fields.resolver import (
     INFO_PARAMSPEC,
     ReservedType,

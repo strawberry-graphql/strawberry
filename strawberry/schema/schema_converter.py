@@ -53,7 +53,6 @@ from strawberry.exceptions import (
     ScalarAlreadyRegisteredError,
     UnresolvedFieldTypeError,
 )
-from strawberry.field import UNRESOLVED
 from strawberry.schema.types.scalar import _make_scalar_type
 from strawberry.strawberry_type import (
     StrawberryList,
@@ -63,6 +62,7 @@ from strawberry.strawberry_type import (
     has_object_definition,
 )
 from strawberry.types.enum import EnumDefinition
+from strawberry.types.field import UNRESOLVED
 from strawberry.types.info import Info
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.private import is_private
@@ -86,10 +86,10 @@ if TYPE_CHECKING:
     )
 
     from strawberry.directive import StrawberryDirective
-    from strawberry.field import StrawberryField
     from strawberry.schema.config import StrawberryConfig
     from strawberry.schema_directive import StrawberrySchemaDirective
     from strawberry.types.enum import EnumValue
+    from strawberry.types.field import StrawberryField
     from strawberry.types.scalar import ScalarDefinition
 
 

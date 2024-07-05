@@ -31,8 +31,8 @@ if TYPE_CHECKING:
         AsyncExtensionResolver,
         SyncExtensionResolver,
     )
-    from strawberry.field import StrawberryField
     from strawberry.types import Info
+    from strawberry.types.field import StrawberryField
 
 
 class BasePermission(abc.ABC):

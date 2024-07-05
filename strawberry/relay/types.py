@@ -26,9 +26,9 @@ from typing import (
 )
 from typing_extensions import Annotated, Literal, Self, TypeAlias, get_args, get_origin
 
-from strawberry.field import field
 from strawberry.relay.exceptions import NodeIDAnnotationError
 from strawberry.strawberry_type import StrawberryContainer, get_object_definition
+from strawberry.types.field import field
 from strawberry.types.info import Info  # noqa: TCH001
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.object_type import interface, type

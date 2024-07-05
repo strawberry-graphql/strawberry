@@ -10,8 +10,8 @@ from strawberry.exceptions import (
     FieldWithResolverAndDefaultValueError,
     PrivateStrawberryFieldError,
 )
-from strawberry.field import StrawberryField
 from strawberry.strawberry_type import has_object_definition
+from strawberry.types.field import StrawberryField
 from strawberry.types.private import is_private
 from strawberry.types.unset import UNSET
 

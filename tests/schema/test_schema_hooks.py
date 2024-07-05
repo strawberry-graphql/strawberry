@@ -2,7 +2,7 @@ import textwrap
 from typing import List
 
 import strawberry
-from strawberry.field import StrawberryField
+from strawberry.types.field import StrawberryField
 from strawberry.types.types import StrawberryObjectDefinition
 
 

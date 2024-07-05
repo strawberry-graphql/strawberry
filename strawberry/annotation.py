@@ -37,8 +37,8 @@ from strawberry.types.unset import UNSET
 from strawberry.utils.typing import eval_type, is_generic, is_type_var
 
 if TYPE_CHECKING:
-    from strawberry.field import StrawberryField
     from strawberry.strawberry_type import StrawberryType
+    from strawberry.types.field import StrawberryField
     from strawberry.types.union import StrawberryUnion
 
 

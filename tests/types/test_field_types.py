@@ -3,7 +3,7 @@ from typing import List, Optional, TypeVar
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.field import StrawberryField
+from strawberry.types.field import StrawberryField
 from strawberry.types.union import StrawberryUnion
 
 

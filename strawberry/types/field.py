@@ -31,7 +31,7 @@ from strawberry.strawberry_type import (
 )
 from strawberry.types.union import StrawberryUnion
 
-from .types.fields.resolver import StrawberryResolver
+from .fields.resolver import StrawberryResolver
 
 if TYPE_CHECKING:
     import builtins
@@ -39,10 +39,9 @@ if TYPE_CHECKING:
 
     from strawberry.arguments import StrawberryArgument
     from strawberry.extensions.field_extension import FieldExtension
+    from strawberry.permission import BasePermission
     from strawberry.types.info import Info
     from strawberry.types.types import StrawberryObjectDefinition
-
-    from .permission import BasePermission
 
 T = TypeVar("T")
 

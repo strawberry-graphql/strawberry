@@ -11,8 +11,8 @@ if TYPE_CHECKING:
     from graphql import DirectiveNode, GraphQLResolveInfo
 
     from strawberry.directive import StrawberryDirective
-    from strawberry.field import StrawberryField
     from strawberry.schema.schema import Schema
+    from strawberry.types.field import StrawberryField
     from strawberry.utils.await_maybe import AwaitableOrValue
 
 

@@ -7,7 +7,6 @@ specification and allow for a more natural way of defining GraphQL schemas.
 from . import experimental, federation, relay
 from .arguments import argument
 from .directive import directive, directive_field
-from .field import field
 from .mutation import mutation, subscription
 from .parent import Parent
 from .permission import BasePermission
@@ -16,6 +15,7 @@ from .schema import Schema
 from .schema_directive import schema_directive
 from .types.auto import auto
 from .types.enum import enum, enum_value
+from .types.field import field
 from .types.info import Info
 from .types.lazy_type import LazyType, lazy
 from .types.object_type import asdict, input, interface, type
