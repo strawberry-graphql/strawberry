@@ -1278,7 +1278,7 @@ def test_raise_if_hook_is_not_callable(default_query_types_and_query: SchemaHelp
     assert result.errors[0].message.endswith("> must be callable, received 'ABC'")
 
 
-async def test_subscription(
+async def test_subscription_success_many_fields(
     default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
 ) -> None:
     schema = strawberry.Schema(
@@ -1286,9 +1286,30 @@ async def test_subscription(
         subscription=default_query_types_and_query.subscription_type,
         extensions=[async_extension],
     )
-
+    subscription_per_yield_hooks_exp = []
+    for _ in range(5):  # number of yields in the subscription
+        subscription_per_yield_hooks_exp.extend(
+            ["on_execute Entered", "resolve", "on_execute Exited", "get_results"]
+        )
+    async_extension.expected = [
+        "on_operation Entered",
+        "on_parse Entered",
+        "on_parse Exited",
+        "on_validate Entered",
+        "on_validate Exited",
+        # first one would not yield anything if there are no errors.
+        # so it doesn't call the "resolve" / "get_results" hooks
+        "on_execute Entered",
+        "on_execute Exited",
+        *subscription_per_yield_hooks_exp,
+        # last one doesn't call the "resolve" / "get_results" hooks because
+        # the subscription is done
+        "on_execute Entered",
+        "on_execute Exited",
+        "on_operation Exited",
+    ]
     async for res in await schema.subscribe(default_query_types_and_query.subscription):
         assert res.data
         assert not res.errors
-        async_extension.assert_expected()
-        async_extension.clear()
+
+    async_extension.assert_expected()

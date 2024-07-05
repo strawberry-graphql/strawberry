@@ -58,28 +58,26 @@ async def subscribe(
                     middleware=middleware_manager,
                 )
 
-                # permission errors i.e would return here.
-                if isinstance(agen_or_result, OriginalExecutionResult):
+            # permission errors i.e would return here.
+            if isinstance(agen_or_result, OriginalExecutionResult):
+                yield await _handle_execution_result(
+                    execution_context,
+                    agen_or_result,
+                    extensions_runner,
+                    process_errors,
+                )
+            else:
+                agen = agen_or_result.__aiter__()
+                while True:
+                    async with extensions_runner.executing():
+                        try:
+                            origin_result = await agen.__anext__()
+                        except StopAsyncIteration:
+                            break
+
                     yield await _handle_execution_result(
                         execution_context,
-                        agen_or_result,
+                        origin_result,
                         extensions_runner,
                         process_errors,
                     )
-                else:
-                    agen = agen_or_result.__aiter__()
-                    running = True
-                    while running:
-                        async with extensions_runner.executing():
-                            try:
-                                origin_result = await agen.__anext__()
-                            except StopAsyncIteration:
-                                running = False
-                            except Exception as e:
-                                ...
-                            yield await _handle_execution_result(
-                                execution_context,
-                                origin_result,
-                                extensions_runner,
-                                process_errors,
-                            )
