@@ -68,15 +68,18 @@ async def subscribe(
                     )
                 else:
                     agen = agen_or_result.__aiter__()
-                    try:
-                        while True:
-                            async with extensions_runner.executing():
+                    running = True
+                    while running:
+                        async with extensions_runner.executing():
+                            try:
                                 origin_result = await agen.__anext__()
-                                yield await _handle_execution_result(
-                                    execution_context,
-                                    origin_result,
-                                    extensions_runner,
-                                    process_errors,
-                                )
-                    except StopAsyncIteration:
-                        ...
+                            except StopAsyncIteration:
+                                running = False
+                            except Exception as e:
+                                ...
+                            yield await _handle_execution_result(
+                                execution_context,
+                                origin_result,
+                                extensions_runner,
+                                process_errors,
+                            )

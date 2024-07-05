@@ -3,7 +3,7 @@ import dataclasses
 import enum
 import json
 import warnings
-from typing import Any, AsyncGenerator, List, Optional, Set, Type
+from typing import Any, AsyncGenerator, List, Optional, Type
 from unittest.mock import patch
 
 import pytest
@@ -196,14 +196,30 @@ class SchemaHelper:
 class ExampleExtension(SchemaExtension):
     def __init_subclass__(cls, **kwargs: Any):
         super().__init_subclass__(**kwargs)
-        cls.called_hooks = set()
+        cls.called_hooks = []
 
-    expected = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-    called_hooks: Set[int]
+    expected = [
+        "on_operation Entered",
+        "on_parse Entered",
+        "on_parse Exited",
+        "on_validate Entered",
+        "on_validate Exited",
+        "on_execute Entered",
+        "resolve",
+        "resolve",
+        "on_execute Exited",
+        "on_operation Exited",
+        "get_results",
+    ]
+    called_hooks: list[str]
 
     @classmethod
     def assert_expected(cls) -> None:
         assert cls.called_hooks == cls.expected
+
+    @classmethod
+    def clear(cls) -> None:
+        cls.called_hooks.clear()
 
 
 @pytest.fixture()
@@ -268,35 +284,38 @@ def test_can_initialize_extension(default_query_types_and_query):
     assert res.data == {"override": 20}
 
 
+@contextlib.contextmanager
+def hook_wrap(list_: List[str], hook_name: str):
+    list_.append(f"{hook_name} Entered")
+    yield
+    list_.append(f"{hook_name} Exited")
+
+
 @pytest.fixture()
 def async_extension() -> Type[ExampleExtension]:
     class MyExtension(ExampleExtension):
         async def on_operation(self):
-            self.called_hooks.add(1)
-            yield
-            self.called_hooks.add(2)
+            with hook_wrap(self.called_hooks, SchemaExtension.on_operation.__name__):
+                yield
 
         async def on_validate(self):
-            self.called_hooks.add(3)
-            yield
-            self.called_hooks.add(4)
+            with hook_wrap(self.called_hooks, SchemaExtension.on_validate.__name__):
+                yield
 
         async def on_parse(self):
-            self.called_hooks.add(5)
-            yield
-            self.called_hooks.add(6)
+            with hook_wrap(self.called_hooks, SchemaExtension.on_parse.__name__):
+                yield
 
         async def on_execute(self):
-            self.called_hooks.add(7)
-            yield
-            self.called_hooks.add(8)
+            with hook_wrap(self.called_hooks, SchemaExtension.on_execute.__name__):
+                yield
 
         async def get_results(self):
-            self.called_hooks.add(9)
+            self.called_hooks.append("get_results")
             return {"example": "example"}
 
         async def resolve(self, _next, root, info, *args: str, **kwargs: Any):
-            self.called_hooks.add(10)
+            self.called_hooks.append("resolve")
             return _next(root, info, *args, **kwargs)
 
     return MyExtension
@@ -306,31 +325,27 @@ def async_extension() -> Type[ExampleExtension]:
 def sync_extension() -> Type[ExampleExtension]:
     class MyExtension(ExampleExtension):
         def on_operation(self):
-            self.called_hooks.add(1)
-            yield
-            self.called_hooks.add(2)
+            with hook_wrap(self.called_hooks, SchemaExtension.on_operation.__name__):
+                yield
 
         def on_validate(self):
-            self.called_hooks.add(3)
-            yield
-            self.called_hooks.add(4)
+            with hook_wrap(self.called_hooks, SchemaExtension.on_validate.__name__):
+                yield
 
         def on_parse(self):
-            self.called_hooks.add(5)
-            yield
-            self.called_hooks.add(6)
+            with hook_wrap(self.called_hooks, SchemaExtension.on_parse.__name__):
+                yield
 
         def on_execute(self):
-            self.called_hooks.add(7)
-            yield
-            self.called_hooks.add(8)
+            with hook_wrap(self.called_hooks, SchemaExtension.on_execute.__name__):
+                yield
 
         def get_results(self):
-            self.called_hooks.add(9)
+            self.called_hooks.append("get_results")
             return {"example": "example"}
 
         def resolve(self, _next, root, info, *args: str, **kwargs: Any):
-            self.called_hooks.add(10)
+            self.called_hooks.append("resolve")
             return _next(root, info, *args, **kwargs)
 
     return MyExtension
@@ -356,14 +371,12 @@ async def test_mixed_sync_and_async_extension_hooks(
 ):
     class MyExtension(sync_extension):
         async def on_operation(self):
-            self.called_hooks.add(1)
-            yield
-            self.called_hooks.add(2)
+            with hook_wrap(self.called_hooks, SchemaExtension.on_operation.__name__):
+                yield
 
         async def on_parse(self):
-            self.called_hooks.add(5)
-            yield
-            self.called_hooks.add(6)
+            with hook_wrap(self.called_hooks, SchemaExtension.on_parse.__name__):
+                yield
 
     @strawberry.type
     class Person:
@@ -468,13 +481,16 @@ async def test_sync_extension_hooks(default_query_types_and_query, sync_extensio
 
 async def test_extension_no_yield(default_query_types_and_query):
     class SyncExt(ExampleExtension):
-        expected = {1, 2}
+        expected = [
+            f"{SchemaExtension.on_operation.__name__} Entered",
+            f"{SchemaExtension.on_parse.__name__} Entered",
+        ]
 
         def on_operation(self):
-            self.called_hooks.add(1)
+            self.called_hooks.append(self.__class__.expected[0])
 
         async def on_parse(self):
-            self.called_hooks.add(2)
+            self.called_hooks.append(self.__class__.expected[1])
 
     schema = strawberry.Schema(
         query=default_query_types_and_query.query_type, extensions=[SyncExt]
@@ -511,28 +527,40 @@ async def test_legacy_extension_supported():
 
         class CompatExtension(ExampleExtension):
             async def on_request_start(self):
-                self.called_hooks.add(1)
+                self.called_hooks.append(
+                    f"{SchemaExtension.on_operation.__name__} Entered"
+                )
 
             async def on_request_end(self):
-                self.called_hooks.add(2)
+                self.called_hooks.append(
+                    f"{SchemaExtension.on_operation.__name__} Exited"
+                )
 
             async def on_validation_start(self):
-                self.called_hooks.add(3)
+                self.called_hooks.append(
+                    f"{SchemaExtension.on_validate.__name__} Entered"
+                )
 
             async def on_validation_end(self):
-                self.called_hooks.add(4)
+                self.called_hooks.append(
+                    f"{SchemaExtension.on_validate.__name__} Exited"
+                )
 
             async def on_parsing_start(self):
-                self.called_hooks.add(5)
+                self.called_hooks.append(f"{SchemaExtension.on_parse.__name__} Entered")
 
             async def on_parsing_end(self):
-                self.called_hooks.add(6)
+                self.called_hooks.append(f"{SchemaExtension.on_parse.__name__} Exited")
 
             def on_executing_start(self):
-                self.called_hooks.add(7)
+                self.called_hooks.append(
+                    f"{SchemaExtension.on_execute.__name__} Entered"
+                )
 
             def on_executing_end(self):
-                self.called_hooks.add(8)
+                self.called_hooks.append(
+                    f"{SchemaExtension.on_execute.__name__} Exited"
+                )
 
         @strawberry.type
         class Person:
@@ -550,7 +578,9 @@ async def test_legacy_extension_supported():
         result = await schema.execute(query)
         assert result.errors is None
 
-        assert CompatExtension.called_hooks == {1, 2, 3, 4, 5, 6, 7, 8}
+        assert CompatExtension.called_hooks == list(
+            filter(lambda x: x.startswith("on_"), ExampleExtension.expected)
+        )
         assert "Event driven styled extensions for" in w[0].message.args[0]
 
 
@@ -563,19 +593,27 @@ async def test_legacy_only_start():
         )
 
         class CompatExtension(ExampleExtension):
-            expected = {1, 2, 3, 4}
+            expected = list(
+                filter(lambda x: x.endswith(" Entered"), ExampleExtension.expected)
+            )
 
             async def on_request_start(self):
-                self.called_hooks.add(1)
+                self.called_hooks.append(
+                    f"{SchemaExtension.on_operation.__name__} Entered"
+                )
 
             async def on_validation_start(self):
-                self.called_hooks.add(2)
+                self.called_hooks.append(
+                    f"{SchemaExtension.on_validate.__name__} Entered"
+                )
 
             async def on_parsing_start(self):
-                self.called_hooks.add(3)
+                self.called_hooks.append(f"{SchemaExtension.on_parse.__name__} Entered")
 
             def on_executing_start(self):
-                self.called_hooks.add(4)
+                self.called_hooks.append(
+                    f"{SchemaExtension.on_execute.__name__} Entered"
+                )
 
         @strawberry.type
         class Person:
@@ -593,7 +631,7 @@ async def test_legacy_only_start():
         result = await schema.execute(query)
         assert result.errors is None
 
-        assert CompatExtension.called_hooks == {1, 2, 3, 4}
+        CompatExtension.assert_expected()
         assert "Event driven styled extensions for" in w[0].message.args[0]
 
 
@@ -606,17 +644,27 @@ async def test_legacy_only_end():
         )
 
         class CompatExtension(ExampleExtension):
+            expected = list(
+                filter(lambda x: x.endswith(" Exited"), ExampleExtension.expected)
+            )
+
             async def on_request_end(self):
-                self.called_hooks.add(1)
+                self.called_hooks.append(
+                    f"{SchemaExtension.on_operation.__name__} Exited"
+                )
 
             async def on_validation_end(self):
-                self.called_hooks.add(2)
+                self.called_hooks.append(
+                    f"{SchemaExtension.on_validate.__name__} Exited"
+                )
 
             async def on_parsing_end(self):
-                self.called_hooks.add(3)
+                self.called_hooks.append(f"{SchemaExtension.on_parse.__name__} Exited")
 
             def on_executing_end(self):
-                self.called_hooks.add(4)
+                self.called_hooks.append(
+                    f"{SchemaExtension.on_execute.__name__} Exited"
+                )
 
         @strawberry.type
         class Person:
@@ -634,7 +682,7 @@ async def test_legacy_only_end():
         result = await schema.execute(query)
         assert result.errors is None
 
-        assert CompatExtension.called_hooks == {1, 2, 3, 4}
+        CompatExtension.assert_expected()
         assert "Event driven styled extensions for" in w[0].message.args[0]
 
 
@@ -1233,7 +1281,6 @@ def test_raise_if_hook_is_not_callable(default_query_types_and_query: SchemaHelp
 async def test_subscription(
     default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
 ) -> None:
-    # `resolve` extension is not supported yet see https://github.com/graphql-python/graphql-core/issues/188
     schema = strawberry.Schema(
         query=default_query_types_and_query.query_type,
         subscription=default_query_types_and_query.subscription_type,
@@ -1243,5 +1290,5 @@ async def test_subscription(
     async for res in await schema.subscribe(default_query_types_and_query.subscription):
         assert res.data
         assert not res.errors
-
-    async_extension.assert_expected()
+        async_extension.assert_expected()
+        async_extension.clear()

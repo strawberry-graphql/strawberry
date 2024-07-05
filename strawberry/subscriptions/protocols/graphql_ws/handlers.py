@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional, cast
 
-from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError
 
 from strawberry.subscriptions.protocols.graphql_ws import (
@@ -20,10 +19,12 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
     GQL_STOP,
 )
+from strawberry.types.execution import ExecutionResultError
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
+    from strawberry.schema.subscribe import SubscriptionResult
     from strawberry.subscriptions.protocols.graphql_ws.types import (
         ConnectionInitPayload,
         OperationMessage,
@@ -137,11 +138,10 @@ class BaseGraphQLWSHandler(ABC):
             self.schema.process_errors([error])
             return
 
-        if isinstance(result_source, GraphQLExecutionResult):
+        if isinstance(result_source, ExecutionResultError):
             assert result_source.errors
             error_payload = result_source.errors[0].formatted
             await self.send_message(GQL_ERROR, operation_id, error_payload)
-            self.schema.process_errors(result_source.errors)
             return
 
         self.subscriptions[operation_id] = result_source
@@ -160,7 +160,7 @@ class BaseGraphQLWSHandler(ABC):
 
     async def handle_async_results(
         self,
-        result_source: AsyncGenerator,
+        result_source: SubscriptionResult,
         operation_id: str,
     ) -> None:
         try:
