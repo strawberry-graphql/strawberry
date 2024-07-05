@@ -148,7 +148,7 @@ class StrawberryField(dataclasses.Field):
 
         # Automatically add the permissions extension
         if len(self.permission_classes):
-            from .permission import PermissionExtension
+            from strawberry.permission import PermissionExtension
 
             if not self.extensions:
                 self.extensions = []

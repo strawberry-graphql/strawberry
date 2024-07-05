@@ -28,8 +28,7 @@ if TYPE_CHECKING:
     from typing_extensions import Literal
 
     from strawberry.extensions.field_extension import FieldExtension
-
-    from .permission import BasePermission
+    from strawberry.permission import BasePermission
 
 # NOTE: we are separating the sync and async resolvers because using both
 # in the same function will cause mypy to raise an error. Not sure if it is a bug
