@@ -1313,3 +1313,34 @@ async def test_subscription_success_many_fields(
         assert not res.errors
 
     async_extension.assert_expected()
+
+
+async def test_subscription_first_yields_error(
+    default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
+) -> None:
+    @strawberry.type()
+    class Subscription:
+        @strawberry.subscription()
+        async def count(self) -> AsyncGenerator[int, None]:
+            raise ValueError("This is an error")
+
+    schema = strawberry.Schema(
+        query=default_query_types_and_query.query_type,
+        subscription=Subscription,
+        extensions=[async_extension],
+    )
+    async_extension.expected = [
+        "on_operation Entered",
+        "on_parse Entered",
+        "on_parse Exited",
+        "on_validate Entered",
+        "on_validate Exited",
+        "on_execute Entered",
+        "on_execute Exited",
+        "get_results",
+        "on_operation Exited",
+    ]
+    async for res in await schema.subscribe(default_query_types_and_query.subscription):
+        assert res.errors
+
+    async_extension.assert_expected()
