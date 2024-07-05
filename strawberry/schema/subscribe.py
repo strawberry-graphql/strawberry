@@ -69,6 +69,7 @@ async def subscribe(
             else:
                 agen = agen_or_result.__aiter__()
                 while True:
+                    execution_context.extensions_results = {}
                     async with extensions_runner.executing():
                         try:
                             origin_result = await agen.__anext__()

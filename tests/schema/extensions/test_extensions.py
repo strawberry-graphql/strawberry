@@ -1344,3 +1344,28 @@ async def test_subscription_first_yields_error(
         assert res.errors
 
     async_extension.assert_expected()
+
+
+async def test_extensino_results_are_cleared_between_yields(
+    default_query_types_and_query: SchemaHelper,
+) -> None:
+    class MyExtension(SchemaExtension):
+        execution_number = 0
+
+        def on_execute(self):
+            yield
+            self.execution_context.extensions_results[str(self.execution_number)] = (
+                self.execution_number
+            )
+            self.execution_number += 1
+
+    schema = strawberry.Schema(
+        query=default_query_types_and_query.query_type,
+        subscription=default_query_types_and_query.subscription_type,
+        extensions=[MyExtension],
+    )
+    res_num = 1  # the first execution is done before the first yield
+    async for res in await schema.subscribe(default_query_types_and_query.subscription):
+        assert res.extensions == {str(res_num): res_num}
+        assert not res.errors
+        res_num += 1
