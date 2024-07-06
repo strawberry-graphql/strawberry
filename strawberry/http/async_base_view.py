@@ -20,9 +20,9 @@ from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
+from strawberry.types.context_wrapper import ContextWrapper
 from strawberry.types.graphql import OperationType
 
-from strawberry.types.context_wrapper import ContextWrapper
 from .base import BaseView
 from .exceptions import HTTPException
 from .types import FormData, HTTPMethod, QueryParams
