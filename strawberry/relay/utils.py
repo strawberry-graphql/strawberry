@@ -188,3 +188,11 @@ class SliceMetadata:
             end=end,
             expected=expected,
         )
+
+
+__all__ = [
+    "from_base64",
+    "to_base64",
+    "should_resolve_list_connection_edges",
+    "SliceMetadata",
+]

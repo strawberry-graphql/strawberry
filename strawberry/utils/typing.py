@@ -409,3 +409,22 @@ def eval_type(
         )
 
     return type_
+
+
+__all__ = [
+    "get_generic_alias",
+    "is_generic_alias",
+    "is_list",
+    "is_union",
+    "is_optional",
+    "get_optional_annotation",
+    "get_list_annotation",
+    "is_concrete_generic",
+    "is_generic_subclass",
+    "is_generic",
+    "is_type_var",
+    "is_classvar",
+    "type_has_annotation",
+    "get_parameters",
+    "eval_type",
+]

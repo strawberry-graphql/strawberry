@@ -26,3 +26,6 @@ class PyInstrument(SchemaExtension):
         profiler.stop()
 
         Path(self._report_path, encoding="utf-8").write_text(profiler.output_html())
+
+
+__all__ = ["PyInstrument"]

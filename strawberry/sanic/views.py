@@ -177,3 +177,6 @@ class GraphQLView(
             return await self.run(request)
         except HTTPException as e:
             return HTTPResponse(e.reason, status=e.status_code)
+
+
+__all__ = ["GraphQLView"]

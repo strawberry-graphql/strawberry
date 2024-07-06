@@ -433,3 +433,6 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors {introspection.errors!r}")
 
         return introspection.data
+
+
+__all__ = ["Schema"]

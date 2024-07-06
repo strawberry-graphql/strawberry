@@ -18,3 +18,6 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         return self._client.post(
             self.url, data=body, content_type="application/json", headers=headers
         )
+
+
+__all__ = ["GraphQLTestClient"]

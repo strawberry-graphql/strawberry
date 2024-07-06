@@ -113,3 +113,6 @@ class BaseSchema(Protocol):
     ) -> None:
         for error in errors:
             StrawberryLogger.error(error, execution_context)
+
+
+__all__ = ["BaseSchema"]

@@ -311,3 +311,6 @@ def union(
         description=description,
         directives=directives,
     )
+
+
+__all__ = ["StrawberryUnion", "union"]

@@ -81,7 +81,9 @@ class NodeExtension(FieldExtension):
         # async extensions.
         return await retval if inspect.isawaitable(retval) else retval
 
-    def get_node_resolver(self, field: StrawberryField):  # noqa: ANN201
+    def get_node_resolver(
+        self, field: StrawberryField
+    ) -> Callable[[Info, GlobalID], Union[Node, None, Awaitable[Union[Node, None]]]]:
         type_ = field.type
         is_optional = isinstance(type_, StrawberryOptional)
 
@@ -97,7 +99,9 @@ class NodeExtension(FieldExtension):
 
         return resolver
 
-    def get_node_list_resolver(self, field: StrawberryField):  # noqa: ANN201
+    def get_node_list_resolver(
+        self, field: StrawberryField
+    ) -> Callable[[Info, List[GlobalID]], Union[List[Node], Awaitable[List[Node]]]]:
         type_ = field.type
         assert isinstance(type_, StrawberryList)
         is_optional = isinstance(type_.of_type, StrawberryOptional)
@@ -472,3 +476,6 @@ def connection(
     if resolver is not None:
         f = f(resolver)
     return f
+
+
+__all__ = ["node", "connection"]

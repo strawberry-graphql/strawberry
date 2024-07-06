@@ -78,3 +78,10 @@ DEFAULT_SCALAR_REGISTRY: Dict[object, ScalarDefinition] = {
         )
     ),
 }
+
+__all__ = [
+    "DEFAULT_SCALAR_REGISTRY",
+    "_get_scalar_definition",
+    "_make_scalar_definition",
+    "_make_scalar_type",
+]

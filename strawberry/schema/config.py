@@ -20,3 +20,6 @@ class StrawberryConfig:
     ) -> None:
         if auto_camel_case is not None:
             self.name_converter.auto_camel_case = auto_camel_case
+
+
+__all__ = ["StrawberryConfig"]

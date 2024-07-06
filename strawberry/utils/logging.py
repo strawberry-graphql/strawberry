@@ -23,3 +23,6 @@ class StrawberryLogger:
         **logger_kwargs: Any,
     ) -> None:
         cls.logger.error(error, exc_info=error.original_error, **logger_kwargs)
+
+
+__all__ = ["StrawberryLogger"]

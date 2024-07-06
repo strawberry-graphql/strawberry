@@ -206,3 +206,6 @@ class SyncBaseHTTPView(
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
+
+
+__all__ = ["SyncBaseHTTPView"]

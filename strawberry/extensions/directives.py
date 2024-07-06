@@ -85,3 +85,6 @@ def process_directive(
     if value_parameter:
         arguments[value_parameter.name] = value
     return strawberry_directive, arguments
+
+
+__all__ = ["DirectivesExtension", "DirectivesExtensionSync"]

@@ -605,3 +605,6 @@ class SourceFinder:
             if self.cst
             else None
         )
+
+
+__all__ = ["SourceFinder"]

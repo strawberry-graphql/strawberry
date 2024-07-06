@@ -41,3 +41,6 @@ def pretty_print_graphql_operation(
         print(  # noqa: T201
             highlight(variables_json, lexers.JsonLexer(), Terminal256Formatter())
         )
+
+
+__all__ = ["pretty_print_graphql_operation"]

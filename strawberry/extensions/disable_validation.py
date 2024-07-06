@@ -7,6 +7,7 @@ class DisableValidation(SchemaExtension):
     """Disable query validation.
 
     Example:
+
     ```python
     import strawberry
     from strawberry.extensions import DisableValidation
@@ -28,3 +29,6 @@ class DisableValidation(SchemaExtension):
     def on_operation(self) -> Iterator[None]:
         self.execution_context.validation_rules = ()  # remove all validation_rules
         yield
+
+
+__all__ = ["DisableValidation"]

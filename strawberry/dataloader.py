@@ -267,3 +267,16 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
     except Exception as e:
         for task in batch.tasks:
             task.future.set_exception(e)
+
+
+__all__ = [
+    "DataLoader",
+    "Batch",
+    "LoaderTask",
+    "AbstractCache",
+    "DefaultCache",
+    "should_create_new_batch",
+    "get_current_batch",
+    "dispatch",
+    "dispatch_batch",
+]

@@ -203,3 +203,6 @@ def field(
         extensions=extensions,
         graphql_type=graphql_type,
     )
+
+
+__all__ = ["field"]

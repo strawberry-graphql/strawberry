@@ -226,3 +226,21 @@ class Policy(FederationDirective):
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
         name="policy", url="https://specs.apollo.dev/federation/v2.7"
     )
+
+
+__all__ = [
+    "External",
+    "Requires",
+    "Provides",
+    "Key",
+    "Shareable",
+    "Link",
+    "Tag",
+    "Override",
+    "Inaccessible",
+    "ComposeDirective",
+    "InterfaceObject",
+    "Authenticated",
+    "RequiresScopes",
+    "Policy",
+]

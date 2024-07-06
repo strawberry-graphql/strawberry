@@ -9,6 +9,7 @@ class ParserCache(SchemaExtension):
     """Add LRU caching the parsing step during execution to improve performance.
 
     Example:
+
     ```python
     import strawberry
     from strawberry.extensions import ParserCache
@@ -40,3 +41,6 @@ class ParserCache(SchemaExtension):
             execution_context.query, **execution_context.parse_options
         )
         yield
+
+
+__all__ = ["ParserCache"]

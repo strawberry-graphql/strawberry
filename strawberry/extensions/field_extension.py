@@ -154,3 +154,6 @@ def build_field_extension_resolvers(
             f"If possible try to change the execution order so that all sync-only "
             f"extensions are executed first."
         )
+
+
+__all__ = ["FieldExtension"]

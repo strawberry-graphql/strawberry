@@ -165,3 +165,6 @@ def _get_fields(
         fields[field_name] = field
 
     return list(fields.values())
+
+
+__all__ = ["_get_fields"]

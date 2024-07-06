@@ -71,3 +71,6 @@ def create_type(
         directives=directives,
         extend=extend,
     )
+
+
+__all__ = ["create_type"]

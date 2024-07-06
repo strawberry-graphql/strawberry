@@ -61,3 +61,6 @@ class GraphQLProtocolTypeRouter(ProtocolTypeRouter):
                 ),
             }
         )
+
+
+__all__ = ["GraphQLProtocolTypeRouter"]

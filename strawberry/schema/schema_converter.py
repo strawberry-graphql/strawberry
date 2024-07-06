@@ -998,3 +998,6 @@ class GraphQLCoreConverter:
             second_origin = None
 
         raise DuplicatedTypeName(first_origin, second_origin, name)
+
+
+__all__ = ["GraphQLCoreConverter"]

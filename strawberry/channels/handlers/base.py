@@ -212,3 +212,6 @@ class ChannelsConsumer(AsyncConsumer):
 
 class ChannelsWSConsumer(ChannelsConsumer, AsyncJsonWebsocketConsumer):
     """Base channels websocket async consumer."""
+
+
+__all__ = ["ChannelsConsumer", "ChannelsWSConsumer"]

@@ -34,3 +34,6 @@ def merge_types(name: str, types: Tuple[type, ...]) -> type:
         )
 
     return strawberry.type(type(name, types, {}))
+
+
+__all__ = ["merge_types"]

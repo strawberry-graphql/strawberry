@@ -63,3 +63,6 @@ def is_scalar(
         return True
 
     return hasattr(annotation, "_scalar_definition")
+
+
+__all__ = ["ID", "JSON", "Base16", "Base32", "Base64", "is_scalar"]

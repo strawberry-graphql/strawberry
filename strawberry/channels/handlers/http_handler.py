@@ -304,3 +304,6 @@ class SyncGraphQLHTTPConsumer(
         root_value: Optional[RootValue] = UNSET,
     ) -> ChannelsResponse:
         return super().run(request, context, root_value)
+
+
+__all__ = ["GraphQLHTTPConsumer", "SyncGraphQLHTTPConsumer"]

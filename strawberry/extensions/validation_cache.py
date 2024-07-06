@@ -43,3 +43,6 @@ class ValidationCache(SchemaExtension):
         )
         execution_context.errors = errors
         yield
+
+
+__all__ = ["ValidationCache"]

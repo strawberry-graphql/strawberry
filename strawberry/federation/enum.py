@@ -117,3 +117,6 @@ def enum(
         return wrap
 
     return wrap(_cls)  # pragma: no cover
+
+
+__all__ = ["enum", "enum_value"]

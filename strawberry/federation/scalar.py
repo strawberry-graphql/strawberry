@@ -166,3 +166,6 @@ def scalar(
         return wrap
 
     return wrap(cls)
+
+
+__all__ = ["scalar"]

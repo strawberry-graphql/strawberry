@@ -16,6 +16,7 @@ class MaxAliasesLimiter(AddValidationRules):
     """Add a validator to limit the number of aliases used.
 
     Example:
+
     ```python
     import strawberry
     from strawberry.extensions import MaxAliasesLimiter
@@ -24,10 +25,7 @@ class MaxAliasesLimiter(AddValidationRules):
     ```
     """
 
-    def __init__(
-        self,
-        max_alias_count: int,
-    ) -> None:
+    def __init__(self, max_alias_count: int) -> None:
         """Initialize the MaxAliasesLimiter.
 
         Args:

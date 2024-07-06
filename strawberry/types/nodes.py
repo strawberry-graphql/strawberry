@@ -150,3 +150,6 @@ class SelectedField:
                 info, getattr(node.selection_set, "selections", [])
             ),
         )
+
+
+__all__ = ["convert_selections", "FragmentSpread", "InlineFragment", "SelectedField"]

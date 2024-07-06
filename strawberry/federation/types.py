@@ -12,3 +12,6 @@ LinkImport = scalar(object, name="link__Import")
 class LinkPurpose(Enum):
     SECURITY = "SECURITY"
     EXECUTION = "EXECUTION"
+
+
+__all__ = ["FieldSet", "LinkImport", "LinkPurpose"]

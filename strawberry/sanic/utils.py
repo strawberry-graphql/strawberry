@@ -37,3 +37,6 @@ def convert_request_to_files_dict(request: Request) -> Dict[str, Any]:
         files_dict[field_name] = BytesIO(file_list[0].body)
 
     return files_dict
+
+
+__all__ = ["convert_request_to_files_dict"]

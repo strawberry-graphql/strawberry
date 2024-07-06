@@ -343,3 +343,6 @@ def subscription(
         extensions=extensions,
         graphql_type=graphql_type,
     )
+
+
+__all__ = ["mutation", "subscription"]

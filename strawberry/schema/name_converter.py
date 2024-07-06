@@ -184,3 +184,6 @@ class NameConverter:
         assert obj.python_name
 
         return self.apply_naming_config(obj.python_name)
+
+
+__all__ = ["NameConverter"]

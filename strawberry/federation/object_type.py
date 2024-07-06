@@ -369,3 +369,6 @@ def interface_object(
         is_interface=False,
         is_interface_object=True,
     )
+
+
+__all__ = ["type", "input", "interface", "interface_object"]

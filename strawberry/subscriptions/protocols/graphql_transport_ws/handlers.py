@@ -400,3 +400,6 @@ class Operation:
             # de-register the operation _before_ sending the final message
             self.handler.forget_id(self.id)
         await self.handler.send_message(message)
+
+
+__all__ = ["BaseGraphQLTransportWSHandler", "Operation"]

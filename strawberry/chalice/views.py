@@ -145,3 +145,6 @@ class GraphQLView(
                 message=e.reason,
                 http_status_code=e.status_code,
             )
+
+
+__all__ = ["GraphQLView"]

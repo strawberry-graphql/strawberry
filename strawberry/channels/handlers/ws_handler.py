@@ -126,3 +126,6 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
             "connection_params": connection_params,
             "ws": request,
         }  # type: ignore
+
+
+__all__ = ["GraphQLWSConsumer"]

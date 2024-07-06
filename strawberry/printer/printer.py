@@ -588,3 +588,6 @@ def print_schema(schema: BaseSchema) -> str:
             ),
         )
     )
+
+
+__all__ = ["print_schema"]

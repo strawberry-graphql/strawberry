@@ -40,3 +40,5 @@ class Query:
         return UserRow(id_="1234")
 ```
 """
+
+__all__ = ["Parent"]

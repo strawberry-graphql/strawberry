@@ -199,3 +199,9 @@ class PermissionExtension(FieldExtension):
             if iscoroutinefunction(permission.has_permission)
         ]
         return len(async_permissions) == 0
+
+
+__all__ = [
+    "BasePermission",
+    "PermissionExtension",
+]

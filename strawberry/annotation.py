@@ -383,3 +383,6 @@ def _is_input_type(type_: Any) -> bool:
         return False
 
     return type_.__strawberry_definition__.is_input
+
+
+__all__ = ["StrawberryAnnotation"]

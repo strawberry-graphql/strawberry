@@ -177,3 +177,9 @@ class AsyncGraphQLView(
 
     async def render_graphql_ide(self, request: Request) -> Response:
         return render_template_string(self.graphql_ide_html)  # type: ignore
+
+
+__all__ = [
+    "GraphQLView",
+    "AsyncGraphQLView",
+]

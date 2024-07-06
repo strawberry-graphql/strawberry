@@ -153,3 +153,6 @@ def lazy(module_path: str) -> StrawberryLazyReference:
     ```
     """
     return StrawberryLazyReference(module_path)
+
+
+__all__ = ["LazyType", "StrawberryLazyReference", "lazy"]

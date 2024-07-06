@@ -208,3 +208,6 @@ class BaseGraphQLWSHandler(ABC):
         if payload is not None:
             data["payload"] = payload
         await self.send_json(data)
+
+
+__all__ = ["BaseGraphQLWSHandler"]

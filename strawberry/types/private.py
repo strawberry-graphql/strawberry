@@ -28,3 +28,6 @@ class User:
 
 def is_private(type_: object) -> bool:
     return type_has_annotation(type_, StrawberryPrivate)
+
+
+__all__ = ["Private", "is_private"]

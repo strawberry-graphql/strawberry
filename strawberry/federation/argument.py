@@ -27,3 +27,6 @@ def argument(
         deprecation_reason=deprecation_reason,
         directives=directives,
     )
+
+
+__all__ = ["argument"]

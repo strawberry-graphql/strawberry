@@ -392,3 +392,6 @@ def _has_federation_keys(
         return any(_is_key(directive) for directive in definition.directives or [])
 
     return False
+
+
+__all__ = ["Schema"]

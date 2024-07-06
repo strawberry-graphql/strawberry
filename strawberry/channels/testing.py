@@ -169,3 +169,6 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
             error.path = f_error.get("path", None)
             result.append(error)
         return result
+
+
+__all__ = ["GraphQLWebsocketCommunicator"]

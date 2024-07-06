@@ -90,3 +90,6 @@ class InputMutationExtension(FieldExtension):
             **kwargs,
             **vars(input_args),
         )
+
+
+__all__ = ["InputMutationExtension"]
