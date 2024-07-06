@@ -80,7 +80,7 @@ class Info(Generic[ContextType, RootValueType]):
 
     @property
     def context(self) -> ContextType:
-        if type(self._raw_info.context) is ContextWrapper:
+        if isinstance(self._raw_info.context, ContextWrapper):
             return self._raw_info.context.context
         return self._raw_info.context
 
