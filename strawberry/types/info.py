@@ -86,7 +86,7 @@ class Info(Generic[ContextType, RootValueType]):
 
     @property
     def input_extensions(self) -> Dict[str, Any]:
-        if type(self._raw_info.context) is ContextWrapper:
+        if isinstance(self._raw_info.context, ContextWrapper):
             return self._raw_info.context.extensions
         return {}
 
