@@ -23,7 +23,7 @@ from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 
-from ..types.context_wrapper import ContextWrapper
+from strawberry.types.context_wrapper import ContextWrapper
 from .base import BaseView
 from .exceptions import HTTPException
 from .types import HTTPMethod, QueryParams
