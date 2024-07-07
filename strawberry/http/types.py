@@ -5,7 +5,7 @@ HTTPMethod = Literal[
     "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "TRACE"
 ]
 
-QueryParams = Mapping[str, Optional[Union[str, List[str]]]]
+QueryParams = Mapping[str, Optional[str]]
 
 
 class FormData(TypedDict):

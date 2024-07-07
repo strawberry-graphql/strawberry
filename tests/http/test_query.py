@@ -168,6 +168,14 @@ async def test_passing_invalid_json_get(http_client: HttpClient):
     assert "Unable to parse request body as JSON" in response.text
 
 
+async def test_query_parameters_are_never_interpreted_as_list(http_client: HttpClient):
+    response = await http_client.get(
+        url="/graphql?query={ hello }&variables={}&variables={}",
+    )
+
+    assert response.status_code == 200
+
+
 async def test_missing_query(http_client: HttpClient):
     response = await http_client.post(
         url="/graphql",

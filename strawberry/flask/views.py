@@ -26,7 +26,7 @@ class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
         self.request = request
 
     @property
-    def query_params(self) -> Mapping[str, Union[str, Optional[List[str]]]]:
+    def query_params(self) -> QueryParams:
         return self.request.args.to_dict()
 
     @property

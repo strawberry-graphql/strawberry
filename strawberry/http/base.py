@@ -4,7 +4,7 @@ from typing_extensions import Protocol
 
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE, get_graphql_ide_html
-from strawberry.http.types import HTTPMethod
+from strawberry.http.types import HTTPMethod, QueryParams
 
 from .exceptions import HTTPException
 from .typevars import Request
@@ -50,16 +50,11 @@ class BaseView(Generic[Request]):
     def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
         return json.dumps(response_data)
 
-    def parse_query_params(
-        self, params: Mapping[str, Optional[Union[str, List[str]]]]
-    ) -> Dict[str, Any]:
+    def parse_query_params(self, params: QueryParams) -> Dict[str, Any]:
         params = dict(params)
 
         if "variables" in params:
             variables = params["variables"]
-
-            if isinstance(variables, list):
-                variables = variables[0]
 
             if variables:
                 params["variables"] = self.parse_json(variables)
