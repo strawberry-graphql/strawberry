@@ -49,37 +49,34 @@ async def _subscribe(
             yield await _handle_execution_result(
                 execution_context, initial_error, extensions_runner, process_errors
             )
-
-        async with extensions_runner.executing():
-            agen_or_result: Union[
-                OriginalExecutionResult,
-                AsyncGenerator[OriginalExecutionResult, None],
-            ] = await original_subscribe(
-                schema,
-                execution_context.graphql_document,
-                root_value=execution_context.root_value,
-                variable_values=execution_context.variables,
-                operation_name=execution_context.operation_name,
-                context_value=execution_context.context,
-                middleware=middleware_manager,
-            )
-
-        if isinstance(agen_or_result, OriginalExecutionResult):
-            yield await _handle_execution_result(
-                execution_context,
-                ExecutionResultError(data=None, errors=agen_or_result.errors),
-                extensions_runner,
-                process_errors,
-            )
-            execution_context.extensions_results = {}
-
-        else:
-            aiterator = agen_or_result.__aiter__()
-            running = True
-            while running:
-                # reset extensions results for each iteration
-                execution_context.extensions_results = {}
-                try:
+        try:
+            async with extensions_runner.executing():
+                agen_or_result: Union[
+                    OriginalExecutionResult,
+                    AsyncGenerator[OriginalExecutionResult, None],
+                ] = await original_subscribe(
+                    schema,
+                    execution_context.graphql_document,
+                    root_value=execution_context.root_value,
+                    variable_values=execution_context.variables,
+                    operation_name=execution_context.operation_name,
+                    context_value=execution_context.context,
+                    middleware=middleware_manager,
+                )
+            # Handle immediate errors.
+            if isinstance(agen_or_result, OriginalExecutionResult):
+                yield await _handle_execution_result(
+                    execution_context,
+                    ExecutionResultError(data=None, errors=agen_or_result.errors),
+                    extensions_runner,
+                    process_errors,
+                )
+            else:
+                aiterator = agen_or_result.__aiter__()
+                running = True
+                while running:
+                    # reset extensions results for each iteration
+                    execution_context.extensions_results = {}
                     async with extensions_runner.executing():
                         try:
                             origin_result = await aiterator.__anext__()
@@ -101,17 +98,17 @@ async def _subscribe(
                         extensions_runner,
                         process_errors,
                     )
-                # catch exceptions raised in `on_execute` hook.
-                except Exception as exc:
-                    origin_result = OriginalExecutionResult(
-                        data=None, errors=[_coerce_error(exc)]
-                    )
-                    yield await _handle_execution_result(
-                        execution_context,
-                        origin_result,
-                        extensions_runner,
-                        process_errors,
-                    )
+        # catch exceptions raised in `on_execute` hook.
+        except Exception as exc:
+            origin_result = OriginalExecutionResult(
+                data=None, errors=[_coerce_error(exc)]
+            )
+            yield await _handle_execution_result(
+                execution_context,
+                origin_result,
+                extensions_runner,
+                process_errors,
+            )
 
 
 async def subscribe(

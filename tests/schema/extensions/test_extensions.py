@@ -1427,3 +1427,23 @@ async def test_extensions_results_are_cleared_between_subscription_yields(
         assert res.extensions == {str(res_num): res_num}
         assert not res.errors
         res_num += 1
+
+
+async def test_subscription_catches_extension_errors(
+    default_query_types_and_query: SchemaHelper,
+) -> None:
+    class MyExtension(SchemaExtension):
+        def on_execute(self):
+            raise ValueError("This is an error")
+
+    schema = strawberry.Schema(
+        query=default_query_types_and_query.query_type,
+        subscription=default_query_types_and_query.subscription_type,
+        extensions=[MyExtension],
+    )
+    async for res in assert_agen(
+        await schema.subscribe(default_query_types_and_query.subscription)
+    ):
+        assert res.errors
+        assert not res.data
+        assert res.errors[0].message == "This is an error"
