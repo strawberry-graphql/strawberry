@@ -1,9 +1,7 @@
 import contextlib
-import dataclasses
-import enum
 import json
 import warnings
-from typing import Any, AsyncGenerator, List, Optional, Type
+from typing import Any, List, Optional, Type
 from unittest.mock import patch
 
 import pytest
@@ -14,7 +12,8 @@ from graphql import execute as original_execute
 import strawberry
 from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.extensions import SchemaExtension
-from strawberry.types.execution import ExecutionResult
+
+from .conftest import ExampleExtension, ExecType, SchemaHelper, hook_wrap
 
 
 def test_base_extension():
@@ -186,81 +185,6 @@ def test_extension_access_to_root_value():
     assert root_value == "ROOT"
 
 
-@dataclasses.dataclass
-class SchemaHelper:
-    query_type: type
-    subscription_type: type
-    query: str
-    subscription: str
-
-
-class ExampleExtension(SchemaExtension):
-    def __init_subclass__(cls, **kwargs: Any):
-        super().__init_subclass__(**kwargs)
-        cls.called_hooks = []
-
-    expected = [
-        "on_operation Entered",
-        "on_parse Entered",
-        "on_parse Exited",
-        "on_validate Entered",
-        "on_validate Exited",
-        "on_execute Entered",
-        "resolve",
-        "resolve",
-        "on_execute Exited",
-        "on_operation Exited",
-        "get_results",
-    ]
-    called_hooks: List[str]
-
-    @classmethod
-    def assert_expected(cls) -> None:
-        assert cls.called_hooks == cls.expected
-
-
-@pytest.fixture()
-def default_query_types_and_query() -> SchemaHelper:
-    @strawberry.type
-    class Person:
-        name: str = "Jess"
-
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def person(self) -> Person:
-            return Person()
-
-    @strawberry.type
-    class Subscription:
-        @strawberry.subscription
-        async def count(self) -> AsyncGenerator[int, None]:
-            for i in range(5):
-                yield i
-
-    subscription = "subscription TestSubscribe { count }"
-    query = "query TestQuery { person { name } }"
-    return SchemaHelper(
-        query_type=Query,
-        query=query,
-        subscription_type=Subscription,
-        subscription=subscription,
-    )
-
-
-class ExecType(enum.Enum):
-    SYNC = enum.auto()
-    ASYNC = enum.auto()
-
-    def is_async(self) -> bool:
-        return self == ExecType.ASYNC
-
-
-@pytest.fixture(params=[ExecType.ASYNC, ExecType.SYNC])
-def exec_type(request: pytest.FixtureRequest) -> ExecType:
-    return request.param
-
-
 def test_can_initialize_extension(default_query_types_and_query):
     class CustomizableExtension(SchemaExtension):
         def __init__(self, arg: int):
@@ -279,43 +203,6 @@ def test_can_initialize_extension(default_query_types_and_query):
     res = schema.execute_sync(query=default_query_types_and_query.query)
     assert not res.errors
     assert res.data == {"override": 20}
-
-
-@contextlib.contextmanager
-def hook_wrap(list_: List[str], hook_name: str):
-    list_.append(f"{hook_name} Entered")
-    yield
-    list_.append(f"{hook_name} Exited")
-
-
-@pytest.fixture()
-def async_extension() -> Type[ExampleExtension]:
-    class MyExtension(ExampleExtension):
-        async def on_operation(self):
-            with hook_wrap(self.called_hooks, SchemaExtension.on_operation.__name__):
-                yield
-
-        async def on_validate(self):
-            with hook_wrap(self.called_hooks, SchemaExtension.on_validate.__name__):
-                yield
-
-        async def on_parse(self):
-            with hook_wrap(self.called_hooks, SchemaExtension.on_parse.__name__):
-                yield
-
-        async def on_execute(self):
-            with hook_wrap(self.called_hooks, SchemaExtension.on_execute.__name__):
-                yield
-
-        async def get_results(self):
-            self.called_hooks.append("get_results")
-            return {"example": "example"}
-
-        async def resolve(self, _next, root, info, *args: str, **kwargs: Any):
-            self.called_hooks.append("resolve")
-            return _next(root, info, *args, **kwargs)
-
-    return MyExtension
 
 
 @pytest.fixture()
@@ -1273,177 +1160,3 @@ def test_raise_if_hook_is_not_callable(default_query_types_and_query: SchemaHelp
     assert isinstance(result.errors[0].original_error, ValueError)
     assert result.errors[0].message.startswith("Hook on_operation on <")
     assert result.errors[0].message.endswith("> must be callable, received 'ABC'")
-
-
-def assert_agen(obj) -> AsyncGenerator[ExecutionResult, None]:
-    assert isinstance(obj, AsyncGenerator)
-    return obj
-
-
-async def test_subscription_success_many_fields(
-    default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
-) -> None:
-    schema = strawberry.Schema(
-        query=default_query_types_and_query.query_type,
-        subscription=default_query_types_and_query.subscription_type,
-        extensions=[async_extension],
-    )
-    subscription_per_yield_hooks_exp = []
-    for _ in range(5):  # number of yields in the subscription
-        subscription_per_yield_hooks_exp.extend(
-            ["on_execute Entered", "resolve", "on_execute Exited", "get_results"]
-        )
-    async_extension.expected = [
-        "on_operation Entered",
-        "on_parse Entered",
-        "on_parse Exited",
-        "on_validate Entered",
-        "on_validate Exited",
-        # first one would not yield anything if there are no errors.
-        # so it doesn't call the "resolve" / "get_results" hooks
-        "on_execute Entered",
-        "on_execute Exited",
-        *subscription_per_yield_hooks_exp,
-        # last one doesn't call the "resolve" / "get_results" hooks because
-        # the subscription is done
-        "on_execute Entered",
-        "on_execute Exited",
-        "on_operation Exited",
-    ]
-    async for res in assert_agen(
-        await schema.subscribe(default_query_types_and_query.subscription)
-    ):
-        assert res.data
-        assert not res.errors
-
-    async_extension.assert_expected()
-
-
-async def test_subscription_extension_handles_immediate_errors(
-    default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
-) -> None:
-    @strawberry.type()
-    class Subscription:
-        @strawberry.subscription()
-        async def count(self) -> AsyncGenerator[int, None]:
-            raise ValueError("This is an error")
-
-    schema = strawberry.Schema(
-        query=default_query_types_and_query.query_type,
-        subscription=Subscription,
-        extensions=[async_extension],
-    )
-    async_extension.expected = [
-        "on_operation Entered",
-        "on_parse Entered",
-        "on_parse Exited",
-        "on_validate Entered",
-        "on_validate Exited",
-        "on_execute Entered",
-        "on_execute Exited",
-        "get_results",
-        "on_operation Exited",
-    ]
-
-    res = await schema.subscribe(default_query_types_and_query.subscription)
-    assert res.errors
-
-    async_extension.assert_expected()
-
-
-async def test_error_after_first_yield_in_subscription(
-    default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
-) -> None:
-    @strawberry.type()
-    class Subscription:
-        @strawberry.subscription()
-        async def count(self) -> AsyncGenerator[int, None]:
-            yield 1
-            raise ValueError("This is an error")
-
-    schema = strawberry.Schema(
-        query=default_query_types_and_query.query_type,
-        subscription=Subscription,
-        extensions=[async_extension],
-    )
-
-    agen = await schema.subscribe(default_query_types_and_query.subscription)
-    assert isinstance(agen, AsyncGenerator)
-    res1 = await agen.__anext__()
-    assert res1.data
-    assert not res1.errors
-    res2 = await agen.__anext__()
-    assert not res2.data
-    assert res2.errors
-    # close the generator
-    with pytest.raises(StopAsyncIteration):
-        await agen.__anext__()
-    async_extension.expected = [
-        "on_operation Entered",
-        "on_parse Entered",
-        "on_parse Exited",
-        "on_validate Entered",
-        "on_validate Exited",
-        "on_execute Entered",
-        "on_execute Exited",
-        "on_execute Entered",
-        "resolve",
-        "on_execute Exited",
-        "get_results",
-        "on_execute Entered",
-        "on_execute Exited",
-        "get_results",
-        "on_operation Exited",
-    ]
-    async_extension.assert_expected()
-
-
-async def test_extensions_results_are_cleared_between_subscription_yields(
-    default_query_types_and_query: SchemaHelper,
-) -> None:
-    class MyExtension(SchemaExtension):
-        execution_number = 0
-
-        def on_execute(self):
-            yield
-            self.execution_number += 1
-
-        def get_results(self):
-            return {str(self.execution_number): self.execution_number}
-
-    schema = strawberry.Schema(
-        query=default_query_types_and_query.query_type,
-        subscription=default_query_types_and_query.subscription_type,
-        extensions=[MyExtension],
-    )
-    # the first execution is done before the first yield
-    # and because `get_results` is called after `on_execute`
-    # we expect the first extension result to be 2
-    res_num = 2
-
-    async for res in assert_agen(
-        await schema.subscribe(default_query_types_and_query.subscription)
-    ):
-        assert res.extensions == {str(res_num): res_num}
-        assert not res.errors
-        res_num += 1
-
-
-async def test_subscription_catches_extension_errors(
-    default_query_types_and_query: SchemaHelper,
-) -> None:
-    class MyExtension(SchemaExtension):
-        def on_execute(self):
-            raise ValueError("This is an error")
-
-    schema = strawberry.Schema(
-        query=default_query_types_and_query.query_type,
-        subscription=default_query_types_and_query.subscription_type,
-        extensions=[MyExtension],
-    )
-    async for res in assert_agen(
-        await schema.subscribe(default_query_types_and_query.subscription)
-    ):
-        assert res.errors
-        assert not res.data
-        assert res.errors[0].message == "This is an error"
