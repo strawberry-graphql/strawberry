@@ -15,6 +15,7 @@ from typing_extensions import Annotated
 import pytest
 
 import strawberry
+from strawberry.types.execution import ExecutionResultError
 
 
 @pytest.mark.asyncio
@@ -236,3 +237,23 @@ async def test_subscription_with_annotated():
 
     assert not result.errors
     assert result.data["example"] == "Hi"
+
+
+async def test_subscription_immediate_error():
+    @strawberry.type
+    class Query:
+        x: str = "Hello"
+
+    @strawberry.type
+    class Subscription:
+        @strawberry.subscription()
+        async def example(self) -> AsyncGenerator[str, None]:
+            return "fds"
+
+    schema = strawberry.Schema(query=Query, subscription=Subscription)
+
+    query = "subscription { example }"
+
+    res_or_agen = await schema.subscribe(query)
+    assert isinstance(res_or_agen, ExecutionResultError)
+    assert res_or_agen.errors

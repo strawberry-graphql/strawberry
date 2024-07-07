@@ -54,8 +54,9 @@ async def test_calls_handle_errors(
             {
                 "message": "Cannot query field 'hey' on type 'Query'.",
                 "locations": [{"line": 1, "column": 3}],
-            }
+            },
         ],
+        "extensions": {"example": "example"},
     }
 
     call_args = async_mock.call_args[0] if async_mock.called else sync_mock.call_args[0]

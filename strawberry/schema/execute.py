@@ -47,7 +47,7 @@ class ParseOptions(TypedDict):
     max_tokens: NotRequired[int]
 
 
-ProccessErrors: TypeAlias = (
+ProcessErrors: TypeAlias = (
     "Callable[[List[GraphQLError], Optional[ExecutionContext]], None]"
 )
 
@@ -91,7 +91,7 @@ def execute_sync(
     extensions_runner: SchemaExtensionsRunner,
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
-    process_errors: ProccessErrors,
+    process_errors: ProcessErrors,
     middleware_manager: MiddlewareManager,
 ) -> ExecutionResult:
     try:
@@ -228,7 +228,7 @@ async def _handle_execution_result(
     context: ExecutionContext,
     result: Union[GraphQLExecutionResult, ExecutionResult],
     extensions_runner: SchemaExtensionsRunner,
-    process_errors: ProccessErrors,
+    process_errors: ProcessErrors,
 ) -> ExecutionResult:
     # Set errors on the context so that it's easier
     # to access in extensions
@@ -251,7 +251,7 @@ async def execute(
     schema: GraphQLSchema,
     execution_context: ExecutionContext,
     extensions_runner: SchemaExtensionsRunner,
-    process_errors: ProccessErrors,
+    process_errors: ProcessErrors,
     middleware_manager: MiddlewareManager,
 ) -> Union[ExecutionResult, ExecutionResultError]:
     try:

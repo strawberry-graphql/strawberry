@@ -375,7 +375,7 @@ class Schema(BaseSchema):
         )
         extensions = self.get_extensions()
 
-        return subscribe(
+        return await subscribe(
             self._schema,
             execution_context=execution_context,
             extensions_runner=self.create_extensions_runner(

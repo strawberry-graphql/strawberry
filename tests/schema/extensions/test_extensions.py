@@ -1311,7 +1311,7 @@ async def test_subscription_success_many_fields(
     async_extension.assert_expected()
 
 
-async def test_subscription_first_yields_error(
+async def test_subscription_extension_handles_errors(
     default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
 ) -> None:
     @strawberry.type()
@@ -1336,8 +1336,9 @@ async def test_subscription_first_yields_error(
         "get_results",
         "on_operation Exited",
     ]
-    async for res in await schema.subscribe(default_query_types_and_query.subscription):
-        assert res.errors
+
+    res = await schema.subscribe(default_query_types_and_query.subscription)
+    assert res.errors
 
     async_extension.assert_expected()
 
@@ -1350,8 +1351,8 @@ async def test_extensions_results_are_cleared_between_subscription_yields(
 
         def on_execute(self):
             yield
-            self.execution_context.extensions_results[str(self.execution_number)] = (
-                self.execution_number
+            self.execution_context.update_extensions_result(
+                {str(self.execution_number): self.execution_number}
             )
             self.execution_number += 1
 

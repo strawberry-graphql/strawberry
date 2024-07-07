@@ -416,7 +416,11 @@ async def test_channel_listen_group_cm(ws: WebsocketCommunicator):
     assert (
         response
         == NextMessage(
-            id="sub1", payload={"data": {"listenerWithConfirmation": "Hello there!"}}
+            id="sub1",
+            payload={
+                "data": {"listenerWithConfirmation": "Hello there!"},
+                "extensions": {"example": "example"},
+            },
         ).as_dict()
     )
 
