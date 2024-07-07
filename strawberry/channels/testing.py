@@ -140,9 +140,9 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
             message_type = response["type"]
             if message_type == NextMessage.type:
                 payload = NextMessage(**response).payload
-                ret = ExecutionResult(payload["data"], None)
+                ret = ExecutionResult(payload.get("data"), None)
                 if "errors" in payload:
-                    ret.errors = self.process_errors(payload["errors"])
+                    ret.errors = self.process_errors(payload.get("errors") or [])
                 ret.extensions = payload.get("extensions", None)
                 yield ret
             elif message_type == ErrorMessage.type:

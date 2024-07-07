@@ -199,7 +199,7 @@ class Schema(BaseSchema):
             if isinstance(extension, SchemaExtension):
                 init_extensions.append(extension)
             else:
-                init_extensions.append(extension(execution_context=None))
+                init_extensions.append(extension(execution_context=None))  # type: ignore[arg-type]
         return init_extensions
 
     def create_extensions_runner(

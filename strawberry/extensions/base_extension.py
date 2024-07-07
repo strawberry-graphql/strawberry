@@ -58,7 +58,8 @@ class SchemaExtension:
     ) -> AwaitableOrValue[object]:
         return _next(root, info, *args, **kwargs)
 
-    get_results: Callable[[], AwaitableOrValue[Dict[str, Any]]] | None = None
+    def get_results(self) -> AwaitableOrValue[Dict[str, Any]]:
+        return {}
 
 
 Hook = Callable[[SchemaExtension], AsyncIteratorOrIterator[None]]

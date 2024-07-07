@@ -11,10 +11,10 @@ from strawberry.extensions.context import (
 )
 from strawberry.utils.await_maybe import await_maybe
 
+from . import SchemaExtension
+
 if TYPE_CHECKING:
     from strawberry.types import ExecutionContext
-
-    from . import SchemaExtension
 
 
 class SchemaExtensionsRunner:
@@ -43,7 +43,9 @@ class SchemaExtensionsRunner:
     def get_extensions_results_sync(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {}
         for extension in self.extensions:
-            if (get_results := extension.get_results) is not None:
+            if (
+                get_results := extension.get_results
+            ) is not SchemaExtension.get_results:
                 if inspect.iscoroutinefunction(get_results):
                     msg = "Cannot use async extension hook during sync execution"
                     raise RuntimeError(msg)
@@ -55,7 +57,9 @@ class SchemaExtensionsRunner:
         data: Dict[str, Any] = {}
 
         for extension in self.extensions:
-            if (get_results := extension.get_results) is not None:
+            if (
+                get_results := extension.get_results
+            ) is not SchemaExtension.get_results:
                 results = await await_maybe(get_results())
                 data.update(results)
 

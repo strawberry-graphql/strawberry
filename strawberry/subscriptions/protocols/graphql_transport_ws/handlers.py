@@ -23,6 +23,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     ConnectionInitMessage,
     ErrorMessage,
     NextMessage,
+    NextPayload,
     PingMessage,
     PongMessage,
     SubscribeMessage,
@@ -311,7 +312,7 @@ class BaseGraphQLTransportWSHandler(ABC):
 
     async def handle_async_results(
         self,
-        result_source: AsyncGenerator,
+        result_source: AsyncIterator[ExecutionResult],
         operation: Operation,
     ) -> None:
         try:
@@ -327,7 +328,7 @@ class BaseGraphQLTransportWSHandler(ABC):
                     # it was already done by schema.execute()
                     return
                 else:
-                    next_payload = {"data": result.data}
+                    next_payload: NextPayload = {"data": result.data}
                     if result.errors:
                         next_payload["errors"] = [
                             err.formatted for err in result.errors
@@ -336,6 +337,7 @@ class BaseGraphQLTransportWSHandler(ABC):
                         next_payload["extensions"] = result.extensions
                     next_message = NextMessage(id=operation.id, payload=next_payload)
                     await operation.send_message(next_message)
+        # TODO: I think this is redundant by now.
         except Exception as error:
             # GraphQLErrors are handled by graphql-core and included in the
             # ExecutionResult

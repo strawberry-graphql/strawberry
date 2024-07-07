@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import contextlib
-from typing import TYPE_CHECKING, AsyncGenerator, AsyncIterator, Union
+from collections.abc import Awaitable
+from typing import TYPE_CHECKING, AsyncGenerator, AsyncIterator, Union, cast
 
 from graphql import (
     ExecutionResult as OriginalExecutionResult,
@@ -30,6 +31,11 @@ SubscriptionResult: TypeAlias = Union[
     ExecutionResultError, AsyncIterator[ExecutionResult]
 ]
 
+OriginSubscriptionResult = Union[
+    OriginalExecutionResult,
+    AsyncGenerator[OriginalExecutionResult, None],
+]
+
 
 async def _subscribe(
     schema: GraphQLSchema,
@@ -51,18 +57,22 @@ async def _subscribe(
             )
         try:
             async with extensions_runner.executing():
-                agen_or_result: Union[
-                    OriginalExecutionResult,
-                    AsyncGenerator[OriginalExecutionResult, None],
-                ] = await original_subscribe(
-                    schema,
-                    execution_context.graphql_document,
-                    root_value=execution_context.root_value,
-                    variable_values=execution_context.variables,
-                    operation_name=execution_context.operation_name,
-                    context_value=execution_context.context,
-                    middleware=middleware_manager,
+                # GraphQL-core actually returns here value (for validation errors i.e) or awaitable
+                # but since we do validation beforehand I couldn't see a case where it would return an initial value
+                assert execution_context.graphql_document is not None
+                agen_or_result = await cast(
+                    Awaitable[OriginSubscriptionResult],
+                    original_subscribe(
+                        schema,
+                        execution_context.graphql_document,
+                        root_value=execution_context.root_value,
+                        variable_values=execution_context.variables,
+                        operation_name=execution_context.operation_name,
+                        context_value=execution_context.context,
+                        middleware=middleware_manager,
+                    ),
                 )
+
             # Handle immediate errors.
             if isinstance(agen_or_result, OriginalExecutionResult):
                 yield await _handle_execution_result(
@@ -79,7 +89,9 @@ async def _subscribe(
                     execution_context.extensions_results = {}
                     async with extensions_runner.executing():
                         try:
-                            origin_result = await aiterator.__anext__()
+                            origin_result: Union[
+                                ExecutionResult, OriginalExecutionResult
+                            ] = await aiterator.__anext__()
 
                         except StopAsyncIteration:
                             break

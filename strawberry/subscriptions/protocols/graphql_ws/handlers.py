@@ -19,14 +19,16 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
     GQL_STOP,
 )
-from strawberry.types.execution import ExecutionResultError
+from strawberry.types.execution import ExecutionResult, ExecutionResultError
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
     from strawberry.schema import BaseSchema
-    from strawberry.schema.subscribe import SubscriptionResult
     from strawberry.subscriptions.protocols.graphql_ws.types import (
         ConnectionInitPayload,
+        DataPayload,
         OperationMessage,
         OperationMessagePayload,
         StartPayload,
@@ -160,22 +162,26 @@ class BaseGraphQLWSHandler(ABC):
 
     async def handle_async_results(
         self,
-        result_source: SubscriptionResult,
+        result_source: AsyncIterator[ExecutionResult],
         operation_id: str,
     ) -> None:
         try:
             async for result in result_source:
-                payload = {"data": result.data}
+                payload: DataPayload = {"data": result.data}
                 if result.errors:
                     payload["errors"] = [err.formatted for err in result.errors]
+                if result.extensions:
+                    payload["extensions"] = result.extensions
                 await self.send_message(GQL_DATA, operation_id, payload)
                 # log errors after send_message to prevent potential
                 # slowdown of sending result
+                # TODO: is that called twice now?
                 if result.errors:
                     self.schema.process_errors(result.errors)
         except asyncio.CancelledError:
             # CancelledErrors are expected during task cleanup.
             pass
+        # TODO: I think this is redundant by now.
         except Exception as error:
             # GraphQLErrors are handled by graphql-core and included in the
             # ExecutionResult
