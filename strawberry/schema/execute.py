@@ -117,18 +117,6 @@ def execute_sync(
                         extensions=extensions_runner.get_extensions_results_sync(),
                     )
 
-                except Exception as error:  # pragma: no cover
-                    error = GraphQLError(str(error), original_error=error)
-
-                    execution_context.errors = [error]
-                    process_errors([error], execution_context)
-
-                    return ExecutionResult(
-                        data=None,
-                        errors=[error],
-                        extensions=extensions_runner.get_extensions_results_sync(),
-                    )
-
             if execution_context.operation_type not in allowed_operation_types:
                 raise InvalidOperationTypeError(execution_context.operation_type)
 
@@ -258,7 +246,7 @@ async def execute(
             if errors := await _parse_and_validate_async(
                 execution_context, extensions_runner
             ):
-                await _handle_execution_result(
+                return await _handle_execution_result(
                     execution_context, errors, extensions_runner, process_errors
                 )
             assert execution_context.graphql_document
