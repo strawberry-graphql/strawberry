@@ -1,4 +1,4 @@
-from typing import Any, List, Mapping, Optional, Union
+from typing import Any, Mapping, Optional
 from typing_extensions import Literal, TypedDict
 
 HTTPMethod = Literal[
