@@ -124,7 +124,11 @@ def execute_sync(
                 _run_validation(execution_context)
                 if execution_context.errors:
                     process_errors(execution_context.errors, execution_context)
-                    return ExecutionResult(data=None, errors=execution_context.errors)
+                    return ExecutionResult(
+                        data=None,
+                        errors=execution_context.errors,
+                        extensions=extensions_runner.get_extensions_results_sync(),
+                    )
 
             with extensions_runner.executing():
                 if not execution_context.result:
