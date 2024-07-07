@@ -250,7 +250,7 @@ async def test_can_send_payload_with_additional_things(ws_raw: WebSocketClient):
     assert json.loads(data.data) == {
         "type": "next",
         "id": "1",
-        "payload": {"data": {"echo": "Hi"}},
+        "payload": {"data": {"echo": "Hi"}, "extensions": {"example": "example"}},
     }
 
 
@@ -400,7 +400,7 @@ async def test_subscription_field_errors(ws: WebSocketClient):
         assert response["payload"][0]["locations"] == [{"line": 1, "column": 16}]
         assert (
             response["payload"][0]["message"]
-            == "The subscription field 'notASubscriptionField' is not defined."
+            == "Cannot query field 'notASubscriptionField' on type 'Subscription'."
         )
         process_errors.assert_called_once()
 

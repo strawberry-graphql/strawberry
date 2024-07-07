@@ -233,7 +233,7 @@ def test_v2_input_with_nonscalar_default():
     }
 
     input OwningInput {
-      nonScalarType: NonScalarTypeInput! = {id: 10}
+      nonScalarType: NonScalarTypeInput! = { id: 10 }
       id: Int! = 10
     }
 
