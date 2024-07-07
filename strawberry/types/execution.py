@@ -97,7 +97,13 @@ class ExecutionResult:
     extensions: Optional[Dict[str, Any]] = None
 
 
-class ExecutionResultError(ExecutionResult): ...
+class ExecutionResultError(ExecutionResult):
+    """
+    Used to diffrentiate between a successful subscription result and an immediate error.
+
+    Immediate errors are errors that at the first iteration of the subscription.
+    These errors should alert the integration level that the operation should be canceled immediatly.
+    """
 
 
 class ParseOptions(TypedDict):

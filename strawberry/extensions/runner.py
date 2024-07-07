@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-import warnings
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from strawberry.extensions.context import (
@@ -45,11 +44,6 @@ class SchemaExtensionsRunner:
         data: Dict[str, Any] = {}
         for extension in self.extensions:
             if (get_results := extension.get_results) is not None:
-                warnings.warn(
-                    "get_results is deprecated, use `execution_context.update_extensions_result()` instead.",
-                    DeprecationWarning,
-                    stacklevel=2,
-                )
                 if inspect.iscoroutinefunction(get_results):
                     msg = "Cannot use async extension hook during sync execution"
                     raise RuntimeError(msg)
@@ -62,11 +56,6 @@ class SchemaExtensionsRunner:
 
         for extension in self.extensions:
             if (get_results := extension.get_results) is not None:
-                warnings.warn(
-                    "get_results is deprecated, use `execution_context.update_extensions_result()` instead.",
-                    DeprecationWarning,
-                    stacklevel=2,
-                )
                 results = await await_maybe(get_results())
                 data.update(results)
 

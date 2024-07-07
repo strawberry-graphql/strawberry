@@ -190,9 +190,9 @@ def execute_sync(
 async def _parse_and_validate_async(
     context: ExecutionContext, extensions_runner: SchemaExtensionsRunner
 ) -> Optional[ExecutionResultError]:
+    if not context.query:
+        raise MissingQueryError()
     async with extensions_runner.parsing():
-        if not context.query:
-            raise MissingQueryError()
         try:
             if not context.graphql_document:
                 context.graphql_document = parse_document(context.query)
@@ -249,21 +249,17 @@ async def execute(
     extensions_runner: SchemaExtensionsRunner,
     process_errors: ProcessErrors,
     middleware_manager: MiddlewareManager,
-) -> Union[ExecutionResult, ExecutionResultError]:
+) -> ExecutionResult:
     try:
         async with extensions_runner.operation():
             # Note: In graphql-core the schema would be validated here but in
             # Strawberry we are validating it at initialisation time instead
 
-            errors = await _parse_and_validate_async(
+            if errors := await _parse_and_validate_async(
                 execution_context, extensions_runner
-            )
-            if errors:
-                return cast(
-                    ExecutionResultError,
-                    await _handle_execution_result(
-                        execution_context, errors, extensions_runner, process_errors
-                    ),
+            ):
+                await _handle_execution_result(
+                    execution_context, errors, extensions_runner, process_errors
                 )
             assert execution_context.graphql_document
             # if there was no parsing error
