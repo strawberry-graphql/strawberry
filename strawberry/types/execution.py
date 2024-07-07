@@ -60,9 +60,6 @@ class ExecutionContext:
     def __post_init__(self, provided_operation_name: str | None) -> None:
         self._provided_operation_name = provided_operation_name
 
-    def update_extensions_result(self, data: Dict[str, Any]) -> None:
-        self.extensions_results.update(data)
-
     @property
     def operation_name(self) -> Optional[str]:
         if self._provided_operation_name:

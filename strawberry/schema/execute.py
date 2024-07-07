@@ -172,16 +172,12 @@ def execute_sync(
     except (MissingQueryError, InvalidOperationTypeError) as e:
         raise e
     except Exception as exc:
-        error = (
-            exc
-            if isinstance(exc, GraphQLError)
-            else GraphQLError(str(exc), original_error=exc)
-        )
-        execution_context.errors = [error]
-        process_errors([error], execution_context)
+        errors = [_coerce_error(exc)]
+        execution_context.errors = errors
+        process_errors(errors, execution_context)
         return ExecutionResult(
             data=None,
-            errors=[error],
+            errors=errors,
             extensions=extensions_runner.get_extensions_results_sync(),
         )
     return ExecutionResult(
@@ -292,14 +288,9 @@ async def execute(
     except (MissingQueryError, InvalidOperationTypeError) as e:
         raise e
     except Exception as exc:
-        error = (
-            exc
-            if isinstance(exc, GraphQLError)
-            else GraphQLError(str(exc), original_error=exc)
-        )
         return await _handle_execution_result(
             execution_context,
-            ExecutionResult(data=None, errors=[error]),
+            ExecutionResult(data=None, errors=[_coerce_error(exc)]),
             extensions_runner,
             process_errors,
         )
@@ -308,3 +299,9 @@ async def execute(
     return await _handle_execution_result(
         execution_context, res, extensions_runner, process_errors
     )
+
+
+def _coerce_error(error: Union[GraphQLError, Exception]) -> GraphQLError:
+    if isinstance(error, GraphQLError):
+        return error
+    return GraphQLError(str(error), original_error=error)

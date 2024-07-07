@@ -11,7 +11,12 @@ from graphql.execution import subscribe as original_subscribe
 from strawberry.types import ExecutionResult
 from strawberry.types.execution import ExecutionContext, ExecutionResultError
 
-from .execute import ProcessErrors, _handle_execution_result, _parse_and_validate_async
+from .execute import (
+    ProcessErrors,
+    _coerce_error,
+    _handle_execution_result,
+    _parse_and_validate_async,
+)
 
 if TYPE_CHECKING:
     from typing_extensions import TypeAlias
@@ -66,22 +71,47 @@ async def _subscribe(
                 extensions_runner,
                 process_errors,
             )
+            execution_context.extensions_results = {}
+
         else:
             aiterator = agen_or_result.__aiter__()
-            while True:
+            running = True
+            while running:
+                # reset extensions results for each iteration
                 execution_context.extensions_results = {}
-                async with extensions_runner.executing():
-                    try:
-                        origin_result = await aiterator.__anext__()
-                    except StopAsyncIteration:
-                        break
+                try:
+                    async with extensions_runner.executing():
+                        try:
+                            origin_result = await aiterator.__anext__()
 
-                yield await _handle_execution_result(
-                    execution_context,
-                    origin_result,
-                    extensions_runner,
-                    process_errors,
-                )
+                        except StopAsyncIteration:
+                            break
+                        except Exception as exc:
+                            # graphql-core doesn't handle exceptions raised in the async generator.
+                            origin_result = ExecutionResult(
+                                data=None, errors=[_coerce_error(exc)]
+                            )
+                            running = False
+                    # we could have yielded in the except block above.
+                    # but this way we make sure `get_result` hook is called deterministically after
+                    # `on_execute` hook is done.
+                    yield await _handle_execution_result(
+                        execution_context,
+                        origin_result,
+                        extensions_runner,
+                        process_errors,
+                    )
+                # catch exceptions raised in `on_execute` hook.
+                except Exception as exc:
+                    origin_result = OriginalExecutionResult(
+                        data=None, errors=[_coerce_error(exc)]
+                    )
+                    yield await _handle_execution_result(
+                        execution_context,
+                        origin_result,
+                        extensions_runner,
+                        process_errors,
+                    )
 
 
 async def subscribe(

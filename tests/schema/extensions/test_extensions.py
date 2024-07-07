@@ -14,6 +14,7 @@ from graphql import execute as original_execute
 import strawberry
 from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.extensions import SchemaExtension
+from strawberry.types.execution import ExecutionResult
 
 
 def test_base_extension():
@@ -1274,6 +1275,11 @@ def test_raise_if_hook_is_not_callable(default_query_types_and_query: SchemaHelp
     assert result.errors[0].message.endswith("> must be callable, received 'ABC'")
 
 
+def assert_agen(obj) -> AsyncGenerator[ExecutionResult, None]:
+    assert isinstance(obj, AsyncGenerator)
+    return obj
+
+
 async def test_subscription_success_many_fields(
     default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
 ) -> None:
@@ -1304,14 +1310,16 @@ async def test_subscription_success_many_fields(
         "on_execute Exited",
         "on_operation Exited",
     ]
-    async for res in await schema.subscribe(default_query_types_and_query.subscription):
+    async for res in assert_agen(
+        await schema.subscribe(default_query_types_and_query.subscription)
+    ):
         assert res.data
         assert not res.errors
 
     async_extension.assert_expected()
 
 
-async def test_subscription_extension_handles_errors(
+async def test_subscription_extension_handles_immediate_errors(
     default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
 ) -> None:
     @strawberry.type()
@@ -1343,6 +1351,53 @@ async def test_subscription_extension_handles_errors(
     async_extension.assert_expected()
 
 
+async def test_error_after_first_yield_in_subscription(
+    default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
+) -> None:
+    @strawberry.type()
+    class Subscription:
+        @strawberry.subscription()
+        async def count(self) -> AsyncGenerator[int, None]:
+            yield 1
+            raise ValueError("This is an error")
+
+    schema = strawberry.Schema(
+        query=default_query_types_and_query.query_type,
+        subscription=Subscription,
+        extensions=[async_extension],
+    )
+
+    agen = await schema.subscribe(default_query_types_and_query.subscription)
+    assert isinstance(agen, AsyncGenerator)
+    res1 = await agen.__anext__()
+    assert res1.data
+    assert not res1.errors
+    res2 = await agen.__anext__()
+    assert not res2.data
+    assert res2.errors
+    # close the generator
+    with pytest.raises(StopAsyncIteration):
+        await agen.__anext__()
+    async_extension.expected = [
+        "on_operation Entered",
+        "on_parse Entered",
+        "on_parse Exited",
+        "on_validate Entered",
+        "on_validate Exited",
+        "on_execute Entered",
+        "on_execute Exited",
+        "on_execute Entered",
+        "resolve",
+        "on_execute Exited",
+        "get_results",
+        "on_execute Entered",
+        "on_execute Exited",
+        "get_results",
+        "on_operation Exited",
+    ]
+    async_extension.assert_expected()
+
+
 async def test_extensions_results_are_cleared_between_subscription_yields(
     default_query_types_and_query: SchemaHelper,
 ) -> None:
@@ -1351,18 +1406,24 @@ async def test_extensions_results_are_cleared_between_subscription_yields(
 
         def on_execute(self):
             yield
-            self.execution_context.update_extensions_result(
-                {str(self.execution_number): self.execution_number}
-            )
             self.execution_number += 1
+
+        def get_results(self):
+            return {str(self.execution_number): self.execution_number}
 
     schema = strawberry.Schema(
         query=default_query_types_and_query.query_type,
         subscription=default_query_types_and_query.subscription_type,
         extensions=[MyExtension],
     )
-    res_num = 1  # the first execution is done before the first yield
-    async for res in await schema.subscribe(default_query_types_and_query.subscription):
+    # the first execution is done before the first yield
+    # and because `get_results` is called after `on_execute`
+    # we expect the first extension result to be 2
+    res_num = 2
+
+    async for res in assert_agen(
+        await schema.subscribe(default_query_types_and_query.subscription)
+    ):
         assert res.extensions == {str(res_num): res_num}
         assert not res.errors
         res_num += 1
