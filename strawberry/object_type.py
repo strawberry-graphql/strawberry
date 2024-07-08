@@ -53,10 +53,16 @@ def _check_field_annotations(cls: Type[Any]) -> None:
 
     https://github.com/python/cpython/blob/6fed3c85402c5ca704eb3f3189ca3f5c67a08d19/Lib/dataclasses.py#L881-L884
     """
-    cls_annotations = cls.__dict__.get("__annotations__", {})
+    original_annotations = cls.__dict__.get("__annotations__", {})
+    cls_annotations = {
+        a: t for a, t in original_annotations.items() if a not in cls.__dict__
+    }
     cls.__annotations__ = cls_annotations
 
     for field_name, field_ in cls.__dict__.items():
+        if field_name in original_annotations:
+            cls_annotations[field_name] = original_annotations[field_name]
+
         if not isinstance(field_, (StrawberryField, dataclasses.Field)):
             # Not a dataclasses.Field, nor a StrawberryField. Ignore
             continue
