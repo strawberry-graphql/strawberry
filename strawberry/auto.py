@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Union, cast
+from typing import Any, Dict, Optional, Union, cast
 from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.type import StrawberryType
@@ -24,11 +24,11 @@ class StrawberryAutoMeta(type):
 
     """
 
-    def __init__(self, *args: str, **kwargs: Any) -> None:
+    def __init__(self, *args: str, **kwargs: Dict[Any, Any]) -> None:
         self._instance: Optional[StrawberryAuto] = None
         super().__init__(*args, **kwargs)
 
-    def __call__(cls, *args: str, **kwargs: Any) -> Any:
+    def __call__(cls, *args: str, **kwargs: Dict[Any, Any]) -> StrawberryAuto:
         if cls._instance is None:
             cls._instance = super().__call__(*args, **kwargs)
 

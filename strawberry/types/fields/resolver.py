@@ -197,7 +197,7 @@ class StrawberryResolver(Generic[T]):
         """
 
     # TODO: Use this when doing the actual resolving? How to deal with async resolvers?
-    def __call__(self, *args: str, **kwargs: Any) -> T:
+    def __call__(self, *args: str, **kwargs: Dict) -> T:
         if not callable(self.wrapped_func):
             raise UncallableResolverError(self)
         return self.wrapped_func(*args, **kwargs)
