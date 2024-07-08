@@ -36,7 +36,7 @@ build-backend = "poetry.masonry.api"
 [tool.poetry.dependencies]
 python = "^3.8"
 # TOOD: revert this
-graphql-core = {git = "https://github.com/nrbnlulu/graphql-core.git", branch = "support-middlewares-for-subscriptions"}
+graphql-core = {git = "https://github.com/graphql-python/graphql-core.git", branch = "main"}
 typing-extensions = ">=4.5.0"
 python-dateutil = "^2.7.0"
 starlette = {version = ">=0.18.0", optional = true}
