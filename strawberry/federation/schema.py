@@ -17,16 +17,6 @@ from typing import (
     cast,
 )
 
-from graphql import (
-    GraphQLField,
-    GraphQLInterfaceType,
-    GraphQLList,
-    GraphQLNonNull,
-    GraphQLScalarType,
-    GraphQLUnionType,
-)
-from graphql.type.definition import GraphQLArgument
-
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import scalar
 from strawberry.printer import print_schema
