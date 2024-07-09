@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     from strawberry.arguments import StrawberryArgument
     from strawberry.extensions.field_extension import FieldExtension
     from strawberry.types.info import Info
-    from strawberry.types.types import StrawberryObjectDefinition
+    from strawberry.types.types import Resolver, StrawberryObjectDefinition
 
     from .permission import BasePermission
 
@@ -441,7 +441,7 @@ def field(
     directives: Optional[Sequence[object]] = (),
     extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-) -> T: ...
+) -> Resolver[T]: ...
 
 
 @overload
@@ -460,7 +460,7 @@ def field(
     directives: Optional[Sequence[object]] = (),
     extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-) -> T: ...
+) -> Resolver[T]: ...
 
 
 @overload

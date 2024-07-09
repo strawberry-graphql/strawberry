@@ -15,6 +15,7 @@ from .scalars import ID
 from .schema import Schema
 from .schema_directive import schema_directive
 from .types.info import Info
+from .types.types import Resolver
 from .union import union
 from .unset import UNSET
 
@@ -29,6 +30,7 @@ __all__ = [
     "Parent",
     "Private",
     "Schema",
+    "Resolver",
     "argument",
     "directive",
     "directive_field",

@@ -18,8 +18,8 @@ def some_resolver_2() -> str:
 class User:
     age: int = strawberry.federation.field(description="Age")
     name: str
-    address: str = strawberry.federation.field(resolver=some_resolver)
-    another_address: str = strawberry.federation.field(resolver=some_resolver_2)
+    address: strawberry.Resolver[str] = strawberry.federation.field(resolver=some_resolver)
+    another_address: strawberry.Resolver[str] = strawberry.federation.field(resolver=some_resolver_2)
 
 @strawberry.federation.input
 class UserInput:

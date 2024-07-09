@@ -16,8 +16,8 @@ def get_user_age() -> int:
 @strawberry.federation.type
 class User:
     name: str
-    age: int = strawberry.field(resolver=get_user_age)
-    something_else: int = strawberry.federation.field(resolver=get_user_age)
+    age: strawberry.Resolver[int] = strawberry.field(resolver=get_user_age)
+    something_else: strawberry.Resolver[int] = strawberry.federation.field(resolver=get_user_age)
 
 
 User(name="Patrick")
