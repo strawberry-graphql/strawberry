@@ -43,10 +43,8 @@ class SchemaExtensionsRunner:
     def get_extensions_results_sync(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {}
         for extension in self.extensions:
-            if (
-                get_results := extension.get_results
-            ) is not SchemaExtension.get_results:
-                if inspect.iscoroutinefunction(get_results):
+            if extension.get_results is not SchemaExtension.get_results:
+                if inspect.iscoroutinefunction(extension.get_results):
                     msg = "Cannot use async extension hook during sync execution"
                     raise RuntimeError(msg)
                 data.update(extension.get_results())  # type: ignore
@@ -57,10 +55,8 @@ class SchemaExtensionsRunner:
         data: Dict[str, Any] = {}
 
         for extension in self.extensions:
-            if (
-                get_results := extension.get_results
-            ) is not SchemaExtension.get_results:
-                results = await await_maybe(get_results())
+            if extension.get_results is not SchemaExtension.get_results:
+                results = await await_maybe(extension.get_results())
                 data.update(results)
 
         data.update(ctx.extensions_results)
