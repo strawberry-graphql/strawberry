@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import contextlib
-from collections.abc import Awaitable
-from typing import TYPE_CHECKING, AsyncGenerator, AsyncIterator, Union, cast
+from typing import TYPE_CHECKING, AsyncGenerator, AsyncIterator, Union
 
 from graphql import (
     ExecutionResult as OriginalExecutionResult,
@@ -11,6 +10,7 @@ from graphql.execution import subscribe as original_subscribe
 
 from strawberry.types import ExecutionResult
 from strawberry.types.execution import ExecutionContext, ExecutionResultError
+from strawberry.utils.await_maybe import await_maybe
 
 from .execute import (
     ProcessErrors,
@@ -57,11 +57,9 @@ async def _subscribe(
             )
         try:
             async with extensions_runner.executing():
-                # GraphQL-core actually returns here value (for validation errors i.e) or awaitable
-                # but since we do validation beforehand I couldn't see a case where it would return an initial value
                 assert execution_context.graphql_document is not None
-                agen_or_result = await cast(
-                    Awaitable[OriginSubscriptionResult],
+                # Might not be awaitable if i.e operation was not provided with the needed variables.
+                agen_or_result: OriginSubscriptionResult = await await_maybe(
                     original_subscribe(
                         schema,
                         execution_context.graphql_document,
@@ -70,7 +68,7 @@ async def _subscribe(
                         operation_name=execution_context.operation_name,
                         context_value=execution_context.context,
                         middleware=middleware_manager,
-                    ),
+                    )
                 )
 
             # Handle immediate errors.
