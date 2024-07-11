@@ -301,7 +301,7 @@ async def test_clear_nocache():
 
     loader = DataLoader(load_fn=idx, cache=False)
 
-    loader.clean(1) # no effect on non-cached values
+    loader.clean(1)  # no effect on non-cached values
 
     assert await loader.load_many([1, 2, 3]) == [(1, 1), (2, 1), (3, 1)]
 
