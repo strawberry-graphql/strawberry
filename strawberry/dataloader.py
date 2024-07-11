@@ -84,7 +84,7 @@ class DefaultCache(AbstractCache[K, T]):
         self.cache_map[self.cache_key_fn(key)] = value
 
     def delete(self, key: K) -> None:
-        del self.cache_map[self.cache_key_fn(key)]
+        self.cache_map.pop(self.cache_key_fn(key), default=None)
 
     def clear(self) -> None:
         self.cache_map.clear()
