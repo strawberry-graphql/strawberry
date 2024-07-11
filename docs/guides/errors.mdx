@@ -170,7 +170,8 @@ Handling expected errors is typically approached in one or both of two ways:
 
 ### Returning as part of the return type
 
-It is often best to express expected errors in the schema. This allows the client to deal with the error in a robust way.
+It is often best to express expected errors in the schema. This allows the
+client to deal with the error in a robust way.
 
 This could be achieved by making the field optional when there is a possibility
 that the data won’t exist:
@@ -260,11 +261,16 @@ outcomes from a mutation.
 
 ### Appending to `errors` array
 
-As seen in the [Unhandled execution errors][#unhandled-execution-errors] section above, errors are automatically added to the errors array by raising the error in execution.
+As seen in the [Unhandled execution errors][#unhandled-execution-errors] section
+above, errors are automatically added to the errors array by raising the error
+in execution.
 
-But cases may arise where you want to handle errors or otherwise use the errors array to indicate that issues have occurred, but still return data in the response too.
+But cases may arise where you want to handle errors or otherwise use the errors
+array to indicate that issues have occurred, but still return data in the
+response too.
 
-This can be achieved by adding `Exception` instances to the `partial_errors` array on the context.
+This can be achieved by adding `Exception` instances to the `partial_errors`
+array on the context.
 
 ```python
 import strawberry
@@ -292,8 +298,11 @@ Results:
 }
 ```
 
-Note that when exceptions are raised in resolvers, the GraphQL library catches the exception and maps it to a `GraphQLError` with path and location data pulled from the resolver.
-If you'd like to persist this kind of metadata in your response, you'll need to add a `GraphQLError` with that data yourself, commonly accomplished with the `located_error()` function.
+Note that when exceptions are raised in resolvers, the GraphQL library catches
+the exception and maps it to a `GraphQLError` with path and location data pulled
+from the resolver. If you'd like to persist this kind of metadata in your
+response, you'll need to add a `GraphQLError` with that data yourself, commonly
+accomplished with the `located_error()` function.
 
 ```python
 import strawberry
