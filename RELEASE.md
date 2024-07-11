@@ -4,6 +4,7 @@ Calling `.clean(key)` on default dataloader with non-existing `key` will not thr
 ```python
 from strawberry.dataloader import DataLoader
 
+
 async def load_data(keys):
     return [str(key) for key in keys]
 
