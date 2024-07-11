@@ -301,7 +301,10 @@ async def test_clear_nocache():
 
     loader = DataLoader(load_fn=idx, cache=False)
 
-    loader.clean(1)  # no effect on non-cached values
+    try:
+        loader.clean(1)  # no effect on non-cached values
+    except Exception as e:
+        assert False, "clean non-cached values does not raise KeyError"
 
     assert await loader.load_many([1, 2, 3]) == [(1, 1), (2, 1), (3, 1)]
 
