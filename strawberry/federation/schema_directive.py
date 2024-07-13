@@ -6,6 +6,7 @@ from strawberry.directive import directive_field
 from strawberry.field import StrawberryField, field
 from strawberry.object_type import _wrap_dataclass
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
+from strawberry.types.type_extension import TypeExtension
 from strawberry.types.type_resolver import _get_fields
 
 
@@ -39,7 +40,7 @@ def schema_directive(
 ) -> Callable[..., T]:
     def _wrap(cls: T) -> T:
         cls = _wrap_dataclass(cls)  # type: ignore
-        fields = _get_fields(cls, {})
+        fields = _get_fields(cls, TypeExtension(), {})
 
         cls.__strawberry_directive__ = StrawberryFederationSchemaDirective(
             python_name=cls.__name__,
