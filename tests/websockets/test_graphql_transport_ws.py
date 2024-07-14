@@ -5,7 +5,7 @@ import contextlib
 import json
 import time
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Type
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional, Type
 from unittest.mock import Mock, patch
 
 try:
@@ -54,7 +54,12 @@ async def ws(ws_raw: WebSocketClient) -> WebSocketClient:
     return ws_raw
 
 
-def assert_next(response, id, data, extensions=None):
+def assert_next(
+    response: dict[str, Any],
+    id: str,
+    data: Dict[str, Any],
+    extensions: Optional[Dict[str, Any]] = None,
+):
     """
     Assert that the NextMessage payload contains the provided data.
     If extensions is provided, it will also assert that the
