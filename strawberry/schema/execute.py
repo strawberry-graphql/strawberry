@@ -72,15 +72,15 @@ def validate_document(
     )
 
 
-def _run_validation(context: ExecutionContext) -> None:
+def _run_validation(execution_context: ExecutionContext) -> None:
     # Check if there are any validation rules or if validation has
     # already been run by an extension
-    if len(context.validation_rules) > 0 and context.errors is None:
-        assert context.graphql_document
-        context.errors = validate_document(
-            context.schema._schema,
-            context.graphql_document,
-            context.validation_rules,
+    if len(execution_context.validation_rules) > 0 and execution_context.errors is None:
+        assert execution_context.graphql_document
+        execution_context.errors = validate_document(
+            execution_context.schema._schema,
+            execution_context.graphql_document,
+            execution_context.validation_rules,
         )
 
 
