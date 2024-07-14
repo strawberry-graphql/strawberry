@@ -66,13 +66,6 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 }
 
 
-def _implements_resolve(obj: SchemaExtension | type[SchemaExtension]) -> bool:
-    """Return whether the extension implements the resolve method."""
-    return bool(
-        (ret := getattr(obj, "resolve", None)) and ret is not SchemaExtension.resolve
-    )
-
-
 class Schema(BaseSchema):
     def __init__(
         self,
@@ -186,7 +179,6 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
     # TODO: can this get cached?
-
     def get_extensions(self, sync: bool = False) -> List[SchemaExtension]:
         init_extensions = []
         extensions = (
@@ -216,8 +208,34 @@ class Schema(BaseSchema):
     ) -> MiddlewareManager:
         # create a middleware manager with all the extensions that support resolve
         return MiddlewareManager(
-            *(ext for ext in extensions if _implements_resolve(ext))
+            *(ext for ext in extensions if self.__class__._implements_resolve(ext))
         )
+
+    def _create_execution_context(
+        self,
+        query: Optional[str],
+        allowed_operation_types: Iterable[OperationType],
+        variable_values: Optional[Dict[str, Any]] = None,
+        context_value: Optional[Any] = None,
+        root_value: Optional[Any] = None,
+        operation_name: Optional[str] = None,
+    ) -> ExecutionContext:
+        return ExecutionContext(
+            query=query,
+            schema=self,
+            allowed_operations=allowed_operation_types,
+            context=context_value,
+            root_value=root_value,
+            variables=variable_values,
+            provided_operation_name=operation_name,
+        )
+
+    @classmethod
+    def _implements_resolve(cls, obj: SchemaExtension | type[SchemaExtension]) -> bool:
+        """Whether the extension implements the resolve method."""
+        if isinstance(obj, SchemaExtension):
+            return type(obj).resolve is not SchemaExtension.resolve
+        return obj.resolve is not SchemaExtension.resolve
 
     @lru_cache
     def get_type_by_name(
@@ -271,23 +289,35 @@ class Schema(BaseSchema):
     ) -> List[StrawberryField]:
         return type_definition.fields
 
-    def _create_execution_context(
+    async def execute(
         self,
         query: Optional[str],
-        allowed_operation_types: Iterable[OperationType],
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ) -> ExecutionContext:
-        return ExecutionContext(
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
+    ) -> ExecutionResult:
+        if allowed_operation_types is None:
+            allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
+
+        execution_context = self._create_execution_context(
             query=query,
-            schema=self,
-            allowed_operations=allowed_operation_types,
-            context=context_value,
+            allowed_operation_types=allowed_operation_types,
+            variable_values=variable_values,
+            context_value=context_value,
             root_value=root_value,
-            variables=variable_values,
-            provided_operation_name=operation_name,
+            operation_name=operation_name,
+        )
+        extensions = self.get_extensions()
+        return await execute(
+            self._schema,
+            execution_context=execution_context,
+            extensions_runner=self.create_extensions_runner(
+                execution_context, extensions
+            ),
+            process_errors=self.process_errors,
+            middleware_manager=self._get_middleware_manager(extensions),
         )
 
     def execute_sync(
@@ -303,12 +333,12 @@ class Schema(BaseSchema):
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
 
         execution_context = self._create_execution_context(
-            query,
-            allowed_operation_types,
-            variable_values,
-            context_value,
-            root_value,
-            operation_name,
+            query=query,
+            allowed_operation_types=allowed_operation_types,
+            variable_values=variable_values,
+            context_value=context_value,
+            root_value=root_value,
+            operation_name=operation_name,
         )
         extensions = self.get_extensions(sync=True)
 
@@ -326,37 +356,6 @@ class Schema(BaseSchema):
 
         return result
 
-    async def execute(
-        self,
-        query: Optional[str],
-        variable_values: Optional[Dict[str, Any]] = None,
-        context_value: Optional[Any] = None,
-        root_value: Optional[Any] = None,
-        operation_name: Optional[str] = None,
-        allowed_operation_types: Optional[Iterable[OperationType]] = None,
-    ) -> ExecutionResult:
-        if allowed_operation_types is None:
-            allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
-
-        execution_context = self._create_execution_context(
-            query,
-            allowed_operation_types,
-            variable_values,
-            context_value,
-            root_value,
-            operation_name,
-        )
-        extensions = self.get_extensions()
-        return await execute(
-            self._schema,
-            execution_context=execution_context,
-            extensions_runner=self.create_extensions_runner(
-                execution_context, extensions
-            ),
-            process_errors=self.process_errors,
-            middleware_manager=self._get_middleware_manager(extensions),
-        )
-
     async def subscribe(
         self,
         query: Optional[str],
@@ -366,12 +365,12 @@ class Schema(BaseSchema):
         operation_name: Optional[str] = None,
     ) -> SubscriptionResult:
         execution_context = self._create_execution_context(
-            query,
-            (OperationType.SUBSCRIPTION,),
-            variable_values,
-            context_value,
-            root_value,
-            operation_name,
+            query=query,
+            allowed_operation_types=(OperationType.SUBSCRIPTION,),
+            variable_values=variable_values,
+            context_value=context_value,
+            root_value=root_value,
+            operation_name=operation_name,
         )
         extensions = self.get_extensions()
 
