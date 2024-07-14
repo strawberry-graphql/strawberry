@@ -58,7 +58,7 @@ async def _subscribe(
             async with extensions_runner.executing():
                 assert execution_context.graphql_document is not None
                 # Might not be awaitable if i.e operation was not provided with the needed variables.
-                agen_or_result: OriginSubscriptionResult = await await_maybe(
+                aiter_or_result: OriginSubscriptionResult = await await_maybe(
                     original_subscribe(
                         schema,
                         execution_context.graphql_document,
@@ -71,15 +71,15 @@ async def _subscribe(
                 )
 
             # Handle immediate errors.
-            if isinstance(agen_or_result, OriginalExecutionResult):
+            if isinstance(aiter_or_result, OriginalExecutionResult):
                 yield await _handle_execution_result(
                     execution_context,
-                    ExecutionResultError(data=None, errors=agen_or_result.errors),
+                    ExecutionResultError(data=None, errors=aiter_or_result.errors),
                     extensions_runner,
                     process_errors,
                 )
             else:
-                aiterator = agen_or_result.__aiter__()
+                aiterator = aiter_or_result.__aiter__()
                 running = True
                 while running:
                     # reset extensions results for each iteration
@@ -140,11 +140,10 @@ async def subscribe(
     if isinstance(first, ExecutionResultError):
         await asyncgen.aclose()
         return first
-    else:
 
-        async def _wrapper() -> AsyncGenerator[ExecutionResult, None]:
-            yield first
-            async for result in asyncgen:
-                yield result
+    async def _wrapper() -> AsyncGenerator[ExecutionResult, None]:
+        yield first
+        async for result in asyncgen:
+            yield result
 
-        return _wrapper()
+    return _wrapper()
