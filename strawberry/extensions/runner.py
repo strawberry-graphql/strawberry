@@ -40,14 +40,19 @@ class SchemaExtensionsRunner:
     def executing(self) -> ExecutingContextManager:
         return ExecutingContextManager(self.extensions, self.execution_context)
 
+    @classmethod
+    def _implments_get_rseults(cls, extension: SchemaExtension) -> bool:
+        "Whether the extension implements get_results"
+        return type(extension).get_results is not SchemaExtension.get_results
+
     def get_extensions_results_sync(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {}
         for extension in self.extensions:
-            if extension.get_results is not SchemaExtension.get_results:
+            if type(self)._implments_get_rseults(extension):
                 if inspect.iscoroutinefunction(extension.get_results):
                     msg = "Cannot use async extension hook during sync execution"
                     raise RuntimeError(msg)
-                data.update(extension.get_results())  # type: ignore
+                data.update(extension.get_results())  # type: ignore should be sync only...
 
         return data
 
@@ -55,9 +60,8 @@ class SchemaExtensionsRunner:
         data: Dict[str, Any] = {}
 
         for extension in self.extensions:
-            if extension.get_results is not SchemaExtension.get_results:
-                results = await await_maybe(extension.get_results())
-                data.update(results)
+            if type(self)._implments_get_rseults(extension):
+                data.update(await await_maybe(extension.get_results()))
 
         data.update(ctx.extensions_results)
         return data

@@ -208,7 +208,7 @@ class Schema(BaseSchema):
     ) -> MiddlewareManager:
         # create a middleware manager with all the extensions that support resolve
         return MiddlewareManager(
-            *(ext for ext in extensions if self.__class__._implements_resolve(ext))
+            *(ext for ext in extensions if type(self)._implements_resolve(ext))
         )
 
     def _create_execution_context(
