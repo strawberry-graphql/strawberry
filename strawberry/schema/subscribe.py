@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import contextlib
 from typing import TYPE_CHECKING, AsyncGenerator, AsyncIterator, Union
 
 from graphql import (
@@ -140,9 +139,7 @@ async def subscribe(
     # To overcome this while maintaining the extension contexts we do this trick.
     first = await asyncgen.__anext__()
     if isinstance(first, ExecutionResultError):
-        # close the async generator (calling `.aclose()` on it won't close the context managers)
-        with contextlib.suppress(StopAsyncIteration):
-            await asyncgen.__anext__()
+        await asyncgen.aclose()
         return first
     else:
 
