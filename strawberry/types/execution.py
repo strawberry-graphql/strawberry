@@ -21,7 +21,6 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired
 
     from graphql import ASTValidationRule
-    from graphql import ExecutionContext as GraphQLExecutionContext
     from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql.error.graphql_error import GraphQLError
     from graphql.language import DocumentNode, OperationDefinitionNode
@@ -55,7 +54,6 @@ class ExecutionContext:
     errors: Optional[List[GraphQLError]] = None
     result: Optional[GraphQLExecutionResult] = None
     extensions_results: Dict[str, Any] = dataclasses.field(default_factory=dict)
-    context_class: Optional[Type[GraphQLExecutionContext]] = None
 
     def __post_init__(self, provided_operation_name: str | None) -> None:
         self._provided_operation_name = provided_operation_name
@@ -99,8 +97,7 @@ class ExecutionResult:
 
 class ExecutionResultError(ExecutionResult):
     """
-    Used to diffrentiate between a successful subscription result and an immediate error.
-
+    Used to differentiate between a successful subscription result and an immediate error.
     Immediate errors are errors that at the first iteration of the subscription.
     These errors should alert the integration level that the operation should be canceled immediatly.
     """

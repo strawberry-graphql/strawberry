@@ -186,8 +186,6 @@ class Schema(BaseSchema):
             DirectivesExtensionSync if sync else DirectivesExtension,
         )
         for extension in extensions:
-            # If the extension has already been instantiated then set the
-            # `execution_context` attribute
             if isinstance(extension, SchemaExtension):
                 init_extensions.append(extension)
             else:
