@@ -308,6 +308,9 @@ class Schema(BaseSchema):
             operation_name=operation_name,
         )
         extensions = self.get_extensions()
+        # TODO (#3571): remove this when we implement executoin context as parameter.
+        for extension in extensions:
+            extension.execution_context = execution_context
         return await execute(
             self._schema,
             execution_context=execution_context,
@@ -339,7 +342,9 @@ class Schema(BaseSchema):
             operation_name=operation_name,
         )
         extensions = self.get_extensions(sync=True)
-
+        # TODO (#3571): remove this when we implement executoin context as parameter.
+        for extension in extensions:
+            extension.execution_context = execution_context
         result = execute_sync(
             self._schema,
             execution_context=execution_context,
@@ -371,7 +376,9 @@ class Schema(BaseSchema):
             operation_name=operation_name,
         )
         extensions = self.get_extensions()
-
+        # TODO (#3571): remove this when we implement executoin context as parameter.
+        for extension in extensions:
+            extension.execution_context = execution_context
         return await subscribe(
             self._schema,
             execution_context=execution_context,
