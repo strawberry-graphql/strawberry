@@ -60,7 +60,6 @@ class ExtensionContextManagerBase:
         self.hooks: List[WrappedHook] = []
         self.default_hook: Hook = getattr(SchemaExtension, self.HOOK_NAME)
         for extension in extensions:
-            extension.execution_context = context_context
             hook = self.get_hook(extension)
             if hook:
                 self.hooks.append(hook)
