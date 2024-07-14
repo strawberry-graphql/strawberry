@@ -52,7 +52,7 @@ class SchemaExtensionsRunner:
                 if inspect.iscoroutinefunction(extension.get_results):
                     msg = "Cannot use async extension hook during sync execution"
                     raise RuntimeError(msg)
-                data.update(extension.get_results())  # type: ignore should be sync only...
+                data.update(extension.get_results())  # type: ignore
 
         return data
 

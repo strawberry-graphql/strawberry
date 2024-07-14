@@ -23,8 +23,6 @@ from strawberry.types.execution import ExecutionResult, ExecutionResultError
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator
-
     from strawberry.schema import BaseSchema
     from strawberry.subscriptions.protocols.graphql_ws.types import (
         ConnectionInitPayload,
@@ -162,7 +160,7 @@ class BaseGraphQLWSHandler(ABC):
 
     async def handle_async_results(
         self,
-        result_source: AsyncIterator[ExecutionResult],
+        result_source: AsyncGenerator[ExecutionResult, None],
         operation_id: str,
     ) -> None:
         try:

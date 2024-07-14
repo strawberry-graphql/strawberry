@@ -24,8 +24,7 @@ from strawberry.utils.await_maybe import AwaitableOrValue, await_maybe
 
 if TYPE_CHECKING:
     from strawberry.extensions.base_extension import Hook
-
-    from ..types.execution import ExecutionContext
+    from strawberry.types.execution import ExecutionContext
 
 
 class WrappedHook(NamedTuple):

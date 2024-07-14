@@ -32,7 +32,7 @@ SubscriptionResult: TypeAlias = Union[
 
 OriginSubscriptionResult = Union[
     OriginalExecutionResult,
-    AsyncGenerator[OriginalExecutionResult, None],
+    AsyncIterator[OriginalExecutionResult],
 ]
 
 
@@ -89,7 +89,6 @@ async def _subscribe(
                             origin_result: Union[
                                 ExecutionResult, OriginalExecutionResult
                             ] = await aiterator.__anext__()
-
                         except StopAsyncIteration:
                             break
                         except Exception as exc:
@@ -143,7 +142,7 @@ async def subscribe(
         return first
     else:
 
-        async def _wrapper() -> AsyncIterator[ExecutionResult]:
+        async def _wrapper() -> AsyncGenerator[ExecutionResult, None]:
             yield first
             async for result in asyncgen:
                 yield result
