@@ -286,7 +286,7 @@ class BaseGraphQLTransportWSHandler(ABC):
     async def operation_task(
         self, result_source: AsyncGenerator, operation: Operation
     ) -> None:
-        """Operation task top level method. Cleans up and de-registers the operation once it is done."""
+        """The operation task's top level method. Cleans-up and de-registers the operation once it is done."""
         # TODO: Handle errors in this method using self.handle_task_exception()
         try:
             await self.handle_async_results(result_source, operation)

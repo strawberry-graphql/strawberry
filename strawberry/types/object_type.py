@@ -233,16 +233,16 @@ def type(
     defining GraphQL types.
 
     Args:
-        cls: The class we want to create a GraphQL type from
-        name: The name of the GraphQL type
-        is_input: Whether the class is an input type, used internally, use `@strawerry.input` instead of passing this flag
-        is_interface: Whether the class is an interface, used internally, use `@strawerry.interface` instead of passing this flag
-        description: The description of the GraphQL type
-        directives: The directives of the GraphQL type
-        extend: Whether the class is extending an existing type
+        cls: The class we want to create a GraphQL type from.
+        name: The name of the GraphQL type.
+        is_input: Whether the class is an input type. Used internally, use `@strawerry.input` instead of passing this flag.
+        is_interface: Whether the class is an interface. Used internally, use `@strawerry.interface` instead of passing this flag.
+        description: The description of the GraphQL type.
+        directives: The directives of the GraphQL type.
+        extend: Whether the class is extending an existing type.
 
     Returns:
-        The class
+        The class.
 
     Example usage:
 
@@ -347,14 +347,14 @@ def input(
     Similar to `@strawberry.type`, but for input types.
 
     Args:
-        cls: The class we want to create a GraphQL input type from
-        name: The name of the GraphQL input type
-        description: The description of the GraphQL input type
-        directives: The directives of the GraphQL input type
-        one_of: Whether the input type is a `oneOf` type
+        cls: The class we want to create a GraphQL input type from.
+        name: The name of the GraphQL input type.
+        description: The description of the GraphQL input type.
+        directives: The directives of the GraphQL input type.
+        one_of: Whether the input type is a `oneOf` type.
 
     Returns:
-        The class
+        The class.
 
     Example usage:
 
@@ -426,13 +426,13 @@ def interface(
     Similar to `@strawberry.type`, but for interfaces.
 
     Args:
-        cls: The class we want to create a GraphQL interface from
-        name: The name of the GraphQL interface
-        description: The description of the GraphQL interface
-        directives: The directives of the GraphQL interface
+        cls: The class we want to create a GraphQL interface from.
+        name: The name of the GraphQL interface.
+        description: The description of the GraphQL interface.
+        directives: The directives of the GraphQL interface.
 
     Returns:
-        The class
+        The class.
 
     Example usage:
 
@@ -465,10 +465,10 @@ def asdict(obj: Any) -> Dict[str, object]:
     This wraps the dataclasses.asdict function to strawberry.
 
     Args:
-        obj: The object to convert into a dictionary
+        obj: The object to convert into a dictionary.
 
     Returns:
-        A dictionary representation of the object
+        A dictionary representation of the object.
 
     Example usage:
 
@@ -479,8 +479,8 @@ def asdict(obj: Any) -> Dict[str, object]:
         age: int
 
 
-    # should be {"name": "Lorem", "age": 25}
-    user_dict = strawberry.asdict(User(name="Lorem", age=25))
+    strawberry.asdict(User(name="Lorem", age=25))
+    # {"name": "Lorem", "age": 25}
     ```
     """
     return dataclasses.asdict(obj)

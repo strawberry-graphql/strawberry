@@ -94,17 +94,17 @@ class Schema(BaseSchema):
         options such as directives, extensions, and scalar overrides.
 
         Args:
-            query: The entry point for queries
-            mutation: The entry point for mutations
-            subscription: The entry point for subscriptions
+            query: The entry point for queries.
+            mutation: The entry point for mutations.
+            subscription: The entry point for subscriptions.
             directives: A list of operation directives that clients can use.
-                The bult-in `@include` and `@skip` are included by default
-            types: A list of additional types that will be included in the schema
-            extensions: A list of Strawberry extensions
-            execution_context_class: The execution context class
-            config: The configuration for the schema
-            scalar_overrides: A dictionary of overrides for scalars
-            schema_directives: A list of schema directives for the schema
+                The bult-in `@include` and `@skip` are included by default.
+            types: A list of additional types that will be included in the schema.
+            extensions: A list of Strawberry extensions.
+            execution_context_class: The execution context class.
+            config: The configuration for the schema.
+            scalar_overrides: A dictionary of overrides for scalars.
+            schema_directives: A list of schema directives for the schema.
 
         Example:
         ```python

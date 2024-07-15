@@ -95,8 +95,8 @@ class BaseGraphQLTestClient(ABC):
 
         Args:
             variables: A dictionary with the variables that are going to be passed to the
-                query
-            files: A dictionary with the files that are going to be passed to the query
+                query.
+            files: A dictionary with the files that are going to be passed to the query.
 
         Example usages:
 

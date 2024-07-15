@@ -10,7 +10,7 @@ class StrawberryPrivate: ...
 T = TypeVar("T")
 
 Private = Annotated[T, StrawberryPrivate()]
-"""Represents a field that won't be exposed in the GraphQL schema
+"""Represents a field that won't be exposed in the GraphQL schema.
 
 Example:
 

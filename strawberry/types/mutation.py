@@ -173,7 +173,7 @@ def mutation(
         def create_post(self, title: str, content: str) -> Post: ...
     ```
 
-    it can be used both as decorator and as a normal function.
+    It can be used both as decorator and as a normal function.
     """
     return field(
         resolver=resolver,  # type: ignore
@@ -294,9 +294,6 @@ def subscription(
     directives: Optional[Sequence[object]] = (),
     extensions: Optional[List[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-    # This init parameter is used by PyRight to determine whether this field
-    # is added in the constructor or not. It is not used to change
-    # any behavior at the moment.
     init: Literal[True, False, None] = None,
 ) -> Any:
     """Annotates a method or property as a GraphQL subscription.
@@ -328,9 +325,9 @@ def subscription(
 
 
     @strawberry.type
-    class Mutation:
+    class Subscription:
         @strawberry.subscription
-        def create_post(self, title: str, content: str) -> Post: ...
+        def post_created(self, title: str, content: str) -> Post: ...
     ```
 
     it can be used both as decorator and as a normal function.

@@ -108,7 +108,7 @@ class Info(Generic[ContextType, RootValueType]):
 
     @cached_property
     def selected_fields(self) -> List[Selection]:
-        """The fields that were selected in the current field."""
+        """The fields that were selected on the current field's type."""
         info = self._raw_info
         return convert_selections(info, info.field_nodes)
 

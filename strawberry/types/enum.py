@@ -69,14 +69,14 @@ def enum_value(
     """Function to customise an enum value, for example to add a description or deprecation reason.
 
     Args:
-        value: The value of the enum member
+        value: The value of the enum member.
         deprecation_reason: The deprecation reason of the enum member,
-            setting this will mark the enum member as deprecated
-        directives: The directives to attach to the enum member
-        description: The GraphQL description of the enum member
+            setting this will mark the enum member as deprecated.
+        directives: The directives to attach to the enum member.
+        description: The GraphQL description of the enum member.
 
     Returns:
-        An EnumValueDefinition object that can be used to customise an enum member
+        An EnumValueDefinition object that can be used to customise an enum member.
 
     Example:
     ```python
@@ -186,13 +186,13 @@ def enum(
     GraphQL enum values.
 
     Args:
-        cls: The Enum class to be annotated
-        name: The name of the GraphQL enum
-        description: The description of the GraphQL enum
-        directives: The directives to attach to the GraphQL enum
+        cls: The Enum class to be annotated.
+        name: The name of the GraphQL enum.
+        description: The description of the GraphQL enum.
+        directives: The directives to attach to the GraphQL enum.
 
     Returns:
-        The decorated Enum class
+        The decorated Enum class.
 
     Example:
     ```python

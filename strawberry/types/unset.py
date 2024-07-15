@@ -45,7 +45,8 @@ class UserInput:
 ```
 
 In the example above, if `name` or `age` are not provided when creating a `UserInput`
-object, they will be set to `UNSET` instead of `None`.
+object, they will be set to `UNSET` instead of `None`. Use `is UNSET` to check
+whether a value is unset.
 """
 
 

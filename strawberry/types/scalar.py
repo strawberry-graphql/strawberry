@@ -166,17 +166,17 @@ def scalar(
     """Annotates a class or type as a GraphQL custom scalar.
 
     Args:
-        cls: The class or type to annotate
-        name: The GraphQL name of the scalar
-        description: The description of the scalar
-        specified_by_url: The URL of the specification
-        serialize: The function to serialize the scalar
-        parse_value: The function to parse the value
-        parse_literal: The function to parse the literal
-        directives: The directives to apply to the scalar
+        cls: The class or type to annotate.
+        name: The GraphQL name of the scalar.
+        description: The description of the scalar.
+        specified_by_url: The URL of the specification.
+        serialize: The function to serialize the scalar.
+        parse_value: The function to parse the value.
+        parse_literal: The function to parse the literal.
+        directives: The directives to apply to the scalar.
 
     Returns:
-        The decorated class or type
+        The decorated class or type.
 
     Example usages:
 
