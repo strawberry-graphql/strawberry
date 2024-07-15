@@ -30,7 +30,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessagePayload,
 )
 from tests.http.clients.base import DebuggableGraphQLTransportWSMixin
-from tests.views.schema import Schema
+from tests.views.schema import MyExtension, Schema
 
 if TYPE_CHECKING:
     from ..http.clients.base import HttpClient, WebSocketClient
@@ -71,6 +71,8 @@ def assert_next(
     assert response["payload"]["data"] == data
     if extensions is not None:
         assert response["payload"]["extensions"] == extensions
+    else:
+        assert "extensions" not in response["payload"]
 
 
 async def test_unknown_message_type(ws_raw: WebSocketClient):
@@ -930,3 +932,19 @@ async def test_subscription_errors_continue(ws: WebSocketClient):
         response = await ws.receive_json()
         assert response["type"] == CompleteMessage.type
         assert response["id"] == "sub1"
+
+
+@patch.object(MyExtension, MyExtension.get_results.__name__, return_value={})
+async def test_no_extenions(mock: Mock, ws: WebSocketClient):
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query='subscription { echo(message: "Hi") }'
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    mock.assert_called_once()
+    assert_next(response, "sub1", {"echo": "Hi"})

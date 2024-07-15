@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from typing import TYPE_CHECKING, AsyncGenerator
+from unittest.mock import MagicMock, patch
 
 import pytest
 import pytest_asyncio
@@ -19,6 +20,7 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
     GQL_STOP,
 )
+from tests.views.schema import MyExtension
 
 if TYPE_CHECKING:
     from ..http.clients.aiohttp import HttpClient, WebSocketClient
@@ -557,3 +559,32 @@ async def test_rejects_connection_params(aiohttp_app_client: HttpClient):
         # make sure the WebSocket is disconnected now
         await ws.receive(timeout=2)  # receive close
         assert ws.closed
+
+
+@patch.object(MyExtension, MyExtension.get_results.__name__, return_value={})
+async def test_no_extensions_results(mock: MagicMock, aiohttp_app_client: HttpClient):
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json({"type": GQL_CONNECTION_INIT})
+        await ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "demo",
+                "payload": {
+                    "query": 'subscription { echo(message: "Hi") }',
+                },
+            }
+        )
+
+        response = await ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ACK
+
+        response = await ws.receive_json()
+        mock.assert_called_once()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "demo"
+        assert "extensions" not in response["payload"]
+
+        await ws.send_json({"type": GQL_STOP, "id": "demo"})
+        response = await ws.receive_json()
