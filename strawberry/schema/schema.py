@@ -85,7 +85,7 @@ class Schema(BaseSchema):
         schema_directives: Iterable[object] = (),
     ) -> None:
         """Default Schema to be to be used in a Strawberry application.
-        
+
         A GraphQL Schema class used to define the structure and configuration
         of GraphQL queries, mutations, and subscriptions.
 

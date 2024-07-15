@@ -193,7 +193,7 @@ class PermissionExtension(FieldExtension):
     @cached_property
     def supports_sync(self) -> bool:
         """Whether this extension can be resolved synchronously or not.
-        
+
         The Permission extension always supports async checking using await_maybe,
         but only supports sync checking if there are no async permissions.
         """

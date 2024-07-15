@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 class GraphQLProtocolTypeRouter(ProtocolTypeRouter):
     """HTTP and Websocket GraphQL type router.
-    
+
     Convenience class to set up GraphQL on both HTTP and Websocket,
     optionally with a Django application for all other HTTP routes.
 
