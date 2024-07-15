@@ -18,7 +18,7 @@ def union(
     Args:
         name: The GraphQL name of the Union type.
         types: The types that the Union can be.
-            (Deprecated, use `Annotated[U, strawberry.union("Name")]` instead)
+            (Deprecated, use `Annotated[U, strawberry.federation.union("Name")]` instead)
         description: The  GraphQL description of the Union type.
         directives: The directives to attach to the Union type.
         inaccessible: Whether the Union type is inaccessible.

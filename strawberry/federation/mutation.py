@@ -2,6 +2,4 @@ from .field import field
 
 mutation = field
 
-__all__ = [
-    "mutation",
-]
+__all__ = ["mutation"]

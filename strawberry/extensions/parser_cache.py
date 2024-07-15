@@ -27,10 +27,9 @@ class ParserCache(SchemaExtension):
         """Initialize the ParserCache.
 
         Args:
-
-        maxsize: Set the maxsize of the cache. If `maxsize` is set to `None` then the
-            cache will grow without bound.
-            More info: https://docs.python.org/3/library/functools.html#functools.lru_cache
+            maxsize: Set the maxsize of the cache. If `maxsize` is set to `None` then the
+                cache will grow without bound.
+                More info: https://docs.python.org/3/library/functools.html#functools.lru_cache
         """
         self.cached_parse_document = lru_cache(maxsize=maxsize)(parse_document)
 

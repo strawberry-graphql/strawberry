@@ -478,8 +478,8 @@ class Node:
         You can override this method to provide a custom implementation.
 
         Args:
-            info: The strawberry execution info resolve the type name from
-            root: The node to resolve
+            info: The strawberry execution info resolve the type name from.
+            root: The node to resolve.
 
         Returns:
             The resolved id (which is expected to be str)
@@ -544,8 +544,8 @@ class Node:
         returned as `None`.
 
         Args:
-            info: The strawberry execution info resolve the type name from
-            node_ids: List of node ids that should be returned
+            info: The strawberry execution info resolve the type name from.
+            node_ids: List of node ids that should be returned.
             required: If `True`, all `node_ids` requested must exist. If they don't,
                 an error must be raised. If `False`, missing nodes should be
                 returned as `None`. It only makes sense when passing a list of
@@ -601,8 +601,8 @@ class Node:
         a single node id.
 
         Args:
-            info: The strawberry execution info resolve the type name from
-            node_id: The id of the node to be retrieved
+            info: The strawberry execution info resolve the type name from.
+            node_id: The id of the node to be retrieved.
             required: if the node is required or not to exist. If not, then None
                 should be returned if it doesn't exist. Otherwise an exception
                 should be raised.
@@ -696,11 +696,11 @@ class Connection(Generic[NodeType]):
         Args:
             node:
                 The resolved node which should return an instance of this
-                connection's `NodeType`
+                connection's `NodeType`.
             info:
-                The strawberry execution info resolve the type name from
+                The strawberry execution info resolve the type name from.
             **kwargs:
-                Additional arguments passed to the resolver
+                Additional arguments passed to the resolver.
 
         """
         return node
@@ -723,13 +723,13 @@ class Connection(Generic[NodeType]):
         on `first`/`last`/`before`/`after` arguments.
 
         Args:
-            info: The strawberry execution info resolve the type name from
-            nodes: An iterable/iteretor of nodes to paginate
-            before: Returns the items in the list that come before the specified cursor
-            after: Returns the items in the list that come after the specified cursor
-            first: Returns the first n items from the list
-            last: Returns the items in the list that come after the specified cursor
-            kwargs: Additional arguments passed to the resolver
+            info: The strawberry execution info resolve the type name from.
+            nodes: An iterable/iteretor of nodes to paginate.
+            before: Returns the items in the list that come before the specified cursor.
+            after: Returns the items in the list that come after the specified cursor.
+            first: Returns the first n items from the list.
+            last: Returns the items in the list that come after the specified cursor.
+            kwargs: Additional arguments passed to the resolver.
 
         Returns:
             The resolved `Connection`
@@ -772,13 +772,13 @@ class ListConnection(Connection[NodeType]):
         This uses the described Relay Pagination algorithm_
 
         Args:
-            info: The strawberry execution info resolve the type name from
-            nodes: An iterable/iteretor of nodes to paginate
-            before: Returns the items in the list that come before the specified cursor
-            after: Returns the items in the list that come after the specified cursor
-            first: Returns the first n items from the list
-            last: Returns the items in the list that come after the specified cursor
-            kwargs: Additional arguments passed to the resolver
+            info: The strawberry execution info resolve the type name from.
+            nodes: An iterable/iteretor of nodes to paginate.
+            before: Returns the items in the list that come before the specified cursor.
+            after: Returns the items in the list that come after the specified cursor.
+            first: Returns the first n items from the list.
+            last: Returns the items in the list that come after the specified cursor.
+            kwargs: Additional arguments passed to the resolver.
 
         Returns:
             The resolved `Connection`

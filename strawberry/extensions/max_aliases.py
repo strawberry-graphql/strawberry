@@ -29,7 +29,7 @@ class MaxAliasesLimiter(AddValidationRules):
         """Initialize the MaxAliasesLimiter.
 
         Args:
-            max_alias_count:  The maximum number of aliases allowed in a GraphQL document.
+            max_alias_count: The maximum number of aliases allowed in a GraphQL document.
         """
         validator = create_validator(max_alias_count)
         super().__init__([validator])

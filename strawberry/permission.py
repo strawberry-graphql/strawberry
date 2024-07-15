@@ -72,11 +72,29 @@ class BasePermission(abc.ABC):
             "Permission classes should override has_permission method"
         )
 
-    # TODO: show an example of how to override this method
     def on_unauthorized(self) -> None:
         """Default error raising for permissions.
 
         This method can be overridden to customize the error raised when the permission is not granted.
+        
+        Example:
+        
+        ```python
+        from strawberry.permission import BasePermission
+        
+        
+        class CustomPermissionError(PermissionError):
+            pass
+        
+        
+        class IsAuthenticated(BasePermission):
+            message = "User is not authenticated"
+            def has_permission(self, source, info, **kwargs):
+                return info.context["user"].is_authenticated
+            
+            def on_unauthorized(self) -> None:
+                raise CustomPermissionError(self.message)
+        ```
         """
         # Instantiate error class
         error = self.error_class(self.message or "")

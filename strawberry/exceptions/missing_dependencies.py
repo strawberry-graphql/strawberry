@@ -15,8 +15,8 @@ class MissingOptionalDependenciesError(Exception):
         """Initialize the error.
 
         Args:
-            packages: List of packages that are required.
-            extras: List of extras that are required.
+            packages: List of packages that are required but missing.
+            extras: List of extras that are required but missing.
         """
         packages = packages or []
 
