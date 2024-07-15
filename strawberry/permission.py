@@ -76,22 +76,23 @@ class BasePermission(abc.ABC):
         """Default error raising for permissions.
 
         This method can be overridden to customize the error raised when the permission is not granted.
-        
+
         Example:
-        
+
         ```python
         from strawberry.permission import BasePermission
-        
-        
+
+
         class CustomPermissionError(PermissionError):
             pass
-        
-        
+
+
         class IsAuthenticated(BasePermission):
             message = "User is not authenticated"
+
             def has_permission(self, source, info, **kwargs):
                 return info.context["user"].is_authenticated
-            
+
             def on_unauthorized(self) -> None:
                 raise CustomPermissionError(self.message)
         ```
