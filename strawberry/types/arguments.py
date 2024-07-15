@@ -242,9 +242,11 @@ def argument(
     Args:
         description: The GraphQL description of the argument
         name: The GraphQL name of the argument
-        deprecation_reason: The reason why this argument is deprecated, setting this will mark the argument as deprecated
+        deprecation_reason: The reason why this argument is deprecated,
+            setting this will mark the argument as deprecated
         directives: The directives to attach to the argument
-        metadata: Metadata to attach to the argument, this can be used to store custom data that can be used by custom logic or plugins
+        metadata: Metadata to attach to the argument, this can be used
+            to store custom data that can be used by custom logic or plugins
 
     Returns:
         A StrawberryArgumentAnnotation object that can be used to customise an argument

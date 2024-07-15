@@ -106,7 +106,8 @@ class QueryDepthLimiter(AddValidationRules):
 
         Args:
             max_depth: The maximum allowed depth for any operation in a GraphQL document.
-            callback: Called each time validation runs. Receives an Object which is a map of the depths for each operation.
+            callback: Called each time validation runs.
+                Receives an Object which is a map of the depths for each operation.
             should_ignore: Stops recursive depth checking based on a field name and arguments.
                 A function that returns a boolean and conforms to the ShouldIgnoreType function signature.
         """

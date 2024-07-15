@@ -39,8 +39,8 @@ class StrawberryType(ABC):
     `__strawberry_definition__` with instance of a StrawberryType that contains
     the parsed information that strawberry created.
 
-    NOTE: ATM this is only true for @type @interface @input follow https://github.com/strawberry-graphql/strawberry/issues/2841
-    to see progress.
+    NOTE: ATM this is only true for @type @interface @input follow
+    https://github.com/strawberry-graphql/strawberry/issues/2841 to see progress.
     """
 
     @property

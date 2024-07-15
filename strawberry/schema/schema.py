@@ -84,15 +84,21 @@ class Schema(BaseSchema):
         ] = None,
         schema_directives: Iterable[object] = (),
     ) -> None:
-        """A GraphQL Schema class used to define the structure and configuration of GraphQL queries, mutations, and subscriptions.
+        """Default Schema to be to be used in a Strawberry application.
+        
+        A GraphQL Schema class used to define the structure and configuration
+        of GraphQL queries, mutations, and subscriptions.
 
-        This class allows the creation of a GraphQL schema by specifying the types for queries, mutations, and subscriptions, along with various configuration options such as directives, extensions, and scalar overrides.
+        This class allows the creation of a GraphQL schema by specifying the types
+        for queries, mutations, and subscriptions, along with various configuration
+        options such as directives, extensions, and scalar overrides.
 
         Args:
             query: The entry point for queries
             mutation: The entry point for mutations
             subscription: The entry point for subscriptions
-            directives: A list of operation directives that clients can use, `@include`, `@skip` are included by default
+            directives: A list of operation directives that clients can use.
+                The bult-in `@include` and `@skip` are included by default
             types: A list of additional types that will be included in the schema
             extensions: A list of Strawberry extensions
             execution_context_class: The execution context class

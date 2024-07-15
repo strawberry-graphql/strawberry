@@ -76,7 +76,10 @@ class StrawberryAuto(metaclass=StrawberryAutoMeta):
 
 
 auto = Annotated[Any, StrawberryAuto()]
-"""A special value that can be used to automatically infer the type of a field when using integrations like Strawberry Django or Strawberry Pydantic.
+"""Special marker for automatic annotation.
+
+A special value that can be used to automatically infer the type of a field
+when using integrations like Strawberry Django or Strawberry Pydantic.
 
 Example:
 ```python

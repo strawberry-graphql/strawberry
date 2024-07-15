@@ -152,8 +152,11 @@ def mutation(
         metadata: The metadata for the field.
         directives: The directives for the field.
         extensions: The extensions for the field.
-        graphql_type: The GraphQL type for the field, useful when you want to use a different type in the resolver than the one in the schema.
-        init: This parameter is used by PyRight to determine whether this field is added in the constructor or not. It is not used to change any behavior at the moment.
+        graphql_type: The GraphQL type for the field, useful when you want to use a
+            different type in the resolver than the one in the schema.
+        init: This parameter is used by PyRight to determine whether this field is
+            added in the constructor or not. It is not used to change any behavior at
+            the moment.
 
     Returns:
         The field object.
@@ -309,8 +312,11 @@ def subscription(
         metadata: The metadata for the field.
         directives: The directives for the field.
         extensions: The extensions for the field.
-        graphql_type: The GraphQL type for the field, useful when you want to use a different type in the resolver than the one in the schema.
-        init: This parameter is used by PyRight to determine whether this field is added in the constructor or not. It is not used to change any behavior at the moment.
+        graphql_type: The GraphQL type for the field, useful when you want to use a
+            different type in the resolver than the one in the schema.
+        init: This parameter is used by PyRight to determine whether this field is
+            added in the constructor or not. It is not used to change any behavior at
+            the moment.
 
     Returns:
         The field for the subscription.
