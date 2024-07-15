@@ -4,7 +4,7 @@ from typing_extensions import Annotated, get_args
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.types.auto import StrawberryAuto, auto
-from strawberry.types.types import StrawberryList
+from strawberry.types.base import StrawberryList
 
 
 @strawberry.type

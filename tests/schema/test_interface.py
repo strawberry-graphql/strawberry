@@ -5,7 +5,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 import strawberry
-from strawberry.types.types import StrawberryObjectDefinition
+from strawberry.types.base import StrawberryObjectDefinition
 
 
 def test_query_interface():

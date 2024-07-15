@@ -25,11 +25,11 @@ if TYPE_CHECKING:
 
     from strawberry.schema import Schema
     from strawberry.types.arguments import StrawberryArgument
-    from strawberry.types.field import StrawberryField
-    from strawberry.types.types import (
+    from strawberry.types.base import (
         StrawberryType,
         WithStrawberryObjectDefinition,
     )
+    from strawberry.types.field import StrawberryField
 
     from .nodes import Selection
 

@@ -6,9 +6,9 @@ import pytest
 
 import strawberry
 from strawberry.schema.config import StrawberryConfig
+from strawberry.types.base import StrawberryList, StrawberryOptional
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.lazy_type import LazyType
-from strawberry.types.types import StrawberryList, StrawberryOptional
 from strawberry.types.union import StrawberryUnion
 
 T = TypeVar("T")

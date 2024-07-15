@@ -25,7 +25,7 @@ from .unresolved_field_type import UnresolvedFieldTypeError
 if TYPE_CHECKING:
     from graphql import GraphQLInputObjectType, GraphQLObjectType
 
-    from strawberry.types.types import StrawberryType
+    from strawberry.types.base import StrawberryType
 
     from .exception_source import ExceptionSource
 

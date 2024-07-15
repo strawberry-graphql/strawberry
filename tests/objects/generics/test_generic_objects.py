@@ -5,7 +5,7 @@ from typing_extensions import Annotated
 import pytest
 
 import strawberry
-from strawberry.types.types import (
+from strawberry.types.base import (
     StrawberryList,
     StrawberryOptional,
     StrawberryTypeVar,

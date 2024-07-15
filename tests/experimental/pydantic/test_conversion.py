@@ -19,7 +19,7 @@ from strawberry.experimental.pydantic.exceptions import (
     BothDefaultAndDefaultFactoryDefinedError,
 )
 from strawberry.experimental.pydantic.utils import get_default_factory_for_field
-from strawberry.types.types import (
+from strawberry.types.base import (
     StrawberryList,
     StrawberryObjectDefinition,
     StrawberryOptional,

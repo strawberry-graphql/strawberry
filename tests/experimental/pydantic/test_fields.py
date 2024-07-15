@@ -8,7 +8,7 @@ from pydantic import BaseModel, ValidationError, conlist
 
 import strawberry
 from strawberry.experimental.pydantic._compat import IS_PYDANTIC_V1
-from strawberry.types.types import StrawberryObjectDefinition, StrawberryOptional
+from strawberry.types.base import StrawberryObjectDefinition, StrawberryOptional
 from tests.experimental.pydantic.utils import needs_pydantic_v1, needs_pydantic_v2
 
 

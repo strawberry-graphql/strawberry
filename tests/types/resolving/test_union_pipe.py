@@ -8,7 +8,7 @@ import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions.invalid_union_type import InvalidUnionTypeError
 from strawberry.schema.types.base_scalars import Date, DateTime
-from strawberry.types.types import StrawberryOptional
+from strawberry.types.base import StrawberryOptional
 from strawberry.types.union import StrawberryUnion
 
 pytestmark = pytest.mark.skipif(

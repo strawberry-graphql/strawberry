@@ -24,7 +24,7 @@ from typing import (
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidArgumentTypeError, InvalidDefaultFactoryError
-from strawberry.types.types import (
+from strawberry.types.base import (
     StrawberryType,
     WithStrawberryObjectDefinition,
     has_object_definition,
@@ -40,8 +40,8 @@ if TYPE_CHECKING:
     from strawberry.extensions.field_extension import FieldExtension
     from strawberry.permission import BasePermission
     from strawberry.types.arguments import StrawberryArgument
+    from strawberry.types.base import StrawberryObjectDefinition
     from strawberry.types.info import Info
-    from strawberry.types.types import StrawberryObjectDefinition
 
 T = TypeVar("T")
 

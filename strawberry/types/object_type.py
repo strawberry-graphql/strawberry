@@ -21,14 +21,14 @@ from strawberry.exceptions import (
     MissingReturnAnnotationError,
     ObjectIsNotClassError,
 )
-from strawberry.types.types import get_object_definition
+from strawberry.types.base import get_object_definition
 from strawberry.utils.dataclasses import add_custom_init_fn
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.str_converters import to_camel_case
 
+from .base import StrawberryObjectDefinition
 from .field import StrawberryField, field
 from .type_resolver import _get_fields
-from .types import StrawberryObjectDefinition
 
 T = TypeVar("T", bound=Type)
 

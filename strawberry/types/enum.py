@@ -13,7 +13,7 @@ from typing import (
 )
 
 from strawberry.exceptions import ObjectIsNotAnEnumError
-from strawberry.types.types import StrawberryType
+from strawberry.types.base import StrawberryType
 
 
 @dataclasses.dataclass

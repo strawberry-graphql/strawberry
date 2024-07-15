@@ -6,8 +6,8 @@ import sys
 from typing import TYPE_CHECKING, Any, Tuple, Union
 from typing_extensions import Self, assert_never
 
+from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.nodes import InlineFragment, Selection
-from strawberry.types.types import StrawberryObjectDefinition
 
 if TYPE_CHECKING:
     from strawberry.types.info import Info

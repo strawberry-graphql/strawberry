@@ -9,12 +9,12 @@ import pytest
 import strawberry
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.schema_directive import Location
-from strawberry.types.enum import EnumDefinition
-from strawberry.types.types import (
+from strawberry.types.base import (
     StrawberryList,
     StrawberryObjectDefinition,
     StrawberryOptional,
 )
+from strawberry.types.enum import EnumDefinition
 from strawberry.types.union import StrawberryUnion
 
 

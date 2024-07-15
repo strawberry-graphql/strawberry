@@ -54,13 +54,7 @@ from strawberry.exceptions import (
 )
 from strawberry.schema.types.scalar import _make_scalar_type
 from strawberry.types.arguments import StrawberryArgument, convert_arguments
-from strawberry.types.enum import EnumDefinition
-from strawberry.types.field import UNRESOLVED
-from strawberry.types.info import Info
-from strawberry.types.lazy_type import LazyType
-from strawberry.types.private import is_private
-from strawberry.types.scalar import ScalarWrapper
-from strawberry.types.types import (
+from strawberry.types.base import (
     StrawberryList,
     StrawberryObjectDefinition,
     StrawberryOptional,
@@ -68,6 +62,12 @@ from strawberry.types.types import (
     get_object_definition,
     has_object_definition,
 )
+from strawberry.types.enum import EnumDefinition
+from strawberry.types.field import UNRESOLVED
+from strawberry.types.info import Info
+from strawberry.types.lazy_type import LazyType
+from strawberry.types.private import is_private
+from strawberry.types.scalar import ScalarWrapper
 from strawberry.types.union import StrawberryUnion
 from strawberry.types.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe

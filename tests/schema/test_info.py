@@ -6,8 +6,8 @@ from typing_extensions import Annotated
 import pytest
 
 import strawberry
+from strawberry.types.base import StrawberryOptional
 from strawberry.types.nodes import FragmentSpread, InlineFragment, SelectedField
-from strawberry.types.types import StrawberryOptional
 from strawberry.types.unset import UNSET
 
 

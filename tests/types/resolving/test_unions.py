@@ -7,7 +7,7 @@ import pytest
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidUnionTypeError
-from strawberry.types.types import get_object_definition
+from strawberry.types.base import get_object_definition
 from strawberry.types.union import StrawberryUnion, union
 
 

@@ -13,10 +13,10 @@ if TYPE_CHECKING:
     from strawberry.directive import StrawberryDirective
     from strawberry.schema.schema_converter import GraphQLCoreConverter
     from strawberry.types import ExecutionContext, ExecutionResult
+    from strawberry.types.base import StrawberryObjectDefinition
     from strawberry.types.enum import EnumDefinition
     from strawberry.types.graphql import OperationType
     from strawberry.types.scalar import ScalarDefinition
-    from strawberry.types.types import StrawberryObjectDefinition
     from strawberry.types.union import StrawberryUnion
 
     from .config import StrawberryConfig

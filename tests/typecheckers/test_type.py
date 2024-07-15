@@ -7,7 +7,7 @@ pytestmark = [skip_on_windows, requires_pyright, requires_mypy]
 
 CODE = """
 import strawberry
-from strawberry.types.types import StrawberryOptional, StrawberryList
+from strawberry.types.base import StrawberryOptional, StrawberryList
 
 
 @strawberry.type
@@ -86,49 +86,49 @@ def test():
         [
             Result(
                 type="note",
-                message='Revealed type is "strawberry.types.types.StrawberryOptional"',
+                message='Revealed type is "strawberry.types.base.StrawberryOptional"',
                 line=11,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "strawberry.types.types.StrawberryList"',
+                message='Revealed type is "strawberry.types.base.StrawberryList"',
                 line=12,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "strawberry.types.types.StrawberryOptional"',
+                message='Revealed type is "strawberry.types.base.StrawberryOptional"',
                 line=13,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "strawberry.types.types.StrawberryList"',
+                message='Revealed type is "strawberry.types.base.StrawberryList"',
                 line=14,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "strawberry.types.types.StrawberryOptional"',
+                message='Revealed type is "strawberry.types.base.StrawberryOptional"',
                 line=16,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "strawberry.types.types.StrawberryList"',
+                message='Revealed type is "strawberry.types.base.StrawberryList"',
                 line=17,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "strawberry.types.types.StrawberryOptional"',
+                message='Revealed type is "strawberry.types.base.StrawberryOptional"',
                 line=18,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "strawberry.types.types.StrawberryList"',
+                message='Revealed type is "strawberry.types.base.StrawberryList"',
                 line=19,
                 column=13,
             ),

@@ -42,10 +42,7 @@ from graphql import (
     parse,
 )
 
-from strawberry.types.enum import EnumDefinition
-from strawberry.types.lazy_type import LazyType
-from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
-from strawberry.types.types import (
+from strawberry.types.base import (
     StrawberryList,
     StrawberryObjectDefinition,
     StrawberryOptional,
@@ -53,6 +50,9 @@ from strawberry.types.types import (
     get_object_definition,
     has_object_definition,
 )
+from strawberry.types.enum import EnumDefinition
+from strawberry.types.lazy_type import LazyType
+from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 from strawberry.types.union import StrawberryUnion
 from strawberry.types.unset import UNSET
 from strawberry.utils.str_converters import capitalize_first, to_camel_case

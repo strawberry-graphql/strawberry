@@ -39,10 +39,10 @@ from strawberry.relay.exceptions import (
     RelayWrongResolverAnnotationError,
 )
 from strawberry.types.arguments import StrawberryArgument, argument
+from strawberry.types.base import StrawberryList, StrawberryOptional
 from strawberry.types.field import _RESOLVER_TYPE, StrawberryField, field
 from strawberry.types.fields.resolver import StrawberryResolver
 from strawberry.types.lazy_type import LazyType
-from strawberry.types.types import StrawberryList, StrawberryOptional
 from strawberry.utils.aio import asyncgen_to_list
 from strawberry.utils.typing import eval_type, is_generic_alias
 

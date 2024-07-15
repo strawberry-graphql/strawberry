@@ -5,7 +5,7 @@ import pytest
 
 import strawberry
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
-from strawberry.types.types import (
+from strawberry.types.base import (
     StrawberryList,
     StrawberryObjectDefinition,
     StrawberryOptional,

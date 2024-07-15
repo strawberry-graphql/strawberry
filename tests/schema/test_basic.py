@@ -10,7 +10,7 @@ import strawberry
 from strawberry import ID
 from strawberry.scalars import Base64
 from strawberry.schema_directive import Location
-from strawberry.types.types import StrawberryList
+from strawberry.types.base import StrawberryList
 
 
 def test_raises_exception_with_unsupported_types():

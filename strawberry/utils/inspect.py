@@ -81,7 +81,7 @@ def get_specialized_type_var_map(cls: type) -> Optional[Dict[str, type]]:
     # {~T: int, ~K: str}
     ```
     """
-    from strawberry.types.types import has_object_definition
+    from strawberry.types.base import has_object_definition
 
     orig_bases = getattr(cls, "__orig_bases__", None)
     if orig_bases is None:

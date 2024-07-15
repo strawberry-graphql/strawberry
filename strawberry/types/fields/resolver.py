@@ -29,8 +29,8 @@ from strawberry.exceptions import (
 )
 from strawberry.parent import StrawberryParent
 from strawberry.types.arguments import StrawberryArgument
+from strawberry.types.base import StrawberryType, has_object_definition
 from strawberry.types.info import Info
-from strawberry.types.types import StrawberryType, has_object_definition
 from strawberry.utils.typing import type_has_annotation
 
 if TYPE_CHECKING:

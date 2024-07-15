@@ -13,7 +13,7 @@ from strawberry.experimental.pydantic._compat import (
 from strawberry.experimental.pydantic.exceptions import (
     UnregisteredTypeException,
 )
-from strawberry.types.types import StrawberryObjectDefinition
+from strawberry.types.base import StrawberryObjectDefinition
 
 try:
     from types import UnionType as TypingUnionType

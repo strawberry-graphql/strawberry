@@ -22,14 +22,14 @@ from graphql import GraphQLError
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.printer import print_schema
 from strawberry.schema import Schema as BaseSchema
-from strawberry.types.info import Info
-from strawberry.types.scalar import scalar
-from strawberry.types.types import (
+from strawberry.types.base import (
     StrawberryContainer,
     StrawberryObjectDefinition,
     WithStrawberryObjectDefinition,
     get_object_definition,
 )
+from strawberry.types.info import Info
+from strawberry.types.scalar import scalar
 from strawberry.types.union import StrawberryUnion
 from strawberry.utils.inspect import get_func_args
 

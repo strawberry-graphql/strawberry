@@ -31,12 +31,12 @@ from strawberry.exceptions import (
     WrongReturnTypeForUnion,
 )
 from strawberry.exceptions.handler import should_use_rich_exceptions
-from strawberry.types.lazy_type import LazyType
-from strawberry.types.types import (
+from strawberry.types.base import (
     StrawberryOptional,
     StrawberryType,
     has_object_definition,
 )
+from strawberry.types.lazy_type import LazyType
 
 if TYPE_CHECKING:
     from graphql import (
@@ -173,7 +173,7 @@ class StrawberryUnion(StrawberryType):
         ) -> str:
             assert isinstance(type_, GraphQLUnionType)
 
-            from strawberry.types.types import StrawberryObjectDefinition
+            from strawberry.types.base import StrawberryObjectDefinition
 
             # If the type given is not an Object type, try resolving using `is_type_of`
             # defined on the union's inner types

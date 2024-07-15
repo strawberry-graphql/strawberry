@@ -37,8 +37,8 @@ from strawberry.extensions.directives import (
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext
+from strawberry.types.base import StrawberryObjectDefinition, has_object_definition
 from strawberry.types.graphql import OperationType
-from strawberry.types.types import StrawberryObjectDefinition, has_object_definition
 
 from ..printer import print_schema
 from . import compat
@@ -53,10 +53,10 @@ if TYPE_CHECKING:
     from strawberry.directive import StrawberryDirective
     from strawberry.extensions import SchemaExtension
     from strawberry.types import ExecutionResult
+    from strawberry.types.base import StrawberryType
     from strawberry.types.enum import EnumDefinition
     from strawberry.types.field import StrawberryField
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
-    from strawberry.types.types import StrawberryType
     from strawberry.types.union import StrawberryUnion
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
