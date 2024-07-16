@@ -6,7 +6,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
-    List,
     Mapping,
     Optional,
     Type,
@@ -43,12 +42,7 @@ class SanicHTTPRequestAdapter(AsyncHTTPRequestAdapter):
         # the keys are the unique variable names and the values are lists
         # of values for each variable name. To ensure consistency, we're
         # enforcing the use of the first value in each list.
-
-        args = cast(
-            Dict[str, Optional[List[str]]],
-            self.request.get_args(keep_blank_values=True),
-        )
-
+        args = self.request.get_args(keep_blank_values=True)
         return {k: args.get(k, None) for k in args}
 
     @property

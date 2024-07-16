@@ -4,12 +4,16 @@ import sys
 import sysconfig
 import textwrap
 from pathlib import Path
-from typing import Generic, List, Optional, Sequence, TypeVar
+from typing import TYPE_CHECKING, Generic, List, Optional, Sequence, TypeVar
 from typing_extensions import Annotated
 
 import pytest
 
 import strawberry
+
+if TYPE_CHECKING:
+    from tests.schema.test_lazy.type_a import TypeA
+    from tests.schema.test_lazy.type_c import TypeC
 
 STRAWBERRY_EXECUTABLE = next(
     Path(sysconfig.get_path("scripts")).glob("strawberry*"), None
@@ -33,7 +37,6 @@ def test_lazy_types_with_generic():
 
 
 def test_no_generic_type_duplication_with_lazy():
-    from tests.schema.test_lazy.type_a import TypeB_abs, TypeB_rel
     from tests.schema.test_lazy.type_b import TypeB
 
     @strawberry.type
@@ -43,8 +46,10 @@ def test_no_generic_type_duplication_with_lazy():
     @strawberry.type
     class Query:
         users: Edge[TypeB]
-        relatively_lazy_users: Edge[TypeB_rel]
-        absolutely_lazy_users: Edge[TypeB_abs]
+        relatively_lazy_users: Edge[Annotated["TypeB", strawberry.lazy(".type_b")]]
+        absolutely_lazy_users: Edge[
+            Annotated["TypeB", strawberry.lazy("tests.schema.test_lazy.type_b")]
+        ]
 
     schema = strawberry.Schema(query=Query)
 
@@ -63,10 +68,16 @@ def test_no_generic_type_duplication_with_lazy():
 
         type TypeB {
           typeA: TypeA!
+          typeAList: [TypeA!]!
+          typeCList: [TypeC!]!
         }
 
         type TypeBEdge {
           node: TypeB!
+        }
+
+        type TypeC {
+          name: String!
         }
         """
     ).strip()

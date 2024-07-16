@@ -91,7 +91,7 @@ def _build_dataclass_creation_fields(
             graphql_name=graphql_name,
             # always unset because we use default_factory instead
             default=dataclasses.MISSING,
-            default_factory=get_default_factory_for_field(field),
+            default_factory=get_default_factory_for_field(field, compat=compat),
             type_annotation=StrawberryAnnotation.from_annotation(field_type),
             description=field.description,
             deprecation_reason=(
@@ -177,7 +177,7 @@ def type(
         )
 
         wrapped = _wrap_dataclass(cls)
-        extra_strawberry_fields = _get_fields(wrapped)
+        extra_strawberry_fields = _get_fields(wrapped, {})
         extra_fields = cast(List[dataclasses.Field], extra_strawberry_fields)
         private_fields = get_private_fields(wrapped)
 

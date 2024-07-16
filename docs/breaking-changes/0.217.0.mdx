@@ -1,0 +1,30 @@
+---
+title: 0.217 Breaking Changes
+slug: breaking-changes/0.217.0
+---
+
+# v0.217.0 changes how kwargs are passed to `has_permission` method
+
+Previously the `kwargs` argument keys for the `has_permission` method were using
+camel casing (depending on your schema configuration), now they will always
+follow the python name defined in your resolvers.
+
+```python
+class IsAuthorized(BasePermission):
+    message = "User is not authorized"
+
+    def has_permission(
+        self, source, info, **kwargs: typing.Any
+    ) -> bool:  # pragma: no cover
+        # kwargs will have a key called "a_key"
+        # instead of `aKey`
+
+        return False
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(permission_classes=[IsAuthorized])
+    def name(self, a_key: str) -> str:  # pragma: no cover
+        return "Erik"
+```

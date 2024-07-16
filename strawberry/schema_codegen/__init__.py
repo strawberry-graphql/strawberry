@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, List, Tuple, Union
 from typing_extensions import Protocol, TypeAlias
 
 import libcst as cst
+from graphlib import TopologicalSorter
 from graphql import (
     EnumTypeDefinitionNode,
     EnumValueDefinitionNode,
@@ -172,19 +173,6 @@ def _get_argument(name: str, value: ArgumentValue) -> cst.Arg:
 
     return cst.Arg(
         value=argument_value,
-        keyword=cst.Name(name),
-        equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
-    )
-
-
-# TODO: this might be removed now
-def _get_argument_list(name: str, values: list[ArgumentValue]) -> cst.Arg:
-    value = cst.List(
-        elements=[cst.Element(value=_sanitize_argument(value)) for value in values],
-    )
-
-    return cst.Arg(
-        value=value,
         keyword=cst.Name(name),
         equal=cst.AssignEqual(cst.SimpleWhitespace(""), cst.SimpleWhitespace("")),
     )
@@ -441,11 +429,11 @@ def _get_class_definition(
     | InputObjectTypeDefinitionNode,
     is_apollo_federation: bool,
     imports: set[Import],
-) -> cst.ClassDef:
+) -> Definition:
     decorator = _get_strawberry_decorator(definition, is_apollo_federation, imports)
 
-    bases = (
-        [cst.Arg(cst.Name(interface.name.value)) for interface in definition.interfaces]
+    interfaces = (
+        [interface.name.value for interface in definition.interfaces]
         if isinstance(
             definition, (ObjectTypeDefinitionNode, InterfaceTypeDefinitionNode)
         )
@@ -453,21 +441,24 @@ def _get_class_definition(
         else []
     )
 
-    return cst.ClassDef(
+    class_definition = cst.ClassDef(
         name=cst.Name(definition.name.value),
-        bases=bases,
         body=cst.IndentedBlock(
             body=[
                 _get_field(field, is_apollo_federation, imports)
                 for field in definition.fields
             ]
         ),
+        bases=[cst.Arg(cst.Name(interface)) for interface in interfaces],
         decorators=[decorator],
     )
+
+    return Definition(class_definition, interfaces, definition.name.value)
 
 
 def _get_enum_value(enum_value: EnumValueDefinitionNode) -> cst.SimpleStatementLine:
     name = enum_value.name.value
+
     return cst.SimpleStatementLine(
         body=[
             cst.Assign(
@@ -478,7 +469,7 @@ def _get_enum_value(enum_value: EnumValueDefinitionNode) -> cst.SimpleStatementL
     )
 
 
-def _get_enum_definition(definition: EnumTypeDefinitionNode) -> cst.ClassDef:
+def _get_enum_definition(definition: EnumTypeDefinitionNode) -> Definition:
     decorator = cst.Decorator(
         decorator=cst.Attribute(
             value=cst.Name("strawberry"),
@@ -486,13 +477,19 @@ def _get_enum_definition(definition: EnumTypeDefinitionNode) -> cst.ClassDef:
         ),
     )
 
-    return cst.ClassDef(
+    class_definition = cst.ClassDef(
         name=cst.Name(definition.name.value),
         bases=[cst.Arg(cst.Name("Enum"))],
         body=cst.IndentedBlock(
             body=[_get_enum_value(value) for value in definition.values]
         ),
         decorators=[decorator],
+    )
+
+    return Definition(
+        class_definition,
+        [],
+        definition.name.value,
     )
 
 
@@ -562,38 +559,54 @@ def _get_schema_definition(
     )
 
 
-def _get_union_definition(definition: UnionTypeDefinitionNode) -> cst.Assign:
+@dataclasses.dataclass(frozen=True)
+class Definition:
+    code: cst.CSTNode
+    dependencies: list[str]
+    name: str
+
+
+def _get_union_definition(definition: UnionTypeDefinitionNode) -> Definition:
     name = definition.name.value
 
     types = cst.parse_expression(
         " | ".join([type_.name.value for type_ in definition.types])
     )
 
-    return cst.Assign(
-        targets=[cst.AssignTarget(cst.Name(name))],
-        value=cst.Subscript(
-            value=cst.Name("Annotated"),
-            slice=[
-                cst.SubscriptElement(slice=cst.Index(types)),
-                cst.SubscriptElement(
-                    slice=cst.Index(
-                        cst.Call(
-                            cst.Attribute(
-                                value=cst.Name("strawberry"),
-                                attr=cst.Name("union"),
-                            ),
-                            args=[_get_argument("name", name)],
-                        )
-                    )
+    simple_statement = cst.SimpleStatementLine(
+        body=[
+            cst.Assign(
+                targets=[cst.AssignTarget(cst.Name(name))],
+                value=cst.Subscript(
+                    value=cst.Name("Annotated"),
+                    slice=[
+                        cst.SubscriptElement(slice=cst.Index(types)),
+                        cst.SubscriptElement(
+                            slice=cst.Index(
+                                cst.Call(
+                                    cst.Attribute(
+                                        value=cst.Name("strawberry"),
+                                        attr=cst.Name("union"),
+                                    ),
+                                    args=[_get_argument("name", name)],
+                                )
+                            )
+                        ),
+                    ],
                 ),
-            ],
-        ),
+            )
+        ]
+    )
+    return Definition(
+        simple_statement,
+        [],
+        definition.name.value,
     )
 
 
 def _get_scalar_definition(
     definition: ScalarTypeDefinitionNode, imports: set[Import]
-) -> cst.SimpleStatementLine | None:
+) -> Definition | None:
     name = definition.name.value
 
     if name == "Date":
@@ -652,7 +665,7 @@ def _get_scalar_definition(
         ),
     ]
 
-    return cst.SimpleStatementLine(
+    statement_definition = cst.SimpleStatementLine(
         body=[
             cst.Assign(
                 targets=[cst.AssignTarget(cst.Name(name))],
@@ -677,12 +690,13 @@ def _get_scalar_definition(
             )
         ]
     )
+    return Definition(statement_definition, [], name=definition.name.value)
 
 
 def codegen(schema: str) -> str:
     document = parse(schema)
 
-    definitions: list[cst.CSTNode] = []
+    definitions: dict[str, Definition] = {}
 
     root_query_name: str | None = None
     root_mutation_name: str | None = None
@@ -692,17 +706,17 @@ def codegen(schema: str) -> str:
         Import(module=None, imports=("strawberry",)),
     }
 
-    object_types: dict[str, cst.ClassDef] = {}
-
     # when we encounter a extend schema @link ..., we check if is an apollo federation schema
     # and we use this variable to keep track of it, but at the moment the assumption is that
     # the schema extension is always done at the top, this might not be the case all the
     # time
     is_apollo_federation = False
 
-    for definition in document.definitions:
+    for graphql_definition in document.definitions:
+        definition: Definition | None = None
+
         if isinstance(
-            definition,
+            graphql_definition,
             (
                 ObjectTypeDefinitionNode,
                 InterfaceTypeDefinitionNode,
@@ -710,23 +724,17 @@ def codegen(schema: str) -> str:
                 ObjectTypeExtensionNode,
             ),
         ):
-            class_definition = _get_class_definition(
-                definition, is_apollo_federation, imports
+            definition = _get_class_definition(
+                graphql_definition, is_apollo_federation, imports
             )
 
-            object_types[definition.name.value] = class_definition
-
-            definitions.append(cst.EmptyLine())
-            definitions.append(class_definition)
-
-        elif isinstance(definition, EnumTypeDefinitionNode):
+        elif isinstance(graphql_definition, EnumTypeDefinitionNode):
             imports.add(Import(module="enum", imports=("Enum",)))
 
-            definitions.append(cst.EmptyLine())
-            definitions.append(_get_enum_definition(definition))
+            definition = _get_enum_definition(graphql_definition)
 
-        elif isinstance(definition, SchemaDefinitionNode):
-            for operation_type_definition in definition.operation_types:
+        elif isinstance(graphql_definition, SchemaDefinitionNode):
+            for operation_type_definition in graphql_definition.operation_types:
                 if operation_type_definition.operation == OperationType.QUERY:
                     root_query_name = operation_type_definition.type.name.value
                 elif operation_type_definition.operation == OperationType.MUTATION:
@@ -737,36 +745,33 @@ def codegen(schema: str) -> str:
                     raise NotImplementedError(
                         f"Unknown operation {operation_type_definition.operation}"
                     )
-        elif isinstance(definition, UnionTypeDefinitionNode):
+        elif isinstance(graphql_definition, UnionTypeDefinitionNode):
             imports.add(Import(module="typing", imports=("Annotated",)))
 
-            definitions.append(cst.EmptyLine())
-            definitions.append(_get_union_definition(definition))
-            definitions.append(cst.EmptyLine())
-        elif isinstance(definition, ScalarTypeDefinitionNode):
-            scalar_definition = _get_scalar_definition(definition, imports)
+            definition = _get_union_definition(graphql_definition)
+        elif isinstance(graphql_definition, ScalarTypeDefinitionNode):
+            definition = _get_scalar_definition(graphql_definition, imports)
 
-            if scalar_definition is not None:
-                definitions.append(cst.EmptyLine())
-                definitions.append(scalar_definition)
-                definitions.append(cst.EmptyLine())
-        elif isinstance(definition, SchemaExtensionNode):
+        elif isinstance(graphql_definition, SchemaExtensionNode):
             is_apollo_federation = any(
                 _is_federation_link_directive(directive)
-                for directive in definition.directives
+                for directive in graphql_definition.directives
             )
         else:
             raise NotImplementedError(f"Unknown definition {definition}")
 
+        if definition is not None:
+            definitions[definition.name] = definition
+
     if root_query_name is None:
-        root_query_name = "Query" if "Query" in object_types else None
+        root_query_name = "Query" if "Query" in definitions else None
 
     if root_mutation_name is None:
-        root_mutation_name = "Mutation" if "Mutation" in object_types else None
+        root_mutation_name = "Mutation" if "Mutation" in definitions else None
 
     if root_subscription_name is None:
         root_subscription_name = (
-            "Subscription" if "Subscription" in object_types else None
+            "Subscription" if "Subscription" in definitions else None
         )
 
     schema_definition = _get_schema_definition(
@@ -777,19 +782,23 @@ def codegen(schema: str) -> str:
     )
 
     if schema_definition:
-        definitions.append(cst.EmptyLine())
-        definitions.append(schema_definition)
+        definitions["Schema"] = Definition(schema_definition, [], "schema")
 
-    module = cst.Module(
-        body=[
-            *[
-                cst.SimpleStatementLine(body=[import_.to_cst()])
-                for import_ in sorted(
-                    imports, key=lambda i: (i.module or "", i.imports)
-                )
-            ],
-            *definitions,  # type: ignore
-        ]
-    )
+    body: list[cst.CSTNode] = [
+        cst.SimpleStatementLine(body=[import_.to_cst()])
+        for import_ in sorted(imports, key=lambda i: (i.module or "", i.imports))
+    ]
+
+    # DAG to sort definitions based on dependencies
+    graph = {name: definition.dependencies for name, definition in definitions.items()}
+    ts = TopologicalSorter(graph)
+
+    for definition_name in tuple(ts.static_order()):
+        definition = definitions[definition_name]
+
+        body.append(cst.EmptyLine())
+        body.append(definition.code)
+
+    module = cst.Module(body=body)  # type: ignore
 
     return module.code

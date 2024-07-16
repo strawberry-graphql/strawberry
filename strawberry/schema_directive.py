@@ -53,8 +53,8 @@ def schema_directive(
     print_definition: bool = True,
 ) -> Callable[..., T]:
     def _wrap(cls: T) -> T:
-        cls = _wrap_dataclass(cls)
-        fields = _get_fields(cls)
+        cls = _wrap_dataclass(cls)  # type: ignore
+        fields = _get_fields(cls, {})
 
         cls.__strawberry_directive__ = StrawberrySchemaDirective(
             python_name=cls.__name__,

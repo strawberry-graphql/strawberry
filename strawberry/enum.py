@@ -136,8 +136,7 @@ def enum(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Iterable[object] = (),
-) -> EnumType:
-    ...
+) -> EnumType: ...
 
 
 @overload
@@ -147,8 +146,7 @@ def enum(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Iterable[object] = (),
-) -> Callable[[EnumType], EnumType]:
-    ...
+) -> Callable[[EnumType], EnumType]: ...
 
 
 def enum(

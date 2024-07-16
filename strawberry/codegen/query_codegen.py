@@ -139,11 +139,9 @@ class QueryCodegenPlugin:
         """
         self.query = query
 
-    def on_start(self) -> None:
-        ...
+    def on_start(self) -> None: ...
 
-    def on_end(self, result: CodegenResult) -> None:
-        ...
+    def on_end(self, result: CodegenResult) -> None: ...
 
     def generate_code(
         self, types: List[GraphQLType], operation: GraphQLOperation

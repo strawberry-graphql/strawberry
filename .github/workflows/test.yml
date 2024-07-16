@@ -68,7 +68,7 @@ jobs:
             .nox
           key:
             ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
-            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}-3
+            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}-4
 
       - run: pip install poetry nox nox-poetry
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
@@ -112,7 +112,7 @@ jobs:
         if: steps.setup-python.outputs.cache-hit != 'true'
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v1
+        uses: CodSpeedHQ/action@v2
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: poetry run pytest tests/benchmarks --codspeed

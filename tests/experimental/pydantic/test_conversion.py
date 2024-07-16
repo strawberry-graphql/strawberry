@@ -12,8 +12,7 @@ import strawberry
 from strawberry.experimental.pydantic._compat import (
     IS_PYDANTIC_V2,
     CompatModelField,
-    PydanticV1Compat,
-    PydanticV2Compat,
+    PydanticCompat,
 )
 from strawberry.experimental.pydantic.exceptions import (
     AutoFieldsNotInBaseModelError,
@@ -145,8 +144,7 @@ def test_convert_alias_name():
     @strawberry.experimental.pydantic.type(
         UserModel, all_fields=True, use_pydantic_alias=True
     )
-    class User:
-        ...
+    class User: ...
 
     origin_user = UserModel(age=1, password="abc")
     user = User.from_pydantic(origin_user)
@@ -164,8 +162,7 @@ def test_do_not_convert_alias_name():
     @strawberry.experimental.pydantic.type(
         UserModel, all_fields=True, use_pydantic_alias=False
     )
-    class User:
-        ...
+    class User: ...
 
     origin_user = UserModel(age=1, password="abc")
     user = User.from_pydantic(origin_user)
@@ -843,10 +840,11 @@ def test_can_convert_pydantic_type_to_strawberry_newtype_list():
 
 
 def test_get_default_factory_for_field():
-    if IS_PYDANTIC_V2:
-        MISSING_TYPE = PydanticV2Compat().PYDANTIC_MISSING_TYPE
-    else:
-        MISSING_TYPE = PydanticV1Compat().PYDANTIC_MISSING_TYPE
+    class User(BaseModel):
+        pass
+
+    compat = PydanticCompat.from_model(User)
+    MISSING_TYPE = compat.PYDANTIC_MISSING_TYPE
 
     def _get_field(
         default: Any = MISSING_TYPE,
@@ -869,7 +867,7 @@ def test_get_default_factory_for_field():
 
     field = _get_field()
 
-    assert get_default_factory_for_field(field) is dataclasses.MISSING
+    assert get_default_factory_for_field(field, compat) is dataclasses.MISSING
 
     def factory_func():
         return "strawberry"
@@ -877,13 +875,13 @@ def test_get_default_factory_for_field():
     field = _get_field(default_factory=factory_func)
 
     # should return the default_factory unchanged
-    assert get_default_factory_for_field(field) is factory_func
+    assert get_default_factory_for_field(field, compat) is factory_func
 
     mutable_default = [123, "strawberry"]
 
     field = _get_field(mutable_default)
 
-    created_factory = get_default_factory_for_field(field)
+    created_factory = get_default_factory_for_field(field, compat)
 
     # should return a factory that copies the default parameter
     assert created_factory() == mutable_default
@@ -895,7 +893,7 @@ def test_get_default_factory_for_field():
         BothDefaultAndDefaultFactoryDefinedError,
         match=("Not allowed to specify both default and default_factory."),
     ):
-        get_default_factory_for_field(field)
+        get_default_factory_for_field(field, compat)
 
 
 def test_convert_input_types_to_pydantic_default_and_default_factory():

@@ -1,0 +1,32 @@
+---
+title: 0.169.0 Breaking changes
+slug: breaking-changes/0.169.0
+---
+
+# v0.169.0 Introduces a couple of breaking changes in the HTTP integrations
+
+## Flask
+
+Both `get_root_value` and `get_context` now receive the request as a parameter.
+
+If you're customizing these methods you can change the signature to:
+
+```python
+def get_root_value(self, request: Request) -> Any: ...
+
+
+def get_context(self, request: Request, response: Response) -> Any: ...
+```
+
+The same is true for the async version of the view.
+
+## Sanic
+
+The `get_root_value` method now receives the request as a parameter and it is
+async.
+
+If you're customizing this method you can change the signature to:
+
+```python
+async def get_root_value(self, request: Request) -> Any: ...
+```

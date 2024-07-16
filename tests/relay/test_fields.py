@@ -363,6 +363,8 @@ query TestQuery (
 attrs = [
     "fruits",
     "fruitsLazy",
+    "fruitsAlias",
+    "fruitsAliasLazy",
     "fruitsConcreteResolver",
     "fruitsCustomResolver",
     "fruitsCustomResolverLazy",
@@ -1478,8 +1480,7 @@ def test_parameters(mocker: MockerFixture):
     class Fruit(relay.Node):
         code: relay.NodeID[str]
 
-    def resolver(info: strawberry.Info) -> List[Fruit]:
-        ...
+    def resolver(info: strawberry.Info) -> List[Fruit]: ...
 
     @strawberry.type
     class Query:

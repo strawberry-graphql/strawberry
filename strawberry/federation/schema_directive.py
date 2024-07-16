@@ -38,8 +38,8 @@ def schema_directive(
     import_url: Optional[str] = None,
 ) -> Callable[..., T]:
     def _wrap(cls: T) -> T:
-        cls = _wrap_dataclass(cls)
-        fields = _get_fields(cls)
+        cls = _wrap_dataclass(cls)  # type: ignore
+        fields = _get_fields(cls, {})
 
         cls.__strawberry_directive__ = StrawberryFederationSchemaDirective(
             python_name=cls.__name__,

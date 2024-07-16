@@ -23,7 +23,7 @@ from typing import (  # type: ignore
     cast,
     overload,
 )
-from typing_extensions import Annotated, get_args, get_origin
+from typing_extensions import Annotated, TypeGuard, get_args, get_origin
 
 ast_unparse = getattr(ast, "unparse", None)
 # ast.unparse is only available on python 3.9+. For older versions we will
@@ -63,13 +63,18 @@ def get_generic_alias(type_: Type) -> Type:
             continue
 
         attr = getattr(typing, attr_name)
-        # _GenericAlias overrides all the methods that we can use to know if
-        # this is a subclass of it. But if it has an "_inst" attribute
-        # then it for sure is a _GenericAlias
-        if hasattr(attr, "_inst") and attr.__origin__ is type_:
+        if is_generic_alias(attr) and attr.__origin__ is type_:
             return attr
 
     raise AssertionError(f"No GenericAlias available for {type_}")  # pragma: no cover
+
+
+def is_generic_alias(type_: Any) -> TypeGuard[_GenericAlias]:
+    """Returns True if the type is a generic alias."""
+    # _GenericAlias overrides all the methods that we can use to know if
+    # this is a subclass of it. But if it has an "_inst" attribute
+    # then it for sure is a _GenericAlias
+    return hasattr(type_, "_inst")
 
 
 def is_list(annotation: object) -> bool:
@@ -204,13 +209,11 @@ def get_parameters(annotation: Type) -> Union[Tuple[object], Tuple[()]]:
 
 
 @overload
-def _ast_replace_union_operation(expr: ast.expr) -> ast.expr:
-    ...
+def _ast_replace_union_operation(expr: ast.expr) -> ast.expr: ...
 
 
 @overload
-def _ast_replace_union_operation(expr: ast.Expr) -> ast.Expr:
-    ...
+def _ast_replace_union_operation(expr: ast.Expr) -> ast.Expr: ...
 
 
 def _ast_replace_union_operation(
@@ -283,6 +286,12 @@ def _get_namespace_from_ast(
     elif (
         isinstance(expr, ast.Subscript)
         and isinstance(expr.value, ast.Name)
+        and expr.value.id in {"list", "List"}
+    ):
+        extra.update(_get_namespace_from_ast(expr.slice, globalns, localns))
+    elif (
+        isinstance(expr, ast.Subscript)
+        and isinstance(expr.value, ast.Name)
         and expr.value.id == "Annotated"
     ):
         assert ast_unparse
@@ -304,7 +313,7 @@ def _get_namespace_from_ast(
         # here to resolve lazy types by execing the annotated args, resolving the
         # type directly and then adding it to extra namespace, so that _eval_type
         # can properly resolve it later
-        type_name = args[0].strip()
+        type_name = args[0].strip(" '\"\n")
         for arg in args[1:]:
             evaled_arg = eval(arg, globalns, localns)  # noqa: PGH001, S307
             if isinstance(evaled_arg, StrawberryLazyReference):

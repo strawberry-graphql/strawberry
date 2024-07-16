@@ -16,6 +16,8 @@ from typing import (
 )
 
 from graphql import (
+    GraphQLBoolean,
+    GraphQLField,
     GraphQLNamedType,
     GraphQLNonNull,
     GraphQLSchema,
@@ -168,6 +170,7 @@ class Schema(BaseSchema):
 
         self._warn_for_federation_directives()
         self._resolve_node_ids()
+        self._extend_introspection()
 
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible
@@ -266,7 +269,7 @@ class Schema(BaseSchema):
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
-            process_errors=self.process_errors,
+            process_errors=self._process_errors,
         )
 
         return result
@@ -298,7 +301,7 @@ class Schema(BaseSchema):
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
-            process_errors=self.process_errors,
+            process_errors=self._process_errors,
         )
 
         return result
@@ -321,7 +324,7 @@ class Schema(BaseSchema):
             operation_name=operation_name,
         )
 
-    def _resolve_node_ids(self):
+    def _resolve_node_ids(self) -> None:
         for concrete_type in self.schema_converter.type_map.values():
             type_def = concrete_type.definition
 
@@ -352,7 +355,7 @@ class Schema(BaseSchema):
                 if not has_custom_resolve_id:
                     origin.resolve_id_attr()
 
-    def _warn_for_federation_directives(self):
+    def _warn_for_federation_directives(self) -> None:
         """Raises a warning if the schema has any federation directives."""
         from strawberry.federation.schema_directives import FederationDirective
 
@@ -374,6 +377,17 @@ class Schema(BaseSchema):
                 UserWarning,
                 stacklevel=3,
             )
+
+    def _extend_introspection(self) -> None:
+        def _resolve_is_one_of(obj: Any, info: Any) -> bool:
+            if "strawberry-definition" not in obj.extensions:
+                return False
+
+            return obj.extensions["strawberry-definition"].is_one_of
+
+        instrospection_type = self._schema.type_map["__Type"]
+        instrospection_type.fields["isOneOf"] = GraphQLField(GraphQLBoolean)  # type: ignore[attr-defined]
+        instrospection_type.fields["isOneOf"].resolve = _resolve_is_one_of  # type: ignore[attr-defined]
 
     def as_str(self) -> str:
         return print_schema(self)

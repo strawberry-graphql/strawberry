@@ -38,7 +38,12 @@ from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
 from strawberry.utils.inspect import in_async_context
 from strawberry.utils.typing import eval_type, is_classvar
 
-from .utils import from_base64, to_base64
+from .utils import (
+    SliceMetadata,
+    from_base64,
+    should_resolve_list_connection_edges,
+    to_base64,
+)
 
 if TYPE_CHECKING:
     from strawberry.scalars import ID
@@ -130,8 +135,7 @@ class GlobalID:
         *,
         required: Literal[True] = ...,
         ensure_type: Type[_T],
-    ) -> _T:
-        ...
+    ) -> _T: ...
 
     @overload
     async def resolve_node(
@@ -140,8 +144,7 @@ class GlobalID:
         *,
         required: Literal[True],
         ensure_type: None = ...,
-    ) -> Node:
-        ...
+    ) -> Node: ...
 
     @overload
     async def resolve_node(
@@ -150,8 +153,7 @@ class GlobalID:
         *,
         required: bool = ...,
         ensure_type: None = ...,
-    ) -> Optional[Node]:
-        ...
+    ) -> Optional[Node]: ...
 
     async def resolve_node(self, info, *, required=False, ensure_type=None) -> Any:
         """Resolve the type name and node id info to the node itself.
@@ -218,14 +220,22 @@ class GlobalID:
 
         """
         type_def = info.schema.get_type_by_name(self.type_name)
-        assert isinstance(type_def, StrawberryObjectDefinition)
+        if not isinstance(type_def, StrawberryObjectDefinition):
+            raise GlobalIDValueError(
+                f"Cannot resolve. GlobalID requires a GraphQL type, "
+                f"received `{self.type_name}`."
+            )
 
         origin = (
             type_def.origin.resolve_type
             if isinstance(type_def.origin, LazyType)
             else type_def.origin
         )
-        assert issubclass(origin, Node)
+        if not issubclass(origin, Node):
+            raise GlobalIDValueError(
+                f"Cannot resolve. GlobalID requires a GraphQL Node type, "
+                f"received `{self.type_name}`."
+            )
         return origin
 
     @overload
@@ -235,8 +245,7 @@ class GlobalID:
         *,
         required: Literal[True] = ...,
         ensure_type: Type[_T],
-    ) -> _T:
-        ...
+    ) -> _T: ...
 
     @overload
     def resolve_node_sync(
@@ -245,8 +254,7 @@ class GlobalID:
         *,
         required: Literal[True],
         ensure_type: None = ...,
-    ) -> Node:
-        ...
+    ) -> Node: ...
 
     @overload
     def resolve_node_sync(
@@ -255,8 +263,7 @@ class GlobalID:
         *,
         required: bool = ...,
         ensure_type: None = ...,
-    ) -> Optional[Node]:
-        ...
+    ) -> Optional[Node]: ...
 
     def resolve_node_sync(self, info, *, required=False, ensure_type=None) -> Any:
         """Resolve the type name and node id info to the node itself.
@@ -485,8 +492,7 @@ class Node:
         info: Info,
         node_ids: Iterable[str],
         required: Literal[True],
-    ) -> AwaitableOrValue[Iterable[Self]]:
-        ...
+    ) -> AwaitableOrValue[Iterable[Self]]: ...
 
     @overload
     @classmethod
@@ -496,8 +502,7 @@ class Node:
         info: Info,
         node_ids: Iterable[str],
         required: Literal[False] = ...,
-    ) -> AwaitableOrValue[Iterable[Optional[Self]]]:
-        ...
+    ) -> AwaitableOrValue[Iterable[Optional[Self]]]: ...
 
     @overload
     @classmethod
@@ -510,8 +515,7 @@ class Node:
     ) -> Union[
         AwaitableOrValue[Iterable[Self]],
         AwaitableOrValue[Iterable[Optional[Self]]],
-    ]:
-        ...
+    ]: ...
 
     @classmethod
     def resolve_nodes(
@@ -555,8 +559,7 @@ class Node:
         *,
         info: Info,
         required: Literal[True],
-    ) -> AwaitableOrValue[Self]:
-        ...
+    ) -> AwaitableOrValue[Self]: ...
 
     @overload
     @classmethod
@@ -566,8 +569,7 @@ class Node:
         *,
         info: Info,
         required: Literal[False] = ...,
-    ) -> AwaitableOrValue[Optional[Self]]:
-        ...
+    ) -> AwaitableOrValue[Optional[Self]]: ...
 
     @overload
     @classmethod
@@ -577,8 +579,7 @@ class Node:
         *,
         info: Info,
         required: bool,
-    ) -> AwaitableOrValue[Optional[Self]]:
-        ...
+    ) -> AwaitableOrValue[Optional[Self]]: ...
 
     @classmethod
     def resolve_node(
@@ -802,61 +803,13 @@ class ListConnection(Connection[NodeType]):
             https://relay.dev/graphql/connections.htm#sec-Pagination-algorithm
 
         """
-        max_results = info.schema.config.relay_max_results
-        start = 0
-        end: Optional[int] = None
-
-        if after:
-            after_type, after_parsed = from_base64(after)
-            if after_type != PREFIX:
-                # When the base64 hash doesnt exist, the after_type seems to return
-                # arrayconnEction instead of PREFIX. Let's raise a predictable
-                # instead of "An unknown error occurred."
-                raise TypeError("Argument 'after' contains a non-existing value.")
-
-            start = int(after_parsed) + 1
-        if before:
-            before_type, before_parsed = from_base64(before)
-            if before_type != PREFIX:
-                # When the base64 hash doesnt exist, the after_type seems to return
-                # arrayconnEction instead of PREFIX. Let's raise a predictable
-                # instead of "An unknown error occurred.
-                raise TypeError("Argument 'before' contains a non-existing value.")
-            end = int(before_parsed)
-
-        if isinstance(first, int):
-            if first < 0:
-                raise ValueError("Argument 'first' must be a non-negative integer.")
-
-            if first > max_results:
-                raise ValueError(
-                    f"Argument 'first' cannot be higher than {max_results}."
-                )
-
-            if end is not None:
-                start = max(0, end - 1)
-
-            end = start + first
-        if isinstance(last, int):
-            if last < 0:
-                raise ValueError("Argument 'last' must be a non-negative integer.")
-
-            if last > max_results:
-                raise ValueError(
-                    f"Argument 'last' cannot be higher than {max_results}."
-                )
-
-            if end is not None:
-                start = max(start, end - last)
-            else:
-                end = sys.maxsize
-
-        if end is None:
-            end = start + max_results
-
-        expected = end - start if end != sys.maxsize else None
-        # Overfetch by 1 to check if we have a next result
-        overfetch = end + 1 if end != sys.maxsize else end
+        slice_metadata = SliceMetadata.from_arguments(
+            info,
+            before=before,
+            after=after,
+            first=first,
+            last=last,
+        )
 
         type_def = get_object_definition(cls)
         assert type_def
@@ -871,19 +824,21 @@ class ListConnection(Connection[NodeType]):
 
         if isinstance(nodes, (AsyncIterator, AsyncIterable)) and in_async_context():
 
-            async def resolver():
+            async def resolver() -> Self:
                 try:
                     iterator = cast(
                         Union[AsyncIterator[NodeType], AsyncIterable[NodeType]],
-                        cast(Sequence, nodes)[start:overfetch],
+                        cast(Sequence, nodes)[
+                            slice_metadata.start : slice_metadata.overfetch
+                        ],
                     )
                 except TypeError:
                     # TODO: Why mypy isn't narrowing this based on the if above?
                     assert isinstance(nodes, (AsyncIterator, AsyncIterable))
                     iterator = aislice(
                         nodes,
-                        start,
-                        overfetch,
+                        slice_metadata.start,
+                        slice_metadata.overfetch,
                     )
 
                 # The slice above might return an object that now is not async
@@ -892,7 +847,7 @@ class ListConnection(Connection[NodeType]):
                     edges: List[Edge] = [
                         edge_class.resolve_edge(
                             cls.resolve_node(v, info=info, **kwargs),
-                            cursor=start + i,
+                            cursor=slice_metadata.start + i,
                         )
                         async for i, v in aenumerate(iterator)
                     ]
@@ -900,17 +855,20 @@ class ListConnection(Connection[NodeType]):
                     edges: List[Edge] = [  # type: ignore[no-redef]
                         edge_class.resolve_edge(
                             cls.resolve_node(v, info=info, **kwargs),
-                            cursor=start + i,
+                            cursor=slice_metadata.start + i,
                         )
                         for i, v in enumerate(iterator)
                     ]
 
-                has_previous_page = start > 0
-                if expected is not None and len(edges) == expected + 1:
+                has_previous_page = slice_metadata.start > 0
+                if (
+                    slice_metadata.expected is not None
+                    and len(edges) == slice_metadata.expected + 1
+                ):
                     # Remove the overfetched result
                     edges = edges[:-1]
                     has_next_page = True
-                elif end == sys.maxsize:
+                elif slice_metadata.end == sys.maxsize:
                     # Last was asked without any after/before
                     assert last is not None
                     original_len = len(edges)
@@ -935,30 +893,44 @@ class ListConnection(Connection[NodeType]):
         try:
             iterator = cast(
                 Union[Iterator[NodeType], Iterable[NodeType]],
-                cast(Sequence, nodes)[start:overfetch],
+                cast(Sequence, nodes)[slice_metadata.start : slice_metadata.overfetch],
             )
         except TypeError:
             assert isinstance(nodes, (Iterable, Iterator))
             iterator = itertools.islice(
                 nodes,
-                start,
-                overfetch,
+                slice_metadata.start,
+                slice_metadata.overfetch,
+            )
+
+        if not should_resolve_list_connection_edges(info):
+            return cls(
+                edges=[],
+                page_info=PageInfo(
+                    start_cursor=None,
+                    end_cursor=None,
+                    has_previous_page=False,
+                    has_next_page=False,
+                ),
             )
 
         edges = [
             edge_class.resolve_edge(
                 cls.resolve_node(v, info=info, **kwargs),
-                cursor=start + i,
+                cursor=slice_metadata.start + i,
             )
             for i, v in enumerate(iterator)
         ]
 
-        has_previous_page = start > 0
-        if expected is not None and len(edges) == expected + 1:
+        has_previous_page = slice_metadata.start > 0
+        if (
+            slice_metadata.expected is not None
+            and len(edges) == slice_metadata.expected + 1
+        ):
             # Remove the overfetched result
             edges = edges[:-1]
             has_next_page = True
-        elif end == sys.maxsize:
+        elif slice_metadata.end == sys.maxsize:
             # Last was asked without any after/before
             assert last is not None
             original_len = len(edges)

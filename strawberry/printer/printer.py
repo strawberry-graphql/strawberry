@@ -69,20 +69,17 @@ class PrintExtras:
 
 
 @overload
-def _serialize_dataclasses(value: Dict[_T, object]) -> Dict[_T, object]:
-    ...
+def _serialize_dataclasses(value: Dict[_T, object]) -> Dict[_T, object]: ...
 
 
 @overload
 def _serialize_dataclasses(
     value: Union[List[object], Tuple[object]],
-) -> List[object]:
-    ...
+) -> List[object]: ...
 
 
 @overload
-def _serialize_dataclasses(value: object) -> object:
-    ...
+def _serialize_dataclasses(value: object) -> object: ...
 
 
 def _serialize_dataclasses(value):
@@ -569,7 +566,7 @@ def print_schema(schema: BaseSchema) -> str:
         None, [print_directive(directive, schema=schema) for directive in directives]
     )
 
-    def _name_getter(type_: Any):
+    def _name_getter(type_: Any) -> str:
         if hasattr(type_, "name"):
             return type_.name
         if isinstance(type_, ScalarWrapper):
