@@ -24,7 +24,7 @@ def _execute_transform_wrap(
     # TODO: maybe capture warnings?
     with open(os.devnull, "w") as null:  # noqa: PTH123
         with contextlib.redirect_stderr(null):
-            return _execute_transform(**job)
+            return _execute_transform(**job, scratch={})
 
 
 def _get_progress_and_pool(
