@@ -12,23 +12,28 @@ class UpdateImportsCodemod(VisitorBasedCodemodCommand):
         self.add_imports_visitor = AddImportsVisitor(context)
         self.remove_imports_visitor = RemoveImportsVisitor(context)
 
-    def _update_strawberry_field_imports(
+    def _update_imports(
         self, node: cst.ImportFrom, updated_node: cst.ImportFrom
     ) -> cst.ImportFrom:
-        if m.matches(
-            node,
-            m.ImportFrom(
-                module=m.Attribute(value=m.Name("strawberry"), attr=m.Name("field"))
-            ),
-        ):
-            updated_node = updated_node.with_changes(
-                module=cst.Attribute(
-                    value=cst.Attribute(
-                        value=cst.Name("strawberry"), attr=cst.Name("types")
-                    ),
-                    attr=cst.Name("field"),
+        imports = ["field", "union"]
+
+        for import_name in imports:
+            if m.matches(
+                node,
+                m.ImportFrom(
+                    module=m.Attribute(
+                        value=m.Name("strawberry"), attr=m.Name(import_name)
+                    )
                 ),
-            )
+            ):
+                updated_node = updated_node.with_changes(
+                    module=cst.Attribute(
+                        value=cst.Attribute(
+                            value=cst.Name("strawberry"), attr=cst.Name("types")
+                        ),
+                        attr=cst.Name(import_name),
+                    ),
+                )
 
         return updated_node
 
@@ -69,7 +74,7 @@ class UpdateImportsCodemod(VisitorBasedCodemodCommand):
     def leave_ImportFrom(
         self, node: cst.ImportFrom, updated_node: cst.ImportFrom
     ) -> cst.ImportFrom:
-        updated_node = self._update_strawberry_field_imports(updated_node, updated_node)
+        updated_node = self._update_imports(updated_node, updated_node)
         updated_node = self._update_strawberry_type_imports(updated_node, updated_node)
 
         return updated_node

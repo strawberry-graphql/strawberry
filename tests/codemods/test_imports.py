@@ -74,3 +74,14 @@ class TestConvertConstantCommand(CodemodTest):
         """
 
         self.assertCodemod(before, after)
+
+    def test_update_import_union(self) -> None:
+        before = """
+            from strawberry.union import StrawberryUnion
+        """
+
+        after = """
+            from strawberry.types.union import StrawberryUnion
+        """
+
+        self.assertCodemod(before, after)
