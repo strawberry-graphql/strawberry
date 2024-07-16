@@ -160,7 +160,7 @@ def test_serialization_of_incorrect_datetime_string(value):
 
 def test_serialization_error_message_for_incorrect_datetime_string():
     """Test if error message is using original error message
-    from datetime lib, and is properly formatted
+    from datetime lib, and is properly formatted.
     """
     result = execute_mutation("2021-13-01T09:00:00")
     assert result.errors

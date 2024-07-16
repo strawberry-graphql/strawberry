@@ -501,7 +501,7 @@ def test_union_optional_with_or_operator():
 
 
 def test_union_with_input_types():
-    """Verify that union of input types raises an error"""
+    """Verify that union of input types raises an error."""
 
     @strawberry.type
     class User:

@@ -1598,7 +1598,7 @@ query fruitsBeforeAfterTest (
 
 async def test_query_before_error():
     """Verify if the error raised on a non-existing before hash
-    raises the correct error
+    raises the correct error.
     """
     # with pytest.raises(ValueError):
     index = to_base64("Fake", 9292292)
@@ -1612,7 +1612,7 @@ async def test_query_before_error():
 
 def test_query_after_error():
     """Verify if the error raised on a non-existing before hash
-    raises the correct error
+    raises the correct error.
     """
     index = to_base64("Fake", 9292292)
     result = schema.execute_sync(

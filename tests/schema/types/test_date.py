@@ -110,7 +110,7 @@ def test_serialization_of_incorrect_date_string(value):
 
 def test_serialization_error_message_for_incorrect_date_string():
     """Test if error message is using original error message from
-    date lib, and is properly formatted
+    date lib, and is properly formatted.
     """
     result = execute_mutation("2021-13-01")
     assert result.errors

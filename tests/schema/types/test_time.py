@@ -109,7 +109,7 @@ def test_serialization_of_incorrect_time_string(value):
 
 def test_serialization_error_message_for_incorrect_time_string():
     """Test if error message is using original error message
-    from time lib, and is properly formatted
+    from time lib, and is properly formatted.
     """
     result = execute_mutation("25:00")
     assert result.errors
