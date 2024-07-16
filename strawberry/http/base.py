@@ -62,9 +62,6 @@ class BaseView(Generic[Request]):
         if "extensions" in params:
             extensions = params["extensions"]
 
-            if isinstance(extensions, list):
-                extensions = extensions[0]
-
             if extensions:
                 params["extensions"] = self.parse_json(extensions)
 
