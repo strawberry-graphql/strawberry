@@ -33,7 +33,7 @@ def _get_libcst_version() -> tuple[int, int, int]:
 def _execute_transform_wrap(
     job: Dict[str, Any],
 ) -> ExecutionResult:
-    additional_kwargs = {}
+    additional_kwargs: Dict[str, Any] = {}
 
     if _get_libcst_version() >= (1, 4, 0):
         additional_kwargs["scratch"] = {}
