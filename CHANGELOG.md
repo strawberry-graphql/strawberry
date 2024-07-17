@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.235.2 - 2024-07-08
+--------------------
+
+This release removes an unnecessary check from our internal GET query parsing logic making it simpler and (insignificantly) faster.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3558](https://github.com/strawberry-graphql/strawberry/pull/3558/)
+
+
 0.235.1 - 2024-06-26
 --------------------
 
