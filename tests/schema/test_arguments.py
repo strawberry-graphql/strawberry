@@ -4,7 +4,7 @@ from typing import Optional
 from typing_extensions import Annotated
 
 import strawberry
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
 
 
 def test_argument_descriptions():
@@ -221,7 +221,6 @@ def test_argument_parse_order():
 
     Refer to: https://github.com/strawberry-graphql/strawberry/issues/2855
     """
-
     from tests.schema.test_annotated import type_a, type_b
 
     expected = """

@@ -12,11 +12,11 @@ from graphql import (
     GraphQLString,
 )
 
-from strawberry.custom_scalar import ScalarDefinition, scalar
 from strawberry.file_uploads.scalars import Upload
 from strawberry.relay.types import GlobalID
 from strawberry.scalars import ID
 from strawberry.schema.types import base_scalars
+from strawberry.types.scalar import ScalarDefinition, scalar
 
 
 def _make_scalar_type(definition: ScalarDefinition) -> GraphQLScalarType:
@@ -78,3 +78,10 @@ DEFAULT_SCALAR_REGISTRY: Dict[object, ScalarDefinition] = {
         )
     ),
 }
+
+__all__ = [
+    "DEFAULT_SCALAR_REGISTRY",
+    "_get_scalar_definition",
+    "_make_scalar_definition",
+    "_make_scalar_type",
+]

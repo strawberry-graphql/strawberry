@@ -55,3 +55,6 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
             pass
         finally:
             await self.shutdown()
+
+
+__all__ = ["GraphQLTransportWSHandler"]

@@ -12,9 +12,8 @@ from typing import (
     overload,
 )
 
-from strawberry.type import StrawberryType
-
-from .exceptions import ObjectIsNotAnEnumError
+from strawberry.exceptions import ObjectIsNotAnEnumError
+from strawberry.types.base import StrawberryType
 
 
 @dataclasses.dataclass
@@ -67,6 +66,30 @@ def enum_value(
     directives: Iterable[object] = (),
     description: Optional[str] = None,
 ) -> EnumValueDefinition:
+    """Function to customise an enum value, for example to add a description or deprecation reason.
+
+    Args:
+        value: The value of the enum member.
+        deprecation_reason: The deprecation reason of the enum member,
+            setting this will mark the enum member as deprecated.
+        directives: The directives to attach to the enum member.
+        description: The GraphQL description of the enum member.
+
+    Returns:
+        An EnumValueDefinition object that can be used to customise an enum member.
+
+    Example:
+    ```python
+    from enum import Enum
+    import strawberry
+
+
+    @strawberry.enum
+    class MyEnum(Enum):
+        FIRST_VALUE = strawberry.enum_value(description="The first value")
+        SECOND_VALUE = strawberry.enum_value(description="The second value")
+    ```
+    """
     return EnumValueDefinition(
         value=value,
         deprecation_reason=deprecation_reason,
@@ -131,7 +154,7 @@ def _process_enum(
 
 @overload
 def enum(
-    _cls: EnumType,
+    cls: EnumType,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -141,7 +164,7 @@ def enum(
 
 @overload
 def enum(
-    _cls: None = None,
+    cls: None = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -150,13 +173,47 @@ def enum(
 
 
 def enum(
-    _cls: Optional[EnumType] = None,
+    cls: Optional[EnumType] = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Iterable[object] = (),
 ) -> Union[EnumType, Callable[[EnumType], EnumType]]:
-    """Registers the enum in the GraphQL type system.
+    """Annotates an Enum class a GraphQL enum.
+
+    GraphQL enums only have names, while Python enums have names and values,
+    Strawberry will use the names of the Python enum as the names of the
+    GraphQL enum values.
+
+    Args:
+        cls: The Enum class to be annotated.
+        name: The name of the GraphQL enum.
+        description: The description of the GraphQL enum.
+        directives: The directives to attach to the GraphQL enum.
+
+    Returns:
+        The decorated Enum class.
+
+    Example:
+    ```python
+    from enum import Enum
+    import strawberry
+
+
+    @strawberry.enum
+    class MyEnum(Enum):
+        FIRST_VALUE = "first_value"
+        SECOND_VALUE = "second_value"
+    ```
+
+    The above code will generate the following GraphQL schema:
+
+    ```graphql
+    enum MyEnum {
+        FIRST_VALUE
+        SECOND_VALUE
+    }
+    ```
 
     If name is passed, the name of the GraphQL type will be
     the value passed of name instead of the Enum class name.
@@ -165,7 +222,10 @@ def enum(
     def wrap(cls: EnumType) -> EnumType:
         return _process_enum(cls, name, description, directives=directives)
 
-    if not _cls:
+    if not cls:
         return wrap
 
-    return wrap(_cls)
+    return wrap(cls)
+
+
+__all__ = ["EnumValue", "EnumDefinition", "EnumValueDefinition", "enum", "enum_value"]

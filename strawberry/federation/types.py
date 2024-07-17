@@ -1,7 +1,7 @@
 from enum import Enum
 
-from strawberry.custom_scalar import scalar
-from strawberry.enum import enum
+from strawberry.types.enum import enum
+from strawberry.types.scalar import scalar
 
 FieldSet = scalar(str, name="_FieldSet")
 
@@ -12,3 +12,6 @@ LinkImport = scalar(object, name="link__Import")
 class LinkPurpose(Enum):
     SECURITY = "SECURITY"
     EXECUTION = "EXECUTION"
+
+
+__all__ = ["FieldSet", "LinkImport", "LinkPurpose"]

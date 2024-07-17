@@ -42,19 +42,19 @@ from graphql import (
     parse,
 )
 
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-from strawberry.enum import EnumDefinition
-from strawberry.lazy_type import LazyType
-from strawberry.type import (
+from strawberry.types.base import (
     StrawberryList,
+    StrawberryObjectDefinition,
     StrawberryOptional,
     StrawberryType,
     get_object_definition,
     has_object_definition,
 )
-from strawberry.types.types import StrawberryObjectDefinition
-from strawberry.union import StrawberryUnion
-from strawberry.unset import UNSET
+from strawberry.types.enum import EnumDefinition
+from strawberry.types.lazy_type import LazyType
+from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
+from strawberry.types.union import StrawberryUnion
+from strawberry.types.unset import UNSET
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
 from .exceptions import (
@@ -917,3 +917,12 @@ class QueryCodegen:
         )
         self._collect_type(graphql_enum)
         return graphql_enum
+
+
+__all__ = [
+    "QueryCodegen",
+    "QueryCodegenPlugin",
+    "ConsolePlugin",
+    "CodegenFile",
+    "CodegenResult",
+]

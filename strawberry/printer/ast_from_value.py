@@ -27,7 +27,7 @@ from graphql.type import (
 )
 
 import strawberry
-from strawberry.type import has_object_definition
+from strawberry.types.base import has_object_definition
 
 if TYPE_CHECKING:
     from graphql.language import ValueNode
@@ -149,3 +149,6 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> Optional[ValueNode]:
 
     # Not reachable. All possible input types have been considered.
     raise TypeError(f"Unexpected input type: {inspect(type_)}.")  # pragma: no cover
+
+
+__all__ = ["ast_from_value"]

@@ -94,10 +94,16 @@ class GraphQLView(
         http_status_code: int,
         headers: Optional[Dict[str, str | List[str]]] = None,
     ) -> Response:
-        """
-        A wrapper for error responses
+        """A wrapper for error responses.
+
+        Args:
+            message: The error message.
+            error_code: The error code.
+            http_status_code: The HTTP status code.
+            headers: The headers to include in the response.
+
         Returns:
-        An errors response
+            An errors response.
         """
         body = {"Code": error_code, "Message": message}
 
@@ -139,3 +145,6 @@ class GraphQLView(
                 message=e.reason,
                 http_status_code=e.status_code,
             )
+
+
+__all__ = ["GraphQLView"]

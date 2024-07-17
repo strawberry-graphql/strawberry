@@ -64,16 +64,20 @@ def run_mypy(code: str, strict: bool = True) -> List[Result]:
 
         results: List[Result] = []
 
-        for line in full_output.split("\n"):
-            mypy_result = json.loads(line)
-            results.append(
-                Result(
-                    type=mypy_result["severity"].strip(),
-                    message=mypy_result["message"].strip(),
-                    line=mypy_result["line"],
-                    column=mypy_result["column"] + 1,
+        try:
+            for line in full_output.split("\n"):
+                mypy_result = json.loads(line)
+
+                results.append(
+                    Result(
+                        type=mypy_result["severity"].strip(),
+                        message=mypy_result["message"].strip(),
+                        line=mypy_result["line"],
+                        column=mypy_result["column"] + 1,
+                    )
                 )
-            )
+        except json.JSONDecodeError:
+            raise Exception(f"Invalid JSON: {full_output}")
 
         results.sort(key=lambda x: (x.line, x.column, x.message))
 

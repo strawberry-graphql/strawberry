@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, Union
 
 from strawberry.scalars import is_scalar as is_strawberry_scalar
-from strawberry.type import StrawberryType, has_object_definition
+from strawberry.types.base import StrawberryType, has_object_definition
 
 # TypeGuard is only available in typing_extensions => 3.10, we don't want
 # to force updates to the typing_extensions package so we only use it when
@@ -12,7 +12,7 @@ from strawberry.type import StrawberryType, has_object_definition
 if TYPE_CHECKING:
     from typing_extensions import TypeGuard
 
-    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
 def is_input_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
@@ -51,3 +51,13 @@ def is_graphql_generic(type_: Union[StrawberryType, type]) -> bool:
         return type_.is_graphql_generic
 
     return False
+
+
+__all__ = [
+    "is_input_type",
+    "is_interface_type",
+    "is_scalar",
+    "is_enum",
+    "is_schema_directive",
+    "is_graphql_generic",
+]
