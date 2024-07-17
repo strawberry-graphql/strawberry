@@ -79,14 +79,22 @@ class UpdateImportsCodemod(VisitorBasedCodemodCommand):
                 module=m.Attribute(value=m.Name("strawberry"), attr=m.Name("type"))
             ),
         ):
-            has_get_object_definition = any(
-                m.matches(name, m.ImportAlias(name=m.Name("get_object_definition")))
-                for name in node.names
+            has_get_object_definition = (
+                any(
+                    m.matches(name, m.ImportAlias(name=m.Name("get_object_definition")))
+                    for name in node.names
+                )
+                if not isinstance(node.names, cst.ImportStar)
+                else False
             )
 
-            has_has_object_definition = any(
-                m.matches(name, m.ImportAlias(name=m.Name("has_object_definition")))
-                for name in node.names
+            has_has_object_definition = (
+                any(
+                    m.matches(name, m.ImportAlias(name=m.Name("has_object_definition")))
+                    for name in node.names
+                )
+                if not isinstance(node.names, cst.ImportStar)
+                else False
             )
 
             updated_node = updated_node.with_changes(
