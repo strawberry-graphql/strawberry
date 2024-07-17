@@ -62,7 +62,7 @@ class NodeExtension(FieldExtension):
         if isinstance(field.type, StrawberryList):
             resolver = self.get_node_list_resolver(field)
         else:
-            resolver = self.get_node_resolver(field)
+            resolver = self.get_node_resolver(field)  # type: ignore
 
         field.base_resolver = StrawberryResolver(resolver, type_override=field.type)
 
