@@ -6,8 +6,8 @@ nox.options.error_on_external_run = True
 
 PYTHON_VERSIONS = ["3.12", "3.11", "3.10", "3.9", "3.8"]
 GQL_CORE_VERSIONS = [
-    "graphql-core==3.2.3",
-    "https://github.com/graphql-python/graphql-core/archive/876aef67b6f1e1f21b3b5db94c7ff03726cb6bdf.zip",
+    "3.2.3",
+    "3.3.0",
 ]
 
 COMMON_PYTEST_OPTIONS = [
@@ -40,8 +40,13 @@ INTEGRATIONS = [
 ]
 
 
-def _install_package(session: Session, package: str) -> None:
-    session._session.install(package)  # type: ignore
+def _install_gql_core(session: Session, version: str) -> None:
+    # hack for the cache  # noqa: FIX004
+    if version == "3.2.3":
+        session._session.install(session, f"graphql-core=={version}")  # type: ignore
+    session._session.install(
+        "https://github.com/graphql-python/graphql-core/archive/876aef67b6f1e1f21b3b5db94c7ff03726cb6bdf.zip"
+    )  # type: ignore
 
 
 gql_core_parametrize = nox.parametrize("gql_core", GQL_CORE_VERSIONS)
@@ -51,7 +56,7 @@ gql_core_parametrize = nox.parametrize("gql_core", GQL_CORE_VERSIONS)
 @gql_core_parametrize
 def tests(session: Session, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
-    _install_package(session, gql_core)
+    _install_gql_core(session, gql_core)
     markers = (
         ["-m", f"not {integration}", f"--ignore=tests/{integration}"]
         for integration in INTEGRATIONS
@@ -70,7 +75,7 @@ def tests(session: Session, gql_core: str) -> None:
 @gql_core_parametrize
 def tests_django(session: Session, django: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
-    _install_package(session, gql_core)
+    _install_gql_core(session, gql_core)
     session._session.install(f"django~={django}")  # type: ignore
     session._session.install("pytest-django")  # type: ignore
 
@@ -84,7 +89,7 @@ def tests_starlette(session: Session, starlette: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
 
     session._session.install(f"starlette=={starlette}")  # type: ignore
-    _install_package(session, gql_core)
+    _install_gql_core(session, gql_core)
     session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", "asgi")
 
 
@@ -108,7 +113,7 @@ def tests_integrations(session: Session, integration: str, gql_core: str) -> Non
     session.run_always("poetry", "install", external=True)
 
     session._session.install(integration)  # type: ignore
-    _install_package(session, gql_core)
+    _install_gql_core(session, gql_core)
     if integration == "aiohttp":
         session._session.install("pytest-aiohttp")  # type: ignore
     elif integration == "channels":
@@ -127,7 +132,7 @@ def test_pydantic(session: Session, pydantic: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
 
     session._session.install(f"pydantic~={pydantic}")  # type: ignore
-    _install_package(session, gql_core)
+    _install_gql_core(session, gql_core)
     session.run(
         "pytest",
         "--cov=.",
