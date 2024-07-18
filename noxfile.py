@@ -1,5 +1,5 @@
 import itertools
-from typing import Any, Callable, List, Tuple
+from typing import Any, Callable, List
 
 import nox
 from nox_poetry import Session, session
@@ -58,11 +58,10 @@ gql_core_parametrize = nox.parametrize(
 )
 
 
-def with_gql_core_parmeterize(origin: Tuple[str, List[str]]) -> Callable[[Any], Any]:
-    name, params = origin
+def with_gql_core_parmeterize(name: str, params: List[str]) -> Callable[[Any], Any]:
     arg_names = f"{name}, gql_core"
-    combinations = itertools.product(params, GQL_CORE_VERSIONS)
-    return nox.parametrize(arg_names, combinations)
+    combinations = list(itertools.product(params, GQL_CORE_VERSIONS))
+    return lambda fn: nox.parametrize(arg_names, combinations)(fn)
 
 
 @session(python=PYTHON_VERSIONS, name="Tests", tags=["tests"])
@@ -84,7 +83,7 @@ def tests(session: Session, gql_core: str) -> None:
 
 
 @session(python=["3.11", "3.12"], name="Django tests", tags=["tests"])
-@gql_core_parametrize("django", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"])
+@with_gql_core_parmeterize("django", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"])
 def tests_django(session: Session, django: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
     _install_gql_core(session, gql_core)
@@ -95,8 +94,7 @@ def tests_django(session: Session, django: str, gql_core: str) -> None:
 
 
 @session(python=["3.11"], name="Starlette tests", tags=["tests"])
-@gql_core_parametrize
-@nox.parametrize("starlette", ["0.28.0", "0.27.0", "0.26.1"])
+@with_gql_core_parmeterize("starlette", ["0.28.0", "0.27.0", "0.26.1"])
 def tests_starlette(session: Session, starlette: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
 
@@ -106,8 +104,7 @@ def tests_starlette(session: Session, starlette: str, gql_core: str) -> None:
 
 
 @session(python=["3.11"], name="Test integrations", tags=["tests"])
-@gql_core_parametrize
-@nox.parametrize(
+@with_gql_core_parmeterize(
     "integration",
     [
         "aiohttp",
@@ -138,8 +135,7 @@ def tests_integrations(session: Session, integration: str, gql_core: str) -> Non
 
 
 @session(python=PYTHON_VERSIONS, name="Pydantic tests", tags=["tests", "pydantic"])
-@gql_core_parametrize
-@nox.parametrize("pydantic", ["1.10", "2.7.0"])
+@with_gql_core_parmeterize("pydantic", ["1.10", "2.7.0"])
 def test_pydantic(session: Session, pydantic: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
 
