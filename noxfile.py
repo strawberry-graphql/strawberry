@@ -41,7 +41,7 @@ INTEGRATIONS = [
 
 
 def _install_package(session: Session, package: str) -> None:
-    session._session.install(package)  # type: ignore
+    session.install(package)  # type: ignore
 
 
 @session(python=PYTHON_VERSIONS, name="Tests", tags=["tests"])
