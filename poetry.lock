@@ -1536,7 +1536,7 @@ files = [
 
 [[package]]
 name = "graphql-core"
-version = "3.3."
+version = "3.3.2"
 description = "GraphQL implementation for Python, a port of GraphQL.js, the JavaScript reference implementation for GraphQL."
 optional = false
 python-versions = ">=3.6,<4"
