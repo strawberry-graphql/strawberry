@@ -5,13 +5,13 @@ from typing_extensions import Annotated
 import pytest
 
 import strawberry
-from strawberry.type import (
+from strawberry.types.base import (
     StrawberryList,
     StrawberryOptional,
     StrawberryTypeVar,
     get_object_definition,
 )
-from strawberry.union import StrawberryUnion
+from strawberry.types.union import StrawberryUnion
 
 T = TypeVar("T")
 

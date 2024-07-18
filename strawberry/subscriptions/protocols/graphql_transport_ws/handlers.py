@@ -31,7 +31,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
 )
 from strawberry.types.execution import ExecutionResultError
 from strawberry.types.graphql import OperationType
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.operation import get_operation_type
 
@@ -67,23 +67,23 @@ class BaseGraphQLTransportWSHandler(ABC):
 
     @abstractmethod
     async def get_context(self) -> Any:
-        """Return the operations context"""
+        """Return the operations context."""
 
     @abstractmethod
     async def get_root_value(self) -> Any:
-        """Return the schemas root value"""
+        """Return the schemas root value."""
 
     @abstractmethod
     async def send_json(self, data: dict) -> None:
-        """Send the data JSON encoded to the WebSocket client"""
+        """Send the data JSON encoded to the WebSocket client."""
 
     @abstractmethod
     async def close(self, code: int, reason: str) -> None:
-        """Close the WebSocket with the passed code and reason"""
+        """Close the WebSocket with the passed code and reason."""
 
     @abstractmethod
     async def handle_request(self) -> Any:
-        """Handle the request this instance was created for"""
+        """Handle the request this instance was created for."""
 
     async def handle(self) -> Any:
         return await self.handle_request()
@@ -286,10 +286,7 @@ class BaseGraphQLTransportWSHandler(ABC):
     async def operation_task(
         self, result_source: AsyncGenerator, operation: Operation
     ) -> None:
-        """
-        Operation task top level method.  Cleans up and de-registers the operation
-        once it is done.
-        """
+        """The operation task's top level method. Cleans-up and de-registers the operation once it is done."""
         # TODO: Handle errors in this method using self.handle_task_exception()
         try:
             await self.handle_async_results(result_source, operation)
@@ -373,9 +370,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         # websocket handler Task.
 
     async def reap_completed_tasks(self) -> None:
-        """
-        Await tasks that have completed
-        """
+        """Await tasks that have completed."""
         tasks, self.completed_tasks = self.completed_tasks, []
         for task in tasks:
             with suppress(BaseException):
@@ -383,10 +378,7 @@ class BaseGraphQLTransportWSHandler(ABC):
 
 
 class Operation:
-    """
-    A class encapsulating a single operation with its id.
-    Helps enforce protocol state transition.
-    """
+    """A class encapsulating a single operation with its id. Helps enforce protocol state transition."""
 
     __slots__ = ["handler", "id", "operation_type", "completed", "task"]
 
@@ -410,3 +402,6 @@ class Operation:
             # de-register the operation _before_ sending the final message
             self.handler.forget_id(self.id)
         await self.handler.send_message(message)
+
+
+__all__ = ["BaseGraphQLTransportWSHandler", "Operation"]

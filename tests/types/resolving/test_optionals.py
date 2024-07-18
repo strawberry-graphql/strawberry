@@ -2,8 +2,8 @@ from typing import List, Optional, Union
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.type import StrawberryOptional
-from strawberry.unset import UnsetType
+from strawberry.types.base import StrawberryOptional
+from strawberry.types.unset import UnsetType
 
 
 def test_basic_optional():

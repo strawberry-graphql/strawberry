@@ -16,20 +16,19 @@ from typing import (
 )
 from typing_extensions import dataclass_transform
 
-from .exceptions import (
+from strawberry.exceptions import (
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
     ObjectIsNotClassError,
 )
+from strawberry.types.base import get_object_definition
+from strawberry.utils.dataclasses import add_custom_init_fn
+from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
+from strawberry.utils.str_converters import to_camel_case
+
+from .base import StrawberryObjectDefinition
 from .field import StrawberryField, field
-from .type import get_object_definition
-from .types.type_resolver import _get_fields
-from .types.types import (
-    StrawberryObjectDefinition,
-)
-from .utils.dataclasses import add_custom_init_fn
-from .utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
-from .utils.str_converters import to_camel_case
+from .type_resolver import _get_fields
 
 T = TypeVar("T", bound=Type)
 
@@ -103,9 +102,7 @@ def _check_field_annotations(cls: Type[Any]) -> None:
 
 
 def _wrap_dataclass(cls: Type[T]) -> Type[T]:
-    """Wrap a strawberry.type class with a dataclass and check for any issues
-    before doing so"""
-
+    """Wrap a strawberry.type class with a dataclass and check for any issues before doing so."""
     # Ensure all Fields have been properly type-annotated
     _check_field_annotations(cls)
 
@@ -232,11 +229,36 @@ def type(
 ) -> Union[T, Callable[[T], T]]:
     """Annotates a class as a GraphQL type.
 
+    Similar to `dataclasses.dataclass`, but with additional functionality for
+    defining GraphQL types.
+
+    Args:
+        cls: The class we want to create a GraphQL type from.
+        name: The name of the GraphQL type.
+        is_input: Whether the class is an input type. Used internally, use `@strawerry.input` instead of passing this flag.
+        is_interface: Whether the class is an interface. Used internally, use `@strawerry.interface` instead of passing this flag.
+        description: The description of the GraphQL type.
+        directives: The directives of the GraphQL type.
+        extend: Whether the class is extending an existing type.
+
+    Returns:
+        The class.
+
     Example usage:
 
-    >>> @strawberry.type
-    >>> class X:
-    >>>     field_abc: str = "ABC"
+    ```python
+    @strawberry.type
+    class User:
+        name: str = "A name"
+    ```
+
+    You can also pass parameters to the decorator:
+
+    ```python
+    @strawberry.type(name="UserType", description="A user type")
+    class MyUser:
+        name: str = "A name"
+    ```
     """
 
     def wrap(cls: T) -> T:
@@ -321,12 +343,35 @@ def input(
     directives: Optional[Sequence[object]] = (),
 ):
     """Annotates a class as a GraphQL Input type.
-    Example usage:
-    >>> @strawberry.input
-    >>> class X:
-    >>>     field_abc: str = "ABC"
-    """
 
+    Similar to `@strawberry.type`, but for input types.
+
+    Args:
+        cls: The class we want to create a GraphQL input type from.
+        name: The name of the GraphQL input type.
+        description: The description of the GraphQL input type.
+        directives: The directives of the GraphQL input type.
+        one_of: Whether the input type is a `oneOf` type.
+
+    Returns:
+        The class.
+
+    Example usage:
+
+    ```python
+    @strawberry.input
+    class UserInput:
+        name: str
+    ```
+
+    You can also pass parameters to the decorator:
+
+    ```python
+    @strawberry.input(name="UserInputType", description="A user input type")
+    class MyUserInput:
+        name: str
+    ```
+    """
     from strawberry.schema_directives import OneOf
 
     if one_of:
@@ -377,12 +422,34 @@ def interface(
     directives: Optional[Sequence[object]] = (),
 ):
     """Annotates a class as a GraphQL Interface.
-    Example usage:
-    >>> @strawberry.interface
-    >>> class X:
-    >>>     field_abc: str
-    """
 
+    Similar to `@strawberry.type`, but for interfaces.
+
+    Args:
+        cls: The class we want to create a GraphQL interface from.
+        name: The name of the GraphQL interface.
+        description: The description of the GraphQL interface.
+        directives: The directives of the GraphQL interface.
+
+    Returns:
+        The class.
+
+    Example usage:
+
+    ```python
+    @strawberry.interface
+    class Node:
+        id: str
+    ```
+
+    You can also pass parameters to the decorator:
+
+    ```python
+    @strawberry.interface(name="NodeType", description="A node type")
+    class MyNode:
+        id: str
+    ```
+    """
     return type(  # type: ignore # not sure why mypy complains here
         cls,
         name=name,
@@ -394,15 +461,27 @@ def interface(
 
 def asdict(obj: Any) -> Dict[str, object]:
     """Convert a strawberry object into a dictionary.
+
     This wraps the dataclasses.asdict function to strawberry.
 
+    Args:
+        obj: The object to convert into a dictionary.
+
+    Returns:
+        A dictionary representation of the object.
+
     Example usage:
-    >>> @strawberry.type
-    >>> class User:
-    >>>     name: str
-    >>>     age: int
-    >>> # should be {"name": "Lorem", "age": 25}
-    >>> user_dict = strawberry.asdict(User(name="Lorem", age=25))
+
+    ```python
+    @strawberry.type
+    class User:
+        name: str
+        age: int
+
+
+    strawberry.asdict(User(name="Lorem", age=25))
+    # {"name": "Lorem", "age": 25}
+    ```
     """
     return dataclasses.asdict(obj)
 

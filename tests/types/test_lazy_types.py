@@ -5,11 +5,11 @@ from typing_extensions import Annotated, TypeAlias
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.field import StrawberryField
-from strawberry.lazy_type import LazyType
-from strawberry.type import get_object_definition
+from strawberry.types.base import get_object_definition
+from strawberry.types.field import StrawberryField
 from strawberry.types.fields.resolver import StrawberryResolver
-from strawberry.union import StrawberryUnion, union
+from strawberry.types.lazy_type import LazyType
+from strawberry.types.union import StrawberryUnion, union
 
 T = TypeVar("T")
 

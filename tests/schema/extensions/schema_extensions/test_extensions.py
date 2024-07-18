@@ -817,7 +817,6 @@ def test_on_parsing_end_is_called_with_parsing_errors():
 
 def test_extension_execution_order_sync():
     """Ensure mixed hooks (async & sync) are called correctly."""
-
     execution_order: List[Type[SchemaExtension]] = []
 
     class ExtensionB(SchemaExtension):

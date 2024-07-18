@@ -3,9 +3,9 @@ from enum import Enum, IntEnum
 import pytest
 
 import strawberry
-from strawberry.enum import EnumDefinition
 from strawberry.exceptions import ObjectIsNotAnEnumError
 from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
+from strawberry.types.enum import EnumDefinition
 
 
 def test_basic_enum():

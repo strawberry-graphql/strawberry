@@ -4,9 +4,9 @@ import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.field import StrawberryField
 from strawberry.tools import create_type
-from strawberry.type import get_object_definition
+from strawberry.types.base import get_object_definition
+from strawberry.types.field import StrawberryField
 
 
 def test_create_type():

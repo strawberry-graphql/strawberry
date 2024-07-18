@@ -92,7 +92,7 @@ class ChannelsConsumer(AsyncConsumer):
         Utility to listen for channels messages for this consumer inside
         a resolver (usually inside a subscription).
 
-        Parameters:
+        Args:
             type:
                 The type of the message to wait for.
             timeout:
@@ -104,7 +104,6 @@ class ChannelsConsumer(AsyncConsumer):
                 execution and then discarded using `self.channel_layer.group_discard`
                 at the end of the execution.
         """
-
         warnings.warn("Use listen_to_channel instead", DeprecationWarning, stacklevel=2)
         if self.channel_layer is None:
             raise RuntimeError(
@@ -152,7 +151,7 @@ class ChannelsConsumer(AsyncConsumer):
         Utility to listen for channels messages for this consumer inside
         a resolver (usually inside a subscription).
 
-        Parameters:
+        Args:
             type:
                 The type of the message to wait for.
             timeout:
@@ -164,7 +163,6 @@ class ChannelsConsumer(AsyncConsumer):
                 execution and then discarded using `self.channel_layer.group_discard`
                 at the end of the execution.
         """
-
         # Code to acquire resource (Channels subscriptions)
         if self.channel_layer is None:
             raise RuntimeError(
@@ -201,7 +199,6 @@ class ChannelsConsumer(AsyncConsumer):
         Seperated to allow user code to be run after subscribing to channels
         and before blocking to wait for incoming channel messages.
         """
-
         while True:
             awaitable = queue.get()
             if timeout is not None:
@@ -215,3 +212,6 @@ class ChannelsConsumer(AsyncConsumer):
 
 class ChannelsWSConsumer(ChannelsConsumer, AsyncJsonWebsocketConsumer):
     """Base channels websocket async consumer."""
+
+
+__all__ = ["ChannelsConsumer", "ChannelsWSConsumer"]

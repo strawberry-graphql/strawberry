@@ -293,3 +293,6 @@ def execute_sync(
         errors=execution_context.result.errors,
         extensions=extensions_runner.get_extensions_results_sync(),
     )
+
+
+__all__ = ["execute", "execute_sync"]

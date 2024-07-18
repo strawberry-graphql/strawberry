@@ -191,3 +191,6 @@ class ApolloTracingExtensionSync(ApolloTracingExtension):
             end_timestamp = self.now()
             resolver_stats.duration = end_timestamp - start_timestamp
             self._resolver_stats.append(resolver_stats)
+
+
+__all__ = ["ApolloTracingExtension", "ApolloTracingExtensionSync"]

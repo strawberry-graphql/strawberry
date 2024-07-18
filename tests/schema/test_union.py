@@ -9,7 +9,7 @@ import pytest
 
 import strawberry
 from strawberry.exceptions import InvalidUnionTypeError
-from strawberry.lazy_type import lazy
+from strawberry.types.lazy_type import lazy
 
 
 def test_union_as_field():
@@ -467,8 +467,7 @@ def test_union_explicit_type_resolution():
     reason="pipe syntax for union is only available on python 3.10+",
 )
 def test_union_optional_with_or_operator():
-    """
-    Verify that the `|` operator is supported when annotating unions as
+    """Verify that the `|` operator is supported when annotating unions as
     optional in schemas.
     """
 
@@ -502,9 +501,7 @@ def test_union_optional_with_or_operator():
 
 
 def test_union_with_input_types():
-    """
-    Verify that union of input types raises an error
-    """
+    """Verify that union of input types raises an error."""
 
     @strawberry.type
     class User:
@@ -538,8 +535,7 @@ def test_union_with_input_types():
 
 
 def test_union_with_similar_nested_generic_types():
-    """
-    Previously this failed due to an edge case where Strawberry would choose AContainer
+    """Previously this failed due to an edge case where Strawberry would choose AContainer
     as the resolved type for container_b due to the inability to exactly match the
     nested generic `Container.items`.
     """
@@ -611,9 +607,7 @@ def test_union_with_similar_nested_generic_types():
 
 
 def test_lazy_union():
-    """
-    Previously this failed to evaluate generic parameters on lazy types
-    """
+    """Previously this failed to evaluate generic parameters on lazy types"""
     TypeA = Annotated["TypeA", lazy("tests.schema.test_lazy_types.type_a")]
     TypeB = Annotated["TypeB", lazy("tests.schema.test_lazy_types.type_b")]
 

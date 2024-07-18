@@ -156,3 +156,6 @@ class SentryTracingExtensionSync(SentryTracingExtension):
             span.set_tag("graphql.path", ".".join(map(str, info.path.as_list())))
 
             return _next(root, info, *args, **kwargs)
+
+
+__all__ = ["SentryTracingExtension", "SentryTracingExtensionSync"]

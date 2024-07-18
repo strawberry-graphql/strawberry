@@ -102,3 +102,10 @@ class RelayWrongResolverAnnotationError(StrawberryException):
 
         source_finder = SourceFinder()
         return source_finder.find_function_from_object(cast(Callable, self.function))
+
+
+__all__ = [
+    "NodeIDAnnotationError",
+    "RelayWrongAnnotationError",
+    "RelayWrongResolverAnnotationError",
+]

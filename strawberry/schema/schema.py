@@ -28,19 +28,18 @@ from graphql.type.directives import specified_directives
 
 from strawberry import relay
 from strawberry.annotation import StrawberryAnnotation
+from strawberry.extensions import SchemaExtension
 from strawberry.extensions.directives import (
     DirectivesExtension,
     DirectivesExtensionSync,
 )
+from strawberry.extensions.runner import SchemaExtensionsRunner
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
-from strawberry.type import has_object_definition
 from strawberry.types import ExecutionContext
+from strawberry.types.base import StrawberryObjectDefinition, has_object_definition
 from strawberry.types.graphql import OperationType
-from strawberry.types.types import StrawberryObjectDefinition
 
-from ..extensions import SchemaExtension
-from ..extensions.runner import SchemaExtensionsRunner
 from ..printer import print_schema
 from . import compat
 from .base import BaseSchema
@@ -51,13 +50,13 @@ from .subscribe import SubscriptionResult, subscribe
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
 
-    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.directive import StrawberryDirective
-    from strawberry.enum import EnumDefinition
-    from strawberry.field import StrawberryField
-    from strawberry.type import StrawberryType
     from strawberry.types import ExecutionResult
-    from strawberry.union import StrawberryUnion
+    from strawberry.types.base import StrawberryType
+    from strawberry.types.enum import EnumDefinition
+    from strawberry.types.field import StrawberryField
+    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.types.union import StrawberryUnion
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.QUERY,
@@ -80,10 +79,45 @@ class Schema(BaseSchema):
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
         scalar_overrides: Optional[
-            Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]]
+            Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]],
         ] = None,
         schema_directives: Iterable[object] = (),
     ) -> None:
+        """Default Schema to be used in a Strawberry application.
+
+        A GraphQL Schema class used to define the structure and configuration
+        of GraphQL queries, mutations, and subscriptions.
+
+        This class allows the creation of a GraphQL schema by specifying the types
+        for queries, mutations, and subscriptions, along with various configuration
+        options such as directives, extensions, and scalar overrides.
+
+        Args:
+            query: The entry point for queries.
+            mutation: The entry point for mutations.
+            subscription: The entry point for subscriptions.
+            directives: A list of operation directives that clients can use.
+                The bult-in `@include` and `@skip` are included by default.
+            types: A list of additional types that will be included in the schema.
+            extensions: A list of Strawberry extensions.
+            execution_context_class: The execution context class.
+            config: The configuration for the schema.
+            scalar_overrides: A dictionary of overrides for scalars.
+            schema_directives: A list of schema directives for the schema.
+
+        Example:
+        ```python
+        import strawberry
+
+
+        @strawberry.type
+        class Query:
+            name: str = "Patrick"
+
+
+        schema = strawberry.Schema(query=Query)
+        ```
+        """
         self.query = query
         self.mutation = mutation
         self.subscription = subscription
@@ -460,7 +494,7 @@ class Schema(BaseSchema):
     __str__ = as_str
 
     def introspect(self) -> Dict[str, Any]:
-        """Return the introspection query result for the current schema
+        """Return the introspection query result for the current schema.
 
         Raises:
             ValueError: If the introspection query fails due to an invalid schema
@@ -470,3 +504,6 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors {introspection.errors!r}")
 
         return introspection.data
+
+
+__all__ = ["Schema"]

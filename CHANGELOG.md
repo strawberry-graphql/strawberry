@@ -1,6 +1,34 @@
 CHANGELOG
 =========
 
+0.236.0 - 2024-07-17
+--------------------
+
+This release changes some of the internals of Strawberry, it shouldn't
+be affecting most of the users, but since we have changed the structure
+of the code you might need to update your imports.
+
+Thankfully we also provide a codemod for this, you can run it with:
+
+```bash
+strawberry upgrade update-imports
+```
+
+This release also includes additional documentation to some of
+the classes, methods and functions, this is in preparation for
+having the API reference in the documentation ✨
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3546](https://github.com/strawberry-graphql/strawberry/pull/3546/)
+
+
+0.235.2 - 2024-07-08
+--------------------
+
+This release removes an unnecessary check from our internal GET query parsing logic making it simpler and (insignificantly) faster.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3558](https://github.com/strawberry-graphql/strawberry/pull/3558/)
+
+
 0.235.1 - 2024-06-26
 --------------------
 
@@ -1333,7 +1361,7 @@ class User:
     @strawberry.field
     @staticmethod
     async def name(parent: strawberry.Parent[UserRow]) -> str:
-        return f"User Number {parent.id}"
+        return f"User Number {parent.id_}"
 
 
 @strawberry.type
@@ -4189,7 +4217,7 @@ the original type was already used with that generic in the schema.
 
 Example:
 
-```python3
+```python
 @strawberry.type
 class Query:
     regular: Edge[User]

@@ -42,7 +42,7 @@ class SchemaExtensionsRunner:
 
     @classmethod
     def _implments_get_rseults(cls, extension: SchemaExtension) -> bool:
-        "Whether the extension implements get_results"
+        """Whether the extension implements get_results."""
         return type(extension).get_results is not SchemaExtension.get_results
 
     def get_extensions_results_sync(self) -> Dict[str, Any]:

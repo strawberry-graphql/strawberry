@@ -1,0 +1,30 @@
+name: Issue Manager
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  issue_comment:
+    types:
+      - created
+  issues:
+    types:
+      - labeled
+  pull_request_target:
+    types:
+      - labeled
+  workflow_dispatch:
+
+jobs:
+  issue-manager:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: tiangolo/issue-manager@0.5.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config: >
+            {
+              "info-needed": {
+                "delay": "P14D",
+                "message": "Hi, this issue requires extra info to be actionable. We're closing this issue because it has not been actionable for a while now. Feel free to provide the requested information and we'll happily open it again! 😊"
+              }
+            }
