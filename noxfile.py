@@ -6,7 +6,7 @@ nox.options.error_on_external_run = True
 
 PYTHON_VERSIONS = ["3.12", "3.11", "3.10", "3.9", "3.8"]
 GQL_CORE_VERSIONS = [
-    "https://github.com/graphql-python/graphql-core/archive/refs/tags/v3.2.3.zip",
+    "graphql-core~=3.2.0",
     "https://github.com/graphql-python/graphql-core/archive/876aef67b6f1e1f21b3b5db94c7ff03726cb6bdf.zip",
 ]
 
