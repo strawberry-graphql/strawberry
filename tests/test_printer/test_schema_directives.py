@@ -325,6 +325,7 @@ def test_prints_multiple_directives_on_schema():
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
+@skip_if_gql_32("formatting is different in gql 3.2")
 def test_prints_with_types():
     @strawberry.input
     class SensitiveConfiguration:
@@ -344,7 +345,7 @@ def test_prints_with_types():
     directive @sensitive(config: SensitiveConfiguration!) on FIELD_DEFINITION
 
     type Query {
-      firstName: String! @sensitive(config: {reason: "example"})
+      firstName: String! @sensitive(config: { reason: "example" })
     }
 
     input SensitiveConfiguration {
