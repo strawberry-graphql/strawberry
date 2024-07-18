@@ -44,8 +44,11 @@ def _install_package(session: Session, package: str) -> None:
     session.install(package)  # type: ignore
 
 
+gql_core_parametrize = nox.parametrize("gql_core", GQL_CORE_VERSIONS)
+
+
 @session(python=PYTHON_VERSIONS, name="Tests", tags=["tests"])
-@nox.parametrize("gql_core", GQL_CORE_VERSIONS)
+@gql_core_parametrize
 def tests(session: Session, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
     _install_package(session, gql_core)
@@ -63,9 +66,8 @@ def tests(session: Session, gql_core: str) -> None:
 
 
 @session(python=["3.11", "3.12"], name="Django tests", tags=["tests"])
-@nox.parametrize(
-    "django, gql_core", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"], GQL_CORE_VERSIONS
-)
+@nox.parametrize("django", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"])
+@gql_core_parametrize
 def tests_django(session: Session, django: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
     _install_package(session, gql_core)
@@ -76,9 +78,8 @@ def tests_django(session: Session, django: str, gql_core: str) -> None:
 
 
 @session(python=["3.11"], name="Starlette tests", tags=["tests"])
-@nox.parametrize(
-    "starlette, gql_core", ["0.28.0", "0.27.0", "0.26.1"], GQL_CORE_VERSIONS
-)
+@gql_core_parametrize
+@nox.parametrize("starlette", ["0.28.0", "0.27.0", "0.26.1"])
 def tests_starlette(session: Session, starlette: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
 
@@ -88,8 +89,9 @@ def tests_starlette(session: Session, starlette: str, gql_core: str) -> None:
 
 
 @session(python=["3.11"], name="Test integrations", tags=["tests"])
+@gql_core_parametrize
 @nox.parametrize(
-    "integration, gql_core",
+    "integration",
     [
         "aiohttp",
         "chalice",
@@ -101,7 +103,6 @@ def tests_starlette(session: Session, starlette: str, gql_core: str) -> None:
         "starlite",
         "litestar",
     ],
-    GQL_CORE_VERSIONS,
 )
 def tests_integrations(session: Session, integration: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
@@ -120,7 +121,8 @@ def tests_integrations(session: Session, integration: str, gql_core: str) -> Non
 
 
 @session(python=PYTHON_VERSIONS, name="Pydantic tests", tags=["tests", "pydantic"])
-@nox.parametrize("pydantic, gql_core", ["1.10", "2.7.0"], GQL_CORE_VERSIONS)
+@gql_core_parametrize
+@nox.parametrize("pydantic", ["1.10", "2.7.0"])
 def test_pydantic(session: Session, pydantic: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
 
