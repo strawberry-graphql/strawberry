@@ -184,6 +184,7 @@ def test_input_defaults():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
+@skip_if_gql_32("formatting is different in gql 3.2")
 def test_input_other_inputs():
     @strawberry.input
     class Nested:
