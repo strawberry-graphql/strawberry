@@ -41,6 +41,7 @@ from strawberry.types.base import StrawberryObjectDefinition, has_object_definit
 from strawberry.types.graphql import OperationType
 
 from ..printer import print_schema
+from ..utils.await_maybe import await_maybe
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
@@ -349,13 +350,15 @@ class Schema(BaseSchema):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
     ) -> Union[AsyncIterator[GraphQLExecutionResult], GraphQLExecutionResult]:
-        return await subscribe(
-            self._schema,
-            parse(query),
-            root_value=root_value,
-            context_value=context_value,
-            variable_values=variable_values,
-            operation_name=operation_name,
+        return await await_maybe(
+            subscribe(
+                self._schema,
+                parse(query),
+                root_value=root_value,
+                context_value=context_value,
+                variable_values=variable_values,
+                operation_name=operation_name,
+            )
         )
 
     def _resolve_node_ids(self) -> None:
