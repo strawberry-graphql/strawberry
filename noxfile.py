@@ -44,7 +44,7 @@ INTEGRATIONS = [
 
 
 def _install_gql_core(session: Session, version: str) -> None:
-    # hack for the cache  # noqa: FIX004
+    # hack for better workflow names  # noqa: FIX004
     if version == "3.2.3":
         session._session.install(f"graphql-core=={version}")  # type: ignore
     session._session.install(
@@ -58,7 +58,8 @@ gql_core_parametrize = nox.parametrize(
 )
 
 
-def with_gql_core_parmeterize(name: str, params: List[str]) -> Callable[[Any], Any]:
+def with_gql_core_parametrize(name: str, params: List[str]) -> Callable[[Any], Any]:
+    # github cache doesn't support comma in the name, this is a workaround.
     arg_names = f"{name}, gql_core"
     combinations = list(itertools.product(params, GQL_CORE_VERSIONS))
     ids = [f"{name}-{comb[0]}__graphql-core-{comb[1]}" for comb in combinations]
@@ -84,7 +85,7 @@ def tests(session: Session, gql_core: str) -> None:
 
 
 @session(python=["3.11", "3.12"], name="Django tests", tags=["tests"])
-@with_gql_core_parmeterize("django", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"])
+@with_gql_core_parametrize("django", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"])
 def tests_django(session: Session, django: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
     _install_gql_core(session, gql_core)
@@ -95,7 +96,7 @@ def tests_django(session: Session, django: str, gql_core: str) -> None:
 
 
 @session(python=["3.11"], name="Starlette tests", tags=["tests"])
-@with_gql_core_parmeterize("starlette", ["0.28.0", "0.27.0", "0.26.1"])
+@with_gql_core_parametrize("starlette", ["0.28.0", "0.27.0", "0.26.1"])
 def tests_starlette(session: Session, starlette: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
 
@@ -105,7 +106,7 @@ def tests_starlette(session: Session, starlette: str, gql_core: str) -> None:
 
 
 @session(python=["3.11"], name="Test integrations", tags=["tests"])
-@with_gql_core_parmeterize(
+@with_gql_core_parametrize(
     "integration",
     [
         "aiohttp",
@@ -136,7 +137,7 @@ def tests_integrations(session: Session, integration: str, gql_core: str) -> Non
 
 
 @session(python=PYTHON_VERSIONS, name="Pydantic tests", tags=["tests", "pydantic"])
-@with_gql_core_parmeterize("pydantic", ["1.10", "2.7.0"])
+@with_gql_core_parametrize("pydantic", ["1.10", "2.7.0"])
 def test_pydantic(session: Session, pydantic: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
 
