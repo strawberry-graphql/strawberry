@@ -41,7 +41,7 @@ INTEGRATIONS = [
 
 
 def _install_package(session: Session, package: str) -> None:
-    session.install(package)  # type: ignore
+    session._session.install(package)  # type: ignore
 
 
 gql_core_parametrize = nox.parametrize("gql_core", GQL_CORE_VERSIONS)
