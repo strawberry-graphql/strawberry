@@ -16,9 +16,8 @@ from typing import (
 )
 
 from strawberry.exceptions import InvalidUnionTypeError
-from strawberry.type import StrawberryType
-
-from .utils.str_converters import to_camel_case
+from strawberry.types.base import StrawberryType
+from strawberry.utils.str_converters import to_camel_case
 
 if TYPE_CHECKING:
     from graphql import GraphQLScalarType
@@ -166,30 +165,44 @@ def scalar(
 ) -> Any:
     """Annotates a class or type as a GraphQL custom scalar.
 
+    Args:
+        cls: The class or type to annotate.
+        name: The GraphQL name of the scalar.
+        description: The description of the scalar.
+        specified_by_url: The URL of the specification.
+        serialize: The function to serialize the scalar.
+        parse_value: The function to parse the value.
+        parse_literal: The function to parse the literal.
+        directives: The directives to apply to the scalar.
+
+    Returns:
+        The decorated class or type.
+
     Example usages:
 
-    >>> strawberry.scalar(
-    >>>     datetime.date,
-    >>>     serialize=lambda value: value.isoformat(),
-    >>>     parse_value=datetime.parse_date
-    >>> )
+    ```python
+    strawberry.scalar(
+        datetime.date,
+        serialize=lambda value: value.isoformat(),
+        parse_value=datetime.parse_date,
+    )
 
-    >>> Base64Encoded = strawberry.scalar(
-    >>>     NewType("Base64Encoded", bytes),
-    >>>     serialize=base64.b64encode,
-    >>>     parse_value=base64.b64decode
-    >>> )
+    Base64Encoded = strawberry.scalar(
+        NewType("Base64Encoded", bytes),
+        serialize=base64.b64encode,
+        parse_value=base64.b64decode,
+    )
 
-    >>> @strawberry.scalar(
-    >>>     serialize=lambda value: ",".join(value.items),
-    >>>     parse_value=lambda value: CustomList(value.split(","))
-    >>> )
-    >>> class CustomList:
-    >>>     def __init__(self, items):
-    >>>         self.items = items
 
+    @strawberry.scalar(
+        serialize=lambda value: ",".join(value.items),
+        parse_value=lambda value: CustomList(value.split(",")),
+    )
+    class CustomList:
+        def __init__(self, items):
+            self.items = items
+    ```
     """
-
     if parse_value is None:
         parse_value = cls
 
@@ -209,3 +222,6 @@ def scalar(
         return wrap
 
     return wrap(cls)
+
+
+__all__ = ["ScalarDefinition", "ScalarWrapper", "scalar"]

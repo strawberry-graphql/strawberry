@@ -25,3 +25,6 @@ class DeprecatedDescriptor:
 
     def inject(self, klass: type) -> None:
         setattr(klass, self.attr_name, self)
+
+
+__all__ = ["DEPRECATION_MESSAGES", "DeprecatedDescriptor"]

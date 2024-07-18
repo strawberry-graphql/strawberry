@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class MissingArgumentsAnnotationsError(StrawberryException):
-    """The field is missing the annotation for one or more arguments"""
+    """The field is missing the annotation for one or more arguments."""
 
     def __init__(
         self,

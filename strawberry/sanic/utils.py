@@ -10,18 +10,17 @@ if TYPE_CHECKING:
 
 
 def convert_request_to_files_dict(request: Request) -> Dict[str, Any]:
-    """
-    request.files has the following format, even if only a single file is uploaded:
+    """Converts the request.files dictionary to a dictionary of BytesIO objects.
 
+    `request.files` has the following format, even if only a single file is uploaded:
+
+    ```python
     {
-        'textFile': [
-            sanic.request.File(
-                type='text/plain',
-                body=b'strawberry',
-                name='textFile.txt'
-            )
+        "textFile": [
+            sanic.request.File(type="text/plain", body=b"strawberry", name="textFile.txt")
         ]
     }
+    ```
 
     Note that the dictionary entries are lists.
     """
@@ -38,3 +37,6 @@ def convert_request_to_files_dict(request: Request) -> Dict[str, Any]:
         files_dict[field_name] = BytesIO(file_list[0].body)
 
     return files_dict
+
+
+__all__ = ["convert_request_to_files_dict"]

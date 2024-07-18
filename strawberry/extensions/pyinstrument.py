@@ -9,9 +9,7 @@ from strawberry.extensions.base_extension import SchemaExtension
 
 
 class PyInstrument(SchemaExtension):
-    """
-    Extension to profile the execution time of resolvers using PyInstrument.
-    """
+    """Extension to profile the execution time of resolvers using PyInstrument."""
 
     def __init__(
         self,
@@ -20,11 +18,6 @@ class PyInstrument(SchemaExtension):
         self._report_path = report_path
 
     def on_operation(self) -> Iterator[None]:
-        """
-        Called when an operation is started,
-        in this case we start the profiler and yield
-        then we stop the profiler when the operation is done
-        """
         profiler = Profiler()
         profiler.start()
 
@@ -33,3 +26,6 @@ class PyInstrument(SchemaExtension):
         profiler.stop()
 
         Path(self._report_path, encoding="utf-8").write_text(profiler.output_html())
+
+
+__all__ = ["PyInstrument"]

@@ -3,9 +3,8 @@ from __future__ import annotations
 from typing import Any, Optional, Union, cast
 from typing_extensions import Annotated, get_args, get_origin
 
-from strawberry.type import StrawberryType
-
-from .annotation import StrawberryAnnotation
+from strawberry.annotation import StrawberryAnnotation
+from strawberry.types.base import StrawberryType
 
 
 class StrawberryAutoMeta(type):
@@ -77,3 +76,22 @@ class StrawberryAuto(metaclass=StrawberryAutoMeta):
 
 
 auto = Annotated[Any, StrawberryAuto()]
+"""Special marker for automatic annotation.
+
+A special value that can be used to automatically infer the type of a field
+when using integrations like Strawberry Django or Strawberry Pydantic.
+
+Example:
+```python
+import strawberry
+
+from my_user_app import models
+
+
+@strawberry.django.type(models.User)
+class User:
+    name: strawberry.auto
+```
+"""
+
+__all__ = ["auto"]

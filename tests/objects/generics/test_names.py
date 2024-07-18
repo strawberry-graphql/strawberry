@@ -5,11 +5,11 @@ from typing_extensions import Annotated
 import pytest
 
 import strawberry
-from strawberry.enum import EnumDefinition
-from strawberry.lazy_type import LazyType
 from strawberry.schema.config import StrawberryConfig
-from strawberry.type import StrawberryList, StrawberryOptional
-from strawberry.union import StrawberryUnion
+from strawberry.types.base import StrawberryList, StrawberryOptional
+from strawberry.types.enum import EnumDefinition
+from strawberry.types.lazy_type import LazyType
+from strawberry.types.union import StrawberryUnion
 
 T = TypeVar("T")
 K = TypeVar("K")
@@ -87,7 +87,8 @@ def test_nested_generics():
 
 def test_nested_generics_aliases_with_schema():
     """This tests is similar to the previous test, but it also tests against
-    the schema, since the resolution of the type name might be different."""
+    the schema, since the resolution of the type name might be different.
+    """
     config = StrawberryConfig()
 
     @strawberry.type

@@ -6,7 +6,7 @@ from typing_extensions import Protocol
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from strawberry.types.types import StrawberryObjectDefinition
+    from strawberry.types.base import StrawberryObjectDefinition
 
 
 PydanticModel = TypeVar("PydanticModel", bound=BaseModel)
@@ -14,7 +14,9 @@ PydanticModel = TypeVar("PydanticModel", bound=BaseModel)
 
 class StrawberryTypeFromPydantic(Protocol[PydanticModel]):
     """This class does not exist in runtime.
-    It only makes the methods below visible for IDEs"""
+
+    It only makes the methods below visible for IDEs.
+    """
 
     def __init__(self, **kwargs: Any) -> None: ...
 

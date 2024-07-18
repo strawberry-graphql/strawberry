@@ -5,8 +5,7 @@ from typing_extensions import assert_type
 import pytest
 
 import strawberry
-from strawberry.type import get_object_definition
-from strawberry.types.types import StrawberryObjectDefinition
+from strawberry.types.base import StrawberryObjectDefinition, get_object_definition
 
 
 def test_get_object_definition():
