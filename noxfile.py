@@ -1,3 +1,6 @@
+import itertools
+from typing import Any, Callable, List, Tuple
+
 import nox
 from nox_poetry import Session, session
 
@@ -49,7 +52,17 @@ def _install_gql_core(session: Session, version: str) -> None:
     )  # type: ignore
 
 
-gql_core_parametrize = nox.parametrize("gql_core", GQL_CORE_VERSIONS)
+gql_core_parametrize = nox.parametrize(
+    "gql_core",
+    GQL_CORE_VERSIONS,
+)
+
+
+def with_gql_core_parmeterize(origin: Tuple[str, List[str]]) -> Callable[[Any], Any]:
+    name, params = origin
+    arg_names = f"{name}, gql_core"
+    combinations = itertools.product(params, GQL_CORE_VERSIONS)
+    return nox.parametrize(arg_names, combinations)
 
 
 @session(python=PYTHON_VERSIONS, name="Tests", tags=["tests"])
@@ -71,8 +84,7 @@ def tests(session: Session, gql_core: str) -> None:
 
 
 @session(python=["3.11", "3.12"], name="Django tests", tags=["tests"])
-@nox.parametrize("django", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"])
-@gql_core_parametrize
+@gql_core_parametrize("django", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"])
 def tests_django(session: Session, django: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
     _install_gql_core(session, gql_core)
