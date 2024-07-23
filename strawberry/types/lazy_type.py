@@ -58,7 +58,7 @@ class LazyType(Generic[TypeName, Module]):
 
         return cls(type_name, module, package)
 
-    def __or__(self, other: Other) -> Union[Self, Other]:
+    def __or__(self, other: Other) -> object:
         return Union[self, other]
 
     def resolve_type(self) -> Type[Any]:
