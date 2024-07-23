@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.236.2 - 2024-07-23
+--------------------
+
+Update federation entity resolver exception handling to set the result to the original error instead of a `GraphQLError`, which obscured the original message and meta-fields.
+
+Contributed by [Bradley Oesch](https://github.com/bradleyoesch) via [PR #3144](https://github.com/strawberry-graphql/strawberry/pull/3144/)
+
+
 0.236.1 - 2024-07-23
 --------------------
 
