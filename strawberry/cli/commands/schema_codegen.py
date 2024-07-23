@@ -3,11 +3,12 @@ from typing import Optional
 
 import typer
 
-from strawberry.cli.app import app
 from strawberry.schema_codegen import codegen
 
+schema_codegen_app = typer.Typer()
 
-@app.command(help="Generate code from a query")
+
+@schema_codegen_app.callback(help="Generate code from a query")
 def schema_codegen(
     schema: Path = typer.Argument(exists=True),
     output: Optional[Path] = typer.Option(

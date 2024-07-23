@@ -2,12 +2,13 @@ from pathlib import Path
 
 import typer
 
-from strawberry.cli.app import app
 from strawberry.cli.utils import load_schema
 from strawberry.printer import print_schema
 
+export_schema_app = typer.Typer()
 
-@app.command(help="Exports the schema")
+
+@export_schema_app.callback(help="Exports the schema")
 def export_schema(
     schema: str,
     app_dir: str = typer.Option(

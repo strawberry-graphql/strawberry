@@ -5,12 +5,13 @@ from enum import Enum
 import rich
 import typer
 
-from strawberry.cli.app import app
 from strawberry.cli.constants import (
     DEBUG_SERVER_LOG_OPERATIONS,
     DEBUG_SERVER_SCHEMA_ENV_VAR_KEY,
 )
 from strawberry.cli.utils import load_schema
+
+server_app = typer.Typer()
 
 
 class LogLevel(str, Enum):
@@ -22,7 +23,7 @@ class LogLevel(str, Enum):
     __slots__ = ()
 
 
-@app.command(help="Starts debug server")
+@server_app.callback(help="Starts debug server")
 def server(
     schema: str,
     host: str = typer.Option("0.0.0.0", "-h", "--host", show_default=True),

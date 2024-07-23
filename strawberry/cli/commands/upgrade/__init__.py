@@ -9,7 +9,6 @@ import rich
 import typer
 from libcst.codemod import CodemodContext
 
-from strawberry.cli.app import app
 from strawberry.codemods.annotated_unions import ConvertUnionToAnnotatedUnion
 from strawberry.codemods.update_imports import UpdateImportsCodemod
 
@@ -21,8 +20,11 @@ codemods = {
 }
 
 
+upgrade_app = typer.Typer()
+
+
 # TODO: add support for running all of them
-@app.command(help="Upgrades a Strawberry project to the latest version")
+@upgrade_app.callback(help="Upgrades a Strawberry project to the latest version")
 def upgrade(
     codemod: str = typer.Argument(
         ...,

@@ -9,9 +9,10 @@ from typing import List, Optional, Type
 import rich
 import typer
 
-from strawberry.cli.app import app
 from strawberry.cli.utils import load_schema
 from strawberry.codegen import ConsolePlugin, QueryCodegen, QueryCodegenPlugin
+
+codegen_app = typer.Typer()
 
 
 def _is_codegen_plugin(obj: object) -> bool:
@@ -87,7 +88,7 @@ def _load_plugins(plugin_ids: List[str], query: Path) -> List[QueryCodegenPlugin
     return plugins
 
 
-@app.command(help="Generate code from a query")
+@codegen_app.command(help="Generate code from a query")
 def codegen(
     query: Optional[List[Path]] = typer.Argument(
         default=None, exists=True, dir_okay=False
