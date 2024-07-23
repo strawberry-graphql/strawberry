@@ -2,7 +2,11 @@ from typing import List, Optional, TypeVar
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
+from strawberry.types.base import (
+    StrawberryList,
+    StrawberryOptional,
+    StrawberryTypeVar,
+)
 
 
 def test_basic_string():

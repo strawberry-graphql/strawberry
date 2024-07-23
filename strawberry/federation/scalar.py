@@ -11,7 +11,7 @@ from typing import (
     overload,
 )
 
-from strawberry.custom_scalar import ScalarWrapper, _process_scalar
+from strawberry.types.scalar import ScalarWrapper, _process_scalar
 
 # in python 3.10+ NewType is a class
 if sys.version_info >= (3, 10):
@@ -79,28 +79,48 @@ def scalar(
 ) -> Any:
     """Annotates a class or type as a GraphQL custom scalar.
 
+    Args:
+        cls: The class or type to annotate
+        name: The GraphQL name of the scalar
+        description: The description of the scalar
+        specified_by_url: The URL of the specification
+        serialize: The function to serialize the scalar
+        parse_value: The function to parse the value
+        parse_literal: The function to parse the literal
+        directives: The directives to apply to the scalar
+        authenticated: Whether to add the @authenticated directive
+        inaccessible: Whether to add the @inaccessible directive
+        policy: The list of policy names to add to the @policy directive
+        requires_scopes: The list of scopes to add to the @requires directive
+        tags: The list of tags to add to the @tag directive
+
+    Returns:
+        The decorated class or type
+
     Example usages:
 
-    >>> strawberry.federation.scalar(
-    >>>     datetime.date,
-    >>>     serialize=lambda value: value.isoformat(),
-    >>>     parse_value=datetime.parse_date
-    >>> )
+    ```python
+    strawberry.federation.scalar(
+        datetime.date,
+        serialize=lambda value: value.isoformat(),
+        parse_value=datetime.parse_date,
+    )
 
-    >>> Base64Encoded = strawberry.federation.scalar(
-    >>>     NewType("Base64Encoded", bytes),
-    >>>     serialize=base64.b64encode,
-    >>>     parse_value=base64.b64decode
-    >>> )
+    Base64Encoded = strawberry.federation.scalar(
+        NewType("Base64Encoded", bytes),
+        serialize=base64.b64encode,
+        parse_value=base64.b64decode,
+    )
 
-    >>> @strawberry.federation.scalar(
-    >>>     serialize=lambda value: ",".join(value.items),
-    >>>     parse_value=lambda value: CustomList(value.split(","))
-    >>> )
-    >>> class CustomList:
-    >>>     def __init__(self, items):
-    >>>         self.items = items
 
+    @strawberry.federation.scalar(
+        serialize=lambda value: ",".join(value.items),
+        parse_value=lambda value: CustomList(value.split(",")),
+    )
+    class CustomList:
+        def __init__(self, items):
+            self.items = items
+    ```
     """
     from strawberry.federation.schema_directives import (
         Authenticated,
@@ -146,3 +166,6 @@ def scalar(
         return wrap
 
     return wrap(cls)
+
+
+__all__ = ["scalar"]

@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.235.2"
+version = "0.236.1"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -68,7 +68,7 @@ asgiref = "^3.2"
 ddtrace = ">=1.6.4"
 email-validator = {version = ">=1.1.3,<3.0.0", optional = false}
 freezegun = "^1.2.1"
-libcst = {version = ">=0.4.7", optional = false}
+libcst = {version = ">=1.0.0", optional = false}
 MarkupSafe = "2.1.3"
 nox = "^2023.4.22"
 nox-poetry = "^1.0.3"
@@ -235,9 +235,6 @@ ignore = [
     "S102",
     "S104",
     "S324",
-    # maybe we can enable this in future
-    # we'd want to have consistent docstrings in future
-    "D",
     "ANN101", # missing annotation for self?
     # definitely enable these, maybe not in tests
     "ANN102",
@@ -351,6 +348,17 @@ ignore = [
     "FIX001",
     "FIX002",
     "FA100",
+
+    # Docstrings, maybe to enable later
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+    "D412",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -370,6 +378,7 @@ ignore = [
     "S603",
     "S607",
     "B018",
+    "D",
 ]
 "strawberry/extensions/tracing/__init__.py" = ["TCH004"]
 "tests/http/clients/__init__.py" = ["F401"]
@@ -384,3 +393,6 @@ exclude =[
     'tests/codegen/snapshots/',
     'tests/cli/snapshots/'
 ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

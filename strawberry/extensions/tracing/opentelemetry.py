@@ -208,3 +208,6 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
             result = _next(root, info, *args, **kwargs)
 
             return result
+
+
+__all__ = ["OpenTelemetryExtension", "OpenTelemetryExtensionSync"]

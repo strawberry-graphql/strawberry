@@ -8,7 +8,7 @@ import strawberry
 from strawberry.directive import DirectiveLocation, DirectiveValue
 from strawberry.extensions import SchemaExtension
 from strawberry.schema.config import StrawberryConfig
-from strawberry.type import get_object_definition
+from strawberry.types.base import get_object_definition
 from strawberry.utils.await_maybe import await_maybe
 
 

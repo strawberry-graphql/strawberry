@@ -48,3 +48,6 @@ class GraphQLTestClient(BaseGraphQLTestClient):
 
     def _decode(self, response: Any, type: Literal["multipart", "json"]) -> Any:
         return response.json()
+
+
+__all__ = ["GraphQLTestClient"]

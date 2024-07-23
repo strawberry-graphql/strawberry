@@ -12,10 +12,10 @@ from typing import (
 )
 from typing_extensions import dataclass_transform
 
-from strawberry.field import StrawberryField
-from strawberry.field import field as base_field
-from strawberry.object_type import type as base_type
-from strawberry.unset import UNSET
+from strawberry.types.field import StrawberryField
+from strawberry.types.field import field as base_field
+from strawberry.types.object_type import type as base_type
+from strawberry.types.unset import UNSET
 
 from .field import field
 
@@ -369,3 +369,6 @@ def interface_object(
         is_interface=False,
         is_interface_object=True,
     )
+
+
+__all__ = ["type", "input", "interface", "interface_object"]

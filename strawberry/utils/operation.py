@@ -38,3 +38,6 @@ def get_operation_type(
         raise RuntimeError("Can't get GraphQL operation type")
 
     return OperationType(definition.operation.value)
+
+
+__all__ = ["get_first_operation", "get_operation_type"]

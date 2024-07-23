@@ -14,8 +14,8 @@ def pretty_print_graphql_operation(
 ) -> None:
     """Pretty print a GraphQL operation using pygments.
 
-    Won't print introspection operation to prevent noise in the output."""
-
+    Won't print introspection operation to prevent noise in the output.
+    """
     try:
         from pygments import highlight, lexers
         from pygments.formatters import Terminal256Formatter
@@ -41,3 +41,6 @@ def pretty_print_graphql_operation(
         print(  # noqa: T201
             highlight(variables_json, lexers.JsonLexer(), Terminal256Formatter())
         )
+
+
+__all__ = ["pretty_print_graphql_operation"]

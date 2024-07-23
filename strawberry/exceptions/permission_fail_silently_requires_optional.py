@@ -20,7 +20,7 @@ class PermissionFailSilentlyRequiresOptionalError(StrawberryException):
         self.rich_message = (
             "fail_silently permissions can only be used with fields of type "
             f"optional or list. Provided field `[underline]{field.name}[/]` "
-            f"is of type `[underline]{field.type.__name__}[/]`"  # type: ignore
+            f"is of type `[underline]{field.type.__name__}[/]`"
         )
         self.annotation_message = "field defined here"
         self.suggestion = (
@@ -38,14 +38,14 @@ class PermissionFailSilentlyRequiresOptionalError(StrawberryException):
         source = None
         if origin is not None:
             source = source_finder.find_class_attribute_from_object(
-                origin,  # type: ignore
+                origin,
                 self.field.python_name,
             )
 
         # in case it is a function
         if source is None and self.field.base_resolver is not None:
             source = source_finder.find_function_from_object(
-                self.field.base_resolver.wrapped_func  # type: ignore
+                self.field.base_resolver.wrapped_func
             )
 
         return source

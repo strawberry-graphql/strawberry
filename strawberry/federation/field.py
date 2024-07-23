@@ -15,15 +15,15 @@ from typing import (
     overload,
 )
 
-from strawberry.field import field as base_field
-from strawberry.unset import UNSET
+from strawberry.types.field import field as base_field
+from strawberry.types.unset import UNSET
 
 if TYPE_CHECKING:
     from typing_extensions import Literal
 
     from strawberry.extensions.field_extension import FieldExtension
-    from strawberry.field import _RESOLVER_TYPE, StrawberryField
     from strawberry.permission import BasePermission
+    from strawberry.types.field import _RESOLVER_TYPE, StrawberryField
 
     from .schema_directives import Override
 
@@ -203,3 +203,6 @@ def field(
         extensions=extensions,
         graphql_type=graphql_type,
     )
+
+
+__all__ = ["field"]

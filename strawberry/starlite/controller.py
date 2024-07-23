@@ -382,3 +382,6 @@ def make_graphql_controller(
             )
 
     return GraphQLController
+
+
+__all__ = ["make_graphql_controller"]

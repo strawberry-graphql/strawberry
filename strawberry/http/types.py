@@ -11,3 +11,6 @@ QueryParams = Mapping[str, Optional[str]]
 class FormData(TypedDict):
     files: Mapping[str, Any]
     form: Mapping[str, Any]
+
+
+__all__ = ["HTTPMethod", "QueryParams", "FormData"]

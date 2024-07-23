@@ -31,12 +31,12 @@ from strawberry.exceptions import (
     WrongReturnTypeForUnion,
 )
 from strawberry.exceptions.handler import should_use_rich_exceptions
-from strawberry.lazy_type import LazyType
-from strawberry.type import (
+from strawberry.types.base import (
     StrawberryOptional,
     StrawberryType,
     has_object_definition,
 )
+from strawberry.types.lazy_type import LazyType
 
 if TYPE_CHECKING:
     from graphql import (
@@ -173,7 +173,7 @@ class StrawberryUnion(StrawberryType):
         ) -> str:
             assert isinstance(type_, GraphQLUnionType)
 
-            from strawberry.types.types import StrawberryObjectDefinition
+            from strawberry.types.base import StrawberryObjectDefinition
 
             # If the type given is not an Object type, try resolving using `is_type_of`
             # defined on the union's inner types
@@ -250,15 +250,27 @@ def union(
 ) -> StrawberryUnion:
     """Creates a new named Union type.
 
+    Args:
+        name: The GraphQL name of the Union type.
+        types: The types that the Union can be.
+            (Deprecated, use `Annotated[U, strawberry.union("Name")]` instead)
+        description: The  GraphQL description of the Union type.
+        directives: The directives to attach to the Union type.
+
     Example usages:
 
-    >>> @strawberry.type
-    ... class A: ...
-    >>> @strawberry.type
-    ... class B: ...
-    >>> Annotated[A | B, strawberry.union("Name")]
-    """
+    ```python
+    import strawberry
+    from typing import Annotated
 
+    @strawberry.type
+    class A: ...
+
+    @strawberry.type
+    class B: ...
+
+    MyUnion = Annotated[A | B, strawberry.union("Name")]
+    """
     if types is None:
         union = StrawberryUnion(
             name=name,
@@ -299,3 +311,6 @@ def union(
         description=description,
         directives=directives,
     )
+
+
+__all__ = ["StrawberryUnion", "union"]

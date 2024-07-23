@@ -4,7 +4,6 @@ from asyncio import ensure_future
 from inspect import isawaitable
 from typing import (
     TYPE_CHECKING,
-    Awaitable,
     Callable,
     Iterable,
     List,
@@ -14,7 +13,6 @@ from typing import (
     Type,
     TypedDict,
     Union,
-    cast,
 )
 
 from graphql import GraphQLError, parse
@@ -32,7 +30,6 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired, Unpack
 
     from graphql import ExecutionContext as GraphQLExecutionContext
-    from graphql import ExecutionResult as GraphQLExecutionResult
     from graphql import GraphQLSchema
     from graphql.language import DocumentNode
     from graphql.validation import ASTValidationRule
@@ -139,9 +136,8 @@ async def execute(
                     )
 
                     if isawaitable(result):
-                        result = await cast(Awaitable["GraphQLExecutionResult"], result)
+                        result = await result
 
-                    result = cast("GraphQLExecutionResult", result)
                     execution_context.result = result
                     # Also set errors on the execution_context so that it's easier
                     # to access in extensions
@@ -237,13 +233,11 @@ def execute_sync(
                     )
 
                     if isawaitable(result):
-                        result = cast(Awaitable["GraphQLExecutionResult"], result)
                         ensure_future(result).cancel()
                         raise RuntimeError(
                             "GraphQL execution failed to complete synchronously."
                         )
 
-                    result = cast("GraphQLExecutionResult", result)
                     execution_context.result = result
                     # Also set errors on the execution_context so that it's easier
                     # to access in extensions
@@ -277,3 +271,6 @@ def execute_sync(
         errors=execution_context.result.errors,
         extensions=extensions_runner.get_extensions_results_sync(),
     )
+
+
+__all__ = ["execute", "execute_sync"]

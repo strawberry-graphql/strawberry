@@ -6,12 +6,12 @@ import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument, convert_arguments
 from strawberry.exceptions import UnsupportedTypeError
-from strawberry.lazy_type import LazyType
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
-from strawberry.unset import UNSET
+from strawberry.types.arguments import StrawberryArgument, convert_arguments
+from strawberry.types.lazy_type import LazyType
+from strawberry.types.unset import UNSET
 
 
 def test_simple_types():

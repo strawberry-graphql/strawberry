@@ -17,7 +17,6 @@ from typing import (
 )
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic._compat import (
     CompatModelField,
     PydanticCompat,
@@ -34,8 +33,9 @@ from strawberry.experimental.pydantic.utils import (
     get_default_factory_for_field,
     get_private_fields,
 )
-from strawberry.field import StrawberryField
-from strawberry.object_type import _process_type, _wrap_dataclass
+from strawberry.types.auto import StrawberryAuto
+from strawberry.types.field import StrawberryField
+from strawberry.types.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.dataclasses import add_custom_init_fn
 
@@ -312,8 +312,10 @@ def input(
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     """Convenience decorator for creating an input type from a Pydantic model.
-    Equal to partial(type, is_input=True)
-    See https://github.com/strawberry-graphql/strawberry/issues/1830
+
+    Equal to `partial(type, is_input=True)`
+
+    See https://github.com/strawberry-graphql/strawberry/issues/1830.
     """
     return type(
         model=model,
@@ -340,8 +342,10 @@ def interface(
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     """Convenience decorator for creating an interface type from a Pydantic model.
-    Equal to partial(type, is_interface=True)
-    See https://github.com/strawberry-graphql/strawberry/issues/1830
+
+    Equal to `partial(type, is_interface=True)`
+
+    See https://github.com/strawberry-graphql/strawberry/issues/1830.
     """
     return type(
         model=model,

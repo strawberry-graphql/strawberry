@@ -48,3 +48,6 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         )
 
         return response
+
+
+__all__ = ["GraphQLTestClient"]

@@ -12,7 +12,6 @@ from typing import (
 )
 from typing_extensions import get_args
 
-from strawberry.type import has_object_definition
 from strawberry.utils.typing import is_generic_alias
 
 
@@ -29,8 +28,7 @@ def in_async_context() -> bool:
 
 @lru_cache(maxsize=250)
 def get_func_args(func: Callable[[Any], Any]) -> List[str]:
-    """Returns a list of arguments for the function"""
-
+    """Returns a list of arguments for the function."""
     sig = inspect.signature(func)
 
     return [
@@ -45,38 +43,46 @@ def get_specialized_type_var_map(cls: type) -> Optional[Dict[str, type]]:
 
     Consider the following:
 
-        >>> class Foo(Generic[T]):
-        ...     ...
-        ...
-        >>> class Bar(Generic[K]):
-        ...     ...
-        ...
-        >>> class IntBar(Bar[int]):
-        ...     ...
-        ...
-        >>> class IntBarSubclass(IntBar):
-        ...     ...
-        ...
-        >>> class IntBarFoo(IntBar, Foo[str]):
-        ...     ...
-        ...
+    ```python
+    class Foo(Generic[T]): ...
+
+
+    class Bar(Generic[K]): ...
+
+
+    class IntBar(Bar[int]): ...
+
+
+    class IntBarSubclass(IntBar): ...
+
+
+    class IntBarFoo(IntBar, Foo[str]): ...
+    ```
 
     This would return:
 
-        >>> get_specialized_type_var_map(object)
-        None
-        >>> get_specialized_type_var_map(Foo)
-        {}
-        >>> get_specialized_type_var_map(Bar)
-        {~T: ~T}
-        >>> get_specialized_type_var_map(IntBar)
-        {~T: int}
-        >>> get_specialized_type_var_map(IntBarSubclass)
-        {~T: int}
-        >>> get_specialized_type_var_map(IntBarFoo)
-        {~T: int, ~K: str}
+    ```python
+    get_specialized_type_var_map(object)
+    # None
 
+    get_specialized_type_var_map(Foo)
+    # {}
+
+    get_specialized_type_var_map(Bar)
+    # {~T: ~T}
+
+    get_specialized_type_var_map(IntBar)
+    # {~T: int}
+
+    get_specialized_type_var_map(IntBarSubclass)
+    # {~T: int}
+
+    get_specialized_type_var_map(IntBarFoo)
+    # {~T: int, ~K: str}
+    ```
     """
+    from strawberry.types.base import has_object_definition
+
     orig_bases = getattr(cls, "__orig_bases__", None)
     if orig_bases is None:
         # Specialized generic aliases will not have __orig_bases__
@@ -114,3 +120,6 @@ def get_specialized_type_var_map(cls: type) -> Optional[Dict[str, type]]:
         )
 
     return type_var_map
+
+
+__all__ = ["in_async_context", "get_func_args", "get_specialized_type_var_map"]

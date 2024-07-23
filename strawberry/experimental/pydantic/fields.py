@@ -13,7 +13,7 @@ from strawberry.experimental.pydantic._compat import (
 from strawberry.experimental.pydantic.exceptions import (
     UnregisteredTypeException,
 )
-from strawberry.types.types import StrawberryObjectDefinition
+from strawberry.types.base import StrawberryObjectDefinition
 
 try:
     from types import UnionType as TypingUnionType
@@ -51,7 +51,7 @@ def replace_pydantic_types(type_: Any, is_input: bool) -> Any:
 def replace_types_recursively(
     type_: Any, is_input: bool, compat: PydanticCompat
 ) -> Any:
-    """Runs the conversions recursively into the arguments of generic types if any"""
+    """Runs the conversions recursively into the arguments of generic types if any."""
     basic_type = compat.get_basic_type(type_)
     replaced_type = replace_pydantic_types(basic_type, is_input)
 

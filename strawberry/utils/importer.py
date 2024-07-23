@@ -19,3 +19,6 @@ def import_module_symbol(
         symbol = getattr(symbol, attribute_name)
 
     return symbol
+
+
+__all__ = ["import_module_symbol"]

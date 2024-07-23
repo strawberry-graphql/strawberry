@@ -78,3 +78,6 @@ class OneOfInputValidationRule(ValidationRule):
                         nodes=[node],
                     )
                 )
+
+
+__all__ = ["OneOfInputValidationRule"]

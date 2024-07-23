@@ -6,8 +6,8 @@ import sys
 from typing import TYPE_CHECKING, Any, Tuple, Union
 from typing_extensions import Self, assert_never
 
+from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.types.nodes import InlineFragment, Selection
-from strawberry.types.types import StrawberryObjectDefinition
 
 if TYPE_CHECKING:
     from strawberry.types.info import Info
@@ -86,6 +86,7 @@ def should_resolve_list_connection_edges(info: Info) -> bool:
 
     def _check_selection(selection: Selection) -> bool:
         """Recursively inspect the selection to check if the user requested to resolve the `edges` field.
+
         Args:
             selection (Selection): The selection to check.
 
@@ -187,3 +188,11 @@ class SliceMetadata:
             end=end,
             expected=expected,
         )
+
+
+__all__ = [
+    "from_base64",
+    "to_base64",
+    "should_resolve_list_connection_edges",
+    "SliceMetadata",
+]
