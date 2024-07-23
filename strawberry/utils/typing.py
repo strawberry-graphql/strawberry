@@ -239,7 +239,7 @@ def _ast_replace_union_operation(
             expr = ast.Subscript(
                 expr.value,
                 # The cast is required for mypy on python 3.7 and 3.8
-                ast.Index(_ast_replace_union_operation(cast(Any, expr.slice).value)),
+                ast.Index(_ast_replace_union_operation(cast(Any, expr.slice).value)),  # type: ignore
                 ast.Load(),
             )
         elif isinstance(expr.slice, (ast.BinOp, ast.Tuple)):
