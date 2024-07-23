@@ -155,7 +155,7 @@ class NodeExtension(FieldExtension):
                             await asyncio.gather(
                                 *awaitable_nodes.values(),
                                 *(
-                                    asyncgen_to_list(nodes)
+                                    asyncgen_to_list(nodes)  # type: ignore
                                     for nodes in asyncgen_nodes.values()
                                 ),
                             ),

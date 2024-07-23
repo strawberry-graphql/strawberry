@@ -84,7 +84,7 @@ def _serialize_dataclasses(value: object) -> object: ...
 
 def _serialize_dataclasses(value):
     if dataclasses.is_dataclass(value):
-        return dataclasses.asdict(value)
+        return dataclasses.asdict(value)  # type: ignore
     if isinstance(value, (list, tuple)):
         return [_serialize_dataclasses(v) for v in value]
     if isinstance(value, dict):
