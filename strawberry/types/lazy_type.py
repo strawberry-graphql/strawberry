@@ -5,7 +5,6 @@ import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
-    TYPE_CHECKING,
     Any,
     ForwardRef,
     Generic,
@@ -13,14 +12,14 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Union,
     cast,
 )
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
+from typing_extensions import Self
 
 TypeName = TypeVar("TypeName")
 Module = TypeVar("Module")
+Other = TypeVar("Other")
 
 
 @dataclass(frozen=True)
@@ -58,6 +57,9 @@ class LazyType(Generic[TypeName, Module]):
             package = current_frame.f_back.f_globals["__package__"]
 
         return cls(type_name, module, package)
+
+    def __or__(self, other: Other) -> Union[Self, Other]:
+        return Union[self, other]
 
     def resolve_type(self) -> Type[Any]:
         module = importlib.import_module(self.module, self.package)
