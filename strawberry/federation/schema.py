@@ -1,5 +1,5 @@
 from collections import defaultdict
-from functools import cached_property, partial
+from functools import cached_property
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -177,30 +177,25 @@ class Schema(BaseSchema):
                 if "info" in func_args:
                     kwargs["info"] = info
 
-                get_result = partial(resolve_reference, **kwargs)
+                try:
+                    result = resolve_reference(**kwargs)
+                except Exception as e:
+                    result = e
             else:
                 from strawberry.arguments import convert_argument
 
                 config = info.schema.config
                 scalar_registry = info.schema.schema_converter.scalar_registry
 
-                get_result = partial(
-                    convert_argument,
-                    representation,
-                    type_=definition.origin,
-                    scalar_registry=scalar_registry,
-                    config=config,
-                )
-
-            try:
-                result = get_result()
-            except Exception as e:
-                # check explicitly for type __name__ instead of checking `isinstance`
-                # so clients can raise custom TypeErrors to avoid this wrapper
-                if type(e).__name__ == "TypeError":
+                try:
+                    result = convert_argument(
+                        representation,
+                        type_=definition.origin,
+                        scalar_registry=scalar_registry,
+                        config=config,
+                    )
+                except Exception:
                     result = TypeError(f"Unable to resolve reference for {type_name}")
-                else:
-                    result = e
 
             results.append(result)
 
