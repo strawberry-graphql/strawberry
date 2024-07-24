@@ -1,6 +1,50 @@
 CHANGELOG
 =========
 
+0.237.0 - 2024-07-24
+--------------------
+
+This release ensures using pydantic 2.8.0 doesn't break when using experimental
+pydantic_type and running mypy.
+
+Contributed by [Martin Roy](https://github.com/lindycoder) via [PR #3562](https://github.com/strawberry-graphql/strawberry/pull/3562/)
+
+
+0.236.2 - 2024-07-23
+--------------------
+
+Update federation entity resolver exception handling to set the result to the original error instead of a `GraphQLError`, which obscured the original message and meta-fields.
+
+Contributed by [Bradley Oesch](https://github.com/bradleyoesch) via [PR #3144](https://github.com/strawberry-graphql/strawberry/pull/3144/)
+
+
+0.236.1 - 2024-07-23
+--------------------
+
+This release fixes an issue where optional lazy types using `| None` were
+failing to be correctly resolved inside modules using future annotations, e.g.
+
+```python
+from __future__ import annotations
+
+from typing import Annotated, TYPE_CHECKING
+
+import strawberry
+
+if TYPE_CHECKING:
+    from types import Group
+
+
+@strawberry.type
+class Person:
+    group: Annotated["Group", strawberry.lazy("types.group")] | None
+```
+
+This should now work as expected.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3576](https://github.com/strawberry-graphql/strawberry/pull/3576/)
+
+
 0.236.0 - 2024-07-17
 --------------------
 

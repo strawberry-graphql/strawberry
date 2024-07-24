@@ -107,7 +107,7 @@ def tests_integrations(session: Session, integration: str) -> None:
 
 
 @session(python=PYTHON_VERSIONS, name="Pydantic tests", tags=["tests", "pydantic"])
-@nox.parametrize("pydantic", ["1.10", "2.7.0"])
+@nox.parametrize("pydantic", ["1.10", "2.7.0", "2.8.0"])
 def test_pydantic(session: Session, pydantic: str) -> None:
     session.run_always("poetry", "install", external=True)
 
@@ -130,7 +130,6 @@ def tests_typecheckers(session: Session) -> None:
 
     session.install("pyright")
     session.install("pydantic")
-    session.install("git+https://github.com/python/mypy.git#master")
 
     session.run(
         "pytest",

@@ -1,7 +1,11 @@
 # type: ignore
 import enum
+import sys
+import textwrap
 from typing import Generic, TypeVar
 from typing_extensions import Annotated, TypeAlias
+
+import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
@@ -195,3 +199,56 @@ def test_lazy_function_in_union():
     [type1, type2] = resolved.types
     assert type1.resolve_type() is LaziestType
     assert type2.resolve_type() is LazyEnum
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason="| operator without future annotations is only available on python 3.10+",
+)
+def test_optional_lazy_type_using_or_operator():
+    from tests.schema.test_lazy.type_a import TypeA
+
+    @strawberry.type
+    class SomeType:
+        foo: Annotated[TypeA, strawberry.lazy("tests.schema.test_lazy.type_a")] | None
+
+    @strawberry.type
+    class AnotherType:
+        foo: TypeA | None = None
+
+    @strawberry.type
+    class Query:
+        some_type: SomeType
+        another_type: AnotherType
+
+    schema = strawberry.Schema(query=Query)
+    expected = """\
+    type AnotherType {
+      foo: TypeA
+    }
+
+    type Query {
+      someType: SomeType!
+      anotherType: AnotherType!
+    }
+
+    type SomeType {
+      foo: TypeA
+    }
+
+    type TypeA {
+      listOfB: [TypeB!]
+      typeB: TypeB!
+    }
+
+    type TypeB {
+      typeA: TypeA!
+      typeAList: [TypeA!]!
+      typeCList: [TypeC!]!
+    }
+
+    type TypeC {
+      name: String!
+    }
+    """
+    assert str(schema).strip() == textwrap.dedent(expected).strip()
