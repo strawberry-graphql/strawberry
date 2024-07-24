@@ -1,5 +1,5 @@
 from collections import defaultdict
-from functools import cached_property, partial
+from functools import cached_property
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -17,20 +17,18 @@ from typing import (
     cast,
 )
 
-from graphql import GraphQLError
-
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.custom_scalar import scalar
 from strawberry.printer import print_schema
 from strawberry.schema import Schema as BaseSchema
-from strawberry.type import (
+from strawberry.types.base import (
     StrawberryContainer,
+    StrawberryObjectDefinition,
     WithStrawberryObjectDefinition,
     get_object_definition,
 )
 from strawberry.types.info import Info
-from strawberry.types.types import StrawberryObjectDefinition
-from strawberry.union import StrawberryUnion
+from strawberry.types.scalar import scalar
+from strawberry.types.union import StrawberryUnion
 from strawberry.utils.inspect import get_func_args
 
 from .schema_directive import StrawberryFederationSchemaDirective
@@ -38,12 +36,12 @@ from .schema_directive import StrawberryFederationSchemaDirective
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
 
-    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-    from strawberry.enum import EnumDefinition
     from strawberry.extensions import SchemaExtension
     from strawberry.federation.schema_directives import ComposeDirective
     from strawberry.schema.config import StrawberryConfig
     from strawberry.schema_directive import StrawberrySchemaDirective
+    from strawberry.types.enum import EnumDefinition
+    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
 FederationAny = scalar(NewType("_Any", object), name="_Any")  # type: ignore
@@ -112,7 +110,6 @@ class Schema(BaseSchema):
         The _service field is added by default, but the _entities field is only
         added if the schema contains an entity type.
         """
-
         import strawberry
         from strawberry.tools.create_type import create_type
         from strawberry.tools.merge_types import merge_types
@@ -179,28 +176,25 @@ class Schema(BaseSchema):
                 if "info" in func_args:
                     kwargs["info"] = info
 
-                get_result = partial(resolve_reference, **kwargs)
+                try:
+                    result = resolve_reference(**kwargs)
+                except Exception as e:
+                    result = e
             else:
-                from strawberry.arguments import convert_argument
+                from strawberry.types.arguments import convert_argument
 
                 config = info.schema.config
                 scalar_registry = info.schema.schema_converter.scalar_registry
 
-                get_result = partial(
-                    convert_argument,
-                    representation,
-                    type_=definition.origin,
-                    scalar_registry=scalar_registry,
-                    config=config,
-                )
-
-            try:
-                result = get_result()
-            except Exception as e:
-                result = GraphQLError(
-                    f"Unable to resolve reference for {definition.origin}",
-                    original_error=e,
-                )
+                try:
+                    result = convert_argument(
+                        representation,
+                        type_=definition.origin,
+                        scalar_registry=scalar_registry,
+                        config=config,
+                    )
+                except Exception:
+                    result = TypeError(f"Unable to resolve reference for {type_name}")
 
             results.append(result)
 
@@ -209,7 +203,8 @@ class Schema(BaseSchema):
     def _remove_resolvable_field(self) -> None:
         # this might be removed when we remove support for federation 1
         # or when we improve how we print the directives
-        from ..unset import UNSET
+        from strawberry.types.unset import UNSET
+
         from .schema_directives import Key
 
         for directive in self.schema_directives_in_use:
@@ -392,3 +387,6 @@ def _has_federation_keys(
         return any(_is_key(directive) for directive in definition.directives or [])
 
     return False
+
+
+__all__ = ["Schema"]

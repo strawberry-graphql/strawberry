@@ -287,3 +287,6 @@ class AsyncGraphQLView(
         response.content = template.render(RequestContext(request, context))
 
         return response
+
+
+__all__ = ["GraphQLView", "AsyncGraphQLView"]

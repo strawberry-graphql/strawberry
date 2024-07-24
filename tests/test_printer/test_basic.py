@@ -6,7 +6,7 @@ import strawberry
 from strawberry.printer import print_schema
 from strawberry.scalars import JSON
 from strawberry.schema.config import StrawberryConfig
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
 
 
 def test_simple_required_types():

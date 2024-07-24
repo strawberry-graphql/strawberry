@@ -36,8 +36,7 @@ def test_decimal_as_input():
 
 
 def test_serialization_of_incorrect_decimal_string():
-    """
-    Test GraphQLError is raised for an invalid Decimal.
+    """Test GraphQLError is raised for an invalid Decimal.
     The error should exclude "original_error".
     """
 

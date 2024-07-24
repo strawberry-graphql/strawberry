@@ -44,3 +44,6 @@ class MaskErrors(SchemaExtension):
                     processed_errors.append(error)
 
             result.errors = processed_errors
+
+
+__all__ = ["MaskErrors"]

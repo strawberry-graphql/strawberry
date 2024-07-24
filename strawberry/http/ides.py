@@ -28,3 +28,6 @@ def get_graphql_ide_html(
         )
 
     return template
+
+
+__all__ = ["get_graphql_ide_html", "GraphQL_IDE"]

@@ -84,3 +84,6 @@ class SchemaExtensionsRunner:
         middlewares = tuple(self.extensions) + additional_middlewares
 
         return MiddlewareManager(*middlewares)
+
+
+__all__ = ["SchemaExtensionsRunner"]

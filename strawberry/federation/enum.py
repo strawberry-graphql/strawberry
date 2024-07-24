@@ -11,8 +11,8 @@ from typing import (
     overload,
 )
 
-from strawberry.enum import _process_enum
-from strawberry.enum import enum_value as base_enum_value
+from strawberry.types.enum import _process_enum
+from strawberry.types.enum import enum_value as base_enum_value
 
 if TYPE_CHECKING:
     from strawberry.enum import EnumType, EnumValueDefinition
@@ -85,7 +85,6 @@ def enum(
     If name is passed, the name of the GraphQL type will be
     the value passed of name instead of the Enum class name.
     """
-
     from strawberry.federation.schema_directives import (
         Authenticated,
         Inaccessible,
@@ -118,3 +117,6 @@ def enum(
         return wrap
 
     return wrap(_cls)  # pragma: no cover
+
+
+__all__ = ["enum", "enum_value"]

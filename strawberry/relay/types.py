@@ -26,14 +26,17 @@ from typing import (
 )
 from typing_extensions import Annotated, Literal, Self, TypeAlias, get_args, get_origin
 
-from strawberry.field import field
-from strawberry.lazy_type import LazyType
-from strawberry.object_type import interface, type
-from strawberry.private import StrawberryPrivate
 from strawberry.relay.exceptions import NodeIDAnnotationError
-from strawberry.type import StrawberryContainer, get_object_definition
+from strawberry.types.base import (
+    StrawberryContainer,
+    StrawberryObjectDefinition,
+    get_object_definition,
+)
+from strawberry.types.field import field
 from strawberry.types.info import Info  # noqa: TCH001
-from strawberry.types.types import StrawberryObjectDefinition
+from strawberry.types.lazy_type import LazyType
+from strawberry.types.object_type import interface, type
+from strawberry.types.private import StrawberryPrivate
 from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
 from strawberry.utils.inspect import in_async_context
 from strawberry.utils.typing import eval_type, is_classvar
@@ -182,7 +185,7 @@ class GlobalID:
 
         """
         n_type = self.resolve_type(info)
-        node = cast(
+        node: Node | Awaitable[Node] = cast(
             Awaitable[Node],
             n_type.resolve_node(
                 self.node_id,
@@ -319,9 +322,14 @@ class NodeIDPrivate(StrawberryPrivate):
     The `Node` interface will automatically create and resolve GlobalIDs
     based on the field annotated with `NodeID`. e.g:
 
-      >>> @strawberry.type
-      ... class Fruit(Node):
-      ...     code: NodeID[str]
+    ```python
+    import strawberry
+
+
+    @strawberry.type
+    class Fruit(Node):
+        code: NodeID[str]
+    ```
 
     In this case, `code` will be used to generate a global ID in the
     format `Fruit:<code>` and will be exposed as `id: GlobalID!` in the
@@ -352,17 +360,20 @@ class Node:
             single node id.
 
     Example:
+    ```python
+    import strawberry
 
-        >>> @strawberry.type
-        ... class Fruit(Node):
-        ...     id: NodeID[int]
-        ...     name: str
-        ...
-        ... @classmethod
-        ... def resolve_nodes(cls, *, info, node_ids, required=False):
-        ...     # Return an iterable of fruits in here
-        ...     ...
 
+    @strawberry.type
+    class Fruit(strawberry.relay.Node):
+        id: strawberry.relay.NodeID[int]
+        name: str
+
+        @classmethod
+        def resolve_nodes(cls, *, info, node_ids, required=False):
+            # Return an iterable of fruits in here
+            ...
+    ```
     """
 
     _id_attr: ClassVar[Optional[str]] = None
@@ -467,10 +478,8 @@ class Node:
         You can override this method to provide a custom implementation.
 
         Args:
-            info:
-                The strawberry execution info resolve the type name from
-            root:
-                The node to resolve
+            info: The strawberry execution info resolve the type name from.
+            root: The node to resolve.
 
         Returns:
             The resolved id (which is expected to be str)
@@ -535,12 +544,9 @@ class Node:
         returned as `None`.
 
         Args:
-            info:
-                The strawberry execution info resolve the type name from
-            node_ids:
-                List of node ids that should be returned
-            required:
-                If `True`, all `node_ids` requested must exist. If they don't,
+            info: The strawberry execution info resolve the type name from.
+            node_ids: List of node ids that should be returned.
+            required: If `True`, all `node_ids` requested must exist. If they don't,
                 an error must be raised. If `False`, missing nodes should be
                 returned as `None`. It only makes sense when passing a list of
                 `node_ids`, otherwise it will should ignored.
@@ -595,18 +601,14 @@ class Node:
         a single node id.
 
         Args:
-            info:
-                The strawberry execution info resolve the type name from
-            node_id:
-                The id of the node to be retrieved
-            required:
-                if the node is required or not to exist. If not, then None
+            info: The strawberry execution info resolve the type name from.
+            node_id: The id of the node to be retrieved.
+            required: if the node is required or not to exist. If not, then None
                 should be returned if it doesn't exist. Otherwise an exception
                 should be raised.
 
         Returns:
             The resolved node or None if it was not found
-
         """
         retval = cls.resolve_nodes(info=info, node_ids=[node_id], required=required)
 
@@ -629,7 +631,6 @@ class PageInfo:
             When paginating backwards, the cursor to continue
         end_cursor:
             When paginating forwards, the cursor to continue
-
     """
 
     has_next_page: bool = field(
@@ -655,15 +656,10 @@ class Edge(Generic[NodeType]):
             A cursor for use in pagination
         node:
             The item at the end of the edge
-
     """
 
-    cursor: str = field(
-        description="A cursor for use in pagination",
-    )
-    node: NodeType = field(
-        description="The item at the end of the edge",
-    )
+    cursor: str = field(description="A cursor for use in pagination")
+    node: NodeType = field(description="The item at the end of the edge")
 
     @classmethod
     def resolve_edge(cls, node: NodeType, *, cursor: Any = None) -> Self:
@@ -682,11 +678,9 @@ class Connection(Generic[NodeType]):
 
     """
 
-    page_info: PageInfo = field(
-        description="Pagination data for this connection",
-    )
+    page_info: PageInfo = field(description="Pagination data for this connection")
     edges: List[Edge[NodeType]] = field(
-        description="Contains the nodes in this connection",
+        description="Contains the nodes in this connection"
     )
 
     @classmethod
@@ -702,9 +696,11 @@ class Connection(Generic[NodeType]):
         Args:
             node:
                 The resolved node which should return an instance of this
-                connection's `NodeType`
+                connection's `NodeType`.
             info:
-                The strawberry execution info resolve the type name from
+                The strawberry execution info resolve the type name from.
+            **kwargs:
+                Additional arguments passed to the resolver.
 
         """
         return node
@@ -727,18 +723,13 @@ class Connection(Generic[NodeType]):
         on `first`/`last`/`before`/`after` arguments.
 
         Args:
-            info:
-                The strawberry execution info resolve the type name from
-            nodes:
-                An iterable/iteretor of nodes to paginate
-            before:
-                Returns the items in the list that come before the specified cursor
-            after:
-                Returns the items in the list that come after the specified cursor
-            first:
-                Returns the first n items from the list
-            last:
-                Returns the items in the list that come after the specified cursor
+            info: The strawberry execution info resolve the type name from.
+            nodes: An iterable/iteretor of nodes to paginate.
+            before: Returns the items in the list that come before the specified cursor.
+            after: Returns the items in the list that come after the specified cursor.
+            first: Returns the first n items from the list.
+            last: Returns the items in the list that come after the specified cursor.
+            kwargs: Additional arguments passed to the resolver.
 
         Returns:
             The resolved `Connection`
@@ -759,11 +750,9 @@ class ListConnection(Connection[NodeType]):
 
     """
 
-    page_info: PageInfo = field(
-        description="Pagination data for this connection",
-    )
+    page_info: PageInfo = field(description="Pagination data for this connection")
     edges: List[Edge[NodeType]] = field(
-        description="Contains the nodes in this connection",
+        description="Contains the nodes in this connection"
     )
 
     @classmethod
@@ -783,25 +772,19 @@ class ListConnection(Connection[NodeType]):
         This uses the described Relay Pagination algorithm_
 
         Args:
-            info:
-                The strawberry execution info resolve the type name from
-            nodes:
-                An iterable/iteretor of nodes to paginate
-            before:
-                Returns the items in the list that come before the specified cursor
-            after:
-                Returns the items in the list that come after the specified cursor
-            first:
-                Returns the first n items from the list
-            last:
-                Returns the items in the list that come after the specified cursor
+            info: The strawberry execution info resolve the type name from.
+            nodes: An iterable/iteretor of nodes to paginate.
+            before: Returns the items in the list that come before the specified cursor.
+            after: Returns the items in the list that come after the specified cursor.
+            first: Returns the first n items from the list.
+            last: Returns the items in the list that come after the specified cursor.
+            kwargs: Additional arguments passed to the resolver.
 
         Returns:
             The resolved `Connection`
 
         .. _Relay Pagination algorithm:
             https://relay.dev/graphql/connections.htm#sec-Pagination-algorithm
-
         """
         slice_metadata = SliceMetadata.from_arguments(
             info,
@@ -949,3 +932,20 @@ class ListConnection(Connection[NodeType]):
                 has_next_page=has_next_page,
             ),
         )
+
+
+__all__ = [
+    "GlobalID",
+    "GlobalIDValueError",
+    "Node",
+    "NodeID",
+    "NodeIDAnnotationError",
+    "NodeIDPrivate",
+    "NodeIterableType",
+    "NodeType",
+    "PREFIX",
+    "Connection",
+    "Edge",
+    "PageInfo",
+    "ListConnection",
+]

@@ -1,6 +1,61 @@
 CHANGELOG
 =========
 
+0.236.2 - 2024-07-23
+--------------------
+
+Update federation entity resolver exception handling to set the result to the original error instead of a `GraphQLError`, which obscured the original message and meta-fields.
+
+Contributed by [Bradley Oesch](https://github.com/bradleyoesch) via [PR #3144](https://github.com/strawberry-graphql/strawberry/pull/3144/)
+
+
+0.236.1 - 2024-07-23
+--------------------
+
+This release fixes an issue where optional lazy types using `| None` were
+failing to be correctly resolved inside modules using future annotations, e.g.
+
+```python
+from __future__ import annotations
+
+from typing import Annotated, TYPE_CHECKING
+
+import strawberry
+
+if TYPE_CHECKING:
+    from types import Group
+
+
+@strawberry.type
+class Person:
+    group: Annotated["Group", strawberry.lazy("types.group")] | None
+```
+
+This should now work as expected.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3576](https://github.com/strawberry-graphql/strawberry/pull/3576/)
+
+
+0.236.0 - 2024-07-17
+--------------------
+
+This release changes some of the internals of Strawberry, it shouldn't
+be affecting most of the users, but since we have changed the structure
+of the code you might need to update your imports.
+
+Thankfully we also provide a codemod for this, you can run it with:
+
+```bash
+strawberry upgrade update-imports
+```
+
+This release also includes additional documentation to some of
+the classes, methods and functions, this is in preparation for
+having the API reference in the documentation ✨
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3546](https://github.com/strawberry-graphql/strawberry/pull/3546/)
+
+
 0.235.2 - 2024-07-08
 --------------------
 
@@ -1341,7 +1396,7 @@ class User:
     @strawberry.field
     @staticmethod
     async def name(parent: strawberry.Parent[UserRow]) -> str:
-        return f"User Number {parent.id}"
+        return f"User Number {parent.id_}"
 
 
 @strawberry.type
@@ -4197,7 +4252,7 @@ the original type was already used with that generic in the schema.
 
 Example:
 
-```python3
+```python
 @strawberry.type
 class Query:
     regular: Edge[User]

@@ -10,7 +10,7 @@ from strawberry.exceptions import (
     FieldWithResolverAndDefaultValueError,
 )
 from strawberry.extensions.field_extension import FieldExtension
-from strawberry.field import StrawberryField
+from strawberry.types.field import StrawberryField
 
 
 def test_field_with_resolver_default():

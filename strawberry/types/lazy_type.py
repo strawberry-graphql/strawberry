@@ -5,7 +5,6 @@ import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
-    TYPE_CHECKING,
     Any,
     ForwardRef,
     Generic,
@@ -13,18 +12,26 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Union,
     cast,
 )
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
+from typing_extensions import Self
 
 TypeName = TypeVar("TypeName")
 Module = TypeVar("Module")
+Other = TypeVar("Other")
 
 
 @dataclass(frozen=True)
 class LazyType(Generic[TypeName, Module]):
+    """A class that represents a type that will be resolved at runtime.
+
+    This is useful when you have circular dependencies between types.
+
+    This class is not meant to be used directly, instead use the `strawberry.lazy`
+    function.
+    """
+
     type_name: str
     module: str
     package: Optional[str] = None
@@ -50,6 +57,9 @@ class LazyType(Generic[TypeName, Module]):
             package = current_frame.f_back.f_globals["__package__"]
 
         return cls(type_name, module, package)
+
+    def __or__(self, other: Other) -> object:
+        return Union[self, other]
 
     def resolve_type(self) -> Type[Any]:
         module = importlib.import_module(self.module, self.package)
@@ -81,6 +91,14 @@ class LazyType(Generic[TypeName, Module]):
 
 
 class StrawberryLazyReference:
+    """A class that represents a lazy reference to a type in another module.
+
+    This is useful when you have circular dependencies between types.
+
+    This class is not meant to be used directly, instead use the `strawberry.lazy`
+    function.
+    """
+
     def __init__(self, module: str) -> None:
         self.module = module
         self.package = None
@@ -105,4 +123,38 @@ class StrawberryLazyReference:
 
 
 def lazy(module_path: str) -> StrawberryLazyReference:
+    """Creates a lazy reference to a type in another module.
+
+    Args:
+        module_path: The path to the module containing the type, supports relative paths
+            starting with `.`
+
+    Returns:
+        A `StrawberryLazyReference` object that can be used to reference a type in another
+        module.
+
+    This is useful when you have circular dependencies between types.
+
+    For example, assuming you have a `Post` type that has a field `author` that
+    references a `User` type (which also has a field `posts` that references a list of
+    `Post`), you can use `strawberry.lazy` to avoid the circular dependency:
+
+    ```python
+    from typing import TYPE_CHECKING, Annotated
+
+    import strawberry
+
+    if TYPE_CHECKING:
+        from .users import User
+
+
+    @strawberry.type
+    class Post:
+        title: str
+        author: Annotated["User", strawberry.lazy(".users")]
+    ```
+    """
     return StrawberryLazyReference(module_path)
+
+
+__all__ = ["LazyType", "StrawberryLazyReference", "lazy"]

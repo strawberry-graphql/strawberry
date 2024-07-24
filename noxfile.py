@@ -130,7 +130,6 @@ def tests_typecheckers(session: Session) -> None:
 
     session.install("pyright")
     session.install("pydantic")
-    session.install("git+https://github.com/python/mypy.git#master")
 
     session.run(
         "pytest",

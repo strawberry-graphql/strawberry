@@ -6,7 +6,7 @@ import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.unset import UnsetType
+from strawberry.types.unset import UnsetType
 
 
 class Bleh:

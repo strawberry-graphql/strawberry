@@ -24,7 +24,7 @@ jobs:
           config: >
             {
               "info-needed": {
-                "delay": P14D,
+                "delay": "P14D",
                 "message": "Hi, this issue requires extra info to be actionable. We're closing this issue because it has not been actionable for a while now. Feel free to provide the requested information and we'll happily open it again! 😊"
               }
             }
