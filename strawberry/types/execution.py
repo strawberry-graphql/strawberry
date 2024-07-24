@@ -97,6 +97,7 @@ class ExecutionResult:
 
 class ExecutionResultError(ExecutionResult):
     """Differentiate between a subscription result and an immediate error.
+
     Immediate errors are errors that at the first iteration of the subscription.
     These errors should alert the integration level that the operation should be canceled immediatly.
     """
