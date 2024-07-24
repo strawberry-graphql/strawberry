@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.237.0 - 2024-07-24
+--------------------
+
+This release ensures using pydantic 2.8.0 doesn't break when using experimental
+pydantic_type and running mypy.
+
+Contributed by [Martin Roy](https://github.com/lindycoder) via [PR #3562](https://github.com/strawberry-graphql/strawberry/pull/3562/)
+
+
 0.236.2 - 2024-07-23
 --------------------
 
