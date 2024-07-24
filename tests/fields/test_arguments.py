@@ -11,7 +11,7 @@ from strawberry.exceptions import (
     InvalidArgumentTypeError,
     MultipleStrawberryArgumentsError,
 )
-from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.types.base import StrawberryList, StrawberryOptional
 
 
 def test_basic_arguments():
@@ -482,14 +482,14 @@ def test_resolver_with_invalid_field_argument_type():
 
 def test_unset_deprecation_warning():
     with pytest.deprecated_call():
-        from strawberry.arguments import UNSET  # noqa: F401
+        from strawberry.types.arguments import UNSET  # noqa: F401
     with pytest.deprecated_call():
-        from strawberry.arguments import is_unset  # noqa: F401
+        from strawberry.types.arguments import is_unset  # noqa: F401
 
 
 def test_deprecated_unset():
     with pytest.deprecated_call():
-        from strawberry.unset import is_unset
+        from strawberry.types.unset import is_unset
 
     with warnings.catch_warnings(record=False):
         assert is_unset(UNSET)

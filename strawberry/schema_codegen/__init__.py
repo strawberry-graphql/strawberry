@@ -802,3 +802,6 @@ def codegen(schema: str) -> str:
     module = cst.Module(body=body)  # type: ignore
 
     return module.code
+
+
+__all__ = ["codegen"]

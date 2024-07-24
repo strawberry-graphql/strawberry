@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from enum import EnumMeta
     from typing_extensions import Literal
 
-    from strawberry.unset import UnsetType
+    from strawberry.types.unset import UnsetType
 
 
 @dataclass
@@ -194,3 +194,34 @@ class GraphQLOperation:
     variables: List[GraphQLVariable]
     type: GraphQLObjectType
     variables_type: Optional[GraphQLObjectType]
+
+
+__all__ = [
+    "GraphQLOptional",
+    "GraphQLList",
+    "GraphQLUnion",
+    "GraphQLField",
+    "GraphQLFragmentSpread",
+    "GraphQLObjectType",
+    "GraphQLFragmentType",
+    "GraphQLEnum",
+    "GraphQLScalar",
+    "GraphQLType",
+    "GraphQLFieldSelection",
+    "GraphQLInlineFragment",
+    "GraphQLSelection",
+    "GraphQLStringValue",
+    "GraphQLIntValue",
+    "GraphQLFloatValue",
+    "GraphQLEnumValue",
+    "GraphQLBoolValue",
+    "GraphQLNullValue",
+    "GraphQLListValue",
+    "GraphQLObjectValue",
+    "GraphQLVariableReference",
+    "GraphQLArgumentValue",
+    "GraphQLArgument",
+    "GraphQLDirective",
+    "GraphQLVariable",
+    "GraphQLOperation",
+]

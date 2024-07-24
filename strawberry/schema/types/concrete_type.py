@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING, Dict, Union
 from graphql import GraphQLField, GraphQLInputField, GraphQLType
 
 if TYPE_CHECKING:
-    from strawberry.custom_scalar import ScalarDefinition
-    from strawberry.enum import EnumDefinition
-    from strawberry.types.types import StrawberryObjectDefinition
-    from strawberry.union import StrawberryUnion
+    from strawberry.types.base import StrawberryObjectDefinition
+    from strawberry.types.enum import EnumDefinition
+    from strawberry.types.scalar import ScalarDefinition
+    from strawberry.types.union import StrawberryUnion
 
 Field = Union[GraphQLInputField, GraphQLField]
 

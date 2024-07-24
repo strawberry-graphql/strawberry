@@ -433,3 +433,9 @@ def make_graphql_controller(
     _GraphQLController.graphql_ide = graphql_ide_
 
     return _GraphQLController
+
+
+__all__ = [
+    "make_graphql_controller",
+    "GraphQLController",
+]

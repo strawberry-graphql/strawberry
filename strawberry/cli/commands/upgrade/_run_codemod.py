@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import os
+from importlib.metadata import version
 from multiprocessing import Pool, cpu_count
 from typing import TYPE_CHECKING, Any, Dict, Generator, Sequence, Type, Union
 
@@ -18,13 +19,29 @@ ProgressType = Union[Type[Progress], Type[FakeProgress]]
 PoolType = Union[Type[Pool], Type[DummyPool]]  # type: ignore
 
 
+def _get_libcst_version() -> tuple[int, int, int]:
+    package_version_str = version("libcst")
+
+    try:
+        major, minor, patch = map(int, package_version_str.split("."))
+    except ValueError:
+        major, minor, patch = (0, 0, 0)
+
+    return major, minor, patch
+
+
 def _execute_transform_wrap(
     job: Dict[str, Any],
 ) -> ExecutionResult:
+    additional_kwargs: Dict[str, Any] = {}
+
+    if _get_libcst_version() >= (1, 4, 0):
+        additional_kwargs["scratch"] = {}
+
     # TODO: maybe capture warnings?
     with open(os.devnull, "w") as null:  # noqa: PTH123
         with contextlib.redirect_stderr(null):
-            return _execute_transform(**job)
+            return _execute_transform(**job, **additional_kwargs)
 
 
 def _get_progress_and_pool(

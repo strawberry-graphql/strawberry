@@ -74,3 +74,6 @@ class BaseView(Generic[Request]):
             replace_variables=self._ide_replace_variables,
             graphql_ide=self.graphql_ide,
         )
+
+
+__all__ = ["BaseView"]

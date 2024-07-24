@@ -8,13 +8,13 @@ from typing import (
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument
 from strawberry.extensions.field_extension import (
     AsyncExtensionResolver,
     FieldExtension,
     SyncExtensionResolver,
 )
-from strawberry.field import StrawberryField
+from strawberry.types.arguments import StrawberryArgument
+from strawberry.types.field import StrawberryField
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
 if TYPE_CHECKING:
@@ -90,3 +90,6 @@ class InputMutationExtension(FieldExtension):
             **kwargs,
             **vars(input_args),
         )
+
+
+__all__ = ["InputMutationExtension"]

@@ -57,3 +57,6 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
 
     async def handle_disconnect(self, code: int) -> None:
         await self.shutdown()
+
+
+__all__ = ["GraphQLTransportWSHandler"]

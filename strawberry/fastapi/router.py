@@ -364,3 +364,6 @@ class GraphQLRouter(
         response.headers.raw.extend(sub_response.headers.raw)
 
         return response
+
+
+__all__ = ["GraphQLRouter"]

@@ -157,9 +157,7 @@ class SyncBaseHTTPView(
     def _handle_errors(
         self, errors: List[GraphQLError], response_data: GraphQLHTTPResponse
     ) -> None:
-        """
-        Hook to allow custom handling of errors, used by the Sentry Integration
-        """
+        """Hook to allow custom handling of errors, used by the Sentry Integration."""
 
     def run(
         self,
@@ -214,3 +212,6 @@ class SyncBaseHTTPView(
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
+
+
+__all__ = ["SyncBaseHTTPView"]

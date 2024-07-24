@@ -67,3 +67,6 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         # channels integration is a high level wrapper that forwards this to
         # both us and the BaseGraphQLTransportWSHandler.
         pass
+
+
+__all__ = ["GraphQLWSHandler"]

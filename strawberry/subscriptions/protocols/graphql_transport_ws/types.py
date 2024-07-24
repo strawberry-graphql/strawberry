@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
 
 if TYPE_CHECKING:
     from graphql import GraphQLFormattedError
@@ -21,9 +21,7 @@ class GraphQLTransportMessage:
 
 @dataclass
 class ConnectionInitMessage(GraphQLTransportMessage):
-    """
-    Direction: Client -> Server
-    """
+    """Direction: Client -> Server."""
 
     payload: Optional[Dict[str, Any]] = UNSET
     type: str = "connection_init"
@@ -31,9 +29,7 @@ class ConnectionInitMessage(GraphQLTransportMessage):
 
 @dataclass
 class ConnectionAckMessage(GraphQLTransportMessage):
-    """
-    Direction: Server -> Client
-    """
+    """Direction: Server -> Client."""
 
     payload: Optional[Dict[str, Any]] = UNSET
     type: str = "connection_ack"
@@ -41,9 +37,7 @@ class ConnectionAckMessage(GraphQLTransportMessage):
 
 @dataclass
 class PingMessage(GraphQLTransportMessage):
-    """
-    Direction: bidirectional
-    """
+    """Direction: bidirectional."""
 
     payload: Optional[Dict[str, Any]] = UNSET
     type: str = "ping"
@@ -51,9 +45,7 @@ class PingMessage(GraphQLTransportMessage):
 
 @dataclass
 class PongMessage(GraphQLTransportMessage):
-    """
-    Direction: bidirectional
-    """
+    """Direction: bidirectional."""
 
     payload: Optional[Dict[str, Any]] = UNSET
     type: str = "pong"
@@ -69,9 +61,7 @@ class SubscribeMessagePayload:
 
 @dataclass
 class SubscribeMessage(GraphQLTransportMessage):
-    """
-    Direction: Client -> Server
-    """
+    """Direction: Client -> Server."""
 
     id: str
     payload: SubscribeMessagePayload
@@ -80,9 +70,7 @@ class SubscribeMessage(GraphQLTransportMessage):
 
 @dataclass
 class NextMessage(GraphQLTransportMessage):
-    """
-    Direction: Server -> Client
-    """
+    """Direction: Server -> Client."""
 
     id: str
     payload: Dict[str, Any]  # TODO: shape like FormattedExecutionResult
@@ -94,9 +82,7 @@ class NextMessage(GraphQLTransportMessage):
 
 @dataclass
 class ErrorMessage(GraphQLTransportMessage):
-    """
-    Direction: Server -> Client
-    """
+    """Direction: Server -> Client."""
 
     id: str
     payload: List[GraphQLFormattedError]
@@ -105,9 +91,19 @@ class ErrorMessage(GraphQLTransportMessage):
 
 @dataclass
 class CompleteMessage(GraphQLTransportMessage):
-    """
-    Direction: bidirectional
-    """
+    """Direction: bidirectional."""
 
     id: str
     type: str = "complete"
+
+
+__all__ = [
+    "ConnectionInitMessage",
+    "ConnectionAckMessage",
+    "PingMessage",
+    "PongMessage",
+    "SubscribeMessage",
+    "NextMessage",
+    "ErrorMessage",
+    "CompleteMessage",
+]
