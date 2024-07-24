@@ -474,8 +474,13 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
             else:
                 extra = {}
 
-                if PYDANTIC_VERSION and PYDANTIC_VERSION >= (2, 7, 0):
-                    extra["api"] = ctx.api
+                if PYDANTIC_VERSION:
+                    if PYDANTIC_VERSION >= (2, 7, 0):
+                        extra["api"] = ctx.api
+                    if PYDANTIC_VERSION >= (2, 8, 0):
+                        # Based on pydantic's default value
+                        # https://github.com/pydantic/pydantic/pull/9606/files#diff-469037bbe55bbf9aa359480a16040d368c676adad736e133fb07e5e20d6ac523R1066
+                        extra["force_typevars_invariant"] = False
 
                 add_method(
                     ctx,

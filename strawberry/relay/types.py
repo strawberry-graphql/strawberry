@@ -185,7 +185,7 @@ class GlobalID:
 
         """
         n_type = self.resolve_type(info)
-        node = cast(
+        node: Node | Awaitable[Node] = cast(
             Awaitable[Node],
             n_type.resolve_node(
                 self.node_id,
