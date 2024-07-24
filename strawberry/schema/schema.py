@@ -214,17 +214,17 @@ class Schema(BaseSchema):
 
     # TODO: can this get cached?
     def get_extensions(self, sync: bool = False) -> List[SchemaExtension]:
-        init_extensions = []
-        extensions = (
-            *self.extensions,
-            DirectivesExtensionSync if sync else DirectivesExtension,
-        )
-        for extension in extensions:
-            if isinstance(extension, SchemaExtension):
-                init_extensions.append(extension)
-            else:
-                init_extensions.append(extension(execution_context=None))  # type: ignore[arg-type]
-        return init_extensions
+        extensions = []
+        if self.directives:
+            extensions = [
+                *self.extensions,
+                DirectivesExtensionSync if sync else DirectivesExtension,
+            ]
+        extensions.extend(self.extensions)
+        return [
+            ext if isinstance(ext, SchemaExtension) else ext(execution_context=None)
+            for ext in extensions
+        ]
 
     def create_extensions_runner(
         self, execution_context: ExecutionContext, extensions: list[SchemaExtension]
