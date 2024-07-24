@@ -1,3 +1,6 @@
+import itertools
+from typing import Any, Callable, List
+
 import nox
 from nox_poetry import Session, session
 
@@ -5,7 +8,10 @@ nox.options.reuse_existing_virtualenvs = True
 nox.options.error_on_external_run = True
 
 PYTHON_VERSIONS = ["3.12", "3.11", "3.10", "3.9", "3.8"]
-
+GQL_CORE_VERSIONS = [
+    "3.2.3",
+    "3.3.0",
+]
 
 COMMON_PYTEST_OPTIONS = [
     "--cov=.",
@@ -37,10 +43,34 @@ INTEGRATIONS = [
 ]
 
 
-@session(python=PYTHON_VERSIONS, name="Tests", tags=["tests"])
-def tests(session: Session) -> None:
-    session.run_always("poetry", "install", external=True)
+def _install_gql_core(session: Session, version: str) -> None:
+    # hack for better workflow names  # noqa: FIX004
+    if version == "3.2.3":
+        session._session.install(f"graphql-core=={version}")  # type: ignore
+    session._session.install(
+        "https://github.com/graphql-python/graphql-core/archive/876aef67b6f1e1f21b3b5db94c7ff03726cb6bdf.zip"
+    )  # type: ignore
 
+
+gql_core_parametrize = nox.parametrize(
+    "gql_core",
+    GQL_CORE_VERSIONS,
+)
+
+
+def with_gql_core_parametrize(name: str, params: List[str]) -> Callable[[Any], Any]:
+    # github cache doesn't support comma in the name, this is a workaround.
+    arg_names = f"{name}, gql_core"
+    combinations = list(itertools.product(params, GQL_CORE_VERSIONS))
+    ids = [f"{name}-{comb[0]}__graphql-core-{comb[1]}" for comb in combinations]
+    return lambda fn: nox.parametrize(arg_names, combinations, ids=ids)(fn)
+
+
+@session(python=PYTHON_VERSIONS, name="Tests", tags=["tests"])
+@gql_core_parametrize
+def tests(session: Session, gql_core: str) -> None:
+    session.run_always("poetry", "install", external=True)
+    _install_gql_core(session, gql_core)
     markers = (
         ["-m", f"not {integration}", f"--ignore=tests/{integration}"]
         for integration in INTEGRATIONS
@@ -55,10 +85,10 @@ def tests(session: Session) -> None:
 
 
 @session(python=["3.11", "3.12"], name="Django tests", tags=["tests"])
-@nox.parametrize("django", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"])
-def tests_django(session: Session, django: str) -> None:
+@with_gql_core_parametrize("django", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"])
+def tests_django(session: Session, django: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
-
+    _install_gql_core(session, gql_core)
     session._session.install(f"django~={django}")  # type: ignore
     session._session.install("pytest-django")  # type: ignore
 
@@ -66,17 +96,17 @@ def tests_django(session: Session, django: str) -> None:
 
 
 @session(python=["3.11"], name="Starlette tests", tags=["tests"])
-@nox.parametrize("starlette", ["0.28.0", "0.27.0", "0.26.1"])
-def tests_starlette(session: Session, starlette: str) -> None:
+@with_gql_core_parametrize("starlette", ["0.28.0", "0.27.0", "0.26.1"])
+def tests_starlette(session: Session, starlette: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
 
     session._session.install(f"starlette=={starlette}")  # type: ignore
-
+    _install_gql_core(session, gql_core)
     session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", "asgi")
 
 
 @session(python=["3.11"], name="Test integrations", tags=["tests"])
-@nox.parametrize(
+@with_gql_core_parametrize(
     "integration",
     [
         "aiohttp",
@@ -90,11 +120,11 @@ def tests_starlette(session: Session, starlette: str) -> None:
         "litestar",
     ],
 )
-def tests_integrations(session: Session, integration: str) -> None:
+def tests_integrations(session: Session, integration: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
 
     session._session.install(integration)  # type: ignore
-
+    _install_gql_core(session, gql_core)
     if integration == "aiohttp":
         session._session.install("pytest-aiohttp")  # type: ignore
     elif integration == "channels":
@@ -107,12 +137,12 @@ def tests_integrations(session: Session, integration: str) -> None:
 
 
 @session(python=PYTHON_VERSIONS, name="Pydantic tests", tags=["tests", "pydantic"])
-@nox.parametrize("pydantic", ["1.10", "2.7.0", "2.8.0"])
-def test_pydantic(session: Session, pydantic: str) -> None:
+@with_gql_core_parametrize("pydantic", ["1.10", "2.7.0", "2.8.0"])
+def test_pydantic(session: Session, pydantic: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
 
     session._session.install(f"pydantic~={pydantic}")  # type: ignore
-
+    _install_gql_core(session, gql_core)
     session.run(
         "pytest",
         "--cov=.",
@@ -130,6 +160,7 @@ def tests_typecheckers(session: Session) -> None:
 
     session.install("pyright")
     session.install("pydantic")
+    session.install("git+https://github.com/python/mypy.git#master")
 
     session.run(
         "pytest",
