@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.237.1 - 2024-07-24
+--------------------
+
+This release adds support for GraphQL-core v3.3 (which has not yet been
+released). Note that we continue to support GraphQL-core v3.2 as well.
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #3570](https://github.com/strawberry-graphql/strawberry/pull/3570/)
+
+
 0.237.0 - 2024-07-24
 --------------------
 
