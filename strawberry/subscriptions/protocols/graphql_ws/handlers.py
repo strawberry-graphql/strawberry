@@ -3,9 +3,15 @@ from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional, cast
-
-from graphql import GraphQLError
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncGenerator,
+    Awaitable,
+    Dict,
+    Optional,
+    cast,
+)
 
 from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_COMPLETE,
@@ -19,11 +25,12 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
     GQL_STOP,
 )
-from strawberry.types.execution import ExecutionResult, PreExecutionError
+from strawberry.types.execution import PreExecutionError
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
+    from strawberry.schema.subscribe import SubscriptionResult
     from strawberry.subscriptions.protocols.graphql_ws.types import (
         ConnectionInitPayload,
         DataPayload,
@@ -123,28 +130,14 @@ class BaseGraphQLWSHandler(ABC):
 
         if self.debug:
             pretty_print_graphql_operation(operation_name, query, variables)
+        result_source = self.schema.subscribe(
+            query=query,
+            variable_values=variables,
+            operation_name=operation_name,
+            context_value=context,
+            root_value=root_value,
+        )
 
-        try:
-            result_source = await self.schema.subscribe(
-                query=query,
-                variable_values=variables,
-                operation_name=operation_name,
-                context_value=context,
-                root_value=root_value,
-            )
-        except GraphQLError as error:
-            error_payload = error.formatted
-            await self.send_message(GQL_ERROR, operation_id, error_payload)
-            self.schema.process_errors([error])
-            return
-
-        if isinstance(result_source, PreExecutionError):
-            assert result_source.errors
-            error_payload = result_source.errors[0].formatted
-            await self.send_message(GQL_ERROR, operation_id, error_payload)
-            return
-
-        self.subscriptions[operation_id] = result_source
         result_handler = self.handle_async_results(result_source, operation_id)
         self.tasks[operation_id] = asyncio.create_task(result_handler)
 
@@ -160,43 +153,33 @@ class BaseGraphQLWSHandler(ABC):
 
     async def handle_async_results(
         self,
-        result_source: AsyncGenerator[ExecutionResult, None],
+        result_source: Awaitable[SubscriptionResult],
         operation_id: str,
     ) -> None:
         try:
-            async for result in result_source:
-                payload: DataPayload = {"data": result.data}
-                if result.errors:
-                    payload["errors"] = [err.formatted for err in result.errors]
-                if result.extensions:
-                    payload["extensions"] = result.extensions
-                await self.send_message(GQL_DATA, operation_id, payload)
-                # log errors after send_message to prevent potential
-                # slowdown of sending result
-                # TODO: is that called twice now?
-                if result.errors:
-                    self.schema.process_errors(result.errors)
+            agen_or_err = await result_source
+            if isinstance(agen_or_err, PreExecutionError):
+                assert agen_or_err.errors
+                error_payload = agen_or_err.errors[0].formatted
+                await self.send_message(GQL_ERROR, operation_id, error_payload)
+            else:
+                self.subscriptions[operation_id] = agen_or_err
+                async for result in agen_or_err:
+                    payload: DataPayload = {"data": result.data}
+                    if result.errors:
+                        payload["errors"] = [err.formatted for err in result.errors]
+                    if result.extensions:
+                        payload["extensions"] = result.extensions
+                    await self.send_message(GQL_DATA, operation_id, payload)
+                await self.send_message(GQL_COMPLETE, operation_id, None)
         except asyncio.CancelledError:
-            # CancelledErrors are expected during task cleanup.
-            pass
-        # TODO: I think this is redundant by now.
-        except Exception as error:
-            # GraphQLErrors are handled by graphql-core and included in the
-            # ExecutionResult
-            error = GraphQLError(str(error), original_error=error)
-            await self.send_message(
-                GQL_DATA,
-                operation_id,
-                {"data": None, "errors": [error.formatted]},
-            )
-            self.schema.process_errors([error])
-
-        await self.send_message(GQL_COMPLETE, operation_id, None)
+            await self.send_message(GQL_COMPLETE, operation_id, None)
 
     async def cleanup_operation(self, operation_id: str) -> None:
-        with suppress(RuntimeError):
-            await self.subscriptions[operation_id].aclose()
-        del self.subscriptions[operation_id]
+        if operation_id in self.subscriptions:
+            with suppress(RuntimeError):
+                await self.subscriptions[operation_id].aclose()
+            del self.subscriptions[operation_id]
 
         self.tasks[operation_id].cancel()
         with suppress(BaseException):
