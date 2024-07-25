@@ -262,13 +262,13 @@ def execute_sync(
                     )
 
                     if isawaitable(result):
-                        result = cast(Awaitable[GraphQLExecutionResult], result)
+                        result = cast(Awaitable[GraphQLExecutionResult], result)  # type: ignore[redundant-cast]
                         ensure_future(result).cancel()
                         raise RuntimeError(
                             "GraphQL execution failed to complete synchronously."
                         )
 
-                    result = cast("GraphQLExecutionResult", result)
+                    result = cast(GraphQLExecutionResult, result)  # type: ignore[redundant-cast]
                     execution_context.result = result
                     # Also set errors on the context so that it's easier
                     # to access in extensions

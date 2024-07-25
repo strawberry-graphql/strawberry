@@ -5,8 +5,13 @@ import pytest
 import strawberry
 from strawberry.extensions import SchemaExtension
 from strawberry.types.execution import ExecutionResult
+from tests.conftest import skip_if_gql_32
 
 from .conftest import ExampleExtension, SchemaHelper
+
+pytestmark = skip_if_gql_32(
+    "We only fully support schema extensions in graphql-core 3.3+"
+)
 
 
 def assert_agen(obj) -> AsyncGenerator[ExecutionResult, None]:

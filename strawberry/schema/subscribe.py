@@ -28,7 +28,9 @@ if TYPE_CHECKING:
 
     from ..extensions.runner import SchemaExtensionsRunner
 
-SubscriptionResult: TypeAlias = Union[PreExecutionError, AsyncIterator[ExecutionResult]]
+SubscriptionResult: TypeAlias = Union[
+    PreExecutionError, AsyncGenerator[ExecutionResult, None]
+]
 
 OriginSubscriptionResult = Union[
     OriginalExecutionResult,
@@ -71,7 +73,7 @@ async def _subscribe(
                         variable_values=execution_context.variables,
                         operation_name=execution_context.operation_name,
                         context_value=execution_context.context,
-                        **{} if IS_GQL_32 else gql_33_kwargs,
+                        **{} if IS_GQL_32 else gql_33_kwargs,  # type: ignore[arg-type]
                     )
                 )
 

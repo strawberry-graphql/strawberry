@@ -283,6 +283,7 @@ class BaseGraphQLTransportWSHandler(ABC):
             first_res_or_agen = await result_source
             # initial subscription result.
             if isinstance(first_res_or_agen, PreExecutionError):
+                assert first_res_or_agen.errors
                 await operation.send_initial_errors(first_res_or_agen.errors)
             # that's a mutation result
             elif isinstance(first_res_or_agen, ExecutionResult):
