@@ -6,12 +6,7 @@ import json
 import time
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional, Type
-from unittest.mock import Mock, patch
-
-try:
-    from unittest.mock import AsyncMock
-except ImportError:
-    AsyncMock = None
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import pytest_asyncio

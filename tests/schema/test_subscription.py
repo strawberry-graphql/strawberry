@@ -270,7 +270,7 @@ async def test_worng_opeartion_variables():
     class Subscription:
         @strawberry.subscription
         async def example(self, name: str) -> AsyncGenerator[str, None]:
-            yield f"Hi {name}"
+            yield f"Hi {name}"  # pragma: no cover
 
     schema = strawberry.Schema(query=Query, subscription=Subscription)
 
