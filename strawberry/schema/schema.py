@@ -123,6 +123,8 @@ class Schema(BaseSchema):
         self.subscription = subscription
 
         self.extensions = extensions
+        self._cached_extensions: list[SchemaExtension] | None = None
+        self._cached_middleware_manager: MiddlewareManager | None = None
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
 
@@ -212,19 +214,20 @@ class Schema(BaseSchema):
             formatted_errors = "\n\n".join(f"❌ {error.message}" for error in errors)
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
-    # TODO: can this get cached?
     def get_extensions(self, sync: bool = False) -> List[SchemaExtension]:
-        extensions = []
-        if self.directives:
-            extensions = [
-                *self.extensions,
-                DirectivesExtensionSync if sync else DirectivesExtension,
+        if not self._cached_extensions:
+            extensions = []
+            if self.directives:
+                extensions = [
+                    *self.extensions,
+                    DirectivesExtensionSync if sync else DirectivesExtension,
+                ]
+            extensions.extend(self.extensions)
+            self._cached_extensions = [
+                ext if isinstance(ext, SchemaExtension) else ext(execution_context=None)
+                for ext in extensions
             ]
-        extensions.extend(self.extensions)
-        return [
-            ext if isinstance(ext, SchemaExtension) else ext(execution_context=None)
-            for ext in extensions
-        ]
+        return self._cached_extensions
 
     def create_extensions_runner(
         self, execution_context: ExecutionContext, extensions: list[SchemaExtension]
@@ -234,14 +237,15 @@ class Schema(BaseSchema):
             extensions=extensions,
         )
 
-    # TODO: can this get cached?
     def _get_middleware_manager(
         self, extensions: list[SchemaExtension]
     ) -> MiddlewareManager:
         # create a middleware manager with all the extensions that implement resolve
-        return MiddlewareManager(
-            *(ext for ext in extensions if type(self)._implements_resolve(ext))
-        )
+        if not self._cached_middleware_manager:
+            self._cached_middleware_manager = MiddlewareManager(
+                *(ext for ext in extensions if self._implements_resolve(ext))
+            )
+        return self._cached_middleware_manager
 
     def _create_execution_context(
         self,
