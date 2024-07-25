@@ -10,6 +10,7 @@ from graphql.execution import subscribe as original_subscribe
 
 from strawberry.types import ExecutionResult
 from strawberry.types.execution import ExecutionContext, PreExecutionError
+from strawberry.utils import IS_GQL_32
 from strawberry.utils.await_maybe import await_maybe
 
 from .execute import (
@@ -58,6 +59,10 @@ async def _subscribe(
             async with extensions_runner.executing():
                 assert execution_context.graphql_document is not None
                 # Might not be awaitable if i.e operation was not provided with the needed variables.
+                gql_33_kwargs = {
+                    "middleware": middleware_manager,
+                    "execution_context_class": execution_context_class,
+                }
                 aiter_or_result: OriginSubscriptionResult = await await_maybe(
                     original_subscribe(
                         schema,
@@ -66,8 +71,7 @@ async def _subscribe(
                         variable_values=execution_context.variables,
                         operation_name=execution_context.operation_name,
                         context_value=execution_context.context,
-                        middleware=middleware_manager,
-                        execution_context_class=execution_context_class,
+                        **{} if IS_GQL_32 else gql_33_kwargs,
                     )
                 )
 

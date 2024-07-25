@@ -2,8 +2,9 @@ import pathlib
 import sys
 from typing import Any, List, Tuple
 
-import graphql
 import pytest
+
+from strawberry.utils import IS_GQL_32
 
 
 def pytest_emoji_xfailed(config: pytest.Config) -> Tuple[str, str]:
@@ -58,9 +59,6 @@ def pytest_ignore_collect(
     # we're running the tests for it
     if "starlite" not in markers and "starlite" in collection_path.parts:
         return True
-
-
-IS_GQL_32 = "3.3" not in graphql.__version__
 
 
 def skip_if_gql_32(reason: str) -> pytest.MarkDecorator:
