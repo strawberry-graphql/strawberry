@@ -47,9 +47,10 @@ def _install_gql_core(session: Session, version: str) -> None:
     # hack for better workflow names  # noqa: FIX004
     if version == "3.2.3":
         session._session.install(f"graphql-core=={version}")  # type: ignore
-    session._session.install(
-        "https://github.com/graphql-python/graphql-core/archive/876aef67b6f1e1f21b3b5db94c7ff03726cb6bdf.zip"
-    )  # type: ignore
+    else:
+        session._session.install(
+            "https://github.com/graphql-python/graphql-core/archive/876aef67b6f1e1f21b3b5db94c7ff03726cb6bdf.zip"
+        )  # type: ignore
 
 
 gql_core_parametrize = nox.parametrize(

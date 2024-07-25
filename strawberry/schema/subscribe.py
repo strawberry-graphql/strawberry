@@ -134,6 +134,7 @@ async def subscribe(
         extensions_runner,
         process_errors,
         middleware_manager,
+        execution_context_class,
     )
     # GrapQL-core might return an initial error result instead of an async iterator.
     # This happens when "there was an immediate error" i.e resolver is not an async iterator.
