@@ -16,7 +16,7 @@ from typing_extensions import Annotated
 import pytest
 
 import strawberry
-from strawberry.types.execution import ExecutionResultError
+from strawberry.types.execution import PreExecutionError
 
 
 @pytest.mark.asyncio
@@ -257,7 +257,7 @@ async def test_subscription_immediate_error():
             subscription { example }
             """
     res_or_agen = await schema.subscribe(query)
-    assert isinstance(res_or_agen, ExecutionResultError)
+    assert isinstance(res_or_agen, PreExecutionError)
     assert res_or_agen.errors
 
 

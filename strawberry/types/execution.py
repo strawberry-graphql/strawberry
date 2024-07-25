@@ -95,7 +95,8 @@ class ExecutionResult:
     extensions: Optional[Dict[str, Any]] = None
 
 
-class ExecutionResultError(ExecutionResult):
+@dataclasses.dataclass
+class PreExecutionError(ExecutionResult):
     """Differentiate between a subscription result and an immediate error.
 
     Immediate errors are errors that at the first iteration of the subscription.

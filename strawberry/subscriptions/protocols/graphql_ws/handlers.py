@@ -19,7 +19,7 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
     GQL_STOP,
 )
-from strawberry.types.execution import ExecutionResult, ExecutionResultError
+from strawberry.types.execution import ExecutionResult, PreExecutionError
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 if TYPE_CHECKING:
@@ -138,7 +138,7 @@ class BaseGraphQLWSHandler(ABC):
             self.schema.process_errors([error])
             return
 
-        if isinstance(result_source, ExecutionResultError):
+        if isinstance(result_source, PreExecutionError):
             assert result_source.errors
             error_payload = result_source.errors[0].formatted
             await self.send_message(GQL_ERROR, operation_id, error_payload)

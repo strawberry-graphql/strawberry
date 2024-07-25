@@ -471,12 +471,14 @@ async def test_subscription_errors(ws: WebSocketClient):
 
 async def test_operation_error_no_complete(ws: WebSocketClient):
     """Test that an "error" message is not followed by "complete"."""
-    # get an "error" message
+    # Since we don't include the operation variables,
+    # the subscription will fail immediately.
+    # see https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#error
     await ws.send_json(
         SubscribeMessage(
             id="sub1",
             payload=SubscribeMessagePayload(
-                query='query { error(message: "TEST ERR") }',
+                query="subscription Foo($bar: String!){ exception(message: $bar) }",
             ),
         ).as_dict()
     )
@@ -487,17 +489,9 @@ async def test_operation_error_no_complete(ws: WebSocketClient):
 
     # after an "error" message, there should be nothing more
     # sent regarding "sub1", not even a "complete".
-    await ws.send_json(
-        SubscribeMessage(
-            id="sub2",
-            payload=SubscribeMessagePayload(
-                query='query { error(message: "TEST ERR") }',
-            ),
-        ).as_dict()
-    )
-    response = await ws.receive_json()
-    assert response["type"] == ErrorMessage.type
-    assert response["id"] == "sub2"
+    await ws.send_json(PingMessage().as_dict())
+    data = await ws.receive_json(timeout=1)
+    assert data == PongMessage().as_dict()
 
 
 async def test_subscription_exceptions(ws: WebSocketClient):
@@ -513,12 +507,9 @@ async def test_subscription_exceptions(ws: WebSocketClient):
         )
 
         response = await ws.receive_json()
-        assert response["type"] == ErrorMessage.type
+        assert response["type"] == NextMessage.type
         assert response["id"] == "sub1"
-        assert len(response["payload"]) == 1
-        assert response["payload"][0].get("path") is None
-        assert response["payload"][0].get("locations") is None
-        assert response["payload"][0]["message"] == "TEST EXC"
+        assert response["payload"]["errors"] == [{"message": "TEST EXC"}]
         process_errors.assert_called_once()
 
 
@@ -671,6 +662,8 @@ async def test_single_result_operation_exception(ws: WebSocketClient):
     """Test that single-result-operations which raise exceptions
     behave in the same way as streaming operations.
     """
+    # it is not clear from the spec that in that case you should do in this case.
+    # I'll leave it as @kristjanvalur did it, although it is probably wrong.
     process_errors = Mock()
     with patch.object(Schema, "process_errors", process_errors):
         await ws.send_json(

@@ -409,7 +409,7 @@ class Schema(BaseSchema):
             operation_name=operation_name,
         )
         extensions = self.get_extensions()
-        # TODO (#3571): remove this when we implement executoin context as parameter.
+        # TODO (#3571): remove this when we implement execution context as parameter.
         for extension in extensions:
             extension.execution_context = execution_context
         return await subscribe(

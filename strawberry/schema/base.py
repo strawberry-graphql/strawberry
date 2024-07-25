@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from strawberry.types.union import StrawberryUnion
 
     from .config import StrawberryConfig
+    from .subscribe import SubscriptionResult
 
 
 class BaseSchema(Protocol):
@@ -62,7 +63,7 @@ class BaseSchema(Protocol):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ) -> Any:
+    ) -> SubscriptionResult:
         raise NotImplementedError
 
     @abstractmethod

@@ -24,7 +24,7 @@ from graphql.validation import validate
 from strawberry.exceptions import MissingQueryError
 from strawberry.schema.validation_rules.one_of import OneOfInputValidationRule
 from strawberry.types import ExecutionResult
-from strawberry.types.execution import ExecutionResultError
+from strawberry.types.execution import PreExecutionError
 
 from .exceptions import InvalidOperationTypeError
 
@@ -86,7 +86,7 @@ def _run_validation(execution_context: ExecutionContext) -> None:
 
 async def _parse_and_validate_async(
     context: ExecutionContext, extensions_runner: SchemaExtensionsRunner
-) -> Optional[ExecutionResultError]:
+) -> Optional[PreExecutionError]:
     if not context.query:
         raise MissingQueryError()
     async with extensions_runner.parsing():
@@ -96,12 +96,12 @@ async def _parse_and_validate_async(
 
         except GraphQLError as error:
             context.errors = [error]
-            return ExecutionResultError(data=None, errors=[error])
+            return PreExecutionError(data=None, errors=[error])
 
         except Exception as error:
             error = GraphQLError(str(error), original_error=error)
             context.errors = [error]
-            return ExecutionResultError(data=None, errors=[error])
+            return PreExecutionError(data=None, errors=[error])
 
     if context.operation_type not in context.allowed_operations:
         raise InvalidOperationTypeError(context.operation_type)
@@ -109,7 +109,7 @@ async def _parse_and_validate_async(
     async with extensions_runner.validation():
         _run_validation(context)
         if context.errors:
-            return ExecutionResultError(
+            return PreExecutionError(
                 data=None,
                 errors=context.errors,
             )

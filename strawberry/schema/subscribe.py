@@ -9,7 +9,7 @@ from graphql.execution import ExecutionContext as GraphQLExecutionContext
 from graphql.execution import subscribe as original_subscribe
 
 from strawberry.types import ExecutionResult
-from strawberry.types.execution import ExecutionContext, ExecutionResultError
+from strawberry.types.execution import ExecutionContext, PreExecutionError
 from strawberry.utils.await_maybe import await_maybe
 
 from .execute import (
@@ -27,9 +27,7 @@ if TYPE_CHECKING:
 
     from ..extensions.runner import SchemaExtensionsRunner
 
-SubscriptionResult: TypeAlias = Union[
-    ExecutionResultError, AsyncIterator[ExecutionResult]
-]
+SubscriptionResult: TypeAlias = Union[PreExecutionError, AsyncIterator[ExecutionResult]]
 
 OriginSubscriptionResult = Union[
     OriginalExecutionResult,
@@ -44,7 +42,7 @@ async def _subscribe(
     process_errors: ProcessErrors,
     middleware_manager: MiddlewareManager,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
-) -> AsyncGenerator[Union[ExecutionResultError, ExecutionResult], None]:
+) -> AsyncGenerator[Union[PreExecutionError, ExecutionResult], None]:
     async with extensions_runner.operation():
         if initial_error := await _parse_and_validate_async(
             context=execution_context,
@@ -77,7 +75,7 @@ async def _subscribe(
             if isinstance(aiter_or_result, OriginalExecutionResult):
                 yield await _handle_execution_result(
                     execution_context,
-                    ExecutionResultError(data=None, errors=aiter_or_result.errors),
+                    PreExecutionError(data=None, errors=aiter_or_result.errors),
                     extensions_runner,
                     process_errors,
                 )
@@ -141,7 +139,7 @@ async def subscribe(
     # This happens when "there was an immediate error" i.e resolver is not an async iterator.
     # To overcome this while maintaining the extension contexts we do this trick.
     first = await asyncgen.__anext__()
-    if isinstance(first, ExecutionResultError):
+    if isinstance(first, PreExecutionError):
         await asyncgen.aclose()
         return first
 
