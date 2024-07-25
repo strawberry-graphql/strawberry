@@ -281,21 +281,14 @@ class BaseGraphQLTransportWSHandler(ABC):
         # TODO: Handle errors in this method using self.handle_task_exception()
         try:
             first_res_or_agen = await result_source
-            # initial subscription result.
+            # that's an immediate error we should end the operation
+            # without COMPLETE message
             if isinstance(first_res_or_agen, PreExecutionError):
                 assert first_res_or_agen.errors
                 await operation.send_initial_errors(first_res_or_agen.errors)
             # that's a mutation result
             elif isinstance(first_res_or_agen, ExecutionResult):
-                if first_res_or_agen.errors:
-                    await operation.send_message(
-                        ErrorMessage(
-                            id=operation.id,
-                            payload=[err.formatted for err in first_res_or_agen.errors],
-                        )
-                    )
-                else:
-                    await operation.send_next(first_res_or_agen)
+                await operation.send_next(first_res_or_agen)
                 await operation.send_message(CompleteMessage(id=operation.id))
             else:
                 async for result in first_res_or_agen:

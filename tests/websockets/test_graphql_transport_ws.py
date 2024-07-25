@@ -638,7 +638,7 @@ async def test_single_result_invalid_operation_selection(ws: WebSocketClient):
     ws.assert_reason("Can't get GraphQL operation type")
 
 
-async def test_single_result_operation_error(ws: WebSocketClient):
+async def test_single_result_execution_error(ws: WebSocketClient):
     process_errors = Mock()
     with patch.object(Schema, "process_errors", process_errors):
         await ws.send_json(
@@ -651,26 +651,27 @@ async def test_single_result_operation_error(ws: WebSocketClient):
         )
 
         response = await ws.receive_json()
-        assert response["type"] == ErrorMessage.type
+        assert response["type"] == NextMessage.type
         assert response["id"] == "sub1"
-        assert len(response["payload"]) == 1
-        assert response["payload"][0]["message"] == "You are not authorized"
+        errs = response["payload"]["errors"]
+        assert len(errs) == 1
+        assert errs[0]["path"] == ["alwaysFail"]
+        assert errs[0]["message"] == "You are not authorized"
+
         process_errors.assert_called_once()
 
 
-async def test_single_result_operation_exception(ws: WebSocketClient):
+async def test_single_result_pre_execution_error(ws: WebSocketClient):
     """Test that single-result-operations which raise exceptions
     behave in the same way as streaming operations.
     """
-    # it is not clear from the spec that in that case you should do in this case.
-    # I'll leave it as @kristjanvalur did it, although it is probably wrong.
     process_errors = Mock()
     with patch.object(Schema, "process_errors", process_errors):
         await ws.send_json(
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query='query { exception(message: "bummer") }',
+                    query="query { IDontExist }",
                 ),
             ).as_dict()
         )
@@ -679,8 +680,10 @@ async def test_single_result_operation_exception(ws: WebSocketClient):
         assert response["type"] == ErrorMessage.type
         assert response["id"] == "sub1"
         assert len(response["payload"]) == 1
-        assert response["payload"][0].get("path") == ["exception"]
-        assert response["payload"][0]["message"] == "bummer"
+        assert (
+            response["payload"][0]["message"]
+            == "Cannot query field 'IDontExist' on type 'Query'."
+        )
         process_errors.assert_called_once()
 
 
