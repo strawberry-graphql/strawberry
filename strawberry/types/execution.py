@@ -97,10 +97,13 @@ class ExecutionResult:
 
 @dataclasses.dataclass
 class PreExecutionError(ExecutionResult):
-    """Differentiate between a subscription result and an immediate error.
+    """Differentiate between a normal execution result and an immediate error.
 
-    Immediate errors are errors that at the first iteration of the subscription.
-    These errors should alert the integration level that the operation should be canceled immediatly.
+    Immediate errors are errors that occur before the execution phase i.e validation errors,
+    or any other error that occur before we interact with resolvers.
+
+    These errors are required by `graphql-ws-transport` protocol in order to close the operation
+    right away once the error is encountered.
     """
 
 

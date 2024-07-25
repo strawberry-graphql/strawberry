@@ -25,6 +25,7 @@ from strawberry.exceptions import MissingQueryError
 from strawberry.schema.validation_rules.one_of import OneOfInputValidationRule
 from strawberry.types import ExecutionResult
 from strawberry.types.execution import PreExecutionError
+from strawberry.utils.await_maybe import await_maybe
 
 from .exceptions import InvalidOperationTypeError
 
@@ -153,7 +154,7 @@ async def execute(
     process_errors: ProcessErrors,
     middleware_manager: MiddlewareManager,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
-) -> ExecutionResult:
+) -> ExecutionResult | PreExecutionError:
     try:
         async with extensions_runner.operation():
             # Note: In graphql-core the schema would be validated here but in
@@ -169,21 +170,19 @@ async def execute(
             assert execution_context.graphql_document
             async with extensions_runner.executing():
                 if not execution_context.result:
-                    awaitable_or_res = original_execute(
-                        schema,
-                        execution_context.graphql_document,
-                        root_value=execution_context.root_value,
-                        middleware=middleware_manager,
-                        variable_values=execution_context.variables,
-                        operation_name=execution_context.operation_name,
-                        context_value=execution_context.context,
-                        execution_context_class=execution_context_class,
+                    res = await await_maybe(
+                        original_execute(
+                            schema,
+                            execution_context.graphql_document,
+                            root_value=execution_context.root_value,
+                            middleware=middleware_manager,
+                            variable_values=execution_context.variables,
+                            operation_name=execution_context.operation_name,
+                            context_value=execution_context.context,
+                            execution_context_class=execution_context_class,
+                        )
                     )
 
-                    if isawaitable(awaitable_or_res):
-                        res = await awaitable_or_res
-                    else:
-                        res = awaitable_or_res
                 else:
                     res = execution_context.result
     except (MissingQueryError, InvalidOperationTypeError) as e:
@@ -191,7 +190,7 @@ async def execute(
     except Exception as exc:
         return await _handle_execution_result(
             execution_context,
-            ExecutionResult(data=None, errors=[_coerce_error(exc)]),
+            PreExecutionError(data=None, errors=[_coerce_error(exc)]),
             extensions_runner,
             process_errors,
         )

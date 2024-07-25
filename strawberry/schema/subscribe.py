@@ -65,17 +65,24 @@ async def _subscribe(
                     "middleware": middleware_manager,
                     "execution_context_class": execution_context_class,
                 }
-                aiter_or_result: OriginSubscriptionResult = await await_maybe(
-                    original_subscribe(
-                        schema,
-                        execution_context.graphql_document,
-                        root_value=execution_context.root_value,
-                        variable_values=execution_context.variables,
-                        operation_name=execution_context.operation_name,
-                        context_value=execution_context.context,
-                        **{} if IS_GQL_32 else gql_33_kwargs,  # type: ignore[arg-type]
+                try:
+                    aiter_or_result: OriginSubscriptionResult = await await_maybe(
+                        original_subscribe(
+                            schema,
+                            execution_context.graphql_document,
+                            root_value=execution_context.root_value,
+                            variable_values=execution_context.variables,
+                            operation_name=execution_context.operation_name,
+                            context_value=execution_context.context,
+                            **{} if IS_GQL_32 else gql_33_kwargs,  # type: ignore[arg-type]
+                        )
                     )
-                )
+                # graphql-core 3.2 doesn't handle some of the pre-execution errors.
+                # see `test_subscription_immediate_error`
+                except Exception as exc:
+                    aiter_or_result = OriginalExecutionResult(
+                        data=None, errors=[_coerce_error(exc)]
+                    )
 
             # Handle immediate errors.
             if isinstance(aiter_or_result, OriginalExecutionResult):
