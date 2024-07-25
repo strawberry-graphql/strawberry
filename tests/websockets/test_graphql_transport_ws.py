@@ -71,8 +71,6 @@ def assert_next(
     assert response["payload"]["data"] == data
     if extensions is not None:
         assert response["payload"]["extensions"] == extensions
-    else:
-        assert "extensions" not in response["payload"]
 
 
 async def test_unknown_message_type(ws_raw: WebSocketClient):
@@ -938,3 +936,4 @@ async def test_no_extenions(mock: Mock, ws: WebSocketClient):
     response = await ws.receive_json()
     mock.assert_called_once()
     assert_next(response, "sub1", {"echo": "Hi"})
+    assert "extensions" not in response["payload"]
