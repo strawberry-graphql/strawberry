@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, AsyncGenerator, AsyncIterator, Union
+from typing import TYPE_CHECKING, AsyncGenerator, AsyncIterator, Optional, Type, Union
 
 from graphql import (
     ExecutionResult as OriginalExecutionResult,
 )
+from graphql.execution import ExecutionContext as GraphQLExecutionContext
 from graphql.execution import subscribe as original_subscribe
 
 from strawberry.types import ExecutionResult
@@ -42,6 +43,7 @@ async def _subscribe(
     extensions_runner: SchemaExtensionsRunner,
     process_errors: ProcessErrors,
     middleware_manager: MiddlewareManager,
+    execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
 ) -> AsyncGenerator[Union[ExecutionResultError, ExecutionResult], None]:
     async with extensions_runner.operation():
         if initial_error := await _parse_and_validate_async(
@@ -67,6 +69,7 @@ async def _subscribe(
                         operation_name=execution_context.operation_name,
                         context_value=execution_context.context,
                         middleware=middleware_manager,
+                        execution_context_class=execution_context_class,
                     )
                 )
 
@@ -125,6 +128,7 @@ async def subscribe(
     extensions_runner: SchemaExtensionsRunner,
     process_errors: ProcessErrors,
     middleware_manager: MiddlewareManager,
+    execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
 ) -> SubscriptionResult:
     asyncgen = _subscribe(
         schema,

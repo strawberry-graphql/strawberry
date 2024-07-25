@@ -351,8 +351,9 @@ class Schema(BaseSchema):
             extensions_runner=self.create_extensions_runner(
                 execution_context, extensions
             ),
-            process_errors=self.process_errors,
+            process_errors=self._process_errors,
             middleware_manager=self._get_middleware_manager(extensions),
+            execution_context_class=self.execution_context_class,
         )
 
     def execute_sync(
@@ -379,7 +380,7 @@ class Schema(BaseSchema):
         # TODO (#3571): remove this when we implement executoin context as parameter.
         for extension in extensions:
             extension.execution_context = execution_context
-        result = execute_sync(
+        return execute_sync(
             self._schema,
             execution_context=execution_context,
             extensions_runner=self.create_extensions_runner(
@@ -387,11 +388,9 @@ class Schema(BaseSchema):
             ),
             execution_context_class=self.execution_context_class,
             allowed_operation_types=allowed_operation_types,
-            process_errors=self.process_errors,
+            process_errors=self._process_errors,
             middleware_manager=self._get_middleware_manager(extensions),
         )
-
-        return result
 
     async def subscribe(
         self,
@@ -419,8 +418,9 @@ class Schema(BaseSchema):
             extensions_runner=self.create_extensions_runner(
                 execution_context, extensions
             ),
-            process_errors=self.process_errors,
+            process_errors=self._process_errors,
             middleware_manager=self._get_middleware_manager(extensions),
+            execution_context_class=self.execution_context_class,
         )
 
     def _resolve_node_ids(self) -> None:

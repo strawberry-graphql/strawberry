@@ -152,6 +152,7 @@ async def execute(
     extensions_runner: SchemaExtensionsRunner,
     process_errors: ProcessErrors,
     middleware_manager: MiddlewareManager,
+    execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
 ) -> ExecutionResult:
     try:
         async with extensions_runner.operation():
@@ -176,6 +177,7 @@ async def execute(
                         variable_values=execution_context.variables,
                         operation_name=execution_context.operation_name,
                         context_value=execution_context.context,
+                        execution_context_class=execution_context_class,
                     )
 
                     if isawaitable(awaitable_or_res):
@@ -256,6 +258,7 @@ def execute_sync(
                         variable_values=execution_context.variables,
                         operation_name=execution_context.operation_name,
                         context_value=execution_context.context,
+                        execution_context_class=execution_context_class,
                     )
 
                     if isawaitable(result):
