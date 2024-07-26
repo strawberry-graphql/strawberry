@@ -44,7 +44,7 @@ class ASGIRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def query_params(self) -> QueryParams:
-        return dict(self.request.query_params)
+        return self.request.query_params
 
     @property
     def method(self) -> HTTPMethod:
