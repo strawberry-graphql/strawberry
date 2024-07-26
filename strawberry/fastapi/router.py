@@ -17,6 +17,7 @@ from typing import (
     Union,
     cast,
 )
+from typing_extensions import TypeGuard
 
 from starlette import status
 from starlette.background import BackgroundTasks  # noqa: TCH002
@@ -34,10 +35,9 @@ from fastapi import APIRouter, Depends, params
 from fastapi.datastructures import Default
 from fastapi.routing import APIRoute
 from fastapi.utils import generate_unique_id
-from strawberry.asgi import ASGIRequestAdapter
+from strawberry.asgi import ASGIRequestAdapter, ASGIWebSocketAdapter
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi.context import BaseContext, CustomContext
-from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.http import process_result
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.exceptions import HTTPException
@@ -58,12 +58,14 @@ if TYPE_CHECKING:
 
 
 class GraphQLRouter(
-    AsyncBaseHTTPView[Request, Response, Response, Context, RootValue], APIRouter
+    AsyncBaseHTTPView[
+        Request, Response, Response, WebSocket, WebSocket, Context, RootValue
+    ],
+    APIRouter,
 ):
-    graphql_ws_handler_class = GraphQLWSHandler
-    graphql_transport_ws_handler_class = GraphQLTransportWSHandler
     allow_queries_via_get = True
     request_adapter_class = ASGIRequestAdapter
+    websocket_adapter_class = ASGIWebSocketAdapter
 
     @staticmethod
     async def __get_root_value() -> None:
@@ -259,44 +261,7 @@ class GraphQLRouter(
             context: Context = Depends(self.context_getter),
             root_value: RootValue = Depends(self.root_value_getter),
         ) -> None:
-            async def _get_context() -> Context:
-                return context
-
-            async def _get_root_value() -> RootValue:
-                return root_value
-
-            preferred_protocol = self.pick_preferred_protocol(websocket)
-            if preferred_protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
-                await self.graphql_transport_ws_handler_class(
-                    schema=self.schema,
-                    debug=self.debug,
-                    connection_init_wait_timeout=self.connection_init_wait_timeout,
-                    get_context=_get_context,
-                    get_root_value=_get_root_value,
-                    ws=websocket,
-                ).handle()
-            elif preferred_protocol == GRAPHQL_WS_PROTOCOL:
-                await self.graphql_ws_handler_class(
-                    schema=self.schema,
-                    debug=self.debug,
-                    keep_alive=self.keep_alive,
-                    keep_alive_interval=self.keep_alive_interval,
-                    get_context=_get_context,
-                    get_root_value=_get_root_value,
-                    ws=websocket,
-                ).handle()
-            else:
-                # Code 4406 is "Subprotocol not acceptable"
-                await websocket.close(code=4406)
-
-    def pick_preferred_protocol(self, ws: WebSocket) -> Optional[str]:
-        protocols = ws["subprotocols"]
-        intersection = set(protocols) & set(self.protocols)
-        return min(
-            intersection,
-            key=lambda i: protocols.index(i),
-            default=None,
-        )
+            await self.run(request=websocket, context=context, root_value=root_value)
 
     async def render_graphql_ide(self, request: Request) -> HTMLResponse:
         return HTMLResponse(self.graphql_ide_html)
@@ -307,12 +272,12 @@ class GraphQLRouter(
         return process_result(result)
 
     async def get_context(
-        self, request: Request, response: Response
+        self, request: Union[Request, WebSocket], response: Union[Response, WebSocket]
     ) -> Context:  # pragma: no cover
         raise ValueError("`get_context` is not used by FastAPI GraphQL Router")
 
     async def get_root_value(
-        self, request: Request
+        self, request: Union[Request, WebSocket]
     ) -> Optional[RootValue]:  # pragma: no cover
         raise ValueError("`get_root_value` is not used by FastAPI GraphQL Router")
 
@@ -347,6 +312,23 @@ class GraphQLRouter(
                 **headers,
             },
         )
+
+    def is_websocket_request(
+        self, request: Union[Request, WebSocket]
+    ) -> TypeGuard[WebSocket]:
+        return request.scope["type"] == "websocket"
+
+    async def pick_websocket_subprotocol(self, request: WebSocket) -> Optional[str]:
+        protocols = request["subprotocols"]
+        intersection = set(protocols) & set(self.protocols)
+        sorted_intersection = sorted(intersection, key=protocols.index)
+        return next(iter(sorted_intersection), None)
+
+    async def create_websocket_response(
+        self, request: WebSocket, subprotocol: Optional[str]
+    ) -> WebSocket:
+        await request.accept(subprotocol=subprotocol)
+        return request
 
 
 __all__ = ["GraphQLRouter"]

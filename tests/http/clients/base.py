@@ -18,6 +18,10 @@ from typing import (
     Union,
 )
 from typing_extensions import Literal
+from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
+    BaseGraphQLTransportWSHandler,
+)
+from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
 
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
@@ -289,7 +293,7 @@ class WebSocketClient(abc.ABC):
             yield await self.receive()
 
 
-class DebuggableGraphQLTransportWSMixin:
+class DebuggableGraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
     def on_init(self) -> None:
         """This method can be patched by unit tests to get the instance of the
         transport handler when it is initialized.
@@ -297,26 +301,39 @@ class DebuggableGraphQLTransportWSMixin:
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        DebuggableGraphQLTransportWSMixin.on_init(self)
+        self.original_context = kwargs.get("context", {})
+        DebuggableGraphQLTransportWSHandler.on_init(self)
 
     def get_tasks(self) -> List:
         return [op.task for op in self.operations.values()]
+    
+    @property
+    def context(self):
+        self.original_context["ws"] = self.websocket
+        self.original_context["get_tasks"] = self.get_tasks
+        self.original_context["connectionInitTimeoutTask"] = self.connection_init_timeout_task
+        return self.original_context
+    
+    @context.setter
+    def context(self, value):
+        self.original_context = value
 
-    async def get_context(self) -> object:
-        context = await super().get_context()
-        context["ws"] = self._ws
-        context["get_tasks"] = self.get_tasks
-        context["connectionInitTimeoutTask"] = self.connection_init_timeout_task
-        return context
 
+class DebuggableGraphQLWSHandler(BaseGraphQLWSHandler):
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.original_context = self.context
 
-class DebuggableGraphQLWSMixin:
     def get_tasks(self) -> List:
         return list(self.tasks.values())
 
-    async def get_context(self) -> object:
-        context = await super().get_context()
-        context["ws"] = self._ws
-        context["get_tasks"] = self.get_tasks
-        context["connectionInitTimeoutTask"] = None
-        return context
+    @property
+    def context(self):
+        self.original_context["ws"] = self.websocket
+        self.original_context["get_tasks"] = self.get_tasks
+        self.original_context["connectionInitTimeoutTask"] = None
+        return self.original_context
+    
+    @context.setter
+    def context(self, value):
+        self.original_context = value

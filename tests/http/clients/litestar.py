@@ -13,15 +13,14 @@ from litestar.testing.websocket_test_session import WebSocketTestSession
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.litestar import make_graphql_controller
-from strawberry.litestar.controller import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
 from ..context import get_context
 from .base import (
     JSON,
-    DebuggableGraphQLTransportWSMixin,
-    DebuggableGraphQLWSMixin,
+    DebuggableGraphQLTransportWSHandler,
+    DebuggableGraphQLWSHandler,
     HttpClient,
     Message,
     Response,
@@ -40,16 +39,6 @@ async def litestar_get_context(request: Request = None):
 
 async def get_root_value(request: Request = None):
     return Query()
-
-
-class DebuggableGraphQLTransportWSHandler(
-    DebuggableGraphQLTransportWSMixin, GraphQLTransportWSHandler
-):
-    pass
-
-
-class DebuggableGraphQLWSHandler(DebuggableGraphQLWSMixin, GraphQLWSHandler):
-    pass
 
 
 class LitestarHttpClient(HttpClient):

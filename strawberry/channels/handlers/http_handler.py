@@ -15,7 +15,7 @@ from typing import (
     Optional,
     Union,
 )
-from typing_extensions import assert_never
+from typing_extensions import assert_never, TypeGuard
 from urllib.parse import parse_qs
 
 from django.conf import settings
@@ -231,6 +231,8 @@ class GraphQLHTTPConsumer(
         ChannelsRequest,
         Union[ChannelsResponse, MultipartChannelsResponse],
         TemporalResponse,
+        ChannelsRequest,
+        TemporalResponse,
         Context,
         RootValue,
     ],
@@ -295,6 +297,21 @@ class GraphQLHTTPConsumer(
         return ChannelsResponse(
             content=self.graphql_ide_html.encode(), content_type="text/html"
         )
+
+    def is_websocket_request(
+        self, request: ChannelsRequest
+    ) -> TypeGuard[ChannelsRequest]:
+        return False
+
+    async def pick_websocket_subprotocol(
+        self, request: ChannelsRequest
+    ) -> Optional[str]:
+        return None
+
+    async def create_websocket_response(
+        self, request: ChannelsRequest, subprotocol: Optional[str]
+    ) -> TemporalResponse:
+        raise NotImplementedError
 
 
 class SyncGraphQLHTTPConsumer(

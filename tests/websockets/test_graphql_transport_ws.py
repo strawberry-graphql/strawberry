@@ -24,7 +24,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
-from tests.http.clients.base import DebuggableGraphQLTransportWSMixin
+from tests.http.clients.base import DebuggableGraphQLTransportWSHandler
 from tests.views.schema import MyExtension, Schema
 
 if TYPE_CHECKING:
@@ -879,7 +879,7 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
         # cause an attribute error in the timeout task
         handler.connection_init_wait_timeout = None
 
-    with patch.object(DebuggableGraphQLTransportWSMixin, "on_init", on_init):
+    with patch.object(DebuggableGraphQLTransportWSHandler, "on_init", on_init):
         async with http_client.ws_connect(
             "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
         ) as ws:

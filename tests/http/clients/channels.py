@@ -28,6 +28,8 @@ from .base import (
     Response,
     ResultOverrideFunction,
     WebSocketClient,
+    DebuggableGraphQLTransportWSHandler,
+    DebuggableGraphQLWSHandler,
 )
 
 
@@ -61,25 +63,6 @@ def create_multipart_request_body(
     ]
 
     return headers, request_body
-
-
-class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
-    def get_tasks(self) -> List[Any]:
-        if hasattr(self._handler, "operations"):
-            return [op.task for op in self._handler.operations.values()]
-        else:
-            return list(self._handler.tasks.values())
-
-    async def get_context(self, *args: str, **kwargs: Any) -> object:
-        context = await super().get_context(*args, **kwargs)
-        context["ws"] = self._handler._ws
-        context["get_tasks"] = self.get_tasks
-        context["connectionInitTimeoutTask"] = getattr(
-            self._handler, "connection_init_timeout_task", None
-        )
-        for key, val in get_context({}).items():
-            context[key] = val
-        return context
 
 
 class DebuggableGraphQLHTTPConsumer(GraphQLHTTPConsumer):
@@ -130,6 +113,16 @@ class DebuggableSyncGraphQLHTTPConsumer(SyncGraphQLHTTPConsumer):
         return super().process_result(request, result)
 
 
+class DebuggableGraphQLWSConsumer(GraphQLWSConsumer):
+    graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
+    graphql_ws_handler_class = DebuggableGraphQLWSHandler
+
+    async def get_context(self, request, response):
+        context = await super().get_context(request, response)
+
+        return get_context(context)
+
+
 class ChannelsHttpClient(HttpClient):
     """A client to test websockets over channels."""
 
@@ -140,7 +133,7 @@ class ChannelsHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
     ):
-        self.ws_app = DebuggableGraphQLTransportWSConsumer.as_asgi(
+        self.ws_app = DebuggableGraphQLWSConsumer.as_asgi(
             schema=schema,
             keep_alive=False,
         )
@@ -154,9 +147,7 @@ class ChannelsHttpClient(HttpClient):
         )
 
     def create_app(self, **kwargs: Any) -> None:
-        self.ws_app = DebuggableGraphQLTransportWSConsumer.as_asgi(
-            schema=schema, **kwargs
-        )
+        self.ws_app = DebuggableGraphQLWSConsumer.as_asgi(schema=schema, **kwargs)
 
     async def _graphql_request(
         self,
