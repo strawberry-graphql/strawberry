@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.237.2 - 2024-07-26
+--------------------
+
+This release makes the ASGI and FastAPI integrations share their HTTP request adapter code, making Strawberry ever so slightly smaller and easier to maintain.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3582](https://github.com/strawberry-graphql/strawberry/pull/3582/)
+
+
 0.237.1 - 2024-07-24
 --------------------
 
