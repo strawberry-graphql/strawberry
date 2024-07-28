@@ -16,6 +16,7 @@ from typing import (
     List,
     NamedTuple,
     Optional,
+    Type,
     Union,
 )
 
@@ -24,7 +25,6 @@ from strawberry.utils.await_maybe import AwaitableOrValue, await_maybe
 
 if TYPE_CHECKING:
     from strawberry.extensions.base_extension import Hook
-    from strawberry.types.execution import ExecutionContext
 
 
 class WrappedHook(NamedTuple):
@@ -54,9 +54,7 @@ class ExtensionContextManagerBase:
     LEGACY_ENTER: str
     LEGACY_EXIT: str
 
-    def __init__(
-        self, extensions: List[SchemaExtension], context_context: ExecutionContext
-    ) -> None:
+    def __init__(self, extensions: List[SchemaExtension]) -> None:
         self.hooks: List[WrappedHook] = []
         self.default_hook: Hook = getattr(SchemaExtension, self.HOOK_NAME)
         for extension in extensions:
@@ -177,8 +175,13 @@ class ExtensionContextManagerBase:
             else:
                 self.exit_stack.enter_context(hook.hook())  # type: ignore
 
-    def __exit__(self, *_: object) -> None:
-        self.exit_stack.close()
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[types.TracebackType],
+    ) -> None:
+        self.exit_stack.__exit__(exc_type, exc_val, exc_tb)
 
     async def __aenter__(self) -> None:
         self.async_exit_stack = contextlib.AsyncExitStack()
@@ -191,8 +194,13 @@ class ExtensionContextManagerBase:
             else:
                 self.async_exit_stack.enter_context(hook.hook())  # type: ignore
 
-    async def __aexit__(self, *_: object) -> None:
-        await self.async_exit_stack.aclose()
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[types.TracebackType],
+    ) -> None:
+        await self.async_exit_stack.__aexit__(exc_type, exc_val, exc_tb)
 
 
 class OperationContextManager(ExtensionContextManagerBase):

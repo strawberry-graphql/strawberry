@@ -29,16 +29,16 @@ class SchemaExtensionsRunner:
         self.extensions = extensions or []
 
     def operation(self) -> OperationContextManager:
-        return OperationContextManager(self.extensions, self.execution_context)
+        return OperationContextManager(self.extensions)
 
     def validation(self) -> ValidationContextManager:
-        return ValidationContextManager(self.extensions, self.execution_context)
+        return ValidationContextManager(self.extensions)
 
     def parsing(self) -> ParsingContextManager:
-        return ParsingContextManager(self.extensions, self.execution_context)
+        return ParsingContextManager(self.extensions)
 
     def executing(self) -> ExecutingContextManager:
-        return ExecutingContextManager(self.extensions, self.execution_context)
+        return ExecutingContextManager(self.extensions)
 
     def get_extensions_results_sync(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {}

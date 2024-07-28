@@ -60,12 +60,12 @@ async def _subscribe(
         try:
             async with extensions_runner.executing():
                 assert execution_context.graphql_document is not None
-                # Might not be awaitable if i.e operation was not provided with the needed variables.
                 gql_33_kwargs = {
                     "middleware": middleware_manager,
                     "execution_context_class": execution_context_class,
                 }
                 try:
+                    # Might not be awaitable for pre-execution errors.
                     aiter_or_result: OriginSubscriptionResult = await await_maybe(
                         original_subscribe(
                             schema,
@@ -103,6 +103,7 @@ async def _subscribe(
                             origin_result: Union[
                                 ExecutionResult, OriginalExecutionResult
                             ] = await aiterator.__anext__()
+
                         except StopAsyncIteration:
                             break
                         except Exception as exc:
