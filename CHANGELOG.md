@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.237.3 - 2024-07-31
+--------------------
+
+This release fixes the type of the ASGI request handler's `scope` argument, making type checkers ever so slightly happier.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3581](https://github.com/strawberry-graphql/strawberry/pull/3581/)
+
+
 0.237.2 - 2024-07-26
 --------------------
 
