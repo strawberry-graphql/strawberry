@@ -43,3 +43,5 @@ def test_subscription_long_run(benchmark: BenchmarkFixture) -> None:
             assert res.data is not None
             assert res.data["longRunning"] == i
             i += 1
+
+    benchmark(lambda: asyncio.run(_run()))
