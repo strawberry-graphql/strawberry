@@ -87,8 +87,10 @@ def exec_type(request: pytest.FixtureRequest) -> ExecType:
 @contextlib.contextmanager
 def hook_wrap(list_: List[str], hook_name: str):
     list_.append(f"{hook_name} Entered")
-    yield
-    list_.append(f"{hook_name} Exited")
+    try:
+        yield
+    finally:
+        list_.append(f"{hook_name} Exited")
 
 
 @pytest.fixture()
