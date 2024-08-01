@@ -39,14 +39,14 @@ class MyExtension(SchemaExtension):
         print("Subscription ended")
 
     async def on_execute(self):
-        # The subsctription is trying to yield a new result
+        # The subscription is trying to yield a new result
         print(f"before yield {self.count}")
         yield
         # the subscription has yielded a new result
         print(f"after yield {self.count}")
         self.count += 1
 
-    # other hooks can are the same as per normal execution.
+    # Other hooks are the same as in normal execution.
     async def resolve(self, _next, root, info, *args, **kwargs):
         res = _next(root, info, *args, **kwargs)
         return res[::-1]
