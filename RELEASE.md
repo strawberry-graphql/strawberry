@@ -11,9 +11,13 @@ from .models import ProductModel
 
 
 class CustomInfo(strawberry.Info):
-    def is_selected(field: str) -> bool:
+    def is_selected(self, field: str) -> bool:
         """Check if the field is selected on the top-level of the query."""
         return field in [sel.name for sel in info.selected_fields]
+
+
+@strawberry.type
+class Order: ...
 
 
 @strawberry.type
