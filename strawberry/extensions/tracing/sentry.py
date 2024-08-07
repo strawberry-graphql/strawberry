@@ -24,7 +24,7 @@ class SentryTracingExtension(SchemaExtension):
         execution_context: Optional[ExecutionContext] = None,
     ) -> None:
         warnings.warn(
-            "The Sentry tracing extension is deprecated, please update to sentry>=1.32.0",
+            "The Sentry tracing extension is deprecated, please update to sentry-sdk>=1.32.0",
             DeprecationWarning,
             stacklevel=2,
         )
