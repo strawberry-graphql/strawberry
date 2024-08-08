@@ -29,7 +29,7 @@ def test_subscription(benchmark: BenchmarkFixture):
 
 
 @pytest.mark.benchmark
-@pytest.mark.parametrize("count", [100, 20000])
+@pytest.mark.parametrize("count", [1000, 20000])
 def test_subscription_long_run(benchmark: BenchmarkFixture, count: int) -> None:
     s = """#graphql
     subscription LongRunning($count: Int!) {
