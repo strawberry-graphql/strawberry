@@ -1,7 +1,8 @@
 import asyncio
-from typing import AsyncGenerator
+from typing import AsyncIterator
 
 import pytest
+from graphql import ExecutionResult
 from pytest_codspeed.plugin import BenchmarkFixture
 
 from .api import schema
@@ -28,18 +29,20 @@ def test_subscription(benchmark: BenchmarkFixture):
 
 
 @pytest.mark.benchmark
-def test_subscription_long_run(benchmark: BenchmarkFixture) -> None:
-    s = """
-    subscription {
-        longRunning
+@pytest.mark.parametrize("count", [1000, 20000])
+def test_subscription_long_run(benchmark: BenchmarkFixture, count: int) -> None:
+    s = """#graphql
+    subscription LongRunning($count: Int!) {
+        longRunning(count: $count)
     }
     """
 
     async def _run():
         i = 0
-        agen = await schema.subscribe(s)
-        assert isinstance(agen, AsyncGenerator)
-        async for res in agen:
+        aiterator: AsyncIterator[ExecutionResult] = await schema.subscribe(
+            s, variable_values={"count": count}
+        )  # type: ignore[assignment]
+        async for res in aiterator:
             assert res.data is not None
             assert res.data["longRunning"] == i
             i += 1
