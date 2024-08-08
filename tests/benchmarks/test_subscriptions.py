@@ -1,6 +1,8 @@
 import asyncio
+from typing import AsyncIterator
 
 import pytest
+from graphql import ExecutionResult
 from pytest_codspeed.plugin import BenchmarkFixture
 
 from .api import schema
@@ -36,8 +38,7 @@ def test_subscription_long_run(benchmark: BenchmarkFixture) -> None:
 
     async def _run():
         i = 0
-        aiterator = await schema.subscribe(s)
-        assert hasattr(aiterator, "__aiter__")
+        aiterator: AsyncIterator[ExecutionResult] = await schema.subscribe(s)  # type: ignore[assignment]
         async for res in aiterator:
             assert res.data is not None
             assert res.data["longRunning"] == i
