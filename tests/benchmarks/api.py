@@ -74,8 +74,8 @@ class Subscription:
         yield "Hello World!"
 
     @strawberry.subscription
-    async def long_running(self) -> AsyncIterator[int]:
-        for i in range(10000):
+    async def long_running(self, count: int) -> AsyncIterator[int]:
+        for i in range(count):
             yield i
 
 

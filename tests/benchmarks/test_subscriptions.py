@@ -29,16 +29,19 @@ def test_subscription(benchmark: BenchmarkFixture):
 
 
 @pytest.mark.benchmark
-def test_subscription_long_run(benchmark: BenchmarkFixture) -> None:
-    s = """
-    subscription {
-        longRunning
+@pytest.mark.parametrize("count", [100, 20000])
+def test_subscription_long_run(benchmark: BenchmarkFixture, count: int) -> None:
+    s = """#graphql
+    subscription LongRunning($count: Int!) {
+        longRunning(count: $count)
     }
     """
 
     async def _run():
         i = 0
-        aiterator: AsyncIterator[ExecutionResult] = await schema.subscribe(s)  # type: ignore[assignment]
+        aiterator: AsyncIterator[ExecutionResult] = await schema.subscribe(
+            s, variable_values={"count": count}
+        )  # type: ignore[assignment]
         async for res in aiterator:
             assert res.data is not None
             assert res.data["longRunning"] == i
