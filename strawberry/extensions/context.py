@@ -24,6 +24,8 @@ from strawberry.extensions import SchemaExtension
 from strawberry.utils.await_maybe import AwaitableOrValue, await_maybe
 
 if TYPE_CHECKING:
+    from types import TracebackType
+
     from strawberry.extensions.base_extension import Hook
 
 
@@ -179,7 +181,7 @@ class ExtensionContextManagerBase:
         self,
         exc_type: Optional[Type[BaseException]],
         exc_val: Optional[BaseException],
-        exc_tb: Optional[types.TracebackType],
+        exc_tb: Optional[TracebackType],
     ) -> None:
         self.exit_stack.__exit__(exc_type, exc_val, exc_tb)
 
@@ -198,7 +200,7 @@ class ExtensionContextManagerBase:
         self,
         exc_type: Optional[Type[BaseException]],
         exc_val: Optional[BaseException],
-        exc_tb: Optional[types.TracebackType],
+        exc_tb: Optional[TracebackType],
     ) -> None:
         await self.async_exit_stack.__aexit__(exc_type, exc_val, exc_tb)
 

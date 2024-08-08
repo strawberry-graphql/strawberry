@@ -130,6 +130,7 @@ class BaseGraphQLWSHandler(ABC):
 
         if self.debug:
             pretty_print_graphql_operation(operation_name, query, variables)
+
         result_source = self.schema.subscribe(
             query=query,
             variable_values=variables,

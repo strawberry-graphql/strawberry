@@ -243,7 +243,7 @@ class Schema(BaseSchema):
         # create a middleware manager with all the extensions that implement resolve
         if not self._cached_middleware_manager:
             self._cached_middleware_manager = MiddlewareManager(
-                *(ext for ext in extensions if self._implements_resolve(ext))
+                *(ext for ext in extensions if ext._implements_resolve())
             )
         return self._cached_middleware_manager
 
@@ -265,13 +265,6 @@ class Schema(BaseSchema):
             variables=variable_values,
             provided_operation_name=operation_name,
         )
-
-    @classmethod
-    def _implements_resolve(cls, obj: SchemaExtension | type[SchemaExtension]) -> bool:
-        """Whether the extension implements the resolve method."""
-        if isinstance(obj, SchemaExtension):
-            return type(obj).resolve is not SchemaExtension.resolve
-        return obj.resolve is not SchemaExtension.resolve
 
     @lru_cache
     def get_type_by_name(
@@ -346,7 +339,7 @@ class Schema(BaseSchema):
             operation_name=operation_name,
         )
         extensions = self.get_extensions()
-        # TODO (#3571): remove this when we implement executoin context as parameter.
+        # TODO (#3571): remove this when we implement execution context as parameter.
         for extension in extensions:
             extension.execution_context = execution_context
         return await execute(
@@ -381,7 +374,7 @@ class Schema(BaseSchema):
             operation_name=operation_name,
         )
         extensions = self.get_extensions(sync=True)
-        # TODO (#3571): remove this when we implement executoin context as parameter.
+        # TODO (#3571): remove this when we implement execution context as parameter.
         for extension in extensions:
             extension.execution_context = execution_context
         return execute_sync(

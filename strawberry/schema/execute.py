@@ -90,6 +90,7 @@ async def _parse_and_validate_async(
 ) -> Optional[PreExecutionError]:
     if not context.query:
         raise MissingQueryError()
+
     async with extensions_runner.parsing():
         try:
             if not context.graphql_document:
@@ -166,7 +167,7 @@ async def execute(
                 return await _handle_execution_result(
                     execution_context, errors, extensions_runner, process_errors
                 )
-            # Please type-checkers. `_parse_and_validate_async` would have errored otherwise.
+
             assert execution_context.graphql_document
             async with extensions_runner.executing():
                 if not execution_context.result:
