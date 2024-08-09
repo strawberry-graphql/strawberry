@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from asyncio import ensure_future
 from inspect import isawaitable
 from typing import (
@@ -15,7 +16,7 @@ from typing import (
     Union,
 )
 
-from graphql import GraphQLError, parse
+from graphql import GraphQLError, located_error, parse
 from graphql import execute as original_execute
 from graphql.validation import validate
 
@@ -76,6 +77,35 @@ def _run_validation(execution_context: ExecutionContext) -> None:
         )
 
 
+def _initialize_partial_errors(execution_context: ExecutionContext) -> None:
+    # Initialize a list of `Exceptions` on the context
+    # Clients can add errors to this list but still return data, in
+    # order to support partial results that contain both data and errors
+    if execution_context.context is not None:
+        try:
+            execution_context.context.partial_errors: list[Exception] = []
+        except AttributeError:
+            with contextlib.suppress(TypeError, IndexError):
+                execution_context.context["partial_errors"] = []
+
+
+def _get_partial_errors(execution_context: ExecutionContext) -> list[GraphQLError]:
+    # Pull any partial errors off the context
+    partial_errors = []
+    try:
+        partial_errors = execution_context.context.partial_errors
+    except AttributeError:
+        with contextlib.suppress(TypeError, IndexError):
+            partial_errors = execution_context.context["partial_errors"]
+
+    # map each error to a `GraphQLError` if not one already
+    return [
+        error if isinstance(error, GraphQLError) else located_error(error)
+        for error in partial_errors
+    ]
+    return []
+
+
 async def execute(
     schema: GraphQLSchema,
     *,
@@ -124,6 +154,8 @@ async def execute(
 
             async with extensions_runner.executing():
                 if not execution_context.result:
+                    _initialize_partial_errors(execution_context)
+
                     result = original_execute(
                         schema,
                         execution_context.graphql_document,
@@ -139,6 +171,15 @@ async def execute(
                         result = await result
 
                     execution_context.result = result
+
+                    partial_errors = _get_partial_errors(execution_context)
+                    if partial_errors:
+                        if not result.errors:
+                            result.errors = []
+                        # Add any partial errors manually added
+                        # to the list of errors automatically added
+                        result.errors.extend(partial_errors)
+
                     # Also set errors on the execution_context so that it's easier
                     # to access in extensions
                     if result.errors:
@@ -221,6 +262,8 @@ def execute_sync(
 
             with extensions_runner.executing():
                 if not execution_context.result:
+                    _initialize_partial_errors(execution_context)
+
                     result = original_execute(
                         schema,
                         execution_context.graphql_document,
@@ -239,6 +282,15 @@ def execute_sync(
                         )
 
                     execution_context.result = result
+
+                    partial_errors = _get_partial_errors(execution_context)
+                    if partial_errors:
+                        if not result.errors:
+                            result.errors = []
+                        # Add any partial errors manually added
+                        # to the list of errors automatically added
+                        result.errors.extend(partial_errors)
+
                     # Also set errors on the execution_context so that it's easier
                     # to access in extensions
                     if result.errors:
