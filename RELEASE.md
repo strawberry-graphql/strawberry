@@ -28,7 +28,8 @@ class Subscription:
 
 
 class MyExtension(SchemaExtension):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.count = 0
 
     async def on_operation(self):
@@ -94,7 +95,6 @@ From:
 ```py
 async def subscribe(
     self,
-    # TODO: make this optional when we support extensions
     query: str,
     variable_values: Optional[Dict[str, Any]] = None,
     context_value: Optional[Any] = None,
