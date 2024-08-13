@@ -11,33 +11,37 @@ from .models import ProductModel
 
 
 class CustomInfo(strawberry.Info):
-    def is_selected(self, field: str) -> bool:
-        """Check if the field is selected on the top-level of the query."""
-        return field in [sel.name for sel in info.selected_fields]
+    @property
+    def selected_group_id(self) -> int | None:
+        """Get the ID of the group you're logged in as."""
+        return self.context["request"].headers.get("Group-ID")
 
 
 @strawberry.type
-class Order: ...
-
-
-@strawberry.type
-class Product:
+class Group:
     id: strawberry.ID
-    orders: list[Order]
+    name: str
+
+
+@strawberry.type
+class User:
+    id: strawberry.ID
+    name: str
+    group: Group
 
 
 @strawberry.type
 class Query:
     @strawberry.field
-    def product(self, id: strawberry.ID, info: CustomInfo) -> Product:
-        kwargs = {"id": id}
+    def user(self, id: strawberry.ID, info: CustomInfo) -> Product:
+        kwargs = {"id": id, "name": ...}
 
-        if info.is_selected("orders"):
-            # Do some expensive operation here that we wouldn't want to
-            # do if the field wasn't selected.
-            kwargs["orders"] = ...
+        if info.selected_group_id is not None:
+            # Get information about the group you're a part of, if
+            # available.
+            kwargs["group"] = ...
 
-        return Product(**kwargs)
+        return User(**kwargs)
 
 
 schema = strawberry.Schema(
