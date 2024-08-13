@@ -87,7 +87,7 @@ pytest-xdist = {extras = ["psutil"], version = "^3.1.0"}
 python-multipart = ">=0.0.7"
 rich = {version = ">=12.5.1", optional = false}
 sanic-testing = ">=22.9,<24.0"
-sentry-sdk = "^1.39.2"
+sentry-sdk = ">=1.39.2,<3.0.0"
 typer = {version = ">=0.7.0", optional = false}
 types-aiofiles = ">=22.1"
 types-certifi = "^2021.10.8"
