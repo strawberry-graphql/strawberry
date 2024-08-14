@@ -24,8 +24,8 @@ class StrawberryConfig:
         if auto_camel_case is not None:
             self.name_converter.auto_camel_case = auto_camel_case
 
-        if not issubclass(self.info_class, Info):  # pragma: no cover
-            raise TypeError("`info_class` must be a subclass of strawberry.types.Info")
+        if not issubclass(self.info_class, Info):
+            raise TypeError("`info_class` must be a subclass of strawberry.Info")
 
 
 __all__ = ["StrawberryConfig"]
