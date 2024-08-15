@@ -181,7 +181,6 @@ type Mutation {
 > `PostInput` are Input types. Providing `posts: CollectionInput[Post]` to
 > `add_posts` (i.e. using the non-input `Post` type) would have resulted in an
 > error:
->
 > ```
 > PostCollectionInput fields cannot be resolved. Input field type must be a
 > GraphQL input type
