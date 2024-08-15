@@ -564,7 +564,7 @@ async def test_rejects_connection_params(aiohttp_app_client: HttpClient):
 
 
 @patch.object(MyExtension, MyExtension.get_results.__name__, return_value={})
-async def test_no_extensions_results(mock: MagicMock, aiohttp_app_client: HttpClient):
+async def test_no_extensions_results_wont_send_extensions_in_payload(mock: MagicMock, aiohttp_app_client: HttpClient):
     async with aiohttp_app_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
     ) as ws:

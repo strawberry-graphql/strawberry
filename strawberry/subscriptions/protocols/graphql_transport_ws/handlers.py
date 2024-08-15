@@ -282,11 +282,11 @@ class BaseGraphQLTransportWSHandler(ABC):
         try:
             first_res_or_agen = await result_source
             # that's an immediate error we should end the operation
-            # without COMPLETE message
+            # without a COMPLETE message
             if isinstance(first_res_or_agen, PreExecutionError):
                 assert first_res_or_agen.errors
                 await operation.send_initial_errors(first_res_or_agen.errors)
-            # that's a mutation result
+            # that's a mutation / query result
             elif isinstance(first_res_or_agen, ExecutionResult):
                 await operation.send_next(first_res_or_agen)
                 await operation.send_message(CompleteMessage(id=operation.id))
@@ -373,8 +373,7 @@ class Operation:
     async def send_next(self, execution_result: ExecutionResult) -> None:
         next_payload: NextPayload = {"data": execution_result.data}
         if execution_result.errors:
-            errors = [err.formatted for err in execution_result.errors]
-            next_payload["errors"] = errors
+            next_payload["errors"] = [err.formatted for err in execution_result.errors]
         if execution_result.extensions:
             next_payload["extensions"] = execution_result.extensions
         await self.send_message(NextMessage(id=self.id, payload=next_payload))

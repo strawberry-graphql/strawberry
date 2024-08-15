@@ -25,7 +25,7 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
     GQL_STOP,
 )
-from strawberry.types.execution import PreExecutionError
+from strawberry.types.execution import ExecutionResult, PreExecutionError
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 if TYPE_CHECKING:
@@ -166,12 +166,7 @@ class BaseGraphQLWSHandler(ABC):
             else:
                 self.subscriptions[operation_id] = agen_or_err
                 async for result in agen_or_err:
-                    payload: DataPayload = {"data": result.data}
-                    if result.errors:
-                        payload["errors"] = [err.formatted for err in result.errors]
-                    if result.extensions:
-                        payload["extensions"] = result.extensions
-                    await self.send_message(GQL_DATA, operation_id, payload)
+                    await self.send_data(result, operation_id)
                 await self.send_message(GQL_COMPLETE, operation_id, None)
         except asyncio.CancelledError:
             await self.send_message(GQL_COMPLETE, operation_id, None)
@@ -198,5 +193,12 @@ class BaseGraphQLWSHandler(ABC):
             data["payload"] = payload
         await self.send_json(data)
 
+    async def send_data(self, execution_result: ExecutionResult, operation_id: str) -> None:
+        payload: DataPayload = {"data": execution_result.data}
+        if execution_result.errors:
+            payload["errors"] = [err.formatted for err in execution_result.errors]
+        if execution_result.extensions:
+            payload["extensions"] = execution_result.extensions
+        await self.send_message(GQL_DATA, operation_id, payload)
 
 __all__ = ["BaseGraphQLWSHandler"]

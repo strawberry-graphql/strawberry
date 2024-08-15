@@ -914,7 +914,7 @@ async def test_subscription_errors_continue(ws: WebSocketClient):
 
 
 @patch.object(MyExtension, MyExtension.get_results.__name__, return_value={})
-async def test_no_extenions(mock: Mock, ws: WebSocketClient):
+async def test_no_extensions_results_wont_send_extensions_in_payload(mock: Mock, ws: WebSocketClient):
     await ws.send_json(
         SubscribeMessage(
             id="sub1",
