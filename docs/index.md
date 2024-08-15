@@ -181,6 +181,6 @@ Well done! You just created your first GraphQL API using Strawberry 🙌!
 
 Check out the following resources to learn more about GraphQL and Strawberry.
 
-- [Schema Basics](/docs/general/schema-basics.md)
-- [Resolvers](/docs/types/resolvers.md)
-- [Deployment](/docs/operations/deployment.md)
+- [Schema Basics](./general/schema-basics.md)
+- [Resolvers](./types/resolvers.md)
+- [Deployment](./operations/deployment.md)
