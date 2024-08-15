@@ -193,12 +193,15 @@ class BaseGraphQLWSHandler(ABC):
             data["payload"] = payload
         await self.send_json(data)
 
-    async def send_data(self, execution_result: ExecutionResult, operation_id: str) -> None:
+    async def send_data(
+        self, execution_result: ExecutionResult, operation_id: str
+    ) -> None:
         payload: DataPayload = {"data": execution_result.data}
         if execution_result.errors:
             payload["errors"] = [err.formatted for err in execution_result.errors]
         if execution_result.extensions:
             payload["extensions"] = execution_result.extensions
         await self.send_message(GQL_DATA, operation_id, payload)
+
 
 __all__ = ["BaseGraphQLWSHandler"]
