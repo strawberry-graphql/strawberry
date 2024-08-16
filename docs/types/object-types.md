@@ -28,7 +28,7 @@ schema (also referred as root types).
 - `Subscription` is the entry point for all the subscriptions.
 
 For a walk-through on how to define schemas, read the
-[schema basics](/docs/general/schema-basics.md).
+[schema basics](../general/schema-basics.md).
 
 ## Defining object types
 
