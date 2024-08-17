@@ -344,7 +344,7 @@ class StrawberryResolver(Generic[T]):
 
     @cached_property
     def is_async(self) -> bool:
-        return iscoroutinefunction(self._unbound_wrapped_func) or isasyncgenfunction(
+        return isinstance(self._unbound_wrapped_func, asgiref.sync.SyncToAsync) or iscoroutinefunction(self._unbound_wrapped_func) or isasyncgenfunction(
             self._unbound_wrapped_func
         )
 
