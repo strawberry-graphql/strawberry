@@ -3,8 +3,9 @@ from __future__ import annotations as _
 import inspect
 import sys
 import warnings
+from asyncio import iscoroutinefunction
 from functools import cached_property
-from inspect import isasyncgenfunction, iscoroutinefunction
+from inspect import isasyncgenfunction
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -344,12 +345,8 @@ class StrawberryResolver(Generic[T]):
 
     @cached_property
     def is_async(self) -> bool:
-        from asgiref.sync import SyncToAsync
-
-        return (
-            isinstance(self._unbound_wrapped_func, SyncToAsync)
-            or iscoroutinefunction(self._unbound_wrapped_func)
-            or isasyncgenfunction(self._unbound_wrapped_func)
+        return iscoroutinefunction(self._unbound_wrapped_func) or isasyncgenfunction(
+            self._unbound_wrapped_func
         )
 
     def copy_with(
