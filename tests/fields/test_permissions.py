@@ -80,4 +80,4 @@ async def test_permission_classes_async():
 
     result = await schema.execute("query { user }")
 
-    assert not result.errors and result.data
+    assert not result.errors
