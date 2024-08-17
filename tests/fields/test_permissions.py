@@ -1,8 +1,9 @@
 from typing import Any
 
 import pytest
-import strawberry
 from asgiref.sync import sync_to_async
+
+import strawberry
 from strawberry.permission import BasePermission
 
 
@@ -71,11 +72,12 @@ async def test_permission_classes_async():
 
     @strawberry.type
     class Query:
-        user: str = strawberry.field(resolver=resolver, permission_classes=[IsAuthenticated])
+        user: str = strawberry.field(
+            resolver=resolver, permission_classes=[IsAuthenticated]
+        )
 
     schema = strawberry.Schema(Query)
 
     result = await schema.execute("query { user }")
 
     assert not result.errors and result.data
-
