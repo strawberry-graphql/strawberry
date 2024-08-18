@@ -172,6 +172,12 @@ PARENT_PARAMSPEC = ReservedType(name=None, type=StrawberryParent)
 
 T = TypeVar("T")
 
+#  asyncio.iscoroutinefunction was deprecated in python >= 3.12
+if hasattr(inspect, "markcoroutinefunction"):
+    iscoroutinefunction = inspect.iscoroutinefunction
+else:
+    iscoroutinefunction = asyncio.iscoroutinefunction
+
 
 class StrawberryResolver(Generic[T]):
     RESERVED_PARAMSPEC: Tuple[ReservedParameterSpecification, ...] = (
@@ -345,10 +351,6 @@ class StrawberryResolver(Generic[T]):
 
     @cached_property
     def is_async(self) -> bool:
-        if hasattr(inspect, "markcoroutinefunction"):
-            iscoroutinefunction = inspect.iscoroutinefunction
-        else:
-            iscoroutinefunction = asyncio.iscoroutinefunction
         return iscoroutinefunction(self._unbound_wrapped_func) or isasyncgenfunction(
             self._unbound_wrapped_func
         )
