@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from typing import TYPE_CHECKING, AsyncGenerator
-from unittest.mock import MagicMock, patch
+from unittest import mock
 
 import pytest
 import pytest_asyncio
@@ -563,9 +563,9 @@ async def test_rejects_connection_params(aiohttp_app_client: HttpClient):
         assert ws.closed
 
 
-@patch.object(MyExtension, MyExtension.get_results.__name__, return_value={})
+@mock.patch.object(MyExtension, MyExtension.get_results.__name__, return_value={})
 async def test_no_extensions_results_wont_send_extensions_in_payload(
-    mock: MagicMock, aiohttp_app_client: HttpClient
+    mock: mock.MagicMock, aiohttp_app_client: HttpClient
 ):
     async with aiohttp_app_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]

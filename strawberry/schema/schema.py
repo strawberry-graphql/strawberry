@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from functools import lru_cache
+from functools import cached_property, lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -123,7 +123,6 @@ class Schema(BaseSchema):
         self.subscription = subscription
 
         self.extensions = extensions
-        self._cached_extensions: list[SchemaExtension] | None = None
         self._cached_middleware_manager: MiddlewareManager | None = None
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
@@ -215,19 +214,25 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
     def get_extensions(self, sync: bool = False) -> List[SchemaExtension]:
-        if not self._cached_extensions:
-            extensions = []
-            if self.directives:
-                extensions = [
-                    *self.extensions,
-                    DirectivesExtensionSync if sync else DirectivesExtension,
-                ]
-            extensions.extend(self.extensions)
-            self._cached_extensions = [
-                ext if isinstance(ext, SchemaExtension) else ext(execution_context=None)
-                for ext in extensions
+        extensions = []
+        if self.directives:
+            extensions = [
+                *self.extensions,
+                DirectivesExtensionSync if sync else DirectivesExtension,
             ]
-        return self._cached_extensions
+        extensions.extend(self.extensions)
+        return [
+            ext if isinstance(ext, SchemaExtension) else ext(execution_context=None)
+            for ext in extensions
+        ]
+
+    @cached_property
+    def _sync_extensions(self) -> List[SchemaExtension]:
+        return self.get_extensions(sync=True)
+
+    @cached_property
+    def _async_extensions(self) -> List[SchemaExtension]:
+        return self.get_extensions(sync=False)
 
     def create_extensions_runner(
         self, execution_context: ExecutionContext, extensions: list[SchemaExtension]
@@ -373,7 +378,7 @@ class Schema(BaseSchema):
             root_value=root_value,
             operation_name=operation_name,
         )
-        extensions = self.get_extensions(sync=True)
+        extensions = self._sync_extensions
         # TODO (#3571): remove this when we implement execution context as parameter.
         for extension in extensions:
             extension.execution_context = execution_context
@@ -405,7 +410,7 @@ class Schema(BaseSchema):
             root_value=root_value,
             operation_name=operation_name,
         )
-        extensions = self.get_extensions()
+        extensions = self._async_extensions
         # TODO (#3571): remove this when we implement execution context as parameter.
         for extension in extensions:
             extension.execution_context = execution_context
