@@ -172,7 +172,7 @@ PARENT_PARAMSPEC = ReservedType(name=None, type=StrawberryParent)
 
 T = TypeVar("T")
 
-#  asyncio.iscoroutinefunction was deprecated in python >= 3.12
+#  inspect.iscoroutinefunction returns True for a function decorated by @sync_to_async in python >= 3.12
 if hasattr(inspect, "markcoroutinefunction"):
     iscoroutinefunction = inspect.iscoroutinefunction
 else:
