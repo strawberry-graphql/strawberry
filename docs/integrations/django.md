@@ -280,5 +280,4 @@ class MyGraphQLView(AsyncGraphQLView):
 
 Subscriptions run over websockets and thus depend on
 [channels](https://channels.readthedocs.io/). Take a look at our
-[channels integraton](/docs/integrations/channels.md) page for more information
-regarding it.
+[channels integraton](./channels.md) page for more information regarding it.

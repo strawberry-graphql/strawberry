@@ -332,8 +332,8 @@ application = GraphQLProtocolTypeRouter(
 )
 ```
 
-Note: Check the [channels integraton](/docs/integrations/channels.md) page for
-more information regarding it.
+Note: Check the [channels integraton](../integrations/channels.md) page for more
+information regarding it.
 
 #### FastAPI
 
