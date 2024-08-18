@@ -1,9 +1,9 @@
 from __future__ import annotations as _
 
+import asyncio
 import inspect
 import sys
 import warnings
-from asyncio import iscoroutinefunction
 from functools import cached_property
 from inspect import isasyncgenfunction
 from typing import (
@@ -345,6 +345,10 @@ class StrawberryResolver(Generic[T]):
 
     @cached_property
     def is_async(self) -> bool:
+        if hasattr(inspect, "markcoroutinefunction"):
+            iscoroutinefunction = inspect.iscoroutinefunction
+        else:
+            iscoroutinefunction = asyncio.iscoroutinefunction
         return iscoroutinefunction(self._unbound_wrapped_func) or isasyncgenfunction(
             self._unbound_wrapped_func
         )

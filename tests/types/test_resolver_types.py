@@ -98,7 +98,7 @@ def test_union():
     assert resolver.type == Union[Venn, Diagram]
 
 
-def test_async_resolver():
+def test_sync_to_async_resolver():
     @sync_to_async
     def async_resolver() -> str:
         return "patrick"
