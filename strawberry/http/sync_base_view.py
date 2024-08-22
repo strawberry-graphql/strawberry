@@ -21,6 +21,7 @@ from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
+from strawberry.types.context_wrapper import ContextWrapper
 from strawberry.types.graphql import OperationType
 
 from .base import BaseView
@@ -112,11 +113,15 @@ class SyncBaseHTTPView(
 
         assert self.schema
 
+        context_wrapper = ContextWrapper(
+            context=context, extensions=request_data.extensions
+        )
+
         return self.schema.execute_sync(
             request_data.query,
             root_value=root_value,
             variable_values=request_data.variables,
-            context_value=context,
+            context_value=context_wrapper,
             operation_name=request_data.operation_name,
             allowed_operation_types=allowed_operation_types,
         )
@@ -146,6 +151,7 @@ class SyncBaseHTTPView(
             query=data.get("query"),
             variables=data.get("variables"),
             operation_name=data.get("operationName"),
+            extensions=data.get("extensions"),
         )
 
     def _handle_errors(
