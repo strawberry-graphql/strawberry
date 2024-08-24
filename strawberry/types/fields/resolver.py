@@ -172,7 +172,8 @@ PARENT_PARAMSPEC = ReservedType(name=None, type=StrawberryParent)
 
 T = TypeVar("T")
 
-#  inspect.iscoroutinefunction returns True for a function decorated by @sync_to_async in python >= 3.12
+# in python >= 3.12 coroutine functions are market using inspect.markcoroutinefunction,
+# which should be checked with inspect.iscoroutinefunction instead of asyncio.iscoroutinefunction
 if hasattr(inspect, "markcoroutinefunction"):
     iscoroutinefunction = inspect.iscoroutinefunction
 else:
