@@ -143,11 +143,11 @@ jobs:
             ~/.nox
             .nox
           key:
-            ${{ runner.os }}-nox-lint-${{ matrix.session.session }}-${{
+            ${{ runner.os }}-nox-lint-2-${{ matrix.session.session }}-${{
             hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
           restore-keys: |
-            ${{ runner.os }}-lint-nox-${{ matrix.session.session }}-
-            ${{ runner.os }}-lint-nox-
+            ${{ runner.os }}-lint-nox-2-${{ matrix.session.session }}-
+            ${{ runner.os }}-lint-nox-2-
 
       - run: pip install poetry
       - run: pip install nox nox-poetry
