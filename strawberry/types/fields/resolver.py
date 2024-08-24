@@ -177,7 +177,7 @@ T = TypeVar("T")
 if hasattr(inspect, "markcoroutinefunction"):
     iscoroutinefunction = inspect.iscoroutinefunction
 else:
-    iscoroutinefunction = asyncio.iscoroutinefunction
+    iscoroutinefunction = asyncio.iscoroutinefunction  # type: ignore[assignment]
 
 
 class StrawberryResolver(Generic[T]):
