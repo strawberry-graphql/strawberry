@@ -138,12 +138,13 @@ class SyncBaseHTTPView(
     def parse_http_body(self, request: SyncHTTPRequestAdapter) -> GraphQLRequestData:
         content_type, params = parse_content_type(request.content_type or "")
 
-        if "application/json" in content_type:
+        if request.method == "GET":
+            data = self.parse_query_params(request.query_params)
+        elif "application/json" in content_type:
             data = self.parse_json(request.body)
+        # TODO: multipart via get?
         elif content_type == "multipart/form-data":
             data = self.parse_multipart(request)
-        elif request.method == "GET":
-            data = self.parse_query_params(request.query_params)
         elif self._is_multipart_subscriptions(content_type, params):
             raise HTTPException(
                 400, "Multipart subcriptions are not supported in sync mode"
