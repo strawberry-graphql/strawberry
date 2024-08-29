@@ -4,7 +4,6 @@ from typing import Dict, Tuple
 
 def parse_content_type(content_type: str) -> Tuple[str, Dict[str, str]]:
     """Parse a content type header into a mime-type and a dictionary of parameters."""
-
     email = Message()
     email["content-type"] = content_type
 
