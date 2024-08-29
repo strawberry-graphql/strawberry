@@ -4,7 +4,6 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    List,
     Mapping,
     Optional,
     Union,
@@ -30,11 +29,11 @@ if TYPE_CHECKING:
 
 
 class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
-    def __init__(self, request: Request):
+    def __init__(self, request: Request) -> None:
         self.request = request
 
     @property
-    def query_params(self) -> Mapping[str, Union[str, Optional[List[str]]]]:
+    def query_params(self) -> QueryParams:
         return self.request.args.to_dict()
 
     @property
@@ -72,7 +71,7 @@ class BaseGraphQLView:
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
-    ):
+    ) -> None:
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
@@ -127,7 +126,7 @@ class GraphQLView(
 
 
 class AsyncFlaskHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request):
+    def __init__(self, request: Request) -> None:
         self.request = request
 
     @property
@@ -185,3 +184,9 @@ class AsyncGraphQLView(
 
     async def render_graphql_ide(self, request: Request) -> Response:
         return render_template_string(self.graphql_ide_html)  # type: ignore
+
+
+__all__ = [
+    "GraphQLView",
+    "AsyncGraphQLView",
+]

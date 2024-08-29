@@ -1,5 +1,5 @@
 ---
-title: AddValidationRules
+title: Add Validation Rules
 summary: Add GraphQL validation rules.
 tags: validation,security
 ---

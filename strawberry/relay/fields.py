@@ -9,6 +9,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncIterator,
+    Awaitable,
     Callable,
     DefaultDict,
     Dict,
@@ -28,21 +29,22 @@ from typing import (
 from typing_extensions import Annotated, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument, argument
 from strawberry.extensions.field_extension import (
     AsyncExtensionResolver,
     FieldExtension,
     SyncExtensionResolver,
 )
-from strawberry.field import _RESOLVER_TYPE, StrawberryField, field
 from strawberry.relay.exceptions import (
     RelayWrongAnnotationError,
     RelayWrongResolverAnnotationError,
 )
-from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.types.arguments import StrawberryArgument, argument
+from strawberry.types.base import StrawberryList, StrawberryOptional
+from strawberry.types.field import _RESOLVER_TYPE, StrawberryField, field
 from strawberry.types.fields.resolver import StrawberryResolver
+from strawberry.types.lazy_type import LazyType
 from strawberry.utils.aio import asyncgen_to_list
-from strawberry.utils.typing import eval_type
+from strawberry.utils.typing import eval_type, is_generic_alias
 
 from .types import Connection, GlobalID, Node, NodeIterableType, NodeType
 
@@ -60,7 +62,7 @@ class NodeExtension(FieldExtension):
         if isinstance(field.type, StrawberryList):
             resolver = self.get_node_list_resolver(field)
         else:
-            resolver = self.get_node_resolver(field)
+            resolver = self.get_node_resolver(field)  # type: ignore
 
         field.base_resolver = StrawberryResolver(resolver, type_override=field.type)
 
@@ -79,14 +81,16 @@ class NodeExtension(FieldExtension):
         # async extensions.
         return await retval if inspect.isawaitable(retval) else retval
 
-    def get_node_resolver(self, field: StrawberryField):  # noqa: ANN201
+    def get_node_resolver(
+        self, field: StrawberryField
+    ) -> Callable[[Info, GlobalID], Union[Node, None, Awaitable[Union[Node, None]]]]:
         type_ = field.type
         is_optional = isinstance(type_, StrawberryOptional)
 
         def resolver(
             info: Info,
             id: Annotated[GlobalID, argument(description="The ID of the object.")],
-        ):
+        ) -> Union[Node, None, Awaitable[Union[Node, None]]]:
             return id.resolve_type(info).resolve_node(
                 id.node_id,
                 info=info,
@@ -95,7 +99,9 @@ class NodeExtension(FieldExtension):
 
         return resolver
 
-    def get_node_list_resolver(self, field: StrawberryField):  # noqa: ANN201
+    def get_node_list_resolver(
+        self, field: StrawberryField
+    ) -> Callable[[Info, List[GlobalID]], Union[List[Node], Awaitable[List[Node]]]]:
         type_ = field.type
         assert isinstance(type_, StrawberryList)
         is_optional = isinstance(type_.of_type, StrawberryOptional)
@@ -105,7 +111,7 @@ class NodeExtension(FieldExtension):
             ids: Annotated[
                 List[GlobalID], argument(description="The IDs of the objects.")
             ],
-        ):
+        ) -> Union[List[Node], Awaitable[List[Node]]]:
             nodes_map: DefaultDict[Type[Node], List[str]] = defaultdict(list)
             # Store the index of the node in the list of nodes of the same type
             # so that we can return them in the same order while also supporting
@@ -138,7 +144,7 @@ class NodeExtension(FieldExtension):
 
             if awaitable_nodes or asyncgen_nodes:
 
-                async def resolve(resolved=resolved_nodes):  # noqa: ANN001
+                async def resolve(resolved: Any = resolved_nodes) -> List[Node]:
                     resolved.update(
                         zip(
                             [
@@ -149,7 +155,7 @@ class NodeExtension(FieldExtension):
                             await asyncio.gather(
                                 *awaitable_nodes.values(),
                                 *(
-                                    asyncgen_to_list(nodes)
+                                    asyncgen_to_list(nodes)  # type: ignore
                                     for nodes in asyncgen_nodes.values()
                                 ),
                             ),
@@ -222,7 +228,13 @@ class ConnectionExtension(FieldExtension):
         ]
 
         f_type = field.type
-        if not isinstance(f_type, type) or not issubclass(f_type, Connection):
+
+        if isinstance(f_type, LazyType):
+            f_type = f_type.resolve_type()
+            field.type = f_type
+
+        type_origin = get_origin(f_type) if is_generic_alias(f_type) else f_type
+        if not isinstance(type_origin, type) or not issubclass(type_origin, Connection):
             raise RelayWrongAnnotationError(field.name, cast(type, field.origin))
 
         assert field.base_resolver
@@ -331,8 +343,7 @@ def connection(
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
     extensions: List[FieldExtension] = (),  # type: ignore
-) -> Any:
-    ...
+) -> Any: ...
 
 
 @overload
@@ -349,8 +360,7 @@ def connection(
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
     extensions: List[FieldExtension] = (),  # type: ignore
-) -> StrawberryField:
-    ...
+) -> StrawberryField: ...
 
 
 def connection(
@@ -384,48 +394,66 @@ def connection(
     case for this is to provide a filtered iterable of nodes by using some custom
     filter arguments.
 
+    Args:
+        graphql_type: The type of the nodes in the connection. This is used to
+            determine the type of the edges and the node field in the connection.
+        resolver: The resolver for the connection. This is expected to return an
+            iterable of the expected node type.
+        name: The GraphQL name of the field.
+        is_subscription: Whether the field is a subscription.
+        description: The GraphQL description of the field.
+        permission_classes: The permission classes to apply to the field.
+        deprecation_reason: The deprecation reason of the field.
+        default: The default value of the field.
+        default_factory: The default factory of the field.
+        metadata: The metadata of the field.
+        directives: The directives to apply to the field.
+        extensions: The extensions to apply to the field.
+        init: Used only for type checking purposes.
+
     Examples:
-        Annotating something like this:
+    Annotating something like this:
 
-        >>> @strawberry.type
-        >>> class X:
-        ...     some_node: relay.Connection[SomeType] = relay.connection(
-                    resolver=get_some_nodes,
-        ...         description="ABC",
-        ...     )
-        ...
-        ...     @relay.connection(relay.Connection[SomeType], description="ABC")
-        ...     def get_some_nodes(self, age: int) -> Iterable[SomeType]:
-        ...         ...
+    ```python
+    @strawberry.type
+    class X:
+        some_node: relay.Connection[SomeType] = relay.connection(
+            resolver=get_some_nodes,
+            description="ABC",
+        )
 
-        Will produce a query like this:
+        @relay.connection(relay.Connection[SomeType], description="ABC")
+        def get_some_nodes(self, age: int) -> Iterable[SomeType]: ...
+    ```
 
-        ```
-        query {
-            someNode (
-                before: String
-                after: String
-                first: String
-                after: String
-                age: Int
-            ) {
-                totalCount
-                pageInfo {
-                    hasNextPage
-                    hasPreviousPage
-                    startCursor
-                    endCursor
-                }
-                edges {
-                    cursor
-                    node {
-                        id
-                        ...
-                    }
+    Will produce a query like this:
+
+    ```graphql
+    query {
+        someNode (
+            before: String
+            after: String
+            first: String
+            after: String
+            age: Int
+        ) {
+            totalCount
+            pageInfo {
+                hasNextPage
+                hasPreviousPage
+                startCursor
+                endCursor
+            }
+            edges {
+                cursor
+                node {
+                    id
+                    ...
                 }
             }
         }
-        ```
+    }
+    ```
 
     .. _Relay connections:
         https://relay.dev/graphql/connections.htm
@@ -448,3 +476,6 @@ def connection(
     if resolver is not None:
         f = f(resolver)
     return f
+
+
+__all__ = ["node", "connection"]

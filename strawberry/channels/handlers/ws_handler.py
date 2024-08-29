@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class GraphQLWSConsumer(ChannelsWSConsumer):
-    """A channels websocket consumer for GraphQL
+    """A channels websocket consumer for GraphQL.
 
     This handles the connections, then hands off to the appropriate
     handler based on the subprotocol.
@@ -54,7 +54,7 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
             GRAPHQL_WS_PROTOCOL,
         ),
         connection_init_wait_timeout: Optional[datetime.timedelta] = None,
-    ):
+    ) -> None:
         if connection_init_wait_timeout is None:
             connection_init_wait_timeout = datetime.timedelta(minutes=1)
         self.connection_init_wait_timeout = connection_init_wait_timeout
@@ -126,3 +126,6 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
             "connection_params": connection_params,
             "ws": request,
         }  # type: ignore
+
+
+__all__ = ["GraphQLWSConsumer"]

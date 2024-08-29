@@ -1,6 +1,7 @@
 import dataclasses
+import textwrap
 import types
-from typing import ClassVar, List, no_type_check
+from typing import Any, ClassVar, List, no_type_check
 
 import pytest
 
@@ -17,7 +18,6 @@ from strawberry.types.fields.resolver import (
     StrawberryResolver,
     UncallableResolverError,
 )
-from strawberry.types.info import Info
 
 
 def test_resolver_as_argument():
@@ -222,7 +222,8 @@ def test_raises_error_when_missing_annotation_and_resolver():
 def test_raises_error_when_missing_type():
     """Test to make sure that if somehow a non-StrawberryField field is added to the cls
     without annotations it raises an exception. This would occur if someone manually
-    uses dataclasses.field"""
+    uses dataclasses.field
+    """
 
     @strawberry.type
     class Query:
@@ -279,8 +280,7 @@ def test_raises_error_when_missing_type_on_longish_class():
 
 def test_raises_error_calling_uncallable_resolver():
     @classmethod  # type: ignore
-    def class_func(cls) -> int:
-        ...
+    def class_func(cls) -> int: ...
 
     # Note that class_func is a raw classmethod object because it has not been bound
     # to a class at this point
@@ -362,7 +362,7 @@ def root_and_info(
     foo: str,
     bar: float,
     info: str,
-    strawberry_info: Info,
+    strawberry_info: strawberry.Info,
 ) -> str:
     raise AssertionError("Unreachable code.")
 
@@ -372,7 +372,7 @@ def self_and_info(
     foo: str,
     bar: float,
     info: str,
-    strawberry_info: Info,
+    strawberry_info: strawberry.Info,
 ) -> str:
     raise AssertionError("Unreachable code.")
 
@@ -382,7 +382,7 @@ def parent_and_info(
     foo: str,
     bar: float,
     info: str,
-    strawberry_info: Info,
+    strawberry_info: strawberry.Info,
 ) -> str:
     raise AssertionError("Unreachable code.")
 
@@ -455,3 +455,83 @@ def test_parameter_hash_collision():
 
     assert len(parameters_map) == 2
     assert len(parameters_set) == 2
+
+
+def test_annotation_using_parent_annotation():
+    @strawberry.type
+    class FruitType:
+        name: str
+
+        @strawberry.field
+        @staticmethod
+        def name_from_parent(parent: strawberry.Parent[Any]) -> str:
+            return f"Using 'parent': {parent.name}"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        @staticmethod
+        def fruit() -> FruitType:
+            return FruitType(name="Strawberry")
+
+    schema = strawberry.Schema(query=Query)
+    expected = """\
+      type FruitType {
+        name: String!
+        nameFromParent: String!
+      }
+
+      type Query {
+        fruit: FruitType!
+      }
+    """
+
+    assert textwrap.dedent(str(schema)) == textwrap.dedent(expected).strip()
+
+    result = schema.execute_sync("query { fruit { name nameFromParent } }")
+    assert result.data == {
+        "fruit": {
+            "name": "Strawberry",
+            "nameFromParent": "Using 'parent': Strawberry",
+        }
+    }
+
+
+def test_annotation_using_parent_annotation_but_named_root():
+    @strawberry.type
+    class FruitType:
+        name: str
+
+        @strawberry.field
+        @staticmethod
+        def name_from_parent(root: strawberry.Parent[Any]) -> str:
+            return f"Using 'root': {root.name}"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        @staticmethod
+        def fruit() -> FruitType:
+            return FruitType(name="Strawberry")
+
+    schema = strawberry.Schema(query=Query)
+    expected = """\
+      type FruitType {
+        name: String!
+        nameFromParent: String!
+      }
+
+      type Query {
+        fruit: FruitType!
+      }
+    """
+
+    assert textwrap.dedent(str(schema)) == textwrap.dedent(expected).strip()
+
+    result = schema.execute_sync("query { fruit { name nameFromParent } }")
+    assert result.data == {
+        "fruit": {
+            "name": "Strawberry",
+            "nameFromParent": "Using 'root': Strawberry",
+        }
+    }

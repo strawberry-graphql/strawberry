@@ -28,7 +28,7 @@ class SchemaExtensionsRunner:
         extensions: Optional[
             List[Union[Type[SchemaExtension], SchemaExtension]]
         ] = None,
-    ):
+    ) -> None:
         self.execution_context = execution_context
 
         if not extensions:
@@ -84,3 +84,6 @@ class SchemaExtensionsRunner:
         middlewares = tuple(self.extensions) + additional_middlewares
 
         return MiddlewareManager(*middlewares)
+
+
+__all__ = ["SchemaExtensionsRunner"]

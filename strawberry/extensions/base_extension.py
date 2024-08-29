@@ -21,31 +21,31 @@ class LifecycleStep(Enum):
 class SchemaExtension:
     execution_context: ExecutionContext
 
-    def __init__(self, *, execution_context: ExecutionContext):
+    def __init__(self, *, execution_context: ExecutionContext) -> None:
         self.execution_context = execution_context
 
-    def on_operation(
+    def on_operation(  # type: ignore
         self,
-    ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover # pyright: ignore
-        """Called before and after a GraphQL operation (query / mutation) starts"""
+    ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
+        """Called before and after a GraphQL operation (query / mutation) starts."""
         yield None
 
-    def on_validate(
+    def on_validate(  # type: ignore
         self,
-    ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover # pyright: ignore
-        """Called before and after the validation step"""
+    ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
+        """Called before and after the validation step."""
         yield None
 
-    def on_parse(
+    def on_parse(  # type: ignore
         self,
-    ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover # pyright: ignore
-        """Called before and after the parsing step"""
+    ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
+        """Called before and after the parsing step."""
         yield None
 
-    def on_execute(
+    def on_execute(  # type: ignore
         self,
-    ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover # pyright: ignore
-        """Called before and after the execution step"""
+    ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
+        """Called before and after the execution step."""
         yield None
 
     def resolve(
@@ -70,3 +70,5 @@ HOOK_METHODS: Set[str] = {
     SchemaExtension.on_parse.__name__,
     SchemaExtension.on_execute.__name__,
 }
+
+__all__ = ["SchemaExtension", "Hook", "HOOK_METHODS", "LifecycleStep"]

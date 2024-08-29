@@ -1,5 +1,5 @@
 ---
-title: DisableValidation
+title: Disable Validation
 summary: Disable all query validation.
 tags: performance,validation
 ---

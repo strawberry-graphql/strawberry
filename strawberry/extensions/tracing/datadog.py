@@ -21,13 +21,14 @@ class DatadogTracingExtension(SchemaExtension):
         self,
         *,
         execution_context: Optional[ExecutionContext] = None,
-    ):
+    ) -> None:
         if execution_context:
             self.execution_context = execution_context
 
     @cached_property
-    def _resource_name(self):
-        assert self.execution_context.query
+    def _resource_name(self) -> str:
+        if self.execution_context.query is None:
+            return "query_missing"
 
         query_hash = self.hash_query(self.execution_context.query)
 
@@ -42,18 +43,20 @@ class DatadogTracingExtension(SchemaExtension):
         name: str,
         **kwargs: Any,
     ) -> Span:
-        """
-        Create a span with the given name and kwargs.
+        """Create a span with the given name and kwargs.
+
         You can  override this if you want to add more tags to the span.
 
         Example:
 
+        ```python
         class CustomExtension(DatadogTracingExtension):
             def create_span(self, lifecycle_step, name, **kwargs):
                 span = super().create_span(lifecycle_step, name, **kwargs)
                 if lifecycle_step == LifeCycleStep.OPERATION:
                     span.set_tag("graphql.query", self.execution_context.query)
                 return span
+        ```
         """
         return tracer.trace(
             name,
@@ -78,15 +81,23 @@ class DatadogTracingExtension(SchemaExtension):
         )
         self.request_span.set_tag("graphql.operation_name", self._operation_name)
 
-        assert self.execution_context.query
+        query = self.execution_context.query
 
-        operation_type = "query"
-        if self.execution_context.query.strip().startswith("mutation"):
-            operation_type = "mutation"
-        elif self.execution_context.query.strip().startswith("subscription"):
-            operation_type = "subscription"
+        if query is not None:
+            query = query.strip()
+            operation_type = "query"
+
+            if query.startswith("mutation"):
+                operation_type = "mutation"
+            elif query.startswith("subscription"):  # pragma: no cover
+                operation_type = "subscription"
+        else:
+            operation_type = "query_missing"
+
         self.request_span.set_tag("graphql.operation_type", operation_type)
+
         yield
+
         self.request_span.finish()
 
     def on_validate(self) -> Generator[None, None, None]:
@@ -164,3 +175,6 @@ class DatadogTracingExtensionSync(DatadogTracingExtension):
             span.set_tag("graphql.path", ".".join(map(str, info.path.as_list())))
 
             return _next(root, info, *args, **kwargs)
+
+
+__all__ = ["DatadogTracingExtension", "DatadogTracingExtensionSync"]

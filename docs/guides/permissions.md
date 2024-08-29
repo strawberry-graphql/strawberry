@@ -13,14 +13,15 @@ like this:
 import typing
 import strawberry
 from strawberry.permission import BasePermission
-from strawberry.types import Info
 
 
 class IsAuthenticated(BasePermission):
     message = "User is not authenticated"
 
     # This method can also be async!
-    def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+    def has_permission(
+        self, source: typing.Any, info: strawberry.Info, **kwargs
+    ) -> bool:
         return False
 
 
@@ -77,13 +78,14 @@ from myauth import authenticate_header, authenticate_query_param
 from starlette.requests import Request
 from starlette.websockets import WebSocket
 from strawberry.permission import BasePermission
-from strawberry.types import Info
 
 
 class IsAuthenticated(BasePermission):
     message = "User is not authenticated"
 
-    def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+    def has_permission(
+        self, source: typing.Any, info: strawberry.Info, **kwargs
+    ) -> bool:
         request: typing.Union[Request, WebSocket] = info.context["request"]
 
         if "Authorization" in request.headers:
@@ -124,7 +126,6 @@ as specified in the
 import typing
 
 from strawberry.permission import BasePermission
-from strawberry.types import Info
 
 from your_business_logic import GQLNotImplementedError
 
@@ -134,7 +135,9 @@ class IsAuthenticated(BasePermission):
     error_class = GQLNotImplementedError
     error_extensions = {"code": "UNAUTHORIZED"}
 
-    def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+    def has_permission(
+        self, source: typing.Any, info: strawberry.Info, **kwargs
+    ) -> bool:
         return False
 ```
 
@@ -178,8 +181,8 @@ client. To return `None` or `[]` instead of raising an error, the
 `fail_silently ` keyword argument on `PermissionExtension` can be set to `True`:
 
 <Warning>
-Note that this will only work if the field returns a type that
-is nullable or a list, e.g. `Optional[str]` or `List[str]`.
+  Note that this will only work if the field returns a type that is nullable or
+  a list, e.g. `Optional[str]` or `List[str]`.
 </Warning>
 
 ```python

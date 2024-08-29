@@ -38,3 +38,14 @@ class OperationMessage(TypedDict, total=False):
     type: str
     id: str
     payload: OperationMessagePayload
+
+
+__all__ = [
+    "ConnectionInitPayload",
+    "ConnectionErrorPayload",
+    "StartPayload",
+    "DataPayload",
+    "ErrorPayload",
+    "OperationMessagePayload",
+    "OperationMessage",
+]

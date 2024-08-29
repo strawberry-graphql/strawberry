@@ -60,7 +60,8 @@ the following:
 
 ```python
 import datetime
-from typing import List, Union, Optional
+import decimal
+from typing import List, Optional
 
 import strawberry
 

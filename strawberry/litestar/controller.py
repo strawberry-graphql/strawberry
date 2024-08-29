@@ -220,9 +220,9 @@ class GraphQLController(
 
     request_adapter_class = LitestarRequestAdapter
     graphql_ws_handler_class: Type[GraphQLWSHandler] = GraphQLWSHandler
-    graphql_transport_ws_handler_class: Type[
+    graphql_transport_ws_handler_class: Type[GraphQLTransportWSHandler] = (
         GraphQLTransportWSHandler
-    ] = GraphQLTransportWSHandler
+    )
 
     allow_queries_via_get: bool = True
     graphiql_allowed_accept: FrozenSet[str] = frozenset({"text/html", "*/*"})
@@ -347,10 +347,10 @@ class GraphQLController(
         context_ws: Any,
         root_value: Any,
     ) -> None:
-        async def _get_context():
+        async def _get_context() -> Any:
             return context_ws
 
-        async def _get_root_value():
+        async def _get_root_value() -> Any:
             return root_value
 
         preferred_protocol = self.pick_preferred_protocol(socket)
@@ -455,3 +455,9 @@ def make_graphql_controller(
     _GraphQLController.graphql_ide = graphql_ide_
 
     return _GraphQLController
+
+
+__all__ = [
+    "make_graphql_controller",
+    "GraphQLController",
+]

@@ -9,7 +9,7 @@ from strawberry.exceptions.utils.source_finder import SourceFinder
 from .exception import StrawberryException
 
 if TYPE_CHECKING:
-    from strawberry.custom_scalar import ScalarDefinition
+    from strawberry.types.scalar import ScalarDefinition
 
     from .exception_source import ExceptionSource
 
@@ -19,7 +19,7 @@ class ScalarAlreadyRegisteredError(StrawberryException):
         self,
         scalar_definition: ScalarDefinition,
         other_scalar_definition: ScalarDefinition,
-    ):
+    ) -> None:
         self.scalar_definition = scalar_definition
 
         scalar_name = scalar_definition.name

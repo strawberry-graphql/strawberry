@@ -13,10 +13,11 @@ from typing import (
     cast,
 )
 
+from pydantic import BaseModel
+
 from strawberry.experimental.pydantic._compat import (
-    PYDANTIC_MISSING_TYPE,
     CompatModelField,
-    get_model_fields,
+    PydanticCompat,
     smart_deepcopy,
 )
 from strawberry.experimental.pydantic.exceptions import (
@@ -24,8 +25,8 @@ from strawberry.experimental.pydantic.exceptions import (
     BothDefaultAndDefaultFactoryDefinedError,
     UnregisteredTypeException,
 )
-from strawberry.private import is_private
-from strawberry.unset import UNSET
+from strawberry.types.private import is_private
+from strawberry.types.unset import UNSET
 from strawberry.utils.typing import (
     get_list_annotation,
     get_optional_annotation,
@@ -34,7 +35,6 @@ from strawberry.utils.typing import (
 )
 
 if TYPE_CHECKING:
-    from pydantic import BaseModel
     from pydantic.typing import NoArgAnyCallable
 
 
@@ -60,7 +60,7 @@ def get_private_fields(cls: Type) -> List[dataclasses.Field]:
 
 
 class DataclassCreationFields(NamedTuple):
-    """Fields required for the fields parameter of make_dataclass"""
+    """Fields required for the fields parameter of make_dataclass."""
 
     name: str
     field_type: Type
@@ -73,9 +73,9 @@ class DataclassCreationFields(NamedTuple):
 
 def get_default_factory_for_field(
     field: CompatModelField,
+    compat: PydanticCompat,
 ) -> Union[NoArgAnyCallable, dataclasses._MISSING_TYPE]:
-    """
-    Gets the default factory for a pydantic field.
+    """Gets the default factory for a pydantic field.
 
     Handles mutable defaults when making the dataclass by
     using pydantic's smart_deepcopy
@@ -83,12 +83,8 @@ def get_default_factory_for_field(
     Returns optionally a NoArgAnyCallable representing a default_factory parameter
     """
     # replace dataclasses.MISSING with our own UNSET to make comparisons easier
-    default_factory = (
-        field.default_factory
-        if field.default_factory is not PYDANTIC_MISSING_TYPE
-        else UNSET
-    )
-    default = field.default if field.default is not PYDANTIC_MISSING_TYPE else UNSET
+    default_factory = field.default_factory if field.has_default_factory else UNSET
+    default = field.default if field.has_default else UNSET
 
     has_factory = default_factory is not None and default_factory is not UNSET
     has_default = default is not None and default is not UNSET
@@ -110,9 +106,14 @@ def get_default_factory_for_field(
         return default_factory
 
     # if we have a default, we should return it
-
     if has_default:
-        return lambda: smart_deepcopy(default)
+        # if the default value is a pydantic base model
+        # we should return the serialized version of that default for
+        # printing the value.
+        if isinstance(default, BaseModel):
+            return lambda: compat.model_dump(default)
+        else:
+            return lambda: smart_deepcopy(default)
 
     # if we don't have default or default_factory, but the field is not required,
     # we should return a factory that returns None
@@ -126,8 +127,9 @@ def get_default_factory_for_field(
 def ensure_all_auto_fields_in_pydantic(
     model: Type[BaseModel], auto_fields: Set[str], cls_name: str
 ) -> None:
+    compat = PydanticCompat.from_model(model)
     # Raise error if user defined a strawberry.auto field not present in the model
-    non_existing_fields = list(auto_fields - get_model_fields(model).keys())
+    non_existing_fields = list(auto_fields - compat.get_model_fields(model).keys())
 
     if non_existing_fields:
         raise AutoFieldsNotInBaseModelError(

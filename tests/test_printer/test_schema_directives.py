@@ -7,7 +7,8 @@ import strawberry
 from strawberry.printer import print_schema
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema_directive import Location
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
+from tests.conftest import skip_if_gql_32
 
 
 def test_print_simple_directive():
@@ -58,6 +59,7 @@ def test_print_directive_with_name():
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
+@skip_if_gql_32("formatting is different in gql 3.2")
 def test_directive_on_types():
     @strawberry.input
     class SensitiveValue:
@@ -132,7 +134,7 @@ def test_directive_on_types():
     type User @sensitiveData(reason: "GDPR") {
       firstName: String!
       age: Int!
-      phone: String! @sensitiveData(reason: "PRIVATE", meta: [{key: "can_share_field", value: "phone_share_accepted"}])
+      phone: String! @sensitiveData(reason: "PRIVATE", meta: [{ key: "can_share_field", value: "phone_share_accepted" }])
       phoneShareAccepted: Boolean!
     }
 
@@ -323,6 +325,7 @@ def test_prints_multiple_directives_on_schema():
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
+@skip_if_gql_32("formatting is different in gql 3.2")
 def test_prints_with_types():
     @strawberry.input
     class SensitiveConfiguration:
@@ -342,7 +345,7 @@ def test_prints_with_types():
     directive @sensitive(config: SensitiveConfiguration!) on FIELD_DEFINITION
 
     type Query {
-      firstName: String! @sensitive(config: {reason: "example"})
+      firstName: String! @sensitive(config: { reason: "example" })
     }
 
     input SensitiveConfiguration {

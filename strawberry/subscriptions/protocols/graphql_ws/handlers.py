@@ -39,7 +39,7 @@ class BaseGraphQLWSHandler(ABC):
         debug: bool,
         keep_alive: bool,
         keep_alive_interval: float,
-    ):
+    ) -> None:
         self.schema = schema
         self.debug = debug
         self.keep_alive = keep_alive
@@ -51,23 +51,23 @@ class BaseGraphQLWSHandler(ABC):
 
     @abstractmethod
     async def get_context(self) -> Any:
-        """Return the operations context"""
+        """Return the operations context."""
 
     @abstractmethod
     async def get_root_value(self) -> Any:
-        """Return the schemas root value"""
+        """Return the schemas root value."""
 
     @abstractmethod
     async def send_json(self, data: OperationMessage) -> None:
-        """Send the data JSON encoded to the WebSocket client"""
+        """Send the data JSON encoded to the WebSocket client."""
 
     @abstractmethod
     async def close(self, code: int = 1000, reason: Optional[str] = None) -> None:
-        """Close the WebSocket with the passed code and reason"""
+        """Close the WebSocket with the passed code and reason."""
 
     @abstractmethod
     async def handle_request(self) -> Any:
-        """Handle the request this instance was created for"""
+        """Handle the request this instance was created for."""
 
     async def handle(self) -> Any:
         return await self.handle_request()
@@ -190,7 +190,8 @@ class BaseGraphQLWSHandler(ABC):
         await self.send_message(GQL_COMPLETE, operation_id, None)
 
     async def cleanup_operation(self, operation_id: str) -> None:
-        await self.subscriptions[operation_id].aclose()
+        with suppress(RuntimeError):
+            await self.subscriptions[operation_id].aclose()
         del self.subscriptions[operation_id]
 
         self.tasks[operation_id].cancel()
@@ -208,3 +209,6 @@ class BaseGraphQLWSHandler(ABC):
         if payload is not None:
             data["payload"] = payload
         await self.send_json(data)
+
+
+__all__ = ["BaseGraphQLWSHandler"]

@@ -23,7 +23,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         get_context: Callable[..., Dict[str, Any]],
         get_root_value: Any,
         request: web.Request,
-    ):
+    ) -> None:
         super().__init__(schema, debug, connection_init_wait_timeout)
         self._get_context = get_context
         self._get_root_value = get_root_value
@@ -57,3 +57,6 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
             await self.shutdown()
 
         return self._ws
+
+
+__all__ = ["GraphQLTransportWSHandler"]

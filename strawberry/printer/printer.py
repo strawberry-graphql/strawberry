@@ -37,11 +37,11 @@ from graphql.utilities.print_schema import (
 )
 from graphql.utilities.print_schema import print_type as original_print_type
 
-from strawberry.custom_scalar import ScalarWrapper
-from strawberry.enum import EnumDefinition
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
-from strawberry.type import StrawberryContainer, has_object_definition
-from strawberry.unset import UNSET
+from strawberry.types.base import StrawberryContainer, has_object_definition
+from strawberry.types.enum import EnumDefinition
+from strawberry.types.scalar import ScalarWrapper
+from strawberry.types.unset import UNSET
 
 from .ast_from_value import ast_from_value
 
@@ -55,8 +55,8 @@ if TYPE_CHECKING:
     )
     from graphql.type.directives import GraphQLDirective
 
-    from strawberry.field import StrawberryField
     from strawberry.schema import BaseSchema
+    from strawberry.types.field import StrawberryField
 
 
 _T = TypeVar("_T")
@@ -69,23 +69,22 @@ class PrintExtras:
 
 
 @overload
-def _serialize_dataclasses(value: Dict[_T, object]) -> Dict[_T, object]:
-    ...
+def _serialize_dataclasses(value: Dict[_T, object]) -> Dict[_T, object]: ...
 
 
 @overload
-def _serialize_dataclasses(value: Union[List[object], Tuple[object]]) -> List[object]:
-    ...
+def _serialize_dataclasses(
+    value: Union[List[object], Tuple[object]],
+) -> List[object]: ...
 
 
 @overload
-def _serialize_dataclasses(value: object) -> object:
-    ...
+def _serialize_dataclasses(value: object) -> object: ...
 
 
 def _serialize_dataclasses(value):
     if dataclasses.is_dataclass(value):
-        return dataclasses.asdict(value)
+        return dataclasses.asdict(value)  # type: ignore
     if isinstance(value, (list, tuple)):
         return [_serialize_dataclasses(v) for v in value]
     if isinstance(value, dict):
@@ -567,7 +566,7 @@ def print_schema(schema: BaseSchema) -> str:
         None, [print_directive(directive, schema=schema) for directive in directives]
     )
 
-    def _name_getter(type_: Any):
+    def _name_getter(type_: Any) -> str:
         if hasattr(type_, "name"):
             return type_.name
         if isinstance(type_, ScalarWrapper):
@@ -589,3 +588,6 @@ def print_schema(schema: BaseSchema) -> str:
             ),
         )
     )
+
+
+__all__ = ["print_schema"]

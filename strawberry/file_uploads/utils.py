@@ -30,3 +30,6 @@ def replace_placeholders_with_files(
                 target_object[value_key] = file_object
 
     return operations
+
+
+__all__ = ["replace_placeholders_with_files"]

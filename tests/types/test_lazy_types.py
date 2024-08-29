@@ -1,21 +1,35 @@
 # type: ignore
 import enum
+import sys
+import textwrap
 from typing import Generic, TypeVar
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypeAlias
+
+import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.field import StrawberryField
-from strawberry.lazy_type import LazyType
-from strawberry.type import get_object_definition
+from strawberry.types.base import get_object_definition
+from strawberry.types.field import StrawberryField
 from strawberry.types.fields.resolver import StrawberryResolver
-from strawberry.union import StrawberryUnion, union
+from strawberry.types.lazy_type import LazyType
+from strawberry.types.union import StrawberryUnion, union
+
+T = TypeVar("T")
 
 
 # This type is in the same file but should adequately test the logic.
 @strawberry.type
 class LaziestType:
     something: bool
+
+
+@strawberry.type
+class LazyGenericType(Generic[T]):
+    something: T
+
+
+LazyTypeAlias: TypeAlias = LazyGenericType[int]
 
 
 @strawberry.enum
@@ -36,6 +50,22 @@ def test_lazy_type():
     assert isinstance(resolved, LazyType)
     assert resolved is LazierType
     assert resolved.resolve_type() is LaziestType
+
+
+def test_lazy_type_alias():
+    # Module path is short and relative because of the way pytest runs the file
+    LazierType = LazyType("LazyTypeAlias", "test_lazy_types")
+
+    annotation = StrawberryAnnotation(LazierType)
+    resolved = annotation.resolve()
+
+    # Currently StrawberryAnnotation(LazyType).resolve() returns the unresolved
+    # LazyType. We may want to find a way to directly return the referenced object
+    # without a second resolving step.
+    assert isinstance(resolved, LazyType)
+    resolved_type = resolved.resolve_type()
+    assert resolved_type.__origin__ is LazyGenericType
+    assert resolved_type.__args__ == (int,)
 
 
 def test_lazy_type_function():
@@ -169,3 +199,56 @@ def test_lazy_function_in_union():
     [type1, type2] = resolved.types
     assert type1.resolve_type() is LaziestType
     assert type2.resolve_type() is LazyEnum
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason="| operator without future annotations is only available on python 3.10+",
+)
+def test_optional_lazy_type_using_or_operator():
+    from tests.schema.test_lazy.type_a import TypeA
+
+    @strawberry.type
+    class SomeType:
+        foo: Annotated[TypeA, strawberry.lazy("tests.schema.test_lazy.type_a")] | None
+
+    @strawberry.type
+    class AnotherType:
+        foo: TypeA | None = None
+
+    @strawberry.type
+    class Query:
+        some_type: SomeType
+        another_type: AnotherType
+
+    schema = strawberry.Schema(query=Query)
+    expected = """\
+    type AnotherType {
+      foo: TypeA
+    }
+
+    type Query {
+      someType: SomeType!
+      anotherType: AnotherType!
+    }
+
+    type SomeType {
+      foo: TypeA
+    }
+
+    type TypeA {
+      listOfB: [TypeB!]
+      typeB: TypeB!
+    }
+
+    type TypeB {
+      typeA: TypeA!
+      typeAList: [TypeA!]!
+      typeCList: [TypeC!]!
+    }
+
+    type TypeC {
+      name: String!
+    }
+    """
+    assert str(schema).strip() == textwrap.dedent(expected).strip()

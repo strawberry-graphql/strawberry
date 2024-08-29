@@ -16,10 +16,9 @@ from typing import (
 
 from pydantic import BaseModel
 
-from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic._compat import (
     CompatModelField,
-    get_model_fields,
+    PydanticCompat,
     lenient_issubclass,
 )
 from strawberry.experimental.pydantic.utils import (
@@ -27,7 +26,8 @@ from strawberry.experimental.pydantic.utils import (
     get_strawberry_type_from_model,
     normalize_type,
 )
-from strawberry.object_type import _process_type, _wrap_dataclass
+from strawberry.types.auto import StrawberryAuto
+from strawberry.types.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.typing import get_list_annotation, is_list
 
@@ -72,7 +72,8 @@ def error_type(
     all_fields: bool = False,
 ) -> Callable[..., Type]:
     def wrap(cls: Type) -> Type:
-        model_fields = get_model_fields(model)
+        compat = PydanticCompat.from_model(model)
+        model_fields = compat.get_model_fields(model)
         fields_set = set(fields) if fields else set()
 
         if fields:
@@ -113,7 +114,7 @@ def error_type(
         ]
 
         wrapped = _wrap_dataclass(cls)
-        extra_fields = cast(List[dataclasses.Field], _get_fields(wrapped))
+        extra_fields = cast(List[dataclasses.Field], _get_fields(wrapped, {}))
         private_fields = get_private_fields(wrapped)
 
         all_model_fields.extend(

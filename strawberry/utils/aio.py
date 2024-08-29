@@ -24,7 +24,7 @@ async def aenumerate(
     i = 0
     async for element in iterable:
         yield i, element
-        i += 1  # noqa: SIM113
+        i += 1
 
 
 async def aislice(
@@ -67,3 +67,11 @@ async def resolve_awaitable(
 ) -> _R:
     """Resolves an awaitable object and calls a callback with the resolved value."""
     return callback(await awaitable)
+
+
+__all__ = [
+    "aenumerate",
+    "aislice",
+    "asyncgen_to_list",
+    "resolve_awaitable",
+]

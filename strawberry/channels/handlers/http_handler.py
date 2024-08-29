@@ -1,7 +1,8 @@
-"""GraphQLHTTPHandler
+"""GraphQLHTTPHandler.
 
 A consumer to provide a graphql endpoint, and optionally graphiql.
 """
+
 from __future__ import annotations
 
 import dataclasses
@@ -34,7 +35,7 @@ from strawberry.http.sync_base_view import SyncBaseHTTPView, SyncHTTPRequestAdap
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.types import FormData
 from strawberry.http.typevars import Context, RootValue
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
 
 from .base import ChannelsConsumer
 
@@ -119,7 +120,7 @@ class ChannelsRequest:
 
 
 class BaseChannelsRequestAdapter:
-    def __init__(self, request: ChannelsRequest):
+    def __init__(self, request: ChannelsRequest) -> None:
         self.request = request
 
     @property
@@ -173,7 +174,7 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         allow_queries_via_get: bool = True,
         subscriptions_enabled: bool = True,
         **kwargs: Any,
-    ):
+    ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.subscriptions_enabled = subscriptions_enabled
@@ -341,3 +342,6 @@ class SyncGraphQLHTTPConsumer(
         root_value: Optional[RootValue] = UNSET,
     ) -> ChannelsResponse | MultipartChannelsResponse:
         return super().run(request, context, root_value)
+
+
+__all__ = ["GraphQLHTTPConsumer", "SyncGraphQLHTTPConsumer"]

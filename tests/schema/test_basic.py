@@ -10,12 +10,11 @@ import strawberry
 from strawberry import ID
 from strawberry.scalars import Base64
 from strawberry.schema_directive import Location
-from strawberry.type import StrawberryList
+from strawberry.types.base import StrawberryList
 
 
 def test_raises_exception_with_unsupported_types():
-    class SomeType:
-        ...
+    class SomeType: ...
 
     @strawberry.type
     class Query:
@@ -366,7 +365,8 @@ def test_parent_class_fields_are_inherited():
 
 def test_can_return_compatible_type():
     """Test that we can return a different type that has the same fields,
-    for example when returning a Django Model."""
+    for example when returning a Django Model.
+    """
 
     @dataclass
     class Example:

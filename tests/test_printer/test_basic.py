@@ -6,7 +6,8 @@ import strawberry
 from strawberry.printer import print_schema
 from strawberry.scalars import JSON
 from strawberry.schema.config import StrawberryConfig
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
+from tests.conftest import skip_if_gql_32
 
 
 def test_simple_required_types():
@@ -183,6 +184,7 @@ def test_input_defaults():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
+@skip_if_gql_32("formatting is different in gql 3.2")
 def test_input_other_inputs():
     @strawberry.input
     class Nested:
@@ -204,8 +206,8 @@ def test_input_other_inputs():
     expected_type = """
     input MyInput {
       nested: Nested!
-      nested2: Nested! = {s: "a"}
-      nested3: Nested! = {s: "a"}
+      nested2: Nested! = { s: "a" }
+      nested3: Nested! = { s: "a" }
       nested4: Nested!
     }
 
@@ -223,6 +225,7 @@ def test_input_other_inputs():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
+@skip_if_gql_32("formatting is different in gql 3.2")
 def test_input_defaults_scalars():
     @strawberry.input
     class MyInput:
@@ -240,14 +243,14 @@ def test_input_defaults_scalars():
 
     expected_type = """
     \"\"\"
-    The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+    The `JSON` scalar type represents JSON values as specified by [ECMA-404](https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf).
     \"\"\"
-    scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
+    scalar JSON @specifiedBy(url: "https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf")
 
     input MyInput {
-      j: JSON! = {}
-      j2: JSON! = {hello: "world"}
-      j3: JSON! = {hello: {nice: "world"}}
+      j: JSON! = {  }
+      j2: JSON! = { hello: "world" }
+      j3: JSON! = { hello: { nice: "world" } }
     }
 
     type Query {
@@ -260,6 +263,7 @@ def test_input_defaults_scalars():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
+@skip_if_gql_32("formatting is different in gql 3.2")
 def test_arguments_scalar():
     @strawberry.input
     class MyInput:
@@ -285,14 +289,14 @@ def test_arguments_scalar():
 
     expected_type = """
     \"\"\"
-    The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+    The `JSON` scalar type represents JSON values as specified by [ECMA-404](https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf).
     \"\"\"
-    scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
+    scalar JSON @specifiedBy(url: "https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf")
 
     type Query {
-      search(j: JSON! = {}): JSON!
-      search2(j: JSON! = {hello: "world"}): JSON!
-      search3(j: JSON! = {hello: {nice: "world"}}): JSON!
+      search(j: JSON! = {  }): JSON!
+      search2(j: JSON! = { hello: "world" }): JSON!
+      search3(j: JSON! = { hello: { nice: "world" } }): JSON!
     }
     """
 

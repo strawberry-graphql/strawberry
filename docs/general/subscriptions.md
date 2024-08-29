@@ -60,7 +60,7 @@ subscription {
 
 In this example, the data looks like this as it passes over the websocket:
 
-<img src="../images/subscriptions-count-websocket.png" alt="A view of the data that's been passed via websocket" width="1013" height="267" />
+![A view of the data that's been passed via websocket](../images/subscriptions-count-websocket.png)
 
 This is a very short example of what is possible. Like with queries and
 mutations the subscription can return any GraphQL type, not only scalars as
@@ -113,7 +113,6 @@ import asyncio
 from typing import AsyncGenerator
 
 import strawberry
-from strawberry.types import Info
 
 from .auth import authenticate_token
 
@@ -128,7 +127,9 @@ class Query:
 @strawberry.type
 class Subscription:
     @strawberry.subscription
-    async def count(self, info: Info, target: int = 100) -> AsyncGenerator[int, None]:
+    async def count(
+        self, info: strawberry.Info, target: int = 100
+    ) -> AsyncGenerator[int, None]:
         connection_params: dict = info.context.get("connection_params")
         token: str = connection_params.get(
             "authToken"
@@ -331,8 +332,8 @@ application = GraphQLProtocolTypeRouter(
 )
 ```
 
-Note: Check the [channels integraton](/docs/integrations/channels.md) page for
-more information regarding it.
+Note: Check the [channels integraton](../integrations/channels.md) page for more
+information regarding it.
 
 #### FastAPI
 

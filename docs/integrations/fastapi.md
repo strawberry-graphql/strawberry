@@ -81,7 +81,6 @@ For dictionary-based custom contexts, an example might look like the following.
 import strawberry
 
 from fastapi import FastAPI, Depends, Request, WebSocket, BackgroundTasks
-from strawberry.types import Info
 from strawberry.fastapi import GraphQLRouter
 
 
@@ -100,7 +99,7 @@ async def get_context(
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info: Info) -> str:
+    def example(self, info: strawberry.Info) -> str:
         return f"Hello {info.context['custom_value']}"
 
 
@@ -129,7 +128,6 @@ For class-based custom contexts, an example might look like the following.
 import strawberry
 
 from fastapi import FastAPI, Depends, Request, WebSocket, BackgroundTasks
-from strawberry.types import Info
 from strawberry.fastapi import BaseContext, GraphQLRouter
 
 
@@ -152,7 +150,7 @@ async def get_context(
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info: Info) -> str:
+    def example(self, info: strawberry.Info) -> str:
         return f"Hello {info.context.name}, {info.context.greeting}"
 
 
@@ -186,7 +184,6 @@ can be added via the context:
 import strawberry
 
 from fastapi import FastAPI, BackgroundTasks
-from strawberry.types import Info
 from strawberry.fastapi import GraphQLRouter
 
 
@@ -204,7 +201,7 @@ class Query:
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def create_flavour(self, name: str, info: Info) -> bool:
+    def create_flavour(self, name: str, info: strawberry.Info) -> bool:
         info.context["background_tasks"].add_task(notify_new_flavour, name)
         return True
 
@@ -293,9 +290,10 @@ tweaked based on your needs.
 
 `encode_json` allows to customize the encoding of the JSON response. By default
 we use `json.dumps` but you can override this method to use a different encoder.
+For example, the `orjson` library from pypi has blazing fast speeds.
 
 ```python
 class MyGraphQLRouter(GraphQLRouter):
-    def encode_json(self, data: GraphQLHTTPResponse) -> str:
-        return json.dumps(data, indent=2)
+    def encode_json(self, data: GraphQLHTTPResponse) -> bytes:
+        return orjson.dumps(data)
 ```

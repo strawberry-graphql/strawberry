@@ -5,7 +5,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 import strawberry
-from strawberry.types.types import StrawberryObjectDefinition
+from strawberry.types.base import StrawberryObjectDefinition
 
 
 def test_query_interface():
@@ -390,12 +390,10 @@ def test_resolve_type_on_interface_returning_interface():
             return "Video" if obj.id == "1" else "Image"
 
     @strawberry.type
-    class Video(Node):
-        ...
+    class Video(Node): ...
 
     @strawberry.type
-    class Image(Node):
-        ...
+    class Image(Node): ...
 
     @strawberry.type
     class Query:

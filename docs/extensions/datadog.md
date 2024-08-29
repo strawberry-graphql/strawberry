@@ -1,5 +1,5 @@
 ---
-title: DatadogExtension
+title: Datadog
 summary: Add Datadog tracing to your GraphQL server.
 tags: tracing
 ---

@@ -23,13 +23,13 @@ from typing import (
 from typing_extensions import Annotated, Protocol, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import (
     ConflictingArgumentsError,
     MissingArgumentsAnnotationsError,
 )
 from strawberry.parent import StrawberryParent
-from strawberry.type import StrawberryType, has_object_definition
+from strawberry.types.arguments import StrawberryArgument
+from strawberry.types.base import StrawberryType, has_object_definition
 from strawberry.types.info import Info
 from strawberry.utils.typing import type_has_annotation
 
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 
 
 class Parameter(inspect.Parameter):
-    def __hash__(self):
+    def __hash__(self) -> int:
         """Override to exclude default value from hash.
 
         This adds compatibility for using unhashable default values in resolvers such as
@@ -155,7 +155,7 @@ class ReservedType(NamedTuple):
             # Handle annotated arguments such as Private[str] and DirectiveValue[str]
             return type_has_annotation(other, self.type)
         else:
-            # Handle both concrete and generic types (i.e Info, and Info[Any, Any])
+            # Handle both concrete and generic types (i.e Info, and Info)
             return (
                 issubclass(origin, self.type)
                 if isinstance(origin, type)
@@ -187,7 +187,7 @@ class StrawberryResolver(Generic[T]):
         *,
         description: Optional[str] = None,
         type_override: Optional[Union[StrawberryType, type]] = None,
-    ):
+    ) -> None:
         self.wrapped_func = func
         self._description = description
         self._type_override = type_override
@@ -231,30 +231,25 @@ class StrawberryResolver(Generic[T]):
     @cached_property
     def arguments(self) -> List[StrawberryArgument]:
         """Resolver arguments exposed in the GraphQL Schema."""
-        parameters = self.signature.parameters.values()
-        reserved_parameters = set(self.reserved_parameters.values())
-        populated_reserved_parameters = set(
-            key for key, value in self.reserved_parameters.items() if value is not None
-        )
+        root_parameter = self.reserved_parameters.get(ROOT_PARAMSPEC)
+        parent_parameter = self.reserved_parameters.get(PARENT_PARAMSPEC)
 
+        # TODO: Maybe use SELF_PARAMSPEC in the future? Right now
+        # it would prevent some common pattern for integrations
+        # (e.g. django) of typing the `root` parameters as the
+        # type of the real object being used
         if (
-            conflicting_arguments := (
-                populated_reserved_parameters
-                # TODO: Maybe use SELF_PARAMSPEC in the future? Right now
-                # it would prevent some common pattern for integrations
-                # (e.g. django) of typing the `root` parameters as the
-                # type of the real object being used
-                & {ROOT_PARAMSPEC, PARENT_PARAMSPEC}
-            )
-        ) and len(conflicting_arguments) > 1:
+            root_parameter is not None
+            and parent_parameter is not None
+            and root_parameter.name != parent_parameter.name
+        ):
             raise ConflictingArgumentsError(
                 self,
-                [
-                    cast(Parameter, self.reserved_parameters[key]).name
-                    for key in conflicting_arguments
-                ],
+                [root_parameter.name, parent_parameter.name],
             )
 
+        parameters = self.signature.parameters.values()
+        reserved_parameters = set(self.reserved_parameters.values())
         missing_annotations: List[str] = []
         arguments: List[StrawberryArgument] = []
         user_parameters = (p for p in parameters if p not in reserved_parameters)
@@ -396,7 +391,7 @@ class StrawberryResolver(Generic[T]):
 
 
 class UncallableResolverError(Exception):
-    def __init__(self, resolver: StrawberryResolver):
+    def __init__(self, resolver: StrawberryResolver) -> None:
         message = (
             f"Attempted to call resolver {resolver} with uncallable function "
             f"{resolver.wrapped_func}"

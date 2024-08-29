@@ -20,26 +20,26 @@ from typing import (
 )
 from typing_extensions import Annotated, Self, get_args, get_origin
 
-from strawberry.custom_scalar import ScalarDefinition
-from strawberry.enum import EnumDefinition
 from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
-from strawberry.lazy_type import LazyType
-from strawberry.private import is_private
-from strawberry.type import (
+from strawberry.types.base import (
     StrawberryList,
+    StrawberryObjectDefinition,
     StrawberryOptional,
     StrawberryTypeVar,
     get_object_definition,
     has_object_definition,
 )
-from strawberry.types.types import StrawberryObjectDefinition
-from strawberry.unset import UNSET
+from strawberry.types.enum import EnumDefinition
+from strawberry.types.lazy_type import LazyType
+from strawberry.types.private import is_private
+from strawberry.types.scalar import ScalarDefinition
+from strawberry.types.unset import UNSET
 from strawberry.utils.typing import eval_type, is_generic, is_type_var
 
 if TYPE_CHECKING:
-    from strawberry.field import StrawberryField
-    from strawberry.type import StrawberryType
-    from strawberry.union import StrawberryUnion
+    from strawberry.types.base import StrawberryType
+    from strawberry.types.field import StrawberryField
+    from strawberry.types.union import StrawberryUnion
 
 
 ASYNC_TYPES = (
@@ -54,18 +54,18 @@ ASYNC_TYPES = (
 
 
 class StrawberryAnnotation:
-    __slots__ = "raw_annotation", "namespace", "__eval_cache__"
+    __slots__ = "raw_annotation", "namespace", "__resolve_cache__"
 
     def __init__(
         self,
         annotation: Union[object, str],
         *,
         namespace: Optional[Dict[str, Any]] = None,
-    ):
+    ) -> None:
         self.raw_annotation = annotation
         self.namespace = namespace
 
-        self.__eval_cache__: Optional[Type[Any]] = None
+        self.__resolve_cache__: Optional[Union[StrawberryType, type]] = None
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, StrawberryAnnotation):
@@ -101,19 +101,17 @@ class StrawberryAnnotation:
     def annotation(self, value: Union[object, str]) -> None:
         self.raw_annotation = value
 
+        self.__resolve_cache__ = None
+
     def evaluate(self) -> type:
         """Return evaluated annotation using `strawberry.util.typing.eval_type`."""
-        evaled_type = self.__eval_cache__
-        if evaled_type:
-            return evaled_type
-
         annotation = self.raw_annotation
+
         if isinstance(annotation, str):
             annotation = ForwardRef(annotation)
 
         evaled_type = eval_type(annotation, self.namespace, None)
 
-        self.__eval_cache__ = evaled_type
         return evaled_type
 
     def _get_type_with_args(
@@ -131,6 +129,12 @@ class StrawberryAnnotation:
 
     def resolve(self) -> Union[StrawberryType, type]:
         """Return resolved (transformed) annotation."""
+        if self.__resolve_cache__ is None:
+            self.__resolve_cache__ = self._resolve()
+
+        return self.__resolve_cache__
+
+    def _resolve(self) -> Union[StrawberryType, type]:
         evaled_type = cast(Any, self.evaluate())
 
         if is_private(evaled_type):
@@ -172,7 +176,7 @@ class StrawberryAnnotation:
         module = sys.modules[field.origin.__module__]
         self.namespace = module.__dict__
 
-        self.__eval_cache__ = None  # Invalidate cache to allow re-evaluation
+        self.__resolve_cache__ = None  # Invalidate cache to allow re-evaluation
 
     def create_concrete_type(self, evaled_type: type) -> type:
         if has_object_definition(evaled_type):
@@ -222,7 +226,7 @@ class StrawberryAnnotation:
 
     def create_union(self, evaled_type: Type[Any], args: list[Any]) -> StrawberryUnion:
         # Prevent import cycles
-        from strawberry.union import StrawberryUnion
+        from strawberry.types.union import StrawberryUnion
 
         # TODO: Deal with Forward References/origin
         if isinstance(evaled_type, StrawberryUnion):
@@ -286,8 +290,7 @@ class StrawberryAnnotation:
 
     @classmethod
     def _is_optional(cls, annotation: Any, args: List[Any]) -> bool:
-        """Returns True if the annotation is Optional[SomeType]"""
-
+        """Returns True if the annotation is Optional[SomeType]."""
         # Optionals are represented as unions
         if not cls._is_union(annotation, args):
             return False
@@ -299,8 +302,7 @@ class StrawberryAnnotation:
 
     @classmethod
     def _is_list(cls, annotation: Any) -> bool:
-        """Returns True if annotation is a List"""
-
+        """Returns True if annotation is a List."""
         annotation_origin = get_origin(annotation)
         annotation_mro = getattr(annotation, "__mro__", [])
         is_list = any(x is list for x in annotation_mro)
@@ -314,7 +316,7 @@ class StrawberryAnnotation:
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:
         # Prevent import cycles
-        from strawberry.union import StrawberryUnion
+        from strawberry.types.union import StrawberryUnion
 
         if isinstance(evaled_type, EnumDefinition):
             return True
@@ -340,8 +342,7 @@ class StrawberryAnnotation:
 
     @classmethod
     def _is_union(cls, annotation: Any, args: List[Any]) -> bool:
-        """Returns True if annotation is a Union"""
-
+        """Returns True if annotation is a Union."""
         # this check is needed because unions declared with the new syntax `A | B`
         # don't have a `__origin__` property on them, but they are instances of
         # `UnionType`, which is only available in Python 3.10+
@@ -359,7 +360,7 @@ class StrawberryAnnotation:
         if annotation_origin is typing.Union:
             return True
 
-        from strawberry.union import StrawberryUnion
+        from strawberry.types.union import StrawberryUnion
 
         return any(isinstance(arg, StrawberryUnion) for arg in args)
 
@@ -382,3 +383,6 @@ def _is_input_type(type_: Any) -> bool:
         return False
 
     return type_.__strawberry_definition__.is_input
+
+
+__all__ = ["StrawberryAnnotation"]

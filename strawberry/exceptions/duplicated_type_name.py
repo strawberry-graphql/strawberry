@@ -13,14 +13,14 @@ if TYPE_CHECKING:
 
 
 class DuplicatedTypeName(StrawberryException):
-    """Raised when the same type with different definition is reused inside a schema"""
+    """Raised when the same type with different definition is reused inside a schema."""
 
     def __init__(
         self,
         first_cls: Optional[Type],
         second_cls: Optional[Type],
         duplicated_type_name: str,
-    ):
+    ) -> None:
         self.first_cls = first_cls
         self.second_cls = second_cls
 

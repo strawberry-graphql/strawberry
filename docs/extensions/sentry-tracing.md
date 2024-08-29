@@ -1,5 +1,5 @@
 ---
-title: SentryTracingExtension
+title: Sentry Tracing
 summary: Add Sentry tracing to your GraphQL server.
 tags: tracing
 ---

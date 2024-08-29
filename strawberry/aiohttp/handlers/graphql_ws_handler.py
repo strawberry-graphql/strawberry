@@ -22,7 +22,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         get_context: Callable,
         get_root_value: Callable,
         request: web.Request,
-    ):
+    ) -> None:
         super().__init__(schema, debug, keep_alive, keep_alive_interval)
         self._get_context = get_context
         self._get_root_value = get_root_value
@@ -60,3 +60,6 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
                 await self.cleanup_operation(operation_id)
 
         return self._ws
+
+
+__all__ = ["GraphQLWSHandler"]

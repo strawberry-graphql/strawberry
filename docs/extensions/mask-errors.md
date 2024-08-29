@@ -1,5 +1,5 @@
 ---
-title: MaskErrors
+title: Mask Errors
 summary: Hide error messages from the client.
 tags: security
 ---

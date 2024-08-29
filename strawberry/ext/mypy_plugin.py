@@ -11,6 +11,7 @@ from typing import (
     List,
     Optional,
     Set,
+    Tuple,
     Union,
     cast,
 )
@@ -59,10 +60,15 @@ try:
 except ImportError:
     TypeVarDef = TypeVarType
 
+PYDANTIC_VERSION: Optional[Tuple[int, ...]] = None
+
 # To be compatible with user who don't use pydantic
 try:
+    import pydantic
     from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY
     from pydantic.mypy import PydanticModelField
+
+    PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))
 
     from strawberry.experimental.pydantic._compat import IS_PYDANTIC_V1
 except ImportError:
@@ -86,7 +92,7 @@ FALLBACK_VERSION = Decimal("0.800")
 
 
 class MypyVersion:
-    """Stores the mypy version to be used by the plugin"""
+    """Stores the mypy version to be used by the plugin."""
 
     VERSION: Decimal
 
@@ -113,7 +119,7 @@ def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
     return type_
 
 
-def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface):
+def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface) -> Any:
     if "." in name:
         return api.named_type_or_none(name)
 
@@ -324,9 +330,11 @@ def add_static_method_to_class(
     return_type: Type,
     tvar_def: Optional[TypeVarType] = None,
 ) -> None:
-    """Adds a static method
-    Edited add_method_to_class to incorporate static method logic
-    https://github.com/python/mypy/blob/9c05d3d19/mypy/plugins/common.py
+    """Adds a static method.
+
+    Edited `add_method_to_class` to incorporate static method logic
+
+    https://github.com/python/mypy/blob/9c05d3d19/mypy/plugins/common.py.
     """
     info = cls.info
 
@@ -464,6 +472,16 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                     return_type=model_type,
                 )
             else:
+                extra = {}
+
+                if PYDANTIC_VERSION:
+                    if PYDANTIC_VERSION >= (2, 7, 0):
+                        extra["api"] = ctx.api
+                    if PYDANTIC_VERSION >= (2, 8, 0):
+                        # Based on pydantic's default value
+                        # https://github.com/pydantic/pydantic/pull/9606/files#diff-469037bbe55bbf9aa359480a16040d368c676adad736e133fb07e5e20d6ac523R1066
+                        extra["force_typevars_invariant"] = False
+
                 add_method(
                     ctx,
                     "to_pydantic",
@@ -474,6 +492,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                             typed=True,
                             force_optional=False,
                             use_alias=True,
+                            **extra,
                         )
                         for f in missing_pydantic_fields
                     ],
@@ -487,12 +506,23 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
             initializer=None,
             kind=ARG_OPT,
         )
+        extra_type = ctx.api.named_type(
+            "builtins.dict",
+            [ctx.api.named_type("builtins.str"), AnyType(TypeOfAny.explicit)],
+        )
+
+        extra_argument = Argument(
+            variable=Var(name="extra", type=UnionType([NoneType(), extra_type])),
+            type_annotation=UnionType([NoneType(), extra_type]),
+            initializer=None,
+            kind=ARG_OPT,
+        )
 
         add_static_method_to_class(
             ctx.api,
             ctx.cls,
             name="from_pydantic",
-            args=[model_argument],
+            args=[model_argument, extra_argument],
             return_type=fill_typevars(ctx.cls.info),
         )
 
@@ -532,22 +562,22 @@ class StrawberryPlugin(Plugin):
         return None
 
     def _is_strawberry_union(self, fullname: str) -> bool:
-        return fullname == "strawberry.union.union" or fullname.endswith(
+        return fullname == "strawberry.types.union.union" or fullname.endswith(
             "strawberry.union"
         )
 
     def _is_strawberry_enum(self, fullname: str) -> bool:
-        return fullname == "strawberry.enum.enum" or fullname.endswith(
+        return fullname == "strawberry.types.enum.enum" or fullname.endswith(
             "strawberry.enum"
         )
 
     def _is_strawberry_scalar(self, fullname: str) -> bool:
-        return fullname == "strawberry.custom_scalar.scalar" or fullname.endswith(
+        return fullname == "strawberry.types.scalar.scalar" or fullname.endswith(
             "strawberry.scalar"
         )
 
     def _is_strawberry_lazy_type(self, fullname: str) -> bool:
-        return fullname == "strawberry.lazy_type.LazyType"
+        return fullname == "strawberry.types.lazy_type.LazyType"
 
     def _is_strawberry_create_type(self, fullname: str) -> bool:
         # using endswith(.create_type) is not ideal as there might be

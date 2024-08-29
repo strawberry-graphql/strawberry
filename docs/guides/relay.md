@@ -48,7 +48,7 @@ class Fruit(relay.Node):
     def resolve_nodes(
         cls,
         *,
-        info: Info,
+        info: strawberry.Info,
         node_ids: Iterable[str],
         required: bool = False,
     ):
@@ -194,7 +194,7 @@ The connection resolver for `relay.ListConnection` should return one of those:
 As demonstrated above, the `Node` field can be used to retrieve/refetch any
 object in the schema that implements the `Node` interface.
 
-It can be defined in in the `Query` objects in 4 ways:
+It can be defined in the `Query` objects in 4 ways:
 
 - `node: Node`: This will define a field that accepts a `GlobalID!` and returns
   a `Node` instance. This is the most basic way to define it.
@@ -330,7 +330,7 @@ class Query:
     @relay.connection(relay.ListConnection[Fruit])
     def fruits_with_filter(
         self,
-        info: Info,
+        info: strawberry.Info,
         name_endswith: str,
     ) -> Iterable[Fruit]:
         for f in fruits.values():
@@ -379,7 +379,7 @@ class Fruit(relay.Node):
 @strawberry.type
 class FruitDBConnection(relay.ListConnection[Fruit]):
     @classmethod
-    def resolve_node(cls, node: FruitDB, *, info: Info, **kwargs) -> Fruit:
+    def resolve_node(cls, node: FruitDB, *, info: strawberry.Info, **kwargs) -> Fruit:
         return Fruit(
             code=node.code,
             name=node.name,
@@ -392,7 +392,7 @@ class Query:
     @relay.connection(FruitDBConnection)
     def fruits_with_filter(
         self,
-        info: Info,
+        info: strawberry.Info,
         name_endswith: str,
     ) -> Iterable[models.Fruit]:
         return models.Fruit.objects.filter(name__endswith=name_endswith)
@@ -421,7 +421,7 @@ class Mutation:
     @strawberry.mutation
     async def update_fruit_weight(
         self,
-        info: Info,
+        info: strawberry.Info,
         id: relay.GlobalID,
         weight: float,
     ) -> Fruit:
@@ -433,7 +433,7 @@ class Mutation:
     @strawberry.mutation
     def update_fruit_weight_sync(
         self,
-        info: Info,
+        info: strawberry.Info,
         id: relay.GlobalID,
         weight: float,
     ) -> Fruit:

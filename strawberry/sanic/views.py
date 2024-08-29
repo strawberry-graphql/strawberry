@@ -8,7 +8,6 @@ from typing import (
     AsyncGenerator,
     Callable,
     Dict,
-    List,
     Mapping,
     Optional,
     Type,
@@ -35,7 +34,7 @@ if TYPE_CHECKING:
 
 
 class SanicHTTPRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request):
+    def __init__(self, request: Request) -> None:
         self.request = request
 
     @property
@@ -45,12 +44,7 @@ class SanicHTTPRequestAdapter(AsyncHTTPRequestAdapter):
         # the keys are the unique variable names and the values are lists
         # of values for each variable name. To ensure consistency, we're
         # enforcing the use of the first value in each list.
-
-        args = cast(
-            Dict[str, Optional[List[str]]],
-            self.request.get_args(keep_blank_values=True),
-        )
-
+        args = self.request.get_args(keep_blank_values=True)
         return {k: args.get(k, None) for k in args}
 
     @property
@@ -80,8 +74,7 @@ class GraphQLView(
     AsyncBaseHTTPView[Request, HTTPResponse, TemporalResponse, Context, RootValue],
     HTTPMethodView,
 ):
-    """
-    Class based view to handle GraphQL HTTP Requests
+    """Class based view to handle GraphQL HTTP Requests.
 
     Args:
         schema: strawberry.Schema
@@ -109,7 +102,7 @@ class GraphQLView(
         allow_queries_via_get: bool = True,
         json_encoder: Optional[Type[json.JSONEncoder]] = None,
         json_dumps_params: Optional[Dict[str, Any]] = None,
-    ):
+    ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.json_encoder = json_encoder
@@ -203,3 +196,6 @@ class GraphQLView(
         await response.eof()
 
         return response
+
+
+__all__ = ["GraphQLView"]

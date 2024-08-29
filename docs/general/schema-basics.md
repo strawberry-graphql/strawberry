@@ -49,8 +49,6 @@ The `!` sign specifies that a field is non-nullable.
 Notice that the schema doesn’t specify how to get the data. That comes later
 when defining the resolvers.
 
-<!-- TODO: plug Ariadne for a schema-first alternative -->
-
 ## Code first approach
 
 As mentioned Strawberry uses a code first approach. The previous schema would
@@ -70,7 +68,7 @@ class Book:
 @strawberry.type
 class Author:
     name: str
-    books: typing.List["Book"]
+    books: typing.List[Book]
 ```
 
 As you can see the code maps almost one to one with the schema, thanks to
@@ -167,7 +165,7 @@ class Book:
     author: "Author" = strawberry.field(resolver=get_author_for_book)
 
 
-def get_books_for_author(root):
+def get_books_for_author(root) -> typing.List[Book]:
     return [Book(title="Jurassic Park")]
 
 
@@ -298,7 +296,7 @@ the following:
 ```python
 @strawberry.type
 class Mutation:
-    @strawberry.field
+    @strawberry.mutation
     def add_book(self, title: str, author: str) -> Book: ...
 ```
 
@@ -359,7 +357,7 @@ Consider our previous mutation to add a book:
 ```python
 @strawberry.type
 class Mutation:
-    @strawberry.field
+    @strawberry.mutation
     def add_book(self, title: str, author: str) -> Book: ...
 ```
 
@@ -379,7 +377,7 @@ class AddBookInput:
 
 @strawberry.type
 class Mutation:
-    @strawberry.field
+    @strawberry.mutation
     def add_book(self, book: AddBookInput) -> Book: ...
 ```
 

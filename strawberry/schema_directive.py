@@ -3,11 +3,11 @@ from enum import Enum
 from typing import Callable, List, Optional, Type, TypeVar
 from typing_extensions import dataclass_transform
 
-from strawberry.object_type import _wrap_dataclass
+from strawberry.types.field import StrawberryField, field
+from strawberry.types.object_type import _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 
 from .directive import directive_field
-from .field import StrawberryField, field
 
 
 class Location(Enum):
@@ -53,8 +53,8 @@ def schema_directive(
     print_definition: bool = True,
 ) -> Callable[..., T]:
     def _wrap(cls: T) -> T:
-        cls = _wrap_dataclass(cls)
-        fields = _get_fields(cls)
+        cls = _wrap_dataclass(cls)  # type: ignore
+        fields = _get_fields(cls, {})
 
         cls.__strawberry_directive__ = StrawberrySchemaDirective(
             python_name=cls.__name__,

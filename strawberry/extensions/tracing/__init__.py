@@ -1,5 +1,5 @@
 import importlib
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .apollo import ApolloTracingExtension, ApolloTracingExtensionSync
@@ -22,7 +22,7 @@ __all__ = [
 ]
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> Any:
     if name in {"DatadogTracingExtension", "DatadogTracingExtensionSync"}:
         return getattr(importlib.import_module(".datadog", __name__), name)
 

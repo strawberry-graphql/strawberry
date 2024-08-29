@@ -32,3 +32,6 @@ def add_custom_init_fn(cls: Any) -> None:
             globals_=globals_,
         ),
     )
+
+
+__all__ = ["add_custom_init_fn"]

@@ -16,6 +16,8 @@ from typing import (
 )
 
 from graphql import (
+    GraphQLBoolean,
+    GraphQLField,
     GraphQLNamedType,
     GraphQLNonNull,
     GraphQLSchema,
@@ -34,12 +36,12 @@ from strawberry.extensions.directives import (
 )
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
-from strawberry.type import has_object_definition
 from strawberry.types import ExecutionContext
+from strawberry.types.base import StrawberryObjectDefinition, has_object_definition
 from strawberry.types.graphql import OperationType
-from strawberry.types.types import StrawberryObjectDefinition
 
 from ..printer import print_schema
+from ..utils.await_maybe import await_maybe
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
@@ -49,13 +51,16 @@ if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
     from graphql import ExecutionResult as GraphQLExecutionResult
 
-    from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
     from strawberry.directive import StrawberryDirective
-    from strawberry.enum import EnumDefinition
     from strawberry.extensions import SchemaExtension
     from strawberry.field import StrawberryField
     from strawberry.type import StrawberryType
     from strawberry.types import ExecutionResult, SubscriptionExecutionResult
+    from strawberry.types.base import StrawberryType
+    from strawberry.types.enum import EnumDefinition
+    from strawberry.types.field import StrawberryField
+    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.types.union import StrawberryUnion
     from strawberry.union import StrawberryUnion
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
@@ -79,10 +84,45 @@ class Schema(BaseSchema):
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
         scalar_overrides: Optional[
-            Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]]
+            Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]],
         ] = None,
         schema_directives: Iterable[object] = (),
-    ):
+    ) -> None:
+        """Default Schema to be to be used in a Strawberry application.
+
+        A GraphQL Schema class used to define the structure and configuration
+        of GraphQL queries, mutations, and subscriptions.
+
+        This class allows the creation of a GraphQL schema by specifying the types
+        for queries, mutations, and subscriptions, along with various configuration
+        options such as directives, extensions, and scalar overrides.
+
+        Args:
+            query: The entry point for queries.
+            mutation: The entry point for mutations.
+            subscription: The entry point for subscriptions.
+            directives: A list of operation directives that clients can use.
+                The bult-in `@include` and `@skip` are included by default.
+            types: A list of additional types that will be included in the schema.
+            extensions: A list of Strawberry extensions.
+            execution_context_class: The execution context class.
+            config: The configuration for the schema.
+            scalar_overrides: A dictionary of overrides for scalars.
+            schema_directives: A list of schema directives for the schema.
+
+        Example:
+        ```python
+        import strawberry
+
+
+        @strawberry.type
+        class Query:
+            name: str = "Patrick"
+
+
+        schema = strawberry.Schema(query=Query)
+        ```
+        """
         self.query = query
         self.mutation = mutation
         self.subscription = subscription
@@ -168,6 +208,7 @@ class Schema(BaseSchema):
 
         self._warn_for_federation_directives()
         self._resolve_node_ids()
+        self._extend_introspection()
 
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible
@@ -266,7 +307,7 @@ class Schema(BaseSchema):
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
-            process_errors=self.process_errors,
+            process_errors=self._process_errors,
         )
 
         return result
@@ -298,7 +339,7 @@ class Schema(BaseSchema):
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
-            process_errors=self.process_errors,
+            process_errors=self._process_errors,
         )
 
         return result
@@ -312,16 +353,18 @@ class Schema(BaseSchema):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
     ) -> Union[AsyncIterator[GraphQLExecutionResult], GraphQLExecutionResult]:
-        return await subscribe(
-            self._schema,
-            parse(query),
-            root_value=root_value,
-            context_value=context_value,
-            variable_values=variable_values,
-            operation_name=operation_name,
+        return await await_maybe(
+            subscribe(
+                self._schema,
+                parse(query),
+                root_value=root_value,
+                context_value=context_value,
+                variable_values=variable_values,
+                operation_name=operation_name,
+            )
         )
 
-    def _resolve_node_ids(self):
+    def _resolve_node_ids(self) -> None:
         for concrete_type in self.schema_converter.type_map.values():
             type_def = concrete_type.definition
 
@@ -352,7 +395,7 @@ class Schema(BaseSchema):
                 if not has_custom_resolve_id:
                     origin.resolve_id_attr()
 
-    def _warn_for_federation_directives(self):
+    def _warn_for_federation_directives(self) -> None:
         """Raises a warning if the schema has any federation directives."""
         from strawberry.federation.schema_directives import FederationDirective
 
@@ -375,13 +418,24 @@ class Schema(BaseSchema):
                 stacklevel=3,
             )
 
+    def _extend_introspection(self) -> None:
+        def _resolve_is_one_of(obj: Any, info: Any) -> bool:
+            if "strawberry-definition" not in obj.extensions:
+                return False
+
+            return obj.extensions["strawberry-definition"].is_one_of
+
+        instrospection_type = self._schema.type_map["__Type"]
+        instrospection_type.fields["isOneOf"] = GraphQLField(GraphQLBoolean)  # type: ignore[attr-defined]
+        instrospection_type.fields["isOneOf"].resolve = _resolve_is_one_of  # type: ignore[attr-defined]
+
     def as_str(self) -> str:
         return print_schema(self)
 
     __str__ = as_str
 
     def introspect(self) -> Dict[str, Any]:
-        """Return the introspection query result for the current schema
+        """Return the introspection query result for the current schema.
 
         Raises:
             ValueError: If the introspection query fails due to an invalid schema
@@ -391,3 +445,6 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors {introspection.errors!r}")
 
         return introspection.data
+
+
+__all__ = ["Schema"]

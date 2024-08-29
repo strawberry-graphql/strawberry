@@ -14,7 +14,7 @@ import strawberry
 from strawberry.scalars import JSON
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema_directive import Location
-from strawberry.type import get_object_definition
+from strawberry.types.base import get_object_definition
 
 DEFINITION_BACKREF = GraphQLCoreConverter.DEFINITION_BACKREF
 
@@ -161,8 +161,7 @@ def test_object_types():
     @strawberry.type()
     class Query:
         @strawberry.field
-        def hello(self, input: Input) -> str:
-            ...
+        def hello(self, input: Input) -> str: ...
 
     schema = strawberry.Schema(query=Query)
     graphql_schema: GraphQLSchema = schema._schema

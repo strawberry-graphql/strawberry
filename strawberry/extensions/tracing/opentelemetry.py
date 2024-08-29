@@ -45,7 +45,7 @@ class OpenTelemetryExtension(SchemaExtension):
         *,
         execution_context: Optional[ExecutionContext] = None,
         arg_filter: Optional[ArgFilter] = None,
-    ):
+    ) -> None:
         self._arg_filter = arg_filter
         self._tracer = trace.get_tracer("strawberry")
         if execution_context:
@@ -208,3 +208,6 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
             result = _next(root, info, *args, **kwargs)
 
             return result
+
+
+__all__ = ["OpenTelemetryExtension", "OpenTelemetryExtensionSync"]

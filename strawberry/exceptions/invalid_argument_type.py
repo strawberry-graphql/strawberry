@@ -3,13 +3,13 @@ from __future__ import annotations
 from functools import cached_property
 from typing import TYPE_CHECKING, Optional
 
-from strawberry.type import get_object_definition
+from strawberry.types.base import get_object_definition
 
 from .exception import StrawberryException
 from .utils.source_finder import SourceFinder
 
 if TYPE_CHECKING:
-    from strawberry.arguments import StrawberryArgument
+    from strawberry.types.arguments import StrawberryArgument
     from strawberry.types.fields.resolver import StrawberryResolver
 
     from .exception_source import ExceptionSource
@@ -20,8 +20,8 @@ class InvalidArgumentTypeError(StrawberryException):
         self,
         resolver: StrawberryResolver,
         argument: StrawberryArgument,
-    ):
-        from strawberry.union import StrawberryUnion
+    ) -> None:
+        from strawberry.types.union import StrawberryUnion
 
         self.function = resolver.wrapped_func
         self.argument_name = argument.python_name

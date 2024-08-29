@@ -1,5 +1,5 @@
 ---
-title: ParserCache
+title: Parser Cache
 summary: Add in memory caching to the parsing step of query execution.
 tags: performance,caching,parsing
 ---

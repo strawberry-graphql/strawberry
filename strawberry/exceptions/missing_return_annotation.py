@@ -13,9 +13,13 @@ if TYPE_CHECKING:
 
 
 class MissingReturnAnnotationError(StrawberryException):
-    """The field is missing the return annotation"""
+    """The field is missing the return annotation."""
 
-    def __init__(self, field_name: str, resolver: StrawberryResolver):
+    def __init__(
+        self,
+        field_name: str,
+        resolver: StrawberryResolver,
+    ) -> None:
         self.function = resolver.wrapped_func
 
         self.message = (

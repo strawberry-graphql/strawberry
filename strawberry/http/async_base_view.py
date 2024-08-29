@@ -41,31 +41,25 @@ from .typevars import Context, Request, Response, RootValue, SubResponse
 class AsyncHTTPRequestAdapter(abc.ABC):
     @property
     @abc.abstractmethod
-    def query_params(self) -> QueryParams:
-        ...
+    def query_params(self) -> QueryParams: ...
 
     @property
     @abc.abstractmethod
-    def method(self) -> HTTPMethod:
-        ...
+    def method(self) -> HTTPMethod: ...
 
     @property
     @abc.abstractmethod
-    def headers(self) -> Mapping[str, str]:
-        ...
+    def headers(self) -> Mapping[str, str]: ...
 
     @property
     @abc.abstractmethod
-    def content_type(self) -> Optional[str]:
-        ...
+    def content_type(self) -> Optional[str]: ...
 
     @abc.abstractmethod
-    async def get_body(self) -> Union[str, bytes]:
-        ...
+    async def get_body(self) -> Union[str, bytes]: ...
 
     @abc.abstractmethod
-    async def get_form_data(self) -> FormData:
-        ...
+    async def get_form_data(self) -> FormData: ...
 
 
 class AsyncBaseHTTPView(
@@ -79,30 +73,24 @@ class AsyncBaseHTTPView(
 
     @property
     @abc.abstractmethod
-    def allow_queries_via_get(self) -> bool:
-        ...
+    def allow_queries_via_get(self) -> bool: ...
 
     @abc.abstractmethod
-    async def get_sub_response(self, request: Request) -> SubResponse:
-        ...
+    async def get_sub_response(self, request: Request) -> SubResponse: ...
 
     @abc.abstractmethod
-    async def get_context(self, request: Request, response: SubResponse) -> Context:
-        ...
+    async def get_context(self, request: Request, response: SubResponse) -> Context: ...
 
     @abc.abstractmethod
-    async def get_root_value(self, request: Request) -> Optional[RootValue]:
-        ...
+    async def get_root_value(self, request: Request) -> Optional[RootValue]: ...
 
     @abc.abstractmethod
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: SubResponse
-    ) -> Response:
-        ...
+    ) -> Response: ...
 
     @abc.abstractmethod
-    async def render_graphql_ide(self, request: Request) -> Response:
-        ...
+    async def render_graphql_ide(self, request: Request) -> Response: ...
 
     async def create_multipart_response(
         self,
@@ -165,9 +153,7 @@ class AsyncBaseHTTPView(
     def _handle_errors(
         self, errors: List[GraphQLError], response_data: GraphQLHTTPResponse
     ) -> None:
-        """
-        Hook to allow custom handling of errors, used by the Sentry Integration
-        """
+        """Hook to allow custom handling of errors, used by the Sentry Integration."""
 
     async def run(
         self,
@@ -237,7 +223,8 @@ class AsyncBaseHTTPView(
         self, stream: Callable[[], AsyncGenerator[str, None]]
     ) -> Callable[[], AsyncGenerator[str, None]]:
         """Adds a heartbeat to the stream, to prevent the connection from closing
-        when there are no messages being sent."""
+        when there are no messages being sent.
+        """
         queue = asyncio.Queue[Tuple[bool, Any]](1)
 
         cancelling = False
@@ -317,7 +304,7 @@ class AsyncBaseHTTPView(
     ) -> GraphQLRequestData:
         content_type, params = parse_content_type(request.content_type or "")
 
-        if content_type == "application/json":
+        if "application/json" in content_type:
             data = self.parse_json(await request.get_body())
         elif content_type == "multipart/form-data":
             data = await self.parse_multipart(request)
@@ -338,3 +325,6 @@ class AsyncBaseHTTPView(
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
+
+
+__all__ = ["AsyncBaseHTTPView"]

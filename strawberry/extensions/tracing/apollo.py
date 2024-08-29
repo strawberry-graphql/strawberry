@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from inspect import isawaitable
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, List, Optional
 
@@ -80,16 +80,16 @@ class ApolloTracingStats:
 
 
 class ApolloTracingExtension(SchemaExtension):
-    def __init__(self, execution_context: ExecutionContext):
+    def __init__(self, execution_context: ExecutionContext) -> None:
         self._resolver_stats: List[ApolloResolverStats] = []
         self.execution_context = execution_context
 
     def on_operation(self) -> Generator[None, None, None]:
         self.start_timestamp = self.now()
-        self.start_time = datetime.utcnow()
+        self.start_time = datetime.now(timezone.utc)
         yield
         self.end_timestamp = self.now()
-        self.end_time = datetime.utcnow()
+        self.end_time = datetime.now(timezone.utc)
 
     def on_parse(self) -> Generator[None, None, None]:
         self._start_parsing = self.now()
@@ -191,3 +191,6 @@ class ApolloTracingExtensionSync(ApolloTracingExtension):
             end_timestamp = self.now()
             resolver_stats.duration = end_timestamp - start_timestamp
             self._resolver_stats.append(resolver_stats)
+
+
+__all__ = ["ApolloTracingExtension", "ApolloTracingExtensionSync"]

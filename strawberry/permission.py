@@ -21,7 +21,7 @@ from strawberry.exceptions.permission_fail_silently_requires_optional import (
 )
 from strawberry.extensions import FieldExtension
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
-from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.types.base import StrawberryList, StrawberryOptional
 from strawberry.utils.await_maybe import await_maybe
 
 if TYPE_CHECKING:
@@ -31,13 +31,25 @@ if TYPE_CHECKING:
         AsyncExtensionResolver,
         SyncExtensionResolver,
     )
-    from strawberry.field import StrawberryField
     from strawberry.types import Info
+    from strawberry.types.field import StrawberryField
 
 
 class BasePermission(abc.ABC):
-    """
-    Base class for creating permissions
+    """Base class for permissions. All permissions should inherit from this class.
+
+    Example:
+
+    ```python
+    from strawberry.permission import BasePermission
+
+
+    class IsAuthenticated(BasePermission):
+        message = "User is not authenticated"
+
+        def has_permission(self, source, info, **kwargs):
+            return info.context["user"].is_authenticated
+    ```
     """
 
     message: Optional[str] = None
@@ -52,16 +64,39 @@ class BasePermission(abc.ABC):
     def has_permission(
         self, source: Any, info: Info, **kwargs: Any
     ) -> Union[bool, Awaitable[bool]]:
+        """Check if the permission should be accepted.
+
+        This method should be overridden by the subclasses.
+        """
         raise NotImplementedError(
             "Permission classes should override has_permission method"
         )
 
     def on_unauthorized(self) -> None:
-        """
-        Default error raising for permissions.
-        This can be overridden to customize the behavior.
-        """
+        """Default error raising for permissions.
 
+        This method can be overridden to customize the error raised when the permission is not granted.
+
+        Example:
+
+        ```python
+        from strawberry.permission import BasePermission
+
+
+        class CustomPermissionError(PermissionError):
+            pass
+
+
+        class IsAuthenticated(BasePermission):
+            message = "User is not authenticated"
+
+            def has_permission(self, source, info, **kwargs):
+                return info.context["user"].is_authenticated
+
+            def on_unauthorized(self) -> None:
+                raise CustomPermissionError(self.message)
+        ```
+        """
         # Instantiate error class
         error = self.error_class(self.message or "")
 
@@ -91,17 +126,14 @@ class BasePermission(abc.ABC):
 
 
 class PermissionExtension(FieldExtension):
-    """
-    Handles permissions for a field
-    Instantiate this as a field extension with all of the permissions you want to apply
+    """Handles permissions for a field.
 
-    fail_silently: bool = False will return None or [] if the permission fails
-    instead of raising an exception. This is only valid for optional or list fields.
+    Instantiate this as a field extension with all of the permissions you want to apply.
 
-    NOTE:
-    Currently, this is automatically added to the field, when using
-    field.permission_classes
-    This is deprecated behavior, please manually add the extension to field.extensions
+    Note:
+        Currently, this is automatically added to the field, when using field.permission_classes
+
+    This is deprecated behaviour, please manually add the extension to field.extensions
     """
 
     def __init__(
@@ -109,17 +141,22 @@ class PermissionExtension(FieldExtension):
         permissions: List[BasePermission],
         use_directives: bool = True,
         fail_silently: bool = False,
-    ):
+    ) -> None:
+        """Initialize the permission extension.
+
+        Args:
+            permissions: List of permissions to apply.
+            fail_silently: If True, return None or [] instead of raising an exception.
+                This is only valid for optional or list fields.
+            use_directives: If True, add schema directives to the field.
+        """
         self.permissions = permissions
         self.fail_silently = fail_silently
         self.return_empty_list = False
         self.use_directives = use_directives
 
     def apply(self, field: StrawberryField) -> None:
-        """
-        Applies all of the permission directives to the schema
-        and sets up silent permissions
-        """
+        """Applies all of the permission directives to the schema and sets up silent permissions."""
         if self.use_directives:
             field.directives.extend(
                 p.schema_directive for p in self.permissions if p.schema_directive
@@ -147,10 +184,7 @@ class PermissionExtension(FieldExtension):
         info: Info,
         **kwargs: Dict[str, Any],
     ) -> Any:
-        """
-        Checks if the permission should be accepted and
-        raises an exception if not
-        """
+        """Checks if the permission should be accepted and raises an exception if not."""
         for permission in self.permissions:
             if not permission.has_permission(source, info, **kwargs):
                 return self._on_unauthorized(permission)
@@ -177,11 +211,20 @@ class PermissionExtension(FieldExtension):
 
     @cached_property
     def supports_sync(self) -> bool:
-        """The Permission extension always supports async checking using await_maybe,
-        but only supports sync checking if there are no async permissions"""
+        """Whether this extension can be resolved synchronously or not.
+
+        The Permission extension always supports async checking using await_maybe,
+        but only supports sync checking if there are no async permissions.
+        """
         async_permissions = [
             True
             for permission in self.permissions
             if iscoroutinefunction(permission.has_permission)
         ]
         return len(async_permissions) == 0
+
+
+__all__ = [
+    "BasePermission",
+    "PermissionExtension",
+]

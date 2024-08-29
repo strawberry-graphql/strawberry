@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import contextlib
 import inspect
+import types
 import warnings
 from asyncio import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncContextManager,
     AsyncIterator,
     Callable,
+    ContextManager,
     Iterator,
     List,
     NamedTuple,
@@ -28,14 +31,20 @@ if TYPE_CHECKING:
 
 class WrappedHook(NamedTuple):
     extension: SchemaExtension
-    initialized_hook: Union[AsyncIterator[None], Iterator[None]]
+    hook: Callable[..., Union[AsyncContextManager[None], ContextManager[None]]]
     is_async: bool
 
 
 class ExtensionContextManagerBase:
-    __slots__ = ("hooks", "deprecation_message", "default_hook")
+    __slots__ = (
+        "hooks",
+        "deprecation_message",
+        "default_hook",
+        "async_exit_stack",
+        "exit_stack",
+    )
 
-    def __init_subclass__(cls):
+    def __init_subclass__(cls) -> None:
         cls.DEPRECATION_MESSAGE = (
             f"Event driven styled extensions for "
             f"{cls.LEGACY_ENTER} or {cls.LEGACY_EXIT}"
@@ -47,7 +56,7 @@ class ExtensionContextManagerBase:
     LEGACY_ENTER: str
     LEGACY_EXIT: str
 
-    def __init__(self, extensions: List[SchemaExtension]):
+    def __init__(self, extensions: List[SchemaExtension]) -> None:
         self.hooks: List[WrappedHook] = []
         self.default_hook: Hook = getattr(SchemaExtension, self.HOOK_NAME)
         for extension in extensions:
@@ -73,10 +82,20 @@ class ExtensionContextManagerBase:
 
         if hook_fn:
             if inspect.isgeneratorfunction(hook_fn):
-                return WrappedHook(extension, hook_fn(extension), False)
+                context_manager = contextlib.contextmanager(
+                    types.MethodType(hook_fn, extension)
+                )
+                return WrappedHook(
+                    extension=extension, hook=context_manager, is_async=False
+                )
 
             if inspect.isasyncgenfunction(hook_fn):
-                return WrappedHook(extension, hook_fn(extension), True)
+                context_manager_async = contextlib.asynccontextmanager(
+                    types.MethodType(hook_fn, extension)
+                )
+                return WrappedHook(
+                    extension=extension, hook=context_manager_async, is_async=True
+                )
 
             if callable(hook_fn):
                 return self.from_callable(extension, hook_fn)
@@ -96,27 +115,31 @@ class ExtensionContextManagerBase:
     ) -> WrappedHook:
         if iscoroutinefunction(on_start) or iscoroutinefunction(on_end):
 
-            async def iterator():
+            @contextlib.asynccontextmanager
+            async def iterator() -> AsyncIterator:
                 if on_start:
                     await await_maybe(on_start())
+
                 yield
+
                 if on_end:
                     await await_maybe(on_end())
 
-            hook = iterator()
-            return WrappedHook(extension, hook, True)
+            return WrappedHook(extension=extension, hook=iterator, is_async=True)
 
         else:
 
-            def iterator():
+            @contextlib.contextmanager
+            def iterator_async() -> Iterator[None]:
                 if on_start:
                     on_start()
+
                 yield
+
                 if on_end:
                     on_end()
 
-            hook = iterator()
-            return WrappedHook(extension, hook, False)
+            return WrappedHook(extension=extension, hook=iterator_async, is_async=False)
 
     @staticmethod
     def from_callable(
@@ -125,78 +148,61 @@ class ExtensionContextManagerBase:
     ) -> WrappedHook:
         if iscoroutinefunction(func):
 
-            async def async_iterator():
+            @contextlib.asynccontextmanager
+            async def iterator() -> AsyncIterator[None]:
                 await func(extension)
                 yield
 
-            hook = async_iterator()
-            return WrappedHook(extension, hook, True)
+            return WrappedHook(extension=extension, hook=iterator, is_async=True)
         else:
 
-            def iterator():
+            @contextlib.contextmanager
+            def iterator() -> Iterator[None]:
                 func(extension)
                 yield
 
-            hook = iterator()
-            return WrappedHook(extension, hook, False)
+            return WrappedHook(extension=extension, hook=iterator, is_async=False)
 
-    def run_hooks_sync(self, is_exit: bool = False) -> None:
-        """Run extensions synchronously."""
-        ctx = (
-            contextlib.suppress(StopIteration, StopAsyncIteration)
-            if is_exit
-            else contextlib.nullcontext()
-        )
-        for hook in self.hooks:
-            with ctx:
-                if hook.is_async:
-                    raise RuntimeError(
-                        f"SchemaExtension hook {hook.extension}.{self.HOOK_NAME} "
-                        "failed to complete synchronously."
-                    )
-                else:
-                    hook.initialized_hook.__next__()  # type: ignore[union-attr]
+    def __enter__(self) -> None:
+        self.exit_stack = contextlib.ExitStack()
 
-    async def run_hooks_async(self, is_exit: bool = False) -> None:
-        """Run extensions asynchronously with support for sync lifecycle hooks.
-
-        The ``is_exit`` flag is required as a `StopIteration` cannot be raised from
-        within a coroutine.
-        """
-        ctx = (
-            contextlib.suppress(StopIteration, StopAsyncIteration)
-            if is_exit
-            else contextlib.nullcontext()
-        )
+        self.exit_stack.__enter__()
 
         for hook in self.hooks:
-            with ctx:
-                if hook.is_async:
-                    await hook.initialized_hook.__anext__()  # type: ignore[union-attr]
-                else:
-                    hook.initialized_hook.__next__()  # type: ignore[union-attr]
-
-    def __enter__(self):
-        self.run_hooks_sync()
+            if hook.is_async:
+                raise RuntimeError(
+                    f"SchemaExtension hook {hook.extension}.{self.HOOK_NAME} "
+                    "failed to complete synchronously."
+                )
+            else:
+                self.exit_stack.enter_context(hook.hook())  # type: ignore
 
     def __exit__(
         self,
         exc_type: Optional[Type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
-    ):
-        self.run_hooks_sync(is_exit=True)
+    ) -> None:
+        self.exit_stack.__exit__(exc_type, exc_val, exc_tb)
 
-    async def __aenter__(self):
-        await self.run_hooks_async()
+    async def __aenter__(self) -> None:
+        self.async_exit_stack = contextlib.AsyncExitStack()
+
+        await self.async_exit_stack.__aenter__()
+
+        for hook in self.hooks:
+            if hook.is_async:
+                await self.async_exit_stack.enter_async_context(hook.hook())  # type: ignore
+            else:
+                self.async_exit_stack.enter_context(hook.hook())  # type: ignore
 
     async def __aexit__(
         self,
         exc_type: Optional[Type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
-    ):
-        await self.run_hooks_async(is_exit=True)
+    ) -> None:
+        await self.async_exit_stack.__aexit__(exc_type, exc_val, exc_tb)
 
 
 class OperationContextManager(ExtensionContextManagerBase):

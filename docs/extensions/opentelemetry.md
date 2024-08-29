@@ -1,5 +1,5 @@
 ---
-title: OpenTelemetryExtension
+title: Open Telemetry
 summary: Add Open Telemetry tracing to your GraphQL server.
 tags: tracing
 ---

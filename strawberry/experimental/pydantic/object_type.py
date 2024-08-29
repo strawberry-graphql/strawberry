@@ -17,11 +17,9 @@ from typing import (
 )
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic._compat import (
-    IS_PYDANTIC_V1,
     CompatModelField,
-    get_model_fields,
+    PydanticCompat,
 )
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
@@ -35,8 +33,9 @@ from strawberry.experimental.pydantic.utils import (
     get_default_factory_for_field,
     get_private_fields,
 )
-from strawberry.field import StrawberryField
-from strawberry.object_type import _process_type, _wrap_dataclass
+from strawberry.types.auto import StrawberryAuto
+from strawberry.types.field import StrawberryField
+from strawberry.types.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.dataclasses import add_custom_init_fn
 
@@ -44,10 +43,12 @@ if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
 
 
-def get_type_for_field(field: CompatModelField, is_input: bool):  # noqa: ANN201
+def get_type_for_field(field: CompatModelField, is_input: bool, compat: PydanticCompat):  # noqa: ANN201
     outer_type = field.outer_type_
-    replaced_type = replace_types_recursively(outer_type, is_input)
-    if IS_PYDANTIC_V1:
+
+    replaced_type = replace_types_recursively(outer_type, is_input, compat=compat)
+
+    if field.is_v1:
         # only pydantic v1 has this Optional logic
         should_add_optional: bool = field.allow_none
         if should_add_optional:
@@ -62,9 +63,10 @@ def _build_dataclass_creation_fields(
     existing_fields: Dict[str, StrawberryField],
     auto_fields_set: Set[str],
     use_pydantic_alias: bool,
+    compat: PydanticCompat,
 ) -> DataclassCreationFields:
     field_type = (
-        get_type_for_field(field, is_input)
+        get_type_for_field(field, is_input, compat=compat)
         if field.name in auto_fields_set
         else existing_fields[field.name].type
     )
@@ -89,7 +91,7 @@ def _build_dataclass_creation_fields(
             graphql_name=graphql_name,
             # always unset because we use default_factory instead
             default=dataclasses.MISSING,
-            default_factory=get_default_factory_for_field(field),
+            default_factory=get_default_factory_for_field(field, compat=compat),
             type_annotation=StrawberryAnnotation.from_annotation(field_type),
             description=field.description,
             deprecation_reason=(
@@ -129,7 +131,8 @@ def type(
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
-        model_fields = get_model_fields(model)
+        compat = PydanticCompat.from_model(model)
+        model_fields = compat.get_model_fields(model)
         original_fields_set = set(fields) if fields else set()
 
         if fields:
@@ -174,7 +177,7 @@ def type(
         )
 
         wrapped = _wrap_dataclass(cls)
-        extra_strawberry_fields = _get_fields(wrapped)
+        extra_strawberry_fields = _get_fields(wrapped, {})
         extra_fields = cast(List[dataclasses.Field], extra_strawberry_fields)
         private_fields = get_private_fields(wrapped)
 
@@ -182,7 +185,12 @@ def type(
 
         all_model_fields: List[DataclassCreationFields] = [
             _build_dataclass_creation_fields(
-                field, is_input, extra_fields_dict, auto_fields_set, use_pydantic_alias
+                field,
+                is_input,
+                extra_fields_dict,
+                auto_fields_set,
+                use_pydantic_alias,
+                compat=compat,
             )
             for field_name, field in model_fields.items()
             if field_name in fields_set
@@ -304,8 +312,10 @@ def input(
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     """Convenience decorator for creating an input type from a Pydantic model.
-    Equal to partial(type, is_input=True)
-    See https://github.com/strawberry-graphql/strawberry/issues/1830
+
+    Equal to `partial(type, is_input=True)`
+
+    See https://github.com/strawberry-graphql/strawberry/issues/1830.
     """
     return type(
         model=model,
@@ -332,8 +342,10 @@ def interface(
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     """Convenience decorator for creating an interface type from a Pydantic model.
-    Equal to partial(type, is_interface=True)
-    See https://github.com/strawberry-graphql/strawberry/issues/1830
+
+    Equal to `partial(type, is_interface=True)`
+
+    See https://github.com/strawberry-graphql/strawberry/issues/1830.
     """
     return type(
         model=model,

@@ -9,9 +9,11 @@ from typing import (
     AsyncIterator,
     Awaitable,
     Callable,
-    Mapping,
+    Dict,
+    List,
     Optional,
     Sequence,
+    Type,
     Union,
     cast,
 )
@@ -21,30 +23,32 @@ from starlette.background import BackgroundTasks  # noqa: TCH002
 from starlette.requests import HTTPConnection, Request
 from starlette.responses import (
     HTMLResponse,
+    JSONResponse,
     PlainTextResponse,
     Response,
     StreamingResponse,
 )
 from starlette.websockets import WebSocket
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, params
+from fastapi.datastructures import Default
+from fastapi.routing import APIRoute
+from fastapi.utils import generate_unique_id
+from strawberry.asgi import ASGIRequestAdapter
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi.context import BaseContext, CustomContext
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
-from strawberry.http import (
-    process_result,
-)
-from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
+from strawberry.http import process_result
+from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.exceptions import HTTPException
-from strawberry.http.types import FormData, HTTPMethod, QueryParams
-from strawberry.http.typevars import (
-    Context,
-    RootValue,
-)
+from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from starlette.types import ASGIApp
+    from enum import Enum
+
+    from starlette.routing import BaseRoute
+    from starlette.types import ASGIApp, Lifespan
 
     from strawberry.fastapi.context import MergedContext
     from strawberry.http import GraphQLHTTPResponse
@@ -53,45 +57,16 @@ if TYPE_CHECKING:
     from strawberry.types import ExecutionResult
 
 
-class FastAPIRequestAdapter(AsyncHTTPRequestAdapter):
-    def __init__(self, request: Request):
-        self.request = request
-
-    @property
-    def query_params(self) -> QueryParams:
-        return dict(self.request.query_params)
-
-    @property
-    def method(self) -> HTTPMethod:
-        return cast(HTTPMethod, self.request.method.upper())
-
-    @property
-    def headers(self) -> Mapping[str, str]:
-        return self.request.headers
-
-    @property
-    def content_type(self) -> Optional[str]:
-        return self.request.headers.get("Content-Type", None)
-
-    async def get_body(self) -> bytes:
-        return await self.request.body()
-
-    async def get_form_data(self) -> FormData:
-        multipart_data = await self.request.form()
-
-        return FormData(files=multipart_data, form=multipart_data)
-
-
 class GraphQLRouter(
     AsyncBaseHTTPView[Request, Response, Response, Context, RootValue], APIRouter
 ):
     graphql_ws_handler_class = GraphQLWSHandler
     graphql_transport_ws_handler_class = GraphQLTransportWSHandler
     allow_queries_via_get = True
-    request_adapter_class = FastAPIRequestAdapter
+    request_adapter_class = ASGIRequestAdapter
 
     @staticmethod
-    async def __get_root_value():
+    async def __get_root_value() -> None:
         return None
 
     @staticmethod
@@ -162,14 +137,46 @@ class GraphQLRouter(
             GRAPHQL_WS_PROTOCOL,
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
+        prefix: str = "",
+        tags: Optional[List[Union[str, Enum]]] = None,
+        dependencies: Optional[Sequence[params.Depends]] = None,
+        default_response_class: Type[Response] = Default(JSONResponse),
+        responses: Optional[Dict[Union[int, str], Dict[str, Any]]] = None,
+        callbacks: Optional[List[BaseRoute]] = None,
+        routes: Optional[List[BaseRoute]] = None,
+        redirect_slashes: bool = True,
         default: Optional[ASGIApp] = None,
+        dependency_overrides_provider: Optional[Any] = None,
+        route_class: Type[APIRoute] = APIRoute,
         on_startup: Optional[Sequence[Callable[[], Any]]] = None,
         on_shutdown: Optional[Sequence[Callable[[], Any]]] = None,
-    ):
+        lifespan: Optional[Lifespan[Any]] = None,
+        deprecated: Optional[bool] = None,
+        include_in_schema: bool = True,
+        generate_unique_id_function: Callable[[APIRoute], str] = Default(
+            generate_unique_id
+        ),
+        **kwargs: Any,
+    ) -> None:
         super().__init__(
+            prefix=prefix,
+            tags=tags,
+            dependencies=dependencies,
+            default_response_class=default_response_class,
+            responses=responses,
+            callbacks=callbacks,
+            routes=routes,
+            redirect_slashes=redirect_slashes,
             default=default,
+            dependency_overrides_provider=dependency_overrides_provider,
+            route_class=route_class,
             on_startup=on_startup,
             on_shutdown=on_shutdown,
+            lifespan=lifespan,
+            deprecated=deprecated,
+            include_in_schema=include_in_schema,
+            generate_unique_id_function=generate_unique_id_function,
+            **kwargs,
         )
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
@@ -251,11 +258,11 @@ class GraphQLRouter(
             websocket: WebSocket,
             context: Context = Depends(self.context_getter),
             root_value: RootValue = Depends(self.root_value_getter),
-        ):
-            async def _get_context():
+        ) -> None:
+            async def _get_context() -> Context:
                 return context
 
-            async def _get_root_value():
+            async def _get_root_value() -> RootValue:
                 return root_value
 
             preferred_protocol = self.pick_preferred_protocol(websocket)
@@ -337,3 +344,6 @@ class GraphQLRouter(
                 "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
             },
         )
+
+
+__all__ = ["GraphQLRouter"]

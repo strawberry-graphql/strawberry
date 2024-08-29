@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Dict, List, Type
+from typing import Any, Dict, List, Type
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -10,14 +10,16 @@ from strawberry.exceptions import (
     FieldWithResolverAndDefaultValueError,
     PrivateStrawberryFieldError,
 )
-from strawberry.field import StrawberryField
-from strawberry.private import is_private
-from strawberry.type import has_object_definition
-from strawberry.unset import UNSET
+from strawberry.types.base import has_object_definition
+from strawberry.types.field import StrawberryField
+from strawberry.types.private import is_private
+from strawberry.types.unset import UNSET
 
 
-def _get_fields(cls: Type) -> List[StrawberryField]:
-    """Get all the strawberry fields off a strawberry.type cls
+def _get_fields(
+    cls: Type[Any], original_type_annotations: Dict[str, Type[Any]]
+) -> List[StrawberryField]:
+    """Get all the strawberry fields off a strawberry.type cls.
 
     This function returns a list of StrawberryFields (one for each field item), while
     also paying attention the name and typing of the field.
@@ -25,16 +27,19 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     StrawberryFields can be defined on a strawberry.type class as either a dataclass-
     style field or using strawberry.field as a decorator.
 
-    >>> import strawberry
-    >>> @strawberry.type
-    ... class Query:
-    ...     type_1a: int = 5
-    ...     type_1b: int = strawberry.field(...)
-    ...     type_1c: int = strawberry.field(resolver=...)
-    ...
-    ...     @strawberry.field
-    ...     def type_2(self) -> int:
-    ...         ...
+    ```python
+    import strawberry
+
+
+    @strawberry.type
+    class Query:
+        type_1a: int = 5
+        type_1b: int = strawberry.field(...)
+        type_1c: int = strawberry.field(resolver=...)
+
+        @strawberry.field
+        def type_2(self) -> int: ...
+    ```
 
     Type #1:
         A pure dataclass-style field. Will not have a StrawberryField; one will need to
@@ -152,7 +157,14 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
         assert_message = "Field must have a name by the time the schema is generated"
         assert field_name is not None, assert_message
 
+        if field.name in original_type_annotations:
+            field.type = original_type_annotations[field.name]
+            field.type_annotation = StrawberryAnnotation(annotation=field.type)
+
         # TODO: Raise exception if field_name already in fields
         fields[field_name] = field
 
     return list(fields.values())
+
+
+__all__ = ["_get_fields"]

@@ -22,7 +22,9 @@ from strawberry.extensions import FieldExtension
 
 
 class UpperCaseExtension(FieldExtension):
-    def resolve(self, next_: Callable[..., Any], source: Any, info: Info, **kwargs):
+    def resolve(
+        self, next_: Callable[..., Any], source: Any, info: strawberry.Info, **kwargs
+    ):
         result = next_(source, info, **kwargs)
         return str(result).upper()
 
@@ -40,22 +42,29 @@ will be called instead of the resolver and receives the resolver function as the
 `next` argument. Therefore, it is important to not modify any arguments that are
 passed to `next` in an incompatible way.
 
-```graphql+response
+<CodeGrid>
+
+```graphql
 query {
-    string
+  string
 }
----
+```
+
+```json
 {
   "string": "THIS IS A TEST!!"
 }
 ```
 
+</CodeGrid>
+
 ## Modifying the field
 
 <Warning>
 
-The `StrawberryField` API is not stable and might change in the future without
-warning.
+Most of the `StrawberryField` API is not stable and might change in the future
+without warning. Stable features include: `StrawberryField.type`,
+`StrawberryField.python_name`, and `StrawberryField.arguments`.
 
 </Warning>
 
@@ -70,7 +79,7 @@ import time
 import strawberry
 from strawberry.extensions import FieldExtension
 from strawberry.schema_directive import Location
-from strawberry.field import StrawberryField
+from strawberry.types.field import StrawberryField
 
 
 @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
@@ -88,7 +97,7 @@ class CachingExtension(FieldExtension):
         field.directives.append(Cached(time=self.caching_time))
 
     def resolve(
-        self, next_: Callable[..., Any], source: Any, info: Info, **kwargs
+        self, next_: Callable[..., Any], source: Any, info: strawberry.Info, **kwargs
     ) -> Any:
         current_time = time.time()
         if self.last_cached + self.caching_time > current_time:
@@ -97,18 +106,24 @@ class CachingExtension(FieldExtension):
         return self.cached_result
 ```
 
-```python+schema
+<CodeGrid>
+
+```python
 @strawberry.type
 class Client:
 
     @strawberry.field(extensions=[CachingExtensions(caching_time=200)])
     def analyzed_hours(self, info) -> int:
         return do_expensive_computation()
----
+```
+
+```graphql
 type Client {
     analyzedHours: Int! @Cached(time=200)
 }
 ```
+
+</CodeGrid>
 
 ## Combining multiple field extensions
 
@@ -164,12 +179,18 @@ from strawberry.extensions import FieldExtension
 
 
 class UpperCaseExtension(FieldExtension):
-    def resolve(self, next: Callable[..., Any], source: Any, info: Info, **kwargs):
+    def resolve(
+        self, next: Callable[..., Any], source: Any, info: strawberry.Info, **kwargs
+    ):
         result = next(source, info, **kwargs)
         return str(result).upper()
 
     async def resolve_async(
-        self, next: Callable[..., Awaitable[Any]], source: Any, info: Info, **kwargs
+        self,
+        next: Callable[..., Awaitable[Any]],
+        source: Any,
+        info: strawberry.Info,
+        **kwargs
     ):
         result = await next(source, info, **kwargs)
         return str(result).upper()

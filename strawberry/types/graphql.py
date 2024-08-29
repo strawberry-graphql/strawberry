@@ -29,3 +29,6 @@ class OperationType(enum.Enum):
             }
 
         raise ValueError(f"Unsupported HTTP method: {method}")  # pragma: no cover
+
+
+__all__ = ["OperationType"]

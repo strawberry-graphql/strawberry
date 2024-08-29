@@ -41,8 +41,8 @@ if TYPE_CHECKING:
 
 
 class GraphQLWebsocketCommunicator(WebsocketCommunicator):
-    """
-    Usage:
+    """A test communicator for GraphQL over Websockets.
+
     ```python
     import pytest
     from strawberry.channels.testing import GraphQLWebsocketCommunicator
@@ -69,18 +69,24 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         path: str,
         headers: Optional[List[Tuple[bytes, bytes]]] = None,
         protocol: str = GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        connection_params: dict = {},
         **kwargs: Any,
-    ):
-        """
+    ) -> None:
+        """Create a new communicator.
 
         Args:
             application: Your asgi application that encapsulates the strawberry schema.
             path: the url endpoint for the schema.
             protocol: currently this supports `graphql-transport-ws` only.
+            connection_params: a dictionary of connection parameters to send to the server.
+            headers: a list of tuples to be sent as headers to the server.
+            subprotocols: an ordered list of preferred subprotocols to be sent to the server.
+            **kwargs: additional arguments to be passed to the `WebsocketCommunicator` constructor.
         """
         self.protocol = protocol
         subprotocols = kwargs.get("subprotocols", [])
         subprotocols.append(protocol)
+        self.connection_params = connection_params
         super().__init__(application, path, headers, subprotocols=subprotocols)
 
     async def __aenter__(self) -> Self:
@@ -99,7 +105,9 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         res = await self.connect()
         if self.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
             assert res == (True, GRAPHQL_TRANSPORT_WS_PROTOCOL)
-            await self.send_json_to(ConnectionInitMessage().as_dict())
+            await self.send_json_to(
+                ConnectionInitMessage(payload=self.connection_params).as_dict()
+            )
             response = await self.receive_json_from()
             assert response == ConnectionAckMessage().as_dict()
         else:
@@ -151,7 +159,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
                 return
 
     def process_errors(self, errors: List[GraphQLFormattedError]) -> List[GraphQLError]:
-        """Reconst a GraphQLError from a FormattedGraphQLError"""
+        """Reconstructs a GraphQLError from a FormattedGraphQLError."""
         result = []
         for f_error in errors:
             error = GraphQLError(
@@ -161,3 +169,6 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
             error.path = f_error.get("path", None)
             result.append(error)
         return result
+
+
+__all__ = ["GraphQLWebsocketCommunicator"]

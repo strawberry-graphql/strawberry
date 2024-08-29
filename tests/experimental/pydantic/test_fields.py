@@ -8,8 +8,7 @@ from pydantic import BaseModel, ValidationError, conlist
 
 import strawberry
 from strawberry.experimental.pydantic._compat import IS_PYDANTIC_V1
-from strawberry.type import StrawberryOptional
-from strawberry.types.types import StrawberryObjectDefinition
+from strawberry.types.base import StrawberryObjectDefinition, StrawberryOptional
 from tests.experimental.pydantic.utils import needs_pydantic_v1, needs_pydantic_v2
 
 
@@ -150,8 +149,7 @@ def test_constrained_list():
         friends: conlist(str, min_items=1)
 
     @strawberry.experimental.pydantic.type(model=User, all_fields=True)
-    class UserType:
-        ...
+    class UserType: ...
 
     assert UserType.__strawberry_definition__.fields[0].name == "friends"
     assert (
@@ -178,8 +176,7 @@ def test_constrained_list_nested():
         friends: conlist(conlist(int, min_items=1), min_items=1)
 
     @strawberry.experimental.pydantic.type(model=User, all_fields=True)
-    class UserType:
-        ...
+    class UserType: ...
 
     assert UserType.__strawberry_definition__.fields[0].name == "friends"
     assert (

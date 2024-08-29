@@ -25,7 +25,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         get_context: Callable,
         get_root_value: Callable,
         ws: WebSocket,
-    ):
+    ) -> None:
         super().__init__(schema, debug, keep_alive, keep_alive_interval)
         self._get_context = get_context
         self._get_root_value = get_root_value
@@ -65,3 +65,6 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
 
             for operation_id in list(self.subscriptions.keys()):
                 await self.cleanup_operation(operation_id)
+
+
+__all__ = ["GraphQLWSHandler"]

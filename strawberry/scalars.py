@@ -3,23 +3,24 @@ from __future__ import annotations
 import base64
 from typing import TYPE_CHECKING, Any, Dict, NewType, Union
 
-from .custom_scalar import scalar
+from strawberry.types.scalar import scalar
 
 if TYPE_CHECKING:
-    from .custom_scalar import ScalarDefinition, ScalarWrapper
+    from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
 ID = NewType("ID", str)
+"""Represent the GraphQL `ID` scalar type."""
 
 JSON = scalar(
     NewType("JSON", object),  # mypy doesn't like `NewType("name", Any)`
     description=(
         "The `JSON` scalar type represents JSON values as specified by "
         "[ECMA-404]"
-        "(http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf)."
+        "(https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf)."
     ),
     specified_by_url=(
-        "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf"
+        "https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf"
     ),
     serialize=lambda v: v,
     parse_value=lambda v: v,
@@ -62,3 +63,6 @@ def is_scalar(
         return True
 
     return hasattr(annotation, "_scalar_definition")
+
+
+__all__ = ["ID", "JSON", "Base16", "Base32", "Base64", "is_scalar"]

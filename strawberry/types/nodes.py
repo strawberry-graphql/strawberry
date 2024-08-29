@@ -1,5 +1,4 @@
-"""
-Abstraction layer for graphql-core field nodes.
+"""Abstraction layer for graphql-core field nodes.
 
 Call `convert_sections` on a list of GraphQL `FieldNode`s,
 such as in `info.field_nodes`.
@@ -9,6 +8,7 @@ If a node has only one useful value, it's value is inlined.
 If a list of nodes have unique names, it's transformed into a mapping.
 Note Python dicts maintain ordering (for all supported versions).
 """
+
 from __future__ import annotations
 
 import dataclasses
@@ -150,3 +150,6 @@ class SelectedField:
                 info, getattr(node.selection_set, "selections", [])
             ),
         )
+
+
+__all__ = ["convert_selections", "FragmentSpread", "InlineFragment", "SelectedField"]

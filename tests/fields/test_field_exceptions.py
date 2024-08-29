@@ -10,7 +10,7 @@ from strawberry.exceptions import (
     FieldWithResolverAndDefaultValueError,
 )
 from strawberry.extensions.field_extension import FieldExtension
-from strawberry.field import StrawberryField
+from strawberry.types.field import StrawberryField
 
 
 def test_field_with_resolver_default():
@@ -57,8 +57,7 @@ def test_extension_changing_field_return_value():
     @strawberry.type
     class Query:
         @strawberry.field(extensions=[ChangeReturnTypeExtension()])
-        def test_changing_return_type(self) -> bool:
-            ...
+        def test_changing_return_type(self) -> bool: ...
 
     schema = strawberry.Schema(query=Query)
     expected = """\

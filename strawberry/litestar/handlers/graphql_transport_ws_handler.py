@@ -20,7 +20,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         get_context: Callable,
         get_root_value: Callable,
         ws: WebSocket,
-    ):
+    ) -> None:
         super().__init__(schema, debug, connection_init_wait_timeout)
         self._get_context = get_context
         self._get_root_value = get_root_value
@@ -55,3 +55,6 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
             pass
         finally:
             await self.shutdown()
+
+
+__all__ = ["GraphQLTransportWSHandler"]

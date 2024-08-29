@@ -2,6 +2,7 @@ import textwrap
 
 import strawberry
 from strawberry.federation.schema_directives import Link
+from tests.conftest import skip_if_gql_32
 
 
 def test_link_directive():
@@ -38,6 +39,7 @@ def test_link_directive():
     assert schema.as_str() == textwrap.dedent(expected).strip()
 
 
+@skip_if_gql_32("formatting is different in gql 3.2")
 def test_link_directive_imports():
     @strawberry.type
     class Query:
@@ -47,7 +49,7 @@ def test_link_directive_imports():
         query=Query,
         schema_directives=[
             Link(
-                url="https://specs.apollo.dev/federation/v2.3",
+                url="https://specs.apollo.dev/federation/v2.7",
                 import_=[
                     "@key",
                     "@requires",
@@ -64,20 +66,30 @@ def test_link_directive_imports():
     )
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@requires", "@provides", "@external", {name: "@tag", as: "@mytag"}, "@extends", "@shareable", "@inaccessible", "@override"]) {
-          query: Query
-        }
+    schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: [
+      "@key"
+      "@requires"
+      "@provides"
+      "@external"
+      { name: "@tag", as: "@mytag" }
+      "@extends"
+      "@shareable"
+      "@inaccessible"
+      "@override"
+    ]) {
+      query: Query
+    }
 
-        type Query {
-          _service: _Service!
-          hello: String!
-        }
+    type Query {
+      _service: _Service!
+      hello: String!
+    }
 
-        scalar _Any
+    scalar _Any
 
-        type _Service {
-          sdl: String!
-        }
+    type _Service {
+      sdl: String!
+    }
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -95,7 +107,7 @@ def test_adds_link_directive_automatically():
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key"]) {
           query: Query
         }
 
@@ -139,7 +151,7 @@ def test_adds_link_directive_from_interface():
     )
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key"]) {
           query: Query
         }
 
@@ -184,7 +196,7 @@ def test_adds_link_directive_from_input_types():
     )
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@inaccessible"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@inaccessible"]) {
           query: Query
         }
 
@@ -224,7 +236,7 @@ def test_adds_link_directive_automatically_from_field():
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@tag"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key", "@tag"]) {
           query: Query
         }
 
@@ -303,7 +315,7 @@ def test_adds_link_directive_automatically_from_scalar():
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.7", import: ["@key"]) {
           query: Query
         }
 

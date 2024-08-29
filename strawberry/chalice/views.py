@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class ChaliceHTTPRequestAdapter(SyncHTTPRequestAdapter):
-    def __init__(self, request: Request):
+    def __init__(self, request: Request) -> None:
         self.request = request
 
     @property
@@ -62,7 +62,7 @@ class GraphQLView(
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
-    ):
+    ) -> None:
         self.allow_queries_via_get = allow_queries_via_get
         self.schema = schema
         if graphiql is not None:
@@ -94,10 +94,16 @@ class GraphQLView(
         http_status_code: int,
         headers: Optional[Dict[str, str | List[str]]] = None,
     ) -> Response:
-        """
-        A wrapper for error responses
+        """A wrapper for error responses.
+
+        Args:
+            message: The error message.
+            error_code: The error code.
+            http_status_code: The HTTP status code.
+            headers: The headers to include in the response.
+
         Returns:
-        An errors response
+            An errors response.
         """
         body = {"Code": error_code, "Message": message}
 
@@ -139,3 +145,6 @@ class GraphQLView(
                 message=e.reason,
                 http_status_code=e.status_code,
             )
+
+
+__all__ = ["GraphQLView"]

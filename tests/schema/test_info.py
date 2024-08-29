@@ -6,10 +6,9 @@ from typing_extensions import Annotated
 import pytest
 
 import strawberry
-from strawberry.type import StrawberryOptional
-from strawberry.types import Info
+from strawberry.types.base import StrawberryOptional
 from strawberry.types.nodes import FragmentSpread, InlineFragment, SelectedField
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
 
 
 def test_info_has_the_correct_shape():
@@ -32,7 +31,7 @@ def test_info_has_the_correct_shape():
     @strawberry.type
     class Query:
         @strawberry.field
-        def hello_world(self, info: Info[str, str]) -> Result:
+        def hello_world(self, info: strawberry.Info[str, str]) -> Result:
             return Result(
                 path="".join([str(p) for p in info.path.as_list()]),
                 operation=str(info.operation),
@@ -110,7 +109,7 @@ def test_info_field_fragments():
     @strawberry.type
     class Query:
         @strawberry.field
-        def hello(self, info: Info[str, str]) -> Result:
+        def hello(self, info: strawberry.Info[str, str]) -> Result:
             nonlocal selected_fields
             selected_fields = info.selected_fields
             return Result(ok=True)
@@ -186,7 +185,10 @@ def test_info_arguments():
     class Query:
         @strawberry.field
         def test_arg(
-            self, info: Info[str, str], input: TestInput, another_arg: bool = True
+            self,
+            info: strawberry.Info[str, str],
+            input: TestInput,
+            another_arg: bool = True,
         ) -> str:
             nonlocal selected_fields
             selected_fields = info.selected_fields
@@ -254,7 +256,7 @@ def test_info_selected_fields_undefined_variable():
     class Query:
         @strawberry.field
         def hello(
-            self, info: Info[str, str], optional_input: Optional[str] = "hi"
+            self, info: strawberry.Info[str, str], optional_input: Optional[str] = "hi"
         ) -> Result:
             nonlocal selected_fields
             selected_fields = info.selected_fields
@@ -304,7 +306,7 @@ def test_return_type_from_resolver(return_type, return_value):
     @strawberry.type
     class Query:
         @strawberry.field
-        def field(self, info: Info) -> return_type:
+        def field(self, info: strawberry.Info) -> return_type:
             assert info.return_type == return_type
             return return_value
 

@@ -6,7 +6,7 @@ import pytest
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidUnionTypeError
-from strawberry.union import StrawberryUnion, union
+from strawberry.types.union import StrawberryUnion, union
 
 pytestmark = pytest.mark.filterwarnings(
     "ignore:Passing types to `strawberry.union` is deprecated."
