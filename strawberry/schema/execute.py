@@ -15,9 +15,8 @@ from typing import (
     Union,
 )
 
-from graphql import GraphQLError, parse
+from graphql import GraphQLError, parse, subscribe
 from graphql import execute as original_execute
-from graphql.execution.subscribe import subscribe
 from graphql.validation import validate
 
 from strawberry.exceptions import MissingQueryError
