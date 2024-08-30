@@ -222,14 +222,12 @@ class AsyncBaseHTTPView(
     def _stream_with_heartbeat(
         self, stream: Callable[[], AsyncGenerator[str, None]]
     ) -> Callable[[], AsyncGenerator[str, None]]:
-        """Adds a heartbeat to the stream, to prevent the connection from closing
-        when there are no messages being sent.
-        """
+        """Adds a heartbeat to the stream, to prevent the connection from closing when there are no messages being sent."""
         queue = asyncio.Queue[Tuple[bool, Any]](1)
 
         cancelling = False
 
-        async def drain():
+        async def drain() -> None:
             try:
                 async for item in stream():
                     await queue.put((False, item))
@@ -239,7 +237,7 @@ class AsyncBaseHTTPView(
                 else:
                     raise
 
-        async def heartbeat():
+        async def heartbeat() -> None:
             while True:
                 await queue.put((False, self.encode_multipart_data({}, "graphql")))
 
@@ -249,7 +247,7 @@ class AsyncBaseHTTPView(
             heartbeat_task = asyncio.create_task(heartbeat())
             task = asyncio.create_task(drain())
 
-            async def cancel_tasks():
+            async def cancel_tasks() -> None:
                 nonlocal cancelling
                 cancelling = True
                 task.cancel()
@@ -282,7 +280,7 @@ class AsyncBaseHTTPView(
         result: SubscriptionExecutionResult,
         separator: str = "graphql",
     ) -> Callable[[], AsyncGenerator[str, None]]:
-        async def stream():
+        async def stream() -> AsyncGenerator[str, None]:
             async for value in result:
                 response = await self.process_result(request, value)
                 yield self.encode_multipart_data({"payload": response}, separator)

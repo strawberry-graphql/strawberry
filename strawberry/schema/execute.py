@@ -23,7 +23,6 @@ from strawberry.exceptions import MissingQueryError
 from strawberry.extensions.runner import SchemaExtensionsRunner
 from strawberry.schema.validation_rules.one_of import OneOfInputValidationRule
 from strawberry.types import ExecutionResult
-from strawberry.types.execution import SubscriptionExecutionResult
 from strawberry.types.graphql import OperationType
 
 from .exceptions import InvalidOperationTypeError
@@ -38,6 +37,7 @@ if TYPE_CHECKING:
 
     from strawberry.extensions import SchemaExtension
     from strawberry.types import ExecutionContext
+    from strawberry.types.execution import SubscriptionExecutionResult
 
 
 # duplicated because of https://github.com/mkdocstrings/griffe-typingdoc/issues/7
