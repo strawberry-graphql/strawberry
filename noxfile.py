@@ -6,6 +6,7 @@ from nox_poetry import Session, session
 
 nox.options.reuse_existing_virtualenvs = True
 nox.options.error_on_external_run = True
+nox.options.default_venv_backend = "uv"
 
 PYTHON_VERSIONS = ["3.12", "3.11", "3.10", "3.9", "3.8"]
 GQL_CORE_VERSIONS = [
