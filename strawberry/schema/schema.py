@@ -53,15 +53,12 @@ if TYPE_CHECKING:
 
     from strawberry.directive import StrawberryDirective
     from strawberry.extensions import SchemaExtension
-    from strawberry.field import StrawberryField
-    from strawberry.type import StrawberryType
     from strawberry.types import ExecutionResult, SubscriptionExecutionResult
     from strawberry.types.base import StrawberryType
     from strawberry.types.enum import EnumDefinition
     from strawberry.types.field import StrawberryField
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
     from strawberry.types.union import StrawberryUnion
-    from strawberry.union import StrawberryUnion
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.QUERY,

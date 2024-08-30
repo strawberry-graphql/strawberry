@@ -256,7 +256,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         else:
             # create AsyncGenerator returning a single result
             async def get_result_source() -> AsyncIterator[ExecutionResult]:
-                yield await self.schema.execute(
+                yield await self.schema.execute(  # type: ignore
                     query=message.payload.query,
                     variable_values=message.payload.variables,
                     context_value=context,

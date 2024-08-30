@@ -335,7 +335,7 @@ class SyncGraphQLHTTPConsumer(
     # handlers in a threadpool. Check SyncConsumer's documentation for more info:
     # https://github.com/django/channels/blob/main/channels/consumer.py#L104
     @database_sync_to_async  # pyright: ignore[reportIncompatibleMethodOverride]
-    def run(  # type: ignore[override]
+    def run(
         self,
         request: ChannelsRequest,
         context: Optional[Context] = UNSET,

@@ -223,7 +223,7 @@ class GraphQL(
 
     async def create_multipart_response(
         self,
-        request: Request,
+        request: Request | WebSocket,
         stream: Callable[[], AsyncIterator[str]],
     ) -> Response:
         return StreamingResponse(
