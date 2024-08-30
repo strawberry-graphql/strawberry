@@ -15,6 +15,7 @@ from typing import (
 )
 
 from aiohttp import web
+from aiohttp.multipart import BodyPartReader
 from strawberry.aiohttp.handlers import (
     GraphQLTransportWSHandler,
     GraphQLWSHandler,
@@ -60,6 +61,7 @@ class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
         files: Dict[str, Any] = {}
 
         async for field in reader:
+            assert isinstance(field, BodyPartReader)
             assert field.name
 
             if field.filename:
