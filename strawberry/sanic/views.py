@@ -195,7 +195,7 @@ class GraphQLView(
 
         await response.eof()
 
-        return response
+        return None
 
 
 __all__ = ["GraphQLView"]
