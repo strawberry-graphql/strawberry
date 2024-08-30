@@ -6,6 +6,7 @@ from nox_poetry import Session, session
 
 nox.options.reuse_existing_virtualenvs = True
 nox.options.error_on_external_run = True
+nox.options.default_venv_backend = "uv"
 
 PYTHON_VERSIONS = ["3.12", "3.11", "3.10", "3.9", "3.8"]
 GQL_CORE_VERSIONS = [
@@ -37,7 +38,6 @@ INTEGRATIONS = [
     "flask",
     "quart",
     "sanic",
-    "starlite",
     "litestar",
     "pydantic",
 ]
@@ -116,7 +116,6 @@ def tests_starlette(session: Session, starlette: str, gql_core: str) -> None:
         "flask",
         "quart",
         "sanic",
-        "starlite",
         "litestar",
     ],
 )
@@ -130,8 +129,6 @@ def tests_integrations(session: Session, integration: str, gql_core: str) -> Non
     elif integration == "channels":
         session._session.install("pytest-django")  # type: ignore
         session._session.install("daphne")  # type: ignore
-    elif integration == "starlite":
-        session._session.install("pydantic<2.0")  # type: ignore
 
     session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", integration)
 
