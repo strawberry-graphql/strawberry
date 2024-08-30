@@ -1300,42 +1300,17 @@ tests = ["asttokens (>=2.1.0)", "coverage", "coverage-enable-subprocess", "ipyth
 
 [[package]]
 name = "faker"
-version = "28.0.0"
+version = "28.1.0"
 description = "Faker is a Python package that generates fake data for you."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "Faker-28.0.0-py3-none-any.whl", hash = "sha256:6a3a08be54c37e05f7943d7ba5211d252c1de737687a46ad6f29209d8d5db11f"},
-    {file = "faker-28.0.0.tar.gz", hash = "sha256:0d3c0399204aaf8205cc1750db443474ca0436f177126b2c27b798e8336cc74f"},
+    {file = "Faker-28.1.0-py3-none-any.whl", hash = "sha256:b17d69312ef6485a720e21bffa997668c88876a5298b278e903ba706243c9c6b"},
+    {file = "faker-28.1.0.tar.gz", hash = "sha256:bc460a0e6020966410d0b276043879abca0fac51890f3324bc254bb0a383ee3a"},
 ]
 
 [package.dependencies]
 python-dateutil = ">=2.4"
-
-[[package]]
-name = "fast-query-parsers"
-version = "1.0.3"
-description = "Ultra-fast query string and url-encoded form-data parsers"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "fast_query_parsers-1.0.3-cp38-abi3-macosx_10_7_x86_64.whl", hash = "sha256:afbf71c1b4398dacfb9d84755eb026f8e759f68a066f1f3cc19e471fc342e74f"},
-    {file = "fast_query_parsers-1.0.3-cp38-abi3-macosx_10_9_x86_64.macosx_11_0_arm64.macosx_10_9_universal2.whl", hash = "sha256:42f26875311d1b151c3406adfa39ec2db98df111a369d75f6fa243ec8462f147"},
-    {file = "fast_query_parsers-1.0.3-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:66630ad423b5b1f5709f82a4d8482cd6aa2f3fa73d2c779ff1877f25dee08d55"},
-    {file = "fast_query_parsers-1.0.3-cp38-abi3-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:a6e3d816c572a6fad1ae9b93713b2db0d3db6e8f594e035ad52361d668dd94a8"},
-    {file = "fast_query_parsers-1.0.3-cp38-abi3-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:0bdcc0ddb4cc69d823c2c0dedd8f5affc71042db39908ad2ca06261bf388cac6"},
-    {file = "fast_query_parsers-1.0.3-cp38-abi3-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:6720505f2d2a764c76bcc4f3730a9dff69d9871740e46264f6605d73f9ce3794"},
-    {file = "fast_query_parsers-1.0.3-cp38-abi3-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:e947e7251769593da93832a10861f59565a46149fa117ebdf25377e7b2853936"},
-    {file = "fast_query_parsers-1.0.3-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:55a30b7cee0a53cddf9016b86fdad87221980d5a02a6126c491bd309755e6de9"},
-    {file = "fast_query_parsers-1.0.3-cp38-abi3-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:9bc2b457caa38371df1a30cfdfc57bd9bfdf348367abdaf6f36533416a0b0e93"},
-    {file = "fast_query_parsers-1.0.3-cp38-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:5736d3c32d6ba23995fa569fe572feabcfcfc30ac9e4709e94cff6f2c456a3d1"},
-    {file = "fast_query_parsers-1.0.3-cp38-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:3a6377eb0c5b172fbc77c3f96deaf1e51708b4b96d27ce173658bf11c1c00b20"},
-    {file = "fast_query_parsers-1.0.3-cp38-abi3-musllinux_1_2_i686.whl", hash = "sha256:7ca6be04f443a1b055e910ccad01b1d72212f269a530415df99a87c5f1e9c927"},
-    {file = "fast_query_parsers-1.0.3-cp38-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:a70d4d8852606f2dd5b798ab628b9d8dc6970ddfdd9e96f4543eb0cc89a74fb5"},
-    {file = "fast_query_parsers-1.0.3-cp38-abi3-win32.whl", hash = "sha256:14b3fab7e9a6ac1c1efaf66c3fd2a3fd1e25ede03ed14118035e530433830a11"},
-    {file = "fast_query_parsers-1.0.3-cp38-abi3-win_amd64.whl", hash = "sha256:21ae5f3a209aee7d3b84bdcdb33dd79f39fc8cb608b3ae8cfcb78123758c1a16"},
-    {file = "fast_query_parsers-1.0.3.tar.gz", hash = "sha256:5200a9e02997ad51d4d76a60ea1b256a68a184b04359540eb6310a15013df68f"},
-]
 
 [[package]]
 name = "fastapi"
@@ -2058,25 +2033,6 @@ redis = ["redis[hiredis] (>=4.4.4)"]
 sqlalchemy = ["advanced-alchemy (>=0.2.2)"]
 standard = ["fast-query-parsers (>=1.0.2)", "jinja2", "jsbeautifier", "uvicorn[standard]", "uvloop (>=0.18.0)"]
 structlog = ["structlog"]
-
-[[package]]
-name = "mako"
-version = "1.3.5"
-description = "A super-fast templating language that borrows the best ideas from the existing templating languages."
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "Mako-1.3.5-py3-none-any.whl", hash = "sha256:260f1dbc3a519453a9c856dedfe4beb4e50bd5a26d96386cb6c80856556bb91a"},
-    {file = "Mako-1.3.5.tar.gz", hash = "sha256:48dbc20568c1d276a2698b36d968fa76161bf127194907ea6fc594fa81f943bc"},
-]
-
-[package.dependencies]
-MarkupSafe = ">=0.9.2"
-
-[package.extras]
-babel = ["Babel"]
-lingua = ["lingua"]
-testing = ["pytest"]
 
 [[package]]
 name = "markdown-it-py"
@@ -2912,37 +2868,6 @@ files = [
 
 [package.dependencies]
 typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
-
-[[package]]
-name = "pydantic-factories"
-version = "1.17.3"
-description = "Mock data generation for pydantic based models and python dataclasses"
-optional = false
-python-versions = ">=3.8,<4.0"
-files = [
-    {file = "pydantic_factories-1.17.3-py3-none-any.whl", hash = "sha256:5a1522a31d27e1af414719c510a4a934365292f3ea6fdc843ed65d0564242636"},
-    {file = "pydantic_factories-1.17.3.tar.gz", hash = "sha256:de36e0db7108af5f4328308da9a4049311c4d5e0814553d2f39078b08b05e48d"},
-]
-
-[package.dependencies]
-faker = "*"
-pydantic = ">=1.10.0"
-typing-extensions = "*"
-
-[[package]]
-name = "pydantic-openapi-schema"
-version = "1.5.1"
-description = "OpenAPI Schema using pydantic. Forked for Starlite-API from 'openapi-schema-pydantic'."
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "pydantic_openapi_schema-1.5.1-py3-none-any.whl", hash = "sha256:fd5b1bff81ff70faa87fec62bd8193ccd671f31bc15b32a4557623d3db0e5eae"},
-    {file = "pydantic_openapi_schema-1.5.1.tar.gz", hash = "sha256:d9b56235f4c4817c6e3693c4f8122c3e5e9c75f6b3b454524ad985012a264daf"},
-]
-
-[package.dependencies]
-email-validator = "*"
-pydantic = ">=1.10.0"
 
 [[package]]
 name = "pygments"
@@ -3824,45 +3749,6 @@ typing-extensions = {version = ">=3.10.0", markers = "python_version < \"3.10\""
 
 [package.extras]
 full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart (>=0.0.7)", "pyyaml"]
-
-[[package]]
-name = "starlite"
-version = "1.51.12"
-description = "Performant, light and flexible ASGI API Framework"
-optional = false
-python-versions = ">=3.8,<4.0"
-files = [
-    {file = "starlite-1.51.12-py3-none-any.whl", hash = "sha256:efc9d478660c4500fd26f86f853a7f014a4aa510cbb0825669028934f6106c3f"},
-    {file = "starlite-1.51.12.tar.gz", hash = "sha256:c785d26291a361dedc52dbf5145be5dfeb41676f0204c49e506fcbafb0a10268"},
-]
-
-[package.dependencies]
-anyio = ">=3"
-fast-query-parsers = "*"
-httpx = ">=0.22"
-importlib-metadata = {version = "*", markers = "python_version < \"3.10\""}
-mako = ">=1.2.4"
-msgspec = ">=0.11.0"
-multidict = ">=6.0.2"
-pydantic = "*"
-pydantic-factories = "*"
-pydantic-openapi-schema = ">=1.5.0"
-pyyaml = "*"
-typing-extensions = "*"
-
-[package.extras]
-brotli = ["brotli"]
-cli = ["click", "jsbeautifier", "rich (>=13.0.0)"]
-cryptography = ["cryptography"]
-full = ["aiomcache", "brotli", "click", "cryptography", "jinja2 (>=3.1.2)", "opentelemetry-instrumentation-asgi", "picologging", "python-jose", "redis[hiredis]", "rich (>=13.0.0)", "structlog"]
-jinja = ["jinja2 (>=3.1.2)"]
-jwt = ["cryptography", "python-jose"]
-memcached = ["aiomcache"]
-opentelemetry = ["opentelemetry-instrumentation-asgi"]
-picologging = ["picologging"]
-redis = ["redis[hiredis]"]
-standard = ["click", "jinja2 (>=3.1.2)", "jsbeautifier", "picologging", "rich (>=13.0.0)"]
-structlog = ["structlog"]
 
 [[package]]
 name = "taskgroup"
@@ -4833,9 +4719,8 @@ pydantic = ["pydantic"]
 pyinstrument = ["pyinstrument"]
 quart = ["quart"]
 sanic = ["sanic"]
-starlite = ["starlite"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "fb5d68cb085bb917f90526664e128212ea8543b781492f0585aeb8c3faa6e0ed"
+content-hash = "655ae06cb9be42aee33c24aa577f1c9fb36162e0add14d52286af559edb3be26"

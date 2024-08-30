@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.238.0 - 2024-08-30
+--------------------
+
+This release removes the integration of Starlite, as it
+has been deprecated since 11 May 2024.
+
+If you are using Starlite, please consider migrating to Litestar (https://litestar.dev) or another alternative.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3609](https://github.com/strawberry-graphql/strawberry/pull/3609/)
+
+
 0.237.3 - 2024-07-31
 --------------------
 

@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.237.3"
+version = "0.238.0"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -54,7 +54,6 @@ python-multipart = {version = ">=0.0.7", optional = true}
 sanic = {version = ">=20.12.2", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
 fastapi = {version = ">=0.65.2", optional = true}
-starlite = {version = ">=1.48.0", optional = true, python = ">=3.8"}
 litestar = {version = ">=2", optional = true, python = ">=3.8"}
 channels = {version = ">=3.0.5", optional = true}
 astunparse = {version = "^1.6.3", python = "<3.9"}
@@ -120,7 +119,6 @@ pytest-aiohttp = "^1.0.3"
 pytest-django = {version = "^4.5"}
 sanic = ">=20.12.2"
 starlette = ">=0.13.6"
-starlite = {version = ">=1.48.0", optional = false, python = ">=3.8", extras = ["testing"]}
 litestar = {version = ">=2", optional = false, python = ">=3.8"}
 uvicorn = ">=0.11.6"
 daphne = "^4.0.0"
@@ -140,7 +138,6 @@ sanic = ["sanic"]
 fastapi = ["fastapi", "python-multipart"]
 chalice = ["chalice"]
 cli = ["typer", "pygments", "rich", "libcst", "graphlib_backport"]
-starlite = ["starlite"]
 litestar = ["litestar"]
 pyinstrument = ["pyinstrument"]
 
@@ -166,7 +163,6 @@ markers = [
     "relay",
     "sanic",
     "starlette",
-    "starlite",
 ]
 asyncio_mode = "auto"
 filterwarnings = [
