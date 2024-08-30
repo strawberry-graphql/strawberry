@@ -38,7 +38,7 @@ INTEGRATIONS = [
     "flask",
     "quart",
     "sanic",
-    "itestar",
+    "litestar",
     "pydantic",
 ]
 
