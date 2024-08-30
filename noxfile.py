@@ -38,8 +38,7 @@ INTEGRATIONS = [
     "flask",
     "quart",
     "sanic",
-    "starlite",
-    "litestar",
+    "itestar",
     "pydantic",
 ]
 
@@ -117,7 +116,6 @@ def tests_starlette(session: Session, starlette: str, gql_core: str) -> None:
         "flask",
         "quart",
         "sanic",
-        "starlite",
         "litestar",
     ],
 )
@@ -131,8 +129,6 @@ def tests_integrations(session: Session, integration: str, gql_core: str) -> Non
     elif integration == "channels":
         session._session.install("pytest-django")  # type: ignore
         session._session.install("daphne")  # type: ignore
-    elif integration == "starlite":
-        session._session.install("pydantic<2.0")  # type: ignore
 
     session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", integration)
 

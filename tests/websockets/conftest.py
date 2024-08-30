@@ -12,7 +12,6 @@ def _get_http_client_classes() -> Generator[Any, None, None]:
         ("AsgiHttpClient", "asgi", [pytest.mark.asgi]),
         ("ChannelsHttpClient", "channels", [pytest.mark.channels]),
         ("FastAPIHttpClient", "fastapi", [pytest.mark.fastapi]),
-        ("StarliteHttpClient", "starlite", [pytest.mark.starlite]),
         ("LitestarHttpClient", "litestar", [pytest.mark.litestar]),
     ]:
         try:
@@ -20,9 +19,6 @@ def _get_http_client_classes() -> Generator[Any, None, None]:
                 importlib.import_module(f"tests.http.clients.{module}"), client
             )
         except ImportError:
-            client_class = None
-        except Exception:
-            # TODO: remove this when removing Starlite
             client_class = None
 
         yield pytest.param(
