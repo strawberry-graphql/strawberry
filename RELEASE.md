@@ -1,7 +1,7 @@
 Release type: patch
 
-Fix a bug "StrawberryResolver.is_async returns False for a function decorated by
-@sync_to_async".
+Fix an issue where `StrawberryResolver.is_async` was returning `False` for a
+function decorated with asgiref's `@sync_to_async`.
 
 The root cause is that in python >= 3.12 coroutine functions are market using
 `inspect.markcoroutinefunction`, which should be checked with
