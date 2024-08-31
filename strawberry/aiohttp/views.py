@@ -193,14 +193,15 @@ class GraphQLView(
         self,
         request: web.Request,
         stream: Callable[[], AsyncGenerator[str, None]],
+        sub_response: web.Response,
     ) -> web.StreamResponse:
         response = web.StreamResponse(
-            status=200,
+            status=sub_response.status,
             headers={
+                **sub_response.headers,
                 "Transfer-Encoding": "chunked",
                 "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
             },
-            reason="OK",
         )
 
         await response.prepare(request)

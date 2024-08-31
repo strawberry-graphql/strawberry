@@ -189,10 +189,13 @@ class BaseView:
         self,
         request: HttpRequest,
         stream: Callable[[], AsyncIterator[Any]],
+        sub_response: TemporalHttpResponse,
     ) -> HttpResponseBase:
         return StreamingHttpResponse(
             streaming_content=stream(),
+            status=sub_response.status_code,
             headers={
+                **sub_response.headers,
                 "Transfer-Encoding": "chunked",
                 "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
             },

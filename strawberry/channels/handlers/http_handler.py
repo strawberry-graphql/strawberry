@@ -1,8 +1,3 @@
-"""GraphQLHTTPHandler.
-
-A consumer to provide a graphql endpoint, and optionally graphiql.
-"""
-
 from __future__ import annotations
 
 import dataclasses
@@ -282,9 +277,11 @@ class GraphQLHTTPConsumer(
         self,
         request: ChannelsRequest,
         stream: Callable[[], AsyncGenerator[str, None]],
+        sub_response: TemporalResponse,
     ) -> MultipartChannelsResponse:
-        # TODO: sub response
-        return MultipartChannelsResponse(stream=stream)
+        status = sub_response.status_code or 200
+        headers = {k.encode(): v.encode() for k, v in sub_response.headers.items()}
+        return MultipartChannelsResponse(stream=stream, status=status, headers=headers)
 
     async def render_graphql_ide(self, request: ChannelsRequest) -> ChannelsResponse:
         return ChannelsResponse(

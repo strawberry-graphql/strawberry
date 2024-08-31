@@ -225,10 +225,13 @@ class GraphQL(
         self,
         request: Request | WebSocket,
         stream: Callable[[], AsyncIterator[str]],
+        sub_response: Response,
     ) -> Response:
         return StreamingResponse(
             stream(),
+            status_code=sub_response.status_code,
             headers={
+                **sub_response.headers,
                 "Transfer-Encoding": "chunked",
                 "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
             },

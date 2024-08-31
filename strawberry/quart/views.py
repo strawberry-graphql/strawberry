@@ -107,11 +107,13 @@ class GraphQLView(
         self,
         request: Request,
         stream: Callable[[], AsyncGenerator[str, None]],
+        sub_response: Response,
     ) -> Response:
         return (
             stream(),
-            200,
+            sub_response.status_code,
             {  # type: ignore
+                **sub_response.headers,
                 "Transfer-Encoding": "chunked",
                 "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
             },

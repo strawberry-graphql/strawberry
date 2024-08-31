@@ -182,10 +182,13 @@ class GraphQLView(
         self,
         request: Request,
         stream: Callable[[], AsyncGenerator[str, None]],
+        sub_response: TemporalResponse,
     ) -> HTTPResponse:
         response = await self.request.respond(
             content_type="multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+            status=sub_response.status_code,
             headers={
+                **sub_response.headers,
                 "Transfer-Encoding": "chunked",
             },
         )
