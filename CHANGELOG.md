@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.238.1 - 2024-08-30
+--------------------
+
+Fix an issue where `StrawberryResolver.is_async` was returning `False` for a
+function decorated with asgiref's `@sync_to_async`.
+
+The root cause is that in python >= 3.12 coroutine functions are market using
+`inspect.markcoroutinefunction`, which should be checked with
+`inspect.iscoroutinefunction` instead of `asyncio.iscoroutinefunction`
+
+Contributed by [Hyun S. Moon](https://github.com/shmoon-kr) via [PR #3599](https://github.com/strawberry-graphql/strawberry/pull/3599/)
+
+
 0.238.0 - 2024-08-30
 --------------------
 
