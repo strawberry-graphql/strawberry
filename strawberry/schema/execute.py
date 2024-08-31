@@ -15,7 +15,7 @@ from typing import (
     Union,
 )
 
-from graphql import GraphQLError, parse
+from graphql import GraphQLError, parse, subscribe
 from graphql import execute as original_execute
 from graphql.validation import validate
 
@@ -23,6 +23,7 @@ from strawberry.exceptions import MissingQueryError
 from strawberry.extensions.runner import SchemaExtensionsRunner
 from strawberry.schema.validation_rules.one_of import OneOfInputValidationRule
 from strawberry.types import ExecutionResult
+from strawberry.types.graphql import OperationType
 
 from .exceptions import InvalidOperationTypeError
 
@@ -36,7 +37,7 @@ if TYPE_CHECKING:
 
     from strawberry.extensions import SchemaExtension
     from strawberry.types import ExecutionContext
-    from strawberry.types.graphql import OperationType
+    from strawberry.types.execution import SubscriptionExecutionResult
 
 
 # duplicated because of https://github.com/mkdocstrings/griffe-typingdoc/issues/7
@@ -84,7 +85,7 @@ async def execute(
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
-) -> ExecutionResult:
+) -> Union[ExecutionResult, SubscriptionExecutionResult]:
     extensions_runner = SchemaExtensionsRunner(
         execution_context=execution_context,
         extensions=list(extensions),
@@ -124,16 +125,28 @@ async def execute(
 
             async with extensions_runner.executing():
                 if not execution_context.result:
-                    result = original_execute(
-                        schema,
-                        execution_context.graphql_document,
-                        root_value=execution_context.root_value,
-                        middleware=extensions_runner.as_middleware_manager(),
-                        variable_values=execution_context.variables,
-                        operation_name=execution_context.operation_name,
-                        context_value=execution_context.context,
-                        execution_context_class=execution_context_class,
-                    )
+                    if execution_context.operation_type == OperationType.SUBSCRIPTION:
+                        # TODO: should we process errors here?
+                        # TODO: make our own wrapper?
+                        return await subscribe(  # type: ignore
+                            schema,
+                            execution_context.graphql_document,
+                            root_value=execution_context.root_value,
+                            context_value=execution_context.context,
+                            variable_values=execution_context.variables,
+                            operation_name=execution_context.operation_name,
+                        )
+                    else:
+                        result = original_execute(
+                            schema,
+                            execution_context.graphql_document,
+                            root_value=execution_context.root_value,
+                            middleware=extensions_runner.as_middleware_manager(),
+                            variable_values=execution_context.variables,
+                            operation_name=execution_context.operation_name,
+                            context_value=execution_context.context,
+                            execution_context_class=execution_context_class,
+                        )
 
                     if isawaitable(result):
                         result = await result

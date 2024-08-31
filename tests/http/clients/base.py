@@ -1,22 +1,29 @@
 import abc
+import contextlib
 import json
+import logging
 from dataclasses import dataclass
+from functools import cached_property
 from io import BytesIO
 from typing import (
     Any,
     AsyncContextManager,
     AsyncGenerator,
+    AsyncIterable,
     Callable,
     Dict,
     List,
     Mapping,
     Optional,
+    Union,
 )
 from typing_extensions import Literal
 
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
+
+logger = logging.getLogger("strawberry.test.http_client")
 
 JSON = Dict[str, object]
 ResultOverrideFunction = Optional[Callable[[ExecutionResult], GraphQLHTTPResponse]]
@@ -25,16 +32,67 @@ ResultOverrideFunction = Optional[Callable[[ExecutionResult], GraphQLHTTPRespons
 @dataclass
 class Response:
     status_code: int
-    data: bytes
-    headers: Mapping[str, str]
+    data: Union[bytes, AsyncIterable[bytes]]
+
+    def __init__(
+        self,
+        status_code: int,
+        data: Union[bytes, AsyncIterable[bytes]],
+        *,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> None:
+        self.status_code = status_code
+        self.data = data
+        self._headers = headers or {}
+
+    @cached_property
+    def headers(self) -> Mapping[str, str]:
+        return {k.lower(): v for k, v in self._headers.items()}
+
+    @property
+    def is_multipart(self) -> bool:
+        return self.headers.get("content-type", "").startswith("multipart/mixed")
 
     @property
     def text(self) -> str:
+        assert isinstance(self.data, bytes)
         return self.data.decode()
 
     @property
     def json(self) -> JSON:
+        assert isinstance(self.data, bytes)
         return json.loads(self.data)
+
+    async def streaming_json(self) -> AsyncIterable[JSON]:
+        if not self.is_multipart:
+            raise ValueError("Streaming not supported")
+
+        def parse_chunk(text: str) -> Union[JSON, None]:
+            # TODO: better parsing? :)
+            with contextlib.suppress(json.JSONDecodeError):
+                return json.loads(text)
+
+        if isinstance(self.data, AsyncIterable):
+            chunks = self.data
+
+            async for chunk in chunks:
+                lines = chunk.decode("utf-8").split("\r\n")
+
+                for text in lines:
+                    if data := parse_chunk(text):
+                        yield data
+        else:
+            # TODO: we do this because httpx doesn't support streaming
+            # it would be nice to fix httpx instead of doing this,
+            # but we might have the same issue in other clients too
+            # TODO: better message
+            logger.warning("Didn't receive a stream, parsing it sync")
+
+            chunks = self.data.decode("utf-8").split("\r\n")
+
+            for chunk in chunks:
+                if data := parse_chunk(chunk):
+                    yield data
 
 
 class HttpClient(abc.ABC):
@@ -100,16 +158,18 @@ class HttpClient(abc.ABC):
         headers: Optional[Dict[str, str]],
         files: Optional[Dict[str, BytesIO]],
     ) -> Dict[str, str]:
-        addition_headers = {}
+        additional_headers = {}
+        headers = headers or {}
 
-        content_type = None
+        # TODO: fix case sensitivity
+        content_type = headers.get("content-type")
 
-        if method == "post" and not files:
+        if not content_type and method == "post" and not files:
             content_type = "application/json"
 
-        addition_headers = {"Content-Type": content_type} if content_type else {}
+        additional_headers = {"Content-Type": content_type} if content_type else {}
 
-        return addition_headers if headers is None else {**addition_headers, **headers}
+        return {**additional_headers, **headers}
 
     def _build_body(
         self,

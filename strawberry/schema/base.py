@@ -12,7 +12,11 @@ if TYPE_CHECKING:
 
     from strawberry.directive import StrawberryDirective
     from strawberry.schema.schema_converter import GraphQLCoreConverter
-    from strawberry.types import ExecutionContext, ExecutionResult
+    from strawberry.types import (
+        ExecutionContext,
+        ExecutionResult,
+        SubscriptionExecutionResult,
+    )
     from strawberry.types.base import StrawberryObjectDefinition
     from strawberry.types.enum import EnumDefinition
     from strawberry.types.graphql import OperationType
@@ -39,7 +43,7 @@ class BaseSchema(Protocol):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
-    ) -> ExecutionResult:
+    ) -> Union[ExecutionResult, SubscriptionExecutionResult]:
         raise NotImplementedError
 
     @abstractmethod

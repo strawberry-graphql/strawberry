@@ -1,6 +1,6 @@
 import warnings
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, AsyncGenerator, Callable, Optional, cast
 
 from quart import Request, Response, request
 from quart.views import View
@@ -102,6 +102,22 @@ class GraphQLView(
                 response=e.reason,
                 status=e.status_code,
             )
+
+    async def create_multipart_response(
+        self,
+        request: Request,
+        stream: Callable[[], AsyncGenerator[str, None]],
+        sub_response: Response,
+    ) -> Response:
+        return (
+            stream(),
+            sub_response.status_code,
+            {  # type: ignore
+                **sub_response.headers,
+                "Transfer-Encoding": "chunked",
+                "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+            },
+        )
 
 
 __all__ = ["GraphQLView"]

@@ -173,6 +173,12 @@ filterwarnings = [
     # ignoring the text instead of the whole warning because we'd
     # get an error when django is not installed
     "ignore:The default value of USE_TZ",
+    "ignore::DeprecationWarning:pydantic_openapi_schema.*",
+    "ignore::DeprecationWarning:graphql.*",
+    "ignore::DeprecationWarning:websockets.*",
+    "ignore::DeprecationWarning:pydantic.*",
+    "ignore::UserWarning:pydantic.*",
+    "ignore::DeprecationWarning:pkg_resources.*",
 ]
 
 [tool.autopub]

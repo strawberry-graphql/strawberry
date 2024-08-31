@@ -5,6 +5,7 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
     Callable,
     Mapping,
     Optional,
@@ -14,8 +15,14 @@ from typing import (
 
 from asgiref.sync import markcoroutinefunction
 from django.core.serializers.json import DjangoJSONEncoder
-from django.http import HttpRequest, HttpResponseNotAllowed, JsonResponse
-from django.http.response import HttpResponse
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponseNotAllowed,
+    JsonResponse,
+    StreamingHttpResponse,
+)
+from django.http.response import HttpResponseBase
 from django.template import RequestContext, Template
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
@@ -116,7 +123,7 @@ class AsyncDjangoHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def content_type(self) -> Optional[str]:
-        return self.request.content_type
+        return self.headers.get("Content-type")
 
     async def get_body(self) -> str:
         return self.request.body.decode()
@@ -159,8 +166,9 @@ class BaseView:
 
     def create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: HttpResponse
-    ) -> HttpResponse:
+    ) -> HttpResponseBase:
         data = self.encode_json(response_data)
+
         response = HttpResponse(
             data,
             content_type="application/json",
@@ -177,6 +185,22 @@ class BaseView:
 
         return response
 
+    async def create_multipart_response(
+        self,
+        request: HttpRequest,
+        stream: Callable[[], AsyncIterator[Any]],
+        sub_response: TemporalHttpResponse,
+    ) -> HttpResponseBase:
+        return StreamingHttpResponse(
+            streaming_content=stream(),
+            status=sub_response.status_code,
+            headers={
+                **sub_response.headers,
+                "Transfer-Encoding": "chunked",
+                "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+            },
+        )
+
     def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
         return json.dumps(response_data, cls=DjangoJSONEncoder)
 
@@ -184,7 +208,7 @@ class BaseView:
 class GraphQLView(
     BaseView,
     SyncBaseHTTPView[
-        HttpRequest, HttpResponse, TemporalHttpResponse, Context, RootValue
+        HttpRequest, HttpResponseBase, TemporalHttpResponse, Context, RootValue
     ],
     View,
 ):
@@ -207,7 +231,7 @@ class GraphQLView(
     @method_decorator(csrf_exempt)
     def dispatch(
         self, request: HttpRequest, *args: Any, **kwargs: Any
-    ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
+    ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponseBase]:
         try:
             return self.run(request=request)
         except HTTPException as e:
@@ -233,7 +257,7 @@ class GraphQLView(
 class AsyncGraphQLView(
     BaseView,
     AsyncBaseHTTPView[
-        HttpRequest, HttpResponse, TemporalHttpResponse, Context, RootValue
+        HttpRequest, HttpResponseBase, TemporalHttpResponse, Context, RootValue
     ],
     View,
 ):
@@ -266,7 +290,7 @@ class AsyncGraphQLView(
     @method_decorator(csrf_exempt)
     async def dispatch(  # pyright: ignore
         self, request: HttpRequest, *args: Any, **kwargs: Any
-    ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponse]:
+    ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponseBase]:
         try:
             return await self.run(request=request)
         except HTTPException as e:

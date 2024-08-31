@@ -6,6 +6,7 @@ from inspect import signature
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
     Awaitable,
     Callable,
     Dict,
@@ -25,6 +26,7 @@ from starlette.responses import (
     JSONResponse,
     PlainTextResponse,
     Response,
+    StreamingResponse,
 )
 from starlette.websockets import WebSocket
 
@@ -329,6 +331,22 @@ class GraphQLRouter(
         response.headers.raw.extend(sub_response.headers.raw)
 
         return response
+
+    async def create_multipart_response(
+        self,
+        request: Request,
+        stream: Callable[[], AsyncIterator[str]],
+        sub_response: Response,
+    ) -> Response:
+        return StreamingResponse(
+            stream(),
+            status_code=sub_response.status_code,
+            headers={
+                **sub_response.headers,
+                "Transfer-Encoding": "chunked",
+                "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+            },
+        )
 
 
 __all__ = ["GraphQLRouter"]
