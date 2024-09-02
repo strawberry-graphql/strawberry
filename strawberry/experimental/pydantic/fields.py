@@ -3,6 +3,7 @@ from typing import Any, Union
 from typing_extensions import Annotated
 
 from pydantic import BaseModel
+
 from strawberry.experimental.pydantic._compat import (
     PydanticCompat,
     get_args,

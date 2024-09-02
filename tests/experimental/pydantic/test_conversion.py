@@ -6,9 +6,9 @@ from enum import Enum
 from typing import Any, Dict, List, NewType, Optional, TypeVar, Union
 
 import pytest
+from pydantic import BaseModel, Field, ValidationError
 
 import strawberry
-from pydantic import BaseModel, Field, ValidationError
 from strawberry.experimental.pydantic._compat import (
     IS_PYDANTIC_V2,
     CompatModelField,
