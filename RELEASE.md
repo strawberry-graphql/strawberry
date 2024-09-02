@@ -3,6 +3,7 @@ Release type: minor
 Support for schema-extensions in subscriptions.
 
 i.e:
+
 ```python
 import asyncio
 from typing import AsyncIterator
@@ -39,14 +40,6 @@ class MyExtension(SchemaExtension):
         # The subscription has ended
         print("Subscription ended")
 
-    async def on_execute(self):
-        # The subscription is trying to yield a new result
-        print(f"before yield {self.count}")
-        yield
-        # the subscription has yielded a new result
-        print(f"after yield {self.count}")
-        self.count += 1
-
     # Other hooks are the same as in normal execution.
     async def resolve(self, _next, root, info, *args, **kwargs):
         res = _next(root, info, *args, **kwargs)
@@ -72,6 +65,7 @@ asyncio.run(main())
 ```
 
 Should output this
+
 ```console
 Subscription started
 before yield 0
@@ -89,9 +83,11 @@ before yield 4
 after yield 4
 Subscription ended
 ```
+
 ### Breaking changes
-This release also updates the signature of `Schema.subscribe`.
-From:
+
+This release also updates the signature of `Schema.subscribe`. From:
+
 ```py
 async def subscribe(
     self,
@@ -102,7 +98,9 @@ async def subscribe(
     operation_name: Optional[str] = None,
 ) -> Union[AsyncIterator[GraphQLExecutionResult], GraphQLExecutionResult]:
 ```
+
 To:
+
 ```py
 async def subscribe(
     self,
@@ -113,4 +111,5 @@ async def subscribe(
     operation_name: Optional[str] = None,
 ) -> Union[AsyncGenerator[ExecutionResult, None], PreExecutionError]:
 ```
+
 Due to moving away from graphql-core result types to our internal types.

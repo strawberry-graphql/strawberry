@@ -29,24 +29,19 @@ async def test_subscription_success_many_fields(
     )
     subscription_per_yield_hooks_exp = []
     for _ in range(5):  # number of yields in the subscription
-        subscription_per_yield_hooks_exp.extend(
-            ["on_execute Entered", "resolve", "on_execute Exited", "get_results"]
-        )
+        subscription_per_yield_hooks_exp.extend(["resolve", "get_results"])
+
     async_extension.expected = [
         "on_operation Entered",
         "on_parse Entered",
         "on_parse Exited",
         "on_validate Entered",
         "on_validate Exited",
-        # first one would not yield anything if there are no errors.
-        # so it doesn't call the "resolve" / "get_results" hooks
         "on_execute Entered",
         "on_execute Exited",
         *subscription_per_yield_hooks_exp,
         # last one doesn't call the "resolve" / "get_results" hooks because
         # the subscription is done
-        "on_execute Entered",
-        "on_execute Exited",
         "on_operation Exited",
     ]
     async for res in assert_agen(
@@ -125,12 +120,8 @@ async def test_error_after_first_yield_in_subscription(
         "on_validate Exited",
         "on_execute Entered",
         "on_execute Exited",
-        "on_execute Entered",
         "resolve",
-        "on_execute Exited",
         "get_results",
-        "on_execute Entered",
-        "on_execute Exited",
         "get_results",
         "on_operation Exited",
     ]
@@ -143,11 +134,8 @@ async def test_extensions_results_are_cleared_between_subscription_yields(
     class MyExtension(SchemaExtension):
         execution_number = 0
 
-        def on_execute(self):
-            yield
-            self.execution_number += 1
-
         def get_results(self):
+            self.execution_number += 1
             return {str(self.execution_number): self.execution_number}
 
     schema = strawberry.Schema(
@@ -155,10 +143,8 @@ async def test_extensions_results_are_cleared_between_subscription_yields(
         subscription=default_query_types_and_query.subscription_type,
         extensions=[MyExtension],
     )
-    # the first execution is done before the first yield
-    # and because `get_results` is called after `on_execute`
-    # we expect the first extension result to be 2
-    res_num = 2
+
+    res_num = 1
 
     async for res in assert_agen(
         await schema.subscribe(default_query_types_and_query.subscription)

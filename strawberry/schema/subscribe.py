@@ -98,20 +98,20 @@ async def _subscribe(
                 while running:
                     # reset extensions results for each iteration
                     execution_context.extensions_results = {}
-                    async with extensions_runner.executing():
-                        try:
-                            origin_result: Union[
-                                ExecutionResult, OriginalExecutionResult
-                            ] = await aiterator.__anext__()
 
-                        except StopAsyncIteration:
-                            break
-                        except Exception as exc:
-                            # graphql-core doesn't handle exceptions raised in the async generator.
-                            origin_result = ExecutionResult(
-                                data=None, errors=[_coerce_error(exc)]
-                            )
-                            running = False
+                    try:
+                        origin_result: Union[
+                            ExecutionResult, OriginalExecutionResult
+                        ] = await aiterator.__anext__()
+
+                    except StopAsyncIteration:
+                        break
+                    except Exception as exc:
+                        # graphql-core doesn't handle exceptions raised in the async generator.
+                        origin_result = ExecutionResult(
+                            data=None, errors=[_coerce_error(exc)]
+                        )
+                        running = False
                     # we could have yielded in the except block above.
                     # but this way we make sure `get_result` hook is called deterministically after
                     # `on_execute` hook is done.
