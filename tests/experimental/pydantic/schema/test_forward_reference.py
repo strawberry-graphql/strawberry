@@ -4,7 +4,6 @@ import textwrap
 from typing import Optional
 
 import pydantic
-
 import strawberry
 
 

@@ -3,9 +3,9 @@ from enum import Enum
 from typing import Any, List, Optional, Union
 from typing_extensions import Annotated
 
-import pydantic
 import pytest
 
+import pydantic
 import strawberry
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.schema_directive import Location
