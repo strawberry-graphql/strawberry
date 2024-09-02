@@ -150,8 +150,7 @@ class MyExtension(SchemaExtension):
 
 - Execution
 
-`on_execute` can be used to run code on the execution step of the GraphQL. When
-using subscriptions, `on_execute` will be called for each subscription yield.
+`on_execute` can be used to run code on the execution step of the GraphQL
 execution.
 
 ```python
