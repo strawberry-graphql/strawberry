@@ -189,18 +189,18 @@ class GraphQLView(
 
         return sub_response
 
-    async def create_multipart_response(
+    async def create_streaming_response(
         self,
         request: web.Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: web.Response,
+        headers: Dict[str, str],
     ) -> web.StreamResponse:
         response = web.StreamResponse(
             status=sub_response.status,
             headers={
                 **sub_response.headers,
-                "Transfer-Encoding": "chunked",
-                "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+                **headers,
             },
         )
 
