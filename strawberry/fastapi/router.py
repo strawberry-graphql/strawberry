@@ -332,6 +332,7 @@ class GraphQLRouter(
 
         return response
 
+    # TODO: rename this to just streaming response?
     async def create_multipart_response(
         self,
         request: Request,
@@ -340,7 +341,7 @@ class GraphQLRouter(
     ) -> Response:
         return StreamingResponse(
             stream(),
-            status_code=sub_response.status_code,
+            status_code=sub_response.status_code or status.HTTP_200_OK,
             headers={
                 **sub_response.headers,
                 "Transfer-Encoding": "chunked",

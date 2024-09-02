@@ -229,7 +229,7 @@ class GraphQL(
     ) -> Response:
         return StreamingResponse(
             stream(),
-            status_code=sub_response.status_code,
+            status_code=sub_response.status_code or status.HTTP_200_OK,
             headers={
                 **sub_response.headers,
                 "Transfer-Encoding": "chunked",
