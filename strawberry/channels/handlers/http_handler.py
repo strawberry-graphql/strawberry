@@ -282,10 +282,14 @@ class GraphQLHTTPConsumer(
     ) -> MultipartChannelsResponse:
         status = sub_response.status_code or 200
 
-        headers = {k.encode(): v.encode() for k, v in sub_response.headers.items()}
-        headers.update({k.encode(): v.encode() for k, v in headers.items()})
+        response_headers = {
+            k.encode(): v.encode() for k, v in sub_response.headers.items()
+        }
+        response_headers.update({k.encode(): v.encode() for k, v in headers.items()})
 
-        return MultipartChannelsResponse(stream=stream, status=status, headers=headers)
+        return MultipartChannelsResponse(
+            stream=stream, status=status, headers=response_headers
+        )
 
     async def render_graphql_ide(self, request: ChannelsRequest) -> ChannelsResponse:
         return ChannelsResponse(
