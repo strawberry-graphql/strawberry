@@ -92,11 +92,12 @@ class AsyncBaseHTTPView(
     @abc.abstractmethod
     async def render_graphql_ide(self, request: Request) -> Response: ...
 
-    async def create_multipart_response(
+    async def create_streaming_response(
         self,
         request: Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: SubResponse,
+        headers: Dict[str, str],
     ) -> Response:
         raise ValueError("Multipart responses are not supported")
 
@@ -199,7 +200,15 @@ class AsyncBaseHTTPView(
         if isinstance(result, SubscriptionExecutionResult):
             stream = self._get_stream(request, result)
 
-            return await self.create_multipart_response(request, stream, sub_response)
+            return await self.create_streaming_response(
+                request,
+                stream,
+                sub_response,
+                headers={
+                    "Transfer-Encoding": "chunked",
+                    "Content-Type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+                },
+            )
 
         response_data = await self.process_result(request=request, result=result)
 

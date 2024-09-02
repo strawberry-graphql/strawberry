@@ -273,15 +273,23 @@ class GraphQLHTTPConsumer(
     async def get_sub_response(self, request: ChannelsRequest) -> TemporalResponse:
         return TemporalResponse()
 
-    async def create_multipart_response(
+    async def create_streaming_response(
         self,
         request: ChannelsRequest,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: TemporalResponse,
+        headers: Dict[str, str],
     ) -> MultipartChannelsResponse:
         status = sub_response.status_code or 200
-        headers = {k.encode(): v.encode() for k, v in sub_response.headers.items()}
-        return MultipartChannelsResponse(stream=stream, status=status, headers=headers)
+
+        response_headers = {
+            k.encode(): v.encode() for k, v in sub_response.headers.items()
+        }
+        response_headers.update({k.encode(): v.encode() for k, v in headers.items()})
+
+        return MultipartChannelsResponse(
+            stream=stream, status=status, headers=response_headers
+        )
 
     async def render_graphql_ide(self, request: ChannelsRequest) -> ChannelsResponse:
         return ChannelsResponse(

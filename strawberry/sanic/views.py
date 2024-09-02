@@ -178,18 +178,18 @@ class GraphQLView(
         except HTTPException as e:
             return HTTPResponse(e.reason, status=e.status_code)
 
-    async def create_multipart_response(
+    async def create_streaming_response(
         self,
         request: Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: TemporalResponse,
+        headers: Dict[str, str],
     ) -> HTTPResponse:
         response = await self.request.respond(
-            content_type="multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
             status=sub_response.status_code,
             headers={
                 **sub_response.headers,
-                "Transfer-Encoding": "chunked",
+                **headers,
             },
         )
 

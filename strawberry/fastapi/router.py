@@ -332,19 +332,19 @@ class GraphQLRouter(
 
         return response
 
-    async def create_multipart_response(
+    async def create_streaming_response(
         self,
         request: Request,
         stream: Callable[[], AsyncIterator[str]],
         sub_response: Response,
+        headers: Dict[str, str],
     ) -> Response:
         return StreamingResponse(
             stream(),
-            status_code=sub_response.status_code,
+            status_code=sub_response.status_code or status.HTTP_200_OK,
             headers={
                 **sub_response.headers,
-                "Transfer-Encoding": "chunked",
-                "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+                **headers,
             },
         )
 

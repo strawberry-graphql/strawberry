@@ -7,6 +7,7 @@ from typing import (
     Any,
     AsyncIterator,
     Callable,
+    Dict,
     Mapping,
     Optional,
     Union,
@@ -185,19 +186,19 @@ class BaseView:
 
         return response
 
-    async def create_multipart_response(
+    async def create_streaming_response(
         self,
         request: HttpRequest,
         stream: Callable[[], AsyncIterator[Any]],
         sub_response: TemporalHttpResponse,
+        headers: Dict[str, str],
     ) -> HttpResponseBase:
         return StreamingHttpResponse(
             streaming_content=stream(),
             status=sub_response.status_code,
             headers={
                 **sub_response.headers,
-                "Transfer-Encoding": "chunked",
-                "Content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+                **headers,
             },
         )
 
