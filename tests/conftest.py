@@ -36,7 +36,6 @@ def pytest_collection_modifyitems(config: pytest.Config, items: List[pytest.Item
             "quart",
             "pydantic",
             "sanic",
-            "starlite",
             "litestar",
         ]
 
@@ -50,14 +49,6 @@ def pytest_ignore_collect(
     collection_path: pathlib.Path, path: Any, config: pytest.Config
 ):
     if sys.version_info < (3, 12) and "python_312" in collection_path.parts:
-        return True
-
-    markers = config.getoption("-m")
-
-    # starlite has some issues with pydantic 2, which we
-    # use in our dev deps, so we skip starlite unless
-    # we're running the tests for it
-    if "starlite" not in markers and "starlite" in collection_path.parts:
         return True
 
 

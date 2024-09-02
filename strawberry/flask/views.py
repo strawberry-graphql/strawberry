@@ -1,7 +1,14 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Mapping,
+    Optional,
+    Union,
+    cast,
+)
 
 from flask import Request, Response, render_template_string, request
 from flask.views import View

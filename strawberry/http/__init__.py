@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional
-from typing_extensions import TypedDict
+from typing_extensions import Literal, TypedDict
 
 if TYPE_CHECKING:
     from strawberry.types import ExecutionResult
@@ -33,6 +33,7 @@ class GraphQLRequestData:
     query: Optional[str]
     variables: Optional[Dict[str, Any]]
     operation_name: Optional[str]
+    protocol: Literal["http", "multipart-subscription"] = "http"
 
 
 def parse_query_params(params: Dict[str, str]) -> Dict[str, Any]:

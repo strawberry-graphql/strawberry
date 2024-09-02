@@ -7,6 +7,7 @@ from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
     Awaitable,
     Callable,
     Dict,
@@ -254,15 +255,18 @@ class BaseGraphQLTransportWSHandler(ABC):
                 context_value=context,
                 root_value=root_value,
             )
-
         else:
-            result_source = self.schema.execute(
-                query=message.payload.query,
-                variable_values=message.payload.variables,
-                context_value=context,
-                root_value=root_value,
-                operation_name=message.payload.operationName,
-            )
+            # create AsyncGenerator returning a single result
+            async def get_result_source() -> AsyncIterator[ExecutionResult]:
+                yield await self.schema.execute(  # type: ignore
+                    query=message.payload.query,
+                    variable_values=message.payload.variables,
+                    context_value=context,
+                    root_value=root_value,
+                    operation_name=message.payload.operationName,
+                )
+
+            result_source = get_result_source()
 
         operation = Operation(self, message.id, operation_type)
 

@@ -126,7 +126,7 @@ class StrawberryExceptionsPlugin:
         else:
             text += f"\n``````\n{exception_text.strip()}\n``````\n\n"
 
-        documentation_path = DOCS_FOLDER / f"{raised_exception.documentation_path}.mdx"
+        documentation_path = DOCS_FOLDER / f"{raised_exception.documentation_path}.md"
 
         if not documentation_path.exists():
             pytest.fail(

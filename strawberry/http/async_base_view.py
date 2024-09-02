@@ -1,29 +1,40 @@
 import abc
+import asyncio
+import contextlib
 import json
 from typing import (
+    Any,
+    AsyncGenerator,
     Callable,
     Dict,
     Generic,
     List,
     Mapping,
     Optional,
+    Tuple,
     Union,
 )
+from typing_extensions import Literal
 
 from graphql import GraphQLError
 
 from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
-from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData, process_result
+from strawberry.http import (
+    GraphQLHTTPResponse,
+    GraphQLRequestData,
+    process_result,
+)
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
-from strawberry.types import ExecutionResult
+from strawberry.types import ExecutionResult, SubscriptionExecutionResult
 from strawberry.types.graphql import OperationType
 
 from .base import BaseView
 from .exceptions import HTTPException
+from .parse_content_type import parse_content_type
 from .types import FormData, HTTPMethod, QueryParams
 from .typevars import Context, Request, Response, RootValue, SubResponse
 
@@ -82,9 +93,18 @@ class AsyncBaseHTTPView(
     @abc.abstractmethod
     async def render_graphql_ide(self, request: Request) -> Response: ...
 
+    async def create_streaming_response(
+        self,
+        request: Request,
+        stream: Callable[[], AsyncGenerator[str, None]],
+        sub_response: SubResponse,
+        headers: Dict[str, str],
+    ) -> Response:
+        raise ValueError("Multipart responses are not supported")
+
     async def execute_operation(
         self, request: Request, context: Context, root_value: Optional[RootValue]
-    ) -> ExecutionResult:
+    ) -> Union[ExecutionResult, SubscriptionExecutionResult]:
         request_adapter = self.request_adapter_class(request)
 
         try:
@@ -101,6 +121,15 @@ class AsyncBaseHTTPView(
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
 
         assert self.schema
+
+        if request_data.protocol == "multipart-subscription":
+            return await self.schema.subscribe(
+                request_data.query,  # type: ignore
+                variable_values=request_data.variables,
+                context_value=context,
+                root_value=root_value,
+                operation_name=request_data.operation_name,
+            )
 
         return await self.schema.execute(
             request_data.query,
@@ -178,6 +207,19 @@ class AsyncBaseHTTPView(
         except MissingQueryError as e:
             raise HTTPException(400, "No GraphQL query found in the request") from e
 
+        if isinstance(result, SubscriptionExecutionResult):
+            stream = self._get_stream(request, result)
+
+            return await self.create_streaming_response(
+                request,
+                stream,
+                sub_response,
+                headers={
+                    "Transfer-Encoding": "chunked",
+                    "Content-Type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+                },
+            )
+
         response_data = await self.process_result(request=request, result=result)
 
         if result.errors:
@@ -187,17 +229,112 @@ class AsyncBaseHTTPView(
             response_data=response_data, sub_response=sub_response
         )
 
+    def encode_multipart_data(self, data: Any, separator: str) -> str:
+        return "".join(
+            [
+                f"\r\n--{separator}\r\n",
+                "Content-Type: application/json\r\n\r\n",
+                self.encode_json(data),
+                "\n",
+            ]
+        )
+
+    def _stream_with_heartbeat(
+        self, stream: Callable[[], AsyncGenerator[str, None]]
+    ) -> Callable[[], AsyncGenerator[str, None]]:
+        """Adds a heartbeat to the stream, to prevent the connection from closing when there are no messages being sent."""
+        queue = asyncio.Queue[Tuple[bool, Any]](1)
+
+        cancelling = False
+
+        async def drain() -> None:
+            try:
+                async for item in stream():
+                    await queue.put((False, item))
+            except Exception as e:
+                if not cancelling:
+                    await queue.put((True, e))
+                else:
+                    raise
+
+        async def heartbeat() -> None:
+            while True:
+                await queue.put((False, self.encode_multipart_data({}, "graphql")))
+
+                await asyncio.sleep(5)
+
+        async def merged() -> AsyncGenerator[str, None]:
+            heartbeat_task = asyncio.create_task(heartbeat())
+            task = asyncio.create_task(drain())
+
+            async def cancel_tasks() -> None:
+                nonlocal cancelling
+                cancelling = True
+                task.cancel()
+
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
+
+                heartbeat_task.cancel()
+
+                with contextlib.suppress(asyncio.CancelledError):
+                    await heartbeat_task
+
+            try:
+                while not task.done():
+                    raised, data = await queue.get()
+
+                    if raised:
+                        await cancel_tasks()
+                        raise data
+
+                    yield data
+            finally:
+                await cancel_tasks()
+
+        return merged
+
+    def _get_stream(
+        self,
+        request: Request,
+        result: SubscriptionExecutionResult,
+        separator: str = "graphql",
+    ) -> Callable[[], AsyncGenerator[str, None]]:
+        async def stream() -> AsyncGenerator[str, None]:
+            async for value in result:
+                response = await self.process_result(request, value)
+                yield self.encode_multipart_data({"payload": response}, separator)
+
+            yield f"\r\n--{separator}--\r\n"
+
+        return self._stream_with_heartbeat(stream)
+
+    async def parse_multipart_subscriptions(
+        self, request: AsyncHTTPRequestAdapter
+    ) -> Dict[str, str]:
+        if request.method == "GET":
+            return self.parse_query_params(request.query_params)
+
+        return self.parse_json(await request.get_body())
+
     async def parse_http_body(
         self, request: AsyncHTTPRequestAdapter
     ) -> GraphQLRequestData:
-        content_type = request.content_type or ""
+        content_type, params = parse_content_type(request.content_type or "")
+
+        protocol: Literal["http", "multipart-subscription"] = "http"
 
         if request.method == "GET":
             data = self.parse_query_params(request.query_params)
+            if self._is_multipart_subscriptions(content_type, params):
+                protocol = "multipart-subscription"
         elif "application/json" in content_type:
             data = self.parse_json(await request.get_body())
-        elif content_type.startswith("multipart/form-data"):
+        elif content_type == "multipart/form-data":
             data = await self.parse_multipart(request)
+        elif self._is_multipart_subscriptions(content_type, params):
+            data = await self.parse_multipart_subscriptions(request)
+            protocol = "multipart-subscription"
         else:
             raise HTTPException(400, "Unsupported content type")
 
@@ -205,6 +342,7 @@ class AsyncBaseHTTPView(
             query=data.get("query"),
             variables=data.get("variables"),
             operation_name=data.get("operationName"),
+            protocol=protocol,
         )
 
     async def process_result(

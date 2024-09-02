@@ -1,6 +1,65 @@
 CHANGELOG
 =========
 
+0.239.1 - 2024-09-02
+--------------------
+
+This release fixes an issue with the http multipart subscription where the
+status code would be returned as `None`, instead of 200.
+
+We also took the opportunity to update the internals to better support
+additional protocols in future.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3610](https://github.com/strawberry-graphql/strawberry/pull/3610/)
+
+
+0.239.0 - 2024-08-31
+--------------------
+
+This release adds support for multipart subscriptions in almost all[^1] of our
+http integrations!
+
+[Multipart subcriptions](https://www.apollographql.com/docs/router/executing-operations/subscription-multipart-protocol/)
+are a new protocol from Apollo GraphQL, built on the
+[Incremental Delivery over HTTP spec](https://github.com/graphql/graphql-over-http/blob/main/rfcs/IncrementalDelivery.md),
+which is also used for `@defer` and `@stream`.
+
+The main advantage of this protocol is that when using the Apollo Client
+libraries you don't need to install any additional dependency, but in future
+this feature should make it easier for us to implement `@defer` and `@stream`
+
+Also, this means that you don't need to use Django Channels for subscription,
+since this protocol is based on HTTP we don't need to use websockets.
+
+[^1]: Flask, Chalice and the sync Django integration don't support this.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3076](https://github.com/strawberry-graphql/strawberry/pull/3076/)
+
+
+0.238.1 - 2024-08-30
+--------------------
+
+Fix an issue where `StrawberryResolver.is_async` was returning `False` for a
+function decorated with asgiref's `@sync_to_async`.
+
+The root cause is that in python >= 3.12 coroutine functions are market using
+`inspect.markcoroutinefunction`, which should be checked with
+`inspect.iscoroutinefunction` instead of `asyncio.iscoroutinefunction`
+
+Contributed by [Hyun S. Moon](https://github.com/shmoon-kr) via [PR #3599](https://github.com/strawberry-graphql/strawberry/pull/3599/)
+
+
+0.238.0 - 2024-08-30
+--------------------
+
+This release removes the integration of Starlite, as it
+has been deprecated since 11 May 2024.
+
+If you are using Starlite, please consider migrating to Litestar (https://litestar.dev) or another alternative.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3609](https://github.com/strawberry-graphql/strawberry/pull/3609/)
+
+
 0.237.3 - 2024-07-31
 --------------------
 

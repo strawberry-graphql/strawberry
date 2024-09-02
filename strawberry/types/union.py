@@ -235,10 +235,7 @@ class StrawberryUnion(StrawberryType):
         if isinstance(type_, StrawberryUnion):
             return True
 
-        if get_origin(type_) is Annotated:
-            return True
-
-        return False
+        return get_origin(type_) is Annotated
 
 
 def union(

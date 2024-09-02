@@ -12,6 +12,7 @@ title: Strawberry docs
 - [Queries](./general/queries.md)
 - [Mutations](./general/mutations.md)
 - [Subscriptions](./general/subscriptions.md)
+- [Multipart Subscriptions](./general/multipart-subscriptions.md)
 - [Why](./general/why.md)
 - [Breaking changes](./breaking-changes.md)
 - [Upgrading Strawberry](./general/upgrades.md)

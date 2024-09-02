@@ -32,8 +32,8 @@ async def ws_raw(http_client: HttpClient) -> AsyncGenerator[WebSocketClient, Non
         "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
     ) as ws:
         yield ws
-    await ws.close()
-    assert ws.closed
+        await ws.close()
+        assert ws.closed
 
 
 @pytest_asyncio.fixture
