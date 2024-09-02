@@ -36,7 +36,6 @@ if TYPE_CHECKING:
 
     from strawberry.extensions import SchemaExtension
     from strawberry.types import ExecutionContext
-    from strawberry.types.execution import SubscriptionExecutionResult
     from strawberry.types.graphql import OperationType
 
 
@@ -85,7 +84,7 @@ async def execute(
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
-) -> Union[ExecutionResult, SubscriptionExecutionResult]:
+) -> ExecutionResult:
     extensions_runner = SchemaExtensionsRunner(
         execution_context=execution_context,
         extensions=list(extensions),
