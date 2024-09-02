@@ -124,7 +124,7 @@ class AsyncBaseHTTPView(
 
         if request_data.protocol == "multipart-subscription":
             return await self.schema.subscribe(
-                request_data.query,
+                request_data.query,  # type: ignore
                 variable_values=request_data.variables,
                 context_value=context,
                 root_value=root_value,
