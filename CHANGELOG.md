@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.239.1 - 2024-09-02
+--------------------
+
+This release fixes an issue with the http multipart subscription where the
+status code would be returned as `None`, instead of 200.
+
+We also took the opportunity to update the internals to better support
+additional protocols in future.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3610](https://github.com/strawberry-graphql/strawberry/pull/3610/)
+
+
 0.239.0 - 2024-08-31
 --------------------
 
