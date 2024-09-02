@@ -313,7 +313,7 @@ def _get_namespace_from_ast(
         # can properly resolve it later
         type_name = args[0].strip(" '\"\n")
         for arg in args[1:]:
-            evaled_arg = eval(arg, globalns, localns)  # noqa: PGH001, S307
+            evaled_arg = eval(arg, globalns, localns)  # noqa: S307
             if isinstance(evaled_arg, StrawberryLazyReference):
                 extra[type_name] = evaled_arg.resolve_forward_ref(ForwardRef(type_name))
 
