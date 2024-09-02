@@ -70,6 +70,13 @@ async def test_multipart_subscription(
 
     data = [d async for d in response.streaming_json()]
 
-    assert data == [{"payload": {"data": {"echo": "Hello world"}}}]
+    assert data == [
+        {
+            "payload": {
+                "data": {"echo": "Hello world"},
+                "extensions": {"example": "example"},
+            }
+        }
+    ]
 
     assert response.status_code == 200
