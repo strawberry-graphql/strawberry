@@ -233,7 +233,7 @@ class AsyncBaseHTTPView(
         self, stream: Callable[[], AsyncGenerator[str, None]]
     ) -> Callable[[], AsyncGenerator[str, None]]:
         """Adds a heartbeat to the stream, to prevent the connection from closing when there are no messages being sent."""
-        queue = asyncio.Queue[Tuple[bool, Any]](1)
+        queue: asyncio.Queue[Tuple[bool, Any]] = asyncio.Queue(1)
 
         cancelling = False
 
