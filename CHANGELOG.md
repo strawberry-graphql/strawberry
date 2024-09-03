@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.239.2 - 2024-09-03
+--------------------
+
+This release fixes a TypeError on Python 3.8 due to us using a
+`asyncio.Queue[Tuple[bool, Any]](1)` instead of `asyncio.Queue(1)`.
+
+Contributed by [Daniel Szoke](https://github.com/szokeasaurusrex) via [PR #3615](https://github.com/strawberry-graphql/strawberry/pull/3615/)
+
+
 0.239.1 - 2024-09-02
 --------------------
 
