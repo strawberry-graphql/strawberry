@@ -421,7 +421,7 @@ def test_annotated_python_39():
 
     assert argument.python_name == "argument"
     assert argument.graphql_name is None
-    assert argument.type == str
+    assert argument.type is str
     assert argument.description == "This is a description"
     assert argument.type is str
 

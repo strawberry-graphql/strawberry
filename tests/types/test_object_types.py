@@ -63,7 +63,7 @@ def test_literal():
 
     field: StrawberryField = get_object_definition(Fabric).fields[0]
 
-    assert field.type == str
+    assert field.type is str
 
 
 def test_object():
