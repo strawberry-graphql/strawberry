@@ -290,8 +290,7 @@ class WebSocketClient(abc.ABC):
 
 
 class DebuggableGraphQLTransportWSMixin:
-    @staticmethod
-    def on_init() -> None:
+    def on_init(self) -> None:
         """This method can be patched by unit tests to get the instance of the
         transport handler when it is initialized.
         """
