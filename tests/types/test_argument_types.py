@@ -60,7 +60,7 @@ def test_literal():
         return "Lord Buckethead"
 
     argument = get_name.arguments[0]
-    assert argument.type == int
+    assert argument.type is int
 
 
 def test_object():

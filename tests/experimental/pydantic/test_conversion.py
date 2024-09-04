@@ -6,9 +6,9 @@ from enum import Enum
 from typing import Any, Dict, List, NewType, Optional, TypeVar, Union
 
 import pytest
-from pydantic import BaseModel, Field, ValidationError
 
 import strawberry
+from pydantic import BaseModel, Field, ValidationError
 from strawberry.experimental.pydantic._compat import (
     IS_PYDANTIC_V2,
     CompatModelField,
@@ -228,7 +228,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_private_field():
     assert len(definition.fields) == 1
     assert definition.fields[0].python_name == "age"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == int
+    assert definition.fields[0].type is int
 
 
 def test_can_convert_pydantic_type_with_nested_data_to_strawberry():

@@ -568,10 +568,7 @@ def test_basic_permission_access_inputs():
         def has_permission(
             self, source, info, **kwargs: typing.Any
         ) -> bool:  # pragma: no cover
-            if kwargs["a_key"] == "secret":
-                return True
-
-            return False
+            return kwargs["a_key"] == "secret"
 
     @strawberry.type
     class Query:

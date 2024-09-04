@@ -219,7 +219,7 @@ exclude = [
     "dist",
     "node_modules",
     "venv",
-    "tests/codegen/snapshots"
+    "tests/*/snapshots"
 ]
 src = ["strawberry", "tests"]
 
