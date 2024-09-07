@@ -30,6 +30,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
+from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 from strawberry.types.unset import UNSET
 from strawberry.utils.debug import pretty_print_graphql_operation
@@ -42,7 +43,7 @@ if TYPE_CHECKING:
     from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
         GraphQLTransportMessage,
     )
-    from strawberry.types import ExecutionResult
+    
 
 
 class BaseGraphQLTransportWSHandler(ABC):
@@ -274,13 +275,16 @@ class BaseGraphQLTransportWSHandler(ABC):
                     root_value=root_value,
                     operation_name=message.payload.operationName,
                 )
+                # Note: result may be SubscriptionExecutionResult or ExecutionResult
+                # now, but we don't support the former properly yet, hence the "ignore" below.
+
                 # Both validation and execution errors are handled the same way.
-                if result.errors:
+                if isinstance(result, ExecutionResult) and result.errors:
                     return result
 
                 # create AsyncGenerator returning a single result
                 async def single_result() -> AsyncIterator[ExecutionResult]:
-                    yield result
+                    yield result  # type: ignore
 
                 return single_result()
 
