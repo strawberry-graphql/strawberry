@@ -43,7 +43,6 @@ if TYPE_CHECKING:
     from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
         GraphQLTransportMessage,
     )
-    
 
 
 class BaseGraphQLTransportWSHandler(ABC):
@@ -294,9 +293,9 @@ class BaseGraphQLTransportWSHandler(ABC):
         self.operations[message.id] = operation
 
     async def operation_task(self, operation: Operation) -> None:
-        """
-        The operation task's top level method. Cleans-up and de-registers the operation
-        once it is done.
+        """The operation task's top level method.
+
+        Cleans-up and de-registers the operation once it is done.
         """
         task = asyncio.current_task()
         assert task is not None  # for type checkers

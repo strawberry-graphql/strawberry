@@ -1192,8 +1192,8 @@ async def test_task_error_handler(ws: WebSocketClient):
                 ).as_dict()
             )
 
-            # wait for the error to be logged
-            while not wakeup:
+            # wait for the error to be logged.  Must use timed loop and not event.
+            while not wakeup:  # noqa: ASYNC110
                 await asyncio.sleep(0.01)
             # and another little bit, for the thread to finish
             await asyncio.sleep(0.01)
