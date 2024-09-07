@@ -84,7 +84,7 @@ async def _subscribe(
                         data=None, errors=[_coerce_error(exc)]
                     )
 
-            # Handle immediate errors.
+            # Handle pre-execution errors.
             if isinstance(aiter_or_result, OriginalExecutionResult):
                 yield await _handle_execution_result(
                     execution_context,
@@ -93,31 +93,19 @@ async def _subscribe(
                     process_errors,
                 )
             else:
-                aiterator = aiter_or_result.__aiter__()
-                running = True
-                while running:
-                    # reset extensions results for each iteration
-                    execution_context.extensions_results = {}
-
-                    try:
-                        origin_result: Union[
-                            ExecutionResult, OriginalExecutionResult
-                        ] = await aiterator.__anext__()
-
-                    except StopAsyncIteration:
-                        break
-                    except Exception as exc:
-                        # graphql-core doesn't handle exceptions raised in the async generator.
-                        origin_result = ExecutionResult(
-                            data=None, errors=[_coerce_error(exc)]
+                try:
+                    async for result in aiter_or_result:
+                        yield await _handle_execution_result(
+                            execution_context,
+                            result,
+                            extensions_runner,
+                            process_errors,
                         )
-                        running = False
-                    # we could have yielded in the except block above.
-                    # but this way we make sure `get_result` hook is called deterministically after
-                    # `on_execute` hook is done.
+                # graphql-core doesn't handle exceptions raised while executing.
+                except Exception as exc:
                     yield await _handle_execution_result(
                         execution_context,
-                        origin_result,
+                        OriginalExecutionResult(data=None, errors=[_coerce_error(exc)]),
                         extensions_runner,
                         process_errors,
                     )
