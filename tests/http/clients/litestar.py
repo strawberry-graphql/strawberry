@@ -30,10 +30,6 @@ from .base import (
 )
 
 
-def custom_context_dependency() -> str:
-    return "Hi!"
-
-
 async def litestar_get_context(request: Request = None):
     return await get_context({"request": request})
 
