@@ -84,7 +84,7 @@ def is_list(annotation: object) -> bool:
     """Returns True if annotation is a List."""
     annotation_origin = getattr(annotation, "__origin__", None)
 
-    return annotation_origin == list
+    return annotation_origin is list
 
 
 def is_union(annotation: object) -> bool:

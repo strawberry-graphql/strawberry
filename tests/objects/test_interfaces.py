@@ -38,7 +38,7 @@ def test_implementing_interfaces():
 
     assert definition.fields[1].python_name == "name"
     assert definition.fields[1].graphql_name is None
-    assert definition.fields[1].type == str
+    assert definition.fields[1].type is str
 
     assert definition.is_interface is False
     assert definition.interfaces == [Node.__strawberry_definition__]
@@ -68,7 +68,7 @@ def test_implementing_interface_twice():
 
     assert definition.fields[1].python_name == "name"
     assert definition.fields[1].graphql_name is None
-    assert definition.fields[1].type == str
+    assert definition.fields[1].type is str
 
     assert definition.is_interface is False
     assert definition.interfaces == [Node.__strawberry_definition__]
@@ -84,7 +84,7 @@ def test_implementing_interface_twice():
 
     assert definition.fields[1].python_name == "name"
     assert definition.fields[1].graphql_name is None
-    assert definition.fields[1].type == str
+    assert definition.fields[1].type is str
 
     assert definition.is_interface is False
     assert definition.interfaces == [Node.__strawberry_definition__]
