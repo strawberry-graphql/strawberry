@@ -20,6 +20,7 @@ class DataPayload(TypedDict, total=False):
 
     # Optional list of formatted graphql.GraphQLError objects
     errors: Optional[List[GraphQLFormattedError]]
+    extensions: Optional[Dict[str, Any]]
 
 
 ErrorPayload = GraphQLFormattedError

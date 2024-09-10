@@ -11,7 +11,7 @@ nox.options.default_venv_backend = "uv"
 PYTHON_VERSIONS = ["3.12", "3.11", "3.10", "3.9", "3.8"]
 GQL_CORE_VERSIONS = [
     "3.2.3",
-    "3.3.0",
+    "3.3.0a6",
 ]
 
 COMMON_PYTEST_OPTIONS = [
@@ -44,12 +44,7 @@ INTEGRATIONS = [
 
 
 def _install_gql_core(session: Session, version: str) -> None:
-    # hack for better workflow names  # noqa: FIX004
-    if version == "3.2.3":
-        session._session.install(f"graphql-core=={version}")  # type: ignore
-    session._session.install(
-        "https://github.com/graphql-python/graphql-core/archive/876aef67b6f1e1f21b3b5db94c7ff03726cb6bdf.zip"
-    )  # type: ignore
+    session._session.install(f"graphql-core=={version}")
 
 
 gql_core_parametrize = nox.parametrize(

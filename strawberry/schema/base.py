@@ -15,7 +15,6 @@ if TYPE_CHECKING:
     from strawberry.types import (
         ExecutionContext,
         ExecutionResult,
-        SubscriptionExecutionResult,
     )
     from strawberry.types.base import StrawberryObjectDefinition
     from strawberry.types.enum import EnumDefinition
@@ -24,6 +23,7 @@ if TYPE_CHECKING:
     from strawberry.types.union import StrawberryUnion
 
     from .config import StrawberryConfig
+    from .subscribe import SubscriptionResult
 
 
 class BaseSchema(Protocol):
@@ -43,7 +43,7 @@ class BaseSchema(Protocol):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
-    ) -> Union[ExecutionResult, SubscriptionExecutionResult]:
+    ) -> ExecutionResult:
         raise NotImplementedError
 
     @abstractmethod
@@ -66,7 +66,7 @@ class BaseSchema(Protocol):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ) -> Any:
+    ) -> SubscriptionResult:
         raise NotImplementedError
 
     @abstractmethod

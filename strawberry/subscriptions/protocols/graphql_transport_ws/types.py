@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict
 
 from strawberry.types.unset import UNSET
 
@@ -68,12 +68,20 @@ class SubscribeMessage(GraphQLTransportMessage):
     type: str = "subscribe"
 
 
+class NextPayload(TypedDict, total=False):
+    data: Any
+
+    # Optional list of formatted graphql.GraphQLError objects
+    errors: Optional[List[GraphQLFormattedError]]
+    extensions: Optional[Dict[str, Any]]
+
+
 @dataclass
 class NextMessage(GraphQLTransportMessage):
     """Direction: Server -> Client."""
 
     id: str
-    payload: Dict[str, Any]  # TODO: shape like FormattedExecutionResult
+    payload: NextPayload
     type: str = "next"
 
     def as_dict(self) -> dict:

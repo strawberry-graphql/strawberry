@@ -14,6 +14,7 @@ from typing import (
     Tuple,
     Union,
 )
+from typing_extensions import Literal
 
 from graphql import GraphQLError
 
@@ -120,6 +121,15 @@ class AsyncBaseHTTPView(
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
 
         assert self.schema
+
+        if request_data.protocol == "multipart-subscription":
+            return await self.schema.subscribe(
+                request_data.query,  # type: ignore
+                variable_values=request_data.variables,
+                context_value=context,
+                root_value=root_value,
+                operation_name=request_data.operation_name,
+            )
 
         return await self.schema.execute(
             request_data.query,
@@ -312,14 +322,19 @@ class AsyncBaseHTTPView(
     ) -> GraphQLRequestData:
         content_type, params = parse_content_type(request.content_type or "")
 
+        protocol: Literal["http", "multipart-subscription"] = "http"
+
         if request.method == "GET":
             data = self.parse_query_params(request.query_params)
+            if self._is_multipart_subscriptions(content_type, params):
+                protocol = "multipart-subscription"
         elif "application/json" in content_type:
             data = self.parse_json(await request.get_body())
         elif content_type == "multipart/form-data":
             data = await self.parse_multipart(request)
         elif self._is_multipart_subscriptions(content_type, params):
             data = await self.parse_multipart_subscriptions(request)
+            protocol = "multipart-subscription"
         else:
             raise HTTPException(400, "Unsupported content type")
 
@@ -327,6 +342,7 @@ class AsyncBaseHTTPView(
             query=data.get("query"),
             variables=data.get("variables"),
             operation_name=data.get("operationName"),
+            protocol=protocol,
         )
 
     async def process_result(

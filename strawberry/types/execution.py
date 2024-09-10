@@ -5,6 +5,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Iterable,
     List,
     Optional,
     Tuple,
@@ -34,6 +35,7 @@ if TYPE_CHECKING:
 class ExecutionContext:
     query: Optional[str]
     schema: Schema
+    allowed_operations: Iterable[OperationType]
     context: Any = None
     variables: Optional[Dict[str, Any]] = None
     parse_options: ParseOptions = dataclasses.field(
@@ -52,6 +54,7 @@ class ExecutionContext:
     graphql_document: Optional[DocumentNode] = None
     errors: Optional[List[GraphQLError]] = None
     result: Optional[GraphQLExecutionResult] = None
+    extensions_results: Dict[str, Any] = dataclasses.field(default_factory=dict)
 
     def __post_init__(self, provided_operation_name: str | None) -> None:
         self._provided_operation_name = provided_operation_name
@@ -91,6 +94,18 @@ class ExecutionResult:
     data: Optional[Dict[str, Any]]
     errors: Optional[List[GraphQLError]]
     extensions: Optional[Dict[str, Any]] = None
+
+
+@dataclasses.dataclass
+class PreExecutionError(ExecutionResult):
+    """Differentiate between a normal execution result and an immediate error.
+
+    Immediate errors are errors that occur before the execution phase i.e validation errors,
+    or any other error that occur before we interact with resolvers.
+
+    These errors are required by `graphql-ws-transport` protocol in order to close the operation
+    right away once the error is encountered.
+    """
 
 
 class ParseOptions(TypedDict):
