@@ -92,7 +92,7 @@ FALLBACK_VERSION = Decimal("0.800")
 
 
 class MypyVersion:
-    """Stores the mypy version to be used by the plugin"""
+    """Stores the mypy version to be used by the plugin."""
 
     VERSION: Decimal
 
@@ -330,9 +330,11 @@ def add_static_method_to_class(
     return_type: Type,
     tvar_def: Optional[TypeVarType] = None,
 ) -> None:
-    """Adds a static method
-    Edited add_method_to_class to incorporate static method logic
-    https://github.com/python/mypy/blob/9c05d3d19/mypy/plugins/common.py
+    """Adds a static method.
+
+    Edited `add_method_to_class` to incorporate static method logic
+
+    https://github.com/python/mypy/blob/9c05d3d19/mypy/plugins/common.py.
     """
     info = cls.info
 
@@ -472,8 +474,13 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
             else:
                 extra = {}
 
-                if PYDANTIC_VERSION and PYDANTIC_VERSION >= (2, 7, 0):
-                    extra["api"] = ctx.api
+                if PYDANTIC_VERSION:
+                    if PYDANTIC_VERSION >= (2, 7, 0):
+                        extra["api"] = ctx.api
+                    if PYDANTIC_VERSION >= (2, 8, 0):
+                        # Based on pydantic's default value
+                        # https://github.com/pydantic/pydantic/pull/9606/files#diff-469037bbe55bbf9aa359480a16040d368c676adad736e133fb07e5e20d6ac523R1066
+                        extra["force_typevars_invariant"] = False
 
                 add_method(
                     ctx,
@@ -555,22 +562,22 @@ class StrawberryPlugin(Plugin):
         return None
 
     def _is_strawberry_union(self, fullname: str) -> bool:
-        return fullname == "strawberry.union.union" or fullname.endswith(
+        return fullname == "strawberry.types.union.union" or fullname.endswith(
             "strawberry.union"
         )
 
     def _is_strawberry_enum(self, fullname: str) -> bool:
-        return fullname == "strawberry.enum.enum" or fullname.endswith(
+        return fullname == "strawberry.types.enum.enum" or fullname.endswith(
             "strawberry.enum"
         )
 
     def _is_strawberry_scalar(self, fullname: str) -> bool:
-        return fullname == "strawberry.custom_scalar.scalar" or fullname.endswith(
+        return fullname == "strawberry.types.scalar.scalar" or fullname.endswith(
             "strawberry.scalar"
         )
 
     def _is_strawberry_lazy_type(self, fullname: str) -> bool:
-        return fullname == "strawberry.lazy_type.LazyType"
+        return fullname == "strawberry.types.lazy_type.LazyType"
 
     def _is_strawberry_create_type(self, fullname: str) -> bool:
         # using endswith(.create_type) is not ideal as there might be

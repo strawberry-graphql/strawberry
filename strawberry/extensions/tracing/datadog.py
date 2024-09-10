@@ -43,18 +43,20 @@ class DatadogTracingExtension(SchemaExtension):
         name: str,
         **kwargs: Any,
     ) -> Span:
-        """
-        Create a span with the given name and kwargs.
+        """Create a span with the given name and kwargs.
+
         You can  override this if you want to add more tags to the span.
 
         Example:
 
+        ```python
         class CustomExtension(DatadogTracingExtension):
             def create_span(self, lifecycle_step, name, **kwargs):
                 span = super().create_span(lifecycle_step, name, **kwargs)
                 if lifecycle_step == LifeCycleStep.OPERATION:
                     span.set_tag("graphql.query", self.execution_context.query)
                 return span
+        ```
         """
         return tracer.trace(
             name,
@@ -173,3 +175,6 @@ class DatadogTracingExtensionSync(DatadogTracingExtension):
             span.set_tag("graphql.path", ".".join(map(str, info.path.as_list())))
 
             return _next(root, info, *args, **kwargs)
+
+
+__all__ = ["DatadogTracingExtension", "DatadogTracingExtensionSync"]

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class MissingReturnAnnotationError(StrawberryException):
-    """The field is missing the return annotation"""
+    """The field is missing the return annotation."""
 
     def __init__(
         self,

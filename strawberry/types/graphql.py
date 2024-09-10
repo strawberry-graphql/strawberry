@@ -15,7 +15,11 @@ class OperationType(enum.Enum):
     @staticmethod
     def from_http(method: HTTPMethod) -> Set[OperationType]:
         if method == "GET":
-            return {OperationType.QUERY}
+            return {
+                OperationType.QUERY,
+                # subscriptions are supported via GET in the multipart protocol
+                OperationType.SUBSCRIPTION,
+            }
 
         if method == "POST":
             return {
@@ -25,3 +29,6 @@ class OperationType(enum.Enum):
             }
 
         raise ValueError(f"Unsupported HTTP method: {method}")  # pragma: no cover
+
+
+__all__ = ["OperationType"]

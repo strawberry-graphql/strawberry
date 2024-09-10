@@ -10,16 +10,20 @@ from strawberry.utils.logging import StrawberryLogger
 if TYPE_CHECKING:
     from graphql import GraphQLError
 
-    from strawberry.custom_scalar import ScalarDefinition
     from strawberry.directive import StrawberryDirective
-    from strawberry.enum import EnumDefinition
     from strawberry.schema.schema_converter import GraphQLCoreConverter
-    from strawberry.types import ExecutionContext, ExecutionResult
+    from strawberry.types import (
+        ExecutionContext,
+        ExecutionResult,
+    )
+    from strawberry.types.base import StrawberryObjectDefinition
+    from strawberry.types.enum import EnumDefinition
     from strawberry.types.graphql import OperationType
-    from strawberry.types.types import StrawberryObjectDefinition
-    from strawberry.union import StrawberryUnion
+    from strawberry.types.scalar import ScalarDefinition
+    from strawberry.types.union import StrawberryUnion
 
     from .config import StrawberryConfig
+    from .subscribe import SubscriptionResult
 
 
 class BaseSchema(Protocol):
@@ -62,7 +66,7 @@ class BaseSchema(Protocol):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ) -> Any:
+    ) -> SubscriptionResult:
         raise NotImplementedError
 
     @abstractmethod
@@ -113,3 +117,6 @@ class BaseSchema(Protocol):
     ) -> None:
         for error in errors:
             StrawberryLogger.error(error, execution_context)
+
+
+__all__ = ["BaseSchema"]

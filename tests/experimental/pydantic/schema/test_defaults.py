@@ -5,6 +5,7 @@ import pydantic
 
 import strawberry
 from strawberry.printer import print_schema
+from tests.conftest import skip_if_gql_32
 from tests.experimental.pydantic.utils import needs_pydantic_v2
 
 
@@ -63,10 +64,6 @@ def test_pydantic_type_default_none():
     class Query:
         a: User = strawberry.field()
 
-        @strawberry.field
-        def a(self) -> User:
-            return User()
-
     schema = strawberry.Schema(Query)
 
     expected = """
@@ -93,10 +90,6 @@ def test_pydantic_type_no_default_but_optional():
     @strawberry.type
     class Query:
         a: User = strawberry.field()
-
-        @strawberry.field
-        def a(self) -> User:
-            return User()
 
     schema = strawberry.Schema(Query)
 
@@ -185,6 +178,7 @@ def test_v2_explicit_default():
     assert print_schema(schema) == textwrap.dedent(expected).strip()
 
 
+@skip_if_gql_32("formatting is different in gql 3.2")
 def test_v2_input_with_nonscalar_default():
     class NonScalarType(pydantic.BaseModel):
         id: int = 10
@@ -233,7 +227,7 @@ def test_v2_input_with_nonscalar_default():
     }
 
     input OwningInput {
-      nonScalarType: NonScalarTypeInput! = {id: 10}
+      nonScalarType: NonScalarTypeInput! = { id: 10 }
       id: Int! = 10
     }
 

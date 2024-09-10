@@ -2,8 +2,8 @@ import textwrap
 from typing import List
 
 import strawberry
-from strawberry.field import StrawberryField
-from strawberry.types.types import StrawberryObjectDefinition
+from strawberry.types.base import StrawberryObjectDefinition
+from strawberry.types.field import StrawberryField
 
 
 def test_can_change_which_fields_are_exposed():

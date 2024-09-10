@@ -21,31 +21,33 @@ class LifecycleStep(Enum):
 class SchemaExtension:
     execution_context: ExecutionContext
 
-    def __init__(self, *, execution_context: ExecutionContext) -> None:
-        self.execution_context = execution_context
-
+    # to support extensions that still use the old signature
+    # we have an optional argument here for ease of initialization.
+    def __init__(
+        self, *, execution_context: ExecutionContext | None = None
+    ) -> None: ...
     def on_operation(  # type: ignore
         self,
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
-        """Called before and after a GraphQL operation (query / mutation) starts"""
+        """Called before and after a GraphQL operation (query / mutation) starts."""
         yield None
 
     def on_validate(  # type: ignore
         self,
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
-        """Called before and after the validation step"""
+        """Called before and after the validation step."""
         yield None
 
     def on_parse(  # type: ignore
         self,
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
-        """Called before and after the parsing step"""
+        """Called before and after the parsing step."""
         yield None
 
     def on_execute(  # type: ignore
         self,
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
-        """Called before and after the execution step"""
+        """Called before and after the execution step."""
         yield None
 
     def resolve(
@@ -61,6 +63,11 @@ class SchemaExtension:
     def get_results(self) -> AwaitableOrValue[Dict[str, Any]]:
         return {}
 
+    @classmethod
+    def _implements_resolve(cls) -> bool:
+        """Whether the extension implements the resolve method."""
+        return cls.resolve is not SchemaExtension.resolve
+
 
 Hook = Callable[[SchemaExtension], AsyncIteratorOrIterator[None]]
 
@@ -70,3 +77,5 @@ HOOK_METHODS: Set[str] = {
     SchemaExtension.on_parse.__name__,
     SchemaExtension.on_execute.__name__,
 }
+
+__all__ = ["SchemaExtension", "Hook", "HOOK_METHODS", "LifecycleStep"]

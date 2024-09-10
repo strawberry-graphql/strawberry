@@ -44,10 +44,13 @@ def get_generic_alias(type_: Type) -> Type:
     Given a type, its generic alias from `typing` module will be returned
     if it exists. For example:
 
-        >>> get_generic_alias(list)
-        typing.List
-        >>> get_generic_alias(dict)
-        typing.Dict
+    ```python
+    get_generic_alias(list)
+    # typing.List
+
+    get_generic_alias(dict)
+    # typing.Dict
+    ```
 
     This is mostly useful for python versions prior to 3.9, to get a version
     of a concrete type which supports `__class_getitem__`. In 3.9+ types like
@@ -78,16 +81,14 @@ def is_generic_alias(type_: Any) -> TypeGuard[_GenericAlias]:
 
 
 def is_list(annotation: object) -> bool:
-    """Returns True if annotation is a List"""
-
+    """Returns True if annotation is a List."""
     annotation_origin = getattr(annotation, "__origin__", None)
 
-    return annotation_origin == list
+    return annotation_origin is list
 
 
 def is_union(annotation: object) -> bool:
-    """Returns True if annotation is a Union"""
-
+    """Returns True if annotation is a Union."""
     # this check is needed because unions declared with the new syntax `A | B`
     # don't have a `__origin__` property on them, but they are instances of
     # `UnionType`, which is only available in Python 3.10+
@@ -105,8 +106,7 @@ def is_union(annotation: object) -> bool:
 
 
 def is_optional(annotation: Type) -> bool:
-    """Returns True if the annotation is Optional[SomeType]"""
-
+    """Returns True if the annotation is Optional[SomeType]."""
     # Optionals are represented as unions
 
     if not is_union(annotation):
@@ -153,7 +153,6 @@ def is_generic_subclass(annotation: type) -> bool:
 
 def is_generic(annotation: type) -> bool:
     """Returns True if the annotation is or extends a generic."""
-
     return (
         # TODO: These two lines appear to have the same effect. When will an
         #       annotation have parameters but not satisfy the first condition?
@@ -164,7 +163,6 @@ def is_generic(annotation: type) -> bool:
 
 def is_type_var(annotation: Type) -> bool:
     """Returns True if the annotation is a TypeVar."""
-
     return isinstance(annotation, TypeVar)
 
 
@@ -241,7 +239,7 @@ def _ast_replace_union_operation(
             expr = ast.Subscript(
                 expr.value,
                 # The cast is required for mypy on python 3.7 and 3.8
-                ast.Index(_ast_replace_union_operation(cast(Any, expr.slice).value)),
+                ast.Index(_ast_replace_union_operation(cast(Any, expr.slice).value)),  # type: ignore
                 ast.Load(),
             )
         elif isinstance(expr.slice, (ast.BinOp, ast.Tuple)):
@@ -259,7 +257,7 @@ def _get_namespace_from_ast(
     globalns: Optional[Dict] = None,
     localns: Optional[Dict] = None,
 ) -> Dict[str, Type]:
-    from strawberry.lazy_type import StrawberryLazyReference
+    from strawberry.types.lazy_type import StrawberryLazyReference
 
     extra = {}
 
@@ -315,7 +313,7 @@ def _get_namespace_from_ast(
         # can properly resolve it later
         type_name = args[0].strip(" '\"\n")
         for arg in args[1:]:
-            evaled_arg = eval(arg, globalns, localns)  # noqa: PGH001, S307
+            evaled_arg = eval(arg, globalns, localns)  # noqa: S307
             if isinstance(evaled_arg, StrawberryLazyReference):
                 extra[type_name] = evaled_arg.resolve_forward_ref(ForwardRef(type_name))
 
@@ -328,9 +326,9 @@ def eval_type(
     localns: Optional[Dict] = None,
 ) -> Type:
     """Evaluates a type, resolving forward references."""
-    from strawberry.auto import StrawberryAuto
-    from strawberry.lazy_type import StrawberryLazyReference
-    from strawberry.private import StrawberryPrivate
+    from strawberry.types.auto import StrawberryAuto
+    from strawberry.types.lazy_type import StrawberryLazyReference
+    from strawberry.types.private import StrawberryPrivate
 
     globalns = globalns or {}
     # If this is not a string, maybe its args are (e.g. List["Foo"])
@@ -411,3 +409,22 @@ def eval_type(
         )
 
     return type_
+
+
+__all__ = [
+    "get_generic_alias",
+    "is_generic_alias",
+    "is_list",
+    "is_union",
+    "is_optional",
+    "get_optional_annotation",
+    "get_list_annotation",
+    "is_concrete_generic",
+    "is_generic_subclass",
+    "is_generic",
+    "is_type_var",
+    "is_classvar",
+    "type_has_annotation",
+    "get_parameters",
+    "eval_type",
+]

@@ -34,10 +34,10 @@ def test():
         [
             Result(
                 type="error",
-                message="""\
-Expression of type "StrawberryField" is incompatible with declared type "str"
-\xa0\xa0"StrawberryField" is incompatible with "str"\
-""",
+                message=(
+                    'Type "int" is not assignable to declared type "str"\n'
+                    '\xa0\xa0"int" is not assignable to "str"'
+                ),
                 line=12,
                 column=22,
             ),

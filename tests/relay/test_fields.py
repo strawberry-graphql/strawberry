@@ -7,11 +7,11 @@ from pytest_mock import MockerFixture
 import strawberry
 from strawberry import relay
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument
-from strawberry.field import StrawberryField
 from strawberry.relay.fields import ConnectionExtension
 from strawberry.relay.utils import to_base64
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
+from strawberry.types.arguments import StrawberryArgument
+from strawberry.types.field import StrawberryField
 from strawberry.types.fields.resolver import StrawberryResolver
 
 from .schema import FruitAsync, schema
@@ -1597,9 +1597,8 @@ query fruitsBeforeAfterTest (
 
 
 async def test_query_before_error():
-    """
-    Verify if the error raised on a non-existing before hash
-    raises the correct error
+    """Verify if the error raised on a non-existing before hash
+    raises the correct error.
     """
     # with pytest.raises(ValueError):
     index = to_base64("Fake", 9292292)
@@ -1612,9 +1611,8 @@ async def test_query_before_error():
 
 
 def test_query_after_error():
-    """
-    Verify if the error raised on a non-existing before hash
-    raises the correct error
+    """Verify if the error raised on a non-existing before hash
+    raises the correct error.
     """
     index = to_base64("Fake", 9292292)
     result = schema.execute_sync(

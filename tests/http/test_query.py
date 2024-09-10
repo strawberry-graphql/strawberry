@@ -54,8 +54,9 @@ async def test_calls_handle_errors(
             {
                 "message": "Cannot query field 'hey' on type 'Query'.",
                 "locations": [{"line": 1, "column": 3}],
-            }
+            },
         ],
+        "extensions": {"example": "example"},
     }
 
     call_args = async_mock.call_args[0] if async_mock.called else sync_mock.call_args[0]
@@ -168,6 +169,15 @@ async def test_passing_invalid_json_get(http_client: HttpClient):
     assert "Unable to parse request body as JSON" in response.text
 
 
+async def test_query_parameters_are_never_interpreted_as_list(http_client: HttpClient):
+    response = await http_client.get(
+        url='/graphql?query=query($name: String!) { hello(name: $name) }&variables={"name": "Jake"}&variables={"name": "Jake"}',
+    )
+
+    assert response.status_code == 200
+    assert response.json["data"] == {"hello": "Hello Jake"}
+
+
 async def test_missing_query(http_client: HttpClient):
     response = await http_client.post(
         url="/graphql",
@@ -216,4 +226,4 @@ async def test_updating_headers(
 
     assert response.status_code == 200
     assert response.json["data"] == {"setHeader": "Jake"}
-    assert response.headers["X-Name"] == "Jake"
+    assert response.headers["x-name"] == "Jake"

@@ -8,8 +8,8 @@ from typing_extensions import Annotated
 import pytest
 
 import strawberry
-from strawberry.field import StrawberryField
-from strawberry.type import get_object_definition
+from strawberry.types.base import get_object_definition
+from strawberry.types.field import StrawberryField
 
 
 def test_enum():
@@ -63,7 +63,7 @@ def test_literal():
 
     field: StrawberryField = get_object_definition(Fabric).fields[0]
 
-    assert field.type == str
+    assert field.type is str
 
 
 def test_object():

@@ -1,6 +1,212 @@
 CHANGELOG
 =========
 
+0.240.0 - 2024-09-10
+--------------------
+
+This release adds support for schema-extensions in subscriptions.
+
+Here's a small example of how to use them (they work the same way as query and
+mutation extensions):
+
+```python
+import asyncio
+from typing import AsyncIterator
+
+import strawberry
+from strawberry.extensions.base_extension import SchemaExtension
+
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def notifications(self, info: strawberry.Info) -> AsyncIterator[str]:
+        for _ in range(3):
+            yield "Hello"
+
+
+class MyExtension(SchemaExtension):
+    async def on_operation(self):
+        # This would run when the subscription starts
+        print("Subscription started")
+        yield
+        # The subscription has ended
+        print("Subscription ended")
+
+
+schema = strawberry.Schema(
+    query=Query, subscription=Subscription, extensions=[MyExtension]
+)
+```
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #3554](https://github.com/strawberry-graphql/strawberry/pull/3554/)
+
+
+0.239.2 - 2024-09-03
+--------------------
+
+This release fixes a TypeError on Python 3.8 due to us using a
+`asyncio.Queue[Tuple[bool, Any]](1)` instead of `asyncio.Queue(1)`.
+
+Contributed by [Daniel Szoke](https://github.com/szokeasaurusrex) via [PR #3615](https://github.com/strawberry-graphql/strawberry/pull/3615/)
+
+
+0.239.1 - 2024-09-02
+--------------------
+
+This release fixes an issue with the http multipart subscription where the
+status code would be returned as `None`, instead of 200.
+
+We also took the opportunity to update the internals to better support
+additional protocols in future.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3610](https://github.com/strawberry-graphql/strawberry/pull/3610/)
+
+
+0.239.0 - 2024-08-31
+--------------------
+
+This release adds support for multipart subscriptions in almost all[^1] of our
+http integrations!
+
+[Multipart subcriptions](https://www.apollographql.com/docs/router/executing-operations/subscription-multipart-protocol/)
+are a new protocol from Apollo GraphQL, built on the
+[Incremental Delivery over HTTP spec](https://github.com/graphql/graphql-over-http/blob/main/rfcs/IncrementalDelivery.md),
+which is also used for `@defer` and `@stream`.
+
+The main advantage of this protocol is that when using the Apollo Client
+libraries you don't need to install any additional dependency, but in future
+this feature should make it easier for us to implement `@defer` and `@stream`
+
+Also, this means that you don't need to use Django Channels for subscription,
+since this protocol is based on HTTP we don't need to use websockets.
+
+[^1]: Flask, Chalice and the sync Django integration don't support this.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3076](https://github.com/strawberry-graphql/strawberry/pull/3076/)
+
+
+0.238.1 - 2024-08-30
+--------------------
+
+Fix an issue where `StrawberryResolver.is_async` was returning `False` for a
+function decorated with asgiref's `@sync_to_async`.
+
+The root cause is that in python >= 3.12 coroutine functions are market using
+`inspect.markcoroutinefunction`, which should be checked with
+`inspect.iscoroutinefunction` instead of `asyncio.iscoroutinefunction`
+
+Contributed by [Hyun S. Moon](https://github.com/shmoon-kr) via [PR #3599](https://github.com/strawberry-graphql/strawberry/pull/3599/)
+
+
+0.238.0 - 2024-08-30
+--------------------
+
+This release removes the integration of Starlite, as it
+has been deprecated since 11 May 2024.
+
+If you are using Starlite, please consider migrating to Litestar (https://litestar.dev) or another alternative.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3609](https://github.com/strawberry-graphql/strawberry/pull/3609/)
+
+
+0.237.3 - 2024-07-31
+--------------------
+
+This release fixes the type of the ASGI request handler's `scope` argument, making type checkers ever so slightly happier.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3581](https://github.com/strawberry-graphql/strawberry/pull/3581/)
+
+
+0.237.2 - 2024-07-26
+--------------------
+
+This release makes the ASGI and FastAPI integrations share their HTTP request adapter code, making Strawberry ever so slightly smaller and easier to maintain.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3582](https://github.com/strawberry-graphql/strawberry/pull/3582/)
+
+
+0.237.1 - 2024-07-24
+--------------------
+
+This release adds support for GraphQL-core v3.3 (which has not yet been
+released). Note that we continue to support GraphQL-core v3.2 as well.
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #3570](https://github.com/strawberry-graphql/strawberry/pull/3570/)
+
+
+0.237.0 - 2024-07-24
+--------------------
+
+This release ensures using pydantic 2.8.0 doesn't break when using experimental
+pydantic_type and running mypy.
+
+Contributed by [Martin Roy](https://github.com/lindycoder) via [PR #3562](https://github.com/strawberry-graphql/strawberry/pull/3562/)
+
+
+0.236.2 - 2024-07-23
+--------------------
+
+Update federation entity resolver exception handling to set the result to the original error instead of a `GraphQLError`, which obscured the original message and meta-fields.
+
+Contributed by [Bradley Oesch](https://github.com/bradleyoesch) via [PR #3144](https://github.com/strawberry-graphql/strawberry/pull/3144/)
+
+
+0.236.1 - 2024-07-23
+--------------------
+
+This release fixes an issue where optional lazy types using `| None` were
+failing to be correctly resolved inside modules using future annotations, e.g.
+
+```python
+from __future__ import annotations
+
+from typing import Annotated, TYPE_CHECKING
+
+import strawberry
+
+if TYPE_CHECKING:
+    from types import Group
+
+
+@strawberry.type
+class Person:
+    group: Annotated["Group", strawberry.lazy("types.group")] | None
+```
+
+This should now work as expected.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3576](https://github.com/strawberry-graphql/strawberry/pull/3576/)
+
+
+0.236.0 - 2024-07-17
+--------------------
+
+This release changes some of the internals of Strawberry, it shouldn't
+be affecting most of the users, but since we have changed the structure
+of the code you might need to update your imports.
+
+Thankfully we also provide a codemod for this, you can run it with:
+
+```bash
+strawberry upgrade update-imports
+```
+
+This release also includes additional documentation to some of
+the classes, methods and functions, this is in preparation for
+having the API reference in the documentation ✨
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3546](https://github.com/strawberry-graphql/strawberry/pull/3546/)
+
+
+0.235.2 - 2024-07-08
+--------------------
+
+This release removes an unnecessary check from our internal GET query parsing logic making it simpler and (insignificantly) faster.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3558](https://github.com/strawberry-graphql/strawberry/pull/3558/)
+
+
 0.235.1 - 2024-06-26
 --------------------
 
@@ -1333,7 +1539,7 @@ class User:
     @strawberry.field
     @staticmethod
     async def name(parent: strawberry.Parent[UserRow]) -> str:
-        return f"User Number {parent.id}"
+        return f"User Number {parent.id_}"
 
 
 @strawberry.type
@@ -4189,7 +4395,7 @@ the original type was already used with that generic in the schema.
 
 Example:
 
-```python3
+```python
 @strawberry.type
 class Query:
     regular: Edge[User]

@@ -6,9 +6,9 @@ from typing_extensions import Annotated
 import pytest
 
 import strawberry
-from strawberry.type import StrawberryOptional
+from strawberry.types.base import StrawberryOptional
 from strawberry.types.nodes import FragmentSpread, InlineFragment, SelectedField
-from strawberry.unset import UNSET
+from strawberry.types.unset import UNSET
 
 
 def test_info_has_the_correct_shape():
@@ -320,7 +320,7 @@ def test_return_type_from_resolver(return_type, return_value):
 
 def test_return_type_from_field():
     def resolver(info):
-        assert info.return_type == int
+        assert info.return_type is int
         return 0
 
     @strawberry.type

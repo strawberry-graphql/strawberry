@@ -5,13 +5,8 @@ import contextlib
 import json
 import time
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Type
-from unittest.mock import Mock, patch
-
-try:
-    from unittest.mock import AsyncMock
-except ImportError:
-    AsyncMock = None
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional, Type
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import pytest_asyncio
@@ -30,7 +25,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessagePayload,
 )
 from tests.http.clients.base import DebuggableGraphQLTransportWSMixin
-from tests.views.schema import Schema
+from tests.views.schema import MyExtension, Schema
 
 if TYPE_CHECKING:
     from ..http.clients.base import HttpClient, WebSocketClient
@@ -42,8 +37,8 @@ async def ws_raw(http_client: HttpClient) -> AsyncGenerator[WebSocketClient, Non
         "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         yield ws
-    await ws.close()
-    assert ws.closed
+        await ws.close()
+        assert ws.closed
 
 
 @pytest_asyncio.fixture
@@ -52,6 +47,25 @@ async def ws(ws_raw: WebSocketClient) -> WebSocketClient:
     response = await ws_raw.receive_json()
     assert response == ConnectionAckMessage().as_dict()
     return ws_raw
+
+
+def assert_next(
+    response: dict[str, Any],
+    id: str,
+    data: Dict[str, Any],
+    extensions: Optional[Dict[str, Any]] = None,
+):
+    """
+    Assert that the NextMessage payload contains the provided data.
+    If extensions is provided, it will also assert that the
+    extensions are present
+    """
+    assert response["type"] == "next"
+    assert response["id"] == id
+    assert set(response["payload"].keys()) <= {"data", "errors", "extensions"}
+    assert response["payload"]["data"] == data
+    if extensions is not None:
+        assert response["payload"]["extensions"] == extensions
 
 
 async def test_unknown_message_type(ws_raw: WebSocketClient):
@@ -158,13 +172,7 @@ async def test_connection_init_timeout_cancellation(
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(
-            id="sub1",
-            payload={"data": {"debug": {"isConnectionInitTimeoutTaskDone": True}}},
-        ).as_dict()
-    )
+    assert_next(response, "sub1", {"debug": {"isConnectionInitTimeoutTaskDone": True}})
 
 
 @pytest.mark.xfail(reason="This test is flaky")
@@ -242,7 +250,7 @@ async def test_can_send_payload_with_additional_things(ws_raw: WebSocketClient):
     assert json.loads(data.data) == {
         "type": "next",
         "id": "1",
-        "payload": {"data": {"echo": "Hi"}},
+        "payload": {"data": {"echo": "Hi"}, "extensions": {"example": "example"}},
     }
 
 
@@ -260,11 +268,7 @@ async def test_server_sent_ping(ws: WebSocketClient):
     await ws.send_json(PongMessage().as_dict())
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(id="sub1", payload={"data": {"requestPing": True}}).as_dict()
-    )
-
+    assert_next(response, "sub1", {"requestPing": True})
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub1").as_dict()
 
@@ -312,9 +316,8 @@ async def test_duplicated_operation_ids(ws: WebSocketClient):
 
 
 async def test_reused_operation_ids(ws: WebSocketClient):
-    """
-    Test that an operation id can be re-used after it has been
-    previously used for a completed operation
+    """Test that an operation id can be re-used after it has been
+    previously used for a completed operation.
     """
     # Use sub1 as an id for an operation
     await ws.send_json(
@@ -327,9 +330,7 @@ async def test_reused_operation_ids(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
-    )
+    assert_next(response, "sub1", {"echo": "Hi"})
 
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub1").as_dict()
@@ -346,9 +347,7 @@ async def test_reused_operation_ids(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
-    )
+    assert_next(response, "sub1", {"echo": "Hi"})
 
 
 async def test_simple_subscription(ws: WebSocketClient):
@@ -362,10 +361,7 @@ async def test_simple_subscription(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
-    )
-
+    assert_next(response, "sub1", {"echo": "Hi"})
     await ws.send_json(CompleteMessage(id="sub1").as_dict())
 
 
@@ -403,7 +399,7 @@ async def test_subscription_field_errors(ws: WebSocketClient):
         assert response["payload"][0]["locations"] == [{"line": 1, "column": 16}]
         assert (
             response["payload"][0]["message"]
-            == "The subscription field 'notASubscriptionField' is not defined."
+            == "Cannot query field 'notASubscriptionField' on type 'Subscription'."
         )
         process_errors.assert_called_once()
 
@@ -428,13 +424,7 @@ async def test_subscription_cancellation(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(
-            id="sub2", payload={"data": {"debug": {"numActiveResultHandlers": 2}}}
-        ).as_dict()
-    )
-
+    assert_next(response, "sub2", {"debug": {"numActiveResultHandlers": 2}})
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub2").as_dict()
 
@@ -450,12 +440,7 @@ async def test_subscription_cancellation(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(
-            id="sub3", payload={"data": {"debug": {"numActiveResultHandlers": 1}}}
-        ).as_dict()
-    )
+    assert_next(response, "sub3", {"debug": {"numActiveResultHandlers": 1}})
 
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub3").as_dict()
@@ -480,15 +465,15 @@ async def test_subscription_errors(ws: WebSocketClient):
 
 
 async def test_operation_error_no_complete(ws: WebSocketClient):
-    """
-    Test that an "error" message is not followed by "complete"
-    """
-    # get an "error" message
+    """Test that an "error" message is not followed by "complete"."""
+    # Since we don't include the operation variables,
+    # the subscription will fail immediately.
+    # see https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#error
     await ws.send_json(
         SubscribeMessage(
             id="sub1",
             payload=SubscribeMessagePayload(
-                query='query { error(message: "TEST ERR") }',
+                query="subscription Foo($bar: String!){ exception(message: $bar) }",
             ),
         ).as_dict()
     )
@@ -499,17 +484,9 @@ async def test_operation_error_no_complete(ws: WebSocketClient):
 
     # after an "error" message, there should be nothing more
     # sent regarding "sub1", not even a "complete".
-    await ws.send_json(
-        SubscribeMessage(
-            id="sub2",
-            payload=SubscribeMessagePayload(
-                query='query { error(message: "TEST ERR") }',
-            ),
-        ).as_dict()
-    )
-    response = await ws.receive_json()
-    assert response["type"] == ErrorMessage.type
-    assert response["id"] == "sub2"
+    await ws.send_json(PingMessage().as_dict())
+    data = await ws.receive_json(timeout=1)
+    assert data == PongMessage().as_dict()
 
 
 async def test_subscription_exceptions(ws: WebSocketClient):
@@ -525,12 +502,9 @@ async def test_subscription_exceptions(ws: WebSocketClient):
         )
 
         response = await ws.receive_json()
-        assert response["type"] == ErrorMessage.type
+        assert response["type"] == NextMessage.type
         assert response["id"] == "sub1"
-        assert len(response["payload"]) == 1
-        assert response["payload"][0].get("path") is None
-        assert response["payload"][0].get("locations") is None
-        assert response["payload"][0]["message"] == "TEST EXC"
+        assert response["payload"]["errors"] == [{"message": "TEST EXC"}]
         process_errors.assert_called_once()
 
 
@@ -543,20 +517,15 @@ async def test_single_result_query_operation(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(id="sub1", payload={"data": {"hello": "Hello world"}}).as_dict()
-    )
-
+    assert_next(response, "sub1", {"hello": "Hello world"})
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub1").as_dict()
 
 
 async def test_single_result_query_operation_async(ws: WebSocketClient):
-    """
-    Test a single result query operation on an
+    """Test a single result query operation on an
     `async` method in the schema, including an artificial
-    async delay
+    async delay.
     """
     await ws.send_json(
         SubscribeMessage(
@@ -568,20 +537,14 @@ async def test_single_result_query_operation_async(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(
-            id="sub1", payload={"data": {"asyncHello": "Hello Dolly"}}
-        ).as_dict()
-    )
+    assert_next(response, "sub1", {"asyncHello": "Hello Dolly"})
 
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub1").as_dict()
 
 
 async def test_single_result_query_operation_overlapped(ws: WebSocketClient):
-    """
-    Test that two single result queries can be in flight at the same time,
+    """Test that two single result queries can be in flight at the same time,
     just like regular queries.  Start two queries with separate ids. The
     first query has a delay, so we expect the response to the second
     query to be delivered first.
@@ -607,12 +570,7 @@ async def test_single_result_query_operation_overlapped(ws: WebSocketClient):
 
     # we expect the response to the second query to arrive first
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(
-            id="sub2", payload={"data": {"asyncHello": "Hello Dolly"}}
-        ).as_dict()
-    )
+    assert_next(response, "sub2", {"asyncHello": "Hello Dolly"})
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub2").as_dict()
 
@@ -626,10 +584,7 @@ async def test_single_result_mutation_operation(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(id="sub1", payload={"data": {"hello": "strawberry"}}).as_dict()
-    )
+    assert_next(response, "sub1", {"hello": "strawberry"})
 
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub1").as_dict()
@@ -653,13 +608,7 @@ async def test_single_result_operation_selection(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(
-            id="sub1", payload={"data": {"hello": "Hello Strawberry"}}
-        ).as_dict()
-    )
-
+    assert_next(response, "sub1", {"hello": "Hello Strawberry"})
     response = await ws.receive_json()
     assert response == CompleteMessage(id="sub1").as_dict()
 
@@ -684,7 +633,7 @@ async def test_single_result_invalid_operation_selection(ws: WebSocketClient):
     ws.assert_reason("Can't get GraphQL operation type")
 
 
-async def test_single_result_operation_error(ws: WebSocketClient):
+async def test_single_result_execution_error(ws: WebSocketClient):
     process_errors = Mock()
     with patch.object(Schema, "process_errors", process_errors):
         await ws.send_json(
@@ -697,17 +646,19 @@ async def test_single_result_operation_error(ws: WebSocketClient):
         )
 
         response = await ws.receive_json()
-        assert response["type"] == ErrorMessage.type
+        assert response["type"] == NextMessage.type
         assert response["id"] == "sub1"
-        assert len(response["payload"]) == 1
-        assert response["payload"][0]["message"] == "You are not authorized"
+        errs = response["payload"]["errors"]
+        assert len(errs) == 1
+        assert errs[0]["path"] == ["alwaysFail"]
+        assert errs[0]["message"] == "You are not authorized"
+
         process_errors.assert_called_once()
 
 
-async def test_single_result_operation_exception(ws: WebSocketClient):
-    """
-    Test that single-result-operations which raise exceptions
-    behave in the same way as streaming operations
+async def test_single_result_pre_execution_error(ws: WebSocketClient):
+    """Test that single-result-operations which raise exceptions
+    behave in the same way as streaming operations.
     """
     process_errors = Mock()
     with patch.object(Schema, "process_errors", process_errors):
@@ -715,7 +666,7 @@ async def test_single_result_operation_exception(ws: WebSocketClient):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query='query { exception(message: "bummer") }',
+                    query="query { IDontExist }",
                 ),
             ).as_dict()
         )
@@ -724,15 +675,16 @@ async def test_single_result_operation_exception(ws: WebSocketClient):
         assert response["type"] == ErrorMessage.type
         assert response["id"] == "sub1"
         assert len(response["payload"]) == 1
-        assert response["payload"][0].get("path") == ["exception"]
-        assert response["payload"][0]["message"] == "bummer"
+        assert (
+            response["payload"][0]["message"]
+            == "Cannot query field 'IDontExist' on type 'Query'."
+        )
         process_errors.assert_called_once()
 
 
 async def test_single_result_duplicate_ids_sub(ws: WebSocketClient):
-    """
-    Test that single-result-operations and streaming operations
-    share the same ID namespace.  Start a regular subscription,
+    """Test that single-result-operations and streaming operations
+    share the same ID namespace. Start a regular subscription,
     then issue a single-result operation with same ID and expect an
     error due to already existing ID
     """
@@ -762,10 +714,9 @@ async def test_single_result_duplicate_ids_sub(ws: WebSocketClient):
 
 
 async def test_single_result_duplicate_ids_query(ws: WebSocketClient):
-    """
-    Test that single-result-operations don't allow duplicate
-    IDs for two asynchronous queries.  Issue one async query
-    with delay, then another with same id.  Expect error.
+    """Test that single-result-operations don't allow duplicate
+    IDs for two asynchronous queries. Issue one async query
+    with delay, then another with same id. Expect error.
     """
     # single result subscription 1
     await ws.send_json(
@@ -808,12 +759,7 @@ async def test_injects_connection_params(ws_raw: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(
-            id="sub1", payload={"data": {"connectionParams": "rocks"}}
-        ).as_dict()
-    )
+    assert_next(response, "sub1", {"connectionParams": "rocks"})
 
     await ws.send_json(CompleteMessage(id="sub1").as_dict())
 
@@ -862,12 +808,7 @@ async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
     )
 
     response = await ws.receive_json()
-    assert (
-        response
-        == NextMessage(
-            id="sub1", payload={"data": {"longFinalizer": "hello"}}
-        ).as_dict()
-    )
+    assert_next(response, "sub1", {"longFinalizer": "hello"})
 
     # now cancel the stubscription and send a new query.  We expect the response
     # to the new query to arrive immediately, without waiting for the finalizer
@@ -890,9 +831,8 @@ async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
 
 
 async def test_error_handler_for_timeout(http_client: HttpClient):
-    """
-    Test that the error handler is called when the timeout
-    task encounters an error
+    """Test that the error handler is called when the timeout
+    task encounters an error.
     """
     with contextlib.suppress(ImportError):
         from tests.http.clients.channels import ChannelsHttpClient
@@ -936,9 +876,8 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
 
 
 async def test_subscription_errors_continue(ws: WebSocketClient):
-    """
-    Verify that an ExecutionResult with errors during subscription does not terminate
-    the subscription
+    """Verify that an ExecutionResult with errors during subscription does not terminate
+    the subscription.
     """
     process_errors = Mock()
     with patch.object(Schema, "process_errors", process_errors):
@@ -972,3 +911,22 @@ async def test_subscription_errors_continue(ws: WebSocketClient):
         response = await ws.receive_json()
         assert response["type"] == CompleteMessage.type
         assert response["id"] == "sub1"
+
+
+@patch.object(MyExtension, MyExtension.get_results.__name__, return_value={})
+async def test_no_extensions_results_wont_send_extensions_in_payload(
+    mock: Mock, ws: WebSocketClient
+):
+    await ws.send_json(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query='subscription { echo(message: "Hi") }'
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json()
+    mock.assert_called_once()
+    assert_next(response, "sub1", {"echo": "Hi"})
+    assert "extensions" not in response["payload"]

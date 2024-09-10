@@ -4,9 +4,9 @@ import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.field import StrawberryField
 from strawberry.tools import create_type
-from strawberry.type import get_object_definition
+from strawberry.types.base import get_object_definition
+from strawberry.types.field import StrawberryField
 
 
 def test_create_type():
@@ -25,7 +25,7 @@ def test_create_type():
 
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
 
 
 def test_create_type_extend_and_directives():
@@ -52,7 +52,7 @@ def test_create_type_extend_and_directives():
 
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
 
 
 def test_create_input_type():
@@ -73,7 +73,7 @@ def test_create_input_type():
 
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
 
 
 def test_create_interface_type():
@@ -95,7 +95,7 @@ def test_create_interface_type():
 
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
 
 
 def test_create_variable_type():
@@ -111,7 +111,7 @@ def test_create_variable_type():
 
     assert definition.fields[0].python_name == "get_name"
     assert definition.fields[0].graphql_name == "name"
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
 
 
 def test_create_type_empty_list():

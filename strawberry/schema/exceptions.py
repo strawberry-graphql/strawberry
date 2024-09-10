@@ -13,3 +13,6 @@ class InvalidOperationTypeError(Exception):
         }[self.operation_type]
 
         return f"{operation_type} are not allowed when using {method}"
+
+
+__all__ = ["InvalidOperationTypeError"]

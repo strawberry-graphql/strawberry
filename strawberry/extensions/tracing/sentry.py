@@ -24,7 +24,7 @@ class SentryTracingExtension(SchemaExtension):
         execution_context: Optional[ExecutionContext] = None,
     ) -> None:
         warnings.warn(
-            "The Sentry tracing extension is deprecated, please update to sentry>=1.32.0",
+            "The Sentry tracing extension is deprecated, please update to sentry-sdk>=1.32.0",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -156,3 +156,6 @@ class SentryTracingExtensionSync(SentryTracingExtension):
             span.set_tag("graphql.path", ".".join(map(str, info.path.as_list())))
 
             return _next(root, info, *args, **kwargs)
+
+
+__all__ = ["SentryTracingExtension", "SentryTracingExtensionSync"]

@@ -73,6 +73,11 @@ class Subscription:
     async def something(self) -> AsyncIterator[str]:
         yield "Hello World!"
 
+    @strawberry.subscription
+    async def long_running(self, count: int) -> AsyncIterator[int]:
+        for i in range(count):
+            yield i
+
 
 @strawberry.directive(locations=[DirectiveLocation.FIELD])
 def uppercase(value: str) -> str:

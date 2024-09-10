@@ -35,7 +35,7 @@ def test_resolver_as_argument():
 
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
     assert definition.fields[0].base_resolver.wrapped_func == get_name
 
 
@@ -53,7 +53,7 @@ def test_resolver_fields():
 
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
     assert definition.fields[0].base_resolver(None) == Query().name()
 
 
@@ -72,7 +72,7 @@ def test_staticmethod_resolver_fields():
 
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
     assert definition.fields[0].base_resolver() == Query.name()
 
     assert Query.name() == "Name"
@@ -96,7 +96,7 @@ def test_classmethod_resolver_fields():
 
     assert definition.fields[0].python_name == "val"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
     assert definition.fields[0].base_resolver() == Query.val()
 
     assert Query.val() == "thingy"
@@ -222,7 +222,8 @@ def test_raises_error_when_missing_annotation_and_resolver():
 def test_raises_error_when_missing_type():
     """Test to make sure that if somehow a non-StrawberryField field is added to the cls
     without annotations it raises an exception. This would occur if someone manually
-    uses dataclasses.field"""
+    uses dataclasses.field
+    """
 
     @strawberry.type
     class Query:
@@ -309,13 +310,13 @@ def test_can_reuse_resolver():
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
     assert definition.fields[0].python_name == "name"
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
     assert definition.fields[0].base_resolver.wrapped_func == get_name
 
     assert definition.fields[1].python_name == "name_2"
     assert definition.fields[1].graphql_name is None
     assert definition.fields[1].python_name == "name_2"
-    assert definition.fields[1].type == str
+    assert definition.fields[1].type is str
     assert definition.fields[1].base_resolver.wrapped_func == get_name
 
 

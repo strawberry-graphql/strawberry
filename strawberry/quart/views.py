@@ -1,6 +1,6 @@
 import warnings
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, AsyncGenerator, Callable, Dict, Optional, cast
 
 from quart import Request, Response, request
 from quart.views import View
@@ -102,3 +102,22 @@ class GraphQLView(
                 response=e.reason,
                 status=e.status_code,
             )
+
+    async def create_streaming_response(
+        self,
+        request: Request,
+        stream: Callable[[], AsyncGenerator[str, None]],
+        sub_response: Response,
+        headers: Dict[str, str],
+    ) -> Response:
+        return (
+            stream(),
+            sub_response.status_code,
+            {  # type: ignore
+                **sub_response.headers,
+                **headers,
+            },
+        )
+
+
+__all__ = ["GraphQLView"]

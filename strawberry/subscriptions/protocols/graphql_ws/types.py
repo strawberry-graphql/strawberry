@@ -20,6 +20,7 @@ class DataPayload(TypedDict, total=False):
 
     # Optional list of formatted graphql.GraphQLError objects
     errors: Optional[List[GraphQLFormattedError]]
+    extensions: Optional[Dict[str, Any]]
 
 
 ErrorPayload = GraphQLFormattedError
@@ -38,3 +39,14 @@ class OperationMessage(TypedDict, total=False):
     type: str
     id: str
     payload: OperationMessagePayload
+
+
+__all__ = [
+    "ConnectionInitPayload",
+    "ConnectionErrorPayload",
+    "StartPayload",
+    "DataPayload",
+    "ErrorPayload",
+    "OperationMessagePayload",
+    "OperationMessage",
+]

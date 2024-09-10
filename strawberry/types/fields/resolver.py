@@ -1,10 +1,11 @@
 from __future__ import annotations as _
 
+import asyncio
 import inspect
 import sys
 import warnings
 from functools import cached_property
-from inspect import isasyncgenfunction, iscoroutinefunction
+from inspect import isasyncgenfunction
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -23,13 +24,13 @@ from typing import (
 from typing_extensions import Annotated, Protocol, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import (
     ConflictingArgumentsError,
     MissingArgumentsAnnotationsError,
 )
 from strawberry.parent import StrawberryParent
-from strawberry.type import StrawberryType, has_object_definition
+from strawberry.types.arguments import StrawberryArgument
+from strawberry.types.base import StrawberryType, has_object_definition
 from strawberry.types.info import Info
 from strawberry.utils.typing import type_has_annotation
 
@@ -170,6 +171,13 @@ INFO_PARAMSPEC = ReservedType("info", Info)
 PARENT_PARAMSPEC = ReservedType(name=None, type=StrawberryParent)
 
 T = TypeVar("T")
+
+# in python >= 3.12 coroutine functions are market using inspect.markcoroutinefunction,
+# which should be checked with inspect.iscoroutinefunction instead of asyncio.iscoroutinefunction
+if hasattr(inspect, "markcoroutinefunction"):
+    iscoroutinefunction = inspect.iscoroutinefunction
+else:
+    iscoroutinefunction = asyncio.iscoroutinefunction  # type: ignore[assignment]
 
 
 class StrawberryResolver(Generic[T]):

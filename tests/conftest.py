@@ -4,6 +4,8 @@ from typing import Any, List, Tuple
 
 import pytest
 
+from strawberry.utils import IS_GQL_32
+
 
 def pytest_emoji_xfailed(config: pytest.Config) -> Tuple[str, str]:
     return "🤷‍♂️ ", "XFAIL 🤷‍♂️ "
@@ -34,7 +36,6 @@ def pytest_collection_modifyitems(config: pytest.Config, items: List[pytest.Item
             "quart",
             "pydantic",
             "sanic",
-            "starlite",
             "litestar",
         ]
 
@@ -50,10 +51,9 @@ def pytest_ignore_collect(
     if sys.version_info < (3, 12) and "python_312" in collection_path.parts:
         return True
 
-    markers = config.getoption("-m")
 
-    # starlite has some issues with pydantic 2, which we
-    # use in our dev deps, so we skip starlite unless
-    # we're running the tests for it
-    if "starlite" not in markers and "starlite" in collection_path.parts:
-        return True
+def skip_if_gql_32(reason: str) -> pytest.MarkDecorator:
+    return pytest.mark.skipif(
+        IS_GQL_32,
+        reason=reason,
+    )

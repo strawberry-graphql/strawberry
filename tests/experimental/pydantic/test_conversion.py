@@ -19,8 +19,11 @@ from strawberry.experimental.pydantic.exceptions import (
     BothDefaultAndDefaultFactoryDefinedError,
 )
 from strawberry.experimental.pydantic.utils import get_default_factory_for_field
-from strawberry.type import StrawberryList, StrawberryOptional
-from strawberry.types.types import StrawberryObjectDefinition
+from strawberry.types.base import (
+    StrawberryList,
+    StrawberryObjectDefinition,
+    StrawberryOptional,
+)
 from tests.experimental.pydantic.utils import needs_pydantic_v1
 
 
@@ -225,7 +228,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_private_field():
     assert len(definition.fields) == 1
     assert definition.fields[0].python_name == "age"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == int
+    assert definition.fields[0].type is int
 
 
 def test_can_convert_pydantic_type_with_nested_data_to_strawberry():

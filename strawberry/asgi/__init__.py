@@ -5,6 +5,9 @@ from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
+    Callable,
+    Dict,
     Mapping,
     Optional,
     Sequence,
@@ -14,7 +17,12 @@ from typing import (
 
 from starlette import status
 from starlette.requests import Request
-from starlette.responses import HTMLResponse, PlainTextResponse, Response
+from starlette.responses import (
+    HTMLResponse,
+    PlainTextResponse,
+    Response,
+    StreamingResponse,
+)
 from starlette.websockets import WebSocket
 
 from strawberry.asgi.handlers import (
@@ -44,7 +52,7 @@ class ASGIRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def query_params(self) -> QueryParams:
-        return dict(self.request.query_params)
+        return self.request.query_params
 
     @property
     def method(self) -> HTTPMethod:
@@ -122,7 +130,7 @@ class GraphQL(
             return await self.handle_http(scope, receive, send)
 
         elif scope["type"] == "websocket":
-            ws = WebSocket(scope=scope, receive=receive, send=send)
+            ws = WebSocket(scope, receive=receive, send=send)
             preferred_protocol = self.pick_preferred_protocol(ws)
 
             if preferred_protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
@@ -213,3 +221,19 @@ class GraphQL(
             response.status_code = sub_response.status_code
 
         return response
+
+    async def create_streaming_response(
+        self,
+        request: Request | WebSocket,
+        stream: Callable[[], AsyncIterator[str]],
+        sub_response: Response,
+        headers: Dict[str, str],
+    ) -> Response:
+        return StreamingResponse(
+            stream(),
+            status_code=sub_response.status_code or status.HTTP_200_OK,
+            headers={
+                **sub_response.headers,
+                **headers,
+            },
+        )

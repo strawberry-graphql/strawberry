@@ -28,3 +28,6 @@ class GraphQLLexer(RegexLexer):
             (r"(\s|,)", token.Text),
         ]
     }
+
+
+__all__ = ["GraphQLLexer"]

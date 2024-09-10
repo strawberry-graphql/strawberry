@@ -45,9 +45,7 @@ def test_mask_some_errors():
 
     def should_mask_error(error: GraphQLError) -> bool:
         original_error = error.original_error
-        if original_error and isinstance(original_error, VisibleError):
-            return False
-        return True
+        return not (original_error and isinstance(original_error, VisibleError))
 
     schema = strawberry.Schema(
         query=Query, extensions=[MaskErrors(should_mask_error=should_mask_error)]

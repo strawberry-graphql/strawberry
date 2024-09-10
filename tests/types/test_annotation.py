@@ -6,7 +6,7 @@ import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.unset import UnsetType
+from strawberry.types.unset import UnsetType
 
 
 class Bleh:
@@ -64,7 +64,7 @@ def test_eq_on_other_type():
 
 
 def test_eq_on_non_annotation():
-    assert StrawberryAnnotation(int) != int
+    assert StrawberryAnnotation(int) is not int
     assert StrawberryAnnotation(int) != 123
 
 
@@ -72,4 +72,4 @@ def test_set_anntation():
     annotation = StrawberryAnnotation(int)
     annotation.annotation = str
 
-    assert annotation.annotation == str
+    assert annotation.annotation is str

@@ -6,6 +6,7 @@ from graphql import GraphQLError
 
 import strawberry
 from strawberry.types.execution import ExecutionResult
+from tests.conftest import IS_GQL_32
 
 
 @pytest.mark.parametrize(
@@ -149,23 +150,20 @@ def execute_mutation(value) -> ExecutionResult:
     ),
 )
 def test_serialization_of_incorrect_datetime_string(value):
-    """
-    Test GraphQLError is raised for incorrect datetime.
+    """Test GraphQLError is raised for incorrect datetime.
     The error should exclude "original_error".
     """
-
     result = execute_mutation(value)
     assert result.errors
     assert isinstance(result.errors[0], GraphQLError)
-    assert result.errors[0].original_error is None
+    if IS_GQL_32:
+        assert result.errors[0].original_error is None
 
 
 def test_serialization_error_message_for_incorrect_datetime_string():
+    """Test if error message is using original error message
+    from datetime lib, and is properly formatted.
     """
-    Test if error message is using original error message
-    from datetime lib, and is properly formatted
-    """
-
     result = execute_mutation("2021-13-01T09:00:00")
     assert result.errors
     assert result.errors[0].message == (

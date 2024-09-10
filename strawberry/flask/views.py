@@ -1,7 +1,14 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Mapping,
+    Optional,
+    Union,
+    cast,
+)
 
 from flask import Request, Response, render_template_string, request
 from flask.views import View
@@ -26,7 +33,7 @@ class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
         self.request = request
 
     @property
-    def query_params(self) -> Mapping[str, Union[str, Optional[List[str]]]]:
+    def query_params(self) -> QueryParams:
         return self.request.args.to_dict()
 
     @property
@@ -177,3 +184,9 @@ class AsyncGraphQLView(
 
     async def render_graphql_ide(self, request: Request) -> Response:
         return render_template_string(self.graphql_ide_html)  # type: ignore
+
+
+__all__ = [
+    "GraphQLView",
+    "AsyncGraphQLView",
+]
