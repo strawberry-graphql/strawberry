@@ -130,7 +130,7 @@ def tests_integrations(session: Session, integration: str, gql_core: str) -> Non
 
 
 @session(python=PYTHON_VERSIONS, name="Pydantic tests", tags=["tests", "pydantic"])
-@with_gql_core_parametrize("pydantic", ["1.10", "2.7.0", "2.8.0"])
+@with_gql_core_parametrize("pydantic", ["1.10", "2.8.0", "2.9.0"])
 def test_pydantic(session: Session, pydantic: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
 
