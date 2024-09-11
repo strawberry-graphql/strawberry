@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.240.1 - 2024-09-11
+--------------------
+
+This release adds support for Python 3.13 (which will be out soon!)
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3510](https://github.com/strawberry-graphql/strawberry/pull/3510/)
+
+
 0.240.0 - 2024-09-10
 --------------------
 
