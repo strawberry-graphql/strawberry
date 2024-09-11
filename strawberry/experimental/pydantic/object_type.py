@@ -37,7 +37,6 @@ from strawberry.types.auto import StrawberryAuto
 from strawberry.types.field import StrawberryField
 from strawberry.types.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
-from strawberry.utils.dataclasses import add_custom_init_fn
 
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
@@ -254,6 +253,8 @@ def type(
         )
 
         if sys.version_info < (3, 10, 1):
+            from strawberry.utils.dataclasses import add_custom_init_fn
+
             add_custom_init_fn(cls)
 
         _process_type(
