@@ -39,7 +39,7 @@ def test():
         [
             Result(
                 type="information",
-                message='Type of "UserOrError" is "type[Annotated]"',
+                message='Type of "UserOrError" is "Annotated"',
                 line=19,
                 column=13,
             ),
