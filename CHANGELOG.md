@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.240.2 - 2024-09-11
+--------------------
+
+This release updates how we check for GraphQL core's version to remove a
+dependency on the `packaging` package.
+
+Contributed by [Nicholas Bollweg](https://github.com/bollwyvl) via [PR #3622](https://github.com/strawberry-graphql/strawberry/pull/3622/)
+
+
 0.240.1 - 2024-09-11
 --------------------
 
