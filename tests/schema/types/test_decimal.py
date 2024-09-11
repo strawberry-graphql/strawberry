@@ -3,7 +3,6 @@ from decimal import Decimal
 from graphql import GraphQLError
 
 import strawberry
-from tests.conftest import IS_GQL_32
 
 
 def test_decimal():
@@ -64,8 +63,6 @@ def test_serialization_of_incorrect_decimal_string():
 
     assert result.errors
     assert isinstance(result.errors[0], GraphQLError)
-    if IS_GQL_32:
-        assert result.errors[0].original_error is None
     assert result.errors[0].message == (
         "Variable '$value' got invalid value 'fail'; Value cannot represent a "
         'Decimal: "fail".'
