@@ -156,9 +156,9 @@ async def execute(
     middleware_manager: MiddlewareManager,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
 ) -> ExecutionResult | PreExecutionError:
+    try:
         async with extensions_runner.operation():
             try:
-
                 # Note: In graphql-core the schema would be validated here but in
                 # Strawberry we are validating it at initialisation time instead
 
@@ -188,7 +188,6 @@ async def execute(
                     else:
                         result = execution_context.result
 
-
             except (MissingQueryError, InvalidOperationTypeError) as e:
                 raise e
             except Exception as exc:
@@ -198,10 +197,13 @@ async def execute(
                     extensions_runner,
                     process_errors,
                 )
-                            # return results after all the operation completed.
+                # return results after all the operation completed.
             return await _handle_execution_result(
                 execution_context, result, extensions_runner, process_errors
             )
+    except Exception as exc:
+        return PreExecutionError(data=None, errors=[_coerce_error(exc)])
+
 
 def execute_sync(
     schema: GraphQLSchema,
