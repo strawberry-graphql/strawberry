@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.240.3 - 2024-09-12
+--------------------
+
+This release fixes an issue that prevented extensions to receive the result from
+the execution context when executing operations in async.
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #3629](https://github.com/strawberry-graphql/strawberry/pull/3629/)
+
+
 0.240.2 - 2024-09-11
 --------------------
 
