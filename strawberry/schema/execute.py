@@ -201,6 +201,8 @@ async def execute(
             return await _handle_execution_result(
                 execution_context, result, extensions_runner, process_errors
             )
+    except (MissingQueryError, InvalidOperationTypeError) as e:
+        raise e
     except Exception as exc:
         return PreExecutionError(data=None, errors=[_coerce_error(exc)])
 
