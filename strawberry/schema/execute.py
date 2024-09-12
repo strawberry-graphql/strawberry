@@ -123,18 +123,14 @@ async def _handle_execution_result(
     context: ExecutionContext,
     result: Union[GraphQLExecutionResult, ExecutionResult],
     extensions_runner: SchemaExtensionsRunner,
-    process_errors: ProcessErrors,
+    process_errors: ProcessErrors | None,
 ) -> ExecutionResult:
     # Set errors on the context so that it's easier
     # to access in extensions
     if result.errors:
         context.errors = result.errors
-
-        # Run the `Schema.process_errors` function here before
-        # extensions have a chance to modify them (see the MaskErrors
-        # extension). That way we can log the original errors but
-        # only return a sanitised version to the client.
-        process_errors(result.errors, context)
+        if process_errors:
+            process_errors(result.errors, context)
     if isinstance(result, GraphQLExecutionResult):
         result = ExecutionResult(data=result.data, errors=result.errors)
     result.extensions = await extensions_runner.get_extensions_results(context)
@@ -171,7 +167,7 @@ async def execute(
             assert execution_context.graphql_document
             async with extensions_runner.executing():
                 if not execution_context.result:
-                    res = await await_maybe(
+                    result = await await_maybe(
                         original_execute(
                             schema,
                             execution_context.graphql_document,
@@ -183,9 +179,20 @@ async def execute(
                             execution_context_class=execution_context_class,
                         )
                     )
-
+                    execution_context.result = result
                 else:
-                    res = execution_context.result
+                    result = execution_context.result
+                # Also set errors on the execution_context so that it's easier
+                # to access in extensions
+                if result.errors:
+                    execution_context.errors = result.errors
+
+                    # Run the `Schema.process_errors` function here before
+                    # extensions have a chance to modify them (see the MaskErrors
+                    # extension). That way we can log the original errors but
+                    # only return a sanitised version to the client.
+                    process_errors(result.errors, execution_context)
+
     except (MissingQueryError, InvalidOperationTypeError) as e:
         raise e
     except Exception as exc:
@@ -195,10 +202,9 @@ async def execute(
             extensions_runner,
             process_errors,
         )
-
     # return results after all the operation completed.
     return await _handle_execution_result(
-        execution_context, res, extensions_runner, process_errors
+        execution_context, result, extensions_runner, None
     )
 
 
