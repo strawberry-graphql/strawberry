@@ -183,10 +183,19 @@ async def execute(
                                 execution_context_class=execution_context_class,
                             )
                         )
-
+                        execution_context.result = result
                     else:
                         result = execution_context.result
+                    # Also set errors on the execution_context so that it's easier
+                    # to access in extensions
+                    if result.errors:
+                        execution_context.errors = result.errors
 
+                        # Run the `Schema.process_errors` function here before
+                        # extensions have a chance to modify them (see the MaskErrors
+                        # extension). That way we can log the original errors but
+                        # only return a sanitised version to the client.
+                        process_errors(result.errors, execution_context)
 
 
     except (MissingQueryError, InvalidOperationTypeError) as e:
