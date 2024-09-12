@@ -156,52 +156,51 @@ async def execute(
     middleware_manager: MiddlewareManager,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
 ) -> ExecutionResult | PreExecutionError:
-        async with extensions_runner.operation():
-            try:
+    async with extensions_runner.operation():
+        try:
+            # Note: In graphql-core the schema would be validated here but in
+            # Strawberry we are validating it at initialisation time instead
 
-                # Note: In graphql-core the schema would be validated here but in
-                # Strawberry we are validating it at initialisation time instead
+            if errors := await _parse_and_validate_async(
+                execution_context, extensions_runner
+            ):
+                return await _handle_execution_result(
+                    execution_context, errors, extensions_runner, process_errors
+                )
 
-                if errors := await _parse_and_validate_async(
-                    execution_context, extensions_runner
-                ):
-                    return await _handle_execution_result(
-                        execution_context, errors, extensions_runner, process_errors
+            assert execution_context.graphql_document
+            async with extensions_runner.executing():
+                if not execution_context.result:
+                    result = await await_maybe(
+                        original_execute(
+                            schema,
+                            execution_context.graphql_document,
+                            root_value=execution_context.root_value,
+                            middleware=middleware_manager,
+                            variable_values=execution_context.variables,
+                            operation_name=execution_context.operation_name,
+                            context_value=execution_context.context,
+                            execution_context_class=execution_context_class,
+                        )
                     )
 
-                assert execution_context.graphql_document
-                async with extensions_runner.executing():
-                    if not execution_context.result:
-                        result = await await_maybe(
-                            original_execute(
-                                schema,
-                                execution_context.graphql_document,
-                                root_value=execution_context.root_value,
-                                middleware=middleware_manager,
-                                variable_values=execution_context.variables,
-                                operation_name=execution_context.operation_name,
-                                context_value=execution_context.context,
-                                execution_context_class=execution_context_class,
-                            )
-                        )
+                else:
+                    result = execution_context.result
 
-                    else:
-                        result = execution_context.result
-
-
-            except (MissingQueryError, InvalidOperationTypeError) as e:
-                raise e
-            except Exception as exc:
-                return await _handle_execution_result(
-                    execution_context,
-                    PreExecutionError(data=None, errors=[_coerce_error(exc)]),
-                    extensions_runner,
-                    process_errors,
-                )
-                            # return results after all the operation completed.
+        except (MissingQueryError, InvalidOperationTypeError) as e:
+            raise e
+        except Exception as exc:
             return await _handle_execution_result(
-                execution_context, result, extensions_runner, process_errors
+                execution_context,
+                PreExecutionError(data=None, errors=[_coerce_error(exc)]),
+                extensions_runner,
+                process_errors,
             )
+            # return results after all the operation completed.
+        return await _handle_execution_result(
+            execution_context, result, extensions_runner, process_errors
+        )
+
 
 def execute_sync(
     schema: GraphQLSchema,

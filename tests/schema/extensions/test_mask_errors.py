@@ -29,7 +29,6 @@ def test_mask_all_errors():
     ]
 
 
-
 async def test_mask_all_errors_async():
     @strawberry.type
     class Query:
@@ -51,6 +50,8 @@ async def test_mask_all_errors_async():
             "path": ["hiddenError"],
         }
     ]
+
+
 def test_mask_some_errors():
     class VisibleError(Exception):
         pass
