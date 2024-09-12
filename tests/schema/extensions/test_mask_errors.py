@@ -1,5 +1,6 @@
 from unittest.mock import Mock
 
+import pytest
 from graphql.error import GraphQLError
 
 import strawberry
@@ -18,6 +19,30 @@ def test_mask_all_errors():
     query = "query { hiddenError }"
 
     result = schema.execute_sync(query)
+    assert result.errors is not None
+    formatted_errors = [err.formatted for err in result.errors]
+    assert formatted_errors == [
+        {
+            "locations": [{"column": 9, "line": 1}],
+            "message": "Unexpected error.",
+            "path": ["hiddenError"],
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_mask_all_errors_async():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hidden_error(self) -> str:
+            raise KeyError("This error is not visible")
+
+    schema = strawberry.Schema(query=Query, extensions=[MaskErrors()])
+
+    query = "query { hiddenError }"
+
+    result = await schema.execute(query)
     assert result.errors is not None
     formatted_errors = [err.formatted for err in result.errors]
     assert formatted_errors == [

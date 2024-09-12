@@ -171,7 +171,7 @@ async def execute(
             assert execution_context.graphql_document
             async with extensions_runner.executing():
                 if not execution_context.result:
-                    res = await await_maybe(
+                    result = await await_maybe(
                         original_execute(
                             schema,
                             execution_context.graphql_document,
@@ -185,7 +185,12 @@ async def execute(
                     )
 
                 else:
-                    res = execution_context.result
+                    result = execution_context.result
+
+            # return results after all the operation completed.
+            return await _handle_execution_result(
+                execution_context, result, extensions_runner, process_errors
+            )
     except (MissingQueryError, InvalidOperationTypeError) as e:
         raise e
     except Exception as exc:
@@ -195,11 +200,6 @@ async def execute(
             extensions_runner,
             process_errors,
         )
-
-    # return results after all the operation completed.
-    return await _handle_execution_result(
-        execution_context, res, extensions_runner, process_errors
-    )
 
 
 def execute_sync(
