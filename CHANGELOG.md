@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.240.4 - 2024-09-13
+--------------------
+
+This release fixes how we check for multipart subscriptions to be
+in line with the latest changes in the spec.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3627](https://github.com/strawberry-graphql/strawberry/pull/3627/)
+
+
 0.240.3 - 2024-09-12
 --------------------
 
