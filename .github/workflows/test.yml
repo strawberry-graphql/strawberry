@@ -57,6 +57,7 @@ jobs:
             3.10
             3.11
             3.12
+            3.13-dev
 
       - name: Pip and nox cache
         id: cache
@@ -67,10 +68,12 @@ jobs:
             ~/.nox
             .nox
           key:
-            ${{ runner.os }}-nox-${{ matrix.session.session }}-${{
-            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}-4
+            ${{ runner.os }}-nox-${{ matrix.session.session }}-${{ env.pythonLocation }}-${{
+            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
+          restore-keys: |
+            ${{ runner.os }}-nox-${{ matrix.session.session }}-${{ env.pythonLocation }}
 
-      - run: pip install poetry nox nox-poetry
+      - run: pip install poetry nox nox-poetry uv
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
       - uses: actions/upload-artifact@v4
         if: ${{ always() }}
@@ -94,8 +97,6 @@ jobs:
   benchmarks:
     name: 📈 Benchmarks
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
 
     steps:
       - uses: actions/checkout@v4
@@ -120,8 +121,6 @@ jobs:
   lint:
     name: ✨ Lint
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
 
     steps:
       - uses: actions/checkout@v4
@@ -143,14 +142,12 @@ jobs:
             ~/.nox
             .nox
           key:
-            ${{ runner.os }}-nox-lint-${{ matrix.session.session }}-${{
+            ${{ runner.os }}-nox-lint-${{ env.pythonLocation }}-${{
             hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
           restore-keys: |
-            ${{ runner.os }}-lint-nox-${{ matrix.session.session }}-
-            ${{ runner.os }}-lint-nox-
+            ${{ runner.os }}-nox-lint-${{ env.pythonLocation }}
 
-      - run: pip install poetry
-      - run: pip install nox nox-poetry
+      - run: pip install poetry nox nox-poetry uv
       - run: nox -r -t lint
 
   unit-tests-on-windows:

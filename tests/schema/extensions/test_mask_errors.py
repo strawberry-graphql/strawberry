@@ -29,6 +29,29 @@ def test_mask_all_errors():
     ]
 
 
+async def test_mask_all_errors_async():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hidden_error(self) -> str:
+            raise KeyError("This error is not visible")
+
+    schema = strawberry.Schema(query=Query, extensions=[MaskErrors()])
+
+    query = "query { hiddenError }"
+
+    result = await schema.execute(query)
+    assert result.errors is not None
+    formatted_errors = [err.formatted for err in result.errors]
+    assert formatted_errors == [
+        {
+            "locations": [{"column": 9, "line": 1}],
+            "message": "Unexpected error.",
+            "path": ["hiddenError"],
+        }
+    ]
+
+
 def test_mask_some_errors():
     class VisibleError(Exception):
         pass
@@ -45,9 +68,7 @@ def test_mask_some_errors():
 
     def should_mask_error(error: GraphQLError) -> bool:
         original_error = error.original_error
-        if original_error and isinstance(original_error, VisibleError):
-            return False
-        return True
+        return not (original_error and isinstance(original_error, VisibleError))
 
     schema = strawberry.Schema(
         query=Query, extensions=[MaskErrors(should_mask_error=should_mask_error)]

@@ -7,6 +7,8 @@ from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
+    Callable,
     Dict,
     FrozenSet,
     List,
@@ -34,6 +36,7 @@ from litestar import (
 from litestar.background_tasks import BackgroundTasks
 from litestar.di import Provide
 from litestar.exceptions import NotFoundException, ValidationException
+from litestar.response.streaming import Stream
 from litestar.status_codes import HTTP_200_OK
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
@@ -183,7 +186,13 @@ class LitestarRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def content_type(self) -> Optional[str]:
-        return self.request.content_type[0]
+        content_type, params = self.request.content_type
+
+        # combine content type and params
+        if params:
+            content_type += "; " + "; ".join(f"{k}={v}" for k, v in params.items())
+
+        return content_type
 
     async def get_body(self) -> bytes:
         return await self.request.body()
@@ -270,6 +279,22 @@ class GraphQLController(
             response.status_code = sub_response.status_code
 
         return response
+
+    async def create_streaming_response(
+        self,
+        request: Request,
+        stream: Callable[[], AsyncIterator[str]],
+        sub_response: Response,
+        headers: Dict[str, str],
+    ) -> Response:
+        return Stream(
+            stream(),
+            status_code=sub_response.status_code,
+            headers={
+                **sub_response.headers,
+                **headers,
+            },
+        )
 
     @get(raises=[ValidationException, NotFoundException])
     async def handle_http_get(

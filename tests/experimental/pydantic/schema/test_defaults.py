@@ -64,10 +64,6 @@ def test_pydantic_type_default_none():
     class Query:
         a: User = strawberry.field()
 
-        @strawberry.field
-        def a(self) -> User:
-            return User()
-
     schema = strawberry.Schema(Query)
 
     expected = """
@@ -94,10 +90,6 @@ def test_pydantic_type_no_default_but_optional():
     @strawberry.type
     class Query:
         a: User = strawberry.field()
-
-        @strawberry.field
-        def a(self) -> User:
-            return User()
 
     schema = strawberry.Schema(Query)
 

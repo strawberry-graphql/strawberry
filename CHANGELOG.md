@@ -1,6 +1,141 @@
 CHANGELOG
 =========
 
+0.240.3 - 2024-09-12
+--------------------
+
+This release fixes an issue that prevented extensions to receive the result from
+the execution context when executing operations in async.
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #3629](https://github.com/strawberry-graphql/strawberry/pull/3629/)
+
+
+0.240.2 - 2024-09-11
+--------------------
+
+This release updates how we check for GraphQL core's version to remove a
+dependency on the `packaging` package.
+
+Contributed by [Nicholas Bollweg](https://github.com/bollwyvl) via [PR #3622](https://github.com/strawberry-graphql/strawberry/pull/3622/)
+
+
+0.240.1 - 2024-09-11
+--------------------
+
+This release adds support for Python 3.13 (which will be out soon!)
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3510](https://github.com/strawberry-graphql/strawberry/pull/3510/)
+
+
+0.240.0 - 2024-09-10
+--------------------
+
+This release adds support for schema-extensions in subscriptions.
+
+Here's a small example of how to use them (they work the same way as query and
+mutation extensions):
+
+```python
+import asyncio
+from typing import AsyncIterator
+
+import strawberry
+from strawberry.extensions.base_extension import SchemaExtension
+
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def notifications(self, info: strawberry.Info) -> AsyncIterator[str]:
+        for _ in range(3):
+            yield "Hello"
+
+
+class MyExtension(SchemaExtension):
+    async def on_operation(self):
+        # This would run when the subscription starts
+        print("Subscription started")
+        yield
+        # The subscription has ended
+        print("Subscription ended")
+
+
+schema = strawberry.Schema(
+    query=Query, subscription=Subscription, extensions=[MyExtension]
+)
+```
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #3554](https://github.com/strawberry-graphql/strawberry/pull/3554/)
+
+
+0.239.2 - 2024-09-03
+--------------------
+
+This release fixes a TypeError on Python 3.8 due to us using a
+`asyncio.Queue[Tuple[bool, Any]](1)` instead of `asyncio.Queue(1)`.
+
+Contributed by [Daniel Szoke](https://github.com/szokeasaurusrex) via [PR #3615](https://github.com/strawberry-graphql/strawberry/pull/3615/)
+
+
+0.239.1 - 2024-09-02
+--------------------
+
+This release fixes an issue with the http multipart subscription where the
+status code would be returned as `None`, instead of 200.
+
+We also took the opportunity to update the internals to better support
+additional protocols in future.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3610](https://github.com/strawberry-graphql/strawberry/pull/3610/)
+
+
+0.239.0 - 2024-08-31
+--------------------
+
+This release adds support for multipart subscriptions in almost all[^1] of our
+http integrations!
+
+[Multipart subcriptions](https://www.apollographql.com/docs/router/executing-operations/subscription-multipart-protocol/)
+are a new protocol from Apollo GraphQL, built on the
+[Incremental Delivery over HTTP spec](https://github.com/graphql/graphql-over-http/blob/main/rfcs/IncrementalDelivery.md),
+which is also used for `@defer` and `@stream`.
+
+The main advantage of this protocol is that when using the Apollo Client
+libraries you don't need to install any additional dependency, but in future
+this feature should make it easier for us to implement `@defer` and `@stream`
+
+Also, this means that you don't need to use Django Channels for subscription,
+since this protocol is based on HTTP we don't need to use websockets.
+
+[^1]: Flask, Chalice and the sync Django integration don't support this.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3076](https://github.com/strawberry-graphql/strawberry/pull/3076/)
+
+
+0.238.1 - 2024-08-30
+--------------------
+
+Fix an issue where `StrawberryResolver.is_async` was returning `False` for a
+function decorated with asgiref's `@sync_to_async`.
+
+The root cause is that in python >= 3.12 coroutine functions are market using
+`inspect.markcoroutinefunction`, which should be checked with
+`inspect.iscoroutinefunction` instead of `asyncio.iscoroutinefunction`
+
+Contributed by [Hyun S. Moon](https://github.com/shmoon-kr) via [PR #3599](https://github.com/strawberry-graphql/strawberry/pull/3599/)
+
+
+0.238.0 - 2024-08-30
+--------------------
+
+This release removes the integration of Starlite, as it
+has been deprecated since 11 May 2024.
+
+If you are using Starlite, please consider migrating to Litestar (https://litestar.dev) or another alternative.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3609](https://github.com/strawberry-graphql/strawberry/pull/3609/)
+
+
 0.237.3 - 2024-07-31
 --------------------
 

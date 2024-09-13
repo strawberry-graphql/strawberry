@@ -5,6 +5,8 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
+    Callable,
     Dict,
     Mapping,
     Optional,
@@ -161,16 +163,46 @@ class GraphQLView(
         )
 
     async def post(self, request: Request) -> HTTPResponse:
+        self.request = request
+
         try:
             return await self.run(request)
         except HTTPException as e:
             return HTTPResponse(e.reason, status=e.status_code)
 
     async def get(self, request: Request) -> HTTPResponse:  # type: ignore[override]
+        self.request = request
+
         try:
             return await self.run(request)
         except HTTPException as e:
             return HTTPResponse(e.reason, status=e.status_code)
+
+    async def create_streaming_response(
+        self,
+        request: Request,
+        stream: Callable[[], AsyncGenerator[str, None]],
+        sub_response: TemporalResponse,
+        headers: Dict[str, str],
+    ) -> HTTPResponse:
+        response = await self.request.respond(
+            status=sub_response.status_code,
+            headers={
+                **sub_response.headers,
+                **headers,
+            },
+        )
+
+        async for chunk in stream():
+            await response.send(chunk)
+
+        await response.eof()
+
+        # returning the response will basically tell sanic to send it again
+        # to the client, so we return None to avoid that, and we ignore the type
+        # error mostly so we don't have to update the types everywhere for this
+        # corner case
+        return None  # type: ignore
 
 
 __all__ = ["GraphQLView"]

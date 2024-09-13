@@ -5,6 +5,9 @@ from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterator,
+    Callable,
+    Dict,
     Mapping,
     Optional,
     Sequence,
@@ -14,7 +17,12 @@ from typing import (
 
 from starlette import status
 from starlette.requests import Request
-from starlette.responses import HTMLResponse, PlainTextResponse, Response
+from starlette.responses import (
+    HTMLResponse,
+    PlainTextResponse,
+    Response,
+    StreamingResponse,
+)
 from starlette.websockets import WebSocket
 
 from strawberry.asgi.handlers import (
@@ -213,3 +221,19 @@ class GraphQL(
             response.status_code = sub_response.status_code
 
         return response
+
+    async def create_streaming_response(
+        self,
+        request: Request | WebSocket,
+        stream: Callable[[], AsyncIterator[str]],
+        sub_response: Response,
+        headers: Dict[str, str],
+    ) -> Response:
+        return StreamingResponse(
+            stream(),
+            status_code=sub_response.status_code or status.HTTP_200_OK,
+            headers={
+                **sub_response.headers,
+                **headers,
+            },
+        )

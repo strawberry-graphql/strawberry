@@ -69,5 +69,16 @@ class BaseView(Generic[Request]):
             graphql_ide=self.graphql_ide,
         )
 
+    def _is_multipart_subscriptions(
+        self, content_type: str, params: Dict[str, str]
+    ) -> bool:
+        if content_type != "multipart/mixed":
+            return False
+
+        if params.get("boundary") != "graphql":
+            return False
+
+        return params.get("subscriptionspec", "").startswith("1.0")
+
 
 __all__ = ["BaseView"]
