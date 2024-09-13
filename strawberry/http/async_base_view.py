@@ -320,21 +320,21 @@ class AsyncBaseHTTPView(
     async def parse_http_body(
         self, request: AsyncHTTPRequestAdapter
     ) -> GraphQLRequestData:
-        content_type, params = parse_content_type(request.content_type or "")
+        headers = {key.lower(): value for key, value in request.headers.items()}
+        content_type, _ = parse_content_type(request.content_type or "")
+        accept = headers.get("accept", "")
 
         protocol: Literal["http", "multipart-subscription"] = "http"
 
+        if self._is_multipart_subscriptions(*parse_content_type(accept)):
+            protocol = "multipart-subscription"
+
         if request.method == "GET":
             data = self.parse_query_params(request.query_params)
-            if self._is_multipart_subscriptions(content_type, params):
-                protocol = "multipart-subscription"
         elif "application/json" in content_type:
             data = self.parse_json(await request.get_body())
         elif content_type == "multipart/form-data":
             data = await self.parse_multipart(request)
-        elif self._is_multipart_subscriptions(content_type, params):
-            data = await self.parse_multipart_subscriptions(request)
-            protocol = "multipart-subscription"
         else:
             raise HTTPException(400, "Unsupported content type")
 

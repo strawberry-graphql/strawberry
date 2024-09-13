@@ -64,7 +64,8 @@ async def test_multipart_subscription(
         method=method,
         query='subscription { echo(message: "Hello world", delay: 0.2) }',
         headers={
-            "content-type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+            "accept": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+            "content-type": "application/json",
         },
     )
 
