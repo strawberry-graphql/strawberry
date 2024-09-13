@@ -30,8 +30,8 @@ include = ["strawberry/py.typed"]
 "Sponsor on Open Collective" = "https://opencollective.com/strawberry-graphql"
 
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry-core>=1.6"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
 python = "^3.8"
