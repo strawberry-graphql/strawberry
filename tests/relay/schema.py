@@ -195,6 +195,12 @@ FruitsListConnectionAlias: TypeAlias = relay.ListConnection[Fruit]
 
 
 @strawberry.type
+class SubWithNode:
+    node: relay.Node = relay.node()
+    nodes: list[relay.Node] = relay.node()
+
+
+@strawberry.type
 class Query:
     node: relay.Node = relay.node()
     node_with_async_permissions: relay.Node = relay.node(
@@ -218,6 +224,11 @@ class Query:
     fruits_custom_pagination: FruitCustomPaginationConnection = relay.connection(
         resolver=fruits_resolver
     )
+
+    @strawberry.field
+    @staticmethod
+    def sub() -> SubWithNode:
+        return SubWithNode
 
     @relay.connection(relay.ListConnection[Fruit])
     def fruits_concrete_resolver(
