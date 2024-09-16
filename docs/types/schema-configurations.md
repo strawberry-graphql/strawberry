@@ -105,3 +105,23 @@ schema = strawberry.Schema(
     query=Query, config=StrawberryConfig(disable_field_suggestions=True)
 )
 ```
+
+### info_class
+
+By default Strawberry will create an object of type `strawberry.Info` when the
+user defines `info: Info` as a parameter to a type or query. You can change this
+behaviour by setting `info_class` to a subclass of `strawberry.Info`.
+
+This can be useful when you want to create a simpler interface for info- or
+context-based properties, or if you wanted to attach additional properties to
+the `Info` class.
+
+```python
+class CustomInfo(Info):
+    @property
+    def response_headers(self) -> Headers:
+        return self.context["response"].headers
+
+
+schema = strawberry.Schema(query=Query, info_class=CustomInfo)
+```

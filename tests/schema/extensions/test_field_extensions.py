@@ -10,6 +10,7 @@ from strawberry.extensions.field_extension import (
     FieldExtension,
     SyncExtensionResolver,
 )
+from strawberry.schema.config import StrawberryConfig
 
 
 class UpperCaseExtension(FieldExtension):
@@ -380,3 +381,36 @@ def test_extension_access_argument_metadata():
         },
         "another_input": {},
     }
+
+
+def test_extension_has_custom_info_class():
+    class CustomInfo(strawberry.Info):
+        test: str = "foo"
+
+    class CustomExtension(FieldExtension):
+        def resolve(
+            self,
+            next_: Callable[..., Any],
+            source: Any,
+            info: CustomInfo,
+            **kwargs: Any,
+        ):
+            assert isinstance(info, CustomInfo)
+            # Explicitly check it's not Info.
+            assert strawberry.Info in type(info).__bases__
+            assert info.test == "foo"
+            return next_(source, info, **kwargs)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(extensions=[CustomExtension()])
+        def string(self) -> str:
+            return "This is a test!!"
+
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(info_class=CustomInfo)
+    )
+    query = "query { string }"
+    result = schema.execute_sync(query)
+    assert result.data, result.errors
+    assert result.data["string"] == "This is a test!!"

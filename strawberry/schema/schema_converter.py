@@ -64,7 +64,6 @@ from strawberry.types.base import (
 )
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.field import UNRESOLVED
-from strawberry.types.info import Info
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.private import is_private
 from strawberry.types.scalar import ScalarWrapper
@@ -90,6 +89,7 @@ if TYPE_CHECKING:
     from strawberry.schema_directive import StrawberrySchemaDirective
     from strawberry.types.enum import EnumValue
     from strawberry.types.field import StrawberryField
+    from strawberry.types.info import Info
     from strawberry.types.scalar import ScalarDefinition
 
 
@@ -664,7 +664,7 @@ class GraphQLCoreConverter:
             return _get_basic_result
 
         def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
-            return Info(
+            return self.config.info_class(
                 _raw_info=info,
                 _field=field,
             )
