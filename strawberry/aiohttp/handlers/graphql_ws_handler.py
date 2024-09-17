@@ -50,6 +50,10 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
                 if ws_message.type == http.WSMsgType.TEXT:
                     message: OperationMessage = ws_message.json()
                     await self.handle_message(message)
+                else:
+                    await self.close(
+                        code=1002, reason="WebSocket message type must be text"
+                    )
         finally:
             if self.keep_alive_task:
                 self.keep_alive_task.cancel()

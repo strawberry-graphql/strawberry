@@ -126,6 +126,31 @@ async def test_ws_messages_must_be_text(ws_raw: WebSocketClient):
         ws.assert_reason("WebSocket message type must be text")
 
 
+async def test_ws_message_frame_types_cannot_be_mixed(ws_raw: WebSocketClient):
+    ws = ws_raw
+
+    await ws.send_json(ConnectionInitMessage().as_dict())
+
+    response = await ws.receive_json()
+    assert response == ConnectionAckMessage().as_dict()
+
+    await ws.send_bytes(
+        json.dumps(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query="subscription { debug { isConnectionInitTimeoutTaskDone } }"
+                ),
+            ).as_dict()
+        ).encode()
+    )
+
+    await ws.receive(timeout=2)
+    assert ws.closed
+    assert ws.close_code == 4400
+    ws.assert_reason("WebSocket message type must be text")
+
+
 async def test_connection_init_timeout(
     request: Any, http_client_class: Type[HttpClient]
 ):
