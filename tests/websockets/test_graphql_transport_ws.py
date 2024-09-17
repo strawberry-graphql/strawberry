@@ -117,13 +117,10 @@ async def test_ws_messages_must_be_text(ws_raw: WebSocketClient):
 
     await ws.send_bytes(json.dumps(ConnectionInitMessage().as_dict()).encode())
 
-    data = await ws.receive(timeout=2)
+    await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4400
-    if ws.name() == "channels":
-        ws.assert_reason("No text section for incoming WebSocket frame!")
-    else:
-        ws.assert_reason("WebSocket message type must be text")
+    ws.assert_reason("WebSocket message type must be text")
 
 
 async def test_ws_message_frame_types_cannot_be_mixed(ws_raw: WebSocketClient):
