@@ -1,4 +1,4 @@
-Release type: patch
+Release type: minor
 
 Starting with this release, clients using the legacy graphql-ws subprotocol will receive an error when they try to send binary data frames.
 Before, binary data frames were silently ignored.
