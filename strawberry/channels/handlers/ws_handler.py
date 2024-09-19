@@ -106,8 +106,9 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
         # Overriding this so that we can pass the errors to handle_invalid_message
         try:
             await super().receive(*args, **kwargs)
-        except ValueError as e:
-            await self._handler.handle_invalid_message(str(e))
+        except ValueError:
+            reason = "WebSocket message type must be text"
+            await self._handler.handle_invalid_message(reason)
 
     async def receive_json(self, content: Any, **kwargs: Any) -> None:
         await self._handler.handle_message(content)
