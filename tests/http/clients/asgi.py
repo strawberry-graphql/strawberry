@@ -8,7 +8,7 @@ from typing_extensions import Literal
 
 from starlette.requests import Request
 from starlette.responses import Response as StarletteResponse
-from starlette.testclient import TestClient
+from starlette.testclient import TestClient, WebSocketTestSession
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from strawberry.asgi import GraphQL as BaseGraphQLView
@@ -168,7 +168,7 @@ class AsgiHttpClient(HttpClient):
 
 
 class AsgiWebSocketClient(WebSocketClient):
-    def __init__(self, ws: Any):
+    def __init__(self, ws: WebSocketTestSession):
         self.ws = ws
         self._closed: bool = False
         self._close_code: Optional[int] = None
@@ -210,6 +210,10 @@ class AsgiWebSocketClient(WebSocketClient):
     async def close(self) -> None:
         self.ws.close()
         self._closed = True
+    
+    @property
+    def accepted_subprotocol(self) -> Optional[str]:
+        return self.ws.accepted_subprotocol
 
     @property
     def closed(self) -> bool:

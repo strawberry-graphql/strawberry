@@ -236,10 +236,11 @@ class ChannelsHttpClient(HttpClient):
     ) -> AsyncGenerator[WebSocketClient, None]:
         client = WebsocketCommunicator(self.ws_app, url, subprotocols=protocols)
 
-        res = await client.connect()
-        assert res == (True, protocols[0])
+        connected, subprotocol_or_close_code = await client.connect()
+        assert connected
+
         try:
-            yield ChannelsWebSocketClient(client)
+            yield ChannelsWebSocketClient(client, accepted_subprotocol=subprotocol_or_close_code)
         finally:
             await client.disconnect()
 
@@ -262,11 +263,12 @@ class SyncChannelsHttpClient(ChannelsHttpClient):
 
 
 class ChannelsWebSocketClient(WebSocketClient):
-    def __init__(self, client: WebsocketCommunicator):
+    def __init__(self, client: WebsocketCommunicator, accepted_subprotocol: Optional[str]):
         self.ws = client
         self._closed: bool = False
         self._close_code: Optional[int] = None
         self._close_reason: Optional[str] = None
+        self._accepted_subprotocol = accepted_subprotocol
 
     def name(self) -> str:
         return "channels"
@@ -297,6 +299,10 @@ class ChannelsWebSocketClient(WebSocketClient):
     async def close(self) -> None:
         await self.ws.disconnect()
         self._closed = True
+    
+    @property
+    def accepted_subprotocol(self) -> Optional[str]:
+        return self._accepted_subprotocol
 
     @property
     def closed(self) -> bool:

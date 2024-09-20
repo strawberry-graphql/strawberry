@@ -240,7 +240,7 @@ class HttpClient(abc.ABC):
         """For use by websocket tests."""
         raise NotImplementedError
 
-    async def ws_connect(
+    def ws_connect(
         self,
         url: str,
         *,
@@ -276,6 +276,10 @@ class WebSocketClient(abc.ABC):
 
     @abc.abstractmethod
     async def close(self) -> None: ...
+
+    @property
+    @abc.abstractmethod
+    def accepted_subprotocol(self) -> Optional[str]: ...
 
     @property
     @abc.abstractmethod
