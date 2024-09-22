@@ -177,6 +177,9 @@ class LitestarWebSocketClient(WebSocketClient):
         self._closed = True
         self._close_code = exc.code
 
+    async def send_text(self, payload: str) -> None:
+        self.ws.send_text(payload)
+
     async def send_json(self, payload: Dict[str, Any]) -> None:
         self.ws.send_json(payload)
 

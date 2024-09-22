@@ -179,6 +179,9 @@ class AsgiWebSocketClient(WebSocketClient):
         self._close_code = exc.code
         self._close_reason = exc.reason
 
+    async def send_text(self, payload: str) -> None:
+        self.ws.send_text(payload)
+
     async def send_json(self, payload: Dict[str, Any]) -> None:
         self.ws.send_json(payload)
 

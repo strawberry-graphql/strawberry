@@ -264,6 +264,9 @@ class WebSocketClient(abc.ABC):
         return ""
 
     @abc.abstractmethod
+    async def send_text(self, payload: str) -> None: ...
+
+    @abc.abstractmethod
     async def send_json(self, payload: Dict[str, Any]) -> None: ...
 
     @abc.abstractmethod

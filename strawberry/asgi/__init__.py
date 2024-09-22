@@ -1,15 +1,15 @@
 from __future__ import annotations
-from starlette.websockets import WebSocketDisconnect, WebSocketState
 
 import warnings
 from datetime import timedelta
+from json import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     AsyncIterator,
     Callable,
     Dict,
-    AsyncGenerator,
     Mapping,
     Optional,
     Sequence,
@@ -26,7 +26,7 @@ from starlette.responses import (
     Response,
     StreamingResponse,
 )
-from starlette.websockets import WebSocket
+from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
@@ -90,7 +90,7 @@ class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
             while self.ws.application_state != WebSocketState.DISCONNECTED:
                 try:
                     yield await self.ws.receive_json()
-                except KeyError:
+                except (KeyError, JSONDecodeError):
                     raise NonJsonMessageReceived()
         except WebSocketDisconnect:  # pragma: no cover
             pass

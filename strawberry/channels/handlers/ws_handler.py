@@ -40,7 +40,10 @@ class ChannelsWebSocketAdapter(AsyncWebSocketAdapter):
             if message["message"] is None:
                 raise NonJsonMessageReceived()
 
-            yield json.loads(message["message"])
+            try:
+                yield json.loads(message["message"])
+            except json.JSONDecodeError:
+                raise NonJsonMessageReceived()
 
     async def send_json(self, message: Mapping[str, object]) -> None:
         serialized_message = json.dumps(message)

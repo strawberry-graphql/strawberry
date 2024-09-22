@@ -181,6 +181,9 @@ class AioWebSocketClient(WebSocketClient):
         self.ws = ws
         self._reason: Optional[str] = None
 
+    async def send_text(self, payload: str) -> None:
+        await self.ws.send_str(payload)
+
     async def send_json(self, payload: Dict[str, Any]) -> None:
         await self.ws.send_json(payload)
 

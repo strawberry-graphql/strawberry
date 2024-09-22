@@ -273,6 +273,9 @@ class ChannelsWebSocketClient(WebSocketClient):
     def name(self) -> str:
         return "channels"
 
+    async def send_text(self, payload: str) -> None:
+        await self.ws.send_to(text_data=payload)
+
     async def send_json(self, payload: Dict[str, Any]) -> None:
         await self.ws.send_json_to(payload)
 
