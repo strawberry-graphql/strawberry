@@ -23,13 +23,13 @@ from tests.views.schema import Query, schema
 from ..context import get_context
 from .base import (
     JSON,
+    DebuggableGraphQLTransportWSHandler,
+    DebuggableGraphQLWSHandler,
     HttpClient,
     Message,
     Response,
     ResultOverrideFunction,
     WebSocketClient,
-    DebuggableGraphQLTransportWSHandler,
-    DebuggableGraphQLWSHandler,
 )
 
 
@@ -240,7 +240,9 @@ class ChannelsHttpClient(HttpClient):
         assert connected
 
         try:
-            yield ChannelsWebSocketClient(client, accepted_subprotocol=subprotocol_or_close_code)
+            yield ChannelsWebSocketClient(
+                client, accepted_subprotocol=subprotocol_or_close_code
+            )
         finally:
             await client.disconnect()
 
@@ -263,7 +265,9 @@ class SyncChannelsHttpClient(ChannelsHttpClient):
 
 
 class ChannelsWebSocketClient(WebSocketClient):
-    def __init__(self, client: WebsocketCommunicator, accepted_subprotocol: Optional[str]):
+    def __init__(
+        self, client: WebsocketCommunicator, accepted_subprotocol: Optional[str]
+    ):
         self.ws = client
         self._closed: bool = False
         self._close_code: Optional[int] = None
@@ -302,7 +306,7 @@ class ChannelsWebSocketClient(WebSocketClient):
     async def close(self) -> None:
         await self.ws.disconnect()
         self._closed = True
-    
+
     @property
     def accepted_subprotocol(self) -> Optional[str]:
         return self._accepted_subprotocol

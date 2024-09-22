@@ -15,6 +15,7 @@ from typing import (
 
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 
+from strawberry.http.exceptions import NonJsonMessageReceived
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
@@ -33,19 +34,17 @@ from strawberry.types.graphql import OperationType
 from strawberry.types.unset import UNSET
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.operation import get_operation_type
-from strawberry.http.exceptions import NonJsonMessageReceived
-
 
 if TYPE_CHECKING:
     from datetime import timedelta
 
+    from strawberry.http.async_base_view import AsyncWebSocketAdapter
     from strawberry.schema import BaseSchema
     from strawberry.schema.subscribe import SubscriptionResult
     from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
         GraphQLTransportMessage,
     )
     from strawberry.types import ExecutionResult
-    from strawberry.http.async_base_view import AsyncWebSocketAdapter
 
 
 class BaseGraphQLTransportWSHandler:
@@ -53,7 +52,7 @@ class BaseGraphQLTransportWSHandler:
 
     def __init__(
         self,
-        websocket: "AsyncWebSocketAdapter",
+        websocket: AsyncWebSocketAdapter,
         context: object,
         root_value: object,
         schema: BaseSchema,
@@ -244,7 +243,7 @@ class BaseGraphQLTransportWSHandler:
         if isinstance(self.context, dict):
             self.context["connection_params"] = self.connection_params
         elif hasattr(self.context, "connection_params"):
-            setattr(self.context, "connection_params", self.connection_params)
+            self.context.connection_params = self.connection_params
 
         result_source: Awaitable[ExecutionResult] | Awaitable[SubscriptionResult]
 

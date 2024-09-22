@@ -1,32 +1,31 @@
 from __future__ import annotations
-import json
 
 import asyncio
 import datetime
+import json
 from typing import (
-    Optional,
-    Tuple,
-    Union,
-    TypedDict,
-    Mapping,
     AsyncGenerator,
     Dict,
+    Mapping,
+    Optional,
+    Tuple,
+    TypedDict,
+    Union,
 )
 from typing_extensions import TypeGuard
 
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncWebSocketAdapter
 from strawberry.http.exceptions import NonJsonMessageReceived
-
-from .base import ChannelsWSConsumer
-
 from strawberry.http.typevars import Context, RootValue
 from strawberry.schema import BaseSchema
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+
+from .base import ChannelsWSConsumer
 
 
 class ChannelsWebSocketAdapter(AsyncWebSocketAdapter):
     def __init__(
-        self, request: "GraphQLWSConsumer", response: "GraphQLWSConsumer"
+        self, request: GraphQLWSConsumer, response: GraphQLWSConsumer
     ) -> None:
         self.ws_consumer = response
 

@@ -158,7 +158,9 @@ class AsyncFlaskHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 class AsyncGraphQLView(
     BaseGraphQLView,
-    AsyncBaseHTTPView[Request, Response, Response, Request, Response, Context, RootValue],
+    AsyncBaseHTTPView[
+        Request, Response, Response, Request, Response, Context, RootValue
+    ],
     View,
 ):
     methods = ["GET", "POST"]

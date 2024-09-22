@@ -15,7 +15,7 @@ from typing import (
     Optional,
     Union,
 )
-from typing_extensions import assert_never, TypeGuard
+from typing_extensions import TypeGuard, assert_never
 from urllib.parse import parse_qs
 
 from django.conf import settings

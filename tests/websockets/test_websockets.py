@@ -63,7 +63,9 @@ async def test_generally_unsupported_subprotocols_are_rejected(http_client: Http
 
 async def test_clients_can_prefer_subprotocols(http_client_class: Type[HttpClient]):
     http_client = http_client_class()
-    http_client.create_app(subscription_protocols=[GRAPHQL_WS_PROTOCOL, GRAPHQL_TRANSPORT_WS_PROTOCOL])
+    http_client.create_app(
+        subscription_protocols=[GRAPHQL_WS_PROTOCOL, GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    )
 
     async with http_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL]

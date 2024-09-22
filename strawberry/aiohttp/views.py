@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from json.decoder import JSONDecodeError
 import asyncio
 import warnings
 from datetime import timedelta
 from io import BytesIO
+from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,11 +16,10 @@ from typing import (
     Optional,
     Union,
     cast,
-    AsyncGenerator,
 )
 from typing_extensions import TypeGuard
 
-from aiohttp import web, http
+from aiohttp import http, web
 from aiohttp.multipart import BodyPartReader
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
@@ -97,7 +96,6 @@ class AioHTTPWebSocketAdapter(AsyncWebSocketAdapter):
 
             elif ws_message.type == http.WSMsgType.BINARY:
                 raise NonJsonMessageReceived()
-
 
     async def send_json(self, message: Mapping[str, object]) -> None:
         await self.ws.send_json(message)

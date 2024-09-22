@@ -18,13 +18,13 @@ from typing import (
     Union,
 )
 from typing_extensions import Literal
+
+from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.ides import GraphQL_IDE
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
     BaseGraphQLTransportWSHandler,
 )
 from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
-
-from strawberry.http import GraphQLHTTPResponse
-from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
 
 logger = logging.getLogger("strawberry.test.http_client")
@@ -313,14 +313,16 @@ class DebuggableGraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
 
     def get_tasks(self) -> List:
         return [op.task for op in self.operations.values()]
-    
+
     @property
     def context(self):
         self.original_context["ws"] = self.websocket
         self.original_context["get_tasks"] = self.get_tasks
-        self.original_context["connectionInitTimeoutTask"] = self.connection_init_timeout_task
+        self.original_context["connectionInitTimeoutTask"] = (
+            self.connection_init_timeout_task
+        )
         return self.original_context
-    
+
     @context.setter
     def context(self, value):
         self.original_context = value
@@ -340,7 +342,7 @@ class DebuggableGraphQLWSHandler(BaseGraphQLWSHandler):
         self.original_context["get_tasks"] = self.get_tasks
         self.original_context["connectionInitTimeoutTask"] = None
         return self.original_context
-    
+
     @context.setter
     def context(self, value):
         self.original_context = value

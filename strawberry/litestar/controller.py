@@ -7,6 +7,7 @@ from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     AsyncIterator,
     Callable,
     Dict,
@@ -17,7 +18,6 @@ from typing import (
     TypedDict,
     Union,
     cast,
-    AsyncGenerator,
 )
 from typing_extensions import TypeGuard
 
@@ -37,9 +37,9 @@ from litestar.background_tasks import BackgroundTasks
 from litestar.di import Provide
 from litestar.exceptions import (
     NotFoundException,
+    SerializationException,
     ValidationException,
     WebSocketDisconnect,
-    SerializationException,
 )
 from litestar.response.streaming import Stream
 from litestar.status_codes import HTTP_200_OK

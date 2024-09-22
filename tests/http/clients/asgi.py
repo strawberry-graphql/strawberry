@@ -213,7 +213,7 @@ class AsgiWebSocketClient(WebSocketClient):
     async def close(self) -> None:
         self.ws.close()
         self._closed = True
-    
+
     @property
     def accepted_subprotocol(self) -> Optional[str]:
         return self.ws.accepted_subprotocol
