@@ -147,9 +147,7 @@ class BaseGraphQLWSHandler:
         await self.cleanup_operation(operation_id)
 
     async def handle_keep_alive(self) -> None:
-        if self.keep_alive_interval is None:
-            return
-
+        assert self.keep_alive_interval
         while True:
             data: OperationMessage = {"type": GQL_CONNECTION_KEEP_ALIVE}
             await self.websocket.send_json(data)
