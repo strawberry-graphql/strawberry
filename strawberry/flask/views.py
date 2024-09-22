@@ -192,7 +192,7 @@ class AsyncGraphQLView(
         return False
 
     async def pick_websocket_subprotocol(self, request: Request) -> Optional[str]:
-        return None
+        raise NotImplementedError
 
     async def create_websocket_response(
         self, request: Request, subprotocol: Optional[str]
