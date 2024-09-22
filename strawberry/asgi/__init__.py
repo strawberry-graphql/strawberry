@@ -152,17 +152,17 @@ class GraphQL(
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
-            request = Request(scope=scope, receive=receive)
+            http_request = Request(scope=scope, receive=receive)
 
             try:
-                response = await self.run(request)
+                response = await self.run(http_request)
             except HTTPException as e:
                 response = PlainTextResponse(e.reason, status_code=e.status_code)
 
             await response(scope, receive, send)
         elif scope["type"] == "websocket":
-            request = WebSocket(scope, receive=receive, send=send)
-            await self.run(request)
+            ws_request = WebSocket(scope, receive=receive, send=send)
+            await self.run(ws_request)
         else:  # pragma: no cover
             raise ValueError("Unknown scope type: {!r}".format(scope["type"]))
 
