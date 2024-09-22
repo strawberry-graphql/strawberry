@@ -24,9 +24,7 @@ from .base import ChannelsWSConsumer
 
 
 class ChannelsWebSocketAdapter(AsyncWebSocketAdapter):
-    def __init__(
-        self, request: GraphQLWSConsumer, response: GraphQLWSConsumer
-    ) -> None:
+    def __init__(self, request: GraphQLWSConsumer, response: GraphQLWSConsumer) -> None:
         self.ws_consumer = response
 
     async def iter_json(self) -> AsyncGenerator[Dict[str, object], None]:
