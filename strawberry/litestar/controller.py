@@ -194,11 +194,11 @@ class LitestarWebSocketAdapter(AsyncWebSocketAdapter):
 
     async def iter_json(self) -> AsyncGenerator[Dict[str, object], None]:
         try:
-            while self.ws.connection_state != "disconnect":
-                try:
+            try:
+                while self.ws.connection_state != "disconnect":
                     yield await self.ws.receive_json()
-                except (SerializationException, ValueError):
-                    raise NonJsonMessageReceived()
+            except (SerializationException, ValueError):
+                raise NonJsonMessageReceived()
         except WebSocketDisconnect:
             pass
 

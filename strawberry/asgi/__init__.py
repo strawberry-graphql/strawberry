@@ -87,11 +87,11 @@ class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
 
     async def iter_json(self) -> AsyncGenerator[Dict[str, object], None]:
         try:
-            while self.ws.application_state != WebSocketState.DISCONNECTED:
-                try:
+            try:
+                while self.ws.application_state != WebSocketState.DISCONNECTED:
                     yield await self.ws.receive_json()
-                except (KeyError, JSONDecodeError):
-                    raise NonJsonMessageReceived()
+            except (KeyError, JSONDecodeError):
+                raise NonJsonMessageReceived()
         except WebSocketDisconnect:  # pragma: no cover
             pass
 

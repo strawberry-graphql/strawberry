@@ -4,6 +4,7 @@ import asyncio
 import datetime
 import json
 from typing import (
+    TYPE_CHECKING,
     AsyncGenerator,
     Dict,
     Mapping,
@@ -17,10 +18,13 @@ from typing_extensions import TypeGuard
 from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncWebSocketAdapter
 from strawberry.http.exceptions import NonJsonMessageReceived
 from strawberry.http.typevars import Context, RootValue
-from strawberry.schema import BaseSchema
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 from .base import ChannelsWSConsumer
+
+if TYPE_CHECKING:
+    from strawberry.http import GraphQLHTTPResponse
+    from strawberry.schema import BaseSchema
 
 
 class ChannelsWebSocketAdapter(AsyncWebSocketAdapter):
@@ -121,7 +125,9 @@ class GraphQLWSConsumer(
     async def connect(self) -> None:
         self.run_task = asyncio.create_task(self.run(self))
 
-    async def receive(self, text_data=None, bytes_data=None):
+    async def receive(
+        self, text_data: Optional[str] = None, bytes_data: Optional[bytes] = None
+    ) -> None:
         if text_data:
             self.message_queue.put_nowait({"message": text_data, "disconnected": False})
         else:
@@ -147,13 +153,15 @@ class GraphQLWSConsumer(
     def allow_queries_via_get(self) -> bool:
         return False
 
-    async def get_sub_response(self, request):
+    async def get_sub_response(self, request: GraphQLWSConsumer) -> GraphQLWSConsumer:
         raise NotImplementedError
 
-    def create_response(self, response_data, sub_response):
+    def create_response(
+        self, response_data: GraphQLHTTPResponse, sub_response: GraphQLWSConsumer
+    ) -> GraphQLWSConsumer:
         raise NotImplementedError
 
-    async def render_graphql_ide(self, request):
+    async def render_graphql_ide(self, request: GraphQLWSConsumer) -> GraphQLWSConsumer:
         raise NotImplementedError
 
     def is_websocket_request(
