@@ -10,13 +10,14 @@ It provides a view that you can use to serve your GraphQL schema:
 
 ```python
 from django.urls import path
+from django.views.decorators.csrf import csrf_exempt
 
 from strawberry.django.views import GraphQLView
 
 from api.schema import schema
 
 urlpatterns = [
-    path("graphql/", GraphQLView.as_view(schema=schema)),
+    path("graphql/", csrf_exempt(GraphQLView.as_view(schema=schema))),
 ]
 ```
 
