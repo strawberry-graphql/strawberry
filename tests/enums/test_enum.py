@@ -1,4 +1,4 @@
-from enum import Enum, IntEnum, StrEnum
+from enum import Enum, IntEnum
 
 import pytest
 
@@ -170,7 +170,7 @@ def test_default_enum_implementation() -> None:
 
 
 def test_default_str_enum_implementation() -> None:
-    class Foo(StrEnum):
+    class Foo(str, Enum):
         BAR = "bar"
         BAZ = "baz"
 
@@ -188,7 +188,7 @@ def test_default_str_enum_implementation() -> None:
 
 
 def test_default_int_enum_implementation() -> None:
-    class Foo(IntEnum):
+    class Foo(int, Enum):
         BAR = 1
         BAZ = 2
 
