@@ -4,9 +4,8 @@ import pytest
 
 import strawberry
 from strawberry.exceptions import ObjectIsNotAnEnumError
-from strawberry.types.enum import EnumDefinition
-
 from strawberry.types.base import get_object_definition
+from strawberry.types.enum import EnumDefinition
 
 
 def test_basic_enum():
@@ -206,6 +205,7 @@ def test_default_int_enum_implementation() -> None:
     assert res.data
     assert res.data["foo"] == 1
 
+
 def test_default_enum_reuse() -> None:
     class Foo(Enum):
         BAR = "bar"
@@ -215,6 +215,6 @@ def test_default_enum_reuse() -> None:
     class SomeType:
         foo: Foo
         bar: Foo
-    
+
     definition = get_object_definition(SomeType, strict=True)
-    assert definition.fields[1].type  is definition.fields[1].type
+    assert definition.fields[1].type is definition.fields[1].type
