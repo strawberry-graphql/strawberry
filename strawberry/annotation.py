@@ -19,8 +19,7 @@ from typing import (
     cast,
 )
 from typing_extensions import Annotated, Self, get_args, get_origin
-from strawberry.types.enum import enum as strawberry_enum
-from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
+
 from strawberry.types.base import (
     StrawberryList,
     StrawberryObjectDefinition,
@@ -30,6 +29,7 @@ from strawberry.types.base import (
     has_object_definition,
 )
 from strawberry.types.enum import EnumDefinition
+from strawberry.types.enum import enum as strawberry_enum
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.private import is_private
 from strawberry.types.scalar import ScalarDefinition

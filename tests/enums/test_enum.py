@@ -4,7 +4,6 @@ import pytest
 
 import strawberry
 from strawberry.exceptions import ObjectIsNotAnEnumError
-from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 from strawberry.types.enum import EnumDefinition
 
 
@@ -156,13 +155,13 @@ def test_default_enum_implementation() -> None:
     class Foo(Enum):
         BAR = "bar"
         BAZ = "baz"
-    
+
     @strawberry.type
     class Query:
         @strawberry.field
         def foo(self, foo: Foo) -> Foo:
             return foo
-    
+
     schema = strawberry.Schema(Query)
     res = schema.execute_sync("{ foo(foo: BAR) }")
     assert not res.errors
@@ -174,13 +173,13 @@ def test_default_str_enum_implementation() -> None:
     class Foo(StrEnum):
         BAR = "bar"
         BAZ = "baz"
-    
+
     @strawberry.type
     class Query:
         @strawberry.field
         def foo(self, foo: Foo) -> Foo:
             return foo
-    
+
     schema = strawberry.Schema(Query)
     res = schema.execute_sync("{ foo(foo: BAR) }")
     assert not res.errors
@@ -192,16 +191,15 @@ def test_default_int_enum_implementation() -> None:
     class Foo(IntEnum):
         BAR = 1
         BAZ = 2
-    
+
     @strawberry.type
     class Query:
         @strawberry.field
         def foo(self, foo: Foo) -> int:
             return foo.value
-    
+
     schema = strawberry.Schema(Query)
     res = schema.execute_sync("{ foo(foo: BAR) }")
     assert not res.errors
     assert res.data
     assert res.data["foo"] == 1
-
