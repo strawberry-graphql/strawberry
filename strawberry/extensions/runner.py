@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 from strawberry.extensions.context import (
     ExecutingContextManager,
@@ -40,13 +40,13 @@ class SchemaExtensionsRunner:
     def executing(self) -> ExecutingContextManager:
         return ExecutingContextManager(self.extensions)
 
-    def get_extensions_results_sync(self) -> Dict[str, Any]:
+    def get_extensions_results_sync(self, ctx: ExecutionContext) -> Dict[str, Any]:
         data: Dict[str, Any] = {}
         for extension in self.extensions:
             if inspect.iscoroutinefunction(extension.get_results):
                 msg = "Cannot use async extension hook during sync execution"
                 raise RuntimeError(msg)
-            data.update(extension.get_results())  # type: ignore
+            data.update(cast(Dict[str, Any], extension.get_results(ctx))) 
 
         return data
 
@@ -54,7 +54,7 @@ class SchemaExtensionsRunner:
         data: Dict[str, Any] = {}
 
         for extension in self.extensions:
-            data.update(await await_maybe(extension.get_results()))
+            data.update(await await_maybe(extension.get_results(ctx)))
 
         data.update(ctx.extensions_results)
         return data

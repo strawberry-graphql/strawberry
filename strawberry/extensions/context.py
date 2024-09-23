@@ -21,6 +21,7 @@ from typing import (
 )
 
 from strawberry.extensions import SchemaExtension
+from strawberry.types.execution import ExecutionContext
 from strawberry.utils.await_maybe import AwaitableOrValue, await_maybe
 
 if TYPE_CHECKING:
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
 
 class WrappedHook(NamedTuple):
     extension: SchemaExtension
-    hook: Callable[..., Union[AsyncContextManager[None], ContextManager[None]]]
+    hook: Callable[[ExecutionContext], Union[AsyncContextManager[None], ContextManager[None]]]
     is_async: bool
 
 
@@ -42,6 +43,7 @@ class ExtensionContextManagerBase:
         "default_hook",
         "async_exit_stack",
         "exit_stack",
+        "execution_context",
     )
 
     def __init_subclass__(cls) -> None:
@@ -56,8 +58,9 @@ class ExtensionContextManagerBase:
     LEGACY_ENTER: str
     LEGACY_EXIT: str
 
-    def __init__(self, extensions: List[SchemaExtension]) -> None:
+    def __init__(self, extensions: List[SchemaExtension], execution_context: ExecutionContext) -> None:
         self.hooks: List[WrappedHook] = []
+        self.execution_context = execution_context
         self.default_hook: Hook = getattr(SchemaExtension, self.HOOK_NAME)
         for extension in extensions:
             hook = self.get_hook(extension)
@@ -175,7 +178,7 @@ class ExtensionContextManagerBase:
                     "failed to complete synchronously."
                 )
             else:
-                self.exit_stack.enter_context(hook.hook())  # type: ignore
+                self.exit_stack.enter_context(hook.hook(self.execution_context))  
 
     def __exit__(
         self,
@@ -192,9 +195,9 @@ class ExtensionContextManagerBase:
 
         for hook in self.hooks:
             if hook.is_async:
-                await self.async_exit_stack.enter_async_context(hook.hook())  # type: ignore
+                await self.async_exit_stack.enter_async_context(hook.hook(self.execution_context))  # type: ignore
             else:
-                self.async_exit_stack.enter_context(hook.hook())  # type: ignore
+                self.async_exit_stack.enter_context(hook.hook(self.execution_context))  # type: ignore
 
     async def __aexit__(
         self,
