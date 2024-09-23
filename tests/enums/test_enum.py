@@ -6,6 +6,8 @@ import strawberry
 from strawberry.exceptions import ObjectIsNotAnEnumError
 from strawberry.types.enum import EnumDefinition
 
+from strawberry.types.base import get_object_definition
+
 
 def test_basic_enum():
     @strawberry.enum
@@ -203,3 +205,16 @@ def test_default_int_enum_implementation() -> None:
     assert not res.errors
     assert res.data
     assert res.data["foo"] == 1
+
+def test_default_enum_reuse() -> None:
+    class Foo(Enum):
+        BAR = "bar"
+        BAZ = "baz"
+
+    @strawberry.type
+    class SomeType:
+        foo: Foo
+        bar: Foo
+    
+    definition = get_object_definition(SomeType, strict=True)
+    assert definition.fields[1].type  is definition.fields[1].type
