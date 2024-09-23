@@ -147,11 +147,13 @@ class BaseView:
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         subscriptions_enabled: bool = False,
+        multipart_uploads_enabled: bool = False,
         **kwargs: Any,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.subscriptions_enabled = subscriptions_enabled
+        self.multipart_uploads_enabled = multipart_uploads_enabled
 
         if graphiql is not None:
             warnings.warn(
