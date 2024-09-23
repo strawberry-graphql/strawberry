@@ -19,7 +19,7 @@ from typing import (
     cast,
 )
 from typing_extensions import Annotated, Self, get_args, get_origin
-
+from strawberry.types.enum import enum as strawberry_enum
 from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 from strawberry.types.base import (
     StrawberryList,
@@ -187,7 +187,7 @@ class StrawberryAnnotation:
         try:
             return evaled_type._enum_definition
         except AttributeError:
-            raise NotAStrawberryEnumError(evaled_type)
+            return strawberry_enum(evaled_type)
 
     def create_list(self, evaled_type: Any) -> StrawberryList:
         item_type, *_ = get_args(evaled_type)

@@ -17,3 +17,5 @@ def test_basic():
 
     # TODO: Remove reference to .enum_definition with StrawberryEnum
     assert resolved is NumaNuma._enum_definition
+
+

@@ -1,4 +1,4 @@
-from enum import Enum, IntEnum
+from enum import Enum, IntEnum, StrEnum
 
 import pytest
 
@@ -120,25 +120,6 @@ def test_can_describe_enum_values():
     assert definition.values[2].description is None
 
 
-@pytest.mark.raises_strawberry_exception(
-    NotAStrawberryEnumError, match='Enum "IceCreamFlavour" is not a Strawberry enum'
-)
-def test_raises_error_when_using_enum_not_decorated():
-    class IceCreamFlavour(Enum):
-        VANILLA = strawberry.enum_value("vanilla")
-        STRAWBERRY = strawberry.enum_value(
-            "strawberry",
-            description="Our favourite",
-        )
-        CHOCOLATE = "chocolate"
-
-    @strawberry.type
-    class Query:
-        flavour: IceCreamFlavour
-
-    strawberry.Schema(query=Query)
-
-
 def test_can_use_enum_values():
     @strawberry.enum
     class TestEnum(Enum):
@@ -169,3 +150,58 @@ def test_int_enums():
     assert TestEnum.D.value == 4
 
     assert [x.value for x in TestEnum.__members__.values()] == [1, 2, 3, 4]
+
+
+def test_default_enum_implementation() -> None:
+    class Foo(Enum):
+        BAR = "bar"
+        BAZ = "baz"
+    
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def foo(self, foo: Foo) -> Foo:
+            return foo
+    
+    schema = strawberry.Schema(Query)
+    res = schema.execute_sync("{ foo(foo: BAR) }")
+    assert not res.errors
+    assert res.data
+    assert res.data["foo"] == "BAR"
+
+
+def test_default_str_enum_implementation() -> None:
+    class Foo(StrEnum):
+        BAR = "bar"
+        BAZ = "baz"
+    
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def foo(self, foo: Foo) -> Foo:
+            return foo
+    
+    schema = strawberry.Schema(Query)
+    res = schema.execute_sync("{ foo(foo: BAR) }")
+    assert not res.errors
+    assert res.data
+    assert res.data["foo"] == "BAR"
+
+
+def test_default_int_enum_implementation() -> None:
+    class Foo(IntEnum):
+        BAR = 1
+        BAZ = 2
+    
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def foo(self, foo: Foo) -> int:
+            return foo.value
+    
+    schema = strawberry.Schema(Query)
+    res = schema.execute_sync("{ foo(foo: BAR) }")
+    assert not res.errors
+    assert res.data
+    assert res.data["foo"] == 1
+
