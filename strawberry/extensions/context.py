@@ -32,7 +32,9 @@ if TYPE_CHECKING:
 
 class WrappedHook(NamedTuple):
     extension: SchemaExtension
-    hook: Callable[[ExecutionContext], Union[AsyncContextManager[None], ContextManager[None]]]
+    hook: Callable[
+        [ExecutionContext], Union[AsyncContextManager[None], ContextManager[None]]
+    ]
     is_async: bool
 
 
@@ -58,7 +60,9 @@ class ExtensionContextManagerBase:
     LEGACY_ENTER: str
     LEGACY_EXIT: str
 
-    def __init__(self, extensions: List[SchemaExtension], execution_context: ExecutionContext) -> None:
+    def __init__(
+        self, extensions: List[SchemaExtension], execution_context: ExecutionContext
+    ) -> None:
         self.hooks: List[WrappedHook] = []
         self.execution_context = execution_context
         self.default_hook: Hook = getattr(SchemaExtension, self.HOOK_NAME)
@@ -178,7 +182,7 @@ class ExtensionContextManagerBase:
                     "failed to complete synchronously."
                 )
             else:
-                self.exit_stack.enter_context(hook.hook(self.execution_context))  
+                self.exit_stack.enter_context(hook.hook(self.execution_context))
 
     def __exit__(
         self,
@@ -195,7 +199,9 @@ class ExtensionContextManagerBase:
 
         for hook in self.hooks:
             if hook.is_async:
-                await self.async_exit_stack.enter_async_context(hook.hook(self.execution_context))  # type: ignore
+                await self.async_exit_stack.enter_async_context(
+                    hook.hook(self.execution_context)
+                )  # type: ignore
             else:
                 self.async_exit_stack.enter_context(hook.hook(self.execution_context))  # type: ignore
 

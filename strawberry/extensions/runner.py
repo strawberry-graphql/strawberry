@@ -46,7 +46,7 @@ class SchemaExtensionsRunner:
             if inspect.iscoroutinefunction(extension.get_results):
                 msg = "Cannot use async extension hook during sync execution"
                 raise RuntimeError(msg)
-            data.update(cast(Dict[str, Any], extension.get_results(ctx))) 
+            data.update(cast(Dict[str, Any], extension.get_results(ctx)))
 
         return data
 

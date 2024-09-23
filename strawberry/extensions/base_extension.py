@@ -19,7 +19,6 @@ class LifecycleStep(Enum):
 
 
 class SchemaExtension:
-
     # to support extensions that still use the old signature
     # we have an optional argument here for ease of initialization.
     def __init__(
@@ -60,7 +59,9 @@ class SchemaExtension:
     ) -> AwaitableOrValue[object]:
         return _next(root, info, *args, **kwargs)
 
-    def get_results(self, execution_context: ExecutionContext) -> AwaitableOrValue[Dict[str, Any]]:
+    def get_results(
+        self, execution_context: ExecutionContext
+    ) -> AwaitableOrValue[Dict[str, Any]]:
         return {}
 
     @classmethod
