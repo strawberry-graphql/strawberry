@@ -29,7 +29,7 @@ app.router.add_route("*", "/graphql", GraphQLView(schema=schema))
 
 ## Options
 
-The `GraphQLView` accepts two options at the moment:
+The `GraphQLView` accepts the following options at the moment:
 
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
 - `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the
@@ -37,6 +37,8 @@ The `GraphQLView` accepts two options at the moment:
   to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
+- `multipart_uploads_enabled`: optional, defaults to `False`, controls whether to enable multipart uploads.
+  Please make sure to consider the [security implications mentioned in the GraphQL Multipart Request Specification](https://github.com/jaydenseric/graphql-multipart-request-spec/blob/master/readme.md#security) when enabling this feature.
 
 ## Extending the view
 
