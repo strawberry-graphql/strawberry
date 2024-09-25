@@ -1,5 +1,6 @@
 import abc
 import json
+from http import HTTPStatus
 from typing import (
     Any,
     Callable,
@@ -181,7 +182,7 @@ class SyncBaseHTTPView(
                 raise HTTPException(404, "Not Found")
 
         if request_adapter.method == "GET" and not self.allow_queries_via_get:
-            raise HTTPException(404, "Not Found")
+            raise HTTPException(HTTPStatus.METHOD_NOT_ALLOWED, HTTPStatus.METHOD_NOT_ALLOWED.phrase)
 
         sub_response = self.get_sub_response(request)
         context = (
