@@ -86,6 +86,7 @@ class FastAPIHttpClient(HttpClient):
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        multipart_uploads_enabled: bool = False,
     ):
         self.app = FastAPI()
 
@@ -97,6 +98,7 @@ class FastAPIHttpClient(HttpClient):
             root_value_getter=get_root_value,
             allow_queries_via_get=allow_queries_via_get,
             keep_alive=False,
+            multipart_uploads_enabled=multipart_uploads_enabled,
         )
         graphql_app.result_override = result_override
         self.app.include_router(graphql_app, prefix="/graphql")
