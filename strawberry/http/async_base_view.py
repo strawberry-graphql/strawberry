@@ -187,7 +187,8 @@ class AsyncBaseHTTPView(
 
         if request_adapter.method == "GET" and not self.allow_queries_via_get:
             raise HTTPException(
-                HTTPStatus.METHOD_NOT_ALLOWED, HTTPStatus.METHOD_NOT_ALLOWED.phrase
+                HTTPStatus.METHOD_NOT_ALLOWED,
+                HTTPStatus.METHOD_NOT_ALLOWED.phrase,
             )
 
         sub_response = await self.get_sub_response(request)
