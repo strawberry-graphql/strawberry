@@ -184,6 +184,9 @@ class AsyncBaseHTTPView(
             else:
                 raise HTTPException(404, "Not Found")
 
+        if request_adapter.method == "GET" and not self.allow_queries_via_get:
+            raise HTTPException(404, "Not Found")
+
         sub_response = await self.get_sub_response(request)
         context = (
             await self.get_context(request, response=sub_response)
