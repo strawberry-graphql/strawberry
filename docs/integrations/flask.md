@@ -37,8 +37,9 @@ from strawberry.flask.views import AsyncGraphQLView
 The `GraphQLView` accepts the following options at the moment:
 
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
-- `graphiql:` optional, defaults to `True`, whether to enable the GraphiQL
-  interface.
+- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the
+  GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or
+  to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
 - `multipart_uploads_enabled`: optional, defaults to `False`, controls whether
