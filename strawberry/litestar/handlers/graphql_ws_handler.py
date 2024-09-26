@@ -46,8 +46,9 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
                 try:
                     message = await self._ws.receive_json()
                 except (SerializationException, ValueError):  # noqa: PERF203
-                    # Ignore non-text messages
-                    continue
+                    await self.close(
+                        code=1002, reason="WebSocket message type must be text"
+                    )
                 else:
                     await self.handle_message(message)
         except WebSocketDisconnect:  # pragma: no cover

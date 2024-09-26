@@ -61,6 +61,10 @@ The `make_graphql_controller` function accepts the following options:
   the maximum time to wait for the connection initialization message when using
   `graphql-transport-ws`
   [protocol](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#connectioninit)
+- `multipart_uploads_enabled`: optional, defaults to `False`, controls whether
+  to enable multipart uploads. Please make sure to consider the
+  [security implications mentioned in the GraphQL Multipart Request Specification](https://github.com/jaydenseric/graphql-multipart-request-spec/blob/master/readme.md#security)
+  when enabling this feature.
 
 ## context_getter
 

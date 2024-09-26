@@ -1,6 +1,85 @@
 CHANGELOG
 =========
 
+0.243.0 - 2024-09-25
+--------------------
+
+Starting with this release, multipart uploads are disabled by default and Strawberry Django view is no longer implicitly exempted from Django's CSRF protection.
+Both changes relieve users from implicit security implications inherited from the GraphQL multipart request specification which was enabled in Strawberry by default.
+
+These are breaking changes if you are using multipart uploads OR the Strawberry Django view.
+Migrations guides including further information are available on the Strawberry website.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3645](https://github.com/strawberry-graphql/strawberry/pull/3645/)
+
+
+0.242.0 - 2024-09-19
+--------------------
+
+Starting with this release, clients using the legacy graphql-ws subprotocol will receive an error when they try to send binary data frames.
+Before, binary data frames were silently ignored.
+
+While vaguely defined in the protocol, the legacy graphql-ws subprotocol is generally understood to only support text data frames.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3633](https://github.com/strawberry-graphql/strawberry/pull/3633/)
+
+
+0.241.0 - 2024-09-16
+--------------------
+
+You can now configure your schemas to provide a custom subclass of
+`strawberry.types.Info` to your types and queries.
+
+```py
+import strawberry
+from strawberry.schema.config import StrawberryConfig
+
+from .models import ProductModel
+
+
+class CustomInfo(strawberry.Info):
+    @property
+    def selected_group_id(self) -> int | None:
+        """Get the ID of the group you're logged in as."""
+        return self.context["request"].headers.get("Group-ID")
+
+
+@strawberry.type
+class Group:
+    id: strawberry.ID
+    name: str
+
+
+@strawberry.type
+class User:
+    id: strawberry.ID
+    name: str
+    group: Group
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user(self, id: strawberry.ID, info: CustomInfo) -> Product:
+        kwargs = {"id": id, "name": ...}
+
+        if info.selected_group_id is not None:
+            # Get information about the group you're a part of, if
+            # available.
+            kwargs["group"] = ...
+
+        return User(**kwargs)
+
+
+schema = strawberry.Schema(
+    Query,
+    config=StrawberryConfig(info_class=CustomInfo),
+)
+```
+
+Contributed by [Ethan Henderson](https://github.com/parafoxia) via [PR #3592](https://github.com/strawberry-graphql/strawberry/pull/3592/)
+
+
 0.240.4 - 2024-09-13
 --------------------
 

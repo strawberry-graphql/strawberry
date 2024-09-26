@@ -66,7 +66,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         # This is not part of the BaseGraphQLWSHandler's interface, but the
         # channels integration is a high level wrapper that forwards this to
         # both us and the BaseGraphQLTransportWSHandler.
-        pass
+        await self.close(code=1002, reason=error_message)
 
 
 __all__ = ["GraphQLWSHandler"]
