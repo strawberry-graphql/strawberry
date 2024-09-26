@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.243.1 - 2024-09-26
+--------------------
+
+This releases adds support for Pydantic 2.9.0's Mypy plugin
+
+Contributed by [Krisque](https://github.com/chrisemke) via [PR #3632](https://github.com/strawberry-graphql/strawberry/pull/3632/)
+
+
 0.243.0 - 2024-09-25
 --------------------
 
