@@ -131,6 +131,7 @@ class GraphQL(
             GRAPHQL_WS_PROTOCOL,
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
+        multipart_uploads_enabled: bool = False,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
@@ -139,6 +140,7 @@ class GraphQL(
         self.debug = debug
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
+        self.multipart_uploads_enabled = multipart_uploads_enabled
 
         if graphiql is not None:
             warnings.warn(

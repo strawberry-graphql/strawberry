@@ -10,13 +10,14 @@ It provides a view that you can use to serve your GraphQL schema:
 
 ```python
 from django.urls import path
+from django.views.decorators.csrf import csrf_exempt
 
 from strawberry.django.views import GraphQLView
 
 from api.schema import schema
 
 urlpatterns = [
-    path("graphql/", GraphQLView.as_view(schema=schema)),
+    path("graphql/", csrf_exempt(GraphQLView.as_view(schema=schema))),
 ]
 ```
 
@@ -40,6 +41,10 @@ The `GraphQLView` accepts the following arguments:
   queries via `GET` requests
 - `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
   the GraphiQL interface, defaults to `False`.
+- `multipart_uploads_enabled`: optional, defaults to `False`, controls whether
+  to enable multipart uploads. Please make sure to consider the
+  [security implications mentioned in the GraphQL Multipart Request Specification](https://github.com/jaydenseric/graphql-multipart-request-spec/blob/master/readme.md#security)
+  when enabling this feature.
 
 ## Deprecated options
 

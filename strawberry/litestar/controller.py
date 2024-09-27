@@ -401,6 +401,7 @@ def make_graphql_controller(
         GRAPHQL_WS_PROTOCOL,
     ),
     connection_init_wait_timeout: timedelta = timedelta(minutes=1),
+    multipart_uploads_enabled: bool = False,
 ) -> Type[GraphQLController]:  # sourcery skip: move-assign
     if context_getter is None:
         custom_context_getter_ = _none_custom_context_getter
@@ -447,6 +448,7 @@ def make_graphql_controller(
     _GraphQLController.schema = schema_
     _GraphQLController.allow_queries_via_get = allow_queries_via_get_
     _GraphQLController.graphql_ide = graphql_ide_
+    _GraphQLController.multipart_uploads_enabled = multipart_uploads_enabled
 
     return _GraphQLController
 

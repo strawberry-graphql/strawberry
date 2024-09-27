@@ -111,11 +111,13 @@ class GraphQLView(
         allow_queries_via_get: bool = True,
         json_encoder: Optional[Type[json.JSONEncoder]] = None,
         json_dumps_params: Optional[Dict[str, Any]] = None,
+        multipart_uploads_enabled: bool = False,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.json_encoder = json_encoder
         self.json_dumps_params = json_dumps_params
+        self.multipart_uploads_enabled = multipart_uploads_enabled
 
         if self.json_encoder is not None:  # pragma: no cover
             warnings.warn(

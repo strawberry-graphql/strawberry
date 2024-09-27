@@ -50,6 +50,7 @@ class ChaliceHttpClient(HttpClient):
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        multipart_uploads_enabled: bool = False,
     ):
         self.app = Chalice(app_name="TheStackBadger")
 

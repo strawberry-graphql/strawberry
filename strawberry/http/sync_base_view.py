@@ -143,7 +143,7 @@ class SyncBaseHTTPView(
         elif "application/json" in content_type:
             data = self.parse_json(request.body)
         # TODO: multipart via get?
-        elif content_type == "multipart/form-data":
+        elif self.multipart_uploads_enabled and content_type == "multipart/form-data":
             data = self.parse_multipart(request)
         elif self._is_multipart_subscriptions(content_type, params):
             raise HTTPException(

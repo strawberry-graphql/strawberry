@@ -59,20 +59,6 @@ jobs:
             3.12
             3.13-dev
 
-      - name: Pip and nox cache
-        id: cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache
-            ~/.nox
-            .nox
-          key:
-            ${{ runner.os }}-nox-${{ matrix.session.session }}-${{ env.pythonLocation }}-${{
-            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
-          restore-keys: |
-            ${{ runner.os }}-nox-${{ matrix.session.session }}-${{ env.pythonLocation }}
-
       - run: pip install poetry nox nox-poetry uv
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
       - uses: actions/upload-artifact@v4

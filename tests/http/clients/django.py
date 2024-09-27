@@ -48,11 +48,13 @@ class DjangoHttpClient(HttpClient):
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        multipart_uploads_enabled: bool = False,
     ):
         self.graphiql = graphiql
         self.graphql_ide = graphql_ide
         self.allow_queries_via_get = allow_queries_via_get
         self.result_override = result_override
+        self.multipart_uploads_enabled = multipart_uploads_enabled
 
     def _get_header_name(self, key: str) -> str:
         return f"HTTP_{key.upper().replace('-', '_')}"
@@ -75,6 +77,7 @@ class DjangoHttpClient(HttpClient):
             graphql_ide=self.graphql_ide,
             allow_queries_via_get=self.allow_queries_via_get,
             result_override=self.result_override,
+            multipart_uploads_enabled=self.multipart_uploads_enabled,
         )
 
         try:

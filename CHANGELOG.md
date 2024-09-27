@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+0.243.1 - 2024-09-26
+--------------------
+
+This releases adds support for Pydantic 2.9.0's Mypy plugin
+
+Contributed by [Krisque](https://github.com/chrisemke) via [PR #3632](https://github.com/strawberry-graphql/strawberry/pull/3632/)
+
+
+0.243.0 - 2024-09-25
+--------------------
+
+Starting with this release, multipart uploads are disabled by default and Strawberry Django view is no longer implicitly exempted from Django's CSRF protection.
+Both changes relieve users from implicit security implications inherited from the GraphQL multipart request specification which was enabled in Strawberry by default.
+
+These are breaking changes if you are using multipart uploads OR the Strawberry Django view.
+Migrations guides including further information are available on the Strawberry website.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3645](https://github.com/strawberry-graphql/strawberry/pull/3645/)
+
+
 0.242.0 - 2024-09-19
 --------------------
 

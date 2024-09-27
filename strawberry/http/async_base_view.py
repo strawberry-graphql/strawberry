@@ -453,7 +453,7 @@ class AsyncBaseHTTPView(
             data = self.parse_query_params(request.query_params)
         elif "application/json" in content_type:
             data = self.parse_json(await request.get_body())
-        elif content_type == "multipart/form-data":
+        elif self.multipart_uploads_enabled and content_type == "multipart/form-data":
             data = await self.parse_multipart(request)
         else:
             raise HTTPException(400, "Unsupported content type")
