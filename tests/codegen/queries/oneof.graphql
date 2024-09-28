@@ -1,4 +1,3 @@
-
-query OneOfTest ($value: OneOfInput!) {
-    oneOf(value: $value)
+query OneOfTest($value: OneOfInput!) {
+  oneOf(value: $value)
 }
