@@ -110,6 +110,9 @@ class PythonPlugin(QueryCodegenPlugin):
         return type_.name
 
     def _print_field(self, field: GraphQLField, as_oneof_member: bool = False) -> str:
+        # `as_oneof_member` makes the field non optional
+        # We're doing this because we're expressing oneOf via union instead
+
         name = field.name
 
         if field.alias:
@@ -183,6 +186,8 @@ class PythonPlugin(QueryCodegenPlugin):
     def _get_oneof_class_name(
         self, parent_type: GraphQLObjectType, member_field: GraphQLField
     ) -> str:
+        # Name the classes using the parent name and field name
+        # Example.option => ExampleOption
         return f"{parent_type.name}{member_field.name.title()}"
 
     def _print_oneof_object_type(self, type_: GraphQLObjectType) -> str:
@@ -194,11 +199,13 @@ class PythonPlugin(QueryCodegenPlugin):
 
         lines = []
         for field in fields:
+            # Add a one-field class for each oneOf member
             lines.append(f"class {self._get_oneof_class_name(type_, field)}:")
             lines.append(
                 textwrap.indent(self._print_field(field, as_oneof_member=True), indent)
             )
 
+        # Create a union of the classes we just created
         type_list = ",".join(
             [self._get_oneof_class_name(type_, field) for field in fields]
         )
@@ -206,6 +213,7 @@ class PythonPlugin(QueryCodegenPlugin):
 
         if type_.graphql_typename:
             # Shouldn't run, inputs can't be fragments
+            # Keeping it here just in case
             lines.append(f"# typename: {type_.graphql_typename}")  # pragma: no cover
 
         return "\n".join(lines)

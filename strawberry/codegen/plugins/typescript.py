@@ -82,12 +82,15 @@ class TypeScriptPlugin(QueryCodegenPlugin):
 
         if field.alias:
             # Shouldn't run, aliases can't exist on inputs
+            # Keeping it here just in case
             name = f"// alias for {field.name}\n{field.alias}"  # pragma: no cover
 
         if isinstance(field.type, GraphQLOptional):
+            # Use the non-null version of the type because we're using unions instead
             output_type = field.type.of_type
         else:
             # Shouldn't run, oneOf types are always nullable
+            # Keeping it here just in case
             output_type = field.type  # pragma: no cover
         return f"{name}: {self._get_type_name(output_type)}"
 
@@ -102,17 +105,22 @@ class TypeScriptPlugin(QueryCodegenPlugin):
         )
 
     def _print_oneof_object_type(self, type_: GraphQLObjectType) -> str:
+        # We'll gather a list of objects for each oneOf field
         options: list[str] = []
         for option in type_.fields:
+            # We'll give each option all fields from the parent type
             option_fields: list[str] = []
             for field in type_.fields:
                 if field == option:
+                    # Each option gets one field with its type...
                     field_row = self._print_oneof_field(field)
                 else:
+                    # ... and the rest set to `never` to prevent multiple from being set
                     field_row = f"{field.name}: never"
                 option_fields.append(textwrap.indent(field_row, " " * 4))
             options.append("{\n" + ",\n".join(option_fields) + "\n}")
 
+        # Union all the options together
         all_options = " | ".join(options)
 
         return f"type {type_.name} = {all_options}"
