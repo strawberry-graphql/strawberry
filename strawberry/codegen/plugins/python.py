@@ -197,12 +197,11 @@ class PythonPlugin(QueryCodegenPlugin):
             lines.append(f"class {self._get_oneof_class_name(type_, field)}:")
             lines.append(textwrap.indent(self._print_field(field, as_oneof_member=True), indent))
 
-        lines.append(f"{type_.name} = Union[{','.join(
-            [
-                self._get_oneof_class_name(type_, field)
-                for field in fields
-            ]
-        )}]")
+        type_list = ','.join([
+            self._get_oneof_class_name(type_, field)
+            for field in fields
+        ])
+        lines.append(f"{type_.name} = Union[{type_list}]")
 
         if type_.graphql_typename:
             lines.append(f"# typename: {type_.graphql_typename}")
