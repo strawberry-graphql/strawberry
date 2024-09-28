@@ -179,33 +179,34 @@ class PythonPlugin(QueryCodegenPlugin):
         lines.append(textwrap.indent(fields, indent))
 
         return "\n".join(lines)
-    
-    def _get_oneof_class_name(self, parent_type: GraphQLObjectType, member_field: GraphQLField):
-        return "{type_.name}{field.name.title()}"
+
+    def _get_oneof_class_name(
+        self, parent_type: GraphQLObjectType, member_field: GraphQLField
+    ) -> str:
+        return f"{parent_type.name}{member_field.name.title()}"
 
     def _print_oneof_object_type(self, type_: GraphQLObjectType) -> str:
-        fields = [
-            field
-            for field in sorted(type_.fields, key=lambda f: f.default_value is not None) # MODIFIED - make sure default fields are last
-            if field.name != "__typename"
-        ]
+        self.imports["typing"].add("Union")
+
+        fields = [field for field in type_.fields if field.name != "__typename"]
 
         indent = 4 * " "
 
         lines = []
         for field in fields:
             lines.append(f"class {self._get_oneof_class_name(type_, field)}:")
-            lines.append(textwrap.indent(self._print_field(field, as_oneof_member=True), indent))
+            lines.append(
+                textwrap.indent(self._print_field(field, as_oneof_member=True), indent)
+            )
 
-        type_list = ','.join([
-            self._get_oneof_class_name(type_, field)
-            for field in fields
-        ])
+        type_list = ",".join(
+            [self._get_oneof_class_name(type_, field) for field in fields]
+        )
         lines.append(f"{type_.name} = Union[{type_list}]")
 
         if type_.graphql_typename:
             lines.append(f"# typename: {type_.graphql_typename}")
-        
+
         return "\n".join(lines)
 
     def _print_enum_type(self, type_: GraphQLEnum) -> str:
