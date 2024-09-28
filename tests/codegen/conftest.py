@@ -134,8 +134,12 @@ class Query:
         return LifeContainer([person], [dinosaur])
 
     @strawberry.field
-    def one_of(value: OneOfInput) -> str:
+    def one_of(self, value: OneOfInput) -> str:
         return "some value"
+
+    @strawberry.field
+    def one_of_typename(self, value: OneOfInput) -> PersonOrAnimal:
+        return Person(name="Name", age=22)
 
 
 @strawberry.input
