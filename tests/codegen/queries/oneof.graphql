@@ -1,0 +1,4 @@
+
+query OneOfTest ($value: OneOfInput!) {
+    oneOf(value: $value)
+}

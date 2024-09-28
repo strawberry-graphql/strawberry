@@ -83,6 +83,12 @@ class ExampleInput:
     optional_people: Optional[List[PersonInput]]
 
 
+@strawberry.input(one_of=True)
+class OneOfInput:
+    a: Optional[str] = strawberry.UNSET
+    b: Optional[str] = strawberry.UNSET
+
+
 @strawberry.type
 class Query:
     id: strawberry.ID
@@ -126,6 +132,10 @@ class Query:
         person = Person(name="Henry", age=10)
         dinosaur = Animal(name="rex", age=66_000_000)
         return LifeContainer([person], [dinosaur])
+
+    @strawberry.field
+    def one_of(value: OneOfInput) -> str:
+        return "some value"
 
 
 @strawberry.input
