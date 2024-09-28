@@ -205,7 +205,8 @@ class PythonPlugin(QueryCodegenPlugin):
         lines.append(f"{type_.name} = Union[{type_list}]")
 
         if type_.graphql_typename:
-            lines.append(f"# typename: {type_.graphql_typename}")
+            # Shouldn't run, inputs can't be fragments
+            lines.append(f"# typename: {type_.graphql_typename}")  # pragma: no cover
 
         return "\n".join(lines)
 

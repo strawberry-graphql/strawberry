@@ -81,12 +81,14 @@ class TypeScriptPlugin(QueryCodegenPlugin):
         name = field.name
 
         if field.alias:
-            name = f"// alias for {field.name}\n{field.alias}"
+            # Shouldn't run, aliases can't exist on inputs
+            name = f"// alias for {field.name}\n{field.alias}"  # pragma: no cover
 
         if isinstance(field.type, GraphQLOptional):
             output_type = field.type.of_type
         else:
-            output_type = field.type
+            # Shouldn't run, oneOf types are always nullable
+            output_type = field.type  # pragma: no cover
         return f"{name}: {self._get_type_name(output_type)}"
 
     def _print_enum_value(self, value: str) -> str:
