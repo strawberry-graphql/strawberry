@@ -77,6 +77,18 @@ class TypeScriptPlugin(QueryCodegenPlugin):
 
         return f"{name}: {self._get_type_name(field.type)}"
 
+    def _print_oneof_field(self, field: GraphQLField) -> str:
+        name = field.name
+
+        if field.alias:
+            name = f"// alias for {field.name}\n{field.alias}"
+
+        if isinstance(field.type, GraphQLOptional):
+            output_type = field.type.of_type
+        else:
+            output_type = field.type
+        return f"{name}: {self._get_type_name(output_type)}"
+
     def _print_enum_value(self, value: str) -> str:
         return f'{value} = "{value}",'
 
@@ -86,6 +98,22 @@ class TypeScriptPlugin(QueryCodegenPlugin):
         return "\n".join(
             [f"type {type_.name} = {{", textwrap.indent(fields, " " * 4), "}"],
         )
+
+    def _print_oneof_object_type(self, type_: GraphQLObjectType) -> str:
+        options: list[str] = []
+        for option in type_.fields:
+            option_fields: list[str] = []
+            for field in type_.fields:
+                if field == option:
+                    field_row = self._print_oneof_field(field)
+                else:
+                    field_row = f"{field.name}: never"
+                option_fields.append(textwrap.indent(field_row, " " * 4))
+            options.append("{\n" + ",\n".join(option_fields) + "\n}")
+
+        all_options = " | ".join(options)
+
+        return f"type {type_.name} = {all_options}"
 
     def _print_enum_type(self, type_: GraphQLEnum) -> str:
         values = "\n".join(self._print_enum_value(value) for value in type_.values)
@@ -112,7 +140,10 @@ class TypeScriptPlugin(QueryCodegenPlugin):
             return self._print_union_type(type_)
 
         if isinstance(type_, GraphQLObjectType):
-            return self._print_object_type(type_)
+            if type_.is_one_of:
+                return self._print_oneof_object_type(type_)
+            else:
+                return self._print_object_type(type_)
 
         if isinstance(type_, GraphQLEnum):
             return self._print_enum_type(type_)
