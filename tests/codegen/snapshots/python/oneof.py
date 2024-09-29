@@ -5,8 +5,10 @@ class OneOfTestResult:
 
 class OneOfInputA:
     a: str
+
 class OneOfInputB:
     b: str
+
 OneOfInput = Union[OneOfInputA,OneOfInputB]
 
 class OneOfTestVariables:

@@ -204,6 +204,7 @@ class PythonPlugin(QueryCodegenPlugin):
             lines.append(
                 textwrap.indent(self._print_field(field, as_oneof_member=True), indent)
             )
+            lines.append("")
 
         # Create a union of the classes we just created
         type_list = ",".join(

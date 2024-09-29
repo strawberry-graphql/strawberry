@@ -11,8 +11,10 @@ class OneOfTypenameTestResult:
 
 class OneOfInputA:
     a: str
+
 class OneOfInputB:
     b: str
+
 OneOfInput = Union[OneOfInputA,OneOfInputB]
 
 class OneOfTypenameTestVariables:
