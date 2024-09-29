@@ -80,11 +80,6 @@ class TypeScriptPlugin(QueryCodegenPlugin):
     def _print_oneof_field(self, field: GraphQLField) -> str:
         name = field.name
 
-        if field.alias:
-            # Shouldn't run, aliases can't exist on inputs
-            # Keeping it here just in case
-            name = f"// alias for {field.name}\n{field.alias}"  # pragma: no cover
-
         if isinstance(field.type, GraphQLOptional):
             # Use the non-null version of the type because we're using unions instead
             output_type = field.type.of_type

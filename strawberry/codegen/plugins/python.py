@@ -212,11 +212,6 @@ class PythonPlugin(QueryCodegenPlugin):
         )
         lines.append(f"{type_.name} = Union[{type_list}]")
 
-        if type_.graphql_typename:
-            # Shouldn't run, inputs can't be fragments
-            # Keeping it here just in case
-            lines.append(f"# typename: {type_.graphql_typename}")  # pragma: no cover
-
         return "\n".join(lines)
 
     def _print_enum_type(self, type_: GraphQLEnum) -> str:
