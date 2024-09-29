@@ -28,8 +28,7 @@ from django.template import RequestContext, Template
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
-from django.utils.decorators import classonlymethod, method_decorator
-from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import classonlymethod
 from django.views.generic import View
 
 from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
@@ -147,11 +146,13 @@ class BaseView:
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         subscriptions_enabled: bool = False,
+        multipart_uploads_enabled: bool = False,
         **kwargs: Any,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.subscriptions_enabled = subscriptions_enabled
+        self.multipart_uploads_enabled = multipart_uploads_enabled
 
         if graphiql is not None:
             warnings.warn(
@@ -229,7 +230,6 @@ class GraphQLView(
     def get_sub_response(self, request: HttpRequest) -> TemporalHttpResponse:
         return TemporalHttpResponse()
 
-    @method_decorator(csrf_exempt)
     def dispatch(
         self, request: HttpRequest, *args: Any, **kwargs: Any
     ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponseBase]:
@@ -288,7 +288,6 @@ class AsyncGraphQLView(
     async def get_sub_response(self, request: HttpRequest) -> TemporalHttpResponse:
         return TemporalHttpResponse()
 
-    @method_decorator(csrf_exempt)
     async def dispatch(  # pyright: ignore
         self, request: HttpRequest, *args: Any, **kwargs: Any
     ) -> Union[HttpResponseNotAllowed, TemplateResponse, HttpResponseBase]:

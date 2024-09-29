@@ -91,7 +91,7 @@ class Query:
     @strawberry.field
     def get_customer(
         self, id: strawberry.ID
-    ):  # -> Customer   note we're returning the interface here
+    ) -> Customer:  # note we're returning the interface here
         if id == "mark":
             return Individual(name="Mark", date_of_birth=date(1984, 5, 14))
 

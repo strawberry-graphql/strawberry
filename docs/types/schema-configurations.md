@@ -123,5 +123,5 @@ class CustomInfo(Info):
         return self.context["response"].headers
 
 
-schema = strawberry.Schema(query=Query, info_class=CustomInfo)
+schema = strawberry.Schema(query=Query, config=StrawberryConfig(info_class=CustomInfo))
 ```
