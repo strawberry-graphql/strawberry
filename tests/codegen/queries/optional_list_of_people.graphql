@@ -1,0 +1,6 @@
+query OptionalListOfPeople {
+  optionalListOfPeople {
+    name
+    age
+  }
+}
