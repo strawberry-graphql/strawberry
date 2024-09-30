@@ -234,19 +234,18 @@ class Schema(BaseSchema):
     def _async_extensions(self) -> List[SchemaExtension]:
         return self.get_extensions(sync=False)
 
-
-    
     @cached_property
     def sync_extension_runner(self) -> SchemaExtensionsRunner:
-        return  SchemaExtensionsRunner(
+        return SchemaExtensionsRunner(
             extensions=self.get_extensions(sync=True),
         )
-    
+
     @cached_property
     def async_extension_runner(self) -> SchemaExtensionsRunner:
         return SchemaExtensionsRunner(
             extensions=self.get_extensions(sync=False),
         )
+
     def _get_middleware_manager(
         self, extensions: list[SchemaExtension]
     ) -> MiddlewareManager:

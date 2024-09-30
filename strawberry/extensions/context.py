@@ -3,7 +3,6 @@ from __future__ import annotations
 import contextlib
 import inspect
 import types
-import warnings
 from asyncio import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
@@ -22,7 +21,7 @@ from typing import (
 
 from strawberry.extensions import SchemaExtension
 from strawberry.types.execution import ExecutionContext
-from strawberry.utils.await_maybe import AwaitableOrValue, await_maybe
+from strawberry.utils.await_maybe import AwaitableOrValue
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -53,11 +52,11 @@ class ExtensionContextManagerBase:
         cls.DEFAULT_HOOK = getattr(SchemaExtension, cls.HOOK_NAME)
 
     def __init__(
-        self, hooks: List[WrappedHook],
-        execution_context: ExecutionContext
+        self, hooks: List[WrappedHook], execution_context: ExecutionContext
     ) -> None:
         self.hooks = hooks
         self.execution_context = execution_context
+
     @classmethod
     def get_hooks(cls, extensions: List[SchemaExtension]) -> List[WrappedHook]:
         hooks = []
@@ -71,7 +70,6 @@ class ExtensionContextManagerBase:
 
     @classmethod
     def get_hook(cls, extension: SchemaExtension) -> Optional[WrappedHook]:
-
         hook_fn: Optional[Hook] = getattr(type(extension), cls.HOOK_NAME)
         hook_fn = hook_fn if hook_fn is not cls.DEFAULT_HOOK else None
 
@@ -101,7 +99,6 @@ class ExtensionContextManagerBase:
             )
 
         return None  # Current extension does not define a hook for this lifecycle stage
-
 
     @staticmethod
     def from_callable(
