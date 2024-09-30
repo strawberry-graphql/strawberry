@@ -13,6 +13,8 @@ import strawberry
 from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.extensions import SchemaExtension
 
+from strawberry.types.execution import ExecutionContext
+
 from .conftest import ExampleExtension, ExecType, SchemaHelper, hook_wrap
 
 
@@ -93,10 +95,10 @@ def test_extension_access_to_parsed_document():
     query_name = ""
 
     class MyExtension(SchemaExtension):
-        def on_parse(self):
+        def on_parse(self, execution_context: ExecutionContext)
             nonlocal query_name
             yield
-            query_definition = self.execution_context.graphql_document.definitions[0]
+            query_definition = execution_context.graphql_document.definitions[0]
             query_name = query_definition.name.value
 
     @strawberry.type
@@ -129,10 +131,10 @@ def test_extension_access_to_errors():
     execution_errors = []
 
     class MyExtension(SchemaExtension):
-        def on_operation(self):
+        def on_parse(self, execution_context: ExecutionContext)
             nonlocal execution_errors
             yield
-            execution_errors = self.execution_context.errors
+            execution_errors = execution_context.errors
 
     @strawberry.type
     class Person:
@@ -164,10 +166,10 @@ def test_extension_access_to_root_value():
     root_value = None
 
     class MyExtension(SchemaExtension):
-        def on_operation(self):
+        def on_parse(self, execution_context: ExecutionContext)
             nonlocal root_value
             yield
-            root_value = self.execution_context.root_value
+            root_value = execution_context.root_value
 
     @strawberry.type
     class Query:
@@ -190,9 +192,9 @@ def test_can_initialize_extension(default_query_types_and_query):
         def __init__(self, arg: int):
             self.arg = arg
 
-        def on_operation(self):
+        def on_parse(self, execution_context: ExecutionContext)
             yield
-            self.execution_context.result.data = {"override": self.arg}
+            execution_context.result.data = {"override": self.arg}
 
     schema = strawberry.Schema(
         query=default_query_types_and_query.query_type,
@@ -208,19 +210,19 @@ def test_can_initialize_extension(default_query_types_and_query):
 @pytest.fixture()
 def sync_extension() -> Type[ExampleExtension]:
     class MyExtension(ExampleExtension):
-        def on_operation(self):
+        def on_parse(self, execution_context: ExecutionContext)
             with hook_wrap(self.called_hooks, SchemaExtension.on_operation.__name__):
                 yield
 
-        def on_validate(self):
+        def on_validate(self, execution_context: ExecutionContext)
             with hook_wrap(self.called_hooks, SchemaExtension.on_validate.__name__):
                 yield
 
-        def on_parse(self):
+        def on_parse(self, execution_context: ExecutionContext)
             with hook_wrap(self.called_hooks, SchemaExtension.on_parse.__name__):
                 yield
 
-        def on_execute(self):
+        def on_execute(self, execution_context: ExecutionContext):
             with hook_wrap(self.called_hooks, SchemaExtension.on_execute.__name__):
                 yield
 
@@ -254,11 +256,11 @@ async def test_mixed_sync_and_async_extension_hooks(
     default_query_types_and_query, sync_extension
 ):
     class MyExtension(sync_extension):
-        async def on_operation(self):
+        async def on_parse(self, execution_context: ExecutionContext)
             with hook_wrap(self.called_hooks, SchemaExtension.on_operation.__name__):
                 yield
 
-        async def on_parse(self):
+        async def on_parse(self, execution_context: ExecutionContext)
             with hook_wrap(self.called_hooks, SchemaExtension.on_parse.__name__):
                 yield
 
@@ -290,36 +292,36 @@ async def test_execution_order(default_query_types_and_query):
         called_hooks.append(f"{klass.__name__}, {hook_name} Exited")
 
     class ExtensionA(ExampleExtension):
-        async def on_operation(self):
+        async def on_parse(self, execution_context: ExecutionContext)
             with register_hook(SchemaExtension.on_operation.__name__, ExtensionA):
                 yield
 
-        async def on_parse(self):
+        async def on_parse(self, execution_context: ExecutionContext)
             with register_hook(SchemaExtension.on_parse.__name__, ExtensionA):
                 yield
 
-        def on_validate(self):
+        def on_validate(self, execution_context: ExecutionContext)
             with register_hook(SchemaExtension.on_validate.__name__, ExtensionA):
                 yield
 
-        def on_execute(self):
+        def on_execute(self, execution_context: ExecutionContext):
             with register_hook(SchemaExtension.on_execute.__name__, ExtensionA):
                 yield
 
     class ExtensionB(ExampleExtension):
-        async def on_operation(self):
+        async def on_parse(self, execution_context: ExecutionContext)
             with register_hook(SchemaExtension.on_operation.__name__, ExtensionB):
                 yield
 
-        def on_parse(self):
+        def on_parse(self, execution_context: ExecutionContext)
             with register_hook(SchemaExtension.on_parse.__name__, ExtensionB):
                 yield
 
-        def on_validate(self):
+        def on_validate(self, execution_context: ExecutionContext)
             with register_hook(SchemaExtension.on_validate.__name__, ExtensionB):
                 yield
 
-        async def on_execute(self):
+        async def on_execute(self, execution_context: ExecutionContext):
             with register_hook(SchemaExtension.on_execute.__name__, ExtensionB):
                 yield
 
@@ -370,10 +372,10 @@ async def test_extension_no_yield(default_query_types_and_query):
             f"{SchemaExtension.on_parse.__name__} Entered",
         ]
 
-        def on_operation(self):
+        def on_parse(self, execution_context: ExecutionContext)
             self.called_hooks.append(self.__class__.expected[0])
 
-        async def on_parse(self):
+        async def on_parse(self, execution_context: ExecutionContext)
             self.called_hooks.append(self.__class__.expected[1])
 
     schema = strawberry.Schema(
@@ -388,7 +390,7 @@ async def test_extension_no_yield(default_query_types_and_query):
 
 def test_raise_if_defined_both_legacy_and_new_style(default_query_types_and_query):
     class WrongUsageExtension(SchemaExtension):
-        def on_execute(self):
+        def on_execute(self, execution_context: ExecutionContext):
             yield
 
         def on_executing_start(self): ...
@@ -595,7 +597,7 @@ class ExceptionTestingExtension(SchemaExtension):
         self.failing_hook = failing_hook
         self.called_hooks = set()
 
-    def on_operation(self):
+    def on_parse(self, execution_context: ExecutionContext)
         if self.failing_hook == "on_operation_start":
             raise Exception(self.failing_hook)
         self.called_hooks.add(1)
@@ -607,7 +609,7 @@ class ExceptionTestingExtension(SchemaExtension):
             raise Exception(self.failing_hook)
         self.called_hooks.add(8)
 
-    def on_parse(self):
+    def on_parse(self, execution_context: ExecutionContext)
         if self.failing_hook == "on_parse_start":
             raise Exception(self.failing_hook)
         self.called_hooks.add(2)
@@ -619,7 +621,7 @@ class ExceptionTestingExtension(SchemaExtension):
             raise Exception(self.failing_hook)
         self.called_hooks.add(3)
 
-    def on_validate(self):
+    def on_validate(self, execution_context: ExecutionContext)
         if self.failing_hook == "on_validate_start":
             raise Exception(self.failing_hook)
         self.called_hooks.add(4)
@@ -631,7 +633,7 @@ class ExceptionTestingExtension(SchemaExtension):
             raise Exception(self.failing_hook)
         self.called_hooks.add(5)
 
-    def on_execute(self):
+    def on_execute(self, execution_context: ExecutionContext):
         if self.failing_hook == "on_execute_start":
             raise Exception(self.failing_hook)
         self.called_hooks.add(6)
@@ -722,7 +724,7 @@ async def test_generic_exceptions_get_wrapped_in_a_graphql_error(
     exception = Exception("This should be wrapped in a GraphQL error")
 
     class MyExtension(SchemaExtension):
-        def on_parse(self):
+        def on_parse(self, execution_context: ExecutionContext)
             raise exception
 
     @strawberry.type
@@ -748,7 +750,7 @@ async def test_graphql_errors_get_not_wrapped_in_a_graphql_error(
     exception = GraphQLError("This should not be wrapped in a GraphQL error")
 
     class MyExtension(SchemaExtension):
-        def on_parse(self):
+        def on_parse(self, execution_context: ExecutionContext)
             raise exception
 
     @strawberry.type
@@ -769,7 +771,7 @@ async def test_graphql_errors_get_not_wrapped_in_a_graphql_error(
 @pytest.mark.asyncio
 async def test_dont_swallow_errors_in_parsing_hooks():
     class MyExtension(SchemaExtension):
-        def on_parse(self):
+        def on_parse(self, execution_context: ExecutionContext)
             raise Exception("This shouldn't be swallowed")
 
     @strawberry.type
@@ -794,10 +796,10 @@ def test_on_parsing_end_is_called_with_parsing_errors():
     execution_errors = False
 
     class MyExtension(SchemaExtension):
-        def on_parse(self):
+        def on_parse(self, execution_context: ExecutionContext)
             nonlocal execution_errors
             yield
-            execution_context = self.execution_context
+            execution_context = execution_context
             execution_errors = execution_context.errors
 
     @strawberry.type
@@ -820,13 +822,13 @@ def test_extension_execution_order_sync():
     execution_order: List[Type[SchemaExtension]] = []
 
     class ExtensionB(SchemaExtension):
-        def on_execute(self):
+        def on_execute(self, execution_context: ExecutionContext):
             execution_order.append(type(self))
             yield
             execution_order.append(type(self))
 
     class ExtensionC(SchemaExtension):
-        def on_execute(self):
+        def on_execute(self, execution_context: ExecutionContext):
             execution_order.append(type(self))
             yield
             execution_order.append(type(self))
@@ -853,7 +855,7 @@ def test_extension_execution_order_sync():
 
 def test_async_extension_in_sync_context():
     class ExtensionA(SchemaExtension):
-        async def on_execute(self):
+        async def on_execute(self, execution_context: ExecutionContext):
             yield
 
     @strawberry.type
@@ -869,9 +871,9 @@ def test_async_extension_in_sync_context():
 
 def test_extension_override_execution():
     class MyExtension(SchemaExtension):
-        def on_execute(self):
+        def on_execute(self, execution_context: ExecutionContext):
             # Always return a static response
-            self.execution_context.result = GraphQLExecutionResult(
+            execution_context.result = GraphQLExecutionResult(
                 data={
                     "surprise": "data",
                 },
@@ -903,9 +905,9 @@ def test_extension_override_execution():
 @pytest.mark.asyncio
 async def test_extension_override_execution_async():
     class MyExtension(SchemaExtension):
-        def on_execute(self):
+        def on_execute(self, execution_context: ExecutionContext):
             # Always return a static response
-            self.execution_context.result = GraphQLExecutionResult(
+            execution_context.result = GraphQLExecutionResult(
                 data={
                     "surprise": "data",
                 },
@@ -942,14 +944,14 @@ def test_execution_cache_example(mock_original_execute):
     response_cache = {}
 
     class ExecutionCache(SchemaExtension):
-        def on_execute(self):
+        def on_execute(self, execution_context: ExecutionContext):
             # Check if we've come across this query before
-            execution_context = self.execution_context
+            execution_context = execution_context
             self.cache_key = (
                 f"{execution_context.query}:{json.dumps(execution_context.variables)}"
             )
             if self.cache_key in response_cache:
-                self.execution_context.result = response_cache[self.cache_key]
+                execution_context.result = response_cache[self.cache_key]
             yield
             if self.cache_key not in response_cache:
                 response_cache[self.cache_key] = execution_context.result
@@ -1012,11 +1014,11 @@ def test_execution_reject_example(mock_original_execute):
     # docs actually works
 
     class RejectSomeQueries(SchemaExtension):
-        def on_execute(self):
+        def on_execute(self, execution_context: ExecutionContext):
             # Reject all operations called "RejectMe"
-            execution_context = self.execution_context
+            execution_context = execution_context
             if execution_context.operation_name == "RejectMe":
-                self.execution_context.result = GraphQLExecutionResult(
+                execution_context.result = GraphQLExecutionResult(
                     data=None,
                     errors=[GraphQLError("Well you asked for it")],
                 )
@@ -1062,9 +1064,9 @@ def test_extend_error_format_example():
     # Test that the example of how to extend error format
 
     class ExtendErrorFormat(SchemaExtension):
-        def on_operation(self):
+        def on_parse(self, execution_context: ExecutionContext)
             yield
-            result = self.execution_context.result
+            result = execution_context.result
             if getattr(result, "errors", None):
                 result.errors = [
                     StrawberryGraphQLError(
@@ -1102,8 +1104,8 @@ def test_extend_error_format_example():
 
 def test_extension_can_set_query():
     class MyExtension(SchemaExtension):
-        def on_operation(self):
-            self.execution_context.query = "{ hi }"
+        def on_parse(self, execution_context: ExecutionContext)
+            execution_context.query = "{ hi }"
             yield
 
     @strawberry.type
@@ -1126,8 +1128,8 @@ def test_extension_can_set_query():
 @pytest.mark.asyncio
 async def test_extension_can_set_query_async():
     class MyExtension(SchemaExtension):
-        def on_operation(self):
-            self.execution_context.query = "{ hi }"
+        def on_parse(self, execution_context: ExecutionContext)
+            execution_context.query = "{ hi }"
             yield
 
     @strawberry.type

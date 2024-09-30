@@ -8,6 +8,8 @@ import pytest
 import strawberry
 from strawberry.extensions import SchemaExtension
 
+from strawberry.types.execution import ExecutionContext
+
 
 @dataclasses.dataclass
 class SchemaHelper:
@@ -96,19 +98,19 @@ def hook_wrap(list_: List[str], hook_name: str):
 @pytest.fixture()
 def async_extension() -> Type[ExampleExtension]:
     class MyExtension(ExampleExtension):
-        async def on_operation(self):
+        async def on_parse(self, execution_context: ExecutionContext):
             with hook_wrap(self.called_hooks, SchemaExtension.on_operation.__name__):
                 yield
 
-        async def on_validate(self):
+        async def on_validate(self, execution_context: ExecutionContext):
             with hook_wrap(self.called_hooks, SchemaExtension.on_validate.__name__):
                 yield
 
-        async def on_parse(self):
+        async def on_parse(self, execution_context: ExecutionContext):
             with hook_wrap(self.called_hooks, SchemaExtension.on_parse.__name__):
                 yield
 
-        async def on_execute(self):
+        async def on_execute(self, execution_context: ExecutionContext)::
             with hook_wrap(self.called_hooks, SchemaExtension.on_execute.__name__):
                 yield
 

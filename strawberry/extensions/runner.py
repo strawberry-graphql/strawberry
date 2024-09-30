@@ -22,39 +22,42 @@ class SchemaExtensionsRunner:
 
     def __init__(
         self,
-        execution_context: ExecutionContext,
         extensions: Optional[List[SchemaExtension]] = None,
     ) -> None:
-        self.execution_context = execution_context
         self.extensions = extensions or []
+        self.operation_hooks = OperationContextManager.get_hooks(self.extensions)
+        self.validation_hooks = ValidationContextManager.get_hooks(self.extensions)
+        self.parsing_hooks = ParsingContextManager.get_hooks(self.extensions)
+        self.executing_hooks = ExecutingContextManager.get_hooks(self.extensions)
 
-    def operation(self) -> OperationContextManager:
-        return OperationContextManager(self.extensions)
 
-    def validation(self) -> ValidationContextManager:
-        return ValidationContextManager(self.extensions)
+    def operation(self, execution_context: ExecutionContext) -> OperationContextManager:
+        return OperationContextManager(self.operation_hooks, execution_context)
 
-    def parsing(self) -> ParsingContextManager:
-        return ParsingContextManager(self.extensions)
+    def validation(self, execution_context: ExecutionContext) -> ValidationContextManager:
+        return ValidationContextManager(self.validation_hooks, execution_context)
 
-    def executing(self) -> ExecutingContextManager:
-        return ExecutingContextManager(self.extensions)
+    def parsing(self, execution_context: ExecutionContext) -> ParsingContextManager:
+        return ParsingContextManager(self.parsing_hooks, execution_context)
 
-    def get_extensions_results_sync(self, ctx: ExecutionContext) -> Dict[str, Any]:
+    def executing(self, execution_context: ExecutionContext) -> ExecutingContextManager:
+        return ExecutingContextManager(self.validation_hooks, execution_context)
+
+    def get_extensions_results_sync(self, execution_context: ExecutionContext) -> Dict[str, Any]:
         data: Dict[str, Any] = {}
         for extension in self.extensions:
             if inspect.iscoroutinefunction(extension.get_results):
                 msg = "Cannot use async extension hook during sync execution"
                 raise RuntimeError(msg)
-            data.update(cast(Dict[str, Any], extension.get_results(ctx)))
+            data.update(cast(Dict[str, Any], extension.get_results(execution_context)))
 
         return data
 
-    async def get_extensions_results(self, ctx: ExecutionContext) -> Dict[str, Any]:
+    async def get_extensions_results(self, execution_context: ExecutionContext) -> Dict[str, Any]:
         data: Dict[str, Any] = {}
 
         for extension in self.extensions:
-            data.update(await await_maybe(extension.get_results(ctx)))
+            data.update(await await_maybe(extension.get_results(execution_context)))
 
-        data.update(ctx.extensions_results)
+        data.update(execution_context.extensions_results)
         return data

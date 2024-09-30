@@ -158,7 +158,7 @@ async def test_subscription_catches_extension_errors(
     default_query_types_and_query: SchemaHelper,
 ) -> None:
     class MyExtension(SchemaExtension):
-        def on_execute(self):
+        def on_execute(self, execution_context: ExecutionContext):
             raise ValueError("This is an error")
 
     schema = strawberry.Schema(
