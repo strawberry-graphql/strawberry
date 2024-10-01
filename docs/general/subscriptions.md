@@ -100,7 +100,7 @@ const wsLink = new GraphQLWsLink(
     connectionParams: {
       authToken: "Bearer I_AM_A_VALID_AUTH_TOKEN",
     },
-  })
+  }),
 );
 ```
 
@@ -256,7 +256,8 @@ schema = strawberry.Schema(query=Query, subscription=Subscription)
 
 ## Unsubscribing subscriptions
 
-In GraphQL, it is possible to unsubscribe from a subscription. Strawberry supoprts this behaviour, and is done using a `try...except` block.
+In GraphQL, it is possible to unsubscribe from a subscription. Strawberry
+supoprts this behaviour, and is done using a `try...except` block.
 
 In Apollo-client, closing a subscription can be acheived like the following:
 
@@ -268,7 +269,8 @@ const subscriber = client.subscribe({query: ...}).subscribe({...})
 subscriber.unsubscribe();
 ```
 
-Strawberry can easily capture when a subscriber unsubscribes using an `asyncio.CancelledError` exception.
+Strawberry can easily capture when a subscriber unsubscribes using an
+`asyncio.CancelledError` exception.
 
 ```python
 import asyncio
@@ -279,6 +281,7 @@ import strawberry
 
 # track active subscribers
 event_messages = {}
+
 
 @strawberry.type
 class Subscription:
