@@ -257,9 +257,9 @@ schema = strawberry.Schema(query=Query, subscription=Subscription)
 ## Unsubscribing subscriptions
 
 In GraphQL, it is possible to unsubscribe from a subscription. Strawberry
-supoprts this behaviour, and is done using a `try...except` block.
+supports this behaviour, and is done using a `try...except` block.
 
-In Apollo-client, closing a subscription can be acheived like the following:
+In Apollo-client, closing a subscription can be achieved like the following:
 
 ```javascript
 const client = useApolloClient();
