@@ -4,7 +4,7 @@ import pytest
 
 import strawberry
 from strawberry.extensions import SchemaExtension
-from strawberry.types.execution import ExecutionResult
+from strawberry.types.execution import ExecutionContext, ExecutionResult
 from tests.conftest import skip_if_gql_32
 
 from .conftest import ExampleExtension, SchemaHelper

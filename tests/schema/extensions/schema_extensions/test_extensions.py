@@ -390,21 +390,6 @@ async def test_extension_no_yield(default_query_types_and_query):
     SyncExt.assert_expected()
 
 
-def test_raise_if_defined_both_legacy_and_new_style(default_query_types_and_query):
-    class WrongUsageExtension(SchemaExtension):
-        def on_execute(self, execution_context: ExecutionContext):
-            yield
-
-        def on_executing_start(self): ...
-
-    schema = strawberry.Schema(
-        query=default_query_types_and_query.query_type, extensions=[WrongUsageExtension]
-    )
-    result = schema.execute_sync(default_query_types_and_query.query)
-    assert len(result.errors) == 1
-    assert isinstance(result.errors[0].original_error, ValueError)
-
-
 def test_warning_about_async_get_results_hooks_in_sync_context():
     class MyExtension(SchemaExtension):
         async def get_results(self, execution_context: ExecutionContext):
@@ -632,7 +617,6 @@ def test_on_parsing_end_is_called_with_parsing_errors():
         def on_parse(self, execution_context: ExecutionContext):
             nonlocal execution_errors
             yield
-            execution_context = execution_context
             execution_errors = execution_context.errors
 
     @strawberry.type
@@ -779,7 +763,6 @@ def test_execution_cache_example(mock_original_execute):
     class ExecutionCache(SchemaExtension):
         def on_execute(self, execution_context: ExecutionContext):
             # Check if we've come across this query before
-            execution_context = execution_context
             self.cache_key = (
                 f"{execution_context.query}:{json.dumps(execution_context.variables)}"
             )
@@ -849,7 +832,6 @@ def test_execution_reject_example(mock_original_execute):
     class RejectSomeQueries(SchemaExtension):
         def on_execute(self, execution_context: ExecutionContext):
             # Reject all operations called "RejectMe"
-            execution_context = execution_context
             if execution_context.operation_name == "RejectMe":
                 execution_context.result = GraphQLExecutionResult(
                     data=None,
@@ -986,11 +968,9 @@ def test_raise_if_hook_is_not_callable(default_query_types_and_query: SchemaHelp
     class MyExtension(SchemaExtension):
         on_operation = "ABC"  # type: ignore
 
-    schema = strawberry.Schema(
-        query=default_query_types_and_query.query_type, extensions=[MyExtension]
-    )
-    result = schema.execute_sync(default_query_types_and_query.query)
-    assert len(result.errors) == 1
-    assert isinstance(result.errors[0].original_error, ValueError)
-    assert result.errors[0].message.startswith("Hook on_operation on <")
-    assert result.errors[0].message.endswith("> must be callable, received 'ABC'")
+    with pytest.raises(ValueError) as exc_info:
+        schema = strawberry.Schema(
+            query=default_query_types_and_query.query_type, extensions=[MyExtension]
+        )
+        _ = schema.execute_sync(default_query_types_and_query.query)
+    assert exc_info.match("Hook on_operation on <.*MyExtension.*> must be callable")

@@ -1,5 +1,6 @@
 import strawberry
 from strawberry.extensions import SchemaExtension
+from strawberry.types.execution import ExecutionContext
 
 
 @strawberry.type

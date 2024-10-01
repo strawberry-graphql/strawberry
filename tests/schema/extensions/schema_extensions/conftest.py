@@ -97,6 +97,10 @@ def hook_wrap(list_: List[str], hook_name: str):
 @pytest.fixture()
 def async_extension() -> Type[ExampleExtension]:
     class MyExtension(ExampleExtension):
+        async def on_operation(self, execution_context: ExecutionContext):
+            with hook_wrap(self.called_hooks, SchemaExtension.on_operation.__name__):
+                yield
+
         async def on_validate(self, execution_context: ExecutionContext):
             with hook_wrap(self.called_hooks, SchemaExtension.on_validate.__name__):
                 yield

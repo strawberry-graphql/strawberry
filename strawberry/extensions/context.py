@@ -20,13 +20,13 @@ from typing import (
 )
 
 from strawberry.extensions import SchemaExtension
-from strawberry.types.execution import ExecutionContext
-from strawberry.utils.await_maybe import AwaitableOrValue
 
 if TYPE_CHECKING:
     from types import TracebackType
 
     from strawberry.extensions.base_extension import Hook
+    from strawberry.types.execution import ExecutionContext
+    from strawberry.utils.await_maybe import AwaitableOrValue
 
 
 class WrappedHook(NamedTuple):
@@ -94,7 +94,7 @@ class ExtensionContextManagerBase:
                 return cls.from_callable(extension, hook_fn)
 
             raise ValueError(
-                f"Hook {self.HOOK_NAME} on {extension} "
+                f"Hook {cls.HOOK_NAME} on {extension} "
                 f"must be callable, received {hook_fn!r}"
             )
 
