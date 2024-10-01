@@ -133,7 +133,7 @@ def test_extension_access_to_errors():
     execution_errors = []
 
     class MyExtension(SchemaExtension):
-        def on_parse(self, execution_context: ExecutionContext):
+        def on_operation(self, execution_context: ExecutionContext):
             nonlocal execution_errors
             yield
             execution_errors = execution_context.errors
@@ -168,7 +168,7 @@ def test_extension_access_to_root_value():
     root_value = None
 
     class MyExtension(SchemaExtension):
-        def on_parse(self, execution_context: ExecutionContext):
+        def on_operation(self, execution_context: ExecutionContext):
             nonlocal root_value
             yield
             root_value = execution_context.root_value
@@ -194,7 +194,7 @@ def test_can_initialize_extension(default_query_types_and_query):
         def __init__(self, arg: int):
             self.arg = arg
 
-        def on_parse(self, execution_context: ExecutionContext):
+        def on_operation(self, execution_context: ExecutionContext):
             yield
             execution_context.result.data = {"override": self.arg}
 
@@ -212,7 +212,7 @@ def test_can_initialize_extension(default_query_types_and_query):
 @pytest.fixture()
 def sync_extension() -> Type[ExampleExtension]:
     class MyExtension(ExampleExtension):
-        def on_parse(self, execution_context: ExecutionContext):
+        def on_operation(self, execution_context: ExecutionContext):
             with hook_wrap(self.called_hooks, SchemaExtension.on_operation.__name__):
                 yield
 
@@ -258,7 +258,7 @@ async def test_mixed_sync_and_async_extension_hooks(
     default_query_types_and_query, sync_extension
 ):
     class MyExtension(sync_extension):
-        async def on_parse(self, execution_context: ExecutionContext):
+        async def on_operation(self, execution_context: ExecutionContext):
             with hook_wrap(self.called_hooks, SchemaExtension.on_operation.__name__):
                 yield
 
@@ -294,7 +294,7 @@ async def test_execution_order(default_query_types_and_query):
         called_hooks.append(f"{klass.__name__}, {hook_name} Exited")
 
     class ExtensionA(ExampleExtension):
-        async def on_parse(self, execution_context: ExecutionContext):
+        async def on_operation(self, execution_context: ExecutionContext):
             with register_hook(SchemaExtension.on_operation.__name__, ExtensionA):
                 yield
 
@@ -311,7 +311,7 @@ async def test_execution_order(default_query_types_and_query):
                 yield
 
     class ExtensionB(ExampleExtension):
-        async def on_parse(self, execution_context: ExecutionContext):
+        async def on_operation(self, execution_context: ExecutionContext):
             with register_hook(SchemaExtension.on_operation.__name__, ExtensionB):
                 yield
 
@@ -374,7 +374,7 @@ async def test_extension_no_yield(default_query_types_and_query):
             f"{SchemaExtension.on_parse.__name__} Entered",
         ]
 
-        def on_parse(self, execution_context: ExecutionContext):
+        def on_operation(self, execution_context: ExecutionContext):
             self.called_hooks.append(self.__class__.expected[0])
 
         async def on_parse(self, execution_context: ExecutionContext):
@@ -897,7 +897,7 @@ def test_extend_error_format_example():
     # Test that the example of how to extend error format
 
     class ExtendErrorFormat(SchemaExtension):
-        def on_parse(self, execution_context: ExecutionContext):
+        def on_operation(self, execution_context: ExecutionContext):
             yield
             result = execution_context.result
             if getattr(result, "errors", None):
@@ -937,7 +937,7 @@ def test_extend_error_format_example():
 
 def test_extension_can_set_query():
     class MyExtension(SchemaExtension):
-        def on_parse(self, execution_context: ExecutionContext):
+        def on_operation(self, execution_context: ExecutionContext):
             execution_context.query = "{ hi }"
             yield
 
@@ -961,7 +961,7 @@ def test_extension_can_set_query():
 @pytest.mark.asyncio
 async def test_extension_can_set_query_async():
     class MyExtension(SchemaExtension):
-        def on_parse(self, execution_context: ExecutionContext):
+        def on_operation(self, execution_context: ExecutionContext):
             execution_context.query = "{ hi }"
             yield
 
