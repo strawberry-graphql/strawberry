@@ -19,11 +19,12 @@ class LifecycleStep(Enum):
 
 
 class SchemaExtension:
-    # to support extensions that still use the old signature
-    # we have an optional argument here for ease of initialization.
-    def __init__(
-        self, *, execution_context: ExecutionContext | None = None
-    ) -> None: ...
+    if not TYPE_CHECKING:
+        # to support extensions that still use the old signature
+        # we have an optional argument here for ease of initialization.
+        def __init__(
+            self, *, execution_context: ExecutionContext | None = None
+        ) -> None: ...
 
     def on_operation(  # type: ignore
         self, execution_context: ExecutionContext

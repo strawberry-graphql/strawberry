@@ -51,8 +51,10 @@ class OpenTelemetryExtension(SchemaExtension):
         if execution_context:
             self.execution_context = execution_context
 
-    def on_operation(self) -> Generator[None, None, None]:
-        self._operation_name = self.execution_context.operation_name
+    def on_operation(
+        self, execution_context: ExecutionContext
+    ) -> Generator[None, None, None]:
+        self._operation_name = execution_context.operation_name
         span_name = (
             f"GraphQL Query: {self._operation_name}"
             if self._operation_name
@@ -64,9 +66,9 @@ class OpenTelemetryExtension(SchemaExtension):
         )
         self._span_holder[LifecycleStep.OPERATION].set_attribute("component", "graphql")
 
-        if self.execution_context.query:
+        if execution_context.query:
             self._span_holder[LifecycleStep.OPERATION].set_attribute(
-                "query", self.execution_context.query
+                "query", execution_context.query
             )
 
         yield
@@ -75,12 +77,14 @@ class OpenTelemetryExtension(SchemaExtension):
         # operation but we don't know until the parsing stage has finished. If
         # that's the case we want to update the span name so that we have a more
         # useful name in our trace.
-        if not self._operation_name and self.execution_context.operation_name:
-            span_name = f"GraphQL Query: {self.execution_context.operation_name}"
+        if not self._operation_name and execution_context.operation_name:
+            span_name = f"GraphQL Query: {execution_context.operation_name}"
             self._span_holder[LifecycleStep.OPERATION].update_name(span_name)
         self._span_holder[LifecycleStep.OPERATION].end()
 
-    def on_validate(self) -> Generator[None, None, None]:
+    def on_validate(
+        self, execution_context: ExecutionContext
+    ) -> Generator[None, None, None]:
         ctx = trace.set_span_in_context(self._span_holder[LifecycleStep.OPERATION])
         self._span_holder[LifecycleStep.VALIDATION] = self._tracer.start_span(
             "GraphQL Validation",
@@ -89,7 +93,9 @@ class OpenTelemetryExtension(SchemaExtension):
         yield
         self._span_holder[LifecycleStep.VALIDATION].end()
 
-    def on_parse(self) -> Generator[None, None, None]:
+    def on_parse(
+        self, execution_context: ExecutionContext
+    ) -> Generator[None, None, None]:
         ctx = trace.set_span_in_context(self._span_holder[LifecycleStep.OPERATION])
         self._span_holder[LifecycleStep.PARSE] = self._tracer.start_span(
             "GraphQL Parsing", context=ctx

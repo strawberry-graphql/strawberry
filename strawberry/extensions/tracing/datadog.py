@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from functools import cached_property
+from functools import lru_cache
 from inspect import isawaitable
 from typing import TYPE_CHECKING, Any, Callable, Generator, Iterator, Optional
 
@@ -25,15 +25,15 @@ class DatadogTracingExtension(SchemaExtension):
         if execution_context:
             self.execution_context = execution_context
 
-    @cached_property
-    def _resource_name(self) -> str:
-        if self.execution_context.query is None:
+    @lru_cache
+    def _resource_name(self, execution_context: ExecutionContext) -> str:
+        if execution_context.query is None:
             return "query_missing"
 
-        query_hash = self.hash_query(self.execution_context.query)
+        query_hash = self.hash_query(execution_context.query)
 
-        if self.execution_context.operation_name:
-            return f"{self.execution_context.operation_name}:{query_hash}"
+        if execution_context.operation_name:
+            return f"{execution_context.operation_name}:{query_hash}"
 
         return query_hash
 
@@ -54,7 +54,7 @@ class DatadogTracingExtension(SchemaExtension):
             def create_span(self, lifecycle_step, name, **kwargs):
                 span = super().create_span(lifecycle_step, name, **kwargs)
                 if lifecycle_step == LifeCycleStep.OPERATION:
-                    span.set_tag("graphql.query", self.execution_context.query)
+                    span.set_tag("graphql.query", execution_context.query)
                 return span
         ```
         """
@@ -67,8 +67,8 @@ class DatadogTracingExtension(SchemaExtension):
     def hash_query(self, query: str) -> str:
         return hashlib.md5(query.encode("utf-8")).hexdigest()
 
-    def on_operation(self) -> Iterator[None]:
-        self._operation_name = self.execution_context.operation_name
+    def on_operation(self, execution_context: ExecutionContext) -> Iterator[None]:
+        self._operation_name = execution_context.operation_name
         span_name = (
             f"{self._operation_name}" if self._operation_name else "Anonymous Query"
         )
@@ -76,12 +76,12 @@ class DatadogTracingExtension(SchemaExtension):
         self.request_span = self.create_span(
             LifecycleStep.OPERATION,
             span_name,
-            resource=self._resource_name,
+            resource=self._resource_name(execution_context),
             service="strawberry",
         )
         self.request_span.set_tag("graphql.operation_name", self._operation_name)
 
-        query = self.execution_context.query
+        query = execution_context.query
 
         if query is not None:
             query = query.strip()
@@ -100,7 +100,9 @@ class DatadogTracingExtension(SchemaExtension):
 
         self.request_span.finish()
 
-    def on_validate(self) -> Generator[None, None, None]:
+    def on_validate(
+        self, execution_context: ExecutionContext
+    ) -> Generator[None, None, None]:
         self.validation_span = self.create_span(
             lifecycle_step=LifecycleStep.VALIDATION,
             name="Validation",
@@ -108,7 +110,9 @@ class DatadogTracingExtension(SchemaExtension):
         yield
         self.validation_span.finish()
 
-    def on_parse(self) -> Generator[None, None, None]:
+    def on_parse(
+        self, execution_context: ExecutionContext
+    ) -> Generator[None, None, None]:
         self.parsing_span = self.create_span(
             lifecycle_step=LifecycleStep.PARSE,
             name="Parsing",
@@ -149,6 +153,9 @@ class DatadogTracingExtension(SchemaExtension):
                 result = await result
 
             return result
+
+    def __hash__(self) -> int:
+        return id(self)
 
 
 class DatadogTracingExtensionSync(DatadogTracingExtension):

@@ -88,6 +88,9 @@ class ExecutionContext:
 
         return get_first_operation(graphql_document)
 
+    def __hash__(self) -> int:
+        return id(self)
+
 
 @dataclasses.dataclass
 class ExecutionResult:

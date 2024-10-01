@@ -4,6 +4,7 @@ from typing import Any, AsyncGenerator, Tuple, Type
 import pytest
 
 import strawberry
+from strawberry.types.execution import ExecutionContext
 
 if typing.TYPE_CHECKING:
     from strawberry.extensions.tracing.datadog import DatadogTracingExtension
@@ -263,13 +264,14 @@ async def test_create_span_override(datadog_extension):
     class CustomExtension(extension):
         def create_span(
             self,
+            execution_context: ExecutionContext,
             lifecycle_step: LifecycleStep,
             name: str,
             **kwargs,  # noqa: ANN003
         ):
             span = super().create_span(lifecycle_step, name, **kwargs)
             if lifecycle_step == LifecycleStep.OPERATION:
-                span.set_tag("graphql.query", self.execution_context.query)
+                span.set_tag("graphql.query", execution_context.query)
             return span
 
     schema = strawberry.Schema(

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import warnings
-from functools import cached_property
+from functools import lru_cache
 from inspect import isawaitable
 from typing import TYPE_CHECKING, Any, Callable, Generator, Optional
 
@@ -32,22 +32,24 @@ class SentryTracingExtension(SchemaExtension):
         if execution_context:
             self.execution_context = execution_context
 
-    @cached_property
-    def _resource_name(self) -> str:
-        assert self.execution_context.query
+    @lru_cache
+    def _resource_name(self, execution_context: ExecutionContext) -> str:
+        assert execution_context.query
 
-        query_hash = self.hash_query(self.execution_context.query)
+        query_hash = self.hash_query(execution_context.query)
 
-        if self.execution_context.operation_name:
-            return f"{self.execution_context.operation_name}:{query_hash}"
+        if execution_context.operation_name:
+            return f"{execution_context.operation_name}:{query_hash}"
 
         return query_hash
 
     def hash_query(self, query: str) -> str:
         return hashlib.md5(query.encode("utf-8")).hexdigest()
 
-    def on_operation(self) -> Generator[None, None, None]:
-        self._operation_name = self.execution_context.operation_name
+    def on_operation(
+        self, execution_context: ExecutionContext
+    ) -> Generator[None, None, None]:
+        self._operation_name = execution_context.operation_name
         name = f"{self._operation_name}" if self._operation_name else "Anonymous Query"
 
         with configure_scope() as scope:
@@ -63,22 +65,26 @@ class SentryTracingExtension(SchemaExtension):
 
         operation_type = "query"
 
-        assert self.execution_context.query
+        assert execution_context.query
 
-        if self.execution_context.query.strip().startswith("mutation"):
+        if execution_context.query.strip().startswith("mutation"):
             operation_type = "mutation"
-        if self.execution_context.query.strip().startswith("subscription"):
+        if execution_context.query.strip().startswith("subscription"):
             operation_type = "subscription"
 
         self.gql_span.set_tag("graphql.operation_type", operation_type)
-        self.gql_span.set_tag("graphql.resource_name", self._resource_name)
-        self.gql_span.set_data("graphql.query", self.execution_context.query)
+        self.gql_span.set_tag(
+            "graphql.resource_name", self._resource_name(execution_context)
+        )
+        self.gql_span.set_data("graphql.query", execution_context.query)
 
         yield
 
         self.gql_span.finish()
 
-    def on_validate(self) -> Generator[None, None, None]:
+    def on_validate(
+        self, execution_context: ExecutionContext
+    ) -> Generator[None, None, None]:
         self.validation_span = self.gql_span.start_child(
             op="validation", description="Validation"
         )
@@ -87,7 +93,9 @@ class SentryTracingExtension(SchemaExtension):
 
         self.validation_span.finish()
 
-    def on_parse(self) -> Generator[None, None, None]:
+    def on_parse(
+        self, execution_context: ExecutionContext
+    ) -> Generator[None, None, None]:
         self.parsing_span = self.gql_span.start_child(
             op="parsing", description="Parsing"
         )
@@ -131,6 +139,9 @@ class SentryTracingExtension(SchemaExtension):
                 result = await result
 
             return result
+
+    def __hash__(self) -> int:
+        return id(self)
 
 
 class SentryTracingExtensionSync(SentryTracingExtension):

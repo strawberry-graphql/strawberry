@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterator
+from typing import TYPE_CHECKING, Iterator
 
 from pyinstrument import Profiler
 
 from strawberry.extensions.base_extension import SchemaExtension
+
+if TYPE_CHECKING:
+    from strawberry.types.execution import ExecutionContext
 
 
 class PyInstrument(SchemaExtension):
@@ -17,7 +20,7 @@ class PyInstrument(SchemaExtension):
     ) -> None:
         self._report_path = report_path
 
-    def on_operation(self) -> Iterator[None]:
+    def on_operation(self, execution_context: ExecutionContext) -> Iterator[None]:
         profiler = Profiler()
         profiler.start()
 

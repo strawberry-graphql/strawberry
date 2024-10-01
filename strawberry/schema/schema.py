@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import warnings
 from functools import cached_property, lru_cache
 from typing import (
@@ -214,17 +215,21 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
     def get_extensions(self, sync: bool = False) -> List[SchemaExtension]:
-        extensions = []
+        ret: List[SchemaExtension] = []
         if self.directives:
-            extensions = [
-                *self.extensions,
-                DirectivesExtensionSync if sync else DirectivesExtension,
-            ]
-        extensions.extend(self.extensions)
-        return [
-            ext if isinstance(ext, SchemaExtension) else ext(execution_context=None)
-            for ext in extensions
-        ]
+            ret.append(
+                DirectivesExtensionSync() if sync else DirectivesExtension(),
+            )
+
+        for extension in self.extensions:
+            if isinstance(extension, SchemaExtension):
+                ret.append(extension)
+
+            elif inspect.signature(extension).parameters.get("execution_context"):
+                ret.append(extension(execution_context=None))  # type: ignore
+            ret.append(extension())
+
+        return ret
 
     @cached_property
     def _sync_extensions(self) -> List[SchemaExtension]:
@@ -237,13 +242,13 @@ class Schema(BaseSchema):
     @cached_property
     def sync_extension_runner(self) -> SchemaExtensionsRunner:
         return SchemaExtensionsRunner(
-            extensions=self.get_extensions(sync=True),
+            extensions=self._sync_extensions,
         )
 
     @cached_property
     def async_extension_runner(self) -> SchemaExtensionsRunner:
         return SchemaExtensionsRunner(
-            extensions=self.get_extensions(sync=False),
+            extensions=self._async_extensions,
         )
 
     def _get_middleware_manager(
@@ -347,7 +352,7 @@ class Schema(BaseSchema):
             root_value=root_value,
             operation_name=operation_name,
         )
-        extensions = self.get_extensions()
+        extensions = self._async_extensions
         return await execute(
             self._schema,
             execution_context=execution_context,
