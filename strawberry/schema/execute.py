@@ -238,7 +238,9 @@ def execute_sync(
                     return ExecutionResult(
                         data=None,
                         errors=[error],
-                        extensions=extensions_runner.get_extensions_results_sync(execution_context),
+                        extensions=extensions_runner.get_extensions_results_sync(
+                            execution_context
+                        ),
                     )
 
             if execution_context.operation_type not in allowed_operation_types:
@@ -251,7 +253,9 @@ def execute_sync(
                     return ExecutionResult(
                         data=None,
                         errors=execution_context.errors,
-                        extensions=extensions_runner.get_extensions_results_sync(execution_context),
+                        extensions=extensions_runner.get_extensions_results_sync(
+                            execution_context
+                        ),
                     )
 
             with extensions_runner.executing(execution_context):

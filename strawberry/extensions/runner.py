@@ -30,11 +30,12 @@ class SchemaExtensionsRunner:
         self.parsing_hooks = ParsingContextManager.get_hooks(self.extensions)
         self.executing_hooks = ExecutingContextManager.get_hooks(self.extensions)
 
-
     def operation(self, execution_context: ExecutionContext) -> OperationContextManager:
         return OperationContextManager(self.operation_hooks, execution_context)
 
-    def validation(self, execution_context: ExecutionContext) -> ValidationContextManager:
+    def validation(
+        self, execution_context: ExecutionContext
+    ) -> ValidationContextManager:
         return ValidationContextManager(self.validation_hooks, execution_context)
 
     def parsing(self, execution_context: ExecutionContext) -> ParsingContextManager:
@@ -43,7 +44,9 @@ class SchemaExtensionsRunner:
     def executing(self, execution_context: ExecutionContext) -> ExecutingContextManager:
         return ExecutingContextManager(self.executing_hooks, execution_context)
 
-    def get_extensions_results_sync(self, execution_context: ExecutionContext) -> Dict[str, Any]:
+    def get_extensions_results_sync(
+        self, execution_context: ExecutionContext
+    ) -> Dict[str, Any]:
         data: Dict[str, Any] = {}
         for extension in self.extensions:
             if inspect.iscoroutinefunction(extension.get_results):
@@ -53,7 +56,9 @@ class SchemaExtensionsRunner:
 
         return data
 
-    async def get_extensions_results(self, execution_context: ExecutionContext) -> Dict[str, Any]:
+    async def get_extensions_results(
+        self, execution_context: ExecutionContext
+    ) -> Dict[str, Any]:
         data: Dict[str, Any] = {}
 
         for extension in self.extensions:
