@@ -1,5 +1,6 @@
 import contextlib
 import json
+from unittest import mock
 import warnings
 from typing import Any, List, Optional, Type
 from unittest.mock import patch
@@ -14,6 +15,7 @@ from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.extensions import SchemaExtension
 
 from strawberry.types.execution import ExecutionContext
+
 
 from .conftest import ExampleExtension, ExecType, SchemaHelper, hook_wrap
 
@@ -46,22 +48,11 @@ def test_base_extension():
     assert result.extensions == {}
 
 
-def test_called_only_if_overriden(monkeypatch: pytest.MonkeyPatch):
-    called = False
-
-    def dont_call_me(self_):
-        nonlocal called
-        called = True
-
-    class ExtensionNoHooks(SchemaExtension): ...
-
-    for hook in (
-        ExtensionNoHooks.on_parse,
-        ExtensionNoHooks.on_operation,
-        ExtensionNoHooks.on_execute,
-        ExtensionNoHooks.on_validate,
-    ):
-        monkeypatch.setattr(SchemaExtension, hook.__name__, dont_call_me)
+def test_called_only_if_overridden(monkeypatch: pytest.MonkeyPatch) -> None:
+    from strawberry.extensions.context import OperationContextManager, ParsingContextManager, ValidationContextManager, ExecutingContextManager
+    hooks_mock = mock.Mock()
+    for manager in [OperationContextManager, ParsingContextManager, ValidationContextManager, ExecutingContextManager]:
+        monkeypatch.setattr(manager, "DEFAULT_HOOK", hooks_mock)
 
     @strawberry.type
     class Person:
@@ -72,8 +63,9 @@ def test_called_only_if_overriden(monkeypatch: pytest.MonkeyPatch):
         @strawberry.field
         def person(self) -> Person:
             return Person()
-
-    schema = strawberry.Schema(query=Query, extensions=[ExtensionNoHooks])
+    class ExtNoHooks(SchemaExtension):
+        pass
+    schema = strawberry.Schema(query=Query, extensions=[ExtNoHooks])
 
     query = """
         query {
@@ -88,14 +80,15 @@ def test_called_only_if_overriden(monkeypatch: pytest.MonkeyPatch):
     assert not result.errors
 
     assert result.extensions == {}
-    assert not called
+    hooks_mock.assert_not_called()   
+
 
 
 def test_extension_access_to_parsed_document():
     query_name = ""
 
     class MyExtension(SchemaExtension):
-        def on_parse(self, execution_context: ExecutionContext)
+        def on_parse(self, execution_context: ExecutionContext):
             nonlocal query_name
             yield
             query_definition = execution_context.graphql_document.definitions[0]
@@ -131,7 +124,7 @@ def test_extension_access_to_errors():
     execution_errors = []
 
     class MyExtension(SchemaExtension):
-        def on_parse(self, execution_context: ExecutionContext)
+        def on_parse(self, execution_context: ExecutionContext):
             nonlocal execution_errors
             yield
             execution_errors = execution_context.errors
@@ -166,7 +159,7 @@ def test_extension_access_to_root_value():
     root_value = None
 
     class MyExtension(SchemaExtension):
-        def on_parse(self, execution_context: ExecutionContext)
+        def on_parse(self, execution_context: ExecutionContext):
             nonlocal root_value
             yield
             root_value = execution_context.root_value
@@ -192,7 +185,7 @@ def test_can_initialize_extension(default_query_types_and_query):
         def __init__(self, arg: int):
             self.arg = arg
 
-        def on_parse(self, execution_context: ExecutionContext)
+        def on_parse(self, execution_context: ExecutionContext):
             yield
             execution_context.result.data = {"override": self.arg}
 
@@ -210,15 +203,15 @@ def test_can_initialize_extension(default_query_types_and_query):
 @pytest.fixture()
 def sync_extension() -> Type[ExampleExtension]:
     class MyExtension(ExampleExtension):
-        def on_parse(self, execution_context: ExecutionContext)
+        def on_parse(self, execution_context: ExecutionContext):
             with hook_wrap(self.called_hooks, SchemaExtension.on_operation.__name__):
                 yield
 
-        def on_validate(self, execution_context: ExecutionContext)
+        def on_validate(self, execution_context: ExecutionContext):
             with hook_wrap(self.called_hooks, SchemaExtension.on_validate.__name__):
                 yield
 
-        def on_parse(self, execution_context: ExecutionContext)
+        def on_parse(self, execution_context: ExecutionContext):
             with hook_wrap(self.called_hooks, SchemaExtension.on_parse.__name__):
                 yield
 
@@ -226,7 +219,7 @@ def sync_extension() -> Type[ExampleExtension]:
             with hook_wrap(self.called_hooks, SchemaExtension.on_execute.__name__):
                 yield
 
-        def get_results(self):
+        def get_results(self, execution_context: ExecutionContext):
             self.called_hooks.append("get_results")
             return {"example": "example"}
 
@@ -256,11 +249,11 @@ async def test_mixed_sync_and_async_extension_hooks(
     default_query_types_and_query, sync_extension
 ):
     class MyExtension(sync_extension):
-        async def on_parse(self, execution_context: ExecutionContext)
+        async def on_parse(self, execution_context: ExecutionContext):
             with hook_wrap(self.called_hooks, SchemaExtension.on_operation.__name__):
                 yield
 
-        async def on_parse(self, execution_context: ExecutionContext)
+        async def on_parse(self, execution_context: ExecutionContext):
             with hook_wrap(self.called_hooks, SchemaExtension.on_parse.__name__):
                 yield
 
@@ -292,15 +285,15 @@ async def test_execution_order(default_query_types_and_query):
         called_hooks.append(f"{klass.__name__}, {hook_name} Exited")
 
     class ExtensionA(ExampleExtension):
-        async def on_parse(self, execution_context: ExecutionContext)
+        async def on_parse(self, execution_context: ExecutionContext):
             with register_hook(SchemaExtension.on_operation.__name__, ExtensionA):
                 yield
 
-        async def on_parse(self, execution_context: ExecutionContext)
+        async def on_parse(self, execution_context: ExecutionContext):
             with register_hook(SchemaExtension.on_parse.__name__, ExtensionA):
                 yield
 
-        def on_validate(self, execution_context: ExecutionContext)
+        def on_validate(self, execution_context: ExecutionContext):
             with register_hook(SchemaExtension.on_validate.__name__, ExtensionA):
                 yield
 
@@ -309,15 +302,15 @@ async def test_execution_order(default_query_types_and_query):
                 yield
 
     class ExtensionB(ExampleExtension):
-        async def on_parse(self, execution_context: ExecutionContext)
+        async def on_parse(self, execution_context: ExecutionContext):
             with register_hook(SchemaExtension.on_operation.__name__, ExtensionB):
                 yield
 
-        def on_parse(self, execution_context: ExecutionContext)
+        def on_parse(self, execution_context: ExecutionContext):
             with register_hook(SchemaExtension.on_parse.__name__, ExtensionB):
                 yield
 
-        def on_validate(self, execution_context: ExecutionContext)
+        def on_validate(self, execution_context: ExecutionContext):
             with register_hook(SchemaExtension.on_validate.__name__, ExtensionB):
                 yield
 
@@ -372,10 +365,10 @@ async def test_extension_no_yield(default_query_types_and_query):
             f"{SchemaExtension.on_parse.__name__} Entered",
         ]
 
-        def on_parse(self, execution_context: ExecutionContext)
+        def on_parse(self, execution_context: ExecutionContext):
             self.called_hooks.append(self.__class__.expected[0])
 
-        async def on_parse(self, execution_context: ExecutionContext)
+        async def on_parse(self, execution_context: ExecutionContext):
             self.called_hooks.append(self.__class__.expected[1])
 
     schema = strawberry.Schema(
@@ -402,179 +395,9 @@ def test_raise_if_defined_both_legacy_and_new_style(default_query_types_and_quer
     assert len(result.errors) == 1
     assert isinstance(result.errors[0].original_error, ValueError)
 
-
-async def test_legacy_extension_supported():
-    with warnings.catch_warnings(record=True) as w:
-        warnings.filterwarnings(
-            "ignore",
-            category=DeprecationWarning,
-            message=r"'.*' is deprecated and slated for removal in Python 3\.\d+",
-        )
-
-        class CompatExtension(ExampleExtension):
-            async def on_request_start(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_operation.__name__} Entered"
-                )
-
-            async def on_request_end(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_operation.__name__} Exited"
-                )
-
-            async def on_validation_start(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_validate.__name__} Entered"
-                )
-
-            async def on_validation_end(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_validate.__name__} Exited"
-                )
-
-            async def on_parsing_start(self):
-                self.called_hooks.append(f"{SchemaExtension.on_parse.__name__} Entered")
-
-            async def on_parsing_end(self):
-                self.called_hooks.append(f"{SchemaExtension.on_parse.__name__} Exited")
-
-            def on_executing_start(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_execute.__name__} Entered"
-                )
-
-            def on_executing_end(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_execute.__name__} Exited"
-                )
-
-        @strawberry.type
-        class Person:
-            name: str = "Jess"
-
-        @strawberry.type
-        class Query:
-            @strawberry.field
-            def person(self) -> Person:
-                return Person()
-
-        schema = strawberry.Schema(query=Query, extensions=[CompatExtension])
-        query = "query TestQuery { person { name } }"
-
-        result = await schema.execute(query)
-        assert result.errors is None
-
-        assert CompatExtension.called_hooks == list(
-            filter(lambda x: x.startswith("on_"), ExampleExtension.expected)
-        )
-        assert "Event driven styled extensions for" in w[0].message.args[0]
-
-
-async def test_legacy_only_start():
-    with warnings.catch_warnings(record=True) as w:
-        warnings.filterwarnings(
-            "ignore",
-            category=DeprecationWarning,
-            message=r"'.*' is deprecated and slated for removal in Python 3\.\d+",
-        )
-
-        class CompatExtension(ExampleExtension):
-            expected = list(
-                filter(lambda x: x.endswith(" Entered"), ExampleExtension.expected)
-            )
-
-            async def on_request_start(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_operation.__name__} Entered"
-                )
-
-            async def on_validation_start(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_validate.__name__} Entered"
-                )
-
-            async def on_parsing_start(self):
-                self.called_hooks.append(f"{SchemaExtension.on_parse.__name__} Entered")
-
-            def on_executing_start(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_execute.__name__} Entered"
-                )
-
-        @strawberry.type
-        class Person:
-            name: str = "Jess"
-
-        @strawberry.type
-        class Query:
-            @strawberry.field
-            def person(self) -> Person:
-                return Person()
-
-        schema = strawberry.Schema(query=Query, extensions=[CompatExtension])
-        query = "query TestQuery { person { name } }"
-
-        result = await schema.execute(query)
-        assert result.errors is None
-
-        CompatExtension.assert_expected()
-        assert "Event driven styled extensions for" in w[0].message.args[0]
-
-
-async def test_legacy_only_end():
-    with warnings.catch_warnings(record=True) as w:
-        warnings.filterwarnings(
-            "ignore",
-            category=DeprecationWarning,
-            message=r"'.*' is deprecated and slated for removal in Python 3\.\d+",
-        )
-
-        class CompatExtension(ExampleExtension):
-            expected = list(
-                filter(lambda x: x.endswith(" Exited"), ExampleExtension.expected)
-            )
-
-            async def on_request_end(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_operation.__name__} Exited"
-                )
-
-            async def on_validation_end(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_validate.__name__} Exited"
-                )
-
-            async def on_parsing_end(self):
-                self.called_hooks.append(f"{SchemaExtension.on_parse.__name__} Exited")
-
-            def on_executing_end(self):
-                self.called_hooks.append(
-                    f"{SchemaExtension.on_execute.__name__} Exited"
-                )
-
-        @strawberry.type
-        class Person:
-            name: str = "Jess"
-
-        @strawberry.type
-        class Query:
-            @strawberry.field
-            def person(self) -> Person:
-                return Person()
-
-        schema = strawberry.Schema(query=Query, extensions=[CompatExtension])
-        query = "query TestQuery { person { name } }"
-
-        result = await schema.execute(query)
-        assert result.errors is None
-
-        CompatExtension.assert_expected()
-        assert "Event driven styled extensions for" in w[0].message.args[0]
-
-
 def test_warning_about_async_get_results_hooks_in_sync_context():
     class MyExtension(SchemaExtension):
-        async def get_results(self):
+        async def get_results(self, execution_context: ExecutionContext):
             pass
 
     @strawberry.type
@@ -596,12 +419,11 @@ class ExceptionTestingExtension(SchemaExtension):
     def __init__(self, failing_hook: str):
         self.failing_hook = failing_hook
         self.called_hooks = set()
-
-    def on_parse(self, execution_context: ExecutionContext)
+    def on_operation(self, execution_context: ExecutionContext):
         if self.failing_hook == "on_operation_start":
             raise Exception(self.failing_hook)
         self.called_hooks.add(1)
-
+        
         with contextlib.suppress(Exception):
             yield
 
@@ -609,7 +431,7 @@ class ExceptionTestingExtension(SchemaExtension):
             raise Exception(self.failing_hook)
         self.called_hooks.add(8)
 
-    def on_parse(self, execution_context: ExecutionContext)
+    def on_parse(self, execution_context: ExecutionContext):
         if self.failing_hook == "on_parse_start":
             raise Exception(self.failing_hook)
         self.called_hooks.add(2)
@@ -621,7 +443,7 @@ class ExceptionTestingExtension(SchemaExtension):
             raise Exception(self.failing_hook)
         self.called_hooks.add(3)
 
-    def on_validate(self, execution_context: ExecutionContext)
+    def on_validate(self, execution_context: ExecutionContext):
         if self.failing_hook == "on_validate_start":
             raise Exception(self.failing_hook)
         self.called_hooks.add(4)
@@ -724,7 +546,7 @@ async def test_generic_exceptions_get_wrapped_in_a_graphql_error(
     exception = Exception("This should be wrapped in a GraphQL error")
 
     class MyExtension(SchemaExtension):
-        def on_parse(self, execution_context: ExecutionContext)
+        def on_parse(self, execution_context: ExecutionContext):
             raise exception
 
     @strawberry.type
@@ -750,7 +572,7 @@ async def test_graphql_errors_get_not_wrapped_in_a_graphql_error(
     exception = GraphQLError("This should not be wrapped in a GraphQL error")
 
     class MyExtension(SchemaExtension):
-        def on_parse(self, execution_context: ExecutionContext)
+        def on_parse(self, execution_context: ExecutionContext):
             raise exception
 
     @strawberry.type
@@ -771,7 +593,7 @@ async def test_graphql_errors_get_not_wrapped_in_a_graphql_error(
 @pytest.mark.asyncio
 async def test_dont_swallow_errors_in_parsing_hooks():
     class MyExtension(SchemaExtension):
-        def on_parse(self, execution_context: ExecutionContext)
+        def on_parse(self, execution_context: ExecutionContext):
             raise Exception("This shouldn't be swallowed")
 
     @strawberry.type
@@ -796,7 +618,7 @@ def test_on_parsing_end_is_called_with_parsing_errors():
     execution_errors = False
 
     class MyExtension(SchemaExtension):
-        def on_parse(self, execution_context: ExecutionContext)
+        def on_parse(self, execution_context: ExecutionContext):
             nonlocal execution_errors
             yield
             execution_context = execution_context
@@ -1064,7 +886,7 @@ def test_extend_error_format_example():
     # Test that the example of how to extend error format
 
     class ExtendErrorFormat(SchemaExtension):
-        def on_parse(self, execution_context: ExecutionContext)
+        def on_parse(self, execution_context: ExecutionContext):
             yield
             result = execution_context.result
             if getattr(result, "errors", None):
@@ -1104,7 +926,7 @@ def test_extend_error_format_example():
 
 def test_extension_can_set_query():
     class MyExtension(SchemaExtension):
-        def on_parse(self, execution_context: ExecutionContext)
+        def on_parse(self, execution_context: ExecutionContext):
             execution_context.query = "{ hi }"
             yield
 
@@ -1128,7 +950,7 @@ def test_extension_can_set_query():
 @pytest.mark.asyncio
 async def test_extension_can_set_query_async():
     class MyExtension(SchemaExtension):
-        def on_parse(self, execution_context: ExecutionContext)
+        def on_parse(self, execution_context: ExecutionContext):
             execution_context.query = "{ hi }"
             yield
 

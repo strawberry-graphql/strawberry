@@ -41,7 +41,7 @@ class SchemaExtensionsRunner:
         return ParsingContextManager(self.parsing_hooks, execution_context)
 
     def executing(self, execution_context: ExecutionContext) -> ExecutingContextManager:
-        return ExecutingContextManager(self.validation_hooks, execution_context)
+        return ExecutingContextManager(self.executing_hooks, execution_context)
 
     def get_extensions_results_sync(self, execution_context: ExecutionContext) -> Dict[str, Any]:
         data: Dict[str, Any] = {}

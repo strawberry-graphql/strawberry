@@ -134,7 +134,7 @@ async def test_extensions_results_are_cleared_between_subscription_yields(
     class MyExtension(SchemaExtension):
         execution_number = 0
 
-        def get_results(self):
+        def get_results(self, execution_context: ExecutionContext):
             self.execution_number += 1
             return {str(self.execution_number): self.execution_number}
 

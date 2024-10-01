@@ -106,21 +106,22 @@ class ExtensionContextManagerBase:
     @staticmethod
     def from_callable(
         extension: SchemaExtension,
-        func: Callable[[SchemaExtension], AwaitableOrValue[Any]],
+        func: Callable[[SchemaExtension, ExecutionContext], AwaitableOrValue[Any]],
     ) -> WrappedHook:
+        self_ = extension   
         if iscoroutinefunction(func):
 
             @contextlib.asynccontextmanager
-            async def iterator() -> AsyncIterator[None]:
-                await func(extension)
+            async def iterator(execution_context: ExecutionContext) -> AsyncIterator[None]:
+                await func(self_, execution_context)
                 yield
 
             return WrappedHook(extension=extension, hook=iterator, is_async=True)
         else:
 
             @contextlib.contextmanager
-            def iterator() -> Iterator[None]:
-                func(extension)
+            def iterator(execution_context: ExecutionContext) -> Iterator[None]:
+                func(self_, execution_context)
                 yield
 
             return WrappedHook(extension=extension, hook=iterator, is_async=False)
