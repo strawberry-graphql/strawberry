@@ -13,7 +13,7 @@ example the following code will throw this error:
 import strawberry
 
 
-# note the lack of @strawberry.enum here:
+@strawberry.enum here:
 class NotAnEnum:
     A = "A"
 
@@ -36,10 +36,11 @@ will fix this error:
 
 ```python
 import strawberry
+from enum import Enum
 
 
 @strawberry.enum
-class NotAnEnum:
+class NotAnEnum(Enum):
     A = "A"
 
 

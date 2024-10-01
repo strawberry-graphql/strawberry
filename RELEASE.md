@@ -1,6 +1,6 @@
 Release type: patch
 
-This release adds support for using rwa Python enum types in your schema
+This release adds support for using raw Python enum types in your schema
 (enums that are not decorated with `@strawberry.enum`)
 
 This is useful if you have enum types from other places in your code

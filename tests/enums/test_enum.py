@@ -182,3 +182,21 @@ def test_default_enum_reuse() -> None:
 
     definition = get_object_definition(SomeType, strict=True)
     assert definition.fields[1].type is definition.fields[1].type
+
+
+def test_default_enum_with_enum_value() -> None:
+    class Foo(Enum):
+        BAR = "bar"
+        BAZ = strawberry.enum_value("baz")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def foo(self, foo: Foo) -> str:
+            return foo.value
+
+    schema = strawberry.Schema(Query)
+    res = schema.execute_sync("{ foo(foo: BAZ) }")
+    assert not res.errors
+    assert res.data
+    assert res.data["foo"] == "baz"
