@@ -105,11 +105,13 @@ class ExtensionContextManagerBase:
         extension: SchemaExtension,
         func: Callable[[SchemaExtension, ExecutionContext], AwaitableOrValue[Any]],
     ) -> WrappedHook:
-        self_ = extension   
+        self_ = extension
         if iscoroutinefunction(func):
 
             @contextlib.asynccontextmanager
-            async def iterator(execution_context: ExecutionContext) -> AsyncIterator[None]:
+            async def iterator(
+                execution_context: ExecutionContext,
+            ) -> AsyncIterator[None]:
                 await func(self_, execution_context)
                 yield
 

@@ -1,8 +1,7 @@
 import contextlib
 import json
-from unittest import mock
-import warnings
 from typing import Any, List, Optional, Type
+from unittest import mock
 from unittest.mock import patch
 
 import pytest
@@ -13,9 +12,7 @@ from graphql import execute as original_execute
 import strawberry
 from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.extensions import SchemaExtension
-
 from strawberry.types.execution import ExecutionContext
-
 
 from .conftest import ExampleExtension, ExecType, SchemaHelper, hook_wrap
 
@@ -49,9 +46,20 @@ def test_base_extension():
 
 
 def test_called_only_if_overridden(monkeypatch: pytest.MonkeyPatch) -> None:
-    from strawberry.extensions.context import OperationContextManager, ParsingContextManager, ValidationContextManager, ExecutingContextManager
+    from strawberry.extensions.context import (
+        ExecutingContextManager,
+        OperationContextManager,
+        ParsingContextManager,
+        ValidationContextManager,
+    )
+
     hooks_mock = mock.Mock()
-    for manager in [OperationContextManager, ParsingContextManager, ValidationContextManager, ExecutingContextManager]:
+    for manager in [
+        OperationContextManager,
+        ParsingContextManager,
+        ValidationContextManager,
+        ExecutingContextManager,
+    ]:
         monkeypatch.setattr(manager, "DEFAULT_HOOK", hooks_mock)
 
     @strawberry.type
@@ -63,8 +71,10 @@ def test_called_only_if_overridden(monkeypatch: pytest.MonkeyPatch) -> None:
         @strawberry.field
         def person(self) -> Person:
             return Person()
+
     class ExtNoHooks(SchemaExtension):
         pass
+
     schema = strawberry.Schema(query=Query, extensions=[ExtNoHooks])
 
     query = """
@@ -80,8 +90,7 @@ def test_called_only_if_overridden(monkeypatch: pytest.MonkeyPatch) -> None:
     assert not result.errors
 
     assert result.extensions == {}
-    hooks_mock.assert_not_called()   
-
+    hooks_mock.assert_not_called()
 
 
 def test_extension_access_to_parsed_document():
@@ -395,6 +404,7 @@ def test_raise_if_defined_both_legacy_and_new_style(default_query_types_and_quer
     assert len(result.errors) == 1
     assert isinstance(result.errors[0].original_error, ValueError)
 
+
 def test_warning_about_async_get_results_hooks_in_sync_context():
     class MyExtension(SchemaExtension):
         async def get_results(self, execution_context: ExecutionContext):
@@ -419,11 +429,12 @@ class ExceptionTestingExtension(SchemaExtension):
     def __init__(self, failing_hook: str):
         self.failing_hook = failing_hook
         self.called_hooks = set()
+
     def on_operation(self, execution_context: ExecutionContext):
         if self.failing_hook == "on_operation_start":
             raise Exception(self.failing_hook)
         self.called_hooks.add(1)
-        
+
         with contextlib.suppress(Exception):
             yield
 
