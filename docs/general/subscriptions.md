@@ -288,19 +288,19 @@ class Subscription:
     @strawberry.subscription
     async def message(self) -> AsyncGenerator[int, None]:
         try:
-            subId = uuid4()
+            subscription_id = uuid4()
 
-            event_messages[subId] = []
+            event_messages[subscription_id] = []
 
             while True:
-                if len(event_messages[subId]) > 0:
-                    yield event_messages[subId]
-                    event_messages[subId].clear()
+                if len(event_messages[subscription_id]) > 0:
+                    yield event_messages[subscription_id]
+                    event_messages[subscription_id].clear()
 
                 await asyncio.sleep(1)
         except asyncio.CancelledError:
             # stop listening to events
-            del event_messages[subId]
+            del event_messages[subscription_id]
 ```
 
 ## GraphQL over WebSocket protocols
