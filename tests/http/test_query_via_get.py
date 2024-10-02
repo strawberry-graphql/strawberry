@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from .clients.base import HttpClient
 
 
@@ -40,5 +42,5 @@ async def test_fails_if_allow_queries_via_get_false(http_client_class):
 
     response = await http_client.query(method="get", query="{ hello }")
 
-    assert response.status_code == 400
-    assert "queries are not allowed when using GET" in response.text
+    assert response.status_code == HTTPStatus.METHOD_NOT_ALLOWED
+    assert HTTPStatus.METHOD_NOT_ALLOWED.phrase in response.text
