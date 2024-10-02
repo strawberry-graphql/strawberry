@@ -111,12 +111,12 @@ class TypeScriptPlugin(QueryCodegenPlugin):
                     field_row = self._print_oneof_field(field)
                 else:
                     # ... and the rest set to `never` to prevent multiple from being set
-                    field_row = f"{field.name}: never"
-                option_fields.append(textwrap.indent(field_row, " " * 4))
-            options.append("{\n" + ",\n".join(option_fields) + "\n}")
+                    field_row = f"{field.name}?: never"
+                option_fields.append(field_row)
+            options.append("{ " + ", ".join(option_fields) + " }")
 
         # Union all the options together
-        all_options = " | ".join(options)
+        all_options = "\n    | ".join(options)
 
         return f"type {type_.name} = {all_options}"
 
