@@ -134,10 +134,12 @@ class Query:
         return LifeContainer([person], [dinosaur])
 
     @strawberry.field
-    def one_of(self, value: OneOfInput) -> str: ...
+    def one_of(self, value: OneOfInput) -> str: ...  # pragma: no cover
 
     @strawberry.field
-    def one_of_typename(self, value: OneOfInput) -> PersonOrAnimal: ...
+    def one_of_typename(
+        self, value: OneOfInput
+    ) -> PersonOrAnimal: ...  # pragma: no cover
 
 
 @strawberry.input
