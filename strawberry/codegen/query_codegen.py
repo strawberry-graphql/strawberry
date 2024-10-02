@@ -645,7 +645,7 @@ class QueryCodegen:
     ) -> Tuple[
         Union[type, StrawberryType], Optional[Callable[[GraphQLType], GraphQLType]]
     ]:
-        wrapper = None
+        wrapper: Optional[Callable[[GraphQLType], GraphQLType]] = None
 
         if isinstance(type_, StrawberryOptional):
             type_, previous_wrapper = self._unwrap_type(type_.of_type)
