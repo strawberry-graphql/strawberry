@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.244.0 - 2024-10-05
+--------------------
+
+Starting with this release, WebSocket logic now lives in the base class shared between all HTTP integrations.
+This makes the behaviour of WebSockets much more consistent between integrations and easier to maintain.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3638](https://github.com/strawberry-graphql/strawberry/pull/3638/)
+
+
 0.243.1 - 2024-09-26
 --------------------
 
