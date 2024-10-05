@@ -1,6 +1,7 @@
 import warnings
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, AsyncGenerator, Callable, Dict, Optional, cast
+from typing_extensions import TypeGuard
 
 from quart import Request, Response, request
 from quart.views import View
@@ -46,7 +47,9 @@ class QuartHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class GraphQLView(
-    AsyncBaseHTTPView[Request, Response, Response, Context, RootValue],
+    AsyncBaseHTTPView[
+        Request, Response, Response, Request, Response, Context, RootValue
+    ],
     View,
 ):
     _ide_subscription_enabled = False
@@ -120,6 +123,17 @@ class GraphQLView(
                 **headers,
             },
         )
+
+    def is_websocket_request(self, request: Request) -> TypeGuard[Request]:
+        return False
+
+    async def pick_websocket_subprotocol(self, request: Request) -> Optional[str]:
+        raise NotImplementedError
+
+    async def create_websocket_response(
+        self, request: Request, subprotocol: Optional[str]
+    ) -> Response:
+        raise NotImplementedError
 
 
 __all__ = ["GraphQLView"]

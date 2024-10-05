@@ -9,6 +9,7 @@ from typing import (
     Union,
     cast,
 )
+from typing_extensions import TypeGuard
 
 from flask import Request, Response, render_template_string, request
 from flask.views import View
@@ -159,7 +160,9 @@ class AsyncFlaskHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 class AsyncGraphQLView(
     BaseGraphQLView,
-    AsyncBaseHTTPView[Request, Response, Response, Context, RootValue],
+    AsyncBaseHTTPView[
+        Request, Response, Response, Request, Response, Context, RootValue
+    ],
     View,
 ):
     methods = ["GET", "POST"]
@@ -186,6 +189,17 @@ class AsyncGraphQLView(
 
     async def render_graphql_ide(self, request: Request) -> Response:
         return render_template_string(self.graphql_ide_html)  # type: ignore
+
+    def is_websocket_request(self, request: Request) -> TypeGuard[Request]:
+        return False
+
+    async def pick_websocket_subprotocol(self, request: Request) -> Optional[str]:
+        raise NotImplementedError
+
+    async def create_websocket_response(
+        self, request: Request, subprotocol: Optional[str]
+    ) -> Response:
+        raise NotImplementedError
 
 
 __all__ = [

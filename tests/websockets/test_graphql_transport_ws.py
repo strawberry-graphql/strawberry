@@ -24,7 +24,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
-from tests.http.clients.base import DebuggableGraphQLTransportWSMixin
+from tests.http.clients.base import DebuggableGraphQLTransportWSHandler
 from tests.views.schema import MyExtension, Schema
 
 if TYPE_CHECKING:
@@ -116,6 +116,17 @@ async def test_ws_messages_must_be_text(ws_raw: WebSocketClient):
     ws = ws_raw
 
     await ws.send_bytes(json.dumps(ConnectionInitMessage().as_dict()).encode())
+
+    await ws.receive(timeout=2)
+    assert ws.closed
+    assert ws.close_code == 4400
+    ws.assert_reason("WebSocket message type must be text")
+
+
+async def test_ws_messages_must_be_json(ws_raw: WebSocketClient):
+    ws = ws_raw
+
+    await ws.send_text("not valid json")
 
     await ws.receive(timeout=2)
     assert ws.closed
@@ -879,7 +890,7 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
         # cause an attribute error in the timeout task
         handler.connection_init_wait_timeout = None
 
-    with patch.object(DebuggableGraphQLTransportWSMixin, "on_init", on_init):
+    with patch.object(DebuggableGraphQLTransportWSHandler, "on_init", on_init):
         async with http_client.ws_connect(
             "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
         ) as ws:

@@ -13,6 +13,7 @@ from typing import (
     Union,
     cast,
 )
+from typing_extensions import TypeGuard
 
 from asgiref.sync import markcoroutinefunction
 from django.core.serializers.json import DjangoJSONEncoder
@@ -258,7 +259,13 @@ class GraphQLView(
 class AsyncGraphQLView(
     BaseView,
     AsyncBaseHTTPView[
-        HttpRequest, HttpResponseBase, TemporalHttpResponse, Context, RootValue
+        HttpRequest,
+        HttpResponseBase,
+        TemporalHttpResponse,
+        HttpRequest,
+        TemporalHttpResponse,
+        Context,
+        RootValue,
     ],
     View,
 ):
@@ -311,6 +318,17 @@ class AsyncGraphQLView(
         response.content = template.render(RequestContext(request, context))
 
         return response
+
+    def is_websocket_request(self, request: HttpRequest) -> TypeGuard[HttpRequest]:
+        return False
+
+    async def pick_websocket_subprotocol(self, request: HttpRequest) -> Optional[str]:
+        raise NotImplementedError
+
+    async def create_websocket_response(
+        self, request: HttpRequest, subprotocol: Optional[str]
+    ) -> TemporalHttpResponse:
+        raise NotImplementedError
 
 
 __all__ = ["GraphQLView", "AsyncGraphQLView"]

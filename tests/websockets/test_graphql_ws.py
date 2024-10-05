@@ -292,6 +292,17 @@ async def test_ws_messages_must_be_text(ws_raw: WebSocketClient):
     ws.assert_reason("WebSocket message type must be text")
 
 
+async def test_ws_messages_must_be_json(ws_raw: WebSocketClient):
+    ws = ws_raw
+
+    await ws.send_text("not valid json")
+
+    await ws.receive(timeout=2)
+    assert ws.closed
+    assert ws.close_code == 1002
+    ws.assert_reason("WebSocket message type must be text")
+
+
 async def test_ws_message_frame_types_cannot_be_mixed(ws_raw: WebSocketClient):
     ws = ws_raw
 

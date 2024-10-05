@@ -1,20 +1,76 @@
 from __future__ import annotations
 
+import asyncio
 import datetime
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union
+import json
+from typing import (
+    TYPE_CHECKING,
+    AsyncGenerator,
+    Dict,
+    Mapping,
+    Optional,
+    Tuple,
+    TypedDict,
+    Union,
+)
+from typing_extensions import TypeGuard
 
+from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncWebSocketAdapter
+from strawberry.http.exceptions import NonJsonMessageReceived
+from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
-from .base import ChannelsConsumer, ChannelsWSConsumer
-from .graphql_transport_ws_handler import GraphQLTransportWSHandler
-from .graphql_ws_handler import GraphQLWSHandler
+from .base import ChannelsWSConsumer
 
 if TYPE_CHECKING:
-    from strawberry.http.typevars import Context, RootValue
+    from strawberry.http import GraphQLHTTPResponse
     from strawberry.schema import BaseSchema
 
 
-class GraphQLWSConsumer(ChannelsWSConsumer):
+class ChannelsWebSocketAdapter(AsyncWebSocketAdapter):
+    def __init__(self, request: GraphQLWSConsumer, response: GraphQLWSConsumer) -> None:
+        self.ws_consumer = response
+
+    async def iter_json(self) -> AsyncGenerator[Dict[str, object], None]:
+        while True:
+            message = await self.ws_consumer.message_queue.get()
+
+            if message["disconnected"]:
+                break
+
+            if message["message"] is None:
+                raise NonJsonMessageReceived()
+
+            try:
+                yield json.loads(message["message"])
+            except json.JSONDecodeError:
+                raise NonJsonMessageReceived()
+
+    async def send_json(self, message: Mapping[str, object]) -> None:
+        serialized_message = json.dumps(message)
+        await self.ws_consumer.send(serialized_message)
+
+    async def close(self, code: int, reason: str) -> None:
+        await self.ws_consumer.close(code=code, reason=reason)
+
+
+class MessageQueueData(TypedDict):
+    message: Union[str, None]
+    disconnected: bool
+
+
+class GraphQLWSConsumer(
+    ChannelsWSConsumer,
+    AsyncBaseHTTPView[
+        "GraphQLWSConsumer",
+        "GraphQLWSConsumer",
+        "GraphQLWSConsumer",
+        "GraphQLWSConsumer",
+        "GraphQLWSConsumer",
+        Context,
+        RootValue,
+    ],
+):
     """A channels websocket consumer for GraphQL.
 
     This handles the connections, then hands off to the appropriate
@@ -39,9 +95,7 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
     ```
     """
 
-    graphql_transport_ws_handler_class = GraphQLTransportWSHandler
-    graphql_ws_handler_class = GraphQLWSHandler
-    _handler: Union[GraphQLWSHandler, GraphQLTransportWSHandler]
+    websocket_adapter_class = ChannelsWebSocketAdapter
 
     def __init__(
         self,
@@ -63,70 +117,71 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
         self.keep_alive_interval = keep_alive_interval
         self.debug = debug
         self.protocols = subscription_protocols
+        self.message_queue: asyncio.Queue[MessageQueueData] = asyncio.Queue()
+        self.run_task: Optional[asyncio.Task] = None
 
         super().__init__()
 
-    def pick_preferred_protocol(
-        self, accepted_subprotocols: Sequence[str]
-    ) -> Optional[str]:
-        intersection = set(accepted_subprotocols) & set(self.protocols)
-        sorted_intersection = sorted(intersection, key=accepted_subprotocols.index)
-        return next(iter(sorted_intersection), None)
-
     async def connect(self) -> None:
-        preferred_protocol = self.pick_preferred_protocol(self.scope["subprotocols"])
+        self.run_task = asyncio.create_task(self.run(self))
 
-        if preferred_protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
-            self._handler = self.graphql_transport_ws_handler_class(
-                schema=self.schema,
-                debug=self.debug,
-                connection_init_wait_timeout=self.connection_init_wait_timeout,
-                get_context=self.get_context,
-                get_root_value=self.get_root_value,
-                ws=self,
-            )
-        elif preferred_protocol == GRAPHQL_WS_PROTOCOL:
-            self._handler = self.graphql_ws_handler_class(
-                schema=self.schema,
-                debug=self.debug,
-                keep_alive=self.keep_alive,
-                keep_alive_interval=self.keep_alive_interval,
-                get_context=self.get_context,
-                get_root_value=self.get_root_value,
-                ws=self,
-            )
+    async def receive(
+        self, text_data: Optional[str] = None, bytes_data: Optional[bytes] = None
+    ) -> None:
+        if text_data:
+            self.message_queue.put_nowait({"message": text_data, "disconnected": False})
         else:
-            # Subprotocol not acceptable
-            return await self.close(code=4406)
-
-        await self._handler.handle()
-        return None
-
-    async def receive(self, *args: str, **kwargs: Any) -> None:
-        # Overriding this so that we can pass the errors to handle_invalid_message
-        try:
-            await super().receive(*args, **kwargs)
-        except ValueError:
-            reason = "WebSocket message type must be text"
-            await self._handler.handle_invalid_message(reason)
-
-    async def receive_json(self, content: Any, **kwargs: Any) -> None:
-        await self._handler.handle_message(content)
+            self.message_queue.put_nowait({"message": None, "disconnected": False})
 
     async def disconnect(self, code: int) -> None:
-        await self._handler.handle_disconnect(code)
+        self.message_queue.put_nowait({"message": None, "disconnected": True})
+        assert self.run_task
+        await self.run_task
 
-    async def get_root_value(self, request: ChannelsConsumer) -> Optional[RootValue]:
+    async def get_root_value(self, request: GraphQLWSConsumer) -> Optional[RootValue]:
         return None
 
     async def get_context(
-        self, request: ChannelsConsumer, connection_params: Any
+        self, request: GraphQLWSConsumer, response: GraphQLWSConsumer
     ) -> Context:
         return {
             "request": request,
-            "connection_params": connection_params,
             "ws": request,
         }  # type: ignore
+
+    @property
+    def allow_queries_via_get(self) -> bool:
+        return False
+
+    async def get_sub_response(self, request: GraphQLWSConsumer) -> GraphQLWSConsumer:
+        raise NotImplementedError
+
+    def create_response(
+        self, response_data: GraphQLHTTPResponse, sub_response: GraphQLWSConsumer
+    ) -> GraphQLWSConsumer:
+        raise NotImplementedError
+
+    async def render_graphql_ide(self, request: GraphQLWSConsumer) -> GraphQLWSConsumer:
+        raise NotImplementedError
+
+    def is_websocket_request(
+        self, request: GraphQLWSConsumer
+    ) -> TypeGuard[GraphQLWSConsumer]:
+        return True
+
+    async def pick_websocket_subprotocol(
+        self, request: GraphQLWSConsumer
+    ) -> Optional[str]:
+        protocols = request.scope["subprotocols"]
+        intersection = set(protocols) & set(self.protocols)
+        sorted_intersection = sorted(intersection, key=protocols.index)
+        return next(iter(sorted_intersection), None)
+
+    async def create_websocket_response(
+        self, request: GraphQLWSConsumer, subprotocol: Optional[str]
+    ) -> GraphQLWSConsumer:
+        await request.accept(subprotocol=subprotocol)
+        return request
 
 
 __all__ = ["GraphQLWSConsumer"]

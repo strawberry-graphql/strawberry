@@ -13,6 +13,7 @@ from typing import (
     Type,
     cast,
 )
+from typing_extensions import TypeGuard
 
 from sanic.request import Request
 from sanic.response import HTTPResponse, html
@@ -71,7 +72,15 @@ class SanicHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class GraphQLView(
-    AsyncBaseHTTPView[Request, HTTPResponse, TemporalResponse, Context, RootValue],
+    AsyncBaseHTTPView[
+        Request,
+        HTTPResponse,
+        TemporalResponse,
+        Request,
+        TemporalResponse,
+        Context,
+        RootValue,
+    ],
     HTTPMethodView,
 ):
     """Class based view to handle GraphQL HTTP Requests.
@@ -205,6 +214,17 @@ class GraphQLView(
         # error mostly so we don't have to update the types everywhere for this
         # corner case
         return None  # type: ignore
+
+    def is_websocket_request(self, request: Request) -> TypeGuard[Request]:
+        return False
+
+    async def pick_websocket_subprotocol(self, request: Request) -> Optional[str]:
+        raise NotImplementedError
+
+    async def create_websocket_response(
+        self, request: Request, subprotocol: Optional[str]
+    ) -> TemporalResponse:
+        raise NotImplementedError
 
 
 __all__ = ["GraphQLView"]
