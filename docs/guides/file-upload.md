@@ -8,8 +8,20 @@ All Strawberry integrations support multipart uploads as described in the
 [GraphQL multipart request specification](https://github.com/jaydenseric/graphql-multipart-request-spec).
 This includes support for uploading single files as well as lists of files.
 
-Uploads can be used in mutations via the `Upload` scalar. The type passed at
-runtime depends on the integration:
+## Security
+
+Note that multipart file upload support is disabled by default in all integrations.
+Before enabling multipart file upload support,
+make sure you address the [security implications outlined in the specification](https://github.com/jaydenseric/graphql-multipart-request-spec/blob/master/readme.md#security).
+Usually, this entails enabling CSRF protection in your server framework (e.g., the `CsrfViewMiddleware` middleware in Django).
+
+To enable file upload support, pass `multipart_uploads_enabled=True` to your integration's view class.
+Refer to the integration-specific documentation for more details on how to do this.
+
+## Upload Scalar
+
+Uploads can be used in mutations via the `Upload` scalar.
+The type passed at runtime depends on the integration:
 
 | Integration                               | Type                                                                                                                                                  |
 | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
