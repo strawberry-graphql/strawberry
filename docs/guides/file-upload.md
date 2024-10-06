@@ -8,6 +8,21 @@ All Strawberry integrations support multipart uploads as described in the
 [GraphQL multipart request specification](https://github.com/jaydenseric/graphql-multipart-request-spec).
 This includes support for uploading single files as well as lists of files.
 
+## Security
+
+Note that multipart file upload support is disabled by default in all
+integrations. Before enabling multipart file upload support, make sure you
+address the
+[security implications outlined in the specification](https://github.com/jaydenseric/graphql-multipart-request-spec/blob/master/readme.md#security).
+Usually, this entails enabling CSRF protection in your server framework (e.g.,
+the `CsrfViewMiddleware` middleware in Django).
+
+To enable file upload support, pass `multipart_uploads_enabled=True` to your
+integration's view class. Refer to the integration-specific documentation for
+more details on how to do this.
+
+## Upload Scalar
+
 Uploads can be used in mutations via the `Upload` scalar. The type passed at
 runtime depends on the integration:
 
@@ -15,10 +30,10 @@ runtime depends on the integration:
 | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [AIOHTTP](/docs/integrations/aiohttp)     | [`io.BytesIO`](https://docs.python.org/3/library/io.html#io.BytesIO)                                                                                  |
 | [ASGI](/docs/integrations/asgi)           | [`starlette.datastructures.UploadFile`](https://www.starlette.io/requests/#request-files)                                                             |
-| [Channels](/docs/integrations/channels)   | [`django.core.files.uploadedfile.UploadedFile`](https://docs.djangoproject.com/en/3.2/ref/files/uploads/#django.core.files.uploadedfile.UploadedFile) |
-| [Django](/docs/integrations/django)       | [`django.core.files.uploadedfile.UploadedFile`](https://docs.djangoproject.com/en/3.2/ref/files/uploads/#django.core.files.uploadedfile.UploadedFile) |
+| [Channels](/docs/integrations/channels)   | [`django.core.files.uploadedfile.UploadedFile`](https://docs.djangoproject.com/en/dev/ref/files/uploads/#django.core.files.uploadedfile.UploadedFile) |
+| [Django](/docs/integrations/django)       | [`django.core.files.uploadedfile.UploadedFile`](https://docs.djangoproject.com/en/dev/ref/files/uploads/#django.core.files.uploadedfile.UploadedFile) |
 | [FastAPI](/docs/integrations/fastapi)     | [`fastapi.UploadFile`](https://fastapi.tiangolo.com/tutorial/request-files/#file-parameters-with-uploadfile)                                          |
-| [Flask](/docs/integrations/flask)         | [`werkzeug.datastructures.FileStorage`](https://werkzeug.palletsprojects.com/en/2.0.x/datastructures/#werkzeug.datastructures.FileStorage)            |
+| [Flask](/docs/integrations/flask)         | [`werkzeug.datastructures.FileStorage`](https://werkzeug.palletsprojects.com/en/latest/datastructures/#werkzeug.datastructures.FileStorage)           |
 | [Quart](/docs/integrations/quart)         | [`quart.datastructures.FileStorage`](https://github.com/pallets/quart/blob/main/src/quart/datastructures.py)                                          |
 | [Sanic](/docs/integrations/sanic)         | [`sanic.request.File`](https://sanic.readthedocs.io/en/stable/sanic/api/core.html#sanic.request.File)                                                 |
 | [Starlette](/docs/integrations/starlette) | [`starlette.datastructures.UploadFile`](https://www.starlette.io/requests/#request-files)                                                             |
