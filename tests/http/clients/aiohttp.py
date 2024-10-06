@@ -218,5 +218,6 @@ class AioWebSocketClient(WebSocketClient):
         assert self.ws.close_code is not None
         return self.ws.close_code
 
-    def assert_reason(self, reason: str) -> None:
-        assert self._reason == reason
+    @property
+    def close_reason(self) -> Optional[str]:
+        return self._reason

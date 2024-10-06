@@ -14,7 +14,7 @@ async def test_turning_off_graphql_ws(http_client_class: Type[HttpClient]):
         await ws.receive(timeout=2)
         assert ws.closed
         assert ws.close_code == 4406
-        ws.assert_reason("Subprotocol not acceptable")
+        assert ws.close_reason == "Subprotocol not acceptable"
 
 
 async def test_turning_off_graphql_transport_ws(http_client_class: Type[HttpClient]):
@@ -27,7 +27,7 @@ async def test_turning_off_graphql_transport_ws(http_client_class: Type[HttpClie
         await ws.receive(timeout=2)
         assert ws.closed
         assert ws.close_code == 4406
-        ws.assert_reason("Subprotocol not acceptable")
+        assert ws.close_reason == "Subprotocol not acceptable"
 
 
 async def test_turning_off_all_subprotocols(http_client_class: Type[HttpClient]):
@@ -40,7 +40,7 @@ async def test_turning_off_all_subprotocols(http_client_class: Type[HttpClient])
         await ws.receive(timeout=2)
         assert ws.closed
         assert ws.close_code == 4406
-        ws.assert_reason("Subprotocol not acceptable")
+        assert ws.close_reason == "Subprotocol not acceptable"
 
     async with http_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
@@ -48,7 +48,7 @@ async def test_turning_off_all_subprotocols(http_client_class: Type[HttpClient])
         await ws.receive(timeout=2)
         assert ws.closed
         assert ws.close_code == 4406
-        ws.assert_reason("Subprotocol not acceptable")
+        assert ws.close_reason == "Subprotocol not acceptable"
 
 
 async def test_generally_unsupported_subprotocols_are_rejected(http_client: HttpClient):
@@ -58,7 +58,7 @@ async def test_generally_unsupported_subprotocols_are_rejected(http_client: Http
         await ws.receive(timeout=2)
         assert ws.closed
         assert ws.close_code == 4406
-        ws.assert_reason("Subprotocol not acceptable")
+        assert ws.close_reason == "Subprotocol not acceptable"
 
 
 async def test_clients_can_prefer_subprotocols(http_client_class: Type[HttpClient]):
