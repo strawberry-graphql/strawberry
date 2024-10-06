@@ -76,7 +76,7 @@ async def test_unknown_message_type(ws_raw: WebSocketClient):
     data = await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4400
-    ws.assert_reason("Unknown message type: NOT_A_MESSAGE_TYPE")
+    assert ws.close_reason == "Unknown message type: NOT_A_MESSAGE_TYPE"
 
 
 async def test_missing_message_type(ws_raw: WebSocketClient):
@@ -87,7 +87,7 @@ async def test_missing_message_type(ws_raw: WebSocketClient):
     data = await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4400
-    ws.assert_reason("Failed to parse message")
+    assert ws.close_reason == "Failed to parse message"
 
 
 async def test_parsing_an_invalid_message(ws_raw: WebSocketClient):
@@ -98,7 +98,7 @@ async def test_parsing_an_invalid_message(ws_raw: WebSocketClient):
     data = await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4400
-    ws.assert_reason("Failed to parse message")
+    assert ws.close_reason == "Failed to parse message"
 
 
 async def test_parsing_an_invalid_payload(ws_raw: WebSocketClient):
@@ -109,7 +109,7 @@ async def test_parsing_an_invalid_payload(ws_raw: WebSocketClient):
     data = await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4400
-    ws.assert_reason("Failed to parse message")
+    assert ws.close_reason == "Failed to parse message"
 
 
 async def test_ws_messages_must_be_text(ws_raw: WebSocketClient):
@@ -120,7 +120,7 @@ async def test_ws_messages_must_be_text(ws_raw: WebSocketClient):
     await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4400
-    ws.assert_reason("WebSocket message type must be text")
+    assert ws.close_reason == "WebSocket message type must be text"
 
 
 async def test_ws_messages_must_be_json(ws_raw: WebSocketClient):
@@ -131,7 +131,7 @@ async def test_ws_messages_must_be_json(ws_raw: WebSocketClient):
     await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4400
-    ws.assert_reason("WebSocket message type must be text")
+    assert ws.close_reason == "WebSocket message type must be text"
 
 
 async def test_ws_message_frame_types_cannot_be_mixed(ws_raw: WebSocketClient):
@@ -156,7 +156,7 @@ async def test_ws_message_frame_types_cannot_be_mixed(ws_raw: WebSocketClient):
     await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4400
-    ws.assert_reason("WebSocket message type must be text")
+    assert ws.close_reason == "WebSocket message type must be text"
 
 
 async def test_connection_init_timeout(
@@ -180,7 +180,7 @@ async def test_connection_init_timeout(
         data = await ws.receive(timeout=2)
         assert ws.closed
         assert ws.close_code == 4408
-        ws.assert_reason("Connection initialisation timeout")
+        assert ws.close_reason == "Connection initialisation timeout"
 
 
 @pytest.mark.flaky
@@ -240,7 +240,7 @@ async def test_close_twice(
         await ws.receive(timeout=0.5)
         assert ws.closed
         assert ws.close_code == 4400
-        ws.assert_reason("Invalid connection init payload")
+        assert ws.close_reason == "Invalid connection init payload"
         transport_close.assert_not_called()
 
 
@@ -249,7 +249,7 @@ async def test_too_many_initialisation_requests(ws: WebSocketClient):
     data = await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4429
-    ws.assert_reason("Too many initialisation requests")
+    assert ws.close_reason == "Too many initialisation requests"
 
 
 async def test_ping_pong(ws: WebSocketClient):
@@ -320,7 +320,7 @@ async def test_unauthorized_subscriptions(ws_raw: WebSocketClient):
     data = await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4401
-    ws.assert_reason("Unauthorized")
+    assert ws.close_reason == "Unauthorized"
 
 
 async def test_duplicated_operation_ids(ws: WebSocketClient):
@@ -345,7 +345,7 @@ async def test_duplicated_operation_ids(ws: WebSocketClient):
     data = await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4409
-    ws.assert_reason("Subscriber for sub1 already exists")
+    assert ws.close_reason == "Subscriber for sub1 already exists"
 
 
 async def test_reused_operation_ids(ws: WebSocketClient):
@@ -409,7 +409,7 @@ async def test_subscription_syntax_error(ws: WebSocketClient):
     data = await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4400
-    ws.assert_reason("Syntax Error: Expected Name, found <EOF>.")
+    assert ws.close_reason == "Syntax Error: Expected Name, found <EOF>."
 
 
 async def test_subscription_field_errors(ws: WebSocketClient):
@@ -663,7 +663,7 @@ async def test_single_result_invalid_operation_selection(ws: WebSocketClient):
     data = await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4400
-    ws.assert_reason("Can't get GraphQL operation type")
+    assert ws.close_reason == "Can't get GraphQL operation type"
 
 
 async def test_single_result_execution_error(ws: WebSocketClient):
@@ -743,7 +743,7 @@ async def test_single_result_duplicate_ids_sub(ws: WebSocketClient):
     data = await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4409
-    ws.assert_reason("Subscriber for sub1 already exists")
+    assert ws.close_reason == "Subscriber for sub1 already exists"
 
 
 async def test_single_result_duplicate_ids_query(ws: WebSocketClient):
@@ -774,7 +774,7 @@ async def test_single_result_duplicate_ids_query(ws: WebSocketClient):
     data = await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4409
-    ws.assert_reason("Subscriber for sub1 already exists")
+    assert ws.close_reason == "Subscriber for sub1 already exists"
 
 
 async def test_injects_connection_params(ws_raw: WebSocketClient):
@@ -804,7 +804,7 @@ async def test_rejects_connection_params_not_dict(ws_raw: WebSocketClient):
     data = await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4400
-    ws.assert_reason("Invalid connection init payload")
+    assert ws.close_reason == "Invalid connection init payload"
 
 
 @pytest.mark.parametrize(
@@ -820,7 +820,7 @@ async def test_rejects_connection_params_with_wrong_type(
     data = await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4400
-    ws.assert_reason("Invalid connection init payload")
+    assert ws.close_reason == "Invalid connection init payload"
 
 
 # timings can sometimes fail currently.  Until this test is rewritten when

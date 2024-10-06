@@ -293,8 +293,9 @@ class WebSocketClient(abc.ABC):
     @abc.abstractmethod
     def close_code(self) -> int: ...
 
+    @property
     @abc.abstractmethod
-    def assert_reason(self, reason: str) -> None: ...
+    def close_reason(self) -> Optional[str]: ...
 
     async def __aiter__(self) -> AsyncGenerator[Message, None]:
         while not self.closed:

@@ -234,5 +234,6 @@ class LitestarWebSocketClient(WebSocketClient):
         assert self._close_code is not None
         return self._close_code
 
-    def assert_reason(self, reason: str) -> None:
-        assert self._close_reason == reason
+    @property
+    def close_reason(self) -> Optional[str]:
+        return self._close_reason
