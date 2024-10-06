@@ -1,4 +1,4 @@
-query OptionalListOfPeople {
+query OperationName {
   optionalListOfPeople {
     name
     age
