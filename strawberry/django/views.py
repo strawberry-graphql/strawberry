@@ -25,7 +25,6 @@ from django.http import (
     StreamingHttpResponse,
 )
 from django.http.response import HttpResponseBase
-from django.template import RequestContext, Template
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
