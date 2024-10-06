@@ -207,7 +207,7 @@ class PythonPlugin(QueryCodegenPlugin):
             lines.append("")
 
         # Create a union of the classes we just created
-        type_list = ",".join(
+        type_list = ", ".join(
             [self._get_oneof_class_name(type_, field) for field in fields]
         )
         lines.append(f"{type_.name} = Union[{type_list}]")

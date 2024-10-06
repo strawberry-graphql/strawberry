@@ -9,7 +9,7 @@ class OneOfInputA:
 class OneOfInputB:
     b: str
 
-OneOfInput = Union[OneOfInputA,OneOfInputB]
+OneOfInput = Union[OneOfInputA, OneOfInputB]
 
 class OneOfTestVariables:
     value: OneOfInput
