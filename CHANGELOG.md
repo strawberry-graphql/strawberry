@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.244.1 - 2024-10-06
+--------------------
+
+Fixes an issue where the codegen tool would crash when working with a nullable list of types.
+
+Contributed by [Jacob Allen](https://github.com/enoua5) via [PR #3653](https://github.com/strawberry-graphql/strawberry/pull/3653/)
+
+
 0.244.0 - 2024-10-05
 --------------------
 
