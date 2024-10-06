@@ -27,7 +27,6 @@ from django.http import (
 from django.http.response import HttpResponseBase
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
-from django.template.response import TemplateResponse
 from django.utils.decorators import classonlymethod
 from django.views.generic import View
 
@@ -43,6 +42,8 @@ from strawberry.http.typevars import (
 from .context import StrawberryDjangoContext
 
 if TYPE_CHECKING:
+    from django.template.response import TemplateResponse
+
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
 
