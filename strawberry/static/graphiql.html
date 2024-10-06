@@ -131,10 +131,7 @@
         headers["x-csrftoken"] = csrfToken;
       }
 
-      const subscriptionsEnabled = JSON.parse("{{ SUBSCRIPTION_ENABLED }}");
-      const subscriptionUrl = subscriptionsEnabled
-        ? httpUrlToWebSockeUrl(fetchURL)
-        : null;
+      const subscriptionUrl = httpUrlToWebSockeUrl(fetchURL);
 
       const fetcher = GraphiQL.createFetcher({
         url: fetchURL,

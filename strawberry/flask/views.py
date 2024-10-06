@@ -63,7 +63,6 @@ class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
 
 
 class BaseGraphQLView:
-    _ide_subscription_enabled = False
     graphql_ide: Optional[GraphQL_IDE]
 
     def __init__(
