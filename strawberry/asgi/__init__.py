@@ -186,7 +186,7 @@ class GraphQL(
 
         return sub_response
 
-    async def render_graphql_ide(self, request: Union[Request, WebSocket]) -> Response:
+    async def render_graphql_ide(self, request: Request) -> Response:
         return HTMLResponse(self.graphql_ide_html)
 
     def create_response(
