@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.245.0 - 2024-10-07
+--------------------
+
+This release removes the dated `subscriptions_enabled` setting from the Django and Channels integrations.
+Instead, WebSocket support is now enabled by default in all GraphQL IDEs.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3660](https://github.com/strawberry-graphql/strawberry/pull/3660/)
+
+
 0.244.1 - 2024-10-06
 --------------------
 
