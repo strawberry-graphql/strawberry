@@ -52,7 +52,7 @@ methods:
 - `async process_result(self, request: aiohttp.web.Request, result: ExecutionResult) -> GraphQLHTTPResponse`
 - `def encode_json(self, data: GraphQLHTTPResponse) -> str`
 
-## get_context
+### get_context
 
 By overriding `GraphQLView.get_context` you can provide a custom context object
 for your resolvers. You can return anything here; by default GraphQLView returns
@@ -83,7 +83,7 @@ called `"example"`.
 Then we can use the context in a resolver. In this case the resolver will return
 `1`.
 
-## get_root_value
+### get_root_value
 
 By overriding `GraphQLView.get_root_value` you can provide a custom root value
 for your schema. This is probably not used a lot but it might be useful in
@@ -110,7 +110,7 @@ class Query:
 Here we configure a Query where requesting the `name` field will return
 `"Patrick"` through the custom root value.
 
-## process_result
+### process_result
 
 By overriding `GraphQLView.process_result` you can customize and/or process
 results before they are sent to a client. This can be useful for logging errors,
@@ -141,7 +141,7 @@ class MyGraphQLView(GraphQLView):
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
 
-## encode_json
+### encode_json
 
 `encode_json` allows to customize the encoding of the JSON response. By default
 we use `json.dumps` but you can override this method to use a different encoder.
