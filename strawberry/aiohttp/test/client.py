@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import (
     Any,
     Dict,
@@ -16,8 +17,9 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         query: str,
         variables: Optional[Dict[str, Mapping]] = None,
         headers: Optional[Dict[str, object]] = None,
-        asserts_errors: Optional[bool] = True,
+        asserts_errors: Optional[bool] = None,
         files: Optional[Dict[str, object]] = None,
+        assert_no_errors: Optional[bool] = True,
     ) -> Response:
         body = self._build_body(query, variables, files)
 
@@ -29,7 +31,19 @@ class GraphQLTestClient(BaseGraphQLTestClient):
             data=data.get("data"),
             extensions=data.get("extensions"),
         )
-        if asserts_errors:
+
+        if asserts_errors is not None:
+            warnings.warn(
+                "The `asserts_errors` argument has been renamed to `assert_no_errors`",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        assert_no_errors = (
+            assert_no_errors if asserts_errors is None else asserts_errors
+        )
+
+        if assert_no_errors:
             assert resp.status == 200
             assert response.errors is None
 
