@@ -66,7 +66,7 @@ The `make_graphql_controller` function accepts the following options:
   [security implications mentioned in the GraphQL Multipart Request Specification](https://github.com/jaydenseric/graphql-multipart-request-spec/blob/master/readme.md#security)
   when enabling this feature.
 
-## context_getter
+### context_getter
 
 The `context_getter` option allows you to provide a Litestar dependency that
 return a custom context object that can be used in your resolver.
@@ -188,7 +188,7 @@ GraphQLController = make_graphql_controller(
 app = Litestar(route_handlers=[GraphQLController])
 ```
 
-### Context typing
+#### Context typing
 
 In our previous example using class based context, the actual runtime context a
 `CustomContext` type. Because it inherits from `BaseContext`, the `request`,
@@ -283,7 +283,7 @@ GraphQLController = make_graphql_controller(
 app = Litestar(route_handlers=[GraphQLController])
 ```
 
-## root_value_getter
+### root_value_getter
 
 The `root_value_getter` option allows you to provide a custom root value that
 can be used in your resolver
