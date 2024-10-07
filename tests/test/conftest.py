@@ -4,17 +4,7 @@ from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, AsyncGenerator
 
 import pytest
-from django.test.client import Client
-from starlette.testclient import TestClient as AsgiTestClient
 
-import aiohttp.web
-from aiohttp.test_utils import TestClient as AiohttpTestClient
-from aiohttp.test_utils import TestServer
-from strawberry.aiohttp.test import GraphQLTestClient as AiohttpGraphQLTestClient
-from strawberry.aiohttp.views import GraphQLView
-from strawberry.asgi import GraphQL
-from strawberry.asgi.test import GraphQLTestClient as AsgiGraphQLTestClient
-from strawberry.django.test import GraphQLTestClient as DjangoGraphQLTestClient
 from tests.views.schema import schema
 
 if TYPE_CHECKING:
@@ -22,23 +12,46 @@ if TYPE_CHECKING:
 
 
 @asynccontextmanager
-async def aiohttp_graphql_client() -> AsyncGenerator[AiohttpGraphQLTestClient]:
+async def aiohttp_graphql_client() -> AsyncGenerator[BaseGraphQLTestClient]:
+    try:
+        from aiohttp import web
+        from aiohttp.test_utils import TestClient, TestServer
+        from strawberry.aiohttp.test import GraphQLTestClient
+        from strawberry.aiohttp.views import GraphQLView
+    except ImportError:
+        pytest.skip("Aiohttp not installed")
+
     view = GraphQLView(schema=schema)
-    app = aiohttp.web.Application()
+    app = web.Application()
     app.router.add_route("*", "/graphql/", view)
 
-    async with AiohttpTestClient(TestServer(app)) as client:
-        yield AiohttpGraphQLTestClient(client)
+    async with TestClient(TestServer(app)) as client:
+        yield GraphQLTestClient(client)
 
 
 @asynccontextmanager
-async def asgi_graphql_client() -> AsyncGenerator[AsgiGraphQLTestClient]:
-    yield AsgiGraphQLTestClient(AsgiTestClient(GraphQL(schema)))
+async def asgi_graphql_client() -> AsyncGenerator[BaseGraphQLTestClient]:
+    try:
+        from starlette.testclient import TestClient
+
+        from strawberry.asgi import GraphQL
+        from strawberry.asgi.test import GraphQLTestClient
+    except ImportError:
+        pytest.skip("Starlette not installed")
+
+    yield GraphQLTestClient(TestClient(GraphQL(schema)))
 
 
 @asynccontextmanager
-async def django_graphql_client() -> AsyncGenerator[DjangoGraphQLTestClient]:
-    yield DjangoGraphQLTestClient(Client())
+async def django_graphql_client() -> AsyncGenerator[BaseGraphQLTestClient]:
+    try:
+        from django.test.client import Client
+
+        from strawberry.django.test import GraphQLTestClient
+    except ImportError:
+        pytest.skip("Django not installed")
+
+    yield GraphQLTestClient(Client())
 
 
 @pytest.fixture(
