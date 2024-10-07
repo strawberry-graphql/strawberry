@@ -39,8 +39,6 @@ The `GraphQLView` accepts the following arguments:
   to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
-- `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
-  the GraphiQL interface, defaults to `False`.
 - `multipart_uploads_enabled`: optional, defaults to `False`, controls whether
   to enable multipart uploads. Please make sure to consider the
   [security implications mentioned in the GraphQL Multipart Request Specification](https://github.com/jaydenseric/graphql-multipart-request-spec/blob/master/readme.md#security)
@@ -182,8 +180,6 @@ The `AsyncGraphQLView` accepts the following arguments:
   to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
-- `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
-  the GraphiQL interface, defaults to `False`.
 
 ## Extending the view
 

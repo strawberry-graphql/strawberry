@@ -52,8 +52,6 @@ class GraphQLView(
     ],
     View,
 ):
-    _ide_subscription_enabled = False
-
     methods = ["GET", "POST"]
     allow_queries_via_get: bool = True
     request_adapter_class = QuartHTTPRequestAdapter
