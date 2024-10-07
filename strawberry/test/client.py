@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Mapping, Optional, Union
@@ -36,8 +37,9 @@ class BaseGraphQLTestClient(ABC):
         query: str,
         variables: Optional[Dict[str, Mapping]] = None,
         headers: Optional[Dict[str, object]] = None,
-        asserts_errors: Optional[bool] = True,
+        asserts_errors: Optional[bool] = None,
         files: Optional[Dict[str, object]] = None,
+        assert_no_errors: Optional[bool] = True,
     ) -> Union[Coroutine[Any, Any, Response], Response]:
         body = self._build_body(query, variables, files)
 
@@ -49,7 +51,19 @@ class BaseGraphQLTestClient(ABC):
             data=data.get("data"),
             extensions=data.get("extensions"),
         )
-        if asserts_errors:
+
+        if asserts_errors is not None:
+            warnings.warn(
+                "The `asserts_errors` argument has been renamed to `assert_no_errors`",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        assert_no_errors = (
+            assert_no_errors if asserts_errors is None else asserts_errors
+        )
+
+        if assert_no_errors:
             assert response.errors is None
 
         return response
