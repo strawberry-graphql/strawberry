@@ -43,6 +43,7 @@ methods:
 - `async get_context(self, request: Request, response: Response) -> Any`
 - `async get_root_value(self, request: Request) -> Any`
 - `async process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `async def render_graphql_ide(self, request: Request) -> HTTPResponse`
 
 ### get_context
 
@@ -129,4 +130,22 @@ we use `json.dumps` but you can override this method to use a different encoder.
 class MyGraphQLView(GraphQLView):
     def encode_json(self, data: GraphQLHTTPResponse) -> str:
         return json.dumps(data, indent=2)
+```
+
+### render_graphql_ide
+
+In case you need more control over the rendering of the GraphQL IDE than the
+`graphql_ide` option provides, you can override the `render_graphql_ide` method.
+
+```python
+from strawberry.sanic.views import GraphQLView
+from sanic.request import Request
+from sanic.response import HTTPResponse, html
+
+
+class MyGraphQLView(GraphQLView):
+    async def render_graphql_ide(self, request: Request) -> HTTPResponse:
+        custom_html = """<html><body><h1>Custom GraphQL IDE</h1></body></html>"""
+
+        return html(custom_html)
 ```

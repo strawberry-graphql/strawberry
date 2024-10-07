@@ -533,9 +533,10 @@ We allow to extend `GraphQLHTTPConsumer`, by overriding the following methods:
 
 - `async def get_context(self, request: ChannelsRequest, response: TemporalResponse) -> Context`
 - `async def get_root_value(self, request: ChannelsRequest) -> Optional[RootValue]`
-- `async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse:`.
+- `async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`.
+- `async def render_graphql_ide(self, request: ChannelsRequest) -> ChannelsResponse`
 
-### Context
+#### Context
 
 The default context returned by `get_context()` is a `dict` that includes the
 following keys by default:
@@ -551,6 +552,22 @@ following keys by default:
   - `status_code`: The status code of the response, if there are no execution
     errors (defaults to `200`)
   - `headers`: Any additional headers that should be send with the response
+
+#### render_graphql_ide
+
+In case you need more control over the rendering of the GraphQL IDE than the
+`graphql_ide` option provides, you can override the `render_graphql_ide` method.
+
+```python
+from strawberry.channels import GraphQLHTTPConsumer, ChannelsRequest, ChannelsResponse
+
+
+class MyGraphQLHTTPConsumer(GraphQLHTTPConsumer):
+    async def render_graphql_ide(self, request: ChannelsRequest) -> ChannelsResponse:
+        custom_html = """<html><body><h1>Custom GraphQL IDE</h1></body></html>"""
+
+        return ChannelsResponse(content=custom_html, content_type="text/html")
+```
 
 ## GraphQLWSConsumer (WebSockets / Subscriptions)
 
