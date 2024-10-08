@@ -269,7 +269,7 @@ const subscriber = client.subscribe({query: ...}).subscribe({...})
 subscriber.unsubscribe();
 ```
 
-Strawberry can easily capture when a subscriber unsubscribes using an
+Strawberry can capture when a subscriber unsubscribes using an
 `asyncio.CancelledError` exception.
 
 ```python
