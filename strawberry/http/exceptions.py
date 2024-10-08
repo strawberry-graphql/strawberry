@@ -4,4 +4,8 @@ class HTTPException(Exception):
         self.reason = reason
 
 
+class NonJsonMessageReceived(Exception):
+    pass
+
+
 __all__ = ["HTTPException"]

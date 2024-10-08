@@ -21,6 +21,10 @@ from typing_extensions import Literal
 
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
+from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
+    BaseGraphQLTransportWSHandler,
+)
+from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
 from strawberry.types import ExecutionResult
 
 logger = logging.getLogger("strawberry.test.http_client")
@@ -237,7 +241,7 @@ class HttpClient(abc.ABC):
         """For use by websocket tests."""
         raise NotImplementedError
 
-    async def ws_connect(
+    def ws_connect(
         self,
         url: str,
         *,
@@ -261,6 +265,9 @@ class WebSocketClient(abc.ABC):
         return ""
 
     @abc.abstractmethod
+    async def send_text(self, payload: str) -> None: ...
+
+    @abc.abstractmethod
     async def send_json(self, payload: Dict[str, Any]) -> None: ...
 
     @abc.abstractmethod
@@ -276,21 +283,26 @@ class WebSocketClient(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def accepted_subprotocol(self) -> Optional[str]: ...
+
+    @property
+    @abc.abstractmethod
     def closed(self) -> bool: ...
 
     @property
     @abc.abstractmethod
     def close_code(self) -> int: ...
 
+    @property
     @abc.abstractmethod
-    def assert_reason(self, reason: str) -> None: ...
+    def close_reason(self) -> Optional[str]: ...
 
     async def __aiter__(self) -> AsyncGenerator[Message, None]:
         while not self.closed:
             yield await self.receive()
 
 
-class DebuggableGraphQLTransportWSMixin:
+class DebuggableGraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
     def on_init(self) -> None:
         """This method can be patched by unit tests to get the instance of the
         transport handler when it is initialized.
@@ -298,26 +310,41 @@ class DebuggableGraphQLTransportWSMixin:
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        DebuggableGraphQLTransportWSMixin.on_init(self)
+        self.original_context = kwargs.get("context", {})
+        DebuggableGraphQLTransportWSHandler.on_init(self)
 
     def get_tasks(self) -> List:
         return [op.task for op in self.operations.values()]
 
-    async def get_context(self) -> object:
-        context = await super().get_context()
-        context["ws"] = self._ws
-        context["get_tasks"] = self.get_tasks
-        context["connectionInitTimeoutTask"] = self.connection_init_timeout_task
-        return context
+    @property
+    def context(self):
+        self.original_context["ws"] = self.websocket
+        self.original_context["get_tasks"] = self.get_tasks
+        self.original_context["connectionInitTimeoutTask"] = (
+            self.connection_init_timeout_task
+        )
+        return self.original_context
+
+    @context.setter
+    def context(self, value):
+        self.original_context = value
 
 
-class DebuggableGraphQLWSMixin:
+class DebuggableGraphQLWSHandler(BaseGraphQLWSHandler):
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.original_context = self.context
+
     def get_tasks(self) -> List:
         return list(self.tasks.values())
 
-    async def get_context(self) -> object:
-        context = await super().get_context()
-        context["ws"] = self._ws
-        context["get_tasks"] = self.get_tasks
-        context["connectionInitTimeoutTask"] = None
-        return context
+    @property
+    def context(self):
+        self.original_context["ws"] = self.websocket
+        self.original_context["get_tasks"] = self.get_tasks
+        self.original_context["connectionInitTimeoutTask"] = None
+        return self.original_context
+
+    @context.setter
+    def context(self, value):
+        self.original_context = value

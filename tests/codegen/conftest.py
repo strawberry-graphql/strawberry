@@ -101,6 +101,7 @@ class Query:
     person: Person
     optional_person: Optional[Person]
     list_of_people: List[Person]
+    optional_list_of_people: Optional[List[Person]]
     enum: Color
     json: JSON
     union: PersonOrAnimal

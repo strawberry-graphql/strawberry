@@ -13,6 +13,7 @@ from typing import (
     Union,
     cast,
 )
+from typing_extensions import TypeGuard
 
 from asgiref.sync import markcoroutinefunction
 from django.core.serializers.json import DjangoJSONEncoder
@@ -24,10 +25,8 @@ from django.http import (
     StreamingHttpResponse,
 )
 from django.http.response import HttpResponseBase
-from django.template import RequestContext, Template
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
-from django.template.response import TemplateResponse
 from django.utils.decorators import classonlymethod
 from django.views.generic import View
 
@@ -43,6 +42,8 @@ from strawberry.http.typevars import (
 from .context import StrawberryDjangoContext
 
 if TYPE_CHECKING:
+    from django.template.response import TemplateResponse
+
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
 
@@ -136,7 +137,6 @@ class AsyncDjangoHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class BaseView:
-    _ide_replace_variables = False
     graphql_ide_html: str
 
     def __init__(
@@ -145,13 +145,11 @@ class BaseView:
         graphiql: Optional[str] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
-        subscriptions_enabled: bool = False,
         multipart_uploads_enabled: bool = False,
         **kwargs: Any,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
-        self.subscriptions_enabled = subscriptions_enabled
         self.multipart_uploads_enabled = multipart_uploads_enabled
 
         if graphiql is not None:
@@ -214,7 +212,6 @@ class GraphQLView(
     ],
     View,
 ):
-    subscriptions_enabled = False
     graphiql: Optional[bool] = None
     graphql_ide: Optional[GraphQL_IDE] = "graphiql"
     allow_queries_via_get = True
@@ -243,26 +240,26 @@ class GraphQLView(
 
     def render_graphql_ide(self, request: HttpRequest) -> HttpResponse:
         try:
-            template = Template(render_to_string("graphql/graphiql.html"))
+            content = render_to_string("graphql/graphiql.html")
         except TemplateDoesNotExist:
-            template = Template(self.graphql_ide_html)
+            content = self.graphql_ide_html
 
-        context = {"SUBSCRIPTION_ENABLED": json.dumps(self.subscriptions_enabled)}
-
-        response = TemplateResponse(request=request, template=None, context=context)
-        response.content = template.render(RequestContext(request, context))
-
-        return response
+        return HttpResponse(content)
 
 
 class AsyncGraphQLView(
     BaseView,
     AsyncBaseHTTPView[
-        HttpRequest, HttpResponseBase, TemporalHttpResponse, Context, RootValue
+        HttpRequest,
+        HttpResponseBase,
+        TemporalHttpResponse,
+        HttpRequest,
+        TemporalHttpResponse,
+        Context,
+        RootValue,
     ],
     View,
 ):
-    subscriptions_enabled = False
     graphiql: Optional[bool] = None
     graphql_ide: Optional[GraphQL_IDE] = "graphiql"
     allow_queries_via_get = True
@@ -301,16 +298,22 @@ class AsyncGraphQLView(
 
     async def render_graphql_ide(self, request: HttpRequest) -> HttpResponse:
         try:
-            template = Template(render_to_string("graphql/graphiql.html"))
+            content = render_to_string("graphql/graphiql.html")
         except TemplateDoesNotExist:
-            template = Template(self.graphql_ide_html)
+            content = self.graphql_ide_html
 
-        context = {"SUBSCRIPTION_ENABLED": json.dumps(self.subscriptions_enabled)}
+        return HttpResponse(content=content)
 
-        response = TemplateResponse(request=request, template=None, context=context)
-        response.content = template.render(RequestContext(request, context))
+    def is_websocket_request(self, request: HttpRequest) -> TypeGuard[HttpRequest]:
+        return False
 
-        return response
+    async def pick_websocket_subprotocol(self, request: HttpRequest) -> Optional[str]:
+        raise NotImplementedError
+
+    async def create_websocket_response(
+        self, request: HttpRequest, subprotocol: Optional[str]
+    ) -> TemporalHttpResponse:
+        raise NotImplementedError
 
 
 __all__ = ["GraphQLView", "AsyncGraphQLView"]

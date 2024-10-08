@@ -25,10 +25,6 @@ class BaseView(Generic[Request]):
     graphql_ide: Optional[GraphQL_IDE]
     multipart_uploads_enabled: bool = False
 
-    # TODO: we might remove this in future :)
-    _ide_replace_variables: bool = True
-    _ide_subscription_enabled: bool = True
-
     def should_render_graphql_ide(self, request: BaseRequestProtocol) -> bool:
         return (
             request.method == "GET"
@@ -64,11 +60,7 @@ class BaseView(Generic[Request]):
 
     @property
     def graphql_ide_html(self) -> str:
-        return get_graphql_ide_html(
-            subscription_enabled=self._ide_subscription_enabled,
-            replace_variables=self._ide_replace_variables,
-            graphql_ide=self.graphql_ide,
-        )
+        return get_graphql_ide_html(graphql_ide=self.graphql_ide)
 
     def _is_multipart_subscriptions(
         self, content_type: str, params: Dict[str, str]
