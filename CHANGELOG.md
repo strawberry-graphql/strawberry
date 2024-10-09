@@ -1,6 +1,36 @@
 CHANGELOG
 =========
 
+0.246.1 - 2024-10-09
+--------------------
+
+This release adds support for using raw Python enum types in your schema
+(enums that are not decorated with `@strawberry.enum`)
+
+This is useful if you have enum types from other places in your code
+that you want to use in strawberry.
+i.e
+```py
+# somewhere.py
+from enum import Enum
+
+
+class AnimalKind(Enum):
+    AXOLOTL, CAPYBARA = range(2)
+
+
+# gql/animals
+from somewhere import AnimalKind
+
+
+@strawberry.type
+class AnimalType:
+    kind: AnimalKind
+```
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #3639](https://github.com/strawberry-graphql/strawberry/pull/3639/)
+
+
 0.246.0 - 2024-10-07
 --------------------
 
