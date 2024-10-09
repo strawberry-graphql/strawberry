@@ -582,6 +582,7 @@ class QueryCodegen:
             type_ = GraphQLObjectType(
                 strawberry_type.name,
                 [],
+                is_one_of=strawberry_type.is_one_of,
             )
 
             for field in strawberry_type.fields:
