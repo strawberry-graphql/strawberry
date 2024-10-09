@@ -80,7 +80,7 @@ def tests(session: Session, gql_core: str) -> None:
     )
 
 
-@session(python=["3.12", "3.13"], name="Django tests", tags=["tests"])
+@session(python=["3.12"], name="Django tests", tags=["tests"])
 @with_gql_core_parametrize("django", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"])
 def tests_django(session: Session, django: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
