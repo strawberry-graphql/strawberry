@@ -301,3 +301,20 @@ class MyGraphQLRouter(GraphQLRouter):
     def encode_json(self, data: GraphQLHTTPResponse) -> bytes:
         return orjson.dumps(data)
 ```
+
+### render_graphql_ide
+
+In case you need more control over the rendering of the GraphQL IDE than the
+`graphql_ide` option provides, you can override the `render_graphql_ide` method.
+
+```python
+from strawberry.fastapi import GraphQLRouter
+from starlette.responses import HTMLResponse, Response
+
+
+class MyGraphQLRouter(GraphQLRouter):
+    async def render_graphql_ide(self, request: Request) -> HTMLResponse:
+        custom_html = """<html><body><h1>Custom GraphQL IDE</h1></body></html>"""
+
+        return HTMLResponse(custom_html)
+```

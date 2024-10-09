@@ -51,6 +51,7 @@ methods:
 - `async get_root_value(self, request: aiohttp.web.Request) -> object`
 - `async process_result(self, request: aiohttp.web.Request, result: ExecutionResult) -> GraphQLHTTPResponse`
 - `def encode_json(self, data: GraphQLHTTPResponse) -> str`
+- `async def render_graphql_ide(self, request: aiohttp.web.Request) -> aiohttp.web.Response`
 
 ### get_context
 
@@ -150,4 +151,21 @@ we use `json.dumps` but you can override this method to use a different encoder.
 class MyGraphQLView(GraphQLView):
     def encode_json(self, data: GraphQLHTTPResponse) -> str:
         return json.dumps(data, indent=2)
+```
+
+### render_graphql_ide
+
+In case you need more control over the rendering of the GraphQL IDE than the
+`graphql_ide` option provides, you can override the `render_graphql_ide` method.
+
+```python
+from aiohttp import web
+from strawberry.aiohttp.views import GraphQLView
+
+
+class MyGraphQLView(GraphQLView):
+    async def render_graphql_ide(self, request: web.Request) -> web.Response:
+        custom_html = """<html><body><h1>Custom GraphQL IDE</h1></body></html>"""
+
+        return web.Response(text=custom_html, content_type="text/html")
 ```

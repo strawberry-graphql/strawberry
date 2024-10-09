@@ -317,3 +317,43 @@ GraphQLController = make_graphql_controller(
 
 app = Litestar(route_handlers=[GraphQLController])
 ```
+
+## Extending the controller
+
+The `make_graphql_controller` function returns a `GraphQLController` class that
+can be extended by overriding the following methods:
+
+1. `async def render_graphql_ide(self, request: Request) -> Response`
+
+### render_graphql_ide
+
+In case you need more control over the rendering of the GraphQL IDE than the
+`graphql_ide` option provides, you can override the `render_graphql_ide` method.
+
+```python
+import strawberry
+from strawberry.litestar import make_graphql_controller
+from litestar import MediaType, Request, Response
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "world"
+
+
+schema = strawberry.Schema(Query)
+
+GraphQLController = make_graphql_controller(
+    schema,
+    path="/graphql",
+)
+
+
+class MyGraphQLController(GraphQLController):
+    async def render_graphql_ide(self, request: Request) -> Response:
+        custom_html = """<html><body><h1>Custom GraphQL IDE</h1></body></html>"""
+
+        return Response(custom_html, media_type=MediaType.HTML)
+```

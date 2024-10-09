@@ -42,6 +42,17 @@ class IceCreamFlavour(Enum):
     CHOCOLATE = "chocolate"
 ```
 
+<Note>
+
+In some cases you already have an enum defined elsewhere in your code. You can
+safely use it in your schema and strawberry will generate a default graphql
+implementation of it.
+
+The only drawback is that it is not currently possible to configure it
+(documentation / renaming or using `strawberry.enum_value` on it).
+
+</Note>
+
 Let's see how we can use Enums in our schema.
 
 ```python

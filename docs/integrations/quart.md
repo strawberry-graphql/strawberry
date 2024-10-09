@@ -43,10 +43,11 @@ The `GraphQLView` accepts the following options at the moment:
 
 We allow to extend the base `GraphQLView`, by overriding the following methods:
 
-- `get_context(self, request: Request, response: Response) -> Any`
-- `get_root_value(self, request: Request) -> Any`
-- `process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse`
-- `encode_json(self, response_data: GraphQLHTTPResponse) -> str`
+- `async def get_context(self, request: Request, response: Response) -> Any`
+- `async def get_root_value(self, request: Request) -> Any`
+- `async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def encode_json(self, response_data: GraphQLHTTPResponse) -> str`
+- `async def render_graphql_ide(self, request: Request) -> Response`
 
 ### get_context
 
@@ -131,4 +132,21 @@ we use `json.dumps` but you can override this method to use a different encoder.
 class MyGraphQLView(GraphQLView):
     def encode_json(self, data: GraphQLHTTPResponse) -> str:
         return json.dumps(data, indent=2)
+```
+
+### render_graphql_ide
+
+In case you need more control over the rendering of the GraphQL IDE than the
+`graphql_ide` option provides, you can override the `render_graphql_ide` method.
+
+```python
+from strawberry.quart.views import GraphQLView
+from quart import Request, Response
+
+
+class MyGraphQLView(GraphQLView):
+    async def render_graphql_ide(self, request: Request) -> Response:
+        custom_html = """<html><body><h1>Custom GraphQL IDE</h1></body></html>"""
+
+        return Response(self.graphql_ide_html)
 ```

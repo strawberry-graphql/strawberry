@@ -31,7 +31,7 @@ repos:
         args: ["--branch", "main"]
 
   - repo: https://github.com/adamchainz/blacken-docs
-    rev: 1.18.0
+    rev: 1.19.0
     hooks:
       - id: blacken-docs
         args: [--skip-errors]

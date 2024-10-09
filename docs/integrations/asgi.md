@@ -50,6 +50,7 @@ We allow to extend the base `GraphQL` app, by overriding the following methods:
 - `async get_root_value(self, request: Request) -> Any`
 - `async process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
 - `def encode_json(self, response_data: GraphQLHTTPResponse) -> str`
+- `async def render_graphql_ide(self, request: Request) -> Response`
 
 ### get_context
 
@@ -175,4 +176,21 @@ we use `json.dumps` but you can override this method to use a different encoder.
 class MyGraphQLView(GraphQL):
     def encode_json(self, data: GraphQLHTTPResponse) -> str:
         return json.dumps(data, indent=2)
+```
+
+### render_graphql_ide
+
+In case you need more control over the rendering of the GraphQL IDE than the
+`graphql_ide` option provides, you can override the `render_graphql_ide` method.
+
+```python
+from strawberry.asgi import GraphQL
+from starlette.responses import HTMLResponse, Response
+
+
+class MyGraphQL(GraphQL):
+    async def render_graphql_ide(self, request: Request) -> Response:
+        custom_html = """<html><body><h1>Custom GraphQL IDE</h1></body></html>"""
+
+        return HTMLResponse(custom_html)
 ```

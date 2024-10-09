@@ -62,11 +62,12 @@ encoding process.
 
 We allow to extend the base `GraphQLView`, by overriding the following methods:
 
-- `get_context(self, request: HttpRequest, response: HttpResponse) -> Any`
-- `get_root_value(self, request: HttpRequest) -> Any`
-- `process_result(self, request: HttpRequest, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def get_context(self, request: HttpRequest, response: HttpResponse) -> Any`
+- `def get_root_value(self, request: HttpRequest) -> Any`
+- `def process_result(self, request: HttpRequest, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def render_graphql_ide(self, request: HttpRequest) -> HttpResponse`
 
-## get_context
+### get_context
 
 `get_context` allows to provide a custom context object that can be used in your
 resolver. You can return anything here, by default we return a
@@ -101,7 +102,7 @@ called "example".
 Then we use the context in a resolver, the resolver will return "1" in this
 case.
 
-## get_root_value
+### get_root_value
 
 `get_root_value` allows to provide a custom root value for your schema, this is
 probably not used a lot but it might be useful in certain situations.
@@ -122,7 +123,7 @@ class Query:
 Here we are returning a Query where the name is "Patrick", so we when requesting
 the field name we'll return "Patrick" in this case.
 
-## process_result
+### process_result
 
 `process_result` allows to customize and/or process results before they are sent
 to the clients. This can be useful logging errors or hiding them (for example to
@@ -150,6 +151,24 @@ class MyGraphQLView(GraphQLView):
 
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
+
+### render_graphql_ide
+
+In case you need more control over the rendering of the GraphQL IDE than the
+`graphql_ide` option provides, you can override the `render_graphql_ide` method.
+
+```python
+from strawberry.django.views import GraphQLView
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+
+
+class MyGraphQLView(GraphQLView):
+    def render_graphql_ide(self, request: HttpRequest) -> HttpResponse:
+        content = render_to_string("myapp/my_graphql_ide_template.html")
+
+        return HttpResponse(content)
+```
 
 # Async Django
 
@@ -190,6 +209,7 @@ methods:
 - `async get_root_value(self, request: HttpRequest) -> Any`
 - `async process_result(self, request: HttpRequest, result: ExecutionResult) -> GraphQLHTTPResponse`
 - `def encode_json(self, data: GraphQLHTTPResponse) -> str`
+- `async def render_graphql_ide(self, request: HttpRequest) -> HttpResponse`
 
 ### get_context
 
@@ -275,6 +295,24 @@ we use `json.dumps` but you can override this method to use a different encoder.
 class MyGraphQLView(AsyncGraphQLView):
     def encode_json(self, data: GraphQLHTTPResponse) -> str:
         return json.dumps(data, indent=2)
+```
+
+### render_graphql_ide
+
+In case you need more control over the rendering of the GraphQL IDE than the
+`graphql_ide` option provides, you can override the `render_graphql_ide` method.
+
+```python
+from strawberry.django.views import AsyncGraphQLView
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+
+
+class MyGraphQLView(AsyncGraphQLView):
+    async def render_graphql_ide(self, request: HttpRequest) -> HttpResponse:
+        content = render_to_string("myapp/my_graphql_ide_template.html")
+
+        return HttpResponse(content)
 ```
 
 ## Subscriptions
