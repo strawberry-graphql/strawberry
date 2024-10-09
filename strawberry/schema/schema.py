@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import warnings
 from functools import cached_property, lru_cache
 from typing import (
@@ -214,17 +215,21 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
     def get_extensions(self, sync: bool = False) -> List[SchemaExtension]:
-        extensions = []
+        ret: List[SchemaExtension] = []
         if self.directives:
-            extensions = [
-                *self.extensions,
-                DirectivesExtensionSync if sync else DirectivesExtension,
-            ]
-        extensions.extend(self.extensions)
-        return [
-            ext if isinstance(ext, SchemaExtension) else ext(execution_context=None)
-            for ext in extensions
-        ]
+            ret.append(
+                DirectivesExtensionSync() if sync else DirectivesExtension(),
+            )
+
+        for extension in self.extensions:
+            if isinstance(extension, SchemaExtension):
+                ret.append(extension)
+
+            elif inspect.signature(extension).parameters.get("execution_context"):
+                ret.append(extension(execution_context=None))  # type: ignore
+            ret.append(extension())
+
+        return ret
 
     @cached_property
     def _sync_extensions(self) -> List[SchemaExtension]:
@@ -234,12 +239,16 @@ class Schema(BaseSchema):
     def _async_extensions(self) -> List[SchemaExtension]:
         return self.get_extensions(sync=False)
 
-    def create_extensions_runner(
-        self, execution_context: ExecutionContext, extensions: list[SchemaExtension]
-    ) -> SchemaExtensionsRunner:
+    @cached_property
+    def sync_extension_runner(self) -> SchemaExtensionsRunner:
         return SchemaExtensionsRunner(
-            execution_context=execution_context,
-            extensions=extensions,
+            extensions=self._sync_extensions,
+        )
+
+    @cached_property
+    def async_extension_runner(self) -> SchemaExtensionsRunner:
+        return SchemaExtensionsRunner(
+            extensions=self._async_extensions,
         )
 
     def _get_middleware_manager(
@@ -343,16 +352,11 @@ class Schema(BaseSchema):
             root_value=root_value,
             operation_name=operation_name,
         )
-        extensions = self.get_extensions()
-        # TODO (#3571): remove this when we implement execution context as parameter.
-        for extension in extensions:
-            extension.execution_context = execution_context
+        extensions = self._async_extensions
         return await execute(
             self._schema,
             execution_context=execution_context,
-            extensions_runner=self.create_extensions_runner(
-                execution_context, extensions
-            ),
+            extensions_runner=self.async_extension_runner,
             process_errors=self._process_errors,
             middleware_manager=self._get_middleware_manager(extensions),
             execution_context_class=self.execution_context_class,
@@ -379,15 +383,11 @@ class Schema(BaseSchema):
             operation_name=operation_name,
         )
         extensions = self._sync_extensions
-        # TODO (#3571): remove this when we implement execution context as parameter.
-        for extension in extensions:
-            extension.execution_context = execution_context
+
         return execute_sync(
             self._schema,
             execution_context=execution_context,
-            extensions_runner=self.create_extensions_runner(
-                execution_context, extensions
-            ),
+            extensions_runner=self.sync_extension_runner,
             execution_context_class=self.execution_context_class,
             allowed_operation_types=allowed_operation_types,
             process_errors=self._process_errors,
@@ -411,15 +411,10 @@ class Schema(BaseSchema):
             operation_name=operation_name,
         )
         extensions = self._async_extensions
-        # TODO (#3571): remove this when we implement execution context as parameter.
-        for extension in extensions:
-            extension.execution_context = execution_context
         return await subscribe(
             self._schema,
             execution_context=execution_context,
-            extensions_runner=self.create_extensions_runner(
-                execution_context, extensions
-            ),
+            extensions_runner=self.async_extension_runner,
             process_errors=self._process_errors,
             middleware_manager=self._get_middleware_manager(extensions),
             execution_context_class=self.execution_context_class,

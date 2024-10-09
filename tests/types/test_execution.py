@@ -1,5 +1,6 @@
 import strawberry
 from strawberry.extensions import SchemaExtension
+from strawberry.types.execution import ExecutionContext
 
 
 @strawberry.type
@@ -14,7 +15,7 @@ def test_execution_context_operation_name_and_type():
     operation_type = None
 
     class MyExtension(SchemaExtension):
-        def on_operation(self):
+        def on_parse(self, execution_context: ExecutionContext):
             yield
             nonlocal operation_name
             nonlocal operation_type
@@ -58,7 +59,7 @@ def test_execution_context_operation_type_mutation():
     operation_type = None
 
     class MyExtension(SchemaExtension):
-        def on_operation(self):
+        def on_parse(self, execution_context: ExecutionContext):
             yield
             nonlocal operation_name
             nonlocal operation_type
@@ -108,7 +109,7 @@ def test_execution_context_operation_name_and_type_with_fragments():
     operation_type = None
 
     class MyExtension(SchemaExtension):
-        def on_operation(self):
+        def on_parse(self, execution_context: ExecutionContext):
             yield
             nonlocal operation_name
             nonlocal operation_type
@@ -140,7 +141,7 @@ def test_execution_context_operation_name_and_type_with_fragments():
 
 def test_error_when_accessing_operation_type_before_parsing():
     class MyExtension(SchemaExtension):
-        def on_operation(self):
+        def on_parse(self, execution_context: ExecutionContext):
             execution_context = self.execution_context
 
             # This should raise a RuntimeError
@@ -156,7 +157,7 @@ def test_error_when_accessing_operation_type_before_parsing():
 
 def test_error_when_accessing_operation_type_with_invalid_operation_name():
     class MyExtension(SchemaExtension):
-        def on_parse(self):
+        def on_parse(self, execution_context: ExecutionContext):
             yield
             execution_context = self.execution_context
 
