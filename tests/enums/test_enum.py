@@ -200,3 +200,20 @@ def test_default_enum_with_enum_value() -> None:
     assert not res.errors
     assert res.data
     assert res.data["foo"] == "baz"
+
+
+def test_default_enum_with_docstring() -> None:
+    class Foo(Enum):
+        """This is a Foo enum."""
+
+        BAR = "bar"
+        BAZ = "baz"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def foo(self, foo: Foo) -> str:
+            return foo.value
+
+    definition = get_object_definition(Query, strict=True)
+    assert definition.fields[0].arguments[0].type.description == Foo.__doc__
