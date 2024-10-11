@@ -24,10 +24,12 @@ jobs:
       sessions: ${{ steps.set-matrix.outputs.sessions }}
     steps:
       - uses: actions/checkout@v4
-      - run: pip install poetry nox nox-poetry
+      - run: python3 -m venv .venv
       - id: set-matrix
         shell: bash
         run: |
+          . .venv/bin/activate 
+          pip install poetry nox nox-poetry
           echo sessions=$(
             nox --json -t tests -l |
             jq 'map(
@@ -82,7 +84,7 @@ jobs:
 
   benchmarks:
     name: 📈 Benchmarks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 # Using this version because CodSpeed doesn't support Ubuntu 24.04 LTS yet.
 
     steps:
       - uses: actions/checkout@v4
@@ -99,7 +101,7 @@ jobs:
         if: steps.setup-python.outputs.cache-hit != 'true'
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v2
+        uses: CodSpeedHQ/action@v3
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: poetry run pytest tests/benchmarks --codspeed
