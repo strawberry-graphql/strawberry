@@ -136,8 +136,8 @@ consistent way to handle pagination.
 <Note>
 
 Strawberry provides a cursor based pagination implementing the
-[relay spec](https://relay.dev/docs/guides/graphql-server-specification/). You
-can read more about it in the [relay](../relay) page.
+[connection](https://relay.dev/docs/guides/graphql-server-specification/). You
+can read more about it in the [connections](./connections) page.
 
 </Note>
 
@@ -203,4 +203,4 @@ Let us look at how we can implement pagination in GraphQL.
 
 - [Implementing Offset Pagination](./offset-based.md)
 - [Implementing Cursor Pagination](./cursor-based.md)
-- [Implementing the Relay Connection Specification](./connections.md)
+- [Implementing the Connection Specification](./connections.md)

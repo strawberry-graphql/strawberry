@@ -82,14 +82,15 @@ string `<TypeName>:<NodeID>`. In the example above, the `Fruit` with a code of
 
 </Note>
 
-Now we can expose it in the schema for retrieval and pagination like:
+Now we can expose it in the schema for retrieval and
+[pagination](./pagination/connections) like:
 
 ```python
 @strawberry.type
 class Query:
     node: relay.Node = relay.node()
 
-    @relay.connection(relay.ListConnection[Fruit])
+    @connection(ListConnection[Fruit])
     def fruits(self) -> Iterable[Fruit]:
         # This can be a database query, a generator, an async generator, etc
         return all_fruits.values()
@@ -179,16 +180,6 @@ query {
 }
 ```
 
-The connection resolver for `relay.ListConnection` should return one of those:
-
-- `List[<NodeType>]`
-- `Iterator[<NodeType>]`
-- `Iterable[<NodeType>]`
-- `AsyncIterator[<NodeType>]`
-- `AsyncIterable[<NodeType>]`
-- `Generator[<NodeType>, Any, Any]`
-- `AsyncGenerator[<NodeType>, Any]`
-
 ### The node field
 
 As demonstrated above, the `Node` field can be used to retrieve/refetch any
@@ -205,207 +196,14 @@ It can be defined in the `Query` objects in 4 ways:
 - `node: List[Optional[Node]]`: The same as `List[Node]`, but the returned list
   can contain `null` values if the given objects don't exist.
 
-### Custom connection pagination
+### The connection field
 
-The default `relay.Connection` class don't implement any pagination logic, and
-should be used as a base class to implement your own pagination logic. All you
-need to do is implement the `resolve_connection` classmethod.
+The connection field, although defined in the relay specifications, is actually
+a well-known pattern in GraphQL for getting paginated results.
 
-The integration provides `relay.ListConnection`, which implements a limit/offset
-approach to paginate the results. This is a basic approach and might be enough
-for most use cases.
-
-<Note>
-
-`relay.ListConnection` implementes the limit/offset by using slices. That means
-that you can override what the slice does by customizing the `__getitem__`
-method of the object returned by your nodes resolver.
-
-For example, when working with `Django`, `resolve_nodes` can return a
-`QuerySet`, meaning that the slice on it will translate to a `LIMIT`/`OFFSET` in
-the SQL query, which will fetch only the data that is needed from the database.
-
-Also note that if that object doesn't have a `__getitem__` attribute, it will
-use `itertools.islice` to paginate it, meaning that when a generator is being
-resolved it will only generate as much results as needed for the given
-pagination, the worst case scenario being the last results needing to be
-returned.
-
-</Note>
-
-Now, suppose we want to implement a custom cursor-based pagination for our
-previous example. We can do something like this:
-
-```python
-import strawberry
-from strawberry import relay
-
-
-@strawberry.type
-class FruitCustomPaginationConnection(relay.Connection[Fruit]):
-    @classmethod
-    def resolve_connection(
-        cls,
-        nodes: Iterable[Fruit],
-        *,
-        info: Optional[Info] = None,
-        before: Optional[str] = None,
-        after: Optional[str] = None,
-        first: Optional[int] = None,
-        last: Optional[int] = None,
-    ):
-        # NOTE: This is a showcase implementation and is far from
-        # being optimal performance wise
-        edges_mapping = {
-            relay.to_base64("fruit_name", n.name): relay.Edge(
-                node=n,
-                cursor=relay.to_base64("fruit_name", n.name),
-            )
-            for n in sorted(nodes, key=lambda f: f.name)
-        }
-        edges = list(edges_mapping.values())
-        first_edge = edges[0] if edges else None
-        last_edge = edges[-1] if edges else None
-
-        if after is not None:
-            after_edge_idx = edges.index(edges_mapping[after])
-            edges = [e for e in edges if edges.index(e) > after_edge_idx]
-
-        if before is not None:
-            before_edge_idx = edges.index(edges_mapping[before])
-            edges = [e for e in edges if edges.index(e) < before_edge_idx]
-
-        if first is not None:
-            edges = edges[:first]
-
-        if last is not None:
-            edges = edges[-last:]
-
-        return cls(
-            edges=edges,
-            page_info=strawberry.relay.PageInfo(
-                start_cursor=edges[0].cursor if edges else None,
-                end_cursor=edges[-1].cursor if edges else None,
-                has_previous_page=(
-                    first_edge is not None and bool(edges) and edges[0] != first_edge
-                ),
-                has_next_page=(
-                    last_edge is not None and bool(edges) and edges[-1] != last_edge
-                ),
-            ),
-        )
-
-
-@strawberry.type
-class Query:
-    @relay.connection(FruitCustomPaginationConnection)
-    def fruits(self) -> Iterable[Fruit]:
-        # This can be a database query, a generator, an async generator, etc
-        return all_fruits.values()
-```
-
-In the example above we specialized the `FruitCustomPaginationConnection` by
-inheriting it from `relay.Connection[Fruit]`. We could still keep it generic by
-inheriting it from `relay.Connection[relay.NodeType]` and then specialize it
-when defining the field, making it possible to use our custom pagination logic
-with more than one type.
-
-### Custom connection arguments
-
-By default the connection will automatically insert some arguments for it to be
-able to paginate the results. Those are:
-
-- `before`: Returns the items in the list that come before the specified cursor
-- `after`: Returns the items in the list that come after the " "specified cursor
-- `first`: Returns the first n items from the list
-- `last`: Returns the items in the list that come after the " "specified cursor
-
-You can still define extra arguments to be used by your own resolver or custom
-pagination logic. For example, suppose we want to return the pagination of all
-fruits whose name starts with a given string. We could do that like this:
-
-```python
-@strawberry.type
-class Query:
-    @relay.connection(relay.ListConnection[Fruit])
-    def fruits_with_filter(
-        self,
-        info: strawberry.Info,
-        name_endswith: str,
-    ) -> Iterable[Fruit]:
-        for f in fruits.values():
-            if f.name.endswith(name_endswith):
-                yield f
-```
-
-This will generate a schema like this:
-
-```graphql
-type Query {
-  fruitsWithFilter(
-    nameEndswith: String!
-    before: String = null
-    after: String = null
-    first: Int = null
-    last: Int = null
-  ): FruitConnection!
-}
-```
-
-### Convert the node to its proper type when resolving the connection
-
-The connection expects that the resolver will return a list of objects that is a
-subclass of its `NodeType`. But there may be situations where you are resolving
-something that needs to be converted to the proper type, like an ORM model.
-
-In this case you can subclass the `relay.Connection`/`relay.ListConnection` and
-provide a custom `resolve_node` method to it, which by default returns the node
-as is. For example:
-
-```python
-import strawberry
-from strawberry import relay
-
-from db import models
-
-
-@strawberry.type
-class Fruit(relay.Node):
-    code: relay.NodeID[int]
-    name: str
-    weight: float
-
-
-@strawberry.type
-class FruitDBConnection(relay.ListConnection[Fruit]):
-    @classmethod
-    def resolve_node(cls, node: FruitDB, *, info: strawberry.Info, **kwargs) -> Fruit:
-        return Fruit(
-            code=node.code,
-            name=node.name,
-            weight=node.weight,
-        )
-
-
-@strawberry.type
-class Query:
-    @relay.connection(FruitDBConnection)
-    def fruits_with_filter(
-        self,
-        info: strawberry.Info,
-        name_endswith: str,
-    ) -> Iterable[models.Fruit]:
-        return models.Fruit.objects.filter(name__endswith=name_endswith)
-```
-
-The main advantage of this approach instead of converting it inside the custom
-resolver is that the `Connection` will paginate the `QuerySet` first, which in
-case of django will make sure that only the paginated results are fetched from
-the database. After that, the `resolve_node` function will be called for each
-result to retrieve the correct object for it.
-
-We used django for this example, but the same applies to any other other similar
-use case, like SQLAlchemy, etc.
+Because of that, it is implemented in Strawberry as a generic pagination
+solution, which you can read more about in the
+[pagination](./pagination/connections) page.
 
 ### The GlobalID scalar
 

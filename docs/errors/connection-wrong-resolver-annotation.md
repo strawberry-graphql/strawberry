@@ -1,13 +1,13 @@
 ---
-title: Relay wrong resolver annotation Error
+title: Connection wrong resolver annotation Error
 ---
 
-# Relay wrong resolver annotation error
+# Connection wrong resolver annotation error
 
 ## Description
 
-This error is thrown when a field on a relay connection was defined with a
-resolver that returns something that is not compatible with pagination.
+This error is thrown when a field on a connection was defined with a resolver
+that returns something that is not compatible with pagination.
 
 For example, the following code would throw this error:
 
@@ -15,19 +15,19 @@ For example, the following code would throw this error:
 from typing import Any
 
 import strawberry
-from strawberry import relay
+from strawberry.pagination import connection
 
 
 @strawberry.type
-class MyType(relay.Node): ...
+class MyType(Node): ...
 
 
 @strawberry.type
 class Query:
-    @relay.connection(relay.Connection[MyType])
+    @connection(Connection[MyType])
     def some_connection_returning_mytype(self) -> MyType: ...
 
-    @relay.connection(relay.Connection[MyType])
+    @connection(Connection[MyType])
     def some_connection_returning_any(self) -> Any: ...
 ```
 
@@ -53,22 +53,22 @@ For example:
 from typing import Any
 
 import strawberry
-from strawberry import relay
+from strawberry.pagination import connection, Connection
 
 
 @strawberry.type
-class MyType(relay.Node): ...
+class MyType: ...
 
 
 @strawberry.type
 class Query:
-    @relay.connection(relay.Connection[MyType])
+    @connection(Connection[MyType])
     def some_connection(self) -> Iterable[MyType]: ...
 ```
 
 <Note>
   Note that if you are returning a type different than the connection type, you
   will need to subclass the connection type and override its `resolve_node`
-  method to convert it to the correct type, as explained in the [relay
-  guide](../guides/relay).
+  method to convert it to the correct type, as explained in the [pagination
+  guide](../guides/pagination).
 </Note>
