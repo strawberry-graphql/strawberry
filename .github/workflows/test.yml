@@ -24,12 +24,14 @@ jobs:
       sessions: ${{ steps.set-matrix.outputs.sessions }}
     steps:
       - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
       - run: python3 -m venv .venv
       - id: set-matrix
         shell: bash
         run: |
           . .venv/bin/activate 
-          pip install poetry nox nox-poetry
+          uv install poetry nox nox-poetry
           echo sessions=$(
             nox --json -t tests -l |
             jq 'map(
