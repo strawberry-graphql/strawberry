@@ -86,8 +86,9 @@ jobs:
 
   benchmarks:
     name: 📈 Benchmarks
-    # Using this version because CodSpeed doesn't support Ubuntu 24.04 LTS yet.
-    runs-on: ubuntu-22.04 
+
+    # Using this version because CodSpeed doesn't support Ubuntu 24.04 LTS yet
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v4
