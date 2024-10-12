@@ -112,7 +112,7 @@ async def test_parsing_an_invalid_payload(ws_raw: WebSocketClient):
     assert ws.close_reason == "Failed to parse message"
 
 
-async def test_ws_messages_must_be_text(ws_raw: WebSocketClient):
+async def test_non_text_ws_messages_result_in_socket_closure(ws_raw: WebSocketClient):
     ws = ws_raw
 
     await ws.send_bytes(json.dumps(ConnectionInitMessage().as_dict()).encode())
@@ -123,7 +123,7 @@ async def test_ws_messages_must_be_text(ws_raw: WebSocketClient):
     assert ws.close_reason == "WebSocket message type must be text"
 
 
-async def test_ws_messages_must_be_json(ws_raw: WebSocketClient):
+async def test_non_json_ws_messages_result_in_socket_closure(ws_raw: WebSocketClient):
     ws = ws_raw
 
     await ws.send_text("not valid json")
@@ -131,7 +131,7 @@ async def test_ws_messages_must_be_json(ws_raw: WebSocketClient):
     await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4400
-    assert ws.close_reason == "WebSocket message type must be text"
+    assert ws.close_reason == "WebSocket message must be valid JSON"
 
 
 async def test_ws_message_frame_types_cannot_be_mixed(ws_raw: WebSocketClient):

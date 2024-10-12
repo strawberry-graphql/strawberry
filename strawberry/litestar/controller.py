@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import warnings
 from datetime import timedelta
 from typing import (
@@ -37,7 +38,6 @@ from litestar.background_tasks import BackgroundTasks
 from litestar.di import Provide
 from litestar.exceptions import (
     NotFoundException,
-    SerializationException,
     ValidationException,
     WebSocketDisconnect,
 )
@@ -49,7 +49,11 @@ from strawberry.http.async_base_view import (
     AsyncHTTPRequestAdapter,
     AsyncWebSocketAdapter,
 )
-from strawberry.http.exceptions import HTTPException, NonJsonMessageReceived
+from strawberry.http.exceptions import (
+    HTTPException,
+    NonJsonMessageReceived,
+    NonTextMessageReceived,
+)
 from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
@@ -192,13 +196,22 @@ class LitestarWebSocketAdapter(AsyncWebSocketAdapter):
     def __init__(self, request: WebSocket, response: WebSocket) -> None:
         self.ws = response
 
-    async def iter_json(self) -> AsyncGenerator[Dict[str, object], None]:
+    async def iter_json(
+        self, ignore_parsing_errors: bool
+    ) -> AsyncGenerator[Dict[str, object], None]:
         try:
-            try:
-                while self.ws.connection_state != "disconnect":
-                    yield await self.ws.receive_json()
-            except (SerializationException, ValueError):
-                raise NonJsonMessageReceived()
+            while self.ws.connection_state != "disconnect":
+                text = await self.ws.receive_text()
+
+                # Litestar internally defaults to an empty string for non-text messages
+                if text == "":
+                    raise NonTextMessageReceived()
+
+                try:
+                    yield json.loads(text)
+                except json.JSONDecodeError:
+                    if not ignore_parsing_errors:
+                        raise NonJsonMessageReceived()
         except WebSocketDisconnect:
             pass
 

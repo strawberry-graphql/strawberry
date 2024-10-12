@@ -15,7 +15,7 @@ from typing import (
 
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 
-from strawberry.http.exceptions import NonJsonMessageReceived
+from strawberry.http.exceptions import NonJsonMessageReceived, NonTextMessageReceived
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
@@ -76,10 +76,12 @@ class BaseGraphQLTransportWSHandler:
         self.on_request_accepted()
 
         try:
-            async for message in self.websocket.iter_json():
+            async for message in self.websocket.iter_json(ignore_parsing_errors=False):
                 await self.handle_message(message)
-        except NonJsonMessageReceived:
+        except NonTextMessageReceived:
             await self.handle_invalid_message("WebSocket message type must be text")
+        except NonJsonMessageReceived:
+            await self.handle_invalid_message("WebSocket message must be valid JSON")
         finally:
             await self.shutdown()
 
