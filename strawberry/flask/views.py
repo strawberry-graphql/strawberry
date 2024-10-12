@@ -187,7 +187,8 @@ class AsyncGraphQLView(
             )
 
     async def render_graphql_ide(self, request: Request) -> Response:
-        return render_template_string(self.graphql_ide_html)  # type: ignore
+        content = render_template_string(self.graphql_ide_html)
+        return Response(content, status=200, content_type="text/html")
 
     def is_websocket_request(self, request: Request) -> TypeGuard[Request]:
         return False
