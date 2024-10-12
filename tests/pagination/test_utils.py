@@ -6,16 +6,15 @@ from unittest import mock
 
 import pytest
 
-from strawberry.relay.types import PREFIX
-from strawberry.relay.utils import (
+import strawberry
+from strawberry.pagination.types import PREFIX
+from strawberry.pagination.utils import (
     SliceMetadata,
     from_base64,
     to_base64,
 )
 from strawberry.schema.config import StrawberryConfig
 from strawberry.types.base import get_object_definition
-
-from .schema import Fruit
 
 
 def test_from_base64():
@@ -55,11 +54,19 @@ def test_to_base64():
 
 
 def test_to_base64_with_type():
+    @strawberry.type
+    class Fruit:
+        id: int
+
     value = to_base64(Fruit, "1")
     assert value == "RnJ1aXQ6MQ=="
 
 
 def test_to_base64_with_typedef():
+    @strawberry.type
+    class Fruit:
+        id: int
+
     value = to_base64(
         get_object_definition(Fruit, strict=True),
         "1",

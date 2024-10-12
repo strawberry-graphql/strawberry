@@ -1,14 +1,14 @@
 ---
-title: Pagination - Implementing the Relay Connection Specification
+title: Pagination - Implementing the Connection Specification
 ---
 
-# Implementing the Relay Connection Specification
+# Implementing the Connection Specification
 
 We naively implemented cursor based pagination in the
 [previous tutorial](./cursor-based.md). To ensure a consistent implementation of
 this pattern, the Relay project has a formal
-[specification](https://relay.dev/graphql/connections.htm) you can follow for
-building GraphQL APIs which use a cursor based connection pattern.
+[connection specification](https://relay.dev/graphql/connections.htm), and
+strawberry provides a `Connection` generic type to implement it.
 
 By the end of this tutorial, we should be able to return a connection of users
 when requested.
@@ -74,522 +74,320 @@ query getUsers {
 
 </CodeGrid>
 
-## Connections
+## Connection
 
 A Connection represents a paginated relationship between two entities. This
 pattern is used when the relationship itself has attributes. For example, we
 might have a connection of users to represent a paginated list of users.
 
-Let us define a Connection type which takes in a Generic ObjectType.
+Strawberry provides a `relay.Connection` class, which contains the basics of
+what you need to implement the specification, but don't implement any pagination
+logic. To use it, all you need to do is to subclass it and implement its
+abstract `resolve_connection` classmethod.
 
-```py
-# example.py
+<Note>
 
-from typing import Generic, TypeVar
+For basic cases, Strawberry provides a `ListConnection` which already implements
+a `resolve_connection`, which we are going to look in the next section.
 
+</Note>
+
+Lets look at an example for a connection of users:
+
+```python
 import strawberry
-
-
-GenericType = TypeVar("GenericType")
-
-
-@strawberry.type
-class Connection(Generic[GenericType]):
-    page_info: "PageInfo" = strawberry.field(
-        description="Information to aid in pagination."
-    )
-
-    edges: list["Edge[GenericType]"] = strawberry.field(
-        description="A list of edges in this connection."
-    )
-```
-
-Connections must have atleast two fields: `edges` and `page_info`.
-
-The `page_info` field contains metadata about the connection. Following the
-Relay specification, we can define a `PageInfo` type like this:
-
-```py line=22-38
-# example.py
-
-from typing import Generic, TypeVar
-
-import strawberry
-
-
-GenericType = TypeVar("GenericType")
+from strawberry.pagination import Connection, Edge, to_base64
 
 
 @strawberry.type
-class Connection(Generic[GenericType]):
-    page_info: "PageInfo" = strawberry.field(
-        description="Information to aid in pagination."
-    )
-
-    edges: list["Edge[GenericType]"] = strawberry.field(
-        description="A list of edges in this connection."
-    )
-
-
-@strawberry.type
-class PageInfo:
-    has_next_page: bool = strawberry.field(
-        description="When paginating forwards, are there more items?"
-    )
-
-    has_previous_page: bool = strawberry.field(
-        description="When paginating backwards, are there more items?"
-    )
-
-    start_cursor: Optional[str] = strawberry.field(
-        description="When paginating backwards, the cursor to continue."
-    )
-
-    end_cursor: Optional[str] = strawberry.field(
-        description="When paginating forwards, the cursor to continue."
-    )
-```
-
-You can read more about the `PageInfo` type at:
-
-- https://graphql.org/learn/pagination/#pagination-and-edges
-- https://relay.dev/graphql/connections.htm
-
-The `edges` field must return a list type that wraps an edge type.
-
-Following the Relay specification, let us define an Edge that takes in a generic
-ObjectType.
-
-```py line=41-49
-# example.py
-
-from typing import Generic, TypeVar
-
-import strawberry
-
-
-GenericType = TypeVar("GenericType")
-
-
-@strawberry.type
-class Connection(Generic[GenericType]):
-    page_info: "PageInfo" = strawberry.field(
-        description="Information to aid in pagination."
-    )
-
-    edges: list["Edge[GenericType]"] = strawberry.field(
-        description="A list of edges in this connection."
-    )
-
-
-@strawberry.type
-class PageInfo:
-    has_next_page: bool = strawberry.field(
-        description="When paginating forwards, are there more items?"
-    )
-
-    has_previous_page: bool = strawberry.field(
-        description="When paginating backwards, are there more items?"
-    )
-
-    start_cursor: Optional[str] = strawberry.field(
-        description="When paginating backwards, the cursor to continue."
-    )
-
-    end_cursor: Optional[str] = strawberry.field(
-        description="When paginating forwards, the cursor to continue."
-    )
-
-
-@strawberry.type
-class Edge(Generic[GenericType]):
-    node: GenericType = strawberry.field(description="The item at the end of the edge.")
-
-    cursor: str = strawberry.field(description="A cursor for use in pagination.")
-```
-
-EdgeTypes must have atleast two fields - `cursor` and `node`. Each edge has it's
-own cursor and item (represented by the `node` field).
-
-Now that we have the types needed to implement pagination using Relay
-Connections, let us use them to paginate a list of users. For simplicity's sake,
-let our dataset be a list of dictionaries.
-
-```py line=7-32
-# example.py
-
-from typing import Generic, TypeVar
-
-import strawberry
-
-user_data = [
-    {
-        "id": 1,
-        "name": "Norman Osborn",
-        "occupation": "Founder, Oscorp Industries",
-        "age": 42,
-    },
-    {
-        "id": 2,
-        "name": "Peter Parker",
-        "occupation": "Freelance Photographer, The Daily Bugle",
-        "age": 20,
-    },
-    {
-        "id": 3,
-        "name": "Harold Osborn",
-        "occupation": "President, Oscorp Industries",
-        "age": 19,
-    },
-    {
-        "id": 4,
-        "name": "Eddie Brock",
-        "occupation": "Journalist, The Eddie Brock Report",
-        "age": 20,
-    },
-]
-
-
-GenericType = TypeVar("GenericType")
-
-
-@strawberry.type
-class Connection(Generic[GenericType]):
-    page_info: "PageInfo" = strawberry.field(
-        description="Information to aid in pagination."
-    )
-
-    edges: list["Edge[GenericType]"] = strawberry.field(
-        description="A list of edges in this connection."
-    )
-
-
-@strawberry.type
-class PageInfo:
-    has_next_page: bool = strawberry.field(
-        description="When paginating forwards, are there more items?"
-    )
-
-    has_previous_page: bool = strawberry.field(
-        description="When paginating backwards, are there more items?"
-    )
-
-    start_cursor: Optional[str] = strawberry.field(
-        description="When paginating backwards, the cursor to continue."
-    )
-
-    end_cursor: Optional[str] = strawberry.field(
-        description="When paginating forwards, the cursor to continue."
-    )
-
-
-@strawberry.type
-class Edge(Generic[GenericType]):
-    node: GenericType = strawberry.field(description="The item at the end of the edge.")
-
-    cursor: str = strawberry.field(description="A cursor for use in pagination.")
-```
-
-Now is a good time to think of what we could use as a cursor for our dataset.
-Our cursor needs to be an opaque value, which doesn't usually change over time.
-It makes sense to use base64 encoded IDs of users as our cursor, as they fit
-both criteria.
-
-<Tip>
-
-While working with Connections, it is a convention to base64-encode cursors. It
-provides a unified interface to the end user. API clients need not bother about
-the type of data to paginate, and can pass unique IDs during pagination. It also
-makes the cursors opaque.
-
-</Tip>
-
-Let us define a couple of helper functions to encode and decode cursors as
-follows:
-
-```py line=3,35-43
-# example.py
-
-from base64 import b64encode, b64decode
-from typing import Generic, TypeVar
-
-import strawberry
-
-user_data = [
-    {
-        "id": 1,
-        "name": "Norman Osborn",
-        "occupation": "Founder, Oscorp Industries",
-        "age": 42,
-    },
-    {
-        "id": 2,
-        "name": "Peter Parker",
-        "occupation": "Freelance Photographer, The Daily Bugle",
-        "age": 20,
-    },
-    {
-        "id": 3,
-        "name": "Harold Osborn",
-        "occupation": "President, Oscorp Industries",
-        "age": 19,
-    },
-    {
-        "id": 4,
-        "name": "Eddie Brock",
-        "occupation": "Journalist, The Eddie Brock Report",
-        "age": 20,
-    },
-]
-
-
-def encode_user_cursor(id: int) -> str:
-    """
-    Encodes the given user ID into a cursor.
-
-    :param id: The user ID to encode.
-
-    :return: The encoded cursor.
-    """
-    return b64encode(f"user:{id}".encode("ascii")).decode("ascii")
-
-
-def decode_user_cursor(cursor: str) -> int:
-    """
-    Decodes the user ID from the given cursor.
-
-    :param cursor: The cursor to decode.
-
-    :return: The decoded user ID.
-    """
-    cursor_data = b64decode(cursor.encode("ascii")).decode("ascii")
-    return int(cursor_data.split(":")[1])
-
-
-GenericType = TypeVar("GenericType")
-
-
-@strawberry.type
-class Connection(Generic[GenericType]):
-    page_info: "PageInfo" = strawberry.field(
-        description="Information to aid in pagination."
-    )
-
-    edges: list["Edge[GenericType]"] = strawberry.field(
-        description="A list of edges in this connection."
-    )
-
-
-@strawberry.type
-class PageInfo:
-    has_next_page: bool = strawberry.field(
-        description="When paginating forwards, are there more items?"
-    )
-
-    has_previous_page: bool = strawberry.field(
-        description="When paginating backwards, are there more items?"
-    )
-
-    start_cursor: Optional[str] = strawberry.field(
-        description="When paginating backwards, the cursor to continue."
-    )
-
-    end_cursor: Optional[str] = strawberry.field(
-        description="When paginating forwards, the cursor to continue."
-    )
-
-
-@strawberry.type
-class Edge(Generic[GenericType]):
-    node: GenericType = strawberry.field(description="The item at the end of the edge.")
-
-    cursor: str = strawberry.field(description="A cursor for use in pagination.")
-```
-
-Let us define a `get_users` field which returns a connection of users, as well
-as an `UserType`. Let us also plug our query into a schema.
-
-```python line=104-174
-# example.py
-
-from base64 import b64encode, b64decode
-from typing import List, Optional, Generic, TypeVar
-
-import strawberry
-
-user_data = [
-    {
-        "id": 1,
-        "name": "Norman Osborn",
-        "occupation": "Founder, Oscorp Industries",
-        "age": 42,
-    },
-    {
-        "id": 2,
-        "name": "Peter Parker",
-        "occupation": "Freelance Photographer, The Daily Bugle",
-        "age": 20,
-    },
-    {
-        "id": 3,
-        "name": "Harold Osborn",
-        "occupation": "President, Oscorp Industries",
-        "age": 19,
-    },
-    {
-        "id": 4,
-        "name": "Eddie Brock",
-        "occupation": "Journalist, The Eddie Brock Report",
-        "age": 20,
-    },
-]
-
-
-def encode_user_cursor(id: int) -> str:
-    """
-    Encodes the given user ID into a cursor.
-
-    :param id: The user ID to encode.
-
-    :return: The encoded cursor.
-    """
-    return b64encode(f"user:{id}".encode("ascii")).decode("ascii")
-
-
-def decode_user_cursor(cursor: str) -> int:
-    """
-    Decodes the user ID from the given cursor.
-
-    :param cursor: The cursor to decode.
-
-    :return: The decoded user ID.
-    """
-    cursor_data = b64decode(cursor.encode("ascii")).decode("ascii")
-    return int(cursor_data.split(":")[1])
-
-
-GenericType = TypeVar("GenericType")
-
-
-@strawberry.type
-class Connection(Generic[GenericType]):
-    page_info: "PageInfo" = strawberry.field(
-        description="Information to aid in pagination."
-    )
-
-    edges: list["Edge[GenericType]"] = strawberry.field(
-        description="A list of edges in this connection."
-    )
-
-
-@strawberry.type
-class PageInfo:
-    has_next_page: bool = strawberry.field(
-        description="When paginating forwards, are there more items?"
-    )
-
-    has_previous_page: bool = strawberry.field(
-        description="When paginating backwards, are there more items?"
-    )
-
-    start_cursor: Optional[str] = strawberry.field(
-        description="When paginating backwards, the cursor to continue."
-    )
-
-    end_cursor: Optional[str] = strawberry.field(
-        description="When paginating forwards, the cursor to continue."
-    )
-
-
-@strawberry.type
-class Edge(Generic[GenericType]):
-    node: GenericType = strawberry.field(description="The item at the end of the edge.")
-
-    cursor: str = strawberry.field(description="A cursor for use in pagination.")
-
-
-@strawberry.type
-class User:
-    id: int = strawberry.field(description="The id of the user.")
-
-    name: str = strawberry.field(description="The name of the user.")
-
-    occupation: str = strawberry.field(description="The occupation of the user.")
-
-    age: int = strawberry.field(description="The age of the user.")
+class UserConnection(Connection[User]):
+    @classmethod
+    def resolve_connection(
+        cls,
+        nodes: Iterable[Fruit],
+        *,
+        info: Optional[Info] = None,
+        before: Optional[str] = None,
+        after: Optional[str] = None,
+        first: Optional[int] = None,
+        last: Optional[int] = None,
+    ):
+        # NOTE: This is a showcase implementation and is far from
+        # being optimal performance wise
+        edges_mapping = {
+            to_base64("cursor-name", n.name): Edge(
+                node=n,
+                cursor=to_base64("cursor-name", n.name),
+            )
+            for n in sorted(nodes, key=lambda f: f.name)
+        }
+        edges = list(edges_mapping.values())
+        first_edge = edges[0] if edges else None
+        last_edge = edges[-1] if edges else None
+
+        if after is not None:
+            after_edge_idx = edges.index(edges_mapping[after])
+            edges = [e for e in edges if edges.index(e) > after_edge_idx]
+
+        if before is not None:
+            before_edge_idx = edges.index(edges_mapping[before])
+            edges = [e for e in edges if edges.index(e) < before_edge_idx]
+
+        if first is not None:
+            edges = edges[:first]
+
+        if last is not None:
+            edges = edges[-last:]
+
+        return cls(
+            edges=edges,
+            page_info=strawberry.relay.PageInfo(
+                start_cursor=edges[0].cursor if edges else None,
+                end_cursor=edges[-1].cursor if edges else None,
+                has_previous_page=(
+                    first_edge is not None and bool(edges) and edges[0] != first_edge
+                ),
+                has_next_page=(
+                    last_edge is not None and bool(edges) and edges[-1] != last_edge
+                ),
+            ),
+        )
 
 
 @strawberry.type
 class Query:
-    @strawberry.field(description="Get a list of users.")
-    def get_users(
-        self, first: int = 2, after: Optional[str] = None
-    ) -> Connection[User]:
-        if after is not None:
-            # decode the user ID from the given cursor.
-            user_id = decode_user_cursor(cursor=after)
-        else:
-            # no cursor was given (this happens usually when the
-            # client sends a query for the first time).
-            user_id = 0
+    @connection(UserConnection)
+    def get_users(self) -> Iterable[User]:
+        # This can be a database query, a generator, an async generator, etc
+        return some_function_that_returns_users()
+```
 
-        # filter the user data, going through the next set of results.
-        filtered_data = list(filter(lambda user: user["id"] > user_id, user_data))
+This would generate a schema like this:
 
-        # slice the relevant user data (Here, we also slice an
-        # additional user instance, to prepare the next cursor).
-        sliced_users = filtered_data[: first + 1]
+```graphql
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
 
-        if len(sliced_users) > first:
-            # calculate the client's next cursor.
-            last_user = sliced_users.pop(-1)
-            next_cursor = encode_user_cursor(id=last_user["id"])
-            has_next_page = True
-        else:
-            # We have reached the last page, and
-            # don't have the next cursor.
-            next_cursor = None
-            has_next_page = False
+type User {
+  id: ID!
+  name: String!
+  occupation: String!
+  age: Int!
+}
 
-        # We know that we have items in the
-        # previous page window if the initial user ID
-        # was not the first one.
-        has_previous_page = user_id > 0
+type UserEdge {
+  cursor: String!
+  node: User!
+}
 
-        # build user edges.
-        edges = [
-            Edge(
-                node=User(**user),
-                cursor=encode_user_cursor(id=user["id"]),
-            )
-            for user in sliced_users
-        ]
+type UserConnection {
+  pageInfo: PageInfo!
+  edges: [UserEdge!]!
+}
 
-        if edges:
-            # we have atleast one edge. Get the cursor
-            # of the first edge we have.
-            start_cursor = edges[0].cursor
-        else:
-            # We have no edges to work with.
-            start_cursor = None
+type Query {
+  getUsers(
+    first: Int = null
+    last: Int = null
+    before: String = null
+    after: String = null
+  ): UserConnection!
+}
+```
 
-        if len(edges) > 1:
-            # We have atleast 2 edges. Get the cursor
-            # of the last edge we have.
-            end_cursor = edges[-1].cursor
-        else:
-            # We don't have enough edges to work with.
-            end_cursor = None
+## ListConnection
 
-        return Connection(
-            edges=edges,
-            page_info=PageInfo(
-                has_next_page=has_next_page,
-                has_previous_page=has_previous_page,
-                start_cursor=start_cursor,
-                end_cursor=end_cursor,
-            ),
+Strawberry also provides `ListConnection`, a subclass of `Connection` that
+implementes a limit/offset pagination algorithm by using slices.
+
+If a limit/offset pagination is enough for your needs, the above example can be
+simplified to use `ListConnection` to a basic resolver that returns one of:
+
+- `List[<NodeType>]`
+- `Iterator[<NodeType>]`
+- `Iterable[<NodeType>]`
+- `AsyncIterator[<NodeType>]`
+- `AsyncIterable[<NodeType>]`
+- `Generator[<NodeType>, Any, Any]`
+- `AsyncGenerator[<NodeType>, Any]`
+
+For example:
+
+```python
+import strawberry
+from strawberry.pagination import Connection, Edge, to_base64
+
+
+@strawberry.type
+class Query:
+    @connection(ListConnection[User])
+    def get_users(self) -> Iterable[User]:
+        # This can be a database query, a generator, an async generator, etc
+        return some_function_that_returns_users()
+```
+
+Because the implementation will use a slice to paginate the data, that means you
+can override what the slice does by customizing the `__getitem__` method of the
+object returned by your nodes resolver.
+
+For example, when working with `Django`, `resolve_nodes` can return a
+`QuerySet`, meaning that the slice on it will translate to a `LIMIT`/`OFFSET` in
+the SQL query, making it fetch only the data that is needed from the database.
+
+Also note that if that object doesn't have a `__getitem__` attribute, it will
+use `itertools.islice` to paginate it, meaning that when a generator is being
+resolved it will only generate as much results as needed for the given
+pagination, the worst case scenario being the last results needing to be
+returned.
+
+## Custom Connection Arguments
+
+By default the connection will automatically insert some arguments for it to be
+able to paginate the results. Those are:
+
+- `before`: Returns the items in the list that come before the specified cursor
+- `after`: Returns the items in the list that come after the " "specified cursor
+- `first`: Returns the first n items from the list
+- `last`: Returns the items in the list that come after the " "specified cursor
+
+You can still define extra arguments to be used by your own resolver or custom
+pagination logic, and those will be merged together. For example, suppose we
+want to return the pagination of all users whose name starts with a given
+string. We could do that like this:
+
+```python
+@strawberry.type
+class Query:
+    @connection(ListConnection[User])
+    def get_users(self, name_starswith: str) -> Iterable[User]:
+        return some_function_that_returns_users(name_startswith=name_startswith)
+```
+
+This will generate a `Query` like this:
+
+```graphql
+type Query {
+  getUsers(
+    nameStartswith: String!
+    first: Int = null
+    last: Int = null
+    before: String = null
+    after: String = null
+  ): UserConnection!
+}
+```
+
+## Converting the node to its proper type when resolving the connection
+
+The connection expects that the resolver will return a list of objects that is a
+subclass of its `NodeType`. But there may be situations where you are resolving
+something that needs to be converted to the proper type, like an ORM model.
+
+In this case you can subclass the `Connection`/`ListConnection` and provide a
+custom `resolve_node` method to it, which by default returns the node as is. For
+example:
+
+```python
+import strawberry
+from strawberry.pagination import ListConnection, connection
+
+from db.models import UserModel
+
+
+@strawberry.type
+class User:
+    id: int
+    name: str
+
+
+@strawberry.type
+class UserConnection(ListConnection[User]):
+    @classmethod
+    def resolve_node(cls, node: UserModel, *, info, **kwargs) -> User:
+        return User(
+            id=node.id,
+            name=node.name,
         )
+
+
+@strawberry.type
+class Query:
+    @connection(UserConnection)
+    def get_users(self, info: strawberry.Info) -> Iterable[UserDB]:
+        return UserDB.objects.all()
+```
+
+The main advantage of this approach instead of converting it inside the custom
+resolver is that the `Connection` will paginate the `QuerySet` first, which in
+case of Django will make sure that only the paginated results are fetched from
+the database. After that, the `resolve_node` function will be called for each
+result to retrieve the correct object for it.
+
+We used Django for this example, but the same applies to any other other similar
+use case, like SQLAlchemy, etc.
+
+## Full working example
+
+Here is a full working example of a connection of users which you can play with:
+
+```python
+from typing import Iterable
+import strawberry
+from strawberry.pagination import ListConnection, connection
+
+user_data = [
+    {
+        "id": 1,
+        "name": "Norman Osborn",
+        "occupation": "Founder, Oscorp Industries",
+        "age": 42,
+    },
+    {
+        "id": 2,
+        "name": "Peter Parker",
+        "occupation": "Freelance Photographer, The Daily Bugle",
+        "age": 20,
+    },
+    {
+        "id": 3,
+        "name": "Harold Osborn",
+        "occupation": "President, Oscorp Industries",
+        "age": 19,
+    },
+    {
+        "id": 4,
+        "name": "Eddie Brock",
+        "occupation": "Journalist, The Eddie Brock Report",
+        "age": 20,
+    },
+]
+
+
+@strawberry.type
+class User:
+    id: int
+    name: str
+    occupation: str
+    age: int
+
+
+@strawberry.type
+class Query:
+    @connection(ListConnection[User])
+    def get_users(self) -> Iterable[User]:
+        return [
+            User(
+                id=user["id"],
+                name=user["name"],
+                occupation=user["occupation"],
+                age=user["age"],
+            )
+            for user in user_data
+        ]
 
 
 schema = strawberry.Schema(query=Query)
