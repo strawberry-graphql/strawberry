@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.246.2 - 2024-10-12
+--------------------
+
+This release tweaks the Flask integration's `render_graphql_ide` method to be stricter typed internally, making type checkers ever so slightly happier.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3666](https://github.com/strawberry-graphql/strawberry/pull/3666/)
+
+
 0.246.1 - 2024-10-09
 --------------------
 
