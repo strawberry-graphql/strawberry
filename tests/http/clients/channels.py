@@ -20,7 +20,7 @@ from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.typevars import Context, RootValue
 from tests.views.schema import Query, schema
 
-from ..context import get_context, get_context_async
+from ..context import get_context
 from .base import (
     JSON,
     DebuggableGraphQLTransportWSHandler,
@@ -78,7 +78,7 @@ class DebuggableGraphQLHTTPConsumer(GraphQLHTTPConsumer):
     async def get_context(self, request: ChannelsConsumer, response: Any) -> Context:
         context = await super().get_context(request, response)
 
-        return await get_context_async(context)
+        return get_context(context)
 
     async def process_result(
         self, request: ChannelsConsumer, result: Any

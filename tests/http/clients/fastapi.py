@@ -16,7 +16,7 @@ from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
-from ..context import get_context_async as get_context
+from ..context import get_context
 from .asgi import AsgiWebSocketClient
 from .base import (
     JSON,
@@ -39,7 +39,7 @@ async def fastapi_get_context(
     ws: WebSocket = None,  # type: ignore
     custom_value: str = Depends(custom_context_dependency),
 ) -> Dict[str, object]:
-    return await get_context(
+    return get_context(
         {
             "request": request or ws,
             "background_tasks": background_tasks,
