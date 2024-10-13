@@ -1,6 +1,99 @@
 CHANGELOG
 =========
 
+0.246.2 - 2024-10-12
+--------------------
+
+This release tweaks the Flask integration's `render_graphql_ide` method to be stricter typed internally, making type checkers ever so slightly happier.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3666](https://github.com/strawberry-graphql/strawberry/pull/3666/)
+
+
+0.246.1 - 2024-10-09
+--------------------
+
+This release adds support for using raw Python enum types in your schema
+(enums that are not decorated with `@strawberry.enum`)
+
+This is useful if you have enum types from other places in your code
+that you want to use in strawberry.
+i.e
+```py
+# somewhere.py
+from enum import Enum
+
+
+class AnimalKind(Enum):
+    AXOLOTL, CAPYBARA = range(2)
+
+
+# gql/animals
+from somewhere import AnimalKind
+
+
+@strawberry.type
+class AnimalType:
+    kind: AnimalKind
+```
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #3639](https://github.com/strawberry-graphql/strawberry/pull/3639/)
+
+
+0.246.0 - 2024-10-07
+--------------------
+
+The AIOHTTP, ASGI, and Django test clients' `asserts_errors` option has been renamed to `assert_no_errors` to better reflect its purpose.
+This change is backwards-compatible, but the old option name will raise a deprecation warning.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3661](https://github.com/strawberry-graphql/strawberry/pull/3661/)
+
+
+0.245.0 - 2024-10-07
+--------------------
+
+This release removes the dated `subscriptions_enabled` setting from the Django and Channels integrations.
+Instead, WebSocket support is now enabled by default in all GraphQL IDEs.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3660](https://github.com/strawberry-graphql/strawberry/pull/3660/)
+
+
+0.244.1 - 2024-10-06
+--------------------
+
+Fixes an issue where the codegen tool would crash when working with a nullable list of types.
+
+Contributed by [Jacob Allen](https://github.com/enoua5) via [PR #3653](https://github.com/strawberry-graphql/strawberry/pull/3653/)
+
+
+0.244.0 - 2024-10-05
+--------------------
+
+Starting with this release, WebSocket logic now lives in the base class shared between all HTTP integrations.
+This makes the behaviour of WebSockets much more consistent between integrations and easier to maintain.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3638](https://github.com/strawberry-graphql/strawberry/pull/3638/)
+
+
+0.243.1 - 2024-09-26
+--------------------
+
+This releases adds support for Pydantic 2.9.0's Mypy plugin
+
+Contributed by [Krisque](https://github.com/chrisemke) via [PR #3632](https://github.com/strawberry-graphql/strawberry/pull/3632/)
+
+
+0.243.0 - 2024-09-25
+--------------------
+
+Starting with this release, multipart uploads are disabled by default and Strawberry Django view is no longer implicitly exempted from Django's CSRF protection.
+Both changes relieve users from implicit security implications inherited from the GraphQL multipart request specification which was enabled in Strawberry by default.
+
+These are breaking changes if you are using multipart uploads OR the Strawberry Django view.
+Migrations guides including further information are available on the Strawberry website.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3645](https://github.com/strawberry-graphql/strawberry/pull/3645/)
+
+
 0.242.0 - 2024-09-19
 --------------------
 

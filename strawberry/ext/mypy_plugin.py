@@ -481,7 +481,14 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                         # Based on pydantic's default value
                         # https://github.com/pydantic/pydantic/pull/9606/files#diff-469037bbe55bbf9aa359480a16040d368c676adad736e133fb07e5e20d6ac523R1066
                         extra["force_typevars_invariant"] = False
-
+                    if PYDANTIC_VERSION >= (2, 9, 0):
+                        extra["model_strict"] = model_type.type.metadata[
+                            PYDANTIC_METADATA_KEY
+                        ]["config"].get("strict", False)
+                        extra["is_root_model_root"] = any(
+                            "pydantic.root_model.RootModel" in base.fullname
+                            for base in model_type.type.mro[:-1]
+                        )
                 add_method(
                     ctx,
                     "to_pydantic",

@@ -15,7 +15,7 @@ from typing import (
     Optional,
     Union,
 )
-from typing_extensions import assert_never
+from typing_extensions import TypeGuard, assert_never
 from urllib.parse import parse_qs
 
 from django.conf import settings
@@ -167,13 +167,12 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
-        subscriptions_enabled: bool = True,
+        multipart_uploads_enabled: bool = False,
         **kwargs: Any,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
-        self.subscriptions_enabled = subscriptions_enabled
-        self._ide_subscriptions_enabled = subscriptions_enabled
+        self.multipart_uploads_enabled = multipart_uploads_enabled
 
         if graphiql is not None:
             warnings.warn(
@@ -230,6 +229,8 @@ class GraphQLHTTPConsumer(
     AsyncBaseHTTPView[
         ChannelsRequest,
         Union[ChannelsResponse, MultipartChannelsResponse],
+        TemporalResponse,
+        ChannelsRequest,
         TemporalResponse,
         Context,
         RootValue,
@@ -295,6 +296,21 @@ class GraphQLHTTPConsumer(
         return ChannelsResponse(
             content=self.graphql_ide_html.encode(), content_type="text/html"
         )
+
+    def is_websocket_request(
+        self, request: ChannelsRequest
+    ) -> TypeGuard[ChannelsRequest]:
+        return False
+
+    async def pick_websocket_subprotocol(
+        self, request: ChannelsRequest
+    ) -> Optional[str]:
+        return None
+
+    async def create_websocket_response(
+        self, request: ChannelsRequest, subprotocol: Optional[str]
+    ) -> TemporalResponse:
+        raise NotImplementedError
 
 
 class SyncGraphQLHTTPConsumer(

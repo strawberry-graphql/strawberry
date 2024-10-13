@@ -254,6 +254,55 @@ schema = strawberry.Schema(query=Query, subscription=Subscription)
 
 [pep-525]: https://www.python.org/dev/peps/pep-0525/
 
+## Unsubscribing subscriptions
+
+In GraphQL, it is possible to unsubscribe from a subscription. Strawberry
+supports this behaviour, and is done using a `try...except` block.
+
+In Apollo-client, closing a subscription can be achieved like the following:
+
+```javascript
+const client = useApolloClient();
+const subscriber = client.subscribe({query: ...}).subscribe({...})
+// ...
+// done with subscription. now unsubscribe
+subscriber.unsubscribe();
+```
+
+Strawberry can capture when a subscriber unsubscribes using an
+`asyncio.CancelledError` exception.
+
+```python
+import asyncio
+from typing import AsyncGenerator
+from uuid import uuid4
+
+import strawberry
+
+# track active subscribers
+event_messages = {}
+
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def message(self) -> AsyncGenerator[int, None]:
+        try:
+            subscription_id = uuid4()
+
+            event_messages[subscription_id] = []
+
+            while True:
+                if len(event_messages[subscription_id]) > 0:
+                    yield event_messages[subscription_id]
+                    event_messages[subscription_id].clear()
+
+                await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            # stop listening to events
+            del event_messages[subscription_id]
+```
+
 ## GraphQL over WebSocket protocols
 
 Strawberry support both the legacy

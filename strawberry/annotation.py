@@ -20,7 +20,6 @@ from typing import (
 )
 from typing_extensions import Annotated, Self, get_args, get_origin
 
-from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 from strawberry.types.base import (
     StrawberryList,
     StrawberryObjectDefinition,
@@ -30,6 +29,7 @@ from strawberry.types.base import (
     has_object_definition,
 )
 from strawberry.types.enum import EnumDefinition
+from strawberry.types.enum import enum as strawberry_enum
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.private import is_private
 from strawberry.types.scalar import ScalarDefinition
@@ -187,7 +187,7 @@ class StrawberryAnnotation:
         try:
             return evaled_type._enum_definition
         except AttributeError:
-            raise NotAStrawberryEnumError(evaled_type)
+            return strawberry_enum(evaled_type)._enum_definition
 
     def create_list(self, evaled_type: Any) -> StrawberryList:
         item_type, *_ = get_args(evaled_type)

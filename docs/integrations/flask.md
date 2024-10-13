@@ -34,22 +34,28 @@ from strawberry.flask.views import AsyncGraphQLView
 
 ## Options
 
-The `GraphQLView` accepts two options at the moment:
+The `GraphQLView` accepts the following options at the moment:
 
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
-- `graphiql:` optional, defaults to `True`, whether to enable the GraphiQL
-  interface.
+- `graphql_ide`: optional, defaults to `"graphiql"`, allows to choose the
+  GraphQL IDE interface (one of `graphiql`, `apollo-sandbox` or `pathfinder`) or
+  to disable it by passing `None`.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
+- `multipart_uploads_enabled`: optional, defaults to `False`, controls whether
+  to enable multipart uploads. Please make sure to consider the
+  [security implications mentioned in the GraphQL Multipart Request Specification](https://github.com/jaydenseric/graphql-multipart-request-spec/blob/master/readme.md#security)
+  when enabling this feature.
 
 ## Extending the view
 
 We allow to extend the base `GraphQLView`, by overriding the following methods:
 
-- `get_context(self, request: Request, response: Response) -> Any`
-- `get_root_value(self, request: Request) -> Any`
-- `process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse`
-- `encode_json(self, response_data: GraphQLHTTPResponse) -> str`
+- `def get_context(self, request: Request, response: Response) -> Any`
+- `def get_root_value(self, request: Request) -> Any`
+- `def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def encode_json(self, response_data: GraphQLHTTPResponse) -> str`
+- `def render_graphql_ide(self, request: Request) -> Response`
 
 <Note>
 
@@ -59,7 +65,7 @@ async functions.
 
 </Note>
 
-## get_context
+### get_context
 
 `get_context` allows to provide a custom context object that can be used in your
 resolver. You can return anything here, by default we return a dictionary with
@@ -85,7 +91,7 @@ called "example".
 Then we use the context in a resolver, the resolver will return "1" in this
 case.
 
-## get_root_value
+### get_root_value
 
 `get_root_value` allows to provide a custom root value for your schema, this is
 probably not used a lot but it might be useful in certain situations.
@@ -106,7 +112,7 @@ class Query:
 Here we are returning a Query where the name is "Patrick", so we when requesting
 the field name we'll return "Patrick" in this case.
 
-## process_result
+### process_result
 
 `process_result` allows to customize and/or process results before they are sent
 to the clients. This can be useful logging errors or hiding them (for example to
@@ -133,7 +139,7 @@ class MyGraphQLView(GraphQLView):
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
 
-## encode_json
+### encode_json
 
 `encode_json` allows to customize the encoding of the JSON response. By default
 we use `json.dumps` but you can override this method to use a different encoder.
@@ -142,4 +148,21 @@ we use `json.dumps` but you can override this method to use a different encoder.
 class MyGraphQLView(GraphQLView):
     def encode_json(self, data: GraphQLHTTPResponse) -> str:
         return json.dumps(data, indent=2)
+```
+
+### render_graphql_ide
+
+In case you need more control over the rendering of the GraphQL IDE than the
+`graphql_ide` option provides, you can override the `render_graphql_ide` method.
+
+```python
+from strawberry.flask.views import GraphQLView
+from flask import Request, Response
+
+
+class MyGraphQLView(GraphQLView):
+    def render_graphql_ide(self, request: Request) -> Response:
+        custom_html = """<html><body><h1>Custom GraphQL IDE</h1></body></html>"""
+
+        return Response(custom_html, status=200, content_type="text/html")
 ```

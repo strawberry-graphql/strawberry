@@ -13,15 +13,14 @@ from litestar.testing.websocket_test_session import WebSocketTestSession
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.litestar import make_graphql_controller
-from strawberry.litestar.controller import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 
 from ..context import get_context
 from .base import (
     JSON,
-    DebuggableGraphQLTransportWSMixin,
-    DebuggableGraphQLWSMixin,
+    DebuggableGraphQLTransportWSHandler,
+    DebuggableGraphQLWSHandler,
     HttpClient,
     Message,
     Response,
@@ -42,16 +41,6 @@ async def get_root_value(request: Request = None):
     return Query()
 
 
-class DebuggableGraphQLTransportWSHandler(
-    DebuggableGraphQLTransportWSMixin, GraphQLTransportWSHandler
-):
-    pass
-
-
-class DebuggableGraphQLWSHandler(DebuggableGraphQLWSMixin, GraphQLWSHandler):
-    pass
-
-
 class LitestarHttpClient(HttpClient):
     def __init__(
         self,
@@ -59,12 +48,14 @@ class LitestarHttpClient(HttpClient):
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        multipart_uploads_enabled: bool = False,
     ):
         self.create_app(
             graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
+            multipart_uploads_enabled=multipart_uploads_enabled,
         )
 
     def create_app(self, result_override: ResultOverrideFunction = None, **kwargs: Any):
@@ -188,6 +179,9 @@ class LitestarWebSocketClient(WebSocketClient):
         self._closed = True
         self._close_code = exc.code
 
+    async def send_text(self, payload: str) -> None:
+        self.ws.send_text(payload)
+
     async def send_json(self, payload: Dict[str, Any]) -> None:
         self.ws.send_json(payload)
 
@@ -228,6 +222,10 @@ class LitestarWebSocketClient(WebSocketClient):
         self._closed = True
 
     @property
+    def accepted_subprotocol(self) -> Optional[str]:
+        return self.ws.accepted_subprotocol
+
+    @property
     def closed(self) -> bool:
         return self._closed
 
@@ -236,5 +234,6 @@ class LitestarWebSocketClient(WebSocketClient):
         assert self._close_code is not None
         return self._close_code
 
-    def assert_reason(self, reason: str) -> None:
-        assert self._close_reason == reason
+    @property
+    def close_reason(self) -> Optional[str]:
+        return self._close_reason

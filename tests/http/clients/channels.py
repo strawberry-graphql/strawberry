@@ -23,6 +23,8 @@ from tests.views.schema import Query, schema
 from ..context import get_context
 from .base import (
     JSON,
+    DebuggableGraphQLTransportWSHandler,
+    DebuggableGraphQLWSHandler,
     HttpClient,
     Message,
     Response,
@@ -61,25 +63,6 @@ def create_multipart_request_body(
     ]
 
     return headers, request_body
-
-
-class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
-    def get_tasks(self) -> List[Any]:
-        if hasattr(self._handler, "operations"):
-            return [op.task for op in self._handler.operations.values()]
-        else:
-            return list(self._handler.tasks.values())
-
-    async def get_context(self, *args: str, **kwargs: Any) -> object:
-        context = await super().get_context(*args, **kwargs)
-        context["ws"] = self._handler._ws
-        context["get_tasks"] = self.get_tasks
-        context["connectionInitTimeoutTask"] = getattr(
-            self._handler, "connection_init_timeout_task", None
-        )
-        for key, val in get_context({}).items():
-            context[key] = val
-        return context
 
 
 class DebuggableGraphQLHTTPConsumer(GraphQLHTTPConsumer):
@@ -130,6 +113,16 @@ class DebuggableSyncGraphQLHTTPConsumer(SyncGraphQLHTTPConsumer):
         return super().process_result(request, result)
 
 
+class DebuggableGraphQLWSConsumer(GraphQLWSConsumer):
+    graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
+    graphql_ws_handler_class = DebuggableGraphQLWSHandler
+
+    async def get_context(self, request, response):
+        context = await super().get_context(request, response)
+
+        return get_context(context)
+
+
 class ChannelsHttpClient(HttpClient):
     """A client to test websockets over channels."""
 
@@ -139,8 +132,9 @@ class ChannelsHttpClient(HttpClient):
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        multipart_uploads_enabled: bool = False,
     ):
-        self.ws_app = DebuggableGraphQLTransportWSConsumer.as_asgi(
+        self.ws_app = DebuggableGraphQLWSConsumer.as_asgi(
             schema=schema,
             keep_alive=False,
         )
@@ -151,12 +145,11 @@ class ChannelsHttpClient(HttpClient):
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
+            multipart_uploads_enabled=multipart_uploads_enabled,
         )
 
     def create_app(self, **kwargs: Any) -> None:
-        self.ws_app = DebuggableGraphQLTransportWSConsumer.as_asgi(
-            schema=schema, **kwargs
-        )
+        self.ws_app = DebuggableGraphQLWSConsumer.as_asgi(schema=schema, **kwargs)
 
     async def _graphql_request(
         self,
@@ -245,10 +238,13 @@ class ChannelsHttpClient(HttpClient):
     ) -> AsyncGenerator[WebSocketClient, None]:
         client = WebsocketCommunicator(self.ws_app, url, subprotocols=protocols)
 
-        res = await client.connect()
-        assert res == (True, protocols[0])
+        connected, subprotocol_or_close_code = await client.connect()
+        assert connected
+
         try:
-            yield ChannelsWebSocketClient(client)
+            yield ChannelsWebSocketClient(
+                client, accepted_subprotocol=subprotocol_or_close_code
+            )
         finally:
             await client.disconnect()
 
@@ -260,6 +256,7 @@ class SyncChannelsHttpClient(ChannelsHttpClient):
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        multipart_uploads_enabled: bool = False,
     ):
         self.http_app = DebuggableSyncGraphQLHTTPConsumer.as_asgi(
             schema=schema,
@@ -267,18 +264,25 @@ class SyncChannelsHttpClient(ChannelsHttpClient):
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
+            multipart_uploads_enabled=multipart_uploads_enabled,
         )
 
 
 class ChannelsWebSocketClient(WebSocketClient):
-    def __init__(self, client: WebsocketCommunicator):
+    def __init__(
+        self, client: WebsocketCommunicator, accepted_subprotocol: Optional[str]
+    ):
         self.ws = client
         self._closed: bool = False
         self._close_code: Optional[int] = None
         self._close_reason: Optional[str] = None
+        self._accepted_subprotocol = accepted_subprotocol
 
     def name(self) -> str:
         return "channels"
+
+    async def send_text(self, payload: str) -> None:
+        await self.ws.send_to(text_data=payload)
 
     async def send_json(self, payload: Dict[str, Any]) -> None:
         await self.ws.send_json_to(payload)
@@ -308,6 +312,10 @@ class ChannelsWebSocketClient(WebSocketClient):
         self._closed = True
 
     @property
+    def accepted_subprotocol(self) -> Optional[str]:
+        return self._accepted_subprotocol
+
+    @property
     def closed(self) -> bool:
         return self._closed
 
@@ -316,5 +324,6 @@ class ChannelsWebSocketClient(WebSocketClient):
         assert self._close_code is not None
         return self._close_code
 
-    def assert_reason(self, reason: str) -> None:
-        assert self._close_reason == reason
+    @property
+    def close_reason(self) -> Optional[str]:
+        return self._close_reason
