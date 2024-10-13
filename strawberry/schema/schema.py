@@ -6,6 +6,7 @@ from functools import cached_property, lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -20,6 +21,7 @@ from graphql import (
     GraphQLField,
     GraphQLNamedType,
     GraphQLNonNull,
+    GraphQLResolveInfo,
     GraphQLSchema,
     get_introspection_query,
     validate_schema,
@@ -50,6 +52,7 @@ from .subscribe import SubscriptionResult, subscribe
 
 if TYPE_CHECKING:
     from graphql import ExecutionContext as GraphQLExecutionContext
+    from graphql.pyutils import AwaitableOrValue
 
     from strawberry.directive import StrawberryDirective
     from strawberry.types import ExecutionResult
@@ -124,7 +127,6 @@ class Schema(BaseSchema):
         self.subscription = subscription
 
         self.extensions = extensions
-        self._cached_middleware_manager: MiddlewareManager | None = None
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
 
@@ -252,14 +254,35 @@ class Schema(BaseSchema):
         )
 
     def _get_middleware_manager(
-        self, extensions: list[SchemaExtension]
+        self,
+        extensions: list[SchemaExtension],
+        execution_context: ExecutionContext,
     ) -> MiddlewareManager:
         # create a middleware manager with all the extensions that implement resolve
-        if not self._cached_middleware_manager:
-            self._cached_middleware_manager = MiddlewareManager(
-                *(ext for ext in extensions if ext._implements_resolve())
-            )
-        return self._cached_middleware_manager
+        middlewares = []
+        for ext in extensions:
+            if ext._implements_resolve():
+                # we should add the execution context to the middleware's `resolve` method
+                # since graphql-core doesn't provide it
+                def resove_wrapper(
+                    _next: Callable,
+                    root: Any,
+                    info: GraphQLResolveInfo,
+                    execution_context: ExecutionContext,
+                    *args: str,
+                    **kwargs: Any,
+                ) -> AwaitableOrValue[object]:
+                    return ext.resolve(  # noqa:B023
+                        _next,
+                        root,
+                        info,
+                        *args,
+                        **kwargs,
+                        execution_context=execution_context,
+                    )
+
+                middlewares.append(resove_wrapper)
+        return MiddlewareManager(*middlewares)
 
     def _create_execution_context(
         self,
@@ -358,7 +381,9 @@ class Schema(BaseSchema):
             execution_context=execution_context,
             extensions_runner=self.async_extension_runner,
             process_errors=self._process_errors,
-            middleware_manager=self._get_middleware_manager(extensions),
+            middleware_manager=self._get_middleware_manager(
+                extensions, execution_context
+            ),
             execution_context_class=self.execution_context_class,
         )
 
@@ -391,7 +416,9 @@ class Schema(BaseSchema):
             execution_context_class=self.execution_context_class,
             allowed_operation_types=allowed_operation_types,
             process_errors=self._process_errors,
-            middleware_manager=self._get_middleware_manager(extensions),
+            middleware_manager=self._get_middleware_manager(
+                extensions, execution_context
+            ),
         )
 
     async def subscribe(
@@ -416,7 +443,9 @@ class Schema(BaseSchema):
             execution_context=execution_context,
             extensions_runner=self.async_extension_runner,
             process_errors=self._process_errors,
-            middleware_manager=self._get_middleware_manager(extensions),
+            middleware_manager=self._get_middleware_manager(
+                extensions, execution_context
+            ),
             execution_context_class=self.execution_context_class,
         )
 

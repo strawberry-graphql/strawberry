@@ -55,6 +55,7 @@ class SchemaExtension:
         _next: Callable,
         root: Any,
         info: GraphQLResolveInfo,
+        execution_context: ExecutionContext,
         *args: str,
         **kwargs: Any,
     ) -> AwaitableOrValue[object]:
