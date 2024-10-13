@@ -30,23 +30,8 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
 from tests.http.clients.base import DebuggableGraphQLTransportWSHandler
 from tests.views.schema import MyExtension, Schema
 
-from ..http.clients.base import WebSocketClient
-
-try:
-    from ..http.clients.fastapi import FastAPIHttpClient
-except ImportError:  # pragma: no cover
-    FastAPIHttpClient = None
-try:
-    from ..http.clients.starlite import StarliteHttpClient
-except ImportError:  # pragma: no cover
-    StarliteHttpClient = None
-try:
-    from ..http.clients.litestar import LitestarHttpClient
-except ImportError:  # pragma: no cover
-    LitestarHttpClient = None
-
 if TYPE_CHECKING:
-    from ..http.clients.base import HttpClient
+    from ..http.clients.base import HttpClient, WebSocketClient
 
 
 @pytest_asyncio.fixture
@@ -912,6 +897,9 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
 
         if isinstance(http_client, ChannelsHttpClient):
             pytest.skip("Can't patch on_init for this client")
+
+    if not AsyncMock:
+        pytest.skip("Don't have AsyncMock")
 
     ws = ws_raw
     handler = None

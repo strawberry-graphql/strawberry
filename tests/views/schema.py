@@ -77,7 +77,7 @@ class DebugInfo:
 @strawberry.type
 class Query:
     @strawberry.field
-    def greetings(self) -> str:  # pragma: no cover
+    def greetings(self) -> str:
         return "hello"
 
     @strawberry.field
@@ -91,13 +91,13 @@ class Query:
 
     @strawberry.field(permission_classes=[AlwaysFailPermission])
     def always_fail(self) -> Optional[str]:
-        return "Hey"  # pragma: no cover
+        return "Hey"
 
     @strawberry.field(permission_classes=[ConditionalFailPermission])
     def conditional_fail(
         self, sleep: Optional[float] = None, fail: bool = False
     ) -> str:
-        return "Hey"  # pragma: no cover
+        return "Hey"
 
     @strawberry.field
     async def error(self, message: str) -> AsyncGenerator[str, None]:
@@ -108,7 +108,7 @@ class Query:
         raise ValueError(message)
 
     @strawberry.field
-    def teapot(self, info: strawberry.Info[Any, None]) -> str:  # pragma: no cover
+    def teapot(self, info: strawberry.Info[Any, None]) -> str:
         info.context["response"].status_code = 418
 
         return "🫖"
@@ -142,7 +142,7 @@ class Query:
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def echo(self, string_to_echo: str) -> str:  # pragma: no cover
+    def echo(self, string_to_echo: str) -> str:
         return string_to_echo
 
     @strawberry.mutation
@@ -162,7 +162,7 @@ class Mutation:
         return list(map(_read_file, folder.files))
 
     @strawberry.mutation
-    def match_text(self, text_file: Upload, pattern: str) -> str:  # pragma: no cover
+    def match_text(self, text_file: Upload, pattern: str) -> str:
         text = text_file.read().decode()
         return pattern if pattern in text else ""
 
@@ -199,7 +199,7 @@ class Subscription:
         raise ValueError(message)
 
         # Without this yield, the method is not recognised as an async generator
-        yield "Hi"  # pragma: no cover
+        yield "Hi"
 
     @strawberry.subscription
     async def flavors(self) -> AsyncGenerator[Flavor, None]:
