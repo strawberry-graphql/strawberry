@@ -33,7 +33,11 @@ from strawberry.http.async_base_view import (
     AsyncHTTPRequestAdapter,
     AsyncWebSocketAdapter,
 )
-from strawberry.http.exceptions import HTTPException, NonJsonMessageReceived
+from strawberry.http.exceptions import (
+    HTTPException,
+    NonJsonMessageReceived,
+    NonTextMessageReceived,
+)
 from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
@@ -85,13 +89,18 @@ class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
     def __init__(self, request: WebSocket, response: WebSocket) -> None:
         self.ws = response
 
-    async def iter_json(self) -> AsyncGenerator[Dict[str, object], None]:
+    async def iter_json(
+        self, ignore_parsing_errors: bool
+    ) -> AsyncGenerator[Dict[str, object], None]:
         try:
-            try:
-                while self.ws.application_state != WebSocketState.DISCONNECTED:
+            while self.ws.application_state != WebSocketState.DISCONNECTED:
+                try:
                     yield await self.ws.receive_json()
-            except (KeyError, JSONDecodeError):
-                raise NonJsonMessageReceived()
+                except JSONDecodeError:  # noqa: PERF203
+                    if not ignore_parsing_errors:
+                        raise NonJsonMessageReceived()
+        except KeyError:
+            raise NonTextMessageReceived()
         except WebSocketDisconnect:  # pragma: no cover
             pass
 
