@@ -8,11 +8,9 @@ from typing import (
     Any,
     Awaitable,
     Callable,
-    Coroutine,
     Dict,
     List,
     Optional,
-    Union,
 )
 
 from graphql import GraphQLError, GraphQLSyntaxError, parse
@@ -105,7 +103,7 @@ class BaseGraphQLTransportWSHandler:
 
     async def handle_connection_init_timeout(self) -> None:
         task = asyncio.current_task()
-        assert task is not None  # for typecheckers
+        assert task
         try:
             delay = self.connection_init_wait_timeout.total_seconds()
             await asyncio.sleep(delay=delay)
@@ -266,13 +264,12 @@ class BaseGraphQLTransportWSHandler:
                 operation_name=message.payload.operationName,
             )
 
-                # create AsyncGenerator returning a single result
-                async def single_result() -> AsyncIterator[ExecutionResult]:
-                    yield result  # type: ignore
+        operation = Operation(self, message.id, operation_type)
 
         # Create task to handle this subscription, reserve the operation ID
-        operation = Operation(self, message.id, operation_type, start_operation)
-        operation.task = asyncio.create_task(self.operation_task(operation))
+        operation.task = asyncio.create_task(
+            self.operation_task(result_source, operation)
+        )
         self.operations[message.id] = operation
 
     async def operation_task(
@@ -302,11 +299,9 @@ class BaseGraphQLTransportWSHandler:
             self.operations.pop(operation.id, None)
             raise
         finally:
-            # Clenaup.  Remove the operation from the list of active operations
-            if operation.id in self.operations:
-                del self.operations[operation.id]
-            # TODO: Stop collecting background tasks, not necessary.
-            # Add this task to a list to be reaped later
+            # add this task to a list to be reaped later
+            task = asyncio.current_task()
+            assert task is not None
             self.completed_tasks.append(task)
 
     def forget_id(self, id: str) -> None:
@@ -344,35 +339,23 @@ class BaseGraphQLTransportWSHandler:
 class Operation:
     """A class encapsulating a single operation with its id. Helps enforce protocol state transition."""
 
-    __slots__ = [
-        "handler",
-        "id",
-        "operation_type",
-        "start_operation",
-        "completed",
-        "task",
-    ]
+    __slots__ = ["handler", "id", "operation_type", "completed", "task"]
 
     def __init__(
         self,
         handler: BaseGraphQLTransportWSHandler,
         id: str,
         operation_type: OperationType,
-        start_operation: Callable[
-            [], Coroutine[Any, Any, Union[Any, AsyncGenerator[Any, None]]]
-        ],
     ) -> None:
         self.handler = handler
         self.id = id
         self.operation_type = operation_type
-        self.start_operation = start_operation
         self.completed = False
         self.task: Optional[asyncio.Task] = None
 
     async def send_message(self, message: GraphQLTransportMessage) -> None:
-        # defensive check, should never happen
         if self.completed:
-            return  # pragma: no cover
+            return
         if isinstance(message, (CompleteMessage, ErrorMessage)):
             self.completed = True
             # de-register the operation _before_ sending the final message
