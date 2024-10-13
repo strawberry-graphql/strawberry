@@ -3,6 +3,7 @@ from typing import Callable, Iterator, List
 from graphql.error import GraphQLError
 
 from strawberry.extensions.base_extension import SchemaExtension
+from strawberry.types.execution import ExecutionContext
 
 
 def default_should_mask_error(_: GraphQLError) -> bool:
@@ -32,9 +33,9 @@ class MaskErrors(SchemaExtension):
             original_error=None,
         )
 
-    def on_operation(self) -> Iterator[None]:
+    def on_operation(self, execution_context: ExecutionContext) -> Iterator[None]:
         yield
-        result = self.execution_context.result
+        result = execution_context.result
         if result and result.errors:
             processed_errors: List[GraphQLError] = []
             for error in result.errors:

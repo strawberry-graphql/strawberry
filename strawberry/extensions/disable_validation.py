@@ -1,6 +1,7 @@
 from typing import Iterator
 
 from strawberry.extensions.base_extension import SchemaExtension
+from strawberry.types.execution import ExecutionContext
 
 
 class DisableValidation(SchemaExtension):
@@ -26,8 +27,8 @@ class DisableValidation(SchemaExtension):
         # some in the future
         pass
 
-    def on_operation(self) -> Iterator[None]:
-        self.execution_context.validation_rules = ()  # remove all validation_rules
+    def on_operation(self, execution_context: ExecutionContext) -> Iterator[None]:
+        execution_context.validation_rules = ()  # remove all validation_rules
         yield
 
 

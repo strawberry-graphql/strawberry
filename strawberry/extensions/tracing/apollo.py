@@ -14,6 +14,8 @@ from .utils import should_skip_tracing
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
 
+    from strawberry.types.execution import ExecutionContext
+
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 if TYPE_CHECKING:
@@ -80,23 +82,30 @@ class ApolloTracingStats:
 
 
 class ApolloTracingExtension(SchemaExtension):
-    def __init__(self, execution_context: ExecutionContext) -> None:
-        self._resolver_stats: List[ApolloResolverStats] = []
-        self.execution_context = execution_context
+    def __init__(self) -> None:
+        self._resolver_stats: List[
+            ApolloResolverStats
+        ] = []  # TODO: this is probably a bug just as using self.execution_context was a bug.
 
-    def on_operation(self) -> Generator[None, None, None]:
+    def on_operation(
+        self, execution_context: ExecutionContext
+    ) -> Generator[None, None, None]:
         self.start_timestamp = self.now()
         self.start_time = datetime.now(timezone.utc)
         yield
         self.end_timestamp = self.now()
         self.end_time = datetime.now(timezone.utc)
 
-    def on_parse(self) -> Generator[None, None, None]:
+    def on_parse(
+        self, execution_context: ExecutionContext
+    ) -> Generator[None, None, None]:
         self._start_parsing = self.now()
         yield
         self._end_parsing = self.now()
 
-    def on_validate(self) -> Generator[None, None, None]:
+    def on_validate(
+        self, execution_context: ExecutionContext
+    ) -> Generator[None, None, None]:
         self._start_validation = self.now()
         yield
         self._end_validation = self.now()
@@ -121,7 +130,9 @@ class ApolloTracingExtension(SchemaExtension):
             ),
         )
 
-    def get_results(self) -> Dict[str, Dict[str, Any]]:
+    def get_results(
+        self, execution_context: ExecutionContext
+    ) -> Dict[str, Dict[str, Any]]:
         return {"tracing": self.stats.to_json()}
 
     async def resolve(

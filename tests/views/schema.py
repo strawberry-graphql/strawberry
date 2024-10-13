@@ -21,7 +21,7 @@ class AlwaysFailPermission(BasePermission):
 
 
 class MyExtension(SchemaExtension):
-    def get_results(self) -> Dict[str, str]:
+    def get_results(self, execution_context: ExecutionContext) -> Dict[str, str]:
         return {"example": "example"}
 
 

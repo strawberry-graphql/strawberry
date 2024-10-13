@@ -7,6 +7,8 @@ from strawberry.extensions.base_extension import SchemaExtension
 if TYPE_CHECKING:
     from graphql import ASTValidationRule
 
+    from strawberry.types.execution import ExecutionContext
+
 
 class AddValidationRules(SchemaExtension):
     """Add graphql-core validation rules.
@@ -42,9 +44,9 @@ class AddValidationRules(SchemaExtension):
     def __init__(self, validation_rules: List[Type[ASTValidationRule]]) -> None:
         self.validation_rules = validation_rules
 
-    def on_operation(self) -> Iterator[None]:
-        self.execution_context.validation_rules = (
-            self.execution_context.validation_rules + tuple(self.validation_rules)
+    def on_operation(self, execution_context: ExecutionContext) -> Iterator[None]:
+        execution_context.validation_rules = execution_context.validation_rules + tuple(
+            self.validation_rules
         )
         yield
 
