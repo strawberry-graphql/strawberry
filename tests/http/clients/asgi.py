@@ -8,11 +8,10 @@ from typing_extensions import Literal
 
 from starlette.requests import Request
 from starlette.responses import Response as StarletteResponse
-from starlette.testclient import TestClient
+from starlette.testclient import TestClient, WebSocketTestSession
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from strawberry.asgi import GraphQL as BaseGraphQLView
-from strawberry.asgi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
@@ -21,24 +20,14 @@ from tests.views.schema import Query, schema
 from ..context import get_context_async as get_context
 from .base import (
     JSON,
-    DebuggableGraphQLTransportWSMixin,
-    DebuggableGraphQLWSMixin,
+    DebuggableGraphQLTransportWSHandler,
+    DebuggableGraphQLWSHandler,
     HttpClient,
     Message,
     Response,
     ResultOverrideFunction,
     WebSocketClient,
 )
-
-
-class DebuggableGraphQLTransportWSHandler(
-    DebuggableGraphQLTransportWSMixin, GraphQLTransportWSHandler
-):
-    pass
-
-
-class DebuggableGraphQLWSHandler(DebuggableGraphQLWSMixin, GraphQLWSHandler):
-    pass
 
 
 class GraphQLView(BaseGraphQLView):
@@ -74,6 +63,7 @@ class AsgiHttpClient(HttpClient):
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        multipart_uploads_enabled: bool = False,
     ):
         view = GraphQLView(
             schema,
@@ -81,6 +71,7 @@ class AsgiHttpClient(HttpClient):
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             keep_alive=False,
+            multipart_uploads_enabled=multipart_uploads_enabled,
         )
         view.result_override = result_override
 
@@ -179,7 +170,7 @@ class AsgiHttpClient(HttpClient):
 
 
 class AsgiWebSocketClient(WebSocketClient):
-    def __init__(self, ws: Any):
+    def __init__(self, ws: WebSocketTestSession):
         self.ws = ws
         self._closed: bool = False
         self._close_code: Optional[int] = None
@@ -189,6 +180,9 @@ class AsgiWebSocketClient(WebSocketClient):
         self._closed = True
         self._close_code = exc.code
         self._close_reason = exc.reason
+
+    async def send_text(self, payload: str) -> None:
+        self.ws.send_text(payload)
 
     async def send_json(self, payload: Dict[str, Any]) -> None:
         self.ws.send_json(payload)
@@ -223,6 +217,10 @@ class AsgiWebSocketClient(WebSocketClient):
         self._closed = True
 
     @property
+    def accepted_subprotocol(self) -> Optional[str]:
+        return self.ws.accepted_subprotocol
+
+    @property
     def closed(self) -> bool:
         return self._closed
 
@@ -231,5 +229,6 @@ class AsgiWebSocketClient(WebSocketClient):
         assert self._close_code is not None
         return self._close_code
 
-    def assert_reason(self, reason: str) -> None:
-        assert self._close_reason == reason
+    @property
+    def close_reason(self) -> Optional[str]:
+        return self._close_reason

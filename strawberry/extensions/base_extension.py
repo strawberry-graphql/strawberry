@@ -21,9 +21,11 @@ class LifecycleStep(Enum):
 class SchemaExtension:
     execution_context: ExecutionContext
 
-    def __init__(self, *, execution_context: ExecutionContext) -> None:
-        self.execution_context = execution_context
-
+    # to support extensions that still use the old signature
+    # we have an optional argument here for ease of initialization.
+    def __init__(
+        self, *, execution_context: ExecutionContext | None = None
+    ) -> None: ...
     def on_operation(  # type: ignore
         self,
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
@@ -60,6 +62,11 @@ class SchemaExtension:
 
     def get_results(self) -> AwaitableOrValue[Dict[str, Any]]:
         return {}
+
+    @classmethod
+    def _implements_resolve(cls) -> bool:
+        """Whether the extension implements the resolve method."""
+        return cls.resolve is not SchemaExtension.resolve
 
 
 Hook = Callable[[SchemaExtension], AsyncIteratorOrIterator[None]]

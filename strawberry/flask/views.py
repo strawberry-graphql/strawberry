@@ -9,6 +9,7 @@ from typing import (
     Union,
     cast,
 )
+from typing_extensions import TypeGuard
 
 from flask import Request, Response, render_template_string, request
 from flask.views import View
@@ -62,7 +63,6 @@ class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
 
 
 class BaseGraphQLView:
-    _ide_subscription_enabled = False
     graphql_ide: Optional[GraphQL_IDE]
 
     def __init__(
@@ -71,10 +71,12 @@ class BaseGraphQLView:
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
+        multipart_uploads_enabled: bool = False,
     ) -> None:
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
+        self.multipart_uploads_enabled = multipart_uploads_enabled
 
         if graphiql is not None:
             warnings.warn(
@@ -157,7 +159,9 @@ class AsyncFlaskHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 class AsyncGraphQLView(
     BaseGraphQLView,
-    AsyncBaseHTTPView[Request, Response, Response, Context, RootValue],
+    AsyncBaseHTTPView[
+        Request, Response, Response, Request, Response, Context, RootValue
+    ],
     View,
 ):
     methods = ["GET", "POST"]
@@ -183,7 +187,19 @@ class AsyncGraphQLView(
             )
 
     async def render_graphql_ide(self, request: Request) -> Response:
-        return render_template_string(self.graphql_ide_html)  # type: ignore
+        content = render_template_string(self.graphql_ide_html)
+        return Response(content, status=200, content_type="text/html")
+
+    def is_websocket_request(self, request: Request) -> TypeGuard[Request]:
+        return False
+
+    async def pick_websocket_subprotocol(self, request: Request) -> Optional[str]:
+        raise NotImplementedError
+
+    async def create_websocket_response(
+        self, request: Request, subprotocol: Optional[str]
+    ) -> Response:
+        raise NotImplementedError
 
 
 __all__ = [

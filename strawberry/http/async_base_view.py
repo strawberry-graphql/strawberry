@@ -2,6 +2,7 @@ import abc
 import asyncio
 import contextlib
 import json
+from datetime import timedelta
 from typing import (
     Any,
     AsyncGenerator,
@@ -13,7 +14,10 @@ from typing import (
     Optional,
     Tuple,
     Union,
+    cast,
+    overload,
 )
+from typing_extensions import Literal, TypeGuard
 
 from graphql import GraphQLError
 
@@ -28,6 +32,11 @@ from strawberry.http import (
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
+    BaseGraphQLTransportWSHandler,
+)
+from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
 from strawberry.types import ExecutionResult, SubscriptionExecutionResult
 from strawberry.types.graphql import OperationType
 
@@ -35,7 +44,15 @@ from .base import BaseView
 from .exceptions import HTTPException
 from .parse_content_type import parse_content_type
 from .types import FormData, HTTPMethod, QueryParams
-from .typevars import Context, Request, Response, RootValue, SubResponse
+from .typevars import (
+    Context,
+    Request,
+    Response,
+    RootValue,
+    SubResponse,
+    WebSocketRequest,
+    WebSocketResponse,
+)
 
 
 class AsyncHTTPRequestAdapter(abc.ABC):
@@ -62,14 +79,42 @@ class AsyncHTTPRequestAdapter(abc.ABC):
     async def get_form_data(self) -> FormData: ...
 
 
+class AsyncWebSocketAdapter(abc.ABC):
+    @abc.abstractmethod
+    def iter_json(self) -> AsyncGenerator[Dict[str, object], None]: ...
+
+    @abc.abstractmethod
+    async def send_json(self, message: Mapping[str, object]) -> None: ...
+
+    @abc.abstractmethod
+    async def close(self, code: int, reason: str) -> None: ...
+
+
 class AsyncBaseHTTPView(
     abc.ABC,
     BaseView[Request],
-    Generic[Request, Response, SubResponse, Context, RootValue],
+    Generic[
+        Request,
+        Response,
+        SubResponse,
+        WebSocketRequest,
+        WebSocketResponse,
+        Context,
+        RootValue,
+    ],
 ):
     schema: BaseSchema
     graphql_ide: Optional[GraphQL_IDE]
+    debug: bool
+    keep_alive = False
+    keep_alive_interval: Optional[float] = None
+    connection_init_wait_timeout: timedelta = timedelta(minutes=1)
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
+    websocket_adapter_class: Callable[
+        [WebSocketRequest, WebSocketResponse], AsyncWebSocketAdapter
+    ]
+    graphql_transport_ws_handler_class = BaseGraphQLTransportWSHandler
+    graphql_ws_handler_class = BaseGraphQLWSHandler
 
     @property
     @abc.abstractmethod
@@ -79,10 +124,16 @@ class AsyncBaseHTTPView(
     async def get_sub_response(self, request: Request) -> SubResponse: ...
 
     @abc.abstractmethod
-    async def get_context(self, request: Request, response: SubResponse) -> Context: ...
+    async def get_context(
+        self,
+        request: Union[Request, WebSocketRequest],
+        response: Union[SubResponse, WebSocketResponse],
+    ) -> Context: ...
 
     @abc.abstractmethod
-    async def get_root_value(self, request: Request) -> Optional[RootValue]: ...
+    async def get_root_value(
+        self, request: Union[Request, WebSocketRequest]
+    ) -> Optional[RootValue]: ...
 
     @abc.abstractmethod
     def create_response(
@@ -100,6 +151,21 @@ class AsyncBaseHTTPView(
         headers: Dict[str, str],
     ) -> Response:
         raise ValueError("Multipart responses are not supported")
+
+    @abc.abstractmethod
+    def is_websocket_request(
+        self, request: Union[Request, WebSocketRequest]
+    ) -> TypeGuard[WebSocketRequest]: ...
+
+    @abc.abstractmethod
+    async def pick_websocket_subprotocol(
+        self, request: WebSocketRequest
+    ) -> Optional[str]: ...
+
+    @abc.abstractmethod
+    async def create_websocket_response(
+        self, request: WebSocketRequest, subprotocol: Optional[str]
+    ) -> WebSocketResponse: ...
 
     async def execute_operation(
         self, request: Request, context: Context, root_value: Optional[RootValue]
@@ -120,6 +186,15 @@ class AsyncBaseHTTPView(
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
 
         assert self.schema
+
+        if request_data.protocol == "multipart-subscription":
+            return await self.schema.subscribe(
+                request_data.query,  # type: ignore
+                variable_values=request_data.variables,
+                context_value=context,
+                root_value=root_value,
+                operation_name=request_data.operation_name,
+            )
 
         return await self.schema.execute(
             request_data.query,
@@ -157,13 +232,80 @@ class AsyncBaseHTTPView(
     ) -> None:
         """Hook to allow custom handling of errors, used by the Sentry Integration."""
 
+    @overload
     async def run(
         self,
         request: Request,
         context: Optional[Context] = UNSET,
         root_value: Optional[RootValue] = UNSET,
-    ) -> Response:
+    ) -> Response: ...
+
+    @overload
+    async def run(
+        self,
+        request: WebSocketRequest,
+        context: Optional[Context] = UNSET,
+        root_value: Optional[RootValue] = UNSET,
+    ) -> WebSocketResponse: ...
+
+    async def run(
+        self,
+        request: Union[Request, WebSocketRequest],
+        context: Optional[Context] = UNSET,
+        root_value: Optional[RootValue] = UNSET,
+    ) -> Union[Response, WebSocketResponse]:
+        root_value = (
+            await self.get_root_value(request) if root_value is UNSET else root_value
+        )
+
+        if self.is_websocket_request(request):
+            websocket_subprotocol = await self.pick_websocket_subprotocol(request)
+            websocket_response = await self.create_websocket_response(
+                request, websocket_subprotocol
+            )
+            websocket = self.websocket_adapter_class(request, websocket_response)
+
+            context = (
+                await self.get_context(request, response=websocket_response)
+                if context is UNSET
+                else context
+            )
+
+            if websocket_subprotocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
+                await self.graphql_transport_ws_handler_class(
+                    websocket=websocket,
+                    context=context,
+                    root_value=root_value,
+                    schema=self.schema,
+                    debug=self.debug,
+                    connection_init_wait_timeout=self.connection_init_wait_timeout,
+                ).handle()
+            elif websocket_subprotocol == GRAPHQL_WS_PROTOCOL:
+                await self.graphql_ws_handler_class(
+                    websocket=websocket,
+                    context=context,
+                    root_value=root_value,
+                    schema=self.schema,
+                    debug=self.debug,
+                    keep_alive=self.keep_alive,
+                    keep_alive_interval=self.keep_alive_interval,
+                ).handle()
+            else:
+                await websocket.close(4406, "Subprotocol not acceptable")
+
+            return websocket_response
+        else:
+            request = cast(Request, request)
+
         request_adapter = self.request_adapter_class(request)
+        sub_response = await self.get_sub_response(request)
+        context = (
+            await self.get_context(request, response=sub_response)
+            if context is UNSET
+            else context
+        )
+
+        assert context
 
         if not self.is_request_allowed(request_adapter):
             raise HTTPException(405, "GraphQL only supports GET and POST requests.")
@@ -173,18 +315,6 @@ class AsyncBaseHTTPView(
                 return await self.render_graphql_ide(request)
             else:
                 raise HTTPException(404, "Not Found")
-
-        sub_response = await self.get_sub_response(request)
-        context = (
-            await self.get_context(request, response=sub_response)
-            if context is UNSET
-            else context
-        )
-        root_value = (
-            await self.get_root_value(request) if root_value is UNSET else root_value
-        )
-
-        assert context
 
         try:
             result = await self.execute_operation(
@@ -310,16 +440,21 @@ class AsyncBaseHTTPView(
     async def parse_http_body(
         self, request: AsyncHTTPRequestAdapter
     ) -> GraphQLRequestData:
-        content_type, params = parse_content_type(request.content_type or "")
+        headers = {key.lower(): value for key, value in request.headers.items()}
+        content_type, _ = parse_content_type(request.content_type or "")
+        accept = headers.get("accept", "")
+
+        protocol: Literal["http", "multipart-subscription"] = "http"
+
+        if self._is_multipart_subscriptions(*parse_content_type(accept)):
+            protocol = "multipart-subscription"
 
         if request.method == "GET":
             data = self.parse_query_params(request.query_params)
         elif "application/json" in content_type:
             data = self.parse_json(await request.get_body())
-        elif content_type == "multipart/form-data":
+        elif self.multipart_uploads_enabled and content_type == "multipart/form-data":
             data = await self.parse_multipart(request)
-        elif self._is_multipart_subscriptions(content_type, params):
-            data = await self.parse_multipart_subscriptions(request)
         else:
             raise HTTPException(400, "Unsupported content type")
 
@@ -327,6 +462,7 @@ class AsyncBaseHTTPView(
             query=data.get("query"),
             variables=data.get("variables"),
             operation_name=data.get("operationName"),
+            protocol=protocol,
         )
 
     async def process_result(

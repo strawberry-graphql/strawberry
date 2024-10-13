@@ -54,8 +54,12 @@ The `GraphQLRouter` accepts the following options:
   value.
 - `root_value_getter`: optional FastAPI dependency for providing custom root
   value.
+- `multipart_uploads_enabled`: optional, defaults to `False`, controls whether
+  to enable multipart uploads. Please make sure to consider the
+  [security implications mentioned in the GraphQL Multipart Request Specification](https://github.com/jaydenseric/graphql-multipart-request-spec/blob/master/readme.md#security)
+  when enabling this feature.
 
-## context_getter
+### context_getter
 
 The `context_getter` option allows you to provide a custom context object that
 can be used in your resolver. `context_getter` is a
@@ -174,7 +178,7 @@ requires `.request` indexing.
 Then we use the context in a resolver. The resolver will return “Hello John, you
 rock!” in this case.
 
-### Setting background tasks
+#### Setting background tasks
 
 Similarly,
 [background tasks](https://fastapi.tiangolo.com/tutorial/background-tasks/?h=background)
@@ -217,7 +221,7 @@ app.include_router(graphql_app, prefix="/graphql")
 If using a custom context class, then background tasks should be stored within
 the class object as `.background_tasks`.
 
-## root_value_getter
+### root_value_getter
 
 The `root_value_getter` option allows you to provide a custom root value for
 your schema. This is most likely a rare usecase but might be useful in certain
@@ -255,7 +259,7 @@ app.include_router(graphql_app, prefix="/graphql")
 Here we are returning a Query where the name is "Patrick", so when we request
 the field name we'll return "Patrick".
 
-## process_result
+### process_result
 
 The `process_result` option allows you to customize and/or process results
 before they are sent to the clients. This can be useful for logging errors or
@@ -286,7 +290,7 @@ class MyGraphQLRouter(GraphQLRouter):
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
 
-## encode_json
+### encode_json
 
 `encode_json` allows to customize the encoding of the JSON response. By default
 we use `json.dumps` but you can override this method to use a different encoder.
@@ -296,4 +300,21 @@ For example, the `orjson` library from pypi has blazing fast speeds.
 class MyGraphQLRouter(GraphQLRouter):
     def encode_json(self, data: GraphQLHTTPResponse) -> bytes:
         return orjson.dumps(data)
+```
+
+### render_graphql_ide
+
+In case you need more control over the rendering of the GraphQL IDE than the
+`graphql_ide` option provides, you can override the `render_graphql_ide` method.
+
+```python
+from strawberry.fastapi import GraphQLRouter
+from starlette.responses import HTMLResponse, Response
+
+
+class MyGraphQLRouter(GraphQLRouter):
+    async def render_graphql_ide(self, request: Request) -> HTMLResponse:
+        custom_html = """<html><body><h1>Custom GraphQL IDE</h1></body></html>"""
+
+        return HTMLResponse(custom_html)
 ```

@@ -1,6 +1,7 @@
 # ruff: noqa: F821
 from __future__ import annotations
 
+import inspect
 import sys
 from collections import abc  # noqa: F401
 from typing import (  # noqa: F401
@@ -15,6 +16,7 @@ from typing_extensions import Annotated
 import pytest
 
 import strawberry
+from strawberry.types.execution import PreExecutionError
 
 
 @pytest.mark.asyncio
@@ -236,3 +238,51 @@ async def test_subscription_with_annotated():
 
     assert not result.errors
     assert result.data["example"] == "Hi"
+
+
+async def test_subscription_immediate_error():
+    @strawberry.type
+    class Query:
+        x: str = "Hello"
+
+    @strawberry.type
+    class Subscription:
+        @strawberry.subscription()
+        async def example(self) -> AsyncGenerator[str, None]:
+            return "fds"
+
+    schema = strawberry.Schema(query=Query, subscription=Subscription)
+
+    query = """#graphql
+            subscription { example }
+            """
+    res_or_agen = await schema.subscribe(query)
+    assert isinstance(res_or_agen, PreExecutionError)
+    assert res_or_agen.errors
+
+
+async def test_worng_opeartion_variables():
+    @strawberry.type
+    class Query:
+        x: str = "Hello"
+
+    @strawberry.type
+    class Subscription:
+        @strawberry.subscription
+        async def example(self, name: str) -> AsyncGenerator[str, None]:
+            yield f"Hi {name}"  # pragma: no cover
+
+    schema = strawberry.Schema(query=Query, subscription=Subscription)
+
+    query = """#graphql
+                subscription subOp($opVar: String!){ example(name: $opVar) }
+            """
+
+    result = await schema.subscribe(query)
+    assert not inspect.isasyncgen(result)
+
+    assert result.errors
+    assert (
+        result.errors[0].message
+        == "Variable '$opVar' of required type 'String!' was not provided."
+    )

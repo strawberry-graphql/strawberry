@@ -1,6 +1,242 @@
 CHANGELOG
 =========
 
+0.246.2 - 2024-10-12
+--------------------
+
+This release tweaks the Flask integration's `render_graphql_ide` method to be stricter typed internally, making type checkers ever so slightly happier.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3666](https://github.com/strawberry-graphql/strawberry/pull/3666/)
+
+
+0.246.1 - 2024-10-09
+--------------------
+
+This release adds support for using raw Python enum types in your schema
+(enums that are not decorated with `@strawberry.enum`)
+
+This is useful if you have enum types from other places in your code
+that you want to use in strawberry.
+i.e
+```py
+# somewhere.py
+from enum import Enum
+
+
+class AnimalKind(Enum):
+    AXOLOTL, CAPYBARA = range(2)
+
+
+# gql/animals
+from somewhere import AnimalKind
+
+
+@strawberry.type
+class AnimalType:
+    kind: AnimalKind
+```
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #3639](https://github.com/strawberry-graphql/strawberry/pull/3639/)
+
+
+0.246.0 - 2024-10-07
+--------------------
+
+The AIOHTTP, ASGI, and Django test clients' `asserts_errors` option has been renamed to `assert_no_errors` to better reflect its purpose.
+This change is backwards-compatible, but the old option name will raise a deprecation warning.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3661](https://github.com/strawberry-graphql/strawberry/pull/3661/)
+
+
+0.245.0 - 2024-10-07
+--------------------
+
+This release removes the dated `subscriptions_enabled` setting from the Django and Channels integrations.
+Instead, WebSocket support is now enabled by default in all GraphQL IDEs.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3660](https://github.com/strawberry-graphql/strawberry/pull/3660/)
+
+
+0.244.1 - 2024-10-06
+--------------------
+
+Fixes an issue where the codegen tool would crash when working with a nullable list of types.
+
+Contributed by [Jacob Allen](https://github.com/enoua5) via [PR #3653](https://github.com/strawberry-graphql/strawberry/pull/3653/)
+
+
+0.244.0 - 2024-10-05
+--------------------
+
+Starting with this release, WebSocket logic now lives in the base class shared between all HTTP integrations.
+This makes the behaviour of WebSockets much more consistent between integrations and easier to maintain.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3638](https://github.com/strawberry-graphql/strawberry/pull/3638/)
+
+
+0.243.1 - 2024-09-26
+--------------------
+
+This releases adds support for Pydantic 2.9.0's Mypy plugin
+
+Contributed by [Krisque](https://github.com/chrisemke) via [PR #3632](https://github.com/strawberry-graphql/strawberry/pull/3632/)
+
+
+0.243.0 - 2024-09-25
+--------------------
+
+Starting with this release, multipart uploads are disabled by default and Strawberry Django view is no longer implicitly exempted from Django's CSRF protection.
+Both changes relieve users from implicit security implications inherited from the GraphQL multipart request specification which was enabled in Strawberry by default.
+
+These are breaking changes if you are using multipart uploads OR the Strawberry Django view.
+Migrations guides including further information are available on the Strawberry website.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3645](https://github.com/strawberry-graphql/strawberry/pull/3645/)
+
+
+0.242.0 - 2024-09-19
+--------------------
+
+Starting with this release, clients using the legacy graphql-ws subprotocol will receive an error when they try to send binary data frames.
+Before, binary data frames were silently ignored.
+
+While vaguely defined in the protocol, the legacy graphql-ws subprotocol is generally understood to only support text data frames.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3633](https://github.com/strawberry-graphql/strawberry/pull/3633/)
+
+
+0.241.0 - 2024-09-16
+--------------------
+
+You can now configure your schemas to provide a custom subclass of
+`strawberry.types.Info` to your types and queries.
+
+```py
+import strawberry
+from strawberry.schema.config import StrawberryConfig
+
+from .models import ProductModel
+
+
+class CustomInfo(strawberry.Info):
+    @property
+    def selected_group_id(self) -> int | None:
+        """Get the ID of the group you're logged in as."""
+        return self.context["request"].headers.get("Group-ID")
+
+
+@strawberry.type
+class Group:
+    id: strawberry.ID
+    name: str
+
+
+@strawberry.type
+class User:
+    id: strawberry.ID
+    name: str
+    group: Group
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user(self, id: strawberry.ID, info: CustomInfo) -> Product:
+        kwargs = {"id": id, "name": ...}
+
+        if info.selected_group_id is not None:
+            # Get information about the group you're a part of, if
+            # available.
+            kwargs["group"] = ...
+
+        return User(**kwargs)
+
+
+schema = strawberry.Schema(
+    Query,
+    config=StrawberryConfig(info_class=CustomInfo),
+)
+```
+
+Contributed by [Ethan Henderson](https://github.com/parafoxia) via [PR #3592](https://github.com/strawberry-graphql/strawberry/pull/3592/)
+
+
+0.240.4 - 2024-09-13
+--------------------
+
+This release fixes how we check for multipart subscriptions to be
+in line with the latest changes in the spec.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3627](https://github.com/strawberry-graphql/strawberry/pull/3627/)
+
+
+0.240.3 - 2024-09-12
+--------------------
+
+This release fixes an issue that prevented extensions to receive the result from
+the execution context when executing operations in async.
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #3629](https://github.com/strawberry-graphql/strawberry/pull/3629/)
+
+
+0.240.2 - 2024-09-11
+--------------------
+
+This release updates how we check for GraphQL core's version to remove a
+dependency on the `packaging` package.
+
+Contributed by [Nicholas Bollweg](https://github.com/bollwyvl) via [PR #3622](https://github.com/strawberry-graphql/strawberry/pull/3622/)
+
+
+0.240.1 - 2024-09-11
+--------------------
+
+This release adds support for Python 3.13 (which will be out soon!)
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3510](https://github.com/strawberry-graphql/strawberry/pull/3510/)
+
+
+0.240.0 - 2024-09-10
+--------------------
+
+This release adds support for schema-extensions in subscriptions.
+
+Here's a small example of how to use them (they work the same way as query and
+mutation extensions):
+
+```python
+import asyncio
+from typing import AsyncIterator
+
+import strawberry
+from strawberry.extensions.base_extension import SchemaExtension
+
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def notifications(self, info: strawberry.Info) -> AsyncIterator[str]:
+        for _ in range(3):
+            yield "Hello"
+
+
+class MyExtension(SchemaExtension):
+    async def on_operation(self):
+        # This would run when the subscription starts
+        print("Subscription started")
+        yield
+        # The subscription has ended
+        print("Subscription ended")
+
+
+schema = strawberry.Schema(
+    query=Query, subscription=Subscription, extensions=[MyExtension]
+)
+```
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #3554](https://github.com/strawberry-graphql/strawberry/pull/3554/)
+
+
 0.239.2 - 2024-09-03
 --------------------
 

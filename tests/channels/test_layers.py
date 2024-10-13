@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING, AsyncGenerator
 
 import pytest
 
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
-async def ws() -> Generator[WebsocketCommunicator, None, None]:
+async def ws() -> AsyncGenerator[WebsocketCommunicator, None]:
     from channels.testing import WebsocketCommunicator
     from strawberry.channels import GraphQLWSConsumer
 
@@ -94,7 +94,11 @@ async def test_channel_listen(ws: WebsocketCommunicator):
     assert (
         response
         == NextMessage(
-            id="sub1", payload={"data": {"listener": "Hello there!"}}
+            id="sub1",
+            payload={
+                "data": {"listener": "Hello there!"},
+                "extensions": {"example": "example"},
+            },
         ).as_dict()
     )
 
@@ -140,7 +144,11 @@ async def test_channel_listen_with_confirmation(ws: WebsocketCommunicator):
     assert (
         response
         == NextMessage(
-            id="sub1", payload={"data": {"listenerWithConfirmation": "Hello there!"}}
+            id="sub1",
+            payload={
+                "data": {"listenerWithConfirmation": "Hello there!"},
+                "extensions": {"example": "example"},
+            },
         ).as_dict()
     )
 
@@ -318,7 +326,11 @@ async def test_channel_listen_group(ws: WebsocketCommunicator):
     assert (
         response
         == NextMessage(
-            id="sub1", payload={"data": {"listener": "Hello there!"}}
+            id="sub1",
+            payload={
+                "data": {"listener": "Hello there!"},
+                "extensions": {"example": "example"},
+            },
         ).as_dict()
     )
 
@@ -334,7 +346,11 @@ async def test_channel_listen_group(ws: WebsocketCommunicator):
     assert (
         response
         == NextMessage(
-            id="sub1", payload={"data": {"listener": "Hello there!"}}
+            id="sub1",
+            payload={
+                "data": {"listener": "Hello there!"},
+                "extensions": {"example": "example"},
+            },
         ).as_dict()
     )
 
@@ -380,7 +396,11 @@ async def test_channel_listen_group_cm(ws: WebsocketCommunicator):
     assert (
         response
         == NextMessage(
-            id="sub1", payload={"data": {"listenerWithConfirmation": "Hello there!"}}
+            id="sub1",
+            payload={
+                "data": {"listenerWithConfirmation": "Hello there!"},
+                "extensions": {"example": "example"},
+            },
         ).as_dict()
     )
 
@@ -396,7 +416,11 @@ async def test_channel_listen_group_cm(ws: WebsocketCommunicator):
     assert (
         response
         == NextMessage(
-            id="sub1", payload={"data": {"listenerWithConfirmation": "Hello there!"}}
+            id="sub1",
+            payload={
+                "data": {"listenerWithConfirmation": "Hello there!"},
+                "extensions": {"example": "example"},
+            },
         ).as_dict()
     )
 

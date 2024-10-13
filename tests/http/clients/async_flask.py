@@ -52,6 +52,7 @@ class AsyncFlaskHttpClient(FlaskHttpClient):
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        multipart_uploads_enabled: bool = False,
     ):
         self.app = Flask(__name__)
         self.app.debug = True
@@ -63,6 +64,7 @@ class AsyncFlaskHttpClient(FlaskHttpClient):
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
+            multipart_uploads_enabled=multipart_uploads_enabled,
         )
 
         self.app.add_url_rule(

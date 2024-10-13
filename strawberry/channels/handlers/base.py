@@ -16,7 +16,7 @@ from typing_extensions import Literal, Protocol, TypedDict
 from weakref import WeakSet
 
 from channels.consumer import AsyncConsumer
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from channels.generic.websocket import AsyncWebsocketConsumer
 
 
 class ChannelsMessage(TypedDict, total=False):
@@ -210,7 +210,7 @@ class ChannelsConsumer(AsyncConsumer):
                 return
 
 
-class ChannelsWSConsumer(ChannelsConsumer, AsyncJsonWebsocketConsumer):
+class ChannelsWSConsumer(ChannelsConsumer, AsyncWebsocketConsumer):
     """Base channels websocket async consumer."""
 
 

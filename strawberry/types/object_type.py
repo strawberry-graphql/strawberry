@@ -22,7 +22,6 @@ from strawberry.exceptions import (
     ObjectIsNotClassError,
 )
 from strawberry.types.base import get_object_definition
-from strawberry.utils.dataclasses import add_custom_init_fn
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.str_converters import to_camel_case
 
@@ -118,6 +117,8 @@ def _wrap_dataclass(cls: Type[T]) -> Type[T]:
     dclass = dataclasses.dataclass(cls, **dclass_kwargs)
 
     if sys.version_info < (3, 10):
+        from strawberry.utils.dataclasses import add_custom_init_fn
+
         add_custom_init_fn(dclass)
 
     return dclass

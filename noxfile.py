@@ -8,10 +8,11 @@ nox.options.reuse_existing_virtualenvs = True
 nox.options.error_on_external_run = True
 nox.options.default_venv_backend = "uv"
 
-PYTHON_VERSIONS = ["3.12", "3.11", "3.10", "3.9", "3.8"]
+PYTHON_VERSIONS = ["3.13", "3.12", "3.11", "3.10", "3.9", "3.8"]
+
 GQL_CORE_VERSIONS = [
     "3.2.3",
-    "3.3.0",
+    "3.3.0a6",
 ]
 
 COMMON_PYTEST_OPTIONS = [
@@ -44,12 +45,7 @@ INTEGRATIONS = [
 
 
 def _install_gql_core(session: Session, version: str) -> None:
-    # hack for better workflow names  # noqa: FIX004
-    if version == "3.2.3":
-        session._session.install(f"graphql-core=={version}")  # type: ignore
-    session._session.install(
-        "https://github.com/graphql-python/graphql-core/archive/876aef67b6f1e1f21b3b5db94c7ff03726cb6bdf.zip"
-    )  # type: ignore
+    session._session.install(f"graphql-core=={version}")
 
 
 gql_core_parametrize = nox.parametrize(
@@ -84,7 +80,7 @@ def tests(session: Session, gql_core: str) -> None:
     )
 
 
-@session(python=["3.11", "3.12"], name="Django tests", tags=["tests"])
+@session(python=["3.12"], name="Django tests", tags=["tests"])
 @with_gql_core_parametrize("django", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"])
 def tests_django(session: Session, django: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
@@ -134,7 +130,7 @@ def tests_integrations(session: Session, integration: str, gql_core: str) -> Non
 
 
 @session(python=PYTHON_VERSIONS, name="Pydantic tests", tags=["tests", "pydantic"])
-@with_gql_core_parametrize("pydantic", ["1.10", "2.7.0", "2.8.0"])
+@with_gql_core_parametrize("pydantic", ["1.10", "2.8.0", "2.9.0"])
 def test_pydantic(session: Session, pydantic: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
 

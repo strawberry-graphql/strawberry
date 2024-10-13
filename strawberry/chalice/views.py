@@ -54,7 +54,6 @@ class GraphQLView(
 ):
     allow_queries_via_get: bool = True
     request_adapter_class = ChaliceHTTPRequestAdapter
-    _ide_subscription_enabled = False
 
     def __init__(
         self,

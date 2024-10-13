@@ -13,6 +13,7 @@ from typing import (
     Type,
     cast,
 )
+from typing_extensions import TypeGuard
 
 from sanic.request import Request
 from sanic.response import HTTPResponse, html
@@ -71,7 +72,15 @@ class SanicHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class GraphQLView(
-    AsyncBaseHTTPView[Request, HTTPResponse, TemporalResponse, Context, RootValue],
+    AsyncBaseHTTPView[
+        Request,
+        HTTPResponse,
+        TemporalResponse,
+        Request,
+        TemporalResponse,
+        Context,
+        RootValue,
+    ],
     HTTPMethodView,
 ):
     """Class based view to handle GraphQL HTTP Requests.
@@ -102,11 +111,13 @@ class GraphQLView(
         allow_queries_via_get: bool = True,
         json_encoder: Optional[Type[json.JSONEncoder]] = None,
         json_dumps_params: Optional[Dict[str, Any]] = None,
+        multipart_uploads_enabled: bool = False,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.json_encoder = json_encoder
         self.json_dumps_params = json_dumps_params
+        self.multipart_uploads_enabled = multipart_uploads_enabled
 
         if self.json_encoder is not None:  # pragma: no cover
             warnings.warn(
@@ -203,6 +214,17 @@ class GraphQLView(
         # error mostly so we don't have to update the types everywhere for this
         # corner case
         return None  # type: ignore
+
+    def is_websocket_request(self, request: Request) -> TypeGuard[Request]:
+        return False
+
+    async def pick_websocket_subprotocol(self, request: Request) -> Optional[str]:
+        raise NotImplementedError
+
+    async def create_websocket_response(
+        self, request: Request, subprotocol: Optional[str]
+    ) -> TemporalResponse:
+        raise NotImplementedError
 
 
 __all__ = ["GraphQLView"]

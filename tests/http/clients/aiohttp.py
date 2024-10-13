@@ -10,7 +10,6 @@ from aiohttp import web
 from aiohttp.client_ws import ClientWebSocketResponse
 from aiohttp.http_websocket import WSMsgType
 from aiohttp.test_utils import TestClient, TestServer
-from strawberry.aiohttp.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
@@ -20,24 +19,14 @@ from tests.views.schema import Query, schema
 from ..context import get_context_async as get_context
 from .base import (
     JSON,
-    DebuggableGraphQLTransportWSMixin,
-    DebuggableGraphQLWSMixin,
+    DebuggableGraphQLTransportWSHandler,
+    DebuggableGraphQLWSHandler,
     HttpClient,
     Message,
     Response,
     ResultOverrideFunction,
     WebSocketClient,
 )
-
-
-class DebuggableGraphQLTransportWSHandler(
-    DebuggableGraphQLTransportWSMixin, GraphQLTransportWSHandler
-):
-    pass
-
-
-class DebuggableGraphQLWSHandler(DebuggableGraphQLWSMixin, GraphQLWSHandler):
-    pass
 
 
 class GraphQLView(BaseGraphQLView):
@@ -72,6 +61,7 @@ class AioHttpClient(HttpClient):
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        multipart_uploads_enabled: bool = False,
     ):
         view = GraphQLView(
             schema=schema,
@@ -79,6 +69,7 @@ class AioHttpClient(HttpClient):
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             keep_alive=False,
+            multipart_uploads_enabled=multipart_uploads_enabled,
         )
         view.result_override = result_override
 
@@ -192,6 +183,9 @@ class AioWebSocketClient(WebSocketClient):
         self.ws = ws
         self._reason: Optional[str] = None
 
+    async def send_text(self, payload: str) -> None:
+        await self.ws.send_str(payload)
+
     async def send_json(self, payload: Dict[str, Any]) -> None:
         await self.ws.send_json(payload)
 
@@ -212,6 +206,10 @@ class AioWebSocketClient(WebSocketClient):
         await self.ws.close()
 
     @property
+    def accepted_subprotocol(self) -> Optional[str]:
+        return self.ws.protocol
+
+    @property
     def closed(self) -> bool:
         return self.ws.closed
 
@@ -220,5 +218,6 @@ class AioWebSocketClient(WebSocketClient):
         assert self.ws.close_code is not None
         return self.ws.close_code
 
-    def assert_reason(self, reason: str) -> None:
-        assert self._reason == reason
+    @property
+    def close_reason(self) -> Optional[str]:
+        return self._reason
