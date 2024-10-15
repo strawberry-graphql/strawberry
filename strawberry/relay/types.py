@@ -316,6 +316,7 @@ class GlobalID:
         return node
 
 
+
 class NodeIDPrivate(StrawberryPrivate):
     """Annotate a type attribute as its id.
 
@@ -340,8 +341,7 @@ class NodeIDPrivate(StrawberryPrivate):
 NodeID: TypeAlias = Annotated[_T, NodeIDPrivate()]
 
 
-@interface(description="An object with a Globally Unique ID")
-class Node:
+class BaseNode:
     """Node interface for GraphQL types.
 
     Subclasses must type the id field using `NodeID`. It will be private to the
@@ -376,9 +376,11 @@ class Node:
     ```
     """
 
+    class Config:
+        GlobalID: ClassVar[Type[GlobalID]] = GlobalID
+
     _id_attr: ClassVar[Optional[str]] = None
 
-    @field(name="id", description="The Globally Unique ID of this object")
     @classmethod
     def _id(cls, root: Node, info: Info) -> GlobalID:
         # NOTE: root might not be a Node instance when using integrations which
@@ -402,18 +404,18 @@ class Node:
 
         if inspect.isawaitable(node_id):
             return cast(
-                GlobalID,
+                cls.Config.GlobalID,
                 resolve_awaitable(
                     node_id,
-                    lambda resolved: GlobalID(
+                    lambda resolved: cls.Config.GlobalID(
                         type_name=type_name,
                         node_id=str(resolved),
                     ),
                 ),
             )
 
-        # If node_id is not str, GlobalID will raise an error for us
-        return GlobalID(type_name=type_name, node_id=str(node_id))
+        # If node_id is not str, cls.Config.GlobalID will raise an error for us
+        return cls.Config.GlobalID(type_name=type_name, node_id=str(node_id))
 
     @classmethod
     def resolve_id_attr(cls) -> str:
@@ -616,6 +618,14 @@ class Node:
             return resolve_awaitable(retval, lambda resolved: next(iter(resolved)))
 
         return next(iter(cast(Iterable[Self], retval)))
+
+
+@interface(description="An object with a Globally Unique ID")
+class Node(BaseNode):
+    @field(name="id", description="The Globally Unique ID of this object")
+    @classmethod
+    def _id(cls, root: Node, info: Info) -> GlobalID:
+        return super()._id(root, info)
 
 
 @type(description="Information to aid in pagination.")
