@@ -160,7 +160,9 @@ class PermissionExtension(FieldExtension):
         if self.use_directives:
             # Dedupe multiple directives
             # https://github.com/strawberry-graphql/strawberry/issues/3596
-            permission_directives = {p.schema_directive for p in self.permissions if p.schema_directive}
+            permission_directives = {
+                p.schema_directive for p in self.permissions if p.schema_directive
+            }
             existing_field_directives = set(field.directives)
             extend_directives = permission_directives - existing_field_directives
             field.directives.extend(extend_directives)
