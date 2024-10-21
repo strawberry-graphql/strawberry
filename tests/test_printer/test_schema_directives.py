@@ -538,7 +538,7 @@ def test_dedupe_multiple_equal_directives():
     class MemberRoleRequired(BasePermission):
         message = "Keine Rechte"
 
-        def has_permission(self, source, info: Info, **kwargs) -> bool:
+        def has_permission(self, source, info: Info) -> bool:
             return True
 
     @strawberry.interface
