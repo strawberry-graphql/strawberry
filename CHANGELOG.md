@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.247.0 - 2024-10-21
+--------------------
+
+This release fixes a regression in the legacy GraphQL over WebSocket protocol.
+Legacy protocol implementations should ignore client message parsing errors.
+During a recent refactor, Strawberry changed this behavior to match the new protocol, where parsing errors must close the WebSocket connection.
+The expected behavior is restored and adequately tested in this release.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3670](https://github.com/strawberry-graphql/strawberry/pull/3670/)
+
+
 0.246.3 - 2024-10-21
 --------------------
 
