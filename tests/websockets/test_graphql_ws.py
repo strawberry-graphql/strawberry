@@ -281,7 +281,7 @@ async def test_subscription_syntax_error(ws: WebSocketClient):
     }
 
 
-async def test_ws_messages_must_be_text(ws_raw: WebSocketClient):
+async def test_non_text_ws_messages_result_in_socket_closure(ws_raw: WebSocketClient):
     ws = ws_raw
 
     await ws.send_bytes(json.dumps({"type": GQL_CONNECTION_INIT}).encode())
@@ -292,15 +292,42 @@ async def test_ws_messages_must_be_text(ws_raw: WebSocketClient):
     assert ws.close_reason == "WebSocket message type must be text"
 
 
-async def test_ws_messages_must_be_json(ws_raw: WebSocketClient):
+async def test_non_json_ws_messages_are_ignored(ws_raw: WebSocketClient):
     ws = ws_raw
 
-    await ws.send_text("not valid json")
+    await ws.send_text("NOT VALID JSON")
+    await ws.send_json({"type": GQL_CONNECTION_INIT})
 
-    await ws.receive(timeout=2)
+    response = await ws.receive_json()
+    assert response["type"] == GQL_CONNECTION_ACK
+
+    await ws.send_text("NOT VALID JSON")
+    await ws.send_json(
+        {
+            "type": GQL_START,
+            "id": "demo",
+            "payload": {
+                "query": 'subscription { echo(message: "Hi") }',
+            },
+        }
+    )
+
+    response = await ws.receive_json()
+    assert response["type"] == GQL_DATA
+    assert response["id"] == "demo"
+    assert response["payload"]["data"] == {"echo": "Hi"}
+
+    await ws.send_text("NOT VALID JSON")
+    await ws.send_json({"type": GQL_STOP, "id": "demo"})
+
+    response = await ws.receive_json()
+    assert response["type"] == GQL_COMPLETE
+    assert response["id"] == "demo"
+
+    await ws.send_text("NOT VALID JSON")
+    await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+    await ws.receive(timeout=2)  # receive close
     assert ws.closed
-    assert ws.close_code == 1002
-    assert ws.close_reason == "WebSocket message type must be text"
 
 
 async def test_ws_message_frame_types_cannot_be_mixed(ws_raw: WebSocketClient):

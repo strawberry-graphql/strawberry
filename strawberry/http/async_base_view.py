@@ -81,7 +81,9 @@ class AsyncHTTPRequestAdapter(abc.ABC):
 
 class AsyncWebSocketAdapter(abc.ABC):
     @abc.abstractmethod
-    def iter_json(self) -> AsyncGenerator[Dict[str, object], None]: ...
+    def iter_json(
+        self, *, ignore_parsing_errors: bool = False
+    ) -> AsyncGenerator[Dict[str, object], None]: ...
 
     @abc.abstractmethod
     async def send_json(self, message: Mapping[str, object]) -> None: ...

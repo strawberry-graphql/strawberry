@@ -16,7 +16,7 @@ from typing import (
 from typing_extensions import TypeGuard
 
 from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncWebSocketAdapter
-from strawberry.http.exceptions import NonJsonMessageReceived
+from strawberry.http.exceptions import NonJsonMessageReceived, NonTextMessageReceived
 from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
@@ -31,7 +31,9 @@ class ChannelsWebSocketAdapter(AsyncWebSocketAdapter):
     def __init__(self, request: GraphQLWSConsumer, response: GraphQLWSConsumer) -> None:
         self.ws_consumer = response
 
-    async def iter_json(self) -> AsyncGenerator[Dict[str, object], None]:
+    async def iter_json(
+        self, *, ignore_parsing_errors: bool = False
+    ) -> AsyncGenerator[Dict[str, object], None]:
         while True:
             message = await self.ws_consumer.message_queue.get()
 
@@ -39,12 +41,13 @@ class ChannelsWebSocketAdapter(AsyncWebSocketAdapter):
                 break
 
             if message["message"] is None:
-                raise NonJsonMessageReceived()
+                raise NonTextMessageReceived()
 
             try:
                 yield json.loads(message["message"])
             except json.JSONDecodeError:
-                raise NonJsonMessageReceived()
+                if not ignore_parsing_errors:
+                    raise NonJsonMessageReceived()
 
     async def send_json(self, message: Mapping[str, object]) -> None:
         serialized_message = json.dumps(message)

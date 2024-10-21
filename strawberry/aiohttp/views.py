@@ -26,7 +26,11 @@ from strawberry.http.async_base_view import (
     AsyncHTTPRequestAdapter,
     AsyncWebSocketAdapter,
 )
-from strawberry.http.exceptions import HTTPException, NonJsonMessageReceived
+from strawberry.http.exceptions import (
+    HTTPException,
+    NonJsonMessageReceived,
+    NonTextMessageReceived,
+)
 from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
@@ -86,16 +90,19 @@ class AioHTTPWebSocketAdapter(AsyncWebSocketAdapter):
         self.request = request
         self.ws = ws
 
-    async def iter_json(self) -> AsyncGenerator[Dict[str, object], None]:
+    async def iter_json(
+        self, *, ignore_parsing_errors: bool = False
+    ) -> AsyncGenerator[Dict[str, object], None]:
         async for ws_message in self.ws:
             if ws_message.type == http.WSMsgType.TEXT:
                 try:
                     yield ws_message.json()
                 except JSONDecodeError:
-                    raise NonJsonMessageReceived()
+                    if not ignore_parsing_errors:
+                        raise NonJsonMessageReceived()
 
             elif ws_message.type == http.WSMsgType.BINARY:
-                raise NonJsonMessageReceived()
+                raise NonTextMessageReceived()
 
     async def send_json(self, message: Mapping[str, object]) -> None:
         await self.ws.send_json(message)
