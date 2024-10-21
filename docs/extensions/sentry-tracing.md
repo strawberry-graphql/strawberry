@@ -10,7 +10,7 @@ tags: tracing
 
 As of Sentry 1.32.0, Strawberry is officially supported by the Sentry SDK.
 Therefore, Strawberry's `SentryTracingExtension` has been deprecated in version
-0.210.0 and finally removed with Strawberry 0.247.0 in favor of the official
+0.210.0 and finally removed with Strawberry 0.248.0 in favor of the official
 Sentry SDK integration.
 
 For more details, please refer to the
