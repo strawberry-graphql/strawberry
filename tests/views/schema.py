@@ -20,6 +20,19 @@ class AlwaysFailPermission(BasePermission):
         return False
 
 
+class ConditionalFailPermission(BasePermission):
+    @property
+    def message(self):
+        return f"failed after sleep {self.sleep}"
+
+    async def has_permission(self, source, info, **kwargs: Any) -> bool:
+        self.sleep = kwargs.get("sleep", None)
+        self.fail = kwargs.get("fail", True)
+        if self.sleep is not None:
+            await asyncio.sleep(kwargs["sleep"])
+        return not self.fail
+
+
 class MyExtension(SchemaExtension):
     def get_results(self) -> Dict[str, str]:
         return {"example": "example"}
@@ -78,6 +91,12 @@ class Query:
 
     @strawberry.field(permission_classes=[AlwaysFailPermission])
     def always_fail(self) -> Optional[str]:
+        return "Hey"
+
+    @strawberry.field(permission_classes=[ConditionalFailPermission])
+    def conditional_fail(
+        self, sleep: Optional[float] = None, fail: bool = False
+    ) -> str:
         return "Hey"
 
     @strawberry.field
@@ -261,6 +280,12 @@ class Subscription:
                 await asyncio.sleep(0.01)
         finally:
             await asyncio.sleep(delay)
+
+    @strawberry.subscription(permission_classes=[ConditionalFailPermission])
+    async def conditional_fail(
+        self, sleep: Optional[float] = None, fail: bool = False
+    ) -> AsyncGenerator[str, None]:
+        yield "Hey"  # pragma: no cover
 
 
 class Schema(strawberry.Schema):
