@@ -156,16 +156,15 @@ class PermissionExtension(FieldExtension):
         self.use_directives = use_directives
 
     def apply(self, field: StrawberryField) -> None:
-        """Applies all of the permission directives to the schema and sets up silent permissions."""
+        """Applies all of the permission directives (deduped) to the schema and sets up silent permissions."""
         if self.use_directives:
-            # Dedupe multiple directives
-            # https://github.com/strawberry-graphql/strawberry/issues/3596
-            permission_directives = {
-                p.schema_directive for p in self.permissions if p.schema_directive
-            }
-            existing_field_directives = set(field.directives)
-            extend_directives = permission_directives - existing_field_directives
-            field.directives.extend(extend_directives)
+            permission_directives = [perm.schema_directive for perm in self.permissions if perm.schema_directive]
+            # Iteration, because we want to keep order
+            for perm_directive in permission_directives:
+                # Dedupe multiple directives
+                if perm_directive in field.directives:
+                    continue
+                field.directives.append(perm_directive)
         # We can only fail silently if the field is optional or a list
         if self.fail_silently:
             if isinstance(field.type, StrawberryOptional):
