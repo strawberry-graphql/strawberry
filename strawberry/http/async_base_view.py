@@ -82,7 +82,7 @@ class AsyncHTTPRequestAdapter(abc.ABC):
 class AsyncWebSocketAdapter(abc.ABC):
     @abc.abstractmethod
     def iter_json(
-        self, ignore_parsing_errors: bool
+        self, *, ignore_parsing_errors: bool = False
     ) -> AsyncGenerator[Dict[str, object], None]: ...
 
     @abc.abstractmethod

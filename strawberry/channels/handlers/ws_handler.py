@@ -32,7 +32,7 @@ class ChannelsWebSocketAdapter(AsyncWebSocketAdapter):
         self.ws_consumer = response
 
     async def iter_json(
-        self, ignore_parsing_errors: bool
+        self, *, ignore_parsing_errors: bool = False
     ) -> AsyncGenerator[Dict[str, object], None]:
         while True:
             message = await self.ws_consumer.message_queue.get()

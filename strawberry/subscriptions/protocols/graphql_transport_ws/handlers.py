@@ -76,7 +76,7 @@ class BaseGraphQLTransportWSHandler:
         self.on_request_accepted()
 
         try:
-            async for message in self.websocket.iter_json(ignore_parsing_errors=False):
+            async for message in self.websocket.iter_json():
                 await self.handle_message(message)
         except NonTextMessageReceived:
             await self.handle_invalid_message("WebSocket message type must be text")

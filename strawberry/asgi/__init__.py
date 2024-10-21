@@ -90,7 +90,7 @@ class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
         self.ws = response
 
     async def iter_json(
-        self, ignore_parsing_errors: bool
+        self, *, ignore_parsing_errors: bool = False
     ) -> AsyncGenerator[Dict[str, object], None]:
         try:
             while self.ws.application_state != WebSocketState.DISCONNECTED:
