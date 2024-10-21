@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.246.3 - 2024-10-21
+--------------------
+
+This release addresses a bug where directives were being added multiple times when defined in an interface which multiple objects inherits from.
+
+The fix involves deduplicating directives when applying extensions/permissions to a field, ensuring that each directive is only added once.
+
+Contributed by [Arthur](https://github.com/Speedy1991) via [PR #3674](https://github.com/strawberry-graphql/strawberry/pull/3674/)
+
+
 0.246.2 - 2024-10-12
 --------------------
 
