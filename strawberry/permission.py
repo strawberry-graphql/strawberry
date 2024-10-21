@@ -158,7 +158,11 @@ class PermissionExtension(FieldExtension):
     def apply(self, field: StrawberryField) -> None:
         """Applies all of the permission directives (deduped) to the schema and sets up silent permissions."""
         if self.use_directives:
-            permission_directives = [perm.schema_directive for perm in self.permissions if perm.schema_directive]
+            permission_directives = [
+                perm.schema_directive
+                for perm in self.permissions
+                if perm.schema_directive
+            ]
             # Iteration, because we want to keep order
             for perm_directive in permission_directives:
                 # Dedupe multiple directives
