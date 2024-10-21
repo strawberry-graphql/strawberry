@@ -533,6 +533,7 @@ def test_print_directive_on_enum_value():
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
+
 def test_dedupe_multiple_equal_directives():
     class MemberRoleRequired(BasePermission):
         message = "Keine Rechte"
@@ -544,9 +545,11 @@ def test_dedupe_multiple_equal_directives():
     class MyInterface:
         id: strawberry.ID
 
-        @strawberry.field(extensions=[PermissionExtension(permissions=[MemberRoleRequired()])])
+        @strawberry.field(
+            extensions=[PermissionExtension(permissions=[MemberRoleRequired()])]
+        )
         def hello(info: Info) -> str:
-            return 'world'
+            return "world"
 
     @strawberry.type
     class MyType1(MyInterface):
@@ -558,10 +561,9 @@ def test_dedupe_multiple_equal_directives():
 
     @strawberry.type
     class Query:
-
         @strawberry.field
         def my_type(info: Info) -> MyInterface:
-            return MyType1(id='1', name='Hello')
+            return MyType1(id="1", name="Hello")
 
     expected_output = """
     directive @memberRoleRequired on FIELD_DEFINITION
