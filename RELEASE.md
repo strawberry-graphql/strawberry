@@ -10,7 +10,7 @@ async def load_data(keys):
 
 
 dataloader = DataLoader(load_fn=load_data)
-dataloader.clean(42)  # does not throw KeyError anymore
+dataloader.clear(42)  # does not throw KeyError anymore
 ```
 
 This is a patch release with no breaking changes.
