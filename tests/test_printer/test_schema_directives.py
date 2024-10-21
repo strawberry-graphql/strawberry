@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import List, Optional, Union, Any
+from typing import Any, List, Optional, Union
 from typing_extensions import Annotated
 
 import strawberry
