@@ -4,6 +4,8 @@ from typing import List, Optional, Union
 from typing_extensions import Annotated
 
 import strawberry
+from strawberry import BasePermission, Info
+from strawberry.permission import PermissionExtension
 from strawberry.printer import print_schema
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema_directive import Location
@@ -528,6 +530,65 @@ def test_print_directive_on_enum_value():
     """
 
     schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+def test_dedupe_multiple_equal_directives():
+    class MemberRoleRequired(BasePermission):
+        message = "Keine Rechte"
+
+        def has_permission(self, source, info: Info, **kwargs) -> bool:
+            return True
+
+    @strawberry.interface
+    class MyInterface:
+        id: strawberry.ID
+
+        @strawberry.field(extensions=[PermissionExtension(permissions=[MemberRoleRequired()])])
+        def hello(info: Info) -> str:
+            return 'world'
+
+    @strawberry.type
+    class MyType1(MyInterface):
+        name: str
+
+    @strawberry.type
+    class MyType2(MyInterface):
+        age: int
+
+    @strawberry.type
+    class Query:
+
+        @strawberry.field
+        def my_type(info: Info) -> MyInterface:
+            return MyType1(id='1', name='Hello')
+
+    expected_output = """
+    directive @memberRoleRequired on FIELD_DEFINITION
+
+    interface MyInterface {
+      id: ID!
+      hello: String! @memberRoleRequired
+    }
+
+    type MyType1 implements MyInterface {
+      id: ID!
+      hello: String! @memberRoleRequired
+      name: String!
+    }
+
+    type MyType2 implements MyInterface {
+      id: ID!
+      hello: String! @memberRoleRequired
+      age: Int!
+    }
+
+    type Query {
+      myType: MyInterface!
+    }
+    """
+
+    schema = strawberry.Schema(Query, types=[MyType1, MyType2])
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
