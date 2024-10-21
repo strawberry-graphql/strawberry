@@ -1,6 +1,6 @@
 Release type: patch
 
-Calling `.clean(key)` on default dataloader with non-existing `key` will not throw `KeyError` anymore. Example:
+Calling `.clear(key)` on default dataloader with non-existing `key` will not throw `KeyError` anymore. Example:
 ```python
 from strawberry.dataloader import DataLoader
 
