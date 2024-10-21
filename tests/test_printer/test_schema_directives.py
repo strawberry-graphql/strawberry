@@ -548,7 +548,7 @@ def test_dedupe_multiple_equal_directives():
         @strawberry.field(
             extensions=[PermissionExtension(permissions=[MemberRoleRequired()])]
         )
-        def hello(info: Info) -> str:
+        def hello(self, info: Info) -> str:
             return "world"
 
     @strawberry.type
@@ -562,8 +562,8 @@ def test_dedupe_multiple_equal_directives():
     @strawberry.type
     class Query:
         @strawberry.field
-        def my_type(info: Info) -> MyInterface:
-            return MyType1(id="1", name="Hello")
+        def my_type(self, info: Info) -> MyInterface:
+            return MyType1(id=strawberry.ID("1"), name="Hello")
 
     expected_output = """
     directive @memberRoleRequired on FIELD_DEFINITION
@@ -593,6 +593,10 @@ def test_dedupe_multiple_equal_directives():
     schema = strawberry.Schema(Query, types=[MyType1, MyType2])
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+    retval = schema.execute_sync("{ myType { id hello } }")
+    assert retval.errors is None
+    assert retval.data == {"myType": {"id": "1", "hello": "world"}}
 
 
 def test_print_directive_on_union():
