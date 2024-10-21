@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Any
 from typing_extensions import Annotated
 
 import strawberry
@@ -538,7 +538,7 @@ def test_dedupe_multiple_equal_directives():
     class MemberRoleRequired(BasePermission):
         message = "Keine Rechte"
 
-        def has_permission(self, source, info: Info) -> bool:
+        def has_permission(self, source, info: Info, **kwargs: Any) -> bool:
             return True
 
     @strawberry.interface
