@@ -7,6 +7,7 @@
 [![CircleCI](https://img.shields.io/circleci/token/307b40d5e152e074d34f84d30d226376a15667d5/project/github/strawberry-graphql/strawberry/main.svg?style=for-the-badge)](https://circleci.com/gh/strawberry-graphql/strawberry/tree/main)
 [![Discord](https://img.shields.io/discord/689806334337482765?label=discord&logo=discord&logoColor=white&style=for-the-badge&color=blue)](https://discord.gg/ZkRTEJQ)
 [![PyPI](https://img.shields.io/pypi/v/strawberry-graphql?logo=pypi&logoColor=white&style=for-the-badge)](https://pypi.org/project/strawberry-graphql/)
+[![](https://img.shields.io/badge/Gurubase-Ask%20Strawberry%20GraphQL%20Guru-006BFF?style=for-the-badge)](https://gurubase.io/g/strawberry-graphql)
 
 ## Installation ( Quick Start )
 
