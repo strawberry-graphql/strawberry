@@ -23,16 +23,19 @@ Create a new file `app.py`:
 ```python
 import strawberry
 
+
 @strawberry.type
 class User:
     name: str
     age: int
+
 
 @strawberry.type
 class Query:
     @strawberry.field
     def user(self) -> User:
         return User(name="Patrick", age=100)
+
 
 schema = strawberry.Schema(query=Query)
 ```
@@ -95,22 +98,26 @@ Strawberry provides built-in testing utilities through `BaseGraphQLTestClient`:
 ```python
 from strawberry.test import BaseGraphQLTestClient
 
+
 class MyTestClient(BaseGraphQLTestClient):
     def request(self, body, headers=None, files=None):
         # Implement request logic
         pass
 
+
 def test_query():
     client = MyTestClient(http_client)
-    response = client.query("""
-        { 
-            user { 
-                name 
-                age 
-            } 
+    response = client.query(
+        """
+        {
+            user {
+                name
+                age
+            }
         }
-    """)
-    
+    """
+    )
+
     assert response.data["user"]["name"] == "Patrick"
     assert not response.errors
 ```
