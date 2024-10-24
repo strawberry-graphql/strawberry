@@ -102,12 +102,17 @@ import httpx
 
 
 class HttpxTestClient(BaseGraphQLTestClient):
-    def __init__(self):
+    def __init__(self) -> None:
         self.client = httpx.Client(base_url="http://localhost:8000")
 
     def request(self, body: str, headers=None, files=None):
         headers = headers or {}
-        response = self.client.post("/graphql", json=body, headers=headers, files=files)
+        response = self.client.post(
+            "/graphql",
+            json=body,
+            headers=headers,
+            files=files,
+        )
         return response.json()
 
 
@@ -121,7 +126,7 @@ def test_query():
                 age
             }
         }
-    """
+        """
     )
     assert response.data["user"]["name"] == "Patrick"
     assert not response.errors
@@ -135,14 +140,17 @@ from requests import Session
 
 
 class RequestsTestClient(BaseGraphQLTestClient):
-    def __init__(self):
+    def __init__(self) -> None:
         self.client = Session()
         self.client.base_url = "http://localhost:8000"
 
     def request(self, body: str, headers=None, files=None):
         headers = headers or {}
         response = self.client.post(
-            f"{self.client.base_url}/graphql", json=body, headers=headers, files=files
+            f"{self.client.base_url}/graphql",
+            json=body,
+            headers=headers,
+            files=files,
         )
         return response.json()
 
@@ -173,14 +181,16 @@ import asyncio
 
 
 class AiohttpTestClient(BaseGraphQLTestClient):
-    def __init__(self):
+    def __init__(self) -> None:
         self.base_url = "http://localhost:8000"
 
     async def async_request(self, body: str, headers=None, files=None):
         headers = headers or {}
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                f"{self.base_url}/graphql", json=body, headers=headers
+                f"{self.base_url}/graphql",
+                json=body,
+                headers=headers,
             ) as response:
                 return await response.json()
 
@@ -198,7 +208,7 @@ def test_async_query():
                 age
             }
         }
-    """
+        """
     )
     assert response.data["user"]["name"] == "Patrick"
     assert not response.errors
