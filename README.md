@@ -23,16 +23,19 @@ Create a new file `app.py`:
 ```python
 import strawberry
 
+
 @strawberry.type
 class User:
     name: str
     age: int
+
 
 @strawberry.type
 class Query:
     @strawberry.field
     def user(self) -> User:
         return User(name="Patrick", age=100)
+
 
 schema = strawberry.Schema(query=Query)
 ```
@@ -96,71 +99,70 @@ Strawberry provides built-in testing utilities through `BaseGraphQLTestClient`. 
 from strawberry.test import BaseGraphQLTestClient
 import httpx  # or any other HTTP client of your choice
 
+
 # Example using httpx
 class HttpxTestClient(BaseGraphQLTestClient):
     def __init__(self):
         self.client = httpx.Client(base_url="http://localhost:8000")
-    
+
     def request(self, body: str, headers=None, files=None):
         headers = headers or {}
-        response = self.client.post(
-            "/graphql",
-            json=body,
-            headers=headers,
-            files=files
-        )
+        response = self.client.post("/graphql", json=body, headers=headers, files=files)
         return response.json()
+
 
 # Example using requests
 from requests import Session
+
 
 class RequestsTestClient(BaseGraphQLTestClient):
     def __init__(self):
         self.client = Session()
         self.client.base_url = "http://localhost:8000"
-    
+
     def request(self, body: str, headers=None, files=None):
         headers = headers or {}
         response = self.client.post(
-            f"{self.client.base_url}/graphql",
-            json=body,
-            headers=headers,
-            files=files
+            f"{self.client.base_url}/graphql", json=body, headers=headers, files=files
         )
         return response.json()
+
 
 def test_query():
     # Choose your preferred client implementation
     client = HttpxTestClient()  # or RequestsTestClient()
-    
-    response = client.query("""
-        { 
-            user { 
-                name 
-                age 
-            } 
+
+    response = client.query(
+        """
+        {
+            user {
+                name
+                age
+            }
         }
-    """)
-    
+    """
+    )
+
     assert response.data["user"]["name"] == "Patrick"
     assert not response.errors
+
 
 # Example with variables
 def test_query_with_variables():
     client = HttpxTestClient()
-    
+
     response = client.query(
         """
-        query GetUser($id: ID!) { 
-            user(id: $id) { 
-                name 
-                age 
-            } 
+        query GetUser($id: ID!) {
+            user(id: $id) {
+                name
+                age
+            }
         }
         """,
-        variables={"id": "123"}
+        variables={"id": "123"},
     )
-    
+
     assert response.data["user"]["name"] == "Patrick"
     assert not response.errors
 ```
