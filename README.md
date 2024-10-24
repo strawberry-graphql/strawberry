@@ -52,12 +52,14 @@ Visit [http://0.0.0.0:8000/graphql](http://0.0.0.0:8000/graphql) to access Graph
 
 ### Type Checking with MyPy
 
-Enable static type checking by adding to your `mypy.ini`:
+Enable static type checking with [MyPy](https://mypy.readthedocs.io/), Python's optional static type checker, by adding to your `mypy.ini`:
 
 ```ini
 [mypy]
 plugins = strawberry.ext.mypy_plugin
 ```
+
+Visit the [MyPy documentation](https://mypy.readthedocs.io/en/stable/introduction.html) to learn more about Python type checking.
 
 ### Django Integration
 
@@ -92,7 +94,38 @@ pip install 'uvicorn[standard]'
 
 ## Testing
 
-Strawberry provides built-in testing utilities through `BaseGraphQLTestClient`. Here are three different implementations using popular HTTP clients:
+Strawberry provides built-in testing utilities through `BaseGraphQLTestClient`. Let's look at how to set up and use different testing clients.
+
+First, let's create a schema with test data:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class User:
+    name: str
+    age: int
+
+
+# Setup test data
+test_users = {
+    "123": User(name="Patrick", age=100),
+    "456": User(name="John", age=25),
+}
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user(self, id: str) -> User:
+        return test_users[id]
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Now let's explore different ways to test this schema:
 
 ### 1. Testing with httpx
 
@@ -121,7 +154,7 @@ def test_query():
     response = client.query(
         """
         {
-            user {
+            user(id: "123") {
                 name
                 age
             }
@@ -203,7 +236,7 @@ def test_async_query():
     response = client.query(
         """
         {
-            user {
+            user(id: "123") {
                 name
                 age
             }
@@ -242,6 +275,7 @@ pre-commit install
 - Documentation: [https://strawberry.rocks](https://strawberry.rocks)
 - GitHub Repository: [https://github.com/strawberry-graphql/strawberry](https://github.com/strawberry-graphql/strawberry)
 - Issue Tracker: [https://github.com/strawberry-graphql/strawberry/issues](https://github.com/strawberry-graphql/strawberry/issues)
+- Discord Community: Join our active community on [Discord](https://discord.gg/ZkRTEJQ) for real-time discussions, questions, and support
 - Security Issues: Contact patrick.arminio@gmail.com directly
 
 ## License
