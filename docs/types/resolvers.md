@@ -203,6 +203,33 @@ Like this you will get the following responses:
 
 </CodeGrid>
 
+### Annotated Arguments
+
+Additional metadata can be added to arguments, for example a custom name or
+deprecation reason, using `strawberry.argument` with
+[typing.Annotated](https://docs.python.org/3/library/typing.html#typing.Annotated):
+
+```python
+from typing import Optional, Annotated
+import strawberry
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def greet(
+        self,
+        name: Optional[str] = strawberry.UNSET,
+        is_morning: Annotated[
+            Optional[bool],
+            strawberry.argument(
+                name="morning",
+                deprecation_reason="The field now automatically detects if it's morning or not",
+            ),
+        ] = None,
+    ) -> str: ...
+```
+
 ## Accessing execution information
 
 Sometimes it is useful to access the information for the current execution
