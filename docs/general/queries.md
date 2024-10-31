@@ -77,24 +77,3 @@ class Query:
                 return fruit
         return None
 ```
-
-Additional metadata can be added to arguments, for example a custom name and
-description using `strawberry.argument` with
-[typing.Annotated](https://docs.python.org/3/library/typing.html#typing.Annotated):
-
-```python
-@strawberry.type
-class Query:
-    @strawberry.field
-    def fruits(
-        self,
-        is_tasty: Annotated[
-            bool | None,
-            strawberry.argument(
-                description="Filters out fruits by whenever they're tasty or not",
-                deprecation_reason="isTasty argument is deprecated, "
-                "use fruits(taste:SWEET) instead",
-            ),
-        ] = None,
-    ) -> list[str]: ...
-```
