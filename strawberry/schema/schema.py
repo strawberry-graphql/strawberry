@@ -187,6 +187,30 @@ class Schema(BaseSchema):
                 },
             )
 
+            # due to 7dc715c9a65e6e0b6ea0ea3e903cf20284e3316b (#1684, #1586),
+            # fields are evaluated lazily. This means, that we only know about all
+            # interfaces after the schema is created.
+            # We need to find a way to add the extra implementations to the schema after creating it.
+            # This is not officially supported by GraphQL core and would be somewhat hacky.
+
+            # TODO: prevent duplicates - no error, but duplicate processing is inefficient
+            for (
+                extra_interface_type
+            ) in self.schema_converter.extra_interface_child_map.values():
+                graphql_type = self.schema_converter.from_object(extra_interface_type)
+                graphql_types.append(graphql_type)
+
+            self._schema = GraphQLSchema(
+                query=query_type,
+                mutation=mutation_type,
+                subscription=subscription_type if subscription else None,
+                directives=specified_directives + tuple(graphql_directives),
+                types=graphql_types,
+                extensions={
+                    GraphQLCoreConverter.DEFINITION_BACKREF: self,
+                },
+            )
+
         except TypeError as error:
             # GraphQL core throws a TypeError if there's any exception raised
             # during the schema creation, so we check if the cause was a

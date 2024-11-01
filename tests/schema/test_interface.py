@@ -8,6 +8,94 @@ import strawberry
 from strawberry.types.base import StrawberryObjectDefinition
 
 
+def test_query_interface_without_extra_types_duplicate_reference():
+    @strawberry.interface
+    class Cheese:
+        name: str
+
+    @strawberry.type
+    class Swiss(Cheese):
+        canton: str
+
+    @strawberry.type
+    class Italian(Cheese):
+        province: str
+
+    @strawberry.type
+    class Root:
+        @strawberry.field
+        def assortment(self) -> List[Cheese]:
+            return [
+                Italian(name="Asiago", province="Friuli"),
+                Swiss(name="Tomme", canton="Vaud"),
+            ]
+
+        @strawberry.field
+        def italians(self) -> List[Italian]:
+            return [Italian(name="Asiago", province="Friuli")]
+
+    schema = strawberry.Schema(query=Root)
+
+    query = """{
+        assortment {
+            name
+            ... on Italian { province }
+            ... on Swiss { canton }
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data is not None
+    assert result.data["assortment"] == [
+        {"name": "Asiago", "province": "Friuli"},
+        {"canton": "Vaud", "name": "Tomme"},
+    ]
+
+
+def test_query_interface_without_extra_types():
+    @strawberry.interface
+    class Cheese:
+        name: str
+
+    @strawberry.type
+    class Swiss(Cheese):
+        canton: str
+
+    @strawberry.type
+    class Italian(Cheese):
+        province: str
+
+    @strawberry.type
+    class Root:
+        @strawberry.field
+        def assortment(self) -> List[Cheese]:
+            return [
+                Italian(name="Asiago", province="Friuli"),
+                Swiss(name="Tomme", canton="Vaud"),
+            ]
+
+    schema = strawberry.Schema(query=Root)
+
+    query = """{
+        assortment {
+            name
+            ... on Italian { province }
+            ... on Swiss { canton }
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data is not None
+    assert result.data["assortment"] == [
+        {"name": "Asiago", "province": "Friuli"},
+        {"canton": "Vaud", "name": "Tomme"},
+    ]
+
+
 def test_query_interface():
     @strawberry.interface
     class Cheese:
