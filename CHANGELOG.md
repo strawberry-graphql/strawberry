@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.247.1 - 2024-11-01
+--------------------
+
+Starting with this release, both websocket-based protocols will handle unexpected socket disconnections more gracefully.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3685](https://github.com/strawberry-graphql/strawberry/pull/3685/)
+
+
 0.247.0 - 2024-10-21
 --------------------
 
