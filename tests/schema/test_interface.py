@@ -1,3 +1,4 @@
+import textwrap
 from dataclasses import dataclass
 from typing import Any, List
 
@@ -22,7 +23,7 @@ def test_query_interface_without_extra_types_duplicate_reference():
         province: str
 
     @strawberry.type
-    class Root:
+    class Query:
         @strawberry.field
         def assortment(self) -> List[Cheese]:
             return [
@@ -34,24 +35,30 @@ def test_query_interface_without_extra_types_duplicate_reference():
         def italians(self) -> List[Italian]:
             return [Italian(name="Asiago", province="Friuli")]
 
-    schema = strawberry.Schema(query=Root)
+    schema = strawberry.Schema(query=Query)
 
-    query = """{
-        assortment {
-            name
-            ... on Italian { province }
-            ... on Swiss { canton }
-        }
-    }"""
+    expected_schema = """
+    interface Cheese {
+      name: String!
+    }
 
-    result = schema.execute_sync(query)
+    type Italian implements Cheese {
+      name: String!
+      province: String!
+    }
 
-    assert not result.errors
-    assert result.data is not None
-    assert result.data["assortment"] == [
-        {"name": "Asiago", "province": "Friuli"},
-        {"canton": "Vaud", "name": "Tomme"},
-    ]
+    type Query {
+      assortment: [Cheese!]!
+      italians: [Italian!]!
+    }
+
+    type Swiss implements Cheese {
+      name: String!
+      canton: String!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
 
 
 def test_query_interface_without_extra_types():
