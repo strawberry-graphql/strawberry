@@ -12,4 +12,8 @@ class NonJsonMessageReceived(Exception):
     pass
 
 
+class WebSocketDisconnected(Exception):
+    pass
+
+
 __all__ = ["HTTPException"]

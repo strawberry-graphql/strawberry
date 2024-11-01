@@ -7,7 +7,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Awaitable,
-    Callable,
     Dict,
     List,
     Optional,
@@ -15,7 +14,11 @@ from typing import (
 
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 
-from strawberry.http.exceptions import NonJsonMessageReceived, NonTextMessageReceived
+from strawberry.http.exceptions import (
+    NonJsonMessageReceived,
+    NonTextMessageReceived,
+    WebSocketDisconnected,
+)
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
@@ -76,12 +79,17 @@ class BaseGraphQLTransportWSHandler:
         self.on_request_accepted()
 
         try:
-            async for message in self.websocket.iter_json():
-                await self.handle_message(message)
-        except NonTextMessageReceived:
-            await self.handle_invalid_message("WebSocket message type must be text")
-        except NonJsonMessageReceived:
-            await self.handle_invalid_message("WebSocket message must be valid JSON")
+            try:
+                async for message in self.websocket.iter_json():
+                    await self.handle_message(message)
+            except NonTextMessageReceived:
+                await self.handle_invalid_message("WebSocket message type must be text")
+            except NonJsonMessageReceived:
+                await self.handle_invalid_message(
+                    "WebSocket message must be valid JSON"
+                )
+        except WebSocketDisconnected:
+            pass
         finally:
             await self.shutdown()
 
@@ -127,50 +135,41 @@ class BaseGraphQLTransportWSHandler:
         self.task_logger.exception("Exception in worker task", exc_info=error)
 
     async def handle_message(self, message: dict) -> None:
-        handler: Callable
-        handler_arg: Any
         try:
             message_type = message.pop("type")
 
             if message_type == ConnectionInitMessage.type:
-                handler = self.handle_connection_init
-                handler_arg = ConnectionInitMessage(**message)
+                await self.handle_connection_init(ConnectionInitMessage(**message))
 
             elif message_type == PingMessage.type:
-                handler = self.handle_ping
-                handler_arg = PingMessage(**message)
+                await self.handle_ping(PingMessage(**message))
 
             elif message_type == PongMessage.type:
-                handler = self.handle_pong
-                handler_arg = PongMessage(**message)
+                await self.handle_pong(PongMessage(**message))
 
             elif message_type == SubscribeMessage.type:
-                handler = self.handle_subscribe
-
                 payload_args = message.pop("payload")
-
                 payload = SubscribeMessagePayload(
                     query=payload_args["query"],
                     operationName=payload_args.get("operationName"),
                     variables=payload_args.get("variables"),
                     extensions=payload_args.get("extensions"),
                 )
-                handler_arg = SubscribeMessage(payload=payload, **message)
+                await self.handle_subscribe(
+                    SubscribeMessage(payload=payload, **message)
+                )
 
             elif message_type == CompleteMessage.type:
-                handler = self.handle_complete
-                handler_arg = CompleteMessage(**message)
+                await self.handle_complete(CompleteMessage(**message))
 
             else:
-                handler = self.handle_invalid_message
-                handler_arg = f"Unknown message type: {message_type}"
+                error_message = f"Unknown message type: {message_type}"
+                await self.handle_invalid_message(error_message)
 
         except (KeyError, TypeError):
-            handler = self.handle_invalid_message
-            handler_arg = "Failed to parse message"
-
-        await handler(handler_arg)
-        await self.reap_completed_tasks()
+            await self.handle_invalid_message("Failed to parse message")
+        finally:
+            await self.reap_completed_tasks()
 
     async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
         if self.connection_timed_out:

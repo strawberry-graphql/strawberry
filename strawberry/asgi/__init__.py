@@ -37,6 +37,7 @@ from strawberry.http.exceptions import (
     HTTPException,
     NonJsonMessageReceived,
     NonTextMessageReceived,
+    WebSocketDisconnected,
 )
 from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import (
@@ -105,7 +106,10 @@ class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
             pass
 
     async def send_json(self, message: Mapping[str, object]) -> None:
-        await self.ws.send_json(message)
+        try:
+            await self.ws.send_json(message)
+        except WebSocketDisconnect as exc:
+            raise WebSocketDisconnected from exc
 
     async def close(self, code: int, reason: str) -> None:
         await self.ws.close(code=code, reason=reason)

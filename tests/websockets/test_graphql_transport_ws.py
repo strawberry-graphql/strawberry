@@ -963,3 +963,23 @@ async def test_no_extensions_results_wont_send_extensions_in_payload(
     mock.assert_called_once()
     assert_next(response, "sub1", {"echo": "Hi"})
     assert "extensions" not in response["payload"]
+
+
+async def test_unexpected_client_disconnects_are_gracefully_handled(
+    ws: WebSocketClient,
+):
+    process_errors = Mock()
+
+    with patch.object(Schema, "process_errors", process_errors):
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='subscription { echo(message: "Hi", delay: 0.5) }'
+                ),
+            ).as_dict()
+        )
+
+        await ws.close()
+        await asyncio.sleep(1)
+        assert not process_errors.called
