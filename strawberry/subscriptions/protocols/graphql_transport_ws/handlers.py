@@ -245,41 +245,42 @@ class BaseGraphQLTransportWSHandler:
         elif hasattr(self.context, "connection_params"):
             self.context.connection_params = self.connection_params
 
+        operation = Operation(
+            self,
+            message.id,
+            operation_type,
+            message.payload.query,
+            message.payload.variables,
+            message.payload.operationName,
+        )
+
+        operation.task = asyncio.create_task(self.run_operation(operation))
+        self.operations[message.id] = operation
+
+    async def run_operation(self, operation: Operation) -> None:
+        """The operation task's top level method. Cleans-up and de-registers the operation once it is done."""
+        # TODO: Handle errors in this method using self.handle_task_exception()
+
         result_source: Awaitable[ExecutionResult] | Awaitable[SubscriptionResult]
 
         # Get an AsyncGenerator yielding the results
-        if operation_type == OperationType.SUBSCRIPTION:
+        if operation.operation_type == OperationType.SUBSCRIPTION:
             result_source = self.schema.subscribe(
-                query=message.payload.query,
-                variable_values=message.payload.variables,
-                operation_name=message.payload.operationName,
+                query=operation.query,
+                variable_values=operation.variables,
+                operation_name=operation.operation_name,
                 context_value=self.context,
                 root_value=self.root_value,
             )
         else:
             result_source = self.schema.execute(
-                query=message.payload.query,
-                variable_values=message.payload.variables,
+                query=operation.query,
+                variable_values=operation.variables,
                 context_value=self.context,
                 root_value=self.root_value,
-                operation_name=message.payload.operationName,
+                operation_name=operation.operation_name,
             )
 
-        operation = Operation(self, message.id, operation_type)
-
-        # Create task to handle this subscription, reserve the operation ID
-        operation.task = asyncio.create_task(
-            self.operation_task(result_source, operation)
-        )
-        self.operations[message.id] = operation
-
-    async def operation_task(
-        self,
-        result_source: Awaitable[ExecutionResult] | Awaitable[SubscriptionResult],
-        operation: Operation,
-    ) -> None:
-        """The operation task's top level method. Cleans-up and de-registers the operation once it is done."""
-        # TODO: Handle errors in this method using self.handle_task_exception()
         try:
             first_res_or_agen = await result_source
             # that's an immediate error we should end the operation
@@ -340,17 +341,32 @@ class BaseGraphQLTransportWSHandler:
 class Operation:
     """A class encapsulating a single operation with its id. Helps enforce protocol state transition."""
 
-    __slots__ = ["handler", "id", "operation_type", "completed", "task"]
+    __slots__ = [
+        "handler",
+        "id",
+        "operation_type",
+        "query",
+        "variables",
+        "operation_name",
+        "completed",
+        "task",
+    ]
 
     def __init__(
         self,
         handler: BaseGraphQLTransportWSHandler,
         id: str,
         operation_type: OperationType,
+        query: str,
+        variables: Optional[Dict[str, Any]],
+        operation_name: Optional[str],
     ) -> None:
         self.handler = handler
         self.id = id
         self.operation_type = operation_type
+        self.query = query
+        self.variables = variables
+        self.operation_name = operation_name
         self.completed = False
         self.task: Optional[asyncio.Task] = None
 
