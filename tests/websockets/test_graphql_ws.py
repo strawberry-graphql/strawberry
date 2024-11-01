@@ -21,7 +21,7 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
     GQL_STOP,
 )
-from tests.views.schema import MyExtension
+from tests.views.schema import MyExtension, Schema
 
 if TYPE_CHECKING:
     from ..http.clients.aiohttp import HttpClient, WebSocketClient
@@ -630,3 +630,29 @@ async def test_no_extensions_results_wont_send_extensions_in_payload(
 
         await ws.send_json({"type": GQL_STOP, "id": "demo"})
         response = await ws.receive_json()
+
+
+async def test_unexpected_client_disconnects_are_gracefully_handled(
+    ws_raw: WebSocketClient,
+):
+    ws = ws_raw
+    process_errors = mock.Mock()
+
+    with mock.patch.object(Schema, "process_errors", process_errors):
+        await ws.send_json({"type": GQL_CONNECTION_INIT})
+        response = await ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ACK
+
+        await ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "sub1",
+                "payload": {
+                    "query": 'subscription { echo(message: "Hi", delay: 0.5) }',
+                },
+            }
+        )
+
+        await ws.close()
+        await asyncio.sleep(1)
+        assert not process_errors.called
