@@ -5,7 +5,6 @@ from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
     AsyncGenerator,
-    Awaitable,
     Dict,
     Optional,
     cast,
@@ -37,7 +36,6 @@ from strawberry.utils.debug import pretty_print_graphql_operation
 if TYPE_CHECKING:
     from strawberry.http.async_base_view import AsyncWebSocketAdapter
     from strawberry.schema import BaseSchema
-    from strawberry.schema.subscribe import SubscriptionResult
 
 
 class BaseGraphQLWSHandler:
@@ -136,15 +134,9 @@ class BaseGraphQLWSHandler:
         if self.debug:
             pretty_print_graphql_operation(operation_name, query, variables)
 
-        result_source = self.schema.subscribe(
-            query=query,
-            variable_values=variables,
-            operation_name=operation_name,
-            context_value=self.context,
-            root_value=self.root_value,
+        result_handler = self.handle_async_results(
+            operation_id, query, operation_name, variables
         )
-
-        result_handler = self.handle_async_results(result_source, operation_id)
         self.tasks[operation_id] = asyncio.create_task(result_handler)
 
     async def handle_stop(self, message: OperationMessage) -> None:
@@ -160,11 +152,19 @@ class BaseGraphQLWSHandler:
 
     async def handle_async_results(
         self,
-        result_source: Awaitable[SubscriptionResult],
         operation_id: str,
+        query: str,
+        operation_name: Optional[str],
+        variables: Optional[Dict[str, object]],
     ) -> None:
         try:
-            agen_or_err = await result_source
+            agen_or_err = await self.schema.subscribe(
+                query=query,
+                variable_values=variables,
+                operation_name=operation_name,
+                context_value=self.context,
+                root_value=self.root_value,
+            )
             if isinstance(agen_or_err, PreExecutionError):
                 assert agen_or_err.errors
                 error_payload = agen_or_err.errors[0].formatted
