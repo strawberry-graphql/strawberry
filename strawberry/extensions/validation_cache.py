@@ -3,6 +3,7 @@ from typing import Iterator, Optional
 
 from strawberry.extensions.base_extension import SchemaExtension
 from strawberry.schema.execute import validate_document
+from strawberry.types.execution import ExecutionContext
 
 
 class ValidationCache(SchemaExtension):
@@ -33,9 +34,7 @@ class ValidationCache(SchemaExtension):
         """
         self.cached_validate_document = lru_cache(maxsize=maxsize)(validate_document)
 
-    def on_validate(self) -> Iterator[None]:
-        execution_context = self.execution_context
-
+    def on_validate(self, execution_context: ExecutionContext) -> Iterator[None]:
         errors = self.cached_validate_document(
             execution_context.schema._schema,
             execution_context.graphql_document,

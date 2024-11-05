@@ -1,16 +1,18 @@
 import typing
 from typing import Any, AsyncGenerator, Tuple, Type
+from unittest.mock import MagicMock
 
 import pytest
 
 import strawberry
+from strawberry.types.execution import ExecutionContext
 
 if typing.TYPE_CHECKING:
     from strawberry.extensions.tracing.datadog import DatadogTracingExtension
 
 
 @pytest.fixture
-def datadog_extension(mocker) -> Tuple[Type["DatadogTracingExtension"], Any]:
+def datadog_extension(mocker) -> Tuple[Type["DatadogTracingExtension"], MagicMock]:
     datadog_mock = mocker.MagicMock()
 
     mocker.patch.dict("sys.modules", ddtrace=datadog_mock)
@@ -264,12 +266,15 @@ async def test_create_span_override(datadog_extension):
         def create_span(
             self,
             lifecycle_step: LifecycleStep,
+            execution_context: ExecutionContext,
             name: str,
             **kwargs,  # noqa: ANN003
         ):
-            span = super().create_span(lifecycle_step, name, **kwargs)
+            span = super().create_span(
+                lifecycle_step, execution_context, name, **kwargs
+            )
             if lifecycle_step == LifecycleStep.OPERATION:
-                span.set_tag("graphql.query", self.execution_context.query)
+                span.set_tag("graphql.query", execution_context.query)
             return span
 
     schema = strawberry.Schema(

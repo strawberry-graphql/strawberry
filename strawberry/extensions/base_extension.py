@@ -19,33 +19,33 @@ class LifecycleStep(Enum):
 
 
 class SchemaExtension:
-    execution_context: ExecutionContext
+    if not TYPE_CHECKING:
+        # to support extensions that still use the old signature
+        # we have an optional argument here for ease of initialization.
+        def __init__(
+            self, *, execution_context: ExecutionContext | None = None
+        ) -> None: ...
 
-    # to support extensions that still use the old signature
-    # we have an optional argument here for ease of initialization.
-    def __init__(
-        self, *, execution_context: ExecutionContext | None = None
-    ) -> None: ...
     def on_operation(  # type: ignore
-        self,
+        self, execution_context: ExecutionContext
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
         """Called before and after a GraphQL operation (query / mutation) starts."""
         yield None
 
     def on_validate(  # type: ignore
-        self,
+        self, execution_context: ExecutionContext
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
         """Called before and after the validation step."""
         yield None
 
     def on_parse(  # type: ignore
-        self,
+        self, execution_context: ExecutionContext
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
         """Called before and after the parsing step."""
         yield None
 
     def on_execute(  # type: ignore
-        self,
+        self, execution_context: ExecutionContext
     ) -> AsyncIteratorOrIterator[None]:  # pragma: no cover
         """Called before and after the execution step."""
         yield None
@@ -55,12 +55,15 @@ class SchemaExtension:
         _next: Callable,
         root: Any,
         info: GraphQLResolveInfo,
+        execution_context: ExecutionContext,
         *args: str,
         **kwargs: Any,
     ) -> AwaitableOrValue[object]:
         return _next(root, info, *args, **kwargs)
 
-    def get_results(self) -> AwaitableOrValue[Dict[str, Any]]:
+    def get_results(
+        self, execution_context: ExecutionContext
+    ) -> AwaitableOrValue[Dict[str, Any]]:
         return {}
 
     @classmethod

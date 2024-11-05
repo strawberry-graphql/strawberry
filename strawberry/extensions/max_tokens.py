@@ -1,6 +1,7 @@
 from typing import Iterator
 
 from strawberry.extensions.base_extension import SchemaExtension
+from strawberry.types.execution import ExecutionContext
 
 
 class MaxTokensLimiter(SchemaExtension):
@@ -34,8 +35,8 @@ class MaxTokensLimiter(SchemaExtension):
         """
         self.max_token_count = max_token_count
 
-    def on_operation(self) -> Iterator[None]:
-        self.execution_context.parse_options["max_tokens"] = self.max_token_count
+    def on_operation(self, execution_context: ExecutionContext) -> Iterator[None]:
+        execution_context.parse_options["max_tokens"] = self.max_token_count
         yield
 
 

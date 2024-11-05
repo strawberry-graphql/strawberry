@@ -46,7 +46,7 @@ async def _subscribe(
     middleware_manager: MiddlewareManager,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
 ) -> AsyncGenerator[Union[PreExecutionError, ExecutionResult], None]:
-    async with extensions_runner.operation():
+    async with extensions_runner.operation(execution_context):
         if initial_error := await _parse_and_validate_async(
             context=execution_context,
             extensions_runner=extensions_runner,
@@ -58,7 +58,7 @@ async def _subscribe(
                 execution_context, initial_error, extensions_runner, process_errors
             )
         try:
-            async with extensions_runner.executing():
+            async with extensions_runner.executing(execution_context):
                 assert execution_context.graphql_document is not None
                 gql_33_kwargs = {
                     "middleware": middleware_manager,

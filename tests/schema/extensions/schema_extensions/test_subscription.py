@@ -4,7 +4,7 @@ import pytest
 
 import strawberry
 from strawberry.extensions import SchemaExtension
-from strawberry.types.execution import ExecutionResult
+from strawberry.types.execution import ExecutionContext, ExecutionResult
 from tests.conftest import skip_if_gql_32
 
 from .conftest import ExampleExtension, SchemaHelper
@@ -134,7 +134,7 @@ async def test_extensions_results_are_cleared_between_subscription_yields(
     class MyExtension(SchemaExtension):
         execution_number = 0
 
-        def get_results(self):
+        def get_results(self, execution_context: ExecutionContext):
             self.execution_number += 1
             return {str(self.execution_number): self.execution_number}
 
@@ -158,7 +158,7 @@ async def test_subscription_catches_extension_errors(
     default_query_types_and_query: SchemaHelper,
 ) -> None:
     class MyExtension(SchemaExtension):
-        def on_execute(self):
+        def on_execute(self, execution_context: ExecutionContext):
             raise ValueError("This is an error")
 
     schema = strawberry.Schema(

@@ -3,7 +3,6 @@ from __future__ import annotations
 import contextlib
 import inspect
 import types
-import warnings
 from asyncio import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
@@ -21,64 +20,58 @@ from typing import (
 )
 
 from strawberry.extensions import SchemaExtension
-from strawberry.utils.await_maybe import AwaitableOrValue, await_maybe
 
 if TYPE_CHECKING:
     from types import TracebackType
 
     from strawberry.extensions.base_extension import Hook
+    from strawberry.types.execution import ExecutionContext
+    from strawberry.utils.await_maybe import AwaitableOrValue
 
 
 class WrappedHook(NamedTuple):
     extension: SchemaExtension
-    hook: Callable[..., Union[AsyncContextManager[None], ContextManager[None]]]
+    hook: Callable[
+        [ExecutionContext], Union[AsyncContextManager[None], ContextManager[None]]
+    ]
     is_async: bool
 
 
 class ExtensionContextManagerBase:
     __slots__ = (
         "hooks",
-        "deprecation_message",
-        "default_hook",
         "async_exit_stack",
         "exit_stack",
+        "execution_context",
     )
 
-    def __init_subclass__(cls) -> None:
-        cls.DEPRECATION_MESSAGE = (
-            f"Event driven styled extensions for "
-            f"{cls.LEGACY_ENTER} or {cls.LEGACY_EXIT}"
-            f" are deprecated, use {cls.HOOK_NAME} instead"
-        )
-
     HOOK_NAME: str
-    DEPRECATION_MESSAGE: str
-    LEGACY_ENTER: str
-    LEGACY_EXIT: str
+    DEFAULT_HOOK: Hook
 
-    def __init__(self, extensions: List[SchemaExtension]) -> None:
-        self.hooks: List[WrappedHook] = []
-        self.default_hook: Hook = getattr(SchemaExtension, self.HOOK_NAME)
+    def __init_subclass__(cls) -> None:
+        cls.DEFAULT_HOOK = getattr(SchemaExtension, cls.HOOK_NAME)
+
+    def __init__(
+        self, hooks: List[WrappedHook], execution_context: ExecutionContext
+    ) -> None:
+        self.hooks = hooks
+        self.execution_context = execution_context
+
+    @classmethod
+    def get_hooks(cls, extensions: List[SchemaExtension]) -> List[WrappedHook]:
+        hooks = []
+
         for extension in extensions:
-            hook = self.get_hook(extension)
+            hook = cls.get_hook(extension)
             if hook:
-                self.hooks.append(hook)
+                hooks.append(hook)
 
-    def get_hook(self, extension: SchemaExtension) -> Optional[WrappedHook]:
-        on_start = getattr(extension, self.LEGACY_ENTER, None)
-        on_end = getattr(extension, self.LEGACY_EXIT, None)
+        return hooks
 
-        is_legacy = on_start is not None or on_end is not None
-        hook_fn: Optional[Hook] = getattr(type(extension), self.HOOK_NAME)
-        hook_fn = hook_fn if hook_fn is not self.default_hook else None
-        if is_legacy and hook_fn is not None:
-            raise ValueError(
-                f"{extension} defines both legacy and new style extension hooks for "
-                "{self.HOOK_NAME}"
-            )
-        elif is_legacy:
-            warnings.warn(self.DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=3)
-            return self.from_legacy(extension, on_start, on_end)
+    @classmethod
+    def get_hook(cls, extension: SchemaExtension) -> Optional[WrappedHook]:
+        hook_fn: Optional[Hook] = getattr(type(extension), cls.HOOK_NAME)
+        hook_fn = hook_fn if hook_fn is not cls.DEFAULT_HOOK else None
 
         if hook_fn:
             if inspect.isgeneratorfunction(hook_fn):
@@ -98,67 +91,36 @@ class ExtensionContextManagerBase:
                 )
 
             if callable(hook_fn):
-                return self.from_callable(extension, hook_fn)
+                return cls.from_callable(extension, hook_fn)
 
             raise ValueError(
-                f"Hook {self.HOOK_NAME} on {extension} "
+                f"Hook {cls.HOOK_NAME} on {extension} "
                 f"must be callable, received {hook_fn!r}"
             )
 
         return None  # Current extension does not define a hook for this lifecycle stage
 
     @staticmethod
-    def from_legacy(
-        extension: SchemaExtension,
-        on_start: Optional[Callable[[], None]] = None,
-        on_end: Optional[Callable[[], None]] = None,
-    ) -> WrappedHook:
-        if iscoroutinefunction(on_start) or iscoroutinefunction(on_end):
-
-            @contextlib.asynccontextmanager
-            async def iterator() -> AsyncIterator:
-                if on_start:
-                    await await_maybe(on_start())
-
-                yield
-
-                if on_end:
-                    await await_maybe(on_end())
-
-            return WrappedHook(extension=extension, hook=iterator, is_async=True)
-
-        else:
-
-            @contextlib.contextmanager
-            def iterator_async() -> Iterator[None]:
-                if on_start:
-                    on_start()
-
-                yield
-
-                if on_end:
-                    on_end()
-
-            return WrappedHook(extension=extension, hook=iterator_async, is_async=False)
-
-    @staticmethod
     def from_callable(
         extension: SchemaExtension,
-        func: Callable[[SchemaExtension], AwaitableOrValue[Any]],
+        func: Callable[[SchemaExtension, ExecutionContext], AwaitableOrValue[Any]],
     ) -> WrappedHook:
+        self_ = extension
         if iscoroutinefunction(func):
 
             @contextlib.asynccontextmanager
-            async def iterator() -> AsyncIterator[None]:
-                await func(extension)
+            async def iterator(
+                execution_context: ExecutionContext,
+            ) -> AsyncIterator[None]:
+                await func(self_, execution_context)
                 yield
 
             return WrappedHook(extension=extension, hook=iterator, is_async=True)
         else:
 
             @contextlib.contextmanager
-            def iterator() -> Iterator[None]:
-                func(extension)
+            def iterator(execution_context: ExecutionContext) -> Iterator[None]:
+                func(self_, execution_context)
                 yield
 
             return WrappedHook(extension=extension, hook=iterator, is_async=False)
@@ -175,7 +137,7 @@ class ExtensionContextManagerBase:
                     "failed to complete synchronously."
                 )
             else:
-                self.exit_stack.enter_context(hook.hook())  # type: ignore
+                self.exit_stack.enter_context(hook.hook(self.execution_context))
 
     def __exit__(
         self,
@@ -192,9 +154,11 @@ class ExtensionContextManagerBase:
 
         for hook in self.hooks:
             if hook.is_async:
-                await self.async_exit_stack.enter_async_context(hook.hook())  # type: ignore
+                await self.async_exit_stack.enter_async_context(
+                    hook.hook(self.execution_context)
+                )  # type: ignore
             else:
-                self.async_exit_stack.enter_context(hook.hook())  # type: ignore
+                self.async_exit_stack.enter_context(hook.hook(self.execution_context))  # type: ignore
 
     async def __aexit__(
         self,
@@ -207,23 +171,15 @@ class ExtensionContextManagerBase:
 
 class OperationContextManager(ExtensionContextManagerBase):
     HOOK_NAME = SchemaExtension.on_operation.__name__
-    LEGACY_ENTER = "on_request_start"
-    LEGACY_EXIT = "on_request_end"
 
 
 class ValidationContextManager(ExtensionContextManagerBase):
     HOOK_NAME = SchemaExtension.on_validate.__name__
-    LEGACY_ENTER = "on_validation_start"
-    LEGACY_EXIT = "on_validation_end"
 
 
 class ParsingContextManager(ExtensionContextManagerBase):
     HOOK_NAME = SchemaExtension.on_parse.__name__
-    LEGACY_ENTER = "on_parsing_start"
-    LEGACY_EXIT = "on_parsing_end"
 
 
 class ExecutingContextManager(ExtensionContextManagerBase):
     HOOK_NAME = SchemaExtension.on_execute.__name__
-    LEGACY_ENTER = "on_executing_start"
-    LEGACY_EXIT = "on_executing_end"

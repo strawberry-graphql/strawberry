@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import hashlib
-from functools import cached_property
+from functools import lru_cache
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Callable, Generator, Iterator, Optional
+from typing import TYPE_CHECKING, Any, Callable, Generator, Iterator
 
 from ddtrace import Span, tracer
 
@@ -17,29 +17,23 @@ if TYPE_CHECKING:
 
 
 class DatadogTracingExtension(SchemaExtension):
-    def __init__(
-        self,
-        *,
-        execution_context: Optional[ExecutionContext] = None,
-    ) -> None:
-        if execution_context:
-            self.execution_context = execution_context
-
-    @cached_property
-    def _resource_name(self) -> str:
-        if self.execution_context.query is None:
+    @lru_cache
+    def _resource_name(self, execution_context: ExecutionContext) -> str:
+        if execution_context.query is None:
             return "query_missing"
 
-        query_hash = self.hash_query(self.execution_context.query)
+        query_hash = self.hash_query(execution_context.query)
 
-        if self.execution_context.operation_name:
-            return f"{self.execution_context.operation_name}:{query_hash}"
+        if execution_context.operation_name:
+            return f"{execution_context.operation_name}:{query_hash}"
 
         return query_hash
 
+    @classmethod
     def create_span(
-        self,
+        cls,
         lifecycle_step: LifecycleStep,
+        execution_context: ExecutionContext,
         name: str,
         **kwargs: Any,
     ) -> Span:
@@ -54,7 +48,7 @@ class DatadogTracingExtension(SchemaExtension):
             def create_span(self, lifecycle_step, name, **kwargs):
                 span = super().create_span(lifecycle_step, name, **kwargs)
                 if lifecycle_step == LifeCycleStep.OPERATION:
-                    span.set_tag("graphql.query", self.execution_context.query)
+                    span.set_tag("graphql.query", execution_context.query)
                 return span
         ```
         """
@@ -67,21 +61,22 @@ class DatadogTracingExtension(SchemaExtension):
     def hash_query(self, query: str) -> str:
         return hashlib.md5(query.encode("utf-8")).hexdigest()
 
-    def on_operation(self) -> Iterator[None]:
-        self._operation_name = self.execution_context.operation_name
+    def on_operation(self, execution_context: ExecutionContext) -> Iterator[None]:
+        self._operation_name = execution_context.operation_name
         span_name = (
             f"{self._operation_name}" if self._operation_name else "Anonymous Query"
         )
 
-        self.request_span = self.create_span(
+        request_span = self.create_span(
             LifecycleStep.OPERATION,
+            execution_context,
             span_name,
-            resource=self._resource_name,
+            resource=self._resource_name(execution_context),
             service="strawberry",
         )
-        self.request_span.set_tag("graphql.operation_name", self._operation_name)
+        request_span.set_tag("graphql.operation_name", self._operation_name)
 
-        query = self.execution_context.query
+        query = execution_context.query
 
         if query is not None:
             query = query.strip()
@@ -94,23 +89,29 @@ class DatadogTracingExtension(SchemaExtension):
         else:
             operation_type = "query_missing"
 
-        self.request_span.set_tag("graphql.operation_type", operation_type)
+        request_span.set_tag("graphql.operation_type", operation_type)
 
         yield
 
-        self.request_span.finish()
+        request_span.finish()
 
-    def on_validate(self) -> Generator[None, None, None]:
-        self.validation_span = self.create_span(
+    def on_validate(
+        self, execution_context: ExecutionContext
+    ) -> Generator[None, None, None]:
+        validation_span = self.create_span(
             lifecycle_step=LifecycleStep.VALIDATION,
+            execution_context=execution_context,
             name="Validation",
         )
         yield
-        self.validation_span.finish()
+        validation_span.finish()
 
-    def on_parse(self) -> Generator[None, None, None]:
+    def on_parse(
+        self, execution_context: ExecutionContext
+    ) -> Generator[None, None, None]:
         self.parsing_span = self.create_span(
             lifecycle_step=LifecycleStep.PARSE,
+            execution_context=execution_context,
             name="Parsing",
         )
         yield
@@ -121,6 +122,7 @@ class DatadogTracingExtension(SchemaExtension):
         _next: Callable,
         root: Any,
         info: GraphQLResolveInfo,
+        execution_context: ExecutionContext,
         *args: str,
         **kwargs: Any,
     ) -> Any:
@@ -136,6 +138,7 @@ class DatadogTracingExtension(SchemaExtension):
 
         with self.create_span(
             lifecycle_step=LifecycleStep.RESOLVE,
+            execution_context=execution_context,
             name=f"Resolving: {field_path}",
         ) as span:
             span.set_tag("graphql.field_name", info.field_name)

@@ -91,7 +91,7 @@ async def _parse_and_validate_async(
     if not context.query:
         raise MissingQueryError()
 
-    async with extensions_runner.parsing():
+    async with extensions_runner.parsing(context):
         try:
             if not context.graphql_document:
                 context.graphql_document = parse_document(context.query)
@@ -108,7 +108,7 @@ async def _parse_and_validate_async(
     if context.operation_type not in context.allowed_operations:
         raise InvalidOperationTypeError(context.operation_type)
 
-    async with extensions_runner.validation():
+    async with extensions_runner.validation(context):
         _run_validation(context)
         if context.errors:
             return PreExecutionError(
@@ -153,7 +153,7 @@ async def execute(
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
 ) -> ExecutionResult | PreExecutionError:
     try:
-        async with extensions_runner.operation():
+        async with extensions_runner.operation(execution_context):
             # Note: In graphql-core the schema would be validated here but in
             # Strawberry we are validating it at initialisation time instead
 
@@ -165,7 +165,7 @@ async def execute(
                 )
 
             assert execution_context.graphql_document
-            async with extensions_runner.executing():
+            async with extensions_runner.executing(execution_context):
                 if not execution_context.result:
                     result = await await_maybe(
                         original_execute(
@@ -219,13 +219,13 @@ def execute_sync(
     middleware_manager: MiddlewareManager,
 ) -> ExecutionResult:
     try:
-        with extensions_runner.operation():
+        with extensions_runner.operation(execution_context):
             # Note: In graphql-core the schema would be validated here but in
             # Strawberry we are validating it at initialisation time instead
             if not execution_context.query:
                 raise MissingQueryError()
 
-            with extensions_runner.parsing():
+            with extensions_runner.parsing(execution_context):
                 try:
                     if not execution_context.graphql_document:
                         execution_context.graphql_document = parse_document(
@@ -238,23 +238,27 @@ def execute_sync(
                     return ExecutionResult(
                         data=None,
                         errors=[error],
-                        extensions=extensions_runner.get_extensions_results_sync(),
+                        extensions=extensions_runner.get_extensions_results_sync(
+                            execution_context
+                        ),
                     )
 
             if execution_context.operation_type not in allowed_operation_types:
                 raise InvalidOperationTypeError(execution_context.operation_type)
 
-            with extensions_runner.validation():
+            with extensions_runner.validation(execution_context):
                 _run_validation(execution_context)
                 if execution_context.errors:
                     process_errors(execution_context.errors, execution_context)
                     return ExecutionResult(
                         data=None,
                         errors=execution_context.errors,
-                        extensions=extensions_runner.get_extensions_results_sync(),
+                        extensions=extensions_runner.get_extensions_results_sync(
+                            execution_context
+                        ),
                     )
 
-            with extensions_runner.executing():
+            with extensions_runner.executing(execution_context):
                 if not execution_context.result:
                     result = original_execute(
                         schema,
@@ -295,12 +299,12 @@ def execute_sync(
         return ExecutionResult(
             data=None,
             errors=errors,
-            extensions=extensions_runner.get_extensions_results_sync(),
+            extensions=extensions_runner.get_extensions_results_sync(execution_context),
         )
     return ExecutionResult(
         data=execution_context.result.data,
         errors=execution_context.result.errors,
-        extensions=extensions_runner.get_extensions_results_sync(),
+        extensions=extensions_runner.get_extensions_results_sync(execution_context),
     )
 
 
