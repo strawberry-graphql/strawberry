@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.247.2 - 2024-11-05
+--------------------
+
+This release fixes the issue that some coroutines in the WebSocket protocol handlers were never awaited if clients disconnected shortly after starting an operation.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3687](https://github.com/strawberry-graphql/strawberry/pull/3687/)
+
+
 0.247.1 - 2024-11-01
 --------------------
 
