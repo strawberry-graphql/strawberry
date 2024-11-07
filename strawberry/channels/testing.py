@@ -111,15 +111,17 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
             await self.send_json_to(
                 ConnectionInitMessage(payload=self.connection_params).as_dict()
             )
-            response = await self.receive_json_from()
-            assert response == ConnectionAckMessage().as_dict()
+            graphql_transport_ws_response = await self.receive_json_from()
+            assert graphql_transport_ws_response == ConnectionAckMessage().as_dict()
         else:
             assert res == (True, GRAPHQL_WS_PROTOCOL)
             await self.send_json_to(
                 GraphQLWSConnectionInitMessage({"type": "connection_init"})
             )
-            response: GraphQLWSConnectionAckMessage = await self.receive_json_from()
-            assert response["type"] == "connection_ack"
+            graphql_ws_response: GraphQLWSConnectionAckMessage = (
+                await self.receive_json_from()
+            )
+            assert graphql_ws_response["type"] == "connection_ack"
 
     # Actual `ExecutionResult`` objects are not available client-side, since they
     # get transformed into `FormattedExecutionResult` on the wire, but we attempt

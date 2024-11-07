@@ -4,7 +4,7 @@ import functools
 import importlib
 import inspect
 from pathlib import Path  # noqa: TCH003
-from typing import List, Optional, Type
+from typing import List, Optional, Type, Union, cast
 
 import rich
 import typer
@@ -61,7 +61,9 @@ def _import_plugin(plugin: str) -> Optional[Type[QueryCodegenPlugin]]:
 
 
 @functools.lru_cache
-def _load_plugin(plugin_path: str) -> Type[QueryCodegenPlugin]:
+def _load_plugin(
+    plugin_path: str,
+) -> Union[Type[QueryCodegenPlugin], Type[ConsolePlugin]]:
     # try to import plugin_name from current folder
     # then try to import from strawberry.codegen.plugins
 
@@ -77,7 +79,9 @@ def _load_plugin(plugin_path: str) -> Type[QueryCodegenPlugin]:
     return plugin
 
 
-def _load_plugins(plugin_ids: List[str], query: Path) -> List[QueryCodegenPlugin]:
+def _load_plugins(
+    plugin_ids: List[str], query: Path
+) -> List[Union[QueryCodegenPlugin, ConsolePlugin]]:
     plugins = []
     for ptype_id in plugin_ids:
         ptype = _load_plugin(ptype_id)
@@ -127,11 +131,11 @@ def codegen(
 
     console_plugin_type = _load_plugin(cli_plugin) if cli_plugin else ConsolePlugin
     console_plugin = console_plugin_type(output_dir)
+    assert isinstance(console_plugin, ConsolePlugin)
     console_plugin.before_any_start()
 
     for q in query:
-        plugins = _load_plugins(selected_plugins, q)
-        console_plugin.query = q  # update the query in the console plugin.
+        plugins = cast(List[QueryCodegenPlugin], _load_plugins(selected_plugins, q))
 
         code_generator = QueryCodegen(
             schema_symbol, plugins=plugins, console_plugin=console_plugin

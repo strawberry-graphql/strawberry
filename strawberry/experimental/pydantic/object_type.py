@@ -105,7 +105,7 @@ def _build_dataclass_creation_fields(
 
     return DataclassCreationFields(
         name=field.name,
-        field_type=field_type,
+        field_type=field_type,  # type: ignore
         field=strawberry_field,
     )
 
@@ -198,7 +198,7 @@ def type(
         all_model_fields = [
             DataclassCreationFields(
                 name=field.name,
-                field_type=field.type,
+                field_type=field.type,  # type: ignore
                 field=field,
             )
             for field in extra_fields + private_fields
