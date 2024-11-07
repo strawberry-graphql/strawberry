@@ -145,7 +145,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
                 },
             }
 
-            if variables:
+            if variables is not None:
                 start_message["payload"]["variables"] = variables
 
             await self.send_json_to(start_message)
