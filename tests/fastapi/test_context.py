@@ -14,14 +14,26 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
-from strawberry.subscriptions.protocols.graphql_ws import (
-    GQL_COMPLETE,
-    GQL_CONNECTION_ACK,
-    GQL_CONNECTION_INIT,
-    GQL_CONNECTION_TERMINATE,
-    GQL_DATA,
-    GQL_START,
-    GQL_STOP,
+from strawberry.subscriptions.protocols.graphql_ws.types import (
+    CompleteMessage as GraphQLWSCompleteMessage,
+)
+from strawberry.subscriptions.protocols.graphql_ws.types import (
+    ConnectionAckMessage as GraphQLWSConnectionAckMessage,
+)
+from strawberry.subscriptions.protocols.graphql_ws.types import (
+    ConnectionInitMessage as GraphQLWSConnectionInitMessage,
+)
+from strawberry.subscriptions.protocols.graphql_ws.types import (
+    ConnectionTerminateMessage as GraphQLWSConnectionTerminateMessage,
+)
+from strawberry.subscriptions.protocols.graphql_ws.types import (
+    DataMessage as GraphQLWSDataMessage,
+)
+from strawberry.subscriptions.protocols.graphql_ws.types import (
+    StartMessage as GraphQLWSStartMessage,
+)
+from strawberry.subscriptions.protocols.graphql_ws.types import (
+    StopMessage as GraphQLWSStopMessage,
 )
 
 
@@ -298,36 +310,42 @@ def test_class_context_injects_connection_params_over_ws():
 
     with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json(
-            {
-                "type": GQL_CONNECTION_INIT,
-                "id": "demo",
-                "payload": {"strawberry": "rocks"},
-            }
+            GraphQLWSConnectionInitMessage(
+                {
+                    "type": "connection_init",
+                    "payload": {"strawberry": "rocks"},
+                }
+            )
         )
         ws.send_json(
-            {
-                "type": GQL_START,
-                "id": "demo",
-                "payload": {
-                    "query": "subscription { connectionParams }",
-                },
-            }
+            GraphQLWSStartMessage(
+                {
+                    "type": "start",
+                    "id": "demo",
+                    "payload": {
+                        "query": "subscription { connectionParams }",
+                    },
+                }
+            )
         )
 
-        response = ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_ACK
+        connection_ack_message: GraphQLWSConnectionAckMessage = ws.receive_json()
+        assert connection_ack_message["type"] == "connection_ack"
 
-        response = ws.receive_json()
-        assert response["type"] == GQL_DATA
-        assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"connectionParams": "rocks"}
+        data_message: GraphQLWSDataMessage = ws.receive_json()
+        assert data_message["type"] == "data"
+        assert data_message["id"] == "demo"
+        assert data_message["payload"]["data"] == {"connectionParams": "rocks"}
 
-        ws.send_json({"type": GQL_STOP, "id": "demo"})
-        response = ws.receive_json()
-        assert response["type"] == GQL_COMPLETE
-        assert response["id"] == "demo"
+        ws.send_json(GraphQLWSStopMessage({"type": "stop", "id": "demo"}))
 
-        ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+        complete_message: GraphQLWSCompleteMessage = ws.receive_json()
+        assert complete_message["type"] == "complete"
+        assert complete_message["id"] == "demo"
+
+        ws.send_json(
+            GraphQLWSConnectionTerminateMessage({"type": "connection_terminate"})
+        )
 
         # make sure the websocket is disconnected now
         with pytest.raises(WebSocketDisconnect):

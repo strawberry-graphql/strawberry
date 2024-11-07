@@ -11,24 +11,18 @@ from typing import (
 )
 
 from strawberry.http.exceptions import NonTextMessageReceived, WebSocketDisconnected
-from strawberry.subscriptions.protocols.graphql_ws import (
-    GQL_COMPLETE,
-    GQL_CONNECTION_ACK,
-    GQL_CONNECTION_ERROR,
-    GQL_CONNECTION_INIT,
-    GQL_CONNECTION_KEEP_ALIVE,
-    GQL_CONNECTION_TERMINATE,
-    GQL_DATA,
-    GQL_ERROR,
-    GQL_START,
-    GQL_STOP,
-)
 from strawberry.subscriptions.protocols.graphql_ws.types import (
-    ConnectionInitPayload,
-    DataPayload,
+    CompleteMessage,
+    ConnectionAckMessage,
+    ConnectionErrorMessage,
+    ConnectionInitMessage,
+    ConnectionKeepAliveMessage,
+    ConnectionTerminateMessage,
+    DataMessage,
+    ErrorMessage,
     OperationMessage,
-    OperationMessagePayload,
-    StartPayload,
+    StartMessage,
+    StopMessage,
 )
 from strawberry.types.execution import ExecutionResult, PreExecutionError
 from strawberry.utils.debug import pretty_print_graphql_operation
@@ -59,7 +53,7 @@ class BaseGraphQLWSHandler:
         self.keep_alive_task: Optional[asyncio.Task] = None
         self.subscriptions: Dict[str, AsyncGenerator] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
-        self.connection_params: Optional[ConnectionInitPayload] = None
+        self.connection_params: Optional[Dict[str, object]] = None
 
     async def handle(self) -> None:
         try:
@@ -87,41 +81,40 @@ class BaseGraphQLWSHandler:
         self,
         message: OperationMessage,
     ) -> None:
-        message_type = message["type"]
-
-        if message_type == GQL_CONNECTION_INIT:
+        if message["type"] == "connection_init":
             await self.handle_connection_init(message)
-        elif message_type == GQL_CONNECTION_TERMINATE:
+        elif message["type"] == "connection_terminate":
             await self.handle_connection_terminate(message)
-        elif message_type == GQL_START:
+        elif message["type"] == "start":
             await self.handle_start(message)
-        elif message_type == GQL_STOP:
+        elif message["type"] == "stop":
             await self.handle_stop(message)
 
-    async def handle_connection_init(self, message: OperationMessage) -> None:
+    async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
         payload = message.get("payload")
         if payload is not None and not isinstance(payload, dict):
-            error_message: OperationMessage = {"type": GQL_CONNECTION_ERROR}
+            error_message: ConnectionErrorMessage = {"type": "connection_error"}
             await self.websocket.send_json(error_message)
             await self.websocket.close(code=1000, reason="")
             return
 
-        payload = cast(Optional["ConnectionInitPayload"], payload)
         self.connection_params = payload
 
-        acknowledge_message: OperationMessage = {"type": GQL_CONNECTION_ACK}
-        await self.websocket.send_json(acknowledge_message)
+        connection_ack_message: ConnectionAckMessage = {"type": "connection_ack"}
+        await self.websocket.send_json(connection_ack_message)
 
         if self.keep_alive:
             keep_alive_handler = self.handle_keep_alive()
             self.keep_alive_task = asyncio.create_task(keep_alive_handler)
 
-    async def handle_connection_terminate(self, message: OperationMessage) -> None:
+    async def handle_connection_terminate(
+        self, message: ConnectionTerminateMessage
+    ) -> None:
         await self.websocket.close(code=1000, reason="")
 
-    async def handle_start(self, message: OperationMessage) -> None:
+    async def handle_start(self, message: StartMessage) -> None:
         operation_id = message["id"]
-        payload = cast("StartPayload", message["payload"])
+        payload = message["payload"]
         query = payload["query"]
         operation_name = payload.get("operationName")
         variables = payload.get("variables")
@@ -139,14 +132,14 @@ class BaseGraphQLWSHandler:
         )
         self.tasks[operation_id] = asyncio.create_task(result_handler)
 
-    async def handle_stop(self, message: OperationMessage) -> None:
+    async def handle_stop(self, message: StopMessage) -> None:
         operation_id = message["id"]
         await self.cleanup_operation(operation_id)
 
     async def handle_keep_alive(self) -> None:
         assert self.keep_alive_interval
         while True:
-            data: OperationMessage = {"type": GQL_CONNECTION_KEEP_ALIVE}
+            data: ConnectionKeepAliveMessage = {"type": "ka"}
             await self.websocket.send_json(data)
             await asyncio.sleep(self.keep_alive_interval)
 
@@ -168,14 +161,24 @@ class BaseGraphQLWSHandler:
             if isinstance(agen_or_err, PreExecutionError):
                 assert agen_or_err.errors
                 error_payload = agen_or_err.errors[0].formatted
-                await self.send_message(GQL_ERROR, operation_id, error_payload)
+                error_message: ErrorMessage = {
+                    "type": "error",
+                    "id": operation_id,
+                    "payload": error_payload,
+                }
+                await self.websocket.send_json(error_message)
             else:
                 self.subscriptions[operation_id] = agen_or_err
                 async for result in agen_or_err:
                     await self.send_data(result, operation_id)
-                await self.send_message(GQL_COMPLETE, operation_id, None)
+                complete_message: CompleteMessage = {
+                    "type": "complete",
+                    "id": operation_id,
+                }
+                await self.websocket.send_json(complete_message)
         except asyncio.CancelledError:
-            await self.send_message(GQL_COMPLETE, operation_id, None)
+            complete_message: CompleteMessage = {"type": "complete", "id": operation_id}
+            await self.websocket.send_json(complete_message)
 
     async def cleanup_operation(self, operation_id: str) -> None:
         if operation_id in self.subscriptions:
@@ -188,26 +191,24 @@ class BaseGraphQLWSHandler:
             await self.tasks[operation_id]
         del self.tasks[operation_id]
 
-    async def send_message(
-        self,
-        type_: str,
-        operation_id: str,
-        payload: Optional[OperationMessagePayload] = None,
-    ) -> None:
-        data: OperationMessage = {"type": type_, "id": operation_id}
-        if payload is not None:
-            data["payload"] = payload
-        await self.websocket.send_json(data)
-
     async def send_data(
         self, execution_result: ExecutionResult, operation_id: str
     ) -> None:
-        payload: DataPayload = {"data": execution_result.data}
+        data_message: DataMessage = {
+            "type": "data",
+            "id": operation_id,
+            "payload": {"data": execution_result.data},
+        }
+
         if execution_result.errors:
-            payload["errors"] = [err.formatted for err in execution_result.errors]
+            data_message["payload"]["errors"] = [
+                err.formatted for err in execution_result.errors
+            ]
+
         if execution_result.extensions:
-            payload["extensions"] = execution_result.extensions
-        await self.send_message(GQL_DATA, operation_id, payload)
+            data_message["payload"]["extensions"] = execution_result.extensions
+
+        await self.websocket.send_json(data_message)
 
 
 __all__ = ["BaseGraphQLWSHandler"]
