@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import dataclasses
 import uuid
 from typing import (
     TYPE_CHECKING,
@@ -26,10 +25,14 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
-from strawberry.subscriptions.protocols.graphql_ws import (
-    GQL_CONNECTION_ACK,
-    GQL_CONNECTION_INIT,
-    GQL_START,
+from strawberry.subscriptions.protocols.graphql_ws.types import (
+    ConnectionAckMessage as GraphQLWSConnectionAckMessage,
+)
+from strawberry.subscriptions.protocols.graphql_ws.types import (
+    ConnectionInitMessage as GraphQLWSConnectionInitMessage,
+)
+from strawberry.subscriptions.protocols.graphql_ws.types import (
+    StartMessage as GraphQLWSStartMessage,
 )
 from strawberry.types import ExecutionResult
 
@@ -112,9 +115,11 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
             assert response == ConnectionAckMessage().as_dict()
         else:
             assert res == (True, GRAPHQL_WS_PROTOCOL)
-            await self.send_json_to({"type": GQL_CONNECTION_INIT})
-            response = await self.receive_json_from()
-            assert response["type"] == GQL_CONNECTION_ACK
+            await self.send_json_to(
+                GraphQLWSConnectionInitMessage({"type": "connection_init"})
+            )
+            response: GraphQLWSConnectionAckMessage = await self.receive_json_from()
+            assert response["type"] == "connection_ack"
 
     # Actual `ExecutionResult`` objects are not available client-side, since they
     # get transformed into `FormattedExecutionResult` on the wire, but we attempt
@@ -123,22 +128,28 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         self, query: str, variables: Optional[Dict] = None
     ) -> Union[ExecutionResult, AsyncIterator[ExecutionResult]]:
         id_ = uuid.uuid4().hex
-        sub_payload = SubscribeMessagePayload(query=query, variables=variables)
+
         if self.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
             await self.send_json_to(
                 SubscribeMessage(
                     id=id_,
-                    payload=sub_payload,
+                    payload=SubscribeMessagePayload(query=query, variables=variables),
                 ).as_dict()
             )
         else:
-            await self.send_json_to(
-                {
-                    "type": GQL_START,
-                    "id": id_,
-                    "payload": dataclasses.asdict(sub_payload),
-                }
-            )
+            start_message: GraphQLWSStartMessage = {
+                "type": "start",
+                "id": id_,
+                "payload": {
+                    "query": query,
+                },
+            }
+
+            if variables is not None:
+                start_message["payload"]["variables"] = variables
+
+            await self.send_json_to(start_message)
+
         while True:
             response = await self.receive_json_from(timeout=5)
             message_type = response["type"]
