@@ -169,16 +169,17 @@ class BaseGraphQLWSHandler:
                 await self.websocket.send_json(error_message)
             else:
                 self.subscriptions[operation_id] = agen_or_err
+
                 async for result in agen_or_err:
                     await self.send_data(result, operation_id)
-                complete_message: CompleteMessage = {
-                    "type": "complete",
-                    "id": operation_id,
-                }
-                await self.websocket.send_json(complete_message)
+
+                await self.websocket.send_json(
+                    CompleteMessage({"type": "complete", "id": operation_id})
+                )
         except asyncio.CancelledError:
-            complete_message: CompleteMessage = {"type": "complete", "id": operation_id}
-            await self.websocket.send_json(complete_message)
+            await self.websocket.send_json(
+                CompleteMessage({"type": "complete", "id": operation_id})
+            )
 
     async def cleanup_operation(self, operation_id: str) -> None:
         if operation_id in self.subscriptions:
