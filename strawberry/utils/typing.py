@@ -350,7 +350,7 @@ def eval_type(
         assert ast_unparse
         type_ = ForwardRef(ast_unparse(ast_obj))
 
-        extra = {}
+        extra: Dict[str, Any] = {}
 
         if sys.version_info >= (3, 13):
             extra = {"type_params": None}
