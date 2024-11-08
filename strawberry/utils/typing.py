@@ -350,7 +350,12 @@ def eval_type(
         assert ast_unparse
         type_ = ForwardRef(ast_unparse(ast_obj))
 
-        return _eval_type(type_, globalns, localns)
+        extra: Dict[str, Any] = {}
+
+        if sys.version_info >= (3, 13):
+            extra = {"type_params": None}
+
+        return _eval_type(type_, globalns, localns, **extra)
 
     origin = get_origin(type_)
     if origin is not None:
