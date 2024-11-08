@@ -1,6 +1,22 @@
 CHANGELOG
 =========
 
+0.248.1 - 2024-11-08
+--------------------
+
+This release fixes the following deprecation warning:
+
+```
+Failing to pass a value to the 'type_params' parameter of 'typing._eval_type' is deprecated,
+as it leads to incorrect behaviour when calling typing._eval_type on a stringified annotation
+that references a PEP 695 type parameter. It will be disallowed in Python 3.15.
+```
+
+This was only trigger in Python 3.13 and above.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3692](https://github.com/strawberry-graphql/strawberry/pull/3692/)
+
+
 0.248.0 - 2024-11-07
 --------------------
 
