@@ -241,8 +241,10 @@ mutation RegisterUser($username: String!, $password: String!) {
       alternativeUsername
     }
     ... on RegisterUserSuccess {
-      id
-      username
+      user {
+        id
+        username
+      }
     }
   }
 }
