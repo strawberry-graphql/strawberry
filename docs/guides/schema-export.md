@@ -32,3 +32,15 @@ Alternatively, the `--output` option can be used:
 ```bash
 strawberry export-schema package.module:schema --output schema.graphql
 ```
+
+You can override the output directive to have specific federation schema (e.g:
+schema @link(url: "https://specs.apollo.dev/federation/v2.5"):
+
+```bash
+strawberry export-schema package.module:schema --federation-version=2.5 --output schema.graphql
+```
+
+> [!WARNING] \
+> If the schema define directives that are not supported by the specified
+> version (in the override parameter) the schema will still generate the output
+> useing the value from the override, and may break at runtime.

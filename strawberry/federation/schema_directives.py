@@ -1,7 +1,9 @@
+import typing
 from dataclasses import dataclass
 from typing import ClassVar, List, Optional
 
 from strawberry import directive_field
+from strawberry.cli import app
 from strawberry.schema_directive import Location, schema_directive
 from strawberry.types.unset import UNSET
 
@@ -11,11 +13,29 @@ from .types import (
     LinkPurpose,
 )
 
+FEDERATION_VERSION_BASE_URL = "https://specs.apollo.dev/federation/v"
+
 
 @dataclass
 class ImportedFrom:
     name: str
     url: str = "https://specs.apollo.dev/federation/v2.7"
+
+    def __init__(self, **kwargs: typing.Dict[str, typing.Any]) -> None:
+        if hasattr(self, "__dataclass_fields__"):
+            args = self.__dataclass_fields__
+            for key, value in kwargs.items():
+                if key in args and type(value) is args.get(key).type:
+                    self.__setattr__(key, value)
+                if (
+                    hasattr(app, "federation_version_override")
+                    and type(value) is str
+                    and str(value).startswith("https://specs.apollo.dev/federation/")
+                ):
+                    self.__setattr__(
+                        key,
+                        f"{FEDERATION_VERSION_BASE_URL}{app.federation_version_override!s}",
+                    )
 
 
 class FederationDirective:

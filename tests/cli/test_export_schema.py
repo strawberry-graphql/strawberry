@@ -19,6 +19,47 @@ def test_schema_export(cli_app: Typer, cli_runner: CliRunner):
     )
 
 
+def test_schema_export_with_federation_version_override(
+    cli_app: Typer, cli_runner: CliRunner
+):
+    selector = "tests.fixtures.sample_package.sample_module_federated:schema"
+    result = cli_runner.invoke(
+        cli_app, ["export-schema", selector, "--federation-version=2.5"]
+    )
+    assert result.exit_code == 0
+    assert result.stdout == (
+        'schema @link(url: "https://specs.apollo.dev/federation/v2.5", import: '
+        '["@key"]) {\n'
+        "  query: Query\n"
+        "}\n"
+        "\n"
+        'type Organization @key(fields: "id") {\n'
+        "  id: ID!\n"
+        "  name: String!\n"
+        "  owner: User!\n"
+        "}\n"
+        "\n"
+        "type Query {\n"
+        "  _entities(representations: [_Any!]!): [_Entity]!\n"
+        "  _service: _Service!\n"
+        "  organizations: [Organization!]!\n"
+        "  organization(id: ID!): Organization\n"
+        "}\n"
+        "\n"
+        'type User @key(fields: "id", resolvable: false) {\n'
+        "  id: ID!\n"
+        "}\n"
+        "\n"
+        "scalar _Any\n"
+        "\n"
+        "union _Entity = Organization | User\n"
+        "\n"
+        "type _Service {\n"
+        "  sdl: String!\n"
+        "}\n"
+    )
+
+
 def test_default_schema_symbol_name(cli_app: Typer, cli_runner: CliRunner):
     selector = "tests.fixtures.sample_package.sample_module"
     result = cli_runner.invoke(cli_app, ["export-schema", selector])
