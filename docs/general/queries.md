@@ -55,6 +55,30 @@ class Query:
         return "Strawberry"
 ```
 
+The decorator syntax supports specifying a `graphql_type` for cases when the
+return type of the function does not match the GraphQL type:
+
+```python
+class User:
+    id: str
+    name: str
+
+    def __init__(self, id: str, name: str):
+        self.id = id
+        self.name = name
+
+@strawberry.type(name="User")
+class UserType:
+    id: strawberry.ID
+    name: str
+
+@strawberry.type
+class Query:
+    @strawberry.field(graphql_type=UserType)
+    def user(self) -> User
+        return User(id="ringo", name="Ringo")
+```
+
 ## Arguments
 
 GraphQL fields can accept arguments, usually to filter out or retrieve specific
