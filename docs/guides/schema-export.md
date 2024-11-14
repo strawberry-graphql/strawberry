@@ -43,4 +43,4 @@ strawberry export-schema package.module:schema --federation-version=2.5 --output
 > [!WARNING] \
 > If the schema define directives that are not supported by the specified
 > version (in the override parameter) the schema will still generate the output
-> useing the value from the override, and may break at runtime.
+> using the value from the override, and may break at runtime.

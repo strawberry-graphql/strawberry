@@ -26,15 +26,16 @@ def export_schema(
         "-o",
         help="File to save the exported schema. If not provided, prints to console.",
     ),
-    federation_version: Path = typer.Option(
+    federation_version: float = typer.Option(
         None,
         "--federation-version",
         "-e",
         help=(
             "Override the output federation schema version. please use with care!"
-            "schema may brake if it have directives that are not supported by the defined federation version."
+            "schema may break if it have directives that are not supported by the defined federation version."
             "(for directive version compatibility please see: https://www.apollographql.com/docs/graphos/reference/federation/directives)"
         ),
+        min=1,
     ),
 ) -> None:
     if federation_version:
