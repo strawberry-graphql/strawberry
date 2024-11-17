@@ -148,7 +148,7 @@ class BaseGraphQLTransportWSHandler:
                 await self.handle_complete(message)
 
             else:
-                error_message = f"Unknown message type: {message["type"]}"
+                error_message = f"Unknown message type: {message['type']}"
                 await self.handle_invalid_message(error_message)
 
         except KeyError:
@@ -211,7 +211,7 @@ class BaseGraphQLTransportWSHandler:
             return
 
         if message["id"] in self.operations:
-            reason = f"Subscriber for {message["id"]} already exists"
+            reason = f"Subscriber for {message['id']} already exists"
             await self.websocket.close(code=4409, reason=reason)
             return
 
