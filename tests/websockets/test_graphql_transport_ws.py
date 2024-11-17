@@ -42,7 +42,7 @@ async def ws_raw(http_client: HttpClient) -> AsyncGenerator[WebSocketClient, Non
 
 @pytest_asyncio.fixture
 async def ws(ws_raw: WebSocketClient) -> WebSocketClient:
-    await ws_raw.send_json(ConnectionInitMessage({"type": "connection_init"}))
+    await ws_raw.send_message({"type": "connection_init"})
     connection_ack_message: ConnectionAckMessage = await ws_raw.receive_json()
     assert connection_ack_message == {"type": "connection_ack"}
     return ws_raw
@@ -72,7 +72,7 @@ def assert_next(
 async def test_unknown_message_type(ws_raw: WebSocketClient):
     ws = ws_raw
 
-    await ws.send_json({"type": "NOT_A_MESSAGE_TYPE"})
+    await ws.send_message({"type": "NOT_A_MESSAGE_TYPE"})  # type: ignore
 
     await ws.receive(timeout=2)
     assert ws.closed
@@ -83,7 +83,7 @@ async def test_unknown_message_type(ws_raw: WebSocketClient):
 async def test_missing_message_type(ws_raw: WebSocketClient):
     ws = ws_raw
 
-    await ws.send_json({"notType": None})
+    await ws.send_message({"notType": None})  # type: ignore
 
     await ws.receive(timeout=2)
     assert ws.closed
@@ -92,7 +92,7 @@ async def test_missing_message_type(ws_raw: WebSocketClient):
 
 
 async def test_parsing_an_invalid_message(ws: WebSocketClient):
-    await ws.send_json({"type": "subscribe", "notPayload": None})
+    await ws.send_message({"type": "subscribe", "notPayload": None})  # type: ignore
 
     await ws.receive(timeout=2)
     assert ws.closed
@@ -127,7 +127,7 @@ async def test_non_json_ws_messages_result_in_socket_closure(ws_raw: WebSocketCl
 async def test_ws_message_frame_types_cannot_be_mixed(ws_raw: WebSocketClient):
     ws = ws_raw
 
-    await ws.send_json(ConnectionInitMessage({"type": "connection_init"}))
+    await ws.send_message({"type": "connection_init"})
 
     ack_message: ConnectionAckMessage = await ws.receive_json()
     assert ack_message == {"type": "connection_ack"}
@@ -183,21 +183,19 @@ async def test_connection_init_timeout_cancellation(
     # Verify that the timeout task is cancelled after the connection Init
     # message is received
     ws = ws_raw
-    await ws.send_json(ConnectionInitMessage({"type": "connection_init"}))
+    await ws.send_message({"type": "connection_init"})
 
     connection_ack_message: ConnectionAckMessage = await ws.receive_json()
     assert connection_ack_message == {"type": "connection_ack"}
 
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {
-                    "query": "subscription { debug { isConnectionInitTimeoutTaskDone } }"
-                },
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {
+                "query": "subscription { debug { isConnectionInitTimeoutTaskDone } }"
+            },
+        }
     )
 
     next_message: NextMessage = await ws.receive_json()
@@ -220,7 +218,8 @@ async def test_close_twice(
 
         # We set payload is set to "invalid value" to force a invalid payload error
         # which will close the connection
-        await ws.send_json({"type": "connection_init", "payload": "invalid value"})
+        await ws.send_message({"type": "connection_init", "payload": "invalid value"})  # type: ignore
+
         # Yield control so that ._close can be called
         await asyncio.sleep(0)
 
@@ -241,7 +240,7 @@ async def test_close_twice(
 
 
 async def test_too_many_initialisation_requests(ws: WebSocketClient):
-    await ws.send_json(ConnectionInitMessage({"type": "connection_init"}))
+    await ws.send_message({"type": "connection_init"})
     await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4429
@@ -249,7 +248,7 @@ async def test_too_many_initialisation_requests(ws: WebSocketClient):
 
 
 async def test_ping_pong(ws: WebSocketClient):
-    await ws.send_json(PingMessage({"type": "ping"}))
+    await ws.send_message({"type": "ping"})
     pong_message: PongMessage = await ws.receive_json()
     assert pong_message == {"type": "pong"}
 
@@ -259,23 +258,21 @@ async def test_can_send_payload_with_additional_things(ws_raw: WebSocketClient):
 
     # send  init
 
-    await ws.send_json(ConnectionInitMessage({"type": "connection_init"}))
+    await ws.send_message({"type": "connection_init"})
 
     await ws.receive(timeout=2)
 
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "type": "subscribe",
-                "payload": {
-                    "query": 'subscription { echo(message: "Hi") }',
-                    "extensions": {
-                        "some": "other thing",
-                    },
+    await ws.send_message(
+        {
+            "type": "subscribe",
+            "payload": {
+                "query": 'subscription { echo(message: "Hi") }',
+                "extensions": {
+                    "some": "other thing",
                 },
-                "id": "1",
-            }
-        )
+            },
+            "id": "1",
+        }
     )
 
     next_message: NextMessage = await ws.receive_json(timeout=2)
@@ -288,20 +285,18 @@ async def test_can_send_payload_with_additional_things(ws_raw: WebSocketClient):
 
 
 async def test_server_sent_ping(ws: WebSocketClient):
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": "subscription { requestPing }"},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": "subscription { requestPing }"},
+        }
     )
 
     ping_message: PingMessage = await ws.receive_json()
     assert ping_message == {"type": "ping"}
 
-    await ws.send_json(PongMessage({"type": "pong"}))
+    await ws.send_message({"type": "pong"})
 
     next_message: NextMessage = await ws.receive_json()
     assert_next(next_message, "sub1", {"requestPing": True})
@@ -312,14 +307,12 @@ async def test_server_sent_ping(ws: WebSocketClient):
 
 async def test_unauthorized_subscriptions(ws_raw: WebSocketClient):
     ws = ws_raw
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": 'subscription { echo(message: "Hi") }'},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": 'subscription { echo(message: "Hi") }'},
+        }
     )
 
     await ws.receive(timeout=2)
@@ -329,24 +322,20 @@ async def test_unauthorized_subscriptions(ws_raw: WebSocketClient):
 
 
 async def test_duplicated_operation_ids(ws: WebSocketClient):
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": 'subscription { echo(message: "Hi", delay: 5) }'},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": 'subscription { echo(message: "Hi", delay: 5) }'},
+        }
     )
 
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": 'subscription { echo(message: "Hi", delay: 5) }'},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": 'subscription { echo(message: "Hi", delay: 5) }'},
+        }
     )
 
     await ws.receive(timeout=2)
@@ -360,14 +349,12 @@ async def test_reused_operation_ids(ws: WebSocketClient):
     previously used for a completed operation.
     """
     # Use sub1 as an id for an operation
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": 'subscription { echo(message: "Hi") }'},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": 'subscription { echo(message: "Hi") }'},
+        }
     )
 
     next_message1: NextMessage = await ws.receive_json()
@@ -378,14 +365,12 @@ async def test_reused_operation_ids(ws: WebSocketClient):
 
     # operation is now complete.  Create a new operation using
     # the same ID
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": 'subscription { echo(message: "Hi") }'},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": 'subscription { echo(message: "Hi") }'},
+        }
     )
 
     next_message2: NextMessage = await ws.receive_json()
@@ -393,30 +378,26 @@ async def test_reused_operation_ids(ws: WebSocketClient):
 
 
 async def test_simple_subscription(ws: WebSocketClient):
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": 'subscription { echo(message: "Hi") }'},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": 'subscription { echo(message: "Hi") }'},
+        }
     )
 
     next_message: NextMessage = await ws.receive_json()
     assert_next(next_message, "sub1", {"echo": "Hi"})
-    await ws.send_json(CompleteMessage({"id": "sub1", "type": "complete"}))
+    await ws.send_message({"id": "sub1", "type": "complete"})
 
 
 async def test_subscription_syntax_error(ws: WebSocketClient):
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": "subscription { INVALID_SYNTAX "},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": "subscription { INVALID_SYNTAX "},
+        }
     )
 
     await ws.receive(timeout=2)
@@ -428,16 +409,14 @@ async def test_subscription_syntax_error(ws: WebSocketClient):
 async def test_subscription_field_errors(ws: WebSocketClient):
     process_errors = Mock()
     with patch.object(Schema, "process_errors", process_errors):
-        await ws.send_json(
-            SubscribeMessage(
-                {
-                    "id": "sub1",
-                    "type": "subscribe",
-                    "payload": {
-                        "query": "subscription { notASubscriptionField }",
-                    },
-                }
-            )
+        await ws.send_message(
+            {
+                "id": "sub1",
+                "type": "subscribe",
+                "payload": {
+                    "query": "subscription { notASubscriptionField }",
+                },
+            }
         )
 
         error_message: ErrorMessage = await ws.receive_json()
@@ -458,26 +437,22 @@ async def test_subscription_field_errors(ws: WebSocketClient):
 
 
 async def test_subscription_cancellation(ws: WebSocketClient):
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": 'subscription { echo(message: "Hi", delay: 99) }'},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": 'subscription { echo(message: "Hi", delay: 99) }'},
+        }
     )
 
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub2",
-                "type": "subscribe",
-                "payload": {
-                    "query": "subscription { debug { numActiveResultHandlers } }",
-                },
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub2",
+            "type": "subscribe",
+            "payload": {
+                "query": "subscription { debug { numActiveResultHandlers } }",
+            },
+        }
     )
 
     next_message: NextMessage = await ws.receive_json()
@@ -486,18 +461,16 @@ async def test_subscription_cancellation(ws: WebSocketClient):
     complete_message: CompleteMessage = await ws.receive_json()
     assert complete_message == {"id": "sub2", "type": "complete"}
 
-    await ws.send_json(CompleteMessage({"id": "sub1", "type": "complete"}))
+    await ws.send_message({"id": "sub1", "type": "complete"})
 
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub3",
-                "type": "subscribe",
-                "payload": {
-                    "query": "subscription { debug { numActiveResultHandlers } }",
-                },
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub3",
+            "type": "subscribe",
+            "payload": {
+                "query": "subscription { debug { numActiveResultHandlers } }",
+            },
+        }
     )
 
     next_message: NextMessage = await ws.receive_json()
@@ -508,16 +481,14 @@ async def test_subscription_cancellation(ws: WebSocketClient):
 
 
 async def test_subscription_errors(ws: WebSocketClient):
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {
-                    "query": 'subscription { error(message: "TEST ERR") }',
-                },
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {
+                "query": 'subscription { error(message: "TEST ERR") }',
+            },
+        }
     )
 
     next_message: NextMessage = await ws.receive_json()
@@ -541,16 +512,14 @@ async def test_operation_error_no_complete(ws: WebSocketClient):
     # Since we don't include the operation variables,
     # the subscription will fail immediately.
     # see https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#error
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {
-                    "query": "subscription Foo($bar: String!){ exception(message: $bar) }",
-                },
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {
+                "query": "subscription Foo($bar: String!){ exception(message: $bar) }",
+            },
+        }
     )
 
     error_message: ErrorMessage = await ws.receive_json()
@@ -559,7 +528,7 @@ async def test_operation_error_no_complete(ws: WebSocketClient):
 
     # after an "error" message, there should be nothing more
     # sent regarding "sub1", not even a "complete".
-    await ws.send_json(PingMessage({"type": "ping"}))
+    await ws.send_message({"type": "ping"})
 
     pong_message: PongMessage = await ws.receive_json(timeout=1)
     assert pong_message == {"type": "pong"}
@@ -568,16 +537,14 @@ async def test_operation_error_no_complete(ws: WebSocketClient):
 async def test_subscription_exceptions(ws: WebSocketClient):
     process_errors = Mock()
     with patch.object(Schema, "process_errors", process_errors):
-        await ws.send_json(
-            SubscribeMessage(
-                {
-                    "id": "sub1",
-                    "type": "subscribe",
-                    "payload": {
-                        "query": 'subscription { exception(message: "TEST EXC") }',
-                    },
-                }
-            )
+        await ws.send_message(
+            {
+                "id": "sub1",
+                "type": "subscribe",
+                "payload": {
+                    "query": 'subscription { exception(message: "TEST EXC") }',
+                },
+            }
         )
 
         next_message: NextMessage = await ws.receive_json()
@@ -589,14 +556,12 @@ async def test_subscription_exceptions(ws: WebSocketClient):
 
 
 async def test_single_result_query_operation(ws: WebSocketClient):
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": "query { hello }"},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": "query { hello }"},
+        }
     )
 
     next_message: NextMessage = await ws.receive_json()
@@ -611,14 +576,12 @@ async def test_single_result_query_operation_async(ws: WebSocketClient):
     `async` method in the schema, including an artificial
     async delay.
     """
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": 'query { asyncHello(name: "Dolly", delay:0.01)}'},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": 'query { asyncHello(name: "Dolly", delay:0.01)}'},
+        }
     )
 
     next_message: NextMessage = await ws.receive_json()
@@ -635,24 +598,20 @@ async def test_single_result_query_operation_overlapped(ws: WebSocketClient):
     query to be delivered first.
     """
     # first query
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": 'query { asyncHello(name: "Dolly", delay:1)}'},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": 'query { asyncHello(name: "Dolly", delay:1)}'},
+        }
     )
     # second query
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub2",
-                "type": "subscribe",
-                "payload": {"query": 'query { asyncHello(name: "Dolly", delay:0)}'},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub2",
+            "type": "subscribe",
+            "payload": {"query": 'query { asyncHello(name: "Dolly", delay:0)}'},
+        }
     )
 
     # we expect the message to the second query to arrive first
@@ -664,14 +623,12 @@ async def test_single_result_query_operation_overlapped(ws: WebSocketClient):
 
 
 async def test_single_result_mutation_operation(ws: WebSocketClient):
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": "mutation { hello }"},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": "mutation { hello }"},
+        }
     )
 
     next_message: NextMessage = await ws.receive_json()
@@ -691,14 +648,12 @@ async def test_single_result_operation_selection(ws: WebSocketClient):
         }
     """
 
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": query, "operationName": "Query2"},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": query, "operationName": "Query2"},
+        }
     )
 
     next_message: NextMessage = await ws.receive_json()
@@ -715,14 +670,12 @@ async def test_single_result_invalid_operation_selection(ws: WebSocketClient):
         }
     """
 
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": query, "operationName": "Query2"},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": query, "operationName": "Query2"},
+        }
     )
 
     await ws.receive(timeout=2)
@@ -734,16 +687,14 @@ async def test_single_result_invalid_operation_selection(ws: WebSocketClient):
 async def test_single_result_execution_error(ws: WebSocketClient):
     process_errors = Mock()
     with patch.object(Schema, "process_errors", process_errors):
-        await ws.send_json(
-            SubscribeMessage(
-                {
-                    "id": "sub1",
-                    "type": "subscribe",
-                    "payload": {
-                        "query": "query { alwaysFail }",
-                    },
-                }
-            )
+        await ws.send_message(
+            {
+                "id": "sub1",
+                "type": "subscribe",
+                "payload": {
+                    "query": "query { alwaysFail }",
+                },
+            }
         )
 
         next_message: NextMessage = await ws.receive_json()
@@ -770,16 +721,14 @@ async def test_single_result_pre_execution_error(ws: WebSocketClient):
     """
     process_errors = Mock()
     with patch.object(Schema, "process_errors", process_errors):
-        await ws.send_json(
-            SubscribeMessage(
-                {
-                    "id": "sub1",
-                    "type": "subscribe",
-                    "payload": {
-                        "query": "query { IDontExist }",
-                    },
-                }
-            )
+        await ws.send_message(
+            {
+                "id": "sub1",
+                "type": "subscribe",
+                "payload": {
+                    "query": "query { IDontExist }",
+                },
+            }
         )
 
         error_message: ErrorMessage = await ws.receive_json()
@@ -801,26 +750,22 @@ async def test_single_result_duplicate_ids_sub(ws: WebSocketClient):
     error due to already existing ID
     """
     # regular subscription
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": 'subscription { echo(message: "Hi", delay: 5) }'},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": 'subscription { echo(message: "Hi", delay: 5) }'},
+        }
     )
     # single result subscription with duplicate id
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {
-                    "query": "query { hello }",
-                },
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {
+                "query": "query { hello }",
+            },
+        }
     )
 
     await ws.receive(timeout=2)
@@ -835,26 +780,22 @@ async def test_single_result_duplicate_ids_query(ws: WebSocketClient):
     with delay, then another with same id. Expect error.
     """
     # single result subscription 1
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": 'query { asyncHello(name: "Hi", delay: 5) }'},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": 'query { asyncHello(name: "Hi", delay: 5) }'},
+        }
     )
     # single result subscription with duplicate id
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {
-                    "query": "query { hello }",
-                },
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {
+                "query": "query { hello }",
+            },
+        }
     )
 
     # We expect the remote to close the socket due to duplicate ID in use
@@ -866,34 +807,30 @@ async def test_single_result_duplicate_ids_query(ws: WebSocketClient):
 
 async def test_injects_connection_params(ws_raw: WebSocketClient):
     ws = ws_raw
-    await ws.send_json(
-        ConnectionInitMessage(
-            {"type": "connection_init", "payload": {"strawberry": "rocks"}}
-        )
+    await ws.send_message(
+        {"type": "connection_init", "payload": {"strawberry": "rocks"}}
     )
 
     connection_ack_message: ConnectionAckMessage = await ws.receive_json()
     assert connection_ack_message == {"type": "connection_ack"}
 
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": "subscription { connectionParams }"},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": "subscription { connectionParams }"},
+        }
     )
 
     next_message: NextMessage = await ws.receive_json()
     assert_next(next_message, "sub1", {"connectionParams": "rocks"})
 
-    await ws.send_json(CompleteMessage({"id": "sub1", "type": "complete"}))
+    await ws.send_message({"id": "sub1", "type": "complete"})
 
 
 async def test_rejects_connection_params_not_dict(ws_raw: WebSocketClient):
     ws = ws_raw
-    await ws.send_json({"type": "connection_init", "payload": "gonna fail"})
+    await ws.send_message({"type": "connection_init", "payload": "gonna fail"})  # type: ignore
 
     await ws.receive(timeout=2)
     assert ws.closed
@@ -909,7 +846,7 @@ async def test_rejects_connection_params_with_wrong_type(
     payload: object, ws_raw: WebSocketClient
 ):
     ws = ws_raw
-    await ws.send_json({"type": "connection_init", "payload": payload})
+    await ws.send_message({"type": "connection_init", "payload": payload})  # type: ignore
 
     await ws.receive(timeout=2)
     assert ws.closed
@@ -925,16 +862,12 @@ async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
     # while some complex finalization takes place.
     delay = 0.1
 
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {
-                    "query": f"subscription {{ longFinalizer(delay: {delay}) }}"
-                },
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": f"subscription {{ longFinalizer(delay: {delay}) }}"},
+        }
     )
 
     next_message: NextMessage = await ws.receive_json()
@@ -943,15 +876,13 @@ async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
     # now cancel the stubscription and send a new query. We expect the message
     # to the new query to arrive immediately, without waiting for the finalizer
     start = time.time()
-    await ws.send_json(CompleteMessage({"id": "sub1", "type": "complete"}))
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub2",
-                "type": "subscribe",
-                "payload": {"query": "query { hello }"},
-            }
-        )
+    await ws.send_message({"id": "sub1", "type": "complete"})
+    await ws.send_message(
+        {
+            "id": "sub2",
+            "type": "subscribe",
+            "payload": {"query": "query { hello }"},
+        }
     )
 
     while True:
@@ -1001,7 +932,7 @@ async def test_error_handler_for_timeout(http_client: HttpClient):
             "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
         ) as ws:
             await asyncio.sleep(0.01)  # wait for the timeout task to start
-            await ws.send_json(ConnectionInitMessage({"type": "connection_init"}))
+            await ws.send_message({"type": "connection_init"})
             connection_ack_message: ConnectionAckMessage = await ws.receive_json()
             assert connection_ack_message == {"type": "connection_ack"}
             await ws.close()
@@ -1020,16 +951,14 @@ async def test_subscription_errors_continue(ws: WebSocketClient):
     """
     process_errors = Mock()
     with patch.object(Schema, "process_errors", process_errors):
-        await ws.send_json(
-            SubscribeMessage(
-                {
-                    "id": "sub1",
-                    "type": "subscribe",
-                    "payload": {
-                        "query": "subscription { flavorsInvalid }",
-                    },
-                }
-            )
+        await ws.send_message(
+            {
+                "id": "sub1",
+                "type": "subscribe",
+                "payload": {
+                    "query": "subscription { flavorsInvalid }",
+                },
+            }
         )
 
         next_message1: NextMessage = await ws.receive_json()
@@ -1062,14 +991,12 @@ async def test_subscription_errors_continue(ws: WebSocketClient):
 async def test_no_extensions_results_wont_send_extensions_in_payload(
     mock: Mock, ws: WebSocketClient
 ):
-    await ws.send_json(
-        SubscribeMessage(
-            {
-                "id": "sub1",
-                "type": "subscribe",
-                "payload": {"query": 'subscription { echo(message: "Hi") }'},
-            }
-        )
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {"query": 'subscription { echo(message: "Hi") }'},
+        }
     )
 
     next_message: NextMessage = await ws.receive_json()
@@ -1084,16 +1011,14 @@ async def test_unexpected_client_disconnects_are_gracefully_handled(
     process_errors = Mock()
 
     with patch.object(Schema, "process_errors", process_errors):
-        await ws.send_json(
-            SubscribeMessage(
-                {
-                    "id": "sub1",
-                    "type": "subscribe",
-                    "payload": {
-                        "query": 'subscription { echo(message: "Hi", delay: 0.5) }'
-                    },
-                }
-            )
+        await ws.send_message(
+            {
+                "id": "sub1",
+                "type": "subscribe",
+                "payload": {
+                    "query": 'subscription { echo(message: "Hi", delay: 0.5) }'
+                },
+            }
         )
 
         await ws.close()
