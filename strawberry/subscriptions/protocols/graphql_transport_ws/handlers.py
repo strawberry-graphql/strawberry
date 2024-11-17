@@ -21,11 +21,8 @@ from strawberry.http.exceptions import (
 )
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
-    ConnectionAckMessage,
     ConnectionInitMessage,
-    ErrorMessage,
     Message,
-    NextMessage,
     NextMessagePayload,
     PingMessage,
     PongMessage,
@@ -180,11 +177,11 @@ class BaseGraphQLTransportWSHandler:
             return
 
         self.connection_init_received = True
-        await self.websocket.send_json(ConnectionAckMessage({"type": "connection_ack"}))
+        await self.send_message({"type": "connection_ack"})
         self.connection_acknowledged = True
 
     async def handle_ping(self, message: PingMessage) -> None:
-        await self.websocket.send_json(PongMessage({"type": "pong"}))
+        await self.send_message({"type": "pong"})
 
     async def handle_pong(self, message: PongMessage) -> None:
         pass
@@ -273,14 +270,14 @@ class BaseGraphQLTransportWSHandler:
             # that's a mutation / query result
             elif isinstance(first_res_or_agen, ExecutionResult):
                 await operation.send_next(first_res_or_agen)
-                await operation.send_message(
-                    CompleteMessage({"id": operation.id, "type": "complete"})
+                await operation.send_operation_message(
+                    {"id": operation.id, "type": "complete"}
                 )
             else:
                 async for result in first_res_or_agen:
                     await operation.send_next(result)
-                await operation.send_message(
-                    CompleteMessage({"id": operation.id, "type": "complete"})
+                await operation.send_operation_message(
+                    {"id": operation.id, "type": "complete"}
                 )
 
         except BaseException as e:  # pragma: no cover
@@ -302,6 +299,9 @@ class BaseGraphQLTransportWSHandler:
 
     async def handle_invalid_message(self, error_message: str) -> None:
         await self.websocket.close(code=4400, reason=error_message)
+
+    async def send_message(self, message: Message) -> None:
+        await self.websocket.send_json(message)
 
     async def cleanup_operation(self, operation_id: str) -> None:
         if operation_id not in self.operations:
@@ -352,27 +352,25 @@ class Operation:
         self.completed = False
         self.task: Optional[asyncio.Task] = None
 
-    async def send_message(self, message: Message) -> None:
+    async def send_operation_message(self, message: Message) -> None:
         if self.completed:
             return
         if message["type"] == "complete" or message["type"] == "error":
             self.completed = True
             # de-register the operation _before_ sending the final message
             self.handler.forget_id(self.id)
-        await self.handler.websocket.send_json(message)
+        await self.handler.send_message(message)
 
     async def send_initial_errors(self, errors: list[GraphQLError]) -> None:
         # Initial errors see https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#error
         # "This can occur before execution starts,
         # usually due to validation errors, or during the execution of the request"
-        await self.send_message(
-            ErrorMessage(
-                {
-                    "id": self.id,
-                    "type": "error",
-                    "payload": [err.formatted for err in errors],
-                }
-            )
+        await self.send_operation_message(
+            {
+                "id": self.id,
+                "type": "error",
+                "payload": [err.formatted for err in errors],
+            }
         )
 
     async def send_next(self, execution_result: ExecutionResult) -> None:
@@ -384,8 +382,8 @@ class Operation:
         if execution_result.extensions:
             next_payload["extensions"] = execution_result.extensions
 
-        await self.send_message(
-            NextMessage({"id": self.id, "type": "next", "payload": next_payload})
+        await self.send_operation_message(
+            {"id": self.id, "type": "next", "payload": next_payload}
         )
 
 
