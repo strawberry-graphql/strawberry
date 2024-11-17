@@ -17,23 +17,10 @@ from graphql import GraphQLError, GraphQLFormattedError
 
 from channels.testing.websocket import WebsocketCommunicator
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
-    ConnectionAckMessage,
-    ConnectionInitMessage,
-    ErrorMessage,
-    NextMessage,
-    SubscribeMessage,
-    SubscribeMessagePayload,
+from strawberry.subscriptions.protocols.graphql_transport_ws import (
+    types as transport_ws_types,
 )
-from strawberry.subscriptions.protocols.graphql_ws.types import (
-    ConnectionAckMessage as GraphQLWSConnectionAckMessage,
-)
-from strawberry.subscriptions.protocols.graphql_ws.types import (
-    ConnectionInitMessage as GraphQLWSConnectionInitMessage,
-)
-from strawberry.subscriptions.protocols.graphql_ws.types import (
-    StartMessage as GraphQLWSStartMessage,
-)
+from strawberry.subscriptions.protocols.graphql_ws import types as ws_types
 from strawberry.types import ExecutionResult
 
 if TYPE_CHECKING:
@@ -109,19 +96,21 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         if self.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
             assert res == (True, GRAPHQL_TRANSPORT_WS_PROTOCOL)
             await self.send_json_to(
-                ConnectionInitMessage(payload=self.connection_params).as_dict()
+                transport_ws_types.ConnectionInitMessage(
+                    {"type": "connection_init", "payload": self.connection_params}
+                )
             )
-            graphql_transport_ws_response = await self.receive_json_from()
-            assert graphql_transport_ws_response == ConnectionAckMessage().as_dict()
+            transport_ws_connection_ack_message: transport_ws_types.ConnectionAckMessage = await self.receive_json_from()
+            assert transport_ws_connection_ack_message == {"type": "connection_ack"}
         else:
             assert res == (True, GRAPHQL_WS_PROTOCOL)
             await self.send_json_to(
-                GraphQLWSConnectionInitMessage({"type": "connection_init"})
+                ws_types.ConnectionInitMessage({"type": "connection_init"})
             )
-            graphql_ws_response: GraphQLWSConnectionAckMessage = (
+            ws_connection_ack_message: ws_types.ConnectionAckMessage = (
                 await self.receive_json_from()
             )
-            assert graphql_ws_response["type"] == "connection_ack"
+            assert ws_connection_ack_message["type"] == "connection_ack"
 
     # Actual `ExecutionResult`` objects are not available client-side, since they
     # get transformed into `FormattedExecutionResult` on the wire, but we attempt
@@ -133,13 +122,16 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
 
         if self.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
             await self.send_json_to(
-                SubscribeMessage(
-                    id=id_,
-                    payload=SubscribeMessagePayload(query=query, variables=variables),
-                ).as_dict()
+                transport_ws_types.SubscribeMessage(
+                    {
+                        "id": id_,
+                        "type": "subscribe",
+                        "payload": {"query": query, "variables": variables},
+                    }
+                )
             )
         else:
-            start_message: GraphQLWSStartMessage = {
+            start_message: ws_types.StartMessage = {
                 "type": "start",
                 "id": id_,
                 "payload": {
@@ -153,17 +145,18 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
             await self.send_json_to(start_message)
 
         while True:
-            response = await self.receive_json_from(timeout=5)
-            message_type = response["type"]
-            if message_type == NextMessage.type:
-                payload = NextMessage(**response).payload
+            message: transport_ws_types.Message = await self.receive_json_from(
+                timeout=5
+            )
+            if message["type"] == "next":
+                payload = message["payload"]
                 ret = ExecutionResult(payload.get("data"), None)
                 if "errors" in payload:
                     ret.errors = self.process_errors(payload.get("errors") or [])
                 ret.extensions = payload.get("extensions", None)
                 yield ret
-            elif message_type == ErrorMessage.type:
-                error_payload = ErrorMessage(**response).payload
+            elif message["type"] == "error":
+                error_payload = message["payload"]
                 yield ExecutionResult(
                     data=None, errors=self.process_errors(error_payload)
                 )

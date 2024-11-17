@@ -1,108 +1,91 @@
-from __future__ import annotations
+from typing import Dict, List, TypedDict, Union
+from typing_extensions import Literal, NotRequired
 
-from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, TypedDict
-
-from strawberry.types.unset import UNSET
-
-if TYPE_CHECKING:
-    from graphql import GraphQLFormattedError
+from graphql import GraphQLFormattedError
 
 
-@dataclass
-class GraphQLTransportMessage:
-    def as_dict(self) -> dict:
-        data = asdict(self)
-        if getattr(self, "payload", None) is UNSET:
-            # Unset fields must have a JSON value of "undefined" not "null"
-            data.pop("payload")
-        return data
-
-
-@dataclass
-class ConnectionInitMessage(GraphQLTransportMessage):
+class ConnectionInitMessage(TypedDict):
     """Direction: Client -> Server."""
 
-    payload: Optional[Dict[str, Any]] = UNSET
-    type: str = "connection_init"
+    type: Literal["connection_init"]
+    payload: NotRequired[Union[Dict[str, object], None]]
 
 
-@dataclass
-class ConnectionAckMessage(GraphQLTransportMessage):
+class ConnectionAckMessage(TypedDict):
     """Direction: Server -> Client."""
 
-    payload: Optional[Dict[str, Any]] = UNSET
-    type: str = "connection_ack"
+    type: Literal["connection_ack"]
+    payload: NotRequired[Union[Dict[str, object], None]]
 
 
-@dataclass
-class PingMessage(GraphQLTransportMessage):
+class PingMessage(TypedDict):
     """Direction: bidirectional."""
 
-    payload: Optional[Dict[str, Any]] = UNSET
-    type: str = "ping"
+    type: Literal["ping"]
+    payload: NotRequired[Union[Dict[str, object], None]]
 
 
-@dataclass
-class PongMessage(GraphQLTransportMessage):
+class PongMessage(TypedDict):
     """Direction: bidirectional."""
 
-    payload: Optional[Dict[str, Any]] = UNSET
-    type: str = "pong"
+    type: Literal["pong"]
+    payload: NotRequired[Union[Dict[str, object], None]]
 
 
-@dataclass
-class SubscribeMessagePayload:
+class SubscribeMessagePayload(TypedDict):
+    operationName: NotRequired[Union[str, None]]
     query: str
-    operationName: Optional[str] = None
-    variables: Optional[Dict[str, Any]] = None
-    extensions: Optional[Dict[str, Any]] = None
+    variables: NotRequired[Union[Dict[str, object], None]]
+    extensions: NotRequired[Union[Dict[str, object], None]]
 
 
-@dataclass
-class SubscribeMessage(GraphQLTransportMessage):
+class SubscribeMessage(TypedDict):
     """Direction: Client -> Server."""
 
     id: str
+    type: Literal["subscribe"]
     payload: SubscribeMessagePayload
-    type: str = "subscribe"
 
 
-class NextPayload(TypedDict, total=False):
-    data: Any
-
-    # Optional list of formatted graphql.GraphQLError objects
-    errors: Optional[List[GraphQLFormattedError]]
-    extensions: Optional[Dict[str, Any]]
+class NextMessagePayload(TypedDict):
+    errors: NotRequired[List[GraphQLFormattedError]]
+    data: NotRequired[Union[Dict[str, object], None]]
+    extensions: NotRequired[Dict[str, object]]
 
 
-@dataclass
-class NextMessage(GraphQLTransportMessage):
+class NextMessage(TypedDict):
     """Direction: Server -> Client."""
 
     id: str
-    payload: NextPayload
-    type: str = "next"
-
-    def as_dict(self) -> dict:
-        return {"id": self.id, "payload": self.payload, "type": self.type}
+    type: Literal["next"]
+    payload: NextMessagePayload
 
 
-@dataclass
-class ErrorMessage(GraphQLTransportMessage):
+class ErrorMessage(TypedDict):
     """Direction: Server -> Client."""
 
     id: str
+    type: Literal["error"]
     payload: List[GraphQLFormattedError]
-    type: str = "error"
 
 
-@dataclass
-class CompleteMessage(GraphQLTransportMessage):
+class CompleteMessage(TypedDict):
     """Direction: bidirectional."""
 
     id: str
-    type: str = "complete"
+    type: Literal["complete"]
+
+
+Message = Union[
+    ConnectionInitMessage,
+    ConnectionAckMessage,
+    PingMessage,
+    PongMessage,
+    SubscribeMessage,
+    NextMessage,
+    ErrorMessage,
+    CompleteMessage,
+]
 
 
 __all__ = [
@@ -114,4 +97,5 @@ __all__ = [
     "NextMessage",
     "ErrorMessage",
     "CompleteMessage",
+    "Message",
 ]

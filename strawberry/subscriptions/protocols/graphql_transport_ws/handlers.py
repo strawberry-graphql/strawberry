@@ -5,11 +5,11 @@ import logging
 from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
-    Any,
     Awaitable,
     Dict,
     List,
     Optional,
+    cast,
 )
 
 from graphql import GraphQLError, GraphQLSyntaxError, parse
@@ -24,17 +24,16 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     ConnectionAckMessage,
     ConnectionInitMessage,
     ErrorMessage,
+    Message,
     NextMessage,
-    NextPayload,
+    NextMessagePayload,
     PingMessage,
     PongMessage,
     SubscribeMessage,
-    SubscribeMessagePayload,
 )
 from strawberry.types import ExecutionResult
 from strawberry.types.execution import PreExecutionError
 from strawberry.types.graphql import OperationType
-from strawberry.types.unset import UNSET
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.operation import get_operation_type
 
@@ -44,9 +43,6 @@ if TYPE_CHECKING:
     from strawberry.http.async_base_view import AsyncWebSocketAdapter
     from strawberry.schema import BaseSchema
     from strawberry.schema.subscribe import SubscriptionResult
-    from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
-        GraphQLTransportMessage,
-    )
 
 
 class BaseGraphQLTransportWSHandler:
@@ -73,15 +69,15 @@ class BaseGraphQLTransportWSHandler:
         self.connection_timed_out = False
         self.operations: Dict[str, Operation] = {}
         self.completed_tasks: List[asyncio.Task] = []
-        self.connection_params: Optional[Dict[str, Any]] = None
+        self.connection_params: Optional[Dict[str, object]] = None
 
-    async def handle(self) -> Any:
+    async def handle(self) -> None:
         self.on_request_accepted()
 
         try:
             try:
                 async for message in self.websocket.iter_json():
-                    await self.handle_message(message)
+                    await self.handle_message(cast(Message, message))
             except NonTextMessageReceived:
                 await self.handle_invalid_message("WebSocket message type must be text")
             except NonJsonMessageReceived:
@@ -134,39 +130,28 @@ class BaseGraphQLTransportWSHandler:
     async def handle_task_exception(self, error: Exception) -> None:  # pragma: no cover
         self.task_logger.exception("Exception in worker task", exc_info=error)
 
-    async def handle_message(self, message: dict) -> None:
+    async def handle_message(self, message: Message) -> None:
         try:
-            message_type = message.pop("type")
+            if message["type"] == "connection_init":
+                await self.handle_connection_init(message)
 
-            if message_type == ConnectionInitMessage.type:
-                await self.handle_connection_init(ConnectionInitMessage(**message))
+            elif message["type"] == "ping":
+                await self.handle_ping(message)
 
-            elif message_type == PingMessage.type:
-                await self.handle_ping(PingMessage(**message))
+            elif message["type"] == "pong":
+                await self.handle_pong(message)
 
-            elif message_type == PongMessage.type:
-                await self.handle_pong(PongMessage(**message))
+            elif message["type"] == "subscribe":
+                await self.handle_subscribe(message)
 
-            elif message_type == SubscribeMessage.type:
-                payload_args = message.pop("payload")
-                payload = SubscribeMessagePayload(
-                    query=payload_args["query"],
-                    operationName=payload_args.get("operationName"),
-                    variables=payload_args.get("variables"),
-                    extensions=payload_args.get("extensions"),
-                )
-                await self.handle_subscribe(
-                    SubscribeMessage(payload=payload, **message)
-                )
-
-            elif message_type == CompleteMessage.type:
-                await self.handle_complete(CompleteMessage(**message))
+            elif message["type"] == "complete":
+                await self.handle_complete(message)
 
             else:
-                error_message = f"Unknown message type: {message_type}"
+                error_message = f"Unknown message type: {message["type"]}"
                 await self.handle_invalid_message(error_message)
 
-        except (KeyError, TypeError):
+        except KeyError:
             await self.handle_invalid_message("Failed to parse message")
         finally:
             await self.reap_completed_tasks()
@@ -175,14 +160,11 @@ class BaseGraphQLTransportWSHandler:
         if self.connection_timed_out:
             # No way to reliably excercise this case during testing
             return  # pragma: no cover
+
         if self.connection_init_timeout_task:
             self.connection_init_timeout_task.cancel()
 
-        payload = (
-            message.payload
-            if message.payload is not None and message.payload is not UNSET
-            else {}
-        )
+        payload = message.get("payload", {})
 
         if not isinstance(payload, dict):
             await self.websocket.close(
@@ -198,11 +180,11 @@ class BaseGraphQLTransportWSHandler:
             return
 
         self.connection_init_received = True
-        await self.send_message(ConnectionAckMessage())
+        await self.websocket.send_json(ConnectionAckMessage({"type": "connection_ack"}))
         self.connection_acknowledged = True
 
     async def handle_ping(self, message: PingMessage) -> None:
-        await self.send_message(PongMessage())
+        await self.websocket.send_json(PongMessage({"type": "pong"}))
 
     async def handle_pong(self, message: PongMessage) -> None:
         pass
@@ -213,14 +195,14 @@ class BaseGraphQLTransportWSHandler:
             return
 
         try:
-            graphql_document = parse(message.payload.query)
+            graphql_document = parse(message["payload"]["query"])
         except GraphQLSyntaxError as exc:
             await self.websocket.close(code=4400, reason=exc.message)
             return
 
         try:
             operation_type = get_operation_type(
-                graphql_document, message.payload.operationName
+                graphql_document, message["payload"].get("operationName")
             )
         except RuntimeError:
             await self.websocket.close(
@@ -228,16 +210,16 @@ class BaseGraphQLTransportWSHandler:
             )
             return
 
-        if message.id in self.operations:
-            reason = f"Subscriber for {message.id} already exists"
+        if message["id"] in self.operations:
+            reason = f"Subscriber for {message["id"]} already exists"
             await self.websocket.close(code=4409, reason=reason)
             return
 
         if self.debug:  # pragma: no cover
             pretty_print_graphql_operation(
-                message.payload.operationName,
-                message.payload.query,
-                message.payload.variables,
+                message["payload"].get("operationName"),
+                message["payload"]["query"],
+                message["payload"].get("variables"),
             )
 
         if isinstance(self.context, dict):
@@ -247,15 +229,15 @@ class BaseGraphQLTransportWSHandler:
 
         operation = Operation(
             self,
-            message.id,
+            message["id"],
             operation_type,
-            message.payload.query,
-            message.payload.variables,
-            message.payload.operationName,
+            message["payload"]["query"],
+            message["payload"].get("variables"),
+            message["payload"].get("operationName"),
         )
 
         operation.task = asyncio.create_task(self.run_operation(operation))
-        self.operations[message.id] = operation
+        self.operations[message["id"]] = operation
 
     async def run_operation(self, operation: Operation) -> None:
         """The operation task's top level method. Cleans-up and de-registers the operation once it is done."""
@@ -291,11 +273,15 @@ class BaseGraphQLTransportWSHandler:
             # that's a mutation / query result
             elif isinstance(first_res_or_agen, ExecutionResult):
                 await operation.send_next(first_res_or_agen)
-                await operation.send_message(CompleteMessage(id=operation.id))
+                await operation.send_message(
+                    CompleteMessage({"id": operation.id, "type": "complete"})
+                )
             else:
                 async for result in first_res_or_agen:
                     await operation.send_next(result)
-                await operation.send_message(CompleteMessage(id=operation.id))
+                await operation.send_message(
+                    CompleteMessage({"id": operation.id, "type": "complete"})
+                )
 
         except BaseException as e:  # pragma: no cover
             self.operations.pop(operation.id, None)
@@ -312,14 +298,10 @@ class BaseGraphQLTransportWSHandler:
         del self.operations[id]
 
     async def handle_complete(self, message: CompleteMessage) -> None:
-        await self.cleanup_operation(operation_id=message.id)
+        await self.cleanup_operation(operation_id=message["id"])
 
     async def handle_invalid_message(self, error_message: str) -> None:
         await self.websocket.close(code=4400, reason=error_message)
-
-    async def send_message(self, message: GraphQLTransportMessage) -> None:
-        data = message.as_dict()
-        await self.websocket.send_json(data)
 
     async def cleanup_operation(self, operation_id: str) -> None:
         if operation_id not in self.operations:
@@ -358,7 +340,7 @@ class Operation:
         id: str,
         operation_type: OperationType,
         query: str,
-        variables: Optional[Dict[str, Any]],
+        variables: Optional[Dict[str, object]],
         operation_name: Optional[str],
     ) -> None:
         self.handler = handler
@@ -370,30 +352,41 @@ class Operation:
         self.completed = False
         self.task: Optional[asyncio.Task] = None
 
-    async def send_message(self, message: GraphQLTransportMessage) -> None:
+    async def send_message(self, message: Message) -> None:
         if self.completed:
             return
-        if isinstance(message, (CompleteMessage, ErrorMessage)):
+        if message["type"] == "complete" or message["type"] == "error":
             self.completed = True
             # de-register the operation _before_ sending the final message
             self.handler.forget_id(self.id)
-        await self.handler.send_message(message)
+        await self.handler.websocket.send_json(message)
 
     async def send_initial_errors(self, errors: list[GraphQLError]) -> None:
         # Initial errors see https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#error
         # "This can occur before execution starts,
         # usually due to validation errors, or during the execution of the request"
         await self.send_message(
-            ErrorMessage(id=self.id, payload=[err.formatted for err in errors])
+            ErrorMessage(
+                {
+                    "id": self.id,
+                    "type": "error",
+                    "payload": [err.formatted for err in errors],
+                }
+            )
         )
 
     async def send_next(self, execution_result: ExecutionResult) -> None:
-        next_payload: NextPayload = {"data": execution_result.data}
+        next_payload: NextMessagePayload = {"data": execution_result.data}
+
         if execution_result.errors:
             next_payload["errors"] = [err.formatted for err in execution_result.errors]
+
         if execution_result.extensions:
             next_payload["extensions"] = execution_result.extensions
-        await self.send_message(NextMessage(id=self.id, payload=next_payload))
+
+        await self.send_message(
+            NextMessage({"id": self.id, "type": "next", "payload": next_payload})
+        )
 
 
 __all__ = ["BaseGraphQLTransportWSHandler", "Operation"]
