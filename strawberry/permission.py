@@ -177,8 +177,7 @@ class PermissionExtension(FieldExtension):
             elif isinstance(field.type, StrawberryList):
                 self.return_empty_list = True
             else:
-                errror = PermissionFailSilentlyRequiresOptionalError(field)
-                raise errror
+                raise PermissionFailSilentlyRequiresOptionalError(field)
 
     def _on_unauthorized(self, permission: BasePermission) -> Any:
         if self.fail_silently:

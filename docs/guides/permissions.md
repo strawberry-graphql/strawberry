@@ -188,6 +188,7 @@ client. To return `None` or `[]` instead of raising an error, the
 ```python
 import strawberry
 from strawberry.permission import PermissionExtension, BasePermission
+from typing import Optional
 
 
 @strawberry.type
@@ -197,7 +198,7 @@ class Query:
             PermissionExtension(permissions=[IsAuthenticated()], fail_silently=True)
         ]
     )
-    def name(self) -> str:
+    def name(self) -> Optional[str]:
         return "ABC"
 ```
 
