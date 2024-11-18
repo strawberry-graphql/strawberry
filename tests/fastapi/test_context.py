@@ -6,35 +6,10 @@ import pytest
 import strawberry
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
-    CompleteMessage,
-    ConnectionAckMessage,
-    ConnectionInitMessage,
-    NextMessage,
-    SubscribeMessage,
-    SubscribeMessagePayload,
+from strawberry.subscriptions.protocols.graphql_transport_ws import (
+    types as transport_ws_types,
 )
-from strawberry.subscriptions.protocols.graphql_ws.types import (
-    CompleteMessage as GraphQLWSCompleteMessage,
-)
-from strawberry.subscriptions.protocols.graphql_ws.types import (
-    ConnectionAckMessage as GraphQLWSConnectionAckMessage,
-)
-from strawberry.subscriptions.protocols.graphql_ws.types import (
-    ConnectionInitMessage as GraphQLWSConnectionInitMessage,
-)
-from strawberry.subscriptions.protocols.graphql_ws.types import (
-    ConnectionTerminateMessage as GraphQLWSConnectionTerminateMessage,
-)
-from strawberry.subscriptions.protocols.graphql_ws.types import (
-    DataMessage as GraphQLWSDataMessage,
-)
-from strawberry.subscriptions.protocols.graphql_ws.types import (
-    StartMessage as GraphQLWSStartMessage,
-)
-from strawberry.subscriptions.protocols.graphql_ws.types import (
-    StopMessage as GraphQLWSStopMessage,
-)
+from strawberry.subscriptions.protocols.graphql_ws import types as ws_types
 
 
 def test_base_context():
@@ -245,29 +220,37 @@ def test_class_context_injects_connection_params_over_transport_ws():
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
-        ws.send_json(ConnectionInitMessage(payload={"strawberry": "rocks"}).as_dict())
+        ws.send_json(
+            transport_ws_types.ConnectionInitMessage(
+                {"type": "connection_init", "payload": {"strawberry": "rocks"}}
+            )
+        )
 
-        response = ws.receive_json()
-        assert response == ConnectionAckMessage().as_dict()
+        connection_ack_message: transport_ws_types.ConnectionInitMessage = (
+            ws.receive_json()
+        )
+        assert connection_ack_message == {"type": "connection_ack"}
 
         ws.send_json(
-            SubscribeMessage(
-                id="sub1",
-                payload=SubscribeMessagePayload(
-                    query="subscription { connectionParams }"
-                ),
-            ).as_dict()
+            transport_ws_types.SubscribeMessage(
+                {
+                    "id": "sub1",
+                    "type": "subscribe",
+                    "payload": {"query": "subscription { connectionParams }"},
+                }
+            )
         )
 
-        response = ws.receive_json()
-        assert (
-            response
-            == NextMessage(
-                id="sub1", payload={"data": {"connectionParams": "rocks"}}
-            ).as_dict()
-        )
+        next_message: transport_ws_types.NextMessage = ws.receive_json()
+        assert next_message == {
+            "id": "sub1",
+            "type": "next",
+            "payload": {"data": {"connectionParams": "rocks"}},
+        }
 
-        ws.send_json(CompleteMessage(id="sub1").as_dict())
+        ws.send_json(
+            transport_ws_types.CompleteMessage({"id": "sub1", "type": "complete"})
+        )
 
         ws.close()
 
@@ -310,7 +293,7 @@ def test_class_context_injects_connection_params_over_ws():
 
     with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json(
-            GraphQLWSConnectionInitMessage(
+            ws_types.ConnectionInitMessage(
                 {
                     "type": "connection_init",
                     "payload": {"strawberry": "rocks"},
@@ -318,7 +301,7 @@ def test_class_context_injects_connection_params_over_ws():
             )
         )
         ws.send_json(
-            GraphQLWSStartMessage(
+            ws_types.StartMessage(
                 {
                     "type": "start",
                     "id": "demo",
@@ -329,22 +312,22 @@ def test_class_context_injects_connection_params_over_ws():
             )
         )
 
-        connection_ack_message: GraphQLWSConnectionAckMessage = ws.receive_json()
+        connection_ack_message: ws_types.ConnectionAckMessage = ws.receive_json()
         assert connection_ack_message["type"] == "connection_ack"
 
-        data_message: GraphQLWSDataMessage = ws.receive_json()
+        data_message: ws_types.DataMessage = ws.receive_json()
         assert data_message["type"] == "data"
         assert data_message["id"] == "demo"
         assert data_message["payload"]["data"] == {"connectionParams": "rocks"}
 
-        ws.send_json(GraphQLWSStopMessage({"type": "stop", "id": "demo"}))
+        ws.send_json(ws_types.StopMessage({"type": "stop", "id": "demo"}))
 
-        complete_message: GraphQLWSCompleteMessage = ws.receive_json()
+        complete_message: ws_types.CompleteMessage = ws.receive_json()
         assert complete_message["type"] == "complete"
         assert complete_message["id"] == "demo"
 
         ws.send_json(
-            GraphQLWSConnectionTerminateMessage({"type": "connection_terminate"})
+            ws_types.ConnectionTerminateMessage({"type": "connection_terminate"})
         )
 
         # make sure the websocket is disconnected now
