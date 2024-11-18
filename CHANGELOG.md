@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.249.0 - 2024-11-18
+--------------------
+
+After a year-long deprecation period, the `SentryTracingExtension` has been
+removed in favor of the official Sentry SDK integration.
+
+To migrate, remove the `SentryTracingExtension` from your Strawberry schema and
+then follow the
+[official Sentry SDK integration guide](https://docs.sentry.io/platforms/python/integrations/strawberry/).
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3672](https://github.com/strawberry-graphql/strawberry/pull/3672/)
+
+
 0.248.1 - 2024-11-08
 --------------------
 
