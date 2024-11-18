@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.250.0 - 2024-11-18
+--------------------
+
+In this release, we migrated the `graphql-transport-ws` types from data classes to typed dicts.
+Using typed dicts enabled us to precisely model `null` versus `undefined` values, which are common in that protocol.
+As a result, we could remove custom conversion methods handling these cases and simplify the codebase.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3701](https://github.com/strawberry-graphql/strawberry/pull/3701/)
+
+
 0.249.0 - 2024-11-18
 --------------------
 
