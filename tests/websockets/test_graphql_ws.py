@@ -218,11 +218,15 @@ async def test_subscription_errors(ws: WebSocketClient):
     assert data_message["id"] == "demo"
     assert data_message["payload"]["data"] is None
 
-    data_payload_errors = data_message["payload"].get("errors")
-    assert data_payload_errors is not None
-    assert len(data_payload_errors) == 1
-    assert data_payload_errors[0].get("path") == ["error"]
-    assert data_payload_errors[0].get("message") == "TEST ERR"
+    assert "errors" in data_message["payload"]
+    assert data_message["payload"]["errors"] is not None
+    assert len(data_message["payload"]["errors"]) == 1
+
+    assert "path" in data_message["payload"]["errors"][0]
+    assert data_message["payload"]["errors"][0]["path"] == ["error"]
+
+    assert "message" in data_message["payload"]["errors"][0]
+    assert data_message["payload"]["errors"][0]["message"] == "TEST ERR"
 
     complete_message: CompleteMessage = await ws.receive_json()
     assert complete_message["type"] == "complete"
@@ -243,9 +247,9 @@ async def test_subscription_exceptions(ws: WebSocketClient):
     assert data_message["id"] == "demo"
     assert data_message["payload"]["data"] is None
 
-    payload_errors = data_message["payload"].get("errors")
-    assert payload_errors is not None
-    assert payload_errors == [{"message": "TEST EXC"}]
+    assert "errors" in data_message["payload"]
+    assert data_message["payload"]["errors"] is not None
+    assert data_message["payload"]["errors"] == [{"message": "TEST EXC"}]
 
     await ws.send_legacy_message({"type": "stop", "id": "demo"})
     complete_message = await ws.receive_json()
