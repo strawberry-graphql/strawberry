@@ -7170,7 +7170,7 @@ class Mutation:
         return
 ```
 results in this schema:
-```grapqhl
+```graphql
 type Mutation {
     doSomething(arg: Int!): Void
 }
