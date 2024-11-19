@@ -72,7 +72,7 @@ def assert_next(
 async def test_unknown_message_type(ws_raw: WebSocketClient):
     ws = ws_raw
 
-    await ws.send_message({"type": "NOT_A_MESSAGE_TYPE"})  # type: ignore
+    await ws.send_json({"type": "NOT_A_MESSAGE_TYPE"})
 
     await ws.receive(timeout=2)
     assert ws.closed
@@ -83,7 +83,7 @@ async def test_unknown_message_type(ws_raw: WebSocketClient):
 async def test_missing_message_type(ws_raw: WebSocketClient):
     ws = ws_raw
 
-    await ws.send_message({"notType": None})  # type: ignore
+    await ws.send_json({"notType": None})
 
     await ws.receive(timeout=2)
     assert ws.closed
@@ -92,7 +92,7 @@ async def test_missing_message_type(ws_raw: WebSocketClient):
 
 
 async def test_parsing_an_invalid_message(ws: WebSocketClient):
-    await ws.send_message({"type": "subscribe", "notPayload": None})  # type: ignore
+    await ws.send_json({"type": "subscribe", "notPayload": None})
 
     await ws.receive(timeout=2)
     assert ws.closed
@@ -218,7 +218,7 @@ async def test_close_twice(
 
         # We set payload is set to "invalid value" to force a invalid payload error
         # which will close the connection
-        await ws.send_message({"type": "connection_init", "payload": "invalid value"})  # type: ignore
+        await ws.send_json({"type": "connection_init", "payload": "invalid value"})
 
         # Yield control so that ._close can be called
         await asyncio.sleep(0)
@@ -830,7 +830,7 @@ async def test_injects_connection_params(ws_raw: WebSocketClient):
 
 async def test_rejects_connection_params_not_dict(ws_raw: WebSocketClient):
     ws = ws_raw
-    await ws.send_message({"type": "connection_init", "payload": "gonna fail"})  # type: ignore
+    await ws.send_json({"type": "connection_init", "payload": "gonna fail"})
 
     await ws.receive(timeout=2)
     assert ws.closed
@@ -846,7 +846,7 @@ async def test_rejects_connection_params_with_wrong_type(
     payload: object, ws_raw: WebSocketClient
 ):
     ws = ws_raw
-    await ws.send_message({"type": "connection_init", "payload": payload})  # type: ignore
+    await ws.send_json({"type": "connection_init", "payload": payload})
 
     await ws.receive(timeout=2)
     assert ws.closed
