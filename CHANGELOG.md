@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.250.1 - 2024-11-19
+--------------------
+
+This release refactors part of the legacy `graphql-ws` protocol implementation, making it easier to read, maintain, and extend.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3704](https://github.com/strawberry-graphql/strawberry/pull/3704/)
+
+
 0.250.0 - 2024-11-18
 --------------------
 
