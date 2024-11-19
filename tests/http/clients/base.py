@@ -28,6 +28,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     Message as GraphQLTransportWSMessage,
 )
 from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
+from strawberry.subscriptions.protocols.graphql_ws.types import OperationMessage
 from strawberry.types import ExecutionResult
 
 logger = logging.getLogger("strawberry.test.http_client")
@@ -305,6 +306,9 @@ class WebSocketClient(abc.ABC):
             yield await self.receive()
 
     async def send_message(self, message: GraphQLTransportWSMessage) -> None:
+        await self.send_json(message)
+
+    async def send_legacy_message(self, message: OperationMessage) -> None:
         await self.send_json(message)
 
 

@@ -78,6 +78,7 @@ OperationMessage = Union[
     DataMessage,
     ErrorMessage,
     CompleteMessage,
+    ConnectionKeepAliveMessage,
 ]
 
 

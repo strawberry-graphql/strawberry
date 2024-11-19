@@ -12,14 +12,9 @@ from typing import (
 
 from strawberry.http.exceptions import NonTextMessageReceived, WebSocketDisconnected
 from strawberry.subscriptions.protocols.graphql_ws.types import (
-    CompleteMessage,
-    ConnectionAckMessage,
-    ConnectionErrorMessage,
     ConnectionInitMessage,
-    ConnectionKeepAliveMessage,
     ConnectionTerminateMessage,
     DataMessage,
-    ErrorMessage,
     OperationMessage,
     StartMessage,
     StopMessage,
@@ -93,15 +88,13 @@ class BaseGraphQLWSHandler:
     async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
         payload = message.get("payload")
         if payload is not None and not isinstance(payload, dict):
-            error_message: ConnectionErrorMessage = {"type": "connection_error"}
-            await self.websocket.send_json(error_message)
+            await self.send_message({"type": "connection_error"})
             await self.websocket.close(code=1000, reason="")
             return
 
         self.connection_params = payload
 
-        connection_ack_message: ConnectionAckMessage = {"type": "connection_ack"}
-        await self.websocket.send_json(connection_ack_message)
+        await self.send_message({"type": "connection_ack"})
 
         if self.keep_alive:
             keep_alive_handler = self.handle_keep_alive()
@@ -139,8 +132,7 @@ class BaseGraphQLWSHandler:
     async def handle_keep_alive(self) -> None:
         assert self.keep_alive_interval
         while True:
-            data: ConnectionKeepAliveMessage = {"type": "ka"}
-            await self.websocket.send_json(data)
+            await self.send_message({"type": "ka"})
             await asyncio.sleep(self.keep_alive_interval)
 
     async def handle_async_results(
@@ -160,26 +152,22 @@ class BaseGraphQLWSHandler:
             )
             if isinstance(agen_or_err, PreExecutionError):
                 assert agen_or_err.errors
-                error_payload = agen_or_err.errors[0].formatted
-                error_message: ErrorMessage = {
-                    "type": "error",
-                    "id": operation_id,
-                    "payload": error_payload,
-                }
-                await self.websocket.send_json(error_message)
+                await self.send_message(
+                    {
+                        "type": "error",
+                        "id": operation_id,
+                        "payload": agen_or_err.errors[0].formatted,
+                    }
+                )
             else:
                 self.subscriptions[operation_id] = agen_or_err
 
                 async for result in agen_or_err:
-                    await self.send_data(result, operation_id)
+                    await self.send_data_message(result, operation_id)
 
-                await self.websocket.send_json(
-                    CompleteMessage({"type": "complete", "id": operation_id})
-                )
+                await self.send_message({"type": "complete", "id": operation_id})
         except asyncio.CancelledError:
-            await self.websocket.send_json(
-                CompleteMessage({"type": "complete", "id": operation_id})
-            )
+            await self.send_message({"type": "complete", "id": operation_id})
 
     async def cleanup_operation(self, operation_id: str) -> None:
         if operation_id in self.subscriptions:
@@ -192,7 +180,7 @@ class BaseGraphQLWSHandler:
             await self.tasks[operation_id]
         del self.tasks[operation_id]
 
-    async def send_data(
+    async def send_data_message(
         self, execution_result: ExecutionResult, operation_id: str
     ) -> None:
         data_message: DataMessage = {
@@ -209,7 +197,10 @@ class BaseGraphQLWSHandler:
         if execution_result.extensions:
             data_message["payload"]["extensions"] = execution_result.extensions
 
-        await self.websocket.send_json(data_message)
+        await self.send_message(data_message)
+
+    async def send_message(self, message: OperationMessage) -> None:
+        await self.websocket.send_json(message)
 
 
 __all__ = ["BaseGraphQLWSHandler"]
