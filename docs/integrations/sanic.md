@@ -123,12 +123,13 @@ tweaked based on your needs.
 
 ### encode_json
 
-`encode_json` allows to customize the encoding of the JSON response. By default
-we use `json.dumps` but you can override this method to use a different encoder.
+`encode_json` allows to customize the encoding of HTTP and WebSocket JSON
+responses. By default we use `json.dumps` but you can override this method to
+use a different encoder.
 
 ```python
 class MyGraphQLView(GraphQLView):
-    def encode_json(self, data: GraphQLHTTPResponse) -> str:
+    def encode_json(self, data: object) -> str:
         return json.dumps(data, indent=2)
 ```
 
