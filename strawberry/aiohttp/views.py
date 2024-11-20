@@ -87,7 +87,10 @@ class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class AioHTTPWebSocketAdapter(AsyncWebSocketAdapter):
-    def __init__(self, request: web.Request, ws: web.WebSocketResponse) -> None:
+    def __init__(
+        self, view: AsyncBaseHTTPView, request: web.Request, ws: web.WebSocketResponse
+    ) -> None:
+        super().__init__(view)
         self.request = request
         self.ws = ws
 
@@ -107,7 +110,7 @@ class AioHTTPWebSocketAdapter(AsyncWebSocketAdapter):
 
     async def send_json(self, message: Mapping[str, object]) -> None:
         try:
-            await self.ws.send_json(message)
+            await self.ws.send_str(self.view.encode_json(message))
         except RuntimeError as exc:
             raise WebSocketDisconnected from exc
 
