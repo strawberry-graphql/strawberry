@@ -1,6 +1,4 @@
-from typing import List, Optional, Union
-
-import pytest
+from typing import Optional, Union
 
 import strawberry
 from strawberry.permission import BasePermission

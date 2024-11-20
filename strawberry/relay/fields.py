@@ -6,8 +6,6 @@ import inspect
 from collections import defaultdict
 from collections.abc import AsyncIterable
 from typing import (
-    TypeVar,
-    UnionType,
     TYPE_CHECKING,
     Any,
     AsyncIterator,
@@ -25,6 +23,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    UnionType,
     cast,
     overload,
 )
@@ -237,15 +236,19 @@ class ConnectionExtension(FieldExtension):
 
         # Handle Optional[Connection[T]] and Union[Connection[T], None] cases
         type_origin = get_origin(f_type) if is_generic_alias(f_type) else f_type
-        
+
         # If it's Optional or Union, extract the inner type
         if type_origin in (Union, UnionType):
             types = getattr(f_type, "__args__", ())
             # Find the non-None type in the Union
-            inner_type = next((t for t in types if t is not type(None)), None)  # noqa: E721
+            inner_type = next((t for t in types if t is not type(None)), None)
             if inner_type is not None:
-                type_origin = get_origin(inner_type) if is_generic_alias(inner_type) else inner_type
-        
+                type_origin = (
+                    get_origin(inner_type)
+                    if is_generic_alias(inner_type)
+                    else inner_type
+                )
+
         if not isinstance(type_origin, type) or not issubclass(type_origin, Connection):
             raise RelayWrongAnnotationError(field.name, cast(type, field.origin))
 
