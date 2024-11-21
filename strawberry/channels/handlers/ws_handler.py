@@ -6,7 +6,6 @@ import json
 from typing import (
     TYPE_CHECKING,
     AsyncGenerator,
-    Dict,
     Mapping,
     Optional,
     Tuple,
@@ -39,7 +38,7 @@ class ChannelsWebSocketAdapter(AsyncWebSocketAdapter):
 
     async def iter_json(
         self, *, ignore_parsing_errors: bool = False
-    ) -> AsyncGenerator[Dict[str, object], None]:
+    ) -> AsyncGenerator[object, None]:
         while True:
             message = await self.ws_consumer.message_queue.get()
 
@@ -50,7 +49,7 @@ class ChannelsWebSocketAdapter(AsyncWebSocketAdapter):
                 raise NonTextMessageReceived()
 
             try:
-                yield json.loads(message["message"])
+                yield self.view.decode_json(message["message"])
             except json.JSONDecodeError:
                 if not ignore_parsing_errors:
                     raise NonJsonMessageReceived()

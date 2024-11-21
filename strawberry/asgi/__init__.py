@@ -95,11 +95,12 @@ class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
 
     async def iter_json(
         self, *, ignore_parsing_errors: bool = False
-    ) -> AsyncGenerator[Dict[str, object], None]:
+    ) -> AsyncGenerator[object, None]:
         try:
             while self.ws.application_state != WebSocketState.DISCONNECTED:
                 try:
-                    yield await self.ws.receive_json()
+                    text = await self.ws.receive_text()
+                    yield self.view.decode_json(text)
                 except JSONDecodeError:  # noqa: PERF203
                     if not ignore_parsing_errors:
                         raise NonJsonMessageReceived()

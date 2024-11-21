@@ -202,7 +202,7 @@ class LitestarWebSocketAdapter(AsyncWebSocketAdapter):
 
     async def iter_json(
         self, *, ignore_parsing_errors: bool = False
-    ) -> AsyncGenerator[Dict[str, object], None]:
+    ) -> AsyncGenerator[object, None]:
         try:
             while self.ws.connection_state != "disconnect":
                 text = await self.ws.receive_text()
@@ -212,7 +212,7 @@ class LitestarWebSocketAdapter(AsyncWebSocketAdapter):
                     raise NonTextMessageReceived()
 
                 try:
-                    yield json.loads(text)
+                    yield self.view.decode_json(text)
                 except json.JSONDecodeError:
                     if not ignore_parsing_errors:
                         raise NonJsonMessageReceived()
