@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.251.0 - 2024-11-21
+--------------------
+
+Starting with this release, the same JSON encoder is used to encode HTTP
+responses and WebSocket messages.
+
+This enables developers to override the `encode_json` method on their views to
+customize the JSON encoder used by all web protocols.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3708](https://github.com/strawberry-graphql/strawberry/pull/3708/)
+
+
 0.250.1 - 2024-11-19
 --------------------
 
