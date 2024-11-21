@@ -2,7 +2,6 @@ import json
 from typing import Any, Dict, Generic, List, Mapping, Optional, Union
 from typing_extensions import Protocol
 
-from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE, get_graphql_ide_html
 from strawberry.http.types import HTTPMethod, QueryParams
 
@@ -44,8 +43,8 @@ class BaseView(Generic[Request]):
         except json.JSONDecodeError as e:
             raise HTTPException(400, "Unable to parse request body as JSON") from e
 
-    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
-        return json.dumps(response_data)
+    def encode_json(self, data: object) -> str:
+        return json.dumps(data)
 
     def parse_query_params(self, params: QueryParams) -> Dict[str, Any]:
         params = dict(params)

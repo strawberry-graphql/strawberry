@@ -194,7 +194,10 @@ class LitestarRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class LitestarWebSocketAdapter(AsyncWebSocketAdapter):
-    def __init__(self, request: WebSocket, response: WebSocket) -> None:
+    def __init__(
+        self, view: AsyncBaseHTTPView, request: WebSocket, response: WebSocket
+    ) -> None:
+        super().__init__(view)
         self.ws = response
 
     async def iter_json(
@@ -218,7 +221,7 @@ class LitestarWebSocketAdapter(AsyncWebSocketAdapter):
 
     async def send_json(self, message: Mapping[str, object]) -> None:
         try:
-            await self.ws.send_json(message)
+            await self.ws.send_data(data=self.view.encode_json(message))
         except WebSocketDisconnect as exc:
             raise WebSocketDisconnected from exc
 

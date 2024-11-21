@@ -80,6 +80,9 @@ class AsyncHTTPRequestAdapter(abc.ABC):
 
 
 class AsyncWebSocketAdapter(abc.ABC):
+    def __init__(self, view: "AsyncBaseHTTPView") -> None:
+        self.view = view
+
     @abc.abstractmethod
     def iter_json(
         self, *, ignore_parsing_errors: bool = False
@@ -113,7 +116,8 @@ class AsyncBaseHTTPView(
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
     websocket_adapter_class: Callable[
-        [WebSocketRequest, WebSocketResponse], AsyncWebSocketAdapter
+        ["AsyncBaseHTTPView", WebSocketRequest, WebSocketResponse],
+        AsyncWebSocketAdapter,
     ]
     graphql_transport_ws_handler_class = BaseGraphQLTransportWSHandler
     graphql_ws_handler_class = BaseGraphQLWSHandler
@@ -265,7 +269,7 @@ class AsyncBaseHTTPView(
             websocket_response = await self.create_websocket_response(
                 request, websocket_subprotocol
             )
-            websocket = self.websocket_adapter_class(request, websocket_response)
+            websocket = self.websocket_adapter_class(self, request, websocket_response)
 
             context = (
                 await self.get_context(request, response=websocket_response)

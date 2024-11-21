@@ -201,8 +201,8 @@ class BaseView:
             },
         )
 
-    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
-        return json.dumps(response_data, cls=DjangoJSONEncoder)
+    def encode_json(self, data: object) -> str:
+        return json.dumps(data, cls=DjangoJSONEncoder)
 
 
 class GraphQLView(

@@ -28,7 +28,13 @@ if TYPE_CHECKING:
 
 
 class ChannelsWebSocketAdapter(AsyncWebSocketAdapter):
-    def __init__(self, request: GraphQLWSConsumer, response: GraphQLWSConsumer) -> None:
+    def __init__(
+        self,
+        view: AsyncBaseHTTPView,
+        request: GraphQLWSConsumer,
+        response: GraphQLWSConsumer,
+    ) -> None:
+        super().__init__(view)
         self.ws_consumer = response
 
     async def iter_json(
@@ -50,7 +56,7 @@ class ChannelsWebSocketAdapter(AsyncWebSocketAdapter):
                     raise NonJsonMessageReceived()
 
     async def send_json(self, message: Mapping[str, object]) -> None:
-        serialized_message = json.dumps(message)
+        serialized_message = self.view.encode_json(message)
         await self.ws_consumer.send(serialized_message)
 
     async def close(self, code: int, reason: str) -> None:
