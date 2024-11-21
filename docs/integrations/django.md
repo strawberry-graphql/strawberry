@@ -286,6 +286,27 @@ class MyGraphQLView(AsyncGraphQLView):
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
 
+### decode_json
+
+`decode_json` allows to customize the decoding of HTTP and WebSocket JSON
+requests. By default we use `json.loads` but you can override this method to use
+a different decoder.
+
+```python
+from strawberry.django.views import AsyncGraphQLView
+from typing import Union
+import orjson
+
+
+class MyGraphQLView(AsyncGraphQLView):
+    def decode_json(self, data: Union[str, bytes]) -> object:
+        return orjson.loads(data)
+```
+
+Make sure your code raises `json.JSONDecodeError` or a subclass of it if the
+JSON cannot be decoded. The library shown in the example above, `orjson`, does
+this by default.
+
 ### encode_json
 
 `encode_json` allows to customize the encoding of HTTP and WebSocket JSON

@@ -49,7 +49,8 @@ We allow to extend the base `GraphQL` app, by overriding the following methods:
 - `async get_context(self, request: Union[Request, WebSocket], response: Optional[Response] = None) -> Any`
 - `async get_root_value(self, request: Request) -> Any`
 - `async process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
-- `def encode_json(self, response_data: object) -> str`
+- `def decode_json(self, data: Union[str, bytes]) -> object`
+- `def encode_json(self, data: object) -> str`
 - `async def render_graphql_ide(self, request: Request) -> Response`
 
 ### get_context
@@ -166,6 +167,26 @@ class MyGraphQL(GraphQL):
 
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
+
+### decode_json
+
+`decode_json` allows to customize the decoding of HTTP JSON requests. By default
+we use `json.loads` but you can override this method to use a different decoder.
+
+```python
+from strawberry.asgi import GraphQL
+from typing import Union
+import orjson
+
+
+class MyGraphQLView(GraphQL):
+    def decode_json(self, data: Union[str, bytes]) -> object:
+        return orjson.loads(data)
+```
+
+Make sure your code raises `json.JSONDecodeError` or a subclass of it if the
+JSON cannot be decoded. The library shown in the example above, `orjson`, does
+this by default.
 
 ### encode_json
 
