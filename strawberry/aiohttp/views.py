@@ -96,11 +96,11 @@ class AioHTTPWebSocketAdapter(AsyncWebSocketAdapter):
 
     async def iter_json(
         self, *, ignore_parsing_errors: bool = False
-    ) -> AsyncGenerator[Dict[str, object], None]:
+    ) -> AsyncGenerator[object, None]:
         async for ws_message in self.ws:
             if ws_message.type == http.WSMsgType.TEXT:
                 try:
-                    yield ws_message.json()
+                    yield self.view.decode_json(ws_message.data)
                 except JSONDecodeError:
                     if not ignore_parsing_errors:
                         raise NonJsonMessageReceived()

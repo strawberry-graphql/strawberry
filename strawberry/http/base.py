@@ -39,9 +39,12 @@ class BaseView(Generic[Request]):
 
     def parse_json(self, data: Union[str, bytes]) -> Any:
         try:
-            return json.loads(data)
+            return self.decode_json(data)
         except json.JSONDecodeError as e:
             raise HTTPException(400, "Unable to parse request body as JSON") from e
+
+    def decode_json(self, data: Union[str, bytes]) -> object:
+        return json.loads(data)
 
     def encode_json(self, data: object) -> str:
         return json.dumps(data)
