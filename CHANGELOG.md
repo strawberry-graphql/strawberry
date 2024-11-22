@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.252.0 - 2024-11-22
+--------------------
+
+The view classes of all integrations now have a `decode_json` method that allows
+you to customize the decoding of HTTP JSON requests.
+
+This is useful if you want to use a different JSON decoder, for example, to
+optimize performance.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3709](https://github.com/strawberry-graphql/strawberry/pull/3709/)
+
+
 0.251.0 - 2024-11-21
 --------------------
 
