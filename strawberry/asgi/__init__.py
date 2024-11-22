@@ -5,7 +5,6 @@ from datetime import timedelta
 from json import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
-    Any,
     AsyncGenerator,
     AsyncIterator,
     Callable,
@@ -185,7 +184,9 @@ class GraphQL(
         else:  # pragma: no cover
             raise ValueError("Unknown scope type: {!r}".format(scope["type"]))
 
-    async def get_root_value(self, request: Union[Request, WebSocket]) -> Optional[Any]:
+    async def get_root_value(
+        self, request: Union[Request, WebSocket]
+    ) -> Optional[RootValue]:
         return None
 
     async def get_context(
