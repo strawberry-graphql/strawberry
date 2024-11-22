@@ -62,9 +62,11 @@ encoding process.
 
 We allow to extend the base `GraphQLView`, by overriding the following methods:
 
-- `def get_context(self, request: HttpRequest, response: HttpResponse) -> Any`
-- `def get_root_value(self, request: HttpRequest) -> Any`
-- `def process_result(self, request: HttpRequest, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def get_context(self, request: HttpRequest, response: HttpResponse) -> Context`
+- `def get_root_value(self, request: HttpRequest) -> Optional[RootValue]`
+- `def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def decode_json(self, data: Union[str, bytes]) -> object`
+- `def encode_json(self, data: object) -> str`
 - `def render_graphql_ide(self, request: HttpRequest) -> HttpResponse`
 
 ### get_context
@@ -74,6 +76,9 @@ resolver. You can return anything here, by default we return a
 `StrawberryDjangoContext` object.
 
 ```python
+import strawberry
+
+
 @strawberry.type
 class Query:
     @strawberry.field
@@ -84,8 +89,13 @@ class Query:
 or in case of a custom context:
 
 ```python
+import strawberry
+from strawberry.django.views import GraphQLView
+from django.http import HttpRequest, HttpResponse
+
+
 class MyGraphQLView(GraphQLView):
-    def get_context(self, request: HttpRequest, response: HttpResponse) -> Any:
+    def get_context(self, request: HttpRequest, response: HttpResponse):
         return {"example": 1}
 
 
@@ -110,8 +120,13 @@ probably not used a lot but it might be useful in certain situations.
 Here's an example:
 
 ```python
+import strawberry
+from strawberry.django.views import GraphQLView
+from django.http import HttpRequest
+
+
 class MyGraphQLView(GraphQLView):
-    def get_root_value(self, request: HttpRequest) -> Any:
+    def get_root_value(self, request: HttpRequest):
         return Query(name="Patrick")
 
 
@@ -135,6 +150,8 @@ and the execution results.
 ```python
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
+from strawberry.django.views import GraphQLView
+from django.http import HttpRequest
 
 
 class MyGraphQLView(GraphQLView):
@@ -152,6 +169,43 @@ class MyGraphQLView(GraphQLView):
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
 
+### decode_json
+
+`decode_json` allows to customize the decoding of HTTP and WebSocket JSON
+requests. By default we use `json.loads` but you can override this method to use
+a different decoder.
+
+```python
+from strawberry.django.views import GraphQLView
+from typing import Union
+import orjson
+
+
+class MyGraphQLView(GraphQLView):
+    def decode_json(self, data: Union[str, bytes]) -> object:
+        return orjson.loads(data)
+```
+
+Make sure your code raises `json.JSONDecodeError` or a subclass of it if the
+JSON cannot be decoded. The library shown in the example above, `orjson`, does
+this by default.
+
+### encode_json
+
+`encode_json` allows to customize the encoding of HTTP and WebSocket JSON
+responses. By default we use `json.dumps` but you can override this method to
+use a different encoder.
+
+```python
+import json
+from strawberry.django.views import GraphQLView
+
+
+class MyGraphQLView(GraphQLView):
+    def encode_json(self, data: object) -> str:
+        return json.dumps(data, indent=2)
+```
+
 ### render_graphql_ide
 
 In case you need more control over the rendering of the GraphQL IDE than the
@@ -159,7 +213,7 @@ In case you need more control over the rendering of the GraphQL IDE than the
 
 ```python
 from strawberry.django.views import GraphQLView
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpRequest
 from django.template.loader import render_to_string
 
 
@@ -202,12 +256,13 @@ The `AsyncGraphQLView` accepts the following arguments:
 
 ## Extending the view
 
-We allow to extend the base `AsyncGraphQLView`, by overriding the following
-methods:
+The base `AsyncGraphQLView` class can be extended by overriding any of the
+following methods:
 
-- `async get_context(self, request: HttpRequest) -> Any`
-- `async get_root_value(self, request: HttpRequest) -> Any`
-- `async process_result(self, request: HttpRequest, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `async def get_context(self, request: HttpRequest, response: HttpResponse) -> Context`
+- `async def get_root_value(self, request: HttpRequest) -> Optional[RootValue]`
+- `async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def decode_json(self, data: Union[str, bytes]) -> object`
 - `def encode_json(self, data: object) -> str`
 - `async def render_graphql_ide(self, request: HttpRequest) -> HttpResponse`
 
@@ -218,8 +273,13 @@ resolver. You can return anything here, by default we return a dictionary with
 the request.
 
 ```python
+import strawberry
+from strawberry.django.views import AsyncGraphQLView
+from django.http import HttpRequest, HttpResponse
+
+
 class MyGraphQLView(AsyncGraphQLView):
-    async def get_context(self, request: HttpRequest, response: HttpResponse) -> Any:
+    async def get_context(self, request: HttpRequest, response: HttpResponse):
         return {"example": 1}
 
 
@@ -244,8 +304,13 @@ probably not used a lot but it might be useful in certain situations.
 Here's an example:
 
 ```python
+import strawberry
+from strawberry.django.views import AsyncGraphQLView
+from django.http import HttpRequest
+
+
 class MyGraphQLView(AsyncGraphQLView):
-    async def get_root_value(self, request: HttpRequest) -> Any:
+    async def get_root_value(self, request: HttpRequest):
         return Query(name="Patrick")
 
 
@@ -269,6 +334,8 @@ and the execution results.
 ```python
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
+from strawberry.django.views import AsyncGraphQLView
+from django.http import HttpRequest
 
 
 class MyGraphQLView(AsyncGraphQLView):
@@ -314,6 +381,10 @@ responses. By default we use `json.dumps` but you can override this method to
 use a different encoder.
 
 ```python
+import json
+from strawberry.django.views import AsyncGraphQLView
+
+
 class MyGraphQLView(AsyncGraphQLView):
     def encode_json(self, data: object) -> str:
         return json.dumps(data, indent=2)

@@ -259,6 +259,16 @@ app.include_router(graphql_app, prefix="/graphql")
 Here we are returning a Query where the name is "Patrick", so when we request
 the field name we'll return "Patrick".
 
+## Extending the router
+
+The base `GraphQLRouter` class can be extended by overriding any of the
+following methods:
+
+- `async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def decode_json(self, data: Union[str, bytes]) -> object`
+- `def encode_json(self, data: object) -> str`
+- `async def render_graphql_ide(self, request: Request) -> HTMLResponse`
+
 ### process_result
 
 The `process_result` option allows you to customize and/or process results
@@ -269,7 +279,7 @@ It needs to return a `GraphQLHTTPResponse` object and accepts the request and
 execution results.
 
 ```python
-from fastapi import Request
+from starlette.requests import Request
 from strawberry.fastapi import GraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
@@ -318,6 +328,10 @@ responses. By default we use `json.dumps` but you can override this method to
 use a different encoder.
 
 ```python
+from strawberry.fastapi import GraphQLRouter
+import json
+
+
 class MyGraphQLRouter(GraphQLRouter):
     def encode_json(self, data: object) -> bytes:
         return json.dumps(data, indent=2)
@@ -331,6 +345,7 @@ In case you need more control over the rendering of the GraphQL IDE than the
 ```python
 from strawberry.fastapi import GraphQLRouter
 from starlette.responses import HTMLResponse, Response
+from starlette.requests import Request
 
 
 class MyGraphQLRouter(GraphQLRouter):

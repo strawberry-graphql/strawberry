@@ -44,14 +44,15 @@ The `GraphQLView` accepts the following options at the moment:
 
 ## Extending the view
 
-The base `GraphQLView` class can be extended by overriding the following
+The base `GraphQLView` class can be extended by overriding any of the following
 methods:
 
-- `async get_context(self, request: aiohttp.web.Request, response: aiohttp.web.StreamResponse) -> object`
-- `async get_root_value(self, request: aiohttp.web.Request) -> object`
-- `async process_result(self, request: aiohttp.web.Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `async def get_context(self, request: Request, response: Union[Response, WebSocketResponse]) -> Context`
+- `async def get_root_value(self, request: Request) -> Optional[RootValue]`
+- `async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def decode_json(self, data: Union[str, bytes]) -> object`
 - `def encode_json(self, data: object) -> str`
-- `async def render_graphql_ide(self, request: aiohttp.web.Request) -> aiohttp.web.Response`
+- `async def render_graphql_ide(self, request: Request) -> Response`
 
 ### get_context
 
@@ -61,13 +62,16 @@ a dictionary with the request.
 
 ```python
 import strawberry
-from aiohttp import web
+from typing import Union
 from strawberry.types import Info
 from strawberry.aiohttp.views import GraphQLView
+from aiohttp.web import Request, Response, WebSocketResponse
 
 
 class MyGraphQLView(GraphQLView):
-    async def get_context(self, request: web.Request, response: web.StreamResponse):
+    async def get_context(
+        self, request: Request, response: Union[Response, WebSocketResponse]
+    ):
         return {"request": request, "response": response, "example": 1}
 
 
@@ -94,12 +98,12 @@ Here's an example:
 
 ```python
 import strawberry
-from aiohttp import web
+from aiohttp.web import Request
 from strawberry.aiohttp.views import GraphQLView
 
 
 class MyGraphQLView(GraphQLView):
-    async def get_root_value(self, request: web.Request):
+    async def get_root_value(self, request: Request):
         return Query(name="Patrick")
 
 
@@ -121,7 +125,7 @@ It needs to return an object of `GraphQLHTTPResponse` and accepts the request
 and execution result.
 
 ```python
-from aiohttp import web
+from aiohttp.web import Request
 from strawberry.aiohttp.views import GraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
@@ -129,7 +133,7 @@ from strawberry.types import ExecutionResult
 
 class MyGraphQLView(GraphQLView):
     async def process_result(
-        self, request: web.Request, result: ExecutionResult
+        self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         data: GraphQLHTTPResponse = {"data": result.data}
 
@@ -170,6 +174,10 @@ responses. By default we use `json.dumps` but you can override this method to
 use a different encoder.
 
 ```python
+import json
+from strawberry.aiohttp.views import GraphQLView
+
+
 class MyGraphQLView(GraphQLView):
     def encode_json(self, data: object) -> str:
         return json.dumps(data, indent=2)
@@ -181,13 +189,13 @@ In case you need more control over the rendering of the GraphQL IDE than the
 `graphql_ide` option provides, you can override the `render_graphql_ide` method.
 
 ```python
-from aiohttp import web
+from aiohttp.web import Request, Response
 from strawberry.aiohttp.views import GraphQLView
 
 
 class MyGraphQLView(GraphQLView):
-    async def render_graphql_ide(self, request: web.Request) -> web.Response:
+    async def render_graphql_ide(self, request: Request) -> Response:
         custom_html = """<html><body><h1>Custom GraphQL IDE</h1></body></html>"""
 
-        return web.Response(text=custom_html, content_type="text/html")
+        return Response(text=custom_html, content_type="text/html")
 ```

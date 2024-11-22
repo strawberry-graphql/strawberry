@@ -320,10 +320,129 @@ app = Litestar(route_handlers=[GraphQLController])
 
 ## Extending the controller
 
-The `make_graphql_controller` function returns a `GraphQLController` class that
-can be extended by overriding the following methods:
+The base `GraphQLController` class returned by `make_graphql_controller` can be
+extended by overriding any of the following methods:
 
-1. `async def render_graphql_ide(self, request: Request) -> Response`
+- `async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def decode_json(self, data: Union[str, bytes]) -> object`
+- `def encode_json(self, data: object) -> str`
+- `async def render_graphql_ide(self, request: Request) -> Response`
+
+### process_result
+
+The `process_result` option allows you to customize and/or process results
+before they are sent to the clients. This can be useful for logging errors or
+hiding them (for example to hide internal exceptions).
+
+It needs to return a `GraphQLHTTPResponse` object and accepts the request and
+execution results.
+
+```python
+import strawberry
+from strawberry.http import GraphQLHTTPResponse
+from strawberry.types import ExecutionResult
+from strawberry.litestar import make_graphql_controller
+from litestar import Request
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "world"
+
+
+schema = strawberry.Schema(Query)
+
+GraphQLController = make_graphql_controller(
+    schema,
+    path="/graphql",
+)
+
+
+class MyGraphQLController(GraphQLController):
+    async def process_result(
+        self, request: Request, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
+        data: GraphQLHTTPResponse = {"data": result.data}
+
+        if result.errors:
+            data["errors"] = [err.formatted for err in result.errors]
+
+        return data
+```
+
+In this case we are doing the default processing of the result, but it can be
+tweaked based on your needs.
+
+### decode_json
+
+`decode_json` allows to customize the decoding of HTTP and WebSocket JSON
+requests. By default we use `json.loads` but you can override this method to use
+a different decoder.
+
+```python
+import strawberry
+import orjson
+from strawberry.litestar import make_graphql_controller
+from typing import Union
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "world"
+
+
+schema = strawberry.Schema(Query)
+
+GraphQLController = make_graphql_controller(
+    schema,
+    path="/graphql",
+)
+
+
+class MyGraphQLController(GraphQLController):
+    def decode_json(self, data: Union[str, bytes]) -> object:
+        return orjson.loads(data)
+```
+
+Make sure your code raises `json.JSONDecodeError` or a subclass of it if the
+JSON cannot be decoded. The library shown in the example above, `orjson`, does
+this by default.
+
+### encode_json
+
+`encode_json` allows to customize the encoding of HTTP and WebSocket JSON
+responses. By default we use `json.dumps` but you can override this method to
+use a different encoder.
+
+```python
+import json
+import strawberry
+from strawberry.litestar import make_graphql_controller
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "world"
+
+
+schema = strawberry.Schema(Query)
+
+GraphQLController = make_graphql_controller(
+    schema,
+    path="/graphql",
+)
+
+
+class MyGraphQLController(GraphQLController):
+    def encode_json(self, data: object) -> bytes:
+        return json.dumps(data, indent=2)
+```
 
 ### render_graphql_ide
 

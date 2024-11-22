@@ -529,11 +529,14 @@ GraphQLWebsocketCommunicator(
 
 ### Extending the consumer
 
-We allow to extend `GraphQLHTTPConsumer`, by overriding the following methods:
+The base `GraphQLHTTPConsumer` class can be extended by overriding any of the
+following methods:
 
 - `async def get_context(self, request: ChannelsRequest, response: TemporalResponse) -> Context`
 - `async def get_root_value(self, request: ChannelsRequest) -> Optional[RootValue]`
-- `async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`.
+- `async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def decode_json(self, data: Union[str, bytes]) -> object`
+- `def encode_json(self, data: object) -> str`
 - `async def render_graphql_ide(self, request: ChannelsRequest) -> ChannelsResponse`
 
 #### Context
@@ -582,10 +585,13 @@ class MyGraphQLHTTPConsumer(GraphQLHTTPConsumer):
 
 ### Extending the consumer
 
-We allow to extend `GraphQLWSConsumer`, by overriding the following methods:
+The base `GraphQLWSConsumer` class can be extended by overriding any of the
+following methods:
 
-- `async def get_context(self, request: ChannelsConsumer, connection_params: Any) -> Context`
-- `async def get_root_value(self, request: ChannelsConsumer) -> Optional[RootValue]`
+- `async def get_context(self, request: GraphQLWSConsumer, response: GraphQLWSConsumer) -> Context`
+- `async def get_root_value(self, request: GraphQLWSConsumer) -> Optional[RootValue]`
+- `def decode_json(self, data: Union[str, bytes]) -> object`
+- `def encode_json(self, data: object) -> str`
 
 ### Context
 
