@@ -44,11 +44,12 @@ The `GraphQL` app accepts the following options at the moment:
 
 ## Extending the view
 
-We allow to extend the base `GraphQL` app, by overriding the following methods:
+The base `GraphQL` class can be extended by overriding any of the following
+methods:
 
-- `async get_context(self, request: Union[Request, WebSocket], response: Optional[Response] = None) -> Any`
-- `async get_root_value(self, request: Request) -> Any`
-- `async process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `async def get_context(self, request: Union[Request, WebSocket], response: Union[Response, WebSocket]) -> Context`
+- `async def get_root_value(self, request: Union[Request, WebSocket]) -> Optional[RootValue]`
+- `async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
 - `def decode_json(self, data: Union[str, bytes]) -> object`
 - `def encode_json(self, data: object) -> str`
 - `async def render_graphql_ide(self, request: Request) -> Response`
@@ -60,10 +61,17 @@ resolver. You can return anything here, by default we return a dictionary with
 the request and the response.
 
 ```python
+import strawberry
+from typing import Union
+from strawberry.asgi import GraphQL
+from starlette.requests import Request
+from starlette.responses import Response
+
+
 class MyGraphQL(GraphQL):
     async def get_context(
         self, request: Union[Request, WebSocket], response: Optional[Response] = None
-    ) -> Any:
+    ):
         return {"example": 1}
 
 
@@ -90,6 +98,9 @@ This is possible by updating the response object contained inside the context of
 the `Info` object.
 
 ```python
+import strawberry
+
+
 @strawberry.type
 class Mutation:
     @strawberry.mutation
@@ -105,6 +116,7 @@ Similarly, [background tasks](https://www.starlette.io/background/) can be set
 on the response via the context:
 
 ```python
+import strawberry
 from starlette.background import BackgroundTask
 
 
@@ -126,8 +138,15 @@ probably not used a lot but it might be useful in certain situations.
 Here's an example:
 
 ```python
+import strawberry
+from typing import Union
+from strawberry.asgi import GraphQL
+from starlette.requests import Request
+from starlette.websockets import WebSocket
+
+
 class MyGraphQL(GraphQL):
-    async def get_root_value(self, request: Request) -> Any:
+    async def get_root_value(self, request: Union[Request, WebSocket]):
         return Query(name="Patrick")
 
 
@@ -149,8 +168,10 @@ It needs to return an object of `GraphQLHTTPResponse` and accepts the request
 and the execution results.
 
 ```python
+from strawberry.asgi import GraphQL
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
+from starlette.requests import Request
 
 
 class MyGraphQL(GraphQL):
@@ -195,6 +216,10 @@ responses. By default we use `json.dumps` but you can override this method to
 use a different encoder.
 
 ```python
+import json
+from strawberry.asgi import GraphQL
+
+
 class MyGraphQLView(GraphQL):
     def encode_json(self, data: object) -> str:
         return json.dumps(data, indent=2)

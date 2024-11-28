@@ -37,12 +37,14 @@ The `GraphQLView` accepts the following options at the moment:
 
 ## Extending the view
 
-The base `GraphQLView` class can be extended by overriding the following
+The base `GraphQLView` class can be extended by overriding any of the following
 methods:
 
-- `async get_context(self, request: Request, response: Response) -> Any`
-- `async get_root_value(self, request: Request) -> Any`
-- `async process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `async def get_context(self, request: Request, response: TemporalResponse) -> Context`
+- `async def get_root_value(self, request: Request) -> Optional[RootValue]`
+- `async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def decode_json(self, data: Union[str, bytes]) -> object`
+- `def encode_json(self, data: object) -> str`
 - `async def render_graphql_ide(self, request: Request) -> HTTPResponse`
 
 ### get_context
@@ -52,8 +54,14 @@ for your resolvers. You can return anything here; by default GraphQLView returns
 a dictionary with the request.
 
 ```python
+import strawberry
+from strawberry.sanic.views import GraphQLView
+from strawberry.http.temporal_response import TemporalResponse
+from sanic.request import Request
+
+
 class MyGraphQLView(GraphQLView):
-    async def get_context(self, request: Request, response: Response) -> Any:
+    async def get_context(self, request: Request, response: TemporalResponse):
         return {"example": 1}
 
 
@@ -79,8 +87,13 @@ certain situations.
 Here's an example:
 
 ```python
+import strawberry
+from strawberry.sanic.views import GraphQLView
+from sanic.request import Request
+
+
 class MyGraphQLView(GraphQLView):
-    async def get_root_value(self, request: Request) -> Any:
+    async def get_root_value(self, request: Request):
         return Query(name="Patrick")
 
 
@@ -148,6 +161,10 @@ responses. By default we use `json.dumps` but you can override this method to
 use a different encoder.
 
 ```python
+import json
+from strawberry.sanic.views import GraphQLView
+
+
 class MyGraphQLView(GraphQLView):
     def encode_json(self, data: object) -> str:
         return json.dumps(data, indent=2)

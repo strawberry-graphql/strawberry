@@ -70,12 +70,14 @@ The `GraphQLView` accepts two options at the moment:
 
 ## Extending the view
 
-We allow to extend the base `GraphQLView`, by overriding the following methods:
+The base `GraphQLView` class can be extended by overriding any of the following
+methods:
 
-- `get_context(self, request: Request, response: TemporalResponse) -> Any`
-- `get_root_value(self, request: Request) -> Any`
-- `process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
-- `encode_json(self, response_data: object) -> str`
+- `def get_context(self, request: Request, response: TemporalResponse) -> Context`
+- `def get_root_value(self, request: Request) -> Optional[RootValue]`
+- `def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def decode_json(self, data: Union[str, bytes]) -> object`
+- `def encode_json(self, data: object) -> str`
 - `def render_graphql_ide(self, request: Request) -> Response`
 
 ### get_context
@@ -86,8 +88,14 @@ the request. By default; the `Response` object from `flask` is injected via the
 parameters.
 
 ```python
+import strawberry
+from strawberry.chalice.views import GraphQLView
+from strawberry.http.temporal import TemporalResponse
+from chalice.app import Request
+
+
 class MyGraphQLView(GraphQLView):
-    def get_context(self, response: Response) -> Any:
+    def get_context(self, request: Request, response: TemporalResponse):
         return {"example": 1}
 
 
@@ -112,8 +120,12 @@ probably not used a lot but it might be useful in certain situations.
 Here's an example:
 
 ```python
+import strawberry
+from strawberry.chalice.views import GraphQLView
+
+
 class MyGraphQLView(GraphQLView):
-    def get_root_value(self) -> Any:
+    def get_root_value(self):
         return Query(name="Patrick")
 
 
@@ -137,6 +149,7 @@ result.
 ```python
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
+from strawberry.chalice.views import GraphQLView
 
 
 class MyGraphQLView(GraphQLView):
@@ -179,6 +192,10 @@ responses. By default we use `json.dumps` but you can override this method to
 use a different encoder.
 
 ```python
+import json
+from strawberry.chalice.views import GraphQLView
+
+
 class MyGraphQLView(GraphQLView):
     def encode_json(self, data: object) -> str:
         return json.dumps(data, indent=2)
