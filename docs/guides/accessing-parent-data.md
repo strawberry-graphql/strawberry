@@ -57,14 +57,16 @@ pass us the parent of the field, we need to add a new argument with type
 `strawberry.Parent[ParentType]`, like so:
 
 ```python
-def get_full_name(parent: strawberry.Parent[Annotated["User", strawberry.lazy(".")]]) -> str:
+def get_full_name(
+    parent: strawberry.Parent[Annotated["User", strawberry.lazy(".")]]
+) -> str:
     return f"{parent.first_name} {parent.last_name}"
 ```
 
 `strawberry.Parent` tells Strawberry to pass the parent value of the field, in
 this case it would be the `User`. Because the `User` class has not been defined
-yet at the point that we define the resolver, we need to use a [lazy](
-https://strawberry.rocks/docs/types/lazy) type declaration.
+yet at the point that we define the resolver, we need to use a
+[lazy](https://strawberry.rocks/docs/types/lazy) type declaration.
 
 > **Note:** `strawberry.Parent` accepts a type argument, which will then be used
 > by your type checker to check your code!
@@ -85,7 +87,9 @@ follows Strawberry's philosophy of using type annotations. Also, with
 work:
 
 ```python
-def get_full_name(user: strawberry.Parent[Annotated["User", strawberry.lazy(".")]]) -> str:
+def get_full_name(
+    user: strawberry.Parent[Annotated["User", strawberry.lazy(".")]]
+) -> str:
     return f"{user.first_name} {user.last_name}"
 ```
 
@@ -104,7 +108,9 @@ class User:
     last_name: str
 
     @strawberry.field
-    def full_name(self, parent: strawberry.Parent[Annotated["User", strawberry.lazy(".")]]) -> str:
+    def full_name(
+        self, parent: strawberry.Parent[Annotated["User", strawberry.lazy(".")]]
+    ) -> str:
         return f"{parent.first_name} {parent.last_name}"
 ```
 
@@ -214,7 +220,9 @@ class User:
 
     @strawberry.field
     @staticmethod
-    def full_name(parent: strawberry.Parent[Annotated["User", strawberry.lazy(".")]]) -> str:
+    def full_name(
+        parent: strawberry.Parent[Annotated["User", strawberry.lazy(".")]]
+    ) -> str:
         return f"{parent.first_name} {parent.last_name}"
 ```
 
