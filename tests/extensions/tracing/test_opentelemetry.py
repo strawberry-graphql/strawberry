@@ -16,6 +16,7 @@ def test_span_holder_initialization():
     extension = OpenTelemetryExtension()
     assert extension._span_holder == {}
 
+
 def test_span_holder_initialization_sync():
     extension = OpenTelemetryExtensionSync()
     assert extension._span_holder == {}
