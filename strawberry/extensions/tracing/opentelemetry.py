@@ -37,7 +37,7 @@ ArgFilter = Callable[[Dict[str, Any], "GraphQLResolveInfo"], Dict[str, Any]]
 
 class OpenTelemetryExtension(SchemaExtension):
     _arg_filter: Optional[ArgFilter]
-    _span_holder: Dict[LifecycleStep, Span] = dict()
+    _span_holder: Dict[LifecycleStep, Span]
     _tracer: Tracer
 
     def __init__(
@@ -48,6 +48,7 @@ class OpenTelemetryExtension(SchemaExtension):
     ) -> None:
         self._arg_filter = arg_filter
         self._tracer = trace.get_tracer("strawberry")
+        self._span_holder = dict()
         if execution_context:
             self.execution_context = execution_context
 
