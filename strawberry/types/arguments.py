@@ -283,9 +283,9 @@ def __getattr__(name: str) -> Any:
 
 # TODO: check exports
 __all__ = [  # noqa: F822
+    "UNSET",  # for backwards compatibility  # type: ignore
     "StrawberryArgument",
     "StrawberryArgumentAnnotation",
-    "UNSET",  # for backwards compatibility  # type: ignore
     "argument",
     "is_unset",  # for backwards compatibility  # type: ignore
 ]

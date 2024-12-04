@@ -81,4 +81,4 @@ Void = scalar(
     description="Represents NULL values",
 )
 
-__all__ = ["Date", "DateTime", "Time", "Decimal", "UUID", "Void"]
+__all__ = ["UUID", "Date", "DateTime", "Decimal", "Time", "Void"]

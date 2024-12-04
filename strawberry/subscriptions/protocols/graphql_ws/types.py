@@ -83,15 +83,15 @@ OperationMessage = Union[
 
 
 __all__ = [
-    "ConnectionInitMessage",
-    "StartMessage",
-    "StopMessage",
-    "ConnectionTerminateMessage",
-    "ConnectionErrorMessage",
+    "CompleteMessage",
     "ConnectionAckMessage",
+    "ConnectionErrorMessage",
+    "ConnectionInitMessage",
+    "ConnectionKeepAliveMessage",
+    "ConnectionTerminateMessage",
     "DataMessage",
     "ErrorMessage",
-    "CompleteMessage",
-    "ConnectionKeepAliveMessage",
     "OperationMessage",
+    "StartMessage",
+    "StopMessage",
 ]

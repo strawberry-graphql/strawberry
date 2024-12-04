@@ -478,4 +478,4 @@ def connection(
     return f
 
 
-__all__ = ["node", "connection"]
+__all__ = ["connection", "node"]

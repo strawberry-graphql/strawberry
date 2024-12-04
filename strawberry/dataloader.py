@@ -210,8 +210,8 @@ class DataLoader(Generic[K, T]):
 def should_create_new_batch(loader: DataLoader, batch: Batch) -> bool:
     return bool(
         batch.dispatched
-        or loader.max_batch_size
-        and len(batch) >= loader.max_batch_size
+        or (loader.max_batch_size
+        and len(batch) >= loader.max_batch_size)
     )
 
 
@@ -267,13 +267,13 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
 
 
 __all__ = [
-    "DataLoader",
-    "Batch",
-    "LoaderTask",
     "AbstractCache",
+    "Batch",
+    "DataLoader",
     "DefaultCache",
-    "should_create_new_batch",
-    "get_current_batch",
+    "LoaderTask",
     "dispatch",
     "dispatch_batch",
+    "get_current_batch",
+    "should_create_new_batch",
 ]

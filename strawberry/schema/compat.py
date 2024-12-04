@@ -54,10 +54,10 @@ def is_graphql_generic(type_: Union[StrawberryType, type]) -> bool:
 
 
 __all__ = [
+    "is_enum",
+    "is_graphql_generic",
     "is_input_type",
     "is_interface_type",
     "is_scalar",
-    "is_enum",
     "is_schema_directive",
-    "is_graphql_generic",
 ]

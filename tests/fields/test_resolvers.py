@@ -1,7 +1,7 @@
 import dataclasses
 import textwrap
 import types
-from typing import Any, ClassVar, List, no_type_check
+from typing import Any, ClassVar, no_type_check
 
 import pytest
 
@@ -12,7 +12,6 @@ from strawberry.exceptions import (
     MissingReturnAnnotationError,
 )
 from strawberry.parent import Parent
-from strawberry.scalars import JSON
 from strawberry.types.fields.resolver import (
     Signature,
     StrawberryResolver,

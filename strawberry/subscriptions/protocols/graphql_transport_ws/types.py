@@ -89,13 +89,13 @@ Message = Union[
 
 
 __all__ = [
-    "ConnectionInitMessage",
+    "CompleteMessage",
     "ConnectionAckMessage",
+    "ConnectionInitMessage",
+    "ErrorMessage",
+    "Message",
+    "NextMessage",
     "PingMessage",
     "PongMessage",
     "SubscribeMessage",
-    "NextMessage",
-    "ErrorMessage",
-    "CompleteMessage",
-    "Message",
 ]

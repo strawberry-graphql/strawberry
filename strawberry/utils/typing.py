@@ -197,9 +197,9 @@ def type_has_annotation(type_: object, annotation: Type) -> bool:
 def get_parameters(annotation: Type) -> Union[Tuple[object], Tuple[()]]:
     if (
         isinstance(annotation, _GenericAlias)
-        or isinstance(annotation, type)
+        or (isinstance(annotation, type)
         and issubclass(annotation, Generic)  # type:ignore
-        and annotation is not Generic
+        and annotation is not Generic)
     ):
         return annotation.__parameters__
     else:
@@ -417,19 +417,19 @@ def eval_type(
 
 
 __all__ = [
-    "get_generic_alias",
-    "is_generic_alias",
-    "is_list",
-    "is_union",
-    "is_optional",
-    "get_optional_annotation",
-    "get_list_annotation",
-    "is_concrete_generic",
-    "is_generic_subclass",
-    "is_generic",
-    "is_type_var",
-    "is_classvar",
-    "type_has_annotation",
-    "get_parameters",
     "eval_type",
+    "get_generic_alias",
+    "get_list_annotation",
+    "get_optional_annotation",
+    "get_parameters",
+    "is_classvar",
+    "is_concrete_generic",
+    "is_generic",
+    "is_generic_alias",
+    "is_generic_subclass",
+    "is_list",
+    "is_optional",
+    "is_type_var",
+    "is_union",
+    "type_has_annotation",
 ]

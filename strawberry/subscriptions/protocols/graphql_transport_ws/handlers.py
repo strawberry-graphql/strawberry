@@ -324,14 +324,14 @@ class Operation:
     """A class encapsulating a single operation with its id. Helps enforce protocol state transition."""
 
     __slots__ = [
+        "completed",
         "handler",
         "id",
+        "operation_name",
         "operation_type",
         "query",
-        "variables",
-        "operation_name",
-        "completed",
         "task",
+        "variables",
     ]
 
     def __init__(

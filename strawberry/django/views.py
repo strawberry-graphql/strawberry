@@ -318,4 +318,4 @@ class AsyncGraphQLView(
         raise NotImplementedError
 
 
-__all__ = ["GraphQLView", "AsyncGraphQLView"]
+__all__ = ["AsyncGraphQLView", "GraphQLView"]
