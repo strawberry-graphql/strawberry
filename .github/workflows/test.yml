@@ -12,6 +12,7 @@ on:
     paths:
       - "strawberry/**"
       - "tests/**"
+      - "noxfile.py"
       - "pyproject.toml"
       - "poetry.lock"
       - ".github/workflows/test.yml"
