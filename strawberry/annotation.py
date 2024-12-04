@@ -208,7 +208,7 @@ class StrawberryAnnotation:
         )
 
         # Note that passing a single type to `Union` is equivalent to not using `Union`
-        # at all. This allows us to not di any checks for how many types have been
+        # at all. This allows us to not do any checks for how many types have been
         # passed as we can safely use `Union` for both optional types
         # (e.g. `Optional[str]`) and optional unions (e.g.
         # `Optional[Union[TypeA, TypeB]]`)
