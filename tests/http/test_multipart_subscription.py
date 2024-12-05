@@ -79,7 +79,13 @@ async def test_multipart_subscription(
                 "data": {"echo": "Hello world"},
                 "extensions": {"example": "example"},
             }
-        }
+        },
+        {
+            "payload": {
+                "data": {"echo": "Hello world"},
+                "extensions": {"example": "example"},
+            }
+        },
     ]
 
     assert response.status_code == 200
@@ -106,7 +112,13 @@ async def test_multipart_subscription_use_the_views_decode_json_method(
                 "data": {"echo": "Hello world"},
                 "extensions": {"example": "example"},
             }
-        }
+        },
+        {
+            "payload": {
+                "data": {"echo": "Hello world"},
+                "extensions": {"example": "example"},
+            }
+        },
     ]
 
     assert response.status_code == 200
