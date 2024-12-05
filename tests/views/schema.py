@@ -154,6 +154,7 @@ class Subscription:
     async def echo(self, message: str, delay: float = 0) -> AsyncGenerator[str, None]:
         await asyncio.sleep(delay)
         yield message
+        yield message
 
     @strawberry.subscription
     async def request_ping(self, info: strawberry.Info) -> AsyncGenerator[bool, None]:
