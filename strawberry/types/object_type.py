@@ -489,8 +489,8 @@ def asdict(obj: Any) -> Dict[str, object]:
 
 __all__ = [
     "StrawberryObjectDefinition",
+    "asdict",
     "input",
     "interface",
     "type",
-    "asdict",
 ]

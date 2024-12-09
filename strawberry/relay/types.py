@@ -33,7 +33,7 @@ from strawberry.types.base import (
     get_object_definition,
 )
 from strawberry.types.field import field
-from strawberry.types.info import Info  # noqa: TCH001
+from strawberry.types.info import Info  # noqa: TC001
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.object_type import interface, type
 from strawberry.types.private import StrawberryPrivate
@@ -935,17 +935,17 @@ class ListConnection(Connection[NodeType]):
 
 
 __all__ = [
+    "PREFIX",
+    "Connection",
+    "Edge",
     "GlobalID",
     "GlobalIDValueError",
+    "ListConnection",
     "Node",
     "NodeID",
     "NodeIDAnnotationError",
     "NodeIDPrivate",
     "NodeIterableType",
     "NodeType",
-    "PREFIX",
-    "Connection",
-    "Edge",
     "PageInfo",
-    "ListConnection",
 ]

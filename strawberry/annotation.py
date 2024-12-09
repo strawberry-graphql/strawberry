@@ -54,7 +54,7 @@ ASYNC_TYPES = (
 
 
 class StrawberryAnnotation:
-    __slots__ = "raw_annotation", "namespace", "__resolve_cache__"
+    __slots__ = "__resolve_cache__", "namespace", "raw_annotation"
 
     def __init__(
         self,

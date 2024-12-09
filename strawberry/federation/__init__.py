@@ -9,17 +9,17 @@ from .schema_directive import schema_directive
 from .union import union
 
 __all__ = [
+    "Schema",
     "argument",
     "enum",
     "enum_value",
     "field",
-    "mutation",
     "input",
     "interface",
     "interface_object",
-    "type",
+    "mutation",
     "scalar",
-    "Schema",
     "schema_directive",
+    "type",
     "union",
 ]

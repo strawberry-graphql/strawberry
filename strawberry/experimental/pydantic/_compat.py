@@ -283,10 +283,10 @@ else:
 
 __all__ = [
     "PydanticCompat",
+    "get_args",
+    "get_origin",
     "is_new_type",
     "lenient_issubclass",
-    "get_origin",
-    "get_args",
     "new_type_supertype",
     "smart_deepcopy",
 ]

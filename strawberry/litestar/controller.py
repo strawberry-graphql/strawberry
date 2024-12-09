@@ -474,6 +474,6 @@ def make_graphql_controller(
 
 
 __all__ = [
-    "make_graphql_controller",
     "GraphQLController",
+    "make_graphql_controller",
 ]
