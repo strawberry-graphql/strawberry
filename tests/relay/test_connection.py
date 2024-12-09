@@ -69,12 +69,10 @@ def test_nullable_connection_with_optional():
     assert not result.errors
 
 
-pytest.mark.skipif(
+@pytest.mark.skipif(
     sys.version_info < (3, 10),
     reason="pipe syntax for union is only available on python 3.10+",
 )
-
-
 def test_nullable_connection_with_pipe():
     @strawberry.type
     class Query:
