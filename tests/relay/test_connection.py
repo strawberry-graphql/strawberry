@@ -15,7 +15,9 @@ class User(Node):
     name: str = "John"
 
     @classmethod
-    def resolve_nodes(cls, *, info, node_ids, required):
+    def resolve_nodes(
+        cls, *, info: strawberry.Info, node_ids: List[Any], required: bool
+    ) -> List[Self]:
         return [cls() for _ in node_ids]
 
 
@@ -38,7 +40,7 @@ class UserConnection(Connection[User]):
 class TestPermission(BasePermission):
     message = "Not allowed"
 
-    def has_permission(self, source, info, **kwargs):
+    def has_permission(self, source, info, **kwargs: Any):
         return False
 
 

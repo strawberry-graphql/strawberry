@@ -3,9 +3,9 @@ import textwrap
 from enum import Enum
 from typing import List, Optional, Union
 
-import pydantic
 import pytest
 
+import pydantic
 import strawberry
 from tests.experimental.pydantic.utils import needs_pydantic_v1
 
