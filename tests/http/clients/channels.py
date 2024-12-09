@@ -19,6 +19,7 @@ from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.typevars import Context, RootValue
 from tests.views.schema import Query, schema
+from tests.websockets.views import OnWSConnectMixin
 
 from ..context import get_context
 from .base import (
@@ -113,7 +114,7 @@ class DebuggableSyncGraphQLHTTPConsumer(SyncGraphQLHTTPConsumer):
         return super().process_result(request, result)
 
 
-class DebuggableGraphQLWSConsumer(GraphQLWSConsumer):
+class DebuggableGraphQLWSConsumer(OnWSConnectMixin, GraphQLWSConsumer):
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
 

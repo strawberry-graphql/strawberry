@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional, Set, Union
+from typing import TYPE_CHECKING, Dict, Optional, Set, Union
 
 from graphql import GraphQLError
 
@@ -155,6 +155,13 @@ class InvalidCustomContext(Exception):
 
 class StrawberryGraphQLError(GraphQLError):
     """Use it when you want to override the graphql.GraphQLError in custom extensions."""
+
+
+class ConnectionRejectionError(Exception):
+    """Use it when you want to reject a WebSocket connection."""
+
+    def __init__(self, payload: Dict[str, object] = {}) -> None:
+        self.payload = payload
 
 
 __all__ = [

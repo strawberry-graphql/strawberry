@@ -248,8 +248,8 @@ class Subscription:
     @strawberry.subscription
     async def connection_params(
         self, info: strawberry.Info
-    ) -> AsyncGenerator[str, None]:
-        yield info.context["connection_params"]["strawberry"]
+    ) -> AsyncGenerator[strawberry.scalars.JSON, None]:
+        yield info.context["connection_params"]
 
     @strawberry.subscription
     async def long_finalizer(

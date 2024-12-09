@@ -107,6 +107,137 @@ async def test_operation_selection(ws: WebSocketClient):
     assert complete_message["id"] == "demo"
 
 
+async def test_connections_are_accepted_by_default(ws_raw: WebSocketClient):
+    await ws_raw.send_legacy_message({"type": "connection_init"})
+    connection_ack_message: ConnectionAckMessage = await ws_raw.receive_json()
+    assert connection_ack_message == {"type": "connection_ack"}
+
+    await ws_raw.close()
+    assert ws_raw.closed
+
+
+async def test_setting_a_connection_ack_payload(ws_raw: WebSocketClient):
+    await ws_raw.send_legacy_message(
+        {
+            "type": "connection_init",
+            "payload": {"test-accept": True, "ack-payload": {"token": "secret"}},
+        }
+    )
+
+    connection_ack_message: ConnectionAckMessage = await ws_raw.receive_json()
+    assert connection_ack_message == {
+        "type": "connection_ack",
+        "payload": {"token": "secret"},
+    }
+
+    await ws_raw.close()
+    assert ws_raw.closed
+
+
+async def test_connection_ack_payload_may_be_unset(ws_raw: WebSocketClient):
+    await ws_raw.send_legacy_message(
+        {
+            "type": "connection_init",
+            "payload": {"test-accept": True},
+        }
+    )
+
+    connection_ack_message: ConnectionAckMessage = await ws_raw.receive_json()
+    assert connection_ack_message == {"type": "connection_ack"}
+
+    await ws_raw.close()
+    assert ws_raw.closed
+
+
+async def test_a_connection_ack_payload_of_none_is_treated_as_unset(
+    ws_raw: WebSocketClient,
+):
+    await ws_raw.send_legacy_message(
+        {
+            "type": "connection_init",
+            "payload": {"test-accept": True, "ack-payload": None},
+        }
+    )
+
+    connection_ack_message: ConnectionAckMessage = await ws_raw.receive_json()
+    assert connection_ack_message == {"type": "connection_ack"}
+
+    await ws_raw.close()
+    assert ws_raw.closed
+
+
+async def test_rejecting_connection_results_in_error_message_and_socket_closure(
+    ws_raw: WebSocketClient,
+):
+    await ws_raw.send_legacy_message(
+        {"type": "connection_init", "payload": {"test-reject": True}}
+    )
+
+    connection_error_message: ConnectionErrorMessage = await ws_raw.receive_json()
+    assert connection_error_message == {"type": "connection_error", "payload": {}}
+
+    await ws_raw.receive(timeout=2)
+    assert ws_raw.closed
+    assert ws_raw.close_code == 1011
+    assert not ws_raw.close_reason
+
+
+async def test_rejecting_connection_with_custom_connection_error_payload(
+    ws_raw: WebSocketClient,
+):
+    await ws_raw.send_legacy_message(
+        {
+            "type": "connection_init",
+            "payload": {"test-reject": True, "err-payload": {"custom": "error"}},
+        }
+    )
+
+    connection_error_message: ConnectionErrorMessage = await ws_raw.receive_json()
+    assert connection_error_message == {
+        "type": "connection_error",
+        "payload": {"custom": "error"},
+    }
+
+    await ws_raw.receive(timeout=2)
+    assert ws_raw.closed
+    assert ws_raw.close_code == 1011
+    assert not ws_raw.close_reason
+
+
+async def test_context_can_be_modified_from_within_on_ws_connect(
+    ws_raw: WebSocketClient,
+):
+    await ws_raw.send_legacy_message(
+        {
+            "type": "connection_init",
+            "payload": {"test-modify": True},
+        }
+    )
+
+    connection_ack_message: ConnectionAckMessage = await ws_raw.receive_json()
+    assert connection_ack_message == {"type": "connection_ack"}
+
+    await ws_raw.send_legacy_message(
+        {
+            "type": "start",
+            "id": "demo",
+            "payload": {
+                "query": "subscription { connectionParams }",
+            },
+        }
+    )
+
+    data_message: DataMessage = await ws_raw.receive_json()
+    assert data_message["type"] == "data"
+    assert data_message["id"] == "demo"
+    assert data_message["payload"]["data"] == {
+        "connectionParams": {"test-modify": True, "modified": True}
+    }
+
+    await ws_raw.close()
+    assert ws_raw.closed
+
+
 async def test_sends_keep_alive(aiohttp_app_client: HttpClient):
     aiohttp_app_client.create_app(keep_alive=True, keep_alive_interval=0.1)
     async with aiohttp_app_client.ws_connect(
@@ -589,7 +720,9 @@ async def test_injects_connection_params(aiohttp_app_client: HttpClient):
         data_message: DataMessage = await ws.receive_json()
         assert data_message["type"] == "data"
         assert data_message["id"] == "demo"
-        assert data_message["payload"]["data"] == {"connectionParams": "rocks"}
+        assert data_message["payload"]["data"] == {
+            "connectionParams": {"strawberry": "rocks"}
+        }
 
         await ws.send_legacy_message({"type": "stop", "id": "demo"})
 
