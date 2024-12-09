@@ -24,7 +24,6 @@ from typing import (
     Type,
     Union,
     cast,
-    overload,
 )
 from typing_extensions import Annotated, get_args, get_origin
 
@@ -46,7 +45,7 @@ from strawberry.types.lazy_type import LazyType
 from strawberry.utils.aio import asyncgen_to_list
 from strawberry.utils.typing import eval_type, is_generic_alias, is_union
 
-from .types import Connection, GlobalID, Node, NodeIterableType
+from .types import Connection, GlobalID, Node
 
 if TYPE_CHECKING:
     from typing_extensions import Literal
@@ -345,42 +344,6 @@ else:
 ConnectionGraphQLType = Any
 
 
-@overload
-def connection(
-    graphql_type: Optional[ConnectionGraphQLType] = None,
-    *,
-    resolver: Optional[_RESOLVER_TYPE[NodeIterableType[Any]]] = None,
-    name: Optional[str] = None,
-    is_subscription: bool = False,
-    description: Optional[str] = None,
-    init: Literal[True] = True,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
-    default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: List[FieldExtension] = (),  # type: ignore
-) -> Any: ...
-
-
-@overload
-def connection(
-    graphql_type: Optional[ConnectionGraphQLType] = None,
-    *,
-    name: Optional[str] = None,
-    is_subscription: bool = False,
-    description: Optional[str] = None,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
-    default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: List[FieldExtension] = (),  # type: ignore
-) -> StrawberryField: ...
-
-
 def connection(
     graphql_type: Optional[ConnectionGraphQLType] = None,
     *,
@@ -397,7 +360,7 @@ def connection(
     extensions: List[FieldExtension] = (),  # type: ignore
     # This init parameter is used by pyright to determine whether this field
     # is added in the constructor or not. It is not used to change
-    # any behavior at the moment.
+    # any behaviour at the moment.
     init: Literal[True, False, None] = None,
 ) -> Any:
     """Annotate a property or a method to create a relay connection field.
