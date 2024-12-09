@@ -1,7 +1,8 @@
 import typing
 
-import strawberry
 from pydantic import BaseModel
+
+import strawberry
 from strawberry.federation.schema_directives import Key
 
 
