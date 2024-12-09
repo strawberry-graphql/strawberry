@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import copy
 import dataclasses
+import operator
 import sys
 from functools import cached_property
 from typing import (
@@ -74,9 +75,11 @@ def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
     return False
 
 
+DEFAULT_RESOLVER_TYPE = Callable[[Any, str], object]
+
+
 class StrawberryField(dataclasses.Field):
     type_annotation: Optional[StrawberryAnnotation]
-    default_resolver: Callable[[Any, str], object] = getattr
 
     def __init__(
         self,
@@ -124,6 +127,7 @@ class StrawberryField(dataclasses.Field):
         self.description: Optional[str] = description
         self.origin = origin
 
+        self._default_resolver: Optional[DEFAULT_RESOLVER_TYPE] = None
         self._arguments: Optional[List[StrawberryArgument]] = None
         self._base_resolver: Optional[StrawberryResolver] = None
         if base_resolver is not None:
@@ -224,6 +228,22 @@ class StrawberryField(dataclasses.Field):
             return self.base_resolver(*args, **kwargs)
 
         return self.default_resolver(source, self.python_name)
+
+    @property
+    def default_resolver(self) -> DEFAULT_RESOLVER_TYPE:
+        if dict in self.origin.__mro__:
+            return operator.getitem
+
+        if self._default_resolver:
+            return self._default_resolver
+
+        return getattr
+
+    @default_resolver.setter
+    def default_resolver(self, default_resolver: DEFAULT_RESOLVER_TYPE) -> None:
+        # TODO: config is settings this, but if we use a typed dict, then it
+        # might be invalid
+        self._default_resolver = default_resolver
 
     @property
     def is_basic_field(self) -> bool:
