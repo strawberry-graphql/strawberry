@@ -156,11 +156,11 @@ class QueryComplexityEstimator(SchemaExtension):
                 return 1
 
             # non-list object fields cost the sum of their children
-            if "page_size" not in field_kwargs:
+            if "page_size" not in arguments:
                 return children_sum
 
             # paginated fields cost gets multiplied by page size
-            return children_sum * field_kwargs["page_size"]
+            return children_sum * arguments["page_size"]
 
 
     # initialize your rate-limiter somehow
@@ -205,7 +205,9 @@ class QueryComplexityEstimator(SchemaExtension):
 
         Args:
             default_estimator: The default complexity estimator for fields
-                that don't specify overrides.
+                that don't specify overrides. If it's an integer, the default
+                estimator will be a `ConstantFieldComplexityEstimator` with
+                the integer value.
             callback: Called each time complexity is estimated. Receives a
                 dictionary which is a map of estimated complexity for each
                 operation.
