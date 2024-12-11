@@ -18,12 +18,13 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import Annotated, Self, get_args, get_origin
+from typing_extensions import Annotated, Required, Self, get_args, get_origin
 
 from strawberry.types.base import (
     StrawberryList,
     StrawberryObjectDefinition,
     StrawberryOptional,
+    StrawberryRequired,
     StrawberryTypeVar,
     get_object_definition,
     has_object_definition,
@@ -40,7 +41,6 @@ if TYPE_CHECKING:
     from strawberry.types.base import StrawberryType
     from strawberry.types.field import StrawberryField
     from strawberry.types.union import StrawberryUnion
-
 
 ASYNC_TYPES = (
     abc.AsyncGenerator,
@@ -160,6 +160,8 @@ class StrawberryAnnotation:
             return self.create_enum(evaled_type)
         elif self._is_optional(evaled_type, args):
             return self.create_optional(evaled_type)
+        elif self._is_required(evaled_type):
+            return self.create_required(evaled_type)
         elif self._is_union(evaled_type, args):
             return self.create_union(evaled_type, args)
         elif is_type_var(evaled_type) or evaled_type is Self:
@@ -220,6 +222,18 @@ class StrawberryAnnotation:
         ).resolve()
 
         return StrawberryOptional(of_type)
+
+    def create_required(self, evaled_type: Any) -> StrawberryRequired:
+        types = get_args(evaled_type)
+
+        child_type = Union[types]  # type: ignore
+
+        of_type = StrawberryAnnotation(
+            annotation=child_type,
+            namespace=self.namespace,
+        ).resolve()
+
+        return StrawberryRequired(of_type)
 
     def create_type_var(self, evaled_type: TypeVar) -> StrawberryTypeVar:
         return StrawberryTypeVar(evaled_type)
@@ -299,6 +313,12 @@ class StrawberryAnnotation:
 
         # A Union to be optional needs to have at least one None type
         return any(x is type(None) for x in types)
+
+    @classmethod
+    def _is_required(cls, annotation: Any) -> bool:
+        """Returns True if the annotation is Required[SomeType]."""
+        # check if the annotation is typing.Required
+        return annotation is Required
 
     @classmethod
     def _is_list(cls, annotation: Any) -> bool:
