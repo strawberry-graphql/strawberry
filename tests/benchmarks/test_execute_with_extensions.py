@@ -1,0 +1,47 @@
+import asyncio
+from inspect import isawaitable
+from pathlib import Path
+from typing import Any, Dict, List
+
+import pytest
+from pytest_codspeed.plugin import BenchmarkFixture
+
+import strawberry
+from strawberry.extensions.base_extension import SchemaExtension
+from strawberry.utils.await_maybe import AwaitableOrValue
+
+from .api import Query
+
+
+class SimpleExtension(SchemaExtension):
+    def get_results(self) -> AwaitableOrValue[Dict[str, Any]]:
+        return super().get_results()
+
+
+class ResolveExtension(SchemaExtension):
+    async def resolve(self, _next, root, info, *args: Any, **kwargs: Any) -> Any:
+        result = _next(root, info, *args, **kwargs)
+        if isawaitable(result):
+            result = await result
+        return result
+
+
+ROOT = Path(__file__).parent / "queries"
+
+items_query = (ROOT / "items.graphql").read_text()
+
+
+@pytest.mark.benchmark
+@pytest.mark.parametrize("items", [100, 1_000])
+@pytest.mark.parametrize("extensions", [[], [SimpleExtension()], [ResolveExtension()]])
+def test_execute(
+    benchmark: BenchmarkFixture, items: int, extensions: List[SchemaExtension]
+):
+    schema = strawberry.Schema(query=Query, extensions=extensions)
+
+    def run():
+        return asyncio.run(
+            schema.execute(items_query, variable_values={"count": items})
+        )
+
+    benchmark(run)
