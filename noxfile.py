@@ -144,6 +144,7 @@ def test_pydantic(session: Session, pydantic: str, gql_core: str) -> None:
         "-m",
         "pydantic",
         "--ignore=tests/cli",
+        "--ignore=tests/benchmarks",
     )
 
 
