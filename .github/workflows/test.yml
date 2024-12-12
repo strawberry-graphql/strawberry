@@ -12,6 +12,7 @@ on:
     paths:
       - "strawberry/**"
       - "tests/**"
+      - "noxfile.py"
       - "pyproject.toml"
       - "poetry.lock"
       - ".github/workflows/test.yml"
@@ -105,7 +106,7 @@ jobs:
         if: steps.setup-python.outputs.cache-hit != 'true'
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v3
+        uses: CodSpeedHQ/action@v3.2.0
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: poetry run pytest tests/benchmarks --codspeed
