@@ -48,4 +48,6 @@ def test_execute(
             schema.execute(items_query, variable_values={"count": items})
         )
 
-    benchmark(run)
+    results = benchmark(run)
+
+    assert results.errors is None
