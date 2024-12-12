@@ -32,8 +32,12 @@ items_query = (ROOT / "items.graphql").read_text()
 
 
 @pytest.mark.benchmark
-@pytest.mark.parametrize("items", [100, 1_000])
-@pytest.mark.parametrize("extensions", [[], [SimpleExtension()], [ResolveExtension()]])
+@pytest.mark.parametrize("items", [100, 1_000], ids=lambda x: f"items_{x}")
+@pytest.mark.parametrize(
+    "extensions",
+    [[], [SimpleExtension()], [ResolveExtension()]],
+    ids=lambda x: f"with_{'_'.join(type(ext).__name__.lower() for ext in x) or 'no_extensions'}",
+)
 def test_execute(
     benchmark: BenchmarkFixture, items: int, extensions: List[SchemaExtension]
 ):
