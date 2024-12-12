@@ -1,5 +1,4 @@
 import asyncio
-from inspect import isawaitable
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -21,7 +20,7 @@ class SimpleExtension(SchemaExtension):
 class ResolveExtension(SchemaExtension):
     async def resolve(self, _next, root, info, *args: Any, **kwargs: Any) -> Any:
         result = _next(root, info, *args, **kwargs)
-        if isawaitable(result):
+        if self.should_await(_next):
             result = await result
         return result
 

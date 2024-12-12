@@ -58,7 +58,7 @@ class SchemaExtension:
         some performance hits, especially because we know if the resolver
         is async or not at schema creation time.
         """
-        return _next._is_async
+        return _next._is_async  # type: ignore
 
     def resolve(
         self,
