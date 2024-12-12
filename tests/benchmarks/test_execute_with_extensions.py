@@ -20,7 +20,7 @@ class SimpleExtension(SchemaExtension):
 class ResolveExtension(SchemaExtension):
     async def resolve(self, _next, root, info, *args: Any, **kwargs: Any) -> Any:
         result = _next(root, info, *args, **kwargs)
-        if self.should_await(_next):
+        if _next._is_async:  #  type: ignore
             result = await result
         return result
 
