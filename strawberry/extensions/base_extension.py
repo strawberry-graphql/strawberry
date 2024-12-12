@@ -50,6 +50,16 @@ class SchemaExtension:
         """Called before and after the execution step."""
         yield None
 
+    def should_await(self, _next: Callable) -> bool:
+        """Whether the extension should await the result from next.
+
+        This relies on the _is_async attribute set by the `SchemaConverter`,
+        normally you'd use `inspect.isawaitable` instead, but that has
+        some performance hits, especially because we know if the resolver
+        is async or not at schema creation time.
+        """
+        return _next._is_async
+
     def resolve(
         self,
         _next: Callable,
