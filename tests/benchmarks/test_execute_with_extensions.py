@@ -32,7 +32,7 @@ items_query = (ROOT / "items.graphql").read_text()
 
 
 @pytest.mark.benchmark
-@pytest.mark.parametrize("items", [100, 1_000], ids=lambda x: f"items_{x}")
+@pytest.mark.parametrize("items", [1_000, 10_000], ids=lambda x: f"items_{x}")
 @pytest.mark.parametrize(
     "extensions",
     [[], [SimpleExtension()], [ResolveExtension()]],
