@@ -52,4 +52,4 @@ async def test_graphql_error(communicator):
 
 async def test_simple_connection_params(communicator):
     async for res in communicator.subscribe(query="subscription { connectionParams }"):
-        assert res.data["connectionParams"] == "Hi"
+        assert res.data["connectionParams"]["strawberry"] == "Hi"

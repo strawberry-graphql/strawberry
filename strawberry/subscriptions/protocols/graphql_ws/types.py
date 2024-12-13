@@ -37,6 +37,7 @@ class ConnectionErrorMessage(TypedDict):
 
 class ConnectionAckMessage(TypedDict):
     type: Literal["connection_ack"]
+    payload: NotRequired[Dict[str, object]]
 
 
 class DataMessagePayload(TypedDict):
