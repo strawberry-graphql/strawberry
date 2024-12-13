@@ -41,6 +41,7 @@ def test_basic_pyinstrument():
         content = report_file_path.read_text("utf-8")
 
     assert not result.errors
+    assert result.data
     assert result.data["theField"] == 4
 
     assert "function_called_by_us_a" in content
