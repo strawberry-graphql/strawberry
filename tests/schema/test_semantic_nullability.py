@@ -1,19 +1,23 @@
 import textwrap
-from typing import List, Optional, Required
+from typing import List, Optional
+
+import pytest
 
 import strawberry
+from strawberry.exceptions.semantic_nullability import InvalidNullReturnError
 from strawberry.schema.config import StrawberryConfig
+from strawberry.types.strict_non_null import NonNull
 
 
-def test_entities_type_when_no_type_has_keys():
-    @strawberry.type()
+def test_semantic_nullability_enabled():
+    @strawberry.type
     class Product:
         upc: str
         name: str
-        price: Required[int]
+        price: NonNull[int]
         weight: Optional[int]
 
-    @strawberry.federation.type(extend=True)
+    @strawberry.type
     class Query:
         @strawberry.field
         def top_products(self, first: int) -> List[Product]:
@@ -24,40 +28,33 @@ def test_entities_type_when_no_type_has_keys():
     )
 
     expected_sdl = textwrap.dedent("""
+        directive @semanticNonNull(level: Int = null) on FIELD_DEFINITION | OBJECT | INTERFACE | SCALAR | ENUM
+
         type Product {
-          upc: String!
-          name: String
-          price: Int
-          weight: Int
+          upc: String @semanticNonNull(level: null)
+          name: String @semanticNonNull(level: null)
+          price: Int!
+          weight: Int @semanticNonNull(level: null)
         }
 
-        extend type Query {
-          _service: _Service!
-          topProducts(first: Int!): [Product!]!
-        }
-
-        scalar _Any
-
-        type _Service {
-          sdl: String!
+        type Query {
+          topProducts(first: Int): [Product] @semanticNonNull(level: null)
         }
     """).strip()
 
     assert str(schema) == expected_sdl
 
-    query = """
-        query {
-            __type(name: "_Entity") {
-                kind
-                possibleTypes {
-                    name
-                }
-            }
-        }
-    """
 
-    result = schema.execute_sync(query)
+def test_semantic_nullability_error_on_null():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def greeting(self) -> str:
+            return None
 
-    assert not result.errors
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(semantic_nullability_beta=True)
+    )
 
-    assert result.data == {"__type": None}
+    with pytest.raises(InvalidNullReturnError):
+        result = schema.execute_sync("{ greeting }")

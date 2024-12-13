@@ -18,7 +18,7 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import Annotated, Required, Self, get_args, get_origin
+from typing_extensions import Annotated, Self, get_args, get_origin
 
 from strawberry.types.base import (
     StrawberryList,
@@ -34,6 +34,7 @@ from strawberry.types.enum import enum as strawberry_enum
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.private import is_private
 from strawberry.types.scalar import ScalarDefinition
+from strawberry.types.strict_non_null import STRAWBERRY_REQUIRED_TOKEN
 from strawberry.types.unset import UNSET
 from strawberry.utils.typing import eval_type, is_generic, is_type_var
 
@@ -160,7 +161,7 @@ class StrawberryAnnotation:
             return self.create_enum(evaled_type)
         elif self._is_optional(evaled_type, args):
             return self.create_optional(evaled_type)
-        elif self._is_required(evaled_type):
+        elif self._is_required(evaled_type, args):
             return self.create_required(evaled_type)
         elif self._is_union(evaled_type, args):
             return self.create_union(evaled_type, args)
@@ -224,12 +225,8 @@ class StrawberryAnnotation:
         return StrawberryOptional(of_type)
 
     def create_required(self, evaled_type: Any) -> StrawberryRequired:
-        types = get_args(evaled_type)
-
-        child_type = Union[types]  # type: ignore
-
         of_type = StrawberryAnnotation(
-            annotation=child_type,
+            annotation=evaled_type,
             namespace=self.namespace,
         ).resolve()
 
@@ -315,10 +312,9 @@ class StrawberryAnnotation:
         return any(x is type(None) for x in types)
 
     @classmethod
-    def _is_required(cls, annotation: Any) -> bool:
+    def _is_required(cls, annotation: Any, args: List[Any]) -> bool:
         """Returns True if the annotation is Required[SomeType]."""
-        # check if the annotation is typing.Required
-        return annotation is Required
+        return STRAWBERRY_REQUIRED_TOKEN in args
 
     @classmethod
     def _is_list(cls, annotation: Any) -> bool:
