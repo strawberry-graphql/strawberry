@@ -22,7 +22,7 @@ def function_called_by_us_c():
 
 
 def test_basic_pyinstrument():
-    with tempfile.NamedTemporaryFile() as report_file:
+    with tempfile.NamedTemporaryFile(delete=False) as report_file:
         report_file_path = Path(report_file.name)
 
         @strawberry.type
