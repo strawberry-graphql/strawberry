@@ -1,4 +1,5 @@
-from typing import Annotated, TypeVar
+from typing import TypeVar
+from typing_extensions import Annotated
 
 STRAWBERRY_REQUIRED_TOKEN = "strawberry_required"
 
