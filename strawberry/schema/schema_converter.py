@@ -72,6 +72,7 @@ from strawberry.types.union import StrawberryUnion
 from strawberry.types.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
 
+from ..exceptions.semantic_nullability import InvalidNullReturnError
 from ..extensions.field_extension import build_field_extension_resolvers
 from ..types.semantic_non_null import SemanticNonNull
 from . import compat
@@ -403,9 +404,7 @@ class GraphQLCoreConverter:
             def resolver_wrapper(*args: Any, **kwargs: Any):  # noqa
                 result = resolver(*args, **kwargs)
                 if result is None:
-                    raise ValueError(
-                        f"Field '{field.name}' returned null, but it is semantic non-nullable."
-                    )
+                    raise InvalidNullReturnError()
 
             maybe_wrapped_resolver = resolver_wrapper
 
