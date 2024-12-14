@@ -172,11 +172,9 @@ class AioHttpClient(HttpClient):
         *,
         protocols: List[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
-        server = TestServer(self.app)
-        await server.start_server()
-        client = TestClient(server)
-        async with client.ws_connect(url, protocols=protocols) as ws:
-            yield AioWebSocketClient(ws)
+        async with TestClient(TestServer(self.app)) as client:
+            async with client.ws_connect(url, protocols=protocols) as ws:
+                yield AioWebSocketClient(ws)
 
 
 class AioWebSocketClient(WebSocketClient):
