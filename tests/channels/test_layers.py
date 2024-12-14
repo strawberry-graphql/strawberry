@@ -58,6 +58,7 @@ async def test_no_layers():
             pass
 
 
+@pytest.mark.django_db
 async def test_channel_listen(ws: WebsocketCommunicator):
     from channels.layers import get_channel_layer
 
@@ -107,6 +108,7 @@ async def test_channel_listen(ws: WebsocketCommunicator):
     await ws.send_json_to(CompleteMessage({"id": "sub1", "type": "complete"}))
 
 
+@pytest.mark.django_db
 async def test_channel_listen_with_confirmation(ws: WebsocketCommunicator):
     from channels.layers import get_channel_layer
 
@@ -162,6 +164,7 @@ async def test_channel_listen_with_confirmation(ws: WebsocketCommunicator):
     await ws.send_json_to(CompleteMessage({"id": "sub1", "type": "complete"}))
 
 
+@pytest.mark.django_db
 async def test_channel_listen_timeout(ws: WebsocketCommunicator):
     from channels.layers import get_channel_layer
 
@@ -195,6 +198,7 @@ async def test_channel_listen_timeout(ws: WebsocketCommunicator):
     assert complete_message == {"id": "sub1", "type": "complete"}
 
 
+@pytest.mark.django_db
 async def test_channel_listen_timeout_cm(ws: WebsocketCommunicator):
     from channels.layers import get_channel_layer
 
@@ -234,6 +238,7 @@ async def test_channel_listen_timeout_cm(ws: WebsocketCommunicator):
     assert complete_message == {"id": "sub1", "type": "complete"}
 
 
+@pytest.mark.django_db
 async def test_channel_listen_no_message_on_channel(ws: WebsocketCommunicator):
     from channels.layers import get_channel_layer
 
@@ -275,6 +280,7 @@ async def test_channel_listen_no_message_on_channel(ws: WebsocketCommunicator):
     assert complete_message == {"id": "sub1", "type": "complete"}
 
 
+@pytest.mark.django_db
 async def test_channel_listen_no_message_on_channel_cm(ws: WebsocketCommunicator):
     from channels.layers import get_channel_layer
 
@@ -322,6 +328,7 @@ async def test_channel_listen_no_message_on_channel_cm(ws: WebsocketCommunicator
     assert complete_message == {"id": "sub1", "type": "complete"}
 
 
+@pytest.mark.django_db
 async def test_channel_listen_group(ws: WebsocketCommunicator):
     from channels.layers import get_channel_layer
 
@@ -390,6 +397,7 @@ async def test_channel_listen_group(ws: WebsocketCommunicator):
     await ws.send_json_to(CompleteMessage({"id": "sub1", "type": "complete"}))
 
 
+@pytest.mark.django_db
 async def test_channel_listen_group_cm(ws: WebsocketCommunicator):
     from channels.layers import get_channel_layer
 
@@ -464,6 +472,7 @@ async def test_channel_listen_group_cm(ws: WebsocketCommunicator):
     await ws.send_json_to(CompleteMessage({"id": "sub1", "type": "complete"}))
 
 
+@pytest.mark.django_db
 async def test_channel_listen_group_twice(ws: WebsocketCommunicator):
     from channels.layers import get_channel_layer
 
