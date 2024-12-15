@@ -1,5 +1,6 @@
 # type: ignore
 import typing
+from contextlib import nullcontext
 from typing import Any, Generic, List, NamedTuple, Optional, Type, TypeVar, Union
 
 import pytest
@@ -512,18 +513,23 @@ def arbitrarily_named_info(icon: str, info_argument: Info) -> str:
 
 
 @pytest.mark.parametrize(
-    "resolver",
+    ("resolver", "deprecation"),
     (
-        pytest.param(name_based_info),
-        pytest.param(type_based_info),
-        pytest.param(generic_type_based_info),
-        pytest.param(arbitrarily_named_info),
+        pytest.param(
+            name_based_info,
+            pytest.deprecated_call(match="Argument name-based matching of"),
+        ),
+        pytest.param(type_based_info, nullcontext()),
+        pytest.param(generic_type_based_info, nullcontext()),
+        pytest.param(arbitrarily_named_info, nullcontext()),
     ),
 )
-def test_info_argument(resolver):
-    @strawberry.type
-    class ResolverGreeting:
-        hello: str = strawberry.field(resolver=resolver)
+def test_info_argument(resolver, deprecation):
+    with deprecation:
+
+        @strawberry.type
+        class ResolverGreeting:
+            hello: str = strawberry.field(resolver=resolver)
 
     schema = strawberry.Schema(query=ResolverGreeting)
     result = schema.execute_sync('{ hello(icon: "🍓") }')

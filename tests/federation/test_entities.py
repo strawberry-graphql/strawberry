@@ -375,7 +375,9 @@ def test_propagates_original_error_message_and_graphql_error_metadata():
             exception = Exception("Foo bar")
             exception.extensions = {"baz": "qux"}
             raise located_error(
-                exception, nodes=info.field_nodes[0], path=["_entities_override", 0]
+                exception,
+                nodes=info._raw_info.field_nodes[0],
+                path=["_entities_override", 0],
             )
 
     @strawberry.federation.type(extend=True)

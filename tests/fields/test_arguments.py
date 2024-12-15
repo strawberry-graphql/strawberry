@@ -1,5 +1,4 @@
 import sys
-import warnings
 from typing import List, Optional, Union
 from typing_extensions import Annotated
 
@@ -488,11 +487,19 @@ def test_unset_deprecation_warning():
 
 
 def test_deprecated_unset():
-    with pytest.deprecated_call():
+    warning = "`is_unset` is deprecated use `value is UNSET` instead"
+
+    with pytest.deprecated_call(match=warning):
         from strawberry.types.unset import is_unset
 
-    with warnings.catch_warnings(record=False):
+    with pytest.deprecated_call(match=warning):
         assert is_unset(UNSET)
+
+    with pytest.deprecated_call(match=warning):
         assert not is_unset(None)
+
+    with pytest.deprecated_call(match=warning):
         assert not is_unset(False)
+
+    with pytest.deprecated_call(match=warning):
         assert not is_unset("hello world")

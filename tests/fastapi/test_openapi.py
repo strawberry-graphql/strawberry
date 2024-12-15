@@ -26,7 +26,7 @@ def test_disable_graphiql_view_and_allow_queries_via_get():
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
     graphql_app = GraphQLRouter[None, None](
-        schema, graphiql=False, allow_queries_via_get=False
+        schema, graphql_ide=None, allow_queries_via_get=False
     )
     app.include_router(graphql_app, prefix="/graphql")
 

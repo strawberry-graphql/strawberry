@@ -2,7 +2,7 @@
 import enum
 import sys
 import textwrap
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, Union
 from typing_extensions import Annotated, TypeAlias
 
 import pytest
@@ -173,7 +173,7 @@ def test_lazy_type_in_union():
     ActiveType = LazyType("LaziestType", "test_lazy_types")
     ActiveEnum = LazyType("LazyEnum", "test_lazy_types")
 
-    something = union(name="CoolUnion", types=(ActiveType, ActiveEnum))
+    something = Annotated[Union[ActiveType, ActiveEnum], union(name="CoolUnion")]
     annotation = StrawberryAnnotation(something)
 
     resolved = annotation.resolve()
@@ -190,7 +190,7 @@ def test_lazy_function_in_union():
     ActiveType = Annotated["LaziestType", strawberry.lazy("test_lazy_types")]
     ActiveEnum = Annotated["LazyEnum", strawberry.lazy("test_lazy_types")]
 
-    something = union(name="CoolUnion", types=(ActiveType, ActiveEnum))
+    something = Annotated[Union[ActiveType, ActiveEnum], union(name="CoolUnion")]
     annotation = StrawberryAnnotation(something)
 
     resolved = annotation.resolve()

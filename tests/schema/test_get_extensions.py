@@ -1,5 +1,5 @@
 import strawberry
-from strawberry.directive import DirectiveLocation
+from strawberry.directive import DirectiveLocation, DirectiveValue
 from strawberry.extensions import SchemaExtension
 from strawberry.extensions.directives import (
     DirectivesExtension,
@@ -13,7 +13,7 @@ class Query:
 
 
 @strawberry.directive(locations=[DirectiveLocation.FIELD])
-def uppercase(value: str) -> str:
+def uppercase(value: DirectiveValue[str]) -> str:
     return value.upper()
 
 
