@@ -137,7 +137,7 @@ def test_create_mutation_type():
         username: str
 
     @strawberry.mutation
-    def make_user(info, username: str) -> User:
+    def make_user(username: str) -> User:
         return User(username=username)
 
     Mutation = create_type("Mutation", [make_user])
@@ -156,7 +156,7 @@ def test_create_mutation_type_with_params():
         username: str
 
     @strawberry.mutation(name="makeNewUser", description="Make a new user")
-    def make_user(info, username: str) -> User:
+    def make_user(username: str) -> User:
         return User(username=username)
 
     Mutation = create_type("Mutation", [make_user])
@@ -176,7 +176,7 @@ def test_create_schema():
         id: strawberry.ID
 
     @strawberry.field
-    def get_user_by_id(info, id: strawberry.ID) -> User:
+    def get_user_by_id(id: strawberry.ID) -> User:
         return User(id=id)
 
     Query = create_type("Query", [get_user_by_id])

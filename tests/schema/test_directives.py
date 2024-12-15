@@ -40,6 +40,7 @@ def test_supports_default_directives():
     )
 
     assert not result.errors
+    assert result.data
     assert result.data["person"] == {"name": "Jess"}
 
     query = """query ($skipPoints: Boolean!){
@@ -53,6 +54,7 @@ def test_supports_default_directives():
     result = schema.execute_sync(query, variable_values={"skipPoints": False})
 
     assert not result.errors
+    assert result.data
     assert result.data["person"] == {"name": "Jess", "points": 2000}
 
 
@@ -80,6 +82,7 @@ async def test_supports_default_directives_async():
     result = await schema.execute(query, variable_values={"includePoints": False})
 
     assert not result.errors
+    assert result.data
     assert result.data["person"] == {"name": "Jess"}
 
     query = """query ($skipPoints: Boolean!){
@@ -93,6 +96,7 @@ async def test_supports_default_directives_async():
     result = await schema.execute(query, variable_values={"skipPoints": False})
 
     assert not result.errors
+    assert result.data
     assert result.data["person"] == {"name": "Jess", "points": 2000}
 
 
@@ -104,7 +108,7 @@ def test_can_declare_directives():
     @strawberry.directive(
         locations=[DirectiveLocation.FIELD], description="Make string uppercase"
     )
-    def uppercase(value: str, example: str):
+    def uppercase(value: DirectiveValue[str], example: str):
         return value.upper()
 
     schema = strawberry.Schema(query=Query, directives=[uppercase])
@@ -171,11 +175,11 @@ def test_runs_directives():
     @strawberry.directive(
         locations=[DirectiveLocation.FIELD], description="Make string uppercase"
     )
-    def turn_uppercase(value: str):
+    def turn_uppercase(value: DirectiveValue[str]):
         return value.upper()
 
     @strawberry.directive(locations=[DirectiveLocation.FIELD])
-    def replace(value: str, old: str, new: str):
+    def replace(value: DirectiveValue[str], old: str, new: str):
         return value.replace(old, new)
 
     schema = strawberry.Schema(query=Query, directives=[turn_uppercase, replace])
@@ -214,11 +218,11 @@ def test_runs_directives_camel_case_off():
     @strawberry.directive(
         locations=[DirectiveLocation.FIELD], description="Make string uppercase"
     )
-    def turn_uppercase(value: str):
+    def turn_uppercase(value: DirectiveValue[str]):
         return value.upper()
 
     @strawberry.directive(locations=[DirectiveLocation.FIELD])
-    def replace(value: str, old: str, new: str):
+    def replace(value: DirectiveValue[str], old: str, new: str):
         return value.replace(old, new)
 
     schema = strawberry.Schema(
@@ -242,6 +246,7 @@ def test_runs_directives_camel_case_off():
     result = schema.execute_sync(query, variable_values={"identified": False})
 
     assert not result.errors
+    assert result.data
     assert result.data["person"]["name"] == "JESS"
     assert result.data["jess"]["name"] == "Jessica"
     assert result.data["johnDoe"].get("name") is None
@@ -262,7 +267,7 @@ async def test_runs_directives_async():
     @strawberry.directive(
         locations=[DirectiveLocation.FIELD], description="Make string uppercase"
     )
-    async def uppercase(value: str):
+    async def uppercase(value: DirectiveValue[str]):
         return value.upper()
 
     schema = strawberry.Schema(query=Query, directives=[uppercase])
@@ -293,7 +298,7 @@ def test_runs_directives_with_list_params():
             return Person()
 
     @strawberry.directive(locations=[DirectiveLocation.FIELD])
-    def replace(value: str, old_list: List[str], new: str):
+    def replace(value: DirectiveValue[str], old_list: List[str], new: str):
         for old in old_list:
             value = value.replace(old, new)
 
@@ -310,6 +315,7 @@ def test_runs_directives_with_list_params():
     result = schema.execute_sync(query, variable_values={"identified": False})
 
     assert not result.errors
+    assert result.data
     assert result.data["person"]["name"] == "JESS"
 
 
@@ -327,7 +333,7 @@ def test_runs_directives_with_extensions():
     @strawberry.directive(
         locations=[DirectiveLocation.FIELD], description="Make string uppercase"
     )
-    def uppercase(value: str):
+    def uppercase(value: DirectiveValue[str]):
         return value.upper()
 
     class ExampleExtension(SchemaExtension):
@@ -366,7 +372,7 @@ async def test_runs_directives_with_extensions_async():
     @strawberry.directive(
         locations=[DirectiveLocation.FIELD], description="Make string uppercase"
     )
-    def uppercase(value: str):
+    def uppercase(value: DirectiveValue[str]):
         return value.upper()
 
     class ExampleExtension(SchemaExtension):
@@ -416,7 +422,7 @@ def info_directive_schema() -> strawberry.Schema:
         locations=[DirectiveLocation.FIELD],
         description="Interpolate string on the server from context data",
     )
-    def interpolate(value: str, info: strawberry.Info):
+    def interpolate(value: DirectiveValue[str], info: strawberry.Info):
         try:
             assert isinstance(info, strawberry.Info)
             assert info._field is field
@@ -592,6 +598,7 @@ async def test_directive_list_argument() -> NoReturn:
     )
 
     assert result.errors is None
+    assert result.data
     assert result.data["greeting"] == "Hi foo, bar"
 
 
@@ -607,7 +614,7 @@ def test_directives_with_custom_types():
     @strawberry.directive(
         locations=[DirectiveLocation.FIELD], description="Make string uppercase"
     )
-    def uppercase(value: str, input: DirectiveInput):
+    def uppercase(value: DirectiveValue[str], input: DirectiveInput):
         return value.upper()
 
     schema = strawberry.Schema(query=Query, directives=[uppercase])
@@ -638,7 +645,7 @@ def test_directives_with_scalar():
     @strawberry.directive(
         locations=[DirectiveLocation.FIELD], description="Make string uppercase"
     )
-    def uppercase(value: str, input: DirectiveInput):
+    def uppercase(value: DirectiveValue[str], input: DirectiveInput):
         return value.upper()
 
     schema = strawberry.Schema(query=Query, directives=[uppercase])
@@ -687,4 +694,5 @@ async def test_directive_with_custom_info_class() -> NoReturn:
     )
 
     assert result.errors is None
+    assert result.data
     assert result.data["greeting"] == "Hi foo, bar"
