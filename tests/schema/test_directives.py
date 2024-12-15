@@ -103,7 +103,9 @@ async def test_supports_default_directives_async():
 def test_can_declare_directives():
     @strawberry.type
     class Query:
-        cake: str = "made_in_switzerland"
+        @strawberry.field
+        def cake(self) -> str:
+            return "made_in_switzerland"
 
     @strawberry.directive(
         locations=[DirectiveLocation.FIELD], description="Make string uppercase"
@@ -123,6 +125,10 @@ def test_can_declare_directives():
     '''
 
     assert schema.as_str() == textwrap.dedent(expected_schema).strip()
+
+    result = schema.execute_sync('query { cake @uppercase(example: "foo") }')
+    assert result.errors is None
+    assert result.data == {"cake": "MADE_IN_SWITZERLAND"}
 
 
 def test_directive_arguments_without_value_param():
@@ -199,6 +205,7 @@ def test_runs_directives():
     result = schema.execute_sync(query, variable_values={"identified": False})
 
     assert not result.errors
+    assert result.data
     assert result.data["person"]["name"] == "JESS"
     assert result.data["jess"]["name"] == "Jessica"
     assert result.data["johnDoe"].get("name") is None
@@ -609,7 +616,9 @@ def test_directives_with_custom_types():
 
     @strawberry.type
     class Query:
-        cake: str = "made_in_switzerland"
+        @strawberry.field
+        def cake(self) -> str:
+            return "made_in_switzerland"
 
     @strawberry.directive(
         locations=[DirectiveLocation.FIELD], description="Make string uppercase"
@@ -634,13 +643,19 @@ def test_directives_with_custom_types():
 
     assert schema.as_str() == textwrap.dedent(expected_schema).strip()
 
+    result = schema.execute_sync('query { cake @uppercase(input: { example: "foo" }) }')
+    assert result.errors is None
+    assert result.data == {"cake": "MADE_IN_SWITZERLAND"}
+
 
 def test_directives_with_scalar():
     DirectiveInput = strawberry.scalar(str, name="DirectiveInput")
 
     @strawberry.type
     class Query:
-        cake: str = "made_in_switzerland"
+        @strawberry.field
+        def cake(self) -> str:
+            return "made_in_switzerland"
 
     @strawberry.directive(
         locations=[DirectiveLocation.FIELD], description="Make string uppercase"
@@ -662,6 +677,10 @@ def test_directives_with_scalar():
     '''
 
     assert schema.as_str() == textwrap.dedent(expected_schema).strip()
+
+    result = schema.execute_sync('query { cake @uppercase(input: "foo") }')
+    assert result.errors is None
+    assert result.data == {"cake": "MADE_IN_SWITZERLAND"}
 
 
 @pytest.mark.asyncio
