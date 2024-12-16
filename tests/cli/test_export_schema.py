@@ -1,5 +1,23 @@
+import typing
+
+from click.testing import Result
 from typer import Typer
 from typer.testing import CliRunner
+
+
+def check_generated_schema(
+    cli_app: Typer,
+    cli_runner: CliRunner,
+    schema_override: typing.Optional[float] = None,
+) -> Result:
+    selector = "tests.fixtures.sample_package.sample_module_federated:schema"
+    args = [
+        "export-schema",
+        selector,
+    ]
+    if schema_override:
+        args.append(f"--federation-version={schema_override!s}")
+    return cli_runner.invoke(cli_app, args)
 
 
 def test_schema_export(cli_app: Typer, cli_runner: CliRunner):
@@ -17,6 +35,33 @@ def test_schema_export(cli_app: Typer, cli_runner: CliRunner):
         "  age: Int!\n"
         "}\n"
     )
+
+
+def test_schema_export_with_federation_version_override(
+    cli_app: Typer, cli_runner: CliRunner
+):
+    result = check_generated_schema(cli_app, cli_runner, 2.5)
+    assert result.exit_code == 0
+    assert result.stdout.startswith(
+        'schema @link(url: "https://specs.apollo.dev/federation/v2.5"'
+    )
+
+
+def test_schema_export_without_federation_version_override(
+    cli_app: Typer, cli_runner: CliRunner
+):
+    result = check_generated_schema(cli_app, cli_runner)
+    assert result.exit_code == 0
+    assert result.stdout.startswith(
+        'schema @link(url: "https://specs.apollo.dev/federation/v2.7"'
+    )
+
+
+def test_invalid_schema_export_federation_version_override(
+    cli_app: Typer, cli_runner: CliRunner
+):
+    result = check_generated_schema(cli_app, cli_runner, 0.2)
+    assert result.exit_code == 2
 
 
 def test_default_schema_symbol_name(cli_app: Typer, cli_runner: CliRunner):
