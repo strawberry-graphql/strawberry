@@ -58,6 +58,7 @@ from strawberry.types.base import (
     StrawberryList,
     StrawberryObjectDefinition,
     StrawberryOptional,
+    StrawberryRequired,
     StrawberryType,
     get_object_definition,
     has_object_definition,
@@ -71,7 +72,9 @@ from strawberry.types.union import StrawberryUnion
 from strawberry.types.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
 
+from ..exceptions.semantic_nullability import InvalidNullReturnError
 from ..extensions.field_extension import build_field_extension_resolvers
+from ..types.semantic_non_null import SemanticNonNull
 from . import compat
 from .types.concrete_type import ConcreteType
 
@@ -252,7 +255,7 @@ class GraphQLCoreConverter:
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
         argument_type = cast(
-            "GraphQLInputType", self.from_maybe_optional(argument.type)
+            "GraphQLInputType", self.from_maybe_optional_or_required(argument.type)
         )
         default_value = Undefined if argument.default is UNSET else argument.default
 
@@ -367,6 +370,9 @@ class GraphQLCoreConverter:
             },
         )
 
+    def create_semantic_non_null_directive(self) -> SemanticNonNull:
+        return SemanticNonNull()
+
     def from_field(
         self,
         field: StrawberryField,
@@ -378,11 +384,29 @@ class GraphQLCoreConverter:
         resolver = self.from_resolver(field)
         field_type = cast(
             "GraphQLOutputType",
-            self.from_maybe_optional(
+            self.from_maybe_optional_or_required(
                 field.resolve_type(type_definition=type_definition)
             ),
         )
         subscribe = None
+
+        maybe_wrapped_resolver = resolver
+        if self.config.semantic_nullability_beta and getattr(
+            field_type, "strawberry_semantic_required_non_null", False
+        ):
+            # TODO: Mid-Term, we'd want something like this:
+            # field.extensions.append(SemanticNonNullExtension()) #noqa
+            # However, we need to refactor from_resolver into two parts:
+            # - field type modifications (call extension.apply)
+            # - resolver building, so we can add the new semanticnonnullextension resolver later
+            field.directives.append(self.create_semantic_non_null_directive())
+
+            def resolver_wrapper(*args: Any, **kwargs: Any):  # noqa
+                result = resolver(*args, **kwargs)
+                if result is None:
+                    raise InvalidNullReturnError()
+
+            maybe_wrapped_resolver = resolver_wrapper
 
         if field.is_subscription:
             subscribe = resolver
@@ -396,7 +420,7 @@ class GraphQLCoreConverter:
         return GraphQLField(
             type_=field_type,
             args=graphql_arguments,
-            resolve=resolver,
+            resolve=maybe_wrapped_resolver,
             subscribe=subscribe,
             description=field.description,
             deprecation_reason=field.deprecation_reason,
@@ -413,7 +437,7 @@ class GraphQLCoreConverter:
     ) -> GraphQLInputField:
         field_type = cast(
             "GraphQLInputType",
-            self.from_maybe_optional(
+            self.from_maybe_optional_or_required(
                 field.resolve_type(type_definition=type_definition)
             ),
         )
@@ -586,7 +610,7 @@ class GraphQLCoreConverter:
         return graphql_interface
 
     def from_list(self, type_: StrawberryList) -> GraphQLList:
-        of_type = self.from_maybe_optional(type_.of_type)
+        of_type = self.from_maybe_optional_or_required(type_.of_type)
 
         return GraphQLList(of_type)
 
@@ -804,16 +828,26 @@ class GraphQLCoreConverter:
 
         return implementation
 
-    def from_maybe_optional(
+    def from_maybe_optional_or_required(
         self, type_: Union[StrawberryType, type]
     ) -> Union[GraphQLNullableType, GraphQLNonNull]:
+        #    ) -> Union[GraphQLNullableType, GraphQLNonNull, GraphQLSemanticNonNull]: TODO in the future this will include graphql semantic non null
         NoneType = type(None)
         if type_ is None or type_ is NoneType:
-            return self.from_type(type_)
+            graphql_core_type = self.from_type(type_)
         elif isinstance(type_, StrawberryOptional):
-            return self.from_type(type_.of_type)
+            graphql_core_type = self.from_type(type_.of_type)
+        elif isinstance(type_, StrawberryRequired):
+            graphql_core_type = GraphQLNonNull(self.from_type(type_.of_type))
+            graphql_core_type.strawberry_semantic_required_non_null = False
         else:
-            return GraphQLNonNull(self.from_type(type_))
+            if self.config.semantic_nullability_beta:
+                graphql_core_type = self.from_type(type_)
+            else:
+                graphql_core_type = GraphQLNonNull(self.from_type(type_))
+            graphql_core_type.strawberry_semantic_required_non_null = True
+
+        return graphql_core_type
 
     def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
         if compat.is_graphql_generic(type_):
