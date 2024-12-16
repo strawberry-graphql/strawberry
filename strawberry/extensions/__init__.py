@@ -9,6 +9,12 @@ from .mask_errors import MaskErrors
 from .max_aliases import MaxAliasesLimiter
 from .max_tokens import MaxTokensLimiter
 from .parser_cache import ParserCache
+from .query_complexity_estimator import (
+    ConstantFieldComplexityEstimator,
+    FieldComplexityEstimator,
+    QueryComplexityEstimator,
+    SimpleFieldComplexityEstimator,
+)
 from .query_depth_limiter import IgnoreContext, QueryDepthLimiter
 from .validation_cache import ValidationCache
 
@@ -29,16 +35,20 @@ def __getattr__(name: str) -> Type[SchemaExtension]:
 
 
 __all__ = [
-    "FieldExtension",
-    "SchemaExtension",
-    "LifecycleStep",
     "AddValidationRules",
+    "ConstantFieldComplexityEstimator",
     "DisableValidation",
-    "ParserCache",
-    "QueryDepthLimiter",
+    "FieldComplexityEstimator",
+    "FieldExtension",
     "IgnoreContext",
-    "ValidationCache",
+    "LifecycleStep",
     "MaskErrors",
     "MaxAliasesLimiter",
     "MaxTokensLimiter",
+    "ParserCache",
+    "QueryComplexityEstimator",
+    "QueryDepthLimiter",
+    "SchemaExtension",
+    "SimpleFieldComplexityEstimator",
+    "ValidationCache",
 ]
