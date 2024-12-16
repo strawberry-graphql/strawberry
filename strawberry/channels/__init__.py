@@ -10,8 +10,8 @@ from .router import GraphQLProtocolTypeRouter
 __all__ = [
     "ChannelsConsumer",
     "ChannelsRequest",
-    "GraphQLProtocolTypeRouter",
     "GraphQLHTTPConsumer",
+    "GraphQLProtocolTypeRouter",
     "GraphQLWSConsumer",
     "SyncGraphQLHTTPConsumer",
 ]

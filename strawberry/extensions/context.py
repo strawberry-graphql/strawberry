@@ -37,11 +37,11 @@ class WrappedHook(NamedTuple):
 
 class ExtensionContextManagerBase:
     __slots__ = (
-        "hooks",
-        "deprecation_message",
-        "default_hook",
         "async_exit_stack",
+        "default_hook",
+        "deprecation_message",
         "exit_stack",
+        "hooks",
     )
 
     def __init_subclass__(cls) -> None:

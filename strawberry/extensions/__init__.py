@@ -29,16 +29,16 @@ def __getattr__(name: str) -> Type[SchemaExtension]:
 
 
 __all__ = [
-    "FieldExtension",
-    "SchemaExtension",
-    "LifecycleStep",
     "AddValidationRules",
     "DisableValidation",
-    "ParserCache",
-    "QueryDepthLimiter",
+    "FieldExtension",
     "IgnoreContext",
-    "ValidationCache",
+    "LifecycleStep",
     "MaskErrors",
     "MaxAliasesLimiter",
     "MaxTokensLimiter",
+    "ParserCache",
+    "QueryDepthLimiter",
+    "SchemaExtension",
+    "ValidationCache",
 ]

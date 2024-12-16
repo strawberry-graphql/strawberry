@@ -37,6 +37,6 @@ class GraphQLRequestData:
 
 __all__ = [
     "GraphQLHTTPResponse",
-    "process_result",
     "GraphQLRequestData",
+    "process_result",
 ]

@@ -195,4 +195,4 @@ class BaseGraphQLTestClient(ABC):
         return response.json()
 
 
-__all__ = ["BaseGraphQLTestClient", "Response", "Body"]
+__all__ = ["BaseGraphQLTestClient", "Body", "Response"]

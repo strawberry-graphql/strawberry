@@ -203,6 +203,6 @@ class AsyncGraphQLView(
 
 
 __all__ = [
-    "GraphQLView",
     "AsyncGraphQLView",
+    "GraphQLView",
 ]

@@ -20,7 +20,7 @@ from typing import (
 from typing_extensions import TypeGuard
 
 from starlette import status
-from starlette.background import BackgroundTasks  # noqa: TCH002
+from starlette.background import BackgroundTasks  # noqa: TC002
 from starlette.requests import HTTPConnection, Request
 from starlette.responses import (
     HTMLResponse,

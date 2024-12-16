@@ -922,9 +922,9 @@ class QueryCodegen:
 
 
 __all__ = [
-    "QueryCodegen",
-    "QueryCodegenPlugin",
-    "ConsolePlugin",
     "CodegenFile",
     "CodegenResult",
+    "ConsolePlugin",
+    "QueryCodegen",
+    "QueryCodegenPlugin",
 ]
