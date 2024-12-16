@@ -10,6 +10,9 @@ schema definition.
 Strawberry provides a command to export your schema definition. The exported
 schema will be described in the GraphQL schema definition language (SDL).
 
+To use the command line tools, you have to ensure Strawberry was installed with
+`strawberry-graphql[cli]`.
+
 You can export your schema using the following command:
 
 ```bash
