@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import importlib
 import inspect
-from pathlib import Path  # noqa: TCH003
+from pathlib import Path  # noqa: TC003
 from typing import List, Optional, Type, Union, cast
 
 import rich

@@ -5,9 +5,9 @@ from .info import Info
 __all__ = [
     "ExecutionContext",
     "ExecutionResult",
+    "Info",
+    "Info",
     "SubscriptionExecutionResult",
-    "Info",
-    "Info",
     "get_object_definition",
     "has_object_definition",
 ]

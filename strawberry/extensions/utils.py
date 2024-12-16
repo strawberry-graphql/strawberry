@@ -37,4 +37,4 @@ def get_path_from_info(info: GraphQLResolveInfo) -> List[str]:
     return elements[::-1]
 
 
-__all__ = ["is_introspection_key", "is_introspection_field", "get_path_from_info"]
+__all__ = ["get_path_from_info", "is_introspection_field", "is_introspection_key"]

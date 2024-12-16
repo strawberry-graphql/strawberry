@@ -14,4 +14,4 @@ async def await_maybe(value: AwaitableOrValue[T]) -> T:
     return value
 
 
-__all__ = ["await_maybe", "AwaitableOrValue", "AsyncIteratorOrIterator"]
+__all__ = ["AsyncIteratorOrIterator", "AwaitableOrValue", "await_maybe"]

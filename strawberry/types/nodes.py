@@ -152,4 +152,4 @@ class SelectedField:
         )
 
 
-__all__ = ["convert_selections", "FragmentSpread", "InlineFragment", "SelectedField"]
+__all__ = ["FragmentSpread", "InlineFragment", "SelectedField", "convert_selections"]

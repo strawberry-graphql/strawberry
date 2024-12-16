@@ -78,4 +78,4 @@ HOOK_METHODS: Set[str] = {
     SchemaExtension.on_execute.__name__,
 }
 
-__all__ = ["SchemaExtension", "Hook", "HOOK_METHODS", "LifecycleStep"]
+__all__ = ["HOOK_METHODS", "Hook", "LifecycleStep", "SchemaExtension"]

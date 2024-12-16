@@ -3,9 +3,9 @@ from .exceptions import UnregisteredTypeException
 from .object_type import input, interface, type
 
 __all__ = [
-    "error_type",
     "UnregisteredTypeException",
+    "error_type",
     "input",
-    "type",
     "interface",
+    "type",
 ]
