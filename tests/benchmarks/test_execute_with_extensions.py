@@ -21,7 +21,7 @@ class SimpleExtension(SchemaExtension):
 class ResolveExtension(SchemaExtension):
     async def resolve(self, _next, root, info, *args: Any, **kwargs: Any) -> Any:
         result = _next(root, info, *args, **kwargs)
-        if isawaitable(result):
+        if (hasattr(_next, "_is_async") and _next._is_async) or isawaitable(result):
             result = await result
         return result
 

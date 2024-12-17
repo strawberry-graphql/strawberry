@@ -757,9 +757,11 @@ class GraphQLCoreConverter:
 
         if field.is_async:
             _async_resolver._is_default = not field.base_resolver  # type: ignore
+            _async_resolver._is_async = True  # type: ignore
             return _async_resolver
         else:
             _resolver._is_default = not field.base_resolver  # type: ignore
+            _resolver._is_async = False  # type: ignore
             return _resolver
 
     def from_scalar(self, scalar: Type) -> GraphQLScalarType:
