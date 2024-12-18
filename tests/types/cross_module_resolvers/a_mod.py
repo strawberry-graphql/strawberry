@@ -1,9 +1,7 @@
-from typing import List
-
 import strawberry
 
 
-def a_resolver() -> List["AObject"]:
+def a_resolver() -> list["AObject"]:
     return []
 
 

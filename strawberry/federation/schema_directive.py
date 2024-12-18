@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Callable, List, Optional, Type, TypeVar
+from typing import Callable, Optional, TypeVar
 from typing_extensions import dataclass_transform
 
 from strawberry.directive import directive_field
@@ -19,7 +19,7 @@ class StrawberryFederationSchemaDirective(StrawberrySchemaDirective):
     compose_options: Optional[ComposeOptions] = None
 
 
-T = TypeVar("T", bound=Type)
+T = TypeVar("T", bound=type)
 
 
 @dataclass_transform(
@@ -29,7 +29,7 @@ T = TypeVar("T", bound=Type)
 )
 def schema_directive(
     *,
-    locations: List[Location],
+    locations: list[Location],
     description: Optional[str] = None,
     name: Optional[str] = None,
     repeatable: bool = False,

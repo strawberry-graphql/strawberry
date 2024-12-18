@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, Union, cast
 from typing_extensions import Protocol
 
 from strawberry.directive import StrawberryDirective
@@ -126,11 +126,11 @@ class NameConverter:
     def from_generic(
         self,
         generic_type: StrawberryObjectDefinition,
-        types: List[Union[StrawberryType, type]],
+        types: list[Union[StrawberryType, type]],
     ) -> str:
         generic_type_name = generic_type.name
 
-        names: List[str] = []
+        names: list[str] = []
 
         for type_ in types:
             name = self.get_from_type(type_)

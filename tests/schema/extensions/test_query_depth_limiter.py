@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import pytest
 from graphql import (
@@ -47,7 +47,7 @@ class Human:
     name: str
     email: str
     address: Address
-    pets: List[Pet]
+    pets: list[Pet]
 
 
 @strawberry.input
@@ -69,7 +69,7 @@ class Query:
         pass
 
     @strawberry.field
-    def users(self, names: Optional[List[str]]) -> List[Human]:
+    def users(self, names: Optional[list[str]]) -> list[Human]:
         pass
 
     @strawberry.field
@@ -87,7 +87,7 @@ schema = strawberry.Schema(Query)
 
 def run_query(
     query: str, max_depth: int, should_ignore: ShouldIgnoreType = None
-) -> Tuple[List[GraphQLError], Union[Dict[str, int], None]]:
+) -> tuple[list[GraphQLError], Union[dict[str, int], None]]:
     document = parse(query)
 
     result = None

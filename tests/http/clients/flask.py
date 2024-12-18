@@ -6,7 +6,7 @@ import functools
 import json
 import urllib.parse
 from io import BytesIO
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 from typing_extensions import Literal
 
 from flask import Flask
@@ -40,7 +40,7 @@ class GraphQLView(BaseGraphQLView):
 
     def get_context(
         self, request: FlaskRequest, response: FlaskResponse
-    ) -> Dict[str, object]:
+    ) -> dict[str, object]:
         context = super().get_context(request, response)
 
         return get_context(context)
@@ -85,16 +85,16 @@ class FlaskHttpClient(HttpClient):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
             query=query, variables=variables, files=files, method=method
         )
 
-        data: Union[Dict[str, object], str, None] = None
+        data: Union[dict[str, object], str, None] = None
 
         if body and files:
             body.update({name: (file, name) for name, file in files.items()})
@@ -117,7 +117,7 @@ class FlaskHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ):
         with self.app.test_client() as client:
@@ -133,7 +133,7 @@ class FlaskHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response:
         loop = asyncio.get_running_loop()
@@ -146,7 +146,7 @@ class FlaskHttpClient(HttpClient):
     async def get(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self.request(url, "get", headers=headers)
 
@@ -155,6 +155,6 @@ class FlaskHttpClient(HttpClient):
         url: str,
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self.request(url, "post", headers=headers, data=data, json=json)

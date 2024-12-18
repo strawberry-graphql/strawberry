@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 from typing_extensions import Protocol
 
 from strawberry.utils.logging import StrawberryLogger
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from graphql import GraphQLError
 
     from strawberry.directive import StrawberryDirective
@@ -29,16 +31,16 @@ if TYPE_CHECKING:
 class BaseSchema(Protocol):
     config: StrawberryConfig
     schema_converter: GraphQLCoreConverter
-    query: Type
-    mutation: Optional[Type]
-    subscription: Optional[Type]
-    schema_directives: List[object]
+    query: type
+    mutation: Optional[type]
+    subscription: Optional[type]
+    schema_directives: list[object]
 
     @abstractmethod
     async def execute(
         self,
         query: Optional[str],
-        variable_values: Optional[Dict[str, Any]] = None,
+        variable_values: Optional[dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
@@ -50,7 +52,7 @@ class BaseSchema(Protocol):
     def execute_sync(
         self,
         query: Optional[str],
-        variable_values: Optional[Dict[str, Any]] = None,
+        variable_values: Optional[dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
@@ -62,7 +64,7 @@ class BaseSchema(Protocol):
     async def subscribe(
         self,
         query: str,
-        variable_values: Optional[Dict[str, Any]] = None,
+        variable_values: Optional[dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
@@ -101,7 +103,7 @@ class BaseSchema(Protocol):
 
     def _process_errors(
         self,
-        errors: List[GraphQLError],
+        errors: list[GraphQLError],
         execution_context: Optional[ExecutionContext] = None,
     ) -> None:
         if self.config.disable_field_suggestions:
@@ -112,7 +114,7 @@ class BaseSchema(Protocol):
 
     def process_errors(
         self,
-        errors: List[GraphQLError],
+        errors: list[GraphQLError],
         execution_context: Optional[ExecutionContext] = None,
     ) -> None:
         for error in errors:

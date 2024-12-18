@@ -1,5 +1,5 @@
 import asyncio
-from typing import Generic, List, Optional, TypeVar
+from typing import Generic, Optional, TypeVar
 
 from pytest_codspeed.plugin import BenchmarkFixture
 
@@ -13,8 +13,8 @@ class GraphQLFilter(Generic[T]):
     """EXTERNAL Filter for GraphQL queries"""
 
     eq: Optional[T] = None
-    in_: Optional[List[T]] = None
-    nin: Optional[List[T]] = None
+    in_: Optional[list[T]] = None
+    nin: Optional[list[T]] = None
     gt: Optional[T] = None
     gte: Optional[T] = None
     lt: Optional[T] = None
@@ -36,7 +36,7 @@ class Book:
     async def authors(
         self,
         name: Optional[GraphQLFilter[str]] = None,
-    ) -> List[Author]:
+    ) -> list[Author]:
         return [Author(name="F. Scott Fitzgerald")]
 
 
@@ -48,7 +48,7 @@ def get_books():
 
 @strawberry.type
 class Query:
-    books: List[Book] = strawberry.field(resolver=get_books)
+    books: list[Book] = strawberry.field(resolver=get_books)
 
 
 schema = strawberry.Schema(query=Query)

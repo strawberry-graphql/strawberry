@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Optional
 
 from .exception import StrawberryException
 from .utils.source_finder import SourceFinder
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class MissingFieldAnnotationError(StrawberryException):
-    def __init__(self, field_name: str, cls: Type) -> None:
+    def __init__(self, field_name: str, cls: type) -> None:
         self.cls = cls
         self.field_name = field_name
 

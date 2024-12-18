@@ -1,7 +1,6 @@
 import textwrap
 from textwrap import dedent
-from typing import Optional
-from typing_extensions import Annotated
+from typing import Annotated, Optional
 
 import strawberry
 from strawberry.types.unset import UNSET

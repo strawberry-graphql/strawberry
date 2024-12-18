@@ -1,11 +1,11 @@
 from .error_type import error_type
 from .exceptions import UnregisteredTypeException
-from .object_type import input, interface, type
+from .object_type import input, interface, type  # noqa: A004
 
 __all__ = [
-    "error_type",
     "UnregisteredTypeException",
+    "error_type",
     "input",
-    "type",
     "interface",
+    "type",
 ]

@@ -2,23 +2,25 @@ from __future__ import annotations
 
 import warnings
 from typing import (
+    TYPE_CHECKING,
     Any,
-    Dict,
-    Mapping,
     Optional,
 )
 
 from strawberry.test.client import BaseGraphQLTestClient, Response
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 class GraphQLTestClient(BaseGraphQLTestClient):
     async def query(
         self,
         query: str,
-        variables: Optional[Dict[str, Mapping]] = None,
-        headers: Optional[Dict[str, object]] = None,
+        variables: Optional[dict[str, Mapping]] = None,
+        headers: Optional[dict[str, object]] = None,
         asserts_errors: Optional[bool] = None,
-        files: Optional[Dict[str, object]] = None,
+        files: Optional[dict[str, object]] = None,
         assert_no_errors: Optional[bool] = True,
     ) -> Response:
         body = self._build_body(query, variables, files)
@@ -51,9 +53,9 @@ class GraphQLTestClient(BaseGraphQLTestClient):
 
     async def request(
         self,
-        body: Dict[str, object],
-        headers: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, object]] = None,
+        body: dict[str, object],
+        headers: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, object]] = None,
     ) -> Any:
         response = await self._client.post(
             self.url,

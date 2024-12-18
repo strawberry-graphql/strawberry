@@ -1,6 +1,5 @@
 import pathlib
 import textwrap
-from typing import List
 
 from pytest_mock import MockerFixture
 from pytest_snapshot.plugin import Snapshot
@@ -44,7 +43,7 @@ def test_node_id_annotation(mocker: MockerFixture):
     @strawberry.type
     class Query:
         @relay.connection(relay.ListConnection[Fruit])
-        def fruits(self) -> List[Fruit]:
+        def fruits(self) -> list[Fruit]:
             return [Fruit(code=i) for i in range(10)]
 
     schema = strawberry.Schema(query=Query)
@@ -154,7 +153,7 @@ def test_node_id_annotation_in_superclass(mocker: MockerFixture):
     @strawberry.type
     class Query:
         @relay.connection(relay.ListConnection[Fruit])
-        def fruits(self) -> List[Fruit]:
+        def fruits(self) -> list[Fruit]:
             return [Fruit(code=i) for i in range(10)]
 
     schema = strawberry.Schema(query=Query)
@@ -265,7 +264,7 @@ def test_node_id_annotation_in_superclass_and_subclass(mocker: MockerFixture):
     @strawberry.type
     class Query:
         @relay.connection(relay.ListConnection[Fruit])
-        def fruits(self) -> List[Fruit]:
+        def fruits(self) -> list[Fruit]:
             return [Fruit(code=i, other_code=i) for i in range(10)]
 
     schema = strawberry.Schema(query=Query)

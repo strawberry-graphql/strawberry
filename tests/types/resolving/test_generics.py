@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Generic, List, Optional, TypeVar, Union
+from typing import Generic, Optional, TypeVar, Union
 
 import pytest
 
@@ -34,14 +34,14 @@ def test_basic_generic():
 def test_generic_lists():
     T = TypeVar("T")
 
-    annotation = StrawberryAnnotation(List[T])
+    annotation = StrawberryAnnotation(list[T])
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryList)
     assert isinstance(resolved.of_type, StrawberryTypeVar)
     assert resolved.is_graphql_generic
 
-    assert resolved == List[T]
+    assert resolved == list[T]
 
 
 def test_generic_objects():

@@ -1,7 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import List
-from typing_extensions import Annotated
+from typing import Annotated
 
 import strawberry
 
@@ -22,7 +21,7 @@ def test_field_tag_printed_correctly():
         @strawberry.field
         def top_products(
             self, first: Annotated[int, strawberry.federation.argument(tags=["myTag"])]
-        ) -> List[Product]:
+        ) -> list[Product]:
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)

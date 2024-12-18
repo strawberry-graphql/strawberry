@@ -30,12 +30,9 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from typing import (
+    TYPE_CHECKING,
     Callable,
-    Dict,
-    Iterable,
-    List,
     Optional,
-    Type,
     Union,
 )
 
@@ -61,12 +58,15 @@ from graphql.validation import ValidationContext, ValidationRule
 from strawberry.extensions import AddValidationRules
 from strawberry.extensions.utils import is_introspection_key
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
 IgnoreType = Union[Callable[[str], bool], re.Pattern, str]
 
 FieldArgumentType = Union[
-    bool, int, float, str, List["FieldArgumentType"], Dict[str, "FieldArgumentType"]
+    bool, int, float, str, list["FieldArgumentType"], dict[str, "FieldArgumentType"]
 ]
-FieldArgumentsType = Dict[str, FieldArgumentType]
+FieldArgumentsType = dict[str, FieldArgumentType]
 
 
 @dataclass
@@ -99,7 +99,7 @@ class QueryDepthLimiter(AddValidationRules):
     def __init__(
         self,
         max_depth: int,
-        callback: Optional[Callable[[Dict[str, int]], None]] = None,
+        callback: Optional[Callable[[dict[str, int]], None]] = None,
         should_ignore: Optional[ShouldIgnoreType] = None,
     ) -> None:
         """Initialize the QueryDepthLimiter.
@@ -123,8 +123,8 @@ class QueryDepthLimiter(AddValidationRules):
 def create_validator(
     max_depth: int,
     should_ignore: Optional[ShouldIgnoreType],
-    callback: Optional[Callable[[Dict[str, int]], None]] = None,
-) -> Type[ValidationRule]:
+    callback: Optional[Callable[[dict[str, int]], None]] = None,
+) -> type[ValidationRule]:
     class DepthLimitValidator(ValidationRule):
         def __init__(self, validation_context: ValidationContext) -> None:
             document = validation_context.document
@@ -154,7 +154,7 @@ def create_validator(
 
 def get_fragments(
     definitions: Iterable[DefinitionNode],
-) -> Dict[str, FragmentDefinitionNode]:
+) -> dict[str, FragmentDefinitionNode]:
     fragments = {}
     for definition in definitions:
         if isinstance(definition, FragmentDefinitionNode):
@@ -167,7 +167,7 @@ def get_fragments(
 # We can basically treat those the same
 def get_queries_and_mutations(
     definitions: Iterable[DefinitionNode],
-) -> Dict[str, OperationDefinitionNode]:
+) -> dict[str, OperationDefinitionNode]:
     operations = {}
 
     for definition in definitions:
@@ -214,7 +214,7 @@ def get_field_arguments(
 
 def determine_depth(
     node: Node,
-    fragments: Dict[str, FragmentDefinitionNode],
+    fragments: dict[str, FragmentDefinitionNode],
     depth_so_far: int,
     max_depth: int,
     context: ValidationContext,
@@ -294,7 +294,7 @@ def determine_depth(
         raise TypeError(f"Depth crawler cannot handle: {node.kind}")  # pragma: no cover
 
 
-def is_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -> bool:
+def is_ignored(node: FieldNode, ignore: Optional[list[IgnoreType]] = None) -> bool:
     if ignore is None:
         return False
 

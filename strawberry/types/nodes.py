@@ -12,7 +12,7 @@ Note Python dicts maintain ordering (for all supported versions).
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Any, Collection, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from graphql.language import FieldNode as GQLFieldNode
 from graphql.language import FragmentSpreadNode as GQLFragmentSpreadNode
@@ -22,12 +22,14 @@ from graphql.language import ObjectValueNode as GQLObjectValueNode
 from graphql.language import VariableNode as GQLVariableNode
 
 if TYPE_CHECKING:
+    from collections.abc import Collection, Iterable
+
     from graphql import GraphQLResolveInfo
     from graphql.language import ArgumentNode as GQLArgumentNode
     from graphql.language import DirectiveNode as GQLDirectiveNode
     from graphql.language import ValueNode as GQLValueNode
-Arguments = Dict[str, Any]
-Directives = Dict[str, Arguments]
+Arguments = dict[str, Any]
+Directives = dict[str, Arguments]
 Selection = Union["SelectedField", "FragmentSpread", "InlineFragment"]
 
 
@@ -62,9 +64,9 @@ def convert_directives(
 
 def convert_selections(
     info: GraphQLResolveInfo, field_nodes: Collection[GQLFieldNode]
-) -> List[Selection]:
+) -> list[Selection]:
     """Return typed `Selection` based on node type."""
-    selections: List[Selection] = []
+    selections: list[Selection] = []
     for node in field_nodes:
         if isinstance(node, GQLFieldNode):
             selections.append(SelectedField.from_node(info, node))
@@ -85,7 +87,7 @@ class FragmentSpread:
     name: str
     type_condition: str
     directives: Directives
-    selections: List[Selection]
+    selections: list[Selection]
 
     @classmethod
     def from_node(
@@ -111,7 +113,7 @@ class InlineFragment:
     """Wrapper for a InlineFragmentNode."""
 
     type_condition: str
-    selections: List[Selection]
+    selections: list[Selection]
     directives: Directives
 
     @classmethod
@@ -136,7 +138,7 @@ class SelectedField:
     name: str
     directives: Directives
     arguments: Arguments
-    selections: List[Selection]
+    selections: list[Selection]
     alias: Optional[str] = None
 
     @classmethod
@@ -152,4 +154,4 @@ class SelectedField:
         )
 
 
-__all__ = ["convert_selections", "FragmentSpread", "InlineFragment", "SelectedField"]
+__all__ = ["FragmentSpread", "InlineFragment", "SelectedField", "convert_selections"]

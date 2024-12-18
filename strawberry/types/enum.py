@@ -1,11 +1,9 @@
 import dataclasses
+from collections.abc import Iterable, Mapping
 from enum import EnumMeta
 from typing import (
     Any,
     Callable,
-    Iterable,
-    List,
-    Mapping,
     Optional,
     TypeVar,
     Union,
@@ -29,7 +27,7 @@ class EnumValue:
 class EnumDefinition(StrawberryType):
     wrapped_cls: EnumMeta
     name: str
-    values: List[EnumValue]
+    values: list[EnumValue]
     description: Optional[str]
     directives: Iterable[object] = ()
 
@@ -228,4 +226,4 @@ def enum(
     return wrap(cls)
 
 
-__all__ = ["EnumValue", "EnumDefinition", "EnumValueDefinition", "enum", "enum_value"]
+__all__ = ["EnumDefinition", "EnumValue", "EnumValueDefinition", "enum", "enum_value"]

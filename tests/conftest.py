@@ -1,17 +1,17 @@
 import pathlib
 import sys
-from typing import Any, List, Tuple
+from typing import Any
 
 import pytest
 
 from strawberry.utils import IS_GQL_32
 
 
-def pytest_emoji_xfailed(config: pytest.Config) -> Tuple[str, str]:
+def pytest_emoji_xfailed(config: pytest.Config) -> tuple[str, str]:
     return "🤷‍♂️ ", "XFAIL 🤷‍♂️ "
 
 
-def pytest_emoji_skipped(config: pytest.Config) -> Tuple[str, str]:
+def pytest_emoji_skipped(config: pytest.Config) -> tuple[str, str]:
     return "🦘 ", "SKIPPED 🦘"
 
 
@@ -19,7 +19,7 @@ pytest_plugins = ("tests.plugins.strawberry_exceptions",)
 
 
 @pytest.hookimpl  # type: ignore
-def pytest_collection_modifyitems(config: pytest.Config, items: List[pytest.Item]):
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]):
     rootdir = pathlib.Path(config.rootdir)  # type: ignore
 
     for item in items:

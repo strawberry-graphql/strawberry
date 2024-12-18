@@ -1,5 +1,4 @@
-from typing import TypeVar
-from typing_extensions import Annotated
+from typing import Annotated, TypeVar
 
 
 class StrawberryParent: ...

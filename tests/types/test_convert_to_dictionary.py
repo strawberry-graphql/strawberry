@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 import strawberry
 from strawberry import asdict
@@ -32,7 +32,7 @@ def test_convert_complex_type_to_dictionary():
     @strawberry.type
     class People:
         name: str
-        animals: List[Animal]
+        animals: list[Animal]
 
     lorem = People(
         name="Kevin", animals=[Animal(legs=Count.TWO), Animal(legs=Count.FOUR)]
@@ -52,7 +52,7 @@ def test_convert_input_to_dictionary():
     class QnaInput:
         title: str
         description: str
-        tags: Optional[List[str]] = strawberry.field(default=None)
+        tags: Optional[list[str]] = strawberry.field(default=None)
 
     title = "Where is the capital of United Kingdom?"
     description = "London is the capital of United Kingdom."

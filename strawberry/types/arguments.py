@@ -2,18 +2,16 @@ from __future__ import annotations
 
 import inspect
 import warnings
+from collections.abc import Iterable, Mapping
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
     Optional,
     Union,
     cast,
 )
-from typing_extensions import Annotated, get_args, get_origin
+from typing_extensions import get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
@@ -34,7 +32,7 @@ if TYPE_CHECKING:
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
-DEPRECATED_NAMES: Dict[str, str] = {
+DEPRECATED_NAMES: dict[str, str] = {
     "UNSET": (
         "importing `UNSET` from `strawberry.arguments` is deprecated, "
         "import instead from `strawberry` or from `strawberry.types.unset`"
@@ -140,7 +138,7 @@ class StrawberryArgument:
 def convert_argument(
     value: object,
     type_: Union[StrawberryType, type],
-    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
     config: StrawberryConfig,
 ) -> object:
     # TODO: move this somewhere else and make it first class
@@ -197,11 +195,11 @@ def convert_argument(
 
 
 def convert_arguments(
-    value: Dict[str, Any],
-    arguments: List[StrawberryArgument],
-    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    value: dict[str, Any],
+    arguments: list[StrawberryArgument],
+    scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
     config: StrawberryConfig,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.
 
     It deals with conversion of input types to proper dataclasses and
@@ -283,9 +281,9 @@ def __getattr__(name: str) -> Any:
 
 # TODO: check exports
 __all__ = [  # noqa: F822
+    "UNSET",  # for backwards compatibility  # type: ignore
     "StrawberryArgument",
     "StrawberryArgumentAnnotation",
-    "UNSET",  # for backwards compatibility  # type: ignore
     "argument",
     "is_unset",  # for backwards compatibility  # type: ignore
 ]

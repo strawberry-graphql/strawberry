@@ -6,21 +6,15 @@ from inspect import signature
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Awaitable,
     Callable,
-    Dict,
-    List,
     Optional,
-    Sequence,
-    Type,
     Union,
     cast,
 )
 from typing_extensions import TypeGuard
 
 from starlette import status
-from starlette.background import BackgroundTasks  # noqa: TCH002
+from starlette.background import BackgroundTasks  # noqa: TC002
 from starlette.requests import HTTPConnection, Request
 from starlette.responses import (
     HTMLResponse,
@@ -44,6 +38,7 @@ from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Awaitable, Sequence
     from enum import Enum
 
     from starlette.routing import BaseRoute
@@ -138,16 +133,16 @@ class GraphQLRouter(
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         prefix: str = "",
-        tags: Optional[List[Union[str, Enum]]] = None,
+        tags: Optional[list[Union[str, Enum]]] = None,
         dependencies: Optional[Sequence[params.Depends]] = None,
-        default_response_class: Type[Response] = Default(JSONResponse),
-        responses: Optional[Dict[Union[int, str], Dict[str, Any]]] = None,
-        callbacks: Optional[List[BaseRoute]] = None,
-        routes: Optional[List[BaseRoute]] = None,
+        default_response_class: type[Response] = Default(JSONResponse),
+        responses: Optional[dict[Union[int, str], dict[str, Any]]] = None,
+        callbacks: Optional[list[BaseRoute]] = None,
+        routes: Optional[list[BaseRoute]] = None,
         redirect_slashes: bool = True,
         default: Optional[ASGIApp] = None,
         dependency_overrides_provider: Optional[Any] = None,
-        route_class: Type[APIRoute] = APIRoute,
+        route_class: type[APIRoute] = APIRoute,
         on_startup: Optional[Sequence[Callable[[], Any]]] = None,
         on_shutdown: Optional[Sequence[Callable[[], Any]]] = None,
         lifespan: Optional[Lifespan[Any]] = None,
@@ -297,7 +292,7 @@ class GraphQLRouter(
         request: Request,
         stream: Callable[[], AsyncIterator[str]],
         sub_response: Response,
-        headers: Dict[str, str],
+        headers: dict[str, str],
     ) -> Response:
         return StreamingResponse(
             stream(),

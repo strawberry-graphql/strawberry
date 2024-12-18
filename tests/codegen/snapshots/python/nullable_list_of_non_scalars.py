@@ -5,4 +5,4 @@ class OperationNameResultOptionalListOfPeople:
     age: int
 
 class OperationNameResult:
-    optional_list_of_people: Optional[List[OperationNameResultOptionalListOfPeople]]
+    optional_list_of_people: Optional[list[OperationNameResultOptionalListOfPeople]]

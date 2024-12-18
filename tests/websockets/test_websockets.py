@@ -1,5 +1,3 @@
-from typing import Type
-
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
@@ -8,7 +6,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
 from tests.http.clients.base import HttpClient
 
 
-async def test_turning_off_graphql_ws(http_client_class: Type[HttpClient]):
+async def test_turning_off_graphql_ws(http_client_class: type[HttpClient]):
     http_client = http_client_class()
     http_client.create_app(subscription_protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL])
 
@@ -21,7 +19,7 @@ async def test_turning_off_graphql_ws(http_client_class: Type[HttpClient]):
         assert ws.close_reason == "Subprotocol not acceptable"
 
 
-async def test_turning_off_graphql_transport_ws(http_client_class: Type[HttpClient]):
+async def test_turning_off_graphql_transport_ws(http_client_class: type[HttpClient]):
     http_client = http_client_class()
     http_client.create_app(subscription_protocols=[GRAPHQL_WS_PROTOCOL])
 
@@ -34,7 +32,7 @@ async def test_turning_off_graphql_transport_ws(http_client_class: Type[HttpClie
         assert ws.close_reason == "Subprotocol not acceptable"
 
 
-async def test_turning_off_all_subprotocols(http_client_class: Type[HttpClient]):
+async def test_turning_off_all_subprotocols(http_client_class: type[HttpClient]):
     http_client = http_client_class()
     http_client.create_app(subscription_protocols=[])
 
@@ -65,7 +63,7 @@ async def test_generally_unsupported_subprotocols_are_rejected(http_client: Http
         assert ws.close_reason == "Subprotocol not acceptable"
 
 
-async def test_clients_can_prefer_subprotocols(http_client_class: Type[HttpClient]):
+async def test_clients_can_prefer_subprotocols(http_client_class: type[HttpClient]):
     http_client = http_client_class()
     http_client.create_app(
         subscription_protocols=[GRAPHQL_WS_PROTOCOL, GRAPHQL_TRANSPORT_WS_PROTOCOL]

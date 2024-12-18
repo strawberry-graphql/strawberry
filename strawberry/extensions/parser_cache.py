@@ -1,5 +1,6 @@
+from collections.abc import Iterator
 from functools import lru_cache
-from typing import Iterator, Optional
+from typing import Optional
 
 from strawberry.extensions.base_extension import SchemaExtension
 from strawberry.schema.execute import parse_document

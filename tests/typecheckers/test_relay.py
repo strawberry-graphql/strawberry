@@ -62,16 +62,16 @@ class FruitAlike:
     ...
 
 
-def fruits_resolver() -> List[Fruit]:
+def fruits_resolver() -> list[Fruit]:
     ...
 
 
 @strawberry.type
 class Query:
     node: relay.Node
-    nodes: List[relay.Node]
+    nodes: list[relay.Node]
     node_optional: Optional[relay.Node]
-    nodes_optional: List[Optional[relay.Node]]
+    nodes_optional: list[Optional[relay.Node]]
     fruits: relay.Connection[Fruit] = strawberry.relay.connection(
         resolver=fruits_resolver,
     )
@@ -85,7 +85,7 @@ class Query:
         self,
         info: strawberry.Info,
         name_endswith: Optional[str] = None,
-    ) -> List[Fruit]:
+    ) -> list[Fruit]:
         ...
 
     @relay.connection(relay.Connection[Fruit])
@@ -166,7 +166,7 @@ def test():
             ),
             Result(
                 type="information",
-                message='Type of "Query.nodes" is "List[Node]"',
+                message='Type of "Query.nodes" is "list[Node]"',
                 line=132,
                 column=13,
             ),
@@ -178,7 +178,7 @@ def test():
             ),
             Result(
                 type="information",
-                message='Type of "Query.nodes_optional" is "List[Node | None]"',
+                message='Type of "Query.nodes_optional" is "list[Node | None]"',
                 line=134,
                 column=13,
             ),

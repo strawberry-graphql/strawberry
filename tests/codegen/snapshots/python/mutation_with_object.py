@@ -5,7 +5,7 @@ class AddBlogPostsResultAddBlogPostsPosts:
     title: str
 
 class AddBlogPostsResultAddBlogPosts:
-    posts: List[AddBlogPostsResultAddBlogPostsPosts]
+    posts: list[AddBlogPostsResultAddBlogPostsPosts]
 
 class AddBlogPostsResult:
     add_blog_posts: AddBlogPostsResultAddBlogPosts
@@ -24,4 +24,4 @@ class BlogPostInput:
     an_optional_int: Optional[int] = None
 
 class AddBlogPostsVariables:
-    input: List[BlogPostInput]
+    input: list[BlogPostInput]

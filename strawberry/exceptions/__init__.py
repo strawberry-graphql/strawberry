@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Dict, Optional, Set, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from graphql import GraphQLError
 
@@ -48,7 +48,7 @@ class UnallowedReturnTypeForUnion(Exception):
     """The return type is not in the list of Union types."""
 
     def __init__(
-        self, field_name: str, result_type: str, allowed_types: Set[GraphQLObjectType]
+        self, field_name: str, result_type: str, allowed_types: set[GraphQLObjectType]
     ) -> None:
         formatted_allowed_types = list(sorted(type_.name for type_ in allowed_types))
 
@@ -160,37 +160,37 @@ class StrawberryGraphQLError(GraphQLError):
 class ConnectionRejectionError(Exception):
     """Use it when you want to reject a WebSocket connection."""
 
-    def __init__(self, payload: Dict[str, object] = {}) -> None:
+    def __init__(self, payload: dict[str, object] = {}) -> None:
         self.payload = payload
 
 
 __all__ = [
-    "StrawberryException",
-    "UnableToFindExceptionSource",
+    "ConflictingArgumentsError",
+    "DuplicatedTypeName",
+    "FieldWithResolverAndDefaultFactoryError",
+    "FieldWithResolverAndDefaultValueError",
+    "InvalidArgumentTypeError",
+    "InvalidCustomContext",
+    "InvalidDefaultFactoryError",
+    "InvalidTypeForUnionMergeError",
+    "InvalidUnionTypeError",
     "MissingArgumentsAnnotationsError",
+    "MissingFieldAnnotationError",
+    "MissingOptionalDependenciesError",
+    "MissingQueryError",
     "MissingReturnAnnotationError",
-    "WrongReturnTypeForUnion",
-    "UnallowedReturnTypeForUnion",
+    "MissingTypesForGenericError",
+    "MultipleStrawberryArgumentsError",
     "ObjectIsNotAnEnumError",
     "ObjectIsNotClassError",
-    "InvalidUnionTypeError",
-    "InvalidTypeForUnionMergeError",
-    "MissingTypesForGenericError",
-    "UnsupportedTypeError",
-    "UnresolvedFieldTypeError",
     "PrivateStrawberryFieldError",
-    "MultipleStrawberryArgumentsError",
     "ScalarAlreadyRegisteredError",
-    "WrongNumberOfResultsReturned",
-    "FieldWithResolverAndDefaultValueError",
-    "FieldWithResolverAndDefaultFactoryError",
-    "ConflictingArgumentsError",
-    "MissingQueryError",
-    "InvalidArgumentTypeError",
-    "InvalidDefaultFactoryError",
-    "InvalidCustomContext",
-    "MissingFieldAnnotationError",
-    "DuplicatedTypeName",
+    "StrawberryException",
     "StrawberryGraphQLError",
-    "MissingOptionalDependenciesError",
+    "UnableToFindExceptionSource",
+    "UnallowedReturnTypeForUnion",
+    "UnresolvedFieldTypeError",
+    "UnsupportedTypeError",
+    "WrongNumberOfResultsReturned",
+    "WrongReturnTypeForUnion",
 ]

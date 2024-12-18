@@ -1,6 +1,7 @@
 import asyncio
 from asyncio.futures import Future
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Union, cast
+from collections.abc import Awaitable
+from typing import Any, Callable, Optional, Union, cast
 
 import pytest
 from pytest_mock import MockerFixture
@@ -8,10 +9,10 @@ from pytest_mock import MockerFixture
 from strawberry.dataloader import AbstractCache, DataLoader
 from strawberry.exceptions import WrongNumberOfResultsReturned
 
-IDXType = Callable[[List[int]], Awaitable[List[int]]]
+IDXType = Callable[[list[int]], Awaitable[list[int]]]
 
 
-async def idx(keys: List[int]) -> List[int]:
+async def idx(keys: list[int]) -> list[int]:
     return keys
 
 
@@ -72,7 +73,7 @@ async def test_max_batch_size(mocker: MockerFixture):
 
 @pytest.mark.asyncio
 async def test_error():
-    async def idx(keys: List[int]) -> List[Union[int, ValueError]]:
+    async def idx(keys: list[int]) -> list[Union[int, ValueError]]:
         return [ValueError()]
 
     loader = DataLoader(load_fn=idx)
@@ -83,7 +84,7 @@ async def test_error():
 
 @pytest.mark.asyncio
 async def test_error_and_values():
-    async def idx(keys: List[int]) -> List[Union[int, ValueError]]:
+    async def idx(keys: list[int]) -> list[Union[int, ValueError]]:
         return [2] if keys == [2] else [ValueError()]
 
     loader = DataLoader(load_fn=idx)
@@ -96,7 +97,7 @@ async def test_error_and_values():
 
 @pytest.mark.asyncio
 async def test_when_raising_error_in_loader():
-    async def idx(keys: List[int]) -> List[Union[int, ValueError]]:
+    async def idx(keys: list[int]) -> list[Union[int, ValueError]]:
         raise ValueError
 
     loader = DataLoader(load_fn=idx)
@@ -114,7 +115,7 @@ async def test_when_raising_error_in_loader():
 
 @pytest.mark.asyncio
 async def test_returning_wrong_number_of_results():
-    async def idx(keys: List[int]) -> List[int]:
+    async def idx(keys: list[int]) -> list[int]:
         return [1, 2]
 
     loader = DataLoader(load_fn=idx)
@@ -195,7 +196,7 @@ async def test_cache_disabled_immediate_await(mocker: MockerFixture):
 
 @pytest.mark.asyncio
 async def test_prime():
-    async def idx(keys: List[Union[int, float]]) -> List[Union[int, float]]:
+    async def idx(keys: list[Union[int, float]]) -> list[Union[int, float]]:
         assert keys, "At least one key must be specified"
         return keys
 
@@ -241,7 +242,7 @@ async def test_prime():
 
 @pytest.mark.asyncio
 async def test_prime_nocache():
-    async def idx(keys: List[Union[int, float]]) -> List[Union[int, float]]:
+    async def idx(keys: list[Union[int, float]]) -> list[Union[int, float]]:
         assert keys, "At least one key must be specified"
         return keys
 
@@ -266,7 +267,7 @@ async def test_prime_nocache():
 async def test_clear():
     batch_num = 0
 
-    async def idx(keys: List[int]) -> List[Tuple[int, int]]:
+    async def idx(keys: list[int]) -> list[tuple[int, int]]:
         """Maps key => (key, batch_num)"""
         nonlocal batch_num
         batch_num += 1
@@ -293,7 +294,7 @@ async def test_clear():
 async def test_clear_nocache():
     batch_num = 0
 
-    async def idx(keys: List[int]) -> List[Tuple[int, int]]:
+    async def idx(keys: list[int]) -> list[tuple[int, int]]:
         """Maps key => (key, batch_num)"""
         nonlocal batch_num
         batch_num += 1
@@ -318,7 +319,7 @@ async def test_clear_nocache():
 
 @pytest.mark.asyncio
 async def test_dont_dispatch_cancelled():
-    async def idx(keys: List[int]) -> List[int]:
+    async def idx(keys: list[int]) -> list[int]:
         await asyncio.sleep(0.2)
         return keys
 
@@ -363,7 +364,7 @@ async def test_dont_dispatch_cancelled():
 async def test_cache_override():
     class TestCache(AbstractCache[int, int]):
         def __init__(self):
-            self.cache: Dict[int, Future[int]] = {}
+            self.cache: dict[int, Future[int]] = {}
 
         def get(self, key: int) -> Optional["Future[int]"]:
             return self.cache.get(key)
@@ -423,7 +424,7 @@ async def test_cache_override():
 
 @pytest.mark.asyncio
 async def test_custom_cache_key_fn():
-    def custom_cache_key(key: List[int]) -> str:
+    def custom_cache_key(key: list[int]) -> str:
         return ",".join(str(k) for k in key)
 
     loader = DataLoader(load_fn=idx, cache_key_fn=custom_cache_key)

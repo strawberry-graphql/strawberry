@@ -7,11 +7,7 @@ from inspect import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
-    Dict,
-    List,
     Optional,
-    Type,
     Union,
 )
 
@@ -25,6 +21,8 @@ from strawberry.types.base import StrawberryList, StrawberryOptional
 from strawberry.utils.await_maybe import await_maybe
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable
+
     from graphql import GraphQLError, GraphQLErrorExtensions
 
     from strawberry.extensions.field_extension import (
@@ -56,7 +54,7 @@ class BasePermission(abc.ABC):
 
     error_extensions: Optional[GraphQLErrorExtensions] = None
 
-    error_class: Type[GraphQLError] = StrawberryGraphQLError
+    error_class: type[GraphQLError] = StrawberryGraphQLError
 
     _schema_directive: Optional[object] = None
 
@@ -138,7 +136,7 @@ class PermissionExtension(FieldExtension):
 
     def __init__(
         self,
-        permissions: List[BasePermission],
+        permissions: list[BasePermission],
         use_directives: bool = True,
         fail_silently: bool = False,
     ) -> None:
@@ -189,7 +187,7 @@ class PermissionExtension(FieldExtension):
         next_: SyncExtensionResolver,
         source: Any,
         info: Info,
-        **kwargs: Dict[str, Any],
+        **kwargs: dict[str, Any],
     ) -> Any:
         """Checks if the permission should be accepted and raises an exception if not."""
         for permission in self.permissions:
@@ -202,7 +200,7 @@ class PermissionExtension(FieldExtension):
         next_: AsyncExtensionResolver,
         source: Any,
         info: Info,
-        **kwargs: Dict[str, Any],
+        **kwargs: dict[str, Any],
     ) -> Any:
         for permission in self.permissions:
             has_permission = await await_maybe(

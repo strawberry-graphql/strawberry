@@ -1,6 +1,4 @@
-import sys
-from typing import List, Optional, Union
-from typing_extensions import Annotated
+from typing import Annotated, Optional, Union
 
 import pytest
 
@@ -71,7 +69,7 @@ def test_arguments_lists():
     @strawberry.type
     class Query:
         @strawberry.field
-        def names(self, inputs: List[Input]) -> List[str]:
+        def names(self, inputs: list[Input]) -> list[str]:
             return [input.name for input in inputs]
 
     definition = Query.__strawberry_definition__
@@ -94,7 +92,7 @@ def test_arguments_lists_of_optionals():
     @strawberry.type
     class Query:
         @strawberry.field
-        def names(self, inputs: List[Optional[Input]]) -> List[str]:
+        def names(self, inputs: list[Optional[Input]]) -> list[str]:
             return [input_.name for input_ in inputs if input_ is not None]
 
     definition = Query.__strawberry_definition__
@@ -393,10 +391,6 @@ def test_annotated_with_other_information():
     assert argument.type is str
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="Annotated type was added in python 3.9",
-)
 def test_annotated_python_39():
     from typing import Annotated
 

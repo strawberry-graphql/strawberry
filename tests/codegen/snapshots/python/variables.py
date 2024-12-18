@@ -12,12 +12,12 @@ class ExampleInput:
     name: str
     age: int
     person: Optional[PersonInput]
-    people: List[PersonInput]
-    optional_people: Optional[List[PersonInput]]
+    people: list[PersonInput]
+    optional_people: Optional[list[PersonInput]]
 
 class OperationNameVariables:
     id: Optional[str]
     input: ExampleInput
-    ids: List[str]
-    ids2: Optional[List[Optional[str]]]
-    ids3: Optional[List[Optional[List[Optional[str]]]]]
+    ids: list[str]
+    ids2: Optional[list[Optional[str]]]
+    ids3: Optional[list[Optional[list[Optional[str]]]]]

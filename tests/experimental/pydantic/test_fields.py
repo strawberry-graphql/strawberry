@@ -1,5 +1,4 @@
 import re
-from typing import List
 from typing_extensions import Literal
 
 import pydantic
@@ -154,7 +153,7 @@ def test_constrained_list():
     assert UserType.__strawberry_definition__.fields[0].name == "friends"
     assert (
         UserType.__strawberry_definition__.fields[0].type_annotation.raw_annotation
-        == List[str]
+        == list[str]
     )
 
     data = UserType(friends=[])
@@ -181,7 +180,7 @@ def test_constrained_list_nested():
     assert UserType.__strawberry_definition__.fields[0].name == "friends"
     assert (
         UserType.__strawberry_definition__.fields[0].type_annotation.raw_annotation
-        == List[List[int]]
+        == list[list[int]]
     )
 
 

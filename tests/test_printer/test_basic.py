@@ -1,5 +1,5 @@
 import textwrap
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 import strawberry
@@ -142,14 +142,14 @@ def test_input_defaults():
         id_number: strawberry.ID = strawberry.ID(123)  # type: ignore
         id_number_string: strawberry.ID = strawberry.ID("123")
         x: Optional[int] = UNSET
-        l: List[str] = strawberry.field(default_factory=list)  # noqa: E741
-        list_with_values: List[str] = strawberry.field(
+        l: list[str] = strawberry.field(default_factory=list)  # noqa: E741
+        list_with_values: list[str] = strawberry.field(
             default_factory=lambda: ["a", "b"]
         )
-        list_from_generator: List[str] = strawberry.field(
+        list_from_generator: list[str] = strawberry.field(
             default_factory=lambda: (x for x in ["a", "b"])
         )
-        list_from_string: List[str] = "ab"  # type: ignore - we do this for testing purposes
+        list_from_string: list[str] = "ab"  # type: ignore - we do this for testing purposes
 
     @strawberry.type
     class Query:

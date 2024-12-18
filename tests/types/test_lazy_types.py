@@ -2,8 +2,8 @@
 import enum
 import sys
 import textwrap
-from typing import Generic, TypeVar, Union
-from typing_extensions import Annotated, TypeAlias
+from typing import Annotated, Generic, TypeVar, Union
+from typing_extensions import TypeAlias
 
 import pytest
 

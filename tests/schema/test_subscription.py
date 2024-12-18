@@ -2,16 +2,13 @@
 from __future__ import annotations
 
 import inspect
-import sys
 from collections import abc  # noqa: F401
-from typing import (  # noqa: F401
+from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator  # noqa: F401
+from typing import (
+    Annotated,
     Any,
-    AsyncGenerator,
-    AsyncIterable,
-    AsyncIterator,
     Union,
 )
-from typing_extensions import Annotated
 
 import pytest
 
@@ -98,21 +95,15 @@ async def test_subscription_with_arguments():
     assert result.data["example"] == "Hi Nina"
 
 
-requires_builtin_generics = pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="built-in generic annotations were added in python 3.9",
-)
-
-
 @pytest.mark.parametrize(
     "return_annotation",
     (
         "AsyncGenerator[str, None]",
         "AsyncIterable[str]",
         "AsyncIterator[str]",
-        pytest.param("abc.AsyncIterator[str]", marks=requires_builtin_generics),
-        pytest.param("abc.AsyncGenerator[str, None]", marks=requires_builtin_generics),
-        pytest.param("abc.AsyncIterable[str]", marks=requires_builtin_generics),
+        "abc.AsyncIterator[str]",
+        "abc.AsyncGenerator[str, None]",
+        "abc.AsyncIterable[str]",
     ),
 )
 @pytest.mark.asyncio

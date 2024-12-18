@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from io import BytesIO
 from json import dumps
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 from typing_extensions import Literal
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
@@ -62,9 +62,9 @@ class DjangoHttpClient(HttpClient):
     def _get_headers(
         self,
         method: Literal["get", "post"],
-        headers: Optional[Dict[str, str]],
-        files: Optional[Dict[str, BytesIO]],
-    ) -> Dict[str, str]:
+        headers: Optional[dict[str, str]],
+        files: Optional[dict[str, BytesIO]],
+    ) -> dict[str, str]:
         headers = headers or {}
         headers = {self._get_header_name(key): value for key, value in headers.items()}
 
@@ -101,9 +101,9 @@ class DjangoHttpClient(HttpClient):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response:
         headers = self._get_headers(method=method, headers=headers, files=files)
@@ -113,7 +113,7 @@ class DjangoHttpClient(HttpClient):
             query=query, variables=variables, files=files, method=method
         )
 
-        data: Union[Dict[str, object], str, None] = None
+        data: Union[dict[str, object], str, None] = None
 
         if body and files:
             files = {
@@ -140,7 +140,7 @@ class DjangoHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         headers = self._get_headers(
             method=method,  # type: ignore
@@ -156,7 +156,7 @@ class DjangoHttpClient(HttpClient):
     async def get(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self.request(url, "get", headers=headers)
 
@@ -165,7 +165,7 @@ class DjangoHttpClient(HttpClient):
         url: str,
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         headers = self._get_headers(method="post", headers=headers, files=None)
 

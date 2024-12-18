@@ -3,7 +3,7 @@
 import sys
 import textwrap
 from enum import Enum
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Union
 from typing_extensions import Self
 
 import pytest
@@ -165,7 +165,7 @@ def test_supports_generic_specialized_with_list_type():
     @strawberry.type
     class Edge[T]:
         cursor: strawberry.ID
-        nodes: List[T]
+        nodes: list[T]
 
     @strawberry.type
     class FruitEdge(Edge[Fruit]): ...
@@ -359,7 +359,7 @@ def test_supports_lists():
 
     @strawberry.type
     class Edge[T]:
-        nodes: List[T]
+        nodes: list[T]
 
     @strawberry.type
     class Query:
@@ -391,7 +391,7 @@ def test_supports_lists_of_optionals():
 
     @strawberry.type
     class Edge[T]:
-        nodes: List[Optional[T]]
+        nodes: list[Optional[T]]
 
     @strawberry.type
     class Query:
@@ -427,7 +427,7 @@ def test_can_extend_generics():
 
     @strawberry.type
     class Connection[T]:
-        edges: List[Edge[T]]
+        edges: list[Edge[T]]
 
     @strawberry.type
     class ConnectionWithMeta[T](Connection[T]):
@@ -677,7 +677,7 @@ def test_supports_multiple_generics_in_union():
     @strawberry.type
     class Query:
         @strawberry.field
-        def example(self) -> List[Union[Edge[int], Edge[str]]]:
+        def example(self) -> list[Union[Edge[int], Edge[str]]]:
             return [
                 Edge(cursor=strawberry.ID("1"), node=1),
                 Edge(cursor=strawberry.ID("2"), node="string"),
@@ -781,7 +781,7 @@ def test_supports_lists_within_unions():
 
     @strawberry.type
     class Edge[T]:
-        nodes: List[T]
+        nodes: list[T]
 
     @strawberry.type
     class Query:
@@ -816,7 +816,7 @@ def test_supports_lists_within_unions_empty_list():
 
     @strawberry.type
     class Edge[T]:
-        nodes: List[T]
+        nodes: list[T]
 
     @strawberry.type
     class Query:
@@ -852,7 +852,7 @@ def test_raises_error_when_unable_to_find_type():
 
     @strawberry.type
     class Edge[T]:
-        nodes: List[T]
+        nodes: list[T]
 
     @strawberry.type
     class Query:
@@ -887,7 +887,7 @@ def test_generic_with_arguments():
     @strawberry.type
     class Collection[T]:
         @strawberry.field
-        def by_id(self, ids: List[int]) -> List[T]:
+        def by_id(self, ids: list[int]) -> list[T]:
             return []
 
     @strawberry.type
@@ -925,7 +925,7 @@ def test_generic_argument():
             return bool(arg)
 
         @strawberry.field
-        def edges(self, args: List[T]) -> int:
+        def edges(self, args: list[T]) -> int:
             return len(args)
 
     @strawberry.type
@@ -994,7 +994,7 @@ def test_generic_extending_with_type_var():
     @strawberry.type
     class Query:
         @strawberry.field
-        def books(self) -> List[Book]:
+        def books(self) -> list[Book]:
             return list()
 
     schema = strawberry.Schema(query=Query)
@@ -1021,7 +1021,7 @@ def test_self():
     @strawberry.interface
     class INode:
         field: Optional[Self]
-        fields: List[Self]
+        fields: list[Self]
 
     @strawberry.type
     class Node(INode): ...

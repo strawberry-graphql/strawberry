@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
-from typing_extensions import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import strawberry
 
@@ -16,7 +15,7 @@ class D:
     @strawberry.field
     async def c_list(
         self,
-    ) -> List[Annotated[C, strawberry.lazy("tests.c")]]:  # pragma: no cover
+    ) -> list[Annotated[C, strawberry.lazy("tests.c")]]:  # pragma: no cover
         from tests.c import C
 
         return [C(id=self.id)]

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import contextlib
 import json as json_module
+from collections.abc import AsyncGenerator
 from io import BytesIO
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, Optional
 from typing_extensions import Literal
 
 from urllib3 import encode_multipart_formdata
@@ -35,9 +36,9 @@ from .base import (
 
 
 def generate_get_path(
-    path, query: str, variables: Optional[Dict[str, Any]] = None
+    path, query: str, variables: Optional[dict[str, Any]] = None
 ) -> str:
-    body: Dict[str, Any] = {"query": query}
+    body: dict[str, Any] = {"query": query}
     if variables is not None:
         body["variables"] = json_module.dumps(variables)
 
@@ -46,7 +47,7 @@ def generate_get_path(
 
 
 def create_multipart_request_body(
-    body: Dict[str, object], files: Dict[str, BytesIO]
+    body: dict[str, object], files: dict[str, BytesIO]
 ) -> tuple[list[tuple[str, str]], bytes]:
     fields = {
         "operations": body["operations"],
@@ -156,9 +157,9 @@ class ChannelsHttpClient(HttpClient):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
@@ -188,7 +189,7 @@ class ChannelsHttpClient(HttpClient):
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
         body: bytes = b"",
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         # HttpCommunicator expects tuples of bytestrings
         if headers:
@@ -212,7 +213,7 @@ class ChannelsHttpClient(HttpClient):
     async def get(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self.request(url, "get", headers=headers)
 
@@ -221,7 +222,7 @@ class ChannelsHttpClient(HttpClient):
         url: str,
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         body = b""
         if data is not None:
@@ -235,7 +236,7 @@ class ChannelsHttpClient(HttpClient):
         self,
         url: str,
         *,
-        protocols: List[str],
+        protocols: list[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
         client = WebsocketCommunicator(self.ws_app, url, subprotocols=protocols)
 
@@ -285,7 +286,7 @@ class ChannelsWebSocketClient(WebSocketClient):
     async def send_text(self, payload: str) -> None:
         await self.ws.send_to(text_data=payload)
 
-    async def send_json(self, payload: Dict[str, Any]) -> None:
+    async def send_json(self, payload: dict[str, Any]) -> None:
         await self.ws.send_json_to(payload)
 
     async def send_bytes(self, payload: bytes) -> None:

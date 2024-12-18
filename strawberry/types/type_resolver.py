@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Any, Dict, List, Type
+from typing import Any
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -17,8 +17,8 @@ from strawberry.types.unset import UNSET
 
 
 def _get_fields(
-    cls: Type[Any], original_type_annotations: Dict[str, Type[Any]]
-) -> List[StrawberryField]:
+    cls: type[Any], original_type_annotations: dict[str, type[Any]]
+) -> list[StrawberryField]:
     """Get all the strawberry fields off a strawberry.type cls.
 
     This function returns a list of StrawberryFields (one for each field item), while
@@ -54,7 +54,7 @@ def _get_fields(
     passing a named function (i.e. not an anonymous lambda) to strawberry.field
     (typically as a decorator).
     """
-    fields: Dict[str, StrawberryField] = {}
+    fields: dict[str, StrawberryField] = {}
 
     # before trying to find any fields, let's first add the fields defined in
     # parent classes, we do this by checking if parents have a type definition
@@ -71,7 +71,7 @@ def _get_fields(
     # Find the class the each field was originally defined on so we can use
     # that scope later when resolving the type, as it may have different names
     # available to it.
-    origins: Dict[str, type] = {field_name: cls for field_name in cls.__annotations__}
+    origins: dict[str, type] = {field_name: cls for field_name in cls.__annotations__}
 
     for base in cls.__mro__:
         if has_object_definition(base):

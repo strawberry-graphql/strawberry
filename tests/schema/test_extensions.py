@@ -1,6 +1,5 @@
 from enum import Enum, auto
-from typing import Union, cast
-from typing_extensions import Annotated
+from typing import Annotated, Union, cast
 
 from graphql import (
     DirectiveLocation,

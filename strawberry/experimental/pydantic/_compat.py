@@ -2,7 +2,7 @@ import dataclasses
 from dataclasses import dataclass
 from decimal import Decimal
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type
+from typing import TYPE_CHECKING, Any, Callable, Optional
 from uuid import UUID
 
 import pydantic
@@ -98,7 +98,7 @@ ATTR_TO_TYPE_MAP_Pydantic_Core_V2 = {
 }
 
 
-def get_fields_map_for_v2() -> Dict[Any, Any]:
+def get_fields_map_for_v2() -> dict[Any, Any]:
     import pydantic_core
 
     fields_map = {
@@ -124,7 +124,7 @@ class PydanticV2Compat:
 
         return PydanticUndefined
 
-    def get_model_fields(self, model: Type[BaseModel]) -> Dict[str, CompatModelField]:
+    def get_model_fields(self, model: type[BaseModel]) -> dict[str, CompatModelField]:
         field_info: dict[str, FieldInfo] = model.model_fields
         new_fields = {}
         # Convert it into CompatModelField
@@ -147,10 +147,10 @@ class PydanticV2Compat:
         return new_fields
 
     @cached_property
-    def fields_map(self) -> Dict[Any, Any]:
+    def fields_map(self) -> dict[Any, Any]:
         return get_fields_map_for_v2()
 
-    def get_basic_type(self, type_: Any) -> Type[Any]:
+    def get_basic_type(self, type_: Any) -> type[Any]:
         if type_ in self.fields_map:
             type_ = self.fields_map[type_]
 
@@ -162,7 +162,7 @@ class PydanticV2Compat:
 
         return type_
 
-    def model_dump(self, model_instance: BaseModel) -> Dict[Any, Any]:
+    def model_dump(self, model_instance: BaseModel) -> dict[Any, Any]:
         return model_instance.model_dump()
 
 
@@ -171,7 +171,7 @@ class PydanticV1Compat:
     def PYDANTIC_MISSING_TYPE(self) -> Any:
         return dataclasses.MISSING
 
-    def get_model_fields(self, model: Type[BaseModel]) -> Dict[str, CompatModelField]:
+    def get_model_fields(self, model: type[BaseModel]) -> dict[str, CompatModelField]:
         new_fields = {}
         # Convert it into CompatModelField
         for name, field in model.__fields__.items():  # type: ignore[attr-defined]
@@ -192,7 +192,7 @@ class PydanticV1Compat:
         return new_fields
 
     @cached_property
-    def fields_map(self) -> Dict[Any, Any]:
+    def fields_map(self) -> dict[Any, Any]:
         if IS_PYDANTIC_V2:
             return {
                 getattr(pydantic.v1, field_name): type
@@ -206,7 +206,7 @@ class PydanticV1Compat:
             if hasattr(pydantic, field_name)
         }
 
-    def get_basic_type(self, type_: Any) -> Type[Any]:
+    def get_basic_type(self, type_: Any) -> type[Any]:
         if IS_PYDANTIC_V1:
             ConstrainedInt = pydantic.ConstrainedInt
             ConstrainedFloat = pydantic.ConstrainedFloat
@@ -225,7 +225,7 @@ class PydanticV1Compat:
         if lenient_issubclass(type_, ConstrainedStr):
             return str
         if lenient_issubclass(type_, ConstrainedList):
-            return List[self.get_basic_type(type_.item_type)]  # type: ignore
+            return list[self.get_basic_type(type_.item_type)]  # type: ignore
 
         if type_ in self.fields_map:
             type_ = self.fields_map[type_]
@@ -238,7 +238,7 @@ class PydanticV1Compat:
 
         return type_
 
-    def model_dump(self, model_instance: BaseModel) -> Dict[Any, Any]:
+    def model_dump(self, model_instance: BaseModel) -> dict[Any, Any]:
         return model_instance.dict()
 
 
@@ -250,7 +250,7 @@ class PydanticCompat:
             self._compat = PydanticV1Compat()  # type: ignore[assignment]
 
     @classmethod
-    def from_model(cls, model: Type[BaseModel]) -> "PydanticCompat":
+    def from_model(cls, model: type[BaseModel]) -> "PydanticCompat":
         if hasattr(model, "model_fields"):
             return cls(is_v2=True)
 
@@ -283,10 +283,10 @@ else:
 
 __all__ = [
     "PydanticCompat",
+    "get_args",
+    "get_origin",
     "is_new_type",
     "lenient_issubclass",
-    "get_origin",
-    "get_args",
     "new_type_supertype",
     "smart_deepcopy",
 ]

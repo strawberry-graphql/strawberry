@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import textwrap
-from typing_extensions import Annotated
+from typing import Annotated
 
 import strawberry
 

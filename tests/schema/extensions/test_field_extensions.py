@@ -1,6 +1,5 @@
 import re
-from typing import Any, Callable, Optional
-from typing_extensions import Annotated
+from typing import Annotated, Any, Callable, Optional
 
 import pytest
 

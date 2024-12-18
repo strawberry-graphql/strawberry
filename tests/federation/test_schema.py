@@ -1,6 +1,6 @@
 import textwrap
 import warnings
-from typing import Generic, List, Optional, TypeVar
+from typing import Generic, Optional, TypeVar
 
 import pytest
 
@@ -18,7 +18,7 @@ def test_entities_type_when_no_type_has_keys():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> List[Product]:
+        def top_products(self, first: int) -> list[Product]:
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
@@ -74,7 +74,7 @@ def test_entities_type():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> List[Product]:
+        def top_products(self, first: int) -> list[Product]:
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
@@ -136,7 +136,7 @@ def test_additional_scalars():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> List[Example]:
+        def top_products(self, first: int) -> list[Example]:
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
@@ -164,7 +164,7 @@ def test_service():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> List[Product]:
+        def top_products(self, first: int) -> list[Product]:
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
@@ -210,7 +210,7 @@ def test_using_generics():
 
     @strawberry.type
     class ListOfProducts(Generic[T]):
-        products: List[T]
+        products: list[T]
 
     @strawberry.federation.type(extend=True)
     class Query:
@@ -264,7 +264,7 @@ def test_input_types():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, example: ExampleInput) -> List[str]:
+        def top_products(self, example: ExampleInput) -> list[str]:
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
@@ -350,7 +350,7 @@ def test_does_not_warn_when_using_federation_schema():
     @strawberry.type
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> List[ProductFed]:
+        def top_products(self, first: int) -> list[ProductFed]:
             return []
 
     with warnings.catch_warnings(record=True) as w:
