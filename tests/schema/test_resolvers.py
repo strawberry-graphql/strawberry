@@ -1,7 +1,7 @@
 # type: ignore
 import typing
 from contextlib import nullcontext
-from typing import Any, Generic, List, NamedTuple, Optional, Type, TypeVar, Union
+from typing import Any, Generic, NamedTuple, Optional, TypeVar, Union
 
 import pytest
 
@@ -215,7 +215,7 @@ def test_classmethod_resolvers():
         age: int
 
         @classmethod
-        def get_users(cls) -> "List[User]":
+        def get_users(cls) -> "list[User]":
             return [cls(name="Bob", age=10), cls(name="Nancy", age=30)]
 
     @strawberry.type
@@ -237,12 +237,12 @@ def test_classmethod_resolvers():
 def test_staticmethod_resolvers():
     class Alphabet:
         @staticmethod
-        def get_letters() -> List[str]:
+        def get_letters() -> list[str]:
             return ["a", "b", "c"]
 
     @strawberry.type
     class Query:
-        letters: List[str] = strawberry.field(resolver=Alphabet.get_letters)
+        letters: list[str] = strawberry.field(resolver=Alphabet.get_letters)
 
     schema = strawberry.Schema(query=Query)
 
@@ -325,7 +325,7 @@ async def test_async_list_resolver():
     @strawberry.type
     class Query:
         @strawberry.field
-        async def best_flavours(self) -> List[str]:
+        async def best_flavours(self) -> list[str]:
             return ["strawberry", "pistachio"]
 
     schema = strawberry.Schema(query=Query)
@@ -362,7 +362,7 @@ def test_generic_resolver_factory():
 
     T = TypeVar("T")
 
-    def resolver_factory(strawberry_type: Type[T]):
+    def resolver_factory(strawberry_type: type[T]):
         def resolver() -> T:
             return strawberry_type(some=1)
 
@@ -477,12 +477,12 @@ def test_generic_resolver_list():
     class AType:
         some: int
 
-    def resolver() -> List[T]:
+    def resolver() -> list[T]:
         return [AType(some=1)]
 
     @strawberry.type
     class Query:
-        list_type: List[AType] = strawberry.field(resolver)
+        list_type: list[AType] = strawberry.field(resolver)
 
     strawberry.Schema(query=Query)
 

@@ -1,6 +1,6 @@
 import warnings
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, AsyncGenerator, Callable, Dict, Optional, cast
+from collections.abc import AsyncGenerator, Mapping
+from typing import TYPE_CHECKING, Callable, Optional, cast
 from typing_extensions import TypeGuard
 
 from quart import Request, Response, request
@@ -111,7 +111,7 @@ class GraphQLView(
         request: Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: Response,
-        headers: Dict[str, str],
+        headers: dict[str, str],
     ) -> Response:
         return (
             stream(),

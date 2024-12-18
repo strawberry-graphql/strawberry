@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 from functools import cached_property
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Callable, Generator, Iterator, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from ddtrace import Span, tracer
 
@@ -11,6 +11,8 @@ from strawberry.extensions import LifecycleStep, SchemaExtension
 from strawberry.extensions.tracing.utils import should_skip_tracing
 
 if TYPE_CHECKING:
+    from collections.abc import Generator, Iterator
+
     from graphql import GraphQLResolveInfo
 
     from strawberry.types.execution import ExecutionContext

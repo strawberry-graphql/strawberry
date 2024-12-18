@@ -1,4 +1,4 @@
-from typing import List, Optional, TypeVar
+from typing import Optional, TypeVar
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
@@ -17,14 +17,14 @@ def test_basic_string():
 
 
 def test_list_of_string():
-    annotation = StrawberryAnnotation(List["int"])
+    annotation = StrawberryAnnotation(list["int"])
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryList)
     assert resolved.of_type is int
 
     assert resolved == StrawberryList(of_type=int)
-    assert resolved == List[int]
+    assert resolved == list[int]
 
 
 def test_list_of_string_of_type():
@@ -32,14 +32,14 @@ def test_list_of_string_of_type():
     class NameGoesHere:
         foo: bool
 
-    annotation = StrawberryAnnotation(List["NameGoesHere"], namespace=locals())
+    annotation = StrawberryAnnotation(list["NameGoesHere"], namespace=locals())
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryList)
     assert resolved.of_type is NameGoesHere
 
     assert resolved == StrawberryList(of_type=NameGoesHere)
-    assert resolved == List[NameGoesHere]
+    assert resolved == list[NameGoesHere]
 
 
 def test_optional_of_string():
@@ -79,14 +79,14 @@ def test_string_of_type_var():
 def test_string_of_list():
     namespace = {**locals(), **globals()}
 
-    annotation = StrawberryAnnotation("List[float]", namespace=namespace)
+    annotation = StrawberryAnnotation("list[float]", namespace=namespace)
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryList)
     assert resolved.of_type is float
 
     assert resolved == StrawberryList(of_type=float)
-    assert resolved == List[float]
+    assert resolved == list[float]
 
 
 def test_string_of_list_of_type():
@@ -96,14 +96,14 @@ def test_string_of_list_of_type():
 
     namespace = {**locals(), **globals()}
 
-    annotation = StrawberryAnnotation("List[BlahBlah]", namespace=namespace)
+    annotation = StrawberryAnnotation("list[BlahBlah]", namespace=namespace)
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryList)
     assert resolved.of_type is BlahBlah
 
     assert resolved == StrawberryList(of_type=BlahBlah)
-    assert resolved == List[BlahBlah]
+    assert resolved == list[BlahBlah]
 
 
 def test_string_of_optional():
@@ -163,7 +163,7 @@ def test_optional():
 def test_basic_list():
     @strawberry.type
     class Query:
-        names: "List[str]"
+        names: "list[str]"
 
     definition = Query.__strawberry_definition__
     assert definition.name == "Query"
@@ -185,7 +185,7 @@ def test_list_of_types():
 
     @strawberry.type
     class Query:
-        users: "List[User]"
+        users: "list[User]"
 
     definition = Query.__strawberry_definition__
     assert definition.name == "Query"

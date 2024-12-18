@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Optional
 
 from .exception import StrawberryException
 from .utils.source_finder import SourceFinder
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class ObjectIsNotAnEnumError(StrawberryException):
-    def __init__(self, cls: Type[Enum]) -> None:
+    def __init__(self, cls: type[Enum]) -> None:
         self.cls = cls
         self.message = (
             "strawberry.enum can only be used with subclasses of Enum. "

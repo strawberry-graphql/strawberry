@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional, TypeVar
+from typing import Optional, TypeVar
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
@@ -36,10 +36,10 @@ def test_forward_reference():
 
 
 def test_list():
-    annotation = StrawberryAnnotation(List[int])
+    annotation = StrawberryAnnotation(list[int])
     field = StrawberryField(type_annotation=annotation)
 
-    assert field.type == List[int]
+    assert field.type == list[int]
 
 
 def test_literal():

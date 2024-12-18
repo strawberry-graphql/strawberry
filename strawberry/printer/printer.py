@@ -5,12 +5,7 @@ from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    List,
     Optional,
-    Set,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     cast,
@@ -64,18 +59,18 @@ _T = TypeVar("_T")
 
 @dataclasses.dataclass
 class PrintExtras:
-    directives: Set[str] = dataclasses.field(default_factory=set)
-    types: Set[type] = dataclasses.field(default_factory=set)
+    directives: set[str] = dataclasses.field(default_factory=set)
+    types: set[type] = dataclasses.field(default_factory=set)
 
 
 @overload
-def _serialize_dataclasses(value: Dict[_T, object]) -> Dict[_T, object]: ...
+def _serialize_dataclasses(value: dict[_T, object]) -> dict[_T, object]: ...
 
 
 @overload
 def _serialize_dataclasses(
-    value: Union[List[object], Tuple[object]],
-) -> List[object]: ...
+    value: Union[list[object], tuple[object]],
+) -> list[object]: ...
 
 
 @overload
@@ -94,7 +89,7 @@ def _serialize_dataclasses(value):
 
 
 def print_schema_directive_params(
-    directive: GraphQLDirective, values: Dict[str, Any]
+    directive: GraphQLDirective, values: dict[str, Any]
 ) -> str:
     params = []
     for name, arg in directive.args.items():
@@ -189,7 +184,7 @@ def print_argument_directives(
 
 
 def print_args(
-    args: Dict[str, GraphQLArgument],
+    args: dict[str, GraphQLArgument],
     indentation: str = "",
     *,
     schema: BaseSchema,
@@ -225,7 +220,7 @@ def print_args(
     )
 
 
-def print_fields(type_: Type, schema: BaseSchema, *, extras: PrintExtras) -> str:
+def print_fields(type_: type, schema: BaseSchema, *, extras: PrintExtras) -> str:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
     fields = []
@@ -320,7 +315,7 @@ def print_enum(
     )
 
 
-def print_extends(type_: Type, schema: BaseSchema) -> str:
+def print_extends(type_: type, schema: BaseSchema) -> str:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
     strawberry_type = type_.extensions and type_.extensions.get(
@@ -334,7 +329,7 @@ def print_extends(type_: Type, schema: BaseSchema) -> str:
 
 
 def print_type_directives(
-    type_: Type, schema: BaseSchema, *, extras: PrintExtras
+    type_: type, schema: BaseSchema, *, extras: PrintExtras
 ) -> str:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 

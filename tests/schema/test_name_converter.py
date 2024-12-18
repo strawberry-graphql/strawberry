@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Generic, List, Optional, TypeVar, Union
+from typing import Generic, Optional, TypeVar, Union
 
 import strawberry
 from strawberry.directive import StrawberryDirective
@@ -35,7 +35,7 @@ class AppendsNameConverter(NameConverter):
     def from_generic(
         self,
         generic_type: StrawberryObjectDefinition,
-        types: List[Union[StrawberryType, type]],
+        types: list[Union[StrawberryType, type]],
     ) -> str:
         return super().from_generic(generic_type, types) + self.suffix
 

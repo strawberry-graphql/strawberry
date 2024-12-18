@@ -1,13 +1,13 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.websockets import WebSocket
 
-CustomContext = Union["BaseContext", Dict[str, Any]]
+CustomContext = Union["BaseContext", dict[str, Any]]
 MergedContext = Union[
-    "BaseContext", Dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]]
+    "BaseContext", dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]]
 ]
 
 

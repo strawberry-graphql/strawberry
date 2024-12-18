@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from flask import Flask
 from flask import Request as FlaskRequest
@@ -31,7 +31,7 @@ class GraphQLView(BaseAsyncGraphQLView):
 
     async def get_context(
         self, request: FlaskRequest, response: FlaskResponse
-    ) -> Dict[str, object]:
+    ) -> dict[str, object]:
         context = await super().get_context(request, response)
 
         return get_context(context)

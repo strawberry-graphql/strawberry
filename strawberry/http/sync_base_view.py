@@ -1,12 +1,10 @@
 import abc
 import json
+from collections.abc import Mapping
 from typing import (
     Any,
     Callable,
-    Dict,
     Generic,
-    List,
-    Mapping,
     Optional,
     Union,
 )
@@ -126,7 +124,7 @@ class SyncBaseHTTPView(
             allowed_operation_types=allowed_operation_types,
         )
 
-    def parse_multipart(self, request: SyncHTTPRequestAdapter) -> Dict[str, str]:
+    def parse_multipart(self, request: SyncHTTPRequestAdapter) -> dict[str, str]:
         operations = self.parse_json(request.post_data.get("operations", "{}"))
         files_map = self.parse_json(request.post_data.get("map", "{}"))
 
@@ -159,7 +157,7 @@ class SyncBaseHTTPView(
         )
 
     def _handle_errors(
-        self, errors: List[GraphQLError], response_data: GraphQLHTTPResponse
+        self, errors: list[GraphQLError], response_data: GraphQLHTTPResponse
     ) -> None:
         """Hook to allow custom handling of errors, used by the Sentry Integration."""
 

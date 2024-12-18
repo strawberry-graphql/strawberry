@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List, Union
-from typing_extensions import Annotated
+from typing import Annotated, Union
 
 import strawberry
 
@@ -118,7 +117,7 @@ class Comment(Node):
 
 @strawberry.type
 class UserConnection:
-    edges: List[UserEdge | None] | None
+    edges: list[UserEdge | None] | None
     page_info: PageInfo
 
 
@@ -130,7 +129,7 @@ class UserEdge:
 
 @strawberry.type
 class PostConnection:
-    edges: List[PostEdge | None] | None
+    edges: list[PostEdge | None] | None
     page_info: PageInfo
 
 
@@ -142,7 +141,7 @@ class PostEdge:
 
 @strawberry.type
 class CommentConnection:
-    edges: List[CommentEdge | None] | None
+    edges: list[CommentEdge | None] | None
     page_info: PageInfo
 
 
@@ -166,7 +165,7 @@ class Query:
     @strawberry.field
     async def search(
         self, query: str, first: int = 10, after: str | None = None
-    ) -> List[SearchResult | None] | None:
+    ) -> list[SearchResult | None] | None:
         div = 3
 
         chunks = [first // div + (1 if x < first % div else 0) for x in range(div)]

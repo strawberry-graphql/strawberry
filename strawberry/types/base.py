@@ -7,12 +7,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
-    Dict,
-    List,
-    Mapping,
     Optional,
-    Sequence,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -25,6 +20,7 @@ from strawberry.utils.typing import is_concrete_generic
 from strawberry.utils.typing import is_generic as is_type_generic
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
     from typing_extensions import TypeGuard
 
     from graphql import GraphQLAbstractType, GraphQLResolveInfo
@@ -44,7 +40,7 @@ class StrawberryType(ABC):
     """
 
     @property
-    def type_params(self) -> List[TypeVar]:
+    def type_params(self) -> list[TypeVar]:
         return []
 
     @property
@@ -55,9 +51,9 @@ class StrawberryType(ABC):
     def copy_with(
         self,
         type_var_map: Mapping[
-            str, Union[StrawberryType, Type[WithStrawberryObjectDefinition]]
+            str, Union[StrawberryType, type[WithStrawberryObjectDefinition]]
         ],
-    ) -> Union[StrawberryType, Type[WithStrawberryObjectDefinition]]:
+    ) -> Union[StrawberryType, type[WithStrawberryObjectDefinition]]:
         raise NotImplementedError()
 
     @property
@@ -93,7 +89,7 @@ class StrawberryType(ABC):
 
 class StrawberryContainer(StrawberryType):
     def __init__(
-        self, of_type: Union[StrawberryType, Type[WithStrawberryObjectDefinition], type]
+        self, of_type: Union[StrawberryType, type[WithStrawberryObjectDefinition], type]
     ) -> None:
         self.of_type = of_type
 
@@ -110,7 +106,7 @@ class StrawberryContainer(StrawberryType):
         return super().__eq__(other)
 
     @property
-    def type_params(self) -> List[TypeVar]:
+    def type_params(self) -> list[TypeVar]:
         if has_object_definition(self.of_type):
             parameters = getattr(self.of_type, "__parameters__", None)
 
@@ -125,7 +121,7 @@ class StrawberryContainer(StrawberryType):
     def copy_with(
         self,
         type_var_map: Mapping[
-            str, Union[StrawberryType, Type[WithStrawberryObjectDefinition]]
+            str, Union[StrawberryType, type[WithStrawberryObjectDefinition]]
         ],
     ) -> Self:
         of_type_copy = self.of_type
@@ -180,7 +176,7 @@ class StrawberryTypeVar(StrawberryType):
         return self.type_var == type_var
 
     @property
-    def type_params(self) -> List[TypeVar]:
+    def type_params(self) -> list[TypeVar]:
         return [self.type_var]
 
     def __eq__(self, other: object) -> bool:
@@ -201,7 +197,7 @@ class WithStrawberryObjectDefinition(Protocol):
 
 def has_object_definition(
     obj: Any,
-) -> TypeGuard[Type[WithStrawberryObjectDefinition]]:
+) -> TypeGuard[type[WithStrawberryObjectDefinition]]:
     if hasattr(obj, "__strawberry_definition__"):
         return True
     # TODO: Generics remove dunder members here, so we inject it here.
@@ -254,9 +250,9 @@ class StrawberryObjectDefinition(StrawberryType):
     name: str
     is_input: bool
     is_interface: bool
-    origin: Type[Any]
+    origin: type[Any]
     description: Optional[str]
-    interfaces: List[StrawberryObjectDefinition]
+    interfaces: list[StrawberryObjectDefinition]
     extend: bool
     directives: Optional[Sequence[object]]
     is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
@@ -264,7 +260,7 @@ class StrawberryObjectDefinition(StrawberryType):
         Callable[[Any, GraphQLResolveInfo, GraphQLAbstractType], str]
     ]
 
-    fields: List[StrawberryField]
+    fields: list[StrawberryField]
 
     concrete_of: Optional[StrawberryObjectDefinition] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
@@ -296,7 +292,7 @@ class StrawberryObjectDefinition(StrawberryType):
 
     def copy_with(
         self, type_var_map: Mapping[str, Union[StrawberryType, type]]
-    ) -> Type[WithStrawberryObjectDefinition]:
+    ) -> type[WithStrawberryObjectDefinition]:
         fields = [field.copy_with(type_var_map) for field in self.fields]
 
         new_type_definition = StrawberryObjectDefinition(
@@ -353,7 +349,7 @@ class StrawberryObjectDefinition(StrawberryType):
         )
 
     @property
-    def specialized_type_var_map(self) -> Optional[Dict[str, type]]:
+    def specialized_type_var_map(self) -> Optional[dict[str, type]]:
         return get_specialized_type_var_map(self.origin)
 
     @property
@@ -361,14 +357,14 @@ class StrawberryObjectDefinition(StrawberryType):
         return not self.is_input and not self.is_interface
 
     @property
-    def type_params(self) -> List[TypeVar]:
-        type_params: List[TypeVar] = []
+    def type_params(self) -> list[TypeVar]:
+        type_params: list[TypeVar] = []
         for field in self.fields:
             type_params.extend(field.type_params)
 
         return type_params
 
-    def is_implemented_by(self, root: Type[WithStrawberryObjectDefinition]) -> bool:
+    def is_implemented_by(self, root: type[WithStrawberryObjectDefinition]) -> bool:
         # TODO: Support dicts
         if isinstance(root, dict):
             raise NotImplementedError

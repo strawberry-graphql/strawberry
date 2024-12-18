@@ -5,9 +5,6 @@ import logging
 from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
-    Awaitable,
-    Dict,
-    List,
     Optional,
     cast,
 )
@@ -37,6 +34,7 @@ from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.operation import get_operation_type
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable
     from datetime import timedelta
 
     from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncWebSocketAdapter
@@ -68,8 +66,8 @@ class BaseGraphQLTransportWSHandler:
         self.connection_init_received = False
         self.connection_acknowledged = False
         self.connection_timed_out = False
-        self.operations: Dict[str, Operation] = {}
-        self.completed_tasks: List[asyncio.Task] = []
+        self.operations: dict[str, Operation] = {}
+        self.completed_tasks: list[asyncio.Task] = []
 
     async def handle(self) -> None:
         self.on_request_accepted()
@@ -338,14 +336,14 @@ class Operation:
     """A class encapsulating a single operation with its id. Helps enforce protocol state transition."""
 
     __slots__ = [
+        "completed",
         "handler",
         "id",
+        "operation_name",
         "operation_type",
         "query",
-        "variables",
-        "operation_name",
-        "completed",
         "task",
+        "variables",
     ]
 
     def __init__(
@@ -354,7 +352,7 @@ class Operation:
         id: str,
         operation_type: OperationType,
         query: str,
-        variables: Optional[Dict[str, object]],
+        variables: Optional[dict[str, object]],
         operation_name: Optional[str],
     ) -> None:
         self.handler = handler

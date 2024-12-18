@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import cached_property
 from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Optional
 
 from strawberry.exceptions.utils.source_finder import SourceFinder
 
@@ -80,7 +80,7 @@ class InvalidUnionTypeError(StrawberryException):
 class InvalidTypeForUnionMergeError(StrawberryException):
     """A specialized version of InvalidUnionTypeError for when trying to merge unions using the pipe operator."""
 
-    invalid_type: Type
+    invalid_type: type
 
     def __init__(self, union: StrawberryUnion, other: object) -> None:
         self.union = union

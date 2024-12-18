@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 import dataclasses
 import sys
-from typing import TYPE_CHECKING, Any, Tuple, Union
+from typing import TYPE_CHECKING, Any, Union
 from typing_extensions import Self, assert_never
 
 from strawberry.types.base import StrawberryObjectDefinition
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from strawberry.types.info import Info
 
 
-def from_base64(value: str) -> Tuple[str, str]:
+def from_base64(value: str) -> tuple[str, str]:
     """Parse the base64 encoded relay value.
 
     Args:
@@ -191,8 +191,8 @@ class SliceMetadata:
 
 
 __all__ = [
-    "from_base64",
-    "to_base64",
-    "should_resolve_list_connection_edges",
     "SliceMetadata",
+    "from_base64",
+    "should_resolve_list_connection_edges",
+    "to_base64",
 ]

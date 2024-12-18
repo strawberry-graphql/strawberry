@@ -1,5 +1,3 @@
-from typing import Dict
-
 from chalice import Chalice  # type: ignore
 from chalice.app import Response
 from strawberry.chalice.views import GraphQLView
@@ -14,7 +12,7 @@ view_not_get = GraphQLView(schema=schema, graphiql=False, allow_queries_via_get=
 
 
 @app.route("/")
-def index() -> Dict[str, str]:
+def index() -> dict[str, str]:
     return {"strawberry": "cake"}
 
 

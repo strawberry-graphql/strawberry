@@ -1,7 +1,7 @@
 import contextlib
 import json
 import warnings
-from typing import Any, List, Optional, Type
+from typing import Any, Optional
 from unittest.mock import patch
 
 import pytest
@@ -206,7 +206,7 @@ def test_can_initialize_extension(default_query_types_and_query):
 
 
 @pytest.fixture()
-def sync_extension() -> Type[ExampleExtension]:
+def sync_extension() -> type[ExampleExtension]:
     class MyExtension(ExampleExtension):
         def on_operation(self):
             with hook_wrap(self.called_hooks, SchemaExtension.on_operation.__name__):
@@ -237,7 +237,7 @@ def sync_extension() -> Type[ExampleExtension]:
 
 @pytest.mark.asyncio
 async def test_async_extension_hooks(
-    default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
+    default_query_types_and_query: SchemaHelper, async_extension: type[ExampleExtension]
 ):
     schema = strawberry.Schema(
         query=default_query_types_and_query.query_type, extensions=[async_extension]
@@ -817,7 +817,7 @@ def test_on_parsing_end_is_called_with_parsing_errors():
 
 def test_extension_execution_order_sync():
     """Ensure mixed hooks (async & sync) are called correctly."""
-    execution_order: List[Type[SchemaExtension]] = []
+    execution_order: list[type[SchemaExtension]] = []
 
     class ExtensionB(SchemaExtension):
         def on_execute(self):

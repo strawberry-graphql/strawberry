@@ -4,7 +4,7 @@ import json
 import pathlib
 import subprocess
 import tempfile
-from typing import List, TypedDict
+from typing import TypedDict
 
 from .result import Result
 
@@ -12,7 +12,7 @@ from .result import Result
 class PyrightCLIResult(TypedDict):
     version: str
     time: str
-    generalDiagnostics: List[GeneralDiagnostic]
+    generalDiagnostics: list[GeneralDiagnostic]
     summary: Summary
 
 
@@ -41,7 +41,7 @@ class Summary(TypedDict):
     timeInSec: float
 
 
-def run_mypy(code: str, strict: bool = True) -> List[Result]:
+def run_mypy(code: str, strict: bool = True) -> list[Result]:
     args = ["mypy", "--output=json"]
 
     if strict:
@@ -62,7 +62,7 @@ def run_mypy(code: str, strict: bool = True) -> List[Result]:
         )
         full_output = full_output.strip()
 
-        results: List[Result] = []
+        results: list[Result] = []
 
         try:
             for line in full_output.split("\n"):

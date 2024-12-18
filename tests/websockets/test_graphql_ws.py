@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import json
-from typing import TYPE_CHECKING, AsyncGenerator, Union
+from collections.abc import AsyncGenerator
+from typing import TYPE_CHECKING, Union
 from unittest import mock
 
 import pytest

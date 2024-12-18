@@ -2,8 +2,15 @@ from __future__ import annotations
 
 import dataclasses
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Callable, Generic, List, Optional, TypeVar
-from typing_extensions import Annotated
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Callable,
+    Generic,
+    Optional,
+    TypeVar,
+)
 
 from graphql import DirectiveLocation
 
@@ -84,17 +91,17 @@ class StrawberryDirective(Generic[T]):
     python_name: str
     graphql_name: Optional[str]
     resolver: StrawberryDirectiveResolver[T]
-    locations: List[DirectiveLocation]
+    locations: list[DirectiveLocation]
     description: Optional[str] = None
 
     @cached_property
-    def arguments(self) -> List[StrawberryArgument]:
+    def arguments(self) -> list[StrawberryArgument]:
         return self.resolver.arguments
 
 
 def directive(
     *,
-    locations: List[DirectiveLocation],
+    locations: list[DirectiveLocation],
     description: Optional[str] = None,
     name: Optional[str] = None,
 ) -> Callable[[Callable[..., T]], StrawberryDirective[T]]:

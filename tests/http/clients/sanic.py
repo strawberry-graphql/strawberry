@@ -3,7 +3,7 @@ from __future__ import annotations
 from io import BytesIO
 from json import dumps
 from random import randint
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 from typing_extensions import Literal
 
 from sanic import Sanic
@@ -75,9 +75,9 @@ class SanicHttpClient(HttpClient):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
@@ -111,7 +111,7 @@ class SanicHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         request, response = await self.app.asgi_client.request(
             method,
@@ -128,7 +128,7 @@ class SanicHttpClient(HttpClient):
     async def get(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self.request(url, "get", headers=headers)
 
@@ -137,7 +137,7 @@ class SanicHttpClient(HttpClient):
         url: str,
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         body = data or dumps(json)
         request, response = await self.app.asgi_client.request(

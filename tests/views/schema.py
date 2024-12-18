@@ -1,7 +1,8 @@
 import asyncio
 import contextlib
+from collections.abc import AsyncGenerator
 from enum import Enum
-from typing import Any, AsyncGenerator, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from graphql import GraphQLError
 
@@ -21,7 +22,7 @@ class AlwaysFailPermission(BasePermission):
 
 
 class MyExtension(SchemaExtension):
-    def get_results(self) -> Dict[str, str]:
+    def get_results(self) -> dict[str, str]:
         return {"example": "example"}
 
 
@@ -52,7 +53,7 @@ class Flavor(Enum):
 
 @strawberry.input
 class FolderInput:
-    files: List[Upload]
+    files: list[Upload]
 
 
 @strawberry.type
@@ -135,11 +136,11 @@ class Mutation:
         return _read_file(text_file)
 
     @strawberry.mutation
-    def read_files(self, files: List[Upload]) -> List[str]:
+    def read_files(self, files: list[Upload]) -> list[str]:
         return list(map(_read_file, files))
 
     @strawberry.mutation
-    def read_folder(self, folder: FolderInput) -> List[str]:
+    def read_folder(self, folder: FolderInput) -> list[str]:
         return list(map(_read_file, folder.files))
 
     @strawberry.mutation
@@ -266,7 +267,7 @@ class Subscription:
 
 class Schema(strawberry.Schema):
     def process_errors(
-        self, errors: List, execution_context: Optional[ExecutionContext] = None
+        self, errors: list, execution_context: Optional[ExecutionContext] = None
     ) -> None:
         import traceback
 

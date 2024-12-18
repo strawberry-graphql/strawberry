@@ -1,4 +1,5 @@
-from typing import Iterable, Optional
+from collections.abc import Iterable
+from typing import Optional
 
 from strawberry.types.arguments import StrawberryArgumentAnnotation
 

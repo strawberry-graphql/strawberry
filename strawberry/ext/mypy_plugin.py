@@ -8,10 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    List,
     Optional,
-    Set,
-    Tuple,
     Union,
     cast,
 )
@@ -60,7 +57,7 @@ try:
 except ImportError:
     TypeVarDef = TypeVarType
 
-PYDANTIC_VERSION: Optional[Tuple[int, ...]] = None
+PYDANTIC_VERSION: Optional[tuple[int, ...]] = None
 
 # To be compatible with user who don't use pydantic
 try:
@@ -107,7 +104,7 @@ class InvalidNodeTypeException(Exception):
         return self.message
 
 
-def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
+def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> type:
     if len(ctx.type.args) == 0:
         # TODO: maybe this should throw an error
 
@@ -126,7 +123,7 @@ def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface) -> Any:
     return api.named_type(name)
 
 
-def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface) -> Type:
+def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface) -> type:
     if isinstance(expr, NameExpr):
         # guarding against invalid nodes, still have to figure out why this happens
         # but sometimes mypy crashes because the internal node of the named type
@@ -250,7 +247,7 @@ def enum_hook(ctx: DynamicClassDefContext) -> None:
             )
             return
 
-    enum_type: Optional[Type]
+    enum_type: Optional[type]
 
     try:
         enum_type = _get_type_for_expr(first_argument, ctx.api)
@@ -298,7 +295,7 @@ def scalar_hook(ctx: DynamicClassDefContext) -> None:
             )
             return
 
-    scalar_type: Optional[Type]
+    scalar_type: Optional[type]
 
     # TODO: add proper support for NewType
 
@@ -326,7 +323,7 @@ def add_static_method_to_class(
     api: Union[SemanticAnalyzerPluginInterface, CheckerPluginInterface],
     cls: ClassDef,
     name: str,
-    args: List[Argument],
+    args: list[Argument],
     return_type: Type,
     tvar_def: Optional[TypeVarType] = None,
 ) -> None:
@@ -410,7 +407,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         model_type = cast(Instance, _get_type_for_expr(model_expression, ctx.api))
 
         # these are the fields that the user added to the strawberry type
-        new_strawberry_fields: Set[str] = set()
+        new_strawberry_fields: set[str] = set()
 
         # TODO: think about inheritance for strawberry?
         for stmt in ctx.cls.defs.body:
@@ -418,7 +415,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                 lhs = cast(NameExpr, stmt.lvalues[0])
                 new_strawberry_fields.add(lhs.name)
 
-        pydantic_fields: Set[PydanticModelField] = set()
+        pydantic_fields: set[PydanticModelField] = set()
         try:
             fields = model_type.type.metadata[PYDANTIC_METADATA_KEY]["fields"]
             for data in fields.items():
@@ -438,7 +435,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                 ctx.reason,
             )
 
-        potentially_missing_fields: Set[PydanticModelField] = {
+        potentially_missing_fields: set[PydanticModelField] = {
             f for f in pydantic_fields if f.name not in new_strawberry_fields
         }
 
@@ -449,7 +446,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         This means that the user is using all_fields=True
         """
         is_all_fields: bool = len(potentially_missing_fields) == len(pydantic_fields)
-        missing_pydantic_fields: Set[PydanticModelField] = (
+        missing_pydantic_fields: set[PydanticModelField] = (
             potentially_missing_fields if not is_all_fields else set()
         )
 
@@ -623,7 +620,7 @@ class StrawberryPlugin(Plugin):
         )
 
 
-def plugin(version: str) -> typing.Type[StrawberryPlugin]:
+def plugin(version: str) -> typing.type[StrawberryPlugin]:
     match = VERSION_RE.match(version)
     if match:
         MypyVersion.VERSION = Decimal(".".join(match.groups()))

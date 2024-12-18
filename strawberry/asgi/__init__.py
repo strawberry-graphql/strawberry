@@ -5,13 +5,8 @@ from datetime import timedelta
 from json import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
-    AsyncGenerator,
-    AsyncIterator,
     Callable,
-    Dict,
-    Mapping,
     Optional,
-    Sequence,
     Union,
     cast,
 )
@@ -46,6 +41,8 @@ from strawberry.http.typevars import (
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, AsyncIterator, Mapping, Sequence
+
     from starlette.types import Receive, Scope, Send
 
     from strawberry.http import GraphQLHTTPResponse
@@ -231,7 +228,7 @@ class GraphQL(
         request: Request | WebSocket,
         stream: Callable[[], AsyncIterator[str]],
         sub_response: Response,
-        headers: Dict[str, str],
+        headers: dict[str, str],
     ) -> Response:
         return StreamingResponse(
             stream(),

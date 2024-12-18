@@ -1,14 +1,9 @@
 import sys
+from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator, Awaitable
 from typing import (
     Any,
-    AsyncGenerator,
-    AsyncIterable,
-    AsyncIterator,
-    Awaitable,
     Callable,
-    List,
     Optional,
-    Tuple,
     TypeVar,
     Union,
 )
@@ -19,7 +14,7 @@ _R = TypeVar("_R")
 
 async def aenumerate(
     iterable: Union[AsyncIterator[_T], AsyncIterable[_T]],
-) -> AsyncIterator[Tuple[int, _T]]:
+) -> AsyncIterator[tuple[int, _T]]:
     """Async version of enumerate."""
     i = 0
     async for element in iterable:
@@ -56,7 +51,7 @@ async def aislice(
         return
 
 
-async def asyncgen_to_list(generator: AsyncGenerator[_T, Any]) -> List[_T]:
+async def asyncgen_to_list(generator: AsyncGenerator[_T, Any]) -> list[_T]:
     """Convert an async generator to a list."""
     return [element async for element in generator]
 

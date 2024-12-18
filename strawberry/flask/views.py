@@ -4,7 +4,6 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    Mapping,
     Optional,
     Union,
     cast,
@@ -23,6 +22,8 @@ from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import Context, RootValue
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from flask.typing import ResponseReturnValue
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
@@ -203,6 +204,6 @@ class AsyncGraphQLView(
 
 
 __all__ = [
-    "GraphQLView",
     "AsyncGraphQLView",
+    "GraphQLView",
 ]

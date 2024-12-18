@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 
 import strawberry
@@ -50,7 +48,7 @@ def test_field_default_extensions_value_set():
 def test_field_default_factory_executed_each_time():
     @strawberry.type
     class Query:
-        the_list: List[str] = strawberry.field(default_factory=list)
+        the_list: list[str] = strawberry.field(default_factory=list)
 
     assert Query().the_list == Query().the_list
     assert Query().the_list is not Query().the_list

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import contextlib
 import json
+from collections.abc import AsyncGenerator
 from io import BytesIO
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, Optional
 from typing_extensions import Literal
 
 from litestar import Litestar, Request
@@ -87,9 +88,9 @@ class LitestarHttpClient(HttpClient):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response:
         if body := self._build_body(
@@ -121,7 +122,7 @@ class LitestarHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         response = getattr(self.client, method)(url, headers=headers)
 
@@ -134,7 +135,7 @@ class LitestarHttpClient(HttpClient):
     async def get(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self.request(url, "get", headers=headers)
 
@@ -143,7 +144,7 @@ class LitestarHttpClient(HttpClient):
         url: str,
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         response = self.client.post(url, headers=headers, content=data, json=json)
 
@@ -158,7 +159,7 @@ class LitestarHttpClient(HttpClient):
         self,
         url: str,
         *,
-        protocols: List[str],
+        protocols: list[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
         try:
             with self.client.websocket_connect(url, protocols) as ws:
@@ -183,7 +184,7 @@ class LitestarWebSocketClient(WebSocketClient):
     async def send_text(self, payload: str) -> None:
         self.ws.send_text(payload)
 
-    async def send_json(self, payload: Dict[str, Any]) -> None:
+    async def send_json(self, payload: dict[str, Any]) -> None:
         self.ws.send_json(payload)
 
     async def send_bytes(self, payload: bytes) -> None:

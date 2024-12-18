@@ -1,5 +1,6 @@
 import json
-from typing import Any, Dict, Generic, List, Mapping, Optional, Union
+from collections.abc import Mapping
+from typing import Any, Generic, Optional, Union
 from typing_extensions import Protocol
 
 from strawberry.http.ides import GraphQL_IDE, get_graphql_ide_html
@@ -11,7 +12,7 @@ from .typevars import Request
 
 class BaseRequestProtocol(Protocol):
     @property
-    def query_params(self) -> Mapping[str, Optional[Union[str, List[str]]]]: ...
+    def query_params(self) -> Mapping[str, Optional[Union[str, list[str]]]]: ...
 
     @property
     def method(self) -> HTTPMethod: ...
@@ -49,7 +50,7 @@ class BaseView(Generic[Request]):
     def encode_json(self, data: object) -> str:
         return json.dumps(data)
 
-    def parse_query_params(self, params: QueryParams) -> Dict[str, Any]:
+    def parse_query_params(self, params: QueryParams) -> dict[str, Any]:
         params = dict(params)
 
         if "variables" in params:
@@ -65,7 +66,7 @@ class BaseView(Generic[Request]):
         return get_graphql_ide_html(graphql_ide=self.graphql_ide)
 
     def _is_multipart_subscriptions(
-        self, content_type: str, params: Dict[str, str]
+        self, content_type: str, params: dict[str, str]
     ) -> bool:
         if content_type != "multipart/mixed":
             return False

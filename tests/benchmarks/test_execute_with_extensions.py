@@ -1,7 +1,7 @@
 import asyncio
 from inspect import isawaitable
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 from pytest_codspeed.plugin import BenchmarkFixture
@@ -14,7 +14,7 @@ from .api import Query
 
 
 class SimpleExtension(SchemaExtension):
-    def get_results(self) -> AwaitableOrValue[Dict[str, Any]]:
+    def get_results(self) -> AwaitableOrValue[dict[str, Any]]:
         return super().get_results()
 
 
@@ -39,7 +39,7 @@ items_query = (ROOT / "items.graphql").read_text()
     ids=lambda x: f"with_{'_'.join(type(ext).__name__.lower() for ext in x) or 'no_extensions'}",
 )
 def test_execute(
-    benchmark: BenchmarkFixture, items: int, extensions: List[SchemaExtension]
+    benchmark: BenchmarkFixture, items: int, extensions: list[SchemaExtension]
 ):
     schema = strawberry.Schema(query=Query, extensions=extensions)
 

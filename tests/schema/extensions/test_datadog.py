@@ -1,5 +1,6 @@
 import typing
-from typing import Any, AsyncGenerator, Tuple, Type
+from collections.abc import AsyncGenerator
+from typing import Any
 
 import pytest
 
@@ -10,7 +11,7 @@ if typing.TYPE_CHECKING:
 
 
 @pytest.fixture
-def datadog_extension(mocker) -> Tuple[Type["DatadogTracingExtension"], Any]:
+def datadog_extension(mocker) -> tuple[type["DatadogTracingExtension"], Any]:
     datadog_mock = mocker.MagicMock()
 
     mocker.patch.dict("sys.modules", ddtrace=datadog_mock)
@@ -21,7 +22,7 @@ def datadog_extension(mocker) -> Tuple[Type["DatadogTracingExtension"], Any]:
 
 
 @pytest.fixture
-def datadog_extension_sync(mocker) -> Tuple[Type["DatadogTracingExtension"], Any]:
+def datadog_extension_sync(mocker) -> tuple[type["DatadogTracingExtension"], Any]:
     datadog_mock = mocker.MagicMock()
 
     mocker.patch.dict("sys.modules", ddtrace=datadog_mock)

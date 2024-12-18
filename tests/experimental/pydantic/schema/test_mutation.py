@@ -1,4 +1,4 @@
-from typing import Dict, List, Union
+from typing import Union
 
 import pydantic
 
@@ -183,7 +183,7 @@ def test_mutation_with_validation_and_error_type():
             try:
                 data = input.to_pydantic()
             except pydantic.ValidationError as e:
-                args: Dict[str, List[str]] = {}
+                args: dict[str, list[str]] = {}
                 for error in e.errors():
                     field = error["loc"][0]  # currently doesn't support nested errors
                     field_errors = args.get(field, [])

@@ -1,5 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional
-from typing_extensions import Annotated
+from typing import TYPE_CHECKING, Annotated, Optional
 
 import strawberry
 
@@ -10,7 +9,7 @@ if TYPE_CHECKING:
 @strawberry.type
 class TypeA:
     list_of_b: Optional[
-        List[Annotated["TypeB", strawberry.lazy("tests.schema.test_lazy.type_b")]]
+        list[Annotated["TypeB", strawberry.lazy("tests.schema.test_lazy.type_b")]]
     ] = None
 
     @strawberry.field

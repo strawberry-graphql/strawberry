@@ -1,3 +1,3 @@
 from .client import BaseGraphQLTestClient, Body, Response
 
-__all__ = ["Body", "Response", "BaseGraphQLTestClient"]
+__all__ = ["BaseGraphQLTestClient", "Body", "Response"]

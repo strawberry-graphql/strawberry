@@ -4,7 +4,7 @@ import dataclasses
 import time
 from datetime import datetime, timezone
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from strawberry.extensions import SchemaExtension
 from strawberry.extensions.utils import get_path_from_info
@@ -12,6 +12,8 @@ from strawberry.extensions.utils import get_path_from_info
 from .utils import should_skip_tracing
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from graphql import GraphQLResolveInfo
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
@@ -25,20 +27,20 @@ class ApolloStepStats:
     start_offset: int
     duration: int
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, Any]:
         return {"startOffset": self.start_offset, "duration": self.duration}
 
 
 @dataclasses.dataclass
 class ApolloResolverStats:
-    path: List[str]
+    path: list[str]
     parent_type: Any
     field_name: str
     return_type: Any
     start_offset: int
     duration: Optional[int] = None
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, Any]:
         return {
             "path": self.path,
             "field_name": self.field_name,
@@ -51,9 +53,9 @@ class ApolloResolverStats:
 
 @dataclasses.dataclass
 class ApolloExecutionStats:
-    resolvers: List[ApolloResolverStats]
+    resolvers: list[ApolloResolverStats]
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, Any]:
         return {"resolvers": [resolver.to_json() for resolver in self.resolvers]}
 
 
@@ -67,7 +69,7 @@ class ApolloTracingStats:
     parsing: ApolloStepStats
     version: int = 1
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, Any]:
         return {
             "version": self.version,
             "startTime": self.start_time.strftime(DATETIME_FORMAT),
@@ -81,7 +83,7 @@ class ApolloTracingStats:
 
 class ApolloTracingExtension(SchemaExtension):
     def __init__(self, execution_context: ExecutionContext) -> None:
-        self._resolver_stats: List[ApolloResolverStats] = []
+        self._resolver_stats: list[ApolloResolverStats] = []
         self.execution_context = execution_context
 
     def on_operation(self) -> Generator[None, None, None]:
@@ -121,7 +123,7 @@ class ApolloTracingExtension(SchemaExtension):
             ),
         )
 
-    def get_results(self) -> Dict[str, Dict[str, Any]]:
+    def get_results(self) -> dict[str, dict[str, Any]]:
         return {"tracing": self.stats.to_json()}
 
     async def resolve(

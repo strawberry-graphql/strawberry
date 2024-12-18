@@ -1,10 +1,8 @@
-import sys
 import textwrap
 from enum import Enum
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import pydantic
-import pytest
 
 import strawberry
 from tests.experimental.pydantic.utils import needs_pydantic_v1
@@ -162,7 +160,7 @@ def test_basic_alias_type():
 def test_basic_type_with_list():
     class UserModel(pydantic.BaseModel):
         age: int
-        friend_names: List[str]
+        friend_names: list[str]
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -225,7 +223,7 @@ def test_basic_type_with_list_of_nested_model():
         name: strawberry.auto
 
     class User(pydantic.BaseModel):
-        hobbies: List[Hobby]
+        hobbies: list[Hobby]
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
@@ -532,10 +530,6 @@ def test_basic_type_with_optional_and_default():
 
 
 @needs_pydantic_v1
-@pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="ConstrainedList with another model does not work with 3.8",
-)
 def test_basic_type_with_constrained_list():
     class FriendList(pydantic.ConstrainedList):
         min_items = 1

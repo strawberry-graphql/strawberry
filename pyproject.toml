@@ -34,7 +34,7 @@ requires = ["poetry-core>=1.6"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 graphql-core = ">=3.2.0,<3.4.0"
 typing-extensions = ">=4.5.0"
 python-dateutil = "^2.7.0"
@@ -191,12 +191,12 @@ append-github-contributor = true
 exclude = ["**/__pycache__",]
 reportMissingImports = true
 reportMissingTypeStubs = false
-pythonVersion = "3.8"
+pythonVersion = "3.9"
 stubPath = ""
 
 [tool.ruff]
 line-length = 88
-target-version = "py38"
+target-version = "py39"
 fix = true
 exclude = [
     ".bzr",
@@ -236,9 +236,7 @@ ignore = [
     "S102",
     "S104",
     "S324",
-    "ANN101", # missing annotation for self?
     # definitely enable these, maybe not in tests
-    "ANN102",
     "ANN401",
     "PGH003",
     "PGH004",
@@ -283,7 +281,6 @@ ignore = [
 
     # enable these, we have some in tests
     "B006",
-    "PT004",
     "PT007",
     "PT011",
     "PT012",

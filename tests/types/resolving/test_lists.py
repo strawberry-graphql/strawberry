@@ -1,8 +1,5 @@
-import sys
 from collections.abc import Sequence
-from typing import List, Optional, Tuple, Union
-
-import pytest
+from typing import Optional, Union
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
@@ -10,31 +7,27 @@ from strawberry.types.base import StrawberryList
 
 
 def test_basic_list():
-    annotation = StrawberryAnnotation(List[str])
+    annotation = StrawberryAnnotation(list[str])
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryList)
     assert resolved.of_type is str
 
     assert resolved == StrawberryList(of_type=str)
-    assert resolved == List[str]
+    assert resolved == list[str]
 
 
 def test_basic_tuple():
-    annotation = StrawberryAnnotation(Tuple[str])
+    annotation = StrawberryAnnotation(tuple[str])
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryList)
     assert resolved.of_type is str
 
     assert resolved == StrawberryList(of_type=str)
-    assert resolved == Tuple[str]
+    assert resolved == tuple[str]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="collections.abc.Sequence supporting [] was added in python 3.9",
-)
 def test_basic_sequence():
     annotation = StrawberryAnnotation(Sequence[str])
     resolved = annotation.resolve()
@@ -47,20 +40,16 @@ def test_basic_sequence():
 
 
 def test_list_of_optional():
-    annotation = StrawberryAnnotation(List[Optional[int]])
+    annotation = StrawberryAnnotation(list[Optional[int]])
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryList)
     assert resolved.of_type == Optional[int]
 
     assert resolved == StrawberryList(of_type=Optional[int])
-    assert resolved == List[Optional[int]]
+    assert resolved == list[Optional[int]]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="collections.abc.Sequence supporting [] was added in python 3.9",
-)
 def test_sequence_of_optional():
     annotation = StrawberryAnnotation(Sequence[Optional[int]])
     resolved = annotation.resolve()
@@ -73,31 +62,27 @@ def test_sequence_of_optional():
 
 
 def test_tuple_of_optional():
-    annotation = StrawberryAnnotation(Tuple[Optional[int]])
+    annotation = StrawberryAnnotation(tuple[Optional[int]])
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryList)
     assert resolved.of_type == Optional[int]
 
     assert resolved == StrawberryList(of_type=Optional[int])
-    assert resolved == Tuple[Optional[int]]
+    assert resolved == tuple[Optional[int]]
 
 
 def test_list_of_lists():
-    annotation = StrawberryAnnotation(List[List[float]])
+    annotation = StrawberryAnnotation(list[list[float]])
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryList)
-    assert resolved.of_type == List[float]
+    assert resolved.of_type == list[float]
 
-    assert resolved == StrawberryList(of_type=List[float])
-    assert resolved == List[List[float]]
+    assert resolved == StrawberryList(of_type=list[float])
+    assert resolved == list[list[float]]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="collections.abc.Sequence supporting [] was added in python 3.9",
-)
 def test_sequence_of_sequence():
     annotation = StrawberryAnnotation(Sequence[Sequence[float]])
     resolved = annotation.resolve()
@@ -110,14 +95,14 @@ def test_sequence_of_sequence():
 
 
 def test_tuple_of_tuple():
-    annotation = StrawberryAnnotation(Tuple[Tuple[float]])
+    annotation = StrawberryAnnotation(tuple[tuple[float]])
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryList)
-    assert resolved.of_type == Tuple[float]
+    assert resolved.of_type == tuple[float]
 
-    assert resolved == StrawberryList(of_type=Tuple[float])
-    assert resolved == Tuple[Tuple[float]]
+    assert resolved == StrawberryList(of_type=tuple[float])
+    assert resolved == tuple[tuple[float]]
 
 
 def test_list_of_union():
@@ -129,20 +114,16 @@ def test_list_of_union():
     class Fungus:
         spore: bool
 
-    annotation = StrawberryAnnotation(List[Union[Animal, Fungus]])
+    annotation = StrawberryAnnotation(list[Union[Animal, Fungus]])
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryList)
     assert resolved.of_type == Union[Animal, Fungus]
 
     assert resolved == StrawberryList(of_type=Union[Animal, Fungus])
-    assert resolved == List[Union[Animal, Fungus]]
+    assert resolved == list[Union[Animal, Fungus]]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="collections.abc.Sequence supporting [] was added in python 3.9",
-)
 def test_sequence_of_union():
     @strawberry.type
     class Animal:
@@ -162,10 +143,6 @@ def test_sequence_of_union():
     assert resolved == Sequence[Union[Animal, Fungus]]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="built-in generic annotations where added in python 3.9",
-)
 def test_list_builtin():
     annotation = StrawberryAnnotation(list[str])
     resolved = annotation.resolve()
@@ -174,14 +151,10 @@ def test_list_builtin():
     assert resolved.of_type is str
 
     assert resolved == StrawberryList(of_type=str)
-    assert resolved == List[str]
+    assert resolved == list[str]
     assert resolved == list[str]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="built-in generic annotations where added in python 3.9",
-)
 def test_tuple_builtin():
     annotation = StrawberryAnnotation(tuple[str])
     resolved = annotation.resolve()
@@ -190,5 +163,5 @@ def test_tuple_builtin():
     assert resolved.of_type is str
 
     assert resolved == StrawberryList(of_type=str)
-    assert resolved == Tuple[str]
+    assert resolved == tuple[str]
     assert resolved == tuple[str]

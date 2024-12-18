@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 import strawberry
 
@@ -7,7 +7,7 @@ def test_basic_list():
     @strawberry.type
     class Query:
         @strawberry.field
-        def example(self) -> List[str]:
+        def example(self) -> list[str]:
             return ["Example"]
 
     schema = strawberry.Schema(query=Query)
@@ -24,7 +24,7 @@ def test_of_optional():
     @strawberry.type
     class Query:
         @strawberry.field
-        def example(self) -> List[Optional[str]]:
+        def example(self) -> list[Optional[str]]:
             return ["Example", None]
 
     schema = strawberry.Schema(query=Query)
@@ -38,12 +38,12 @@ def test_of_optional():
 
 
 def test_lists_of_lists():
-    def get_polygons() -> List[List[float]]:
+    def get_polygons() -> list[list[float]]:
         return [[2.0, 6.0]]
 
     @strawberry.type
     class Query:
-        polygons: List[List[float]] = strawberry.field(resolver=get_polygons)
+        polygons: list[list[float]] = strawberry.field(resolver=get_polygons)
 
     schema = strawberry.Schema(query=Query)
 

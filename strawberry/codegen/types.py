@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Mapping, Optional, Type, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
     from enum import EnumMeta
     from typing_extensions import Literal
 
@@ -23,7 +24,7 @@ class GraphQLList:
 @dataclass
 class GraphQLUnion:
     name: str
-    types: List[GraphQLObjectType]
+    types: list[GraphQLObjectType]
 
 
 @dataclass
@@ -42,7 +43,7 @@ class GraphQLFragmentSpread:
 @dataclass
 class GraphQLObjectType:
     name: str
-    fields: List[GraphQLField] = field(default_factory=list)
+    fields: list[GraphQLField] = field(default_factory=list)
     graphql_typename: Optional[str] = None
 
 
@@ -52,7 +53,7 @@ class GraphQLObjectType:
 @dataclass
 class GraphQLFragmentType(GraphQLObjectType):
     name: str
-    fields: List[GraphQLField] = field(default_factory=list)
+    fields: list[GraphQLField] = field(default_factory=list)
     graphql_typename: Optional[str] = None
     on: str = ""
 
@@ -66,14 +67,14 @@ class GraphQLFragmentType(GraphQLObjectType):
 @dataclass
 class GraphQLEnum:
     name: str
-    values: List[str]
+    values: list[str]
     python_type: EnumMeta
 
 
 @dataclass
 class GraphQLScalar:
     name: str
-    python_type: Optional[Type]
+    python_type: Optional[type]
 
 
 GraphQLType = Union[
@@ -90,15 +91,15 @@ GraphQLType = Union[
 class GraphQLFieldSelection:
     field: str
     alias: Optional[str]
-    selections: List[GraphQLSelection]
-    directives: List[GraphQLDirective]
-    arguments: List[GraphQLArgument]
+    selections: list[GraphQLSelection]
+    directives: list[GraphQLDirective]
+    arguments: list[GraphQLArgument]
 
 
 @dataclass
 class GraphQLInlineFragment:
     type_condition: str
-    selections: List[GraphQLSelection]
+    selections: list[GraphQLSelection]
 
 
 GraphQLSelection = Union[
@@ -141,7 +142,7 @@ class GraphQLNullValue:
 
 @dataclass
 class GraphQLListValue:
-    values: List[GraphQLArgumentValue]
+    values: list[GraphQLArgumentValue]
 
 
 @dataclass
@@ -176,7 +177,7 @@ class GraphQLArgument:
 @dataclass
 class GraphQLDirective:
     name: str
-    arguments: List[GraphQLArgument]
+    arguments: list[GraphQLArgument]
 
 
 @dataclass
@@ -189,39 +190,39 @@ class GraphQLVariable:
 class GraphQLOperation:
     name: str
     kind: Literal["query", "mutation", "subscription"]
-    selections: List[GraphQLSelection]
-    directives: List[GraphQLDirective]
-    variables: List[GraphQLVariable]
+    selections: list[GraphQLSelection]
+    directives: list[GraphQLDirective]
+    variables: list[GraphQLVariable]
     type: GraphQLObjectType
     variables_type: Optional[GraphQLObjectType]
 
 
 __all__ = [
-    "GraphQLOptional",
-    "GraphQLList",
-    "GraphQLUnion",
-    "GraphQLField",
-    "GraphQLFragmentSpread",
-    "GraphQLObjectType",
-    "GraphQLFragmentType",
+    "GraphQLArgument",
+    "GraphQLArgumentValue",
+    "GraphQLBoolValue",
+    "GraphQLDirective",
     "GraphQLEnum",
-    "GraphQLScalar",
-    "GraphQLType",
+    "GraphQLEnumValue",
+    "GraphQLField",
     "GraphQLFieldSelection",
+    "GraphQLFloatValue",
+    "GraphQLFragmentSpread",
+    "GraphQLFragmentType",
     "GraphQLInlineFragment",
+    "GraphQLIntValue",
+    "GraphQLList",
+    "GraphQLListValue",
+    "GraphQLNullValue",
+    "GraphQLObjectType",
+    "GraphQLObjectValue",
+    "GraphQLOperation",
+    "GraphQLOptional",
+    "GraphQLScalar",
     "GraphQLSelection",
     "GraphQLStringValue",
-    "GraphQLIntValue",
-    "GraphQLFloatValue",
-    "GraphQLEnumValue",
-    "GraphQLBoolValue",
-    "GraphQLNullValue",
-    "GraphQLListValue",
-    "GraphQLObjectValue",
-    "GraphQLVariableReference",
-    "GraphQLArgumentValue",
-    "GraphQLArgument",
-    "GraphQLDirective",
+    "GraphQLType",
+    "GraphQLUnion",
     "GraphQLVariable",
-    "GraphQLOperation",
+    "GraphQLVariableReference",
 ]

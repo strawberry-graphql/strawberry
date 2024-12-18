@@ -1,5 +1,5 @@
 import textwrap
-from typing_extensions import Annotated
+from typing import Annotated
 
 import strawberry
 from strawberry.field_extensions import InputMutationExtension

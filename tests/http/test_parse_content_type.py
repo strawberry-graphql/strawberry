@@ -1,5 +1,3 @@
-from typing import Dict, Tuple
-
 import pytest
 
 from strawberry.http.parse_content_type import parse_content_type
@@ -44,6 +42,6 @@ from strawberry.http.parse_content_type import parse_content_type
 )
 async def test_parse_content_type(
     content_type: str,
-    expected: Tuple[str, Dict[str, str]],
+    expected: tuple[str, dict[str, str]],
 ):
     assert parse_content_type(content_type) == expected

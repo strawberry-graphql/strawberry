@@ -1,5 +1,5 @@
-from typing import Any, cast
-from typing_extensions import Annotated, get_args
+from typing import Annotated, Any, cast
+from typing_extensions import get_args
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation

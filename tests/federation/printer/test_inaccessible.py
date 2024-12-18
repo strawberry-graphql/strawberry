@@ -1,7 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import List
-from typing_extensions import Annotated
+from typing import Annotated
 
 import strawberry
 
@@ -34,7 +33,7 @@ def test_field_inaccessible_printed_correctly():
         def top_products(
             self,
             first: Annotated[int, strawberry.federation.argument(inaccessible=True)],
-        ) -> List[Product]:
+        ) -> list[Product]:
             return []
 
     schema = strawberry.federation.Schema(

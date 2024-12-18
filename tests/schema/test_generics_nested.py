@@ -1,5 +1,5 @@
 import textwrap
-from typing import Generic, List, Optional, TypeVar, Union
+from typing import Generic, Optional, TypeVar, Union
 
 import strawberry
 from strawberry.scalars import JSON
@@ -59,19 +59,19 @@ def test_unions_nested_inside_a_list():
         data: JSON
 
     @strawberry.type
-    class BlockRowType(Generic[T]):
+    class BlockRowtype(Generic[T]):
         total: int
-        items: List[T]
+        items: list[T]
 
     @strawberry.type
     class Query:
         @strawberry.field
         def blocks(
             self,
-        ) -> List[Union[BlockRowType[int], BlockRowType[str], JsonBlock]]:
+        ) -> list[Union[BlockRowtype[int], BlockRowtype[str], JsonBlock]]:
             return [
-                BlockRowType(total=3, items=["a", "b", "c"]),
-                BlockRowType(total=1, items=[1, 2, 3, 4]),
+                BlockRowtype(total=3, items=["a", "b", "c"]),
+                BlockRowtype(total=1, items=[1, 2, 3, 4]),
                 JsonBlock(data=JSON({"a": 1})),
             ]
 
@@ -81,10 +81,10 @@ def test_unions_nested_inside_a_list():
         """query {
         blocks {
             __typename
-            ... on IntBlockRowType {
+            ... on IntBlockRowtype {
                 a: items
             }
-            ... on StrBlockRowType {
+            ... on StrBlockRowtype {
                 b: items
             }
             ... on JsonBlock {
@@ -98,8 +98,8 @@ def test_unions_nested_inside_a_list():
 
     assert result.data == {
         "blocks": [
-            {"__typename": "StrBlockRowType", "b": ["a", "b", "c"]},
-            {"__typename": "IntBlockRowType", "a": [1, 2, 3, 4]},
+            {"__typename": "StrBlockRowtype", "b": ["a", "b", "c"]},
+            {"__typename": "IntBlockRowtype", "a": [1, 2, 3, 4]},
             {"__typename": "JsonBlock", "data": {"a": 1}},
         ]
     }
@@ -113,19 +113,19 @@ def test_unions_nested_inside_a_list_with_no_items():
         data: JSON
 
     @strawberry.type
-    class BlockRowType(Generic[T]):
+    class BlockRowtype(Generic[T]):
         total: int
-        items: List[T]
+        items: list[T]
 
     @strawberry.type
     class Query:
         @strawberry.field
         def blocks(
             self,
-        ) -> List[Union[BlockRowType[int], BlockRowType[str], JsonBlock]]:
+        ) -> list[Union[BlockRowtype[int], BlockRowtype[str], JsonBlock]]:
             return [
-                BlockRowType(total=3, items=[]),
-                BlockRowType(total=1, items=[]),
+                BlockRowtype(total=3, items=[]),
+                BlockRowtype(total=1, items=[]),
                 JsonBlock(data=JSON({"a": 1})),
             ]
 
@@ -135,10 +135,10 @@ def test_unions_nested_inside_a_list_with_no_items():
         """query {
         blocks {
             __typename
-            ... on IntBlockRowType {
+            ... on IntBlockRowtype {
                 a: items
             }
-            ... on StrBlockRowType {
+            ... on StrBlockRowtype {
                 b: items
             }
             ... on JsonBlock {
@@ -152,8 +152,8 @@ def test_unions_nested_inside_a_list_with_no_items():
 
     assert result.data == {
         "blocks": [
-            {"__typename": "IntBlockRowType", "a": []},
-            {"__typename": "IntBlockRowType", "a": []},
+            {"__typename": "IntBlockRowtype", "a": []},
+            {"__typename": "IntBlockRowtype", "a": []},
             {"__typename": "JsonBlock", "data": {"a": 1}},
         ]
     }
@@ -167,19 +167,19 @@ def test_unions_nested_inside_a_list_of_lists():
         data: JSON
 
     @strawberry.type
-    class BlockRowType(Generic[T]):
+    class BlockRowtype(Generic[T]):
         total: int
-        items: List[List[T]]
+        items: list[list[T]]
 
     @strawberry.type
     class Query:
         @strawberry.field
         def blocks(
             self,
-        ) -> List[Union[BlockRowType[int], BlockRowType[str], JsonBlock]]:
+        ) -> list[Union[BlockRowtype[int], BlockRowtype[str], JsonBlock]]:
             return [
-                BlockRowType(total=3, items=[["a", "b", "c"]]),
-                BlockRowType(total=1, items=[[1, 2, 3, 4]]),
+                BlockRowtype(total=3, items=[["a", "b", "c"]]),
+                BlockRowtype(total=1, items=[[1, 2, 3, 4]]),
                 JsonBlock(data=JSON({"a": 1})),
             ]
 
@@ -189,10 +189,10 @@ def test_unions_nested_inside_a_list_of_lists():
         """query {
         blocks {
             __typename
-            ... on IntBlockRowType {
+            ... on IntBlockRowtype {
                 a: items
             }
-            ... on StrBlockRowType {
+            ... on StrBlockRowtype {
                 b: items
             }
             ... on JsonBlock {
@@ -206,8 +206,8 @@ def test_unions_nested_inside_a_list_of_lists():
 
     assert result.data == {
         "blocks": [
-            {"__typename": "StrBlockRowType", "b": [["a", "b", "c"]]},
-            {"__typename": "IntBlockRowType", "a": [[1, 2, 3, 4]]},
+            {"__typename": "StrBlockRowtype", "b": [["a", "b", "c"]]},
+            {"__typename": "IntBlockRowtype", "a": [[1, 2, 3, 4]]},
             {"__typename": "JsonBlock", "data": {"a": 1}},
         ]
     }
@@ -226,22 +226,22 @@ def test_using_generics_with_an_interface():
         data: JSON
 
     @strawberry.type
-    class BlockRowType(BlockInterface, Generic[T]):
+    class BlockRowtype(BlockInterface, Generic[T]):
         total: int
-        items: List[T]
+        items: list[T]
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def blocks(self) -> List[BlockInterface]:
+        def blocks(self) -> list[BlockInterface]:
             return [
-                BlockRowType(id=strawberry.ID("3"), total=3, items=["a", "b", "c"]),
-                BlockRowType(id=strawberry.ID("1"), total=1, items=[1, 2, 3, 4]),
+                BlockRowtype(id=strawberry.ID("3"), total=3, items=["a", "b", "c"]),
+                BlockRowtype(id=strawberry.ID("1"), total=1, items=[1, 2, 3, 4]),
                 JsonBlock(id=strawberry.ID("2"), data=JSON({"a": 1})),
             ]
 
     schema = strawberry.Schema(
-        query=Query, types=[BlockRowType[int], JsonBlock, BlockRowType[str]]
+        query=Query, types=[BlockRowtype[int], JsonBlock, BlockRowtype[str]]
     )
 
     expected_schema = textwrap.dedent(
@@ -251,7 +251,7 @@ def test_using_generics_with_an_interface():
           disclaimer: String
         }
 
-        type IntBlockRowType implements BlockInterface {
+        type IntBlockRowtype implements BlockInterface {
           id: ID!
           disclaimer: String
           total: Int!
@@ -273,7 +273,7 @@ def test_using_generics_with_an_interface():
           blocks: [BlockInterface!]!
         }
 
-        type StrBlockRowType implements BlockInterface {
+        type StrBlockRowtype implements BlockInterface {
           id: ID!
           disclaimer: String
           total: Int!
@@ -289,10 +289,10 @@ def test_using_generics_with_an_interface():
         blocks {
             id
             __typename
-            ... on IntBlockRowType {
+            ... on IntBlockRowtype {
                 a: items
             }
-            ... on StrBlockRowType {
+            ... on StrBlockRowtype {
                 b: items
             }
             ... on JsonBlock {
@@ -306,8 +306,8 @@ def test_using_generics_with_an_interface():
 
     assert result.data == {
         "blocks": [
-            {"id": "3", "__typename": "StrBlockRowType", "b": ["a", "b", "c"]},
-            {"id": "1", "__typename": "IntBlockRowType", "a": [1, 2, 3, 4]},
+            {"id": "3", "__typename": "StrBlockRowtype", "b": ["a", "b", "c"]},
+            {"id": "1", "__typename": "IntBlockRowtype", "a": [1, 2, 3, 4]},
             {"id": "2", "__typename": "JsonBlock", "data": {"a": 1}},
         ]
     }

@@ -6,12 +6,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    FrozenSet,
-    Generator,
-    Iterable,
     Optional,
-    Set,
     Union,
 )
 
@@ -24,6 +19,8 @@ from strawberry.extensions.utils import get_path_from_info
 from .utils import should_skip_tracing
 
 if TYPE_CHECKING:
+    from collections.abc import Generator, Iterable
+
     from graphql import GraphQLResolveInfo
     from opentelemetry.trace import Span, Tracer
 
@@ -32,12 +29,12 @@ if TYPE_CHECKING:
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
-ArgFilter = Callable[[Dict[str, Any], "GraphQLResolveInfo"], Dict[str, Any]]
+ArgFilter = Callable[[dict[str, Any], "GraphQLResolveInfo"], dict[str, Any]]
 
 
 class OpenTelemetryExtension(SchemaExtension):
     _arg_filter: Optional[ArgFilter]
-    _span_holder: Dict[LifecycleStep, Span]
+    _span_holder: dict[LifecycleStep, Span]
     _tracer: Tracer
 
     def __init__(
@@ -100,8 +97,8 @@ class OpenTelemetryExtension(SchemaExtension):
         self._span_holder[LifecycleStep.PARSE].end()
 
     def filter_resolver_args(
-        self, args: Dict[str, Any], info: GraphQLResolveInfo
-    ) -> Dict[str, Any]:
+        self, args: dict[str, Any], info: GraphQLResolveInfo
+    ) -> dict[str, Any]:
         if not self._arg_filter:
             return args
         return self._arg_filter(deepcopy(args), info)
@@ -132,7 +129,7 @@ class OpenTelemetryExtension(SchemaExtension):
         else:
             return str(value)
 
-    def convert_set_to_allowed_types(self, value: Union[Set, FrozenSet]) -> str:
+    def convert_set_to_allowed_types(self, value: Union[set, frozenset]) -> str:
         return (
             "{" + ", ".join(str(self.convert_to_allowed_types(x)) for x in value) + "}"
         )

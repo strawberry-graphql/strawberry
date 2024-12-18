@@ -5,10 +5,7 @@ import datetime
 import json
 from typing import (
     TYPE_CHECKING,
-    AsyncGenerator,
-    Mapping,
     Optional,
-    Tuple,
     TypedDict,
     Union,
 )
@@ -22,6 +19,8 @@ from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_P
 from .base import ChannelsWSConsumer
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Mapping
+
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.schema import BaseSchema
 
@@ -111,7 +110,7 @@ class GraphQLWSConsumer(
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
         debug: bool = False,
-        subscription_protocols: Tuple[str, str] = (
+        subscription_protocols: tuple[str, str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
         ),

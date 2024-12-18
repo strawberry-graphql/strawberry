@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Union
 
 from strawberry import UNSET
 from strawberry.exceptions import ConnectionRejectionError
@@ -8,8 +8,8 @@ from strawberry.types.unset import UnsetType
 
 class OnWSConnectMixin(AsyncBaseHTTPView):
     async def on_ws_connect(
-        self, context: Dict[str, object]
-    ) -> Union[UnsetType, None, Dict[str, object]]:
+        self, context: dict[str, object]
+    ) -> Union[UnsetType, None, dict[str, object]]:
         connection_params = context["connection_params"]
 
         if isinstance(connection_params, dict):

@@ -4,8 +4,6 @@ import asyncio
 from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
-    AsyncGenerator,
-    Dict,
     Optional,
     cast,
 )
@@ -25,6 +23,8 @@ from strawberry.types.unset import UnsetType
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
+
     from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncWebSocketAdapter
     from strawberry.schema import BaseSchema
 
@@ -50,8 +50,8 @@ class BaseGraphQLWSHandler:
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
         self.keep_alive_task: Optional[asyncio.Task] = None
-        self.subscriptions: Dict[str, AsyncGenerator] = {}
-        self.tasks: Dict[str, asyncio.Task] = {}
+        self.subscriptions: dict[str, AsyncGenerator] = {}
+        self.tasks: dict[str, asyncio.Task] = {}
 
     async def handle(self) -> None:
         try:
@@ -156,7 +156,7 @@ class BaseGraphQLWSHandler:
         operation_id: str,
         query: str,
         operation_name: Optional[str],
-        variables: Optional[Dict[str, object]],
+        variables: Optional[dict[str, object]],
     ) -> None:
         try:
             agen_or_err = await self.schema.subscribe(

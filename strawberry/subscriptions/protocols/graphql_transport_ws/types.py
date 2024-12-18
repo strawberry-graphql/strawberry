@@ -1,4 +1,4 @@
-from typing import Dict, List, TypedDict, Union
+from typing import TypedDict, Union
 from typing_extensions import Literal, NotRequired
 
 from graphql import GraphQLFormattedError
@@ -8,35 +8,35 @@ class ConnectionInitMessage(TypedDict):
     """Direction: Client -> Server."""
 
     type: Literal["connection_init"]
-    payload: NotRequired[Union[Dict[str, object], None]]
+    payload: NotRequired[Union[dict[str, object], None]]
 
 
 class ConnectionAckMessage(TypedDict):
     """Direction: Server -> Client."""
 
     type: Literal["connection_ack"]
-    payload: NotRequired[Union[Dict[str, object], None]]
+    payload: NotRequired[Union[dict[str, object], None]]
 
 
 class PingMessage(TypedDict):
     """Direction: bidirectional."""
 
     type: Literal["ping"]
-    payload: NotRequired[Union[Dict[str, object], None]]
+    payload: NotRequired[Union[dict[str, object], None]]
 
 
 class PongMessage(TypedDict):
     """Direction: bidirectional."""
 
     type: Literal["pong"]
-    payload: NotRequired[Union[Dict[str, object], None]]
+    payload: NotRequired[Union[dict[str, object], None]]
 
 
 class SubscribeMessagePayload(TypedDict):
     operationName: NotRequired[Union[str, None]]
     query: str
-    variables: NotRequired[Union[Dict[str, object], None]]
-    extensions: NotRequired[Union[Dict[str, object], None]]
+    variables: NotRequired[Union[dict[str, object], None]]
+    extensions: NotRequired[Union[dict[str, object], None]]
 
 
 class SubscribeMessage(TypedDict):
@@ -48,9 +48,9 @@ class SubscribeMessage(TypedDict):
 
 
 class NextMessagePayload(TypedDict):
-    errors: NotRequired[List[GraphQLFormattedError]]
-    data: NotRequired[Union[Dict[str, object], None]]
-    extensions: NotRequired[Dict[str, object]]
+    errors: NotRequired[list[GraphQLFormattedError]]
+    data: NotRequired[Union[dict[str, object], None]]
+    extensions: NotRequired[dict[str, object]]
 
 
 class NextMessage(TypedDict):
@@ -66,7 +66,7 @@ class ErrorMessage(TypedDict):
 
     id: str
     type: Literal["error"]
-    payload: List[GraphQLFormattedError]
+    payload: list[GraphQLFormattedError]
 
 
 class CompleteMessage(TypedDict):
@@ -89,13 +89,13 @@ Message = Union[
 
 
 __all__ = [
-    "ConnectionInitMessage",
+    "CompleteMessage",
     "ConnectionAckMessage",
+    "ConnectionInitMessage",
+    "ErrorMessage",
+    "Message",
+    "NextMessage",
     "PingMessage",
     "PongMessage",
     "SubscribeMessage",
-    "NextMessage",
-    "ErrorMessage",
-    "CompleteMessage",
-    "Message",
 ]

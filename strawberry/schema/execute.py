@@ -1,16 +1,12 @@
 from __future__ import annotations
 
 from asyncio import ensure_future
+from collections.abc import Awaitable, Iterable
 from inspect import isawaitable
 from typing import (
     TYPE_CHECKING,
-    Awaitable,
     Callable,
-    Iterable,
-    List,
     Optional,
-    Tuple,
-    Type,
     TypedDict,
     Union,
     cast,
@@ -49,7 +45,7 @@ class ParseOptions(TypedDict):
 
 
 ProcessErrors: TypeAlias = (
-    "Callable[[List[GraphQLError], Optional[ExecutionContext]], None]"
+    "Callable[[list[GraphQLError], Optional[ExecutionContext]], None]"
 )
 
 
@@ -60,8 +56,8 @@ def parse_document(query: str, **kwargs: Unpack[ParseOptions]) -> DocumentNode:
 def validate_document(
     schema: GraphQLSchema,
     document: DocumentNode,
-    validation_rules: Tuple[Type[ASTValidationRule], ...],
-) -> List[GraphQLError]:
+    validation_rules: tuple[type[ASTValidationRule], ...],
+) -> list[GraphQLError]:
     validation_rules = (
         *validation_rules,
         OneOfInputValidationRule,
@@ -150,7 +146,7 @@ async def execute(
     extensions_runner: SchemaExtensionsRunner,
     process_errors: ProcessErrors,
     middleware_manager: MiddlewareManager,
-    execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+    execution_context_class: Optional[type[GraphQLExecutionContext]] = None,
 ) -> ExecutionResult | PreExecutionError:
     try:
         async with extensions_runner.operation():
@@ -214,7 +210,7 @@ def execute_sync(
     allowed_operation_types: Iterable[OperationType],
     extensions_runner: SchemaExtensionsRunner,
     execution_context: ExecutionContext,
-    execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+    execution_context_class: Optional[type[GraphQLExecutionContext]] = None,
     process_errors: ProcessErrors,
     middleware_manager: MiddlewareManager,
 ) -> ExecutionResult:

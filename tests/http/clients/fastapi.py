@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import contextlib
 import json
+from collections.abc import AsyncGenerator
 from io import BytesIO
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, Optional
 from typing_extensions import Literal
 
 from starlette.websockets import WebSocketDisconnect
@@ -39,7 +40,7 @@ async def fastapi_get_context(
     request: Request = None,  # type: ignore
     ws: WebSocket = None,  # type: ignore
     custom_value: str = Depends(custom_context_dependency),
-) -> Dict[str, object]:
+) -> dict[str, object]:
     return get_context(
         {
             "request": request or ws,
@@ -114,9 +115,9 @@ class FastAPIHttpClient(HttpClient):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
@@ -147,7 +148,7 @@ class FastAPIHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         response = getattr(self.client, method)(url, headers=headers)
 
@@ -156,7 +157,7 @@ class FastAPIHttpClient(HttpClient):
     async def get(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self.request(url, "get", headers=headers)
 
@@ -165,7 +166,7 @@ class FastAPIHttpClient(HttpClient):
         url: str,
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         response = self.client.post(url, headers=headers, content=data, json=json)
 
@@ -176,7 +177,7 @@ class FastAPIHttpClient(HttpClient):
         self,
         url: str,
         *,
-        protocols: List[str],
+        protocols: list[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
         try:
             with self.client.websocket_connect(url, protocols) as ws:

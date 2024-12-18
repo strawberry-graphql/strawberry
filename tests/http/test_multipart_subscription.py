@@ -1,5 +1,4 @@
 import contextlib
-from typing import Type
 from typing_extensions import Literal
 
 import pytest
@@ -10,7 +9,7 @@ from .clients.base import HttpClient
 
 
 @pytest.fixture()
-def http_client(http_client_class: Type[HttpClient]) -> HttpClient:
+def http_client(http_client_class: type[HttpClient]) -> HttpClient:
     with contextlib.suppress(ImportError):
         import django
 

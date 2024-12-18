@@ -1,4 +1,4 @@
-from typing import Type, Union
+from typing import Union
 
 from graphql import (
     ExecutableDefinitionNode,
@@ -35,7 +35,7 @@ class MaxAliasesLimiter(AddValidationRules):
         super().__init__([validator])
 
 
-def create_validator(max_alias_count: int) -> Type[ValidationRule]:
+def create_validator(max_alias_count: int) -> type[ValidationRule]:
     """Create a validator that checks the number of aliases in a document.
 
     Args:

@@ -9,8 +9,8 @@ class ListLifeGenericResultListLifeItems2:
     age: int
 
 class ListLifeGenericResultListLife:
-    items1: List[ListLifeGenericResultListLifeItems1]
-    items2: List[ListLifeGenericResultListLifeItems2]
+    items1: list[ListLifeGenericResultListLifeItems1]
+    items2: list[ListLifeGenericResultListLifeItems2]
 
 class ListLifeGenericResult:
     list_life: ListLifeGenericResultListLife

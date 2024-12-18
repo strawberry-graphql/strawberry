@@ -8,11 +8,7 @@ from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncGenerator,
     Callable,
-    Dict,
-    Iterable,
-    Mapping,
     Optional,
     Union,
     cast,
@@ -40,6 +36,8 @@ from strawberry.http.typevars import (
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Iterable, Mapping
+
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
@@ -67,8 +65,8 @@ class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
     async def get_form_data(self) -> FormData:
         reader = await self.request.multipart()
 
-        data: Dict[str, Any] = {}
-        files: Dict[str, Any] = {}
+        data: dict[str, Any] = {}
+        files: dict[str, Any] = {}
 
         async for field in reader:
             assert isinstance(field, BodyPartReader)
@@ -224,7 +222,7 @@ class GraphQLView(
         request: web.Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: web.Response,
-        headers: Dict[str, str],
+        headers: dict[str, str],
     ) -> web.StreamResponse:
         response = web.StreamResponse(
             status=sub_response.status,

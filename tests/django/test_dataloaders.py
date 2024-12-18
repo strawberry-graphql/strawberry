@@ -1,5 +1,4 @@
 import json
-from typing import List, Tuple
 
 import pytest
 from asgiref.sync import sync_to_async
@@ -11,7 +10,7 @@ from strawberry.dataloader import DataLoader
 try:
     import django
 
-    DJANGO_VERSION: Tuple[int, int, int] = django.VERSION
+    DJANGO_VERSION: tuple[int, int, int] = django.VERSION
 except ImportError:
     DJANGO_VERSION = (0, 0, 0)
 
@@ -43,7 +42,7 @@ async def test_fetch_data_from_db(mocker: MockerFixture):
 
     from .app.models import Example
 
-    def _sync_batch_load(keys: List[str]):
+    def _sync_batch_load(keys: list[str]):
         data = Example.objects.filter(id__in=keys)
 
         return list(data)
@@ -53,7 +52,7 @@ async def test_fetch_data_from_db(mocker: MockerFixture):
 
     ids = await prepare_db()
 
-    async def idx(keys: List[str]) -> List[Example]:
+    async def idx(keys: list[str]) -> list[Example]:
         return await batch_load(keys)
 
     mock_loader = mocker.Mock(side_effect=idx)

@@ -4,29 +4,27 @@ import asyncio
 import dataclasses
 import inspect
 from collections import defaultdict
-from collections.abc import AsyncIterable
-from typing import (
-    TYPE_CHECKING,
-    Any,
+from collections.abc import (
+    AsyncIterable,
     AsyncIterator,
     Awaitable,
-    Callable,
-    DefaultDict,
-    Dict,
-    ForwardRef,
     Iterable,
     Iterator,
-    List,
     Mapping,
-    Optional,
     Sequence,
-    Tuple,
-    Type,
+)
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Callable,
+    ForwardRef,
+    Optional,
     Union,
     cast,
     overload,
 )
-from typing_extensions import Annotated, get_origin
+from typing_extensions import get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.extensions.field_extension import (
@@ -101,7 +99,7 @@ class NodeExtension(FieldExtension):
 
     def get_node_list_resolver(
         self, field: StrawberryField
-    ) -> Callable[[Info, List[GlobalID]], Union[List[Node], Awaitable[List[Node]]]]:
+    ) -> Callable[[Info, list[GlobalID]], Union[list[Node], Awaitable[list[Node]]]]:
         type_ = field.type
         assert isinstance(type_, StrawberryList)
         is_optional = isinstance(type_.of_type, StrawberryOptional)
@@ -109,14 +107,14 @@ class NodeExtension(FieldExtension):
         def resolver(
             info: Info,
             ids: Annotated[
-                List[GlobalID], argument(description="The IDs of the objects.")
+                list[GlobalID], argument(description="The IDs of the objects.")
             ],
-        ) -> Union[List[Node], Awaitable[List[Node]]]:
-            nodes_map: DefaultDict[Type[Node], List[str]] = defaultdict(list)
+        ) -> Union[list[Node], Awaitable[list[Node]]]:
+            nodes_map: defaultdict[type[Node], list[str]] = defaultdict(list)
             # Store the index of the node in the list of nodes of the same type
             # so that we can return them in the same order while also supporting
             # different types
-            index_map: Dict[GlobalID, Tuple[Type[Node], int]] = {}
+            index_map: dict[GlobalID, tuple[type[Node], int]] = {}
             for gid in ids:
                 node_t = gid.resolve_type(info)
                 nodes_map[node_t].append(gid.node_id)
@@ -144,7 +142,7 @@ class NodeExtension(FieldExtension):
 
             if awaitable_nodes or asyncgen_nodes:
 
-                async def resolve(resolved: Any = resolved_nodes) -> List[Node]:
+                async def resolve(resolved: Any = resolved_nodes) -> list[Node]:
                     resolved.update(
                         zip(
                             [
@@ -183,7 +181,7 @@ class NodeExtension(FieldExtension):
 
 
 class ConnectionExtension(FieldExtension):
-    connection_type: Type[Connection[Node]]
+    connection_type: type[Connection[Node]]
 
     def apply(self, field: StrawberryField) -> None:
         field.arguments = [
@@ -259,7 +257,7 @@ class ConnectionExtension(FieldExtension):
         ):
             raise RelayWrongResolverAnnotationError(field.name, field.base_resolver)
 
-        self.connection_type = cast(Type[Connection[Node]], field.type)
+        self.connection_type = cast(type[Connection[Node]], field.type)
 
     def resolve(
         self,
@@ -329,54 +327,54 @@ else:
 
 @overload
 def connection(
-    graphql_type: Optional[Type[Connection[NodeType]]] = None,
+    graphql_type: Optional[type[Connection[NodeType]]] = None,
     *,
     resolver: Optional[_RESOLVER_TYPE[NodeIterableType[Any]]] = None,
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
     init: Literal[True] = True,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: List[FieldExtension] = (),  # type: ignore
+    extensions: list[FieldExtension] = (),  # type: ignore
 ) -> Any: ...
 
 
 @overload
 def connection(
-    graphql_type: Optional[Type[Connection[NodeType]]] = None,
+    graphql_type: Optional[type[Connection[NodeType]]] = None,
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: List[FieldExtension] = (),  # type: ignore
+    extensions: list[FieldExtension] = (),  # type: ignore
 ) -> StrawberryField: ...
 
 
 def connection(
-    graphql_type: Optional[Type[Connection[NodeType]]] = None,
+    graphql_type: Optional[type[Connection[NodeType]]] = None,
     *,
     resolver: Optional[_RESOLVER_TYPE[Any]] = None,
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: List[FieldExtension] = (),  # type: ignore
+    extensions: list[FieldExtension] = (),  # type: ignore
     # This init parameter is used by pyright to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
@@ -478,4 +476,4 @@ def connection(
     return f
 
 
-__all__ = ["node", "connection"]
+__all__ = ["connection", "node"]

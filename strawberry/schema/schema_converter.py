@@ -6,14 +6,9 @@ from functools import partial, reduce
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
     Callable,
-    Dict,
     Generic,
-    List,
     Optional,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     cast,
@@ -76,6 +71,8 @@ from . import compat
 from .types.concrete_type import ConcreteType
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable
+
     from graphql import (
         GraphQLInputType,
         GraphQLNullableType,
@@ -111,8 +108,8 @@ def _get_thunk_mapping(
     type_definition: StrawberryObjectDefinition,
     name_converter: Callable[[StrawberryField], str],
     field_converter: FieldConverterProtocol[FieldType],
-    get_fields: Callable[[StrawberryObjectDefinition], List[StrawberryField]],
-) -> Dict[str, FieldType]:
+    get_fields: Callable[[StrawberryObjectDefinition], list[StrawberryField]],
+) -> dict[str, FieldType]:
     """Create a GraphQL core `ThunkMapping` mapping of field names to field types.
 
     This method filters out remaining `strawberry.Private` annotated fields that
@@ -124,7 +121,7 @@ def _get_thunk_mapping(
     Raises:
         TypeError: If the type of a field in ``fields`` is `UNRESOLVED`
     """
-    thunk_mapping: Dict[str, FieldType] = {}
+    thunk_mapping: dict[str, FieldType] = {}
 
     fields = get_fields(type_definition)
 
@@ -173,7 +170,7 @@ class CustomGraphQLEnumType(GraphQLEnumType):
         return self.wrapped_cls(super().parse_value(input_value))
 
     def parse_literal(
-        self, value_node: ValueNode, _variables: Optional[Dict[str, Any]] = None
+        self, value_node: ValueNode, _variables: Optional[dict[str, Any]] = None
     ) -> Any:
         return self.wrapped_cls(super().parse_literal(value_node, _variables))
 
@@ -185,8 +182,8 @@ def get_arguments(
     info: Info,
     kwargs: Any,
     config: StrawberryConfig,
-    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
-) -> Tuple[List[Any], Dict[str, Any]]:
+    scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+) -> tuple[list[Any], dict[str, Any]]:
     # TODO: An extension might have changed the resolver arguments,
     # but we need them here since we are calling it.
     # This is a bit of a hack, but it's the easiest way to get the arguments
@@ -242,10 +239,10 @@ class GraphQLCoreConverter:
     def __init__(
         self,
         config: StrawberryConfig,
-        scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
-        get_fields: Callable[[StrawberryObjectDefinition], List[StrawberryField]],
+        scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+        get_fields: Callable[[StrawberryObjectDefinition], list[StrawberryField]],
     ) -> None:
-        self.type_map: Dict[str, ConcreteType] = {}
+        self.type_map: dict[str, ConcreteType] = {}
         self.config = config
         self.scalar_registry = scalar_registry
         self.get_fields = get_fields
@@ -329,13 +326,13 @@ class GraphQLCoreConverter:
             },
         )
 
-    def from_schema_directive(self, cls: Type) -> GraphQLDirective:
+    def from_schema_directive(self, cls: type) -> GraphQLDirective:
         strawberry_directive = cast(
             "StrawberrySchemaDirective", cls.__strawberry_directive__
         )
         module = sys.modules[cls.__module__]
 
-        args: Dict[str, GraphQLArgument] = {}
+        args: dict[str, GraphQLArgument] = {}
         for field in strawberry_directive.fields:
             default = field.default
             if default == dataclasses.MISSING:
@@ -436,7 +433,7 @@ class GraphQLCoreConverter:
 
     def get_graphql_fields(
         self, type_definition: StrawberryObjectDefinition
-    ) -> Dict[str, GraphQLField]:
+    ) -> dict[str, GraphQLField]:
         return _get_thunk_mapping(
             type_definition=type_definition,
             name_converter=self.config.name_converter.from_field,
@@ -446,7 +443,7 @@ class GraphQLCoreConverter:
 
     def get_graphql_input_fields(
         self, type_definition: StrawberryObjectDefinition
-    ) -> Dict[str, GraphQLInputField]:
+    ) -> dict[str, GraphQLInputField]:
         return _get_thunk_mapping(
             type_definition=type_definition,
             name_converter=self.config.name_converter.from_field,
@@ -672,8 +669,8 @@ class GraphQLCoreConverter:
         def _get_result(
             _source: Any,
             info: Info,
-            field_args: List[Any],
-            field_kwargs: Dict[str, Any],
+            field_args: list[Any],
+            field_kwargs: dict[str, Any],
         ) -> Any:
             return field.get_result(
                 _source, info=info, args=field_args, kwargs=field_kwargs
@@ -762,7 +759,7 @@ class GraphQLCoreConverter:
             _resolver._is_default = not field.base_resolver  # type: ignore
             return _resolver
 
-    def from_scalar(self, scalar: Type) -> GraphQLScalarType:
+    def from_scalar(self, scalar: type) -> GraphQLScalarType:
         scalar_definition: ScalarDefinition
 
         if scalar in self.scalar_registry:
@@ -864,7 +861,7 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_union, GraphQLUnionType)  # For mypy
             return graphql_union
 
-        graphql_types: List[GraphQLObjectType] = []
+        graphql_types: list[GraphQLObjectType] = []
         for type_ in union.types:
             graphql_type = self.from_type(type_)
 

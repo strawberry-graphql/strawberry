@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from strawberry.extensions.context import (
     ExecutingContextManager,
@@ -18,12 +18,12 @@ if TYPE_CHECKING:
 
 
 class SchemaExtensionsRunner:
-    extensions: List[SchemaExtension]
+    extensions: list[SchemaExtension]
 
     def __init__(
         self,
         execution_context: ExecutionContext,
-        extensions: Optional[List[SchemaExtension]] = None,
+        extensions: Optional[list[SchemaExtension]] = None,
     ) -> None:
         self.execution_context = execution_context
         self.extensions = extensions or []
@@ -40,8 +40,8 @@ class SchemaExtensionsRunner:
     def executing(self) -> ExecutingContextManager:
         return ExecutingContextManager(self.extensions)
 
-    def get_extensions_results_sync(self) -> Dict[str, Any]:
-        data: Dict[str, Any] = {}
+    def get_extensions_results_sync(self) -> dict[str, Any]:
+        data: dict[str, Any] = {}
         for extension in self.extensions:
             if inspect.iscoroutinefunction(extension.get_results):
                 msg = "Cannot use async extension hook during sync execution"
@@ -50,8 +50,8 @@ class SchemaExtensionsRunner:
 
         return data
 
-    async def get_extensions_results(self, ctx: ExecutionContext) -> Dict[str, Any]:
-        data: Dict[str, Any] = {}
+    async def get_extensions_results(self, ctx: ExecutionContext) -> dict[str, Any]:
+        data: dict[str, Any] = {}
 
         for extension in self.extensions:
             data.update(await await_maybe(extension.get_results()))

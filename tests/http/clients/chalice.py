@@ -3,7 +3,7 @@ from __future__ import annotations
 import urllib.parse
 from io import BytesIO
 from json import dumps
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 from typing_extensions import Literal
 
 from chalice.app import Chalice
@@ -72,16 +72,16 @@ class ChaliceHttpClient(HttpClient):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
             query=query, variables=variables, files=files, method=method
         )
 
-        data: Union[Dict[str, object], str, None] = None
+        data: Union[dict[str, object], str, None] = None
 
         if body and files:
             body.update({name: (file, name) for name, file in files.items()})
@@ -113,7 +113,7 @@ class ChaliceHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         with Client(self.app) as client:
             response = getattr(client.http, method)(url, headers=headers)
@@ -127,7 +127,7 @@ class ChaliceHttpClient(HttpClient):
     async def get(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self.request(url, "get", headers=headers)
 
@@ -136,7 +136,7 @@ class ChaliceHttpClient(HttpClient):
         url: str,
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         body = data or dumps(json)
 

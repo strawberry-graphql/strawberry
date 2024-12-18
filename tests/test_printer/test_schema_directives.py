@@ -1,7 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Any, List, Optional, Union
-from typing_extensions import Annotated
+from typing import Annotated, Any, Optional, Union
 
 import strawberry
 from strawberry import BasePermission, Info
@@ -71,12 +70,12 @@ def test_directive_on_types():
     @strawberry.schema_directive(locations=[Location.OBJECT, Location.FIELD_DEFINITION])
     class SensitiveData:
         reason: str
-        meta: Optional[List[SensitiveValue]] = UNSET
+        meta: Optional[list[SensitiveValue]] = UNSET
 
     @strawberry.schema_directive(locations=[Location.INPUT_OBJECT])
     class SensitiveInput:
         reason: str
-        meta: Optional[List[SensitiveValue]] = UNSET
+        meta: Optional[list[SensitiveValue]] = UNSET
 
     @strawberry.schema_directive(locations=[Location.INPUT_FIELD_DEFINITION])
     class RangeInput:
@@ -228,7 +227,7 @@ def test_respects_schema_parameter_types_for_arguments_int():
 def test_respects_schema_parameter_types_for_arguments_list_of_ints():
     @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
     class Sensitive:
-        real_age: List[int]
+        real_age: list[int]
 
     @strawberry.type
     class Query:
@@ -252,7 +251,7 @@ def test_respects_schema_parameter_types_for_arguments_list_of_ints():
 def test_respects_schema_parameter_types_for_arguments_list_of_strings():
     @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
     class Sensitive:
-        real_age: List[str]
+        real_age: list[str]
 
     @strawberry.type
     class Query:

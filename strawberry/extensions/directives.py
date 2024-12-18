@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Dict, Tuple
+from typing import TYPE_CHECKING, Any, Callable
 
 from strawberry.extensions import SchemaExtension
 from strawberry.types.nodes import convert_arguments
@@ -62,7 +62,7 @@ def process_directive(
     directive: DirectiveNode,
     value: Any,
     info: GraphQLResolveInfo,
-) -> Tuple[StrawberryDirective, Dict[str, Any]]:
+) -> tuple[StrawberryDirective, dict[str, Any]]:
     """Get a `StrawberryDirective` from ``directive` and prepare its arguments."""
     directive_name = directive.name.value
     schema: Schema = info.schema._strawberry_schema  # type: ignore

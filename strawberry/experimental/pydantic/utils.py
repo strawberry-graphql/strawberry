@@ -4,11 +4,7 @@ import dataclasses
 from typing import (
     TYPE_CHECKING,
     Any,
-    List,
     NamedTuple,
-    Set,
-    Tuple,
-    Type,
     Union,
     cast,
 )
@@ -38,9 +34,9 @@ if TYPE_CHECKING:
     from pydantic.typing import NoArgAnyCallable
 
 
-def normalize_type(type_: Type) -> Any:
+def normalize_type(type_: type) -> Any:
     if is_list(type_):
-        return List[normalize_type(get_list_annotation(type_))]  # type: ignore
+        return list[normalize_type(get_list_annotation(type_))]  # type: ignore
 
     if is_optional(type_):
         return get_optional_annotation(type_)
@@ -55,7 +51,7 @@ def get_strawberry_type_from_model(type_: Any) -> Any:
         raise UnregisteredTypeException(type_)
 
 
-def get_private_fields(cls: Type) -> List[dataclasses.Field]:
+def get_private_fields(cls: type) -> list[dataclasses.Field]:
     return [field for field in dataclasses.fields(cls) if is_private(field.type)]
 
 
@@ -63,10 +59,10 @@ class DataclassCreationFields(NamedTuple):
     """Fields required for the fields parameter of make_dataclass."""
 
     name: str
-    field_type: Type
+    field_type: type
     field: dataclasses.Field
 
-    def to_tuple(self) -> Tuple[str, Type, dataclasses.Field]:
+    def to_tuple(self) -> tuple[str, type, dataclasses.Field]:
         # fields parameter wants (name, type, Field)
         return self.name, self.field_type, self.field
 
@@ -125,7 +121,7 @@ def get_default_factory_for_field(
 
 
 def ensure_all_auto_fields_in_pydantic(
-    model: Type[BaseModel], auto_fields: Set[str], cls_name: str
+    model: type[BaseModel], auto_fields: set[str], cls_name: str
 ) -> None:
     compat = PydanticCompat.from_model(model)
     # Raise error if user defined a strawberry.auto field not present in the model

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, List, Type
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 
 class MissingFieldsListError(Exception):
-    def __init__(self, type: Type[BaseModel]) -> None:
+    def __init__(self, type: type[BaseModel]) -> None:
         message = (
             f"List of fields to copy from {type} is empty. Add fields with the "
             f"`auto` type annotation"
@@ -22,7 +22,7 @@ class UnsupportedTypeError(Exception):
 
 
 class UnregisteredTypeException(Exception):
-    def __init__(self, type: Type[BaseModel]) -> None:
+    def __init__(self, type: type[BaseModel]) -> None:
         message = (
             f"Cannot find a Strawberry Type for {type} did you forget to register it?"
         )
@@ -43,9 +43,9 @@ class BothDefaultAndDefaultFactoryDefinedError(Exception):
 class AutoFieldsNotInBaseModelError(Exception):
     def __init__(
         self,
-        fields: List[str],
+        fields: list[str],
         cls_name: str,
-        model: Type[BaseModel],
+        model: type[BaseModel],
     ) -> None:
         message = (
             f"{cls_name} defines {fields} with strawberry.auto. "

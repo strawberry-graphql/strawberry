@@ -1,7 +1,7 @@
 import datetime
 import json
 from json import JSONEncoder
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 
 class StrawberryJSONEncoder(JSONEncoder):
@@ -10,7 +10,7 @@ class StrawberryJSONEncoder(JSONEncoder):
 
 
 def pretty_print_graphql_operation(
-    operation_name: Optional[str], query: str, variables: Optional[Dict["str", Any]]
+    operation_name: Optional[str], query: str, variables: Optional[dict["str", Any]]
 ) -> None:
     """Pretty print a GraphQL operation using pygments.
 

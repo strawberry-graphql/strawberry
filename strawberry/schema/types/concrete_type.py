@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Dict, Union
+from typing import TYPE_CHECKING, Union
 
 from graphql import GraphQLField, GraphQLInputField, GraphQLType
 
@@ -22,7 +22,7 @@ class ConcreteType:
     implementation: GraphQLType
 
 
-TypeMap = Dict[str, ConcreteType]
+TypeMap = dict[str, ConcreteType]
 
 
 __all__ = ["ConcreteType", "Field", "GraphQLType", "TypeMap"]

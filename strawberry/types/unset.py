@@ -1,7 +1,7 @@
 import warnings
-from typing import Any, Dict, Optional, Type
+from typing import Any, Optional
 
-DEPRECATED_NAMES: Dict[str, str] = {
+DEPRECATED_NAMES: dict[str, str] = {
     "is_unset": "`is_unset` is deprecated use `value is UNSET` instead",
 }
 
@@ -9,7 +9,7 @@ DEPRECATED_NAMES: Dict[str, str] = {
 class UnsetType:
     __instance: Optional["UnsetType"] = None
 
-    def __new__(cls: Type["UnsetType"]) -> "UnsetType":
+    def __new__(cls: type["UnsetType"]) -> "UnsetType":
         if cls.__instance is None:
             ret = super().__new__(cls)
             cls.__instance = ret

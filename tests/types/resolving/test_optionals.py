@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
@@ -40,14 +40,14 @@ def test_optional_with_unset_as_union():
 
 
 def test_optional_list():
-    annotation = StrawberryAnnotation(Optional[List[bool]])
+    annotation = StrawberryAnnotation(Optional[list[bool]])
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryOptional)
-    assert resolved.of_type == List[bool]
+    assert resolved.of_type == list[bool]
 
-    assert resolved == StrawberryOptional(of_type=List[bool])
-    assert resolved == Optional[List[bool]]
+    assert resolved == StrawberryOptional(of_type=list[bool])
+    assert resolved == Optional[list[bool]]
 
 
 def test_optional_optional():

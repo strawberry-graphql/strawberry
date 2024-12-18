@@ -4,7 +4,7 @@ import json
 import os
 import subprocess
 import tempfile
-from typing import List, TypedDict, cast
+from typing import TypedDict, cast
 
 from .result import Result, ResultType
 
@@ -12,7 +12,7 @@ from .result import Result, ResultType
 class PyrightCLIResult(TypedDict):
     version: str
     time: str
-    generalDiagnostics: List[GeneralDiagnostic]
+    generalDiagnostics: list[GeneralDiagnostic]
     summary: Summary
 
 
@@ -41,7 +41,7 @@ class Summary(TypedDict):
     timeInSec: float
 
 
-def run_pyright(code: str, strict: bool = True) -> List[Result]:
+def run_pyright(code: str, strict: bool = True) -> list[Result]:
     if strict:
         code = "# pyright: strict\n" + code
 

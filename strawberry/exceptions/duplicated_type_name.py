@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Optional
 
 from .exception import StrawberryException
 from .utils.source_finder import SourceFinder
@@ -17,8 +17,8 @@ class DuplicatedTypeName(StrawberryException):
 
     def __init__(
         self,
-        first_cls: Optional[Type],
-        second_cls: Optional[Type],
+        first_cls: Optional[type],
+        second_cls: Optional[type],
         duplicated_type_name: str,
     ) -> None:
         self.first_cls = first_cls

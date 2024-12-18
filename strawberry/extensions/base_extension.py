@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, Set
+from typing import TYPE_CHECKING, Any, Callable
 
 from strawberry.utils.await_maybe import AsyncIteratorOrIterator, AwaitableOrValue
 
@@ -60,7 +60,7 @@ class SchemaExtension:
     ) -> AwaitableOrValue[object]:
         return _next(root, info, *args, **kwargs)
 
-    def get_results(self) -> AwaitableOrValue[Dict[str, Any]]:
+    def get_results(self) -> AwaitableOrValue[dict[str, Any]]:
         return {}
 
     @classmethod
@@ -71,11 +71,11 @@ class SchemaExtension:
 
 Hook = Callable[[SchemaExtension], AsyncIteratorOrIterator[None]]
 
-HOOK_METHODS: Set[str] = {
+HOOK_METHODS: set[str] = {
     SchemaExtension.on_operation.__name__,
     SchemaExtension.on_validate.__name__,
     SchemaExtension.on_parse.__name__,
     SchemaExtension.on_execute.__name__,
 }
 
-__all__ = ["SchemaExtension", "Hook", "HOOK_METHODS", "LifecycleStep"]
+__all__ = ["HOOK_METHODS", "Hook", "LifecycleStep", "SchemaExtension"]

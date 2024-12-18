@@ -1,7 +1,7 @@
 import json
 import urllib.parse
 from io import BytesIO
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 from typing_extensions import Literal
 
 from quart import Quart
@@ -33,7 +33,7 @@ class GraphQLView(BaseGraphQLView):
 
     async def get_context(
         self, request: QuartRequest, response: QuartResponse
-    ) -> Dict[str, object]:
+    ) -> dict[str, object]:
         context = await super().get_context(request, response)
 
         return get_context(context)
@@ -78,9 +78,9 @@ class QuartHttpClient(HttpClient):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
@@ -109,7 +109,7 @@ class QuartHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response:
         async with self.app.test_app() as test_app:
@@ -126,7 +126,7 @@ class QuartHttpClient(HttpClient):
     async def get(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self.request(url, "get", headers=headers)
 
@@ -135,7 +135,7 @@ class QuartHttpClient(HttpClient):
         url: str,
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         kwargs = {"headers": headers, "data": data, "json": json}
         return await self.request(

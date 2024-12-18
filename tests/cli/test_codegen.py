@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List
 
 import pytest
 from typer import Typer
@@ -19,8 +18,8 @@ class ConsoleTestPlugin(ConsolePlugin):
 
 class QueryCodegenTestPlugin(QueryCodegenPlugin):
     def generate_code(
-        self, types: List[GraphQLType], operation: GraphQLOperation
-    ) -> List[CodegenFile]:
+        self, types: list[GraphQLType], operation: GraphQLOperation
+    ) -> list[CodegenFile]:
         return [
             CodegenFile(
                 path="test.py",
@@ -31,8 +30,8 @@ class QueryCodegenTestPlugin(QueryCodegenPlugin):
 
 class EmptyPlugin(QueryCodegenPlugin):
     def generate_code(
-        self, types: List[GraphQLType], operation: GraphQLOperation
-    ) -> List[CodegenFile]:
+        self, types: list[GraphQLType], operation: GraphQLOperation
+    ) -> list[CodegenFile]:
         return [
             CodegenFile(
                 path="test.py",

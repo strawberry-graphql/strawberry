@@ -1,11 +1,8 @@
+from collections.abc import Iterable, Sequence
 from typing import (
     TYPE_CHECKING,
     Callable,
-    Iterable,
-    List,
     Optional,
-    Sequence,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -23,7 +20,7 @@ if TYPE_CHECKING:
     from .schema_directives import Key
 
 
-T = TypeVar("T", bound=Type)
+T = TypeVar("T", bound=type)
 
 
 def _impl_type(
@@ -38,8 +35,8 @@ def _impl_type(
     extend: bool = False,
     shareable: bool = False,
     inaccessible: bool = UNSET,
-    policy: Optional[List[List[str]]] = None,
-    requires_scopes: Optional[List[List[str]]] = None,
+    policy: Optional[list[list[str]]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
     tags: Iterable[str] = (),
     is_input: bool = False,
     is_interface: bool = False,
@@ -115,8 +112,8 @@ def type(
     extend: bool = False,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policy: Optional[List[List[str]]] = None,
-    requires_scopes: Optional[List[List[str]]] = None,
+    policy: Optional[list[list[str]]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
     shareable: bool = False,
     tags: Iterable[str] = (),
 ) -> T: ...
@@ -137,8 +134,8 @@ def type(
     extend: bool = False,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policy: Optional[List[List[str]]] = None,
-    requires_scopes: Optional[List[List[str]]] = None,
+    policy: Optional[list[list[str]]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
     shareable: bool = False,
     tags: Iterable[str] = (),
 ) -> Callable[[T], T]: ...
@@ -154,8 +151,8 @@ def type(
     extend: bool = False,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policy: Optional[List[List[str]]] = None,
-    requires_scopes: Optional[List[List[str]]] = None,
+    policy: Optional[list[list[str]]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
     shareable: bool = False,
     tags: Iterable[str] = (),
 ):
@@ -247,8 +244,8 @@ def interface(
     authenticated: bool = False,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policy: Optional[List[List[str]]] = None,
-    requires_scopes: Optional[List[List[str]]] = None,
+    policy: Optional[list[list[str]]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
     tags: Iterable[str] = (),
 ) -> T: ...
 
@@ -267,8 +264,8 @@ def interface(
     authenticated: bool = False,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policy: Optional[List[List[str]]] = None,
-    requires_scopes: Optional[List[List[str]]] = None,
+    policy: Optional[list[list[str]]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
     tags: Iterable[str] = (),
 ) -> Callable[[T], T]: ...
 
@@ -282,8 +279,8 @@ def interface(
     authenticated: bool = False,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policy: Optional[List[List[str]]] = None,
-    requires_scopes: Optional[List[List[str]]] = None,
+    policy: Optional[list[list[str]]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
     tags: Iterable[str] = (),
 ):
     return _impl_type(
@@ -316,8 +313,8 @@ def interface_object(
     authenticated: bool = False,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policy: Optional[List[List[str]]] = None,
-    requires_scopes: Optional[List[List[str]]] = None,
+    policy: Optional[list[list[str]]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
     tags: Iterable[str] = (),
 ) -> T: ...
 
@@ -336,8 +333,8 @@ def interface_object(
     authenticated: bool = False,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policy: Optional[List[List[str]]] = None,
-    requires_scopes: Optional[List[List[str]]] = None,
+    policy: Optional[list[list[str]]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
     tags: Iterable[str] = (),
 ) -> Callable[[T], T]: ...
 
@@ -351,8 +348,8 @@ def interface_object(
     authenticated: bool = False,
     inaccessible: bool = UNSET,
     keys: Iterable[Union["Key", str]] = (),
-    policy: Optional[List[List[str]]] = None,
-    requires_scopes: Optional[List[List[str]]] = None,
+    policy: Optional[list[list[str]]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
     tags: Iterable[str] = (),
 ):
     return _impl_type(
@@ -371,4 +368,4 @@ def interface_object(
     )
 
 
-__all__ = ["type", "input", "interface", "interface_object"]
+__all__ = ["input", "interface", "interface_object", "type"]

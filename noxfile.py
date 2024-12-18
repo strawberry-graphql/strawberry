@@ -1,5 +1,5 @@
 import itertools
-from typing import Any, Callable, List
+from typing import Any, Callable
 
 import nox
 from nox_poetry import Session, session
@@ -8,7 +8,7 @@ nox.options.reuse_existing_virtualenvs = True
 nox.options.error_on_external_run = True
 nox.options.default_venv_backend = "uv"
 
-PYTHON_VERSIONS = ["3.13", "3.12", "3.11", "3.10", "3.9", "3.8"]
+PYTHON_VERSIONS = ["3.13", "3.12", "3.11", "3.10", "3.9"]
 
 GQL_CORE_VERSIONS = [
     "3.2.3",
@@ -54,7 +54,7 @@ gql_core_parametrize = nox.parametrize(
 )
 
 
-def with_gql_core_parametrize(name: str, params: List[str]) -> Callable[[Any], Any]:
+def with_gql_core_parametrize(name: str, params: list[str]) -> Callable[[Any], Any]:
     # github cache doesn't support comma in the name, this is a workaround.
     arg_names = f"{name}, gql_core"
     combinations = list(itertools.product(params, GQL_CORE_VERSIONS))

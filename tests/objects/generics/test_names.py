@@ -1,6 +1,5 @@
 import textwrap
-from typing import Generic, List, NewType, TypeVar
-from typing_extensions import Annotated
+from typing import Annotated, Generic, NewType, TypeVar
 
 import pytest
 
@@ -70,7 +69,7 @@ def test_nested_generics():
 
     @strawberry.type
     class Connection(Generic[T]):
-        edges: List[T]
+        edges: list[T]
 
     type_definition = Connection.__strawberry_definition__  # type: ignore
 
@@ -114,7 +113,7 @@ def test_nested_generics_aliases_with_schema():
 
     @strawberry.type
     class Query:
-        d: Value[List[DictItem[int, str]]]
+        d: Value[list[DictItem[int, str]]]
 
     schema = strawberry.Schema(query=Query)
 

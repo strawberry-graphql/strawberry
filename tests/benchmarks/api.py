@@ -1,4 +1,4 @@
-from typing import AsyncIterator, List
+from collections.abc import AsyncIterator
 
 import strawberry
 from strawberry.directive import DirectiveLocation
@@ -59,11 +59,11 @@ class Query:
         return "Hello World!"
 
     @strawberry.field
-    def people(self, limit: int = 100) -> List[Person]:
+    def people(self, limit: int = 100) -> list[Person]:
         return people[:limit] if limit else people
 
     @strawberry.field
-    def items(self, count: int) -> List[Item]:
+    def items(self, count: int) -> list[Item]:
         return [Item(name="Item", index=i) for i in range(count)]
 
 

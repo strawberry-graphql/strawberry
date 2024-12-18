@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import dataclasses
-from typing import TYPE_CHECKING, Any, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Union, cast
 
 from strawberry.types.base import (
     StrawberryList,
@@ -98,7 +98,7 @@ def convert_pydantic_model_to_strawberry_class(
     return cls(**kwargs)
 
 
-def convert_strawberry_class_to_pydantic_model(obj: Type) -> Any:
+def convert_strawberry_class_to_pydantic_model(obj: type) -> Any:
     if hasattr(obj, "to_pydantic"):
         return obj.to_pydantic()
     elif dataclasses.is_dataclass(obj):

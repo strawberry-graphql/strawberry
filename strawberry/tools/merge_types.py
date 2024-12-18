@@ -1,13 +1,12 @@
 import warnings
 from collections import Counter
 from itertools import chain
-from typing import Tuple
 
 import strawberry
 from strawberry.types.base import has_object_definition
 
 
-def merge_types(name: str, types: Tuple[type, ...]) -> type:
+def merge_types(name: str, types: tuple[type, ...]) -> type:
     """Merge multiple Strawberry types into one.
 
     For example, given two queries `A` and `B`, one can merge them into a

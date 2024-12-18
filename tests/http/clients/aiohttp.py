@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import contextlib
 import json
+from collections.abc import AsyncGenerator
 from io import BytesIO
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, Optional
 from typing_extensions import Literal
 
 from aiohttp import web
@@ -30,14 +31,14 @@ from .base import (
 )
 
 
-class GraphQLView(OnWSConnectMixin, BaseGraphQLView[Dict[str, object], object]):
+class GraphQLView(OnWSConnectMixin, BaseGraphQLView[dict[str, object], object]):
     result_override: ResultOverrideFunction = None
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
     async def get_context(
         self, request: web.Request, response: web.StreamResponse
-    ) -> Dict[str, object]:
+    ) -> dict[str, object]:
         context = await super().get_context(request, response)
 
         return get_context(context)
@@ -95,9 +96,9 @@ class AioHttpClient(HttpClient):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response:
         async with TestClient(TestServer(self.app)) as client:
@@ -129,7 +130,7 @@ class AioHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         async with TestClient(TestServer(self.app)) as client:
             response = await getattr(client, method)(url, headers=headers)
@@ -143,7 +144,7 @@ class AioHttpClient(HttpClient):
     async def get(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self.request(url, "get", headers=headers)
 
@@ -152,7 +153,7 @@ class AioHttpClient(HttpClient):
         url: str,
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         async with TestClient(TestServer(self.app)) as client:
             response = await client.post(
@@ -170,7 +171,7 @@ class AioHttpClient(HttpClient):
         self,
         url: str,
         *,
-        protocols: List[str],
+        protocols: list[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
         async with TestClient(TestServer(self.app)) as client:
             async with client.ws_connect(url, protocols=protocols) as ws:
@@ -185,7 +186,7 @@ class AioWebSocketClient(WebSocketClient):
     async def send_text(self, payload: str) -> None:
         await self.ws.send_str(payload)
 
-    async def send_json(self, payload: Dict[str, Any]) -> None:
+    async def send_json(self, payload: dict[str, Any]) -> None:
         await self.ws.send_json(payload)
 
     async def send_bytes(self, payload: bytes) -> None:

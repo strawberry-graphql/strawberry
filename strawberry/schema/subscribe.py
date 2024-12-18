@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, AsyncGenerator, AsyncIterator, Optional, Type, Union
+from collections.abc import AsyncGenerator, AsyncIterator
+from typing import TYPE_CHECKING, Optional, Union
 
 from graphql import (
     ExecutionResult as OriginalExecutionResult,
@@ -44,7 +45,7 @@ async def _subscribe(
     extensions_runner: SchemaExtensionsRunner,
     process_errors: ProcessErrors,
     middleware_manager: MiddlewareManager,
-    execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+    execution_context_class: Optional[type[GraphQLExecutionContext]] = None,
 ) -> AsyncGenerator[Union[PreExecutionError, ExecutionResult], None]:
     async with extensions_runner.operation():
         if initial_error := await _parse_and_validate_async(
@@ -128,7 +129,7 @@ async def subscribe(
     extensions_runner: SchemaExtensionsRunner,
     process_errors: ProcessErrors,
     middleware_manager: MiddlewareManager,
-    execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+    execution_context_class: Optional[type[GraphQLExecutionContext]] = None,
 ) -> SubscriptionResult:
     asyncgen = _subscribe(
         schema,

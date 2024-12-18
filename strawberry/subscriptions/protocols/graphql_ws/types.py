@@ -1,4 +1,4 @@
-from typing import Dict, List, TypedDict, Union
+from typing import TypedDict, Union
 from typing_extensions import Literal, NotRequired
 
 from graphql import GraphQLFormattedError
@@ -6,12 +6,12 @@ from graphql import GraphQLFormattedError
 
 class ConnectionInitMessage(TypedDict):
     type: Literal["connection_init"]
-    payload: NotRequired[Dict[str, object]]
+    payload: NotRequired[dict[str, object]]
 
 
 class StartMessagePayload(TypedDict):
     query: str
-    variables: NotRequired[Dict[str, object]]
+    variables: NotRequired[dict[str, object]]
     operationName: NotRequired[str]
 
 
@@ -32,20 +32,20 @@ class ConnectionTerminateMessage(TypedDict):
 
 class ConnectionErrorMessage(TypedDict):
     type: Literal["connection_error"]
-    payload: NotRequired[Dict[str, object]]
+    payload: NotRequired[dict[str, object]]
 
 
 class ConnectionAckMessage(TypedDict):
     type: Literal["connection_ack"]
-    payload: NotRequired[Dict[str, object]]
+    payload: NotRequired[dict[str, object]]
 
 
 class DataMessagePayload(TypedDict):
     data: object
-    errors: NotRequired[List[GraphQLFormattedError]]
+    errors: NotRequired[list[GraphQLFormattedError]]
 
     # Non-standard field:
-    extensions: NotRequired[Dict[str, object]]
+    extensions: NotRequired[dict[str, object]]
 
 
 class DataMessage(TypedDict):
@@ -84,15 +84,15 @@ OperationMessage = Union[
 
 
 __all__ = [
-    "ConnectionInitMessage",
-    "StartMessage",
-    "StopMessage",
-    "ConnectionTerminateMessage",
-    "ConnectionErrorMessage",
+    "CompleteMessage",
     "ConnectionAckMessage",
+    "ConnectionErrorMessage",
+    "ConnectionInitMessage",
+    "ConnectionKeepAliveMessage",
+    "ConnectionTerminateMessage",
     "DataMessage",
     "ErrorMessage",
-    "CompleteMessage",
-    "ConnectionKeepAliveMessage",
     "OperationMessage",
+    "StartMessage",
+    "StopMessage",
 ]

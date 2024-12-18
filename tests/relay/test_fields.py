@@ -1,5 +1,4 @@
 import textwrap
-from typing import List
 
 import pytest
 from pytest_mock import MockerFixture
@@ -1460,7 +1459,7 @@ def test_parameters(mocker: MockerFixture):
 
     class CustomField(StrawberryField):
         @property
-        def arguments(self) -> List[StrawberryArgument]:
+        def arguments(self) -> list[StrawberryArgument]:
             return [
                 *super().arguments,
                 StrawberryArgument(
@@ -1472,7 +1471,7 @@ def test_parameters(mocker: MockerFixture):
             ]
 
         @arguments.setter
-        def arguments(self, value: List[StrawberryArgument]):
+        def arguments(self, value: list[StrawberryArgument]):
             cls = self.__class__
             return super(cls, cls).arguments.fset(self, value)
 
@@ -1480,7 +1479,7 @@ def test_parameters(mocker: MockerFixture):
     class Fruit(relay.Node):
         code: relay.NodeID[str]
 
-    def resolver(info: strawberry.Info) -> List[Fruit]: ...
+    def resolver(info: strawberry.Info) -> list[Fruit]: ...
 
     @strawberry.type
     class Query:

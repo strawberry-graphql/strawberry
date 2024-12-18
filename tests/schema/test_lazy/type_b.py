@@ -1,5 +1,4 @@
-from typing import TYPE_CHECKING, List
-from typing_extensions import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import strawberry
 
@@ -7,14 +6,14 @@ if TYPE_CHECKING:
     from .type_a import TypeA
     from .type_c import TypeC
 
-    ListTypeA = List[TypeA]
-    ListTypeC = List[TypeC]
+    ListTypeA = list[TypeA]
+    ListTypeC = list[TypeC]
 else:
     TypeA = Annotated["TypeA", strawberry.lazy("tests.schema.test_lazy.type_a")]
-    ListTypeA = List[
+    ListTypeA = list[
         Annotated["TypeA", strawberry.lazy("tests.schema.test_lazy.type_a")]
     ]
-    ListTypeC = List[
+    ListTypeC = list[
         Annotated["TypeC", strawberry.lazy("tests.schema.test_lazy.type_c")]
     ]
 
