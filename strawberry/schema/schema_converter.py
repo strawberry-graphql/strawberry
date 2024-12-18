@@ -92,7 +92,6 @@ if TYPE_CHECKING:
     from strawberry.types.info import Info
     from strawberry.types.scalar import ScalarDefinition
 
-
 FieldType = TypeVar(
     "FieldType", bound=Union[GraphQLField, GraphQLInputField], covariant=True
 )
@@ -245,6 +244,7 @@ class GraphQLCoreConverter:
         scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
         get_fields: Callable[[StrawberryObjectDefinition], List[StrawberryField]],
     ) -> None:
+        self.extra_interface_child_map: Dict[str, StrawberryObjectDefinition] = {}
         self.type_map: Dict[str, ConcreteType] = {}
         self.config = config
         self.scalar_registry = scalar_registry
@@ -583,6 +583,20 @@ class GraphQLCoreConverter:
             definition=interface, implementation=graphql_interface
         )
 
+        # get all subclasses of the interface
+        subclasses = interface.origin.__subclasses__()
+        for subclass in subclasses:
+            # check if subclass is strawberry type
+
+            subclass_object_definition = get_object_definition(subclass, strict=False)
+            object_type_name = self.config.name_converter.from_type(
+                subclass_object_definition
+            )
+
+            if object_type_name not in self.type_map:
+                self.extra_interface_child_map[object_type_name] = (
+                    subclass_object_definition
+                )
         return graphql_interface
 
     def from_list(self, type_: StrawberryList) -> GraphQLList:
