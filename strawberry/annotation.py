@@ -127,6 +127,7 @@ class StrawberryAnnotation:
 
         return evaled_type, []
 
+    # TODO: can we cache this?
     def resolve(self) -> Union[StrawberryType, type]:
         """Return resolved (transformed) annotation."""
         if self.__resolve_cache__ is None:
