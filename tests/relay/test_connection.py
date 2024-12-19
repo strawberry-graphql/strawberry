@@ -104,8 +104,8 @@ def test_nullable_connection_with_permission():
         @strawberry.relay.connection(
             Optional[UserConnection], permission_classes=[TestPermission]
         )
-        def users(self) -> Optional[List[User]]:
-            return None
+        def users(self) -> Optional[List[User]]:  # pragma: no cover
+            pytest.fail("Should not have been called...")
 
     schema = strawberry.Schema(query=Query)
     query = """
