@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.254.1 - 2024-12-20
+--------------------
+
+This release updates the Context and RootValue vars to have
+a default value of `None`, this makes it easier to use the views
+without having to pass in a value for these vars.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3732](https://github.com/strawberry-graphql/strawberry/pull/3732/)
+
+
 0.254.0 - 2024-12-13
 --------------------
 
