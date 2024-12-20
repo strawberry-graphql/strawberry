@@ -131,7 +131,9 @@ jobs:
       - run: |
           poetry run pip install mypy
 
-          poetry run mypy --config-file mypy.ini
+          mkdir .mypy_cache
+
+          poetry run mypy --install-types --non-interactive --cache-dir=.mypy_cache/ --config-file mypy.ini
 
   unit-tests-on-windows:
     name: 🪟 Tests on Windows
