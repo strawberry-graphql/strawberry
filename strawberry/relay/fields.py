@@ -43,7 +43,7 @@ from strawberry.types.field import _RESOLVER_TYPE, StrawberryField, field
 from strawberry.types.fields.resolver import StrawberryResolver
 from strawberry.types.lazy_type import LazyType
 from strawberry.utils.aio import asyncgen_to_list
-from strawberry.utils.typing import eval_type, is_generic_alias, is_union
+from strawberry.utils.typing import eval_type, is_generic_alias, is_optional, is_union
 
 from .types import Connection, GlobalID, Node
 
@@ -257,7 +257,8 @@ class ConnectionExtension(FieldExtension):
             )
 
         if is_union(resolver_type):
-            # TODO: actually check if is optional and get correct type
+            assert is_optional(resolver_type)
+
             resolver_type = get_args(resolver_type)[0]
 
         origin = get_origin(resolver_type)
