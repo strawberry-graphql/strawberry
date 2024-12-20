@@ -24,9 +24,8 @@ from typing import (
     Type,
     Union,
     cast,
-    overload,
 )
-from typing_extensions import Annotated, get_origin
+from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.extensions.field_extension import (
@@ -44,9 +43,9 @@ from strawberry.types.field import _RESOLVER_TYPE, StrawberryField, field
 from strawberry.types.fields.resolver import StrawberryResolver
 from strawberry.types.lazy_type import LazyType
 from strawberry.utils.aio import asyncgen_to_list
-from strawberry.utils.typing import eval_type, is_generic_alias
+from strawberry.utils.typing import eval_type, is_generic_alias, is_optional, is_union
 
-from .types import Connection, GlobalID, Node, NodeIterableType, NodeType
+from .types import Connection, GlobalID, Node
 
 if TYPE_CHECKING:
     from typing_extensions import Literal
@@ -233,7 +232,11 @@ class ConnectionExtension(FieldExtension):
             f_type = f_type.resolve_type()
             field.type = f_type
 
+        if isinstance(f_type, StrawberryOptional):
+            f_type = f_type.of_type
+
         type_origin = get_origin(f_type) if is_generic_alias(f_type) else f_type
+
         if not isinstance(type_origin, type) or not issubclass(type_origin, Connection):
             raise RelayWrongAnnotationError(field.name, cast(type, field.origin))
 
@@ -253,13 +256,19 @@ class ConnectionExtension(FieldExtension):
                 None,
             )
 
+        if is_union(resolver_type):
+            assert is_optional(resolver_type)
+
+            resolver_type = get_args(resolver_type)[0]
+
         origin = get_origin(resolver_type)
+
         if origin is None or not issubclass(
             origin, (Iterator, Iterable, AsyncIterator, AsyncIterable)
         ):
             raise RelayWrongResolverAnnotationError(field.name, field.base_resolver)
 
-        self.connection_type = cast(Type[Connection[Node]], field.type)
+        self.connection_type = cast(Type[Connection[Node]], f_type)
 
     def resolve(
         self,
@@ -327,44 +336,17 @@ else:
         return field(*args, **kwargs)
 
 
-@overload
-def connection(
-    graphql_type: Optional[Type[Connection[NodeType]]] = None,
-    *,
-    resolver: Optional[_RESOLVER_TYPE[NodeIterableType[Any]]] = None,
-    name: Optional[str] = None,
-    is_subscription: bool = False,
-    description: Optional[str] = None,
-    init: Literal[True] = True,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
-    default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: List[FieldExtension] = (),  # type: ignore
-) -> Any: ...
-
-
-@overload
-def connection(
-    graphql_type: Optional[Type[Connection[NodeType]]] = None,
-    *,
-    name: Optional[str] = None,
-    is_subscription: bool = False,
-    description: Optional[str] = None,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
-    default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: List[FieldExtension] = (),  # type: ignore
-) -> StrawberryField: ...
+# we used to have `Type[Connection[NodeType]]` here, but that when we added
+# support for making the Connection type optional, we had to change it to
+# `Any` because otherwise it wouldn't be type check since `Optional[Connection[Something]]`
+# is not a `Type`, but a special form, see https://discuss.python.org/t/is-annotated-compatible-with-type-t/43898/46
+# for more information, and also https://peps.python.org/pep-0747/, which is currently
+# in draft status (and no type checker supports it yet)
+ConnectionGraphQLType = Any
 
 
 def connection(
-    graphql_type: Optional[Type[Connection[NodeType]]] = None,
+    graphql_type: Optional[ConnectionGraphQLType] = None,
     *,
     resolver: Optional[_RESOLVER_TYPE[Any]] = None,
     name: Optional[str] = None,
@@ -379,7 +361,7 @@ def connection(
     extensions: List[FieldExtension] = (),  # type: ignore
     # This init parameter is used by pyright to determine whether this field
     # is added in the constructor or not. It is not used to change
-    # any behavior at the moment.
+    # any behaviour at the moment.
     init: Literal[True, False, None] = None,
 ) -> Any:
     """Annotate a property or a method to create a relay connection field.
