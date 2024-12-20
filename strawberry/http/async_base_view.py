@@ -13,6 +13,7 @@ from typing import (
     Mapping,
     Optional,
     Tuple,
+    Type,
     Union,
     cast,
     overload,
@@ -117,14 +118,18 @@ class AsyncBaseHTTPView(
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
     websocket_adapter_class: Callable[
         [
-            "AsyncBaseHTTPView[Request, Response, SubResponse, WebSocketRequest, WebSocketResponse, Context, RootValue]",
+            "AsyncBaseHTTPView[Any, Any, Any, Any, Any, Context, RootValue]",
             WebSocketRequest,
             WebSocketResponse,
         ],
         AsyncWebSocketAdapter,
     ]
-    graphql_transport_ws_handler_class = BaseGraphQLTransportWSHandler
-    graphql_ws_handler_class = BaseGraphQLWSHandler
+    graphql_transport_ws_handler_class: Type[
+        BaseGraphQLTransportWSHandler[Context, RootValue]
+    ] = BaseGraphQLTransportWSHandler[Context, RootValue]
+    graphql_ws_handler_class: Type[BaseGraphQLWSHandler[Context, RootValue]] = (
+        BaseGraphQLWSHandler[Context, RootValue]
+    )
 
     @property
     @abc.abstractmethod
@@ -285,8 +290,8 @@ class AsyncBaseHTTPView(
                 await self.graphql_transport_ws_handler_class(
                     view=self,
                     websocket=websocket,
-                    context=context,
-                    root_value=root_value,
+                    context=context,  # type: ignore
+                    root_value=root_value,  # type: ignore
                     schema=self.schema,
                     debug=self.debug,
                     connection_init_wait_timeout=self.connection_init_wait_timeout,
@@ -295,8 +300,8 @@ class AsyncBaseHTTPView(
                 await self.graphql_ws_handler_class(
                     view=self,
                     websocket=websocket,
-                    context=context,
-                    root_value=root_value,
+                    context=context,  # type: ignore
+                    root_value=root_value,  # type: ignore
                     schema=self.schema,
                     debug=self.debug,
                     keep_alive=self.keep_alive,

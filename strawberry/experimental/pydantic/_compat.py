@@ -8,7 +8,6 @@ from uuid import UUID
 import pydantic
 from pydantic import BaseModel
 from pydantic.version import VERSION as PYDANTIC_VERSION
-
 from strawberry.experimental.pydantic.exceptions import UnsupportedTypeError
 
 if TYPE_CHECKING:
@@ -134,7 +133,7 @@ class PydanticV2Compat:
                 type_=field.annotation,
                 outer_type_=field.annotation,
                 default=field.default,
-                default_factory=field.default_factory,  # type: ignore
+                default_factory=field.default_factory,
                 required=field.is_required(),
                 alias=field.alias,
                 # v2 doesn't have allow_none
