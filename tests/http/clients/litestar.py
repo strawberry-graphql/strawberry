@@ -15,6 +15,7 @@ from strawberry.http.ides import GraphQL_IDE
 from strawberry.litestar import make_graphql_controller
 from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
+from tests.websockets.views import OnWSConnectMixin
 
 from ..context import get_context
 from .base import (
@@ -67,7 +68,7 @@ class LitestarHttpClient(HttpClient):
             **kwargs,
         )
 
-        class GraphQLController(BaseGraphQLController):
+        class GraphQLController(OnWSConnectMixin, BaseGraphQLController):
             graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
             graphql_ws_handler_class = DebuggableGraphQLWSHandler
 

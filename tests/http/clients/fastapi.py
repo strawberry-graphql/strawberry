@@ -15,6 +15,7 @@ from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
+from tests.websockets.views import OnWSConnectMixin
 
 from ..context import get_context
 from .asgi import AsgiWebSocketClient
@@ -54,7 +55,7 @@ async def get_root_value(
     return Query()
 
 
-class GraphQLRouter(BaseGraphQLRouter[Any, Any]):
+class GraphQLRouter(OnWSConnectMixin, BaseGraphQLRouter[Any, Any]):
     result_override: ResultOverrideFunction = None
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler

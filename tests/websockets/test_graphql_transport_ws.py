@@ -247,6 +247,94 @@ async def test_too_many_initialisation_requests(ws: WebSocketClient):
     assert ws.close_reason == "Too many initialisation requests"
 
 
+async def test_connections_are_accepted_by_default(ws_raw: WebSocketClient):
+    await ws_raw.send_message({"type": "connection_init"})
+    connection_ack_message: ConnectionAckMessage = await ws_raw.receive_json()
+    assert connection_ack_message == {"type": "connection_ack"}
+
+    await ws_raw.close()
+    assert ws_raw.closed
+
+
+@pytest.mark.parametrize("payload", [None, {"token": "secret"}])
+async def test_setting_a_connection_ack_payload(ws_raw: WebSocketClient, payload):
+    await ws_raw.send_message(
+        {
+            "type": "connection_init",
+            "payload": {"test-accept": True, "ack-payload": payload},
+        }
+    )
+
+    connection_ack_message: ConnectionAckMessage = await ws_raw.receive_json()
+    assert connection_ack_message == {"type": "connection_ack", "payload": payload}
+
+    await ws_raw.close()
+    assert ws_raw.closed
+
+
+async def test_connection_ack_payload_may_be_unset(ws_raw: WebSocketClient):
+    await ws_raw.send_message(
+        {
+            "type": "connection_init",
+            "payload": {"test-accept": True},
+        }
+    )
+
+    connection_ack_message: ConnectionAckMessage = await ws_raw.receive_json()
+    assert connection_ack_message == {"type": "connection_ack"}
+
+    await ws_raw.close()
+    assert ws_raw.closed
+
+
+async def test_rejecting_connection_closes_socket_with_expected_code_and_message(
+    ws_raw: WebSocketClient,
+):
+    await ws_raw.send_message(
+        {"type": "connection_init", "payload": {"test-reject": True}}
+    )
+
+    await ws_raw.receive(timeout=2)
+    assert ws_raw.closed
+    assert ws_raw.close_code == 4403
+    assert ws_raw.close_reason == "Forbidden"
+
+
+async def test_context_can_be_modified_from_within_on_ws_connect(
+    ws_raw: WebSocketClient,
+):
+    await ws_raw.send_message(
+        {
+            "type": "connection_init",
+            "payload": {"test-modify": True},
+        }
+    )
+
+    connection_ack_message: ConnectionAckMessage = await ws_raw.receive_json()
+    assert connection_ack_message == {"type": "connection_ack"}
+
+    await ws_raw.send_message(
+        {
+            "type": "subscribe",
+            "id": "demo",
+            "payload": {
+                "query": "subscription { connectionParams }",
+            },
+        }
+    )
+
+    next_message: NextMessage = await ws_raw.receive_json()
+    assert next_message["type"] == "next"
+    assert next_message["id"] == "demo"
+    assert "data" in next_message["payload"]
+    assert next_message["payload"]["data"] == {
+        "connectionParams": {"test-modify": True, "modified": True}
+    }
+
+    await ws_raw.close()
+    assert ws_raw.closed
+
+
 async def test_ping_pong(ws: WebSocketClient):
     await ws.send_message({"type": "ping"})
     pong_message: PongMessage = await ws.receive_json()
@@ -823,7 +911,7 @@ async def test_injects_connection_params(ws_raw: WebSocketClient):
     )
 
     next_message: NextMessage = await ws.receive_json()
-    assert_next(next_message, "sub1", {"connectionParams": "rocks"})
+    assert_next(next_message, "sub1", {"connectionParams": {"strawberry": "rocks"}})
 
     await ws.send_message({"id": "sub1", "type": "complete"})
 

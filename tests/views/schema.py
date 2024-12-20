@@ -221,12 +221,13 @@ class Subscription:
     ) -> AsyncGenerator[str, None]:
         yield info.context["request"].channel_name
 
-        async for message in info.context["request"].channel_listen(
+        async with info.context["request"].listen_to_channel(
             type="test.message",
             timeout=timeout,
             groups=[group] if group is not None else [],
-        ):
-            yield message["text"]
+        ) as cm:
+            async for message in cm:
+                yield message["text"]
 
     @strawberry.subscription
     async def listener_with_confirmation(
@@ -248,8 +249,8 @@ class Subscription:
     @strawberry.subscription
     async def connection_params(
         self, info: strawberry.Info
-    ) -> AsyncGenerator[str, None]:
-        yield info.context["connection_params"]["strawberry"]
+    ) -> AsyncGenerator[strawberry.scalars.JSON, None]:
+        yield info.context["connection_params"]
 
     @strawberry.subscription
     async def long_finalizer(

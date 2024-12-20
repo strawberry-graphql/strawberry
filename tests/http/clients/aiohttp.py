@@ -15,6 +15,7 @@ from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
+from tests.websockets.views import OnWSConnectMixin
 
 from ..context import get_context
 from .base import (
@@ -29,14 +30,14 @@ from .base import (
 )
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(OnWSConnectMixin, BaseGraphQLView[Dict[str, object], object]):
     result_override: ResultOverrideFunction = None
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
     async def get_context(
         self, request: web.Request, response: web.StreamResponse
-    ) -> object:
+    ) -> Dict[str, object]:
         context = await super().get_context(request, response)
 
         return get_context(context)
@@ -171,11 +172,9 @@ class AioHttpClient(HttpClient):
         *,
         protocols: List[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
-        server = TestServer(self.app)
-        await server.start_server()
-        client = TestClient(server)
-        async with client.ws_connect(url, protocols=protocols) as ws:
-            yield AioWebSocketClient(ws)
+        async with TestClient(TestServer(self.app)) as client:
+            async with client.ws_connect(url, protocols=protocols) as ws:
+                yield AioWebSocketClient(ws)
 
 
 class AioWebSocketClient(WebSocketClient):

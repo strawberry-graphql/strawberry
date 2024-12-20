@@ -99,7 +99,9 @@ class Subscription:
         yield message
 
     @strawberry.subscription
-    async def request_ping(self, info) -> typing.AsyncGenerator[bool, None]:
+    async def request_ping(
+        self, info: strawberry.Info
+    ) -> typing.AsyncGenerator[bool, None]:
         ws = info.context["ws"]
         await ws.send_json(PingMessage().as_dict())
         yield True
@@ -111,7 +113,7 @@ class Subscription:
             await asyncio.sleep(1)
 
     @strawberry.subscription
-    async def context(self, info) -> typing.AsyncGenerator[str, None]:
+    async def context(self, info: strawberry.Info) -> typing.AsyncGenerator[str, None]:
         yield info.context["custom_value"]
 
     @strawberry.subscription
@@ -132,7 +134,9 @@ class Subscription:
         yield Flavor.CHOCOLATE
 
     @strawberry.subscription
-    async def debug(self, info) -> typing.AsyncGenerator[DebugInfo, None]:
+    async def debug(
+        self, info: strawberry.Info
+    ) -> typing.AsyncGenerator[DebugInfo, None]:
         active_result_handlers = [
             task for task in info.context["get_tasks"]() if not task.done()
         ]

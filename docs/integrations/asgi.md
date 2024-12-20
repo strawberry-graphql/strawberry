@@ -53,6 +53,7 @@ methods:
 - `def decode_json(self, data: Union[str, bytes]) -> object`
 - `def encode_json(self, data: object) -> str`
 - `async def render_graphql_ide(self, request: Request) -> Response`
+- `async def on_ws_connect(self, context: Context) -> Union[UnsetType, None, Dict[str, object]]`
 
 ### get_context
 
@@ -240,4 +241,48 @@ class MyGraphQL(GraphQL):
         custom_html = """<html><body><h1>Custom GraphQL IDE</h1></body></html>"""
 
         return HTMLResponse(custom_html)
+```
+
+### on_ws_connect
+
+By overriding `on_ws_connect` you can customize the behavior when a `graphql-ws`
+or `graphql-transport-ws` connection is established. This is particularly useful
+for authentication and authorization. By default, all connections are accepted.
+
+To manually accept a connection, return `strawberry.UNSET` or a connection
+acknowledgment payload. The acknowledgment payload will be sent to the client.
+
+Note that the legacy protocol does not support `None`/`null` acknowledgment
+payloads, while the new protocol does. Our implementation will treat
+`None`/`null` payloads the same as `strawberry.UNSET` in the context of the
+legacy protocol.
+
+To reject a connection, raise a `ConnectionRejectionError`. You can optionally
+provide a custom error payload that will be sent to the client when the legacy
+GraphQL over WebSocket protocol is used.
+
+```python
+from typing import Dict
+from strawberry.exceptions import ConnectionRejectionError
+from strawberry.asgi import GraphQL
+
+
+class MyGraphQL(GraphQL):
+    async def on_ws_connect(self, context: Dict[str, object]):
+        connection_params = context["connection_params"]
+
+        if not isinstance(connection_params, dict):
+            # Reject without a custom graphql-ws error payload
+            raise ConnectionRejectionError()
+
+        if connection_params.get("password") != "secret":
+            # Reject with a custom graphql-ws error payload
+            raise ConnectionRejectionError({"reason": "Invalid password"})
+
+        if username := connection_params.get("username"):
+            # Accept with a custom acknowledgment payload
+            return {"message": f"Hello, {username}!"}
+
+        # Accept without a acknowledgment payload
+        return await super().on_ws_connect(context)
 ```
