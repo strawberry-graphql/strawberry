@@ -116,7 +116,11 @@ class AsyncBaseHTTPView(
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
     websocket_adapter_class: Callable[
-        ["AsyncBaseHTTPView", WebSocketRequest, WebSocketResponse],
+        [
+            "AsyncBaseHTTPView[Request, Response, SubResponse, WebSocketRequest, WebSocketResponse, Context, RootValue]",
+            WebSocketRequest,
+            WebSocketResponse,
+        ],
         AsyncWebSocketAdapter,
     ]
     graphql_transport_ws_handler_class = BaseGraphQLTransportWSHandler
