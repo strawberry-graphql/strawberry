@@ -71,9 +71,7 @@ async def test_raises_permission_error_for_subscription():
     @strawberry.type
     class Subscription:
         @strawberry.subscription(permission_classes=[IsAdmin])
-        async def user(
-            self, info
-        ) -> typing.AsyncGenerator[str, None]:  # pragma: no cover
+        async def user(self) -> typing.AsyncGenerator[str, None]:  # pragma: no cover
             yield "Hello"
 
     schema = strawberry.Schema(query=Query, subscription=Subscription)

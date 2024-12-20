@@ -177,7 +177,7 @@ def test_setting_metadata_on_argument():
         @strawberry.field
         def hello(
             self,
-            info,
+            info: strawberry.Info,
             input: Annotated[str, strawberry.argument(metadata={"test": "foo"})],
         ) -> str:
             nonlocal field_definition

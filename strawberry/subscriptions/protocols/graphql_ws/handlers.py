@@ -4,13 +4,17 @@ import asyncio
 from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
+    Any,
     AsyncGenerator,
     Dict,
+    Generic,
     Optional,
     cast,
 )
 
+from strawberry.exceptions import ConnectionRejectionError
 from strawberry.http.exceptions import NonTextMessageReceived, WebSocketDisconnected
+from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions.protocols.graphql_ws.types import (
     ConnectionInitMessage,
     ConnectionTerminateMessage,
@@ -20,24 +24,30 @@ from strawberry.subscriptions.protocols.graphql_ws.types import (
     StopMessage,
 )
 from strawberry.types.execution import ExecutionResult, PreExecutionError
+from strawberry.types.unset import UnsetType
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 if TYPE_CHECKING:
-    from strawberry.http.async_base_view import AsyncWebSocketAdapter
+    from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncWebSocketAdapter
     from strawberry.schema import BaseSchema
 
 
-class BaseGraphQLWSHandler:
+class BaseGraphQLWSHandler(Generic[Context, RootValue]):
+    context: Context
+    root_value: RootValue
+
     def __init__(
         self,
+        view: AsyncBaseHTTPView[Any, Any, Any, Any, Any, Context, RootValue],
         websocket: AsyncWebSocketAdapter,
-        context: object,
-        root_value: object,
+        context: Context,
+        root_value: RootValue,
         schema: BaseSchema,
         debug: bool,
         keep_alive: bool,
         keep_alive_interval: Optional[float],
     ) -> None:
+        self.view = view
         self.websocket = websocket
         self.context = context
         self.root_value = root_value
@@ -48,7 +58,6 @@ class BaseGraphQLWSHandler:
         self.keep_alive_task: Optional[asyncio.Task] = None
         self.subscriptions: Dict[str, AsyncGenerator] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
-        self.connection_params: Optional[Dict[str, object]] = None
 
     async def handle(self) -> None:
         try:
@@ -92,9 +101,29 @@ class BaseGraphQLWSHandler:
             await self.websocket.close(code=1000, reason="")
             return
 
-        self.connection_params = payload
+        if isinstance(self.context, dict):
+            self.context["connection_params"] = payload
+        elif hasattr(self.context, "connection_params"):
+            self.context.connection_params = payload
 
-        await self.send_message({"type": "connection_ack"})
+        self.context = cast(Context, self.context)
+
+        try:
+            connection_ack_payload = await self.view.on_ws_connect(self.context)
+        except ConnectionRejectionError as e:
+            await self.send_message({"type": "connection_error", "payload": e.payload})
+            await self.websocket.close(code=1011, reason="")
+            return
+
+        if (
+            isinstance(connection_ack_payload, UnsetType)
+            or connection_ack_payload is None
+        ):
+            await self.send_message({"type": "connection_ack"})
+        else:
+            await self.send_message(
+                {"type": "connection_ack", "payload": connection_ack_payload}
+            )
 
         if self.keep_alive:
             keep_alive_handler = self.handle_keep_alive()
@@ -111,11 +140,6 @@ class BaseGraphQLWSHandler:
         query = payload["query"]
         operation_name = payload.get("operationName")
         variables = payload.get("variables")
-
-        if isinstance(self.context, dict):
-            self.context["connection_params"] = self.connection_params
-        elif hasattr(self.context, "connection_params"):
-            self.context.connection_params = self.connection_params
 
         if self.debug:
             pretty_print_graphql_operation(operation_name, query, variables)

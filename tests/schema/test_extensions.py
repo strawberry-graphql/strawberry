@@ -11,6 +11,7 @@ from graphql import (
 )
 
 import strawberry
+from strawberry.directive import DirectiveValue
 from strawberry.scalars import JSON
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema_directive import Location
@@ -52,7 +53,7 @@ def test_extensions_schema_directive():
 
 def test_directive():
     @strawberry.directive(locations=[DirectiveLocation.FIELD])
-    def uppercase(value: str, foo: str):
+    def uppercase(value: DirectiveValue[str], foo: str):
         return value.upper()
 
     @strawberry.type()

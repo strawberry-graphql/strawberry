@@ -13,6 +13,7 @@ from typing import (
     Mapping,
     Optional,
     Tuple,
+    Type,
     Union,
     cast,
     overload,
@@ -21,7 +22,6 @@ from typing_extensions import Literal, TypeGuard
 
 from graphql import GraphQLError
 
-from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
@@ -39,6 +39,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
 from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
 from strawberry.types import ExecutionResult, SubscriptionExecutionResult
 from strawberry.types.graphql import OperationType
+from strawberry.types.unset import UNSET, UnsetType
 
 from .base import BaseView
 from .exceptions import HTTPException
@@ -80,10 +81,13 @@ class AsyncHTTPRequestAdapter(abc.ABC):
 
 
 class AsyncWebSocketAdapter(abc.ABC):
+    def __init__(self, view: "AsyncBaseHTTPView") -> None:
+        self.view = view
+
     @abc.abstractmethod
     def iter_json(
         self, *, ignore_parsing_errors: bool = False
-    ) -> AsyncGenerator[Dict[str, object], None]: ...
+    ) -> AsyncGenerator[object, None]: ...
 
     @abc.abstractmethod
     async def send_json(self, message: Mapping[str, object]) -> None: ...
@@ -113,10 +117,19 @@ class AsyncBaseHTTPView(
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
     request_adapter_class: Callable[[Request], AsyncHTTPRequestAdapter]
     websocket_adapter_class: Callable[
-        [WebSocketRequest, WebSocketResponse], AsyncWebSocketAdapter
+        [
+            "AsyncBaseHTTPView[Any, Any, Any, Any, Any, Context, RootValue]",
+            WebSocketRequest,
+            WebSocketResponse,
+        ],
+        AsyncWebSocketAdapter,
     ]
-    graphql_transport_ws_handler_class = BaseGraphQLTransportWSHandler
-    graphql_ws_handler_class = BaseGraphQLWSHandler
+    graphql_transport_ws_handler_class: Type[
+        BaseGraphQLTransportWSHandler[Context, RootValue]
+    ] = BaseGraphQLTransportWSHandler[Context, RootValue]
+    graphql_ws_handler_class: Type[BaseGraphQLWSHandler[Context, RootValue]] = (
+        BaseGraphQLWSHandler[Context, RootValue]
+    )
 
     @property
     @abc.abstractmethod
@@ -265,7 +278,7 @@ class AsyncBaseHTTPView(
             websocket_response = await self.create_websocket_response(
                 request, websocket_subprotocol
             )
-            websocket = self.websocket_adapter_class(request, websocket_response)
+            websocket = self.websocket_adapter_class(self, request, websocket_response)
 
             context = (
                 await self.get_context(request, response=websocket_response)
@@ -275,18 +288,20 @@ class AsyncBaseHTTPView(
 
             if websocket_subprotocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
                 await self.graphql_transport_ws_handler_class(
+                    view=self,
                     websocket=websocket,
-                    context=context,
-                    root_value=root_value,
+                    context=context,  # type: ignore
+                    root_value=root_value,  # type: ignore
                     schema=self.schema,
                     debug=self.debug,
                     connection_init_wait_timeout=self.connection_init_wait_timeout,
                 ).handle()
             elif websocket_subprotocol == GRAPHQL_WS_PROTOCOL:
                 await self.graphql_ws_handler_class(
+                    view=self,
                     websocket=websocket,
-                    context=context,
-                    root_value=root_value,
+                    context=context,  # type: ignore
+                    root_value=root_value,  # type: ignore
                     schema=self.schema,
                     debug=self.debug,
                     keep_alive=self.keep_alive,
@@ -471,6 +486,11 @@ class AsyncBaseHTTPView(
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
+
+    async def on_ws_connect(
+        self, context: Context
+    ) -> Union[UnsetType, None, Dict[str, object]]:
+        return UNSET
 
 
 __all__ = ["AsyncBaseHTTPView"]

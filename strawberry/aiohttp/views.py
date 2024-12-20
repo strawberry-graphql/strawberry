@@ -87,17 +87,20 @@ class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class AioHTTPWebSocketAdapter(AsyncWebSocketAdapter):
-    def __init__(self, request: web.Request, ws: web.WebSocketResponse) -> None:
+    def __init__(
+        self, view: AsyncBaseHTTPView, request: web.Request, ws: web.WebSocketResponse
+    ) -> None:
+        super().__init__(view)
         self.request = request
         self.ws = ws
 
     async def iter_json(
         self, *, ignore_parsing_errors: bool = False
-    ) -> AsyncGenerator[Dict[str, object], None]:
+    ) -> AsyncGenerator[object, None]:
         async for ws_message in self.ws:
             if ws_message.type == http.WSMsgType.TEXT:
                 try:
-                    yield ws_message.json()
+                    yield self.view.decode_json(ws_message.data)
                 except JSONDecodeError:
                     if not ignore_parsing_errors:
                         raise NonJsonMessageReceived()
@@ -107,7 +110,7 @@ class AioHTTPWebSocketAdapter(AsyncWebSocketAdapter):
 
     async def send_json(self, message: Mapping[str, object]) -> None:
         try:
-            await self.ws.send_json(message)
+            await self.ws.send_str(self.view.encode_json(message))
         except RuntimeError as exc:
             raise WebSocketDisconnected from exc
 

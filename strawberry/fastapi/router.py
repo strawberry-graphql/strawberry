@@ -38,7 +38,6 @@ from fastapi.utils import generate_unique_id
 from strawberry.asgi import ASGIRequestAdapter, ASGIWebSocketAdapter
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi.context import BaseContext, CustomContext
-from strawberry.http import process_result
 from strawberry.http.async_base_view import AsyncBaseHTTPView
 from strawberry.http.exceptions import HTTPException
 from strawberry.http.typevars import Context, RootValue
@@ -54,7 +53,6 @@ if TYPE_CHECKING:
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
-    from strawberry.types import ExecutionResult
 
 
 class GraphQLRouter(
@@ -267,11 +265,6 @@ class GraphQLRouter(
 
     async def render_graphql_ide(self, request: Request) -> HTMLResponse:
         return HTMLResponse(self.graphql_ide_html)
-
-    async def process_result(
-        self, request: Request, result: ExecutionResult
-    ) -> GraphQLHTTPResponse:
-        return process_result(result)
 
     async def get_context(
         self, request: Union[Request, WebSocket], response: Union[Response, WebSocket]

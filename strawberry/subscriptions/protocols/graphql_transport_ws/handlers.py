@@ -5,8 +5,10 @@ import logging
 from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
+    Any,
     Awaitable,
     Dict,
+    Generic,
     List,
     Optional,
     cast,
@@ -14,11 +16,13 @@ from typing import (
 
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 
+from strawberry.exceptions import ConnectionRejectionError
 from strawberry.http.exceptions import (
     NonJsonMessageReceived,
     NonTextMessageReceived,
     WebSocketDisconnected,
 )
+from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionInitMessage,
@@ -31,29 +35,32 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
 from strawberry.types import ExecutionResult
 from strawberry.types.execution import PreExecutionError
 from strawberry.types.graphql import OperationType
+from strawberry.types.unset import UnsetType
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.operation import get_operation_type
 
 if TYPE_CHECKING:
     from datetime import timedelta
 
-    from strawberry.http.async_base_view import AsyncWebSocketAdapter
+    from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncWebSocketAdapter
     from strawberry.schema import BaseSchema
     from strawberry.schema.subscribe import SubscriptionResult
 
 
-class BaseGraphQLTransportWSHandler:
+class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
     task_logger: logging.Logger = logging.getLogger("strawberry.ws.task")
 
     def __init__(
         self,
+        view: AsyncBaseHTTPView[Any, Any, Any, Any, Any, Context, RootValue],
         websocket: AsyncWebSocketAdapter,
-        context: object,
-        root_value: object,
+        context: Context,
+        root_value: RootValue,
         schema: BaseSchema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
     ) -> None:
+        self.view = view
         self.websocket = websocket
         self.context = context
         self.root_value = root_value
@@ -64,9 +71,8 @@ class BaseGraphQLTransportWSHandler:
         self.connection_init_received = False
         self.connection_acknowledged = False
         self.connection_timed_out = False
-        self.operations: Dict[str, Operation] = {}
+        self.operations: Dict[str, Operation[Context, RootValue]] = {}
         self.completed_tasks: List[asyncio.Task] = []
-        self.connection_params: Optional[Dict[str, object]] = None
 
     async def handle(self) -> None:
         self.on_request_accepted()
@@ -169,15 +175,33 @@ class BaseGraphQLTransportWSHandler:
             )
             return
 
-        self.connection_params = payload
-
         if self.connection_init_received:
             reason = "Too many initialisation requests"
             await self.websocket.close(code=4429, reason=reason)
             return
 
         self.connection_init_received = True
-        await self.send_message({"type": "connection_ack"})
+
+        if isinstance(self.context, dict):
+            self.context["connection_params"] = payload
+        elif hasattr(self.context, "connection_params"):
+            self.context.connection_params = payload
+
+        self.context = cast(Context, self.context)
+
+        try:
+            connection_ack_payload = await self.view.on_ws_connect(self.context)
+        except ConnectionRejectionError:
+            await self.websocket.close(code=4403, reason="Forbidden")
+            return
+
+        if isinstance(connection_ack_payload, UnsetType):
+            await self.send_message({"type": "connection_ack"})
+        else:
+            await self.send_message(
+                {"type": "connection_ack", "payload": connection_ack_payload}
+            )
+
         self.connection_acknowledged = True
 
     async def handle_ping(self, message: PingMessage) -> None:
@@ -219,11 +243,6 @@ class BaseGraphQLTransportWSHandler:
                 message["payload"].get("variables"),
             )
 
-        if isinstance(self.context, dict):
-            self.context["connection_params"] = self.connection_params
-        elif hasattr(self.context, "connection_params"):
-            self.context.connection_params = self.connection_params
-
         operation = Operation(
             self,
             message["id"],
@@ -236,7 +255,7 @@ class BaseGraphQLTransportWSHandler:
         operation.task = asyncio.create_task(self.run_operation(operation))
         self.operations[message["id"]] = operation
 
-    async def run_operation(self, operation: Operation) -> None:
+    async def run_operation(self, operation: Operation[Context, RootValue]) -> None:
         """The operation task's top level method. Cleans-up and de-registers the operation once it is done."""
         # TODO: Handle errors in this method using self.handle_task_exception()
 
@@ -320,7 +339,7 @@ class BaseGraphQLTransportWSHandler:
                 await task
 
 
-class Operation:
+class Operation(Generic[Context, RootValue]):
     """A class encapsulating a single operation with its id. Helps enforce protocol state transition."""
 
     __slots__ = [
@@ -336,7 +355,7 @@ class Operation:
 
     def __init__(
         self,
-        handler: BaseGraphQLTransportWSHandler,
+        handler: BaseGraphQLTransportWSHandler[Context, RootValue],
         id: str,
         operation_type: OperationType,
         query: str,

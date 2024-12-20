@@ -201,8 +201,8 @@ class BaseView:
             },
         )
 
-    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
-        return json.dumps(response_data, cls=DjangoJSONEncoder)
+    def encode_json(self, data: object) -> str:
+        return json.dumps(data, cls=DjangoJSONEncoder)
 
 
 class GraphQLView(
@@ -221,8 +221,8 @@ class GraphQLView(
     def get_root_value(self, request: HttpRequest) -> Optional[RootValue]:
         return None
 
-    def get_context(self, request: HttpRequest, response: HttpResponse) -> Any:
-        return StrawberryDjangoContext(request=request, response=response)
+    def get_context(self, request: HttpRequest, response: HttpResponse) -> Context:
+        return StrawberryDjangoContext(request=request, response=response)  # type: ignore
 
     def get_sub_response(self, request: HttpRequest) -> TemporalHttpResponse:
         return TemporalHttpResponse()
@@ -276,11 +276,13 @@ class AsyncGraphQLView(
 
         return view
 
-    async def get_root_value(self, request: HttpRequest) -> Any:
+    async def get_root_value(self, request: HttpRequest) -> Optional[RootValue]:
         return None
 
-    async def get_context(self, request: HttpRequest, response: HttpResponse) -> Any:
-        return StrawberryDjangoContext(request=request, response=response)
+    async def get_context(
+        self, request: HttpRequest, response: HttpResponse
+    ) -> Context:
+        return StrawberryDjangoContext(request=request, response=response)  # type: ignore
 
     async def get_sub_response(self, request: HttpRequest) -> TemporalHttpResponse:
         return TemporalHttpResponse()

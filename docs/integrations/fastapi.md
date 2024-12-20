@@ -259,6 +259,17 @@ app.include_router(graphql_app, prefix="/graphql")
 Here we are returning a Query where the name is "Patrick", so when we request
 the field name we'll return "Patrick".
 
+## Extending the router
+
+The base `GraphQLRouter` class can be extended by overriding any of the
+following methods:
+
+- `async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def decode_json(self, data: Union[str, bytes]) -> object`
+- `def encode_json(self, data: object) -> str`
+- `async def render_graphql_ide(self, request: Request) -> HTMLResponse`
+- `async def on_ws_connect(self, context: Context) -> Union[UnsetType, None, Dict[str, object]]`
+
 ### process_result
 
 The `process_result` option allows you to customize and/or process results
@@ -269,7 +280,7 @@ It needs to return a `GraphQLHTTPResponse` object and accepts the request and
 execution results.
 
 ```python
-from fastapi import Request
+from starlette.requests import Request
 from strawberry.fastapi import GraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
@@ -290,16 +301,41 @@ class MyGraphQLRouter(GraphQLRouter):
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
 
-### encode_json
+### decode_json
 
-`encode_json` allows to customize the encoding of the JSON response. By default
-we use `json.dumps` but you can override this method to use a different encoder.
-For example, the `orjson` library from pypi has blazing fast speeds.
+`decode_json` allows to customize the decoding of HTTP and WebSocket JSON
+requests. By default we use `json.loads` but you can override this method to use
+a different decoder.
 
 ```python
+from strawberry.fastapi import GraphQLRouter
+from typing import Union
+import orjson
+
+
 class MyGraphQLRouter(GraphQLRouter):
-    def encode_json(self, data: GraphQLHTTPResponse) -> bytes:
-        return orjson.dumps(data)
+    def decode_json(self, data: Union[str, bytes]) -> object:
+        return orjson.loads(data)
+```
+
+Make sure your code raises `json.JSONDecodeError` or a subclass of it if the
+JSON cannot be decoded. The library shown in the example above, `orjson`, does
+this by default.
+
+### encode_json
+
+`encode_json` allows to customize the encoding of HTTP and WebSocket JSON
+responses. By default we use `json.dumps` but you can override this method to
+use a different encoder.
+
+```python
+from strawberry.fastapi import GraphQLRouter
+import json
+
+
+class MyGraphQLRouter(GraphQLRouter):
+    def encode_json(self, data: object) -> bytes:
+        return json.dumps(data, indent=2)
 ```
 
 ### render_graphql_ide
@@ -310,6 +346,7 @@ In case you need more control over the rendering of the GraphQL IDE than the
 ```python
 from strawberry.fastapi import GraphQLRouter
 from starlette.responses import HTMLResponse, Response
+from starlette.requests import Request
 
 
 class MyGraphQLRouter(GraphQLRouter):
@@ -317,4 +354,48 @@ class MyGraphQLRouter(GraphQLRouter):
         custom_html = """<html><body><h1>Custom GraphQL IDE</h1></body></html>"""
 
         return HTMLResponse(custom_html)
+```
+
+### on_ws_connect
+
+By overriding `on_ws_connect` you can customize the behavior when a `graphql-ws`
+or `graphql-transport-ws` connection is established. This is particularly useful
+for authentication and authorization. By default, all connections are accepted.
+
+To manually accept a connection, return `strawberry.UNSET` or a connection
+acknowledgment payload. The acknowledgment payload will be sent to the client.
+
+Note that the legacy protocol does not support `None`/`null` acknowledgment
+payloads, while the new protocol does. Our implementation will treat
+`None`/`null` payloads the same as `strawberry.UNSET` in the context of the
+legacy protocol.
+
+To reject a connection, raise a `ConnectionRejectionError`. You can optionally
+provide a custom error payload that will be sent to the client when the legacy
+GraphQL over WebSocket protocol is used.
+
+```python
+from typing import Dict
+from strawberry.exceptions import ConnectionRejectionError
+from strawberry.fastapi import GraphQLRouter
+
+
+class MyGraphQLRouter(GraphQLRouter):
+    async def on_ws_connect(self, context: Dict[str, object]):
+        connection_params = context["connection_params"]
+
+        if not isinstance(connection_params, dict):
+            # Reject without a custom graphql-ws error payload
+            raise ConnectionRejectionError()
+
+        if connection_params.get("password") != "secret":
+            # Reject with a custom graphql-ws error payload
+            raise ConnectionRejectionError({"reason": "Invalid password"})
+
+        if username := connection_params.get("username"):
+            # Accept with a custom acknowledgment payload
+            return {"message": f"Hello, {username}!"}
+
+        # Accept without a acknowledgment payload
+        return await super().on_ws_connect(context)
 ```

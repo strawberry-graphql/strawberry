@@ -6,7 +6,6 @@ import json
 from typing import (
     TYPE_CHECKING,
     AsyncGenerator,
-    Dict,
     Mapping,
     Optional,
     Tuple,
@@ -28,12 +27,18 @@ if TYPE_CHECKING:
 
 
 class ChannelsWebSocketAdapter(AsyncWebSocketAdapter):
-    def __init__(self, request: GraphQLWSConsumer, response: GraphQLWSConsumer) -> None:
+    def __init__(
+        self,
+        view: AsyncBaseHTTPView,
+        request: GraphQLWSConsumer,
+        response: GraphQLWSConsumer,
+    ) -> None:
+        super().__init__(view)
         self.ws_consumer = response
 
     async def iter_json(
         self, *, ignore_parsing_errors: bool = False
-    ) -> AsyncGenerator[Dict[str, object], None]:
+    ) -> AsyncGenerator[object, None]:
         while True:
             message = await self.ws_consumer.message_queue.get()
 
@@ -44,13 +49,13 @@ class ChannelsWebSocketAdapter(AsyncWebSocketAdapter):
                 raise NonTextMessageReceived()
 
             try:
-                yield json.loads(message["message"])
+                yield self.view.decode_json(message["message"])
             except json.JSONDecodeError:
                 if not ignore_parsing_errors:
                     raise NonJsonMessageReceived()
 
     async def send_json(self, message: Mapping[str, object]) -> None:
-        serialized_message = json.dumps(message)
+        serialized_message = self.view.encode_json(message)
         await self.ws_consumer.send(serialized_message)
 
     async def close(self, code: int, reason: str) -> None:

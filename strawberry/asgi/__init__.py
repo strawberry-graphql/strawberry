@@ -5,7 +5,6 @@ from datetime import timedelta
 from json import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
-    Any,
     AsyncGenerator,
     AsyncIterator,
     Callable,
@@ -87,16 +86,20 @@ class ASGIRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
-    def __init__(self, request: WebSocket, response: WebSocket) -> None:
+    def __init__(
+        self, view: AsyncBaseHTTPView, request: WebSocket, response: WebSocket
+    ) -> None:
+        super().__init__(view)
         self.ws = response
 
     async def iter_json(
         self, *, ignore_parsing_errors: bool = False
-    ) -> AsyncGenerator[Dict[str, object], None]:
+    ) -> AsyncGenerator[object, None]:
         try:
             while self.ws.application_state != WebSocketState.DISCONNECTED:
                 try:
-                    yield await self.ws.receive_json()
+                    text = await self.ws.receive_text()
+                    yield self.view.decode_json(text)
                 except JSONDecodeError:  # noqa: PERF203
                     if not ignore_parsing_errors:
                         raise NonJsonMessageReceived()
@@ -107,7 +110,7 @@ class ASGIWebSocketAdapter(AsyncWebSocketAdapter):
 
     async def send_json(self, message: Mapping[str, object]) -> None:
         try:
-            await self.ws.send_json(message)
+            await self.ws.send_text(self.view.encode_json(message))
         except WebSocketDisconnect as exc:
             raise WebSocketDisconnected from exc
 
@@ -181,7 +184,9 @@ class GraphQL(
         else:  # pragma: no cover
             raise ValueError("Unknown scope type: {!r}".format(scope["type"]))
 
-    async def get_root_value(self, request: Union[Request, WebSocket]) -> Optional[Any]:
+    async def get_root_value(
+        self, request: Union[Request, WebSocket]
+    ) -> Optional[RootValue]:
         return None
 
     async def get_context(

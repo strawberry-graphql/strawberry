@@ -81,7 +81,7 @@ def tests(session: Session, gql_core: str) -> None:
 
 
 @session(python=["3.12"], name="Django tests", tags=["tests"])
-@with_gql_core_parametrize("django", ["4.2.0", "4.1.0", "4.0.0", "3.2.0"])
+@with_gql_core_parametrize("django", ["5.1.3", "5.0.9", "4.2.0"])
 def tests_django(session: Session, django: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
     _install_gql_core(session, gql_core)
@@ -92,11 +92,11 @@ def tests_django(session: Session, django: str, gql_core: str) -> None:
 
 
 @session(python=["3.11"], name="Starlette tests", tags=["tests"])
-@with_gql_core_parametrize("starlette", ["0.28.0", "0.27.0", "0.26.1"])
-def tests_starlette(session: Session, starlette: str, gql_core: str) -> None:
+@gql_core_parametrize
+def tests_starlette(session: Session, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
 
-    session._session.install(f"starlette=={starlette}")  # type: ignore
+    session._session.install("starlette")  # type: ignore
     _install_gql_core(session, gql_core)
     session.run("pytest", *COMMON_PYTEST_OPTIONS, "-m", "asgi")
 
@@ -144,6 +144,7 @@ def test_pydantic(session: Session, pydantic: str, gql_core: str) -> None:
         "-m",
         "pydantic",
         "--ignore=tests/cli",
+        "--ignore=tests/benchmarks",
     )
 
 
@@ -153,7 +154,7 @@ def tests_typecheckers(session: Session) -> None:
 
     session.install("pyright")
     session.install("pydantic")
-    session.install("git+https://github.com/python/mypy.git#master")
+    session.install("mypy")
 
     session.run(
         "pytest",
@@ -180,11 +181,3 @@ def tests_cli(session: Session) -> None:
         "tests/cli",
         "-vv",
     )
-
-
-@session(name="Mypy", tags=["lint"])
-def mypy(session: Session) -> None:
-    session.run_always("poetry", "install", "--with", "integrations", external=True)
-    session.install("mypy")
-
-    session.run("mypy", "--config-file", "mypy.ini")

@@ -49,19 +49,21 @@ The `GraphQLView` accepts the following options at the moment:
 
 ## Extending the view
 
-We allow to extend the base `GraphQLView`, by overriding the following methods:
+The base `GraphQLView` class can be extended by overriding any of the following
+methods:
 
-- `def get_context(self, request: Request, response: Response) -> Any`
-- `def get_root_value(self, request: Request) -> Any`
-- `def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse`
-- `def encode_json(self, response_data: GraphQLHTTPResponse) -> str`
+- `def get_context(self, request: Request, response: Response) -> Context`
+- `def get_root_value(self, request: Request) -> Optional[RootValue]`
+- `def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def decode_json(self, data: Union[str, bytes]) -> object`
+- `def encode_json(self, data: object) -> str`
 - `def render_graphql_ide(self, request: Request) -> Response`
 
 <Note>
 
-Note that the `AsyncGraphQLView` can also be extended by overriding the same
-methods above, but `get_context`, `get_root_value` and `process_result` are
-async functions.
+Note that the `AsyncGraphQLView` can also be extended in the same way, but the
+`get_context`, `get_root_value`, `process_result`, and `render_graphql_ide`
+methods are asynchronous.
 
 </Note>
 
@@ -73,8 +75,13 @@ the request. By default; the `Response` object from `flask` is injected via the
 parameters.
 
 ```python
+import strawberry
+from strawberry.flask.views import GraphQLView
+from flask import Request, Response
+
+
 class MyGraphQLView(GraphQLView):
-    def get_context(self, request: Request, response: Response) -> Any:
+    def get_context(self, request: Request, response: Response):
         return {"example": 1}
 
 
@@ -99,8 +106,13 @@ probably not used a lot but it might be useful in certain situations.
 Here's an example:
 
 ```python
+import strawberry
+from strawberry.flask.views import GraphQLView
+from flask import Request
+
+
 class MyGraphQLView(GraphQLView):
-    def get_root_value(self, request: Request) -> Any:
+    def get_root_value(self, request: Request):
         return Query(name="Patrick")
 
 
@@ -122,6 +134,7 @@ It needs to return an object of `GraphQLHTTPResponse` and accepts the execution
 result.
 
 ```python
+from strawberry.flask.views import GraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
@@ -139,14 +152,39 @@ class MyGraphQLView(GraphQLView):
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
 
-### encode_json
+### decode_json
 
-`encode_json` allows to customize the encoding of the JSON response. By default
-we use `json.dumps` but you can override this method to use a different encoder.
+`decode_json` allows to customize the decoding of HTTP JSON requests. By default
+we use `json.loads` but you can override this method to use a different decoder.
 
 ```python
+from strawberry.flask.views import GraphQLView
+from typing import Union
+import orjson
+
+
 class MyGraphQLView(GraphQLView):
-    def encode_json(self, data: GraphQLHTTPResponse) -> str:
+    def decode_json(self, data: Union[str, bytes]) -> object:
+        return orjson.loads(data)
+```
+
+Make sure your code raises `json.JSONDecodeError` or a subclass of it if the
+JSON cannot be decoded. The library shown in the example above, `orjson`, does
+this by default.
+
+### encode_json
+
+`encode_json` allows to customize the encoding of HTTP and WebSocket JSON
+responses. By default we use `json.dumps` but you can override this method to
+use a different encoder.
+
+```python
+import json
+from strawberry.flask.views import GraphQLView
+
+
+class MyGraphQLView(GraphQLView):
+    def encode_json(self, data: object) -> str:
         return json.dumps(data, indent=2)
 ```
 

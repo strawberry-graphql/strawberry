@@ -1,6 +1,96 @@
 CHANGELOG
 =========
 
+0.254.1 - 2024-12-20
+--------------------
+
+This release updates the Context and RootValue vars to have
+a default value of `None`, this makes it easier to use the views
+without having to pass in a value for these vars.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3732](https://github.com/strawberry-graphql/strawberry/pull/3732/)
+
+
+0.254.0 - 2024-12-13
+--------------------
+
+This release adds a new `on_ws_connect` method to all HTTP view integrations.
+The method is called when a `graphql-transport-ws` or `graphql-ws` connection is
+established and can be used to customize the connection acknowledgment behavior.
+
+This is particularly useful for authentication, authorization, and sending a
+custom acknowledgment payload to clients when a connection is accepted. For
+example:
+
+```python
+class MyGraphQLView(GraphQLView):
+    async def on_ws_connect(self, context: Dict[str, object]):
+        connection_params = context["connection_params"]
+
+        if not isinstance(connection_params, dict):
+            # Reject without a custom graphql-ws error payload
+            raise ConnectionRejectionError()
+
+        if connection_params.get("password") != "secret:
+            # Reject with a custom graphql-ws error payload
+            raise ConnectionRejectionError({"reason": "Invalid password"})
+
+        if username := connection_params.get("username"):
+            # Accept with a custom acknowledgement payload
+            return {"message": f"Hello, {username}!"}
+
+        # Accept without a acknowledgement payload
+        return await super().on_ws_connect(context)
+```
+
+Take a look at our documentation to learn more.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3720](https://github.com/strawberry-graphql/strawberry/pull/3720/)
+
+
+0.253.1 - 2024-12-03
+--------------------
+
+Description:
+Fixed a bug in the OpenTelemetryExtension class where the _span_holder dictionary was incorrectly shared across all instances. This was caused by defining _span_holder as a class-level attribute with a mutable default value (dict()).
+
+Contributed by [Conglei](https://github.com/conglei) via [PR #3716](https://github.com/strawberry-graphql/strawberry/pull/3716/)
+
+
+0.253.0 - 2024-11-23
+--------------------
+
+In this release, the return types of the `get_root_value` and `get_context`
+methods were updated to be consistent across all view integrations. Before this
+release, the return types used by the ASGI and Django views were too generic.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3712](https://github.com/strawberry-graphql/strawberry/pull/3712/)
+
+
+0.252.0 - 2024-11-22
+--------------------
+
+The view classes of all integrations now have a `decode_json` method that allows
+you to customize the decoding of HTTP JSON requests.
+
+This is useful if you want to use a different JSON decoder, for example, to
+optimize performance.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3709](https://github.com/strawberry-graphql/strawberry/pull/3709/)
+
+
+0.251.0 - 2024-11-21
+--------------------
+
+Starting with this release, the same JSON encoder is used to encode HTTP
+responses and WebSocket messages.
+
+This enables developers to override the `encode_json` method on their views to
+customize the JSON encoder used by all web protocols.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3708](https://github.com/strawberry-graphql/strawberry/pull/3708/)
+
+
 0.250.1 - 2024-11-19
 --------------------
 

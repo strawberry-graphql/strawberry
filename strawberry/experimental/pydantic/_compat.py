@@ -134,7 +134,7 @@ class PydanticV2Compat:
                 type_=field.annotation,
                 outer_type_=field.annotation,
                 default=field.default,
-                default_factory=field.default_factory,
+                default_factory=field.default_factory,  # type: ignore
                 required=field.is_required(),
                 alias=field.alias,
                 # v2 doesn't have allow_none
