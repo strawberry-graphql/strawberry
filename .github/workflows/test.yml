@@ -131,7 +131,7 @@ jobs:
       - run: |
           poetry run pip install mypy
 
-          poetry run mypy --config-file mypy.ini
+          poetry run mypy --no-install-types --config-file mypy.ini
 
   unit-tests-on-windows:
     name: 🪟 Tests on Windows
