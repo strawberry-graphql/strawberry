@@ -117,31 +117,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - run: pipx install poetry
+      - run: pipx install coverage
       - uses: actions/setup-python@v5
+        id: setup-python
         with:
-          python-version: |
-            3.8
-            3.9
-            3.10
-            3.11
-            3.12
+          python-version: "3.12"
+          cache: "poetry"
 
-      - name: Pip and nox cache
-        id: cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache
-            ~/.nox
-            .nox
-          key:
-            ${{ runner.os }}-nox-lint-${{ env.pythonLocation }}-${{
-            hashFiles('**/poetry.lock') }}-${{ hashFiles('**/noxfile.py') }}
-          restore-keys: |
-            ${{ runner.os }}-nox-lint-${{ env.pythonLocation }}
+      - run: poetry install --with integrations
+        if: steps.setup-python.outputs.cache-hit != 'true'
 
-      - run: pip install poetry nox nox-poetry uv
-      - run: nox -r -t lint
+      - run: |
+          poetry run pip install mypy
+
+          poetry run mypy --config-file mypy.ini
 
   unit-tests-on-windows:
     name: 🪟 Tests on Windows

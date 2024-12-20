@@ -180,11 +180,3 @@ def tests_cli(session: Session) -> None:
         "tests/cli",
         "-vv",
     )
-
-
-@session(name="Mypy", tags=["lint"])
-def mypy(session: Session) -> None:
-    session.run_always("poetry", "install", "--with", "integrations", external=True)
-    session.install("mypy")
-
-    session.run("mypy", "--config-file", "mypy.ini")
