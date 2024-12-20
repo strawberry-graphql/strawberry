@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, AsyncGenerator, Dict
+from typing import AsyncGenerator, Dict
 
 import pytest
 
@@ -47,7 +47,7 @@ def test_with_explicit_class_context_getter():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
@@ -81,7 +81,7 @@ def test_with_implicit_class_context_getter():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
@@ -113,7 +113,7 @@ def test_with_dict_context_getter():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
@@ -138,7 +138,7 @@ def test_without_context_getter():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter[None, None](schema, context_getter=None)
+    graphql_app = GraphQLRouter(schema, context_getter=None)
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
@@ -169,7 +169,7 @@ def test_with_invalid_context_getter():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
@@ -213,7 +213,7 @@ def test_class_context_injects_connection_params_over_transport_ws():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query, subscription=Subscription)
-    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
     test_client = TestClient(app)
 
@@ -287,7 +287,7 @@ def test_class_context_injects_connection_params_over_ws():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query, subscription=Subscription)
-    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
     test_client = TestClient(app)
 
