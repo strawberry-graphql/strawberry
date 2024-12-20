@@ -129,8 +129,6 @@ jobs:
         if: steps.setup-python.outputs.cache-hit != 'true'
 
       - run: |
-          poetry run pip install mypy
-
           mkdir .mypy_cache
 
           poetry run mypy --install-types --non-interactive --cache-dir=.mypy_cache/ --config-file mypy.ini
