@@ -100,6 +100,10 @@ poetry-plugin-export = "^1.6.0"
 urllib3 = "<2"
 graphlib_backport = {version = "*", python = "<3.9", optional = false}
 inline-snapshot = "^0.10.1"
+types-deprecated = "^1.2.15.20241117"
+types-six = "^1.17.0.20241205"
+types-pyyaml = "^6.0.12.20240917"
+mypy = "^1.13.0"
 
 [tool.poetry.group.integrations]
 optional = true
