@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.256.0 - 2024-12-21
+--------------------
+
+This release drops support for Python 3.8, which reached its end-of-life (EOL)
+in October 2024. The minimum supported Python version is now 3.9.
+
+We strongly recommend upgrading to Python 3.9 or a newer version, as older
+versions are no longer maintained and may contain security vulnerabilities.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3730](https://github.com/strawberry-graphql/strawberry/pull/3730/)
+
+
 0.255.0 - 2024-12-20
 --------------------
 
