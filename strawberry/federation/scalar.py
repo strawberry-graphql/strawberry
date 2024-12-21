@@ -1,9 +1,8 @@
 import sys
+from collections.abc import Iterable
 from typing import (
     Any,
     Callable,
-    Iterable,
-    List,
     NewType,
     Optional,
     TypeVar,
@@ -36,8 +35,8 @@ def scalar(
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policy: Optional[List[List[str]]] = None,
-    requires_scopes: Optional[List[List[str]]] = None,
+    policy: Optional[list[list[str]]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> Callable[[_T], _T]: ...
 
@@ -55,8 +54,8 @@ def scalar(
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policy: Optional[List[List[str]]] = None,
-    requires_scopes: Optional[List[List[str]]] = None,
+    policy: Optional[list[list[str]]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> _T: ...
 
@@ -73,8 +72,8 @@ def scalar(
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policy: Optional[List[List[str]]] = None,
-    requires_scopes: Optional[List[List[str]]] = None,
+    policy: Optional[list[list[str]]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
     tags: Optional[Iterable[str]] = (),
 ) -> Any:
     """Annotates a class or type as a GraphQL custom scalar.

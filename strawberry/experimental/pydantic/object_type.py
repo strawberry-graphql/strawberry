@@ -7,12 +7,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    List,
     Optional,
-    Sequence,
-    Set,
-    Type,
     cast,
 )
 
@@ -39,6 +34,9 @@ from strawberry.types.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 
 if TYPE_CHECKING:
+    import builtins
+    from collections.abc import Sequence
+
     from graphql import GraphQLResolveInfo
 
 
@@ -59,8 +57,8 @@ def get_type_for_field(field: CompatModelField, is_input: bool, compat: Pydantic
 def _build_dataclass_creation_fields(
     field: CompatModelField,
     is_input: bool,
-    existing_fields: Dict[str, StrawberryField],
-    auto_fields_set: Set[str],
+    existing_fields: dict[str, StrawberryField],
+    auto_fields_set: set[str],
     use_pydantic_alias: bool,
     compat: PydanticCompat,
 ) -> DataclassCreationFields:
@@ -118,9 +116,9 @@ if TYPE_CHECKING:
 
 
 def type(
-    model: Type[PydanticModel],
+    model: builtins.type[PydanticModel],
     *,
-    fields: Optional[List[str]] = None,
+    fields: Optional[list[str]] = None,
     name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
@@ -128,8 +126,8 @@ def type(
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
-) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
-    def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
+) -> Callable[..., builtins.type[StrawberryTypeFromPydantic[PydanticModel]]]:
+    def wrap(cls: Any) -> builtins.type[StrawberryTypeFromPydantic[PydanticModel]]:
         compat = PydanticCompat.from_model(model)
         model_fields = compat.get_model_fields(model)
         original_fields_set = set(fields) if fields else set()
@@ -177,12 +175,12 @@ def type(
 
         wrapped = _wrap_dataclass(cls)
         extra_strawberry_fields = _get_fields(wrapped, {})
-        extra_fields = cast(List[dataclasses.Field], extra_strawberry_fields)
+        extra_fields = cast(list[dataclasses.Field], extra_strawberry_fields)
         private_fields = get_private_fields(wrapped)
 
         extra_fields_dict = {field.name: field for field in extra_strawberry_fields}
 
-        all_model_fields: List[DataclassCreationFields] = [
+        all_model_fields: list[DataclassCreationFields] = [
             _build_dataclass_creation_fields(
                 field,
                 is_input,
@@ -208,7 +206,7 @@ def type(
         # Implicitly define `is_type_of` to support interfaces/unions that use
         # pydantic objects (not the corresponding strawberry type)
         @classmethod  # type: ignore
-        def is_type_of(cls: Type, obj: Any, _info: GraphQLResolveInfo) -> bool:
+        def is_type_of(cls: builtins.type, obj: Any, _info: GraphQLResolveInfo) -> bool:
             return isinstance(obj, (cls, model))
 
         namespace = {"is_type_of": is_type_of}
@@ -232,7 +230,7 @@ def type(
         if hasattr(cls, "resolve_reference"):
             namespace["resolve_reference"] = cls.resolve_reference
 
-        kwargs: Dict[str, object] = {}
+        kwargs: dict[str, object] = {}
 
         # Python 3.10.1 introduces the kw_only param to `make_dataclass`.
         # If we're on an older version then generate our own custom init function
@@ -273,7 +271,7 @@ def type(
         cls._pydantic_type = model
 
         def from_pydantic_default(
-            instance: PydanticModel, extra: Optional[Dict[str, Any]] = None
+            instance: PydanticModel, extra: Optional[dict[str, Any]] = None
         ) -> StrawberryTypeFromPydantic[PydanticModel]:
             ret = convert_pydantic_model_to_strawberry_class(
                 cls=cls, model_instance=instance, extra=extra
@@ -302,16 +300,16 @@ def type(
 
 
 def input(
-    model: Type[PydanticModel],
+    model: builtins.type[PydanticModel],
     *,
-    fields: Optional[List[str]] = None,
+    fields: Optional[list[str]] = None,
     name: Optional[str] = None,
     is_interface: bool = False,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
-) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
+) -> Callable[..., builtins.type[StrawberryTypeFromPydantic[PydanticModel]]]:
     """Convenience decorator for creating an input type from a Pydantic model.
 
     Equal to `partial(type, is_input=True)`
@@ -332,16 +330,16 @@ def input(
 
 
 def interface(
-    model: Type[PydanticModel],
+    model: builtins.type[PydanticModel],
     *,
-    fields: Optional[List[str]] = None,
+    fields: Optional[list[str]] = None,
     name: Optional[str] = None,
     is_input: bool = False,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
-) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
+) -> Callable[..., builtins.type[StrawberryTypeFromPydantic[PydanticModel]]]:
     """Convenience decorator for creating an interface type from a Pydantic model.
 
     Equal to `partial(type, is_interface=True)`

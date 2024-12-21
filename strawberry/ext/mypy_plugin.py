@@ -8,10 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    List,
     Optional,
-    Set,
-    Tuple,
     Union,
     cast,
 )
@@ -60,7 +57,7 @@ try:
 except ImportError:
     TypeVarDef = TypeVarType
 
-PYDANTIC_VERSION: Optional[Tuple[int, ...]] = None
+PYDANTIC_VERSION: Optional[tuple[int, ...]] = None
 
 # To be compatible with user who don't use pydantic
 try:
@@ -326,7 +323,7 @@ def add_static_method_to_class(
     api: Union[SemanticAnalyzerPluginInterface, CheckerPluginInterface],
     cls: ClassDef,
     name: str,
-    args: List[Argument],
+    args: list[Argument],
     return_type: Type,
     tvar_def: Optional[TypeVarType] = None,
 ) -> None:
@@ -410,7 +407,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         model_type = cast(Instance, _get_type_for_expr(model_expression, ctx.api))
 
         # these are the fields that the user added to the strawberry type
-        new_strawberry_fields: Set[str] = set()
+        new_strawberry_fields: set[str] = set()
 
         # TODO: think about inheritance for strawberry?
         for stmt in ctx.cls.defs.body:
@@ -418,7 +415,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                 lhs = cast(NameExpr, stmt.lvalues[0])
                 new_strawberry_fields.add(lhs.name)
 
-        pydantic_fields: Set[PydanticModelField] = set()
+        pydantic_fields: set[PydanticModelField] = set()
         try:
             fields = model_type.type.metadata[PYDANTIC_METADATA_KEY]["fields"]
             for data in fields.items():
@@ -438,7 +435,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                 ctx.reason,
             )
 
-        potentially_missing_fields: Set[PydanticModelField] = {
+        potentially_missing_fields: set[PydanticModelField] = {
             f for f in pydantic_fields if f.name not in new_strawberry_fields
         }
 
@@ -449,7 +446,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         This means that the user is using all_fields=True
         """
         is_all_fields: bool = len(potentially_missing_fields) == len(pydantic_fields)
-        missing_pydantic_fields: Set[PydanticModelField] = (
+        missing_pydantic_fields: set[PydanticModelField] = (
             potentially_missing_fields if not is_all_fields else set()
         )
 

@@ -2,21 +2,11 @@ import abc
 import contextlib
 import json
 import logging
+from collections.abc import AsyncGenerator, AsyncIterable, Mapping
 from dataclasses import dataclass
 from functools import cached_property
 from io import BytesIO
-from typing import (
-    Any,
-    AsyncContextManager,
-    AsyncGenerator,
-    AsyncIterable,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Union,
-)
+from typing import Any, Callable, Optional, Union
 from typing_extensions import Literal
 
 from strawberry.http import GraphQLHTTPResponse
@@ -33,7 +23,7 @@ from strawberry.types import ExecutionResult
 
 logger = logging.getLogger("strawberry.test.http_client")
 
-JSON = Dict[str, object]
+JSON = dict[str, object]
 ResultOverrideFunction = Optional[Callable[[ExecutionResult], GraphQLHTTPResponse]]
 
 
@@ -47,7 +37,7 @@ class Response:
         status_code: int,
         data: Union[bytes, AsyncIterable[bytes]],
         *,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> None:
         self.status_code = status_code
         self.data = data
@@ -119,9 +109,9 @@ class HttpClient(abc.ABC):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response: ...
 
@@ -130,14 +120,14 @@ class HttpClient(abc.ABC):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response: ...
 
     @abc.abstractmethod
     async def get(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response: ...
 
     @abc.abstractmethod
@@ -146,16 +136,16 @@ class HttpClient(abc.ABC):
         url: str,
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response: ...
 
     async def query(
         self,
         query: Optional[str] = None,
         method: Literal["get", "post"] = "post",
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self._graphql_request(
             method, query=query, headers=headers, variables=variables, files=files
@@ -164,9 +154,9 @@ class HttpClient(abc.ABC):
     def _get_headers(
         self,
         method: Literal["get", "post"],
-        headers: Optional[Dict[str, str]],
-        files: Optional[Dict[str, BytesIO]],
-    ) -> Dict[str, str]:
+        headers: Optional[dict[str, str]],
+        files: Optional[dict[str, BytesIO]],
+    ) -> dict[str, str]:
         additional_headers = {}
         headers = headers or {}
 
@@ -183,17 +173,17 @@ class HttpClient(abc.ABC):
     def _build_body(
         self,
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
         method: Literal["get", "post"] = "post",
-    ) -> Optional[Dict[str, object]]:
+    ) -> Optional[dict[str, object]]:
         if query is None:
             assert files is None
             assert variables is None
 
             return None
 
-        body: Dict[str, object] = {"query": query}
+        body: dict[str, object] = {"query": query}
 
         if variables:
             body["variables"] = variables
@@ -215,11 +205,11 @@ class HttpClient(abc.ABC):
 
     @staticmethod
     def _build_multipart_file_map(
-        variables: Dict[str, object], files: Dict[str, BytesIO]
-    ) -> Dict[str, List[str]]:
+        variables: dict[str, object], files: dict[str, BytesIO]
+    ) -> dict[str, list[str]]:
         # TODO: remove code duplication
 
-        files_map: Dict[str, List[str]] = {}
+        files_map: dict[str, list[str]] = {}
         for key, values in variables.items():
             if isinstance(values, dict):
                 folder_key = next(iter(values.keys()))
@@ -249,8 +239,8 @@ class HttpClient(abc.ABC):
         self,
         url: str,
         *,
-        protocols: List[str],
-    ) -> AsyncContextManager["WebSocketClient"]:
+        protocols: list[str],
+    ) -> contextlib.AbstractAsyncContextManager["WebSocketClient"]:
         raise NotImplementedError
 
 
@@ -323,7 +313,7 @@ class DebuggableGraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         self.original_context = kwargs.get("context", {})
         DebuggableGraphQLTransportWSHandler.on_init(self)
 
-    def get_tasks(self) -> List:
+    def get_tasks(self) -> list:
         return [op.task for op in self.operations.values()]
 
     @property
@@ -345,7 +335,7 @@ class DebuggableGraphQLWSHandler(BaseGraphQLWSHandler):
         super().__init__(*args, **kwargs)
         self.original_context = self.context
 
-    def get_tasks(self) -> List:
+    def get_tasks(self) -> list:
         return list(self.tasks.values())
 
     @property

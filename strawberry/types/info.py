@@ -6,12 +6,8 @@ from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
     Generic,
-    List,
     Optional,
-    Tuple,
-    Type,
     Union,
 )
 from typing_extensions import TypeVar
@@ -72,7 +68,7 @@ class Info(Generic[ContextType, RootValueType]):
     _raw_info: GraphQLResolveInfo
     _field: StrawberryField
 
-    def __class_getitem__(cls, types: Union[type, Tuple[type, ...]]) -> Type[Info]:
+    def __class_getitem__(cls, types: Union[type, tuple[type, ...]]) -> type[Info]:
         """Workaround for when passing only one type.
 
         Python doesn't yet support directly passing only one type to a generic class
@@ -97,7 +93,7 @@ class Info(Generic[ContextType, RootValueType]):
         return self._raw_info.schema._strawberry_schema  # type: ignore
 
     @property
-    def field_nodes(self) -> List[FieldNode]:  # deprecated
+    def field_nodes(self) -> list[FieldNode]:  # deprecated
         warnings.warn(
             "`info.field_nodes` is deprecated, use `selected_fields` instead",
             DeprecationWarning,
@@ -107,7 +103,7 @@ class Info(Generic[ContextType, RootValueType]):
         return self._raw_info.field_nodes
 
     @cached_property
-    def selected_fields(self) -> List[Selection]:
+    def selected_fields(self) -> list[Selection]:
         """The fields that were selected on the current field's type."""
         info = self._raw_info
         return convert_selections(info, info.field_nodes)
@@ -123,14 +119,14 @@ class Info(Generic[ContextType, RootValueType]):
         return self._raw_info.root_value
 
     @property
-    def variable_values(self) -> Dict[str, Any]:
+    def variable_values(self) -> dict[str, Any]:
         """The variable values passed to the query execution."""
         return self._raw_info.variable_values
 
     @property
     def return_type(
         self,
-    ) -> Optional[Union[Type[WithStrawberryObjectDefinition], StrawberryType]]:
+    ) -> Optional[Union[type[WithStrawberryObjectDefinition], StrawberryType]]:
         """The return type of the current field being resolved."""
         return self._field.type
 

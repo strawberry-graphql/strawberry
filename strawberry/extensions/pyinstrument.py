@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterator
+from typing import TYPE_CHECKING
 
 from pyinstrument import Profiler
 
 from strawberry.extensions.base_extension import SchemaExtension
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 class PyInstrument(SchemaExtension):

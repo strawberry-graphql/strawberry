@@ -1,7 +1,6 @@
 import dataclasses
 from enum import Enum
-from typing import Any, List, Optional, Union
-from typing_extensions import Annotated
+from typing import Annotated, Any, Optional, Union
 
 import pydantic
 import pytest
@@ -221,7 +220,7 @@ def test_referencing_other_registered_models():
 
 def test_list():
     class User(pydantic.BaseModel):
-        friend_names: List[str]
+        friend_names: list[str]
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
@@ -242,7 +241,7 @@ def test_list_of_types():
         name: str
 
     class User(pydantic.BaseModel):
-        friends: Optional[List[Optional[Friend]]]
+        friends: Optional[list[Optional[Friend]]]
 
     @strawberry.experimental.pydantic.type(Friend)
     class FriendType:
@@ -353,7 +352,7 @@ def test_optional_and_default():
         name: str = pydantic.Field("Michael", description="The user name")
         password: Optional[str] = pydantic.Field(default="ABC")
         passwordtwo: Optional[str] = None
-        some_list: Optional[List[str]] = pydantic.Field(default_factory=list)
+        some_list: Optional[list[str]] = pydantic.Field(default_factory=list)
         check: Optional[bool] = False
 
     @strawberry.experimental.pydantic.type(UserModel, all_fields=True)
@@ -400,8 +399,8 @@ def test_type_with_fields_mutable_default():
     empty_list = []
 
     class User(pydantic.BaseModel):
-        groups: List[str]
-        friends: List[str] = empty_list
+        groups: list[str]
+        friends: list[str] = empty_list
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
@@ -633,7 +632,7 @@ def test_both_output_and_input_type():
         work: Optional[Work] = None
 
     class Group(pydantic.BaseModel):
-        users: List[User]
+        users: list[User]
 
     # Test both definition orders
     @strawberry.experimental.pydantic.input(Work)
@@ -664,7 +663,7 @@ def test_both_output_and_input_type():
 
     @strawberry.type
     class Query:
-        groups: List[GroupOutput]
+        groups: list[GroupOutput]
 
     @strawberry.type
     class Mutation:
@@ -939,7 +938,7 @@ def test_annotated():
 def test_nested_annotated():
     class User(pydantic.BaseModel):
         a: Optional[Annotated[int, "metadata"]]
-        b: Optional[List[Annotated[int, "metadata"]]]
+        b: Optional[list[Annotated[int, "metadata"]]]
 
     @strawberry.experimental.pydantic.input(User, all_fields=True)
     class UserType:

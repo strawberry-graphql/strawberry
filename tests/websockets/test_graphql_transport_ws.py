@@ -4,8 +4,9 @@ import asyncio
 import contextlib
 import json
 import time
+from collections.abc import AsyncGenerator
 from datetime import timedelta
-from typing import TYPE_CHECKING, AsyncGenerator, Dict, Optional, Type, Union
+from typing import TYPE_CHECKING, Optional, Union
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -51,8 +52,8 @@ async def ws(ws_raw: WebSocketClient) -> WebSocketClient:
 def assert_next(
     next_message: NextMessage,
     id: str,
-    data: Dict[str, object],
-    extensions: Optional[Dict[str, object]] = None,
+    data: dict[str, object],
+    extensions: Optional[dict[str, object]] = None,
 ):
     """
     Assert that the NextMessage payload contains the provided data.
@@ -153,7 +154,7 @@ async def test_ws_message_frame_types_cannot_be_mixed(ws_raw: WebSocketClient):
 
 
 async def test_connection_init_timeout(
-    request: object, http_client_class: Type[HttpClient]
+    request: object, http_client_class: type[HttpClient]
 ):
     with contextlib.suppress(ImportError):
         from tests.http.clients.aiohttp import AioHttpClient
@@ -206,7 +207,7 @@ async def test_connection_init_timeout_cancellation(
 
 @pytest.mark.xfail(reason="This test is flaky")
 async def test_close_twice(
-    mocker: MockerFixture, request: object, http_client_class: Type[HttpClient]
+    mocker: MockerFixture, request: object, http_client_class: type[HttpClient]
 ):
     test_client = http_client_class()
     test_client.create_app(connection_init_wait_timeout=timedelta(seconds=0.25))

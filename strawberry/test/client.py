@@ -4,23 +4,25 @@ import json
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Coroutine, Dict, List, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 from typing_extensions import Literal, TypedDict
 
 if TYPE_CHECKING:
+    from collections.abc import Coroutine, Mapping
+
     from graphql import GraphQLFormattedError
 
 
 @dataclass
 class Response:
-    errors: Optional[List[GraphQLFormattedError]]
-    data: Optional[Dict[str, object]]
-    extensions: Optional[Dict[str, object]]
+    errors: Optional[list[GraphQLFormattedError]]
+    data: Optional[dict[str, object]]
+    extensions: Optional[dict[str, object]]
 
 
 class Body(TypedDict, total=False):
     query: str
-    variables: Optional[Dict[str, object]]
+    variables: Optional[dict[str, object]]
 
 
 class BaseGraphQLTestClient(ABC):
@@ -35,10 +37,10 @@ class BaseGraphQLTestClient(ABC):
     def query(
         self,
         query: str,
-        variables: Optional[Dict[str, Mapping]] = None,
-        headers: Optional[Dict[str, object]] = None,
+        variables: Optional[dict[str, Mapping]] = None,
+        headers: Optional[dict[str, object]] = None,
         asserts_errors: Optional[bool] = None,
-        files: Optional[Dict[str, object]] = None,
+        files: Optional[dict[str, object]] = None,
         assert_no_errors: Optional[bool] = True,
     ) -> Union[Coroutine[Any, Any, Response], Response]:
         body = self._build_body(query, variables, files)
@@ -71,19 +73,19 @@ class BaseGraphQLTestClient(ABC):
     @abstractmethod
     def request(
         self,
-        body: Dict[str, object],
-        headers: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, object]] = None,
+        body: dict[str, object],
+        headers: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, object]] = None,
     ) -> Any:
         raise NotImplementedError
 
     def _build_body(
         self,
         query: str,
-        variables: Optional[Dict[str, Mapping]] = None,
-        files: Optional[Dict[str, object]] = None,
-    ) -> Dict[str, object]:
-        body: Dict[str, object] = {"query": query}
+        variables: Optional[dict[str, Mapping]] = None,
+        files: Optional[dict[str, object]] = None,
+    ) -> dict[str, object]:
+        body: dict[str, object] = {"query": query}
 
         if variables:
             body["variables"] = variables
@@ -103,8 +105,8 @@ class BaseGraphQLTestClient(ABC):
 
     @staticmethod
     def _build_multipart_file_map(
-        variables: Dict[str, Mapping], files: Dict[str, object]
-    ) -> Dict[str, List[str]]:
+        variables: dict[str, Mapping], files: dict[str, object]
+    ) -> dict[str, list[str]]:
         """Creates the file mapping between the variables and the files objects passed as key arguments.
 
         Args:
@@ -158,7 +160,7 @@ class BaseGraphQLTestClient(ABC):
         # }
         ```
         """
-        map: Dict[str, List[str]] = {}
+        map: dict[str, list[str]] = {}
         for key, values in variables.items():
             reference = key
             variable_values = values
@@ -195,4 +197,4 @@ class BaseGraphQLTestClient(ABC):
         return response.json()
 
 
-__all__ = ["BaseGraphQLTestClient", "Response", "Body"]
+__all__ = ["BaseGraphQLTestClient", "Body", "Response"]

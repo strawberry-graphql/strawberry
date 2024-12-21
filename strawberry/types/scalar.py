@@ -6,8 +6,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Iterable,
-    Mapping,
     NewType,
     Optional,
     TypeVar,
@@ -20,6 +18,8 @@ from strawberry.types.base import StrawberryType
 from strawberry.utils.str_converters import to_camel_case
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping
+
     from graphql import GraphQLScalarType
 
 

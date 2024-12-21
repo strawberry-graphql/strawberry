@@ -4,7 +4,7 @@ import contextlib
 import os
 from importlib.metadata import version
 from multiprocessing import Pool, cpu_count
-from typing import TYPE_CHECKING, Any, Dict, Generator, Sequence, Type, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from libcst.codemod._cli import ExecutionConfig, ExecutionResult, _execute_transform
 from libcst.codemod._dummy_pool import DummyPool
@@ -13,10 +13,12 @@ from rich.progress import Progress
 from ._fake_progress import FakeProgress
 
 if TYPE_CHECKING:
+    from collections.abc import Generator, Sequence
+
     from libcst.codemod import Codemod
 
-ProgressType = Union[Type[Progress], Type[FakeProgress]]
-PoolType = Union[Type[Pool], Type[DummyPool]]  # type: ignore
+ProgressType = Union[type[Progress], type[FakeProgress]]
+PoolType = Union[type[Pool], type[DummyPool]]  # type: ignore
 
 
 def _get_libcst_version() -> tuple[int, int, int]:
@@ -31,9 +33,9 @@ def _get_libcst_version() -> tuple[int, int, int]:
 
 
 def _execute_transform_wrap(
-    job: Dict[str, Any],
+    job: dict[str, Any],
 ) -> ExecutionResult:
-    additional_kwargs: Dict[str, Any] = {}
+    additional_kwargs: dict[str, Any] = {}
 
     if _get_libcst_version() >= (1, 4, 0):
         additional_kwargs["scratch"] = {}

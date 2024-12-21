@@ -5,12 +5,8 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncGenerator,
     Callable,
-    Dict,
-    Mapping,
     Optional,
-    Type,
     cast,
 )
 from typing_extensions import TypeGuard
@@ -29,6 +25,8 @@ from strawberry.http.typevars import (
 from strawberry.sanic.utils import convert_request_to_files_dict
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Mapping
+
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
@@ -109,8 +107,8 @@ class GraphQLView(
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
-        json_encoder: Optional[Type[json.JSONEncoder]] = None,
-        json_dumps_params: Optional[Dict[str, Any]] = None,
+        json_encoder: Optional[type[json.JSONEncoder]] = None,
+        json_dumps_params: Optional[dict[str, Any]] = None,
         multipart_uploads_enabled: bool = False,
     ) -> None:
         self.schema = schema
@@ -194,7 +192,7 @@ class GraphQLView(
         request: Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: TemporalResponse,
-        headers: Dict[str, str],
+        headers: dict[str, str],
     ) -> HTTPResponse:
         response = await self.request.respond(
             status=sub_response.status_code,

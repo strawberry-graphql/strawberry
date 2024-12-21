@@ -1,4 +1,4 @@
-from typing import AsyncGenerator, Type
+from collections.abc import AsyncGenerator
 
 import pytest
 
@@ -20,7 +20,7 @@ def assert_agen(obj) -> AsyncGenerator[ExecutionResult, None]:
 
 
 async def test_subscription_success_many_fields(
-    default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
+    default_query_types_and_query: SchemaHelper, async_extension: type[ExampleExtension]
 ) -> None:
     schema = strawberry.Schema(
         query=default_query_types_and_query.query_type,
@@ -54,7 +54,7 @@ async def test_subscription_success_many_fields(
 
 
 async def test_subscription_extension_handles_immediate_errors(
-    default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
+    default_query_types_and_query: SchemaHelper, async_extension: type[ExampleExtension]
 ) -> None:
     @strawberry.type()
     class Subscription:
@@ -86,7 +86,7 @@ async def test_subscription_extension_handles_immediate_errors(
 
 
 async def test_error_after_first_yield_in_subscription(
-    default_query_types_and_query: SchemaHelper, async_extension: Type[ExampleExtension]
+    default_query_types_and_query: SchemaHelper, async_extension: type[ExampleExtension]
 ) -> None:
     @strawberry.type()
     class Subscription:

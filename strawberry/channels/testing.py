@@ -4,12 +4,7 @@ import uuid
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Dict,
-    List,
     Optional,
-    Tuple,
-    Type,
     Union,
 )
 
@@ -24,6 +19,7 @@ from strawberry.subscriptions.protocols.graphql_ws import types as ws_types
 from strawberry.types import ExecutionResult
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
     from types import TracebackType
     from typing_extensions import Self
 
@@ -57,7 +53,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         self,
         application: ASGIApplication,
         path: str,
-        headers: Optional[List[Tuple[bytes, bytes]]] = None,
+        headers: Optional[list[tuple[bytes, bytes]]] = None,
         protocol: str = GRAPHQL_TRANSPORT_WS_PROTOCOL,
         connection_params: dict = {},
         **kwargs: Any,
@@ -85,7 +81,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
 
     async def __aexit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> None:
@@ -116,7 +112,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
     # get transformed into `FormattedExecutionResult` on the wire, but we attempt
     # to do a limited representation of them here, to make testing simpler.
     async def subscribe(
-        self, query: str, variables: Optional[Dict] = None
+        self, query: str, variables: Optional[dict] = None
     ) -> Union[ExecutionResult, AsyncIterator[ExecutionResult]]:
         id_ = uuid.uuid4().hex
 
@@ -164,7 +160,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
             else:
                 return
 
-    def process_errors(self, errors: List[GraphQLFormattedError]) -> List[GraphQLError]:
+    def process_errors(self, errors: list[GraphQLFormattedError]) -> list[GraphQLError]:
         """Reconstructs a GraphQLError from a FormattedGraphQLError."""
         result = []
         for f_error in errors:

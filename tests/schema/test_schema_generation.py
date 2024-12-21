@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import pytest
 from graphql import ExecutionContext as GraphQLExecutionContext
@@ -66,8 +66,8 @@ def test_custom_execution_context():
     class CustomExecutionContext(GraphQLExecutionContext):
         @staticmethod
         def build_response(
-            data: Optional[Dict[str, Any]],
-            errors: List[GraphQLError],
+            data: Optional[dict[str, Any]],
+            errors: list[GraphQLError],
         ) -> ExecutionResult:
             result = super(
                 CustomExecutionContext, CustomExecutionContext

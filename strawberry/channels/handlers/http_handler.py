@@ -8,10 +8,7 @@ from io import BytesIO
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncGenerator,
     Callable,
-    Dict,
-    Mapping,
     Optional,
     Union,
 )
@@ -35,6 +32,8 @@ from strawberry.types.unset import UNSET
 from .base import ChannelsConsumer
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Mapping
+
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.http.types import HTTPMethod, QueryParams
@@ -46,7 +45,7 @@ class ChannelsResponse:
     content: bytes
     status: int = 200
     content_type: str = "application/json"
-    headers: Dict[bytes, bytes] = dataclasses.field(default_factory=dict)
+    headers: dict[bytes, bytes] = dataclasses.field(default_factory=dict)
 
 
 @dataclasses.dataclass
@@ -54,7 +53,7 @@ class MultipartChannelsResponse:
     stream: Callable[[], AsyncGenerator[str, None]]
     status: int = 200
     content_type: str = "multipart/mixed;boundary=graphql;subscriptionSpec=1.0"
-    headers: Dict[bytes, bytes] = dataclasses.field(default_factory=dict)
+    headers: dict[bytes, bytes] = dataclasses.field(default_factory=dict)
 
 
 @dataclasses.dataclass
@@ -279,7 +278,7 @@ class GraphQLHTTPConsumer(
         request: ChannelsRequest,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: TemporalResponse,
-        headers: Dict[str, str],
+        headers: dict[str, str],
     ) -> MultipartChannelsResponse:
         status = sub_response.status_code or 200
 

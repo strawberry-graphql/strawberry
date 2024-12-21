@@ -5,10 +5,7 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
     Callable,
-    Dict,
-    Mapping,
     Optional,
     Union,
     cast,
@@ -42,6 +39,8 @@ from strawberry.http.typevars import (
 from .context import StrawberryDjangoContext
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Mapping
+
     from django.template.response import TemplateResponse
 
     from strawberry.http import GraphQLHTTPResponse
@@ -190,7 +189,7 @@ class BaseView:
         request: HttpRequest,
         stream: Callable[[], AsyncIterator[Any]],
         sub_response: TemporalHttpResponse,
-        headers: Dict[str, str],
+        headers: dict[str, str],
     ) -> HttpResponseBase:
         return StreamingHttpResponse(
             streaming_content=stream(),
@@ -318,4 +317,4 @@ class AsyncGraphQLView(
         raise NotImplementedError
 
 
-__all__ = ["GraphQLView", "AsyncGraphQLView"]
+__all__ = ["AsyncGraphQLView", "GraphQLView"]

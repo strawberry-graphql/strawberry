@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from typing import TYPE_CHECKING, Set
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from strawberry.http.types import HTTPMethod
@@ -13,7 +13,7 @@ class OperationType(enum.Enum):
     SUBSCRIPTION = "subscription"
 
     @staticmethod
-    def from_http(method: HTTPMethod) -> Set[OperationType]:
+    def from_http(method: HTTPMethod) -> set[OperationType]:
         if method == "GET":
             return {
                 OperationType.QUERY,

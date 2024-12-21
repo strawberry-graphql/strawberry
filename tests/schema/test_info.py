@@ -1,7 +1,6 @@
 import dataclasses
 import json
-from typing import List, Optional
-from typing_extensions import Annotated
+from typing import Annotated, Optional
 
 import pytest
 
@@ -299,8 +298,8 @@ def test_info_selected_fields_undefined_variable():
     ("return_type", "return_value"),
     [
         (str, "text"),
-        (List[str], ["text"]),
-        (Optional[List[int]], None),
+        (list[str], ["text"]),
+        (Optional[list[int]], None),
     ],
 )
 def test_return_type_from_resolver(return_type, return_value):

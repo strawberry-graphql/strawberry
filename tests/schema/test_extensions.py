@@ -1,6 +1,5 @@
 from enum import Enum, auto
-from typing import Union, cast
-from typing_extensions import Annotated
+from typing import Annotated, Union, cast
 
 from graphql import (
     DirectiveLocation,
@@ -53,7 +52,7 @@ def test_extensions_schema_directive():
 
 def test_directive():
     @strawberry.directive(locations=[DirectiveLocation.FIELD])
-    def uppercase(value: DirectiveValue[str], foo: str):
+    def uppercase(value: DirectiveValue[str], foo: str):  # pragma: no cover
         return value.upper()
 
     @strawberry.type()

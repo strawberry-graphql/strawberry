@@ -1,4 +1,5 @@
-from typing import Any, AsyncGenerator, AsyncIterable, Optional, Union, cast
+from collections.abc import AsyncGenerator, AsyncIterable
+from typing import Any, Optional, Union, cast
 from typing_extensions import assert_type
 from unittest.mock import MagicMock
 

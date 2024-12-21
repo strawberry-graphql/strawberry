@@ -1,5 +1,3 @@
-from typing import Dict
-
 import strawberry
 
 
@@ -72,7 +70,7 @@ def test_with_dict_context_getter():
     def custom_context_dependency() -> str:
         return "rocks"
 
-    async def get_context(custom_context_dependency: str) -> Dict[str, str]:
+    async def get_context(custom_context_dependency: str) -> dict[str, str]:
         return {"strawberry": custom_context_dependency}
 
     schema = strawberry.Schema(query=Query)

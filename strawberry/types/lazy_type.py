@@ -9,8 +9,6 @@ from typing import (
     ForwardRef,
     Generic,
     Optional,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     cast,
@@ -36,7 +34,7 @@ class LazyType(Generic[TypeName, Module]):
     module: str
     package: Optional[str] = None
 
-    def __class_getitem__(cls, params: Tuple[str, str]) -> "Self":
+    def __class_getitem__(cls, params: tuple[str, str]) -> "Self":
         warnings.warn(
             (
                 "LazyType is deprecated, use "
@@ -61,7 +59,7 @@ class LazyType(Generic[TypeName, Module]):
     def __or__(self, other: Other) -> object:
         return Union[self, other]
 
-    def resolve_type(self) -> Type[Any]:
+    def resolve_type(self) -> type[Any]:
         module = importlib.import_module(self.module, self.package)
         main_module = sys.modules.get("__main__", None)
         if main_module:
@@ -84,7 +82,7 @@ class LazyType(Generic[TypeName, Module]):
         return module.__dict__[self.type_name]
 
     # this empty call method allows LazyTypes to be used in generic types
-    # for example: List[LazyType["A", "module"]]
+    # for example: list[LazyType["A", "module"]]
 
     def __call__(self) -> None:  # pragma: no cover
         return None

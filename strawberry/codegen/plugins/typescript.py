@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import textwrap
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from strawberry.codegen import CodegenFile, QueryCodegenPlugin
 from strawberry.codegen.types import (
@@ -40,8 +40,8 @@ class TypeScriptPlugin(QueryCodegenPlugin):
         self.query = query
 
     def generate_code(
-        self, types: List[GraphQLType], operation: GraphQLOperation
-    ) -> List[CodegenFile]:
+        self, types: list[GraphQLType], operation: GraphQLOperation
+    ) -> list[CodegenFile]:
         printed_types = list(filter(None, (self._print_type(type) for type in types)))
 
         return [CodegenFile(self.outfile_name, "\n\n".join(printed_types))]

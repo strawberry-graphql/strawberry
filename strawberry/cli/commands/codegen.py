@@ -3,8 +3,8 @@ from __future__ import annotations
 import functools
 import importlib
 import inspect
-from pathlib import Path  # noqa: TCH003
-from typing import List, Optional, Type, Union, cast
+from pathlib import Path  # noqa: TC003
+from typing import Optional, Union, cast
 
 import rich
 import typer
@@ -22,7 +22,7 @@ def _is_codegen_plugin(obj: object) -> bool:
     )
 
 
-def _import_plugin(plugin: str) -> Optional[Type[QueryCodegenPlugin]]:
+def _import_plugin(plugin: str) -> Optional[type[QueryCodegenPlugin]]:
     module_name = plugin
     symbol_name: Optional[str] = None
 
@@ -63,7 +63,7 @@ def _import_plugin(plugin: str) -> Optional[Type[QueryCodegenPlugin]]:
 @functools.lru_cache
 def _load_plugin(
     plugin_path: str,
-) -> Union[Type[QueryCodegenPlugin], Type[ConsolePlugin]]:
+) -> type[Union[QueryCodegenPlugin, ConsolePlugin]]:
     # try to import plugin_name from current folder
     # then try to import from strawberry.codegen.plugins
 
@@ -80,8 +80,8 @@ def _load_plugin(
 
 
 def _load_plugins(
-    plugin_ids: List[str], query: Path
-) -> List[Union[QueryCodegenPlugin, ConsolePlugin]]:
+    plugin_ids: list[str], query: Path
+) -> list[Union[QueryCodegenPlugin, ConsolePlugin]]:
     plugins = []
     for ptype_id in plugin_ids:
         ptype = _load_plugin(ptype_id)
@@ -93,7 +93,7 @@ def _load_plugins(
 
 @app.command(help="Generate code from a query")
 def codegen(
-    query: Optional[List[Path]] = typer.Argument(
+    query: Optional[list[Path]] = typer.Argument(
         default=None, exists=True, dir_okay=False
     ),
     schema: str = typer.Option(..., help="Python path to the schema file"),
@@ -117,7 +117,7 @@ def codegen(
         writable=True,
         resolve_path=True,
     ),
-    selected_plugins: List[str] = typer.Option(
+    selected_plugins: list[str] = typer.Option(
         ...,
         "-p",
         "--plugins",
@@ -135,7 +135,7 @@ def codegen(
     console_plugin.before_any_start()
 
     for q in query:
-        plugins = cast(List[QueryCodegenPlugin], _load_plugins(selected_plugins, q))
+        plugins = cast(list[QueryCodegenPlugin], _load_plugins(selected_plugins, q))
 
         code_generator = QueryCodegen(
             schema_symbol, plugins=plugins, console_plugin=console_plugin

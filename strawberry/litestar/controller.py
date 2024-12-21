@@ -8,14 +8,8 @@ from datetime import timedelta
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncGenerator,
-    AsyncIterator,
     Callable,
-    Dict,
-    FrozenSet,
     Optional,
-    Tuple,
-    Type,
     TypedDict,
     Union,
     cast,
@@ -60,7 +54,7 @@ from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import AsyncGenerator, AsyncIterator, Mapping
 
     from litestar.types import AnyCallable, Dependencies
     from strawberry.http import GraphQLHTTPResponse
@@ -97,7 +91,7 @@ class WebSocketContextDict(TypedDict):
 
 
 MergedContext = Union[
-    BaseContext, WebSocketContextDict, HTTPContextDict, Dict[str, Any]
+    BaseContext, WebSocketContextDict, HTTPContextDict, dict[str, Any]
 ]
 
 
@@ -254,11 +248,11 @@ class GraphQLController(
     websocket_adapter_class = LitestarWebSocketAdapter
 
     allow_queries_via_get: bool = True
-    graphiql_allowed_accept: FrozenSet[str] = frozenset({"text/html", "*/*"})
+    graphiql_allowed_accept: frozenset[str] = frozenset({"text/html", "*/*"})
     graphql_ide: Optional[GraphQL_IDE] = "graphiql"
     debug: bool = False
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
-    protocols: Tuple[str, ...] = (
+    protocols: tuple[str, ...] = (
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
         GRAPHQL_WS_PROTOCOL,
     )
@@ -329,7 +323,7 @@ class GraphQLController(
         request: Request,
         stream: Callable[[], AsyncIterator[str]],
         sub_response: Response,
-        headers: Dict[str, str],
+        headers: dict[str, str],
     ) -> Response:
         return Stream(
             stream(),
@@ -416,13 +410,13 @@ def make_graphql_controller(
     root_value_getter: Optional[AnyCallable] = None,
     # TODO: context typevar
     context_getter: Optional[AnyCallable] = None,
-    subscription_protocols: Tuple[str, ...] = (
+    subscription_protocols: tuple[str, ...] = (
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
         GRAPHQL_WS_PROTOCOL,
     ),
     connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     multipart_uploads_enabled: bool = False,
-) -> Type[GraphQLController]:  # sourcery skip: move-assign
+) -> type[GraphQLController]:  # sourcery skip: move-assign
     if context_getter is None:
         custom_context_getter_ = _none_custom_context_getter
     else:
@@ -474,6 +468,6 @@ def make_graphql_controller(
 
 
 __all__ = [
-    "make_graphql_controller",
     "GraphQLController",
+    "make_graphql_controller",
 ]

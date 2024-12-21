@@ -1,4 +1,4 @@
-from typing import Type, Union
+from typing import Union
 from typing_extensions import Literal
 
 import pytest
@@ -10,7 +10,7 @@ from .clients.base import HttpClient
 @pytest.mark.parametrize("graphql_ide", ["graphiql", "apollo-sandbox", "pathfinder"])
 async def test_renders_graphql_ide(
     header_value: str,
-    http_client_class: Type[HttpClient],
+    http_client_class: type[HttpClient],
     graphql_ide: Literal["graphiql", "apollo-sandbox", "pathfinder"],
 ):
     http_client = http_client_class(graphql_ide=graphql_ide)
@@ -36,7 +36,7 @@ async def test_renders_graphql_ide(
 
 @pytest.mark.parametrize("header_value", ["text/html", "*/*"])
 async def test_renders_graphql_ide_deprecated(
-    header_value: str, http_client_class: Type[HttpClient]
+    header_value: str, http_client_class: type[HttpClient]
 ):
     with pytest.deprecated_call(
         match=r"The `graphiql` argument is deprecated in favor of `graphql_ide`"
@@ -57,7 +57,7 @@ async def test_renders_graphql_ide_deprecated(
 
 
 async def test_does_not_render_graphiql_if_wrong_accept(
-    http_client_class: Type[HttpClient],
+    http_client_class: type[HttpClient],
 ):
     http_client = http_client_class()
     response = await http_client.get("/graphql", headers={"Accept": "text/xml"})
@@ -69,7 +69,7 @@ async def test_does_not_render_graphiql_if_wrong_accept(
 
 @pytest.mark.parametrize("graphql_ide", [False, None])
 async def test_renders_graphiql_disabled(
-    http_client_class: Type[HttpClient],
+    http_client_class: type[HttpClient],
     graphql_ide: Union[bool, None],
 ):
     http_client = http_client_class(graphql_ide=graphql_ide)
@@ -79,7 +79,7 @@ async def test_renders_graphiql_disabled(
 
 
 async def test_renders_graphiql_disabled_deprecated(
-    http_client_class: Type[HttpClient],
+    http_client_class: type[HttpClient],
 ):
     with pytest.deprecated_call(
         match=r"The `graphiql` argument is deprecated in favor of `graphql_ide`"

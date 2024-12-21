@@ -1,5 +1,6 @@
 import sys
-from typing import Any, Iterable, List, Optional
+from collections.abc import Iterable
+from typing import Any, Optional
 from typing_extensions import Self
 
 import pytest
@@ -16,8 +17,8 @@ class User(Node):
 
     @classmethod
     def resolve_nodes(
-        cls, *, info: strawberry.Info, node_ids: List[Any], required: bool
-    ) -> List[Self]:
+        cls, *, info: strawberry.Info, node_ids: list[Any], required: bool
+    ) -> list[Self]:
         return [cls() for _ in node_ids]
 
 
@@ -48,7 +49,7 @@ def test_nullable_connection_with_optional():
     @strawberry.type
     class Query:
         @strawberry.relay.connection(Optional[UserConnection])
-        def users(self) -> Optional[List[User]]:
+        def users(self) -> Optional[list[User]]:
             return None
 
     schema = strawberry.Schema(query=Query)
@@ -77,7 +78,7 @@ def test_nullable_connection_with_pipe():
     @strawberry.type
     class Query:
         @strawberry.relay.connection(UserConnection | None)
-        def users(self) -> List[User] | None:
+        def users(self) -> list[User] | None:
             return None
 
     schema = strawberry.Schema(query=Query)
@@ -104,7 +105,7 @@ def test_nullable_connection_with_permission():
         @strawberry.relay.connection(
             Optional[UserConnection], permission_classes=[TestPermission]
         )
-        def users(self) -> Optional[List[User]]:  # pragma: no cover
+        def users(self) -> Optional[list[User]]:  # pragma: no cover
             pytest.fail("Should not have been called...")
 
     schema = strawberry.Schema(query=Query)

@@ -1,7 +1,6 @@
 import contextlib
 import json
 from io import BytesIO
-from typing import Type
 
 import pytest
 from urllib3 import encode_multipart_formdata
@@ -10,7 +9,7 @@ from .clients.base import HttpClient
 
 
 @pytest.fixture()
-def http_client(http_client_class: Type[HttpClient]) -> HttpClient:
+def http_client(http_client_class: type[HttpClient]) -> HttpClient:
     with contextlib.suppress(ImportError):
         from .clients.chalice import ChaliceHttpClient
 
@@ -21,7 +20,7 @@ def http_client(http_client_class: Type[HttpClient]) -> HttpClient:
 
 
 @pytest.fixture()
-def enabled_http_client(http_client_class: Type[HttpClient]) -> HttpClient:
+def enabled_http_client(http_client_class: type[HttpClient]) -> HttpClient:
     with contextlib.suppress(ImportError):
         from .clients.chalice import ChaliceHttpClient
 

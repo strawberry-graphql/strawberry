@@ -2,18 +2,13 @@ import abc
 import asyncio
 import contextlib
 import json
+from collections.abc import AsyncGenerator, Mapping
 from datetime import timedelta
 from typing import (
     Any,
-    AsyncGenerator,
     Callable,
-    Dict,
     Generic,
-    List,
-    Mapping,
     Optional,
-    Tuple,
-    Type,
     Union,
     cast,
     overload,
@@ -124,10 +119,10 @@ class AsyncBaseHTTPView(
         ],
         AsyncWebSocketAdapter,
     ]
-    graphql_transport_ws_handler_class: Type[
+    graphql_transport_ws_handler_class: type[
         BaseGraphQLTransportWSHandler[Context, RootValue]
     ] = BaseGraphQLTransportWSHandler[Context, RootValue]
-    graphql_ws_handler_class: Type[BaseGraphQLWSHandler[Context, RootValue]] = (
+    graphql_ws_handler_class: type[BaseGraphQLWSHandler[Context, RootValue]] = (
         BaseGraphQLWSHandler[Context, RootValue]
     )
 
@@ -163,7 +158,7 @@ class AsyncBaseHTTPView(
         request: Request,
         stream: Callable[[], AsyncGenerator[str, None]],
         sub_response: SubResponse,
-        headers: Dict[str, str],
+        headers: dict[str, str],
     ) -> Response:
         raise ValueError("Multipart responses are not supported")
 
@@ -220,7 +215,7 @@ class AsyncBaseHTTPView(
             allowed_operation_types=allowed_operation_types,
         )
 
-    async def parse_multipart(self, request: AsyncHTTPRequestAdapter) -> Dict[str, str]:
+    async def parse_multipart(self, request: AsyncHTTPRequestAdapter) -> dict[str, str]:
         try:
             form_data = await request.get_form_data()
         except ValueError as e:
@@ -243,7 +238,7 @@ class AsyncBaseHTTPView(
             raise HTTPException(400, "File(s) missing in form data") from e
 
     def _handle_errors(
-        self, errors: List[GraphQLError], response_data: GraphQLHTTPResponse
+        self, errors: list[GraphQLError], response_data: GraphQLHTTPResponse
     ) -> None:
         """Hook to allow custom handling of errors, used by the Sentry Integration."""
 
@@ -380,7 +375,7 @@ class AsyncBaseHTTPView(
         self, stream: Callable[[], AsyncGenerator[str, None]]
     ) -> Callable[[], AsyncGenerator[str, None]]:
         """Adds a heartbeat to the stream, to prevent the connection from closing when there are no messages being sent."""
-        queue: asyncio.Queue[Tuple[bool, Any]] = asyncio.Queue(1)
+        queue: asyncio.Queue[tuple[bool, Any]] = asyncio.Queue(1)
 
         cancelling = False
 
@@ -448,7 +443,7 @@ class AsyncBaseHTTPView(
 
     async def parse_multipart_subscriptions(
         self, request: AsyncHTTPRequestAdapter
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         if request.method == "GET":
             return self.parse_query_params(request.query_params)
 
@@ -489,7 +484,7 @@ class AsyncBaseHTTPView(
 
     async def on_ws_connect(
         self, context: Context
-    ) -> Union[UnsetType, None, Dict[str, object]]:
+    ) -> Union[UnsetType, None, dict[str, object]]:
         return UNSET
 
 

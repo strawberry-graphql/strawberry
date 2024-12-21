@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import strawberry
 from strawberry.schema_directive import Location
@@ -252,7 +252,7 @@ class Product:
         return User(**user)
 
     notes: Optional[str] = strawberry.federation.field(tags=["internal"])
-    research: List[ProductResearch]
+    research: list[ProductResearch]
 
     @classmethod
     def from_data(cls, data: dict) -> "Product":
@@ -290,7 +290,7 @@ class Product:
 @strawberry.federation.interface_object(keys=["id"])
 class Inventory:
     id: strawberry.ID
-    deprecated_products: List[DeprecatedProduct]
+    deprecated_products: list[DeprecatedProduct]
 
     @classmethod
     def resolve_reference(cls, id: strawberry.ID) -> "Inventory":

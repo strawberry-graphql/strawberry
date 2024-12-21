@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from sanic.request import File
 
@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from sanic.request import Request
 
 
-def convert_request_to_files_dict(request: Request) -> Dict[str, Any]:
+def convert_request_to_files_dict(request: Request) -> dict[str, Any]:
     """Converts the request.files dictionary to a dictionary of BytesIO objects.
 
     `request.files` has the following format, even if only a single file is uploaded:
@@ -24,12 +24,12 @@ def convert_request_to_files_dict(request: Request) -> Dict[str, Any]:
 
     Note that the dictionary entries are lists.
     """
-    request_files = cast(Optional[Dict[str, List[File]]], request.files)
+    request_files = cast(Optional[dict[str, list[File]]], request.files)
 
     if not request_files:
         return {}
 
-    files_dict: Dict[str, Union[BytesIO, List[BytesIO]]] = {}
+    files_dict: dict[str, Union[BytesIO, list[BytesIO]]] = {}
 
     for field_name, file_list in request_files.items():
         assert len(file_list) == 1

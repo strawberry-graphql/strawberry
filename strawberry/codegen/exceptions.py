@@ -16,7 +16,7 @@ class MultipleOperationsProvidedError(CodegenError):
 
 __all__ = [
     "CodegenError",
-    "NoOperationProvidedError",
-    "NoOperationNameProvidedError",
     "MultipleOperationsProvidedError",
+    "NoOperationNameProvidedError",
+    "NoOperationProvidedError",
 ]

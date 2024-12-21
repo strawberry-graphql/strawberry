@@ -1,7 +1,8 @@
 import contextlib
 import dataclasses
 import enum
-from typing import Any, AsyncGenerator, List, Type
+from collections.abc import AsyncGenerator
+from typing import Any
 
 import pytest
 
@@ -35,7 +36,7 @@ class ExampleExtension(SchemaExtension):
         "on_operation Exited",
         "get_results",
     ]
-    called_hooks: List[str]
+    called_hooks: list[str]
 
     @classmethod
     def assert_expected(cls) -> None:
@@ -85,7 +86,7 @@ def exec_type(request: pytest.FixtureRequest) -> ExecType:
 
 
 @contextlib.contextmanager
-def hook_wrap(list_: List[str], hook_name: str):
+def hook_wrap(list_: list[str], hook_name: str):
     list_.append(f"{hook_name} Entered")
     try:
         yield
@@ -94,7 +95,7 @@ def hook_wrap(list_: List[str], hook_name: str):
 
 
 @pytest.fixture()
-def async_extension() -> Type[ExampleExtension]:
+def async_extension() -> type[ExampleExtension]:
     class MyExtension(ExampleExtension):
         async def on_operation(self):
             with hook_wrap(self.called_hooks, SchemaExtension.on_operation.__name__):

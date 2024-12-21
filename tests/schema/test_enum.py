@@ -1,8 +1,7 @@
 import typing
 from enum import Enum
 from textwrap import dedent
-from typing import List, Optional
-from typing_extensions import Annotated
+from typing import Annotated, Optional
 
 import pytest
 
@@ -164,7 +163,7 @@ def test_enum_in_list():
     @strawberry.type
     class Query:
         @strawberry.field
-        def best_flavours(self) -> List[IceCreamFlavour]:
+        def best_flavours(self) -> list[IceCreamFlavour]:
             return [IceCreamFlavour.STRAWBERRY, IceCreamFlavour.PISTACHIO]
 
     schema = strawberry.Schema(query=Query)
@@ -188,7 +187,7 @@ def test_enum_in_optional_list():
     @strawberry.type
     class Query:
         @strawberry.field
-        def best_flavours(self) -> Optional[List[IceCreamFlavour]]:
+        def best_flavours(self) -> Optional[list[IceCreamFlavour]]:
             return None
 
     schema = strawberry.Schema(query=Query)
@@ -237,7 +236,7 @@ async def test_enum_in_list_async():
     @strawberry.type
     class Query:
         @strawberry.field
-        async def best_flavours(self) -> List[IceCreamFlavour]:
+        async def best_flavours(self) -> list[IceCreamFlavour]:
             return [IceCreamFlavour.STRAWBERRY, IceCreamFlavour.PISTACHIO]
 
     schema = strawberry.Schema(query=Query)

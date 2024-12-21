@@ -2,19 +2,15 @@ import ast
 import dataclasses
 import sys
 import typing
+from collections.abc import AsyncGenerator
 from functools import lru_cache
 from typing import (  # type: ignore
-    TYPE_CHECKING,
+    Annotated,
     Any,
-    AsyncGenerator,
     ClassVar,
-    Dict,
     ForwardRef,
     Generic,
-    List,
     Optional,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     _eval_type,
@@ -23,22 +19,11 @@ from typing import (  # type: ignore
     cast,
     overload,
 )
-from typing_extensions import Annotated, TypeGuard, get_args, get_origin
-
-ast_unparse = getattr(ast, "unparse", None)
-# ast.unparse is only available on python 3.9+. For older versions we will
-# use `astunparse.unparse`.
-# We are also using "not TYPE_CHECKING" here because mypy gives an erorr
-# on tests because "astunparse" is missing stubs, but the mypy action says
-# that the comment is unused.
-if not TYPE_CHECKING and ast_unparse is None:
-    import astunparse
-
-    ast_unparse = astunparse.unparse
+from typing_extensions import TypeGuard, get_args, get_origin
 
 
 @lru_cache
-def get_generic_alias(type_: Type) -> Type:
+def get_generic_alias(type_: type) -> type:
     """Get the generic alias for a type.
 
     Given a type, its generic alias from `typing` module will be returned
@@ -105,21 +90,21 @@ def is_union(annotation: object) -> bool:
     return annotation_origin == Union
 
 
-def is_optional(annotation: Type) -> bool:
+def is_optional(annotation: type) -> bool:
     """Returns True if the annotation is Optional[SomeType]."""
     # Optionals are represented as unions
 
     if not is_union(annotation):
         return False
 
-    types = annotation.__args__
+    types = annotation.__args__  # type: ignore[attr-defined]
 
     # A Union to be optional needs to have at least one None type
     return any(x == None.__class__ for x in types)
 
 
-def get_optional_annotation(annotation: Type) -> Type:
-    types = annotation.__args__
+def get_optional_annotation(annotation: type) -> type:
+    types = annotation.__args__  # type: ignore[attr-defined]
 
     non_none_types = tuple(x for x in types if x != None.__class__)
 
@@ -127,13 +112,13 @@ def get_optional_annotation(annotation: Type) -> Type:
     # type (normally a Union type).
 
     if len(non_none_types) > 1:
-        return annotation.copy_with(non_none_types)
+        return annotation.copy_with(non_none_types)  # type: ignore[attr-defined]
 
     return non_none_types[0]
 
 
-def get_list_annotation(annotation: Type) -> Type:
-    return annotation.__args__[0]
+def get_list_annotation(annotation: type) -> type:
+    return annotation.__args__[0]  # type: ignore[attr-defined]
 
 
 def is_concrete_generic(annotation: type) -> bool:
@@ -161,7 +146,7 @@ def is_generic(annotation: type) -> bool:
     )
 
 
-def is_type_var(annotation: Type) -> bool:
+def is_type_var(annotation: type) -> bool:
     """Returns True if the annotation is a TypeVar."""
     return isinstance(annotation, TypeVar)
 
@@ -186,7 +171,7 @@ def is_classvar(cls: type, annotation: Union[ForwardRef, str]) -> bool:
     )
 
 
-def type_has_annotation(type_: object, annotation: Type) -> bool:
+def type_has_annotation(type_: object, annotation: type) -> bool:
     """Returns True if the type_ has been annotated with annotation."""
     if get_origin(type_) is Annotated:
         return any(isinstance(argument, annotation) for argument in get_args(type_))
@@ -194,14 +179,13 @@ def type_has_annotation(type_: object, annotation: Type) -> bool:
     return False
 
 
-def get_parameters(annotation: Type) -> Union[Tuple[object], Tuple[()]]:
-    if (
-        isinstance(annotation, _GenericAlias)
-        or isinstance(annotation, type)
+def get_parameters(annotation: type) -> Union[tuple[object], tuple[()]]:
+    if isinstance(annotation, _GenericAlias) or (
+        isinstance(annotation, type)
         and issubclass(annotation, Generic)  # type:ignore
         and annotation is not Generic
     ):
-        return annotation.__parameters__
+        return annotation.__parameters__  # type: ignore[union-attr]
     else:
         return ()  # pragma: no cover
 
@@ -238,8 +222,7 @@ def _ast_replace_union_operation(
         if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
             expr = ast.Subscript(
                 expr.value,
-                # The cast is required for mypy on python 3.7 and 3.8
-                ast.Index(_ast_replace_union_operation(cast(Any, expr.slice).value)),  # type: ignore
+                ast.Index(_ast_replace_union_operation(expr.slice.value)),  # type: ignore
                 ast.Load(),
             )
         elif isinstance(expr.slice, (ast.BinOp, ast.Tuple)):
@@ -254,9 +237,9 @@ def _ast_replace_union_operation(
 
 def _get_namespace_from_ast(
     expr: Union[ast.Expr, ast.expr],
-    globalns: Optional[Dict] = None,
-    localns: Optional[Dict] = None,
-) -> Dict[str, Type]:
+    globalns: Optional[dict] = None,
+    localns: Optional[dict] = None,
+) -> dict[str, type]:
     from strawberry.types.lazy_type import StrawberryLazyReference
 
     extra = {}
@@ -274,7 +257,6 @@ def _get_namespace_from_ast(
         and expr.value.id == "Union"
     ):
         if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
-            # The cast is required for mypy on python 3.7 and 3.8
             expr_slice = cast(Any, expr.slice).value
         else:
             expr_slice = expr.slice
@@ -292,18 +274,15 @@ def _get_namespace_from_ast(
         and isinstance(expr.value, ast.Name)
         and expr.value.id == "Annotated"
     ):
-        assert ast_unparse
-
         if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
-            # The cast is required for mypy on python 3.7 and 3.8
             expr_slice = cast(Any, expr.slice).value
         else:
             expr_slice = expr.slice
 
-        args: List[str] = []
+        args: list[str] = []
         for elt in cast(ast.Tuple, expr_slice).elts:
             extra.update(_get_namespace_from_ast(elt, globalns, localns))
-            args.append(ast_unparse(elt))
+            args.append(ast.unparse(elt))
 
         # When using forward refs, the whole
         # Annotated[SomeType, strawberry.lazy("type.module")] is a forward ref,
@@ -322,16 +301,16 @@ def _get_namespace_from_ast(
 
 def eval_type(
     type_: Any,
-    globalns: Optional[Dict] = None,
-    localns: Optional[Dict] = None,
-) -> Type:
+    globalns: Optional[dict] = None,
+    localns: Optional[dict] = None,
+) -> type:
     """Evaluates a type, resolving forward references."""
     from strawberry.types.auto import StrawberryAuto
     from strawberry.types.lazy_type import StrawberryLazyReference
     from strawberry.types.private import StrawberryPrivate
 
     globalns = globalns or {}
-    # If this is not a string, maybe its args are (e.g. List["Foo"])
+    # If this is not a string, maybe its args are (e.g. list["Foo"])
     if isinstance(type_, ForwardRef):
         ast_obj = cast(ast.Expr, ast.parse(type_.__forward_arg__).body[0])
 
@@ -347,10 +326,9 @@ def eval_type(
 
         globalns.update(_get_namespace_from_ast(ast_obj, globalns, localns))
 
-        assert ast_unparse
-        type_ = ForwardRef(ast_unparse(ast_obj))
+        type_ = ForwardRef(ast.unparse(ast_obj))
 
-        extra: Dict[str, Any] = {}
+        extra: dict[str, Any] = {}
 
         if sys.version_info >= (3, 13):
             extra = {"type_params": None}
@@ -400,13 +378,6 @@ def eval_type(
             if origin is UnionType:
                 origin = Union
 
-        # Future annotations in older versions will eval generic aliases to their
-        # real types (i.e. List[foo] will have its origin set to list instead
-        # of List). If that type is not subscriptable, retrieve its generic
-        # alias version instead.
-        if sys.version_info < (3, 9) and not hasattr(origin, "__class_getitem__"):
-            origin = get_generic_alias(origin)
-
         type_ = (
             origin[tuple(eval_type(a, globalns, localns) for a in args)]
             if args
@@ -417,19 +388,19 @@ def eval_type(
 
 
 __all__ = [
-    "get_generic_alias",
-    "is_generic_alias",
-    "is_list",
-    "is_union",
-    "is_optional",
-    "get_optional_annotation",
-    "get_list_annotation",
-    "is_concrete_generic",
-    "is_generic_subclass",
-    "is_generic",
-    "is_type_var",
-    "is_classvar",
-    "type_has_annotation",
-    "get_parameters",
     "eval_type",
+    "get_generic_alias",
+    "get_list_annotation",
+    "get_optional_annotation",
+    "get_parameters",
+    "is_classvar",
+    "is_concrete_generic",
+    "is_generic",
+    "is_generic_alias",
+    "is_generic_subclass",
+    "is_list",
+    "is_optional",
+    "is_type_var",
+    "is_union",
+    "type_has_annotation",
 ]

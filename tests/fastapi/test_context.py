@@ -1,5 +1,5 @@
 import asyncio
-from typing import AsyncGenerator, Dict
+from collections.abc import AsyncGenerator
 
 import pytest
 
@@ -108,7 +108,7 @@ def test_with_dict_context_getter():
     def custom_context_dependency() -> str:
         return "rocks"
 
-    def get_context(value: str = Depends(custom_context_dependency)) -> Dict[str, str]:
+    def get_context(value: str = Depends(custom_context_dependency)) -> dict[str, str]:
         return {"strawberry": value}
 
     app = FastAPI()

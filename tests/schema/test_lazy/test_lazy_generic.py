@@ -3,9 +3,9 @@ import subprocess
 import sys
 import sysconfig
 import textwrap
+from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Generic, List, Optional, Sequence, TypeVar
-from typing_extensions import Annotated
+from typing import TYPE_CHECKING, Annotated, Generic, Optional, TypeVar
 
 import pytest
 
@@ -142,8 +142,8 @@ def test_lazy_types_declared_within_optional():
 
     @strawberry.type
     class Query:
-        normal_edges: List[Edge[Optional[TypeC]]]
-        lazy_edges: List[
+        normal_edges: list[Edge[Optional[TypeC]]]
+        lazy_edges: list[
             Edge[
                 Optional[
                     Annotated["TypeC", strawberry.lazy("tests.schema.test_lazy.type_c")]

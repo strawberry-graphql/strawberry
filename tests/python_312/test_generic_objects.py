@@ -2,8 +2,7 @@
 
 import datetime
 import sys
-from typing import List, Optional, Union
-from typing_extensions import Annotated
+from typing import Annotated, Optional, Union
 
 import pytest
 
@@ -109,7 +108,7 @@ def test_generics_nested_in_list():
 
     @strawberry.type
     class Connection[T]:
-        edges: List[Edge[T]]
+        edges: list[Edge[T]]
 
     definition = get_object_definition(Connection, strict=True)
     assert definition.is_graphql_generic
@@ -146,9 +145,9 @@ def test_list_inside_generic():
     @strawberry.type
     class Foo:
         string: Value[str]
-        strings: Value[List[str]]
+        strings: Value[list[str]]
         optional_string: Value[Optional[str]]
-        optional_strings: Value[Optional[List[str]]]
+        optional_strings: Value[Optional[list[str]]]
 
     definition = get_object_definition(Foo, strict=True)
     assert not definition.is_graphql_generic
@@ -196,7 +195,7 @@ def test_generic_with_optional():
 def test_generic_with_list():
     @strawberry.type
     class Connection[T]:
-        edges: List[T]
+        edges: list[T]
 
     definition = get_object_definition(Connection, strict=True)
     assert definition.is_graphql_generic
@@ -225,7 +224,7 @@ def test_generic_with_list():
 def test_generic_with_list_of_optionals():
     @strawberry.type
     class Connection[T]:
-        edges: List[Optional[T]]
+        edges: list[Optional[T]]
 
     definition = get_object_definition(Connection, strict=True)
     assert definition.is_graphql_generic
@@ -374,7 +373,7 @@ def test_using_generics_raises_when_missing_annotation_nested():
 
     @strawberry.type
     class Connection[T]:
-        edges: List[Edge[T]]
+        edges: list[Edge[T]]
 
     @strawberry.type
     class User:
@@ -424,7 +423,7 @@ def test_generics_inside_list():
 
     @strawberry.type
     class Query:
-        user: List[Edge[str]]
+        user: list[Edge[str]]
 
     query_definition = get_object_definition(Query, strict=True)
     assert query_definition.type_params == []
@@ -501,7 +500,7 @@ def test_union_inside_generics():
 
     @strawberry.type
     class Connection[T]:
-        nodes: List[T]
+        nodes: list[T]
 
     DogCat = Annotated[Union[Dog, Cat], strawberry.union("DogCat")]
 
@@ -538,7 +537,7 @@ def test_anonymous_union_inside_generics():
 
     @strawberry.type
     class Connection[T]:
-        nodes: List[T]
+        nodes: list[T]
 
     @strawberry.type
     class Query:
@@ -591,7 +590,7 @@ def test_generic_with_arguments():
     @strawberry.type
     class Collection[T]:
         @strawberry.field
-        def by_id(self, ids: List[int]) -> List[T]:
+        def by_id(self, ids: list[int]) -> list[T]:
             return []
 
     @strawberry.type

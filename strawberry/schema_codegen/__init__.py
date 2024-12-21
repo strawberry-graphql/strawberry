@@ -3,11 +3,11 @@ from __future__ import annotations
 import dataclasses
 import keyword
 from collections import defaultdict
-from typing import TYPE_CHECKING, List, Tuple, Union
+from graphlib import TopologicalSorter
+from typing import TYPE_CHECKING, Union
 from typing_extensions import Protocol, TypeAlias
 
 import libcst as cst
-from graphlib import TopologicalSorter
 from graphql import (
     EnumTypeDefinitionNode,
     EnumValueDefinitionNode,
@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 
 class HasDirectives(Protocol):
-    directives: Tuple[ConstDirectiveNode, ...]
+    directives: tuple[ConstDirectiveNode, ...]
 
 
 _SCALAR_MAP = {
@@ -256,7 +256,7 @@ def _get_field(
     )
 
 
-ArgumentValue: TypeAlias = Union[str, bool, List["ArgumentValue"]]
+ArgumentValue: TypeAlias = Union[str, bool, list["ArgumentValue"]]
 
 
 def _get_argument_value(argument_value: ConstValueNode) -> ArgumentValue:

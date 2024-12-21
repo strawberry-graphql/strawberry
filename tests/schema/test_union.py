@@ -2,8 +2,7 @@ import sys
 import textwrap
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import Generic, List, Optional, TypeVar, Union
-from typing_extensions import Annotated
+from typing import Annotated, Generic, Optional, TypeVar, Union
 
 import pytest
 
@@ -543,7 +542,7 @@ def test_union_with_similar_nested_generic_types():
 
     @strawberry.type
     class Container(Generic[T]):
-        items: List[T]
+        items: list[T]
 
     @strawberry.type
     class A:
@@ -684,10 +683,6 @@ def test_raises_on_union_with_int():
     InvalidUnionTypeError,
     match=r"Type `list\[...\]` cannot be used in a GraphQL Union",
 )
-@pytest.mark.skipif(
-    sys.version_info < (3, 9, 0),
-    reason="list[str] is only available on python 3.9+",
-)
 def test_raises_on_union_with_list_str():
     global ICanBeInUnion
 
@@ -708,10 +703,6 @@ def test_raises_on_union_with_list_str():
     InvalidUnionTypeError,
     match=r"Type `list\[...\]` cannot be used in a GraphQL Union",
 )
-@pytest.mark.skipif(
-    sys.version_info < (3, 9, 0),
-    reason="list[str] is only available on python 3.9+",
-)
 def test_raises_on_union_with_list_str_38():
     global ICanBeInUnion
 
@@ -721,7 +712,7 @@ def test_raises_on_union_with_list_str_38():
 
     @strawberry.type
     class Query:
-        union: Union[ICanBeInUnion, List[str]]
+        union: Union[ICanBeInUnion, list[str]]
 
     strawberry.Schema(query=Query)
 

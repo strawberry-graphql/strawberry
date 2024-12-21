@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Any, Dict, List, NoReturn, Optional
+from typing import Any, NoReturn, Optional
 
 import pytest
 
@@ -305,7 +305,7 @@ def test_runs_directives_with_list_params():
             return Person()
 
     @strawberry.directive(locations=[DirectiveLocation.FIELD])
-    def replace(value: DirectiveValue[str], old_list: List[str], new: str):
+    def replace(value: DirectiveValue[str], old_list: list[str], new: str):
         for old in old_list:
             value = value.replace(old, new)
 
@@ -412,7 +412,7 @@ def info_directive_schema() -> strawberry.Schema:
         EN: str = "EN"
         NL: str = "NL"
 
-    greetings: Dict[Locale, str] = {
+    greetings: dict[Locale, str] = {
         Locale.EN: "Hello {username}",
         Locale.NL: "Hallo {username}",
     }
@@ -594,7 +594,7 @@ async def test_directive_list_argument() -> NoReturn:
             return "Hi"
 
     @strawberry.directive(locations=[DirectiveLocation.FIELD])
-    def append_names(value: DirectiveValue[str], names: List[str]):
+    def append_names(value: DirectiveValue[str], names: list[str]):
         assert isinstance(names, list)
         return f"{value} {', '.join(names)}"
 
@@ -695,7 +695,7 @@ async def test_directive_with_custom_info_class() -> NoReturn:
         test: str = "foo"
 
     @strawberry.directive(locations=[DirectiveLocation.FIELD])
-    def append_names(value: DirectiveValue[str], names: List[str], info: CustomInfo):
+    def append_names(value: DirectiveValue[str], names: list[str], info: CustomInfo):
         assert isinstance(names, list)
         assert isinstance(info, CustomInfo)
         assert Info in type(info).__bases__  # Explicitly check it's not Info.

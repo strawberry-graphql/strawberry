@@ -26,4 +26,4 @@ def to_snake_case(name: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", name).lower()
 
 
-__all__ = ["to_camel_case", "to_kebab_case", "capitalize_first", "to_snake_case"]
+__all__ = ["capitalize_first", "to_camel_case", "to_kebab_case", "to_snake_case"]

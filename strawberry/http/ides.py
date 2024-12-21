@@ -22,4 +22,4 @@ def get_graphql_ide_html(
     return template
 
 
-__all__ = ["get_graphql_ide_html", "GraphQL_IDE"]
+__all__ = ["GraphQL_IDE", "get_graphql_ide_html"]

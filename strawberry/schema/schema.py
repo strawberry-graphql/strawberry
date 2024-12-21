@@ -5,11 +5,7 @@ from functools import cached_property, lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    Iterable,
-    List,
     Optional,
-    Type,
     Union,
     cast,
 )
@@ -37,7 +33,11 @@ from strawberry.extensions.runner import SchemaExtensionsRunner
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext
-from strawberry.types.base import StrawberryObjectDefinition, has_object_definition
+from strawberry.types.base import (
+    StrawberryObjectDefinition,
+    WithStrawberryObjectDefinition,
+    has_object_definition,
+)
 from strawberry.types.graphql import OperationType
 
 from ..printer import print_schema
@@ -48,6 +48,8 @@ from .execute import execute, execute_sync
 from .subscribe import SubscriptionResult, subscribe
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from graphql import ExecutionContext as GraphQLExecutionContext
 
     from strawberry.directive import StrawberryDirective
@@ -70,16 +72,16 @@ class Schema(BaseSchema):
         self,
         # TODO: can we make sure we only allow to pass
         # something that has been decorated?
-        query: Type,
-        mutation: Optional[Type] = None,
-        subscription: Optional[Type] = None,
+        query: type,
+        mutation: Optional[type] = None,
+        subscription: Optional[type] = None,
         directives: Iterable[StrawberryDirective] = (),
-        types: Iterable[Union[Type, StrawberryType]] = (),
-        extensions: Iterable[Union[Type[SchemaExtension], SchemaExtension]] = (),
-        execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+        types: Iterable[Union[type, StrawberryType]] = (),
+        extensions: Iterable[Union[type[SchemaExtension], SchemaExtension]] = (),
+        execution_context_class: Optional[type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
         scalar_overrides: Optional[
-            Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]],
+            dict[object, Union[type, ScalarWrapper, ScalarDefinition]],
         ] = None,
         schema_directives: Iterable[object] = (),
     ) -> None:
@@ -127,7 +129,7 @@ class Schema(BaseSchema):
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
 
-        SCALAR_OVERRIDES_DICT_TYPE = Dict[
+        SCALAR_OVERRIDES_DICT_TYPE = dict[
             object, Union["ScalarWrapper", "ScalarDefinition"]
         ]
 
@@ -142,14 +144,24 @@ class Schema(BaseSchema):
         self.directives = directives
         self.schema_directives = list(schema_directives)
 
-        query_type = self.schema_converter.from_object(query.__strawberry_definition__)
+        query_type = self.schema_converter.from_object(
+            cast(type[WithStrawberryObjectDefinition], query).__strawberry_definition__
+        )
         mutation_type = (
-            self.schema_converter.from_object(mutation.__strawberry_definition__)
+            self.schema_converter.from_object(
+                cast(
+                    type[WithStrawberryObjectDefinition], mutation
+                ).__strawberry_definition__
+            )
             if mutation
             else None
         )
         subscription_type = (
-            self.schema_converter.from_object(subscription.__strawberry_definition__)
+            self.schema_converter.from_object(
+                cast(
+                    type[WithStrawberryObjectDefinition], subscription
+                ).__strawberry_definition__
+            )
             if subscription
             else None
         )
@@ -213,7 +225,7 @@ class Schema(BaseSchema):
             formatted_errors = "\n\n".join(f"❌ {error.message}" for error in errors)
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
-    def get_extensions(self, sync: bool = False) -> List[SchemaExtension]:
+    def get_extensions(self, sync: bool = False) -> list[SchemaExtension]:
         extensions = []
         if self.directives:
             extensions = [
@@ -227,11 +239,11 @@ class Schema(BaseSchema):
         ]
 
     @cached_property
-    def _sync_extensions(self) -> List[SchemaExtension]:
+    def _sync_extensions(self) -> list[SchemaExtension]:
         return self.get_extensions(sync=True)
 
     @cached_property
-    def _async_extensions(self) -> List[SchemaExtension]:
+    def _async_extensions(self) -> list[SchemaExtension]:
         return self.get_extensions(sync=False)
 
     def create_extensions_runner(
@@ -256,7 +268,7 @@ class Schema(BaseSchema):
         self,
         query: Optional[str],
         allowed_operation_types: Iterable[OperationType],
-        variable_values: Optional[Dict[str, Any]] = None,
+        variable_values: Optional[dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
@@ -320,13 +332,13 @@ class Schema(BaseSchema):
 
     def get_fields(
         self, type_definition: StrawberryObjectDefinition
-    ) -> List[StrawberryField]:
+    ) -> list[StrawberryField]:
         return type_definition.fields
 
     async def execute(
         self,
         query: Optional[str],
-        variable_values: Optional[Dict[str, Any]] = None,
+        variable_values: Optional[dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
@@ -361,7 +373,7 @@ class Schema(BaseSchema):
     def execute_sync(
         self,
         query: Optional[str],
-        variable_values: Optional[Dict[str, Any]] = None,
+        variable_values: Optional[dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
@@ -397,7 +409,7 @@ class Schema(BaseSchema):
     async def subscribe(
         self,
         query: Optional[str],
-        variable_values: Optional[Dict[str, Any]] = None,
+        variable_values: Optional[dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
@@ -495,7 +507,7 @@ class Schema(BaseSchema):
 
     __str__ = as_str
 
-    def introspect(self) -> Dict[str, Any]:
+    def introspect(self) -> dict[str, Any]:
         """Return the introspection query result for the current schema.
 
         Raises:
