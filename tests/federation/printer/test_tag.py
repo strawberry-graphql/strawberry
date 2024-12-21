@@ -21,7 +21,7 @@ def test_field_tag_printed_correctly():
         @strawberry.field
         def top_products(
             self, first: Annotated[int, strawberry.federation.argument(tags=["myTag"])]
-        ) -> list[Product]:
+        ) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)

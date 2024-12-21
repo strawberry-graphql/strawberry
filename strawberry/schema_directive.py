@@ -51,12 +51,12 @@ def schema_directive(
     name: Optional[str] = None,
     repeatable: bool = False,
     print_definition: bool = True,
-) -> Callable[..., T]:
+) -> Callable[[T], T]:
     def _wrap(cls: T) -> T:
         cls = _wrap_dataclass(cls)  # type: ignore
         fields = _get_fields(cls, {})
 
-        cls.__strawberry_directive__ = StrawberrySchemaDirective(
+        cls.__strawberry_directive__ = StrawberrySchemaDirective(  # type: ignore[attr-defined]
             python_name=cls.__name__,
             graphql_name=name,
             locations=locations,

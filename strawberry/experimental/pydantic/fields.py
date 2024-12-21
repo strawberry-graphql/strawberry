@@ -24,14 +24,7 @@ except ImportError:
     else:
         raise
 
-try:
-    from typing import GenericAlias as TypingGenericAlias  # type: ignore
-except ImportError:
-    import sys
-
-    # python < 3.9 does not have GenericAlias (list[int], tuple[str, ...] and so on)
-    # we do this under a conditional to avoid a mypy :)
-    raise
+from typing import GenericAlias as TypingGenericAlias  # type: ignore
 
 
 def replace_pydantic_types(type_: Any, is_input: bool) -> Any:

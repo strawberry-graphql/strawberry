@@ -53,7 +53,7 @@ def test_lazy_forward_reference():
     @strawberry.type
     class Query:
         @strawberry.field
-        async def a(self) -> A:
+        async def a(self) -> A:  # pragma: no cover
             return A(id=strawberry.ID("1"))
 
     expected_representation = """
@@ -114,7 +114,7 @@ def test_with_resolver():
     class User:
         name: str
 
-    def get_users() -> list[User]:
+    def get_users() -> list[User]:  # pragma: no cover
         return []
 
     @strawberry.type
@@ -140,7 +140,7 @@ def test_union_or_notation():
     class User:
         name: str
 
-    def get_users() -> list[User] | None:
+    def get_users() -> list[User] | None:  # pragma: no cover
         return []
 
     @strawberry.type
@@ -167,7 +167,7 @@ def test_union_or_notation_generic_type_alias():
     class User:
         name: str
 
-    def get_users() -> list[User] | None:
+    def get_users() -> list[User] | None:  # pragma: no cover
         return []
 
     @strawberry.type
@@ -194,7 +194,7 @@ def test_annotated():
     class User:
         name: str
 
-    def get_users() -> list[User]:
+    def get_users() -> list[User]:  # pragma: no cover
         return []
 
     @strawberry.type
@@ -220,7 +220,7 @@ def test_annotated_or_notation():
     class User:
         name: str
 
-    def get_users() -> list[User] | None:
+    def get_users() -> list[User] | None:  # pragma: no cover
         return []
 
     @strawberry.type
@@ -249,7 +249,7 @@ def test_annotated_or_notation_generic_type_alias():
     class User:
         name: str
 
-    def get_users() -> list[User]:
+    def get_users() -> list[User]:  # pragma: no cover
         return []
 
     @strawberry.type

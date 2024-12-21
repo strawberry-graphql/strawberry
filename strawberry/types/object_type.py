@@ -1,3 +1,4 @@
+import builtins
 import dataclasses
 import inspect
 import sys
@@ -26,10 +27,10 @@ from .base import StrawberryObjectDefinition
 from .field import StrawberryField, field
 from .type_resolver import _get_fields
 
-T = TypeVar("T", bound=type)
+T = TypeVar("T", bound=builtins.type)
 
 
-def _get_interfaces(cls: type[Any]) -> list[StrawberryObjectDefinition]:
+def _get_interfaces(cls: builtins.type[Any]) -> list[StrawberryObjectDefinition]:
     interfaces: list[StrawberryObjectDefinition] = []
     for base in cls.__mro__[1:]:  # Exclude current class
         type_definition = get_object_definition(base)
@@ -39,7 +40,7 @@ def _get_interfaces(cls: type[Any]) -> list[StrawberryObjectDefinition]:
     return interfaces
 
 
-def _check_field_annotations(cls: type[Any]) -> None:
+def _check_field_annotations(cls: builtins.type[Any]) -> None:
     """Are any of the dataclass Fields missing type annotations?
 
     This is similar to the check that dataclasses do during creation, but allows us to
@@ -97,7 +98,7 @@ def _check_field_annotations(cls: type[Any]) -> None:
             raise MissingFieldAnnotationError(field_name, cls)
 
 
-def _wrap_dataclass(cls: type[T]) -> type[T]:
+def _wrap_dataclass(cls: builtins.type[T]) -> builtins.type[T]:
     """Wrap a strawberry.type class with a dataclass and check for any issues before doing so."""
     # Ensure all Fields have been properly type-annotated
     _check_field_annotations(cls)
@@ -140,7 +141,7 @@ def _process_type(
     is_type_of = getattr(cls, "is_type_of", None)
     resolve_type = getattr(cls, "resolve_type", None)
 
-    cls.__strawberry_definition__ = StrawberryObjectDefinition(
+    cls.__strawberry_definition__ = StrawberryObjectDefinition(  # type: ignore[attr-defined]
         name=name,
         is_input=is_input,
         is_interface=is_interface,
@@ -156,7 +157,7 @@ def _process_type(
     # TODO: remove when deprecating _type_definition
     DeprecatedDescriptor(
         DEPRECATION_MESSAGES._TYPE_DEFINITION,
-        cls.__strawberry_definition__,
+        cls.__strawberry_definition__,  # type: ignore[attr-defined]
         "_type_definition",
     ).inject(cls)
 

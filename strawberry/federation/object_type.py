@@ -1,3 +1,4 @@
+import builtins
 from collections.abc import Iterable, Sequence
 from typing import (
     TYPE_CHECKING,
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
     from .schema_directives import Key
 
 
-T = TypeVar("T", bound=type)
+T = TypeVar("T", bound=builtins.type)
 
 
 def _impl_type(

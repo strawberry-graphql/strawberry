@@ -33,6 +33,8 @@ from .exceptions import MissingFieldsListError
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from strawberry.types.base import WithStrawberryObjectDefinition
+
 
 def get_type_for_field(field: CompatModelField) -> Union[type[Union[None, list]], Any]:
     type_ = field.outer_type_
@@ -113,7 +115,7 @@ def error_type(
             if name in fields_set
         ]
 
-        wrapped = _wrap_dataclass(cls)
+        wrapped: type[WithStrawberryObjectDefinition] = _wrap_dataclass(cls)
         extra_fields = cast(list[dataclasses.Field], _get_fields(wrapped, {}))
         private_fields = get_private_fields(wrapped)
 
@@ -146,7 +148,7 @@ def error_type(
         )
 
         model._strawberry_type = cls  # type: ignore[attr-defined]
-        cls._pydantic_type = model
+        cls._pydantic_type = model  # type: ignore[attr-defined]
         return cls
 
     return wrap

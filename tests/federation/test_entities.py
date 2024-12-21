@@ -18,7 +18,7 @@ def test_fetch_entities():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> typing.List[Product]:
+        def top_products(self, first: int) -> typing.List[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
@@ -58,7 +58,7 @@ def test_info_param_in_resolve_reference():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> typing.List[Product]:
+        def top_products(self, first: int) -> typing.List[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
@@ -102,7 +102,7 @@ def test_does_not_need_custom_resolve_reference_for_basic_things():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> typing.List[Product]:
+        def top_products(self, first: int) -> typing.List[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
@@ -142,7 +142,7 @@ def test_does_not_need_custom_resolve_reference_nested():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> typing.List[Product]:
+        def top_products(self, first: int) -> typing.List[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
@@ -189,7 +189,7 @@ def test_fails_properly_when_wrong_key_is_passed():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> typing.List[Product]:
+        def top_products(self, first: int) -> typing.List[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
@@ -232,7 +232,7 @@ def test_fails_properly_when_wrong_data_is_passed():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> typing.List[Product]:
+        def top_products(self, first: int) -> typing.List[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
@@ -430,7 +430,7 @@ async def test_can_use_async_resolve_reference():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> typing.List[Product]:
+        def top_products(self, first: int) -> typing.List[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
@@ -469,7 +469,7 @@ async def test_can_use_async_resolve_reference_multiple_representations():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> typing.List[Product]:
+        def top_products(self, first: int) -> typing.List[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)

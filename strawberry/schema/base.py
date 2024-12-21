@@ -18,7 +18,10 @@ if TYPE_CHECKING:
         ExecutionContext,
         ExecutionResult,
     )
-    from strawberry.types.base import StrawberryObjectDefinition
+    from strawberry.types.base import (
+        StrawberryObjectDefinition,
+        WithStrawberryObjectDefinition,
+    )
     from strawberry.types.enum import EnumDefinition
     from strawberry.types.graphql import OperationType
     from strawberry.types.scalar import ScalarDefinition
@@ -31,9 +34,9 @@ if TYPE_CHECKING:
 class BaseSchema(Protocol):
     config: StrawberryConfig
     schema_converter: GraphQLCoreConverter
-    query: type
-    mutation: Optional[type]
-    subscription: Optional[type]
+    query: type[WithStrawberryObjectDefinition]
+    mutation: Optional[type[WithStrawberryObjectDefinition]]
+    subscription: Optional[type[WithStrawberryObjectDefinition]]
     schema_directives: list[object]
 
     @abstractmethod

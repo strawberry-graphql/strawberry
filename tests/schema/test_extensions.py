@@ -52,7 +52,7 @@ def test_extensions_schema_directive():
 
 def test_directive():
     @strawberry.directive(locations=[DirectiveLocation.FIELD])
-    def uppercase(value: DirectiveValue[str], foo: str):
+    def uppercase(value: DirectiveValue[str], foo: str):  # pragma: no cover
         return value.upper()
 
     @strawberry.type()

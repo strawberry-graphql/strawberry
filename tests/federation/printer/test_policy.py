@@ -25,7 +25,7 @@ def test_field_policy_printed_correctly():
         )
         def top_products(
             self, first: Annotated[int, strawberry.federation.argument()]
-        ) -> list[Product]:
+        ) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)

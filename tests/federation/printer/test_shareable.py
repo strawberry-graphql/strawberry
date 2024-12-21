@@ -17,7 +17,7 @@ def test_field_shareable_printed_correctly():
     @strawberry.federation.type
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> list[Product]:
+        def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)

@@ -33,7 +33,11 @@ from strawberry.extensions.runner import SchemaExtensionsRunner
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext
-from strawberry.types.base import StrawberryObjectDefinition, has_object_definition
+from strawberry.types.base import (
+    StrawberryObjectDefinition,
+    WithStrawberryObjectDefinition,
+    has_object_definition,
+)
 from strawberry.types.graphql import OperationType
 
 from ..printer import print_schema
@@ -140,14 +144,24 @@ class Schema(BaseSchema):
         self.directives = directives
         self.schema_directives = list(schema_directives)
 
-        query_type = self.schema_converter.from_object(query.__strawberry_definition__)
+        query_type = self.schema_converter.from_object(
+            cast(type[WithStrawberryObjectDefinition], query).__strawberry_definition__
+        )
         mutation_type = (
-            self.schema_converter.from_object(mutation.__strawberry_definition__)
+            self.schema_converter.from_object(
+                cast(
+                    type[WithStrawberryObjectDefinition], mutation
+                ).__strawberry_definition__
+            )
             if mutation
             else None
         )
         subscription_type = (
-            self.schema_converter.from_object(subscription.__strawberry_definition__)
+            self.schema_converter.from_object(
+                cast(
+                    type[WithStrawberryObjectDefinition], subscription
+                ).__strawberry_definition__
+            )
             if subscription
             else None
         )

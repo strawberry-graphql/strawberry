@@ -26,7 +26,7 @@ def test_entities_type_when_no_type_has_keys():
     @strawberry.federation.type
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> list[Product]:
+        def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
@@ -89,7 +89,7 @@ def test_entities_type_when_one_type_has_keys():
     @strawberry.federation.type
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> list[Product]:
+        def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)

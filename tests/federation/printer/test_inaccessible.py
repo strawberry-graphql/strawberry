@@ -33,7 +33,7 @@ def test_field_inaccessible_printed_correctly():
         def top_products(
             self,
             first: Annotated[int, strawberry.federation.argument(inaccessible=True)],
-        ) -> list[Product]:
+        ) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(
@@ -96,7 +96,7 @@ def test_inaccessible_on_mutation():
     @strawberry.type
     class Mutation:
         @strawberry.federation.mutation(inaccessible=True)
-        def hello(self) -> str:
+        def hello(self) -> str:  # pragma: no cover
             return "Hello"
 
     schema = strawberry.federation.Schema(

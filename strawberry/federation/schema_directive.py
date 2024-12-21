@@ -36,12 +36,12 @@ def schema_directive(
     print_definition: bool = True,
     compose: bool = False,
     import_url: Optional[str] = None,
-) -> Callable[..., T]:
+) -> Callable[[T], T]:
     def _wrap(cls: T) -> T:
         cls = _wrap_dataclass(cls)  # type: ignore
         fields = _get_fields(cls, {})
 
-        cls.__strawberry_directive__ = StrawberryFederationSchemaDirective(
+        cls.__strawberry_directive__ = StrawberryFederationSchemaDirective(  # type: ignore[attr-defined]
             python_name=cls.__name__,
             graphql_name=name,
             locations=locations,

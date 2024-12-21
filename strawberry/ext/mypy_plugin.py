@@ -104,7 +104,7 @@ class InvalidNodeTypeException(Exception):
         return self.message
 
 
-def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> type:
+def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
     if len(ctx.type.args) == 0:
         # TODO: maybe this should throw an error
 
@@ -123,7 +123,7 @@ def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface) -> Any:
     return api.named_type(name)
 
 
-def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface) -> type:
+def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface) -> Type:
     if isinstance(expr, NameExpr):
         # guarding against invalid nodes, still have to figure out why this happens
         # but sometimes mypy crashes because the internal node of the named type
@@ -247,7 +247,7 @@ def enum_hook(ctx: DynamicClassDefContext) -> None:
             )
             return
 
-    enum_type: Optional[type]
+    enum_type: Optional[Type]
 
     try:
         enum_type = _get_type_for_expr(first_argument, ctx.api)
@@ -295,7 +295,7 @@ def scalar_hook(ctx: DynamicClassDefContext) -> None:
             )
             return
 
-    scalar_type: Optional[type]
+    scalar_type: Optional[Type]
 
     # TODO: add proper support for NewType
 
@@ -620,7 +620,7 @@ class StrawberryPlugin(Plugin):
         )
 
 
-def plugin(version: str) -> typing.type[StrawberryPlugin]:
+def plugin(version: str) -> typing.Type[StrawberryPlugin]:
     match = VERSION_RE.match(version)
     if match:
         MypyVersion.VERSION = Decimal(".".join(match.groups()))

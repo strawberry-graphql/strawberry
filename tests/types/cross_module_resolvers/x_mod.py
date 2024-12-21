@@ -1,2 +1,2 @@
-def typeless_resolver() -> list:
+def typeless_resolver() -> list:  # pragma: no cover
     return []

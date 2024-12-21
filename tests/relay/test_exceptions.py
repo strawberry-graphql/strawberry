@@ -73,7 +73,7 @@ def test_raises_error_on_missing_node_id_annotation():
     @strawberry.type
     class Query:
         @relay.connection(relay.ListConnection[Fruit])
-        def fruits(self) -> list[Fruit]: ...
+        def fruits(self) -> list[Fruit]: ...  # pragma: no cover
 
     strawberry.Schema(query=Query)
 
@@ -91,7 +91,7 @@ def test_raises_error_on_multiple_node_id_annotation():
     @strawberry.type
     class Query:
         @relay.connection(relay.ListConnection[Fruit])
-        def fruits(self) -> list[Fruit]: ...
+        def fruits(self) -> list[Fruit]: ...  # pragma: no cover
 
     strawberry.Schema(query=Query)
 
@@ -130,7 +130,7 @@ def test_raises_error_on_connection_wrong_annotation():
     @strawberry.type
     class Query:
         @relay.connection(list[Fruit])  # type: ignore
-        def custom_resolver(self) -> list[Fruit]: ...
+        def custom_resolver(self) -> list[Fruit]: ...  # pragma: no cover
 
     strawberry.Schema(query=Query)
 
@@ -150,6 +150,6 @@ def test_raises_error_on_connection_resolver_wrong_annotation():
     @strawberry.type
     class Query:
         @relay.connection(relay.Connection[Fruit])  # type: ignore
-        def custom_resolver(self): ...
+        def custom_resolver(self): ...  # pragma: no cover
 
     strawberry.Schema(query=Query)

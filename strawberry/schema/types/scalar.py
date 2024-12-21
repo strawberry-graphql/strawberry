@@ -45,7 +45,7 @@ def _make_scalar_definition(scalar_type: GraphQLScalarType) -> ScalarDefinition:
 
 
 def _get_scalar_definition(scalar: type) -> ScalarDefinition:
-    return scalar._scalar_definition
+    return scalar._scalar_definition  # type: ignore[attr-defined]
 
 
 DEFAULT_SCALAR_REGISTRY: dict[object, ScalarDefinition] = {

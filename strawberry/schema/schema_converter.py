@@ -328,7 +328,8 @@ class GraphQLCoreConverter:
 
     def from_schema_directive(self, cls: type) -> GraphQLDirective:
         strawberry_directive = cast(
-            "StrawberrySchemaDirective", cls.__strawberry_directive__
+            "StrawberrySchemaDirective",
+            cls.__strawberry_directive__,  # type: ignore[attr-defined]
         )
         module = sys.modules[cls.__module__]
 
@@ -770,7 +771,7 @@ class GraphQLCoreConverter:
             else:
                 scalar_definition = _scalar_definition
         else:
-            scalar_definition = scalar._scalar_definition
+            scalar_definition = scalar._scalar_definition  # type: ignore[attr-defined]
 
         scalar_name = self.config.name_converter.from_type(scalar_definition)
 

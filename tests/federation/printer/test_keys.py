@@ -27,7 +27,7 @@ def test_keys_federation_1():
     @strawberry.federation.type
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> list[Product]:
+        def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=False)
@@ -89,7 +89,7 @@ def test_keys_federation_2():
     @strawberry.federation.type
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> list[Product]:
+        def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)

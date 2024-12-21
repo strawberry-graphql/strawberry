@@ -109,14 +109,14 @@ def is_optional(annotation: type) -> bool:
     if not is_union(annotation):
         return False
 
-    types = annotation.__args__
+    types = annotation.__args__  # type: ignore[attr-defined]
 
     # A Union to be optional needs to have at least one None type
     return any(x == None.__class__ for x in types)
 
 
 def get_optional_annotation(annotation: type) -> type:
-    types = annotation.__args__
+    types = annotation.__args__  # type: ignore[attr-defined]
 
     non_none_types = tuple(x for x in types if x != None.__class__)
 
@@ -124,13 +124,13 @@ def get_optional_annotation(annotation: type) -> type:
     # type (normally a Union type).
 
     if len(non_none_types) > 1:
-        return annotation.copy_with(non_none_types)
+        return annotation.copy_with(non_none_types)  # type: ignore[attr-defined]
 
     return non_none_types[0]
 
 
 def get_list_annotation(annotation: type) -> type:
-    return annotation.__args__[0]
+    return annotation.__args__[0]  # type: ignore[attr-defined]
 
 
 def is_concrete_generic(annotation: type) -> bool:
@@ -197,7 +197,7 @@ def get_parameters(annotation: type) -> Union[tuple[object], tuple[()]]:
         and issubclass(annotation, Generic)  # type:ignore
         and annotation is not Generic
     ):
-        return annotation.__parameters__
+        return annotation.__parameters__  # type: ignore[union-attr]
     else:
         return ()  # pragma: no cover
 

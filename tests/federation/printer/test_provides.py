@@ -28,7 +28,7 @@ def test_field_provides_are_printed_correctly_camel_case_on():
     @strawberry.federation.type
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> list[Product]:
+        def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(
@@ -100,7 +100,7 @@ def test_field_provides_are_printed_correctly_camel_case_off():
     @strawberry.federation.type
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> list[Product]:
+        def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(
