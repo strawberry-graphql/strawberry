@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Awaitable
 from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
+    Any,
+    Generic,
     Optional,
     cast,
 )
@@ -17,6 +20,7 @@ from strawberry.http.exceptions import (
     NonTextMessageReceived,
     WebSocketDisconnected,
 )
+from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionInitMessage,
@@ -42,15 +46,15 @@ if TYPE_CHECKING:
     from strawberry.schema.subscribe import SubscriptionResult
 
 
-class BaseGraphQLTransportWSHandler:
+class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
     task_logger: logging.Logger = logging.getLogger("strawberry.ws.task")
 
     def __init__(
         self,
-        view: AsyncBaseHTTPView,
+        view: AsyncBaseHTTPView[Any, Any, Any, Any, Any, Context, RootValue],
         websocket: AsyncWebSocketAdapter,
-        context: object,
-        root_value: object,
+        context: Context,
+        root_value: RootValue,
         schema: BaseSchema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
@@ -66,7 +70,7 @@ class BaseGraphQLTransportWSHandler:
         self.connection_init_received = False
         self.connection_acknowledged = False
         self.connection_timed_out = False
-        self.operations: dict[str, Operation] = {}
+        self.operations: dict[str, Operation[Context, RootValue]] = {}
         self.completed_tasks: list[asyncio.Task] = []
 
     async def handle(self) -> None:
@@ -182,6 +186,8 @@ class BaseGraphQLTransportWSHandler:
         elif hasattr(self.context, "connection_params"):
             self.context.connection_params = payload
 
+        self.context = cast(Context, self.context)
+
         try:
             connection_ack_payload = await self.view.on_ws_connect(self.context)
         except ConnectionRejectionError:
@@ -248,7 +254,7 @@ class BaseGraphQLTransportWSHandler:
         operation.task = asyncio.create_task(self.run_operation(operation))
         self.operations[message["id"]] = operation
 
-    async def run_operation(self, operation: Operation) -> None:
+    async def run_operation(self, operation: Operation[Context, RootValue]) -> None:
         """The operation task's top level method. Cleans-up and de-registers the operation once it is done."""
         # TODO: Handle errors in this method using self.handle_task_exception()
 
@@ -332,7 +338,7 @@ class BaseGraphQLTransportWSHandler:
                 await task
 
 
-class Operation:
+class Operation(Generic[Context, RootValue]):
     """A class encapsulating a single operation with its id. Helps enforce protocol state transition."""
 
     __slots__ = [
@@ -348,7 +354,7 @@ class Operation:
 
     def __init__(
         self,
-        handler: BaseGraphQLTransportWSHandler,
+        handler: BaseGraphQLTransportWSHandler[Context, RootValue],
         id: str,
         operation_type: OperationType,
         query: str,

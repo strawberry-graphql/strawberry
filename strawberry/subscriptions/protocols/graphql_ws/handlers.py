@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import AsyncGenerator
 from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
+    Any,
+    Generic,
     Optional,
     cast,
 )
 
 from strawberry.exceptions import ConnectionRejectionError
 from strawberry.http.exceptions import NonTextMessageReceived, WebSocketDisconnected
+from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions.protocols.graphql_ws.types import (
     ConnectionInitMessage,
     ConnectionTerminateMessage,
@@ -29,13 +33,16 @@ if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
 
 
-class BaseGraphQLWSHandler:
+class BaseGraphQLWSHandler(Generic[Context, RootValue]):
+    context: Context
+    root_value: RootValue
+
     def __init__(
         self,
-        view: AsyncBaseHTTPView,
+        view: AsyncBaseHTTPView[Any, Any, Any, Any, Any, Context, RootValue],
         websocket: AsyncWebSocketAdapter,
-        context: object,
-        root_value: object,
+        context: Context,
+        root_value: RootValue,
         schema: BaseSchema,
         debug: bool,
         keep_alive: bool,
@@ -99,6 +106,8 @@ class BaseGraphQLWSHandler:
             self.context["connection_params"] = payload
         elif hasattr(self.context, "connection_params"):
             self.context.connection_params = payload
+
+        self.context = cast(Context, self.context)
 
         try:
             connection_ack_payload = await self.view.on_ws_connect(self.context)
