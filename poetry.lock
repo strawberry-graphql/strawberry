@@ -4758,7 +4758,7 @@ aiohttp = ["aiohttp"]
 asgi = ["python-multipart", "starlette"]
 chalice = ["chalice"]
 channels = ["asgiref", "channels"]
-cli = ["graphlib_backport", "libcst", "pygments", "rich", "typer"]
+cli = ["libcst", "pygments", "rich", "typer"]
 debug = ["libcst", "rich"]
 debug-server = ["libcst", "pygments", "python-multipart", "rich", "starlette", "typer", "uvicorn"]
 django = ["Django", "asgiref"]
@@ -4774,4 +4774,4 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "73db594d875b804c45742bd9846363468568b874353f39d17ff338169d22a8e8"
+content-hash = "7ff91376b60e5b89d4a0e2016507c73c73d1063ba9a3dff6f1400473a820bab9"

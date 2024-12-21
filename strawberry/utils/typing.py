@@ -5,7 +5,6 @@ import typing
 from collections.abc import AsyncGenerator
 from functools import lru_cache
 from typing import (  # type: ignore
-    TYPE_CHECKING,
     Annotated,
     Any,
     ClassVar,
@@ -21,17 +20,6 @@ from typing import (  # type: ignore
     overload,
 )
 from typing_extensions import TypeGuard, get_args, get_origin
-
-ast_unparse = getattr(ast, "unparse", None)
-# ast.unparse is only available on python 3.9+. For older versions we will
-# use `astunparse.unparse`.
-# We are also using "not TYPE_CHECKING" here because mypy gives an erorr
-# on tests because "astunparse" is missing stubs, but the mypy action says
-# that the comment is unused.
-if not TYPE_CHECKING and ast_unparse is None:
-    import astunparse
-
-    ast_unparse = astunparse.unparse
 
 
 @lru_cache
@@ -234,8 +222,7 @@ def _ast_replace_union_operation(
         if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
             expr = ast.Subscript(
                 expr.value,
-                # The cast is required for mypy on python 3.7 and 3.8
-                ast.Index(_ast_replace_union_operation(cast(Any, expr.slice).value)),  # type: ignore
+                ast.Index(_ast_replace_union_operation(expr.slice.value)),  # type: ignore
                 ast.Load(),
             )
         elif isinstance(expr.slice, (ast.BinOp, ast.Tuple)):
@@ -270,7 +257,6 @@ def _get_namespace_from_ast(
         and expr.value.id == "Union"
     ):
         if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
-            # The cast is required for mypy on python 3.7 and 3.8
             expr_slice = cast(Any, expr.slice).value
         else:
             expr_slice = expr.slice
@@ -288,10 +274,7 @@ def _get_namespace_from_ast(
         and isinstance(expr.value, ast.Name)
         and expr.value.id == "Annotated"
     ):
-        assert ast_unparse
-
         if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
-            # The cast is required for mypy on python 3.7 and 3.8
             expr_slice = cast(Any, expr.slice).value
         else:
             expr_slice = expr.slice
@@ -299,7 +282,7 @@ def _get_namespace_from_ast(
         args: list[str] = []
         for elt in cast(ast.Tuple, expr_slice).elts:
             extra.update(_get_namespace_from_ast(elt, globalns, localns))
-            args.append(ast_unparse(elt))
+            args.append(ast.unparse(elt))
 
         # When using forward refs, the whole
         # Annotated[SomeType, strawberry.lazy("type.module")] is a forward ref,
@@ -343,8 +326,7 @@ def eval_type(
 
         globalns.update(_get_namespace_from_ast(ast_obj, globalns, localns))
 
-        assert ast_unparse
-        type_ = ForwardRef(ast_unparse(ast_obj))
+        type_ = ForwardRef(ast.unparse(ast_obj))
 
         extra: dict[str, Any] = {}
 
