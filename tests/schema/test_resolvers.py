@@ -614,20 +614,6 @@ def multiple_infos(root, info1: Info, info2: Info) -> str:
         pytest.param(parent_self_and_root),
         pytest.param(multiple_parents),
         pytest.param(multiple_infos),
-        pytest.param(
-            parent_and_self,
-            marks=pytest.mark.xfail(
-                strict=True,
-                reason="`self` should not raise ConflictingArgumentsError",
-            ),
-        ),
-        pytest.param(
-            self_and_root,
-            marks=pytest.mark.xfail(
-                strict=True,
-                reason="`self` should not raise ConflictingArgumentsError",
-            ),
-        ),
     ),
 )
 @pytest.mark.raises_strawberry_exception(
@@ -638,6 +624,15 @@ def multiple_infos(root, info1: Info, info2: Info) -> str:
     ),
 )
 def test_multiple_conflicting_reserved_arguments(resolver):
+    @strawberry.type
+    class Query:
+        name: str = strawberry.field(resolver=resolver)
+
+    strawberry.Schema(query=Query)
+
+
+@pytest.mark.parametrize("resolver", (parent_and_self, self_and_root))
+def test_self_should_not_raise_conflicting_arguments_error(resolver):
     @strawberry.type
     class Query:
         name: str = strawberry.field(resolver=resolver)
