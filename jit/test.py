@@ -5,9 +5,9 @@ import strawberry
 from strawberry.extensions import DisableValidation, ParserCache
 from strawberry.extensions.base_extension import SchemaExtension
 
-from .compiler import compile
+from .compiler import compile as jit_compile
 
-TOTAL_RESULTS = 10
+TOTAL_RESULTS = 1000
 
 
 @strawberry.type
@@ -70,14 +70,14 @@ class NoResolveExtension(SchemaExtension):
 
 
 query = """
-    {
-        users {
-            id
-            name
-            # articles { id title }
-        }
-        articles { id title }
+{
+    users {
+        id
+        name
+        # articles { id title }
     }
+    articles { id title }
+}
 """
 
 
@@ -87,12 +87,26 @@ async def _original_execution(schema) -> Any:
     return result.data
 
 
-async def _jitted_execution(schema) -> Any:
+async def _jitted_execution(schema, warmup: bool = False) -> Any:
     # TODO: doesn't need to be async
     # TODO: I guess this would return a function or something
-    results = await compile(query, schema)
+    function_code = jit_compile(query, schema)
 
-    return results
+    import rich
+    from rich.syntax import Syntax
+
+    if warmup:
+        rich.print("Query:")
+        rich.print(Syntax(query, "graphql", theme="dracula"))
+        rich.print("Compiled:")
+        rich.print(Syntax(function_code, "python", theme="dracula", line_numbers=True))
+
+    namespace = {
+        "Query": Query,
+    }
+    exec(compile(function_code, "<string>", "exec"), namespace)
+
+    return await namespace["_compiled_operation"](schema, {})
 
 
 extensions_combinations = [
@@ -126,7 +140,7 @@ async def bench():
 
         await _original_execution(schema)
 
-        await _jitted_execution(schema)
+        await _jitted_execution(schema, warmup=True)
 
     print()
 
@@ -154,9 +168,13 @@ async def bench():
         results.append(("JIT " + title, jit_time))
 
         if result != jit_result:
+            import json
+            import pathlib
+
             print("Results don't match")
-            # print(json.dumps(result, indent=2))
-            # print(json.dumps(jit_result, indent=2))
+
+            pathlib.Path("a.json").write_text(json.dumps(result, indent=2))
+            pathlib.Path("b.json").write_text(json.dumps(jit_result, indent=2))
             return
         # TODO: check results
 
