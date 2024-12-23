@@ -3,7 +3,7 @@ from typing import Any
 from litestar import Litestar, Request
 from litestar.di import Provide
 from strawberry.litestar import make_graphql_controller
-from tests.litestar.schema import schema
+from tests.views.schema import schema
 
 
 def custom_context_dependency() -> str:
