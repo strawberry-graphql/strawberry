@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterator
 
 import strawberry
-from strawberry.directive import DirectiveLocation
+from strawberry.directive import DirectiveLocation, DirectiveValue
 
 
 @strawberry.type
@@ -80,7 +80,7 @@ class Subscription:
 
 
 @strawberry.directive(locations=[DirectiveLocation.FIELD])
-def uppercase(value: str) -> str:
+def uppercase(value: DirectiveValue[str]) -> str:
     return value.upper()
 
 
