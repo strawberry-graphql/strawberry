@@ -93,8 +93,7 @@ async def _parse_and_validate_async(
 
     async with extensions_runner.parsing():
         try:
-            if not context.graphql_document:
-                context.graphql_document = parse_document(context.query)
+            context.graphql_document = parse_document(context.query)
 
         except GraphQLError as error:
             context.errors = [error]

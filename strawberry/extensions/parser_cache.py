@@ -2,7 +2,12 @@ from functools import lru_cache
 from typing import Iterator, Optional
 
 from strawberry.extensions.base_extension import SchemaExtension
-from strawberry.schema.execute import parse_document
+from strawberry.schema.execute import parse_document as original_parse_document
+
+
+def parse_document(*args, **kwargs):
+    print("parse_document function called")
+    return original_parse_document(*args, **kwargs)
 
 
 class ParserCache(SchemaExtension):
@@ -42,4 +47,4 @@ class ParserCache(SchemaExtension):
         yield
 
 
-__all__ = ["ParserCache"]
+_all__ = ["ParserCache"]
