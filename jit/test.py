@@ -1,3 +1,4 @@
+from functools import lru_cache
 from inspect import isawaitable
 from typing import Any
 
@@ -7,7 +8,7 @@ from strawberry.extensions.base_extension import SchemaExtension
 
 from .compiler import compile as jit_compile
 
-TOTAL_RESULTS = 1000
+TOTAL_RESULTS = 10_000
 
 
 @strawberry.type
@@ -74,7 +75,7 @@ query = """
     users {
         id
         name
-        # articles { id title }
+        articles { id title }
     }
     articles { id title }
 }
@@ -87,26 +88,51 @@ async def _original_execution(schema) -> Any:
     return result.data
 
 
-async def _jitted_execution(schema, warmup: bool = False) -> Any:
-    # TODO: doesn't need to be async
-    # TODO: I guess this would return a function or something
+@lru_cache
+def _full_compile(query, schema) -> Any:
     function_code = jit_compile(query, schema)
-
-    import rich
-    from rich.syntax import Syntax
-
-    if warmup:
-        rich.print("Query:")
-        rich.print(Syntax(query, "graphql", theme="dracula"))
-        rich.print("Compiled:")
-        rich.print(Syntax(function_code, "python", theme="dracula", line_numbers=True))
 
     namespace = {
         "Query": Query,
+        "User": User,
+        "Article": Article,
     }
-    exec(compile(function_code, "<string>", "exec"), namespace)
+    try:
+        exec(compile(function_code, "<string>", "exec"), namespace)
+    except Exception as e:
+        print(function_code)
+        raise e
 
-    return await namespace["_compiled_operation"](schema, {})
+    fun = namespace["_compiled_operation"]
+
+    import pathlib
+
+    pathlib.Path("jit/hand/_source.py").write_text(function_code)
+
+    return function_code, fun
+
+
+async def _jitted_execution(schema, warmup: bool = False) -> Any:
+    code, fun = _full_compile(query, schema)
+
+    if warmup:
+        import rich
+        from rich.syntax import Syntax
+
+        rich.print("Query:")
+
+        rich.print(Syntax(query, "graphql", theme="dracula"))
+        rich.print("Compiled:")
+        rich.print(Syntax(code, "python", theme="dracula", line_numbers=True))
+
+    try:
+        return await fun(schema, {})
+    except Exception as e:
+        import pathlib
+
+        pathlib.Path("error.py").write_text(code)
+
+        raise e
 
 
 extensions_combinations = [
@@ -119,6 +145,8 @@ async def bench():
     import time
 
     from tabulate import tabulate
+
+    from .hand.a import _compiled_operation as a_compiled_operation
 
     def _get_title(schema):
         return " + ".join(
@@ -176,11 +204,26 @@ async def bench():
             pathlib.Path("a.json").write_text(json.dumps(result, indent=2))
             pathlib.Path("b.json").write_text(json.dumps(jit_result, indent=2))
             return
-        # TODO: check results
+
+        # a
+        start = time.time()
+        a_hand_result = await a_compiled_operation(schema, {})
+        a_time = time.time() - start
+
+        results.append(("A " + title, a_time))
+
+        if result != a_hand_result:
+            import json
+            import pathlib
+
+            print("Results don't match")
+
+            pathlib.Path("a.json").write_text(json.dumps(result, indent=2))
+            pathlib.Path("b.json").write_text(json.dumps(a_hand_result, indent=2))
+            return
 
     table_data = []
 
-    results = sorted(results, key=lambda x: -x[1])
     baseline_time = results[0][1]
 
     for title, duration in results:

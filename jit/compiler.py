@@ -1,103 +1,119 @@
 import textwrap
-from functools import lru_cache
+from inspect import iscoroutinefunction
+from typing import Optional
+from typing_extensions import Protocol
 
-from graphql import DocumentNode, FieldNode, OperationDefinitionNode
+from graphql import DocumentNode, FieldNode, OperationDefinitionNode, SelectionSetNode
 from graphql.language import OperationType
 from graphql.language.parser import parse
 
+from strawberry.scalars import is_scalar
 from strawberry.schema import Schema
-from strawberry.types.base import StrawberryList, get_object_definition
+from strawberry.types.base import (
+    StrawberryList,
+    StrawberryObjectDefinition,
+    StrawberryType,
+    get_object_definition,
+)
 
-memoised_parse = lru_cache(maxsize=None)(parse)
+
+class HasSelectionSet(Protocol):
+    selection_set: Optional[SelectionSetNode]
 
 
-def _recurse(definition, root_type) -> str:
-    body_lines = []
+def _recurse(
+    definition: HasSelectionSet,
+    root_type: StrawberryType,
+    schema: Schema,
+    level: int = 0,
+    indent: int = 1,
+    path: str = "Query",
+    root_value_variable: str = "root_value",
+) -> str:
+    body = []
 
-    body_lines.append("root_type_definition = Query.__strawberry_definition__")
-    body_lines.append("results = {}")
-    body_lines.append("")
+    # TODO: results can be list or dict or None
 
-    # for async stuff we can use asyncio.gather or, better, tasks groups
-    # we can say that the JIT only works on 3.x (whatever has task groups)?
+    if isinstance(root_type, StrawberryList):
+        result = "[]"
+        body.append(f"results_{level} = {result}")
+        body.append("for item in value:")
 
-    # TODO: add comments to code
+        of_type = root_type.of_type.__strawberry_definition__
 
-    # we need to handle fragments and other stuff
-    for selection in definition.selection_set.selections:
-        assert isinstance(selection, FieldNode)
-
-        field_name = selection.name.value
-        root_field_name = field_name
-
-        # TODO: we need a way to get the field from the GraphQL name
-        field = root_type.get_field(field_name)
-
-        assert field
-
-        return_type = field.type
-
-        # TODO: we need to check if this is async or now, assumption that it is for now
-        # TODO: we also need to check if we need to pass async
-        # but all of this will be a function, so there's not going to be much penalty
-        # but we need to build the info object :'D
-
-        if isinstance(return_type, StrawberryList):
-            body_lines.append(f"{field_name} = []")
-            of_type = return_type.of_type
-            of_type_definition = get_object_definition(of_type, strict=True)
-
-            type_name = of_type_definition.name
-
-            # TODO: here we can find the actual implementation of the field
-            # and import it, for now we'll go the schema route
-            body_lines.append(f"field_type = schema.get_type_by_name('{type_name}')")
-            # TODO: we can find this once, or use a map, but we also need to find the
-            # python name (we are working with the GraphQL name)
-            body_lines.append(
-                f"current_field = next(field for field in root_type_definition.fields if field.name == '{field_name}')"
+        body.append(
+            _recurse(
+                definition,
+                of_type,
+                level=level + 1,
+                indent=1,
+                path=path,
+                schema=schema,
+                root_value_variable="item",
             )
-            # TODO: this could be a good place to check if the field is async
-            # `_resolver` is added by me in the schema converted
-            body_lines.append(
-                "field_results = await current_field._resolver(None, None)"
+        )
+
+        # TODO: I HATE THIS :'D
+        body.append(f"    results_{level}.append(results_{level+1})")
+        body.append(f"results_{level-1}['{definition.name.value}'] = results_{level}")
+        body.append("")
+
+    elif isinstance(root_type, StrawberryObjectDefinition):
+        result = "{}"
+        body.append(f"results_{level} = {result}")
+
+        root_value = root_value_variable
+        info_value = "None"
+
+        body.append(f"root_type_{level} = {root_type.name}.__strawberry_definition__")
+        body.append(f"# {path}")
+
+        if not definition.selection_set:
+            raise ValueError("This shouldn't happen")
+
+        for selection in definition.selection_set.selections:
+            body.append(f"# {path}.{selection.name.value}")
+            assert isinstance(selection, FieldNode)
+
+            field_name = selection.name.value
+
+            field = next(
+                field for field in root_type.fields if field.name == field_name
             )
-            body_lines.append("")
 
-            body_lines.append("current_type = field_type")
-            body_lines.append("current_field_results = []")
-            body_lines.append("for item in field_results:")
-            # TODO: this should be the place to recurse
-            body_lines.append("    item_result = {}")
-            body_lines.append("")
+            index = root_type.fields.index(field)
+            resolver = field._resolver
 
-            for sub_selection in selection.selection_set.selections:
-                assert isinstance(sub_selection, FieldNode)
+            body.append(f"field = root_type_{level}.fields[{index}]")
 
-                field_name = sub_selection.name.value
-
-                field = next(
-                    field
-                    for field in of_type_definition.fields
-                    if field.name == field_name
+            if iscoroutinefunction(resolver):
+                body.append(
+                    f"value = await field._resolver({root_value}, {info_value})"
                 )
+            else:
+                if field.is_basic_field:
+                    body.append(f"value = {root_value}.{field_name}")
+                else:
+                    body.append(f"value = field._resolver({root_value}, {info_value})")
 
-                index = of_type_definition.fields.index(field)
-
-                # TODO: for now find the index
-                body_lines.append(f"    field = field_type.fields[{index}]")
-
-                body_lines.append(
-                    f"    item_result['{field_name}'] = field._resolver(item, None)"
+            body.append(
+                _recurse(
+                    selection,
+                    field.type,
+                    level=level + 1,
+                    indent=0,
+                    path=f"{path}.{field_name}",
+                    schema=schema,
                 )
+            )
 
-                body_lines.append("")
+    elif is_scalar(root_type, schema.schema_converter.scalar_registry):
+        body.append(f"results_{level - 1}['{definition.name.value}'] = value")
 
-            body_lines.append("    current_field_results.append(item_result)")
-            body_lines.append("")
-            body_lines.append(f"results['{root_field_name}'] = current_field_results")
+    else:
+        raise NotImplementedError(f"Type {root_type} not supported")
 
-    return textwrap.indent("\n".join(body_lines), " " * 4)
+    return textwrap.indent("\n".join(body), "    " * indent)
 
 
 def compile(operation: str, schema: Schema) -> ...:
@@ -106,7 +122,7 @@ def compile(operation: str, schema: Schema) -> ...:
     # 2. For each field in the operation, get the type of the field
     # 3. Get the fields of the type
 
-    ast = memoised_parse(operation)
+    ast = parse(operation)
 
     assert isinstance(ast, DocumentNode)
 
@@ -131,10 +147,12 @@ def compile(operation: str, schema: Schema) -> ...:
         # TODO: variables
         async def _compiled_operation(schema, root_value):
         __BODY__
-            return results
+            return results_0
         """
     )
 
-    function = function.replace("__BODY__", _recurse(definition, root_type))
+    function = function.replace(
+        "__BODY__", _recurse(definition, root_type, schema=schema)
+    )
 
     return function
