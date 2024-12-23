@@ -159,6 +159,9 @@ class StrawberryList(StrawberryContainer): ...
 class StrawberryOptional(StrawberryContainer): ...
 
 
+class StrawberryRequired(StrawberryContainer): ...
+
+
 class StrawberryTypeVar(StrawberryType):
     def __init__(self, type_var: TypeVar) -> None:
         self.type_var = type_var

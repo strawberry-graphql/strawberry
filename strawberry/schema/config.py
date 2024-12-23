@@ -15,6 +15,7 @@ class StrawberryConfig:
     default_resolver: Callable[[Any, str], object] = getattr
     relay_max_results: int = 100
     disable_field_suggestions: bool = False
+    semantic_nullability_beta: bool = False
     info_class: type[Info] = Info
 
     def __post_init__(
