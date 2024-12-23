@@ -30,11 +30,21 @@ def test_additional_schema_directives_printed_correctly_object():
     }
 
     type Query {
+      _entities(representations: [_Any!]!): [_Entity]!
+      _service: _Service!
       federatedType: FederatedType!
+    }
+
+    scalar _Any
+
+    union _Entity = FederatedType
+
+    type _Service {
+      sdl: String!
     }
     """
 
-    schema = strawberry.Schema(
+    schema = strawberry.federation.Schema(
         query=Query, config=StrawberryConfig(auto_camel_case=False)
     )
     assert schema.as_str() == textwrap.dedent(expected_type).strip()
@@ -72,11 +82,21 @@ def test_additional_schema_directives_printed_in_order_object():
     }
 
     type Query {
+      _entities(representations: [_Any!]!): [_Entity]!
+      _service: _Service!
       federatedType: FederatedType!
+    }
+
+    scalar _Any
+
+    union _Entity = FederatedType
+
+    type _Service {
+      sdl: String!
     }
     """
 
-    schema = strawberry.Schema(
+    schema = strawberry.federation.Schema(
         query=Query, config=StrawberryConfig(auto_camel_case=False)
     )
     assert schema.as_str() == textwrap.dedent(expected_type).strip()
