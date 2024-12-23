@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Union
 
 import strawberry
 
@@ -167,11 +167,13 @@ def test_field_tag_printed_correctly_on_union():
     class B:
         b: str
 
-    Union = strawberry.federation.union("Union", (A, B), tags=["myTag", "anotherTag"])
+    MyUnion = Annotated[
+        Union[A, B], strawberry.federation.union("Union", tags=["myTag", "anotherTag"])
+    ]
 
     @strawberry.federation.type
     class Query:
-        hello: Union
+        hello: MyUnion
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
