@@ -9,7 +9,7 @@ async def _compiled_operation(schema, root_value, variables):
     # Query.search
     arguments = {}
     arguments['query'] = variables['query']
-    arguments['first'] = 1000
+    arguments['first'] = variables['first']
     field = root_type_0.fields[0]
     value_0 = await field._resolver(root_value, None, **arguments)
     # root_value_variable: value_0

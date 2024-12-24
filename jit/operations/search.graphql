@@ -1,5 +1,5 @@
-query Search($query: String!) {
-  search(query: $query, first: 1000) {
+query Search($query: String!, $first: Int!) {
+  search(query: $query, first: $first) {
     id
     title
 
