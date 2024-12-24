@@ -146,7 +146,6 @@ async def bench():
 
     from tabulate import tabulate
 
-    from .hand.a import _compiled_operation as a_compiled_operation
 
     def _get_title(schema):
         return " + ".join(
@@ -205,22 +204,22 @@ async def bench():
             pathlib.Path("b.json").write_text(json.dumps(jit_result, indent=2))
             return
 
-        # a
-        start = time.time()
-        a_hand_result = await a_compiled_operation(schema, {})
-        a_time = time.time() - start
-
-        results.append(("A " + title, a_time))
-
-        if result != a_hand_result:
-            import json
-            import pathlib
-
-            print("Results don't match")
-
-            pathlib.Path("a.json").write_text(json.dumps(result, indent=2))
-            pathlib.Path("b.json").write_text(json.dumps(a_hand_result, indent=2))
-            return
+        # # a
+        # start = time.time()
+        # a_hand_result = await a_compiled_operation(schema, {})
+        # a_time = time.time() - start
+        #
+        # results.append(("A " + title, a_time))
+        #
+        # if result != a_hand_result:
+        #     import json
+        #     import pathlib
+        #
+        #     print("Results don't match")
+        #
+        #     pathlib.Path("a.json").write_text(json.dumps(result, indent=2))
+        #     pathlib.Path("b.json").write_text(json.dumps(a_hand_result, indent=2))
+        #     return
 
     table_data = []
 

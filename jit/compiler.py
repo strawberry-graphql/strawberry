@@ -3,7 +3,14 @@ from inspect import iscoroutinefunction
 from typing import Optional
 from typing_extensions import Protocol
 
-from graphql import DocumentNode, FieldNode, OperationDefinitionNode, SelectionSetNode
+from graphql import (
+    DocumentNode,
+    FieldNode,
+    IntValueNode,
+    OperationDefinitionNode,
+    SelectionSetNode,
+    StringValueNode,
+)
 from graphql.language import OperationType
 from graphql.language.parser import parse
 
@@ -12,9 +19,11 @@ from strawberry.schema import Schema
 from strawberry.types.base import (
     StrawberryList,
     StrawberryObjectDefinition,
+    StrawberryOptional,
     StrawberryType,
     get_object_definition,
 )
+from strawberry.types.union import StrawberryUnion
 
 
 class HasSelectionSet(Protocol):
@@ -32,6 +41,9 @@ def _recurse(
 ) -> str:
     body = []
 
+    if hasattr(root_type, "__strawberry_definition__"):
+        root_type = root_type.__strawberry_definition__
+
     # TODO: results can be list or dict or None
 
     if isinstance(root_type, StrawberryList):
@@ -39,7 +51,7 @@ def _recurse(
         body.append(f"results_{level} = {result}")
         body.append("for item in value:")
 
-        of_type = root_type.of_type.__strawberry_definition__
+        of_type = root_type.of_type
 
         body.append(
             _recurse(
@@ -58,6 +70,16 @@ def _recurse(
         body.append(f"results_{level-1}['{definition.name.value}'] = results_{level}")
         body.append("")
 
+    elif isinstance(root_type, StrawberryOptional):
+        body.append(
+            _recurse(
+                definition, root_type.of_type, level=level, indent=0, schema=schema
+            )
+        )
+
+    elif isinstance(root_type, StrawberryUnion):
+        body.append("# TODO: unions")
+
     elif isinstance(root_type, StrawberryObjectDefinition):
         result = "{}"
         body.append(f"results_{level} = {result}")
@@ -75,6 +97,18 @@ def _recurse(
             body.append(f"# {path}.{selection.name.value}")
             assert isinstance(selection, FieldNode)
 
+            # get arguments
+
+            arguments = {}
+
+            for argument in selection.arguments:
+                if isinstance(argument.value, (StringValueNode, IntValueNode)):
+                    arguments[argument.name.value] = argument.value.value
+                else:
+                    raise NotImplementedError(
+                        f"Argument {argument.value} not supported"
+                    )
+
             field_name = selection.name.value
 
             field = next(
@@ -86,15 +120,20 @@ def _recurse(
 
             body.append(f"field = root_type_{level}.fields[{index}]")
 
+            # append arguments
+            body.append(f"arguments = {arguments}")
+
             if iscoroutinefunction(resolver):
                 body.append(
-                    f"value = await field._resolver({root_value}, {info_value})"
+                    f"value = await field._resolver({root_value}, {info_value}, **arguments)"
                 )
             else:
                 if field.is_basic_field:
                     body.append(f"value = {root_value}.{field_name}")
                 else:
-                    body.append(f"value = field._resolver({root_value}, {info_value})")
+                    body.append(
+                        f"value = field._resolver({root_value}, {info_value}, **arguments)"
+                    )
 
             body.append(
                 _recurse(
