@@ -10,6 +10,7 @@ from graphql import (
     OperationDefinitionNode,
     SelectionSetNode,
     StringValueNode,
+    VariableNode,
 )
 from graphql.language import OperationType
 from graphql.language.parser import parse
@@ -99,11 +100,21 @@ def _recurse(
 
             # get arguments
 
-            arguments = {}
+            body.append("arguments = {}")
 
             for argument in selection.arguments:
-                if isinstance(argument.value, (StringValueNode, IntValueNode)):
-                    arguments[argument.name.value] = argument.value.value
+                if isinstance(argument.value, StringValueNode):
+                    body.append(
+                        f"arguments['{argument.name.value}'] = '{argument.value.value}'"
+                    )
+                if isinstance(argument.value, IntValueNode):
+                    body.append(
+                        f"arguments['{argument.name.value}'] = {argument.value.value}"
+                    )
+                elif isinstance(argument.value, VariableNode):
+                    body.append(
+                        f"arguments['{argument.name.value}'] = variables['{argument.value.name.value}']"
+                    )
                 else:
                     raise NotImplementedError(
                         f"Argument {argument.value} not supported"
@@ -121,8 +132,6 @@ def _recurse(
             body.append(f"field = root_type_{level}.fields[{index}]")
 
             # append arguments
-            body.append(f"arguments = {arguments}")
-
             if iscoroutinefunction(resolver):
                 body.append(
                     f"value = await field._resolver({root_value}, {info_value}, **arguments)"
@@ -184,7 +193,7 @@ def compile(operation: str, schema: Schema) -> ...:
     function = textwrap.dedent(
         """
         # TODO: variables
-        async def _compiled_operation(schema, root_value):
+        async def _compiled_operation(schema, root_value, variables):
         __BODY__
             return results_0
         """

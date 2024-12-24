@@ -26,16 +26,16 @@ class Query:
 schema = strawberry.Schema(query=Query, extensions=[DisableValidation(), ParserCache()])
 
 query = """
-query Search {
-    search(query: "test", first: 10) {
+query Search ($query: String!) {
+    search(query: $query, first: 10) {
        title
    }
 }
 """
 
 
-async def _original_execution(schema) -> Any:
-    result = await schema.execute(query)
+async def _original_execution(schema, variables=None) -> Any:
+    result = await schema.execute(query, variable_values=variables)
 
     return result.data
 
@@ -62,7 +62,7 @@ def _full_compile(query, schema) -> Any:
     return function_code, fun
 
 
-async def _jitted_execution(schema, warmup: bool = False) -> Any:
+async def _jitted_execution(schema, variables, warmup: bool = False) -> Any:
     code, fun = _full_compile(query, schema)
 
     if warmup:
@@ -76,7 +76,7 @@ async def _jitted_execution(schema, warmup: bool = False) -> Any:
         rich.print(Syntax(code, "python", theme="dracula", line_numbers=True))
 
     try:
-        return await fun(schema, {})
+        return await fun(schema, {}, variables)
     except Exception as e:
         import pathlib
 
@@ -100,9 +100,11 @@ async def bench():
         _get_title(schema),
     )
 
-    await _original_execution(schema)
+    variables = {"query": "Article"}
 
-    await _jitted_execution(schema, warmup=True)
+    await _original_execution(schema, variables)
+
+    await _jitted_execution(schema, variables, warmup=True)
 
     print()
 
@@ -113,7 +115,7 @@ async def bench():
     print("Benchmarking...", title)
 
     start = time.time()
-    result = await _original_execution(schema)
+    result = await _original_execution(schema, variables)
     original_time = time.time() - start
 
     results.append((title, original_time))
@@ -123,7 +125,7 @@ async def bench():
     print("Benchmarking...", "JIT" + title)
 
     start = time.time()
-    jit_result = await _jitted_execution(schema)
+    jit_result = await _jitted_execution(schema, variables)
     jit_time = time.time() - start
 
     results.append(("JIT " + title, jit_time))
