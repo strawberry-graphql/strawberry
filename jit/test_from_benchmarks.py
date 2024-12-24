@@ -1,88 +1,28 @@
+import rich
 import json
 import pathlib
+import time
 from functools import lru_cache
 from typing import Any
 
-import strawberry
-from strawberry.extensions import DisableValidation, ParserCache
+from tabulate import tabulate
 
 from .compiler import compile as jit_compile
-
-
-@strawberry.type
-class Birthday:
-    year: int
-
-
-@strawberry.type
-class User:
-    id: strawberry.ID
-    name: str
-    birthday: Birthday
-
-    @strawberry.field
-    @staticmethod
-    def articles(root) -> list["Article"]:
-        return list(
-            Article(id=strawberry.ID(str(i)), title=f"Article {i}", author=root)
-            for i in range(100)
-        )
-
-
-@strawberry.type
-class Article:
-    id: strawberry.ID
-    title: str
-    author: User
-
-
-@strawberry.type
-class Query:
-    @strawberry.field
-    @staticmethod
-    async def search(query: str, first: int = 10) -> list[Article]:
-        return list(
-            Article(
-                id=strawberry.ID(str(i)),
-                title=f"Article {i}",
-                author=User(
-                    id=strawberry.ID(str(i)),
-                    name=f"User {i}",
-                    birthday=Birthday(year=2000),
-                ),
-            )
-            for i in range(first)
-        )
-
-
-schema = strawberry.Schema(query=Query, extensions=[DisableValidation(), ParserCache()])
+from .schema import *  # noqa
 
 query = """
-query Search ($query: String!) {
-    search(query: $query, first: 10000) {
-        id
-        title
-
-        author {
-            name
-            birthday {
-                year
-            }
-        }
-    }
-}
 """
 
 
-async def _original_execution(schema, variables=None) -> Any:
-    result = await schema.execute(query, variable_values=variables)
+async def _original_execution(operation, variables=None) -> Any:
+    result = await schema.execute(operation, variable_values=variables)
 
     return result.data
 
 
 @lru_cache
-def _full_compile(query, schema) -> Any:
-    function_code = jit_compile(query, schema)
+def _full_compile(operation, schema) -> Any:
+    function_code = jit_compile(operation, schema)
 
     namespace = {
         **globals(),
@@ -102,80 +42,48 @@ def _full_compile(query, schema) -> Any:
     return function_code, fun
 
 
-async def _jitted_execution(schema, variables, warmup: bool = False) -> Any:
-    code, fun = _full_compile(query, schema)
+async def _jitted_execution(operation, variables) -> Any:
+    code, fun = _full_compile(operation, schema)
 
-    if warmup:
-        import rich
-        from rich.syntax import Syntax
-
-        rich.print("Query:")
-
-        rich.print(Syntax(query, "graphql", theme="dracula"))
-        rich.print("Compiled:")
-        rich.print(Syntax(code, "python", theme="dracula", line_numbers=True))
-
-    try:
-        return await fun(schema, {}, variables)
-    except Exception as e:
-        import pathlib
-
-        pathlib.Path("error.py").write_text(code)
-
-        raise e
+    return await fun(schema, {}, variables)
 
 
-async def bench():
-    import time
+async def bench(query: pathlib.Path, variables: Any) -> None:
+    operation_text = query.read_text()
 
-    from tabulate import tabulate
+    rich.print("Benchmarking...", query.name)
+    rich.print("=====================================")
+    rich.print("Warming up...")
 
-    def _get_title(schema):
-        return " + ".join(
-            extension.__class__.__name__ for extension in schema.extensions
-        )
+    await _original_execution(operation=operation_text, variables=variables)
+    await _jitted_execution(operation=operation_text, variables=variables)
 
-    print(
-        "Warming up...",
-        _get_title(schema),
-    )
-
-    variables = {"query": "Article"}
-
-    await _original_execution(schema, variables)
-
-    await _jitted_execution(schema, variables, warmup=True)
-
-    print()
+    rich.print("=====================================")
+    rich.print("Benchmarking... [blue]standard execution")
 
     results = []
 
-    title = _get_title(schema)
-
-    print("Benchmarking...", title)
-
     start = time.time()
-    result = await _original_execution(schema, variables)
+    result = await _original_execution(operation=operation_text, variables=variables)
     original_time = time.time() - start
 
-    results.append((title, original_time))
+    results.append(("standard", original_time))
 
-    # jitted
-
-    print("Benchmarking...", "JIT" + title)
+    rich.print("Benchmarking... [blue]JIT")
 
     start = time.time()
-    jit_result = await _jitted_execution(schema, variables)
+    jit_result = await _jitted_execution(operation=operation_text, variables=variables)
     jit_time = time.time() - start
 
-    results.append(("JIT " + title, jit_time))
+    results.append(("JIT", jit_time))
 
     if result != jit_result:
-        print("Results don't match")
+        rich.print("[red]Results don't match")
 
-        pathlib.Path("a.json").write_text(json.dumps(result, indent=2))
+        pathlib.Path("original.json").write_text(json.dumps(result, indent=2))
         pathlib.Path("jit.json").write_text(json.dumps(jit_result, indent=2))
-        return
+
+        raise Exception("Results don't match")
 
     table_data = []
 
@@ -191,9 +99,8 @@ async def bench():
         )
 
     # Print formatted table
-    print()
-    print("Performance Comparison:")
-    print(
+    rich.print()
+    rich.print(
         tabulate(
             table_data,
             headers=["Version", "Time", "Speed Ratio"],
@@ -201,12 +108,15 @@ async def bench():
         )
     )
 
-    print(f"Size in kb: {len(json.dumps(jit_result)) / 1024}")
-
-    pathlib.Path("results.json").write_text(json.dumps(jit_result, indent=0))
-
 
 if __name__ == "__main__":
     import asyncio
 
-    asyncio.run(bench())
+    here = pathlib.Path(__file__).parent
+
+    benchmarks = [
+        (pathlib.Path(here / "operations/search.graphql"), {"query": "test"}),
+    ]
+
+    for query, variables in benchmarks:
+        asyncio.run(bench(query, variables))

@@ -1,3 +1,4 @@
+
 # TODO: variables
 async def _compiled_operation(schema, root_value, variables):
     # root_value_variable: root_value
@@ -7,8 +8,8 @@ async def _compiled_operation(schema, root_value, variables):
     # Query
     # Query.search
     arguments = {}
-    arguments["query"] = variables["query"]
-    arguments["first"] = 10000
+    arguments['query'] = variables['query']
+    arguments['first'] = 1000
     field = root_type_0.fields[0]
     value_0 = await field._resolver(root_value, None, **arguments)
     # root_value_variable: value_0
@@ -24,13 +25,13 @@ async def _compiled_operation(schema, root_value, variables):
         field = root_type_2.fields[0]
         value_2 = item.id
         # root_value_variable: value_2
-        results_2["id"] = value_2
+        results_2['id'] = value_2
         # Query.search.title
         arguments = {}
         field = root_type_2.fields[1]
         value_2 = item.title
         # root_value_variable: value_2
-        results_2["title"] = value_2
+        results_2['title'] = value_2
         # Query.search.author
         arguments = {}
         field = root_type_2.fields[2]
@@ -45,7 +46,7 @@ async def _compiled_operation(schema, root_value, variables):
         field = root_type_3.fields[1]
         value_3 = value_2.name
         # root_value_variable: value_3
-        results_3["name"] = value_3
+        results_3['name'] = value_3
         # Query.search.author.birthday
         arguments = {}
         field = root_type_3.fields[2]
@@ -60,10 +61,10 @@ async def _compiled_operation(schema, root_value, variables):
         field = root_type_4.fields[0]
         value_4 = value_3.year
         # root_value_variable: value_4
-        results_4["year"] = value_4
-        results_3["birthday"] = results_4
-        results_2["author"] = results_3
+        results_4['year'] = value_4
+        results_3['birthday'] = results_4
+        results_2['author'] = results_3
         results_1.append(results_2)
-    results_0["search"] = results_1
+    results_0['search'] = results_1
 
     return results_0

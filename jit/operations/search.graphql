@@ -1,0 +1,13 @@
+query Search($query: String!) {
+  search(query: $query, first: 1000) {
+    id
+    title
+
+    author {
+      name
+      birthday {
+        year
+      }
+    }
+  }
+}
