@@ -1,3 +1,17 @@
+# query Search($query: String!, $first: Int!) {
+#   search(query: $query, first: $first) {
+#     id
+#     title
+# 
+#     author {
+#       name
+#       birthday {
+#         year
+#       }
+#     }
+#   }
+# }
+
 
 # TODO: variables
 async def _compiled_operation(schema, root_value, variables):
@@ -41,28 +55,28 @@ async def _compiled_operation(schema, root_value, variables):
         results_3 = {}
         root_type_3 = User.__strawberry_definition__
         # Query.search.author
-        # Query.search.author.articles
+        # Query.search.author.name
         arguments = {}
-        field = root_type_3.fields[3]
-        value_3 = field._resolver(value_2, None, **arguments)
+        field = root_type_3.fields[1]
+        value_3 = value_2.name
         # root_value_variable: value_3
-        results_4 = []
-        for item in value_3:
-            # root_value_variable: item
-            # Object: Article
-            results_5 = {}
-            root_type_5 = Article.__strawberry_definition__
-            # Query.search.author.articles
-            # Query.search.author.articles.title
-            arguments = {}
-            field = root_type_5.fields[1]
-            value_5 = item.title
-            # root_value_variable: value_5
-            results_5['title'] = value_5
-            results_4['articles'] = results_5
-            results_4.append(results_5)
-        results_3['articles'] = results_4
-
+        results_3['name'] = value_3
+        # Query.search.author.birthday
+        arguments = {}
+        field = root_type_3.fields[2]
+        value_3 = value_2.birthday
+        # root_value_variable: value_3
+        # Object: Birthday
+        results_4 = {}
+        root_type_4 = Birthday.__strawberry_definition__
+        # Query.search.author.birthday
+        # Query.search.author.birthday.year
+        arguments = {}
+        field = root_type_4.fields[0]
+        value_4 = value_3.year
+        # root_value_variable: value_4
+        results_4['year'] = value_4
+        results_3['birthday'] = results_4
         results_2['author'] = results_3
         results_1.append(results_2)
     results_0['search'] = results_1

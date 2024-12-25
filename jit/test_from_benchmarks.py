@@ -42,8 +42,17 @@ def _full_compile(operation, schema) -> Any:
     return function_code, fun
 
 
-async def _jitted_execution(operation, variables) -> Any:
+async def _jitted_execution(operation, variables, name: str | None = None) -> Any:
     code, fun = _full_compile(operation, schema)
+
+    here = pathlib.Path(__file__).parent
+
+    if name:
+        text = (
+            "\n".join([f"# {line}" for line in operation.splitlines()]) + "\n\n" + code
+        )
+
+        pathlib.Path(here / ".compiled" / f"{name}.py").write_text(text)
 
     return await fun(schema, {}, variables)
 
@@ -58,7 +67,9 @@ async def bench(query: pathlib.Path, variables: Any) -> None:
         live.console.print("Warming up...")
 
         await _original_execution(operation=operation_text, variables=variables)
-        await _jitted_execution(operation=operation_text, variables=variables)
+        await _jitted_execution(
+            operation=operation_text, variables=variables, name=query.name
+        )
 
         live.console.print("=====================================")
         live.console.print("Benchmarking... [blue]standard execution")

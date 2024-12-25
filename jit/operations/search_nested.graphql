@@ -4,28 +4,9 @@ query Search($query: String!, $first: Int!) {
     title
 
     author {
-      name
-      birthday {
-        year
-      }
-
+      # this breaks the query
       articles {
         title
-        author {
-          name
-        }
-        articles {
-          title
-          author {
-            name
-          }
-          articles {
-            title
-            author {
-              name
-            }
-          }
-        }
       }
     }
   }

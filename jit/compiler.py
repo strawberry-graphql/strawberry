@@ -58,22 +58,28 @@ def _recurse(
     definition: HasSelectionSet,
     root_type: StrawberryType,
     schema: Schema,
+    path: List[str],
     level: int = 0,
     indent: int = 1,
-    path: str = "Query",
     root_value_variable: str = "root_value",
+    parent_result_variable: Optional[str] = None,
 ) -> str:
     body = []
 
-    body.append(f"# root_value_variable: {root_value_variable}")
-    if hasattr(root_type, "__strawberry_definition__"):
-        root_type = root_type.__strawberry_definition__
+    body.append("")
+    body.append("")
+    body.append(f"# root_value_variable is `{root_value_variable}`")
+    body.append(f"# level is `{level}`")
+    body.append(f"# indent is `{indent}`")
+    body.append(f"# path is `{path}`")
+    body.append(f"# parent_result_variable is `{parent_result_variable}`")
 
-    # TODO: results can be list or dict or None
+    if hasattr(root_type, "__strawberry_definition__"):
+        root_type = root_type.__strawberry_definition__  # type: ignore
 
     if isinstance(root_type, StrawberryList):
         result = "[]"
-        body.append(f"results_{level} = {result}")
+        body.append(f"{parent_result_variable} = {result}")
         body.append(f"for item in value_{level - 1}:")
 
         of_type = root_type.of_type
@@ -113,13 +119,13 @@ def _recurse(
         info_value = "None"
 
         body.append(f"root_type_{level} = {root_type.name}.__strawberry_definition__")
-        body.append(f"# {path}")
+        body.append(f"# {'.'.join(path)}")
 
         if not definition.selection_set:
             raise ValueError("This shouldn't happen")
 
         for selection in definition.selection_set.selections:
-            body.append(f"# {path}.{selection.name.value}")
+            body.append(f"# {'.'.join(path)}.{selection.name.value}")
             assert isinstance(selection, FieldNode)
 
             # get arguments
@@ -132,8 +138,10 @@ def _recurse(
             )
 
             if not field:
-                breakpoint()
-                raise ValueError(f"Field {field_name} not found in {root_type}")
+                body.append(
+                    f"# Field {field_name} not found in {root_type.name} {level}"
+                )
+                continue
 
             index = root_type.fields.index(field)
             resolver = field._resolver
@@ -160,7 +168,7 @@ def _recurse(
                     root_value_variable=f"value_{level}",
                     level=level + 1,
                     indent=0,
-                    path=f"{path}.{field_name}",
+                    path=[*path, field_name],
                     schema=schema,
                 )
             )
@@ -214,7 +222,14 @@ def compile(operation: str, schema: Schema) -> ...:
     )
 
     function = function.replace(
-        "__BODY__", _recurse(definition, root_type, schema=schema)
+        "__BODY__",
+        _recurse(
+            definition,
+            root_type,
+            schema=schema,
+            path=["Query"],
+            parent_result_variable="results_0",
+        ),
     )
 
     return function

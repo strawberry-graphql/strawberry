@@ -1,4 +1,3 @@
-
 # TODO: variables
 async def _compiled_operation(schema, root_value, variables):
     # root_value_variable: root_value
@@ -8,8 +7,8 @@ async def _compiled_operation(schema, root_value, variables):
     # Query
     # Query.search
     arguments = {}
-    arguments['query'] = variables['query']
-    arguments['first'] = variables['first']
+    arguments["query"] = variables["query"]
+    arguments["first"] = variables["first"]
     field = root_type_0.fields[0]
     value_0 = await field._resolver(root_value, None, **arguments)
     # root_value_variable: value_0
@@ -25,13 +24,13 @@ async def _compiled_operation(schema, root_value, variables):
         field = root_type_2.fields[0]
         value_2 = item.id
         # root_value_variable: value_2
-        results_2['id'] = value_2
+        results_2["id"] = value_2
         # Query.search.title
         arguments = {}
         field = root_type_2.fields[1]
         value_2 = item.title
         # root_value_variable: value_2
-        results_2['title'] = value_2
+        results_2["title"] = value_2
         # Query.search.author
         arguments = {}
         field = root_type_2.fields[2]
@@ -58,13 +57,13 @@ async def _compiled_operation(schema, root_value, variables):
             field = root_type_5.fields[1]
             value_5 = item.title
             # root_value_variable: value_5
-            results_5['title'] = value_5
-            results_4['articles'] = results_5
+            results_5["title"] = value_5
+            results_4["articles"] = results_5
             results_4.append(results_5)
-        results_3['articles'] = results_4
+        results_3["articles"] = results_4
 
-        results_2['author'] = results_3
+        results_2["author"] = results_3
         results_1.append(results_2)
-    results_0['search'] = results_1
+    results_0["search"] = results_1
 
     return results_0

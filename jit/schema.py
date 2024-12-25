@@ -18,7 +18,7 @@ class User:
     def articles(root) -> list["Article"]:
         return list(
             Article(id=strawberry.ID(str(i)), title=f"Article {i}", author=root)
-            for i in range(100)
+            for i in range(10)
         )
 
 
