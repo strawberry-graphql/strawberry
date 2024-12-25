@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import textwrap
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from strawberry.codegen import CodegenFile, QueryCodegenPlugin
 from strawberry.codegen.types import (
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 class TypeScriptPlugin(QueryCodegenPlugin):
-    SCALARS_TO_TS_TYPE = {
+    SCALARS_TO_TS_TYPE: ClassVar[dict[str | type, str]] = {
         "ID": "string",
         "Int": "number",
         "String": "string",

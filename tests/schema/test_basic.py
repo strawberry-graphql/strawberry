@@ -463,9 +463,9 @@ def test_multiple_fields_with_same_type():
 def test_str_magic_method_prints_schema_sdl():
     @strawberry.type
     class Query:
-        exampleBool: bool
-        exampleStr: str = "Example"
-        exampleInt: int = 1
+        example_bool: bool
+        example_str: str = "Example"
+        example_int: int = 1
 
     schema = strawberry.Schema(query=Query)
     expected = """

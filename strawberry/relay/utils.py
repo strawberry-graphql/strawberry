@@ -33,8 +33,9 @@ def from_base64(value: str) -> tuple[str, str]:
     except Exception as e:
         raise ValueError(str(e)) from e
 
-    if len(res) != 2:
-        raise ValueError(f"{res} expected to contain only 2 items")
+    expected_len = 2
+    if len(res) != expected_len:
+        raise ValueError(f"{res} expected to contain only {expected_len} items")
 
     return res[0], res[1]
 

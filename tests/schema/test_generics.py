@@ -996,7 +996,7 @@ def test_generic_extending_with_type_var():
     class Query:
         @strawberry.field
         def books(self) -> list[Book]:
-            return list()
+            return []
 
     schema = strawberry.Schema(query=Query)
 

@@ -186,8 +186,7 @@ def get_parameters(annotation: type) -> Union[tuple[object], tuple[()]]:
         and annotation is not Generic
     ):
         return annotation.__parameters__  # type: ignore[union-attr]
-    else:
-        return ()  # pragma: no cover
+    return ()  # pragma: no cover
 
 
 @overload

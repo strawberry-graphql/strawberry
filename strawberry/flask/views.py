@@ -4,6 +4,7 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Optional,
     Union,
     cast,
@@ -102,7 +103,7 @@ class GraphQLView(
     SyncBaseHTTPView[Request, Response, Response, Context, RootValue],
     View,
 ):
-    methods = ["GET", "POST"]
+    methods: ClassVar[list[str]] = ["GET", "POST"]
     allow_queries_via_get: bool = True
     request_adapter_class = FlaskHTTPRequestAdapter
 
@@ -165,7 +166,7 @@ class AsyncGraphQLView(
     ],
     View,
 ):
-    methods = ["GET", "POST"]
+    methods: ClassVar[list[str]] = ["GET", "POST"]
     allow_queries_via_get: bool = True
     request_adapter_class = AsyncFlaskHTTPRequestAdapter
 

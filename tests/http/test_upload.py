@@ -8,7 +8,7 @@ from urllib3 import encode_multipart_formdata
 from .clients.base import HttpClient
 
 
-@pytest.fixture()
+@pytest.fixture
 def http_client(http_client_class: type[HttpClient]) -> HttpClient:
     with contextlib.suppress(ImportError):
         from .clients.chalice import ChaliceHttpClient
@@ -19,7 +19,7 @@ def http_client(http_client_class: type[HttpClient]) -> HttpClient:
     return http_client_class()
 
 
-@pytest.fixture()
+@pytest.fixture
 def enabled_http_client(http_client_class: type[HttpClient]) -> HttpClient:
     with contextlib.suppress(ImportError):
         from .clients.chalice import ChaliceHttpClient

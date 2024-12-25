@@ -15,10 +15,10 @@ from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
+from tests.http.context import get_context
 from tests.views.schema import Query, schema
 from tests.websockets.views import OnWSConnectMixin
 
-from ..context import get_context
 from .asgi import AsgiWebSocketClient
 from .base import (
     JSON,
@@ -127,11 +127,10 @@ class FastAPIHttpClient(HttpClient):
         if body:
             if method == "get":
                 kwargs["params"] = body
+            elif files:
+                kwargs["data"] = body
             else:
-                if files:
-                    kwargs["data"] = body
-                else:
-                    kwargs["content"] = json.dumps(body)
+                kwargs["content"] = json.dumps(body)
 
         if files:
             kwargs["files"] = files

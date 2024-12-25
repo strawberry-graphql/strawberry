@@ -30,6 +30,7 @@ from strawberry.extensions.directives import (
     DirectivesExtensionSync,
 )
 from strawberry.extensions.runner import SchemaExtensionsRunner
+from strawberry.printer import print_schema
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext
@@ -40,7 +41,6 @@ from strawberry.types.base import (
 )
 from strawberry.types.graphql import OperationType
 
-from ..printer import print_schema
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
@@ -177,9 +177,11 @@ class Schema(BaseSchema):
                     self.schema_converter.from_schema_directive(type_)
                 )
             else:
-                if has_object_definition(type_):
-                    if type_.__strawberry_definition__.is_graphql_generic:
-                        type_ = StrawberryAnnotation(type_).resolve()  # noqa: PLW2901
+                if (
+                    has_object_definition(type_)
+                    and type_.__strawberry_definition__.is_graphql_generic
+                ):
+                    type_ = StrawberryAnnotation(type_).resolve()  # noqa: PLW2901
                 graphql_type = self.schema_converter.from_maybe_optional(type_)
                 if isinstance(graphql_type, GraphQLNonNull):
                     graphql_type = graphql_type.of_type
@@ -283,7 +285,7 @@ class Schema(BaseSchema):
             provided_operation_name=operation_name,
         )
 
-    @lru_cache
+    @lru_cache  # noqa: B019
     def get_type_by_name(
         self, name: str
     ) -> Optional[
@@ -319,7 +321,7 @@ class Schema(BaseSchema):
             None,
         )
 
-    @lru_cache
+    @lru_cache  # noqa: B019
     def get_directive_by_name(self, graphql_name: str) -> Optional[StrawberryDirective]:
         return next(
             (

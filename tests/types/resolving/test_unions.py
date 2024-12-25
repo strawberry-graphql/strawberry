@@ -123,7 +123,7 @@ def test_error_with_scalar_types():
     class Query:
         something: Something
 
-    schema = strawberry.Schema(query=Query)
+    strawberry.Schema(query=Query)
 
 
 @pytest.mark.raises_strawberry_exception(
@@ -145,4 +145,4 @@ def test_error_with_scalar_types_pipe():
     class Query:
         something: Something2
 
-    schema = strawberry.Schema(query=Query)
+    strawberry.Schema(query=Query)

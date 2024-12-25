@@ -50,7 +50,7 @@ class ConvertUnionToAnnotatedUnion(VisitorBasedCodemodCommand):
 
         super().__init__(context)
 
-    def visit_Module(self, node: cst.Module) -> Optional[bool]:
+    def visit_Module(self, node: cst.Module) -> Optional[bool]:  # noqa: N802
         self._is_using_named_import = False
 
         return super().visit_Module(node)

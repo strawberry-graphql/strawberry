@@ -58,7 +58,7 @@ def test_eq_on_other_type():
     assert Foo() != object()
     assert object() != Foo()
     assert Foo() != 123 != Foo()
-    assert 123 != Foo()
+    assert Foo() != 123
     assert Foo() == StrawberryAnnotation(int)
     assert StrawberryAnnotation(int) == Foo()
 

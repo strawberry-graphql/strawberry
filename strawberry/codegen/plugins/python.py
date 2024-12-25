@@ -3,7 +3,7 @@ from __future__ import annotations
 import textwrap
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, ClassVar, Optional
 
 from strawberry.codegen import CodegenFile, QueryCodegenPlugin
 from strawberry.codegen.types import (
@@ -35,7 +35,7 @@ class PythonType:
 
 
 class PythonPlugin(QueryCodegenPlugin):
-    SCALARS_TO_PYTHON_TYPES: dict[str, PythonType] = {
+    SCALARS_TO_PYTHON_TYPES: ClassVar[dict[str, PythonType]] = {
         "ID": PythonType("str"),
         "Int": PythonType("int"),
         "String": PythonType("str"),
@@ -128,7 +128,7 @@ class PythonPlugin(QueryCodegenPlugin):
                     + ", ".join(self._print_argument_value(v) for v in argval.values)
                     + "]"
                 )
-            elif isinstance(argval.values, dict):
+            if isinstance(argval.values, dict):
                 return (
                     "{"
                     + ", ".join(
@@ -137,8 +137,7 @@ class PythonPlugin(QueryCodegenPlugin):
                     )
                     + "}"
                 )
-            else:
-                raise TypeError(f"Unrecognized values type: {argval}")
+            raise TypeError(f"Unrecognized values type: {argval}")
         if isinstance(argval, GraphQLEnumValue):
             # This is an enum.  It needs the namespace alongside the name.
             if argval.enum_type is None:

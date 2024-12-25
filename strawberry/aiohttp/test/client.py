@@ -46,7 +46,8 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         )
 
         if assert_no_errors:
-            assert resp.status == 200
+            ok_response = 200
+            assert resp.status == ok_response
             assert response.errors is None
 
         return response
@@ -57,13 +58,11 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         headers: Optional[dict[str, object]] = None,
         files: Optional[dict[str, object]] = None,
     ) -> Any:
-        response = await self._client.post(
+        return await self._client.post(
             self.url,
             json=body if not files else None,
             data=body if files else None,
         )
-
-        return response
 
 
 __all__ = ["GraphQLTestClient"]

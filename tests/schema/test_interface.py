@@ -191,7 +191,7 @@ def test_interface_duck_typing_returning_dict():
     class Query:
         @strawberry.field
         def anime(self) -> Anime:
-            return dict(id=1, name="One Piece")  # type: ignore
+            return {"id": 1, "name": "One Piece"}  # type: ignore
 
     schema = strawberry.Schema(query=Query)
 

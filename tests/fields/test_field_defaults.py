@@ -55,10 +55,10 @@ def test_field_default_factory_executed_each_time():
 
 
 def test_field_with_separate_resolver_default():
-    with pytest.raises(FieldWithResolverAndDefaultValueError):
+    def gun_resolver() -> str:
+        return "revolver"
 
-        def gun_resolver() -> str:
-            return "revolver"
+    with pytest.raises(FieldWithResolverAndDefaultValueError):
 
         @strawberry.type
         class Query:

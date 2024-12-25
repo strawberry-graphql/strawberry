@@ -844,7 +844,7 @@ def test_supports_lists_within_unions_empty_list():
     assert result.data == {"user": {"__typename": "UserEdge", "nodes": []}}
 
 
-@pytest.mark.xfail()
+@pytest.mark.xfail
 def test_raises_error_when_unable_to_find_type():
     @strawberry.type
     class User:
@@ -995,7 +995,7 @@ def test_generic_extending_with_type_var():
     class Query:
         @strawberry.field
         def books(self) -> list[Book]:
-            return list()
+            return []
 
     schema = strawberry.Schema(query=Query)
 

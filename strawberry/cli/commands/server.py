@@ -25,7 +25,7 @@ class LogLevel(str, Enum):
 @app.command(help="Starts debug server")
 def server(
     schema: str,
-    host: str = typer.Option("0.0.0.0", "-h", "--host", show_default=True),
+    host: str = typer.Option("0.0.0.0", "-h", "--host", show_default=True),  # noqa: S104
     port: int = typer.Option(8000, "-p", "--port", show_default=True),
     log_level: LogLevel = typer.Option(
         "error",
@@ -54,13 +54,13 @@ def server(
     try:
         import starlette  # noqa: F401
         import uvicorn
-    except ImportError:
+    except ImportError as e:
         rich.print(
             "[red]Error: The debug server requires additional packages, "
             "install them by running:\n"
             r"pip install 'strawberry-graphql\[debug-server]'"
         )
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
     load_schema(schema, app_dir=app_dir)
 

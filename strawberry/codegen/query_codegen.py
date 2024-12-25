@@ -202,7 +202,7 @@ def _get_deps(t: GraphQLType) -> Iterable[GraphQLType]:
             yield from _get_deps(gql_type)
     else:
         # Want to make sure that all types are covered.
-        raise ValueError(f"Unknown GraphQLType: {t}")
+        raise ValueError(f"Unknown GraphQLType: {t}")  # noqa: TRY004
 
 
 _TYPE_TO_GRAPHQL_TYPE = {
@@ -253,10 +253,9 @@ class QueryCodegenPluginManager:
 
             if t1 in _get_deps(t2):
                 return -1
-            elif t2 in _get_deps(t1):
+            if t2 in _get_deps(t1):
                 return 1
-            else:
-                return 0
+            return 0
 
         return sorted(types, key=cmp_to_key(type_cmp))
 
@@ -311,15 +310,15 @@ class QueryCodegen:
         operations = self._get_operations(ast)
 
         if not operations:
-            raise NoOperationProvidedError()
+            raise NoOperationProvidedError
 
         if len(operations) > 1:
-            raise MultipleOperationsProvidedError()
+            raise MultipleOperationsProvidedError
 
         operation = operations[0]
 
         if operation.name is None:
-            raise NoOperationNameProvidedError()
+            raise NoOperationNameProvidedError
 
         # Look for any free-floating fragments and create types out of them
         # These types can then be referenced and included later via the
@@ -550,7 +549,7 @@ class QueryCodegen:
         if isinstance(field_type, ScalarDefinition):
             return self._collect_scalar(field_type, None)
 
-        elif isinstance(field_type, EnumDefinition):
+        if isinstance(field_type, EnumDefinition):
             return self._collect_enum(field_type)
 
         raise ValueError(f"Unsupported type: {field_type}")  # pragma: no cover

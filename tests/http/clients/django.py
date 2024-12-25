@@ -14,9 +14,9 @@ from strawberry.django.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
+from tests.http.context import get_context
 from tests.views.schema import Query, schema
 
-from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 

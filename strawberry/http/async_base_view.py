@@ -306,8 +306,7 @@ class AsyncBaseHTTPView(
                 await websocket.close(4406, "Subprotocol not acceptable")
 
             return websocket_response
-        else:
-            request = cast(Request, request)
+        request = cast(Request, request)
 
         request_adapter = self.request_adapter_class(request)
         sub_response = await self.get_sub_response(request)
@@ -325,8 +324,7 @@ class AsyncBaseHTTPView(
         if self.should_render_graphql_ide(request_adapter):
             if self.graphql_ide:
                 return await self.render_graphql_ide(request)
-            else:
-                raise HTTPException(404, "Not Found")
+            raise HTTPException(404, "Not Found")
 
         try:
             result = await self.execute_operation(

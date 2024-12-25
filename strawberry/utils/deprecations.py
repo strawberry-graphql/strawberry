@@ -4,7 +4,7 @@ import warnings
 from typing import Any, Optional
 
 
-class DEPRECATION_MESSAGES:
+class DEPRECATION_MESSAGES:  # noqa: N801
     _TYPE_DEFINITION = (
         "_type_definition is deprecated, use __strawberry_definition__ instead"
     )

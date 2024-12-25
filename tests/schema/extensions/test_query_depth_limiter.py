@@ -245,11 +245,6 @@ def test_should_catch_query_thats_too_deep():
 
 
 def test_should_raise_invalid_ignore():
-    query = """
-    query read1 {
-      user { address { city } }
-    }
-    """
     with pytest.raises(
         TypeError,
         match="The `should_ignore` argument to `QueryDepthLimiter` must be a callable.",
@@ -272,11 +267,7 @@ def test_should_ignore_field_by_name():
     """
 
     def should_ignore(ignore: IgnoreContext) -> bool:
-        return (
-            ignore.field_name == "user1"
-            or ignore.field_name == "user2"
-            or ignore.field_name == "user3"
-        )
+        return ignore.field_name in ("user1", "user2", "user3")
 
     errors, result = run_query(query, 10, should_ignore=should_ignore)
 

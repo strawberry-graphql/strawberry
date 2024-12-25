@@ -107,9 +107,7 @@ class StrawberryAnnotation:
         if isinstance(annotation, str):
             annotation = ForwardRef(annotation)
 
-        evaled_type = eval_type(annotation, self.namespace, None)
-
-        return evaled_type
+        return eval_type(annotation, self.namespace, None)
 
     def _get_type_with_args(
         self, evaled_type: type[Any]
@@ -155,13 +153,13 @@ class StrawberryAnnotation:
         # a StrawberryType
         if self._is_enum(evaled_type):
             return self.create_enum(evaled_type)
-        elif self._is_optional(evaled_type, args):
+        if self._is_optional(evaled_type, args):
             return self.create_optional(evaled_type)
-        elif self._is_union(evaled_type, args):
+        if self._is_union(evaled_type, args):
             return self.create_union(evaled_type, args)
-        elif is_type_var(evaled_type) or evaled_type is Self:
+        if is_type_var(evaled_type) or evaled_type is Self:
             return self.create_type_var(cast(TypeVar, evaled_type))
-        elif self._is_strawberry_type(evaled_type):
+        if self._is_strawberry_type(evaled_type):
             # Simply return objects that are already StrawberryTypes
             return evaled_type
 
@@ -315,27 +313,21 @@ class StrawberryAnnotation:
         # Prevent import cycles
         from strawberry.types.union import StrawberryUnion
 
-        if isinstance(evaled_type, EnumDefinition):
-            return True
-        elif _is_input_type(evaled_type):  # TODO: Replace with StrawberryInputObject
-            return True
-        # TODO: add support for StrawberryInterface when implemented
-        elif isinstance(evaled_type, StrawberryList):
-            return True
-        elif has_object_definition(evaled_type):
-            return True
-        elif isinstance(evaled_type, StrawberryObjectDefinition):
-            return True
-        elif isinstance(evaled_type, StrawberryOptional):
-            return True
-        elif isinstance(
-            evaled_type, ScalarDefinition
-        ):  # TODO: Replace with StrawberryScalar
-            return True
-        elif isinstance(evaled_type, StrawberryUnion):
-            return True
-
-        return False
+        return bool(
+            isinstance(evaled_type, EnumDefinition)
+            or _is_input_type(evaled_type)
+            or isinstance(evaled_type, StrawberryList)
+            or has_object_definition(evaled_type)
+            or isinstance(
+                evaled_type,
+                (
+                    StrawberryObjectDefinition,
+                    StrawberryOptional,
+                    ScalarDefinition,
+                    StrawberryUnion,
+                ),
+            )
+        )
 
     @classmethod
     def _is_union(cls, annotation: Any, args: list[Any]) -> bool:

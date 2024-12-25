@@ -1257,10 +1257,10 @@ def test_can_convert_pydantic_type_to_strawberry_with_constrained_list():
     assert user == User(work=[Work(name="developer"), Work(name="tester")])
 
 
-SI = TypeVar("SI", covariant=True)  # pragma: no mutate
+SI_co = TypeVar("SI_co", covariant=True)  # pragma: no mutate
 
 
-class SpecialList(list[SI]):
+class SpecialList(list[SI_co]):
     pass
 
 
@@ -1269,7 +1269,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_specialized_list():
     class WorkModel(BaseModel):
         name: str
 
-    class WorkList(SpecialList[SI]):
+    class WorkList(SpecialList[SI_co]):
         min_items = 1
 
     class UserModel(BaseModel):

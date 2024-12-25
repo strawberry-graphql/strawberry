@@ -12,9 +12,9 @@ from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.quart.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult
+from tests.http.context import get_context
 from tests.views.schema import Query, schema
 
-from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
@@ -112,10 +112,9 @@ class QuartHttpClient(HttpClient):
         headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response:
-        async with self.app.test_app() as test_app:
-            async with self.app.app_context():
-                client = test_app.test_client()
-                response = await getattr(client, method)(url, headers=headers, **kwargs)
+        async with self.app.test_app() as test_app, self.app.app_context():
+            client = test_app.test_client()
+            response = await getattr(client, method)(url, headers=headers, **kwargs)
 
         return Response(
             status_code=response.status_code,
