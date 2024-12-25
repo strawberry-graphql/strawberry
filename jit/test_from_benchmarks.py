@@ -29,15 +29,11 @@ def _full_compile(operation, schema) -> Any:
     }
     try:
         exec(compile(function_code, "<string>", "exec"), namespace)
+
+        fun = namespace["_compiled_operation"]
     except Exception as e:
-        print(function_code)
-        raise e
-
-    fun = namespace["_compiled_operation"]
-
-    import pathlib
-
-    pathlib.Path("jit/hand/_source.py").write_text(function_code)
+        fun = None
+        rich.print("[red]Error during JIT compilation", e)
 
     return function_code, fun
 
@@ -45,19 +41,18 @@ def _full_compile(operation, schema) -> Any:
 async def _jitted_execution(operation, variables, name: str | None = None) -> Any:
     code, fun = _full_compile(operation, schema)
 
-    here = pathlib.Path(__file__).parent
+    result = None
 
-    if name:
-        text = (
-            "\n".join([f"# {line}" for line in operation.splitlines()]) + "\n\n" + code
-        )
+    if fun:
+        try:
+            result = await fun(schema, {}, variables)
+        except Exception as e:
+            rich.print("[red]Error during JIT execution", e)
 
-        pathlib.Path(here / ".compiled" / f"{name}.py").write_text(text)
-
-    return await fun(schema, {}, variables)
+    return result, code
 
 
-async def bench(query: pathlib.Path, variables: Any) -> None:
+async def bench(query: pathlib.Path, variables: Any) -> dict | None:
     rich.print()
     operation_text = query.read_text()
 
@@ -66,10 +61,13 @@ async def bench(query: pathlib.Path, variables: Any) -> None:
         live.console.print("====================================")
         live.console.print("Warming up...")
 
-        await _original_execution(operation=operation_text, variables=variables)
-        await _jitted_execution(
-            operation=operation_text, variables=variables, name=query.name
-        )
+        try:
+            await _original_execution(operation=operation_text, variables=variables)
+            await _jitted_execution(
+                operation=operation_text, variables=variables, name=query.name
+            )
+        except Exception as e:
+            rich.print("[red]Error during warmup")
 
         live.console.print("=====================================")
         live.console.print("Benchmarking... [blue]standard execution")
@@ -87,9 +85,10 @@ async def bench(query: pathlib.Path, variables: Any) -> None:
         live.console.print("Benchmarking... [blue]JIT")
 
         start = time.time()
-        jit_result = await _jitted_execution(
+        jit_result, jitted_code = await _jitted_execution(
             operation=operation_text, variables=variables
         )
+
         jit_time = time.time() - start
 
         results.append(("JIT", jit_time))
@@ -99,8 +98,6 @@ async def bench(query: pathlib.Path, variables: Any) -> None:
 
         pathlib.Path("original.json").write_text(json.dumps(result, indent=2))
         pathlib.Path("jit.json").write_text(json.dumps(jit_result, indent=2))
-
-        raise Exception("Results don't match")
 
     table_data = []
 
@@ -127,11 +124,32 @@ async def bench(query: pathlib.Path, variables: Any) -> None:
     rich.print(table)
     rich.print("=====================================")
 
+    return {
+        "id": query.stem,
+        "title": query.name,
+        "results": [
+            {
+                "version": "standard",
+                "time": f"{original_time:.4f}s",
+                "speedRatio": f"{baseline_time/original_time:.2f}x",
+            },
+            {
+                "version": "JIT",
+                "time": f"{jit_time:.4f}s",
+                "speedRatio": f"{baseline_time/jit_time:.2f}x",
+            },
+        ],
+        "code": jitted_code,
+        "query": operation_text,
+    }
+
 
 if __name__ == "__main__":
     import asyncio
 
     operations = pathlib.Path(__file__).parent / "operations"
+
+    json_output = pathlib.Path(__file__).parent / "web/src/data/benchmarks.json"
 
     benchmarks = [
         (pathlib.Path(operations / "search.graphql"), {"query": "test", "first": 1000}),
@@ -141,5 +159,11 @@ if __name__ == "__main__":
         ),
     ]
 
+    results = []
+
     for query, variables in benchmarks:
-        asyncio.run(bench(query, variables))
+        result = asyncio.run(bench(query, variables))
+
+        results.append(result)
+
+    json_output.write_text(json.dumps(results, indent=2))

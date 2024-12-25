@@ -214,7 +214,6 @@ def compile(operation: str, schema: Schema) -> ...:
 
     function = textwrap.dedent(
         """
-        # TODO: variables
         async def _compiled_operation(schema, root_value, variables):
         __BODY__
             return results_0
@@ -230,6 +229,6 @@ def compile(operation: str, schema: Schema) -> ...:
             path=["Query"],
             parent_result_variable="results_0",
         ),
-    )
+    ).strip()
 
     return function

@@ -1,0 +1,26 @@
+[
+  {
+    "id": "search",
+    "title": "search.graphql",
+    "results": [
+      {
+        "version": "standard",
+        "time": "0.0125s",
+        "speedRatio": "1.00x"
+      },
+      {
+        "version": "JIT",
+        "time": "0.0011s",
+        "speedRatio": "11.81x"
+      }
+    ],
+    "code": "poetry run python -m jit.test_from_benchmark\nBenchmarking... search.graphql\n===================================\nWarming up...\nparse_document function called\n==================================="
+  },
+  {
+    "id": "nested",
+    "title": "search_nested.graphql",
+    "results": [],
+    "code": "Benchmarking... search_nested.graphql"
+  }
+]
+
