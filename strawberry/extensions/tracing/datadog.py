@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 from functools import cached_property
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable
 
 from ddtrace import Span, tracer
 
@@ -22,7 +22,7 @@ class DatadogTracingExtension(SchemaExtension):
     def __init__(
         self,
         *,
-        execution_context: Optional[ExecutionContext] = None,
+        execution_context: ExecutionContext | None = None,
     ) -> None:
         if execution_context:
             self.execution_context = execution_context

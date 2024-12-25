@@ -6,7 +6,7 @@ import json
 import time
 from collections.abc import AsyncGenerator
 from datetime import timedelta
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -53,7 +53,7 @@ def assert_next(
     next_message: NextMessage,
     id: str,
     data: dict[str, object],
-    extensions: Optional[dict[str, object]] = None,
+    extensions: dict[str, object] | None = None,
 ):
     """
     Assert that the NextMessage payload contains the provided data.
@@ -975,9 +975,7 @@ async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
     )
 
     while True:
-        next_or_complete_message: Union[
-            NextMessage, CompleteMessage
-        ] = await ws.receive_json()
+        next_or_complete_message: NextMessage | CompleteMessage = await ws.receive_json()
 
         assert next_or_complete_message["type"] in ("next", "complete")
 

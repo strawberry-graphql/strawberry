@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from strawberry.extensions.context import (
     ExecutingContextManager,
@@ -23,7 +23,7 @@ class SchemaExtensionsRunner:
     def __init__(
         self,
         execution_context: ExecutionContext,
-        extensions: Optional[list[SchemaExtension]] = None,
+        extensions: list[SchemaExtension] | None = None,
     ) -> None:
         self.execution_context = execution_context
         self.extensions = extensions or []

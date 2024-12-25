@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from flask import Flask
 from flask import Request as FlaskRequest
@@ -48,8 +48,8 @@ class GraphQLView(BaseAsyncGraphQLView):
 class AsyncFlaskHttpClient(FlaskHttpClient):
     def __init__(
         self,
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,

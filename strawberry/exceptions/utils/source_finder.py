@@ -6,7 +6,7 @@ import sys
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional, cast
+from typing import TYPE_CHECKING, Any, Callable, cast
 
 from ..exception_source import ExceptionSource
 
@@ -30,7 +30,7 @@ class LibCSTSourceFinder:
     def __init__(self) -> None:
         self.cst = importlib.import_module("libcst")
 
-    def find_source(self, module: str) -> Optional[SourcePath]:
+    def find_source(self, module: str) -> SourcePath | None:
         # TODO: support for pyodide
 
         source_module = sys.modules.get(module)
@@ -73,11 +73,11 @@ class LibCSTSourceFinder:
 
     def _find_definition_by_qualname(
         self, qualname: str, nodes: Sequence[CSTNode]
-    ) -> Optional[CSTNode]:
+    ) -> CSTNode | None:
         from libcst import ClassDef, FunctionDef
 
         for definition in nodes:
-            parent: Optional[CSTNode] = definition
+            parent: CSTNode | None = definition
             stack = []
 
             while parent:
@@ -101,7 +101,7 @@ class LibCSTSourceFinder:
 
     def _find_function_definition(
         self, source: SourcePath, function: Callable[..., Any]
-    ) -> Optional[FunctionDef]:
+    ) -> FunctionDef | None:
         import libcst.matchers as m
 
         matcher = m.FunctionDef(name=m.Name(value=function.__name__))
@@ -115,7 +115,7 @@ class LibCSTSourceFinder:
 
     def _find_class_definition(
         self, source: SourcePath, cls: type[Any]
-    ) -> Optional[CSTNode]:
+    ) -> CSTNode | None:
         import libcst.matchers as m
 
         matcher = m.ClassDef(name=m.Name(value=cls.__name__))
@@ -123,7 +123,7 @@ class LibCSTSourceFinder:
         class_defs = self._find(source.code, matcher)
         return self._find_definition_by_qualname(cls.__qualname__, class_defs)
 
-    def find_class(self, cls: type[Any]) -> Optional[ExceptionSource]:
+    def find_class(self, cls: type[Any]) -> ExceptionSource | None:
         source = self.find_source(cls.__module__)
 
         if source is None:
@@ -149,7 +149,7 @@ class LibCSTSourceFinder:
 
     def find_class_attribute(
         self, cls: type[Any], attribute_name: str
-    ) -> Optional[ExceptionSource]:
+    ) -> ExceptionSource | None:
         source = self.find_source(cls.__module__)
 
         if source is None:
@@ -190,7 +190,7 @@ class LibCSTSourceFinder:
             error_column_end=attribute_position.end.column,
         )
 
-    def find_function(self, function: Callable[..., Any]) -> Optional[ExceptionSource]:
+    def find_function(self, function: Callable[..., Any]) -> ExceptionSource | None:
         source = self.find_source(function.__module__)
 
         if source is None:
@@ -224,7 +224,7 @@ class LibCSTSourceFinder:
 
     def find_argument(
         self, function: Callable[..., Any], argument_name: str
-    ) -> Optional[ExceptionSource]:
+    ) -> ExceptionSource | None:
         source = self.find_source(function.__module__)
 
         if source is None:
@@ -262,7 +262,7 @@ class LibCSTSourceFinder:
 
     def find_union_call(
         self, path: Path, union_name: str, invalid_type: object
-    ) -> Optional[ExceptionSource]:
+    ) -> ExceptionSource | None:
         import libcst.matchers as m
 
         source = path.read_text()
@@ -338,7 +338,7 @@ class LibCSTSourceFinder:
 
     def find_union_merge(
         self, union: StrawberryUnion, other: object, frame: Traceback
-    ) -> Optional[ExceptionSource]:
+    ) -> ExceptionSource | None:
         import libcst.matchers as m
 
         path = Path(frame.filename)
@@ -374,7 +374,7 @@ class LibCSTSourceFinder:
 
     def find_annotated_union(
         self, union_definition: StrawberryUnion, invalid_type: object
-    ) -> Optional[ExceptionSource]:
+    ) -> ExceptionSource | None:
         if union_definition._source_file is None:
             return None
 
@@ -502,7 +502,7 @@ class LibCSTSourceFinder:
 
     def find_scalar_call(
         self, scalar_definition: ScalarDefinition
-    ) -> Optional[ExceptionSource]:
+    ) -> ExceptionSource | None:
         if scalar_definition._source_file is None:
             return None  # pragma: no cover
 
@@ -555,33 +555,33 @@ class LibCSTSourceFinder:
 
 class SourceFinder:
     @cached_property
-    def cst(self) -> Optional[LibCSTSourceFinder]:
+    def cst(self) -> LibCSTSourceFinder | None:
         try:
             return LibCSTSourceFinder()
         except ImportError:
             return None  # pragma: no cover
 
-    def find_class_from_object(self, cls: type[Any]) -> Optional[ExceptionSource]:
+    def find_class_from_object(self, cls: type[Any]) -> ExceptionSource | None:
         return self.cst.find_class(cls) if self.cst else None
 
     def find_class_attribute_from_object(
         self, cls: type[Any], attribute_name: str
-    ) -> Optional[ExceptionSource]:
+    ) -> ExceptionSource | None:
         return self.cst.find_class_attribute(cls, attribute_name) if self.cst else None
 
     def find_function_from_object(
         self, function: Callable[..., Any]
-    ) -> Optional[ExceptionSource]:
+    ) -> ExceptionSource | None:
         return self.cst.find_function(function) if self.cst else None
 
     def find_argument_from_object(
         self, function: Callable[..., Any], argument_name: str
-    ) -> Optional[ExceptionSource]:
+    ) -> ExceptionSource | None:
         return self.cst.find_argument(function, argument_name) if self.cst else None
 
     def find_union_call(
         self, path: Path, union_name: str, invalid_type: object
-    ) -> Optional[ExceptionSource]:
+    ) -> ExceptionSource | None:
         return (
             self.cst.find_union_call(path, union_name, invalid_type)
             if self.cst
@@ -590,17 +590,17 @@ class SourceFinder:
 
     def find_union_merge(
         self, union: StrawberryUnion, other: object, frame: Traceback
-    ) -> Optional[ExceptionSource]:
+    ) -> ExceptionSource | None:
         return self.cst.find_union_merge(union, other, frame) if self.cst else None
 
     def find_scalar_call(
         self, scalar_definition: ScalarDefinition
-    ) -> Optional[ExceptionSource]:
+    ) -> ExceptionSource | None:
         return self.cst.find_scalar_call(scalar_definition) if self.cst else None
 
     def find_annotated_union(
         self, union_definition: StrawberryUnion, invalid_type: object
-    ) -> Optional[ExceptionSource]:
+    ) -> ExceptionSource | None:
         return (
             self.cst.find_annotated_union(union_definition, invalid_type)
             if self.cst

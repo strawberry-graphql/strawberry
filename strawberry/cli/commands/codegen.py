@@ -4,7 +4,7 @@ import functools
 import importlib
 import inspect
 from pathlib import Path  # noqa: TC003
-from typing import Optional, Union, cast
+from typing import cast
 
 import rich
 import typer
@@ -22,9 +22,9 @@ def _is_codegen_plugin(obj: object) -> bool:
     )
 
 
-def _import_plugin(plugin: str) -> Optional[type[QueryCodegenPlugin]]:
+def _import_plugin(plugin: str) -> type[QueryCodegenPlugin] | None:
     module_name = plugin
-    symbol_name: Optional[str] = None
+    symbol_name: str | None = None
 
     if ":" in plugin:
         module_name, symbol_name = plugin.split(":", 1)
@@ -63,7 +63,7 @@ def _import_plugin(plugin: str) -> Optional[type[QueryCodegenPlugin]]:
 @functools.lru_cache
 def _load_plugin(
     plugin_path: str,
-) -> type[Union[QueryCodegenPlugin, ConsolePlugin]]:
+) -> type[QueryCodegenPlugin | ConsolePlugin]:
     # try to import plugin_name from current folder
     # then try to import from strawberry.codegen.plugins
 
@@ -81,7 +81,7 @@ def _load_plugin(
 
 def _load_plugins(
     plugin_ids: list[str], query: Path
-) -> list[Union[QueryCodegenPlugin, ConsolePlugin]]:
+) -> list[QueryCodegenPlugin | ConsolePlugin]:
     plugins = []
     for ptype_id in plugin_ids:
         ptype = _load_plugin(ptype_id)
@@ -93,7 +93,7 @@ def _load_plugins(
 
 @app.command(help="Generate code from a query")
 def codegen(
-    query: Optional[list[Path]] = typer.Argument(
+    query: list[Path] | None = typer.Argument(
         default=None, exists=True, dir_okay=False
     ),
     schema: str = typer.Option(..., help="Python path to the schema file"),
@@ -122,7 +122,7 @@ def codegen(
         "-p",
         "--plugins",
     ),
-    cli_plugin: Optional[str] = None,
+    cli_plugin: str | None = None,
 ) -> None:
     if not query:
         return

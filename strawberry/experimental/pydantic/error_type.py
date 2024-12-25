@@ -7,7 +7,6 @@ from typing import (
     Any,
     Callable,
     Optional,
-    Union,
     cast,
 )
 
@@ -36,13 +35,13 @@ if TYPE_CHECKING:
     from strawberry.types.base import WithStrawberryObjectDefinition
 
 
-def get_type_for_field(field: CompatModelField) -> Union[type[Union[None, list]], Any]:
+def get_type_for_field(field: CompatModelField) -> type[None | list] | Any:
     type_ = field.outer_type_
     type_ = normalize_type(type_)
     return field_type_to_type(type_)
 
 
-def field_type_to_type(type_: type) -> Union[Any, list[Any], None]:
+def field_type_to_type(type_: type) -> Any | list[Any] | None:
     error_class: Any = str
     strawberry_type: Any = error_class
 
@@ -67,10 +66,10 @@ def field_type_to_type(type_: type) -> Union[Any, list[Any], None]:
 def error_type(
     model: type[BaseModel],
     *,
-    fields: Optional[list[str]] = None,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    fields: list[str] | None = None,
+    name: str | None = None,
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     all_fields: bool = False,
 ) -> Callable[..., type]:
     def wrap(cls: type) -> type:

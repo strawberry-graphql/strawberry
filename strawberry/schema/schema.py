@@ -5,7 +5,6 @@ from functools import cached_property, lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
     Union,
     cast,
 )
@@ -73,16 +72,15 @@ class Schema(BaseSchema):
         # TODO: can we make sure we only allow to pass
         # something that has been decorated?
         query: type,
-        mutation: Optional[type] = None,
-        subscription: Optional[type] = None,
+        mutation: type | None = None,
+        subscription: type | None = None,
         directives: Iterable[StrawberryDirective] = (),
-        types: Iterable[Union[type, StrawberryType]] = (),
-        extensions: Iterable[Union[type[SchemaExtension], SchemaExtension]] = (),
-        execution_context_class: Optional[type[GraphQLExecutionContext]] = None,
-        config: Optional[StrawberryConfig] = None,
-        scalar_overrides: Optional[
-            dict[object, Union[type, ScalarWrapper, ScalarDefinition]],
-        ] = None,
+        types: Iterable[type | StrawberryType] = (),
+        extensions: Iterable[type[SchemaExtension] | SchemaExtension] = (),
+        execution_context_class: type[GraphQLExecutionContext] | None = None,
+        config: StrawberryConfig | None = None,
+        scalar_overrides: dict[object, type | ScalarWrapper | ScalarDefinition]
+        | None = None,
         schema_directives: Iterable[object] = (),
     ) -> None:
         """Default Schema to be used in a Strawberry application.
@@ -266,12 +264,12 @@ class Schema(BaseSchema):
 
     def _create_execution_context(
         self,
-        query: Optional[str],
+        query: str | None,
         allowed_operation_types: Iterable[OperationType],
-        variable_values: Optional[dict[str, Any]] = None,
-        context_value: Optional[Any] = None,
-        root_value: Optional[Any] = None,
-        operation_name: Optional[str] = None,
+        variable_values: dict[str, Any] | None = None,
+        context_value: Any | None = None,
+        root_value: Any | None = None,
+        operation_name: str | None = None,
     ) -> ExecutionContext:
         return ExecutionContext(
             query=query,
@@ -286,14 +284,13 @@ class Schema(BaseSchema):
     @lru_cache
     def get_type_by_name(
         self, name: str
-    ) -> Optional[
-        Union[
-            StrawberryObjectDefinition,
-            ScalarDefinition,
-            EnumDefinition,
-            StrawberryUnion,
-        ]
-    ]:
+    ) -> (
+        StrawberryObjectDefinition
+        | ScalarDefinition
+        | EnumDefinition
+        | StrawberryUnion
+        | None
+    ):
         # TODO: respect auto_camel_case
         if name in self.schema_converter.type_map:
             return self.schema_converter.type_map[name].definition
@@ -302,7 +299,7 @@ class Schema(BaseSchema):
 
     def get_field_for_type(
         self, field_name: str, type_name: str
-    ) -> Optional[StrawberryField]:
+    ) -> StrawberryField | None:
         type_ = self.get_type_by_name(type_name)
 
         if not type_:
@@ -320,7 +317,7 @@ class Schema(BaseSchema):
         )
 
     @lru_cache
-    def get_directive_by_name(self, graphql_name: str) -> Optional[StrawberryDirective]:
+    def get_directive_by_name(self, graphql_name: str) -> StrawberryDirective | None:
         return next(
             (
                 directive
@@ -337,12 +334,12 @@ class Schema(BaseSchema):
 
     async def execute(
         self,
-        query: Optional[str],
-        variable_values: Optional[dict[str, Any]] = None,
-        context_value: Optional[Any] = None,
-        root_value: Optional[Any] = None,
-        operation_name: Optional[str] = None,
-        allowed_operation_types: Optional[Iterable[OperationType]] = None,
+        query: str | None,
+        variable_values: dict[str, Any] | None = None,
+        context_value: Any | None = None,
+        root_value: Any | None = None,
+        operation_name: str | None = None,
+        allowed_operation_types: Iterable[OperationType] | None = None,
     ) -> ExecutionResult:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
@@ -372,12 +369,12 @@ class Schema(BaseSchema):
 
     def execute_sync(
         self,
-        query: Optional[str],
-        variable_values: Optional[dict[str, Any]] = None,
-        context_value: Optional[Any] = None,
-        root_value: Optional[Any] = None,
-        operation_name: Optional[str] = None,
-        allowed_operation_types: Optional[Iterable[OperationType]] = None,
+        query: str | None,
+        variable_values: dict[str, Any] | None = None,
+        context_value: Any | None = None,
+        root_value: Any | None = None,
+        operation_name: str | None = None,
+        allowed_operation_types: Iterable[OperationType] | None = None,
     ) -> ExecutionResult:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
@@ -408,11 +405,11 @@ class Schema(BaseSchema):
 
     async def subscribe(
         self,
-        query: Optional[str],
-        variable_values: Optional[dict[str, Any]] = None,
-        context_value: Optional[Any] = None,
-        root_value: Optional[Any] = None,
-        operation_name: Optional[str] = None,
+        query: str | None,
+        variable_values: dict[str, Any] | None = None,
+        context_value: Any | None = None,
+        root_value: Any | None = None,
+        operation_name: str | None = None,
     ) -> SubscriptionResult:
         execution_context = self._create_execution_context(
             query=query,

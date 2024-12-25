@@ -6,7 +6,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Optional,
     cast,
 )
 from typing_extensions import TypeGuard
@@ -55,7 +54,7 @@ class SanicHTTPRequestAdapter(AsyncHTTPRequestAdapter):
         return self.request.headers
 
     @property
-    def content_type(self) -> Optional[str]:
+    def content_type(self) -> str | None:
         return self.request.content_type
 
     async def get_body(self) -> str:
@@ -104,11 +103,11 @@ class GraphQLView(
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
-        json_encoder: Optional[type[json.JSONEncoder]] = None,
-        json_dumps_params: Optional[dict[str, Any]] = None,
+        json_encoder: type[json.JSONEncoder] | None = None,
+        json_dumps_params: dict[str, Any] | None = None,
         multipart_uploads_enabled: bool = False,
     ) -> None:
         self.schema = schema
@@ -143,7 +142,7 @@ class GraphQLView(
         else:
             self.graphql_ide = graphql_ide
 
-    async def get_root_value(self, request: Request) -> Optional[RootValue]:
+    async def get_root_value(self, request: Request) -> RootValue | None:
         return None
 
     async def get_context(
@@ -216,11 +215,11 @@ class GraphQLView(
     def is_websocket_request(self, request: Request) -> TypeGuard[Request]:
         return False
 
-    async def pick_websocket_subprotocol(self, request: Request) -> Optional[str]:
+    async def pick_websocket_subprotocol(self, request: Request) -> str | None:
         raise NotImplementedError
 
     async def create_websocket_response(
-        self, request: Request, subprotocol: Optional[str]
+        self, request: Request, subprotocol: str | None
     ) -> TemporalResponse:
         raise NotImplementedError
 

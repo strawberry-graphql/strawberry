@@ -10,7 +10,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Optional,
     TypeVar,
     Union,
     cast,
@@ -57,7 +56,7 @@ _RESOLVER_TYPE = Union[_RESOLVER_TYPE_SYNC[T], _RESOLVER_TYPE_ASYNC[T]]
 UNRESOLVED = object()
 
 
-def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
+def _is_generic(resolver_type: StrawberryType | type) -> bool:
     """Returns True if `resolver_type` is generic else False."""
     if isinstance(resolver_type, StrawberryType):
         return resolver_type.is_graphql_generic
@@ -70,23 +69,23 @@ def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
 
 
 class StrawberryField(dataclasses.Field):
-    type_annotation: Optional[StrawberryAnnotation]
+    type_annotation: StrawberryAnnotation | None
     default_resolver: Callable[[Any, str], object] = getattr
 
     def __init__(
         self,
-        python_name: Optional[str] = None,
-        graphql_name: Optional[str] = None,
-        type_annotation: Optional[StrawberryAnnotation] = None,
-        origin: Optional[Union[type, Callable, staticmethod, classmethod]] = None,
+        python_name: str | None = None,
+        graphql_name: str | None = None,
+        type_annotation: StrawberryAnnotation | None = None,
+        origin: type | Callable | staticmethod | classmethod | None = None,
         is_subscription: bool = False,
-        description: Optional[str] = None,
-        base_resolver: Optional[StrawberryResolver] = None,
+        description: str | None = None,
+        base_resolver: StrawberryResolver | None = None,
         permission_classes: list[type[BasePermission]] = (),  # type: ignore
         default: object = dataclasses.MISSING,
-        default_factory: Union[Callable[[], Any], object] = dataclasses.MISSING,
-        metadata: Optional[Mapping[Any, Any]] = None,
-        deprecation_reason: Optional[str] = None,
+        default_factory: Callable[[], Any] | object = dataclasses.MISSING,
+        metadata: Mapping[Any, Any] | None = None,
+        deprecation_reason: str | None = None,
         directives: Sequence[object] = (),
         extensions: list[FieldExtension] = (),  # type: ignore
     ) -> None:
@@ -116,11 +115,11 @@ class StrawberryField(dataclasses.Field):
 
         self.type_annotation = type_annotation
 
-        self.description: Optional[str] = description
+        self.description: str | None = description
         self.origin = origin
 
-        self._arguments: Optional[list[StrawberryArgument]] = None
-        self._base_resolver: Optional[StrawberryResolver] = None
+        self._arguments: list[StrawberryArgument] | None = None
+        self._base_resolver: StrawberryResolver | None = None
         if base_resolver is not None:
             self.base_resolver = base_resolver
 
@@ -208,8 +207,8 @@ class StrawberryField(dataclasses.Field):
         return self
 
     def get_result(
-        self, source: Any, info: Optional[Info], args: list[Any], kwargs: Any
-    ) -> Union[Awaitable[Any], Any]:
+        self, source: Any, info: Info | None, args: list[Any], kwargs: Any
+    ) -> Awaitable[Any] | Any:
         """Calls the resolver defined for the StrawberryField.
 
         If the field doesn't have a resolver defined we default
@@ -251,7 +250,7 @@ class StrawberryField(dataclasses.Field):
             else _is_generic(self.type)
         )
 
-    def _python_name(self) -> Optional[str]:
+    def _python_name(self) -> str | None:
         if self.name:
             return self.name
 
@@ -266,7 +265,7 @@ class StrawberryField(dataclasses.Field):
     python_name: str = property(_python_name, _set_python_name)  # type: ignore[assignment]
 
     @property
-    def base_resolver(self) -> Optional[StrawberryResolver]:
+    def base_resolver(self) -> StrawberryResolver | None:
         return self._base_resolver
 
     @base_resolver.setter
@@ -292,11 +291,7 @@ class StrawberryField(dataclasses.Field):
     @property  # type: ignore
     def type(
         self,
-    ) -> Union[  # type: ignore [valid-type]
-        StrawberryType,
-        type[WithStrawberryObjectDefinition],
-        Literal[UNRESOLVED],
-    ]:
+    ) -> StrawberryType | type[WithStrawberryObjectDefinition] | Literal[UNRESOLVED]:
         return self.resolve_type()
 
     @type.setter
@@ -326,12 +321,8 @@ class StrawberryField(dataclasses.Field):
     def resolve_type(
         self,
         *,
-        type_definition: Optional[StrawberryObjectDefinition] = None,
-    ) -> Union[  # type: ignore [valid-type]
-        StrawberryType,
-        type[WithStrawberryObjectDefinition],
-        Literal[UNRESOLVED],
-    ]:
+        type_definition: StrawberryObjectDefinition | None = None,
+    ) -> StrawberryType | type[WithStrawberryObjectDefinition] | Literal[UNRESOLVED]:
         # We return UNRESOLVED by default, which means this case will raise a
         # MissingReturnAnnotationError exception in _check_field_annotations
         resolved = UNRESOLVED
@@ -375,13 +366,11 @@ class StrawberryField(dataclasses.Field):
         return resolved
 
     def copy_with(
-        self, type_var_map: Mapping[str, Union[StrawberryType, builtins.type]]
+        self, type_var_map: Mapping[str, StrawberryType | builtins.type]
     ) -> Self:
         new_field = copy.copy(self)
 
-        override_type: Optional[
-            Union[StrawberryType, type[WithStrawberryObjectDefinition]]
-        ] = None
+        override_type: StrawberryType | type[WithStrawberryObjectDefinition] | None = None
         type_ = self.resolve_type()
         if has_object_definition(type_):
             type_definition = type_.__strawberry_definition__
@@ -422,18 +411,18 @@ class StrawberryField(dataclasses.Field):
 def field(
     *,
     resolver: _RESOLVER_TYPE_ASYNC[T],
-    name: Optional[str] = None,
+    name: str | None = None,
     is_subscription: bool = False,
-    description: Optional[str] = None,
+    description: str | None = None,
     init: Literal[False] = False,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
 ) -> T: ...
 
 
@@ -441,36 +430,36 @@ def field(
 def field(
     *,
     resolver: _RESOLVER_TYPE_SYNC[T],
-    name: Optional[str] = None,
+    name: str | None = None,
     is_subscription: bool = False,
-    description: Optional[str] = None,
+    description: str | None = None,
     init: Literal[False] = False,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
 ) -> T: ...
 
 
 @overload
 def field(
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     is_subscription: bool = False,
-    description: Optional[str] = None,
+    description: str | None = None,
     init: Literal[True] = True,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
 ) -> Any: ...
 
 
@@ -478,17 +467,17 @@ def field(
 def field(
     resolver: _RESOLVER_TYPE_ASYNC[T],
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     is_subscription: bool = False,
-    description: Optional[str] = None,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    description: str | None = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
 ) -> StrawberryField: ...
 
 
@@ -496,34 +485,34 @@ def field(
 def field(
     resolver: _RESOLVER_TYPE_SYNC[T],
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     is_subscription: bool = False,
-    description: Optional[str] = None,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    description: str | None = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
 ) -> StrawberryField: ...
 
 
 def field(
-    resolver: Optional[_RESOLVER_TYPE[Any]] = None,
+    resolver: _RESOLVER_TYPE[Any] | None = None,
     *,
-    name: Optional[str] = None,
+    name: str | None = None,
     is_subscription: bool = False,
-    description: Optional[str] = None,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
+    description: str | None = None,
+    permission_classes: list[type[BasePermission]] | None = None,
+    deprecation_reason: str | None = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    default_factory: Callable[..., object] | object = dataclasses.MISSING,
+    metadata: Mapping[Any, Any] | None = None,
+    directives: Sequence[object] | None = (),
+    extensions: list[FieldExtension] | None = None,
+    graphql_type: Any | None = None,
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.

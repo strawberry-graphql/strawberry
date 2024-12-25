@@ -7,7 +7,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
-    Optional,
     cast,
 )
 
@@ -46,7 +45,7 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
         schema: BaseSchema,
         debug: bool,
         keep_alive: bool,
-        keep_alive_interval: Optional[float],
+        keep_alive_interval: float | None,
     ) -> None:
         self.view = view
         self.websocket = websocket
@@ -56,7 +55,7 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
         self.debug = debug
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
-        self.keep_alive_task: Optional[asyncio.Task] = None
+        self.keep_alive_task: asyncio.Task | None = None
         self.subscriptions: dict[str, AsyncGenerator] = {}
         self.tasks: dict[str, asyncio.Task] = {}
 
@@ -164,8 +163,8 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
         self,
         operation_id: str,
         query: str,
-        operation_name: Optional[str],
-        variables: Optional[dict[str, object]],
+        operation_name: str | None,
+        variables: dict[str, object] | None,
     ) -> None:
         try:
             agen_or_err = await self.schema.subscribe(

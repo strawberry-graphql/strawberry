@@ -9,7 +9,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Optional,
     Union,
 )
 from typing_extensions import TypeGuard, assert_never
@@ -84,7 +83,7 @@ class ChannelsRequest:
         return self.consumer.scope["method"].upper()
 
     @property
-    def content_type(self) -> Optional[str]:
+    def content_type(self) -> str | None:
         return self.headers.get("content-type", None)
 
     @cached_property
@@ -130,7 +129,7 @@ class BaseChannelsRequestAdapter:
         return self.request.headers
 
     @property
-    def content_type(self) -> Optional[str]:
+    def content_type(self) -> str | None:
         return self.request.content_type
 
 
@@ -148,7 +147,7 @@ class SyncChannelsRequestAdapter(BaseChannelsRequestAdapter, SyncHTTPRequestAdap
         return self.request.body
 
     @property
-    def post_data(self) -> Mapping[str, Union[str, bytes]]:
+    def post_data(self) -> Mapping[str, str | bytes]:
         return self.request.form_data["form"]
 
     @property
@@ -158,13 +157,13 @@ class SyncChannelsRequestAdapter(BaseChannelsRequestAdapter, SyncHTTPRequestAdap
 
 class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
     graphql_ide_html: str
-    graphql_ide: Optional[GraphQL_IDE] = "graphiql"
+    graphql_ide: GraphQL_IDE | None = "graphiql"
 
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         multipart_uploads_enabled: bool = False,
         **kwargs: Any,
@@ -259,7 +258,7 @@ class GraphQLHTTPConsumer(
     allow_queries_via_get: bool = True
     request_adapter_class = ChannelsRequestAdapter
 
-    async def get_root_value(self, request: ChannelsRequest) -> Optional[RootValue]:
+    async def get_root_value(self, request: ChannelsRequest) -> RootValue | None:
         return None  # pragma: no cover
 
     async def get_context(
@@ -303,11 +302,11 @@ class GraphQLHTTPConsumer(
 
     async def pick_websocket_subprotocol(
         self, request: ChannelsRequest
-    ) -> Optional[str]:
+    ) -> str | None:
         return None
 
     async def create_websocket_response(
-        self, request: ChannelsRequest, subprotocol: Optional[str]
+        self, request: ChannelsRequest, subprotocol: str | None
     ) -> TemporalResponse:
         raise NotImplementedError
 
@@ -332,7 +331,7 @@ class SyncGraphQLHTTPConsumer(
     allow_queries_via_get: bool = True
     request_adapter_class = SyncChannelsRequestAdapter
 
-    def get_root_value(self, request: ChannelsRequest) -> Optional[RootValue]:
+    def get_root_value(self, request: ChannelsRequest) -> RootValue | None:
         return None  # pragma: no cover
 
     def get_context(
@@ -358,8 +357,8 @@ class SyncGraphQLHTTPConsumer(
     def run(
         self,
         request: ChannelsRequest,
-        context: Optional[Context] = UNSET,
-        root_value: Optional[RootValue] = UNSET,
+        context: Context | None = UNSET,
+        root_value: RootValue | None = UNSET,
     ) -> ChannelsResponse | MultipartChannelsResponse:
         return super().run(request, context, root_value)
 

@@ -16,9 +16,7 @@ Field = Union[GraphQLInputField, GraphQLField]
 
 @dataclasses.dataclass
 class ConcreteType:
-    definition: Union[
-        StrawberryObjectDefinition, EnumDefinition, ScalarDefinition, StrawberryUnion
-    ]
+    definition: StrawberryObjectDefinition | EnumDefinition | ScalarDefinition | StrawberryUnion
     implementation: GraphQLType
 
 

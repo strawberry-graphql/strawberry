@@ -4,8 +4,6 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
-    Union,
     cast,
 )
 from typing_extensions import TypeGuard
@@ -39,7 +37,7 @@ class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
         return self.request.args.to_dict()
 
     @property
-    def body(self) -> Union[str, bytes]:
+    def body(self) -> str | bytes:
         return self.request.data.decode()
 
     @property
@@ -51,7 +49,7 @@ class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
         return self.request.headers
 
     @property
-    def post_data(self) -> Mapping[str, Union[str, bytes]]:
+    def post_data(self) -> Mapping[str, str | bytes]:
         return self.request.form
 
     @property
@@ -59,18 +57,18 @@ class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
         return self.request.files
 
     @property
-    def content_type(self) -> Optional[str]:
+    def content_type(self) -> str | None:
         return self.request.content_type
 
 
 class BaseGraphQLView:
-    graphql_ide: Optional[GraphQL_IDE]
+    graphql_ide: GraphQL_IDE | None
 
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         multipart_uploads_enabled: bool = False,
     ) -> None:
@@ -109,7 +107,7 @@ class GraphQLView(
     def get_context(self, request: Request, response: Response) -> Context:
         return {"request": request, "response": response}  # type: ignore
 
-    def get_root_value(self, request: Request) -> Optional[RootValue]:
+    def get_root_value(self, request: Request) -> RootValue | None:
         return None
 
     def get_sub_response(self, request: Request) -> Response:
@@ -141,7 +139,7 @@ class AsyncFlaskHTTPRequestAdapter(AsyncHTTPRequestAdapter):
         return cast(HTTPMethod, self.request.method.upper())
 
     @property
-    def content_type(self) -> Optional[str]:
+    def content_type(self) -> str | None:
         return self.request.content_type
 
     @property
@@ -172,7 +170,7 @@ class AsyncGraphQLView(
     async def get_context(self, request: Request, response: Response) -> Context:
         return {"request": request, "response": response}  # type: ignore
 
-    async def get_root_value(self, request: Request) -> Optional[RootValue]:
+    async def get_root_value(self, request: Request) -> RootValue | None:
         return None
 
     async def get_sub_response(self, request: Request) -> Response:
@@ -194,11 +192,11 @@ class AsyncGraphQLView(
     def is_websocket_request(self, request: Request) -> TypeGuard[Request]:
         return False
 
-    async def pick_websocket_subprotocol(self, request: Request) -> Optional[str]:
+    async def pick_websocket_subprotocol(self, request: Request) -> str | None:
         raise NotImplementedError
 
     async def create_websocket_response(
-        self, request: Request, subprotocol: Optional[str]
+        self, request: Request, subprotocol: str | None
     ) -> Response:
         raise NotImplementedError
 

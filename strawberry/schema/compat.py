@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from strawberry.scalars import is_scalar as is_strawberry_scalar
 from strawberry.types.base import StrawberryType, has_object_definition
@@ -15,35 +15,35 @@ if TYPE_CHECKING:
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
-def is_input_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
+def is_input_type(type_: StrawberryType | type) -> TypeGuard[type]:
     if not has_object_definition(type_):
         return False
     return type_.__strawberry_definition__.is_input
 
 
-def is_interface_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
+def is_interface_type(type_: StrawberryType | type) -> TypeGuard[type]:
     if not has_object_definition(type_):
         return False
     return type_.__strawberry_definition__.is_interface
 
 
 def is_scalar(
-    type_: Union[StrawberryType, type],
-    scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    type_: StrawberryType | type,
+    scalar_registry: dict[object, ScalarWrapper | ScalarDefinition],
 ) -> TypeGuard[type]:
     return is_strawberry_scalar(type_, scalar_registry)
 
 
-def is_enum(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
+def is_enum(type_: StrawberryType | type) -> TypeGuard[type]:
     return hasattr(type_, "_enum_definition")
 
 
-def is_schema_directive(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
+def is_schema_directive(type_: StrawberryType | type) -> TypeGuard[type]:
     return hasattr(type_, "__strawberry_directive__")
 
 
 # TODO: do we still need this?
-def is_graphql_generic(type_: Union[StrawberryType, type]) -> bool:
+def is_graphql_generic(type_: StrawberryType | type) -> bool:
     if has_object_definition(type_):
         return type_.__strawberry_definition__.is_graphql_generic
 

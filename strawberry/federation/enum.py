@@ -4,8 +4,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Optional,
-    Union,
     overload,
 )
 
@@ -20,7 +18,7 @@ if TYPE_CHECKING:
 
 def enum_value(
     value: Any,
-    deprecation_reason: Optional[str] = None,
+    deprecation_reason: str | None = None,
     directives: Iterable[object] = (),
     inaccessible: bool = False,
     tags: Iterable[str] = (),
@@ -42,14 +40,14 @@ def enum_value(
 def enum(
     _cls: EnumType,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policy: Optional[list[list[str]]] = None,
-    requires_scopes: Optional[list[list[str]]] = None,
-    tags: Optional[Iterable[str]] = (),
+    policy: list[list[str]] | None = None,
+    requires_scopes: list[list[str]] | None = None,
+    tags: Iterable[str] | None = (),
 ) -> EnumType: ...
 
 
@@ -57,29 +55,29 @@ def enum(
 def enum(
     _cls: None = None,
     *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
+    name: str | None = None,
+    description: str | None = None,
     directives: Iterable[object] = (),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policy: Optional[list[list[str]]] = None,
-    requires_scopes: Optional[list[list[str]]] = None,
-    tags: Optional[Iterable[str]] = (),
+    policy: list[list[str]] | None = None,
+    requires_scopes: list[list[str]] | None = None,
+    tags: Iterable[str] | None = (),
 ) -> Callable[[EnumType], EnumType]: ...
 
 
 def enum(
-    _cls: Optional[EnumType] = None,
+    _cls: EnumType | None = None,
     *,
     name=None,
     description=None,
     directives=(),
     authenticated: bool = False,
     inaccessible: bool = False,
-    policy: Optional[list[list[str]]] = None,
-    requires_scopes: Optional[list[list[str]]] = None,
-    tags: Optional[Iterable[str]] = (),
-) -> Union[EnumType, Callable[[EnumType], EnumType]]:
+    policy: list[list[str]] | None = None,
+    requires_scopes: list[list[str]] | None = None,
+    tags: Iterable[str] | None = (),
+) -> EnumType | Callable[[EnumType], EnumType]:
     """Registers the enum in the GraphQL type system.
 
     If name is passed, the name of the GraphQL type will be

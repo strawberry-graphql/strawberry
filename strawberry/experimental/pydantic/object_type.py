@@ -118,12 +118,12 @@ if TYPE_CHECKING:
 def type(
     model: builtins.type[PydanticModel],
     *,
-    fields: Optional[list[str]] = None,
-    name: Optional[str] = None,
+    fields: list[str] | None = None,
+    name: str | None = None,
     is_input: bool = False,
     is_interface: bool = False,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
 ) -> Callable[..., builtins.type[StrawberryTypeFromPydantic[PydanticModel]]]:
@@ -271,7 +271,7 @@ def type(
         cls._pydantic_type = model
 
         def from_pydantic_default(
-            instance: PydanticModel, extra: Optional[dict[str, Any]] = None
+            instance: PydanticModel, extra: dict[str, Any] | None = None
         ) -> StrawberryTypeFromPydantic[PydanticModel]:
             ret = convert_pydantic_model_to_strawberry_class(
                 cls=cls, model_instance=instance, extra=extra
@@ -302,11 +302,11 @@ def type(
 def input(
     model: builtins.type[PydanticModel],
     *,
-    fields: Optional[list[str]] = None,
-    name: Optional[str] = None,
+    fields: list[str] | None = None,
+    name: str | None = None,
     is_interface: bool = False,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
 ) -> Callable[..., builtins.type[StrawberryTypeFromPydantic[PydanticModel]]]:
@@ -332,11 +332,11 @@ def input(
 def interface(
     model: builtins.type[PydanticModel],
     *,
-    fields: Optional[list[str]] = None,
-    name: Optional[str] = None,
+    fields: list[str] | None = None,
+    name: str | None = None,
     is_input: bool = False,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
+    description: str | None = None,
+    directives: Sequence[object] | None = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
 ) -> Callable[..., builtins.type[StrawberryTypeFromPydantic[PydanticModel]]]:

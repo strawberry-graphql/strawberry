@@ -8,7 +8,6 @@ from typing import (
     Callable,
     Optional,
     TypedDict,
-    Union,
     cast,
 )
 
@@ -83,7 +82,7 @@ def _run_validation(execution_context: ExecutionContext) -> None:
 
 async def _parse_and_validate_async(
     context: ExecutionContext, extensions_runner: SchemaExtensionsRunner
-) -> Optional[PreExecutionError]:
+) -> PreExecutionError | None:
     if not context.query:
         raise MissingQueryError()
 
@@ -117,7 +116,7 @@ async def _parse_and_validate_async(
 
 async def _handle_execution_result(
     context: ExecutionContext,
-    result: Union[GraphQLExecutionResult, ExecutionResult],
+    result: GraphQLExecutionResult | ExecutionResult,
     extensions_runner: SchemaExtensionsRunner,
     process_errors: ProcessErrors | None,
 ) -> ExecutionResult:
@@ -134,7 +133,7 @@ async def _handle_execution_result(
     return result
 
 
-def _coerce_error(error: Union[GraphQLError, Exception]) -> GraphQLError:
+def _coerce_error(error: GraphQLError | Exception) -> GraphQLError:
     if isinstance(error, GraphQLError):
         return error
     return GraphQLError(str(error), original_error=error)
@@ -146,7 +145,7 @@ async def execute(
     extensions_runner: SchemaExtensionsRunner,
     process_errors: ProcessErrors,
     middleware_manager: MiddlewareManager,
-    execution_context_class: Optional[type[GraphQLExecutionContext]] = None,
+    execution_context_class: type[GraphQLExecutionContext] | None = None,
 ) -> ExecutionResult | PreExecutionError:
     try:
         async with extensions_runner.operation():
@@ -210,7 +209,7 @@ def execute_sync(
     allowed_operation_types: Iterable[OperationType],
     extensions_runner: SchemaExtensionsRunner,
     execution_context: ExecutionContext,
-    execution_context_class: Optional[type[GraphQLExecutionContext]] = None,
+    execution_context_class: type[GraphQLExecutionContext] | None = None,
     process_errors: ProcessErrors,
     middleware_manager: MiddlewareManager,
 ) -> ExecutionResult:

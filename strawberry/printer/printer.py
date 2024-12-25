@@ -7,7 +7,6 @@ from typing import (
     Any,
     Optional,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -73,7 +72,7 @@ def _serialize_dataclasses(value: dict[_T, object]) -> dict[_T, object]: ...
 
 @overload
 def _serialize_dataclasses(
-    value: Union[list[object], tuple[object]],
+    value: list[object] | tuple[object],
 ) -> list[object]: ...
 
 
@@ -155,7 +154,7 @@ def print_schema_directive(
 
 
 def print_field_directives(
-    field: Optional[StrawberryField], schema: BaseSchema, *, extras: PrintExtras
+    field: StrawberryField | None, schema: BaseSchema, *, extras: PrintExtras
 ) -> str:
     if not field:
         return ""
@@ -501,7 +500,7 @@ def _all_root_names_are_common_names(schema: BaseSchema) -> bool:
 
 def print_schema_definition(
     schema: BaseSchema, *, extras: PrintExtras
-) -> Optional[str]:
+) -> str | None:
     # TODO: add support for description
 
     if _all_root_names_are_common_names(schema) and not schema.schema_directives:
@@ -525,7 +524,7 @@ def print_schema_definition(
 
 def print_directive(
     directive: GraphQLDirective, *, schema: BaseSchema
-) -> Optional[str]:
+) -> str | None:
     strawberry_directive = directive.extensions["strawberry-definition"]
 
     if (

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from chalice.app import Request, Response
 from strawberry.http.exceptions import HTTPException
@@ -27,7 +27,7 @@ class ChaliceHTTPRequestAdapter(SyncHTTPRequestAdapter):
         return self.request.query_params or {}
 
     @property
-    def body(self) -> Union[str, bytes]:
+    def body(self) -> str | bytes:
         return self.request.raw_body
 
     @property
@@ -39,7 +39,7 @@ class ChaliceHTTPRequestAdapter(SyncHTTPRequestAdapter):
         return self.request.headers
 
     @property
-    def post_data(self) -> Mapping[str, Union[str, bytes]]:
+    def post_data(self) -> Mapping[str, str | bytes]:
         raise NotImplementedError
 
     @property
@@ -47,7 +47,7 @@ class ChaliceHTTPRequestAdapter(SyncHTTPRequestAdapter):
         raise NotImplementedError
 
     @property
-    def content_type(self) -> Optional[str]:
+    def content_type(self) -> str | None:
         return self.request.headers.get("Content-Type", None)
 
 
@@ -60,8 +60,8 @@ class GraphQLView(
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
     ) -> None:
         self.allow_queries_via_get = allow_queries_via_get
@@ -76,7 +76,7 @@ class GraphQLView(
         else:
             self.graphql_ide = graphql_ide
 
-    def get_root_value(self, request: Request) -> Optional[RootValue]:
+    def get_root_value(self, request: Request) -> RootValue | None:
         return None
 
     def render_graphql_ide(self, request: Request) -> Response:
@@ -93,7 +93,7 @@ class GraphQLView(
         message: str,
         error_code: str,
         http_status_code: int,
-        headers: Optional[dict[str, str | list[str]]] = None,
+        headers: dict[str, str | list[str]] | None = None,
     ) -> Response:
         """A wrapper for error responses.
 

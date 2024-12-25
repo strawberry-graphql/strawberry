@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -30,9 +30,9 @@ class GraphQLUnion:
 @dataclass
 class GraphQLField:
     name: str
-    alias: Optional[str]
+    alias: str | None
     type: GraphQLType
-    default_value: Optional[GraphQLArgumentValue] = None
+    default_value: GraphQLArgumentValue | None = None
 
 
 @dataclass
@@ -44,7 +44,7 @@ class GraphQLFragmentSpread:
 class GraphQLObjectType:
     name: str
     fields: list[GraphQLField] = field(default_factory=list)
-    graphql_typename: Optional[str] = None
+    graphql_typename: str | None = None
 
 
 # Subtype of GraphQLObjectType.
@@ -54,7 +54,7 @@ class GraphQLObjectType:
 class GraphQLFragmentType(GraphQLObjectType):
     name: str
     fields: list[GraphQLField] = field(default_factory=list)
-    graphql_typename: Optional[str] = None
+    graphql_typename: str | None = None
     on: str = ""
 
     def __post_init__(self) -> None:
@@ -74,7 +74,7 @@ class GraphQLEnum:
 @dataclass
 class GraphQLScalar:
     name: str
-    python_type: Optional[type]
+    python_type: type | None
 
 
 GraphQLType = Union[
@@ -90,7 +90,7 @@ GraphQLType = Union[
 @dataclass
 class GraphQLFieldSelection:
     field: str
-    alias: Optional[str]
+    alias: str | None
     selections: list[GraphQLSelection]
     directives: list[GraphQLDirective]
     arguments: list[GraphQLArgument]
@@ -125,7 +125,7 @@ class GraphQLFloatValue:
 @dataclass
 class GraphQLEnumValue:
     name: str
-    enum_type: Optional[str] = None
+    enum_type: str | None = None
 
 
 @dataclass
@@ -194,7 +194,7 @@ class GraphQLOperation:
     directives: list[GraphQLDirective]
     variables: list[GraphQLVariable]
     type: GraphQLObjectType
-    variables_type: Optional[GraphQLObjectType]
+    variables_type: GraphQLObjectType | None
 
 
 __all__ = [

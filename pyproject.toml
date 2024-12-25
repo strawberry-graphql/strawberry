@@ -227,11 +227,6 @@ src = ["strawberry", "tests"]
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    # https://github.com/astral-sh/ruff/pull/4427
-    # equivalent to keep-runtime-typing
-    "UP006",
-    "UP007",
-
     "TID252",
     # we use asserts in tests and to hint mypy
     "S101",

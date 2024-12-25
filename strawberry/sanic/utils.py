@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from sanic.request import File
 
@@ -29,7 +29,7 @@ def convert_request_to_files_dict(request: Request) -> dict[str, Any]:
     if not request_files:
         return {}
 
-    files_dict: dict[str, Union[BytesIO, list[BytesIO]]] = {}
+    files_dict: dict[str, BytesIO | list[BytesIO]] = {}
 
     for field_name, file_list in request_files.items():
         assert len(file_list) == 1

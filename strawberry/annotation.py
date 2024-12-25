@@ -10,7 +10,6 @@ from typing import (
     Annotated,
     Any,
     ForwardRef,
-    Optional,
     TypeVar,
     Union,
     cast,
@@ -55,14 +54,14 @@ class StrawberryAnnotation:
 
     def __init__(
         self,
-        annotation: Union[object, str],
+        annotation: object | str,
         *,
-        namespace: Optional[dict[str, Any]] = None,
+        namespace: dict[str, Any] | None = None,
     ) -> None:
         self.raw_annotation = annotation
         self.namespace = namespace
 
-        self.__resolve_cache__: Optional[Union[StrawberryType, type]] = None
+        self.__resolve_cache__: StrawberryType | type | None = None
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, StrawberryAnnotation):
@@ -75,8 +74,8 @@ class StrawberryAnnotation:
 
     @staticmethod
     def from_annotation(
-        annotation: object, namespace: Optional[dict[str, Any]] = None
-    ) -> Optional[StrawberryAnnotation]:
+        annotation: object, namespace: dict[str, Any] | None = None
+    ) -> StrawberryAnnotation | None:
         if annotation is None:
             return None
 
@@ -85,7 +84,7 @@ class StrawberryAnnotation:
         return annotation
 
     @property
-    def annotation(self) -> Union[object, str]:
+    def annotation(self) -> object | str:
         """Return evaluated type on success or fallback to raw (string) annotation."""
         try:
             return self.evaluate()
@@ -95,7 +94,7 @@ class StrawberryAnnotation:
             return self.raw_annotation
 
     @annotation.setter
-    def annotation(self, value: Union[object, str]) -> None:
+    def annotation(self, value: object | str) -> None:
         self.raw_annotation = value
 
         self.__resolve_cache__ = None
@@ -124,14 +123,14 @@ class StrawberryAnnotation:
 
         return evaled_type, []
 
-    def resolve(self) -> Union[StrawberryType, type]:
+    def resolve(self) -> StrawberryType | type:
         """Return resolved (transformed) annotation."""
         if self.__resolve_cache__ is None:
             self.__resolve_cache__ = self._resolve()
 
         return self.__resolve_cache__
 
-    def _resolve(self) -> Union[StrawberryType, type]:
+    def _resolve(self) -> StrawberryType | type:
         evaled_type = cast(Any, self.evaluate())
 
         if is_private(evaled_type):

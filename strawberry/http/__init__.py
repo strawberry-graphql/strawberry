@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 from typing_extensions import Literal, TypedDict
 
 if TYPE_CHECKING:
@@ -9,9 +9,9 @@ if TYPE_CHECKING:
 
 
 class GraphQLHTTPResponse(TypedDict, total=False):
-    data: Optional[dict[str, object]]
-    errors: Optional[list[object]]
-    extensions: Optional[dict[str, object]]
+    data: dict[str, object] | None
+    errors: list[object] | None
+    extensions: dict[str, object] | None
 
 
 def process_result(result: ExecutionResult) -> GraphQLHTTPResponse:
@@ -29,9 +29,9 @@ def process_result(result: ExecutionResult) -> GraphQLHTTPResponse:
 class GraphQLRequestData:
     # query is optional here as it can be added by an extensions
     # (for example an extension for persisted queries)
-    query: Optional[str]
-    variables: Optional[dict[str, Any]]
-    operation_name: Optional[str]
+    query: str | None
+    variables: dict[str, Any] | None
+    operation_name: str | None
     protocol: Literal["http", "multipart-subscription"] = "http"
 
 

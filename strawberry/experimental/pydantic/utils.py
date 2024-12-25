@@ -5,7 +5,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     NamedTuple,
-    Union,
     cast,
 )
 
@@ -70,7 +69,7 @@ class DataclassCreationFields(NamedTuple):
 def get_default_factory_for_field(
     field: CompatModelField,
     compat: PydanticCompat,
-) -> Union[NoArgAnyCallable, dataclasses._MISSING_TYPE]:
+) -> NoArgAnyCallable | dataclasses._MISSING_TYPE:
     """Gets the default factory for a pydantic field.
 
     Handles mutable defaults when making the dataclass by

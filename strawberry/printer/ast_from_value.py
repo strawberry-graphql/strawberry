@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Mapping
 from math import isfinite
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from graphql.language import (
     BooleanValueNode,
@@ -45,7 +45,7 @@ _re_integer_string = re.compile("^-?(?:0|[1-9][0-9]*)$")
 
 
 def ast_from_leaf_type(
-    serialized: object, type_: Optional[GraphQLInputType]
+    serialized: object, type_: GraphQLInputType | None
 ) -> ValueNode:
     # Others serialize based on their corresponding Python scalar types.
     if isinstance(serialized, bool):
@@ -87,7 +87,7 @@ def ast_from_leaf_type(
     )  # pragma: no cover
 
 
-def ast_from_value(value: Any, type_: GraphQLInputType) -> Optional[ValueNode]:
+def ast_from_value(value: Any, type_: GraphQLInputType) -> ValueNode | None:
     # custom ast_from_value that allows to also serialize custom scalar that aren't
     # basic types, namely JSON scalar types
 

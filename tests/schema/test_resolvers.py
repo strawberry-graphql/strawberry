@@ -1,5 +1,4 @@
 # type: ignore
-import typing
 from contextlib import nullcontext
 from typing import Any, Generic, NamedTuple, Optional, TypeVar, Union
 
@@ -220,7 +219,7 @@ def test_classmethod_resolvers():
 
     @strawberry.type
     class Query:
-        users: typing.List[User] = strawberry.field(resolver=User.get_users)
+        users: list[User] = strawberry.field(resolver=User.get_users)
 
     schema = strawberry.Schema(query=Query)
 

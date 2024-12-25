@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from typing import Final
@@ -18,7 +18,7 @@ class StrawberryLogger:
     def error(
         cls,
         error: GraphQLError,
-        execution_context: Optional[ExecutionContext] = None,
+        execution_context: ExecutionContext | None = None,
         # https://www.python.org/dev/peps/pep-0484/#arbitrary-argument-lists-and-default-argument-values
         **logger_kwargs: Any,
     ) -> None:

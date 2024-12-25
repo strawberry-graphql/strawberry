@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 from strawberry.exceptions.exception import StrawberryException
 from strawberry.exceptions.utils.source_finder import SourceFinder
@@ -31,7 +31,7 @@ class NodeIDAnnotationError(StrawberryException):
         super().__init__(self.message)
 
     @cached_property
-    def exception_source(self) -> Optional[ExceptionSource]:
+    def exception_source(self) -> ExceptionSource | None:
         if self.cls is None:
             return None  # pragma: no cover
 
@@ -62,7 +62,7 @@ class RelayWrongAnnotationError(StrawberryException):
         super().__init__(self.message)
 
     @cached_property
-    def exception_source(self) -> Optional[ExceptionSource]:
+    def exception_source(self) -> ExceptionSource | None:
         if self.cls is None:
             return None  # pragma: no cover
 
@@ -96,7 +96,7 @@ class RelayWrongResolverAnnotationError(StrawberryException):
         super().__init__(self.message)
 
     @cached_property
-    def exception_source(self) -> Optional[ExceptionSource]:
+    def exception_source(self) -> ExceptionSource | None:
         if self.function is None:
             return None  # pragma: no cover
 

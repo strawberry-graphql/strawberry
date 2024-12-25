@@ -6,8 +6,6 @@ from json import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Callable,
-    Optional,
-    Union,
     cast,
 )
 from typing_extensions import TypeGuard
@@ -67,7 +65,7 @@ class ASGIRequestAdapter(AsyncHTTPRequestAdapter):
         return self.request.headers
 
     @property
-    def content_type(self) -> Optional[str]:
+    def content_type(self) -> str | None:
         return self.request.headers.get("content-type")
 
     async def get_body(self) -> bytes:
@@ -133,8 +131,8 @@ class GraphQL(
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: Optional[bool] = None,
-        graphql_ide: Optional[GraphQL_IDE] = "graphiql",
+        graphiql: bool | None = None,
+        graphql_ide: GraphQL_IDE | None = "graphiql",
         allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
@@ -181,19 +179,17 @@ class GraphQL(
         else:  # pragma: no cover
             raise ValueError("Unknown scope type: {!r}".format(scope["type"]))
 
-    async def get_root_value(
-        self, request: Union[Request, WebSocket]
-    ) -> Optional[RootValue]:
+    async def get_root_value(self, request: Request | WebSocket) -> RootValue | None:
         return None
 
     async def get_context(
-        self, request: Union[Request, WebSocket], response: Union[Response, WebSocket]
+        self, request: Request | WebSocket, response: Response | WebSocket
     ) -> Context:
         return {"request": request, "response": response}  # type: ignore
 
     async def get_sub_response(
         self,
-        request: Union[Request, WebSocket],
+        request: Request | WebSocket,
     ) -> Response:
         sub_response = Response()
         sub_response.status_code = None  # type: ignore
@@ -240,18 +236,18 @@ class GraphQL(
         )
 
     def is_websocket_request(
-        self, request: Union[Request, WebSocket]
+        self, request: Request | WebSocket
     ) -> TypeGuard[WebSocket]:
         return request.scope["type"] == "websocket"
 
-    async def pick_websocket_subprotocol(self, request: WebSocket) -> Optional[str]:
+    async def pick_websocket_subprotocol(self, request: WebSocket) -> str | None:
         protocols = request["subprotocols"]
         intersection = set(protocols) & set(self.protocols)
         sorted_intersection = sorted(intersection, key=protocols.index)
         return next(iter(sorted_intersection), None)
 
     async def create_websocket_response(
-        self, request: WebSocket, subprotocol: Optional[str]
+        self, request: WebSocket, subprotocol: str | None
     ) -> WebSocket:
         await request.accept(subprotocol=subprotocol)
         return request
