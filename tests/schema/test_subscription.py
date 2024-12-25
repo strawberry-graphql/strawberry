@@ -187,9 +187,7 @@ async def test_subscription_with_unions_and_annotated():
         @strawberry.subscription
         async def example_with_annotated_union(
             self,
-        ) -> AsyncGenerator[
-            Annotated[C | D, strawberry.union("UnionName")], None
-        ]:
+        ) -> AsyncGenerator[Annotated[C | D, strawberry.union("UnionName")], None]:
             yield C(c="Hi")
 
     schema = strawberry.Schema(query=Query, subscription=Subscription)

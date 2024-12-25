@@ -77,7 +77,13 @@ class BaseSchema(Protocol):
     @abstractmethod
     def get_type_by_name(
         self, name: str
-    ) -> StrawberryObjectDefinition | ScalarDefinition | EnumDefinition | StrawberryUnion | None:
+    ) -> (
+        StrawberryObjectDefinition
+        | ScalarDefinition
+        | EnumDefinition
+        | StrawberryUnion
+        | None
+    ):
         raise NotImplementedError
 
     @abstractmethod

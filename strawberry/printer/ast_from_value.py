@@ -44,9 +44,7 @@ __all__ = ["ast_from_value"]
 _re_integer_string = re.compile("^-?(?:0|[1-9][0-9]*)$")
 
 
-def ast_from_leaf_type(
-    serialized: object, type_: GraphQLInputType | None
-) -> ValueNode:
+def ast_from_leaf_type(serialized: object, type_: GraphQLInputType | None) -> ValueNode:
     # Others serialize based on their corresponding Python scalar types.
     if isinstance(serialized, bool):
         return BooleanValueNode(value=serialized)

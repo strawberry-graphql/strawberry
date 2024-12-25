@@ -35,9 +35,7 @@ from .base import (
 )
 
 
-def generate_get_path(
-    path, query: str, variables: dict[str, Any] | None = None
-) -> str:
+def generate_get_path(path, query: str, variables: dict[str, Any] | None = None) -> str:
     body: dict[str, Any] = {"query": query}
     if variables is not None:
         body["variables"] = json_module.dumps(variables)
@@ -271,9 +269,7 @@ class SyncChannelsHttpClient(ChannelsHttpClient):
 
 
 class ChannelsWebSocketClient(WebSocketClient):
-    def __init__(
-        self, client: WebsocketCommunicator, accepted_subprotocol: str | None
-    ):
+    def __init__(self, client: WebsocketCommunicator, accepted_subprotocol: str | None):
         self.ws = client
         self._closed: bool = False
         self._close_code: int | None = None

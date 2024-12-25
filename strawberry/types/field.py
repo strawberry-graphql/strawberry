@@ -370,7 +370,9 @@ class StrawberryField(dataclasses.Field):
     ) -> Self:
         new_field = copy.copy(self)
 
-        override_type: StrawberryType | type[WithStrawberryObjectDefinition] | None = None
+        override_type: StrawberryType | type[WithStrawberryObjectDefinition] | None = (
+            None
+        )
         type_ = self.resolve_type()
         if has_object_definition(type_):
             type_definition = type_.__strawberry_definition__

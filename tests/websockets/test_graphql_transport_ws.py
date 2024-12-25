@@ -975,7 +975,9 @@ async def test_subsciption_cancel_finalization_delay(ws: WebSocketClient):
     )
 
     while True:
-        next_or_complete_message: NextMessage | CompleteMessage = await ws.receive_json()
+        next_or_complete_message: (
+            NextMessage | CompleteMessage
+        ) = await ws.receive_json()
 
         assert next_or_complete_message["type"] in ("next", "complete")
 

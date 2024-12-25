@@ -26,7 +26,8 @@ class WrappedHook(NamedTuple):
     extension: SchemaExtension
     hook: Callable[
         ...,
-        contextlib.AbstractAsyncContextManager[None] | contextlib.AbstractContextManager[None],
+        contextlib.AbstractAsyncContextManager[None]
+        | contextlib.AbstractContextManager[None],
     ]
     is_async: bool
 

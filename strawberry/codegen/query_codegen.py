@@ -635,9 +635,7 @@ class QueryCodegen:
 
     def _unwrap_type(
         self, type_: type | StrawberryType
-    ) -> tuple[
-        type | StrawberryType, Callable[[GraphQLType], GraphQLType] | None
-    ]:
+    ) -> tuple[type | StrawberryType, Callable[[GraphQLType], GraphQLType] | None]:
         wrapper: Callable[[GraphQLType], GraphQLType] | None = None
 
         if isinstance(type_, StrawberryOptional):

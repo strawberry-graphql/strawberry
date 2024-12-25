@@ -300,9 +300,7 @@ class GraphQLHTTPConsumer(
     ) -> TypeGuard[ChannelsRequest]:
         return False
 
-    async def pick_websocket_subprotocol(
-        self, request: ChannelsRequest
-    ) -> str | None:
+    async def pick_websocket_subprotocol(self, request: ChannelsRequest) -> str | None:
         return None
 
     async def create_websocket_response(
