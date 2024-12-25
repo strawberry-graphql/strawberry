@@ -15,6 +15,8 @@ from .schema import *  # noqa
 async def _original_execution(operation, variables=None) -> Any:
     result = await schema.execute(operation, variable_values=variables)
 
+    assert not result.errors
+
     return result.data
 
 
@@ -118,11 +120,12 @@ async def bench(query: pathlib.Path, variables: Any) -> None:
 if __name__ == "__main__":
     import asyncio
 
-    here = pathlib.Path(__file__).parent
+    operations = pathlib.Path(__file__).parent / "operations"
 
     benchmarks = [
+        (pathlib.Path(operations / "search.graphql"), {"query": "test", "first": 1000}),
         (
-            pathlib.Path(here / "operations/search.graphql"),
+            pathlib.Path(operations / "search_nested.graphql"),
             {"query": "test", "first": 1000},
         ),
     ]

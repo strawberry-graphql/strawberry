@@ -128,8 +128,12 @@ def _recurse(
             field_name = selection.name.value
 
             field = next(
-                field for field in root_type.fields if field.name == field_name
+                (field for field in root_type.fields if field.name == field_name), None
             )
+
+            if not field:
+                breakpoint()
+                raise ValueError(f"Field {field_name} not found in {root_type}")
 
             index = root_type.fields.index(field)
             resolver = field._resolver

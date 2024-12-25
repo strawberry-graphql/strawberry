@@ -1,0 +1,32 @@
+query Search($query: String!, $first: Int!) {
+  search(query: $query, first: $first) {
+    id
+    title
+
+    author {
+      name
+      birthday {
+        year
+      }
+
+      articles {
+        title
+        author {
+          name
+        }
+        articles {
+          title
+          author {
+            name
+          }
+          articles {
+            title
+            author {
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+}
