@@ -374,6 +374,8 @@ class GraphQLCoreConverter:
         # self.from_resolver needs to be called before accessing field.type because
         # in there a field extension might want to change the type during its apply
         resolver = self.from_resolver(field)
+        # TODO: think more about this
+        field._resolver = resolver  # type: ignore
         field_type = cast(
             "GraphQLOutputType",
             self.from_maybe_optional(
