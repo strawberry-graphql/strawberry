@@ -50,11 +50,7 @@ def _import_plugin(plugin: str) -> Optional[type[QueryCodegenPlugin]]:
             if name in module.__dict__["__all__"]
         }
 
-    for obj in symbols.values():
-        if _is_codegen_plugin(obj):
-            return obj
-
-    return None
+    return next((obj for obj in symbols.values() if _is_codegen_plugin(obj)), None)
 
 
 @functools.lru_cache
