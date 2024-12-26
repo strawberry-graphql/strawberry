@@ -237,7 +237,7 @@ class GraphQLController(
     ],
 ):
     path: str = ""
-    dependencies: ClassVar[Dependencies] = {
+    dependencies: ClassVar[Dependencies] = {  # type: ignore[misc]
         "custom_context": Provide(_none_custom_context_getter),
         "context": Provide(_context_getter_http),
         "context_ws": Provide(_context_getter_ws),
@@ -446,7 +446,7 @@ def make_graphql_controller(
 
     class _GraphQLController(GraphQLController):
         path: str = routes_path
-        dependencies: ClassVar[Dependencies] = {
+        dependencies: ClassVar[Dependencies] = {  # type: ignore[misc]
             "custom_context": Provide(custom_context_getter_),
             "context": Provide(_context_getter_http),
             "context_ws": Provide(_context_getter_ws),

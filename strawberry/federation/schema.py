@@ -271,7 +271,7 @@ class Schema(BaseSchema):
         link_directives: list[object] = [
             Link(
                 url=url,
-                import_=sorted(directives),
+                import_=sorted(directives),  # type: ignore[arg-type]
             )
             for url, directives in directive_by_url.items()
         ]

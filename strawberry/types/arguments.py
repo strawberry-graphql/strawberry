@@ -24,7 +24,7 @@ from strawberry.types.base import (
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.lazy_type import LazyType, StrawberryLazyReference
 from strawberry.types.unset import UNSET as _deprecated_UNSET  # noqa: N811
-from strawberry.types.unset import _deprecated_is_unset  # type: ignore  # noqa: F401
+from strawberry.types.unset import _deprecated_is_unset  # noqa: F401
 
 if TYPE_CHECKING:
     from strawberry.schema.config import StrawberryConfig

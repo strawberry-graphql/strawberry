@@ -12,7 +12,7 @@ class GraphQLLexer(RegexLexer):
     filenames: ClassVar[list[str]] = ["*.graphql", "*.gql"]
     mimetypes: ClassVar[list[str]] = ["application/graphql"]
 
-    tokens: ClassVar[dict[str, tuple[str, Any]]] = {
+    tokens: ClassVar[dict[str, list[tuple[str, Any]]]] = {
         "root": [
             (r"#.*", token.Comment.Singline),
             (r"\.\.\.", token.Operator),

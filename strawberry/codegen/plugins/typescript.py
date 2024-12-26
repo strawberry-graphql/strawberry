@@ -102,6 +102,7 @@ class TypeScriptPlugin(QueryCodegenPlugin):
         if type_.name in self.SCALARS_TO_TS_TYPE:
             return ""
 
+        assert type_.python_type is not None
         return f"type {type_.name} = {self.SCALARS_TO_TS_TYPE[type_.python_type]}"
 
     def _print_union_type(self, type_: GraphQLUnion) -> str:
