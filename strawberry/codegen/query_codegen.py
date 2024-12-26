@@ -249,13 +249,15 @@ class QueryCodegenPluginManager:
         def type_cmp(t1: GraphQLType, t2: GraphQLType) -> int:
             """Compare the types."""
             if t1 is t2:
-                return 0
+                retval = 0
+            elif t1 in _get_deps(t2):
+                retval = -1
+            elif t2 in _get_deps(t1):
+                retval = 1
+            else:
+                retval = 0
 
-            if t1 in _get_deps(t2):
-                return -1
-            if t2 in _get_deps(t1):
-                return 1
-            return 0
+            return retval
 
         return sorted(types, key=cmp_to_key(type_cmp))
 

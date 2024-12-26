@@ -77,7 +77,7 @@ def run_mypy(code: str, strict: bool = True) -> list[Result]:
                     )
                 )
         except json.JSONDecodeError as e:
-            raise Exception(f"Invalid JSON: {full_output}") from e
+            raise ValueError(f"Invalid JSON: {full_output}") from e
 
         results.sort(key=lambda x: (x.line, x.column, x.message))
 
