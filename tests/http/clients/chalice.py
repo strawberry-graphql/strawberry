@@ -20,7 +20,7 @@ from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(BaseGraphQLView[dict[str, object], object]):
     result_override: ResultOverrideFunction = None
 
     def get_root_value(self, request: ChaliceRequest) -> Query:
@@ -29,7 +29,7 @@ class GraphQLView(BaseGraphQLView):
 
     def get_context(
         self, request: ChaliceRequest, response: TemporalResponse
-    ) -> object:
+    ) -> dict[str, object]:
         context = super().get_context(request, response)
 
         return get_context(context)
@@ -66,12 +66,13 @@ class ChaliceHttpClient(HttpClient):
             "/graphql", methods=["GET", "POST"], content_types=["application/json"]
         )
         def handle_graphql():
+            assert self.app.current_request is not None
             return view.execute_request(self.app.current_request)
 
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: Optional[str] = None,
+        query: str,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,

@@ -35,7 +35,7 @@ def custom_context_dependency() -> str:
     return "Hi!"
 
 
-async def fastapi_get_context(
+def fastapi_get_context(
     background_tasks: BackgroundTasks,
     request: Request = None,  # type: ignore
     ws: WebSocket = None,  # type: ignore
@@ -49,14 +49,14 @@ async def fastapi_get_context(
     )
 
 
-async def get_root_value(
+def get_root_value(
     request: Request = None,  # type: ignore - FastAPI
     ws: WebSocket = None,  # type: ignore - FastAPI
 ) -> Query:
     return Query()
 
 
-class GraphQLRouter(OnWSConnectMixin, BaseGraphQLRouter[Any, Any]):
+class GraphQLRouter(OnWSConnectMixin, BaseGraphQLRouter[dict[str, object], object]):
     result_override: ResultOverrideFunction = None
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
@@ -114,7 +114,7 @@ class FastAPIHttpClient(HttpClient):
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: Optional[str] = None,
+        query: str,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
@@ -179,10 +179,10 @@ class FastAPIHttpClient(HttpClient):
         *,
         protocols: list[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
-        try:
-            with self.client.websocket_connect(url, protocols) as ws:
-                yield AsgiWebSocketClient(ws)
-        except WebSocketDisconnect as error:
-            ws = AsgiWebSocketClient(None)
-            ws.handle_disconnect(error)
-            yield ws
+        with self.client.websocket_connect(url, protocols) as ws:
+            ws_client = AsgiWebSocketClient(ws)
+
+            try:
+                yield ws_client
+            except WebSocketDisconnect as error:
+                ws_client.handle_disconnect(error)

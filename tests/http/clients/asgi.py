@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import json
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Mapping
 from io import BytesIO
 from typing import Any, Optional, Union
 from typing_extensions import Literal
@@ -86,7 +86,7 @@ class AsgiHttpClient(HttpClient):
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: Optional[str] = None,
+        query: str,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
@@ -152,7 +152,7 @@ class AsgiHttpClient(HttpClient):
         return Response(
             status_code=response.status_code,
             data=response.content,
-            headers=response.headers,
+            headers=dict(response.headers),
         )
 
     @contextlib.asynccontextmanager
@@ -162,13 +162,12 @@ class AsgiHttpClient(HttpClient):
         *,
         protocols: list[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
-        try:
-            with self.client.websocket_connect(url, protocols) as ws:
-                yield AsgiWebSocketClient(ws)
-        except WebSocketDisconnect as error:
-            ws = AsgiWebSocketClient(None)
-            ws.handle_disconnect(error)
-            yield ws
+        with self.client.websocket_connect(url, protocols) as ws:
+            ws_client = AsgiWebSocketClient(ws)
+            try:
+                yield ws_client
+            except WebSocketDisconnect as error:
+                ws_client.handle_disconnect(error)
 
 
 class AsgiWebSocketClient(WebSocketClient):
@@ -186,7 +185,7 @@ class AsgiWebSocketClient(WebSocketClient):
     async def send_text(self, payload: str) -> None:
         self.ws.send_text(payload)
 
-    async def send_json(self, payload: dict[str, Any]) -> None:
+    async def send_json(self, payload: Mapping[str, object]) -> None:
         self.ws.send_json(payload)
 
     async def send_bytes(self, payload: bytes) -> None:
