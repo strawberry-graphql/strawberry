@@ -15,9 +15,9 @@ def wrap_parser(parser: Callable, type_: str) -> Callable:
         try:
             return parser(value)
         except ValueError as e:
-            raise GraphQLError(
+            raise GraphQLError(  # noqa: B904
                 f'Value cannot represent a {type_}: "{value}". {e}'
-            ) from e
+            )
 
     return inner
 
@@ -25,8 +25,8 @@ def wrap_parser(parser: Callable, type_: str) -> Callable:
 def parse_decimal(value: object) -> decimal.Decimal:
     try:
         return decimal.Decimal(str(value))
-    except decimal.DecimalException as e:
-        raise GraphQLError(f'Value cannot represent a Decimal: "{value}".') from e
+    except decimal.DecimalException:
+        raise GraphQLError(f'Value cannot represent a Decimal: "{value}".')  # noqa: B904
 
 
 isoformat = methodcaller("isoformat")

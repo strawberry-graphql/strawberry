@@ -285,7 +285,7 @@ class Schema(BaseSchema):
             provided_operation_name=operation_name,
         )
 
-    @lru_cache  # noqa: B019
+    @lru_cache
     def get_type_by_name(
         self, name: str
     ) -> Optional[
@@ -321,7 +321,7 @@ class Schema(BaseSchema):
             None,
         )
 
-    @lru_cache  # noqa: B019
+    @lru_cache
     def get_directive_by_name(self, graphql_name: str) -> Optional[StrawberryDirective]:
         return next(
             (

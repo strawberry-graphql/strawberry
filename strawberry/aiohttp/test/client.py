@@ -46,8 +46,7 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         )
 
         if assert_no_errors:
-            ok_response = 200
-            assert resp.status == ok_response
+            assert resp.status == 200
             assert response.errors is None
 
         return response

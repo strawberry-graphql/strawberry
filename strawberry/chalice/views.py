@@ -118,7 +118,7 @@ class GraphQLView(
     ) -> Response:
         status_code = 200
 
-        if sub_response.status_code != status_code:
+        if sub_response.status_code != 200:
             status_code = sub_response.status_code
 
         return Response(

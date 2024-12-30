@@ -54,13 +54,13 @@ def server(
     try:
         import starlette  # noqa: F401
         import uvicorn
-    except ImportError as e:
+    except ImportError:
         rich.print(
             "[red]Error: The debug server requires additional packages, "
             "install them by running:\n"
             r"pip install 'strawberry-graphql\[debug-server]'"
         )
-        raise typer.Exit(1) from e
+        raise typer.Exit(1)  # noqa: B904
 
     load_schema(schema, app_dir=app_dir)
 

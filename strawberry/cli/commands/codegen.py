@@ -39,6 +39,7 @@ def _import_plugin(plugin: str) -> Optional[type[QueryCodegenPlugin]]:
 
         assert _is_codegen_plugin(obj)
         return obj
+
     symbols = {
         key: value for key, value in module.__dict__.items() if not key.startswith("__")
     }
@@ -50,7 +51,11 @@ def _import_plugin(plugin: str) -> Optional[type[QueryCodegenPlugin]]:
             if name in module.__dict__["__all__"]
         }
 
-    return next((obj for obj in symbols.values() if _is_codegen_plugin(obj)), None)
+    for obj in symbols.values():
+        if _is_codegen_plugin(obj):
+            return obj
+
+    return None
 
 
 @functools.lru_cache

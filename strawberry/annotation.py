@@ -313,21 +313,27 @@ class StrawberryAnnotation:
         # Prevent import cycles
         from strawberry.types.union import StrawberryUnion
 
-        return bool(
-            isinstance(evaled_type, EnumDefinition)
-            or _is_input_type(evaled_type)
-            or isinstance(evaled_type, StrawberryList)
-            or has_object_definition(evaled_type)
-            or isinstance(
-                evaled_type,
-                (
-                    StrawberryObjectDefinition,
-                    StrawberryOptional,
-                    ScalarDefinition,
-                    StrawberryUnion,
-                ),
-            )
-        )
+        if isinstance(evaled_type, EnumDefinition):
+            return True
+        elif _is_input_type(evaled_type):  # TODO: Replace with StrawberryInputObject
+            return True
+        # TODO: add support for StrawberryInterface when implemented
+        elif isinstance(evaled_type, StrawberryList):
+            return True
+        elif has_object_definition(evaled_type):
+            return True
+        elif isinstance(evaled_type, StrawberryObjectDefinition):
+            return True
+        elif isinstance(evaled_type, StrawberryOptional):
+            return True
+        elif isinstance(
+            evaled_type, ScalarDefinition
+        ):  # TODO: Replace with StrawberryScalar
+            return True
+        elif isinstance(evaled_type, StrawberryUnion):
+            return True
+
+        return False
 
     @classmethod
     def _is_union(cls, annotation: Any, args: list[Any]) -> bool:

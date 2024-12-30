@@ -307,6 +307,15 @@ ignore = [
     "EM102",
     "EM103",
 
+    # Allow comparisons with magic numbers
+    "PLR2004",
+
+    # Allow methods to use lru_cache
+    "B019",
+
+    # Don't force if branches to be converted to "or"
+    "SIM114",
+
     # ruff formatter recommends to disable those, as they conflict with it
     # we don't need to ever enable those.
     "COM812",
@@ -330,6 +339,7 @@ ignore = [
 "strawberry/cli/*" = ["B008"]
 "strawberry/extensions/tracing/__init__.py" = ["TCH004"]
 "strawberry/fastapi/*" = ["B008"]
+"strawberry/annotation.py" = ["RET505"]
 "tests/*" = [
     "ANN001",
     "ANN201",

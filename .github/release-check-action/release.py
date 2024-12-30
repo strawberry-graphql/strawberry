@@ -39,6 +39,6 @@ def get_release_info(file_path: Path) -> ReleaseInfo:
 
         change_type_key = match.group(1)
         change_type = ChangeType[change_type_key.upper()]
-        changelog = "".join(list(f.readlines())).strip()
+        changelog = "".join(f.readlines()).strip()
 
     return ReleaseInfo(change_type, changelog)
