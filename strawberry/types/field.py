@@ -191,17 +191,21 @@ class StrawberryField(dataclasses.Field):
         for argument in resolver.arguments:
             if isinstance(argument.type_annotation.annotation, str):
                 continue
-            elif isinstance(argument.type, StrawberryUnion):
+
+            if isinstance(argument.type, StrawberryUnion):
                 raise InvalidArgumentTypeError(
                     resolver,
                     argument,
                 )
-            elif has_object_definition(argument.type):
-                if argument.type.__strawberry_definition__.is_interface:
-                    raise InvalidArgumentTypeError(
-                        resolver,
-                        argument,
-                    )
+
+            if (
+                has_object_definition(argument.type)
+                and argument.type.__strawberry_definition__.is_interface
+            ):
+                raise InvalidArgumentTypeError(
+                    resolver,
+                    argument,
+                )
 
         self.base_resolver = resolver
 

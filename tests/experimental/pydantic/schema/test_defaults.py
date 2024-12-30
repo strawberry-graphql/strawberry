@@ -247,7 +247,7 @@ def test_v2_input_with_nonscalar_default():
     }
     """
     result = schema.execute_sync(
-        query, variable_values=dict(input_data=dict(nonScalarType={}))
+        query, variable_values={"input_data": {"nonScalarType": {}}}
     )
 
     assert not result.errors

@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from graphql.execution.middleware import MiddlewareManager
     from graphql.type.schema import GraphQLSchema
 
-    from ..extensions.runner import SchemaExtensionsRunner
+    from strawberry.extensions.runner import SchemaExtensionsRunner
 
 SubscriptionResult: TypeAlias = Union[
     PreExecutionError, AsyncGenerator[ExecutionResult, None]
@@ -80,7 +80,7 @@ async def _subscribe(
                     )
                 # graphql-core 3.2 doesn't handle some of the pre-execution errors.
                 # see `test_subscription_immediate_error`
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     aiter_or_result = OriginalExecutionResult(
                         data=None, errors=[_coerce_error(exc)]
                     )
@@ -103,7 +103,7 @@ async def _subscribe(
                             process_errors,
                         )
                 # graphql-core doesn't handle exceptions raised while executing.
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     yield await _handle_execution_result(
                         execution_context,
                         OriginalExecutionResult(data=None, errors=[_coerce_error(exc)]),
@@ -111,7 +111,7 @@ async def _subscribe(
                         process_errors,
                     )
         # catch exceptions raised in `on_execute` hook.
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             origin_result = OriginalExecutionResult(
                 data=None, errors=[_coerce_error(exc)]
             )

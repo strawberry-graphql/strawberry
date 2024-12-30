@@ -389,11 +389,11 @@ def parent_and_info(
 
 @pytest.mark.parametrize(
     "resolver_func",
-    (
+    [
         pytest.param(self_and_info),
         pytest.param(root_and_info),
         pytest.param(parent_and_info),
-    ),
+    ],
 )
 def test_resolver_annotations(resolver_func):
     """Ensure only non-reserved annotations are returned."""
@@ -417,7 +417,7 @@ def test_resolver_with_unhashable_default():
     @strawberry.type
     class Query:
         @strawberry.field
-        def field(self, x: list[str] = ["foo"], y: JSON = {"foo": 42}) -> str:
+        def field(self, x: list[str] = ["foo"], y: JSON = {"foo": 42}) -> str:  # noqa: B006
             return f"{x} {y}"
 
     schema = strawberry.Schema(Query)

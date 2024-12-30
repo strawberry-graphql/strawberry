@@ -90,13 +90,13 @@ def execute_mutation(value) -> ExecutionResult:
 
 @pytest.mark.parametrize(
     "value",
-    (
+    [
         "2012-12-01T09:00",
         "2012-13-01",
         "2012-04-9",
         #  this might have been fixed in 3.11
         # "20120411",
-    ),
+    ],
 )
 def test_serialization_of_incorrect_date_string(value):
     """Test GraphQLError is raised for incorrect date.

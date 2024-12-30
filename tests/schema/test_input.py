@@ -96,7 +96,7 @@ def test_input_with_nonscalar_field_default():
     }
     """
     result = schema.execute_sync(
-        query, variable_values=dict(input_data=dict(nonScalarField={}))
+        query, variable_values={"input_data": {"nonScalarField": {}}}
     )
 
     assert not result.errors

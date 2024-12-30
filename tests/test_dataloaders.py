@@ -158,7 +158,7 @@ async def test_caches_by_id_when_loading_many(mocker: MockerFixture):
 
     assert a == b
 
-    assert [1, 1] == await asyncio.gather(a, b)
+    assert await asyncio.gather(a, b) == [1, 1]
 
     mock_loader.assert_called_once_with([1])
 
@@ -330,8 +330,8 @@ async def test_dont_dispatch_cancelled():
     value_b = cast("Future[Any]", loader.load(2))
     value_b.cancel()
     # value_c will be cancelled by the timeout
+    value_c = cast("Future[Any]", loader.load(3))
     with pytest.raises(asyncio.TimeoutError):
-        value_c = cast("Future[Any]", loader.load(3))
         await asyncio.wait_for(value_c, 0.1)
     value_d = await loader.load(4)
 
@@ -392,7 +392,7 @@ async def test_cache_override():
 
     loader.clear(1)
     assert len(custom_cache.cache) == 2
-    assert sorted(list(custom_cache.cache.keys())) == [2, 3]
+    assert sorted(custom_cache.cache.keys()) == [2, 3]
 
     loader.clear_all()
     assert len(custom_cache.cache) == 0
@@ -429,7 +429,7 @@ async def test_custom_cache_key_fn():
 
     loader = DataLoader(load_fn=idx, cache_key_fn=custom_cache_key)
     data = await loader.load([1, 2, "test"])
-    assert [1, 2, "test"] == data
+    assert data == [1, 2, "test"]
 
 
 @pytest.mark.asyncio

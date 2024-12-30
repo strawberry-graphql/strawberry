@@ -16,7 +16,7 @@ class OnWSConnectMixin(AsyncBaseHTTPView):
             if connection_params.get("test-reject"):
                 if "err-payload" in connection_params:
                     raise ConnectionRejectionError(connection_params["err-payload"])
-                raise ConnectionRejectionError()
+                raise ConnectionRejectionError
 
             if connection_params.get("test-accept"):
                 if "ack-payload" in connection_params:

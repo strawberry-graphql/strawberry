@@ -47,18 +47,17 @@ class NameConverter:
             return self.from_directive(type_)
         if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
             return self.from_enum(type_)
-        elif isinstance(type_, StrawberryObjectDefinition):
+        if isinstance(type_, StrawberryObjectDefinition):
             if type_.is_input:
                 return self.from_input_object(type_)
             if type_.is_interface:
                 return self.from_interface(type_)
             return self.from_object(type_)
-        elif isinstance(type_, StrawberryUnion):
+        if isinstance(type_, StrawberryUnion):
             return self.from_union(type_)
-        elif isinstance(type_, ScalarDefinition):  # TODO: Replace with StrawberryScalar
+        if isinstance(type_, ScalarDefinition):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
-        else:
-            return str(type_)
+        return str(type_)
 
     def from_argument(self, argument: StrawberryArgument) -> str:
         return self.get_graphql_name(argument)

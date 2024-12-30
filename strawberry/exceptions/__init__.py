@@ -50,7 +50,7 @@ class UnallowedReturnTypeForUnion(Exception):
     def __init__(
         self, field_name: str, result_type: str, allowed_types: set[GraphQLObjectType]
     ) -> None:
-        formatted_allowed_types = list(sorted(type_.name for type_ in allowed_types))
+        formatted_allowed_types = sorted(type_.name for type_ in allowed_types)
 
         message = (
             f'The type "{result_type}" of the field "{field_name}" '
@@ -160,7 +160,9 @@ class StrawberryGraphQLError(GraphQLError):
 class ConnectionRejectionError(Exception):
     """Use it when you want to reject a WebSocket connection."""
 
-    def __init__(self, payload: dict[str, object] = {}) -> None:
+    def __init__(self, payload: dict[str, object] | None = None) -> None:
+        if payload is None:
+            payload = {}
         self.payload = payload
 
 

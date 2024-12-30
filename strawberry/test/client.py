@@ -188,8 +188,7 @@ class BaseGraphQLTestClient(ABC):
         # Variables can be mixed files and other data, we don't want to map non-files
         # vars so we need to remove them, we can't remove them before
         # because they can be part of a list of files or folder
-        map_without_vars = {k: v for k, v in map.items() if k in files}
-        return map_without_vars
+        return {k: v for k, v in map.items() if k in files}
 
     def _decode(self, response: Any, type: Literal["multipart", "json"]) -> Any:
         if type == "multipart":

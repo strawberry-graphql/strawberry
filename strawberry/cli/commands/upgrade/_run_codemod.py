@@ -41,9 +41,8 @@ def _execute_transform_wrap(
         additional_kwargs["scratch"] = {}
 
     # TODO: maybe capture warnings?
-    with open(os.devnull, "w") as null:  # noqa: PTH123
-        with contextlib.redirect_stderr(null):
-            return _execute_transform(**job, **additional_kwargs)
+    with open(os.devnull, "w") as null, contextlib.redirect_stderr(null):  # noqa: PTH123
+        return _execute_transform(**job, **additional_kwargs)
 
 
 def _get_progress_and_pool(

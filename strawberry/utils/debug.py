@@ -30,7 +30,7 @@ def pretty_print_graphql_operation(
     if operation_name == "IntrospectionQuery":
         return
 
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # noqa: DTZ005
 
     print(f"[{now}]: {operation_name or 'No operation name'}")  # noqa: T201
     print(highlight(query, GraphQLLexer(), Terminal256Formatter()))  # noqa: T201

@@ -115,7 +115,7 @@ def _get_field_type(
 
     if isinstance(field_type, NonNullTypeNode):
         return _get_field_type(field_type.type, was_non_nullable=True)
-    elif isinstance(field_type, ListTypeNode):
+    if isinstance(field_type, ListTypeNode):
         expr = cst.Subscript(
             value=cst.Name("list"),
             slice=[
@@ -262,14 +262,13 @@ ArgumentValue: TypeAlias = Union[str, bool, list["ArgumentValue"]]
 def _get_argument_value(argument_value: ConstValueNode) -> ArgumentValue:
     if isinstance(argument_value, StringValueNode):
         return argument_value.value
-    elif isinstance(argument_value, EnumValueDefinitionNode):
+    if isinstance(argument_value, EnumValueDefinitionNode):
         return argument_value.name.value
-    elif isinstance(argument_value, ListValueNode):
+    if isinstance(argument_value, ListValueNode):
         return [_get_argument_value(arg) for arg in argument_value.values]
-    elif isinstance(argument_value, BooleanValueNode):
+    if isinstance(argument_value, BooleanValueNode):
         return argument_value.value
-    else:
-        raise NotImplementedError(f"Unknown argument value {argument_value}")
+    raise NotImplementedError(f"Unknown argument value {argument_value}")
 
 
 def _get_directives(

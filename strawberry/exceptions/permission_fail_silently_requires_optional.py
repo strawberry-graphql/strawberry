@@ -7,7 +7,8 @@ from .exception import StrawberryException
 from .utils.source_finder import SourceFinder
 
 if TYPE_CHECKING:
-    from ..field import StrawberryField
+    from strawberry.field import StrawberryField
+
     from .exception_source import ExceptionSource
 
 

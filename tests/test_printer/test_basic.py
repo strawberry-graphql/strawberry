@@ -276,15 +276,15 @@ def test_arguments_scalar():
     @strawberry.type
     class Query:
         @strawberry.field
-        def search(self, j: JSON = {}) -> JSON:
+        def search(self, j: JSON = {}) -> JSON:  # noqa: B006
             return j
 
         @strawberry.field
-        def search2(self, j: JSON = {"hello": "world"}) -> JSON:
+        def search2(self, j: JSON = {"hello": "world"}) -> JSON:  # noqa: B006
             return j
 
         @strawberry.field
-        def search3(self, j: JSON = {"hello": {"nice": "world"}}) -> JSON:
+        def search3(self, j: JSON = {"hello": {"nice": "world"}}) -> JSON:  # noqa: B006
             return j
 
     expected_type = """

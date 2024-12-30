@@ -126,11 +126,9 @@ class UpdateImportsCodemod(VisitorBasedCodemodCommand):
 
         return updated_node
 
-    def leave_ImportFrom(
+    def leave_ImportFrom(  # noqa: N802
         self, node: cst.ImportFrom, updated_node: cst.ImportFrom
     ) -> cst.ImportFrom:
         updated_node = self._update_imports(updated_node, updated_node)
         updated_node = self._update_types_types_imports(updated_node, updated_node)
-        updated_node = self._update_strawberry_type_imports(updated_node, updated_node)
-
-        return updated_node
+        return self._update_strawberry_type_imports(updated_node, updated_node)

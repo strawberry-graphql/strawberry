@@ -54,7 +54,7 @@ class StrawberryUnion(StrawberryType):
     def __init__(
         self,
         name: Optional[str] = None,
-        type_annotations: tuple[StrawberryAnnotation, ...] = tuple(),
+        type_annotations: tuple[StrawberryAnnotation, ...] = (),
         description: Optional[str] = None,
         directives: Iterable[object] = (),
     ) -> None:

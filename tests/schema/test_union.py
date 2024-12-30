@@ -520,16 +520,15 @@ def test_union_with_input_types():
         name: str
         something: Union[A, B]
 
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, data: Input) -> User:
+            return User(name=data.name, age=100)
+
     with pytest.raises(
         TypeError, match="Union for A is not supported because it is an Input type"
     ):
-
-        @strawberry.type
-        class Query:
-            @strawberry.field
-            def user(self, data: Input) -> User:
-                return User(name=data.name, age=100)
-
         strawberry.Schema(query=Query)
 
 

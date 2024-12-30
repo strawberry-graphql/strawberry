@@ -12,9 +12,9 @@ except ModuleNotFoundError:
         import_symbol = f"{__name__}.{name}"
         try:
             return importlib.import_module(import_symbol)
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as e:
             raise AttributeError(
                 f"Attempted import of {import_symbol} failed. Make sure to install the"
                 "'strawberry-graphql-django' package to use the Strawberry Django "
                 "extension API."
-            )
+            ) from e

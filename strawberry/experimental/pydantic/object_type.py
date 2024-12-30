@@ -115,7 +115,7 @@ if TYPE_CHECKING:
     )
 
 
-def type(
+def type(  # noqa: PLR0915
     model: builtins.type[PydanticModel],
     *,
     fields: Optional[list[str]] = None,
@@ -127,7 +127,7 @@ def type(
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
 ) -> Callable[..., builtins.type[StrawberryTypeFromPydantic[PydanticModel]]]:
-    def wrap(cls: Any) -> builtins.type[StrawberryTypeFromPydantic[PydanticModel]]:
+    def wrap(cls: Any) -> builtins.type[StrawberryTypeFromPydantic[PydanticModel]]:  # noqa: PLR0915
         compat = PydanticCompat.from_model(model)
         model_fields = compat.get_model_fields(model)
         original_fields_set = set(fields) if fields else set()

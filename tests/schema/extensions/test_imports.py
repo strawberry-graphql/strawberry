@@ -8,4 +8,4 @@ def test_can_import(mocker):
 
 def test_fails_if_import_is_not_found():
     with pytest.raises(ImportError):
-        from strawberry.extensions.tracing import Blueberry  # noqa
+        from strawberry.extensions.tracing import Blueberry  # noqa: F401

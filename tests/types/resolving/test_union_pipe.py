@@ -98,7 +98,7 @@ def test_raises_error_when_piping_with_scalar():
     class Query:
         user: UserOrError | int
 
-    schema = strawberry.Schema(query=Query)
+    strawberry.Schema(query=Query)
 
 
 @pytest.mark.raises_strawberry_exception(

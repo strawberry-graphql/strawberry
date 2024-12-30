@@ -205,7 +205,7 @@ def test_can_initialize_extension(default_query_types_and_query):
     assert res.data == {"override": 20}
 
 
-@pytest.fixture()
+@pytest.fixture
 def sync_extension() -> type[ExampleExtension]:
     class MyExtension(ExampleExtension):
         def on_operation(self):
@@ -646,7 +646,7 @@ class ExceptionTestingExtension(SchemaExtension):
 
 @pytest.mark.parametrize(
     "failing_hook",
-    (
+    [
         "on_operation_start",
         "on_operation_end",
         "on_parse_start",
@@ -655,7 +655,7 @@ class ExceptionTestingExtension(SchemaExtension):
         "on_validate_end",
         "on_execute_start",
         "on_execute_end",
-    ),
+    ],
 )
 @pytest.mark.asyncio
 async def test_exceptions_are_included_in_the_execution_result(failing_hook):
@@ -684,7 +684,7 @@ async def test_exceptions_are_included_in_the_execution_result(failing_hook):
 
 @pytest.mark.parametrize(
     ("failing_hook", "expected_hooks"),
-    (
+    [
         ("on_operation_start", set()),
         ("on_parse_start", {1, 8}),
         ("on_parse_end", {1, 2, 8}),
@@ -693,7 +693,7 @@ async def test_exceptions_are_included_in_the_execution_result(failing_hook):
         ("on_execute_start", {1, 2, 3, 4, 5, 8}),
         ("on_execute_end", {1, 2, 3, 4, 5, 6, 8}),
         ("on_operation_end", {1, 2, 3, 4, 5, 6, 7}),
-    ),
+    ],
 )
 @pytest.mark.asyncio
 async def test_exceptions_abort_evaluation(failing_hook, expected_hooks):

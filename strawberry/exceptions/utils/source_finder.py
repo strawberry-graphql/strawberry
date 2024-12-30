@@ -8,7 +8,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 
-from ..exception_source import ExceptionSource
+from strawberry.exceptions.exception_source import ExceptionSource
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

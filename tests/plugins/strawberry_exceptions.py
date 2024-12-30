@@ -32,9 +32,11 @@ def suppress_output(verbosity_level: int = 0) -> Generator[None, None, None]:
 
         return
 
-    with Path(os.devnull).open("w", encoding="utf-8") as devnull:
-        with contextlib.redirect_stdout(devnull):
-            yield
+    with (
+        Path(os.devnull).open("w", encoding="utf-8") as devnull,
+        contextlib.redirect_stdout(devnull),
+    ):
+        yield
 
 
 class StrawberryExceptionsPlugin:

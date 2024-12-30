@@ -50,6 +50,7 @@ def pytest_ignore_collect(
 ):
     if sys.version_info < (3, 12) and "python_312" in collection_path.parts:
         return True
+    return None
 
 
 def skip_if_gql_32(reason: str) -> pytest.MarkDecorator:

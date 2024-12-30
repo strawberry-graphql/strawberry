@@ -13,9 +13,9 @@ from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.sanic.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult
+from tests.http.context import get_context
 from tests.views.schema import Query, schema
 
-from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
@@ -87,11 +87,10 @@ class SanicHttpClient(HttpClient):
         if body:
             if method == "get":
                 kwargs["params"] = body
+            elif files:
+                kwargs["data"] = body
             else:
-                if files:
-                    kwargs["data"] = body
-                else:
-                    kwargs["content"] = dumps(body)
+                kwargs["content"] = dumps(body)
 
         request, response = await self.app.asgi_client.request(
             method,

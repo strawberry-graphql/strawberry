@@ -45,8 +45,7 @@ if TYPE_CHECKING:
 
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
-
-    from ..schema import BaseSchema
+    from strawberry.schema import BaseSchema
 
 
 # TODO: remove this and unify temporal responses
@@ -266,7 +265,7 @@ class AsyncGraphQLView(
     request_adapter_class = AsyncDjangoHTTPRequestAdapter
 
     @classonlymethod  # pyright: ignore[reportIncompatibleMethodOverride]
-    def as_view(cls, **initkwargs: Any) -> Callable[..., HttpResponse]:
+    def as_view(cls, **initkwargs: Any) -> Callable[..., HttpResponse]:  # noqa: N805
         # This code tells django that this view is async, see docs here:
         # https://docs.djangoproject.com/en/3.1/topics/async/#async-views
 

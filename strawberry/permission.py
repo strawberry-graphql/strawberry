@@ -101,7 +101,7 @@ class BasePermission(abc.ABC):
         if self.error_extensions:
             # Add our extensions to the error
             if not error.extensions:
-                error.extensions = dict()
+                error.extensions = {}
             error.extensions.update(self.error_extensions)
 
         raise error

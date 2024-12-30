@@ -8,7 +8,7 @@ from strawberry.http.base import BaseView
 from .clients.base import HttpClient
 
 
-@pytest.fixture()
+@pytest.fixture
 def http_client(http_client_class: type[HttpClient]) -> HttpClient:
     with contextlib.suppress(ImportError):
         import django

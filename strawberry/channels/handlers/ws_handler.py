@@ -45,13 +45,13 @@ class ChannelsWebSocketAdapter(AsyncWebSocketAdapter):
                 break
 
             if message["message"] is None:
-                raise NonTextMessageReceived()
+                raise NonTextMessageReceived
 
             try:
                 yield self.view.decode_json(message["message"])
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
                 if not ignore_parsing_errors:
-                    raise NonJsonMessageReceived()
+                    raise NonJsonMessageReceived from e
 
     async def send_json(self, message: Mapping[str, object]) -> None:
         serialized_message = self.view.encode_json(message)

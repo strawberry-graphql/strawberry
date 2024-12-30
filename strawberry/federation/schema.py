@@ -172,7 +172,7 @@ class Schema(BaseSchema):
 
                 try:
                     result = resolve_reference(**kwargs)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     result = e
             else:
                 from strawberry.types.arguments import convert_argument
@@ -187,7 +187,7 @@ class Schema(BaseSchema):
                         scalar_registry=scalar_registry,
                         config=config,
                     )
-                except Exception:
+                except Exception:  # noqa: BLE001
                     result = TypeError(f"Unable to resolve reference for {type_name}")
 
             results.append(result)
@@ -271,7 +271,7 @@ class Schema(BaseSchema):
         link_directives: list[object] = [
             Link(
                 url=url,
-                import_=list(sorted(directives)),
+                import_=sorted(directives),  # type: ignore[arg-type]
             )
             for url, directives in directive_by_url.items()
         ]

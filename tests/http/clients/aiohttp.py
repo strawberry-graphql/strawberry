@@ -15,10 +15,10 @@ from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
+from tests.http.context import get_context
 from tests.views.schema import Query, schema
 from tests.websockets.views import OnWSConnectMixin
 
-from ..context import get_context
 from .base import (
     JSON,
     DebuggableGraphQLTransportWSHandler,
@@ -173,9 +173,11 @@ class AioHttpClient(HttpClient):
         *,
         protocols: list[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
-        async with TestClient(TestServer(self.app)) as client:
-            async with client.ws_connect(url, protocols=protocols) as ws:
-                yield AioWebSocketClient(ws)
+        async with (
+            TestClient(TestServer(self.app)) as client,
+            client.ws_connect(url, protocols=protocols) as ws,
+        ):
+            yield AioWebSocketClient(ws)
 
 
 class AioWebSocketClient(WebSocketClient):

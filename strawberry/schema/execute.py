@@ -85,7 +85,7 @@ async def _parse_and_validate_async(
     context: ExecutionContext, extensions_runner: SchemaExtensionsRunner
 ) -> Optional[PreExecutionError]:
     if not context.query:
-        raise MissingQueryError()
+        raise MissingQueryError
 
     async with extensions_runner.parsing():
         try:
@@ -96,7 +96,7 @@ async def _parse_and_validate_async(
             context.errors = [error]
             return PreExecutionError(data=None, errors=[error])
 
-        except Exception as error:
+        except Exception as error:  # noqa: BLE001
             error = GraphQLError(str(error), original_error=error)
             context.errors = [error]
             return PreExecutionError(data=None, errors=[error])
@@ -189,9 +189,9 @@ async def execute(
                     # only return a sanitised version to the client.
                     process_errors(result.errors, execution_context)
 
-    except (MissingQueryError, InvalidOperationTypeError) as e:
-        raise e
-    except Exception as exc:
+    except (MissingQueryError, InvalidOperationTypeError):
+        raise
+    except Exception as exc:  # noqa: BLE001
         return await _handle_execution_result(
             execution_context,
             PreExecutionError(data=None, errors=[_coerce_error(exc)]),
@@ -219,7 +219,7 @@ def execute_sync(
             # Note: In graphql-core the schema would be validated here but in
             # Strawberry we are validating it at initialisation time instead
             if not execution_context.query:
-                raise MissingQueryError()
+                raise MissingQueryError  # noqa: TRY301
 
             with extensions_runner.parsing():
                 try:
@@ -238,7 +238,7 @@ def execute_sync(
                     )
 
             if execution_context.operation_type not in allowed_operation_types:
-                raise InvalidOperationTypeError(execution_context.operation_type)
+                raise InvalidOperationTypeError(execution_context.operation_type)  # noqa: TRY301
 
             with extensions_runner.validation():
                 _run_validation(execution_context)
@@ -266,7 +266,7 @@ def execute_sync(
                     if isawaitable(result):
                         result = cast(Awaitable[GraphQLExecutionResult], result)  # type: ignore[redundant-cast]
                         ensure_future(result).cancel()
-                        raise RuntimeError(
+                        raise RuntimeError(  # noqa: TRY301
                             "GraphQL execution failed to complete synchronously."
                         )
 
@@ -282,9 +282,9 @@ def execute_sync(
                         # extension). That way we can log the original errors but
                         # only return a sanitised version to the client.
                         process_errors(result.errors, execution_context)
-    except (MissingQueryError, InvalidOperationTypeError) as e:
-        raise e
-    except Exception as exc:
+    except (MissingQueryError, InvalidOperationTypeError):
+        raise
+    except Exception as exc:  # noqa: BLE001
         errors = [_coerce_error(exc)]
         execution_context.errors = errors
         process_errors(errors, execution_context)

@@ -99,12 +99,12 @@ class AioHTTPWebSocketAdapter(AsyncWebSocketAdapter):
             if ws_message.type == http.WSMsgType.TEXT:
                 try:
                     yield self.view.decode_json(ws_message.data)
-                except JSONDecodeError:
+                except JSONDecodeError as e:
                     if not ignore_parsing_errors:
-                        raise NonJsonMessageReceived()
+                        raise NonJsonMessageReceived from e
 
             elif ws_message.type == http.WSMsgType.BINARY:
-                raise NonTextMessageReceived()
+                raise NonTextMessageReceived
 
     async def send_json(self, message: Mapping[str, object]) -> None:
         try:

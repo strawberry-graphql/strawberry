@@ -10,7 +10,7 @@ import strawberry
 from strawberry.extensions import AddValidationRules, DisableValidation
 
 
-@pytest.mark.parametrize("validate_queries", (True, False))
+@pytest.mark.parametrize("validate_queries", [True, False])
 @patch("strawberry.schema.execute.validate", wraps=validate)
 def test_enabling_query_validation_sync(mock_validate, validate_queries):
     @strawberry.type
@@ -43,7 +43,7 @@ def test_enabling_query_validation_sync(mock_validate, validate_queries):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("validate_queries", (True, False))
+@pytest.mark.parametrize("validate_queries", [True, False])
 async def test_enabling_query_validation(validate_queries):
     @strawberry.type
     class Query:

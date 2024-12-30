@@ -279,7 +279,7 @@ class Product:
                 return get_product_by_sku_and_variation(
                     sku=data["sku"], variation=data["variation"]
                 )
-            elif "package" in data:
+            if "package" in data:
                 return get_product_by_sku_and_package(
                     sku=data["sku"], package=data["package"]
                 )

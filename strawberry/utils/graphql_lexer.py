@@ -1,3 +1,5 @@
+from typing import Any, ClassVar
+
 from pygments import token
 from pygments.lexer import RegexLexer
 
@@ -6,11 +8,11 @@ class GraphQLLexer(RegexLexer):
     """GraphQL Lexer for Pygments, used by the debug server."""
 
     name = "GraphQL"
-    aliases = ["graphql", "gql"]
-    filenames = ["*.graphql", "*.gql"]
-    mimetypes = ["application/graphql"]
+    aliases: ClassVar[list[str]] = ["graphql", "gql"]
+    filenames: ClassVar[list[str]] = ["*.graphql", "*.gql"]
+    mimetypes: ClassVar[list[str]] = ["application/graphql"]
 
-    tokens = {
+    tokens: ClassVar[dict[str, list[tuple[str, Any]]]] = {
         "root": [
             (r"#.*", token.Comment.Singline),
             (r"\.\.\.", token.Operator),

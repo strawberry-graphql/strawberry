@@ -189,18 +189,17 @@ def resolve_field_value(
 ) -> FieldArgumentType:
     if isinstance(value, StringValueNode):
         return value.value
-    elif isinstance(value, IntValueNode):
+    if isinstance(value, IntValueNode):
         return int(value.value)
-    elif isinstance(value, FloatValueNode):
+    if isinstance(value, FloatValueNode):
         return float(value.value)
-    elif isinstance(value, BooleanValueNode):
+    if isinstance(value, BooleanValueNode):
         return value.value
-    elif isinstance(value, ListValueNode):
+    if isinstance(value, ListValueNode):
         return [resolve_field_value(v) for v in value.values]
-    elif isinstance(value, ObjectValueNode):
+    if isinstance(value, ObjectValueNode):
         return {v.name.value: resolve_field_value(v.value) for v in value.fields}
-    else:
-        return {}
+    return {}
 
 
 def get_field_arguments(
@@ -250,20 +249,18 @@ def determine_depth(
             return 0
 
         return 1 + max(
-            map(
-                lambda selection: determine_depth(
-                    node=selection,
-                    fragments=fragments,
-                    depth_so_far=depth_so_far + 1,
-                    max_depth=max_depth,
-                    context=context,
-                    operation_name=operation_name,
-                    should_ignore=should_ignore,
-                ),
-                node.selection_set.selections,
+            determine_depth(
+                node=selection,
+                fragments=fragments,
+                depth_so_far=depth_so_far + 1,
+                max_depth=max_depth,
+                context=context,
+                operation_name=operation_name,
+                should_ignore=should_ignore,
             )
+            for selection in node.selection_set.selections
         )
-    elif isinstance(node, FragmentSpreadNode):
+    if isinstance(node, FragmentSpreadNode):
         return determine_depth(
             node=fragments[node.name.value],
             fragments=fragments,
@@ -273,25 +270,22 @@ def determine_depth(
             operation_name=operation_name,
             should_ignore=should_ignore,
         )
-    elif isinstance(
+    if isinstance(
         node, (InlineFragmentNode, FragmentDefinitionNode, OperationDefinitionNode)
     ):
         return max(
-            map(
-                lambda selection: determine_depth(
-                    node=selection,
-                    fragments=fragments,
-                    depth_so_far=depth_so_far,
-                    max_depth=max_depth,
-                    context=context,
-                    operation_name=operation_name,
-                    should_ignore=should_ignore,
-                ),
-                node.selection_set.selections,
+            determine_depth(
+                node=selection,
+                fragments=fragments,
+                depth_so_far=depth_so_far,
+                max_depth=max_depth,
+                context=context,
+                operation_name=operation_name,
+                should_ignore=should_ignore,
             )
+            for selection in node.selection_set.selections
         )
-    else:
-        raise TypeError(f"Depth crawler cannot handle: {node.kind}")  # pragma: no cover
+    raise TypeError(f"Depth crawler cannot handle: {node.kind}")  # pragma: no cover
 
 
 def is_ignored(node: FieldNode, ignore: Optional[list[IgnoreType]] = None) -> bool:

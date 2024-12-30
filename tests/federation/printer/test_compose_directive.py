@@ -30,7 +30,7 @@ def test_schema_directives_and_compose_schema():
 
     @strawberry.type
     class Query:
-        federatedType: FederatedType
+        federatedType: FederatedType  # noqa: N815
 
     expected_type = """
     directive @cacheControl(maxAge: Int!) on OBJECT
@@ -95,7 +95,7 @@ def test_schema_directives_and_compose_schema_custom_import_url():
 
     @strawberry.type
     class Query:
-        federatedType: FederatedType
+        federatedType: FederatedType  # noqa: N815
 
     expected_type = """
     directive @cacheControl(maxAge: Int!) on OBJECT

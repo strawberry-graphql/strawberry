@@ -4,12 +4,9 @@ here for completeness. A problematic case is when a type is a string
 (forward reference) and can only be resolved at schema construction.
 """
 
-import a_mod
-import b_mod
-import c_mod
-import x_mod
-
 import strawberry
+
+from . import a_mod, b_mod, c_mod, x_mod
 
 
 def test_a():

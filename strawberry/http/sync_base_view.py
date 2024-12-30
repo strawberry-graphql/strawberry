@@ -175,8 +175,7 @@ class SyncBaseHTTPView(
         if self.should_render_graphql_ide(request_adapter):
             if self.graphql_ide:
                 return self.render_graphql_ide(request)
-            else:
-                raise HTTPException(404, "Not Found")
+            raise HTTPException(404, "Not Found")
 
         sub_response = self.get_sub_response(request)
         context = (

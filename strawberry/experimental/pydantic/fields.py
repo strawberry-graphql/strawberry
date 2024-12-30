@@ -32,8 +32,7 @@ def replace_pydantic_types(type_: Any, is_input: bool) -> Any:
         attr = "_strawberry_input_type" if is_input else "_strawberry_type"
         if hasattr(type_, attr):
             return getattr(type_, attr)
-        else:
-            raise UnregisteredTypeException(type_)
+        raise UnregisteredTypeException(type_)
     return type_
 
 

@@ -270,6 +270,7 @@ class WebSocketClient(abc.ABC):
     @abc.abstractmethod
     async def receive(self, timeout: Optional[float] = None) -> Message: ...
 
+    @abc.abstractmethod
     async def receive_json(self, timeout: Optional[float] = None) -> Any: ...
 
     @abc.abstractmethod

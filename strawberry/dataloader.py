@@ -240,7 +240,7 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
         values = list(values)
 
         if len(values) != len(batch):
-            raise WrongNumberOfResultsReturned(
+            raise WrongNumberOfResultsReturned(  # noqa: TRY301
                 expected=len(batch), received=len(values)
             )
 
@@ -254,7 +254,7 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
                 task.future.set_exception(value)
             else:
                 task.future.set_result(value)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         for task in batch.tasks:
             task.future.set_exception(e)
 

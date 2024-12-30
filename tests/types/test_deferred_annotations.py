@@ -24,7 +24,7 @@ def test_deferred_other_module():
     modules[mod.__name__] = mod
 
     try:
-        exec(deferred_module_source, mod.__dict__)
+        exec(deferred_module_source, mod.__dict__)  # noqa: S102
 
         @strawberry.type
         class Post(mod.UserContent):

@@ -32,12 +32,12 @@ schema = strawberry.Schema(query=Query)
 
 @pytest.mark.parametrize(
     ("default_value", "variables"),
-    (
+    [
         ("{a: null, b: null}", {}),
         ('{ a: "abc", b: 123 }', {}),
         ("{a: null, b: 123}", {}),
         ("{}", {}),
-    ),
+    ],
 )
 def test_must_specify_at_least_one_key_default(
     default_value: str, variables: dict[str, Any]
@@ -220,7 +220,7 @@ def test_works_with_camelcasing():
     class Query:
         @strawberry.field
         def test(self, input: ExampleWithLongerNames) -> Result:
-            return Result(  # noqa
+            return Result(  # noqa: F821
                 a_field=None if input.a_field is strawberry.UNSET else input.a_field,
                 b_field=None if input.b_field is strawberry.UNSET else input.b_field,
             )

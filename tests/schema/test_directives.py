@@ -420,7 +420,7 @@ def info_directive_schema() -> strawberry.Schema:
     @strawberry.type
     class Query:
         @strawberry.field
-        def greetingTemplate(self, locale: Locale = Locale.EN) -> str:
+        def greeting_template(self, locale: Locale = Locale.EN) -> str:
             return greetings[locale]
 
     field = get_object_definition(Query, strict=True).fields[0]

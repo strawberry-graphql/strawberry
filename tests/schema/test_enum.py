@@ -129,7 +129,7 @@ def test_enum_falsy_values():
     @strawberry.input
     class Input:
         flavour: IceCreamFlavour
-        optionalFlavour: typing.Optional[IceCreamFlavour] = None
+        optional_flavour: typing.Optional[IceCreamFlavour] = None
 
     @strawberry.type
     class Query:

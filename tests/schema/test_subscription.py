@@ -97,14 +97,14 @@ async def test_subscription_with_arguments():
 
 @pytest.mark.parametrize(
     "return_annotation",
-    (
+    [
         "AsyncGenerator[str, None]",
         "AsyncIterable[str]",
         "AsyncIterator[str]",
         "abc.AsyncIterator[str]",
         "abc.AsyncGenerator[str, None]",
         "abc.AsyncIterable[str]",
-    ),
+    ],
 )
 @pytest.mark.asyncio
 async def test_subscription_return_annotations(return_annotation: str):

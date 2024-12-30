@@ -14,8 +14,7 @@ class UnsetType:
             ret = super().__new__(cls)
             cls.__instance = ret
             return ret
-        else:
-            return cls.__instance
+        return cls.__instance
 
     def __str__(self) -> str:
         return ""

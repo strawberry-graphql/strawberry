@@ -19,10 +19,10 @@ from strawberry.channels.handlers.base import ChannelsConsumer
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.typevars import Context, RootValue
+from tests.http.context import get_context
 from tests.views.schema import Query, schema
 from tests.websockets.views import OnWSConnectMixin
 
-from ..context import get_context
 from .base import (
     JSON,
     DebuggableGraphQLTransportWSHandler,
@@ -299,7 +299,7 @@ class ChannelsWebSocketClient(WebSocketClient):
             self._close_code = m["code"]
             self._close_reason = m.get("reason")
             return Message(type=m["type"], data=m["code"], extra=m.get("reason"))
-        elif m["type"] == "websocket.send":
+        if m["type"] == "websocket.send":
             return Message(type=m["type"], data=m["text"])
         return Message(type=m["type"], data=m["data"], extra=m["extra"])
 

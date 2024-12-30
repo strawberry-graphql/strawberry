@@ -111,9 +111,7 @@ def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
         return AnyType(TypeOfAny.special_form)
 
     type_name = ctx.type.args[0]
-    type_ = ctx.api.analyze_type(type_name)
-
-    return type_
+    return ctx.api.analyze_type(type_name)
 
 
 def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface) -> Any:
@@ -147,14 +145,12 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface) -
     if isinstance(expr, MemberExpr):
         if expr.fullname:
             return _get_named_type(expr.fullname, api)
-        else:
-            raise InvalidNodeTypeException(expr)
+        raise InvalidNodeTypeException(expr)
 
     if isinstance(expr, CallExpr):
         if expr.analyzed:
             return _get_type_for_expr(expr.analyzed, api)
-        else:
-            raise InvalidNodeTypeException(expr)
+        raise InvalidNodeTypeException(expr)
 
     if isinstance(expr, CastExpr):
         return expr.type
@@ -177,8 +173,6 @@ def create_type_hook(ctx: DynamicClassDefContext) -> None:
         ctx.name,
         SymbolTableNode(GDEF, type_alias, plugin_generated=True),
     )
-
-    return
 
 
 def union_hook(ctx: DynamicClassDefContext) -> None:
@@ -343,13 +337,12 @@ def add_static_method_to_class(
             cls.defs.body.remove(sym.node)
 
     # For compat with mypy < 0.93
-    if MypyVersion.VERSION < Decimal("0.93"):
+    if Decimal("0.93") > MypyVersion.VERSION:
         function_type = api.named_type("__builtins__.function")
+    elif isinstance(api, SemanticAnalyzerPluginInterface):
+        function_type = api.named_type("builtins.function")
     else:
-        if isinstance(api, SemanticAnalyzerPluginInterface):
-            function_type = api.named_type("builtins.function")
-        else:
-            function_type = api.named_generic_type("builtins.function", [])
+        function_type = api.named_generic_type("builtins.function", [])
 
     arg_types, arg_names, arg_kinds = [], [], []
     for arg in args:
