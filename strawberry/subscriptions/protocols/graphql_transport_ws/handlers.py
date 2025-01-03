@@ -167,7 +167,8 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
             self.connection_init_timeout_task.cancel()
 
         payload = message.get("payload", {})
-
+        if payload is None:
+            payload = {}
         if not isinstance(payload, dict):
             await self.websocket.close(
                 code=4400, reason="Invalid connection init payload"
