@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import json as json_module
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Mapping
 from io import BytesIO
 from typing import Any, Optional
 from typing_extensions import Literal
@@ -15,10 +15,11 @@ from strawberry.channels import (
     GraphQLWSConsumer,
     SyncGraphQLHTTPConsumer,
 )
-from strawberry.channels.handlers.base import ChannelsConsumer
+from strawberry.channels.handlers.http_handler import ChannelsRequest
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
-from strawberry.http.typevars import Context, RootValue
+from strawberry.http.temporal_response import TemporalResponse
+from strawberry.types import ExecutionResult
 from tests.views.schema import Query, schema
 from tests.websockets.views import OnWSConnectMixin
 
@@ -67,23 +68,23 @@ def create_multipart_request_body(
     return headers, request_body
 
 
-class DebuggableGraphQLHTTPConsumer(GraphQLHTTPConsumer):
+class DebuggableGraphQLHTTPConsumer(GraphQLHTTPConsumer[dict[str, object], object]):
     result_override: ResultOverrideFunction = None
 
     def __init__(self, *args: Any, **kwargs: Any):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 
-    async def get_root_value(self, request: ChannelsConsumer) -> Optional[RootValue]:
+    async def get_root_value(self, request: ChannelsRequest):
         return Query()
 
-    async def get_context(self, request: ChannelsConsumer, response: Any) -> Context:
+    async def get_context(self, request: ChannelsRequest, response: TemporalResponse):
         context = await super().get_context(request, response)
 
         return get_context(context)
 
     async def process_result(
-        self, request: ChannelsConsumer, result: Any
+        self, request: ChannelsRequest, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         if self.result_override:
             return self.result_override(result)
@@ -91,23 +92,25 @@ class DebuggableGraphQLHTTPConsumer(GraphQLHTTPConsumer):
         return await super().process_result(request, result)
 
 
-class DebuggableSyncGraphQLHTTPConsumer(SyncGraphQLHTTPConsumer):
+class DebuggableSyncGraphQLHTTPConsumer(
+    SyncGraphQLHTTPConsumer[dict[str, object], object]
+):
     result_override: ResultOverrideFunction = None
 
     def __init__(self, *args: Any, **kwargs: Any):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 
-    def get_root_value(self, request: ChannelsConsumer) -> Optional[RootValue]:
+    def get_root_value(self, request: ChannelsRequest):
         return Query()
 
-    def get_context(self, request: ChannelsConsumer, response: Any) -> Context:
+    def get_context(self, request: ChannelsRequest, response: TemporalResponse):
         context = super().get_context(request, response)
 
         return get_context(context)
 
     def process_result(
-        self, request: ChannelsConsumer, result: Any
+        self, request: ChannelsRequest, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         if self.result_override:
             return self.result_override(result)
@@ -115,11 +118,15 @@ class DebuggableSyncGraphQLHTTPConsumer(SyncGraphQLHTTPConsumer):
         return super().process_result(request, result)
 
 
-class DebuggableGraphQLWSConsumer(OnWSConnectMixin, GraphQLWSConsumer):
+class DebuggableGraphQLWSConsumer(
+    OnWSConnectMixin, GraphQLWSConsumer[dict[str, object], object]
+):
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
-    async def get_context(self, request, response):
+    async def get_context(
+        self, request: GraphQLWSConsumer, response: GraphQLWSConsumer
+    ):
         context = await super().get_context(request, response)
 
         return get_context(context)
@@ -156,7 +163,7 @@ class ChannelsHttpClient(HttpClient):
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: Optional[str] = None,
+        query: str,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
@@ -169,10 +176,9 @@ class ChannelsHttpClient(HttpClient):
         headers = self._get_headers(method=method, headers=headers, files=files)
 
         if method == "post":
-            if files:
-                new_headers, body = create_multipart_request_body(body, files)
-                for k, v in new_headers:
-                    headers[k] = v
+            if body and files:
+                header_pairs, body = create_multipart_request_body(body, files)
+                headers = dict(header_pairs)
             else:
                 body = json_module.dumps(body).encode()
             endpoint_url = "/graphql"
@@ -188,19 +194,20 @@ class ChannelsHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        body: bytes = b"",
         headers: Optional[dict[str, str]] = None,
+        body: bytes = b"",
     ) -> Response:
         # HttpCommunicator expects tuples of bytestrings
-        if headers:
-            headers = [(k.encode(), v.encode()) for k, v in headers.items()]
+        header_tuples = (
+            [(k.encode(), v.encode()) for k, v in headers.items()] if headers else []
+        )
 
         communicator = HttpCommunicator(
             self.http_app,
             method.upper(),
             url,
             body=body,
-            headers=headers,
+            headers=header_tuples,
         )
         response = await communicator.get_response()
 
@@ -286,14 +293,14 @@ class ChannelsWebSocketClient(WebSocketClient):
     async def send_text(self, payload: str) -> None:
         await self.ws.send_to(text_data=payload)
 
-    async def send_json(self, payload: dict[str, Any]) -> None:
+    async def send_json(self, payload: Mapping[str, object]) -> None:
         await self.ws.send_json_to(payload)
 
     async def send_bytes(self, payload: bytes) -> None:
         await self.ws.send_to(bytes_data=payload)
 
     async def receive(self, timeout: Optional[float] = None) -> Message:
-        m = await self.ws.receive_output(timeout=timeout)
+        m = await self.ws.receive_output(timeout=timeout)  # type: ignore
         if m["type"] == "websocket.close":
             self._closed = True
             self._close_code = m["code"]
@@ -304,7 +311,7 @@ class ChannelsWebSocketClient(WebSocketClient):
         return Message(type=m["type"], data=m["data"], extra=m["extra"])
 
     async def receive_json(self, timeout: Optional[float] = None) -> Any:
-        m = await self.ws.receive_output(timeout=timeout)
+        m = await self.ws.receive_output(timeout=timeout)  # type: ignore
         assert m["type"] == "websocket.send"
         assert "text" in m
         return json_module.loads(m["text"])

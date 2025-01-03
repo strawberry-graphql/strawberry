@@ -34,9 +34,6 @@ if TYPE_CHECKING:
 
 
 class BaseGraphQLWSHandler(Generic[Context, RootValue]):
-    context: Context
-    root_value: RootValue
-
     def __init__(
         self,
         view: AsyncBaseHTTPView[Any, Any, Any, Any, Any, Context, RootValue],

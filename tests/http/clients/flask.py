@@ -22,7 +22,7 @@ from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(BaseGraphQLView[dict[str, object], object]):
     # this allows to test our code path for checking the request type
     # TODO: we might want to remove our check since it is done by flask
     # already
@@ -30,7 +30,7 @@ class GraphQLView(BaseGraphQLView):
 
     result_override: ResultOverrideFunction = None
 
-    def __init__(self, *args: str, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 
@@ -84,7 +84,7 @@ class FlaskHttpClient(HttpClient):
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: Optional[str] = None,
+        query: str,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,

@@ -3,10 +3,27 @@ from typing import Union
 from strawberry import UNSET
 from strawberry.exceptions import ConnectionRejectionError
 from strawberry.http.async_base_view import AsyncBaseHTTPView
+from strawberry.http.typevars import (
+    Request,
+    Response,
+    SubResponse,
+    WebSocketRequest,
+    WebSocketResponse,
+)
 from strawberry.types.unset import UnsetType
 
 
-class OnWSConnectMixin(AsyncBaseHTTPView):
+class OnWSConnectMixin(
+    AsyncBaseHTTPView[
+        Request,
+        Response,
+        SubResponse,
+        WebSocketRequest,
+        WebSocketResponse,
+        dict[str, object],
+        object,
+    ]
+):
     async def on_ws_connect(
         self, context: dict[str, object]
     ) -> Union[UnsetType, None, dict[str, object]]:

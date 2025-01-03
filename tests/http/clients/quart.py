@@ -18,7 +18,7 @@ from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(BaseGraphQLView[dict[str, object], object]):
     methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"]
 
     result_override: ResultOverrideFunction = None
@@ -77,7 +77,7 @@ class QuartHttpClient(HttpClient):
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: Optional[str] = None,
+        query: str,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,

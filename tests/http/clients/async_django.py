@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterable
+
 from django.core.exceptions import BadRequest, SuspiciousOperation
 from django.http import Http404, HttpRequest, HttpResponse, StreamingHttpResponse
-from django.test.client import RequestFactory
 
 from strawberry.django.views import AsyncGraphQLView as BaseAsyncGraphQLView
 from strawberry.http import GraphQLHTTPResponse
@@ -14,14 +15,16 @@ from .base import Response, ResultOverrideFunction
 from .django import DjangoHttpClient
 
 
-class AsyncGraphQLView(BaseAsyncGraphQLView):
+class AsyncGraphQLView(BaseAsyncGraphQLView[dict[str, object], object]):
     result_override: ResultOverrideFunction = None
 
     async def get_root_value(self, request: HttpRequest) -> Query:
         await super().get_root_value(request)  # for coverage
         return Query()
 
-    async def get_context(self, request: HttpRequest, response: HttpResponse) -> object:
+    async def get_context(
+        self, request: HttpRequest, response: HttpResponse
+    ) -> dict[str, object]:
         context = {"request": request, "response": response}
 
         return get_context(context)
@@ -36,7 +39,7 @@ class AsyncGraphQLView(BaseAsyncGraphQLView):
 
 
 class AsyncDjangoHttpClient(DjangoHttpClient):
-    async def _do_request(self, request: RequestFactory) -> Response:
+    async def _do_request(self, request: HttpRequest) -> Response:
         view = AsyncGraphQLView.as_view(
             schema=schema,
             graphiql=self.graphiql,
@@ -56,14 +59,16 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
                 data=e.args[0].encode(),
                 headers={},
             )
+
         data = (
             response.streaming_content
             if isinstance(response, StreamingHttpResponse)
+            and isinstance(response.streaming_content, AsyncIterable)
             else response.content
         )
 
         return Response(
             status_code=response.status_code,
             data=data,
-            headers=response.headers,
+            headers=dict(response.headers),
         )

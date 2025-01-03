@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import json
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Mapping
 from io import BytesIO
 from typing import Any, Optional, Union
 from typing_extensions import Literal
@@ -10,7 +10,7 @@ from typing_extensions import Literal
 from starlette.requests import Request
 from starlette.responses import Response as StarletteResponse
 from starlette.testclient import TestClient, WebSocketTestSession
-from starlette.websockets import WebSocket, WebSocketDisconnect
+from starlette.websockets import WebSocket
 
 from strawberry.asgi import GraphQL as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
@@ -86,7 +86,7 @@ class AsgiHttpClient(HttpClient):
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: Optional[str] = None,
+        query: str,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
@@ -152,7 +152,7 @@ class AsgiHttpClient(HttpClient):
         return Response(
             status_code=response.status_code,
             data=response.content,
-            headers=response.headers,
+            headers=dict(response.headers),
         )
 
     @contextlib.asynccontextmanager
@@ -162,13 +162,8 @@ class AsgiHttpClient(HttpClient):
         *,
         protocols: list[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
-        try:
-            with self.client.websocket_connect(url, protocols) as ws:
-                yield AsgiWebSocketClient(ws)
-        except WebSocketDisconnect as error:
-            ws = AsgiWebSocketClient(None)
-            ws.handle_disconnect(error)
-            yield ws
+        with self.client.websocket_connect(url, protocols) as ws:
+            yield AsgiWebSocketClient(ws)
 
 
 class AsgiWebSocketClient(WebSocketClient):
@@ -178,15 +173,10 @@ class AsgiWebSocketClient(WebSocketClient):
         self._close_code: Optional[int] = None
         self._close_reason: Optional[str] = None
 
-    def handle_disconnect(self, exc: WebSocketDisconnect) -> None:
-        self._closed = True
-        self._close_code = exc.code
-        self._close_reason = exc.reason
-
     async def send_text(self, payload: str) -> None:
         self.ws.send_text(payload)
 
-    async def send_json(self, payload: dict[str, Any]) -> None:
+    async def send_json(self, payload: Mapping[str, object]) -> None:
         self.ws.send_json(payload)
 
     async def send_bytes(self, payload: bytes) -> None:
