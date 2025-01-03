@@ -10,7 +10,7 @@ from typing_extensions import Literal
 from starlette.requests import Request
 from starlette.responses import Response as StarletteResponse
 from starlette.testclient import TestClient, WebSocketTestSession
-from starlette.websockets import WebSocket, WebSocketDisconnect
+from starlette.websockets import WebSocket
 
 from strawberry.asgi import GraphQL as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
@@ -163,11 +163,7 @@ class AsgiHttpClient(HttpClient):
         protocols: list[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
         with self.client.websocket_connect(url, protocols) as ws:
-            ws_client = AsgiWebSocketClient(ws)
-            try:
-                yield ws_client
-            except WebSocketDisconnect as error:
-                ws_client.handle_disconnect(error)
+            yield AsgiWebSocketClient(ws)
 
 
 class AsgiWebSocketClient(WebSocketClient):
@@ -176,11 +172,6 @@ class AsgiWebSocketClient(WebSocketClient):
         self._closed: bool = False
         self._close_code: Optional[int] = None
         self._close_reason: Optional[str] = None
-
-    def handle_disconnect(self, exc: WebSocketDisconnect) -> None:
-        self._closed = True
-        self._close_code = exc.code
-        self._close_reason = exc.reason
 
     async def send_text(self, payload: str) -> None:
         self.ws.send_text(payload)

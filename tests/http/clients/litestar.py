@@ -162,12 +162,7 @@ class LitestarHttpClient(HttpClient):
         protocols: list[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
         with self.client.websocket_connect(url, protocols) as ws:
-            ws_client = LitestarWebSocketClient(ws)
-
-            try:
-                yield ws_client
-            except WebSocketDisconnect as error:
-                ws_client.handle_disconnect(error)
+            yield LitestarWebSocketClient(ws)
 
 
 class LitestarWebSocketClient(WebSocketClient):
@@ -176,10 +171,6 @@ class LitestarWebSocketClient(WebSocketClient):
         self._closed: bool = False
         self._close_code: Optional[int] = None
         self._close_reason: Optional[str] = None
-
-    def handle_disconnect(self, exc: WebSocketDisconnect) -> None:
-        self._closed = True
-        self._close_code = exc.code
 
     async def send_text(self, payload: str) -> None:
         self.ws.send_text(payload)
