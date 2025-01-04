@@ -222,7 +222,7 @@ class Query:
 
 ### Custom connection pagination
 
-The default `relay.Connection` class don't implement any pagination logic, and
+The default `relay.Connection` class doesn't implement any pagination logic, and
 should be used as a base class to implement your own pagination logic. All you
 need to do is implement the `resolve_connection` classmethod.
 
