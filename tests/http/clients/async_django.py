@@ -8,9 +8,9 @@ from django.http import Http404, HttpRequest, HttpResponse, StreamingHttpRespons
 from strawberry.django.views import AsyncGraphQLView as BaseAsyncGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
+from tests.http.context import get_context
 from tests.views.schema import Query, schema
 
-from ..context import get_context
 from .base import Response, ResultOverrideFunction
 from .django import DjangoHttpClient
 

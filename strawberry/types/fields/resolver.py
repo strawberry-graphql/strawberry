@@ -91,8 +91,7 @@ class ReservedNameBoundParameter(NamedTuple):
         if parameters:  # Add compatibility for resolvers with no arguments
             first_parameter = parameters[0]
             return first_parameter if first_parameter.name == self.name else None
-        else:
-            return None
+        return None
 
 
 class ReservedType(NamedTuple):
@@ -145,21 +144,19 @@ class ReservedType(NamedTuple):
             )
             warnings.warn(warning, stacklevel=3)
             return reserved_name
-        else:
-            return None
+        return None
 
     def is_reserved_type(self, other: builtins.type) -> bool:
         origin = cast(type, get_origin(other)) or other
         if origin is Annotated:
             # Handle annotated arguments such as Private[str] and DirectiveValue[str]
             return type_has_annotation(other, self.type)
-        else:
-            # Handle both concrete and generic types (i.e Info, and Info)
-            return (
-                issubclass(origin, self.type)
-                if isinstance(origin, type)
-                else origin is self.type
-            )
+        # Handle both concrete and generic types (i.e Info, and Info)
+        return (
+            issubclass(origin, self.type)
+            if isinstance(origin, type)
+            else origin is self.type
+        )
 
 
 SELF_PARAMSPEC = ReservedNameBoundParameter("self")
@@ -309,24 +306,20 @@ class StrawberryResolver(Generic[T]):
         reserved_names = {p.name for p in reserved_parameters.values() if p is not None}
 
         annotations = self._unbound_wrapped_func.__annotations__
-        annotations = {
+        return {
             name: annotation
             for name, annotation in annotations.items()
             if name not in reserved_names
         }
-
-        return annotations
 
     @cached_property
     def type_annotation(self) -> Optional[StrawberryAnnotation]:
         return_annotation = self.signature.return_annotation
         if return_annotation is inspect.Signature.empty:
             return None
-        else:
-            type_annotation = StrawberryAnnotation(
-                annotation=return_annotation, namespace=self._namespace
-            )
-        return type_annotation
+        return StrawberryAnnotation(
+            annotation=return_annotation, namespace=self._namespace
+        )
 
     @property
     def type(self) -> Optional[Union[StrawberryType, type]]:

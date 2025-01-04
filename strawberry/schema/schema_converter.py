@@ -47,6 +47,7 @@ from strawberry.exceptions import (
     ScalarAlreadyRegisteredError,
     UnresolvedFieldTypeError,
 )
+from strawberry.extensions.field_extension import build_field_extension_resolvers
 from strawberry.schema.types.scalar import _make_scalar_type
 from strawberry.types.arguments import StrawberryArgument, convert_arguments
 from strawberry.types.base import (
@@ -66,7 +67,6 @@ from strawberry.types.union import StrawberryUnion
 from strawberry.types.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
 
-from ..extensions.field_extension import build_field_extension_resolvers
 from . import compat
 from .types.concrete_type import ConcreteType
 
@@ -91,7 +91,9 @@ if TYPE_CHECKING:
 
 
 FieldType = TypeVar(
-    "FieldType", bound=Union[GraphQLField, GraphQLInputField], covariant=True
+    "FieldType",
+    bound=Union[GraphQLField, GraphQLInputField],
+    covariant=True,
 )
 
 
@@ -756,9 +758,8 @@ class GraphQLCoreConverter:
         if field.is_async:
             _async_resolver._is_default = not field.base_resolver  # type: ignore
             return _async_resolver
-        else:
-            _resolver._is_default = not field.base_resolver  # type: ignore
-            return _resolver
+        _resolver._is_default = not field.base_resolver  # type: ignore
+        return _resolver
 
     def from_scalar(self, scalar: type) -> GraphQLScalarType:
         scalar_definition: ScalarDefinition
@@ -808,10 +809,9 @@ class GraphQLCoreConverter:
         NoneType = type(None)
         if type_ is None or type_ is NoneType:
             return self.from_type(type_)
-        elif isinstance(type_, StrawberryOptional):
+        if isinstance(type_, StrawberryOptional):
             return self.from_type(type_.of_type)
-        else:
-            return GraphQLNonNull(self.from_type(type_))
+        return GraphQLNonNull(self.from_type(type_))
 
     def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
         if compat.is_graphql_generic(type_):
@@ -819,27 +819,27 @@ class GraphQLCoreConverter:
 
         if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
             return self.from_enum(type_)
-        elif compat.is_input_type(type_):  # TODO: Replace with StrawberryInputObject
+        if compat.is_input_type(type_):  # TODO: Replace with StrawberryInputObject
             return self.from_input_object(type_)
-        elif isinstance(type_, StrawberryList):
+        if isinstance(type_, StrawberryList):
             return self.from_list(type_)
-        elif compat.is_interface_type(type_):  # TODO: Replace with StrawberryInterface
+        if compat.is_interface_type(type_):  # TODO: Replace with StrawberryInterface
             type_definition: StrawberryObjectDefinition = (
                 type_.__strawberry_definition__  # type: ignore
             )
             return self.from_interface(type_definition)
-        elif has_object_definition(type_):
+        if has_object_definition(type_):
             return self.from_object(type_.__strawberry_definition__)
-        elif compat.is_enum(type_):  # TODO: Replace with StrawberryEnum
+        if compat.is_enum(type_):  # TODO: Replace with StrawberryEnum
             enum_definition: EnumDefinition = type_._enum_definition  # type: ignore
             return self.from_enum(enum_definition)
-        elif isinstance(type_, StrawberryObjectDefinition):
+        if isinstance(type_, StrawberryObjectDefinition):
             return self.from_object(type_)
-        elif isinstance(type_, StrawberryUnion):
+        if isinstance(type_, StrawberryUnion):
             return self.from_union(type_)
-        elif isinstance(type_, LazyType):
+        if isinstance(type_, LazyType):
             return self.from_type(type_.resolve_type())
-        elif compat.is_scalar(
+        if compat.is_scalar(
             type_, self.scalar_registry
         ):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)

@@ -47,8 +47,7 @@ def normalize_type(type_: type) -> Any:
 def get_strawberry_type_from_model(type_: Any) -> Any:
     if hasattr(type_, "_strawberry_type"):
         return type_._strawberry_type
-    else:
-        raise UnregisteredTypeException(type_)
+    raise UnregisteredTypeException(type_)
 
 
 def get_private_fields(cls: type) -> list[dataclasses.Field]:
@@ -97,9 +96,7 @@ def get_default_factory_for_field(
     # if we have a default_factory, we should return it
 
     if has_factory:
-        default_factory = cast("NoArgAnyCallable", default_factory)
-
-        return default_factory
+        return cast("NoArgAnyCallable", default_factory)
 
     # if we have a default, we should return it
     if has_default:
@@ -108,8 +105,7 @@ def get_default_factory_for_field(
         # printing the value.
         if isinstance(default, BaseModel):
             return lambda: compat.model_dump(default)
-        else:
-            return lambda: smart_deepcopy(default)
+        return lambda: smart_deepcopy(default)
 
     # if we don't have default or default_factory, but the field is not required,
     # we should return a factory that returns None
@@ -131,5 +127,3 @@ def ensure_all_auto_fields_in_pydantic(
         raise AutoFieldsNotInBaseModelError(
             fields=non_existing_fields, cls_name=cls_name, model=model
         )
-    else:
-        return

@@ -55,14 +55,16 @@ def test_field_default_factory_executed_each_time():
 
 
 def test_field_with_separate_resolver_default():
-    with pytest.raises(FieldWithResolverAndDefaultValueError):
+    def fruit_resolver() -> str:  # pragma: no cover
+        return "banana"
 
-        def gun_resolver() -> str:
-            return "revolver"
+    with pytest.raises(FieldWithResolverAndDefaultValueError):
 
         @strawberry.type
         class Query:
-            weapon: str = strawberry.field(default="sword", resolver=gun_resolver)
+            weapon: str = strawberry.field(
+                default="strawberry", resolver=fruit_resolver
+            )
 
 
 def test_field_with_resolver_and_default_factory():

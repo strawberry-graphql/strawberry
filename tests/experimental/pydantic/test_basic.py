@@ -110,7 +110,7 @@ def test_basic_type_auto_fields():
 
 
 def test_auto_fields_other_sentinel():
-    class other_sentinel:
+    class OtherSentinel:
         pass
 
     class User(pydantic.BaseModel):
@@ -122,7 +122,7 @@ def test_auto_fields_other_sentinel():
     class UserType:
         age: strawberry.auto
         password: strawberry.auto
-        other: other_sentinel  # this should be a private field, not an auto field
+        other: OtherSentinel  # this should be a private field, not an auto field
 
     definition: StrawberryObjectDefinition = UserType.__strawberry_definition__
     assert definition.name == "UserType"
@@ -140,7 +140,7 @@ def test_auto_fields_other_sentinel():
 
     assert field3.python_name == "other"
     assert field3.graphql_name is None
-    assert field3.type is other_sentinel
+    assert field3.type is OtherSentinel
 
 
 def test_referencing_other_models_fails_when_not_registered():
@@ -668,7 +668,7 @@ def test_both_output_and_input_type():
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def updateGroup(group: GroupInput) -> GroupOutput:
+        def update_group(group: GroupInput) -> GroupOutput:
             pass
 
     # This triggers the exception from #1504

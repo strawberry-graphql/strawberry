@@ -43,7 +43,7 @@ class ExampleExtension(SchemaExtension):
         assert cls.called_hooks == cls.expected
 
 
-@pytest.fixture()
+@pytest.fixture
 def default_query_types_and_query() -> SchemaHelper:
     @strawberry.type
     class Person:
@@ -94,7 +94,7 @@ def hook_wrap(list_: list[str], hook_name: str):
         list_.append(f"{hook_name} Exited")
 
 
-@pytest.fixture()
+@pytest.fixture
 def async_extension() -> type[ExampleExtension]:
     class MyExtension(ExampleExtension):
         async def on_operation(self):

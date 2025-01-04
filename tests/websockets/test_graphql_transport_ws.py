@@ -28,7 +28,7 @@ from tests.http.clients.base import DebuggableGraphQLTransportWSHandler
 from tests.views.schema import MyExtension, Schema
 
 if TYPE_CHECKING:
-    from ..http.clients.base import HttpClient, WebSocketClient
+    from tests.http.clients.base import HttpClient, WebSocketClient
 
 
 @pytest_asyncio.fixture

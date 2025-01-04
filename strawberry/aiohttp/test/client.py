@@ -57,13 +57,11 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         headers: Optional[dict[str, object]] = None,
         files: Optional[dict[str, object]] = None,
     ) -> Any:
-        response = await self._client.post(
+        return await self._client.post(
             self.url,
             json=body if not files else None,
             data=body if files else None,
         )
-
-        return response
 
 
 __all__ = ["GraphQLTestClient"]

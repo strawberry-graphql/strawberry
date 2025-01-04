@@ -228,125 +228,69 @@ src = ["strawberry", "tests"]
 select = ["ALL"]
 ignore = [
     # https://github.com/astral-sh/ruff/pull/4427
-    # equivalent to keep-runtime-typing
+    # equivalent to keep-runtime-typing. We might want to enable those
+    # after we drop support for Python 3.9
     "UP006",
     "UP007",
 
-    "TID252",
     # we use asserts in tests and to hint mypy
     "S101",
-    "S102",
-    "S104",
-    "S324",
-    # definitely enable these, maybe not in tests
+
+    # Allow "Any" for annotations. We have too many Any annotations and some
+    # are legit. Maybe reconsider in the future, except for tests?
     "ANN401",
-    "PGH003",
-    "PGH004",
-    "RET504",
-    "RET505",
-    "RET506",
-    "RET507",
-    "RET503",
-    "BLE001",
-    "B008",
-    "N811",
-    "N804",
+
+    # Allow our exceptions to have names that don't end in "Error". Maybe refactor
+    # in the future? But that would be a breaking change.
     "N818",
+
+    # Allow "type: ignore" without rule code. Because we support both mypy and
+    # pyright, and they have different codes for the same error, we can't properly
+    # fix those issues.
+    "PGH003",
+
     # Variable `T` in function should be lowercase
     # this seems a potential bug or opportunity for improvement in ruff
     "N806",
-
-    # first argument should named self (found in tests)
-    "N805",
-
-    "N815",
 
     # shadowing builtins
     "A001",
     "A002",
     "A003",
 
+    # Unused arguments
     "ARG001",
     "ARG002",
     "ARG003",
     "ARG004",
     "ARG005",
+
+    # Boolean positional arguments
     "FBT001",
     "FBT002",
     "FBT003",
 
-    "PT001",
-    "PT023",
+    # Too many arguments/branches/return statements
+    "PLR0913",
+    "PLR0912",
+    "PLR0911",
 
-    # this is pretty much handled by black
-    "E501",
+    # Do not force adding _co to covariant typevars
+    "PLC0105",
 
-    # enable these, we have some in tests
-    "B006",
-    "PT007",
-    "PT011",
-    "PT012",
-    "PT015",
-    "PT017",
-    "C414",
-    "N802",
-
-    "SIM117",
-    "SIM102",
-
-    "F841",
-    "B027",
-    "B905",
-    "ISC001",
-
-    # same?
-    "S105",
-    "S106",
-
-    "DTZ003",
-    "DTZ005",
-
-    "RSE102",
+    # Allow private access to attributes
     "SLF001",
 
-    # in tests
-    "DTZ001",
-
-    "EM101",
-    "EM102",
-    "EM103",
-
-    "B904",
-    "B019",
-
-    "N801",
-    "N807",
-
-    # pandas
-    "PD",
-
-    "RUF012",
-    "PLC0105",
-    "FA102",
-
     # code complexity
-    "C",
     "C901",
 
-    # trailing commas
-    "COM812",
-
-    "PLR",
-    "INP",
-    "TRY",
-    "SIM300",
-    "SIM114",
-
-    "DJ008",
+    # Allow todo/fixme/etc comments
     "TD002",
     "TD003",
     "FIX001",
     "FIX002",
+
+    # We don't want to add "from __future__ mport annotations" everywhere
     "FA100",
 
     # Docstrings, maybe to enable later
@@ -359,29 +303,72 @@ ignore = [
     "D106",
     "D107",
     "D412",
+
+    # Allow to define exceptions text in the exception body
+    "TRY003",
+    "EM101",
+    "EM102",
+    "EM103",
+
+    # Allow comparisons with magic numbers
+    "PLR2004",
+
+    # Allow methods to use lru_cache
+    "B019",
+
+    # Don't force if branches to be converted to "or"
+    "SIM114",
+
+    # ruff formatter recommends to disable those, as they conflict with it
+    # we don't need to ever enable those.
+    "COM812",
+    "COM819",
+    "D206",
+    "E111",
+    "E114",
+    "E117",
+    "E501",
+    "ISC001",
+    "Q000",
+    "Q001",
+    "Q002",
+    "Q003",
+    "W191",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"strawberry/schema/types/concrete_type.py" = ["TCH002"]
+".github/*" = ["INP001"]
+"federation-compatibility/*" = ["INP001"]
+"strawberry/cli/*" = ["B008"]
+"strawberry/extensions/tracing/__init__.py" = ["TCH004"]
+"strawberry/fastapi/*" = ["B008"]
+"strawberry/annotation.py" = ["RET505"]
 "tests/*" = [
-    "RSE102",
-    "SLF001",
-    "TCH001",
-    "TCH002",
-    "TCH003",
     "ANN001",
     "ANN201",
     "ANN202",
     "ANN204",
-    "PLW0603",
-    "PLC1901",
-    "S603",
-    "S607",
+    "B008",
     "B018",
     "D",
+    "DTZ001",
+    "DTZ005",
+    "FA102",
+    "N805",
+    "PLC1901",
+    "PLR2004",
+    "PLW0603",
+    "PT011",
+    "RUF012",
+    "S105",
+    "S106",
+    "S603",
+    "S607",
+    "TCH001",
+    "TCH002",
+    "TCH003",
+    "TRY002",
 ]
-"strawberry/extensions/tracing/__init__.py" = ["TCH004"]
-"tests/http/clients/__init__.py" = ["F401"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["strawberry"]

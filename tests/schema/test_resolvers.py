@@ -514,7 +514,7 @@ def arbitrarily_named_info(icon: str, info_argument: Info) -> str:
 
 @pytest.mark.parametrize(
     ("resolver", "deprecation"),
-    (
+    [
         pytest.param(
             name_based_info,
             pytest.deprecated_call(match="Argument name-based matching of"),
@@ -522,7 +522,7 @@ def arbitrarily_named_info(icon: str, info_argument: Info) -> str:
         pytest.param(type_based_info, nullcontext()),
         pytest.param(generic_type_based_info, nullcontext()),
         pytest.param(arbitrarily_named_info, nullcontext()),
-    ),
+    ],
 )
 def test_info_argument(resolver, deprecation):
     with deprecation:
@@ -565,10 +565,10 @@ class Foo:
 
 @pytest.mark.parametrize(
     "resolver",
-    (
+    [
         pytest.param(parent_no_self),
         pytest.param(Foo.static_method_parent),
-    ),
+    ],
 )
 def test_parent_argument(resolver):
     @strawberry.type
@@ -610,11 +610,11 @@ def multiple_infos(root, info1: Info, info2: Info) -> str:
 
 @pytest.mark.parametrize(
     "resolver",
-    (
+    [
         pytest.param(parent_self_and_root),
         pytest.param(multiple_parents),
         pytest.param(multiple_infos),
-    ),
+    ],
 )
 @pytest.mark.raises_strawberry_exception(
     ConflictingArgumentsError,
@@ -631,7 +631,7 @@ def test_multiple_conflicting_reserved_arguments(resolver):
     strawberry.Schema(query=Query)
 
 
-@pytest.mark.parametrize("resolver", (parent_and_self, self_and_root))
+@pytest.mark.parametrize("resolver", [parent_and_self, self_and_root])
 def test_self_should_not_raise_conflicting_arguments_error(resolver):
     @strawberry.type
     class Query:

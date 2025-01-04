@@ -1,6 +1,6 @@
 import warnings
 from collections.abc import AsyncGenerator, Mapping
-from typing import TYPE_CHECKING, Callable, Optional, cast
+from typing import TYPE_CHECKING, Callable, ClassVar, Optional, cast
 from typing_extensions import TypeGuard
 
 from quart import Request, Response, request
@@ -52,7 +52,7 @@ class GraphQLView(
     ],
     View,
 ):
-    methods = ["GET", "POST"]
+    methods: ClassVar[list[str]] = ["GET", "POST"]
     allow_queries_via_get: bool = True
     request_adapter_class = QuartHTTPRequestAdapter
 

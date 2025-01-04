@@ -500,10 +500,6 @@ def test_silent_permissions_incompatible_types():
         def name(self) -> User:  # pragma: no cover
             return User(name="ABC")
 
-    error = re.escape(
-        "Cannot use fail_silently=True with a non-optional " "or non-list field"
-    )
-
     strawberry.Schema(query=Query)
 
 

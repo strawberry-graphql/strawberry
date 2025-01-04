@@ -77,7 +77,7 @@ class ExtensionContextManagerBase:
                 f"{extension} defines both legacy and new style extension hooks for "
                 "{self.HOOK_NAME}"
             )
-        elif is_legacy:
+        if is_legacy:
             warnings.warn(self.DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=3)
             return self.from_legacy(extension, on_start, on_end)
 
@@ -128,19 +128,17 @@ class ExtensionContextManagerBase:
 
             return WrappedHook(extension=extension, hook=iterator, is_async=True)
 
-        else:
+        @contextlib.contextmanager
+        def iterator_async() -> Iterator[None]:
+            if on_start:
+                on_start()
 
-            @contextlib.contextmanager
-            def iterator_async() -> Iterator[None]:
-                if on_start:
-                    on_start()
+            yield
 
-                yield
+            if on_end:
+                on_end()
 
-                if on_end:
-                    on_end()
-
-            return WrappedHook(extension=extension, hook=iterator_async, is_async=False)
+        return WrappedHook(extension=extension, hook=iterator_async, is_async=False)
 
     @staticmethod
     def from_callable(
@@ -155,14 +153,13 @@ class ExtensionContextManagerBase:
                 yield
 
             return WrappedHook(extension=extension, hook=iterator, is_async=True)
-        else:
 
-            @contextlib.contextmanager
-            def iterator() -> Iterator[None]:
-                func(extension)
-                yield
+        @contextlib.contextmanager  # type: ignore[no-redef]
+        def iterator() -> Iterator[None]:
+            func(extension)
+            yield
 
-            return WrappedHook(extension=extension, hook=iterator, is_async=False)
+        return WrappedHook(extension=extension, hook=iterator, is_async=False)
 
     def __enter__(self) -> None:
         self.exit_stack = contextlib.ExitStack()
@@ -175,8 +172,7 @@ class ExtensionContextManagerBase:
                     f"SchemaExtension hook {hook.extension}.{self.HOOK_NAME} "
                     "failed to complete synchronously."
                 )
-            else:
-                self.exit_stack.enter_context(hook.hook())  # type: ignore
+            self.exit_stack.enter_context(hook.hook())  # type: ignore
 
     def __exit__(
         self,

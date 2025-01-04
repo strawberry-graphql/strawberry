@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Optional, Union
 from typing_extensions import Protocol
 
@@ -88,7 +87,6 @@ class BaseSchema(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    @lru_cache
     def get_directive_by_name(self, graphql_name: str) -> Optional[StrawberryDirective]:
         raise NotImplementedError
 

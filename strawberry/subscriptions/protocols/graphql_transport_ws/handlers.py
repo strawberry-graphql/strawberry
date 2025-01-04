@@ -122,7 +122,7 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
             self.connection_timed_out = True
             reason = "Connection initialisation timeout"
             await self.websocket.close(code=4408, reason=reason)
-        except Exception as error:
+        except Exception as error:  # noqa: BLE001
             await self.handle_task_exception(error)  # pragma: no cover
         finally:
             # do not clear self.connection_init_timeout_task
@@ -298,7 +298,7 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
                     {"id": operation.id, "type": "complete"}
                 )
 
-        except BaseException as e:  # pragma: no cover
+        except BaseException:  # pragma: no cover
             self.operations.pop(operation.id, None)
             raise
         finally:

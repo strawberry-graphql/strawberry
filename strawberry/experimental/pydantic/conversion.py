@@ -101,17 +101,17 @@ def convert_pydantic_model_to_strawberry_class(
 def convert_strawberry_class_to_pydantic_model(obj: type) -> Any:
     if hasattr(obj, "to_pydantic"):
         return obj.to_pydantic()
-    elif dataclasses.is_dataclass(obj):
+    if dataclasses.is_dataclass(obj):
         result = []
         for f in dataclasses.fields(obj):
             value = convert_strawberry_class_to_pydantic_model(getattr(obj, f.name))
             result.append((f.name, value))
         return dict(result)
-    elif isinstance(obj, (list, tuple)):
+    if isinstance(obj, (list, tuple)):
         # Assume we can create an object of this type by passing in a
         # generator (which is not true for namedtuples, not supported).
         return type(obj)(convert_strawberry_class_to_pydantic_model(v) for v in obj)
-    elif isinstance(obj, dict):
+    if isinstance(obj, dict):
         return type(obj)(
             (
                 convert_strawberry_class_to_pydantic_model(k),
@@ -119,5 +119,4 @@ def convert_strawberry_class_to_pydantic_model(obj: type) -> Any:
             )
             for k, v in obj.items()
         )
-    else:
-        return copy.deepcopy(obj)
+    return copy.deepcopy(obj)

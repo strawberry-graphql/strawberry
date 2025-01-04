@@ -67,7 +67,7 @@ class DatadogTracingExtension(SchemaExtension):
         )
 
     def hash_query(self, query: str) -> str:
-        return hashlib.md5(query.encode("utf-8")).hexdigest()
+        return hashlib.md5(query.encode("utf-8")).hexdigest()  # noqa: S324
 
     def on_operation(self) -> Iterator[None]:
         self._operation_name = self.execution_context.operation_name

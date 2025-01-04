@@ -45,7 +45,7 @@ class OpenTelemetryExtension(SchemaExtension):
     ) -> None:
         self._arg_filter = arg_filter
         self._tracer = trace.get_tracer("strawberry")
-        self._span_holder = dict()
+        self._span_holder = {}
         if execution_context:
             self.execution_context = execution_context
 
@@ -116,18 +116,17 @@ class OpenTelemetryExtension(SchemaExtension):
         # Put these in decreasing order of use-cases to exit as soon as possible
         if isinstance(value, (bool, str, bytes, int, float)):
             return value
-        elif isinstance(value, (list, tuple, range)):
+        if isinstance(value, (list, tuple, range)):
             return self.convert_list_or_tuple_to_allowed_types(value)
-        elif isinstance(value, dict):
+        if isinstance(value, dict):
             return self.convert_dict_to_allowed_types(value)
-        elif isinstance(value, (set, frozenset)):
+        if isinstance(value, (set, frozenset)):
             return self.convert_set_to_allowed_types(value)
-        elif isinstance(value, complex):
+        if isinstance(value, complex):
             return str(value)  # Convert complex numbers to strings
-        elif isinstance(value, (bytearray, memoryview)):
+        if isinstance(value, (bytearray, memoryview)):
             return bytes(value)  # Convert bytearray and memoryview to bytes
-        else:
-            return str(value)
+        return str(value)
 
     def convert_set_to_allowed_types(self, value: Union[set, frozenset]) -> str:
         return (
@@ -192,9 +191,7 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
         **kwargs: Any,
     ) -> Any:
         if should_skip_tracing(_next, info):
-            result = _next(root, info, *args, **kwargs)
-
-            return result
+            return _next(root, info, *args, **kwargs)
 
         with self._tracer.start_as_current_span(
             f"GraphQL Resolving: {info.field_name}",
@@ -203,9 +200,7 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
             ),
         ) as span:
             self.add_tags(span, info, kwargs)
-            result = _next(root, info, *args, **kwargs)
-
-            return result
+            return _next(root, info, *args, **kwargs)
 
 
 __all__ = ["OpenTelemetryExtension", "OpenTelemetryExtensionSync"]

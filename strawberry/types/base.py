@@ -54,12 +54,12 @@ class StrawberryType(ABC):
             str, Union[StrawberryType, type[WithStrawberryObjectDefinition]]
         ],
     ) -> Union[StrawberryType, type[WithStrawberryObjectDefinition]]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def is_graphql_generic(self) -> bool:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def has_generic(self, type_var: TypeVar) -> bool:
         return False
@@ -70,17 +70,15 @@ class StrawberryType(ABC):
         if isinstance(other, StrawberryType):
             return self is other
 
-        elif isinstance(other, StrawberryAnnotation):
+        if isinstance(other, StrawberryAnnotation):
             return self == other.resolve()
 
-        else:
-            # This could be simplified if StrawberryAnnotation.resolve() always returned
-            # a StrawberryType
-            resolved = StrawberryAnnotation(other).resolve()
-            if isinstance(resolved, StrawberryType):
-                return self == resolved
-            else:
-                return NotImplemented
+        # This could be simplified if StrawberryAnnotation.resolve() always returned
+        # a StrawberryType
+        resolved = StrawberryAnnotation(other).resolve()
+        if isinstance(resolved, StrawberryType):
+            return self == resolved
+        return NotImplemented
 
     def __hash__(self) -> int:
         # TODO: Is this a bad idea? __eq__ objects are supposed to have the same hash
@@ -100,8 +98,7 @@ class StrawberryContainer(StrawberryType):
         if isinstance(other, StrawberryType):
             if isinstance(other, StrawberryContainer):
                 return self.of_type == other.of_type
-            else:
-                return False
+            return False
 
         return super().__eq__(other)
 
@@ -112,11 +109,10 @@ class StrawberryContainer(StrawberryType):
 
             return list(parameters) if parameters else []
 
-        elif isinstance(self.of_type, StrawberryType):
+        if isinstance(self.of_type, StrawberryType):
             return self.of_type.type_params
 
-        else:
-            return []
+        return []
 
     def copy_with(
         self,

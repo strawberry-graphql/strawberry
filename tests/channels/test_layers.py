@@ -51,9 +51,11 @@ async def test_no_layers():
         "Check https://channels.readthedocs.io/en/stable/topics/channel_layers.html "
         "for more information"
     )
-    with pytest.deprecated_call(match="Use listen_to_channel instead"):
-        with pytest.raises(RuntimeError, match=msg):
-            await consumer.channel_listen("foobar").__anext__()
+    with (
+        pytest.deprecated_call(match="Use listen_to_channel instead"),
+        pytest.raises(RuntimeError, match=msg),
+    ):
+        await consumer.channel_listen("foobar").__anext__()
 
     with pytest.raises(RuntimeError, match=msg):
         async with consumer.listen_to_channel("foobar"):

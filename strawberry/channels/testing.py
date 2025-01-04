@@ -55,7 +55,7 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
         path: str,
         headers: Optional[list[tuple[bytes, bytes]]] = None,
         protocol: str = GRAPHQL_TRANSPORT_WS_PROTOCOL,
-        connection_params: dict = {},
+        connection_params: dict | None = None,
         **kwargs: Any,
     ) -> None:
         """Create a new communicator.
@@ -69,6 +69,8 @@ class GraphQLWebsocketCommunicator(WebsocketCommunicator):
             subprotocols: an ordered list of preferred subprotocols to be sent to the server.
             **kwargs: additional arguments to be passed to the `WebsocketCommunicator` constructor.
         """
+        if connection_params is None:
+            connection_params = {}
         self.protocol = protocol
         subprotocols = kwargs.get("subprotocols", [])
         subprotocols.append(protocol)

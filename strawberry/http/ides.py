@@ -17,9 +17,7 @@ def get_graphql_ide_html(
     else:
         path = here / "static/graphiql.html"
 
-    template = path.read_text(encoding="utf-8")
-
-    return template
+    return path.read_text(encoding="utf-8")
 
 
 __all__ = ["GraphQL_IDE", "get_graphql_ide_html"]

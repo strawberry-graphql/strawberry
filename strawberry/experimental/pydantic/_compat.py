@@ -119,7 +119,7 @@ def get_fields_map_for_v2() -> dict[Any, Any]:
 
 class PydanticV2Compat:
     @property
-    def PYDANTIC_MISSING_TYPE(self) -> Any:
+    def PYDANTIC_MISSING_TYPE(self) -> Any:  # noqa: N802
         from pydantic_core import PydanticUndefined
 
         return PydanticUndefined
@@ -155,7 +155,7 @@ class PydanticV2Compat:
             type_ = self.fields_map[type_]
 
             if type_ is None:
-                raise UnsupportedTypeError()
+                raise UnsupportedTypeError
 
         if is_new_type(type_):
             return new_type_supertype(type_)
@@ -168,7 +168,7 @@ class PydanticV2Compat:
 
 class PydanticV1Compat:
     @property
-    def PYDANTIC_MISSING_TYPE(self) -> Any:
+    def PYDANTIC_MISSING_TYPE(self) -> Any:  # noqa: N802
         return dataclasses.MISSING
 
     def get_model_fields(self, model: type[BaseModel]) -> dict[str, CompatModelField]:
@@ -231,7 +231,7 @@ class PydanticV1Compat:
             type_ = self.fields_map[type_]
 
             if type_ is None:
-                raise UnsupportedTypeError()
+                raise UnsupportedTypeError
 
         if is_new_type(type_):
             return new_type_supertype(type_)

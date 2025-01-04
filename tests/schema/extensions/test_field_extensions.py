@@ -284,8 +284,7 @@ def test_extension_argument_parsing():
         ):
             nonlocal field_kwargs
             field_kwargs = kwargs
-            result = next_(source, info, **kwargs)
-            return result
+            return next_(source, info, **kwargs)
 
     @strawberry.type
     class Query:
@@ -316,8 +315,7 @@ def test_extension_mutate_arguments():
             **kwargs: Any,
         ):
             kwargs["some_input"] += 10
-            result = next_(source, info, **kwargs)
-            return result
+            return next_(source, info, **kwargs)
 
     @strawberry.type
     class Query:
@@ -353,8 +351,7 @@ def test_extension_access_argument_metadata():
                 assert argument_def is not None
                 argument_metadata[key] = argument_def.metadata
 
-            result = next_(source, info, **kwargs)
-            return result
+            return next_(source, info, **kwargs)
 
     @strawberry.type
     class Query:

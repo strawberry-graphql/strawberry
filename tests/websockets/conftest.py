@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from ..http.clients.base import HttpClient
+from tests.http.clients.base import HttpClient
 
 
 def _get_http_client_classes() -> Generator[Any, None, None]:
@@ -38,6 +38,6 @@ def http_client_class(request: Any) -> type[HttpClient]:
     return request.param
 
 
-@pytest.fixture()
+@pytest.fixture
 def http_client(http_client_class: type[HttpClient]) -> HttpClient:
     return http_client_class()

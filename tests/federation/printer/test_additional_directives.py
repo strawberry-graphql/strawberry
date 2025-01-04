@@ -20,7 +20,7 @@ def test_additional_schema_directives_printed_correctly_object():
 
     @strawberry.type
     class Query:
-        federatedType: FederatedType
+        federatedType: FederatedType  # noqa: N815
 
     expected_type = """
     directive @CacheControl(max_age: Int!) on OBJECT
@@ -70,7 +70,7 @@ def test_additional_schema_directives_printed_in_order_object():
 
     @strawberry.type
     class Query:
-        federatedType: FederatedType
+        federatedType: FederatedType  # noqa: N815
 
     expected_type = """
     directive @CacheControl0(max_age: Int!) on OBJECT

@@ -107,9 +107,7 @@ class StrawberryAnnotation:
         if isinstance(annotation, str):
             annotation = ForwardRef(annotation)
 
-        evaled_type = eval_type(annotation, self.namespace, None)
-
-        return evaled_type
+        return eval_type(annotation, self.namespace, None)
 
     def _get_type_with_args(
         self, evaled_type: type[Any]
@@ -155,13 +153,13 @@ class StrawberryAnnotation:
         # a StrawberryType
         if self._is_enum(evaled_type):
             return self.create_enum(evaled_type)
-        elif self._is_optional(evaled_type, args):
+        if self._is_optional(evaled_type, args):
             return self.create_optional(evaled_type)
-        elif self._is_union(evaled_type, args):
+        if self._is_union(evaled_type, args):
             return self.create_union(evaled_type, args)
-        elif is_type_var(evaled_type) or evaled_type is Self:
+        if is_type_var(evaled_type) or evaled_type is Self:
             return self.create_type_var(cast(TypeVar, evaled_type))
-        elif self._is_strawberry_type(evaled_type):
+        if self._is_strawberry_type(evaled_type):
             # Simply return objects that are already StrawberryTypes
             return evaled_type
 
