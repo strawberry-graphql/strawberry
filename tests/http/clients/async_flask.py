@@ -16,12 +16,12 @@ from .base import ResultOverrideFunction
 from .flask import FlaskHttpClient
 
 
-class GraphQLView(BaseAsyncGraphQLView):
+class GraphQLView(BaseAsyncGraphQLView[dict[str, object], object]):
     methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"]
 
     result_override: ResultOverrideFunction = None
 
-    def __init__(self, *args: str, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 

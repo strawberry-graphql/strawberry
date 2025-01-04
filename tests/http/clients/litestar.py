@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import json
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Mapping
 from io import BytesIO
 from typing import Any, Optional
 from typing_extensions import Literal
@@ -87,7 +87,7 @@ class LitestarHttpClient(HttpClient):
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: Optional[str] = None,
+        query: str,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
@@ -151,7 +151,7 @@ class LitestarHttpClient(HttpClient):
         return Response(
             status_code=response.status_code,
             data=response.content,
-            headers=response.headers,
+            headers=dict(response.headers),
         )
 
     @contextlib.asynccontextmanager
@@ -161,13 +161,8 @@ class LitestarHttpClient(HttpClient):
         *,
         protocols: list[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
-        try:
-            with self.client.websocket_connect(url, protocols) as ws:
-                yield LitestarWebSocketClient(ws)
-        except WebSocketDisconnect as error:
-            ws = LitestarWebSocketClient(None)
-            ws.handle_disconnect(error)
-            yield ws
+        with self.client.websocket_connect(url, protocols) as ws:
+            yield LitestarWebSocketClient(ws)
 
 
 class LitestarWebSocketClient(WebSocketClient):
@@ -177,14 +172,10 @@ class LitestarWebSocketClient(WebSocketClient):
         self._close_code: Optional[int] = None
         self._close_reason: Optional[str] = None
 
-    def handle_disconnect(self, exc: WebSocketDisconnect) -> None:
-        self._closed = True
-        self._close_code = exc.code
-
     async def send_text(self, payload: str) -> None:
         self.ws.send_text(payload)
 
-    async def send_json(self, payload: dict[str, Any]) -> None:
+    async def send_json(self, payload: Mapping[str, object]) -> None:
         self.ws.send_json(payload)
 
     async def send_bytes(self, payload: bytes) -> None:
@@ -211,12 +202,15 @@ class LitestarWebSocketClient(WebSocketClient):
             return Message(type=m["type"], data=m["code"], extra=m["reason"])
         if m["type"] == "websocket.send":
             return Message(type=m["type"], data=m["text"])
+
+        assert "data" in m
         return Message(type=m["type"], data=m["data"], extra=m["extra"])
 
     async def receive_json(self, timeout: Optional[float] = None) -> Any:
         m = self.ws.receive()
         assert m["type"] == "websocket.send"
         assert "text" in m
+        assert m["text"] is not None
         return json.loads(m["text"])
 
     async def close(self) -> None:

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import contextlib
 import json
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Mapping
 from io import BytesIO
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from typing_extensions import Literal
 
 from aiohttp import web
@@ -37,7 +37,7 @@ class GraphQLView(OnWSConnectMixin, BaseGraphQLView[dict[str, object], object]):
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
     async def get_context(
-        self, request: web.Request, response: web.StreamResponse
+        self, request: web.Request, response: Union[web.Response, web.WebSocketResponse]
     ) -> dict[str, object]:
         context = await super().get_context(request, response)
 
@@ -95,7 +95,7 @@ class AioHttpClient(HttpClient):
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: Optional[str] = None,
+        query: str,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
@@ -163,7 +163,7 @@ class AioHttpClient(HttpClient):
             return Response(
                 status_code=response.status,
                 data=(await response.text()).encode(),
-                headers=response.headers,
+                headers=dict(response.headers),
             )
 
     @contextlib.asynccontextmanager
@@ -188,7 +188,7 @@ class AioWebSocketClient(WebSocketClient):
     async def send_text(self, payload: str) -> None:
         await self.ws.send_str(payload)
 
-    async def send_json(self, payload: dict[str, Any]) -> None:
+    async def send_json(self, payload: Mapping[str, object]) -> None:
         await self.ws.send_json(payload)
 
     async def send_bytes(self, payload: bytes) -> None:
@@ -199,7 +199,7 @@ class AioWebSocketClient(WebSocketClient):
         self._reason = m.extra
         return Message(type=m.type, data=m.data, extra=m.extra)
 
-    async def receive_json(self, timeout: Optional[float] = None) -> Any:
+    async def receive_json(self, timeout: Optional[float] = None) -> object:
         m = await self.ws.receive(timeout)
         assert m.type == WSMsgType.TEXT
         return json.loads(m.data)

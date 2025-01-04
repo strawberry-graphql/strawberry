@@ -20,14 +20,16 @@ from tests.views.schema import Query, schema
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(BaseGraphQLView[dict[str, object], object]):
     result_override: ResultOverrideFunction = None
 
     def get_root_value(self, request) -> Query:
         super().get_root_value(request)  # for coverage
         return Query()
 
-    def get_context(self, request: HttpRequest, response: HttpResponse) -> object:
+    def get_context(
+        self, request: HttpRequest, response: HttpResponse
+    ) -> dict[str, object]:
         context = {"request": request, "response": response}
 
         return get_context(context)
@@ -70,7 +72,7 @@ class DjangoHttpClient(HttpClient):
 
         return super()._get_headers(method=method, headers=headers, files=files)
 
-    async def _do_request(self, request: RequestFactory) -> Response:
+    async def _do_request(self, request: HttpRequest) -> Response:
         view = GraphQLView.as_view(
             schema=schema,
             graphiql=self.graphiql,
@@ -83,24 +85,20 @@ class DjangoHttpClient(HttpClient):
         try:
             response = view(request)
         except Http404:
-            return Response(
-                status_code=404, data=b"Not found", headers=response.headers
-            )
+            return Response(status_code=404, data=b"Not found")
         except (BadRequest, SuspiciousOperation) as e:
-            return Response(
-                status_code=400, data=e.args[0].encode(), headers=response.headers
-            )
+            return Response(status_code=400, data=e.args[0].encode())
         else:
             return Response(
                 status_code=response.status_code,
                 data=response.content,
-                headers=response.headers,
+                headers=dict(response.headers),
             )
 
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: Optional[str] = None,
+        query: str,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
@@ -116,11 +114,12 @@ class DjangoHttpClient(HttpClient):
         data: Union[dict[str, object], str, None] = None
 
         if body and files:
-            files = {
-                name: SimpleUploadedFile(name, file.read())
-                for name, file in files.items()
-            }
-            body.update(files)
+            body.update(
+                {
+                    name: SimpleUploadedFile(name, file.read())
+                    for name, file in files.items()
+                }
+            )
         else:
             additional_arguments["content_type"] = "application/json"
 
@@ -142,11 +141,7 @@ class DjangoHttpClient(HttpClient):
         method: Literal["get", "post", "patch", "put", "delete"],
         headers: Optional[dict[str, str]] = None,
     ) -> Response:
-        headers = self._get_headers(
-            method=method,  # type: ignore
-            headers=headers,
-            files=None,
-        )
+        headers = headers or {}
 
         factory = RequestFactory()
         request = getattr(factory, method)(url, **headers)
@@ -158,6 +153,12 @@ class DjangoHttpClient(HttpClient):
         url: str,
         headers: Optional[dict[str, str]] = None,
     ) -> Response:
+        headers = self._get_headers(
+            method="get",
+            headers=headers,
+            files=None,
+        )
+
         return await self.request(url, "get", headers=headers)
 
     async def post(

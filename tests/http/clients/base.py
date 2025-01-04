@@ -108,7 +108,7 @@ class HttpClient(abc.ABC):
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: Optional[str] = None,
+        query: str,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
@@ -141,7 +141,7 @@ class HttpClient(abc.ABC):
 
     async def query(
         self,
-        query: Optional[str] = None,
+        query: str,
         method: Literal["get", "post"] = "post",
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
@@ -303,7 +303,9 @@ class WebSocketClient(abc.ABC):
         await self.send_json(message)
 
 
-class DebuggableGraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
+class DebuggableGraphQLTransportWSHandler(
+    BaseGraphQLTransportWSHandler[dict[str, object], object]
+):
     def on_init(self) -> None:
         """This method can be patched by unit tests to get the instance of the
         transport handler when it is initialized.
@@ -331,10 +333,10 @@ class DebuggableGraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         self.original_context = value
 
 
-class DebuggableGraphQLWSHandler(BaseGraphQLWSHandler):
+class DebuggableGraphQLWSHandler(BaseGraphQLWSHandler[dict[str, object], object]):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        self.original_context = self.context
+        self.original_context = kwargs.get("context", {})
 
     def get_tasks(self) -> list:
         return list(self.tasks.values())
