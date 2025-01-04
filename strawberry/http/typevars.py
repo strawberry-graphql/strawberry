@@ -1,6 +1,6 @@
 from typing_extensions import TypeVar
 
-Request = TypeVar("Request", contravariant=True)  # noqa: PLC0105
+Request = TypeVar("Request", contravariant=True)
 Response = TypeVar("Response")
 SubResponse = TypeVar("SubResponse")
 WebSocketRequest = TypeVar("WebSocketRequest")

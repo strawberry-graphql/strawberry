@@ -90,7 +90,7 @@ if TYPE_CHECKING:
     from strawberry.types.scalar import ScalarDefinition
 
 
-FieldType = TypeVar(  # noqa: PLC0105
+FieldType = TypeVar(
     "FieldType",
     bound=Union[GraphQLField, GraphQLInputField],
     covariant=True,
