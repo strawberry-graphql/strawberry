@@ -62,7 +62,7 @@ DEFAULT_SCALAR_REGISTRY: dict[object, ScalarDefinition] = {
     datetime.datetime: _get_scalar_definition(base_scalars.DateTime),
     datetime.time: _get_scalar_definition(base_scalars.Time),
     decimal.Decimal: _get_scalar_definition(base_scalars.Decimal),
-    # We can't wrap GLobalID with @scalar because it has custom attributes/methods
+    # We can't wrap GlobalID with @scalar because it has custom attributes/methods
     GlobalID: _get_scalar_definition(
         scalar(
             GlobalID,
