@@ -131,11 +131,16 @@ class SliceMetadata:
         after: str | None = None,
         first: int | None = None,
         last: int | None = None,
+        max_results: int | None = None,
     ) -> Self:
         """Get the slice metadata to use on ListConnection."""
         from strawberry.relay.types import PREFIX
 
-        max_results = info.schema.config.relay_max_results
+        max_results = (
+            max_results
+            if max_results is not None
+            else info.schema.config.relay_max_results
+        )
         start = 0
         end: int | None = None
 

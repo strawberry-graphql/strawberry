@@ -182,6 +182,9 @@ class NodeExtension(FieldExtension):
 class ConnectionExtension(FieldExtension):
     connection_type: type[Connection[Node]]
 
+    def __init__(self, max_results: Optional[int] = None) -> None:
+        self.max_results = max_results
+
     def apply(self, field: StrawberryField) -> None:
         field.arguments = [
             *field.arguments,
@@ -288,6 +291,7 @@ class ConnectionExtension(FieldExtension):
             after=after,
             first=first,
             last=last,
+            max_results=self.max_results,
         )
 
     async def resolve_async(
@@ -316,6 +320,7 @@ class ConnectionExtension(FieldExtension):
             after=after,
             first=first,
             last=last,
+            max_results=self.max_results,
         )
 
         # If nodes was an AsyncIterable/AsyncIterator, resolve_connection
@@ -357,6 +362,7 @@ def connection(
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
     extensions: list[FieldExtension] = (),  # type: ignore
+    max_results: Optional[int] = None,
     # This init parameter is used by pyright to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behaviour at the moment.
@@ -389,6 +395,9 @@ def connection(
         metadata: The metadata of the field.
         directives: The directives to apply to the field.
         extensions: The extensions to apply to the field.
+        max_results: The maximum number of results this connection can return.
+            Can be set to override the default value of 100 defined in the
+            schema configuration.
         init: Used only for type checking purposes.
 
     Examples:
@@ -451,7 +460,7 @@ def connection(
         default_factory=default_factory,
         metadata=metadata,
         directives=directives or (),
-        extensions=[*extensions, ConnectionExtension()],
+        extensions=[*extensions, ConnectionExtension(max_results=max_results)],
     )
     if resolver is not None:
         f = f(resolver)

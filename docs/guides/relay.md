@@ -205,6 +205,21 @@ It can be defined in the `Query` objects in 4 ways:
 - `node: List[Optional[Node]]`: The same as `List[Node]`, but the returned list
   can contain `null` values if the given objects don't exist.
 
+### Max results for connections
+
+The implementation of `relay.ListConnection` will limit the number of results to
+the `relay_max_results` configuration in the
+[schema's config](../types/schema-configurations.md) (which defaults to `100`).
+
+That can also be configured on a per-field basis by passing `max_results` to the
+`@connection` decorator. For example:
+
+```python
+@strawerry.type
+class Query:
+    fruits: ListConnection[Fruit] = relay.connection(max_results=10_000)
+```
+
 ### Custom connection pagination
 
 The default `relay.Connection` class don't implement any pagination logic, and
