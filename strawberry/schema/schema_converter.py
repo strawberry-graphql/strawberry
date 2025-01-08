@@ -58,6 +58,7 @@ from strawberry.types.base import (
     get_object_definition,
     has_object_definition,
 )
+from strawberry.types.cast import get_strawberry_type_cast
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.field import UNRESOLVED
 from strawberry.types.lazy_type import LazyType
@@ -619,6 +620,9 @@ class GraphQLCoreConverter:
             )
 
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
+                if (type_cast := get_strawberry_type_cast(obj)) is not None:
+                    return type_cast in possible_types
+
                 if object_type.concrete_of and (
                     has_object_definition(obj)
                     and obj.__strawberry_definition__.origin
@@ -898,6 +902,9 @@ class GraphQLCoreConverter:
         if object_type.interfaces:
 
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
+                if (type_cast := get_strawberry_type_cast(obj)) is not None:
+                    return type_cast is object_type.origin
+
                 if object_type.concrete_of and (
                     has_object_definition(obj)
                     and obj.__strawberry_definition__.origin
