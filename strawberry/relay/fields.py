@@ -37,6 +37,7 @@ from strawberry.relay.exceptions import (
 )
 from strawberry.types.arguments import StrawberryArgument, argument
 from strawberry.types.base import StrawberryList, StrawberryOptional
+from strawberry.types.cast import cast as strawberry_cast
 from strawberry.types.field import _RESOLVER_TYPE, StrawberryField, field
 from strawberry.types.fields.resolver import StrawberryResolver
 from strawberry.types.lazy_type import LazyType
@@ -88,11 +89,26 @@ class NodeExtension(FieldExtension):
             info: Info,
             id: Annotated[GlobalID, argument(description="The ID of the object.")],
         ) -> Union[Node, None, Awaitable[Union[Node, None]]]:
-            return id.resolve_type(info).resolve_node(
+            node_type = id.resolve_type(info)
+            resolved_node = node_type.resolve_node(
                 id.node_id,
                 info=info,
                 required=not is_optional,
             )
+
+            # We are using `strawberry_cast` here to cast the resolved node to make
+            # sure `is_type_of` will not try to find its type again. Very important
+            # when returning a non type (e.g. Django/SQLAlchemy/Pydantic model), as
+            # we could end up resolving to a different type in case more than one
+            # are registered.
+            if inspect.isawaitable(resolved_node):
+
+                async def resolve() -> Any:
+                    return strawberry_cast(node_type, await resolved_node)
+
+                return resolve()
+
+            return cast(Node, strawberry_cast(node_type, resolved_node))
 
         return resolver
 
@@ -139,6 +155,14 @@ class NodeExtension(FieldExtension):
                 if inspect.isasyncgen(nodes)
             }
 
+            # We are using `strawberry_cast` here to cast the resolved node to make
+            # sure `is_type_of` will not try to find its type again. Very important
+            # when returning a non type (e.g. Django/SQLAlchemy/Pydantic model), as
+            # we could end up resolving to a different type in case more than one
+            # are registered
+            def cast_nodes(node_t: type[Node], nodes: Iterable[Any]) -> list[Node]:
+                return [cast(Node, strawberry_cast(node_t, node)) for node in nodes]
+
             if awaitable_nodes or asyncgen_nodes:
 
                 async def resolve(resolved: Any = resolved_nodes) -> list[Node]:
@@ -161,7 +185,8 @@ class NodeExtension(FieldExtension):
 
                     # Resolve any generator to lists
                     resolved = {
-                        node_t: list(nodes) for node_t, nodes in resolved.items()
+                        node_t: cast_nodes(node_t, nodes)
+                        for node_t, nodes in resolved.items()
                     }
                     return [
                         resolved[index_map[gid][0]][index_map[gid][1]] for gid in ids
@@ -171,7 +196,7 @@ class NodeExtension(FieldExtension):
 
             # Resolve any generator to lists
             resolved = {
-                node_t: list(cast(Iterator[Node], nodes))
+                node_t: cast_nodes(node_t, cast(Iterable[Node], nodes))
                 for node_t, nodes in resolved_nodes.items()
             }
             return [resolved[index_map[gid][0]][index_map[gid][1]] for gid in ids]

@@ -13,6 +13,7 @@ from .schema import Schema
 from .schema_directive import schema_directive
 from .types.arguments import argument
 from .types.auto import auto
+from .types.cast import cast
 from .types.enum import enum, enum_value
 from .types.field import field
 from .types.info import Info
@@ -36,6 +37,7 @@ __all__ = [
     "argument",
     "asdict",
     "auto",
+    "cast",
     "directive",
     "directive_field",
     "enum",

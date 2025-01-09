@@ -1,4 +1,8 @@
+import dataclasses
 import textwrap
+from collections.abc import Iterable
+from typing import Optional, Union
+from typing_extensions import Self
 
 import pytest
 from pytest_mock import MockerFixture
@@ -1621,3 +1625,77 @@ def test_query_after_error():
 
     assert result.errors is not None
     assert "Argument 'after' contains a non-existing value" in str(result.errors)
+
+
+@pytest.mark.parametrize(
+    ("type_name", "should_have_name"),
+    [("Fruit", False), ("PublicFruit", True)],
+)
+@pytest.mark.django_db(transaction=True)
+def test_correct_model_returned(type_name: str, should_have_name: bool):
+    @dataclasses.dataclass
+    class FruitModel:
+        id: str
+        name: str
+
+    fruits: dict[str, FruitModel] = {"1": FruitModel(id="1", name="Strawberry")}
+
+    @strawberry.type
+    class Fruit(relay.Node):
+        id: relay.NodeID[int]
+
+        @classmethod
+        def resolve_nodes(
+            cls,
+            *,
+            info: Optional[strawberry.Info] = None,
+            node_ids: Iterable[str],
+            required: bool = False,
+        ) -> Iterable[Optional[Union[Self, FruitModel]]]:
+            return [fruits[nid] if required else fruits.get(nid) for nid in node_ids]
+
+    @strawberry.type
+    class PublicFruit(relay.Node):
+        id: relay.NodeID[int]
+        name: str
+
+        @classmethod
+        def resolve_nodes(
+            cls,
+            *,
+            info: Optional[strawberry.Info] = None,
+            node_ids: Iterable[str],
+            required: bool = False,
+        ) -> Iterable[Optional[Union[Self, FruitModel]]]:
+            return [fruits[nid] if required else fruits.get(nid) for nid in node_ids]
+
+    @strawberry.type
+    class Query:
+        node: relay.Node = relay.node()
+
+    schema = strawberry.Schema(query=Query, types=[Fruit, PublicFruit])
+
+    node_id = relay.to_base64(type_name, "1")
+    result = schema.execute_sync(
+        """
+        query NodeQuery($id: GlobalID!) {
+          node(id: $id) {
+            __typename
+            id
+            ... on PublicFruit {
+              name
+            }
+          }
+        }
+    """,
+        {"id": node_id},
+    )
+    assert result.errors is None
+    assert isinstance(result.data, dict)
+
+    assert result.data["node"]["__typename"] == type_name
+    assert result.data["node"]["id"] == node_id
+    if should_have_name:
+        assert result.data["node"]["name"] == "Strawberry"
+    else:
+        assert "name" not in result.data["node"]
