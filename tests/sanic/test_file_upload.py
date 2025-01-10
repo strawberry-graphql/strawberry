@@ -1,14 +1,15 @@
+from io import BytesIO
+from typing import cast
+
 import pytest
+from sanic_testing.testing import SanicTestClient
+
+import strawberry
 from sanic import Sanic
 from sanic.request import File
-from sanic import response
-from sanic_testing.testing import SanicTestClient
-from strawberry.sanic.views import GraphQLView
-import strawberry
 from strawberry.file_uploads import Upload
-from io import BytesIO
 from strawberry.sanic import utils
-from typing import cast
+from strawberry.sanic.views import GraphQLView
 
 
 @strawberry.type
