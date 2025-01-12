@@ -717,6 +717,7 @@ class Connection(Generic[NodeType]):
         after: Optional[str] = None,
         first: Optional[int] = None,
         last: Optional[int] = None,
+        max_results: Optional[int] = None,
         **kwargs: Any,
     ) -> AwaitableOrValue[Self]:
         """Resolve a connection from nodes.
@@ -731,6 +732,7 @@ class Connection(Generic[NodeType]):
             after: Returns the items in the list that come after the specified cursor.
             first: Returns the first n items from the list.
             last: Returns the items in the list that come after the specified cursor.
+            max_results: The maximum number of results to resolve.
             kwargs: Additional arguments passed to the resolver.
 
         Returns:
@@ -767,6 +769,7 @@ class ListConnection(Connection[NodeType]):
         after: Optional[str] = None,
         first: Optional[int] = None,
         last: Optional[int] = None,
+        max_results: Optional[int] = None,
         **kwargs: Any,
     ) -> AwaitableOrValue[Self]:
         """Resolve a connection from the list of nodes.
@@ -780,6 +783,7 @@ class ListConnection(Connection[NodeType]):
             after: Returns the items in the list that come after the specified cursor.
             first: Returns the first n items from the list.
             last: Returns the items in the list that come after the specified cursor.
+            max_results: The maximum number of results to resolve.
             kwargs: Additional arguments passed to the resolver.
 
         Returns:
@@ -794,6 +798,7 @@ class ListConnection(Connection[NodeType]):
             after=after,
             first=first,
             last=last,
+            max_results=max_results,
         )
 
         type_def = get_object_definition(cls)
