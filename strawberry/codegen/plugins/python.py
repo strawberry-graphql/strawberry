@@ -65,7 +65,7 @@ class PythonPlugin(QueryCodegenPlugin):
 
     def _print_imports(self) -> str:
         imports = [
-            f'from {import_} import {", ".join(sorted(types))}'
+            f"from {import_} import {', '.join(sorted(types))}"
             for import_, types in self.imports.items()
         ]
 
@@ -187,9 +187,9 @@ class PythonPlugin(QueryCodegenPlugin):
         if type_.name in self.SCALARS_TO_PYTHON_TYPES:
             return ""
 
-        assert (
-            type_.python_type is not None
-        ), f"Scalar type must have a python type: {type_.name}"
+        assert type_.python_type is not None, (
+            f"Scalar type must have a python type: {type_.name}"
+        )
 
         return f'{type_.name} = NewType("{type_.name}", {type_.python_type.__name__})'
 

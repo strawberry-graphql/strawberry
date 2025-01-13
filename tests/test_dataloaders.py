@@ -123,8 +123,7 @@ async def test_returning_wrong_number_of_results():
     with pytest.raises(
         WrongNumberOfResultsReturned,
         match=(
-            "Received wrong number of results in dataloader, "
-            "expected: 1, received: 2"
+            "Received wrong number of results in dataloader, expected: 1, received: 2"
         ),
     ):
         await loader.load(1)

@@ -347,9 +347,9 @@ class QueryCodegen:
         )
         for fd in fragment_definitions:
             query_type = self.schema.get_type_by_name(fd.type_condition.name.value)
-            assert isinstance(
-                query_type, StrawberryObjectDefinition
-            ), f"{fd.type_condition.name.value!r} is not a type in the graphql schema!"
+            assert isinstance(query_type, StrawberryObjectDefinition), (
+                f"{fd.type_condition.name.value!r} is not a type in the graphql schema!"
+            )
 
             typename = fd.type_condition.name.value
             graph_ql_object_type_factory = partial(
@@ -695,9 +695,9 @@ class QueryCodegen:
             selection.name.value, parent_type_name
         )
 
-        assert (
-            selected_field
-        ), f"Couldn't find {parent_type_name}.{selection.name.value}"
+        assert selected_field, (
+            f"Couldn't find {parent_type_name}.{selection.name.value}"
+        )
 
         selected_field_type, wrapper = self._unwrap_type(selected_field.type)
         name = capitalize_first(to_camel_case(selection.name.value))
