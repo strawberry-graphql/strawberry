@@ -20,7 +20,11 @@ from graphql import (
     validate_schema,
 )
 from graphql.execution.middleware import MiddlewareManager
-from graphql.type.directives import specified_directives
+from graphql.type.directives import (
+    GraphQLDeferDirective,
+    GraphQLStreamDirective,
+    specified_directives,
+)
 
 from strawberry import relay
 from strawberry.annotation import StrawberryAnnotation
@@ -194,7 +198,11 @@ class Schema(BaseSchema):
                 query=query_type,
                 mutation=mutation_type,
                 subscription=subscription_type if subscription else None,
-                directives=specified_directives + tuple(graphql_directives),
+                directives=(
+                    specified_directives
+                    + tuple(graphql_directives)
+                    + (GraphQLDeferDirective, GraphQLStreamDirective)
+                ),
                 types=graphql_types,
                 extensions={
                     GraphQLCoreConverter.DEFINITION_BACKREF: self,

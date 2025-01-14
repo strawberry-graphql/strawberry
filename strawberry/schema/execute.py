@@ -14,7 +14,7 @@ from typing import (
 
 from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError, parse
-from graphql import execute as original_execute
+from graphql.execution import experimental_execute_incrementally
 from graphql.validation import validate
 
 from strawberry.exceptions import MissingQueryError
@@ -121,16 +121,17 @@ async def _handle_execution_result(
     extensions_runner: SchemaExtensionsRunner,
     process_errors: ProcessErrors | None,
 ) -> ExecutionResult:
-    # Set errors on the context so that it's easier
-    # to access in extensions
-    if result.errors:
-        context.errors = result.errors
-        if process_errors:
-            process_errors(result.errors, context)
-    if isinstance(result, GraphQLExecutionResult):
-        result = ExecutionResult(data=result.data, errors=result.errors)
-    result.extensions = await extensions_runner.get_extensions_results(context)
-    context.result = result  # type: ignore  # mypy failed to deduce correct type.
+    # TODO: deal with this later
+    # # Set errors on the context so that it's easier
+    # # to access in extensions
+    # if result.errors:
+    #     context.errors = result.errors
+    #     if process_errors:
+    #         process_errors(result.errors, context)
+    # if isinstance(result, GraphQLExecutionResult):
+    #     result = ExecutionResult(data=result.data, errors=result.errors)
+    # result.extensions = await extensions_runner.get_extensions_results(context)
+    # context.result = result  # type: ignore  # mypy failed to deduce correct type.
     return result
 
 
@@ -164,7 +165,7 @@ async def execute(
             async with extensions_runner.executing():
                 if not execution_context.result:
                     result = await await_maybe(
-                        original_execute(
+                        experimental_execute_incrementally(
                             schema,
                             execution_context.graphql_document,
                             root_value=execution_context.root_value,
@@ -178,16 +179,18 @@ async def execute(
                     execution_context.result = result
                 else:
                     result = execution_context.result
-                # Also set errors on the execution_context so that it's easier
-                # to access in extensions
-                if result.errors:
-                    execution_context.errors = result.errors
+                # TODO: deal with this later
+                # # Also set errors on the execution_context so that it's easier
+                # # to access in extensions
+                # breakpoint()
+                # if result.errors:
+                #     execution_context.errors = result.errors
 
-                    # Run the `Schema.process_errors` function here before
-                    # extensions have a chance to modify them (see the MaskErrors
-                    # extension). That way we can log the original errors but
-                    # only return a sanitised version to the client.
-                    process_errors(result.errors, execution_context)
+                #     # Run the `Schema.process_errors` function here before
+                #     # extensions have a chance to modify them (see the MaskErrors
+                #     # extension). That way we can log the original errors but
+                #     # only return a sanitised version to the client.
+                #     process_errors(result.errors, execution_context)
 
     except (MissingQueryError, InvalidOperationTypeError):
         raise
@@ -252,7 +255,7 @@ def execute_sync(
 
             with extensions_runner.executing():
                 if not execution_context.result:
-                    result = original_execute(
+                    result = experimental_execute_incrementally(
                         schema,
                         execution_context.graphql_document,
                         root_value=execution_context.root_value,
