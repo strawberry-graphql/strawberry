@@ -10,6 +10,7 @@ import strawberry
 from strawberry.extensions import SchemaExtension
 from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
+from strawberry.schema.config import StrawberryConfig
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
 from strawberry.types import ExecutionContext
 
@@ -275,9 +276,11 @@ class Schema(strawberry.Schema):
         return super().process_errors(errors, execution_context)
 
 
-schema = Schema(
-    query=Query,
-    mutation=Mutation,
-    subscription=Subscription,
-    extensions=[MyExtension],
-)
+def get_schema(config: Optional[StrawberryConfig] = None) -> strawberry.Schema:
+    return Schema(
+        query=Query,
+        mutation=Mutation,
+        subscription=Subscription,
+        extensions=[MyExtension],
+        config=config,
+    )

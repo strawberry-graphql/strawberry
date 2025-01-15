@@ -259,7 +259,6 @@ class GraphQLController(
     )
     keep_alive: bool = False
     keep_alive_interval: float = 1
-    batch: bool = False
 
     def is_websocket_request(
         self, request: Union[Request, WebSocket]
@@ -420,7 +419,6 @@ def make_graphql_controller(
     ),
     connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     multipart_uploads_enabled: bool = False,
-    batch: bool = False,
 ) -> type[GraphQLController]:  # sourcery skip: move-assign
     if context_getter is None:
         custom_context_getter_ = _none_custom_context_getter
@@ -468,7 +466,6 @@ def make_graphql_controller(
     _GraphQLController.allow_queries_via_get = allow_queries_via_get_
     _GraphQLController.graphql_ide = graphql_ide_
     _GraphQLController.multipart_uploads_enabled = multipart_uploads_enabled
-    _GraphQLController.batch = batch
 
     return _GraphQLController
 

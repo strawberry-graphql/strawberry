@@ -126,8 +126,6 @@ class AsyncBaseHTTPView(
         BaseGraphQLWSHandler[Context, RootValue]
     )
 
-    batch: bool
-
     @property
     @abc.abstractmethod
     def allow_queries_via_get(self) -> bool: ...
@@ -533,13 +531,7 @@ class AsyncBaseHTTPView(
             raise HTTPException(400, "Unsupported content type")
 
         if isinstance(data, list):
-            if protocol == "multipart-subscription":
-                # note: multipart-subscriptions are not supported in batch requests
-                raise HTTPException(
-                    400, "Batching is not supported for multipart subscriptions"
-                )
-            if not self.batch:
-                raise HTTPException(400, "Batching is not enabled")
+            await self.validate_batch_request(data, protocol=protocol)
             return [
                 GraphQLRequestData(
                     query=item.get("query"),
@@ -555,6 +547,11 @@ class AsyncBaseHTTPView(
             operation_name=data.get("operationName"),
             protocol=protocol,
         )
+
+    async def validate_batch_request(
+        self, request_data: list[GraphQLRequestData], protocol: str
+    ) -> None:
+        self._validate_batch_request(request_data=request_data, protocol=protocol)
 
     async def process_result(
         self, request: Request, result: ExecutionResult

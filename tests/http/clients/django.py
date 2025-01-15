@@ -13,9 +13,10 @@ from django.test.client import RequestFactory
 from strawberry.django.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
-from tests.views.schema import Query, schema
+from tests.views.schema import Query, get_schema
 
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
@@ -51,14 +52,14 @@ class DjangoHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
-        batch: bool = False,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
+        self.schema_config = schema_config
         self.graphiql = graphiql
         self.graphql_ide = graphql_ide
         self.allow_queries_via_get = allow_queries_via_get
         self.result_override = result_override
         self.multipart_uploads_enabled = multipart_uploads_enabled
-        self.batch = batch
 
     def _get_header_name(self, key: str) -> str:
         return f"HTTP_{key.upper().replace('-', '_')}"
@@ -76,13 +77,12 @@ class DjangoHttpClient(HttpClient):
 
     async def _do_request(self, request: HttpRequest) -> Response:
         view = GraphQLView.as_view(
-            schema=schema,
+            schema=get_schema(self.schema_config),
             graphiql=self.graphiql,
             graphql_ide=self.graphql_ide,
             allow_queries_via_get=self.allow_queries_via_get,
             result_override=self.result_override,
             multipart_uploads_enabled=self.multipart_uploads_enabled,
-            batch=self.batch,
         )
 
         try:

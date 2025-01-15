@@ -9,7 +9,7 @@ from strawberry.django.views import AsyncGraphQLView as BaseAsyncGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
-from tests.views.schema import Query, schema
+from tests.views.schema import Query, get_schema
 
 from .base import Response, ResultOverrideFunction
 from .django import DjangoHttpClient
@@ -41,13 +41,12 @@ class AsyncGraphQLView(BaseAsyncGraphQLView[dict[str, object], object]):
 class AsyncDjangoHttpClient(DjangoHttpClient):
     async def _do_request(self, request: HttpRequest) -> Response:
         view = AsyncGraphQLView.as_view(
-            schema=schema,
+            schema=get_schema(self.schema_config),
             graphiql=self.graphiql,
             graphql_ide=self.graphql_ide,
             allow_queries_via_get=self.allow_queries_via_get,
             result_override=self.result_override,
             multipart_uploads_enabled=self.multipart_uploads_enabled,
-            batch=self.batch,
         )
 
         try:

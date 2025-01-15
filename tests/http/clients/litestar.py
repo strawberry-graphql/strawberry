@@ -14,9 +14,10 @@ from litestar.testing.websocket_test_session import WebSocketTestSession
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.litestar import make_graphql_controller
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
-from tests.views.schema import Query, schema
+from tests.views.schema import Query, get_schema
 from tests.websockets.views import OnWSConnectMixin
 
 from .base import (
@@ -51,20 +52,20 @@ class LitestarHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
-        batch: bool = False,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
+        self.schema = get_schema(schema_config)
         self.create_app(
             graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
             multipart_uploads_enabled=multipart_uploads_enabled,
-            batch=batch,
         )
 
     def create_app(self, result_override: ResultOverrideFunction = None, **kwargs: Any):
         BaseGraphQLController = make_graphql_controller(
-            schema=schema,
+            schema=self.schema,
             path="/graphql",
             context_getter=litestar_get_context,
             root_value_getter=get_root_value,

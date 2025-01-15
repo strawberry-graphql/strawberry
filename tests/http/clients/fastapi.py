@@ -12,9 +12,10 @@ from fastapi.testclient import TestClient
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
-from tests.views.schema import Query, schema
+from tests.views.schema import Query, get_schema
 from tests.websockets.views import OnWSConnectMixin
 
 from .asgi import AsgiWebSocketClient
@@ -76,12 +77,13 @@ class FastAPIHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
-        batch: bool = False,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
         self.app = FastAPI()
 
+        self.schema = get_schema(schema_config)
         graphql_app = GraphQLRouter(
-            schema,
+            self.schema,
             graphiql=graphiql,
             graphql_ide=graphql_ide,
             context_getter=fastapi_get_context,
@@ -89,7 +91,6 @@ class FastAPIHttpClient(HttpClient):
             allow_queries_via_get=allow_queries_via_get,
             keep_alive=False,
             multipart_uploads_enabled=multipart_uploads_enabled,
-            batch=batch,
         )
         graphql_app.result_override = result_override
         self.app.include_router(graphql_app, prefix="/graphql")
@@ -98,7 +99,7 @@ class FastAPIHttpClient(HttpClient):
 
     def create_app(self, **kwargs: Any) -> None:
         self.app = FastAPI()
-        graphql_app = GraphQLRouter(schema=schema, **kwargs)
+        graphql_app = GraphQLRouter(schema=self.schema, **kwargs)
         self.app.include_router(graphql_app, prefix="/graphql")
 
         self.client = TestClient(self.app)

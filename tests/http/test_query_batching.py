@@ -2,6 +2,8 @@ import contextlib
 
 import pytest
 
+from strawberry.schema.config import StrawberryConfig
+
 from .clients.base import HttpClient
 
 
@@ -53,11 +55,15 @@ def multipart_subscriptions_batch_http_client(
                 reason="ChaliceHttpClient doesn't support multipart subscriptions"
             )
 
-    return http_client_class(batch=True)
+    return http_client_class(
+        schema_config=StrawberryConfig(batching_config={"enabled": True})
+    )
 
 
 async def test_batch_graphql_query(http_client_class: type[HttpClient]):
-    http_client = http_client_class(batch=True)
+    http_client = http_client_class(
+        schema_config=StrawberryConfig(batching_config={"enabled": True})
+    )
 
     response = await http_client.post(
         url="/graphql",
@@ -78,7 +84,9 @@ async def test_batch_graphql_query(http_client_class: type[HttpClient]):
 async def test_returns_error_when_batching_is_disabled(
     http_client_class: type[HttpClient],
 ):
-    http_client = http_client_class(batch=False)
+    http_client = http_client_class(
+        schema_config=StrawberryConfig(batching_config={"enabled": False})
+    )
 
     response = await http_client.post(
         url="/graphql",

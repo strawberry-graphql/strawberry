@@ -63,11 +63,9 @@ class GraphQLView(
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
-        batch: bool = False,
     ) -> None:
         self.allow_queries_via_get = allow_queries_via_get
         self.schema = schema
-        self.batch = batch
         if graphiql is not None:
             warnings.warn(
                 "The `graphiql` argument is deprecated in favor of `graphql_ide`",

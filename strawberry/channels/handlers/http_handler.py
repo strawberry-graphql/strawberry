@@ -161,13 +161,11 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         multipart_uploads_enabled: bool = False,
-        batch: bool = False,
         **kwargs: Any,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.multipart_uploads_enabled = multipart_uploads_enabled
-        self.batch = batch
 
         if graphiql is not None:
             warnings.warn(
@@ -254,7 +252,6 @@ class GraphQLHTTPConsumer(
     ```
     """
 
-    batch: bool = False
     allow_queries_via_get: bool = True
     request_adapter_class = ChannelsRequestAdapter
 
@@ -328,7 +325,6 @@ class SyncGraphQLHTTPConsumer(
     synchronous and not asynchronous).
     """
 
-    batch: bool = False
     allow_queries_via_get: bool = True
     request_adapter_class = SyncChannelsRequestAdapter
 

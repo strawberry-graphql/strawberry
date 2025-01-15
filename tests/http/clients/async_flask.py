@@ -8,9 +8,10 @@ from flask import Response as FlaskResponse
 from strawberry.flask.views import AsyncGraphQLView as BaseAsyncGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
-from tests.views.schema import Query, schema
+from tests.views.schema import Query, get_schema
 
 from .base import ResultOverrideFunction
 from .flask import FlaskHttpClient
@@ -53,20 +54,19 @@ class AsyncFlaskHttpClient(FlaskHttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
-        batch: bool = False,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
         self.app = Flask(__name__)
         self.app.debug = True
 
         view = GraphQLView.as_view(
             "graphql_view",
-            schema=schema,
+            schema=get_schema(schema_config),
             graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
             multipart_uploads_enabled=multipart_uploads_enabled,
-            batch=batch,
         )
 
         self.app.add_url_rule(

@@ -12,9 +12,10 @@ from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.sanic.views import GraphQLView as BaseGraphQLView
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
-from tests.views.schema import Query, schema
+from tests.views.schema import Query, get_schema
 
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
@@ -54,19 +55,18 @@ class SanicHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
-        batch: bool = False,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
         self.app = Sanic(
             f"test_{int(randint(0, 1000))}",  # noqa: S311
         )
         view = GraphQLView.as_view(
-            schema=schema,
+            schema=get_schema(schema_config),
             graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
             multipart_uploads_enabled=multipart_uploads_enabled,
-            batch=batch,
         )
         self.app.add_route(
             view,

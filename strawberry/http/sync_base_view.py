@@ -72,8 +72,6 @@ class SyncBaseHTTPView(
     graphql_ide: Optional[GraphQL_IDE]
     request_adapter_class: Callable[[Request], SyncHTTPRequestAdapter]
 
-    batch: bool = False
-
     # Methods that need to be implemented by individual frameworks
 
     @property
@@ -209,8 +207,7 @@ class SyncBaseHTTPView(
             raise HTTPException(400, "Unsupported content type")
 
         if isinstance(data, list):
-            if not self.batch:
-                raise HTTPException(400, "Batching is not enabled")
+            self.validate_batch_request(data, protocol="http")
             return [
                 GraphQLRequestData(
                     query=item.get("query"),
@@ -224,6 +221,11 @@ class SyncBaseHTTPView(
             variables=data.get("variables"),
             operation_name=data.get("operationName"),
         )
+
+    def validate_batch_request(
+        self, request_data: list[GraphQLRequestData], protocol: str
+    ) -> None:
+        self._validate_batch_request(request_data=request_data, protocol=protocol)
 
     def _handle_errors(
         self, errors: list[GraphQLError], response_data: GraphQLHTTPResponse

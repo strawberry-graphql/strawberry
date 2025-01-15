@@ -11,6 +11,7 @@ from typing_extensions import Literal
 
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
+from strawberry.schema.config import StrawberryConfig
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
     BaseGraphQLTransportWSHandler,
 )
@@ -23,7 +24,7 @@ from strawberry.types import ExecutionResult
 
 logger = logging.getLogger("strawberry.test.http_client")
 
-JSON = dict[str, object]
+JSON = Union[dict[str, "JSON"], list["JSON"], str, int, float, bool, None]
 ResultOverrideFunction = Optional[Callable[[ExecutionResult], GraphQLHTTPResponse]]
 
 
@@ -102,7 +103,7 @@ class HttpClient(abc.ABC):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
-        batch: bool = False,
+        schema_config: Optional[StrawberryConfig] = None,
     ): ...
 
     @abc.abstractmethod
@@ -136,7 +137,7 @@ class HttpClient(abc.ABC):
         self,
         url: str,
         data: Optional[bytes] = None,
-        json: Optional[Union[JSON, list[JSON]]] = None,
+        json: Optional[JSON] = None,
         headers: Optional[dict[str, str]] = None,
     ) -> Response: ...
 
