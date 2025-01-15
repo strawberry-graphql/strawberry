@@ -91,7 +91,9 @@ class BaseGraphQLView:
             self.graphql_ide = graphql_ide
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: Response
+        self,
+        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        sub_response: Response,
     ) -> Response:
         sub_response.set_data(self.encode_json(response_data))  # type: ignore
 

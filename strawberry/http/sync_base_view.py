@@ -72,6 +72,8 @@ class SyncBaseHTTPView(
     graphql_ide: Optional[GraphQL_IDE]
     request_adapter_class: Callable[[Request], SyncHTTPRequestAdapter]
 
+    batch: bool = False
+
     # Methods that need to be implemented by individual frameworks
 
     @property
@@ -89,15 +91,21 @@ class SyncBaseHTTPView(
 
     @abc.abstractmethod
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: SubResponse
+        self,
+        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        sub_response: SubResponse,
     ) -> Response: ...
 
     @abc.abstractmethod
     def render_graphql_ide(self, request: Request) -> Response: ...
 
     def execute_operation(
-        self, request: Request, context: Context, root_value: Optional[RootValue]
-    ) -> ExecutionResult:
+        self,
+        request: Request,
+        context: Context,
+        root_value: Optional[RootValue],
+        sub_response: SubResponse,
+    ) -> Union[ExecutionResult, list[ExecutionResult]]:
         request_adapter = self.request_adapter_class(request)
 
         try:
@@ -115,14 +123,62 @@ class SyncBaseHTTPView(
 
         assert self.schema
 
-        return self.schema.execute_sync(
-            request_data.query,
+        if isinstance(request_data, list):
+            # batch GraphQL requests
+            return [
+                self.execute_single(
+                    request=request,
+                    request_adapter=request_adapter,
+                    sub_response=sub_response,
+                    context=context,
+                    root_value=root_value,
+                    request_data=data,
+                )
+                for data in request_data
+            ]
+
+        return self.execute_single(
+            request=request,
+            request_adapter=request_adapter,
+            sub_response=sub_response,
+            context=context,
             root_value=root_value,
-            variable_values=request_data.variables,
-            context_value=context,
-            operation_name=request_data.operation_name,
-            allowed_operation_types=allowed_operation_types,
+            request_data=request_data,
         )
+
+    def execute_single(
+        self,
+        request: Request,
+        request_adapter: SyncHTTPRequestAdapter,
+        sub_response: SubResponse,
+        context: Context,
+        root_value: Optional[RootValue],
+        request_data: GraphQLRequestData,
+    ) -> ExecutionResult:
+        allowed_operation_types = OperationType.from_http(request_adapter.method)
+
+        if not self.allow_queries_via_get and request_adapter.method == "GET":
+            allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
+
+        assert self.schema
+
+        try:
+            result = self.schema.execute_sync(
+                request_data.query,
+                root_value=root_value,
+                variable_values=request_data.variables,
+                context_value=context,
+                operation_name=request_data.operation_name,
+                allowed_operation_types=allowed_operation_types,
+            )
+        except InvalidOperationTypeError as e:
+            raise HTTPException(
+                400, e.as_http_error_reason(request_adapter.method)
+            ) from e
+        except MissingQueryError as e:
+            raise HTTPException(400, "No GraphQL query found in the request") from e
+
+        return result
 
     def parse_multipart(self, request: SyncHTTPRequestAdapter) -> dict[str, str]:
         operations = self.parse_json(request.post_data.get("operations", "{}"))
@@ -133,7 +189,9 @@ class SyncBaseHTTPView(
         except KeyError as e:
             raise HTTPException(400, "File(s) missing in form data") from e
 
-    def parse_http_body(self, request: SyncHTTPRequestAdapter) -> GraphQLRequestData:
+    def parse_http_body(
+        self, request: SyncHTTPRequestAdapter
+    ) -> Union[GraphQLRequestData, list[GraphQLRequestData]]:
         content_type, params = parse_content_type(request.content_type or "")
 
         if request.method == "GET":
@@ -150,6 +208,18 @@ class SyncBaseHTTPView(
         else:
             raise HTTPException(400, "Unsupported content type")
 
+        if isinstance(data, list):
+            if not self.batch:
+                # note: multipart-subscriptions are not supported in batch requests
+                raise HTTPException(400, "Batch requests are not supported")
+            return [
+                GraphQLRequestData(
+                    query=item.get("query"),
+                    variables=item.get("variables"),
+                    operation_name=item.get("operationName"),
+                )
+                for item in data
+            ]
         return GraphQLRequestData(
             query=data.get("query"),
             variables=data.get("variables"),
@@ -187,23 +257,25 @@ class SyncBaseHTTPView(
 
         assert context
 
-        try:
-            result = self.execute_operation(
-                request=request,
-                context=context,
-                root_value=root_value,
-            )
-        except InvalidOperationTypeError as e:
-            raise HTTPException(
-                400, e.as_http_error_reason(request_adapter.method)
-            ) from e
-        except MissingQueryError as e:
-            raise HTTPException(400, "No GraphQL query found in the request") from e
+        result = self.execute_operation(
+            request=request,
+            context=context,
+            root_value=root_value,
+            sub_response=sub_response,
+        )
 
-        response_data = self.process_result(request=request, result=result)
+        if isinstance(result, list):
+            response_data = []
+            for execution_result in result:
+                result = self.process_result(request=request, result=execution_result)
+                if execution_result.errors:
+                    self._handle_errors(execution_result.errors, result)
+                response_data.append(result)
+        else:
+            response_data = self.process_result(request=request, result=result)
 
-        if result.errors:
-            self._handle_errors(result.errors, response_data)
+            if result.errors:
+                self._handle_errors(result.errors, response_data)
 
         return self.create_response(
             response_data=response_data, sub_response=sub_response

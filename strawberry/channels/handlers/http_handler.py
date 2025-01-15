@@ -5,13 +5,7 @@ import json
 import warnings
 from functools import cached_property
 from io import BytesIO
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Optional,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 from typing_extensions import TypeGuard, assert_never
 from urllib.parse import parse_qs
 
@@ -186,7 +180,9 @@ class BaseGraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         super().__init__(**kwargs)
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse
+        self,
+        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        sub_response: TemporalResponse,
     ) -> ChannelsResponse:
         return ChannelsResponse(
             content=json.dumps(response_data).encode(),
