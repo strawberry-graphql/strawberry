@@ -18,12 +18,28 @@ and how to integrate it into your application with an example using FastAPI.
 
 To enable query batching in Strawberry, you need to configure the
 `StrawberryConfig` when defining your GraphQL schema. The batching configuration
-is provided as a dictionary with the key `enabled`:
+is provided as a dictionary with the key `enabled`.
+
+You can also specify the maximum number of operations allowed in a batch request
+using the `max_operations` key.
+
+### Basic Configuration
 
 ```python
 from strawberry.schema.config import StrawberryConfig
 
 config = StrawberryConfig(batching_config={"enabled": True})
+```
+
+### Configuring Maximum Operations
+
+To set a limit on the number of operations in a batch request, use the
+`max_operations` key:
+
+```python
+from strawberry.schema.config import StrawberryConfig
+
+config = StrawberryConfig(batching_config={"enabled": True, "max_operations": 5})
 ```
 
 When batching is enabled, the server can handle a list of operations
@@ -49,7 +65,8 @@ class Query:
 
 
 schema = strawberry.Schema(
-    Query, config=StrawberryConfig(batching_config={"enabled": True})
+    Query,
+    config=StrawberryConfig(batching_config={"enabled": True, "max_operations": 5}),
 )
 
 graphql_app = GraphQLRouter(schema)
@@ -60,9 +77,14 @@ app.include_router(graphql_app, prefix="/graphql")
 
 ### Running the Application
 
-1.Save the code in a file (e.g., app.py). 2. Start the FastAPI server:
-`bash     uvicorn app:app --reload     ` 3.The GraphQL endpoint will be
-available at http://127.0.0.1:8000/graphql.
+1. Save the code in a file (e.g., `app.py`).
+2. Start the FastAPI server:
+
+```bash
+uvicorn app:app --reload
+```
+
+3. The GraphQL endpoint will be available at `http://127.0.0.1:8000/graphql`.
 
 ### Testing Query Batching
 
@@ -98,7 +120,7 @@ sent, the server will respond with a 400 status code and an error message:
 
 #### Too Many Operations
 
-If the number of operations in a batch exceeds the max_operations limit, the
+If the number of operations in a batch exceeds the `max_operations` limit, the
 server will return a 400 status code and an error message:
 
 ```json
@@ -109,7 +131,7 @@ server will return a 400 status code and an error message:
 
 ### Limitations
 
-#### Multipart Subscriptions:
+#### Multipart Subscriptions
 
 Query batching does not support multipart subscriptions. Attempting to batch
 such operations will result in a 400 error with a relevant message.
