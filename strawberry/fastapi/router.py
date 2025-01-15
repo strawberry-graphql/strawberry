@@ -59,6 +59,7 @@ class GraphQLRouter(
     allow_queries_via_get = True
     request_adapter_class = ASGIRequestAdapter
     websocket_adapter_class = ASGIWebSocketAdapter
+    batch: bool = False
 
     @staticmethod
     async def __get_root_value() -> None:

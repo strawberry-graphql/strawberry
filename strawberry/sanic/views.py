@@ -101,6 +101,7 @@ class GraphQLView(
 
     allow_queries_via_get = True
     request_adapter_class = SanicHTTPRequestAdapter
+    batch: bool = False
 
     def __init__(
         self,
@@ -111,12 +112,14 @@ class GraphQLView(
         json_encoder: Optional[type[json.JSONEncoder]] = None,
         json_dumps_params: Optional[dict[str, Any]] = None,
         multipart_uploads_enabled: bool = False,
+        batch: bool = False,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.json_encoder = json_encoder
         self.json_dumps_params = json_dumps_params
         self.multipart_uploads_enabled = multipart_uploads_enabled
+        self.batch = batch
 
         if self.json_encoder is not None:  # pragma: no cover
             warnings.warn(

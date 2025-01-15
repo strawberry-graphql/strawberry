@@ -55,6 +55,7 @@ class GraphQLView(
     methods: ClassVar[list[str]] = ["GET", "POST"]
     allow_queries_via_get: bool = True
     request_adapter_class = QuartHTTPRequestAdapter
+    batch: bool = False
 
     def __init__(
         self,

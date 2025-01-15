@@ -108,6 +108,7 @@ class GraphQLView(
     methods: ClassVar[list[str]] = ["GET", "POST"]
     allow_queries_via_get: bool = True
     request_adapter_class = FlaskHTTPRequestAdapter
+    batch: bool = False
 
     def get_context(self, request: Request, response: Response) -> Context:
         return {"request": request, "response": response}  # type: ignore
@@ -171,6 +172,7 @@ class AsyncGraphQLView(
     methods: ClassVar[list[str]] = ["GET", "POST"]
     allow_queries_via_get: bool = True
     request_adapter_class = AsyncFlaskHTTPRequestAdapter
+    batch: bool = False
 
     async def get_context(self, request: Request, response: Response) -> Context:
         return {"request": request, "response": response}  # type: ignore

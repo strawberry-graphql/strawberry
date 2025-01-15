@@ -217,6 +217,7 @@ class GraphQLView(
     allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = DjangoHTTPRequestAdapter
+    batch: bool = False
 
     def get_root_value(self, request: HttpRequest) -> Optional[RootValue]:
         return None
@@ -265,6 +266,7 @@ class AsyncGraphQLView(
     allow_queries_via_get = True
     schema: BaseSchema = None  # type: ignore
     request_adapter_class = AsyncDjangoHTTPRequestAdapter
+    batch: bool = False
 
     @classonlymethod  # pyright: ignore[reportIncompatibleMethodOverride]
     def as_view(cls, **initkwargs: Any) -> Callable[..., HttpResponse]:  # noqa: N805
