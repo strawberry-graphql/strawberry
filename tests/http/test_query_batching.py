@@ -122,6 +122,23 @@ async def test_returns_error_for_multipart_subscriptions(
     assert "Batching is not supported for multipart subscriptions" in response.text
 
 
+async def test_single_multipart_subscription_works_without_batching(
+    multipart_subscriptions_batch_http_client: HttpClient,
+):
+    response = await multipart_subscriptions_batch_http_client.post(
+        url="/graphql",
+        json={"query": 'subscription { echo(message: "Hello world", delay: 0.2) }'},
+        headers={
+            "content-type": "application/json",
+            "accept": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith(
+        "multipart/mixed;boundary=graphql"
+    )
+
+
 async def test_returns_error_when_trying_too_many_operations(
     http_client_class: type[HttpClient],
 ):
