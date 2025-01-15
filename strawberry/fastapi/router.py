@@ -152,6 +152,7 @@ class GraphQLRouter(
             generate_unique_id
         ),
         multipart_uploads_enabled: bool = False,
+        batch: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -187,6 +188,7 @@ class GraphQLRouter(
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.multipart_uploads_enabled = multipart_uploads_enabled
+        self.batch = batch
 
         if graphiql is not None:
             warnings.warn(

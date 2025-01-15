@@ -142,6 +142,7 @@ class ChannelsHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        batch: bool = False,
     ):
         self.ws_app = DebuggableGraphQLWSConsumer.as_asgi(
             schema=schema,
@@ -155,6 +156,7 @@ class ChannelsHttpClient(HttpClient):
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
             multipart_uploads_enabled=multipart_uploads_enabled,
+            batch=batch,
         )
 
     def create_app(self, **kwargs: Any) -> None:
@@ -266,6 +268,7 @@ class SyncChannelsHttpClient(ChannelsHttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        batch: bool = False,
     ):
         self.http_app = DebuggableSyncGraphQLHTTPConsumer.as_asgi(
             schema=schema,
@@ -274,6 +277,7 @@ class SyncChannelsHttpClient(ChannelsHttpClient):
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
             multipart_uploads_enabled=multipart_uploads_enabled,
+            batch=batch,
         )
 
 

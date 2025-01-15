@@ -102,6 +102,7 @@ class HttpClient(abc.ABC):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        batch: bool = False,
     ): ...
 
     @abc.abstractmethod
@@ -135,7 +136,7 @@ class HttpClient(abc.ABC):
         self,
         url: str,
         data: Optional[bytes] = None,
-        json: Optional[JSON] = None,
+        json: Optional[Union[JSON, list[JSON]]] = None,
         headers: Optional[dict[str, str]] = None,
     ) -> Response: ...
 

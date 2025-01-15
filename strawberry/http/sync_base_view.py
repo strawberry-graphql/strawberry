@@ -210,8 +210,7 @@ class SyncBaseHTTPView(
 
         if isinstance(data, list):
             if not self.batch:
-                # note: multipart-subscriptions are not supported in batch requests
-                raise HTTPException(400, "Batch requests are not supported")
+                raise HTTPException(400, "Batching is not enabled")
             return [
                 GraphQLRequestData(
                     query=item.get("query"),

@@ -66,6 +66,7 @@ class AsgiHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        batch: bool = False,
     ):
         view = GraphQLView(
             schema,
@@ -74,6 +75,7 @@ class AsgiHttpClient(HttpClient):
             allow_queries_via_get=allow_queries_via_get,
             keep_alive=False,
             multipart_uploads_enabled=multipart_uploads_enabled,
+            batch=batch,
         )
         view.result_override = result_override
 

@@ -47,6 +47,7 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
             allow_queries_via_get=self.allow_queries_via_get,
             result_override=self.result_override,
             multipart_uploads_enabled=self.multipart_uploads_enabled,
+            batch=self.batch,
         )
 
         try:

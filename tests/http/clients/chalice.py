@@ -51,6 +51,7 @@ class ChaliceHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        batch: bool = False,
     ):
         self.app = Chalice(app_name="TheStackBadger")
 
@@ -59,6 +60,7 @@ class ChaliceHttpClient(HttpClient):
             graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
+            batch=batch,
         )
         view.result_override = result_override
 

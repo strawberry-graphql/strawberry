@@ -533,9 +533,13 @@ class AsyncBaseHTTPView(
             raise HTTPException(400, "Unsupported content type")
 
         if isinstance(data, list):
-            if protocol == "multipart-subscription" or not self.batch:
+            if protocol == "multipart-subscription":
                 # note: multipart-subscriptions are not supported in batch requests
-                raise HTTPException(400, "Batch requests are not supported")
+                raise HTTPException(
+                    400, "Batching is not supported for multipart subscriptions"
+                )
+            if not self.batch:
+                raise HTTPException(400, "Batching is not enabled")
             return [
                 GraphQLRequestData(
                     query=item.get("query"),

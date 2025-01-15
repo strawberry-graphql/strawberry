@@ -74,11 +74,13 @@ class BaseGraphQLView:
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         multipart_uploads_enabled: bool = False,
+        batch: bool = False,
     ) -> None:
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.multipart_uploads_enabled = multipart_uploads_enabled
+        self.batch = batch
 
         if graphiql is not None:
             warnings.warn(

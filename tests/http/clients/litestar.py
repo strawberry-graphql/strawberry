@@ -51,6 +51,7 @@ class LitestarHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        batch: bool = False,
     ):
         self.create_app(
             graphiql=graphiql,
@@ -58,6 +59,7 @@ class LitestarHttpClient(HttpClient):
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
             multipart_uploads_enabled=multipart_uploads_enabled,
+            batch=batch,
         )
 
     def create_app(self, result_override: ResultOverrideFunction = None, **kwargs: Any):
