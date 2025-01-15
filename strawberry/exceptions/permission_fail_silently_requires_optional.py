@@ -16,7 +16,7 @@ class PermissionFailSilentlyRequiresOptionalError(StrawberryException):
     def __init__(self, field: StrawberryField) -> None:
         self.field = field
         self.message = (
-            "Cannot use fail_silently=True with a non-optional " "or non-list field"
+            "Cannot use fail_silently=True with a non-optional or non-list field"
         )
         self.rich_message = (
             "fail_silently permissions can only be used with fields of type "

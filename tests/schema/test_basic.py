@@ -476,9 +476,9 @@ def test_str_magic_method_prints_schema_sdl():
     }
     """
     assert str(schema) == textwrap.dedent(expected).strip()
-    assert "<strawberry.schema.schema.Schema object" in repr(
-        schema
-    ), "Repr should not be affected"
+    assert "<strawberry.schema.schema.Schema object" in repr(schema), (
+        "Repr should not be affected"
+    )
 
 
 def test_field_with_default():

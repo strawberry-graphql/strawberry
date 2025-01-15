@@ -68,7 +68,7 @@ DEFAULT_SCALAR_REGISTRY: dict[object, ScalarDefinition] = {
             GlobalID,
             name="GlobalID",
             description=GraphQLID.description,
-            parse_literal=lambda v, vars=None: GlobalID.from_id(
+            parse_literal=lambda v, vars=None: GlobalID.from_id(  # noqa: A006
                 GraphQLID.parse_literal(v, vars)
             ),
             parse_value=GlobalID.from_id,
