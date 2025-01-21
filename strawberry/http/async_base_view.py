@@ -205,17 +205,31 @@ class AsyncBaseHTTPView(
 
         if isinstance(request_data, list):
             # batch GraphQL requests
-            tasks = [
-                self.execute_single(
-                    request=request,
-                    request_adapter=request_adapter,
-                    sub_response=sub_response,
-                    context=context,
-                    root_value=root_value,
-                    request_data=data,
-                )
-                for data in request_data
-            ]
+            if not self.schema.config.batching_config["share_context"]:
+                tasks = [
+                    self.execute_single(
+                        request=request,
+                        request_adapter=request_adapter,
+                        sub_response=sub_response,
+                        # create a new context for each request data
+                        context=await self.get_context(request, response=sub_response),
+                        root_value=root_value,
+                        request_data=data,
+                    )
+                    for data in request_data
+                ]
+            else:
+                tasks = [
+                    self.execute_single(
+                        request=request,
+                        request_adapter=request_adapter,
+                        sub_response=sub_response,
+                        context=context,
+                        root_value=root_value,
+                        request_data=data,
+                    )
+                    for data in request_data
+                ]
 
             return await asyncio.gather(*tasks)
 

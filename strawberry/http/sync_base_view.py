@@ -123,6 +123,19 @@ class SyncBaseHTTPView(
 
         if isinstance(request_data, list):
             # batch GraphQL requests
+            if not self.schema.config.batching_config["share_context"]:
+                return [
+                    self.execute_single(
+                        request=request,
+                        request_adapter=request_adapter,
+                        sub_response=sub_response,
+                        # create a new context for each request data
+                        context=self.get_context(request, response=sub_response),
+                        root_value=root_value,
+                        request_data=data,
+                    )
+                    for data in request_data
+                ]
             return [
                 self.execute_single(
                     request=request,

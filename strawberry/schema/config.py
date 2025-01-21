@@ -12,6 +12,7 @@ from .name_converter import NameConverter
 class BatchingConfig(TypedDict, total=False):
     enabled: Required[bool]
     max_operations: int
+    share_context: Required[bool]
 
 
 @dataclass
