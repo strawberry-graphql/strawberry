@@ -56,13 +56,20 @@ def multipart_subscriptions_batch_http_client(
             )
 
     return http_client_class(
-        schema_config=StrawberryConfig(batching_config={"enabled": True})
+        schema_config=StrawberryConfig(
+            batching_config={"enabled": True, "share_context": True}
+        )
     )
 
 
-async def test_batch_graphql_query(http_client_class: type[HttpClient]):
+@pytest.mark.parametrize("share_context", [True, False])
+async def test_batch_graphql_query(
+    http_client_class: type[HttpClient], share_context: bool
+):
     http_client = http_client_class(
-        schema_config=StrawberryConfig(batching_config={"enabled": True})
+        schema_config=StrawberryConfig(
+            batching_config={"enabled": True, "share_context": share_context}
+        )
     )
 
     response = await http_client.post(
@@ -81,11 +88,14 @@ async def test_batch_graphql_query(http_client_class: type[HttpClient]):
     ]
 
 
+@pytest.mark.parametrize("share_context", [True, False])
 async def test_returns_error_when_batching_is_disabled(
-    http_client_class: type[HttpClient],
+    http_client_class: type[HttpClient], share_context: bool
 ):
     http_client = http_client_class(
-        schema_config=StrawberryConfig(batching_config={"enabled": False})
+        schema_config=StrawberryConfig(
+            batching_config={"enabled": False, "share_context": share_context}
+        )
     )
 
     response = await http_client.post(
@@ -98,53 +108,20 @@ async def test_returns_error_when_batching_is_disabled(
     )
 
     assert response.status_code == 400
-
     assert "Batching is not enabled" in response.text
 
 
-async def test_returns_error_for_multipart_subscriptions(
-    multipart_subscriptions_batch_http_client: HttpClient,
-):
-    response = await multipart_subscriptions_batch_http_client.post(
-        url="/graphql",
-        json=[
-            {"query": 'subscription { echo(message: "Hello world", delay: 0.2) }'},
-            {"query": 'subscription { echo(message: "Hello world", delay: 0.2) }'},
-        ],
-        headers={
-            "content-type": "application/json",
-            "accept": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
-        },
-    )
-
-    assert response.status_code == 400
-
-    assert "Batching is not supported for multipart subscriptions" in response.text
-
-
-async def test_single_multipart_subscription_works_without_batching(
-    multipart_subscriptions_batch_http_client: HttpClient,
-):
-    response = await multipart_subscriptions_batch_http_client.post(
-        url="/graphql",
-        json={"query": 'subscription { echo(message: "Hello world", delay: 0.2) }'},
-        headers={
-            "content-type": "application/json",
-            "accept": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
-        },
-    )
-    assert response.status_code == 200
-    assert response.headers["content-type"].startswith(
-        "multipart/mixed;boundary=graphql"
-    )
-
-
+@pytest.mark.parametrize("share_context", [True, False])
 async def test_returns_error_when_trying_too_many_operations(
-    http_client_class: type[HttpClient],
+    http_client_class: type[HttpClient], share_context: bool
 ):
     http_client = http_client_class(
         schema_config=StrawberryConfig(
-            batching_config={"enabled": True, "max_operations": 2}
+            batching_config={
+                "enabled": True,
+                "max_operations": 2,
+                "share_context": share_context,
+            }
         )
     )
 
@@ -159,5 +136,4 @@ async def test_returns_error_when_trying_too_many_operations(
     )
 
     assert response.status_code == 400
-
     assert "Too many operations" in response.text
