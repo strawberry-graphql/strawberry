@@ -17,23 +17,12 @@ from typing_extensions import Literal, TypeGuard
 
 from graphql import GraphQLError
 
-# TODO: only import this if exists
-from graphql.execution.execute import (
-    ExperimentalIncrementalExecutionResults,
-    InitialIncrementalExecutionResult,
-)
-from graphql.execution.incremental_publisher import (
-    IncrementalDeferResult,
-    IncrementalResult,
-    IncrementalStreamResult,
-    SubsequentIncrementalExecutionResult,
-)
-
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
     GraphQLHTTPResponse,
     GraphQLRequestData,
+    IncrementalGraphQLHTTPResponse,
     process_result,
 )
 from strawberry.http.ides import GraphQL_IDE
@@ -61,6 +50,26 @@ from .typevars import (
     WebSocketRequest,
     WebSocketResponse,
 )
+
+try:
+    from graphql.execution.execute import (
+        ExperimentalIncrementalExecutionResults,
+        InitialIncrementalExecutionResult,
+    )
+    from graphql.execution.incremental_publisher import (
+        IncrementalDeferResult,
+        IncrementalResult,
+        IncrementalStreamResult,
+        SubsequentIncrementalExecutionResult,
+    )
+
+except ImportError:
+    from types import NoneType
+
+    InitialIncrementalExecutionResult = NoneType
+    IncrementalResult = NoneType
+    IncrementalStreamResult = NoneType
+    SubsequentIncrementalExecutionResult = NoneType
 
 
 class AsyncHTTPRequestAdapter(abc.ABC):
@@ -349,7 +358,9 @@ class AsyncBaseHTTPView(
         except MissingQueryError as e:
             raise HTTPException(400, "No GraphQL query found in the request") from e
 
-        if isinstance(result, ExperimentalIncrementalExecutionResults):
+        if HAS_INCREMENTAL_EXECUTION and isinstance(
+            result, ExperimentalIncrementalExecutionResults
+        ):
 
             async def stream():
                 yield "---"
@@ -538,9 +549,8 @@ class AsyncBaseHTTPView(
     async def process_subsequent_result(
         self,
         request: Request,
-        result: SubsequentIncrementalExecutionResult,
-        # TODO: use proper return type
-    ) -> GraphQLHTTPResponse:
+        result: "SubsequentIncrementalExecutionResult",
+    ) -> IncrementalGraphQLHTTPResponse:
         data = {
             "incremental": [
                 await self.process_result(request, value)
@@ -557,19 +567,20 @@ class AsyncBaseHTTPView(
         request: Request,
         result: Union[ExecutionResult, InitialIncrementalExecutionResult],
     ) -> GraphQLHTTPResponse:
-        if isinstance(result, InitialIncrementalExecutionResult):
-            return {
-                "data": result.data,
-                "incremental": [
-                    self.process_incremental_result(request, value)
-                    for value in result.incremental
-                ]
-                if result.incremental
-                else [],
-                "hasNext": result.has_next,
-                "extensions": result.extensions,
-            }
-        return process_result(result)
+        if not isinstance(result, InitialIncrementalExecutionResult):
+            return process_result(result)
+
+        return {
+            "data": result.data,
+            "incremental": [
+                self.process_incremental_result(request, value)
+                for value in result.incremental
+            ]
+            if result.incremental
+            else [],
+            "hasNext": result.has_next,
+            "extensions": result.extensions,
+        }
 
     async def on_ws_connect(
         self, context: Context

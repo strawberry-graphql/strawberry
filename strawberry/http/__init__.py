@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Optional
-from typing_extensions import Literal, TypedDict
+from typing_extensions import Literal, NotRequired, TypedDict
 
 if TYPE_CHECKING:
     from strawberry.types import ExecutionResult
@@ -35,8 +35,15 @@ class GraphQLRequestData:
     protocol: Literal["http", "multipart-subscription"] = "http"
 
 
+class IncrementalGraphQLHTTPResponse(TypedDict):
+    incremental: list[GraphQLHTTPResponse]
+    hasNext: bool
+    extensions: NotRequired[dict[str, Any]]
+
+
 __all__ = [
     "GraphQLHTTPResponse",
     "GraphQLRequestData",
+    "IncrementalGraphQLHTTPResponse",
     "process_result",
 ]
