@@ -26,13 +26,20 @@ async def test_basic_defer(method: Literal["get", "post"], http_client: HttpClie
             "data": {"hello": "Hello world"},
             "incremental": [],
             "hasNext": True,
+            # TODO: why is this None?
             "extensions": None,
         }
 
         subsequent = await stream.__anext__()
 
         assert subsequent == {
-            "incremental": [{"data": {"asyncHello": "Hello world"}}],
+            "incremental": [
+                {
+                    "data": {"asyncHello": "Hello world"},
+                    "extensions": {"example": "example"},
+                }
+            ],
             "hasNext": False,
+            # TODO: how do we fill these?
             "extensions": None,
         }

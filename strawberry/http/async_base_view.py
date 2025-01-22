@@ -358,9 +358,7 @@ class AsyncBaseHTTPView(
         except MissingQueryError as e:
             raise HTTPException(400, "No GraphQL query found in the request") from e
 
-        if HAS_INCREMENTAL_EXECUTION and isinstance(
-            result, ExperimentalIncrementalExecutionResults
-        ):
+        if isinstance(result, ExperimentalIncrementalExecutionResults):
 
             async def stream():
                 yield "---"
@@ -524,9 +522,16 @@ class AsyncBaseHTTPView(
             protocol=protocol,
         )
 
-    def process_incremental_result(
+    async def process_incremental_result(
         self, request: Request, result: IncrementalResult
     ) -> GraphQLHTTPResponse:
+        result = await self.schema._handle_execution_result(
+            context=self.schema.execution_context,
+            result=result,
+            extensions_runner=self.schema.extensions_runner,
+            process_errors=self.schema.process_errors,
+        )
+
         if isinstance(result, IncrementalDeferResult):
             return {
                 "data": result.data,
@@ -568,6 +573,12 @@ class AsyncBaseHTTPView(
         result: Union[ExecutionResult, InitialIncrementalExecutionResult],
     ) -> GraphQLHTTPResponse:
         if not isinstance(result, InitialIncrementalExecutionResult):
+            result = await self.schema._handle_execution_result(
+                context=self.schema.execution_context,
+                result=result,
+                extensions_runner=self.schema.extensions_runner,
+                process_errors=self.schema.process_errors,
+            )
             return process_result(result)
 
         return {

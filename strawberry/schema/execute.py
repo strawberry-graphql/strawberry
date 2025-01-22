@@ -25,6 +25,26 @@ from strawberry.utils.await_maybe import await_maybe
 
 from .exceptions import InvalidOperationTypeError
 
+try:
+    from graphql.execution.execute import (
+        ExperimentalIncrementalExecutionResults,
+        InitialIncrementalExecutionResult,
+    )
+    from graphql.execution.incremental_publisher import (
+        IncrementalDeferResult,
+        IncrementalResult,
+        IncrementalStreamResult,
+        SubsequentIncrementalExecutionResult,
+    )
+
+except ImportError:
+    from types import NoneType
+
+    InitialIncrementalExecutionResult = NoneType
+    IncrementalResult = NoneType
+    IncrementalStreamResult = NoneType
+    SubsequentIncrementalExecutionResult = NoneType
+
 if TYPE_CHECKING:
     from typing_extensions import NotRequired, TypeAlias, Unpack
 
@@ -115,26 +135,6 @@ async def _parse_and_validate_async(
     return None
 
 
-async def _handle_execution_result(
-    context: ExecutionContext,
-    result: Union[GraphQLExecutionResult, ExecutionResult],
-    extensions_runner: SchemaExtensionsRunner,
-    process_errors: ProcessErrors | None,
-) -> ExecutionResult:
-    # TODO: deal with this later
-    # # Set errors on the context so that it's easier
-    # # to access in extensions
-    # if result.errors:
-    #     context.errors = result.errors
-    #     if process_errors:
-    #         process_errors(result.errors, context)
-    # if isinstance(result, GraphQLExecutionResult):
-    #     result = ExecutionResult(data=result.data, errors=result.errors)
-    # result.extensions = await extensions_runner.get_extensions_results(context)
-    # context.result = result  # type: ignore  # mypy failed to deduce correct type.
-    return result
-
-
 def _coerce_error(error: Union[GraphQLError, Exception]) -> GraphQLError:
     if isinstance(error, GraphQLError):
         return error
@@ -157,9 +157,8 @@ async def execute(
             if errors := await _parse_and_validate_async(
                 execution_context, extensions_runner
             ):
-                return await _handle_execution_result(
-                    execution_context, errors, extensions_runner, process_errors
-                )
+                # TODO: ...
+                return errors
 
             assert execution_context.graphql_document
             async with extensions_runner.executing():
@@ -195,16 +194,9 @@ async def execute(
     except (MissingQueryError, InvalidOperationTypeError):
         raise
     except Exception as exc:  # noqa: BLE001
-        return await _handle_execution_result(
-            execution_context,
-            PreExecutionError(data=None, errors=[_coerce_error(exc)]),
-            extensions_runner,
-            process_errors,
-        )
-    # return results after all the operation completed.
-    return await _handle_execution_result(
-        execution_context, result, extensions_runner, None
-    )
+        return PreExecutionError(data=None, errors=[_coerce_error(exc)])
+
+    return result
 
 
 def execute_sync(
