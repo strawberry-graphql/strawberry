@@ -125,7 +125,9 @@ class GraphQLRouter(
         keep_alive_interval: float = 1,
         debug: bool = False,
         root_value_getter: Optional[Callable[[], RootValue]] = None,
-        context_getter: Optional[Callable[..., Optional[Context]]] = None,
+        context_getter: Optional[
+            Callable[..., Union[Optional[Context], Awaitable[Optional[Context]]]]
+        ] = None,
         subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
