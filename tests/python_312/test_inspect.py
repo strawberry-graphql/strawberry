@@ -91,6 +91,22 @@ def test_get_specialized_type_var_map_double_generic_subclass():
     assert get_specialized_type_var_map(Bin) == {"_T": int}
 
 
+def test_get_specialized_type_var_map_double_generic_passthrough():
+    @strawberry.type
+    class Foo[_T]: ...
+
+    @strawberry.type
+    class Bar[_K](Foo[_K]): ...
+
+    @strawberry.type
+    class Bin(Bar[int]): ...
+
+    assert get_specialized_type_var_map(Bin) == {
+        "_T": int,
+        "_K": int,
+    }
+
+
 def test_get_specialized_type_var_map_multiple_inheritance():
     @strawberry.type
     class Foo[_T]: ...
