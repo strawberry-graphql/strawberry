@@ -5,13 +5,16 @@ from functools import cached_property, lru_cache
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Optional,
     Union,
     cast,
 )
 
+from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import (
     GraphQLBoolean,
+    GraphQLError,
     GraphQLField,
     GraphQLNamedType,
     GraphQLNonNull,
@@ -20,7 +23,11 @@ from graphql import (
     validate_schema,
 )
 from graphql.execution.middleware import MiddlewareManager
-from graphql.type.directives import specified_directives
+from graphql.type.directives import (
+    GraphQLDeferDirective,
+    GraphQLStreamDirective,
+    specified_directives,
+)
 
 from strawberry import relay
 from strawberry.annotation import StrawberryAnnotation
@@ -33,7 +40,7 @@ from strawberry.extensions.runner import SchemaExtensionsRunner
 from strawberry.printer import print_schema
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
-from strawberry.types import ExecutionContext
+from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.base import (
     StrawberryObjectDefinition,
     WithStrawberryObjectDefinition,
@@ -49,16 +56,20 @@ from .subscribe import SubscriptionResult, subscribe
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+    from typing_extensions import TypeAlias
 
     from graphql import ExecutionContext as GraphQLExecutionContext
 
     from strawberry.directive import StrawberryDirective
-    from strawberry.types import ExecutionResult
     from strawberry.types.base import StrawberryType
     from strawberry.types.enum import EnumDefinition
     from strawberry.types.field import StrawberryField
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
     from strawberry.types.union import StrawberryUnion
+
+ProcessErrors: TypeAlias = (
+    "Callable[[list[GraphQLError], Optional[ExecutionContext]], None]"
+)
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.QUERY,
@@ -194,7 +205,11 @@ class Schema(BaseSchema):
                 query=query_type,
                 mutation=mutation_type,
                 subscription=subscription_type if subscription else None,
-                directives=specified_directives + tuple(graphql_directives),
+                directives=(
+                    specified_directives
+                    + tuple(graphql_directives)
+                    + (GraphQLDeferDirective, GraphQLStreamDirective)
+                ),
                 types=graphql_types,
                 extensions={
                     GraphQLCoreConverter.DEFINITION_BACKREF: self,
@@ -285,6 +300,30 @@ class Schema(BaseSchema):
             provided_operation_name=operation_name,
         )
 
+    #  TODO: is this the right place to do this?
+    async def _handle_execution_result(
+        self,
+        context: ExecutionContext,
+        result: Union[GraphQLExecutionResult, ExecutionResult],
+        extensions_runner: SchemaExtensionsRunner,
+        process_errors: ProcessErrors | None,
+    ) -> ExecutionResult:
+        # Set errors on the context so that it's easier
+        # to access in extensions
+        if result.errors:
+            context.errors = result.errors
+
+            if process_errors:
+                process_errors(result.errors, context)
+
+        if isinstance(result, GraphQLExecutionResult):
+            result = ExecutionResult(data=result.data, errors=result.errors)
+
+        result.extensions = await extensions_runner.get_extensions_results(context)
+
+        context.result = result  # type: ignore  # mypy failed to deduce correct type.
+        return result
+
     @lru_cache
     def get_type_by_name(
         self, name: str
@@ -361,12 +400,15 @@ class Schema(BaseSchema):
         # TODO (#3571): remove this when we implement execution context as parameter.
         for extension in extensions:
             extension.execution_context = execution_context
+        # TODO: fix (race conditions, ugly code)
+        self.execution_context = execution_context
+        self.extensions_runner = self.create_extensions_runner(
+            execution_context, extensions
+        )
         return await execute(
             self._schema,
             execution_context=execution_context,
-            extensions_runner=self.create_extensions_runner(
-                execution_context, extensions
-            ),
+            extensions_runner=self.extensions_runner,
             process_errors=self._process_errors,
             middleware_manager=self._get_middleware_manager(extensions),
             execution_context_class=self.execution_context_class,

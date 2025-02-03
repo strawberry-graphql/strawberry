@@ -17,7 +17,6 @@ from strawberry.utils.await_maybe import await_maybe
 from .execute import (
     ProcessErrors,
     _coerce_error,
-    _handle_execution_result,
     _parse_and_validate_async,
 )
 
@@ -37,6 +36,15 @@ OriginSubscriptionResult = Union[
     OriginalExecutionResult,
     AsyncIterator[OriginalExecutionResult],
 ]
+
+
+def _handle_execution_result(
+    context: ExecutionContext,
+    result: Union[GraphQLExecutionResult, ExecutionResult],
+    extensions_runner: SchemaExtensionsRunner,
+    process_errors: ProcessErrors | None,
+) -> ExecutionResult:
+    pass
 
 
 async def _subscribe(

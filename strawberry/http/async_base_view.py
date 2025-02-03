@@ -22,6 +22,7 @@ from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
     GraphQLHTTPResponse,
     GraphQLRequestData,
+    IncrementalGraphQLHTTPResponse,
     process_result,
 )
 from strawberry.http.ides import GraphQL_IDE
@@ -49,6 +50,26 @@ from .typevars import (
     WebSocketRequest,
     WebSocketResponse,
 )
+
+try:
+    from graphql.execution.execute import (
+        ExperimentalIncrementalExecutionResults,
+        InitialIncrementalExecutionResult,
+    )
+    from graphql.execution.incremental_publisher import (
+        IncrementalDeferResult,
+        IncrementalResult,
+        IncrementalStreamResult,
+        SubsequentIncrementalExecutionResult,
+    )
+
+except ImportError:
+    from types import NoneType
+
+    InitialIncrementalExecutionResult = NoneType
+    IncrementalResult = NoneType
+    IncrementalStreamResult = NoneType
+    SubsequentIncrementalExecutionResult = NoneType
 
 
 class AsyncHTTPRequestAdapter(abc.ABC):
@@ -337,6 +358,29 @@ class AsyncBaseHTTPView(
         except MissingQueryError as e:
             raise HTTPException(400, "No GraphQL query found in the request") from e
 
+        if isinstance(result, ExperimentalIncrementalExecutionResults):
+
+            async def stream():
+                yield "---"
+                response = await self.process_result(request, result.initial_result)
+                yield self.encode_multipart_data(response, "-")
+
+                async for value in result.subsequent_results:
+                    response = await self.process_subsequent_result(request, value)
+                    yield self.encode_multipart_data(response, "-")
+
+                yield "--\r\n"
+
+            return await self.create_streaming_response(
+                request,
+                stream,
+                sub_response,
+                headers={
+                    "Transfer-Encoding": "chunked",
+                    "Content-Type": 'multipart/mixed; boundary="-"',
+                },
+            )
+
         if isinstance(result, SubscriptionExecutionResult):
             stream = self._get_stream(request, result)
 
@@ -360,12 +404,15 @@ class AsyncBaseHTTPView(
         )
 
     def encode_multipart_data(self, data: Any, separator: str) -> str:
+        encoded_data = self.encode_json(data)
+
         return "".join(
             [
-                f"\r\n--{separator}\r\n",
-                "Content-Type: application/json\r\n\r\n",
-                self.encode_json(data),
-                "\n",
+                "\r\n",
+                "Content-Type: application/json; charset=utf-8\r\n",
+                "\r\n",
+                encoded_data,
+                f"\r\n--{separator}",
             ]
         )
 
@@ -475,10 +522,76 @@ class AsyncBaseHTTPView(
             protocol=protocol,
         )
 
-    async def process_result(
-        self, request: Request, result: ExecutionResult
+    async def process_incremental_result(
+        self, request: Request, result: IncrementalResult
     ) -> GraphQLHTTPResponse:
-        return process_result(result)
+        result = await self.schema._handle_execution_result(
+            context=self.schema.execution_context,
+            result=result,
+            extensions_runner=self.schema.extensions_runner,
+            process_errors=self.schema.process_errors,
+        )
+
+        if isinstance(result, IncrementalDeferResult):
+            return {
+                "data": result.data,
+                "errors": result.errors,
+                "path": result.path,
+                "label": result.label,
+                "extensions": result.extensions,
+            }
+        if isinstance(result, IncrementalStreamResult):
+            return {
+                "items": result.items,
+                "errors": result.errors,
+                "path": result.path,
+                "label": result.label,
+                "extensions": result.extensions,
+            }
+
+        raise ValueError(f"Unsupported incremental result type: {type(result)}")
+
+    async def process_subsequent_result(
+        self,
+        request: Request,
+        result: "SubsequentIncrementalExecutionResult",
+    ) -> IncrementalGraphQLHTTPResponse:
+        data = {
+            "incremental": [
+                await self.process_result(request, value)
+                for value in result.incremental
+            ],
+            "hasNext": result.has_next,
+            "extensions": result.extensions,
+        }
+
+        return data
+
+    async def process_result(
+        self,
+        request: Request,
+        result: Union[ExecutionResult, InitialIncrementalExecutionResult],
+    ) -> GraphQLHTTPResponse:
+        if not isinstance(result, InitialIncrementalExecutionResult):
+            result = await self.schema._handle_execution_result(
+                context=self.schema.execution_context,
+                result=result,
+                extensions_runner=self.schema.extensions_runner,
+                process_errors=self.schema.process_errors,
+            )
+            return process_result(result)
+
+        return {
+            "data": result.data,
+            "incremental": [
+                self.process_incremental_result(request, value)
+                for value in result.incremental
+            ]
+            if result.incremental
+            else [],
+            "hasNext": result.has_next,
+            "extensions": result.extensions,
+        }
 
     async def on_ws_connect(
         self, context: Context
