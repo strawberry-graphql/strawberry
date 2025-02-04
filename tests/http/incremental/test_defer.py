@@ -10,22 +10,26 @@ from tests.http.clients.base import HttpClient
 async def test_basic_defer(method: Literal["get", "post"], http_client: HttpClient):
     response = await http_client.query(
         method=method,
-        query="""{
-            hello
-
-            ... @defer {
-                asyncHello
+        query="""
+        query HeroNameQuery {
+            hero {
+                id
+                ...NameFragment @defer
             }
-        }""",
+        }
+        fragment NameFragment on Hero {
+            name
+        }
+        """,
     )
 
     async with contextlib.aclosing(response.streaming_json()) as stream:
         initial = await stream.__anext__()
 
         assert initial == {
-            "data": {"hello": "Hello world"},
-            "incremental": [],
+            "data": {"hero": {"id": "1"}},
             "hasNext": True,
+            "pending": [{"path": ["hero"], "id": "0"}],
             # TODO: why is this None?
             "extensions": None,
         }
@@ -35,10 +39,11 @@ async def test_basic_defer(method: Literal["get", "post"], http_client: HttpClie
         assert subsequent == {
             "incremental": [
                 {
-                    "data": {"asyncHello": "Hello world"},
+                    "data": {"name": "Thiago Bellini"},
                     "extensions": {"example": "example"},
                 }
             ],
+            "completed": [{"id": "0"}],
             "hasNext": False,
             # TODO: how do we fill these?
             "extensions": None,

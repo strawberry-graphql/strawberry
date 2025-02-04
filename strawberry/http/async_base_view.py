@@ -52,24 +52,26 @@ from .typevars import (
 )
 
 try:
-    from graphql.execution.execute import (
-        ExperimentalIncrementalExecutionResults,
-        InitialIncrementalExecutionResult,
-    )
+    from graphql.execution.execute import ExperimentalIncrementalExecutionResults
     from graphql.execution.incremental_publisher import (
         IncrementalDeferResult,
         IncrementalResult,
         IncrementalStreamResult,
+        InitialIncrementalExecutionResult,
+        PendingResult,
         SubsequentIncrementalExecutionResult,
     )
 
-except ImportError:
+except ImportError as e:
     from types import NoneType
+
+    print(e)
 
     InitialIncrementalExecutionResult = NoneType
     IncrementalResult = NoneType
     IncrementalStreamResult = NoneType
     SubsequentIncrementalExecutionResult = NoneType
+    PendingResult = NoneType
 
 
 class AsyncHTTPRequestAdapter(abc.ABC):
@@ -561,6 +563,9 @@ class AsyncBaseHTTPView(
                 await self.process_result(request, value)
                 for value in result.incremental
             ],
+            "completed": [
+                completed_result.formatted for completed_result in result.completed
+            ],
             "hasNext": result.has_next,
             "extensions": result.extensions,
         }
@@ -572,26 +577,24 @@ class AsyncBaseHTTPView(
         request: Request,
         result: Union[ExecutionResult, InitialIncrementalExecutionResult],
     ) -> GraphQLHTTPResponse:
-        if not isinstance(result, InitialIncrementalExecutionResult):
-            result = await self.schema._handle_execution_result(
-                context=self.schema.execution_context,
-                result=result,
-                extensions_runner=self.schema.extensions_runner,
-                process_errors=self.schema.process_errors,
-            )
-            return process_result(result)
+        if isinstance(result, InitialIncrementalExecutionResult):
+            return {
+                "data": result.data,
+                "pending": [
+                    pending_result.formatted for pending_result in result.pending
+                ],
+                "hasNext": result.has_next,
+                "extensions": result.extensions,
+            }
 
-        return {
-            "data": result.data,
-            "incremental": [
-                self.process_incremental_result(request, value)
-                for value in result.incremental
-            ]
-            if result.incremental
-            else [],
-            "hasNext": result.has_next,
-            "extensions": result.extensions,
-        }
+        result = await self.schema._handle_execution_result(
+            context=self.schema.execution_context,
+            result=result,
+            extensions_runner=self.schema.extensions_runner,
+            process_errors=self.schema.process_errors,
+        )
+
+        return process_result(result)
 
     async def on_ws_connect(
         self, context: Context
