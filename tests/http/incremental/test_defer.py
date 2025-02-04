@@ -40,11 +40,12 @@ async def test_basic_defer(method: Literal["get", "post"], http_client: HttpClie
             "incremental": [
                 {
                     "data": {"name": "Thiago Bellini"},
+                    # TODO: we need to move these out of the data.
                     "extensions": {"example": "example"},
                 }
             ],
             "completed": [{"id": "0"}],
             "hasNext": False,
-            # TODO: how do we fill these?
+            # TODO: fill from above
             "extensions": None,
         }
