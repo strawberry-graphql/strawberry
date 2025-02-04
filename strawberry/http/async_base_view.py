@@ -524,35 +524,6 @@ class AsyncBaseHTTPView(
             protocol=protocol,
         )
 
-    async def process_incremental_result(
-        self, request: Request, result: IncrementalResult
-    ) -> GraphQLHTTPResponse:
-        result = await self.schema._handle_execution_result(
-            context=self.schema.execution_context,
-            result=result,
-            extensions_runner=self.schema.extensions_runner,
-            process_errors=self.schema.process_errors,
-        )
-
-        if isinstance(result, IncrementalDeferResult):
-            return {
-                "data": result.data,
-                "errors": result.errors,
-                "path": result.path,
-                "label": result.label,
-                "extensions": result.extensions,
-            }
-        if isinstance(result, IncrementalStreamResult):
-            return {
-                "items": result.items,
-                "errors": result.errors,
-                "path": result.path,
-                "label": result.label,
-                "extensions": result.extensions,
-            }
-
-        raise ValueError(f"Unsupported incremental result type: {type(result)}")
-
     async def process_subsequent_result(
         self,
         request: Request,
