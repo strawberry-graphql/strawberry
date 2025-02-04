@@ -578,14 +578,20 @@ class AsyncBaseHTTPView(
         result: Union[ExecutionResult, InitialIncrementalExecutionResult],
     ) -> GraphQLHTTPResponse:
         if isinstance(result, InitialIncrementalExecutionResult):
-            return {
-                "data": result.data,
-                "pending": [
-                    pending_result.formatted for pending_result in result.pending
-                ],
-                "hasNext": result.has_next,
-                "extensions": result.extensions,
-            }
+            # TODO: fix this mess
+            from strawberry.types import (
+                InitialIncrementalExecutionResult as InitialIncrementalExecutionResultType,
+            )
+
+            # TODO: do this where we create ExecutionResult
+            # or maybe remove our wrappers and just GraphQL core's types
+            result = InitialIncrementalExecutionResultType(
+                data=result.data,
+                pending=[pending_result.formatted for pending_result in result.pending],
+                has_next=result.has_next,
+                extensions=result.extensions,
+                errors=result.errors,
+            )
 
         result = await self.schema._handle_execution_result(
             context=self.schema.execution_context,

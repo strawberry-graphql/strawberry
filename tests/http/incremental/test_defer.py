@@ -30,8 +30,7 @@ async def test_basic_defer(method: Literal["get", "post"], http_client: HttpClie
             "data": {"hero": {"id": "1"}},
             "hasNext": True,
             "pending": [{"path": ["hero"], "id": "0"}],
-            # TODO: why is this None?
-            "extensions": None,
+            "extensions": {"example": "example"},
         }
 
         subsequent = await stream.__anext__()

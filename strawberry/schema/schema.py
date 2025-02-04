@@ -300,7 +300,7 @@ class Schema(BaseSchema):
             provided_operation_name=operation_name,
         )
 
-    #  TODO: is this the right place to do this?
+    # TODO: is this the right place to do this?
     async def _handle_execution_result(
         self,
         context: ExecutionContext,
@@ -319,6 +319,7 @@ class Schema(BaseSchema):
         if isinstance(result, GraphQLExecutionResult):
             result = ExecutionResult(data=result.data, errors=result.errors)
 
+        # TODO: not correct when handling incremental results
         result.extensions = await extensions_runner.get_extensions_results(context)
 
         context.result = result  # type: ignore  # mypy failed to deduce correct type.
