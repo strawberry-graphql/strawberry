@@ -63,6 +63,12 @@ class DebugInfo:
 
 
 @strawberry.type
+class Hero:
+    id: strawberry.ID
+    name: str
+
+
+@strawberry.type
 class Query:
     @strawberry.field
     def greetings(self) -> str:
@@ -119,6 +125,10 @@ class Query:
         response.headers["X-Name"] = name
 
         return name
+
+    @strawberry.field
+    def hero(self) -> Hero:
+        return Hero(id=strawberry.ID("1"), name="Thiago Bellini")
 
 
 @strawberry.type
