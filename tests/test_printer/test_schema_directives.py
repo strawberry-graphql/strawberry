@@ -712,3 +712,39 @@ def test_print_directive_on_argument_with_description():
     schema = strawberry.Schema(query=Query)
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_print_directive_with_unset_value():
+    @strawberry.input
+    class FooInput:
+        a: Optional[str] = strawberry.UNSET
+        b: Optional[str] = strawberry.UNSET
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class FooDirective:
+        input: FooInput
+        optional_input: Optional[FooInput] = strawberry.UNSET
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(directives=[FooDirective(input=FooInput(a="something"))])
+        def foo(self, info) -> str: ...
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_output = """
+    directive @fooDirective(input: FooInput!, optionalInput: FooInput) on FIELD_DEFINITION
+
+    type Query {
+      foo: String! @fooDirective(input: {a: "something"})
+    }
+
+    input FooInput {
+      a: String
+      b: String
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
