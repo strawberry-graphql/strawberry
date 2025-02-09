@@ -5,6 +5,7 @@ from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Optional,
     TypeVar,
     Union,
@@ -68,32 +69,56 @@ class PrintExtras:
 
 
 @overload
-def _serialize_dataclasses(value: dict[_T, object]) -> dict[_T, object]: ...
+def _serialize_dataclasses(
+    value: dict[_T, object],
+    *,
+    name_converter: Callable[[str], str] | None = None,
+) -> dict[_T, object]: ...
 
 
 @overload
 def _serialize_dataclasses(
     value: Union[list[object], tuple[object]],
+    *,
+    name_converter: Callable[[str], str] | None = None,
 ) -> list[object]: ...
 
 
 @overload
-def _serialize_dataclasses(value: object) -> object: ...
+def _serialize_dataclasses(
+    value: object,
+    *,
+    name_converter: Callable[[str], str] | None = None,
+) -> object: ...
 
 
-def _serialize_dataclasses(value):
+def _serialize_dataclasses(
+    value,
+    *,
+    name_converter: Callable[[str], str] | None = None,
+):
+    if name_converter is None:
+        name_converter = lambda x: x  # noqa: E731
+
     if dataclasses.is_dataclass(value):
-        return {k: v for k, v in dataclasses.asdict(value).items() if v is not UNSET}  # type: ignore
+        return {
+            name_converter(k): v
+            for k, v in dataclasses.asdict(value).items()  # type: ignore
+            if v is not UNSET
+        }
     if isinstance(value, (list, tuple)):
         return [_serialize_dataclasses(v) for v in value]
     if isinstance(value, dict):
-        return {k: _serialize_dataclasses(v) for k, v in value.items()}
+        return {name_converter(k): _serialize_dataclasses(v) for k, v in value.items()}
 
     return value
 
 
 def print_schema_directive_params(
-    directive: GraphQLDirective, values: dict[str, Any]
+    directive: GraphQLDirective,
+    values: dict[str, Any],
+    *,
+    schema: BaseSchema,
 ) -> str:
     params = []
     for name, arg in directive.args.items():
@@ -101,7 +126,13 @@ def print_schema_directive_params(
         if value is UNSET:
             value = None
         else:
-            ast = ast_from_value(_serialize_dataclasses(value), arg.type)
+            ast = ast_from_value(
+                _serialize_dataclasses(
+                    value,
+                    name_converter=schema.config.name_converter.apply_naming_config,
+                ),
+                arg.type,
+            )
             value = ast and f"{name}: {print_ast(ast)}"
 
         if value:
@@ -129,6 +160,7 @@ def print_schema_directive(
             )
             for f in strawberry_directive.fields
         },
+        schema=schema,
     )
 
     printed_directive = print_directive(gql_directive, schema=schema)

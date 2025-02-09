@@ -749,3 +749,43 @@ def test_print_directive_with_unset_value():
     schema = strawberry.Schema(query=Query)
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_print_directive_with_snake_case_arguments():
+    @strawberry.input
+    class FooInput:
+        hello: str
+        hello_world: str
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class FooDirective:
+        input: FooInput
+        optional_input: Optional[FooInput] = strawberry.UNSET
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(
+            directives=[
+                FooDirective(input=FooInput(hello="hello", hello_world="hello world"))
+            ]
+        )
+        def foo(self, info) -> str: ...
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_output = """
+    directive @fooDirective(input: FooInput!, optionalInput: FooInput) on FIELD_DEFINITION
+
+    type Query {
+      foo: String! @fooDirective(input: {hello: "hello", helloWorld: "hello world"})
+    }
+
+    input FooInput {
+      hello: String!
+      helloWorld: String!
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
