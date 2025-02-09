@@ -934,7 +934,7 @@ async def test_extension_override_execution_async():
     }
 
 
-@patch("strawberry.schema.execute.original_execute", wraps=original_execute)
+@patch("strawberry.schema.schema.execute", wraps=original_execute)
 def test_execution_cache_example(mock_original_execute):
     # Test that the example of how to use the on_executing_start hook in the
     # docs actually works
@@ -1006,7 +1006,7 @@ def test_execution_cache_example(mock_original_execute):
     assert mock_original_execute.call_count == 2
 
 
-@patch("strawberry.schema.execute.original_execute", wraps=original_execute)
+@patch("strawberry.schema.schema.execute", wraps=original_execute)
 def test_execution_reject_example(mock_original_execute):
     # Test that the example of how to use the on_executing_start hook in the
     # docs actually works

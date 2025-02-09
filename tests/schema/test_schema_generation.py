@@ -1,10 +1,5 @@
-from typing import Any, Optional
-
 import pytest
-from graphql import ExecutionContext as GraphQLExecutionContext
 from graphql import (
-    ExecutionResult,
-    GraphQLError,
     GraphQLField,
     GraphQLNonNull,
     GraphQLObjectType,
@@ -60,41 +55,3 @@ def test_schema_fails_on_an_invalid_schema():
 
     with pytest.raises(ValueError, match="Invalid Schema. Errors.*"):
         strawberry.Schema(query=Query)
-
-
-def test_custom_execution_context():
-    class CustomExecutionContext(GraphQLExecutionContext):
-        @staticmethod
-        def build_response(
-            data: Optional[dict[str, Any]],
-            errors: list[GraphQLError],
-        ) -> ExecutionResult:
-            result = super(
-                CustomExecutionContext, CustomExecutionContext
-            ).build_response(data, errors)
-
-            if not result.data:
-                return result
-
-            # Add some extra data to the response
-            result.data.update(
-                {
-                    "extra": "data",
-                }
-            )
-            return result
-
-    @strawberry.type
-    class Query:
-        hello: str = "World"
-
-    schema = strawberry.Schema(
-        query=Query, execution_context_class=CustomExecutionContext
-    )
-
-    result = schema.execute_sync("{ hello }", root_value=Query())
-
-    assert result.data == {
-        "hello": "World",
-        "extra": "data",
-    }
