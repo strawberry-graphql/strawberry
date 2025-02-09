@@ -736,7 +736,7 @@ def test_print_directive_with_unset_value():
     directive @fooDirective(input: FooInput!, optionalInput: FooInput) on FIELD_DEFINITION
 
     type Query {
-      foo: String! @fooDirective(input: {a: "something"})
+      foo: String! @fooDirective(input: { a: "something" })
     }
 
     input FooInput {
