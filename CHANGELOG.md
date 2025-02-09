@@ -1,6 +1,20 @@
 CHANGELOG
 =========
 
+0.259.0 - 2025-02-09
+--------------------
+
+This release refactors some of the internal execution logic by:
+
+1. Moving execution logic from separate files into schema.py for better organization
+2. Using graphql-core's parse and validate functions directly instead of wrapping them
+3. Removing redundant execute.py and subscribe.py files
+
+This is an internal refactor that should not affect the public API or functionality. The changes make the codebase simpler and easier to maintain.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3771](https://github.com/strawberry-graphql/strawberry/pull/3771/)
+
+
 0.258.1 - 2025-02-09
 --------------------
 
