@@ -7,11 +7,9 @@ authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 keywords = ["graphql", "api", "rest", "starlette", "async"]
-
 homepage = "https://strawberry.rocks/"
 repository = "https://github.com/strawberry-graphql/strawberry"
 documentation = "https://strawberry.rocks/"
-
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -28,10 +26,6 @@ include = ["strawberry/py.typed"]
 "Mastodon" = "https://farbun.social/@strawberry"
 "Sponsor on GitHub" = "https://github.com/sponsors/strawberry-graphql"
 "Sponsor on Open Collective" = "https://opencollective.com/strawberry-graphql"
-
-[build-system]
-requires = ["poetry-core>=1.6"]
-build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -123,6 +117,7 @@ litestar = {version = ">=2", optional = false}
 uvicorn = ">=0.11.6"
 daphne = "^4.0.0"
 
+
 [tool.poetry.extras]
 aiohttp = ["aiohttp"]
 asgi = ["starlette", "python-multipart"]
@@ -143,6 +138,7 @@ pyinstrument = ["pyinstrument"]
 
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"
+
 
 [tool.pytest.ini_options]
 addopts = "--emoji"
@@ -181,6 +177,7 @@ filterwarnings = [
     "ignore::UserWarning:pydantic.*",
     "ignore::DeprecationWarning:pkg_resources.*",
 ]
+
 
 [tool.autopub]
 git-username = "Botberry"
@@ -384,3 +381,15 @@ exclude =[
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.codeflash]
+# All paths are relative to this pyproject.toml's directory.
+module-root = "strawberry"
+tests-root = "tests"
+test-framework = "pytest"
+ignore-paths = []
+formatter-cmds = ["ruff check --exit-zero --fix $file", "ruff format $file"]
+
+[build-system]
+requires = ["poetry-core>=1.6"]
+build-backend = "poetry.core.masonry.api"
