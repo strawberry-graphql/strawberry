@@ -714,6 +714,7 @@ def test_print_directive_on_argument_with_description():
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
+@skip_if_gql_32("formatting is different in gql 3.2")
 def test_print_directive_with_unset_value():
     @strawberry.input
     class FooInput:
