@@ -42,17 +42,17 @@ app.include_router(graphql_app, prefix="/graphql")
 
 <Note>
 
-Both FastAPI and Strawberry support sync and async functions, but their
-behavior is different.
+Both FastAPI and Strawberry support sync and async functions, but their behavior
+is different.
 
-FastAPI processes sync endpoints in a threadpool and async endpoints using
-the event loop. However, Strawberry processes sync and async fields using the
-event loop, which means that using a sync `def` will block the entire worker.
+FastAPI processes sync endpoints in a threadpool and async endpoints using the
+event loop. However, Strawberry processes sync and async fields using the event
+loop, which means that using a sync `def` will block the entire worker.
 
-It is recommended to use `async def` for all of your fields if you want
-to be able to handle concurrent request on a single worker. If you can't use
-async, make sure you wrap blocking code in a suspending thread, for example
-using `starlette.concurrency.run_in_threadpool`.
+It is recommended to use `async def` for all of your fields if you want to be
+able to handle concurrent request on a single worker. If you can't use async,
+make sure you wrap blocking code in a suspending thread, for example using
+`starlette.concurrency.run_in_threadpool`.
 
 </Note>
 
