@@ -135,6 +135,31 @@ class StrawberryArgument:
         return is_graphql_generic(self.type)
 
 
+def _convert_argument_value_can_be_returned(
+    type_: Union[StrawberryType, type],
+    scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+) -> bool:
+    if isinstance(type_, StrawberryOptional):
+        return _convert_argument_value_can_be_returned(type_.of_type, scalar_registry)
+
+    if is_scalar(type_, scalar_registry):
+        return True
+
+    if isinstance(type_, EnumDefinition):
+        return True
+
+    if isinstance(type_, LazyType):
+        return _convert_argument_value_can_be_returned(
+            type_.resolve_type(), scalar_registry
+        )
+
+    if hasattr(type_, "_enum_definition"):
+        enum_definition: EnumDefinition = type_._enum_definition
+        return _convert_argument_value_can_be_returned(enum_definition, scalar_registry)
+
+    return False
+
+
 def convert_argument(
     value: object,
     type_: Union[StrawberryType, type],
@@ -149,21 +174,20 @@ def convert_argument(
     if value is _deprecated_UNSET:
         return _deprecated_UNSET
 
+    if _convert_argument_value_can_be_returned(type_, scalar_registry):
+        return value
+
     if isinstance(type_, StrawberryOptional):
         return convert_argument(value, type_.of_type, scalar_registry, config)
 
     if isinstance(type_, StrawberryList):
         value_list = cast(Iterable, value)
+        if _convert_argument_value_can_be_returned(type_.of_type, scalar_registry):
+            return list(value_list)
         return [
             convert_argument(x, type_.of_type, scalar_registry, config)
             for x in value_list
         ]
-
-    if is_scalar(type_, scalar_registry):
-        return value
-
-    if isinstance(type_, EnumDefinition):
-        return value
 
     if isinstance(type_, LazyType):
         return convert_argument(value, type_.resolve_type(), scalar_registry, config)
