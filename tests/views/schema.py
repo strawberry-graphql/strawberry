@@ -151,10 +151,16 @@ class Mutation:
 
 @strawberry.type
 class Subscription:
+    active_echo_subscriptions = 0
+
     @strawberry.subscription
     async def echo(self, message: str, delay: float = 0) -> AsyncGenerator[str, None]:
-        await asyncio.sleep(delay)
-        yield message
+        try:
+            Subscription.active_echo_subscriptions += 1
+            await asyncio.sleep(delay)
+            yield message
+        finally:
+            Subscription.active_echo_subscriptions -= 1
 
     @strawberry.subscription
     async def request_ping(self, info: strawberry.Info) -> AsyncGenerator[bool, None]:

@@ -20,7 +20,7 @@ from strawberry.subscriptions.protocols.graphql_ws.types import (
     ErrorMessage,
     StartMessage,
 )
-from tests.views.schema import MyExtension, Schema
+from tests.views.schema import MyExtension, Schema, Subscription
 
 if TYPE_CHECKING:
     from tests.http.clients.aiohttp import HttpClient, WebSocketClient
@@ -814,3 +814,4 @@ async def test_unexpected_client_disconnects_are_gracefully_handled(
         await ws.close()
         await asyncio.sleep(1)
         assert not process_errors.called
+        assert Subscription.active_echo_subscriptions == 0
