@@ -155,6 +155,16 @@ def _is_leaf_type(
     return False
 
 
+def _is_optional_leaf_type(
+    type_: Union[StrawberryType, type],
+    scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+) -> bool:
+    if isinstance(type_, StrawberryOptional):
+        return _is_leaf_type(type_.of_type, scalar_registry)
+
+    return False
+
+
 def convert_argument(
     value: object,
     type_: Union[StrawberryType, type],
@@ -174,9 +184,8 @@ def convert_argument(
 
     if isinstance(type_, StrawberryList):
         value_list = cast(Iterable, value)
-        if _is_leaf_type(type_.of_type, scalar_registry) or (
-            isinstance(type_, StrawberryOptional)
-            and _is_leaf_type(type_.of_type, scalar_registry)
+        if _is_leaf_type(type_.of_type, scalar_registry) or _is_optional_leaf_type(
+            type_.of_type, scalar_registry
         ):
             return list(value_list)
         return [
