@@ -1,6 +1,6 @@
 Release type: patch
 
-This release fix an issue where directives with input types using snake_case
+This release fixes an issue where directives with input types using snake_case
 would not be printed in the schema.
 
 For example, the following:
