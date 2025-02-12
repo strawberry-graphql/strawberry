@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.259.1 - 2025-02-12
+--------------------
+
+This release adjusts the `context_getter` attribute from the fastapi `GraphQLRouter`
+to accept an async callables.
+
+Contributed by [Alexey Pelykh](https://github.com/alexey-pelykh) via [PR #3763](https://github.com/strawberry-graphql/strawberry/pull/3763/)
+
+
 0.259.0 - 2025-02-09
 --------------------
 
