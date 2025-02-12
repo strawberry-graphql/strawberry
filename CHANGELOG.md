@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.260.0 - 2025-02-12
+--------------------
+
+Support aliases (TypeVar passthrough) in `get_specialized_type_var_map`.
+
+Contributed by [Alexey Pelykh](https://github.com/alexey-pelykh) via [PR #3766](https://github.com/strawberry-graphql/strawberry/pull/3766/)
+
+
 0.259.1 - 2025-02-12
 --------------------
 
