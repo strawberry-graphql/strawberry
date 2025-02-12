@@ -109,7 +109,10 @@ def _serialize_dataclasses(
     if isinstance(value, (list, tuple)):
         return [_serialize_dataclasses(v, name_converter=name_converter) for v in value]
     if isinstance(value, dict):
-        return {name_converter(k): _serialize_dataclasses(v) for k, v in value.items()}
+        return {
+            name_converter(k): _serialize_dataclasses(v, name_converter=name_converter)
+            for k, v in value.items()
+        }
 
     return value
 
