@@ -751,6 +751,7 @@ def test_print_directive_with_unset_value():
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
+@skip_if_gql_32("formatting is different in gql 3.2")
 def test_print_directive_with_snake_case_arguments():
     @strawberry.input
     class FooInput:
@@ -777,7 +778,7 @@ def test_print_directive_with_snake_case_arguments():
     directive @fooDirective(input: FooInput!, optionalInput: FooInput) on FIELD_DEFINITION
 
     type Query {
-      foo: String! @fooDirective(input: {hello: "hello", helloWorld: "hello world"})
+      foo: String! @fooDirective(input: { hello: "hello", helloWorld: "hello world" })
     }
 
     input FooInput {
