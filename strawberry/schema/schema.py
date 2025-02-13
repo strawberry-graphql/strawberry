@@ -297,13 +297,12 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
     def get_extensions(self, sync: bool = False) -> list[SchemaExtension]:
-        extensions = []
-        if self.directives:
-            extensions = [
-                *self.extensions,
-                DirectivesExtensionSync if sync else DirectivesExtension,
-            ]
+        extensions: list[type[SchemaExtension] | SchemaExtension] = []
         extensions.extend(self.extensions)
+        if self.directives:
+            extensions.extend(
+                [DirectivesExtensionSync if sync else DirectivesExtension]
+            )
         return [
             ext if isinstance(ext, SchemaExtension) else ext(execution_context=None)
             for ext in extensions
