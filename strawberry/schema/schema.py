@@ -297,7 +297,7 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
     def get_extensions(self, sync: bool = False) -> list[SchemaExtension]:
-        extensions: list[SchemaExtension] = []
+        extensions: list[type[SchemaExtension] | SchemaExtension] = []
         extensions.extend(self.extensions)
         if self.directives:
             extensions.extend(
