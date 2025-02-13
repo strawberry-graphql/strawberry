@@ -298,12 +298,9 @@ class Schema(BaseSchema):
 
     def get_extensions(self, sync: bool = False) -> list[SchemaExtension]:
         extensions = []
-        if self.directives:
-            extensions = [
-                *self.extensions,
-                DirectivesExtensionSync if sync else DirectivesExtension,
-            ]
         extensions.extend(self.extensions)
+        if self.directives:
+            extensions.extend([DirectivesExtensionSync if sync else DirectivesExtension])
         return [
             ext if isinstance(ext, SchemaExtension) else ext(execution_context=None)
             for ext in extensions
