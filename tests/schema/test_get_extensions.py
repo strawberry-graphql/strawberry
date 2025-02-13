@@ -75,9 +75,7 @@ def test_no_duplicate_extensions_with_directives():
     """
 
     schema = strawberry.Schema(
-        query=Query,
-        extensions=[MyExtension],
-        directives=[uppercase]
+        query=Query, extensions=[MyExtension], directives=[uppercase]
     )
 
     extensions = schema.get_extensions()
@@ -92,22 +90,21 @@ def test_no_duplicate_extensions_with_directives():
 def test_extension_order_preserved():
     """Test to verify that extension order is preserved while removing duplicates."""
 
-    class Extension1(SchemaExtension): pass
+    class Extension1(SchemaExtension):
+        pass
 
-    class Extension2(SchemaExtension): pass
+    class Extension2(SchemaExtension):
+        pass
 
     schema = strawberry.Schema(
-        query=Query,
-        extensions=[Extension1, Extension2],
-        directives=[uppercase]
+        query=Query, extensions=[Extension1, Extension2], directives=[uppercase]
     )
 
     extensions = schema.get_extensions()
-    extension_types = [type(ext) for ext in extensions
-                       if not isinstance(ext, (
-        DirectivesExtension, DirectivesExtensionSync))]
+    extension_types = [
+        type(ext)
+        for ext in extensions
+        if not isinstance(ext, (DirectivesExtension, DirectivesExtensionSync))
+    ]
 
-    assert extension_types == [Extension1, Extension2], (
-        "Extension order not preserved"
-    )
-
+    assert extension_types == [Extension1, Extension2], "Extension order not preserved"
