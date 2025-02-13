@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.260.1 - 2025-02-13
+--------------------
+
+This release fixes an issue where extensions were being duplicated when custom directives were added to the schema. Previously, when user directives were present, extensions were being appended twice to the extension list, causing them to be executed multiple times during query processing.
+
+The fix ensures that extensions are added only once and maintains their original order. Test cases have been added to validate this behavior and ensure extensions are executed exactly once.
+
+Contributed by [DONEY K PAUL](https://github.com/doney-dkp) via [PR #3783](https://github.com/strawberry-graphql/strawberry/pull/3783/)
+
+
 0.260.0 - 2025-02-12
 --------------------
 
