@@ -11,6 +11,7 @@ from typing import (
 )
 
 from opentelemetry import trace
+from opentelemetry.semconv._incubating.attributes import graphql_attributes
 from opentelemetry.trace import SpanKind
 
 from strawberry.extensions import LifecycleStep, SchemaExtension
@@ -60,11 +61,16 @@ class OpenTelemetryExtension(SchemaExtension):
         self._span_holder[LifecycleStep.OPERATION] = self._tracer.start_span(
             span_name, kind=SpanKind.SERVER
         )
-        self._span_holder[LifecycleStep.OPERATION].set_attribute("component", "graphql")
+
+        # set the name if we have it. if we don't, we might populate it after parsing.
+        if self._operation_name:
+            self._span_holder[LifecycleStep.OPERATION].set_attribute(
+                graphql_attributes.GRAPHQL_OPERATION_NAME, self._operation_name
+            )
 
         if self.execution_context.query:
             self._span_holder[LifecycleStep.OPERATION].set_attribute(
-                "query", self.execution_context.query
+                graphql_attributes.GRAPHQL_DOCUMENT, self.execution_context.query
             )
 
         yield
@@ -76,6 +82,22 @@ class OpenTelemetryExtension(SchemaExtension):
         if not self._operation_name and self.execution_context.operation_name:
             span_name = f"GraphQL Query: {self.execution_context.operation_name}"
             self._span_holder[LifecycleStep.OPERATION].update_name(span_name)
+            self._span_holder[LifecycleStep.OPERATION].set_attribute(
+                graphql_attributes.GRAPHQL_OPERATION_NAME,
+                self.execution_context.operation_name,
+            )
+
+        # likewise for the operation type; we'll know it for sure after parsing.
+        # note that this means ``self.execution_context.operation_type`` must
+        # be kept in sync with ``graphql_attributes.GraphqlOperationTypeValues``.
+        if self.execution_context.operation_type:
+            self._span_holder[LifecycleStep.OPERATION].set_attribute(
+                graphql_attributes.GRAPHQL_OPERATION_TYPE,
+                graphql_attributes.GraphqlOperationTypeValues(
+                    self.execution_context.operation_type.value.lower()
+                ).value,
+            )
+
         self._span_holder[LifecycleStep.OPERATION].end()
 
     def on_validate(self) -> Generator[None, None, None]:
@@ -139,7 +161,6 @@ class OpenTelemetryExtension(SchemaExtension):
     def add_tags(self, span: Span, info: GraphQLResolveInfo, kwargs: Any) -> None:
         graphql_path = ".".join(map(str, get_path_from_info(info)))
 
-        span.set_attribute("component", "graphql")
         span.set_attribute("graphql.parentType", info.parent_type.name)
         span.set_attribute("graphql.path", graphql_path)
 
