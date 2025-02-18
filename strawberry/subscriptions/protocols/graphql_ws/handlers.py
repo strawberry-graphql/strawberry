@@ -162,29 +162,32 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
         variables: Optional[dict[str, object]],
     ) -> None:
         try:
-            agen_or_err = await self.schema.subscribe(
+            result_source = await self.schema.subscribe(
                 query=query,
                 variable_values=variables,
                 operation_name=operation_name,
                 context_value=self.context,
                 root_value=self.root_value,
             )
-            if isinstance(agen_or_err, PreExecutionError):
-                assert agen_or_err.errors
-                await self.send_message(
-                    {
-                        "type": "error",
-                        "id": operation_id,
-                        "payload": agen_or_err.errors[0].formatted,
-                    }
-                )
-            else:
-                self.subscriptions[operation_id] = agen_or_err
+            self.subscriptions[operation_id] = result_source
 
-                async for result in agen_or_err:
-                    await self.send_data_message(result, operation_id)
+            is_first_result = True
+            async for result in result_source:
+                if is_first_result and isinstance(result, PreExecutionError):
+                    await self.send_message(
+                        {
+                            "type": "error",
+                            "id": operation_id,
+                            "payload": result.errors[0].formatted,
+                        }
+                    )
+                    return
 
-                await self.send_message({"type": "complete", "id": operation_id})
+                await self.send_data_message(result, operation_id)
+                is_first_result = False
+
+            await self.send_message({"type": "complete", "id": operation_id})
+
         except asyncio.CancelledError:
             await self.send_message({"type": "complete", "id": operation_id})
 
