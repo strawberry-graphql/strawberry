@@ -1104,9 +1104,7 @@ async def test_unexpected_client_disconnects_are_gracefully_handled(
             {
                 "id": "sub1",
                 "type": "subscribe",
-                "payload": {
-                    "query": 'subscription { infinity(message: "Hi") }'
-                },
+                "payload": {"query": 'subscription { infinity(message: "Hi") }'},
             }
         )
         await ws.receive(timeout=2)

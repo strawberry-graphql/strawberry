@@ -64,7 +64,7 @@ def name(
         str,
         strawberry.argument(description="This is a description"),
         strawberry.argument(description="Another description"),
-    ]
+    ],
 ) -> str:
     return "Name"
 
