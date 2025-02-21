@@ -28,7 +28,7 @@ include = ["strawberry/py.typed"]
 "Sponsor on Open Collective" = "https://opencollective.com/strawberry-graphql"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.9"
 graphql-core = ">=3.2.0,<3.4.0"
 typing-extensions = ">=4.5.0"
 python-dateutil = "^2.7.0"
