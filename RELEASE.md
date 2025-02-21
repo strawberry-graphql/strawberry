@@ -1,3 +1,3 @@
 Release type: patch
 
-Use `python >= 3.9` instead of `^3.9` to avoid confilcts of other projects use `>= 3.x`
+This release updates the Python version requirement to use ⁠python >= 3.9 instead of ⁠^3.9 to avoid conflicts with other projects that use ⁠>= 3.x
