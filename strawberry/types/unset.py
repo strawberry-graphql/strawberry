@@ -1,5 +1,6 @@
 import warnings
-from typing import Any, Optional
+from typing import Any, Optional, TypeVar, Union
+from typing_extensions import TypeAlias, TypeGuard
 
 DEPRECATED_NAMES: dict[str, str] = {
     "is_unset": "`is_unset` is deprecated use `value is UNSET` instead",
@@ -59,6 +60,18 @@ def __getattr__(name: str) -> Any:
         warnings.warn(DEPRECATED_NAMES[name], DeprecationWarning, stacklevel=2)
         return globals()[f"_deprecated_{name}"]
     raise AttributeError(f"module {__name__} has no attribute {name}")
+
+
+NOTHING = UnsetType()
+"""A special value that can be used to represent an unset value in a field or argument."""
+
+T = TypeVar("T")
+
+Maybe: TypeAlias = Union[T, UnsetType, None]
+
+
+def isnt_unset(value: Union[T, UnsetType, None]) -> TypeGuard[Union[T, None]]:
+    return not isinstance(value, UnsetType)
 
 
 __all__ = [
