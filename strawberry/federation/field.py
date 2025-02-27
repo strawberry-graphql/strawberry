@@ -15,22 +15,30 @@ from strawberry.types.field import field as base_field
 from strawberry.types.unset import UNSET
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Iterable, Mapping, Sequence
     from typing_extensions import Literal
 
     from strawberry.extensions.field_extension import FieldExtension
     from strawberry.permission import BasePermission
-    from strawberry.types.field import _RESOLVER_TYPE, StrawberryField
+    from strawberry.types.field import (
+        _RESOLVER_TYPE,
+        _RESOLVER_TYPE_ASYNC,
+        _RESOLVER_TYPE_SYNC,
+        StrawberryField,
+    )
 
     from .schema_directives import Override
 
 T = TypeVar("T")
 
+# NOTE: we are separating the sync and async resolvers because using both
+# in the same function will cause mypy to raise an error. Not sure if it is a bug
+
 
 @overload
 def field(
     *,
-    resolver: _RESOLVER_TYPE[T],
+    resolver: _RESOLVER_TYPE_ASYNC[T],
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
@@ -47,9 +55,39 @@ def field(
     init: Literal[False] = False,
     permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
-    default: Any = UNSET,
-    default_factory: Union[Callable[..., object], object] = UNSET,
-    directives: Sequence[object] = (),
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
+    directives: Optional[Sequence[object]] = (),
+    extensions: Optional[list[FieldExtension]] = None,
+    graphql_type: Optional[Any] = None,
+) -> T: ...
+
+
+@overload
+def field(
+    *,
+    resolver: _RESOLVER_TYPE_SYNC[T],
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    authenticated: bool = False,
+    external: bool = False,
+    inaccessible: bool = False,
+    policy: Optional[list[list[str]]] = None,
+    provides: Optional[list[str]] = None,
+    override: Optional[Union[Override, str]] = None,
+    requires: Optional[list[str]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
+    tags: Optional[Iterable[str]] = (),
+    shareable: bool = False,
+    init: Literal[False] = False,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
+    directives: Optional[Sequence[object]] = (),
     extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> T: ...
@@ -74,9 +112,10 @@ def field(
     init: Literal[True] = True,
     permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
-    default: Any = UNSET,
-    default_factory: Union[Callable[..., object], object] = UNSET,
-    directives: Sequence[object] = (),
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
+    directives: Optional[Sequence[object]] = (),
     extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> Any: ...
@@ -84,7 +123,7 @@ def field(
 
 @overload
 def field(
-    resolver: _RESOLVER_TYPE[T],
+    resolver: _RESOLVER_TYPE_ASYNC[T],
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
@@ -101,9 +140,38 @@ def field(
     shareable: bool = False,
     permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
-    default: Any = UNSET,
-    default_factory: Union[Callable[..., object], object] = UNSET,
-    directives: Sequence[object] = (),
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
+    directives: Optional[Sequence[object]] = (),
+    extensions: Optional[list[FieldExtension]] = None,
+    graphql_type: Optional[Any] = None,
+) -> StrawberryField: ...
+
+
+@overload
+def field(
+    resolver: _RESOLVER_TYPE_SYNC[T],
+    *,
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    authenticated: bool = False,
+    external: bool = False,
+    inaccessible: bool = False,
+    policy: Optional[list[list[str]]] = None,
+    provides: Optional[list[str]] = None,
+    override: Optional[Union[Override, str]] = None,
+    requires: Optional[list[str]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
+    tags: Optional[Iterable[str]] = (),
+    shareable: bool = False,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
+    directives: Optional[Sequence[object]] = (),
     extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> StrawberryField: ...
@@ -129,7 +197,8 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    directives: Sequence[object] = (),
+    metadata: Optional[Mapping[Any, Any]] = None,
+    directives: Optional[Sequence[object]] = (),
     extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
     # This init parameter is used by PyRight to determine whether this field
@@ -197,6 +266,7 @@ def field(
         default_factory=default_factory,
         init=init,  # type: ignore
         directives=directives,
+        metadata=metadata,
         extensions=extensions,
         graphql_type=graphql_type,
     )
