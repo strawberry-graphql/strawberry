@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.261.1 - 2025-02-27
+--------------------
+
+This release updates the Python version requirement to use ⁠python >= 3.9 instead of ⁠^3.9 to avoid conflicts with other projects that use ⁠>= 3.x
+
+Contributed by [John Lyu](https://github.com/PaleNeutron) via [PR #3789](https://github.com/strawberry-graphql/strawberry/pull/3789/)
+
+
 0.261.0 - 2025-02-27
 --------------------
 
