@@ -11,25 +11,47 @@ if typing.TYPE_CHECKING:
 
 
 @pytest.fixture
-def datadog_extension(mocker) -> tuple[type["DatadogTracingExtension"], Any]:
-    trace_mock = mocker.MagicMock()
+def ddtrace_version_2(mocker):
+    mock_pkg_resources = mocker.MagicMock()
+    mock_distribution = mocker.MagicMock()
+    mock_distribution.version = "2.20.0"
+    mock_pkg_resources.get_distribution.return_value = mock_distribution
+    mocker.patch.dict("sys.modules", pkg_resources=mock_pkg_resources)
 
-    mocker.patch.dict("sys.modules", {"ddtrace.trace": trace_mock})
+    datadog_mock = mocker.MagicMock()
+    mocker.patch.dict("sys.modules", ddtrace=datadog_mock)
+    return datadog_mock
+
+@pytest.fixture
+def ddtrace_version_3(mocker):
+    mock_pkg_resources = mocker.MagicMock()
+    mock_distribution = mocker.MagicMock()
+    mock_distribution.version = "3.0.0"
+    mock_pkg_resources.get_distribution.return_value = mock_distribution
+    mocker.patch.dict("sys.modules", pkg_resources=mock_pkg_resources)
+
+    trace_mock = mocker.MagicMock()
+    mocker.patch.dict("sys.modules", {'ddtrace.trace' :trace_mock})
+    return trace_mock
+
+@pytest.fixture(params=["ddtrace_version_2", "ddtrace_version_3"])
+def datadog_extension(request) -> tuple[type["DatadogTracingExtension"], Any]:
+    fixture_name = request.param
+    ddtrace_mock = request.getfixturevalue(fixture_name)
 
     from strawberry.extensions.tracing.datadog import DatadogTracingExtension
 
-    return DatadogTracingExtension, trace_mock
+    return DatadogTracingExtension, ddtrace_mock
 
 
-@pytest.fixture
-def datadog_extension_sync(mocker) -> tuple[type["DatadogTracingExtension"], Any]:
-    trace_mock = mocker.MagicMock()
-
-    mocker.patch.dict("sys.modules", {"ddtrace.trace": trace_mock})
+@pytest.fixture(params=["ddtrace_version_2", "ddtrace_version_3"])
+def datadog_extension_sync(request) -> tuple[type["DatadogTracingExtension"], Any]:
+    fixture_name = request.param
+    ddtrace_mock = request.getfixturevalue(fixture_name)
 
     from strawberry.extensions.tracing.datadog import DatadogTracingExtensionSync
 
-    return DatadogTracingExtensionSync, trace_mock
+    return DatadogTracingExtensionSync, ddtrace_mock
 
 
 @strawberry.type
