@@ -150,7 +150,7 @@ def test_pydantic(session: Session, pydantic: str, gql_core: str) -> None:
 
 @session(python=PYTHON_VERSIONS, name="Type checkers tests", tags=["tests"])
 def tests_typecheckers(session: Session) -> None:
-    session.run_always("poetry", "install", external=True)
+    session.run_always("poetry", "install", "--with", "integrations", external=True)
 
     session.install("pyright")
     session.install("pydantic")

@@ -1,6 +1,38 @@
 CHANGELOG
 =========
 
+0.261.0 - 2025-02-27
+--------------------
+
+This release adds support for `type[strawberry.UNSET]` in addition to `strawberry.types.unset.UnsetType` for annotations.
+
+
+```python
+@strawberry.type
+class User:
+    name: str | None = UNSET
+    age: int | None | type[strawberry.UNSET] = UNSET
+```
+
+Contributed by [Alexey Pelykh](https://github.com/alexey-pelykh) via [PR #3765](https://github.com/strawberry-graphql/strawberry/pull/3765/)
+
+
+0.260.4 - 2025-02-27
+--------------------
+
+This release adds support for Datadog ddtrace v3.0.0 in the `DatadogTracingExtension`
+
+Contributed by [Jon Finerty](https://github.com/jonfinerty) via [PR #3794](https://github.com/strawberry-graphql/strawberry/pull/3794/)
+
+
+0.260.3 - 2025-02-27
+--------------------
+
+This release fixes the issue that some subscription resolvers were not canceled if a client unexpectedly disconnected.
+
+Contributed by [Jakub Bacic](https://github.com/jakub-bacic) via [PR #3778](https://github.com/strawberry-graphql/strawberry/pull/3778/)
+
+
 0.260.2 - 2025-02-13
 --------------------
 
