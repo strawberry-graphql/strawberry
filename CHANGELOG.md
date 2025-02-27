@@ -1,6 +1,22 @@
 CHANGELOG
 =========
 
+0.261.0 - 2025-02-27
+--------------------
+
+This release adds support for `type[strawberry.UNSET]` in addition to `strawberry.types.unset.UnsetType` for annotations.
+
+
+```python
+@strawberry.type
+class User:
+    name: str | None = UNSET
+    age: int | None | type[strawberry.UNSET] = UNSET
+```
+
+Contributed by [Alexey Pelykh](https://github.com/alexey-pelykh) via [PR #3765](https://github.com/strawberry-graphql/strawberry/pull/3765/)
+
+
 0.260.4 - 2025-02-27
 --------------------
 
