@@ -5666,10 +5666,10 @@ Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2128](ht
 
 Reduce the number of required dependencies, by marking Pygments and python-multipart as optional. These dependencies are still necessary for some functionality, and so users of that functionality need to ensure they're installed, either explicitly or via an extra:
 
-- Pygments is still necessary when using Strawberry in debug mode, and is included in the `strawberry[debug-server]` extra.
-- python-multipart is still necessary when using `strawberry.file_uploads.Upload` with FastAPI or Starlette, and is included in the `strawberry[fastapi]` and `strawberry[asgi]` extras, respectively.
+- Pygments is still necessary when using Strawberry in debug mode, and is included in the `strawberry-graphql[debug-server]` extra.
+- python-multipart is still necessary when using `strawberry.file_uploads.Upload` with FastAPI or Starlette, and is included in the `strawberry-graphql[fastapi]` and `strawberry-graphql[asgi]` extras, respectively.
 
-There is now also the `strawberry[cli]` extra to support commands like `strawberry codegen` and `strawberry export-schema`.
+There is now also the `strawberry-graphql[cli]` extra to support commands like `strawberry codegen` and `strawberry export-schema`.
 
 Contributed by [Huon Wilson](https://github.com/huonw) via [PR #2205](https://github.com/strawberry-graphql/strawberry/pull/2205/)
 
@@ -9235,7 +9235,7 @@ you can install the required dependencies needed to use Strawberry with
 ASGI by running:
 
 ```
-pip install 'strawberry[asgi]'
+pip install 'strawberry-graphql[asgi]'
 ```
 
 Contributed by [A. Coady](https://github.com/coady) [PR #1036](https://github.com/strawberry-graphql/strawberry/pull/1036/)
