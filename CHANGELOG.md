@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.260.3 - 2025-02-27
+--------------------
+
+This release fixes the issue that some subscription resolvers were not canceled if a client unexpectedly disconnected.
+
+Contributed by [Jakub Bacic](https://github.com/jakub-bacic) via [PR #3778](https://github.com/strawberry-graphql/strawberry/pull/3778/)
+
+
 0.260.2 - 2025-02-13
 --------------------
 
