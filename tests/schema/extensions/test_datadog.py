@@ -12,24 +12,24 @@ if typing.TYPE_CHECKING:
 
 @pytest.fixture
 def datadog_extension(mocker) -> tuple[type["DatadogTracingExtension"], Any]:
-    datadog_mock = mocker.MagicMock()
-
-    mocker.patch.dict("sys.modules", ddtrace=datadog_mock)
+    trace_mock = mocker.MagicMock()
+    
+    mocker.patch.dict("sys.modules", {'ddtrace.trace' :trace_mock})
 
     from strawberry.extensions.tracing.datadog import DatadogTracingExtension
 
-    return DatadogTracingExtension, datadog_mock
+    return DatadogTracingExtension, trace_mock
 
 
 @pytest.fixture
 def datadog_extension_sync(mocker) -> tuple[type["DatadogTracingExtension"], Any]:
-    datadog_mock = mocker.MagicMock()
-
-    mocker.patch.dict("sys.modules", ddtrace=datadog_mock)
+    trace_mock = mocker.MagicMock()
+    
+    mocker.patch.dict("sys.modules", {'ddtrace.trace' :trace_mock})
 
     from strawberry.extensions.tracing.datadog import DatadogTracingExtensionSync
 
-    return DatadogTracingExtensionSync, datadog_mock
+    return DatadogTracingExtensionSync, trace_mock
 
 
 @strawberry.type

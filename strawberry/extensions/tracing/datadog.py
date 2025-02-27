@@ -5,7 +5,7 @@ from functools import cached_property
 from inspect import isawaitable
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from ddtrace import Span, tracer
+from ddtrace.trace import Span, tracer
 
 from strawberry.extensions import LifecycleStep, SchemaExtension
 from strawberry.extensions.tracing.utils import should_skip_tracing
