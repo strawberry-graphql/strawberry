@@ -386,7 +386,7 @@ def connection(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: list[FieldExtension] = (),  # type: ignore
+    extensions: list[FieldExtension] | None = None,
     max_results: Optional[int] = None,
     # This init parameter is used by pyright to determine whether this field
     # is added in the constructor or not. It is not used to change
@@ -473,6 +473,7 @@ def connection(
         https://relay.dev/graphql/connections.htm
 
     """
+    extensions = extensions or []
     f = StrawberryField(
         python_name=None,
         graphql_name=name,

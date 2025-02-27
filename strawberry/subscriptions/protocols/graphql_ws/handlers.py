@@ -76,8 +76,7 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
                 with suppress(BaseException):
                     await self.keep_alive_task
 
-            for operation_id in list(self.subscriptions.keys()):
-                await self.cleanup_operation(operation_id)
+            await self.cleanup()
 
     async def handle_message(
         self,
@@ -201,6 +200,10 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
         with suppress(BaseException):
             await self.tasks[operation_id]
         del self.tasks[operation_id]
+
+    async def cleanup(self) -> None:
+        for operation_id in list(self.tasks.keys()):
+            await self.cleanup_operation(operation_id)
 
     async def send_data_message(
         self, execution_result: ExecutionResult, operation_id: str
