@@ -11,25 +11,42 @@ if typing.TYPE_CHECKING:
 
 
 @pytest.fixture
-def datadog_extension(mocker) -> tuple[type["DatadogTracingExtension"], Any]:
-    datadog_mock = mocker.MagicMock()
-
-    mocker.patch.dict("sys.modules", ddtrace=datadog_mock)
-
-    from strawberry.extensions.tracing.datadog import DatadogTracingExtension
-
-    return DatadogTracingExtension, datadog_mock
+def ddtrace_version_2(mocker):
+    ddtrace_mock = mocker.MagicMock()
+    ddtrace_mock.__version__ = "2.20.0"
+    mocker.patch.dict("sys.modules", ddtrace=ddtrace_mock)
+    return ddtrace_mock
 
 
 @pytest.fixture
-def datadog_extension_sync(mocker) -> tuple[type["DatadogTracingExtension"], Any]:
-    datadog_mock = mocker.MagicMock()
+def ddtrace_version_3(mocker):
+    ddtrace_mock = mocker.MagicMock()
+    ddtrace_mock.__version__ = "3.0.0"
+    mocker.patch.dict("sys.modules", ddtrace=ddtrace_mock)
 
-    mocker.patch.dict("sys.modules", ddtrace=datadog_mock)
+    trace_mock = mocker.MagicMock()
+    mocker.patch.dict("sys.modules", {"ddtrace.trace": trace_mock})
+    return trace_mock
+
+
+@pytest.fixture(params=["ddtrace_version_2", "ddtrace_version_3"])
+def datadog_extension(request) -> tuple[type["DatadogTracingExtension"], Any]:
+    fixture_name = request.param
+    ddtrace_mock = request.getfixturevalue(fixture_name)
+
+    from strawberry.extensions.tracing.datadog import DatadogTracingExtension
+
+    return DatadogTracingExtension, ddtrace_mock
+
+
+@pytest.fixture(params=["ddtrace_version_2", "ddtrace_version_3"])
+def datadog_extension_sync(request) -> tuple[type["DatadogTracingExtension"], Any]:
+    fixture_name = request.param
+    ddtrace_mock = request.getfixturevalue(fixture_name)
 
     from strawberry.extensions.tracing.datadog import DatadogTracingExtensionSync
 
-    return DatadogTracingExtensionSync, datadog_mock
+    return DatadogTracingExtensionSync, ddtrace_mock
 
 
 @strawberry.type
