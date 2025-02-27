@@ -1,6 +1,198 @@
 CHANGELOG
 =========
 
+0.260.4 - 2025-02-27
+--------------------
+
+This release adds support for Datadog ddtrace v3.0.0 in the `DatadogTracingExtension`
+
+Contributed by [Jon Finerty](https://github.com/jonfinerty) via [PR #3794](https://github.com/strawberry-graphql/strawberry/pull/3794/)
+
+
+0.260.3 - 2025-02-27
+--------------------
+
+This release fixes the issue that some subscription resolvers were not canceled if a client unexpectedly disconnected.
+
+Contributed by [Jakub Bacic](https://github.com/jakub-bacic) via [PR #3778](https://github.com/strawberry-graphql/strawberry/pull/3778/)
+
+
+0.260.2 - 2025-02-13
+--------------------
+
+This release fixes an issue where directives with input types using snake_case
+would not be printed in the schema.
+
+For example, the following:
+
+```python
+@strawberry.input
+class FooInput:
+    hello: str
+    hello_world: str
+
+
+@strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+class FooDirective:
+    input: FooInput
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(
+        directives=[
+            FooDirective(input=FooInput(hello="hello", hello_world="hello world")),
+        ]
+    )
+    def foo(self, info) -> str: ...
+```
+
+Would previously print as:
+
+```graphql
+directive @fooDirective(
+  input: FooInput!
+  optionalInput: FooInput
+) on FIELD_DEFINITION
+
+type Query {
+  foo: String! @fooDirective(input: { hello: "hello" })
+}
+
+input FooInput {
+  hello: String!
+  hello_world: String!
+}
+```
+
+Now it will be correctly printed as:
+
+```graphql
+directive @fooDirective(
+  input: FooInput!
+  optionalInput: FooInput
+) on FIELD_DEFINITION
+
+type Query {
+  foo: String!
+    @fooDirective(input: { hello: "hello", helloWorld: "hello world" })
+}
+
+input FooInput {
+  hello: String!
+  hello_world: String!
+}
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3780](https://github.com/strawberry-graphql/strawberry/pull/3780/)
+
+
+0.260.1 - 2025-02-13
+--------------------
+
+This release fixes an issue where extensions were being duplicated when custom directives were added to the schema. Previously, when user directives were present, extensions were being appended twice to the extension list, causing them to be executed multiple times during query processing.
+
+The fix ensures that extensions are added only once and maintains their original order. Test cases have been added to validate this behavior and ensure extensions are executed exactly once.
+
+Contributed by [DONEY K PAUL](https://github.com/doney-dkp) via [PR #3783](https://github.com/strawberry-graphql/strawberry/pull/3783/)
+
+
+0.260.0 - 2025-02-12
+--------------------
+
+Support aliases (TypeVar passthrough) in `get_specialized_type_var_map`.
+
+Contributed by [Alexey Pelykh](https://github.com/alexey-pelykh) via [PR #3766](https://github.com/strawberry-graphql/strawberry/pull/3766/)
+
+
+0.259.1 - 2025-02-12
+--------------------
+
+This release adjusts the `context_getter` attribute from the fastapi `GraphQLRouter`
+to accept an async callables.
+
+Contributed by [Alexey Pelykh](https://github.com/alexey-pelykh) via [PR #3763](https://github.com/strawberry-graphql/strawberry/pull/3763/)
+
+
+0.259.0 - 2025-02-09
+--------------------
+
+This release refactors some of the internal execution logic by:
+
+1. Moving execution logic from separate files into schema.py for better organization
+2. Using graphql-core's parse and validate functions directly instead of wrapping them
+3. Removing redundant execute.py and subscribe.py files
+
+This is an internal refactor that should not affect the public API or functionality. The changes make the codebase simpler and easier to maintain.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3771](https://github.com/strawberry-graphql/strawberry/pull/3771/)
+
+
+0.258.1 - 2025-02-09
+--------------------
+
+This release adjusts the schema printer to avoid printing a schema directive
+value set to `UNSET` as `""` (empty string).
+
+For example, the following:
+
+```python
+@strawberry.input
+class FooInput:
+    a: str | None = strawberry.UNSET
+    b: str | None = strawberry.UNSET
+
+
+@strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+class FooDirective:
+    input: FooInput
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(directives=[FooDirective(input=FooInput(a="aaa"))])
+    def foo(self, info) -> str: ...
+```
+
+Would previously print as:
+
+```graphql
+directive @fooDirective(
+  input: FooInput!
+  optionalInput: FooInput
+) on FIELD_DEFINITION
+
+type Query {
+  foo: String! @fooDirective(input: { a: "aaa", b: "" })
+}
+
+input FooInput {
+  a: String
+  b: String
+}
+```
+
+Now it will be correctly printed as:
+
+```graphql
+directive @fooDirective(
+  input: FooInput!
+  optionalInput: FooInput
+) on FIELD_DEFINITION
+
+type Query {
+  foo: String! @fooDirective(input: { a: "aaa" })
+}
+
+input FooInput {
+  a: String
+  b: String
+}
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3770](https://github.com/strawberry-graphql/strawberry/pull/3770/)
+
+
 0.258.0 - 2025-01-12
 --------------------
 
@@ -3398,23 +3590,23 @@ the attributes of the `IgnoreContext` class.
 For example, the following query:
 ```python
 """
-    query {
-      matt: user(name: "matt") {
-        email
-      }
-      andy: user(name: "andy") {
-        email
-        address {
-          city
-        }
-        pets {
-          name
-          owner {
-            name
-          }
-        }
+query {
+  matt: user(name: "matt") {
+    email
+  }
+  andy: user(name: "andy") {
+    email
+    address {
+      city
+    }
+    pets {
+      name
+      owner {
+        name
       }
     }
+  }
+}
 """
 ```
 can have its depth limited by the following `should_ignore`:
@@ -3431,17 +3623,17 @@ query_depth_limiter = QueryDepthLimiter(should_ignore=should_ignore)
 so that it *effectively* becomes:
 ```python
 """
-    query {
-      andy: user(name: "andy") {
-        email
-        pets {
-          name
-          owner {
-            name
-          }
-        }
+query {
+  andy: user(name: "andy") {
+    email
+    pets {
+      name
+      owner {
+        name
       }
     }
+  }
+}
 """
 ```
 
@@ -10526,7 +10718,7 @@ from typing import Annotated
 class Query:
     @strawberry.field
     def user_by_id(
-        id: Annotated[str, strawberry.argument(description="The ID of the user")]
+        id: Annotated[str, strawberry.argument(description="The ID of the user")],
     ) -> User: ...
 ```
 
