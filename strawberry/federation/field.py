@@ -219,7 +219,7 @@ def field(
         Tag,
     )
 
-    directives = list(directives)
+    directives = list(directives or [])
 
     if authenticated:
         directives.append(Authenticated())
