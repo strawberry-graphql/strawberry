@@ -28,6 +28,17 @@ def test_optional_with_unset():
     assert resolved == Optional[str]
 
 
+def test_optional_with_type_of_unset():
+    annotation = StrawberryAnnotation(Union[type[strawberry.UNSET], Optional[str]])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryOptional)
+    assert resolved.of_type is str
+
+    assert resolved == StrawberryOptional(of_type=str)
+    assert resolved == Optional[str]
+
+
 def test_optional_with_unset_as_union():
     annotation = StrawberryAnnotation(Union[UnsetType, None, str])
     resolved = annotation.resolve()
