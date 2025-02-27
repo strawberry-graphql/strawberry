@@ -23,7 +23,7 @@ from .types.object_type import asdict, input, interface, type  # noqa: A004
 from .types.private import Private
 from .types.scalar import scalar
 from .types.union import union
-from .types.unset import UNSET, Maybe, isnt_unset
+from .types.unset import UNSET, Maybe, not_unset
 
 __all__ = [
     "ID",
@@ -48,9 +48,9 @@ __all__ = [
     "field",
     "input",
     "interface",
-    "isnt_unset",
     "lazy",
     "mutation",
+    "not_unset",
     "relay",
     "scalar",
     "schema_directive",

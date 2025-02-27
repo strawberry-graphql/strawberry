@@ -278,15 +278,13 @@ def maybe_schema() -> strawberry.Schema:
 
     @strawberry.input
     class UpdateUserInput:
-        phone: strawberry.Maybe[str] = (
-            strawberry.UNSET
-        )  # TODO: by default we should inject `default` dc value here.
+        phone: strawberry.Maybe[str]
 
     @strawberry.type
     class Mutation:
         @strawberry.mutation
         def update_user(self, input: UpdateUserInput) -> User:
-            if strawberry.isnt_unset(input.phone):
+            if strawberry.not_unset(input.phone):
                 user.phone = input.phone
             return user
 

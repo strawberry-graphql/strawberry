@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar, Union
 from typing_extensions import TypeAlias, TypeGuard
 
 DEPRECATED_NAMES: dict[str, str] = {
@@ -67,11 +67,15 @@ NOTHING = UnsetType()
 
 T = TypeVar("T")
 
-Maybe: TypeAlias = Union[T, UnsetType, None]
+if TYPE_CHECKING:
+    Maybe: TypeAlias = Union[T, UnsetType, None]
+else:
+    # we do this trick so we can inspect that at runtime
+    class Maybe(Generic[T]): ...
 
 
-def isnt_unset(value: Union[T, UnsetType, None]) -> TypeGuard[Union[T, None]]:
-    return not isinstance(value, UnsetType)
+def not_unset(value: Union[T, UnsetType, None]) -> TypeGuard[Union[T, None]]:
+    return value is not UNSET and not isinstance(value, UnsetType)
 
 
 __all__ = [

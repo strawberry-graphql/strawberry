@@ -1,11 +1,14 @@
 Release type: patch
 
-This release adds a new (preferable) way to handle optional updates.
-Up until now when you wanted to inffer if an input value was null or absent you'd use `strawberry.UNSET` which is a bit cumbersome and error prone.
+This release adds a new (preferable) way to handle optional updates. Up until
+now when you wanted to inffer if an input value was null or absent you'd use
+`strawberry.UNSET` which is a bit cumbersome and error prone.
 
-Now you can use `strawberry.Maybe` and `strawberry.isnt_unset` to identify if a value was provided or not.
+Now you can use `strawberry.Maybe` and `strawberry.not_unset` to identify if a
+value was provided or not.
 
 i.e
+
 ```python
 import strawberry
 
@@ -25,7 +28,7 @@ class UpdateUserInput:
 @strawberry.type
 class Mutation:
     def update_user(self, info, input: UpdateUserInput) -> User:
-        if strawberry.isnt_unset(input.phone):
+        if strawberry.not_unset(input.phone):
             phone = (
                 input.phone
             )  # could be `str | None` in case we want to nullify the phone
