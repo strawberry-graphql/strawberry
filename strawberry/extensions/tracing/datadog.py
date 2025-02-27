@@ -5,12 +5,12 @@ from functools import cached_property
 from inspect import isawaitable
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
+import ddtrace
 from packaging import version
 
 from strawberry.extensions import LifecycleStep, SchemaExtension
 from strawberry.extensions.tracing.utils import should_skip_tracing
 
-import ddtrace
 parsed_ddtrace_version = version.parse(ddtrace.__version__)
 if parsed_ddtrace_version >= version.parse("3.0.0"):
     from ddtrace.trace import Span, tracer
