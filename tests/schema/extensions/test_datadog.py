@@ -12,24 +12,17 @@ if typing.TYPE_CHECKING:
 
 @pytest.fixture
 def ddtrace_version_2(mocker):
-    mock_pkg_resources = mocker.MagicMock()
-    mock_distribution = mocker.MagicMock()
-    mock_distribution.version = "2.20.0"
-    mock_pkg_resources.get_distribution.return_value = mock_distribution
-    mocker.patch.dict("sys.modules", pkg_resources=mock_pkg_resources)
-
-    datadog_mock = mocker.MagicMock()
-    mocker.patch.dict("sys.modules", ddtrace=datadog_mock)
-    return datadog_mock
+    ddtrace_mock = mocker.MagicMock()
+    ddtrace_mock.__version__ = "2.20.0"
+    mocker.patch.dict("sys.modules", ddtrace=ddtrace_mock)
+    return ddtrace_mock
 
 
 @pytest.fixture
 def ddtrace_version_3(mocker):
-    mock_pkg_resources = mocker.MagicMock()
-    mock_distribution = mocker.MagicMock()
-    mock_distribution.version = "3.0.0"
-    mock_pkg_resources.get_distribution.return_value = mock_distribution
-    mocker.patch.dict("sys.modules", pkg_resources=mock_pkg_resources)
+    ddtrace_mock = mocker.MagicMock()
+    ddtrace_mock.__version__ = "3.0.0"
+    mocker.patch.dict("sys.modules", ddtrace=ddtrace_mock)
 
     trace_mock = mocker.MagicMock()
     mocker.patch.dict("sys.modules", {"ddtrace.trace": trace_mock})
