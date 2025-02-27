@@ -22,6 +22,7 @@ def ddtrace_version_2(mocker):
     mocker.patch.dict("sys.modules", ddtrace=datadog_mock)
     return datadog_mock
 
+
 @pytest.fixture
 def ddtrace_version_3(mocker):
     mock_pkg_resources = mocker.MagicMock()
@@ -31,8 +32,9 @@ def ddtrace_version_3(mocker):
     mocker.patch.dict("sys.modules", pkg_resources=mock_pkg_resources)
 
     trace_mock = mocker.MagicMock()
-    mocker.patch.dict("sys.modules", {'ddtrace.trace' :trace_mock})
+    mocker.patch.dict("sys.modules", {"ddtrace.trace": trace_mock})
     return trace_mock
+
 
 @pytest.fixture(params=["ddtrace_version_2", "ddtrace_version_3"])
 def datadog_extension(request) -> tuple[type["DatadogTracingExtension"], Any]:
