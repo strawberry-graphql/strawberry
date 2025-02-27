@@ -3574,23 +3574,23 @@ the attributes of the `IgnoreContext` class.
 For example, the following query:
 ```python
 """
-    query {
-      matt: user(name: "matt") {
-        email
-      }
-      andy: user(name: "andy") {
-        email
-        address {
-          city
-        }
-        pets {
-          name
-          owner {
-            name
-          }
-        }
+query {
+  matt: user(name: "matt") {
+    email
+  }
+  andy: user(name: "andy") {
+    email
+    address {
+      city
+    }
+    pets {
+      name
+      owner {
+        name
       }
     }
+  }
+}
 """
 ```
 can have its depth limited by the following `should_ignore`:
@@ -3607,17 +3607,17 @@ query_depth_limiter = QueryDepthLimiter(should_ignore=should_ignore)
 so that it *effectively* becomes:
 ```python
 """
-    query {
-      andy: user(name: "andy") {
-        email
-        pets {
-          name
-          owner {
-            name
-          }
-        }
+query {
+  andy: user(name: "andy") {
+    email
+    pets {
+      name
+      owner {
+        name
       }
     }
+  }
+}
 """
 ```
 
@@ -10702,7 +10702,7 @@ from typing import Annotated
 class Query:
     @strawberry.field
     def user_by_id(
-        id: Annotated[str, strawberry.argument(description="The ID of the user")]
+        id: Annotated[str, strawberry.argument(description="The ID of the user")],
     ) -> User: ...
 ```
 
