@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.260.4 - 2025-02-27
+--------------------
+
+This release adds support for Datadog ddtrace v3.0.0 in the `DatadogTracingExtension`
+
+Contributed by [Jon Finerty](https://github.com/jonfinerty) via [PR #3794](https://github.com/strawberry-graphql/strawberry/pull/3794/)
+
+
 0.260.3 - 2025-02-27
 --------------------
 
