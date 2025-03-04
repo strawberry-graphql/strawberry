@@ -199,7 +199,10 @@ class PydanticV1Compat:
     def PYDANTIC_MISSING_TYPE(self) -> Any:  # noqa: N802
         return dataclasses.MISSING
 
-    def get_model_fields(self, model: type[BaseModel]) -> dict[str, CompatModelField]:
+    def get_model_fields(
+        self, model: type[BaseModel], include_computed: bool = False
+    ) -> dict[str, CompatModelField]:
+        """`include_computed` is a noop for PydanticV1Compat."""
         new_fields = {}
         # Convert it into CompatModelField
         for name, field in model.__fields__.items():  # type: ignore[attr-defined]
