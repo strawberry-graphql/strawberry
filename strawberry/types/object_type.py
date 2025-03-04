@@ -3,6 +3,7 @@ import dataclasses
 import inspect
 import sys
 import types
+import typing_extensions as typing
 from collections.abc import Sequence
 from typing import (
     Any,
@@ -10,16 +11,19 @@ from typing import (
     Optional,
     TypeVar,
     Union,
+    get_origin,
     overload,
 )
 from typing_extensions import dataclass_transform
 
+import strawberry
 from strawberry.exceptions import (
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
     ObjectIsNotClassError,
 )
 from strawberry.types.base import get_object_definition
+from strawberry.types.unset import UNSET, Maybe
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.str_converters import to_camel_case
 
@@ -120,6 +124,22 @@ def _wrap_dataclass(cls: builtins.type[T]) -> builtins.type[T]:
         add_custom_init_fn(dclass)
 
     return dclass
+
+
+def _inject_default_for_maybe_annotations(
+    cls: builtins.type[T], annotations: dict[str, Any]
+) -> None:
+    """Inject `= UNSET` for fields with `Maybe` annotations."""
+    for name, annot in annotations.copy().items():
+        if (orig := get_origin(annot)) and orig is Maybe:
+            type_of_maybe = Union[typing.get_args(annot)[0], None]
+            annotations[name] = type_of_maybe
+            setattr(
+                cls,
+                name,
+                strawberry.field(default=UNSET, graphql_type=type_of_maybe),
+            )
+            continue
 
 
 def _process_type(
@@ -286,7 +306,8 @@ def type(
 
             if field and isinstance(field, StrawberryField) and field.type_annotation:
                 original_type_annotations[field_name] = field.type_annotation.annotation
-
+        if is_input:
+            _inject_default_for_maybe_annotations(cls, annotations)
         wrapped = _wrap_dataclass(cls)
 
         return _process_type(  # type: ignore
