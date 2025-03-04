@@ -1,6 +1,25 @@
 CHANGELOG
 =========
 
+0.262.0 - 2025-03-04
+--------------------
+
+This release adds support for exporting schema created by a callable:
+
+```bash
+strawberry export-schema package.module:create_schema
+```
+
+when
+
+```python
+def create_schema():
+    return strawberry.Schema(query=Query)
+```
+
+Contributed by [Alexey Pelykh](https://github.com/alexey-pelykh) via [PR #3797](https://github.com/strawberry-graphql/strawberry/pull/3797/)
+
+
 0.261.1 - 2025-02-27
 --------------------
 
