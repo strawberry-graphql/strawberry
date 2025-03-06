@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.262.1 - 2025-03-06
+--------------------
+
+This release updates the handling of the Django `graphql/graphiql.html` template, if provided; it will now receive the current request as context.
+
+Contributed by [ash](https://github.com/sersorrel) via [PR #3800](https://github.com/strawberry-graphql/strawberry/pull/3800/)
+
+
 0.262.0 - 2025-03-04
 --------------------
 
