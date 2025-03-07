@@ -84,9 +84,9 @@ type Point2D {
 
 </CodeGrid>
 
-In some cases this would not suffice.
-i.e if you wanted to know if a field was not set or if it was set to `None`.
-In this case you can use `strawberry.Maybe` like so:
+In some cases this would not suffice. i.e if you wanted to know if a field was
+not set or if it was set to `None`. In this case you can use `strawberry.Maybe`
+like so:
 
 <CodeGrid>
 
@@ -97,19 +97,18 @@ from typing import Optional
 
 @strawberry.input
 class UpdateUserInput:
-  name: str | None = None
-  phone: strawberry.Maybe[str]
+    name: str | None = None
+    phone: strawberry.Maybe[str]
 
 
 @strawberry.type
 class Mutation:
     def update_user(self, user_id: strawberry.ID, input: UpdateUserInput) -> User:
         if name := input.name:
-            ... # update name...
+            ...  # update name...
         if strawberry.not_unset(input.phone):
             phone = input.phone
-            ... # update phone...
-          
+            ...  # update phone...
 ```
 
 ```graphql
