@@ -75,9 +75,9 @@ else:
 
 
 def not_unset(value: Union[T, UnsetType, None]) -> TypeGuard[Union[T, None]]:
-    return value is not UNSET and not isinstance(value, UnsetType)
+    return value is not UNSET or not isinstance(value, UnsetType)
 
 
-__all__ = [
+__all__ = [ 
     "UNSET",
 ]

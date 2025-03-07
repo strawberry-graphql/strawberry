@@ -84,8 +84,9 @@ type Point2D {
 
 </CodeGrid>
 
-Alternatively you can also use `strawberry.UNSET` instead of the `None` default
-value, which will make the field optional in the schema:
+In some cases this would not suffice.
+i.e if you wanted to know if a field was not set or if it was set to `None`.
+In this case you can use `strawberry.Maybe` like so:
 
 <CodeGrid>
 
@@ -95,17 +96,27 @@ from typing import Optional
 
 
 @strawberry.input
-class Point2D:
-    x: float
-    y: float
-    label: Optional[str] = strawberry.UNSET
+class UpdateUserInput:
+  name: str | None = None
+  phone: strawberry.Maybe[str]
+
+
+@strawberry.type
+class Mutation:
+    def update_user(self, user_id: strawberry.ID, input: UpdateUserInput) -> User:
+        if name := input.name:
+            ... # update name...
+        if strawberry.not_unset(input.phone):
+            phone = input.phone
+            ... # update phone...
+          
 ```
 
 ```graphql
-type Point2D {
-  x: Float!
-  y: Float!
-  label: String
+type UpdateUserInput {
+  name: String = null
+  phone: String
+
 }
 ```
 
