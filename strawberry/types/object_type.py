@@ -132,7 +132,7 @@ def _inject_default_for_maybe_annotations(
     """Inject `= UNSET` for fields with `Maybe` annotations."""
     for name, annot in annotations.copy().items():
         if (orig := get_origin(annot)) and orig is Maybe:
-            type_of_maybe = Union[typing.get_args(annot)[0], None]
+            type_of_maybe = Union[typing.get_args(annot)[0], None]  # type: ignore[valid-type]
             annotations[name] = type_of_maybe
             setattr(
                 cls,
