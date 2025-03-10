@@ -32,6 +32,7 @@ python = ">=3.9"
 graphql-core = {version = ">=3.2.0,<3.4.0", python = ">=3.9,<4.0"}
 typing-extensions = ">=4.5.0"
 python-dateutil = "^2.7.0"
+packaging = "^24.2"
 starlette = {version = ">=0.18.0", optional = true}
 typer = {version = ">=0.7.0", optional = true}
 pygments = {version = "^2.3", optional = true}
