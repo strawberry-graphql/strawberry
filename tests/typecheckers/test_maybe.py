@@ -26,33 +26,37 @@ if strawberry.not_unset(obj.foobar):
 
 def test_maybe() -> None:
     result = typecheck(CODE)
-    
-    assert result.pyright == snapshot([
-    Result(
-        type="information",
-        message='Type of "obj.foobar" is "str | UnsetType | None"',
-        line=12,
-        column=13,
-    ),
-    Result(
-        type="information",
-        message='Type of "obj.foobar" is "str | None"',
-        line=15,
-        column=17,
-    ),
-])
 
-    assert result.mypy == snapshot([
-    Result(
-        type="note",
-        message='Revealed type is "Union[builtins.str, strawberry.types.unset.UnsetType, None]"',
-        line=12,
-        column=13,
-    ),
-    Result(
-        type="note",
-        message='Revealed type is "Union[builtins.str, None]"',
-        line=15,
-        column=17,
-    ),
-])
+    assert result.pyright == snapshot(
+        [
+            Result(
+                type="information",
+                message='Type of "obj.foobar" is "str | UnsetType | None"',
+                line=12,
+                column=13,
+            ),
+            Result(
+                type="information",
+                message='Type of "obj.foobar" is "str | None"',
+                line=15,
+                column=17,
+            ),
+        ]
+    )
+
+    assert result.mypy == snapshot(
+        [
+            Result(
+                type="note",
+                message='Revealed type is "Union[builtins.str, strawberry.types.unset.UnsetType, None]"',
+                line=12,
+                column=13,
+            ),
+            Result(
+                type="note",
+                message='Revealed type is "Union[builtins.str, None]"',
+                line=15,
+                column=17,
+            ),
+        ]
+    )
