@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.262.2 - 2025-03-12
+--------------------
+
+This release adds missing `packaging` dependency required by `DatadogTracingExtension`
+
+Contributed by [Jakub Bacic](https://github.com/jakub-bacic) via [PR #3803](https://github.com/strawberry-graphql/strawberry/pull/3803/)
+
+
 0.262.1 - 2025-03-06
 --------------------
 
