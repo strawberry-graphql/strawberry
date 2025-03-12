@@ -821,50 +821,11 @@ colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
 name = "codeflash"
-version = "0.9.2"
-description = "Client for codeflash.ai - automatic code performance optimization, powered by AI"
-optional = false
-python-versions = "<4.0,>=3.9"
-groups = ["dev"]
-markers = "python_version < \"4.0\""
-files = [
-    {file = "codeflash-0.9.2.tar.gz", hash = "sha256:c6e3edfae9dc6d49e0f431410472fbc457bb1c114dc72a939cf22e0e7681d4fc"},
-]
-
-[package.dependencies]
-click = ">=8.1.0"
-coverage = ">=7.6.4"
-crosshair-tool = ">=0.0.78"
-dill = ">=0.3.8"
-gitpython = ">=3.1.31"
-humanize = ">=4.0.0"
-inquirer = ">=3.0.0"
-isort = ">=5.11.0"
-jedi = ">=0.19.1"
-junitparser = ">=3.1.0"
-libcst = ">=1.0.1"
-lxml = ">=5.3.0"
-parameterized = ">=0.9.0"
-posthog = ">=3.0.0"
-pydantic = ">=1.10.1"
-pytest = ">=7.0.0"
-pytest-timeout = ">=2.1.0"
-rich = ">=13.8.1"
-sentry-sdk = ">=1.40.6,<3.0.0"
-tiktoken = ">=0.3.2"
-timeout-decorator = ">=0.5.0"
-tomlkit = ">=0.11.7"
-unidiff = ">=0.7.4"
-unittest-xml-reporting = ">=3.2.0"
-
-[[package]]
-name = "codeflash"
 version = "0.10.0"
 description = "Client for codeflash.ai - automatic code performance optimization, powered by AI"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
-markers = "python_version >= \"4.0\""
 files = [
     {file = "codeflash-0.10.0.tar.gz", hash = "sha256:ab0bcd9c5d4dc7dacb5e49e7907ac3909472ce75be2e54a94ca205e6a9be94e8"},
 ]
@@ -2954,30 +2915,11 @@ uv = ["uv (>=0.1.6)"]
 
 [[package]]
 name = "nox-poetry"
-version = "1.0.3"
-description = "nox-poetry"
-optional = false
-python-versions = ">=3.7,<4.0"
-groups = ["dev"]
-markers = "python_version < \"4.0\""
-files = [
-    {file = "nox_poetry-1.0.3-py3-none-any.whl", hash = "sha256:a2fffeb70ae81840479e68287afe1c772bf376f70f1e92f99832a20b3c64d064"},
-    {file = "nox_poetry-1.0.3.tar.gz", hash = "sha256:dc7ecbbd812a333a0c0b558f57e5b37f7c12926cddbcecaf2264957fd373824e"},
-]
-
-[package.dependencies]
-nox = ">=2020.8.22"
-packaging = ">=20.9"
-tomlkit = ">=0.7"
-
-[[package]]
-name = "nox-poetry"
 version = "1.2.0"
 description = "nox-poetry"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
-markers = "python_version >= \"4.0\""
 files = [
     {file = "nox_poetry-1.2.0-py3-none-any.whl", hash = "sha256:266eea7a0ab3cad7f4121ecc05b76945036db3b67e6e347557f05010a18e2682"},
     {file = "nox_poetry-1.2.0.tar.gz", hash = "sha256:2531a404e3a21eb73fc1a587a548506a8e2c4c1e6e7ef0c1d0d8d6453b7e5d26"},
@@ -3044,7 +2986,7 @@ version = "24.2"
 description = "Core utilities for Python packages"
 optional = false
 python-versions = ">=3.8"
-groups = ["dev", "integrations"]
+groups = ["main", "dev", "integrations"]
 files = [
     {file = "packaging-24.2-py3-none-any.whl", hash = "sha256:09abb1bccd265c01f4a3aa3f7a7db064b36514d2cba19a2f694fe6150451a759"},
     {file = "packaging-24.2.tar.gz", hash = "sha256:c228a6dc5e932d346bc5739379109d49e8853dd8223571c7c5b55260edc0b97f"},
@@ -5924,4 +5866,4 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9"
-content-hash = "bb8fbdae51f704d93e2dfc6e9aa23fd1efc42e54aa3e04e1820f5577bd978d8d"
+content-hash = "18b9f273cbfb14310238603486a201b5dbe1e7a023a06f47045c664338b2eaad"
