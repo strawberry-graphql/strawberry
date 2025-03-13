@@ -15,9 +15,11 @@ from strawberry.exceptions import ConnectionRejectionError
 from strawberry.http.exceptions import NonTextMessageReceived, WebSocketDisconnected
 from strawberry.http.typevars import Context, RootValue
 from strawberry.subscriptions.protocols.graphql_ws.types import (
+    CompleteMessage,
     ConnectionInitMessage,
     ConnectionTerminateMessage,
     DataMessage,
+    ErrorMessage,
     OperationMessage,
     StartMessage,
     StopMessage,
@@ -174,22 +176,24 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
             is_first_result = True
             async for result in result_source:
                 if is_first_result and isinstance(result, PreExecutionError):
+                    assert result.errors
+
                     await self.send_message(
-                        {
-                            "type": "error",
-                            "id": operation_id,
-                            "payload": result.errors[0].formatted,
-                        }
+                        ErrorMessage(
+                            type="error",
+                            id=operation_id,
+                            payload=result.errors[0].formatted,
+                        )
                     )
                     return
 
                 await self.send_data_message(result, operation_id)
                 is_first_result = False
 
-            await self.send_message({"type": "complete", "id": operation_id})
+            await self.send_message(CompleteMessage(type="complete", id=operation_id))
 
         except asyncio.CancelledError:
-            await self.send_message({"type": "complete", "id": operation_id})
+            await self.send_message(CompleteMessage(type="complete", id=operation_id))
 
     async def cleanup_operation(self, operation_id: str) -> None:
         if operation_id in self.subscriptions:
