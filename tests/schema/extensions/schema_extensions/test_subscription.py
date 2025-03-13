@@ -76,12 +76,15 @@ async def test_subscription_extension_handles_immediate_errors(
         "on_execute Entered",
         "on_execute Exited",
         "get_results",
-        # TODO: we might need this
-        # "on_operation Exited",
+        "on_operation Exited",
     ]
 
     result = await schema.subscribe(default_query_types_and_query.subscription)
-    result = await result.__anext__()
+    results = [result async for result in result]
+
+    assert len(results) == 1
+    result = results[0]
+
     assert isinstance(result, PreExecutionError)
     assert result.errors
 
