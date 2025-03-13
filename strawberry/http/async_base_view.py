@@ -353,7 +353,29 @@ class AsyncBaseHTTPView(
                 },
             )
         if isinstance(result, GraphQLIncrementalExecutionResults):
-            return None
+
+            async def stream():
+                yield "---"
+                response = {"data": {"test": "test"}}
+                # response = await self.process_result(request, result.initial_result)
+                yield self.encode_multipart_data(response, "-")
+
+                async for value in result.subsequent_results:
+                    response = {"data": {"test": "test"}}
+                    # response = await self.process_subsequent_result(request, value)
+                    yield self.encode_multipart_data(response, "-")
+
+                yield "--\r\n"
+
+            return await self.create_streaming_response(
+                request,
+                stream,
+                sub_response,
+                headers={
+                    "Transfer-Encoding": "chunked",
+                    "Content-Type": 'multipart/mixed; boundary="-"',
+                },
+            )
 
         response_data = await self.process_result(request=request, result=result)
 
@@ -365,12 +387,15 @@ class AsyncBaseHTTPView(
         )
 
     def encode_multipart_data(self, data: Any, separator: str) -> str:
+        encoded_data = self.encode_json(data)
+
         return "".join(
             [
-                f"\r\n--{separator}\r\n",
-                "Content-Type: application/json\r\n\r\n",
-                self.encode_json(data),
-                "\n",
+                "\r\n",
+                "Content-Type: application/json; charset=utf-8\r\n",
+                "\r\n",
+                encoded_data,
+                f"\r\n--{separator}",
             ]
         )
 
