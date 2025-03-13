@@ -91,6 +91,10 @@ ATTR_TO_TYPE_MAP_Pydantic_V2 = {
     "SecretStr": str,
     "SecretBytes": bytes,
     "AnyUrl": str,
+    "AnyHttpUrl": str,
+    "HttpUrl": str,
+    "PostgresDsn": str,
+    "RedisDsn": str,
 }
 
 ATTR_TO_TYPE_MAP_Pydantic_Core_V2 = {
@@ -263,8 +267,8 @@ class PydanticCompat:
 if IS_PYDANTIC_V2:
     from typing_extensions import get_args, get_origin
 
-    from pydantic._internal._typing_extra import is_new_type
-    from pydantic._internal._utils import lenient_issubclass, smart_deepcopy
+    from pydantic.v1.typing import is_new_type
+    from pydantic.v1.utils import lenient_issubclass, smart_deepcopy
 
     def new_type_supertype(type_: Any) -> Any:
         return type_.__supertype__
