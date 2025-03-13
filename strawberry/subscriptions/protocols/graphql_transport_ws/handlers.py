@@ -186,8 +186,6 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         elif hasattr(self.context, "connection_params"):
             self.context.connection_params = payload
 
-        self.context = cast(Context, self.context)
-
         try:
             connection_ack_payload = await self.view.on_ws_connect(self.context)
         except ConnectionRejectionError:

@@ -8,7 +8,6 @@ from uuid import UUID
 import pydantic
 from pydantic import BaseModel
 from pydantic.version import VERSION as PYDANTIC_VERSION
-
 from strawberry.experimental.pydantic.exceptions import UnsupportedTypeError
 
 if TYPE_CHECKING:
@@ -222,13 +221,13 @@ class PydanticV1Compat:
             ConstrainedStr = pydantic.v1.ConstrainedStr
             ConstrainedList = pydantic.v1.ConstrainedList
 
-        if lenient_issubclass(type_, ConstrainedInt):
+        if lenient_issubclass(type_, ConstrainedInt):  # type: ignore
             return int
-        if lenient_issubclass(type_, ConstrainedFloat):
+        if lenient_issubclass(type_, ConstrainedFloat):  # type: ignore
             return float
-        if lenient_issubclass(type_, ConstrainedStr):
+        if lenient_issubclass(type_, ConstrainedStr):  # type: ignore
             return str
-        if lenient_issubclass(type_, ConstrainedList):
+        if lenient_issubclass(type_, ConstrainedList):  # type: ignore
             return list[self.get_basic_type(type_.item_type)]  # type: ignore
 
         if type_ in self.fields_map:
