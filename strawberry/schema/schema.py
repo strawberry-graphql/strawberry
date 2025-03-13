@@ -82,8 +82,8 @@ if TYPE_CHECKING:
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
     from strawberry.types.union import StrawberryUnion
 
-SubscriptionResult: TypeAlias = Union[
-    PreExecutionError, AsyncGenerator[ExecutionResult, None]
+SubscriptionResult: TypeAlias = AsyncGenerator[
+    Union[PreExecutionError, ExecutionResult], None
 ]
 
 OriginSubscriptionResult = Union[

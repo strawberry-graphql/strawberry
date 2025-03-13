@@ -174,6 +174,7 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
             self.subscriptions[operation_id] = result_source
 
             is_first_result = True
+
             async for result in result_source:
                 if is_first_result and isinstance(result, PreExecutionError):
                     assert result.errors

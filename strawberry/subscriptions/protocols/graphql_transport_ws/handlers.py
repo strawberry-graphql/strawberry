@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Awaitable
 from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
@@ -38,12 +37,11 @@ from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.operation import get_operation_type
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
     from datetime import timedelta
 
     from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncWebSocketAdapter
     from strawberry.schema import BaseSchema
-    from strawberry.schema.subscribe import SubscriptionResult
+    from strawberry.schema.schema import SubscriptionResult
 
 
 class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
@@ -254,7 +252,7 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
 
     async def run_operation(self, operation: Operation[Context, RootValue]) -> None:
         """The operation task's top level method. Cleans-up and de-registers the operation once it is done."""
-        result_source: Awaitable[ExecutionResult] | Awaitable[SubscriptionResult]
+        result_source: ExecutionResult | SubscriptionResult
 
         try:
             # Get an AsyncGenerator yielding the results
@@ -279,6 +277,7 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
 
             if isinstance(result_source, ExecutionResult):
                 if isinstance(result_source, PreExecutionError):
+                    assert result_source.errors
                     await operation.send_initial_errors(result_source.errors)
                 else:
                     await operation.send_next(result_source)
@@ -287,6 +286,7 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
 
                 async for result in result_source:
                     if is_first_result and isinstance(result, PreExecutionError):
+                        assert result.errors
                         await operation.send_initial_errors(result.errors)
                         break
 
@@ -294,11 +294,11 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
                     is_first_result = False
 
             await operation.send_operation_message(
-                {"id": operation.id, "type": "complete"}
+                CompleteMessage(id=operation.id, type="complete")
             )
 
-        except BaseException as error:  # pragma: no cover
-            self.handle_task_exception(error)
+        except Exception as error:  # pragma: no cover
+            await self.handle_task_exception(error)
 
             with suppress(Exception):
                 await operation.send_operation_message(
