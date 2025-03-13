@@ -91,6 +91,10 @@ ATTR_TO_TYPE_MAP_Pydantic_V2 = {
     "SecretStr": str,
     "SecretBytes": bytes,
     "AnyUrl": str,
+    "AnyHttpUrl": str,
+    "HttpUrl": str,
+    "PostgresDsn": str,
+    "RedisDsn": str,
 }
 
 ATTR_TO_TYPE_MAP_Pydantic_Core_V2 = {
