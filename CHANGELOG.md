@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.262.3 - 2025-03-13
+--------------------
+
+This release changes the required version of packaging from >=24 to >=23,
+in order to allow using Strawberry on https://play.strawberry.rocks
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3806](https://github.com/strawberry-graphql/strawberry/pull/3806/)
+
+
 0.262.2 - 2025-03-12
 --------------------
 
