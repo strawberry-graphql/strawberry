@@ -29,8 +29,6 @@ from graphql import (
     parse,
     validate_schema,
 )
-from graphql.execution import ExecutionContext as GraphQLExecutionContext
-from graphql.execution import execute, subscribe
 from graphql.execution.middleware import MiddlewareManager
 from graphql.type.directives import specified_directives
 from graphql.validation import validate
@@ -63,6 +61,14 @@ from strawberry.utils import IS_GQL_32
 from strawberry.utils.await_maybe import await_maybe
 
 from . import compat
+from ._graphql_core import (
+    GraphQLExecutionContext,
+    GraphQLIncrementalExecutionResults,
+    ResultType,
+    execute,
+    incremental_execution_directives,
+    subscribe,
+)
 from .base import BaseSchema
 from .config import StrawberryConfig
 from .exceptions import InvalidOperationTypeError
@@ -90,6 +96,7 @@ OriginSubscriptionResult = Union[
     OriginalExecutionResult,
     AsyncIterator[OriginalExecutionResult],
 ]
+
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.QUERY,
@@ -263,7 +270,11 @@ class Schema(BaseSchema):
                 query=query_type,
                 mutation=mutation_type,
                 subscription=subscription_type if subscription else None,
-                directives=specified_directives + tuple(graphql_directives),
+                directives=(
+                    specified_directives
+                    + tuple(graphql_directives)
+                    + incremental_execution_directives
+                ),
                 types=graphql_types,
                 extensions={
                     GraphQLCoreConverter.DEFINITION_BACKREF: self,
@@ -441,12 +452,16 @@ class Schema(BaseSchema):
     async def _handle_execution_result(
         self,
         context: ExecutionContext,
-        result: Union[GraphQLExecutionResult, ExecutionResult],
+        result: ResultType,
         extensions_runner: SchemaExtensionsRunner,
         *,
         # TODO: can we remove this somehow, see comment in execute
         skip_process_errors: bool = False,
     ) -> ExecutionResult:
+        # TODO: handle this, also, why do we have both GraphQLExecutionResuld and ExecutionResult?
+        if isinstance(result, GraphQLIncrementalExecutionResults):
+            return result
+
         # Set errors on the context so that it's easier
         # to access in extensions
         if result.errors:
@@ -521,7 +536,9 @@ class Schema(BaseSchema):
                         result = execution_context.result
                     # Also set errors on the execution_context so that it's easier
                     # to access in extensions
-                    if result.errors:
+
+                    # TODO: maybe here use the first result from incremental execution if it exists
+                    if isinstance(result, GraphQLExecutionResult) and result.errors:
                         execution_context.errors = result.errors
 
                         # Run the `Schema.process_errors` function here before

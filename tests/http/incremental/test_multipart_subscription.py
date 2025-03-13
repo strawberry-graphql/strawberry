@@ -4,8 +4,7 @@ from typing_extensions import Literal
 import pytest
 
 from strawberry.http.base import BaseView
-
-from .clients.base import HttpClient
+from tests.http.clients.base import HttpClient
 
 
 @pytest.fixture
