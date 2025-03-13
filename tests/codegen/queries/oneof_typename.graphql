@@ -1,0 +1,8 @@
+query OneOfTypenameTest($value: OneOfInput!) {
+  alias: oneOfTypename(value: $value) {
+    ... on Person {
+      name
+      age
+    }
+  }
+}
