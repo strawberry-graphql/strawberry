@@ -1,0 +1,47 @@
+from typing import Union
+
+from graphql.execution import ExecutionContext as GraphQLExecutionContext
+from graphql.execution import ExecutionResult as GraphQLExecutionResult
+from graphql.execution import execute, subscribe
+
+from strawberry.types import ExecutionResult
+
+try:
+    from graphql import (
+        ExperimentalIncrementalExecutionResults as GraphQLIncrementalExecutionResults,
+    )
+    from graphql.execution import experimental_execute_incrementally
+    from graphql.type.directives import (
+        GraphQLDeferDirective,
+        GraphQLStreamDirective,
+    )
+
+    incremental_execution_directives = (
+        GraphQLDeferDirective,
+        GraphQLStreamDirective,
+    )
+
+    execute = experimental_execute_incrementally
+except ImportError:
+    from types import NoneType
+
+    GraphQLIncrementalExecutionResults = NoneType
+
+    incremental_execution_directives = []
+
+
+# TODO: give this a better name, maybe also a better place
+ResultType = Union[
+    GraphQLExecutionResult,
+    GraphQLIncrementalExecutionResults,
+    ExecutionResult,
+]
+
+__all__ = [
+    "GraphQLExecutionContext",
+    "GraphQLIncrementalExecutionResults",
+    "ResultType",
+    "execute",
+    "incremental_execution_directives",
+    "subscribe",
+]

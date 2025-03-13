@@ -25,6 +25,9 @@ from strawberry.http import (
     process_result,
 )
 from strawberry.http.ides import GraphQL_IDE
+from strawberry.schema._graphql_core import (
+    GraphQLIncrementalExecutionResults,
+)
 from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
@@ -349,6 +352,8 @@ class AsyncBaseHTTPView(
                     "Content-Type": "multipart/mixed;boundary=graphql;subscriptionSpec=1.0,application/json",
                 },
             )
+        if isinstance(result, GraphQLIncrementalExecutionResults):
+            return None
 
         response_data = await self.process_result(request=request, result=result)
 
