@@ -35,7 +35,7 @@ class QuartHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def headers(self) -> Mapping[str, str]:
-        return self.request.headers
+        return self.request.headers  # type: ignore
 
     async def get_body(self) -> str:
         return (await self.request.data).decode()

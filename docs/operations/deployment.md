@@ -61,11 +61,12 @@ See the documentation for the integration you are using for more information on
 deployment:
 
 - [AIOHTTP](https://docs.aiohttp.org/en/stable/deployment.html)
+- [Chalice](https://aws.github.io/chalice/quickstart.html#deploying)
 - [Django](https://docs.djangoproject.com/en/4.0/howto/deployment/)
 - [FastAPI](https://fastapi.tiangolo.com/deployment/)
 - [Flask](https://flask.palletsprojects.com/en/2.0.x/deploying/)
+- [Litestar](https://docs.litestar.dev/latest/topics/deployment/index.html)
 - [Sanic](https://sanic.dev/en/guide/deployment/configuration.html)
-- [Chalice](https://aws.github.io/chalice/quickstart.html#deploying)
 
 The docs for [ASGI](https://asgi.readthedocs.io/en/latest/index.html) and
 [Starlette](https://www.starlette.io/) do not provide an official deployment

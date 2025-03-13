@@ -27,7 +27,7 @@ class MissingReturnAnnotationError(StrawberryException):
             "did you forget to add it?"
         )
         self.rich_message = (
-            "[bold red]Missing annotation for field " f"`[underline]{resolver.name}[/]`"
+            f"[bold red]Missing annotation for field `[underline]{resolver.name}[/]`"
         )
 
         self.suggestion = (

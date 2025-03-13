@@ -60,11 +60,12 @@ async.
 
 Additionally, these servers rely on the `python-multipart` package, which is not
 included by Strawberry by default. It can be installed directly, or, for
-convenience, it is included in extras: `strawberry[asgi]` (for ASGI/Starlette)
-or `strawberry[fastapi]` (for FastAPI). For example:
+convenience, it is included in extras: `strawberry-graphql[asgi]` (for
+ASGI/Starlette) or `strawberry-graphql[fastapi]` (for FastAPI). For example:
 
-- if using Pip, `pip install 'strawberry[fastapi]'`
-- if using Poetry, `strawberry = { version = "...", extras = ["fastapi"] }` in
+- if using Pip, `pip install 'strawberry-graphql[fastapi]'`
+- if using Poetry,
+  `strawberry-graphql = { version = "...", extras = ["fastapi"] }` in
   `pyproject.toml`.
 
 Example:

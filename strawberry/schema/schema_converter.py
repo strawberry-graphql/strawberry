@@ -518,12 +518,10 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_interface, GraphQLInterfaceType)  # For mypy
             return graphql_interface
 
-        def _get_resolve_type() -> (
-            Callable[
-                [Any, GraphQLResolveInfo, GraphQLAbstractType],
-                Union[Awaitable[Optional[str]], str, None],
-            ]
-        ):
+        def _get_resolve_type() -> Callable[
+            [Any, GraphQLResolveInfo, GraphQLAbstractType],
+            Union[Awaitable[Optional[str]], str, None],
+        ]:
             if interface.resolve_type:
                 return interface.resolve_type
 

@@ -161,6 +161,8 @@ class Mutation:
 
 @strawberry.type
 class Subscription:
+    active_infinity_subscriptions = 0
+
     @strawberry.subscription
     async def echo(self, message: str, delay: float = 0) -> AsyncGenerator[str, None]:
         await asyncio.sleep(delay)
@@ -174,9 +176,14 @@ class Subscription:
 
     @strawberry.subscription
     async def infinity(self, message: str) -> AsyncGenerator[str, None]:
-        while True:
-            yield message
-            await asyncio.sleep(1)
+        Subscription.active_infinity_subscriptions += 1
+
+        try:
+            while True:
+                yield message
+                await asyncio.sleep(1)
+        finally:
+            Subscription.active_infinity_subscriptions -= 1
 
     @strawberry.subscription
     async def context(self, info: strawberry.Info) -> AsyncGenerator[str, None]:

@@ -4,7 +4,7 @@ import pytest
 
 import strawberry
 from strawberry.extensions import SchemaExtension
-from strawberry.types.execution import ExecutionResult
+from strawberry.types.execution import ExecutionResult, PreExecutionError
 from tests.conftest import skip_if_gql_32
 
 from .conftest import ExampleExtension, SchemaHelper
@@ -79,8 +79,14 @@ async def test_subscription_extension_handles_immediate_errors(
         "on_operation Exited",
     ]
 
-    res = await schema.subscribe(default_query_types_and_query.subscription)
-    assert res.errors
+    result = await schema.subscribe(default_query_types_and_query.subscription)
+    results = [result async for result in result]
+
+    assert len(results) == 1
+    result = results[0]
+
+    assert isinstance(result, PreExecutionError)
+    assert result.errors
 
     async_extension.assert_expected()
 

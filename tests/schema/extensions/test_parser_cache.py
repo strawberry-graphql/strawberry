@@ -7,7 +7,7 @@ import strawberry
 from strawberry.extensions import MaxTokensLimiter, ParserCache
 
 
-@patch("strawberry.schema.execute.parse", wraps=parse)
+@patch("strawberry.extensions.parser_cache.parse", wraps=parse)
 def test_parser_cache_extension(mock_parse):
     @strawberry.type
     class Query:
@@ -49,7 +49,7 @@ def test_parser_cache_extension(mock_parse):
     assert mock_parse.call_count == 2
 
 
-@patch("strawberry.schema.execute.parse", wraps=parse)
+@patch("strawberry.extensions.parser_cache.parse", wraps=parse)
 def test_parser_cache_extension_arguments(mock_parse):
     @strawberry.type
     class Query:
@@ -75,7 +75,7 @@ def test_parser_cache_extension_arguments(mock_parse):
     mock_parse.assert_called_with("query { hello }", max_tokens=20)
 
 
-@patch("strawberry.schema.execute.parse", wraps=parse)
+@patch("strawberry.extensions.parser_cache.parse", wraps=parse)
 def test_parser_cache_extension_syntax_error(mock_parse):
     @strawberry.type
     class Query:
@@ -95,7 +95,7 @@ def test_parser_cache_extension_syntax_error(mock_parse):
     assert mock_parse.call_count == 1
 
 
-@patch("strawberry.schema.execute.parse", wraps=parse)
+@patch("strawberry.extensions.parser_cache.parse", wraps=parse)
 def test_parser_cache_extension_max_size(mock_parse):
     @strawberry.type
     class Query:
@@ -133,7 +133,8 @@ def test_parser_cache_extension_max_size(mock_parse):
 
 
 @pytest.mark.asyncio
-async def test_parser_cache_extension_async():
+@patch("strawberry.extensions.parser_cache.parse", wraps=parse)
+async def test_parser_cache_extension_async(mock_parse):
     @strawberry.type
     class Query:
         @strawberry.field
@@ -148,28 +149,27 @@ async def test_parser_cache_extension_async():
 
     query = "query { hello }"
 
-    with patch("strawberry.schema.execute.parse", wraps=parse) as mock_parse:
-        result = await schema.execute(query)
+    result = await schema.execute(query)
 
+    assert not result.errors
+    assert result.data == {"hello": "world"}
+
+    assert mock_parse.call_count == 1
+
+    # Run query multiple times
+    for _ in range(3):
+        result = await schema.execute(query)
         assert not result.errors
         assert result.data == {"hello": "world"}
 
-        assert mock_parse.call_count == 1
+    # validate is still only called once
+    assert mock_parse.call_count == 1
 
-        # Run query multiple times
-        for _ in range(3):
-            result = await schema.execute(query)
-            assert not result.errors
-            assert result.data == {"hello": "world"}
+    # Running a second query doesn't cache
+    query2 = "query { ping }"
+    result = await schema.execute(query2)
 
-        # validate is still only called once
-        assert mock_parse.call_count == 1
+    assert not result.errors
+    assert result.data == {"ping": "pong"}
 
-        # Running a second query doesn't cache
-        query2 = "query { ping }"
-        result = await schema.execute(query2)
-
-        assert not result.errors
-        assert result.data == {"ping": "pong"}
-
-        assert mock_parse.call_count == 2
+    assert mock_parse.call_count == 2
