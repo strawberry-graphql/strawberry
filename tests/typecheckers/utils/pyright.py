@@ -49,8 +49,9 @@ def run_pyright(code: str, strict: bool = True) -> list[Result]:
         f.write(code)
 
     process_result = subprocess.run(
-        ["pyright", "--outputjson", f.name], stdout=subprocess.PIPE, check=False
+        ["pyright", "--outputjson", f.name], capture_output=True, check=False
     )
+    assert not process_result.stderr.decode("utf-8")
 
     os.unlink(f.name)  # noqa: PTH108
 
