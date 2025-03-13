@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.262.5 - 2025-03-13
+--------------------
+
+This release updates the internals of our subscription implementation, to make the code
+easier to maintain for future changes.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3787](https://github.com/strawberry-graphql/strawberry/pull/3787/)
+
+
 0.262.4 - 2025-03-13
 --------------------
 
