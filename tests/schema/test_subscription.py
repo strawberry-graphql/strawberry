@@ -1,7 +1,6 @@
 # ruff: noqa: F821
 from __future__ import annotations
 
-import inspect
 from collections import abc  # noqa: F401
 from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator  # noqa: F401
 from typing import (
@@ -245,14 +244,17 @@ async def test_subscription_immediate_error():
     schema = strawberry.Schema(query=Query, subscription=Subscription)
 
     query = """#graphql
-            subscription { example }
-            """
-    res_or_agen = await schema.subscribe(query)
-    assert isinstance(res_or_agen, PreExecutionError)
-    assert res_or_agen.errors
+        subscription { example }
+    """
+
+    result = await schema.subscribe(query)
+    result = await result.__anext__()
+
+    assert isinstance(result, PreExecutionError)
+    assert result.errors
 
 
-async def test_worng_opeartion_variables():
+async def test_wrong_operation_variables():
     @strawberry.type
     class Query:
         x: str = "Hello"
@@ -266,11 +268,11 @@ async def test_worng_opeartion_variables():
     schema = strawberry.Schema(query=Query, subscription=Subscription)
 
     query = """#graphql
-                subscription subOp($opVar: String!){ example(name: $opVar) }
-            """
+        subscription subOp($opVar: String!){ example(name: $opVar) }
+    """
 
     result = await schema.subscribe(query)
-    assert not inspect.isasyncgen(result)
+    result = await result.__anext__()
 
     assert result.errors
     assert (
