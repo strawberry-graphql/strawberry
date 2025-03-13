@@ -22,6 +22,7 @@ from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
     GraphQLHTTPResponse,
     GraphQLRequestData,
+    IncrementalGraphQLHTTPResponse,
     process_result,
 )
 from strawberry.http.ides import GraphQL_IDE
@@ -49,6 +50,28 @@ from .typevars import (
     WebSocketRequest,
     WebSocketResponse,
 )
+
+try:
+    from graphql.execution.execute import ExperimentalIncrementalExecutionResults
+    from graphql.execution.incremental_publisher import (
+        IncrementalDeferResult,
+        IncrementalResult,
+        IncrementalStreamResult,
+        InitialIncrementalExecutionResult,
+        PendingResult,
+        SubsequentIncrementalExecutionResult,
+    )
+
+except ImportError as e:
+    from types import NoneType
+
+    print(e)
+
+    InitialIncrementalExecutionResult = NoneType
+    IncrementalResult = NoneType
+    IncrementalStreamResult = NoneType
+    SubsequentIncrementalExecutionResult = NoneType
+    PendingResult = NoneType
 
 
 class AsyncHTTPRequestAdapter(abc.ABC):
@@ -337,6 +360,29 @@ class AsyncBaseHTTPView(
         except MissingQueryError as e:
             raise HTTPException(400, "No GraphQL query found in the request") from e
 
+        if isinstance(result, ExperimentalIncrementalExecutionResults):
+
+            async def stream():
+                yield "---"
+                response = await self.process_result(request, result.initial_result)
+                yield self.encode_multipart_data(response, "-")
+
+                async for value in result.subsequent_results:
+                    response = await self.process_subsequent_result(request, value)
+                    yield self.encode_multipart_data(response, "-")
+
+                yield "--\r\n"
+
+            return await self.create_streaming_response(
+                request,
+                stream,
+                sub_response,
+                headers={
+                    "Transfer-Encoding": "chunked",
+                    "Content-Type": 'multipart/mixed; boundary="-"',
+                },
+            )
+
         if isinstance(result, SubscriptionExecutionResult):
             stream = self._get_stream(request, result)
 
@@ -360,12 +406,15 @@ class AsyncBaseHTTPView(
         )
 
     def encode_multipart_data(self, data: Any, separator: str) -> str:
+        encoded_data = self.encode_json(data)
+
         return "".join(
             [
-                f"\r\n--{separator}\r\n",
-                "Content-Type: application/json\r\n\r\n",
-                self.encode_json(data),
-                "\n",
+                "\r\n",
+                "Content-Type: application/json; charset=utf-8\r\n",
+                "\r\n",
+                encoded_data,
+                f"\r\n--{separator}",
             ]
         )
 
@@ -475,9 +524,53 @@ class AsyncBaseHTTPView(
             protocol=protocol,
         )
 
+    async def process_subsequent_result(
+        self,
+        request: Request,
+        result: "SubsequentIncrementalExecutionResult",
+    ) -> IncrementalGraphQLHTTPResponse:
+        data = {
+            "incremental": [
+                await self.process_result(request, value)
+                for value in result.incremental
+            ],
+            "completed": [
+                completed_result.formatted for completed_result in result.completed
+            ],
+            "hasNext": result.has_next,
+            "extensions": result.extensions,
+        }
+
+        return data
+
     async def process_result(
-        self, request: Request, result: ExecutionResult
+        self,
+        request: Request,
+        result: Union[ExecutionResult, InitialIncrementalExecutionResult],
     ) -> GraphQLHTTPResponse:
+        if isinstance(result, InitialIncrementalExecutionResult):
+            # TODO: fix this mess
+            from strawberry.types import (
+                InitialIncrementalExecutionResult as InitialIncrementalExecutionResultType,
+            )
+
+            # TODO: do this where we create ExecutionResult
+            # or maybe remove our wrappers and just GraphQL core's types
+            result = InitialIncrementalExecutionResultType(
+                data=result.data,
+                pending=[pending_result.formatted for pending_result in result.pending],
+                has_next=result.has_next,
+                extensions=result.extensions,
+                errors=result.errors,
+            )
+
+        result = await self.schema._handle_execution_result(
+            context=self.schema.execution_context,
+            result=result,
+            extensions_runner=self.schema.extensions_runner,
+            process_errors=self.schema.process_errors,
+        )
+
         return process_result(result)
 
     async def on_ws_connect(

@@ -32,7 +32,11 @@ from graphql import (
 from graphql.execution import ExecutionContext as GraphQLExecutionContext
 from graphql.execution import execute, subscribe
 from graphql.execution.middleware import MiddlewareManager
-from graphql.type.directives import specified_directives
+from graphql.type.directives import (
+    GraphQLDeferDirective,
+    GraphQLStreamDirective,
+    specified_directives,
+)
 from graphql.validation import validate
 
 from strawberry import relay
@@ -82,6 +86,9 @@ if TYPE_CHECKING:
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
     from strawberry.types.union import StrawberryUnion
 
+ProcessErrors: TypeAlias = (
+    "Callable[[list[GraphQLError], Optional[ExecutionContext]], None]"
+)
 SubscriptionResult: TypeAlias = AsyncGenerator[
     Union[PreExecutionError, ExecutionResult], None
 ]
@@ -263,7 +270,11 @@ class Schema(BaseSchema):
                 query=query_type,
                 mutation=mutation_type,
                 subscription=subscription_type if subscription else None,
-                directives=specified_directives + tuple(graphql_directives),
+                directives=(
+                    specified_directives
+                    + tuple(graphql_directives)
+                    + (GraphQLDeferDirective, GraphQLStreamDirective)
+                ),
                 types=graphql_types,
                 extensions={
                     GraphQLCoreConverter.DEFINITION_BACKREF: self,
@@ -352,6 +363,31 @@ class Schema(BaseSchema):
             variables=variable_values,
             provided_operation_name=operation_name,
         )
+
+    # TODO: is this the right place to do this?
+    async def _handle_execution_result(
+        self,
+        context: ExecutionContext,
+        result: Union[GraphQLExecutionResult, ExecutionResult],
+        extensions_runner: SchemaExtensionsRunner,
+        process_errors: ProcessErrors | None,
+    ) -> ExecutionResult:
+        # Set errors on the context so that it's easier
+        # to access in extensions
+        if result.errors:
+            context.errors = result.errors
+
+            if process_errors:
+                process_errors(result.errors, context)
+
+        if isinstance(result, GraphQLExecutionResult):
+            result = ExecutionResult(data=result.data, errors=result.errors)
+
+        # TODO: not correct when handling incremental results
+        result.extensions = await extensions_runner.get_extensions_results(context)
+
+        context.result = result  # type: ignore  # mypy failed to deduce correct type.
+        return result
 
     @lru_cache
     def get_type_by_name(

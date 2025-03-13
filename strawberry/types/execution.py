@@ -93,6 +93,15 @@ class ExecutionResult:
 
 
 @dataclasses.dataclass
+class InitialIncrementalExecutionResult:
+    data: Optional[dict[str, Any]]
+    errors: Optional[list[GraphQLError]]
+    pending: list[Any]
+    has_next: bool
+    extensions: Optional[dict[str, Any]] = None
+
+
+@dataclasses.dataclass
 class PreExecutionError(ExecutionResult):
     """Differentiate between a normal execution result and an immediate error.
 
