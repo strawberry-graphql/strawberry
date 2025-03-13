@@ -49,7 +49,7 @@ class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
 
     @property
     def headers(self) -> Mapping[str, str]:
-        return self.request.headers
+        return self.request.headers  # type: ignore
 
     @property
     def post_data(self) -> Mapping[str, Union[str, bytes]]:
@@ -147,7 +147,7 @@ class AsyncFlaskHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def headers(self) -> Mapping[str, str]:
-        return self.request.headers
+        return self.request.headers  # type: ignore
 
     async def get_body(self) -> str:
         return self.request.data.decode()

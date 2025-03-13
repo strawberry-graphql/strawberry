@@ -6029,4 +6029,4 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9"
-content-hash = "0d19a5c5acfacbb9c37950a2d84606c11ec3c79c3b318e303fa3855e13bbda0c"
+content-hash = "44629c649cb477cf697610fe54e8c969a0e47cdcb93eba28d1220b603c95b7fa"
