@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.262.4 - 2025-03-13
+--------------------
+
+This release adds support for the upcoming version of Pydantic (2.11)
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3808](https://github.com/strawberry-graphql/strawberry/pull/3808/)
+
+
 0.262.3 - 2025-03-13
 --------------------
 
