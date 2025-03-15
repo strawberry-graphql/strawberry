@@ -1294,6 +1294,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_specialized_list():
 
 def test_can_convert_pydantic_type_to_strawberry_computed_field():
     """Test that computed fields on a pydantic type are not accessed unless queried."""
+
     class UserModel(BaseModel):
         age: int
 
@@ -1312,7 +1313,6 @@ def test_can_convert_pydantic_type_to_strawberry_computed_field():
 
     def get_location(root) -> str:
         return root._original_model.location
-
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
