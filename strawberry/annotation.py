@@ -145,7 +145,7 @@ class StrawberryAnnotation:
             return self.create_list(evaled_type)
         if type_of := self._get_maybe_type(evaled_type):
             return StrawberryAnnotation(
-                annotation=type_of,
+                annotation=Union[type_of, None],
                 namespace=self.namespace,
             ).resolve()
 
@@ -315,9 +315,7 @@ class StrawberryAnnotation:
 
     @classmethod
     def _get_maybe_type(cls, annotation: Any) -> type | None:
-        if _annot_is_maybe(annotation):
-            return Union[get_args(annotation)[0], None]
-        return None
+        return get_args(annotation)[0] if _annot_is_maybe(annotation) else None
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:
