@@ -162,12 +162,14 @@ class Query:
         return f"Hello {name}!"
 
     @strawberry.field
-    def greet(self, name: Optional[str] = strawberry.UNSET) -> str:
-        if name is strawberry.UNSET:
-            return "Name was not set!"
-        if name is None:
+    def greet(self, name: strawberry.Maybe[str] = strawberry.UNSET) -> str:
+        if strawberry.not_unset(name):
+            if name:
+              return f"Hello {name}!"
+            else:
             return "Name was null!"
-        return f"Hello {name}!"
+        else:
+          return "Name was not set!"
 ```
 
 ```graphql
@@ -219,7 +221,7 @@ class Query:
     @strawberry.field
     def greet(
         self,
-        name: Optional[str] = strawberry.UNSET,
+        name: strawberry.Maybe[str] = strawberry.UNSET,
         is_morning: Annotated[
             Optional[bool],
             strawberry.argument(
