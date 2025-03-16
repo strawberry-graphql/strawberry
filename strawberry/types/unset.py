@@ -79,7 +79,7 @@ def _annot_is_maybe(annotation: Any) -> bool:
     return (orig := typing.get_origin(annotation)) and orig is Maybe
 
 
-def not_unset(value: Union[T, UnsetType, None]) -> TypeGuard[Union[T, None]]:
+def exists(value: Union[T, UnsetType, None]) -> TypeGuard[Union[T, None]]:
     return value is not UNSET or not isinstance(value, UnsetType)
 
 

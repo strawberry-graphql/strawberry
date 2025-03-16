@@ -19,7 +19,7 @@ obj = SomeType(foobar="some text")
 
 reveal_type(obj.foobar)
 
-if strawberry.not_unset(obj.foobar):
+if strawberry.exists(obj.foobar):
     reveal_type(obj.foobar)
 """
 

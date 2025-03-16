@@ -284,7 +284,7 @@ def maybe_schema() -> strawberry.Schema:
     class Mutation:
         @strawberry.mutation
         def update_user(self, input: UpdateUserInput) -> User:
-            if strawberry.not_unset(input.phone):
+            if strawberry.exists(input.phone):
                 user.phone = input.phone
             return user
 

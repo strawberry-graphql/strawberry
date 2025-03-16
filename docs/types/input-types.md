@@ -106,7 +106,7 @@ class Mutation:
     def update_user(self, user_id: strawberry.ID, input: UpdateUserInput) -> User:
         if name := input.name:
             ...  # update name...
-        if strawberry.not_unset(input.phone):
+        if strawberry.exists(input.phone):
             phone = input.phone
             ...  # update phone...
 ```

@@ -219,8 +219,8 @@ def test_works_with_camelcasing():
         @strawberry.field
         def test(self, input: ExampleWithLongerNames) -> Result:
             return Result(  # noqa: F821
-                a_field=input.a_field if strawberry.not_unset(input.a_field) else None,
-                b_field=input.b_field if strawberry.not_unset(input.b_field) else None,
+                a_field=input.a_field if strawberry.exists(input.a_field) else None,
+                b_field=input.b_field if strawberry.exists(input.b_field) else None,
             )
 
     schema = strawberry.Schema(query=Query)

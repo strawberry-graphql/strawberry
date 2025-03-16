@@ -163,7 +163,7 @@ class Query:
 
     @strawberry.field
     def greet(self, name: strawberry.Maybe[str] = strawberry.UNSET) -> str:
-        if strawberry.not_unset(name):
+        if strawberry.exists(name):
             if name:
               return f"Hello {name}!"
             else:
