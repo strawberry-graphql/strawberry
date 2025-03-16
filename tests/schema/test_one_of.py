@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Union
 
 import pytest
 
@@ -14,8 +14,8 @@ class ExampleInputTagged:
 
 @strawberry.type
 class ExampleResult:
-    a: str | None
-    b: int | None
+    a: Union[str, None]
+    b: Union[int, None]
 
 
 @strawberry.type
