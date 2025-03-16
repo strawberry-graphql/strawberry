@@ -84,9 +84,9 @@ type Point2D {
 
 </CodeGrid>
 
-In some cases this would not suffice. i.e if you wanted to know if a field was
-not set or if it was set to `None`. In this case you can use `strawberry.Maybe`
-like so:
+When you need to distinguish between a field being set to `null` or its value
+and the field being absent, optional arguments would not suffice. In this case
+you can use `strawberry.Maybe` like so:
 
 <CodeGrid>
 
@@ -149,8 +149,8 @@ import strawberry
 
 @strawberry.input(one_of=True)
 class SearchBy:
-    name: str | None = strawberry.UNSET
-    email: str | None = strawberry.UNSET
+    name: strawberry.Maybe[str]
+    email: strawberry.Maybe[str]
 ```
 
 ```graphql
@@ -188,7 +188,7 @@ class Point2D:
     z: Optional[float] = strawberry.field(
         deprecation_reason="3D coordinates are deprecated"
     )
-    label: Optional[str] = strawberry.UNSET
+    label: strawberry.Maybe[str]
 ```
 
 ```graphql

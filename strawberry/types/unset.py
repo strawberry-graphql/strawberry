@@ -1,3 +1,4 @@
+import typing
 import warnings
 from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar, Union
 from typing_extensions import TypeAlias, TypeGuard
@@ -72,6 +73,10 @@ if TYPE_CHECKING:
 else:
     # we do this trick so we can inspect that at runtime
     class Maybe(Generic[T]): ...
+
+
+def _annot_is_maybe(annotation: Any) -> bool:
+    return (orig := typing.get_origin(annotation)) and orig is Maybe
 
 
 def not_unset(value: Union[T, UnsetType, None]) -> TypeGuard[Union[T, None]]:

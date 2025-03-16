@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any
 
 import pytest
@@ -10,8 +8,8 @@ from strawberry.schema_directives import OneOf
 
 @strawberry.input(one_of=True)
 class ExampleInputTagged:
-    a: str | None = strawberry.UNSET
-    b: int | None = strawberry.UNSET
+    a: strawberry.Maybe[str]
+    b: strawberry.Maybe[int]
 
 
 @strawberry.type
@@ -208,8 +206,8 @@ def test_works_with_camelcasing():
 
     @strawberry.input(directives=[OneOf()])
     class ExampleWithLongerNames:
-        a_field: str | None = strawberry.UNSET
-        b_field: int | None = strawberry.UNSET
+        a_field: strawberry.Maybe[str]
+        b_field: strawberry.Maybe[int]
 
     @strawberry.type
     class Result:
@@ -221,8 +219,8 @@ def test_works_with_camelcasing():
         @strawberry.field
         def test(self, input: ExampleWithLongerNames) -> Result:
             return Result(  # noqa: F821
-                a_field=None if input.a_field is strawberry.UNSET else input.a_field,
-                b_field=None if input.b_field is strawberry.UNSET else input.b_field,
+                a_field=input.a_field if strawberry.not_unset(input.a_field) else None,
+                b_field=input.b_field if strawberry.not_unset(input.b_field) else None,
             )
 
     schema = strawberry.Schema(query=Query)

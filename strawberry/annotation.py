@@ -30,7 +30,7 @@ from strawberry.types.enum import enum as strawberry_enum
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.private import is_private
 from strawberry.types.scalar import ScalarDefinition
-from strawberry.types.unset import UNSET
+from strawberry.types.unset import UNSET, _annot_is_maybe
 from strawberry.utils.typing import eval_type, is_generic, is_type_var
 
 if TYPE_CHECKING:
@@ -143,6 +143,11 @@ class StrawberryAnnotation:
             return evaled_type
         if self._is_list(evaled_type):
             return self.create_list(evaled_type)
+        if type_of := self._get_maybe_type(evaled_type):
+            return StrawberryAnnotation(
+                annotation=type_of,
+                namespace=self.namespace,
+            ).resolve()
 
         if self._is_graphql_generic(evaled_type):
             if any(is_type_var(type_) for type_ in get_args(evaled_type)):
@@ -307,6 +312,12 @@ class StrawberryAnnotation:
             or annotation_origin is abc.Sequence
             or is_list
         )
+
+    @classmethod
+    def _get_maybe_type(cls, annotation: Any) -> type | None:
+        if _annot_is_maybe(annotation):
+            return Union[get_args(annotation)[0], None]
+        return None
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:

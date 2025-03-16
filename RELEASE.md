@@ -28,10 +28,22 @@ class UpdateUserInput:
 @strawberry.type
 class Mutation:
     def update_user(self, info, input: UpdateUserInput) -> User:
+        reveal_type(input.phone)  # str | None | UnsetType
         if strawberry.not_unset(input.phone):
-            phone = (
-                input.phone
-            )  # could be `str | None` in case we want to nullify the phone
+            reveal_type(input.phone)  # str | None
+            update_user_phone(input.phone)
 
-        return User(name=input.name, phone=phone)
+        return User(name=input.name, phone=input.phone)
+```
+You can also use `strawberry.Maybe` as a field argument like so
+
+```python
+import strawberry
+
+
+@strawberry.field
+def filter_users(self, phone: strawberry.Maybe[str] = strawberry.UNSET) -> list[User]:
+    if strawberry.not_unset(phone):
+        return filter_users_by_phone(phone)
+    return get_all_users()
 ```

@@ -144,7 +144,7 @@ type Query {
 
 Optional or nullable arguments can be expressed using `Optional`. If you need to
 differentiate between `null` (maps to `None` in Python) and no arguments being
-passed, you can use `UNSET`:
+passed, you can use `strawberry.Maybe`:
 
 <CodeGrid>
 
