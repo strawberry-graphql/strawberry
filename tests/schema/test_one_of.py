@@ -211,8 +211,8 @@ def test_works_with_camelcasing():
 
     @strawberry.type
     class Result:
-        a_field: str | None
-        b_field: int | None
+        a_field: Union[str, None]
+        b_field: Union[int, None]
 
     @strawberry.type
     class Query:
