@@ -10,6 +10,7 @@ import strawberry
 from strawberry.extensions import SchemaExtension
 from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
+from strawberry.schema.config import StrawberryConfig
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
 from strawberry.types import ExecutionContext
 
@@ -303,4 +304,7 @@ schema = Schema(
     mutation=Mutation,
     subscription=Subscription,
     extensions=[MyExtension],
+    config=StrawberryConfig(
+        enable_experimental_incremental_execution=True,
+    ),
 )
