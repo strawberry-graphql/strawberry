@@ -21,13 +21,13 @@ try:
         GraphQLStreamDirective,
     )
 
-    execute = experimental_execute_incrementally
 except ImportError:
     from types import NoneType
 
     GraphQLIncrementalExecutionResults = NoneType
 
     incremental_execution_directives = []
+    experimental_execute_incrementally = None
 
 
 # TODO: give this a better name, maybe also a better place
@@ -42,6 +42,7 @@ __all__ = [
     "GraphQLIncrementalExecutionResults",
     "ResultType",
     "execute",
+    "experimental_execute_incrementally",
     "incremental_execution_directives",
     "subscribe",
 ]
