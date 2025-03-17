@@ -133,7 +133,7 @@ class Query:
         return name
 
     @strawberry.field
-    def hero(self) -> Hero:
+    def character(self) -> Hero:
         return Hero(id=strawberry.ID("1"), name="Thiago Bellini")
 
 
