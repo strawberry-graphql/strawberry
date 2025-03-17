@@ -66,6 +66,7 @@ from ._graphql_core import (
     GraphQLIncrementalExecutionResults,
     ResultType,
     execute,
+    experimental_execute_incrementally,
     incremental_execution_directives,
     subscribe,
 )
@@ -266,15 +267,16 @@ class Schema(BaseSchema):
                 graphql_types.append(graphql_type)
 
         try:
+            directives = specified_directives + tuple(graphql_directives)
+
+            if self.config.enable_experimental_incremental_execution:
+                directives = tuple(directives) + tuple(incremental_execution_directives)
+
             self._schema = GraphQLSchema(
                 query=query_type,
                 mutation=mutation_type,
                 subscription=subscription_type if subscription else None,
-                directives=(
-                    specified_directives
-                    + tuple(graphql_directives)
-                    + incremental_execution_directives
-                ),
+                directives=directives,
                 types=graphql_types,
                 extensions={
                     GraphQLCoreConverter.DEFINITION_BACKREF: self,
@@ -502,6 +504,14 @@ class Schema(BaseSchema):
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
         middleware_manager = self._get_middleware_manager(extensions)
 
+        execute_function = (
+            experimental_execute_incrementally
+            if self.config.enable_experimental_incremental_execution
+            else execute
+        )
+
+        # TODO: raise if experimental_execute_incrementally is not available
+
         try:
             async with extensions_runner.operation():
                 # Note: In graphql-core the schema would be validated here but in
@@ -520,7 +530,7 @@ class Schema(BaseSchema):
                 async with extensions_runner.executing():
                     if not execution_context.result:
                         result = await await_maybe(
-                            execute(
+                            execute_function(
                                 self._schema,
                                 execution_context.graphql_document,
                                 root_value=execution_context.root_value,
