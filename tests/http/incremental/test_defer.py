@@ -12,7 +12,7 @@ async def test_basic_defer(method: Literal["get", "post"], http_client: HttpClie
         method=method,
         query="""
         query HeroNameQuery {
-            hero {
+            character {
                 id
                 ...NameFragment @defer
             }
@@ -27,9 +27,9 @@ async def test_basic_defer(method: Literal["get", "post"], http_client: HttpClie
         initial = await stream.__anext__()
 
         assert initial == {
-            "data": {"hero": {"id": "1"}},
+            "data": {"character": {"id": "1"}},
             "hasNext": True,
-            "pending": [{"path": ["hero"], "id": "0"}],
+            "pending": [{"path": ["character"], "id": "0"}],
             "extensions": {"example": "example"},
         }
 
