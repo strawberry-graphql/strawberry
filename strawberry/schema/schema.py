@@ -460,7 +460,7 @@ class Schema(BaseSchema):
         # TODO: can we remove this somehow, see comment in execute
         skip_process_errors: bool = False,
     ) -> ExecutionResult:
-        # TODO: handle this, also, why do we have both GraphQLExecutionResuld and ExecutionResult?
+        # TODO: handle this, also, why do we have both GraphQLExecutionResult and ExecutionResult?
         if isinstance(result, GraphQLIncrementalExecutionResults):
             return result
 
