@@ -188,7 +188,7 @@ class GlobalID:
         """
         n_type = self.resolve_type(info)
         node: Node | Awaitable[Node] = cast(
-            Awaitable[Node],
+            "Awaitable[Node]",
             n_type.resolve_node(
                 self.node_id,
                 info=info,
@@ -393,7 +393,7 @@ class Node:
             parent_type = info._raw_info.parent_type
             type_def = info.schema.get_type_by_name(parent_type.name)
             assert isinstance(type_def, StrawberryObjectDefinition)
-            origin = cast(type[Node], type_def.origin)
+            origin = cast("type[Node]", type_def.origin)
             resolve_id = origin.resolve_id
             resolve_typename = origin.resolve_typename
 
@@ -404,7 +404,7 @@ class Node:
 
         if inspect.isawaitable(node_id):
             return cast(
-                GlobalID,
+                "GlobalID",
                 resolve_awaitable(
                     node_id,
                     lambda resolved: GlobalID(
@@ -617,7 +617,7 @@ class Node:
         if inspect.isawaitable(retval):
             return resolve_awaitable(retval, lambda resolved: next(iter(resolved)))
 
-        return next(iter(cast(Iterable[Self], retval)))
+        return next(iter(cast("Iterable[Self]", retval)))
 
 
 @strawberry_type(description="Information to aid in pagination.")
@@ -810,15 +810,15 @@ class ListConnection(Connection[NodeType]):
         while isinstance(field, StrawberryContainer):
             field = field.of_type
 
-        edge_class = cast(Edge[NodeType], field)
+        edge_class = cast("Edge[NodeType]", field)
 
         if isinstance(nodes, (AsyncIterator, AsyncIterable)) and in_async_context():
 
             async def resolver() -> Self:
                 try:
                     iterator = cast(
-                        Union[AsyncIterator[NodeType], AsyncIterable[NodeType]],
-                        cast(Sequence, nodes)[
+                        "Union[AsyncIterator[NodeType], AsyncIterable[NodeType]]",
+                        cast("Sequence", nodes)[
                             slice_metadata.start : slice_metadata.overfetch
                         ],
                     )
@@ -882,8 +882,8 @@ class ListConnection(Connection[NodeType]):
 
         try:
             iterator = cast(
-                Union[Iterator[NodeType], Iterable[NodeType]],
-                cast(Sequence, nodes)[slice_metadata.start : slice_metadata.overfetch],
+                "Union[Iterator[NodeType], Iterable[NodeType]]",
+                cast("Sequence", nodes)[slice_metadata.start : slice_metadata.overfetch],
             )
         except TypeError:
             assert isinstance(nodes, (Iterable, Iterator))

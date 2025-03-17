@@ -151,7 +151,7 @@ def print_schema_directive(
     directive: Any, schema: BaseSchema, *, extras: PrintExtras
 ) -> str:
     strawberry_directive = cast(
-        StrawberrySchemaDirective, directive.__class__.__strawberry_directive__
+        "StrawberrySchemaDirective", directive.__class__.__strawberry_directive__
     )
     schema_converter = schema.schema_converter
     gql_directive = schema_converter.from_schema_directive(directive.__class__)
@@ -178,13 +178,13 @@ def print_schema_directive(
                 f_type = f_type.of_type
 
             if has_object_definition(f_type):
-                extras.types.add(cast(type, f_type))
+                extras.types.add(cast("type", f_type))
 
             if hasattr(f_type, "_scalar_definition"):
-                extras.types.add(cast(type, f_type))
+                extras.types.add(cast("type", f_type))
 
             if isinstance(f_type, EnumDefinition):
-                extras.types.add(cast(type, f_type))
+                extras.types.add(cast("type", f_type))
 
     return f" @{gql_directive.name}{params}"
 
@@ -363,7 +363,7 @@ def print_extends(type_: GraphQLObjectType, schema: BaseSchema) -> str:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
     strawberry_type = cast(
-        Optional[StrawberryObjectDefinition],
+        "Optional[StrawberryObjectDefinition]",
         type_.extensions
         and type_.extensions.get(GraphQLCoreConverter.DEFINITION_BACKREF),
     )
@@ -380,7 +380,7 @@ def print_type_directives(
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
     strawberry_type = cast(
-        Optional[StrawberryObjectDefinition],
+        "Optional[StrawberryObjectDefinition]",
         type_.extensions
         and type_.extensions.get(GraphQLCoreConverter.DEFINITION_BACKREF),
     )
@@ -594,7 +594,7 @@ def is_builtin_directive(directive: GraphQLDirective) -> bool:
 
 def print_schema(schema: BaseSchema) -> str:
     graphql_core_schema = cast(
-        GraphQLSchema,
+        "GraphQLSchema",
         schema._schema,  # type: ignore
     )
     extras = PrintExtras()

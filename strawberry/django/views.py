@@ -83,7 +83,7 @@ class DjangoHTTPRequestAdapter(SyncHTTPRequestAdapter):
     def method(self) -> HTTPMethod:
         assert self.request.method is not None
 
-        return cast(HTTPMethod, self.request.method.upper())
+        return cast("HTTPMethod", self.request.method.upper())
 
     @property
     def headers(self) -> Mapping[str, str]:
@@ -114,7 +114,7 @@ class AsyncDjangoHTTPRequestAdapter(AsyncHTTPRequestAdapter):
     def method(self) -> HTTPMethod:
         assert self.request.method is not None
 
-        return cast(HTTPMethod, self.request.method.upper())
+        return cast("HTTPMethod", self.request.method.upper())
 
     @property
     def headers(self) -> Mapping[str, str]:
