@@ -261,7 +261,7 @@ class AsyncBaseHTTPView(
         root_value: Optional[RootValue] = UNSET,
     ) -> WebSocketResponse: ...
 
-    async def run(
+    async def run(  # noqa: PLR0915
         self,
         request: Union[Request, WebSocketRequest],
         context: Optional[Context] = UNSET,
@@ -354,15 +354,36 @@ class AsyncBaseHTTPView(
             )
         if isinstance(result, GraphQLIncrementalExecutionResults):
 
-            async def stream():
+            async def stream() -> AsyncGenerator[str, None]:
                 yield "---"
-                response = {"data": {"test": "test"}}
-                # response = await self.process_result(request, result.initial_result)
+
+                response = await self.process_result(request, result.initial_result)
+
+                response["hasNext"] = result.initial_result.has_next
+                response["pending"] = [
+                    p.formatted for p in result.initial_result.pending
+                ]
+                response["extensions"] = result.initial_result.extensions
+
                 yield self.encode_multipart_data(response, "-")
 
                 async for value in result.subsequent_results:
-                    response = {"data": {"test": "test"}}
-                    # response = await self.process_subsequent_result(request, value)
+                    response = {
+                        "hasNext": value.has_next,
+                        "extensions": value.extensions,
+                    }
+
+                    if value.pending:
+                        response["pending"] = [p.formatted for p in value.pending]
+
+                    if value.completed:
+                        response["completed"] = [p.formatted for p in value.completed]
+
+                    if value.incremental:
+                        response["incremental"] = [
+                            p.formatted for p in value.incremental
+                        ]
+
                     yield self.encode_multipart_data(response, "-")
 
                 yield "--\r\n"
