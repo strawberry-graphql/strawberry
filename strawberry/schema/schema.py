@@ -598,6 +598,14 @@ class Schema(BaseSchema):
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
         middleware_manager = self._get_middleware_manager(extensions)
 
+        execute_function = (
+            experimental_execute_incrementally
+            if self.config.enable_experimental_incremental_execution
+            else execute
+        )
+
+        # TODO: raise if experimental_execute_incrementally is not available
+
         try:
             with extensions_runner.operation():
                 # Note: In graphql-core the schema would be validated here but in
@@ -639,7 +647,7 @@ class Schema(BaseSchema):
 
                 with extensions_runner.executing():
                     if not execution_context.result:
-                        result = execute(
+                        result = execute_function(
                             self._schema,
                             execution_context.graphql_document,
                             root_value=execution_context.root_value,
