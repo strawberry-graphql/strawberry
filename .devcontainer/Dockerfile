@@ -1,4 +1,4 @@
-ARG VARIANT=3.10
+ARG VARIANT=3.13
 FROM mcr.microsoft.com/devcontainers/python:${VARIANT}
 
 RUN pip3 install poetry pre-commit
