@@ -362,7 +362,7 @@ class QueryCodegen:
                 # The FragmentDefinitionNode has a non-Optional `SelectionSetNode` but
                 # the Protocol wants an `Optional[SelectionSetNode]` so this doesn't
                 # quite conform.
-                cast(HasSelectionSet, fd),
+                cast("HasSelectionSet", fd),
                 parent_type=query_type,
                 class_name=fd.name.value,
                 graph_ql_object_type_factory=graph_ql_object_type_factory,
@@ -468,13 +468,13 @@ class QueryCodegen:
         result_class_name = f"{operation_name}Result"
 
         operation_type = self._collect_types(
-            cast(HasSelectionSet, operation_definition),
+            cast("HasSelectionSet", operation_definition),
             parent_type=query_type,
             class_name=result_class_name,
         )
 
         operation_kind = cast(
-            Literal["query", "mutation", "subscription"],
+            "Literal['query', 'mutation', 'subscription']",
             operation_definition.operation.value,
         )
 
@@ -801,7 +801,7 @@ class QueryCodegen:
         # `GraphQLField` or `GraphQLFragmentSpread`
         # and the suite above will cause this statement to be
         # skipped if there are any `GraphQLFragmentSpread`.
-        current_type.fields = cast(list[GraphQLField], fields)
+        current_type.fields = cast("list[GraphQLField]", fields)
 
         self._collect_type(current_type)
 
@@ -854,7 +854,7 @@ class QueryCodegen:
                 assert isinstance(sub_selection, FieldNode)
 
                 parent_type = cast(
-                    StrawberryObjectDefinition,
+                    "StrawberryObjectDefinition",
                     self.schema.get_type_by_name(type_condition_name),
                 )
 
@@ -889,7 +889,7 @@ class QueryCodegen:
             # `GraphQLField` or `GraphQLFragmentSpread`
             # and the suite above will cause this statement to be
             # skipped if there are any `GraphQLFragmentSpread`.
-            current_type.fields.extend(cast(list[GraphQLField], fields))
+            current_type.fields.extend(cast("list[GraphQLField]", fields))
 
             sub_types.append(current_type)
 

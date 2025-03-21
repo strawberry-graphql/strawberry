@@ -24,7 +24,7 @@ def convert_request_to_files_dict(request: Request) -> dict[str, Any]:
 
     Note that the dictionary entries are lists.
     """
-    request_files = cast(Optional[dict[str, list[File]]], request.files)
+    request_files = cast("Optional[dict[str, list[File]]]", request.files)
 
     if not request_files:
         return {}

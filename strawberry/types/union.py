@@ -93,7 +93,7 @@ class StrawberryUnion(StrawberryType):
     @property
     def types(self) -> tuple[StrawberryType, ...]:
         return tuple(
-            cast(StrawberryType, annotation.resolve())
+            cast("StrawberryType", annotation.resolve())
             for annotation in self.type_annotations
         )
 

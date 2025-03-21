@@ -37,7 +37,7 @@ async def test_loading():
 async def test_gathering(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=cast(IDXType, mock_loader))
+    loader = DataLoader(load_fn=cast("IDXType", mock_loader))
 
     [value_a, value_b, value_c] = await asyncio.gather(
         loader.load(1),
@@ -56,7 +56,7 @@ async def test_gathering(mocker: MockerFixture):
 async def test_max_batch_size(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=cast(IDXType, mock_loader), max_batch_size=2)
+    loader = DataLoader(load_fn=cast("IDXType", mock_loader), max_batch_size=2)
 
     [value_a, value_b, value_c] = await asyncio.gather(
         loader.load(1),
@@ -133,7 +133,7 @@ async def test_returning_wrong_number_of_results():
 async def test_caches_by_id(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=cast(IDXType, mock_loader), cache=True)
+    loader = DataLoader(load_fn=cast("IDXType", mock_loader), cache=True)
 
     a = loader.load(1)
     b = loader.load(1)
@@ -150,7 +150,7 @@ async def test_caches_by_id(mocker: MockerFixture):
 async def test_caches_by_id_when_loading_many(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=cast(IDXType, mock_loader), cache=True)
+    loader = DataLoader(load_fn=cast("IDXType", mock_loader), cache=True)
 
     a = loader.load(1)
     b = loader.load(1)
@@ -166,7 +166,7 @@ async def test_caches_by_id_when_loading_many(mocker: MockerFixture):
 async def test_cache_disabled(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=cast(IDXType, mock_loader), cache=False)
+    loader = DataLoader(load_fn=cast("IDXType", mock_loader), cache=False)
 
     a = loader.load(1)
     b = loader.load(1)
@@ -183,7 +183,7 @@ async def test_cache_disabled(mocker: MockerFixture):
 async def test_cache_disabled_immediate_await(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
 
-    loader = DataLoader(load_fn=cast(IDXType, mock_loader), cache=False)
+    loader = DataLoader(load_fn=cast("IDXType", mock_loader), cache=False)
 
     a = await loader.load(1)
     b = await loader.load(1)
@@ -452,7 +452,7 @@ async def test_user_class_custom_cache_key_fn():
 
 def test_works_when_created_in_a_different_loop(mocker: MockerFixture):
     mock_loader = mocker.Mock(side_effect=idx)
-    loader = DataLoader(load_fn=cast(IDXType, mock_loader), cache=False)
+    loader = DataLoader(load_fn=cast("IDXType", mock_loader), cache=False)
 
     loop = asyncio.new_event_loop()
 

@@ -35,7 +35,7 @@ def test_repr():
 def test_isinstance():
     assert isinstance(auto, StrawberryAuto)
     assert not isinstance(object, StrawberryAuto)
-    assert not isinstance(cast(Any, object()), StrawberryAuto)
+    assert not isinstance(cast("Any", object()), StrawberryAuto)
 
 
 def test_isinstance_with_annotation():
