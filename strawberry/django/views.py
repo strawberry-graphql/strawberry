@@ -163,7 +163,9 @@ class BaseView:
         super().__init__(**kwargs)
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: HttpResponse
+        self,
+        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        sub_response: HttpResponse,
     ) -> HttpResponseBase:
         data = self.encode_json(response_data)
 
