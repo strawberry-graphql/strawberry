@@ -1,2 +1,2 @@
-poetry install --with integrations
+poetry install --with dev,integrations
 pre-commit install --install-hooks
