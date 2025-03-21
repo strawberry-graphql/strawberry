@@ -117,11 +117,17 @@ def get_default_factory_for_field(
 
 
 def ensure_all_auto_fields_in_pydantic(
-    model: type[BaseModel], auto_fields: set[str], cls_name: str
+    model: type[BaseModel],
+    auto_fields: set[str],
+    cls_name: str,
+    include_computed: bool = False,
 ) -> None:
     compat = PydanticCompat.from_model(model)
     # Raise error if user defined a strawberry.auto field not present in the model
-    non_existing_fields = list(auto_fields - compat.get_model_fields(model).keys())
+    non_existing_fields = list(
+        auto_fields
+        - compat.get_model_fields(model, include_computed=include_computed).keys()
+    )
 
     if non_existing_fields:
         raise AutoFieldsNotInBaseModelError(
