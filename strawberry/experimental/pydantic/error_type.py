@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import warnings
+from collections.abc import Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -24,6 +25,7 @@ from strawberry.experimental.pydantic.utils import (
     normalize_type,
 )
 from strawberry.types.auto import StrawberryAuto
+from strawberry.types.base import WithStrawberryObjectDefinition
 from strawberry.types.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.typing import get_list_annotation, is_list
@@ -105,32 +107,34 @@ def error_type(
         if not fields_set:
             raise MissingFieldsListError(cls)
 
-        all_model_fields: list[tuple[str, Any, dataclasses.Field]] = [
-            (
-                name,
-                get_type_for_field(field),
-                dataclasses.field(default=None),  # type: ignore[arg-type]
-            )
-            for name, field in model_fields.items()
-            if name in fields_set
-        ]
+        # Optimizing the collection of all_model_fields and eliminating list comprehension with a condition check
+        all_model_fields = []
+        for name, field in model_fields.items():
+            if name in fields_set:
+                all_model_fields.append(
+                    (
+                        name,
+                        get_type_for_field(field),
+                        dataclasses.field(default=None),  # type: ignore[arg-type]
+                    )
+                )
 
         wrapped: type[WithStrawberryObjectDefinition] = _wrap_dataclass(cls)
         extra_fields = cast("list[dataclasses.Field]", _get_fields(wrapped, {}))
         private_fields = get_private_fields(wrapped)
 
-        all_model_fields.extend(
-            (
-                field.name,
-                field.type,
-                field,
-            )
-            for field in extra_fields + private_fields
-            if (
-                field.name not in auto_fields_set
-                and not isinstance(field.type, StrawberryAuto)
-            )
-        )
+        extra_and_private_fields = extra_fields + private_fields
+        for field in extra_and_private_fields:
+            if field.name not in auto_fields_set and not isinstance(
+                field.type, StrawberryAuto
+            ):
+                all_model_fields.append(
+                    (
+                        field.name,
+                        field.type,
+                        field,
+                    )
+                )
 
         cls = dataclasses.make_dataclass(
             cls.__name__,

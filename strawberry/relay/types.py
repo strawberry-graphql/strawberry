@@ -883,7 +883,9 @@ class ListConnection(Connection[NodeType]):
         try:
             iterator = cast(
                 "Union[Iterator[NodeType], Iterable[NodeType]]",
-                cast("Sequence", nodes)[slice_metadata.start : slice_metadata.overfetch],
+                cast("Sequence", nodes)[
+                    slice_metadata.start : slice_metadata.overfetch
+                ],
             )
         except TypeError:
             assert isinstance(nodes, (Iterable, Iterator))

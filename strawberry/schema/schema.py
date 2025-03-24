@@ -214,7 +214,9 @@ class Schema(BaseSchema):
         self.schema_directives = list(schema_directives)
 
         query_type = self.schema_converter.from_object(
-            cast("type[WithStrawberryObjectDefinition]", query).__strawberry_definition__
+            cast(
+                "type[WithStrawberryObjectDefinition]", query
+            ).__strawberry_definition__
         )
         mutation_type = (
             self.schema_converter.from_object(
