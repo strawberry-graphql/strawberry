@@ -35,7 +35,7 @@ def _convert_from_pydantic_to_strawberry_type(
             if hasattr(option_type, "_pydantic_type"):
                 source_type = option_type._pydantic_type
             else:
-                source_type = cast(type, option_type)
+                source_type = cast("type", option_type)
             if isinstance(data, source_type):
                 return _convert_from_pydantic_to_strawberry_type(
                     option_type, data_from_model=data, extra=extra

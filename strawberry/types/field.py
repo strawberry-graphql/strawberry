@@ -369,7 +369,7 @@ class StrawberryField(dataclasses.Field):
             # If the field is still generic, try to resolve it from the type_definition
             # that is asking for it.
             if (
-                _is_generic(cast(Union[StrawberryType, type], resolved))
+                _is_generic(cast("Union[StrawberryType, type]", resolved))
                 and type_definition is not None
                 and type_definition.type_var_map
                 and isinstance(resolved, StrawberryType)

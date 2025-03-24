@@ -153,7 +153,7 @@ def convert_argument(
         return convert_argument(value, type_.of_type, scalar_registry, config)
 
     if isinstance(type_, StrawberryList):
-        value_list = cast(Iterable, value)
+        value_list = cast("Iterable", value)
         return [
             convert_argument(x, type_.of_type, scalar_registry, config)
             for x in value_list
@@ -177,7 +177,7 @@ def convert_argument(
 
         type_definition = type_.__strawberry_definition__
         for field in type_definition.fields:
-            value = cast(Mapping, value)
+            value = cast("Mapping", value)
             graphql_name = config.name_converter.from_field(field)
 
             if graphql_name in value:
@@ -188,7 +188,7 @@ def convert_argument(
                     config,
                 )
 
-        type_ = cast(type, type_)
+        type_ = cast("type", type_)
         return type_(**kwargs)
 
     raise UnsupportedTypeError(type_)
