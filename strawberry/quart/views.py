@@ -1,22 +1,22 @@
 import warnings
 from collections.abc import AsyncGenerator, Mapping
 from datetime import timedelta
+from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Callable, ClassVar, Optional, cast
 from typing_extensions import TypeGuard
-from json.decoder import JSONDecodeError
 
-from quart import Quart, Request, Response, websocket, request
+from quart import Quart, Request, Response, request, websocket
 from quart.ctx import has_websocket_context
 from quart.views import View
 from strawberry.http.async_base_view import (
     AsyncBaseHTTPView,
     AsyncHTTPRequestAdapter,
-    AsyncWebSocketAdapter
+    AsyncWebSocketAdapter,
 )
 from strawberry.http.exceptions import (
     HTTPException,
     NonJsonMessageReceived,
-    WebSocketDisconnected
+    WebSocketDisconnected,
 )
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.types import FormData, HTTPMethod, QueryParams
@@ -185,7 +185,7 @@ class GraphQLView(
         connection = request.headers.get("Connection", "").lower()
         upgrade = request.headers.get("Upgrade", "").lower()
 
-        return ("upgrade" in connection and "websocket" in upgrade)
+        return "upgrade" in connection and "websocket" in upgrade
 
     async def pick_websocket_subprotocol(self, request: Request) -> Optional[str]:
         # Get the requested protocols
@@ -215,8 +215,7 @@ class GraphQLView(
 
     @classmethod
     def register_route(cls, app: Quart, rule_name: str, path: str, **kwargs):
-        """
-        Helper method to register both HTTP and WebSocket handlers for a given path.
+        """Helper method to register both HTTP and WebSocket handlers for a given path.
 
         Args:
             app: The Quart application

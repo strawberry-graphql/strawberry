@@ -1,11 +1,9 @@
-import asyncio
 import contextlib
 import json
 import urllib.parse
+from collections.abc import AsyncGenerator, Mapping
 from io import BytesIO
-from typing import Any, Optional, AsyncGenerator, Mapping
-
-from quart.typing import TestWebsocketConnectionProtocol
+from typing import Any, Optional
 from typing_extensions import Literal
 
 from starlette.testclient import TestClient, WebSocketTestSession
@@ -21,8 +19,14 @@ from strawberry.types import ExecutionResult
 from tests.http.context import get_context
 from tests.views.schema import Query, schema
 
-from .base import JSON, HttpClient, Response, ResultOverrideFunction, WebSocketClient, \
-    Message
+from .base import (
+    JSON,
+    HttpClient,
+    Message,
+    Response,
+    ResultOverrideFunction,
+    WebSocketClient,
+)
 
 
 class GraphQLView(BaseGraphQLView[dict[str, object], object]):
@@ -81,10 +85,7 @@ class QuartHttpClient(HttpClient):
             view_func=view,
         )
         self.app.add_url_rule(
-            '/graphql',
-            view_func=view,
-            methods=["GET"],
-            websocket=True
+            "/graphql", view_func=view, methods=["GET"], websocket=True
         )
 
         self.client = TestClient(self.app)
@@ -100,14 +101,10 @@ class QuartHttpClient(HttpClient):
             view_func=view,
         )
         self.app.add_url_rule(
-            '/graphql',
-            view_func=view,
-            methods=["GET"],
-            websocket=True
+            "/graphql", view_func=view, methods=["GET"], websocket=True
         )
 
         self.client = TestClient(self.app)
-
 
     async def _graphql_request(
         self,
@@ -187,7 +184,6 @@ class QuartHttpClient(HttpClient):
             yield QuartWebSocketClient(ws)
 
 
-
 class QuartWebSocketClient(WebSocketClient):
     def __init__(self, ws: WebSocketTestSession):
         self.ws = ws
@@ -214,7 +210,7 @@ class QuartWebSocketClient(WebSocketClient):
         if m["type"] == "websocket.close":
             self._closed = True
             self._close_code = m["code"]
-            self._close_reason =  m.get("reason", None)
+            self._close_reason = m.get("reason", None)
             return Message(type=m["type"], data=m["code"], extra=m.get("reason", None))
         if m["type"] == "websocket.send":
             return Message(type=m["type"], data=m["text"])
