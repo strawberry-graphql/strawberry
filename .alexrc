@@ -13,6 +13,7 @@
     "special",
     "primitive",
     "invalid",
+    "failed",
     "crash"
   ]
 }
