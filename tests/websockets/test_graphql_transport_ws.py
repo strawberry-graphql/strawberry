@@ -72,7 +72,6 @@ def assert_next(
 
 async def test_unknown_message_type(ws_raw: WebSocketClient):
     ws = ws_raw
-
     await ws.send_json({"type": "NOT_A_MESSAGE_TYPE"})
 
     await ws.receive(timeout=2)
