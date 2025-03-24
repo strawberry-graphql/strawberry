@@ -1,6 +1,107 @@
 CHANGELOG
 =========
 
+0.262.5 - 2025-03-13
+--------------------
+
+This release updates the internals of our subscription implementation, to make the code
+easier to maintain for future changes.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3787](https://github.com/strawberry-graphql/strawberry/pull/3787/)
+
+
+0.262.4 - 2025-03-13
+--------------------
+
+This release adds support for the upcoming version of Pydantic (2.11)
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3808](https://github.com/strawberry-graphql/strawberry/pull/3808/)
+
+
+0.262.3 - 2025-03-13
+--------------------
+
+This release changes the required version of packaging from >=24 to >=23,
+in order to allow using Strawberry on https://play.strawberry.rocks
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3806](https://github.com/strawberry-graphql/strawberry/pull/3806/)
+
+
+0.262.2 - 2025-03-12
+--------------------
+
+This release adds missing `packaging` dependency required by `DatadogTracingExtension`
+
+Contributed by [Jakub Bacic](https://github.com/jakub-bacic) via [PR #3803](https://github.com/strawberry-graphql/strawberry/pull/3803/)
+
+
+0.262.1 - 2025-03-06
+--------------------
+
+This release updates the handling of the Django `graphql/graphiql.html` template, if provided; it will now receive the current request as context.
+
+Contributed by [ash](https://github.com/sersorrel) via [PR #3800](https://github.com/strawberry-graphql/strawberry/pull/3800/)
+
+
+0.262.0 - 2025-03-04
+--------------------
+
+This release adds support for exporting schema created by a callable:
+
+```bash
+strawberry export-schema package.module:create_schema
+```
+
+when
+
+```python
+def create_schema():
+    return strawberry.Schema(query=Query)
+```
+
+Contributed by [Alexey Pelykh](https://github.com/alexey-pelykh) via [PR #3797](https://github.com/strawberry-graphql/strawberry/pull/3797/)
+
+
+0.261.1 - 2025-02-27
+--------------------
+
+This release updates the Python version requirement to use ⁠python >= 3.9 instead of ⁠^3.9 to avoid conflicts with other projects that use ⁠>= 3.x
+
+Contributed by [John Lyu](https://github.com/PaleNeutron) via [PR #3789](https://github.com/strawberry-graphql/strawberry/pull/3789/)
+
+
+0.261.0 - 2025-02-27
+--------------------
+
+This release adds support for `type[strawberry.UNSET]` in addition to `strawberry.types.unset.UnsetType` for annotations.
+
+
+```python
+@strawberry.type
+class User:
+    name: str | None = UNSET
+    age: int | None | type[strawberry.UNSET] = UNSET
+```
+
+Contributed by [Alexey Pelykh](https://github.com/alexey-pelykh) via [PR #3765](https://github.com/strawberry-graphql/strawberry/pull/3765/)
+
+
+0.260.4 - 2025-02-27
+--------------------
+
+This release adds support for Datadog ddtrace v3.0.0 in the `DatadogTracingExtension`
+
+Contributed by [Jon Finerty](https://github.com/jonfinerty) via [PR #3794](https://github.com/strawberry-graphql/strawberry/pull/3794/)
+
+
+0.260.3 - 2025-02-27
+--------------------
+
+This release fixes the issue that some subscription resolvers were not canceled if a client unexpectedly disconnected.
+
+Contributed by [Jakub Bacic](https://github.com/jakub-bacic) via [PR #3778](https://github.com/strawberry-graphql/strawberry/pull/3778/)
+
+
 0.260.2 - 2025-02-13
 --------------------
 
@@ -5626,10 +5727,10 @@ Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2128](ht
 
 Reduce the number of required dependencies, by marking Pygments and python-multipart as optional. These dependencies are still necessary for some functionality, and so users of that functionality need to ensure they're installed, either explicitly or via an extra:
 
-- Pygments is still necessary when using Strawberry in debug mode, and is included in the `strawberry[debug-server]` extra.
-- python-multipart is still necessary when using `strawberry.file_uploads.Upload` with FastAPI or Starlette, and is included in the `strawberry[fastapi]` and `strawberry[asgi]` extras, respectively.
+- Pygments is still necessary when using Strawberry in debug mode, and is included in the `strawberry-graphql[debug-server]` extra.
+- python-multipart is still necessary when using `strawberry.file_uploads.Upload` with FastAPI or Starlette, and is included in the `strawberry-graphql[fastapi]` and `strawberry-graphql[asgi]` extras, respectively.
 
-There is now also the `strawberry[cli]` extra to support commands like `strawberry codegen` and `strawberry export-schema`.
+There is now also the `strawberry-graphql[cli]` extra to support commands like `strawberry codegen` and `strawberry export-schema`.
 
 Contributed by [Huon Wilson](https://github.com/huonw) via [PR #2205](https://github.com/strawberry-graphql/strawberry/pull/2205/)
 
@@ -9195,7 +9296,7 @@ you can install the required dependencies needed to use Strawberry with
 ASGI by running:
 
 ```
-pip install 'strawberry[asgi]'
+pip install 'strawberry-graphql[asgi]'
 ```
 
 Contributed by [A. Coady](https://github.com/coady) [PR #1036](https://github.com/strawberry-graphql/strawberry/pull/1036/)

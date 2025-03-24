@@ -238,7 +238,7 @@ class GraphQLView(
 
     def render_graphql_ide(self, request: HttpRequest) -> HttpResponse:
         try:
-            content = render_to_string("graphql/graphiql.html")
+            content = render_to_string("graphql/graphiql.html", request=request)
         except TemplateDoesNotExist:
             content = self.graphql_ide_html
 
@@ -298,7 +298,7 @@ class AsyncGraphQLView(
 
     async def render_graphql_ide(self, request: HttpRequest) -> HttpResponse:
         try:
-            content = render_to_string("graphql/graphiql.html")
+            content = render_to_string("graphql/graphiql.html", request=request)
         except TemplateDoesNotExist:
             content = self.graphql_ide_html
 
