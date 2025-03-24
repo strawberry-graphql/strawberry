@@ -101,7 +101,7 @@ class RelayWrongResolverAnnotationError(StrawberryException):
             return None  # pragma: no cover
 
         source_finder = SourceFinder()
-        return source_finder.find_function_from_object(cast(Callable, self.function))
+        return source_finder.find_function_from_object(cast("Callable", self.function))
 
 
 __all__ = [

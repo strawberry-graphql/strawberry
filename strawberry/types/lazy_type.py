@@ -105,7 +105,7 @@ class StrawberryLazyReference:
             frame = sys._getframe(2)
             # TODO: raise a nice error if frame is None
             assert frame is not None
-            self.package = cast(str, frame.f_globals["__package__"])
+            self.package = cast("str", frame.f_globals["__package__"])
 
     def resolve_forward_ref(self, forward_ref: ForwardRef) -> LazyType:
         return LazyType(forward_ref.__forward_arg__, self.module, self.package)

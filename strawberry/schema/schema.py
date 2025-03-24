@@ -205,7 +205,7 @@ class Schema(BaseSchema):
         scalar_registry: SCALAR_OVERRIDES_DICT_TYPE = {**DEFAULT_SCALAR_REGISTRY}
         if scalar_overrides:
             # TODO: check that the overrides are valid
-            scalar_registry.update(cast(SCALAR_OVERRIDES_DICT_TYPE, scalar_overrides))
+            scalar_registry.update(cast("SCALAR_OVERRIDES_DICT_TYPE", scalar_overrides))
 
         self.schema_converter = GraphQLCoreConverter(
             self.config, scalar_registry, self.get_fields
@@ -214,12 +214,12 @@ class Schema(BaseSchema):
         self.schema_directives = list(schema_directives)
 
         query_type = self.schema_converter.from_object(
-            cast(type[WithStrawberryObjectDefinition], query).__strawberry_definition__
+            cast("type[WithStrawberryObjectDefinition]", query).__strawberry_definition__
         )
         mutation_type = (
             self.schema_converter.from_object(
                 cast(
-                    type[WithStrawberryObjectDefinition], mutation
+                    "type[WithStrawberryObjectDefinition]", mutation
                 ).__strawberry_definition__
             )
             if mutation
@@ -228,7 +228,7 @@ class Schema(BaseSchema):
         subscription_type = (
             self.schema_converter.from_object(
                 cast(
-                    type[WithStrawberryObjectDefinition], subscription
+                    "type[WithStrawberryObjectDefinition]", subscription
                 ).__strawberry_definition__
             )
             if subscription
@@ -624,13 +624,13 @@ class Schema(BaseSchema):
                         )
 
                         if isawaitable(result):
-                            result = cast(Awaitable[GraphQLExecutionResult], result)  # type: ignore[redundant-cast]
+                            result = cast("Awaitable[GraphQLExecutionResult]", result)  # type: ignore[redundant-cast]
                             ensure_future(result).cancel()
                             raise RuntimeError(  # noqa: TRY301
                                 "GraphQL execution failed to complete synchronously."
                             )
 
-                        result = cast(GraphQLExecutionResult, result)  # type: ignore[redundant-cast]
+                        result = cast("GraphQLExecutionResult", result)  # type: ignore[redundant-cast]
                         execution_context.result = result
                         # Also set errors on the context so that it's easier
                         # to access in extensions
