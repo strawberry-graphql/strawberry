@@ -10,9 +10,9 @@
 		"preview": "vite preview",
 		"relay": "relay-compiler"
 	},
-
 	"dependencies": {
 		"@apollo/client": "^3.13.4",
+		"@playwright/test": "^1.51.1",
 		"@radix-ui/react-slot": "^1.1.2",
 		"@tailwindcss/vite": "^4.0.14",
 		"class-variance-authority": "^0.7.1",

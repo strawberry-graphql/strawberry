@@ -1,12 +1,11 @@
 import { serializeFetchParameter } from "@apollo/client";
-import type { CacheConfig, RequestParameters } from "relay-runtime";
+import type { RequestParameters } from "relay-runtime";
 import {
 	Environment,
 	Network,
 	Observable,
 	RecordSource,
 	Store,
-	QueryResponseCache,
 } from "relay-runtime";
 import type { Variables } from "relay-runtime";
 import { maybe } from "@apollo/client/utilities";
@@ -28,6 +27,7 @@ function fetchQuery(operation: RequestParameters, variables: Variables) {
 
 	const options: {
 		method: string;
+		// biome-ignore lint/suspicious/noExplicitAny: :)
 		headers: Record<string, any>;
 		body?: string;
 	} = {
@@ -47,7 +47,8 @@ function fetchQuery(operation: RequestParameters, variables: Variables) {
 
 		const currentFetch = maybe(() => fetch) || backupFetch;
 
-		const observerNext = (data) => {
+		// biome-ignore lint/suspicious/noExplicitAny: :)
+		const observerNext = (data: any) => {
 			console.log("data", data);
 			if ("incremental" in data) {
 				for (const item of data.incremental) {
@@ -58,6 +59,7 @@ function fetchQuery(operation: RequestParameters, variables: Variables) {
 			}
 		};
 
+		// biome-ignore lint/style/noNonNullAssertion: :)
 		currentFetch!(uri, options)
 			.then(async (response) => {
 				console.log("response", response);
