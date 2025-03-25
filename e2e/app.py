@@ -18,11 +18,10 @@ class BlogPost:
 
     @strawberry.field
     async def comments(self) -> list[Comment]:
-        await asyncio.sleep(4)
-
+        await asyncio.sleep(2)
         return [
-            Comment(id=strawberry.ID("1"), content="Great post!"),
-            Comment(id=strawberry.ID("2"), content="Thanks for sharing!"),
+            Comment(id=strawberry.ID("Comment:1"), content="Great post!"),
+            Comment(id=strawberry.ID("Comment:2"), content="Thanks for sharing!"),
         ]
 
 
