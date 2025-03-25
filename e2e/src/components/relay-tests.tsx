@@ -36,7 +36,18 @@ interface RelayQueryWrapperProps {
 
 function RelayFetchQuery({ query, variables }: RelayQueryWrapperProps) {
 	const data = useLazyLoadQuery(query, variables ?? {});
-	return <pre>{JSON.stringify(data, null, 2)}</pre>;
+	// remove all things that start with `__` recursively
+	const filterData = (obj: unknown): unknown => {
+		if (typeof obj !== "object" || obj === null) return obj;
+		if (Array.isArray(obj)) return obj.map(filterData);
+		return Object.fromEntries(
+			Object.entries(obj as Record<string, unknown>)
+				.filter(([key]) => !key.startsWith("__"))
+				.map(([key, value]) => [key, filterData(value)]),
+		);
+	};
+	const filteredData = filterData(data);
+	return <pre>{JSON.stringify(filteredData, null, 2)}</pre>;
 }
 
 function RelayQueryWrapper({
