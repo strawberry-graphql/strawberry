@@ -16,8 +16,8 @@ from strawberry.http.async_base_view import (
 from strawberry.http.exceptions import (
     HTTPException,
     NonJsonMessageReceived,
+    NonTextMessageReceived,
     WebSocketDisconnected,
-    NonTextMessageReceived
 )
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.types import FormData, HTTPMethod, QueryParams

@@ -4,39 +4,37 @@ import json
 import urllib.parse
 from collections.abc import AsyncGenerator, Mapping
 from io import BytesIO
-from typing import Any, Optional, AsyncGenerator, Mapping, Union
+from typing import Any, Optional, Union
+from typing_extensions import Literal
 
 from asgiref.typing import ASGISendEvent
 from hypercorn.typing import WebsocketScope
-from quart.typing import TestWebsocketConnectionProtocol
-from quart.utils import decode_headers
-from typing import Any, Optional
-from typing_extensions import Literal
 
 from quart import Quart
 from quart import Request as QuartRequest
 from quart import Response as QuartResponse
 from quart.datastructures import FileStorage
 from quart.testing.connections import TestWebsocketConnection
-
+from quart.typing import TestWebsocketConnectionProtocol
+from quart.utils import decode_headers
 from strawberry.exceptions import ConnectionRejectionError
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.quart.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult
-from strawberry.types.unset import UnsetType, UNSET
+from strawberry.types.unset import UNSET, UnsetType
 from tests.http.context import get_context
 from tests.views.schema import Query, schema
 
 from .base import (
     JSON,
+    DebuggableGraphQLTransportWSHandler,
+    DebuggableGraphQLWSHandler,
     HttpClient,
     Message,
     Response,
     ResultOverrideFunction,
     WebSocketClient,
-    DebuggableGraphQLTransportWSHandler,
-    DebuggableGraphQLWSHandler
 )
 
 
@@ -211,17 +209,20 @@ class QuartHttpClient(HttpClient):
         protocols: list[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
         headers = {
-            'sec-websocket-protocol': ", ".join(protocols),
+            "sec-websocket-protocol": ", ".join(protocols),
         }
         async with self.app.test_app() as test_app:
             client = test_app.test_client()
             client.websocket_connection_class = QuartTestWebsocketConnection
-            async with client.websocket(url, headers=headers, subprotocols=protocols) as ws:
+            async with client.websocket(
+                url, headers=headers, subprotocols=protocols
+            ) as ws:
                 yield QuartWebSocketClient(ws)
+
 
 class QuartTestWebsocketConnection(TestWebsocketConnection):
     def __init__(self, app: Quart, scope: WebsocketScope) -> None:
-        scope['asgi'] = {'spec_version': '2.3'}
+        scope["asgi"] = {"spec_version": "2.3"}
         super().__init__(app, scope)
 
     async def _asgi_send(self, message: ASGISendEvent) -> None:
@@ -236,6 +237,7 @@ class QuartTestWebsocketConnection(TestWebsocketConnection):
             self.response_data.extend(message["body"])
         elif message["type"] == "websocket.close":
             await self._receive_queue.put(json.dumps(message))
+
 
 class QuartWebSocketClient(WebSocketClient):
     def __init__(self, ws: TestWebsocketConnectionProtocol):
@@ -267,12 +269,12 @@ class QuartWebSocketClient(WebSocketClient):
             return Message(type=m["type"], data=m["code"], extra=m.get("reason", None))
         if m["type"] == "websocket.send":
             return Message(type=m["type"], data=m["text"])
-        if m['type'] == "connection_ack":
-            return Message(type=m['type'], data='')
+        if m["type"] == "connection_ack":
+            return Message(type=m["type"], data="")
         return Message(type=m["type"], data=m["data"], extra=m["extra"])
 
     async def receive_json(self, timeout: Optional[float] = None) -> Any:
-        m =  await asyncio.wait_for(self.ws.receive_json(), timeout=timeout)
+        m = await asyncio.wait_for(self.ws.receive_json(), timeout=timeout)
         return m
 
     async def close(self) -> None:
