@@ -1,19 +1,19 @@
 {
-  "allow": [
-    "black",
-    "hook",
-    "hooks",
-    "failure",
-    "period",
-    "execute",
-    "executed",
-    "executes",
-    "execution",
-    "reject",
-    "special",
-    "primitive",
-    "invalid",
-    "failed",
-    "crash"
-  ]
+	"allow": [
+		"black",
+		"hook",
+		"hooks",
+		"failure",
+		"period",
+		"execute",
+		"executed",
+		"executes",
+		"execution",
+		"reject",
+		"special",
+		"primitive",
+		"invalid",
+		"failed",
+		"crash"
+	]
 }

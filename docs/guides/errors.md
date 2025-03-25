@@ -161,6 +161,63 @@ schema = strawberry.Schema(query=Query)
 
 </CodeGrid>
 
+## Partial responses for failed resolvers
+
+By default, GraphQL allows partial responses when a resolver fails. This means
+that successfully resolved fields are still returned alongside errors. However,
+this applies only when the erroneous field is defined as optional.
+
+Consider the following example:
+
+```python
+from typing import Optional
+import strawberry
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def successful_field(self) -> Optional[str]:
+        return "This field works"
+
+    @strawberry.field
+    def error_field(self) -> Optional[str]:
+        raise Exception("This field fails")
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+<CodeGrid>
+
+```graphql
+{
+  successfulField
+  errorField
+}
+```
+
+```json
+{
+  "data": {
+    "successfulField": "This field works",
+    "errorField": null
+  },
+  "errors": [
+    {
+      "message": "This field fails",
+      "locations": [{ "line": 3, "column": 3 }],
+      "path": ["errorField"]
+    }
+  ]
+}
+```
+
+</CodeGrid>
+
+The response includes both successfully resolved data and error details,
+demonstrating GraphQL's ability to return partial results.
+
 ## Expected errors
 
 If an error is expected then it is often best to express it in the schema. This
