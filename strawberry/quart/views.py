@@ -17,6 +17,7 @@ from strawberry.http.exceptions import (
     HTTPException,
     NonJsonMessageReceived,
     WebSocketDisconnected,
+    NonTextMessageReceived
 )
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.types import FormData, HTTPMethod, QueryParams
@@ -67,15 +68,14 @@ class QuartWebSocketAdapter(AsyncWebSocketAdapter):
         self, *, ignore_parsing_errors: bool = False
     ) -> AsyncGenerator[object, None]:
         while True:
+            message = await self.ws.receive()
+            if type(message) is bytes:
+                raise NonTextMessageReceived
             try:
-                message = await self.ws.receive()
-                try:
-                    yield self.view.decode_json(message)
-                except JSONDecodeError as e:
-                    if not ignore_parsing_errors:
-                        raise NonJsonMessageReceived from e
-            except Exception as exc:
-                raise WebSocketDisconnected from exc
+                yield self.view.decode_json(message)
+            except JSONDecodeError as e:
+                if not ignore_parsing_errors:
+                    raise NonJsonMessageReceived from e
 
     async def send_json(self, message: Mapping[str, object]) -> None:
         try:
