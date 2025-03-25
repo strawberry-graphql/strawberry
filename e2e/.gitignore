@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 !src/lib/
+
+playwright-report/
+test-results/

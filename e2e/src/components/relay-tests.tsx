@@ -56,29 +56,46 @@ type BlogPostQuery = {
 function RelayFragmentWrapper({
 	fragment,
 	data,
+	testId,
 }: {
 	fragment: typeof COMMENTS_FRAGMENT;
 	data: any;
+	testId?: string;
 }) {
 	const fragmentData = useFragment(fragment, data);
 
-	return <pre>{JSON.stringify(fragmentData, null, 2)}</pre>;
+	return (
+		<pre data-testid={testId}>{JSON.stringify(fragmentData, null, 2)}</pre>
+	);
 }
 
 function RelayFetchQuery({
 	query,
 	variables,
 	fragment,
+	testId,
 }: RelayQueryWrapperProps) {
 	const data = useLazyLoadQuery(query, variables ?? {});
 	const filteredData = filterData(data);
 
 	return (
 		<>
-			<pre>{JSON.stringify(filteredData, null, 2)}</pre>
-			<Suspense fallback={<div>Loading fragment...</div>}>
+			<pre data-testid={`${testId}-result`}>
+				{JSON.stringify(filteredData, null, 2)}
+			</pre>
+			<Suspense
+				fallback={
+					<div data-testid={`${testId}-fragment-loading`}>
+						Loading fragment...
+					</div>
+				}
+			>
 				{fragment && data ? (
-					<RelayFragmentWrapper fragment={fragment} data={data.blogPost} />
+					<RelayFragmentWrapper
+						fragment={fragment}
+						data={data.blogPost}
+						testId={`${testId}-comments`}
+					/>
 				) : null}
 			</Suspense>
 		</>
@@ -90,19 +107,30 @@ function RelayQueryWrapper({
 	variables,
 	buttonText = "Run Query",
 	fragment,
-}: RelayQueryWrapperProps) {
+	testId,
+}: RelayQueryWrapperProps & { testId?: string }) {
 	const [shouldRun, setShouldRun] = useState(false);
 
 	if (!shouldRun) {
-		return <Button onClick={() => setShouldRun(true)}>{buttonText}</Button>;
+		return (
+			<Button
+				onClick={() => setShouldRun(true)}
+				data-testid={`${testId}-button`}
+			>
+				{buttonText}
+			</Button>
+		);
 	}
 
 	return (
-		<Suspense fallback={<div>Loading...</div>}>
+		<Suspense
+			fallback={<div data-testid={`${testId}-loading`}>Loading...</div>}
+		>
 			<RelayFetchQuery
 				query={query}
 				variables={variables}
 				fragment={fragment}
+				testId={testId}
 			/>
 		</Suspense>
 	);
@@ -130,8 +158,18 @@ class ErrorBoundary extends Component<
 		if (this.state.hasError) {
 			return (
 				<div className="p-4 border border-red-500 rounded-md bg-red-50">
-					<h2 className="text-red-700 font-bold">Something went wrong.</h2>
-					<p className="text-red-600">Please try refreshing the page.</p>
+					<h2
+						className="text-red-700 font-bold"
+						data-testid="error-boundary-message"
+					>
+						Something went wrong.
+					</h2>
+					<p
+						className="text-red-600"
+						data-testid="error-boundary-refresh-message"
+					>
+						Please try refreshing the page.
+					</p>
 					{this.state.error && (
 						<pre className="mt-4 p-2 bg-red-100 rounded text-sm overflow-auto">
 							{this.state.error.stack}
@@ -152,11 +190,15 @@ function RelayTests() {
 				<h1 className="text-2xl font-bold">Relay Tests</h1>
 				<div className="gap-4">
 					<h2 className="text-lg"># Basic Query</h2>
-					<RelayQueryWrapper query={HELLO_QUERY} />
+					<RelayQueryWrapper query={HELLO_QUERY} testId="relay-basic-query" />
 				</div>
 				<div className="gap-4">
 					<h2 className="text-lg"># Hello With Delay</h2>
-					<RelayQueryWrapper query={HELLO_QUERY} variables={{ delay: 2 }} />
+					<RelayQueryWrapper
+						query={HELLO_QUERY}
+						variables={{ delay: 2 }}
+						testId="relay-delayed-query"
+					/>
 				</div>
 				<div className="gap-4">
 					<h2 className="text-lg"># Blog Post</h2>
@@ -164,6 +206,7 @@ function RelayTests() {
 						query={BLOG_POST_QUERY}
 						variables={{ id: "1" }}
 						fragment={COMMENTS_FRAGMENT}
+						testId="relay-blog-post"
 					/>
 				</div>
 				<div className="gap-4">
@@ -172,6 +215,7 @@ function RelayTests() {
 						query={BLOG_POST_QUERY}
 						variables={{ id: "1", shouldDefer: true }}
 						fragment={COMMENTS_FRAGMENT}
+						testId="relay-defer"
 					/>
 				</div>
 			</div>
