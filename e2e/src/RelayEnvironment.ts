@@ -17,27 +17,9 @@ import {
 
 const uri = "http://localhost:8000/graphql";
 
-const oneMinute = 60 * 1000;
-const cache = new QueryResponseCache({ size: 250, ttl: oneMinute });
-
 const backupFetch = maybe(() => fetch);
 
-function fetchQuery(
-	operation: RequestParameters,
-	variables: Variables,
-	cacheConfig: CacheConfig,
-) {
-	const queryID = operation.text;
-	const isMutation = operation.operationKind === "mutation";
-	const isQuery = operation.operationKind === "query";
-	const forceFetch = cacheConfig && cacheConfig.force;
-
-	// Try to get data from cache on queries
-	const fromCache = cache.get(queryID, variables);
-	if (isQuery && fromCache !== null && !forceFetch) {
-		return fromCache;
-	}
-
+function fetchQuery(operation: RequestParameters, variables: Variables) {
 	const body = {
 		operationName: operation.name,
 		variables,
@@ -66,6 +48,7 @@ function fetchQuery(
 		const currentFetch = maybe(() => fetch) || backupFetch;
 
 		const observerNext = (data) => {
+			console.log("data", data);
 			if ("incremental" in data) {
 				for (const item of data.incremental) {
 					sink.next(item);
@@ -77,25 +60,21 @@ function fetchQuery(
 
 		currentFetch!(uri, options)
 			.then(async (response) => {
+				console.log("response", response);
+
 				const ctype = response.headers?.get("content-type");
 
 				if (ctype !== null && /^multipart\/mixed/i.test(ctype)) {
 					const result = readMultipartBody(response, observerNext);
-					console.log("result", result);
+
 					return result;
-				} else {
-					const json = await response.json();
-
-					if (isQuery && json) {
-						cache.set(queryID, variables, json);
-					}
-					// Clear cache on mutations
-					if (isMutation) {
-						cache.clear();
-					}
-
-					observerNext(json);
 				}
+
+				const json = await response.json();
+
+				console.log("json", json);
+
+				observerNext(json);
 			})
 			.then(() => {
 				sink.complete();

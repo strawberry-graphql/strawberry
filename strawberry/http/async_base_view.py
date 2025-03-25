@@ -381,7 +381,14 @@ class AsyncBaseHTTPView(
 
                     if value.incremental:
                         response["incremental"] = [
-                            p.formatted for p in value.incremental
+                            {
+                                **p.formatted,
+                                # for Apollo
+                                # content type is `multipart/mixed;deferSpec=20220824,application/json`
+                                "path": ["blogPost"],
+                                "label": "relayTestsBlogPostQuery$defer$relayTestsCommentsFragment",
+                            }
+                            for p in value.incremental
                         ]
 
                     yield self.encode_multipart_data(response, "-")
@@ -414,6 +421,7 @@ class AsyncBaseHTTPView(
             [
                 "\r\n",
                 "Content-Type: application/json; charset=utf-8\r\n",
+                "Content-Length: " + str(len(encoded_data)) + "\r\n",
                 "\r\n",
                 encoded_data,
                 f"\r\n--{separator}",

@@ -1,4 +1,4 @@
-import { graphql, useLazyLoadQuery } from "react-relay";
+import { graphql, useLazyLoadQuery, useFragment } from "react-relay";
 import { Button } from "@/components/ui/button";
 import { Suspense, useState, Component } from "react";
 
@@ -32,28 +32,64 @@ interface RelayQueryWrapperProps {
 	// biome-ignore lint/suspicious/noExplicitAny: typing this would be a pain
 	variables?: any;
 	buttonText?: string;
+	fragment?: typeof COMMENTS_FRAGMENT;
 }
 
-function RelayFetchQuery({ query, variables }: RelayQueryWrapperProps) {
-	const data = useLazyLoadQuery(query, variables ?? {});
-	// remove all things that start with `__` recursively
-	const filterData = (obj: unknown): unknown => {
-		if (typeof obj !== "object" || obj === null) return obj;
-		if (Array.isArray(obj)) return obj.map(filterData);
-		return Object.fromEntries(
-			Object.entries(obj as Record<string, unknown>)
-				.filter(([key]) => !key.startsWith("__"))
-				.map(([key, value]) => [key, filterData(value)]),
-		);
+const filterData = (obj: unknown): unknown => {
+	if (typeof obj !== "object" || obj === null) return obj;
+	if (Array.isArray(obj)) return obj.map(filterData);
+	return Object.fromEntries(
+		Object.entries(obj as Record<string, unknown>)
+			.filter(([key]) => !key.startsWith("__"))
+			.map(([key, value]) => [key, filterData(value)]),
+	);
+};
+
+// Add this type to help with TypeScript
+type BlogPostQuery = {
+	blogPost?: {
+		title: string;
+		content: string;
 	};
+};
+
+function RelayFragmentWrapper({
+	fragment,
+	data,
+}: {
+	fragment: typeof COMMENTS_FRAGMENT;
+	data: any;
+}) {
+	const fragmentData = useFragment(fragment, data);
+
+	return <pre>{JSON.stringify(fragmentData, null, 2)}</pre>;
+}
+
+function RelayFetchQuery({
+	query,
+	variables,
+	fragment,
+}: RelayQueryWrapperProps) {
+	const data = useLazyLoadQuery(query, variables ?? {});
 	const filteredData = filterData(data);
-	return <pre>{JSON.stringify(filteredData, null, 2)}</pre>;
+
+	return (
+		<>
+			<pre>{JSON.stringify(filteredData, null, 2)}</pre>
+			<Suspense fallback={<div>Loading fragment...</div>}>
+				{fragment && data ? (
+					<RelayFragmentWrapper fragment={fragment} data={data.blogPost} />
+				) : null}
+			</Suspense>
+		</>
+	);
 }
 
 function RelayQueryWrapper({
 	query,
 	variables,
 	buttonText = "Run Query",
+	fragment,
 }: RelayQueryWrapperProps) {
 	const [shouldRun, setShouldRun] = useState(false);
 
@@ -63,7 +99,11 @@ function RelayQueryWrapper({
 
 	return (
 		<Suspense fallback={<div>Loading...</div>}>
-			<RelayFetchQuery query={query} variables={variables} />
+			<RelayFetchQuery
+				query={query}
+				variables={variables}
+				fragment={fragment}
+			/>
 		</Suspense>
 	);
 }
@@ -120,13 +160,18 @@ function RelayTests() {
 				</div>
 				<div className="gap-4">
 					<h2 className="text-lg"># Blog Post</h2>
-					<RelayQueryWrapper query={BLOG_POST_QUERY} variables={{ id: "1" }} />
+					<RelayQueryWrapper
+						query={BLOG_POST_QUERY}
+						variables={{ id: "1" }}
+						fragment={COMMENTS_FRAGMENT}
+					/>
 				</div>
 				<div className="gap-4">
 					<h2 className="text-lg"># Blog Post With Defer</h2>
 					<RelayQueryWrapper
 						query={BLOG_POST_QUERY}
 						variables={{ id: "1", shouldDefer: true }}
+						fragment={COMMENTS_FRAGMENT}
 					/>
 				</div>
 			</div>
