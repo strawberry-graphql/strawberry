@@ -15,9 +15,10 @@ from starlette.websockets import WebSocket
 from strawberry.asgi import GraphQL as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
-from tests.views.schema import Query, schema
+from tests.views.schema import Query, get_schema
 from tests.websockets.views import OnWSConnectMixin
 
 from .base import (
@@ -66,9 +67,11 @@ class AsgiHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
+        self.schema = get_schema(schema_config)
         view = GraphQLView(
-            schema,
+            self.schema,
             graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
@@ -80,7 +83,7 @@ class AsgiHttpClient(HttpClient):
         self.client = TestClient(view)
 
     def create_app(self, **kwargs: Any) -> None:
-        view = GraphQLView(schema=schema, **kwargs)
+        view = GraphQLView(schema=self.schema, **kwargs)
         self.client = TestClient(view)
 
     async def _graphql_request(

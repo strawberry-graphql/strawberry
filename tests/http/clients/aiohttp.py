@@ -14,9 +14,10 @@ from aiohttp.test_utils import TestClient, TestServer
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
-from tests.views.schema import Query, schema
+from tests.views.schema import Query, get_schema
 from tests.websockets.views import OnWSConnectMixin
 
 from .base import (
@@ -64,9 +65,11 @@ class AioHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
+        self.schema = get_schema(schema_config)
         view = GraphQLView(
-            schema=schema,
+            schema=self.schema,
             graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
@@ -83,7 +86,7 @@ class AioHttpClient(HttpClient):
         )
 
     def create_app(self, **kwargs: Any) -> None:
-        view = GraphQLView(schema=schema, **kwargs)
+        view = GraphQLView(schema=self.schema, **kwargs)
 
         self.app = web.Application()
         self.app.router.add_route(
