@@ -135,6 +135,36 @@ class StrawberryArgument:
         return is_graphql_generic(self.type)
 
 
+def _is_leaf_type(
+    type_: Union[StrawberryType, type],
+    scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+) -> bool:
+    if is_scalar(type_, scalar_registry):
+        return True
+
+    if isinstance(type_, EnumDefinition):
+        return True
+
+    if isinstance(type_, LazyType):
+        return _is_leaf_type(type_.resolve_type(), scalar_registry)
+
+    if hasattr(type_, "_enum_definition"):
+        enum_definition: EnumDefinition = type_._enum_definition
+        return _is_leaf_type(enum_definition, scalar_registry)
+
+    return False
+
+
+def _is_optional_leaf_type(
+    type_: Union[StrawberryType, type],
+    scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+) -> bool:
+    if isinstance(type_, StrawberryOptional):
+        return _is_leaf_type(type_.of_type, scalar_registry)
+
+    return False
+
+
 def convert_argument(
     value: object,
     type_: Union[StrawberryType, type],
@@ -154,15 +184,16 @@ def convert_argument(
 
     if isinstance(type_, StrawberryList):
         value_list = cast(Iterable, value)
+        if _is_leaf_type(type_.of_type, scalar_registry) or _is_optional_leaf_type(
+            type_.of_type, scalar_registry
+        ):
+            return list(value_list)
         return [
             convert_argument(x, type_.of_type, scalar_registry, config)
             for x in value_list
         ]
 
-    if is_scalar(type_, scalar_registry):
-        return value
-
-    if isinstance(type_, EnumDefinition):
+    if _is_leaf_type(type_, scalar_registry):
         return value
 
     if isinstance(type_, LazyType):
