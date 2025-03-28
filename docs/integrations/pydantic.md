@@ -63,6 +63,22 @@ class UserType:
     pass
 ```
 
+By default, computed fields are excluded. To also include all computed fields
+pass `include_computed=True` to the decorator.
+
+```python
+import strawberry
+
+from .models import User
+
+
+@strawberry.experimental.pydantic.type(
+    model=User, all_fields=True, include_computed=True
+)
+class UserType:
+    pass
+```
+
 ## Input types
 
 Input types are similar to types; we can create one by using the
