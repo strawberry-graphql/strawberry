@@ -1,3 +1,3 @@
 Release type: patch
 
-Fix GraphQL IDE charset error that showed non-printing characters.
+This release updates the Content-Type header from ⁠`"text/html"` to `⁠"text/html; charset=utf-8"` to prevent the GraphQL IDE from displaying unusual or incorrect characters.
