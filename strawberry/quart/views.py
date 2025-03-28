@@ -1,8 +1,9 @@
+import asyncio
 import warnings
 from collections.abc import AsyncGenerator, Mapping
 from datetime import timedelta
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Callable, ClassVar, Optional, cast
+from typing import TYPE_CHECKING, Callable, ClassVar, Optional, cast, Sequence
 from typing_extensions import TypeGuard
 
 from quart import Quart, Request, Response, request, websocket
@@ -80,7 +81,7 @@ class QuartWebSocketAdapter(AsyncWebSocketAdapter):
     async def send_json(self, message: Mapping[str, object]) -> None:
         try:
             await self.ws.send(self.view.encode_json(message))
-        except Exception as exc:
+        except asyncio.CancelledError as exc:
             raise WebSocketDisconnected from exc
 
     async def close(self, code: int, reason: str) -> None:
@@ -107,7 +108,7 @@ class GraphQLView(
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
         debug: bool = False,
-        subscription_protocols: list[str] = [
+        subscription_protocols: Sequence[str] = [
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
         ],
@@ -204,12 +205,7 @@ class GraphQLView(
     async def create_websocket_response(
         self, request: Request, subprotocol: Optional[str]
     ) -> Response:
-        if subprotocol:
-            # Set the WebSocket protocol if specified
-            await websocket.accept(subprotocol=subprotocol)
-        else:
-            await websocket.accept()
-
+        await websocket.accept(subprotocol=subprotocol)
         # Return the current websocket context as the "response"
         return None
 
