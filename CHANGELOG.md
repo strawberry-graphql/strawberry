@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.262.6 - 2025-03-28
+--------------------
+
+This release updates the Content-Type header from ⁠`"text/html"` to `⁠"text/html; charset=utf-8"` to prevent the GraphQL IDE from displaying unusual or incorrect characters.
+
+Contributed by [Moritz Ulmer](https://github.com/moritz89) via [PR #3824](https://github.com/strawberry-graphql/strawberry/pull/3824/)
+
+
 0.262.5 - 2025-03-13
 --------------------
 
