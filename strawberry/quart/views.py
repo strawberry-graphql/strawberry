@@ -1,9 +1,9 @@
 import asyncio
 import warnings
-from collections.abc import AsyncGenerator, Mapping
+from collections.abc import AsyncGenerator, Mapping, Sequence
 from datetime import timedelta
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Callable, ClassVar, Optional, cast, Sequence
+from typing import TYPE_CHECKING, Callable, ClassVar, Optional, cast
 from typing_extensions import TypeGuard
 
 from quart import Quart, Request, Response, request, websocket
