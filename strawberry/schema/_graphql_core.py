@@ -22,8 +22,9 @@ try:
     )
 
 except ImportError:
-    from types import NoneType
+    from typing_extensions import Literal, TypeAlias
 
+    NoneType: TypeAlias = Literal[None]
     GraphQLIncrementalExecutionResults = NoneType
 
     incremental_execution_directives = []
