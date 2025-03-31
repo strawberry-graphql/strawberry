@@ -45,6 +45,8 @@ async def test_basic_defer(method: Literal["get", "post"], http_client: HttpClie
                     {
                         "data": {"name": "Thiago Bellini"},
                         "id": "0",
+                        "path": ["character"],
+                        "label": None,
                     }
                 ],
                 "completed": [{"id": "0"}],
@@ -83,7 +85,14 @@ async def test_basic_stream(http_client: HttpClient):
             {
                 "hasNext": True,
                 "extensions": None,
-                "incremental": [{"items": ["Hello 0"], "id": "0"}],
+                "incremental": [
+                    {
+                        "items": ["Hello 0"],
+                        "id": "0",
+                        "path": ["streambableField"],
+                        "label": None,
+                    }
+                ],
             }
         )
 
@@ -93,7 +102,14 @@ async def test_basic_stream(http_client: HttpClient):
             {
                 "hasNext": True,
                 "extensions": None,
-                "incremental": [{"items": ["Hello 1"], "id": "0"}],
+                "incremental": [
+                    {
+                        "items": ["Hello 1"],
+                        "id": "0",
+                        "path": ["streambableField"],
+                        "label": None,
+                    }
+                ],
             }
         )
 
