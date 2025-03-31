@@ -1,11 +1,20 @@
 import textwrap
 
 import pydantic
-from pydantic import computed_field
+import pytest
+from pydantic.version import VERSION as PYDANTIC_VERSION
 
 import strawberry
 
+IS_PYDANTIC_V2: bool = PYDANTIC_VERSION.startswith("2.")
 
+if IS_PYDANTIC_V2:
+    from pydantic import computed_field
+
+
+@pytest.mark.skipif(
+    not IS_PYDANTIC_V2, reason="Requires Pydantic v2 for computed_field"
+)
 def test_computed_field():
     class UserModel(pydantic.BaseModel):
         age: int
