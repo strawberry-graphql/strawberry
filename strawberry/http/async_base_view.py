@@ -380,16 +380,31 @@ class AsyncBaseHTTPView(
                         response["completed"] = [p.formatted for p in value.completed]
 
                     if value.incremental:
-                        response["incremental"] = [
-                            {
-                                **p.formatted,
-                                # for Apollo
-                                # content type is `multipart/mixed;deferSpec=20220824,application/json`
-                                "path": ["blogPost"],
-                                "label": "relayTestsBlogPostQuery$defer$relayTestsCommentsFragment",
-                            }
-                            for p in value.incremental
-                        ]
+                        incremental = []
+
+                        for incremental_value in value.incremental:
+                            pending_value = next(
+                                (
+                                    v
+                                    for v in result.initial_result.pending
+                                    if v.id == incremental_value.id
+                                ),
+                                None,
+                            )
+
+                            assert pending_value
+
+                            incremental.append(
+                                {
+                                    **incremental_value.formatted,
+                                    # for Apollo
+                                    # content type is `multipart/mixed;deferSpec=20220824,application/json`
+                                    "path": pending_value.path,
+                                    "label": pending_value.label,
+                                }
+                            )
+
+                        response["incremental"] = incremental
 
                     yield self.encode_multipart_data(response, "-")
 
