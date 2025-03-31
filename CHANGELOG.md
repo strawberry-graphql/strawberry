@@ -1,6 +1,75 @@
 CHANGELOG
 =========
 
+0.262.6 - 2025-03-28
+--------------------
+
+This release updates the Content-Type header from ⁠`"text/html"` to `⁠"text/html; charset=utf-8"` to prevent the GraphQL IDE from displaying unusual or incorrect characters.
+
+Contributed by [Moritz Ulmer](https://github.com/moritz89) via [PR #3824](https://github.com/strawberry-graphql/strawberry/pull/3824/)
+
+
+0.262.5 - 2025-03-13
+--------------------
+
+This release updates the internals of our subscription implementation, to make the code
+easier to maintain for future changes.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3787](https://github.com/strawberry-graphql/strawberry/pull/3787/)
+
+
+0.262.4 - 2025-03-13
+--------------------
+
+This release adds support for the upcoming version of Pydantic (2.11)
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3808](https://github.com/strawberry-graphql/strawberry/pull/3808/)
+
+
+0.262.3 - 2025-03-13
+--------------------
+
+This release changes the required version of packaging from >=24 to >=23,
+in order to allow using Strawberry on https://play.strawberry.rocks
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3806](https://github.com/strawberry-graphql/strawberry/pull/3806/)
+
+
+0.262.2 - 2025-03-12
+--------------------
+
+This release adds missing `packaging` dependency required by `DatadogTracingExtension`
+
+Contributed by [Jakub Bacic](https://github.com/jakub-bacic) via [PR #3803](https://github.com/strawberry-graphql/strawberry/pull/3803/)
+
+
+0.262.1 - 2025-03-06
+--------------------
+
+This release updates the handling of the Django `graphql/graphiql.html` template, if provided; it will now receive the current request as context.
+
+Contributed by [ash](https://github.com/sersorrel) via [PR #3800](https://github.com/strawberry-graphql/strawberry/pull/3800/)
+
+
+0.262.0 - 2025-03-04
+--------------------
+
+This release adds support for exporting schema created by a callable:
+
+```bash
+strawberry export-schema package.module:create_schema
+```
+
+when
+
+```python
+def create_schema():
+    return strawberry.Schema(query=Query)
+```
+
+Contributed by [Alexey Pelykh](https://github.com/alexey-pelykh) via [PR #3797](https://github.com/strawberry-graphql/strawberry/pull/3797/)
+
+
 0.261.1 - 2025-02-27
 --------------------
 

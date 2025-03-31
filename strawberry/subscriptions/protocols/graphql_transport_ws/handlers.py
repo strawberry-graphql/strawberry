@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Awaitable
 from contextlib import suppress
 from typing import (
     TYPE_CHECKING,
@@ -38,12 +37,11 @@ from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.operation import get_operation_type
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
     from datetime import timedelta
 
     from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncWebSocketAdapter
     from strawberry.schema import BaseSchema
-    from strawberry.schema.subscribe import SubscriptionResult
+    from strawberry.schema.schema import SubscriptionResult
 
 
 class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
@@ -186,8 +184,6 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         elif hasattr(self.context, "connection_params"):
             self.context.connection_params = payload
 
-        self.context = cast(Context, self.context)
-
         try:
             connection_ack_payload = await self.view.on_ws_connect(self.context)
         except ConnectionRejectionError:
@@ -256,50 +252,61 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
 
     async def run_operation(self, operation: Operation[Context, RootValue]) -> None:
         """The operation task's top level method. Cleans-up and de-registers the operation once it is done."""
-        # TODO: Handle errors in this method using self.handle_task_exception()
-
-        result_source: Awaitable[ExecutionResult] | Awaitable[SubscriptionResult]
-
-        # Get an AsyncGenerator yielding the results
-        if operation.operation_type == OperationType.SUBSCRIPTION:
-            result_source = self.schema.subscribe(
-                query=operation.query,
-                variable_values=operation.variables,
-                operation_name=operation.operation_name,
-                context_value=self.context,
-                root_value=self.root_value,
-            )
-        else:
-            result_source = self.schema.execute(
-                query=operation.query,
-                variable_values=operation.variables,
-                context_value=self.context,
-                root_value=self.root_value,
-                operation_name=operation.operation_name,
-            )
+        result_source: ExecutionResult | SubscriptionResult
 
         try:
-            first_res_or_agen = await result_source
-            # that's an immediate error we should end the operation
-            # without a COMPLETE message
-            if isinstance(first_res_or_agen, PreExecutionError):
-                assert first_res_or_agen.errors
-                await operation.send_initial_errors(first_res_or_agen.errors)
-            # that's a mutation / query result
-            elif isinstance(first_res_or_agen, ExecutionResult):
-                await operation.send_next(first_res_or_agen)
-                await operation.send_operation_message(
-                    {"id": operation.id, "type": "complete"}
+            # Get an AsyncGenerator yielding the results
+            if operation.operation_type == OperationType.SUBSCRIPTION:
+                result_source = await self.schema.subscribe(
+                    query=operation.query,
+                    variable_values=operation.variables,
+                    operation_name=operation.operation_name,
+                    context_value=self.context,
+                    root_value=self.root_value,
                 )
             else:
-                async for result in first_res_or_agen:
+                result_source = await self.schema.execute(
+                    query=operation.query,
+                    variable_values=operation.variables,
+                    context_value=self.context,
+                    root_value=self.root_value,
+                    operation_name=operation.operation_name,
+                )
+
+            # TODO: maybe change PreExecutionError to an exception that can be caught
+
+            if isinstance(result_source, ExecutionResult):
+                if isinstance(result_source, PreExecutionError):
+                    assert result_source.errors
+                    await operation.send_initial_errors(result_source.errors)
+                else:
+                    await operation.send_next(result_source)
+            else:
+                is_first_result = True
+
+                async for result in result_source:
+                    if is_first_result and isinstance(result, PreExecutionError):
+                        assert result.errors
+                        await operation.send_initial_errors(result.errors)
+                        break
+
                     await operation.send_next(result)
+                    is_first_result = False
+
+            await operation.send_operation_message(
+                CompleteMessage(id=operation.id, type="complete")
+            )
+
+        except Exception as error:  # pragma: no cover
+            await self.handle_task_exception(error)
+
+            with suppress(Exception):
                 await operation.send_operation_message(
                     {"id": operation.id, "type": "complete"}
                 )
 
-        except BaseException:  # pragma: no cover
             self.operations.pop(operation.id, None)
+
             raise
         finally:
             # add this task to a list to be reaped later
