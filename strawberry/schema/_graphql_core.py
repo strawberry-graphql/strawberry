@@ -22,10 +22,7 @@ try:
     )
 
 except ImportError:
-    from typing_extensions import Literal, TypeAlias
-
-    NoneType: TypeAlias = Literal[None]
-    GraphQLIncrementalExecutionResults = NoneType
+    GraphQLIncrementalExecutionResults = type(None)
 
     incremental_execution_directives = []
     experimental_execute_incrementally = None
