@@ -1,6 +1,34 @@
 CHANGELOG
 =========
 
+0.263.0 - 2025-04-01
+--------------------
+
+Adds the ability to include pydantic computed fields when using pydantic.type decorator.
+
+Example:
+```python
+class UserModel(pydantic.BaseModel):
+    age: int
+
+    @computed_field
+    @property
+    def next_age(self) -> int:
+        return self.age + 1
+
+
+@strawberry.experimental.pydantic.type(
+    UserModel, all_fields=True, include_computed=True
+)
+class User:
+    pass
+```
+
+Will allow `nextAge` to be requested from a user entity.
+
+Contributed by [Tyler Nisonoff](https://github.com/tylernisonoff) via [PR #3798](https://github.com/strawberry-graphql/strawberry/pull/3798/)
+
+
 0.262.6 - 2025-03-28
 --------------------
 
