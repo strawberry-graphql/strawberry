@@ -126,11 +126,12 @@ def type(  # noqa: PLR0915
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
+    include_computed: bool = False,
     use_pydantic_alias: bool = True,
 ) -> Callable[..., builtins.type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> builtins.type[StrawberryTypeFromPydantic[PydanticModel]]:  # noqa: PLR0915
         compat = PydanticCompat.from_model(model)
-        model_fields = compat.get_model_fields(model)
+        model_fields = compat.get_model_fields(model, include_computed=include_computed)
         original_fields_set = set(fields) if fields else set()
 
         if fields:
@@ -171,7 +172,10 @@ def type(  # noqa: PLR0915
             raise MissingFieldsListError(cls)
 
         ensure_all_auto_fields_in_pydantic(
-            model=model, auto_fields=auto_fields_set, cls_name=cls.__name__
+            model=model,
+            auto_fields=auto_fields_set,
+            cls_name=cls.__name__,
+            include_computed=include_computed,
         )
 
         wrapped = _wrap_dataclass(cls)
