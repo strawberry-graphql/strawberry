@@ -1,13 +1,25 @@
 import asyncio  # noqa: INP001
+import random
 
 import strawberry
 from strawberry.schema.config import StrawberryConfig
 
 
 @strawberry.type
+class Author:
+    id: strawberry.ID
+    name: str
+
+
+@strawberry.type
 class Comment:
     id: strawberry.ID
     content: str
+
+    @strawberry.field
+    async def author(self) -> Author:
+        await asyncio.sleep(random.randint(0, 2))  # noqa: S311
+        return Author(id=strawberry.ID("Author:1"), name="John Doe")
 
 
 @strawberry.type
@@ -17,12 +29,11 @@ class BlogPost:
     content: str
 
     @strawberry.field
-    async def comments(self) -> list[Comment]:
-        await asyncio.sleep(2)
-        return [
-            Comment(id=strawberry.ID("Comment:1"), content="Great post!"),
-            Comment(id=strawberry.ID("Comment:2"), content="Thanks for sharing!"),
-        ]
+    async def comments(self) -> strawberry.Streamable[Comment]:
+        for x in range(5):
+            await asyncio.sleep(random.choice([0, 0.5, 1, 1.5, 2]))  # noqa: S311
+
+            yield Comment(id=strawberry.ID(f"Comment:{x}"), content="Great post!")
 
 
 @strawberry.type

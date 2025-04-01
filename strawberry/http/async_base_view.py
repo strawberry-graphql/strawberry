@@ -367,6 +367,8 @@ class AsyncBaseHTTPView(
 
                 yield self.encode_multipart_data(response, "-")
 
+                all_pending = result.initial_result.pending
+
                 async for value in result.subsequent_results:
                     response = {
                         "hasNext": value.has_next,
@@ -382,11 +384,13 @@ class AsyncBaseHTTPView(
                     if value.incremental:
                         incremental = []
 
+                        all_pending.extend(value.pending)
+
                         for incremental_value in value.incremental:
                             pending_value = next(
                                 (
                                     v
-                                    for v in result.initial_result.pending
+                                    for v in all_pending
                                     if v.id == incremental_value.id
                                 ),
                                 None,
@@ -397,8 +401,6 @@ class AsyncBaseHTTPView(
                             incremental.append(
                                 {
                                     **incremental_value.formatted,
-                                    # for Apollo
-                                    # content type is `multipart/mixed;deferSpec=20220824,application/json`
                                     "path": pending_value.path,
                                     "label": pending_value.label,
                                 }
