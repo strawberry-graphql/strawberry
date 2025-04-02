@@ -137,10 +137,8 @@ class Query:
     def character(self) -> Hero:
         return Hero(id=strawberry.ID("1"), name="Thiago Bellini")
 
-    # TODO: we might want to support more type annations
-    # and maybe make our own
     @strawberry.field
-    async def streambable_field(self) -> list[str]:
+    async def streambable_field(self) -> strawberry.Streamable[str]:
         for i in range(2):
             yield f"Hello {i}"
             await asyncio.sleep(0.1)
