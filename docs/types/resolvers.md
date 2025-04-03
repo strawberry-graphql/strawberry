@@ -163,13 +163,13 @@ class Query:
 
     @strawberry.field
     def greet(self, name: strawberry.Maybe[str] = strawberry.UNSET) -> str:
-        if strawberry.exists(name):
-            if name:
-              return f"Hello {name}!"
+        if name:
+            if name.value:
+                return f"Hello {name.value}!"
             else:
-            return "Name was null!"
+                return "Name was null!"
         else:
-          return "Name was not set!"
+            return "Name was not set!"
 ```
 
 ```graphql

@@ -1,7 +1,7 @@
 import typing
 import warnings
 from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar, Union
-from typing_extensions import TypeAlias, TypeGuard
+from typing_extensions import TypeAlias
 
 DEPRECATED_NAMES: dict[str, str] = {
     "is_unset": "`is_unset` is deprecated use `value is UNSET` instead",
@@ -68,8 +68,28 @@ NOTHING = UnsetType()
 
 T = TypeVar("T")
 
+
+class Some(Generic[T]):
+    __slots__ = ("value",)
+
+    def __init__(self, value: T) -> None:
+        self.value = value
+
+    def __repr__(self) -> str:
+        return f"Some({self.value!r})"
+
+    def __eq__(self, other: object) -> bool:
+        return self.value == other.value if isinstance(other, Some) else False
+
+    def __hash__(self) -> int:
+        return hash(self.value)
+
+    def __bool__(self) -> bool:
+        return True
+
+
 if TYPE_CHECKING:
-    Maybe: TypeAlias = Union[T, UnsetType, None]
+    Maybe: TypeAlias = Union[Some[Union[T, None]], None]
 else:
     # we do this trick so we can inspect that at runtime
     class Maybe(Generic[T]): ...
@@ -77,10 +97,6 @@ else:
 
 def _annot_is_maybe(annotation: Any) -> bool:
     return (orig := typing.get_origin(annotation)) and orig is Maybe
-
-
-def exists(value: Union[T, UnsetType, None]) -> TypeGuard[Union[T, None]]:
-    return value is not UNSET or not isinstance(value, UnsetType)
 
 
 __all__ = [

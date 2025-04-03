@@ -132,8 +132,8 @@ def test_optional_argument_maybe() -> None:
     class Query:
         @strawberry.field
         def hello(self, name: strawberry.Maybe[str] = strawberry.UNSET) -> str:
-            if strawberry.exists(name):
-                return foo + name if name else "None"
+            if name:
+                return foo + name.value if name.value else "None"
             return "UNSET"
 
     schema = strawberry.Schema(query=Query)

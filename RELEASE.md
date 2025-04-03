@@ -4,7 +4,7 @@ This release adds a new (preferable) way to handle optional updates. Up until
 now when you wanted to inffer if an input value was null or absent you'd use
 `strawberry.UNSET` which is a bit cumbersome and error prone.
 
-Now you can use `strawberry.Maybe` and `strawberry.exists` to identify if a
+Now you can use `strawberry.Maybe` to identify if a
 value was provided or not.
 
 i.e
@@ -28,10 +28,10 @@ class UpdateUserInput:
 @strawberry.type
 class Mutation:
     def update_user(self, info, input: UpdateUserInput) -> User:
-        reveal_type(input.phone)  # str | None | UnsetType
-        if strawberry.exists(input.phone):
-            reveal_type(input.phone)  # str | None
-            update_user_phone(input.phone)
+        reveal_type(input.phone)  # Some[str | None] | None
+        if input.phone:
+            reveal_type(input.phone.value)  # str | None
+            update_user_phone(input.phone.value)
 
         return User(name=input.name, phone=input.phone)
 ```
@@ -44,7 +44,7 @@ import strawberry
 
 @strawberry.field
 def filter_users(self, phone: strawberry.Maybe[str] = strawberry.UNSET) -> list[User]:
-    if strawberry.exists(phone):
-        return filter_users_by_phone(phone)
+    if phone:
+        return filter_users_by_phone(phone.value)
     return get_all_users()
 ```

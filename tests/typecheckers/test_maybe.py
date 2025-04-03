@@ -15,11 +15,11 @@ class SomeType:
     foobar: strawberry.Maybe[str]
 
 
-obj = SomeType(foobar="some text")
+obj = SomeType(foobar=strawberry.Some("some text"))
 
 reveal_type(obj.foobar)
 
-if strawberry.exists(obj.foobar):
+if obj.foobar:
     reveal_type(obj.foobar)
 """
 
@@ -31,13 +31,13 @@ def test_maybe() -> None:
         [
             Result(
                 type="information",
-                message='Type of "obj.foobar" is "str | UnsetType | None"',
+                message='Type of "obj.foobar" is "Some[str | None] | None"',
                 line=12,
                 column=13,
             ),
             Result(
                 type="information",
-                message='Type of "obj.foobar" is "str | None"',
+                message='Type of "obj.foobar" is "Some[str | None]"',
                 line=15,
                 column=17,
             ),
@@ -48,13 +48,13 @@ def test_maybe() -> None:
         [
             Result(
                 type="note",
-                message='Revealed type is "Union[builtins.str, strawberry.types.unset.UnsetType, None]"',
+                message='Revealed type is "Union[strawberry.types.unset.Some[Union[builtins.str, None]], None]"',
                 line=12,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "Union[builtins.str, None]"',
+                message='Revealed type is "strawberry.types.unset.Some[Union[builtins.str, None]]"',
                 line=15,
                 column=17,
             ),
