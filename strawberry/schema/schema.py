@@ -82,8 +82,8 @@ if TYPE_CHECKING:
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
     from strawberry.types.union import StrawberryUnion
 
-SubscriptionResult: TypeAlias = Union[
-    PreExecutionError, AsyncGenerator[ExecutionResult, None]
+SubscriptionResult: TypeAlias = AsyncGenerator[
+    Union[PreExecutionError, ExecutionResult], None
 ]
 
 OriginSubscriptionResult = Union[
@@ -760,36 +760,11 @@ class Schema(BaseSchema):
         for extension in extensions:
             extension.execution_context = execution_context
 
-        asyncgen = self._subscribe(
+        return self._subscribe(
             execution_context,
             extensions_runner=self.create_extensions_runner(
                 execution_context, extensions
             ),
-            middleware_manager=self._get_middleware_manager(extensions),
-            execution_context_class=self.execution_context_class,
-        )
-        # GraphQL-core might return an initial error result instead of an async iterator.
-        # This happens when "there was an immediate error" i.e resolver is not an async iterator.
-        # To overcome this while maintaining the extension contexts we do this trick.
-        first = await asyncgen.__anext__()
-        if isinstance(first, PreExecutionError):
-            await asyncgen.aclose()
-            return first
-
-        async def _wrapper() -> AsyncGenerator[ExecutionResult, None]:
-            yield first
-            async for result in asyncgen:
-                yield result
-
-        return _wrapper()
-
-        return await subscribe(
-            self._schema,
-            execution_context=execution_context,
-            extensions_runner=self.create_extensions_runner(
-                execution_context, extensions
-            ),
-            process_errors=self._process_errors,
             middleware_manager=self._get_middleware_manager(extensions),
             execution_context_class=self.execution_context_class,
         )

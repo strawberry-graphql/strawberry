@@ -19,6 +19,13 @@ def test_schema_export(cli_app: Typer, cli_runner: CliRunner):
     )
 
 
+def test_schema_symbol_is_callable(cli_app: Typer, cli_runner: CliRunner):
+    selector = "tests.fixtures.sample_package.sample_module:create_schema"
+    result = cli_runner.invoke(cli_app, ["export-schema", selector])
+
+    assert result.exit_code == 0
+
+
 def test_default_schema_symbol_name(cli_app: Typer, cli_runner: CliRunner):
     selector = "tests.fixtures.sample_package.sample_module"
     result = cli_runner.invoke(cli_app, ["export-schema", selector])

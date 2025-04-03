@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from graphql import GraphQLError
 
     from strawberry.directive import StrawberryDirective
+    from strawberry.schema.schema import SubscriptionResult
     from strawberry.schema.schema_converter import GraphQLCoreConverter
     from strawberry.types import (
         ExecutionContext,
@@ -27,7 +28,6 @@ if TYPE_CHECKING:
     from strawberry.types.union import StrawberryUnion
 
     from .config import StrawberryConfig
-    from .subscribe import SubscriptionResult
 
 
 class BaseSchema(Protocol):

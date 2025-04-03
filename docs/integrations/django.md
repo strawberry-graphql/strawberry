@@ -209,7 +209,10 @@ class MyGraphQLView(GraphQLView):
 ### render_graphql_ide
 
 In case you need more control over the rendering of the GraphQL IDE than the
-`graphql_ide` option provides, you can override the `render_graphql_ide` method.
+`graphql_ide` option provides, you can provide the `graphql/graphiql.html`
+template, which will be used instead of the configured IDE.
+
+Alternatively, you can override the `render_graphql_ide` method:
 
 ```python
 from strawberry.django.views import GraphQLView
@@ -393,7 +396,10 @@ class MyGraphQLView(AsyncGraphQLView):
 ### render_graphql_ide
 
 In case you need more control over the rendering of the GraphQL IDE than the
-`graphql_ide` option provides, you can override the `render_graphql_ide` method.
+`graphql_ide` option provides, you can provide the `graphql/graphiql.html`
+template, which will be used instead of the configured IDE.
+
+Alternatively, you can override the `render_graphql_ide` method:
 
 ```python
 from strawberry.django.views import AsyncGraphQLView

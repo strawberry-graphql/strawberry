@@ -12,7 +12,7 @@ PYTHON_VERSIONS = ["3.13", "3.12", "3.11", "3.10", "3.9"]
 
 GQL_CORE_VERSIONS = [
     "3.2.3",
-    "3.3.0a6",
+    "3.3.0a7",
 ]
 
 COMMON_PYTEST_OPTIONS = [
@@ -130,7 +130,7 @@ def tests_integrations(session: Session, integration: str, gql_core: str) -> Non
 
 
 @session(python=PYTHON_VERSIONS, name="Pydantic tests", tags=["tests", "pydantic"])
-@with_gql_core_parametrize("pydantic", ["1.10", "2.8.0", "2.9.0"])
+@with_gql_core_parametrize("pydantic", ["1.10", "2.9.0", "2.10.0", "2.11.0"])
 def test_pydantic(session: Session, pydantic: str, gql_core: str) -> None:
     session.run_always("poetry", "install", external=True)
 
@@ -150,7 +150,7 @@ def test_pydantic(session: Session, pydantic: str, gql_core: str) -> None:
 
 @session(python=PYTHON_VERSIONS, name="Type checkers tests", tags=["tests"])
 def tests_typecheckers(session: Session) -> None:
-    session.run_always("poetry", "install", external=True)
+    session.run_always("poetry", "install", "--with", "integrations", external=True)
 
     session.install("pyright")
     session.install("pydantic")
