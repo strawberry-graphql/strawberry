@@ -22,7 +22,11 @@ class ExampleResult:
 class Query:
     @strawberry.field
     def test(self, input: ExampleInputTagged) -> ExampleResult:
-        return input  # type: ignore
+        if input.a:
+            return ExampleResult(a=input.a.value, b=None)
+        if input.b:
+            return ExampleResult(a=None, b=input.b.value)
+        return ExampleResult(a=None, b=None)
 
 
 schema = strawberry.Schema(query=Query)

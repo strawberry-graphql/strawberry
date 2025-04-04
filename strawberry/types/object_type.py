@@ -20,7 +20,7 @@ from strawberry.exceptions import (
     ObjectIsNotClassError,
 )
 from strawberry.types.base import get_object_definition
-from strawberry.types.unset import UNSET, _annot_is_maybe
+from strawberry.types.unset import _annot_is_maybe
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.str_converters import to_camel_case
 
@@ -129,7 +129,7 @@ def _inject_default_for_maybe_annotations(
     """Inject `= UNSET` for fields with `Maybe` annotations and no default value."""
     for name, annot in annotations.copy().items():
         if _annot_is_maybe(annot) and not getattr(cls, name, None):
-            setattr(cls, name, UNSET)
+            setattr(cls, name, None)
 
 
 def _process_type(

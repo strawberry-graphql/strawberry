@@ -144,10 +144,10 @@ class StrawberryAnnotation:
         if self._is_list(evaled_type):
             return self.create_list(evaled_type)
         if type_of := self._get_maybe_type(evaled_type):
-            return StrawberryAnnotation(
-                annotation=Union[type_of, None],
-                namespace=self.namespace,
-            ).resolve()
+            return StrawberryOptional(
+                of_type=type_of,
+                is_maybe=True,
+            )
 
         if self._is_graphql_generic(evaled_type):
             if any(is_type_var(type_) for type_ in get_args(evaled_type)):

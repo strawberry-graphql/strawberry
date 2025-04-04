@@ -24,7 +24,10 @@ from strawberry.types.base import (
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.lazy_type import LazyType, StrawberryLazyReference
 from strawberry.types.unset import UNSET as _deprecated_UNSET  # noqa: N811
-from strawberry.types.unset import _deprecated_is_unset  # noqa: F401
+from strawberry.types.unset import (
+    Some,
+    _deprecated_is_unset,  # noqa: F401
+)
 
 if TYPE_CHECKING:
     from strawberry.schema.config import StrawberryConfig
@@ -150,7 +153,8 @@ def convert_argument(
         return _deprecated_UNSET
 
     if isinstance(type_, StrawberryOptional):
-        return convert_argument(value, type_.of_type, scalar_registry, config)
+        res = convert_argument(value, type_.of_type, scalar_registry, config)
+        return Some(res) if type_.is_maybe else res
 
     if isinstance(type_, StrawberryList):
         value_list = cast(Iterable, value)

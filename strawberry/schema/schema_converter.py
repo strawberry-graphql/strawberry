@@ -419,8 +419,9 @@ class GraphQLCoreConverter:
             ),
         )
         default_value: object
-
-        if field.default_value is UNSET or field.default_value is dataclasses.MISSING:
+        if isinstance(field.type, StrawberryOptional) and field.type.is_maybe:
+            default_value = Undefined
+        elif field.default_value is UNSET or field.default_value is dataclasses.MISSING:
             default_value = Undefined
         else:
             default_value = field.default_value
