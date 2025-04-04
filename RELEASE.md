@@ -43,7 +43,7 @@ import strawberry
 
 
 @strawberry.field
-def filter_users(self, phone: strawberry.Maybe[str] = strawberry.UNSET) -> list[User]:
+def filter_users(self, phone: strawberry.Maybe[str] = None) -> list[User]:
     if phone:
         return filter_users_by_phone(phone.value)
     return get_all_users()

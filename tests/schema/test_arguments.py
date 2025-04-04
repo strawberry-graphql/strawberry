@@ -126,14 +126,12 @@ def test_optional_argument_unset():
 
 
 def test_optional_argument_maybe() -> None:
-    foo = "foo"
-
     @strawberry.type
     class Query:
         @strawberry.field
-        def hello(self, name: strawberry.Maybe[str] = strawberry.UNSET) -> str:
+        def hello(self, name: strawberry.Maybe[str] = None) -> str:
             if name:
-                return foo + name.value if name.value else "None"
+                return "None" if name.value is None else name.value
             return "UNSET"
 
     schema = strawberry.Schema(query=Query)
@@ -162,7 +160,7 @@ def test_optional_argument_maybe() -> None:
     """
     )
     assert not result.errors
-    assert result.data == {"hello": "foobar"}
+    assert result.data == {"hello": "bar"}
     result = schema.execute_sync(
         """
         query {

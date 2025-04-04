@@ -137,6 +137,9 @@ class StrawberryArgument:
 
         return is_graphql_generic(self.type)
 
+    def is_maybe(self) -> bool:
+        return isinstance(self.type, StrawberryOptional) and self.type.is_maybe
+
 
 def convert_argument(
     value: object,
@@ -145,16 +148,15 @@ def convert_argument(
     config: StrawberryConfig,
 ) -> object:
     # TODO: move this somewhere else and make it first class
+    if isinstance(type_, StrawberryOptional):
+        res = convert_argument(value, type_.of_type, scalar_registry, config)
+        return Some(res) if type_.is_maybe else res
 
     if value is None:
         return None
 
     if value is _deprecated_UNSET:
         return _deprecated_UNSET
-
-    if isinstance(type_, StrawberryOptional):
-        res = convert_argument(value, type_.of_type, scalar_registry, config)
-        return Some(res) if type_.is_maybe else res
 
     if isinstance(type_, StrawberryList):
         value_list = cast(Iterable, value)

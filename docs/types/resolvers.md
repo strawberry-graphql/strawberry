@@ -162,7 +162,7 @@ class Query:
         return f"Hello {name}!"
 
     @strawberry.field
-    def greet(self, name: strawberry.Maybe[str] = strawberry.UNSET) -> str:
+    def greet(self, name: strawberry.Maybe[str] = None) -> str:
         if name:
             if name.value:
                 return f"Hello {name.value}!"
@@ -221,7 +221,7 @@ class Query:
     @strawberry.field
     def greet(
         self,
-        name: strawberry.Maybe[str] = strawberry.UNSET,
+        name: strawberry.Maybe[str] = None,
         is_morning: Annotated[
             Optional[bool],
             strawberry.argument(
