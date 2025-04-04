@@ -43,7 +43,7 @@ async def test_opentelemetry_uses_global_tracer(global_tracer_mock):
 
     await schema.execute(query)
 
-    global_tracer_mock.assert_called_once_with("strawberry")
+    global_tracer_mock.assert_called_once_with("strawberry", tracer_provider=None)
 
 
 @pytest.mark.asyncio
@@ -60,7 +60,7 @@ async def test_opentelemetry_sync_uses_global_tracer(global_tracer_mock):
 
     await schema.execute(query)
 
-    global_tracer_mock.assert_called_once_with("strawberry")
+    global_tracer_mock.assert_called_once_with("strawberry", tracer_provider=None)
 
 
 def _instrumentation_stages(mocker, query):
