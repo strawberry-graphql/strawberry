@@ -255,7 +255,7 @@ class GraphQLCoreConverter:
             "GraphQLInputType", self.from_maybe_optional(argument.type)
         )
         if isinstance((tp := argument.type), StrawberryOptional) and tp.is_maybe:
-            default_value = Undefined
+            default_value: Any = Undefined
         else:
             default_value = Undefined if argument.default is UNSET else argument.default
 
