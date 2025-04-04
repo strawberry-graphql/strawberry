@@ -1,3 +1,3 @@
 Release type: patch
 
-Allow passing in a custom `TracerProvider` to the `OpenTelemetryExtension`.
+This releases add support for passing in a custom `TracerProvider` to the `OpenTelemetryExtension`.
