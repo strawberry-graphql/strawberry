@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.263.1 - 2025-04-04
+--------------------
+
+This releases add support for passing in a custom `TracerProvider` to the `OpenTelemetryExtension`.
+
+Contributed by [Chase Dorsey](https://github.com/cdorsey) via [PR #3830](https://github.com/strawberry-graphql/strawberry/pull/3830/)
+
+
 0.263.0 - 2025-04-01
 --------------------
 
