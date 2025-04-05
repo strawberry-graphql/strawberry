@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.263.2 - 2025-04-05
+--------------------
+
+This release contains a few improvements to how `AsyncGenerators` are handled by
+strawberry codebase, ensuring they get properly closed in case of unexpected
+errors.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3834](https://github.com/strawberry-graphql/strawberry/pull/3834/)
+
+
 0.263.1 - 2025-04-04
 --------------------
 
