@@ -1,0 +1,23 @@
+# TODO: strawberry doesn't generate these directives
+directive @defer(
+	if: Boolean
+	label: String
+) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+directive @stream(if: Boolean, label: String, initialCount: Int = 0) on FIELD
+
+type BlogPost {
+	id: ID!
+	title: String!
+	content: String!
+	comments: [Comment!]!
+}
+
+type Comment {
+	id: ID!
+	content: String!
+}
+
+type Query {
+	hello(delay: Float! = 0): String!
+	blogPost(id: ID!): BlogPost!
+}

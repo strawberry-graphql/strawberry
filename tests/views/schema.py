@@ -10,6 +10,7 @@ import strawberry
 from strawberry.extensions import SchemaExtension
 from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
+from strawberry.schema.config import StrawberryConfig
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
 from strawberry.types import ExecutionContext
 
@@ -60,6 +61,12 @@ class FolderInput:
 class DebugInfo:
     num_active_result_handlers: int
     is_connection_init_timeout_task_done: Optional[bool]
+
+
+@strawberry.type
+class Hero:
+    id: strawberry.ID
+    name: str
 
 
 @strawberry.type
@@ -119,6 +126,16 @@ class Query:
         response.headers["X-Name"] = name
 
         return name
+
+    @strawberry.field
+    def character(self) -> Hero:
+        return Hero(id=strawberry.ID("1"), name="Thiago Bellini")
+
+    @strawberry.field
+    async def streambable_field(self) -> strawberry.Streamable[str]:
+        for i in range(2):
+            yield f"Hello {i}"
+            await asyncio.sleep(0.1)
 
 
 @strawberry.type
@@ -287,4 +304,7 @@ schema = Schema(
     mutation=Mutation,
     subscription=Subscription,
     extensions=[MyExtension],
+    config=StrawberryConfig(
+        enable_experimental_incremental_execution=True,
+    ),
 )
