@@ -70,7 +70,7 @@ def strawberry_threading_exception_handler(
         # (we'd need to do type ignore for python 3.8 and above, but mypy
         # doesn't seem to be able to handle that and will complain in python 3.7)
 
-        cast(Any, original_threading_exception_hook)(args)
+        cast("Any", original_threading_exception_hook)(args)
 
         return
 

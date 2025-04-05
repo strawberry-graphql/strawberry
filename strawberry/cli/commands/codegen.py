@@ -133,7 +133,7 @@ def codegen(
     console_plugin.before_any_start()
 
     for q in query:
-        plugins = cast(list[QueryCodegenPlugin], _load_plugins(selected_plugins, q))
+        plugins = cast("list[QueryCodegenPlugin]", _load_plugins(selected_plugins, q))
 
         code_generator = QueryCodegen(
             schema_symbol, plugins=plugins, console_plugin=console_plugin

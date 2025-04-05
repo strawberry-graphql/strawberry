@@ -101,7 +101,8 @@ def test_interface_performance(benchmark: BenchmarkFixture, ntypes: int):
                 query,
                 root_value=Query(
                     items=[
-                        CONCRETE_TYPES[i % ntypes](id=cast(ID, i)) for i in range(1000)
+                        CONCRETE_TYPES[i % ntypes](id=cast("ID", i))
+                        for i in range(1000)
                     ]
                 ),
             )

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import logging
 import sys
 import typing
+import warnings
 from collections import abc
 from enum import Enum
 from typing import (
@@ -130,7 +130,7 @@ class StrawberryAnnotation:
         return self.__resolve_cache__
 
     def _resolve(self) -> Union[StrawberryType, type]:
-        evaled_type = cast(Any, self.evaluate())
+        evaled_type = cast("Any", self.evaluate())
 
         if is_private(evaled_type):
             return evaled_type
@@ -158,7 +158,7 @@ class StrawberryAnnotation:
         if self._is_union(evaled_type, args):
             return self.create_union(evaled_type, args)
         if is_type_var(evaled_type) or evaled_type is Self:
-            return self.create_type_var(cast(TypeVar, evaled_type))
+            return self.create_type_var(cast("TypeVar", evaled_type))
         if self._is_strawberry_type(evaled_type):
             # Simply return objects that are already StrawberryTypes
             return evaled_type
@@ -242,9 +242,12 @@ class StrawberryAnnotation:
 
         union_args = [arg for arg in args if isinstance(arg, StrawberryUnion)]
         if len(union_args) > 1:
-            logging.warning(
-                "Duplicate union definition detected. "
-                "Only the first definition will be considered"
+            warnings.warn(
+                (
+                    "Duplicate union definition detected. "
+                    "Only the first definition will be considered"
+                ),
+                stacklevel=2,
             )
 
         if union_args:

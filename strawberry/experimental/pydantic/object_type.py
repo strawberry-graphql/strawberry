@@ -180,7 +180,7 @@ def type(  # noqa: PLR0915
 
         wrapped = _wrap_dataclass(cls)
         extra_strawberry_fields = _get_fields(wrapped, {})
-        extra_fields = cast(list[dataclasses.Field], extra_strawberry_fields)
+        extra_fields = cast("list[dataclasses.Field]", extra_strawberry_fields)
         private_fields = get_private_fields(wrapped)
 
         extra_fields_dict = {field.name: field for field in extra_strawberry_fields}
