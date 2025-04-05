@@ -58,7 +58,7 @@ def run_pyright(code: str, strict: bool = True) -> list[Result]:
 
     result = [
         Result(
-            type=cast(ResultType, diagnostic["severity"].strip()),
+            type=cast("ResultType", diagnostic["severity"].strip()),
             message=diagnostic["message"].strip(),
             line=diagnostic["range"]["start"]["line"],
             column=diagnostic["range"]["start"]["character"] + 1,

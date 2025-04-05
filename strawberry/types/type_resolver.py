@@ -71,7 +71,7 @@ def _get_fields(
     # Find the class the each field was originally defined on so we can use
     # that scope later when resolving the type, as it may have different names
     # available to it.
-    origins: dict[str, type] = {field_name: cls for field_name in cls.__annotations__}
+    origins: dict[str, type] = dict.fromkeys(cls.__annotations__, cls)
 
     for base in cls.__mro__:
         if has_object_definition(base):

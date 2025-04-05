@@ -18,7 +18,7 @@ class FakeInfo:
 
 
 # We only need that info contains the schema for the tests
-fake_info = cast(Info, FakeInfo())
+fake_info = cast("Info", FakeInfo())
 
 
 @pytest.mark.parametrize("type_name", [None, 1, 1.1])

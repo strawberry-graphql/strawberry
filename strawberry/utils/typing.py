@@ -256,11 +256,11 @@ def _get_namespace_from_ast(
         and expr.value.id == "Union"
     ):
         if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
-            expr_slice = cast(Any, expr.slice).value
+            expr_slice = cast("Any", expr.slice).value
         else:
             expr_slice = expr.slice
 
-        for elt in cast(ast.Tuple, expr_slice).elts:
+        for elt in cast("ast.Tuple", expr_slice).elts:
             extra.update(_get_namespace_from_ast(elt, globalns, localns))
     elif (
         isinstance(expr, ast.Subscript)
@@ -274,12 +274,12 @@ def _get_namespace_from_ast(
         and expr.value.id == "Annotated"
     ):
         if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
-            expr_slice = cast(Any, expr.slice).value
+            expr_slice = cast("Any", expr.slice).value
         else:
             expr_slice = expr.slice
 
         args: list[str] = []
-        for elt in cast(ast.Tuple, expr_slice).elts:
+        for elt in cast("ast.Tuple", expr_slice).elts:
             extra.update(_get_namespace_from_ast(elt, globalns, localns))
             args.append(ast.unparse(elt))
 
@@ -311,7 +311,7 @@ def eval_type(
     globalns = globalns or {}
     # If this is not a string, maybe its args are (e.g. list["Foo"])
     if isinstance(type_, ForwardRef):
-        ast_obj = cast(ast.Expr, ast.parse(type_.__forward_arg__).body[0])
+        ast_obj = cast("ast.Expr", ast.parse(type_.__forward_arg__).body[0])
 
         # For Python 3.10+, we can use the built-in _eval_type function directly.
         # It will handle "|" notations properly

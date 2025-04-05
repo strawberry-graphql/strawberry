@@ -147,7 +147,7 @@ class ReservedType(NamedTuple):
         return None
 
     def is_reserved_type(self, other: builtins.type) -> bool:
-        origin = cast(type, get_origin(other)) or other
+        origin = cast("type", get_origin(other)) or other
         if origin is Annotated:
             # Handle annotated arguments such as Private[str] and DirectiveValue[str]
             return type_has_annotation(other, self.type)

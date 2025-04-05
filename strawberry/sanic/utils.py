@@ -3,10 +3,8 @@ from __future__ import annotations
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
-from sanic.request import File
-
 if TYPE_CHECKING:
-    from sanic.request import Request
+    from sanic.request import File, Request
 
 
 def convert_request_to_files_dict(request: Request) -> dict[str, Any]:
@@ -24,7 +22,7 @@ def convert_request_to_files_dict(request: Request) -> dict[str, Any]:
 
     Note that the dictionary entries are lists.
     """
-    request_files = cast(Optional[dict[str, list[File]]], request.files)
+    request_files = cast("Optional[dict[str, list[File]]]", request.files)
 
     if not request_files:
         return {}

@@ -83,7 +83,7 @@ def test_enum():
     schema = strawberry.Schema(query=Query)
     graphql_schema: GraphQLSchema = schema._schema
 
-    graphql_thing_type = cast(GraphQLEnumType, graphql_schema.get_type("ThingType"))
+    graphql_thing_type = cast("GraphQLEnumType", graphql_schema.get_type("ThingType"))
     assert (
         graphql_thing_type.extensions[DEFINITION_BACKREF] is ThingType._enum_definition
     )
@@ -184,7 +184,7 @@ def test_object_types():
         is Query.__strawberry_definition__.get_field("hello").arguments[0]
     )
 
-    graphql_input = cast(GraphQLInputType, graphql_schema.get_type("Input"))
+    graphql_input = cast("GraphQLInputType", graphql_schema.get_type("Input"))
     assert graphql_input.fields["name"].extensions[
         DEFINITION_BACKREF
     ] is Input.__strawberry_definition__.get_field("name")
