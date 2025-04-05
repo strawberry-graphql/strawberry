@@ -13,6 +13,7 @@ import pytest
 
 import strawberry
 from strawberry.types.execution import PreExecutionError
+from strawberry.utils.aio import aclosing
 
 
 @pytest.mark.asyncio
@@ -31,8 +32,8 @@ async def test_subscription():
 
     query = "subscription { example }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["example"] == "Hi"
@@ -64,8 +65,8 @@ async def test_subscription_with_permission():
 
     query = "subscription { example }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["example"] == "Hi"
@@ -87,8 +88,8 @@ async def test_subscription_with_arguments():
 
     query = 'subscription { example(name: "Nina") }'
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["example"] == "Hi Nina"
@@ -124,8 +125,8 @@ async def test_subscription_return_annotations(return_annotation: str):
 
     query = "subscription { example }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["example"] == "Hi"
@@ -157,8 +158,8 @@ async def test_subscription_with_unions():
 
     query = "subscription { exampleWithUnion { ... on A { a } } }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["exampleWithUnion"]["a"] == "Hi"
@@ -196,8 +197,8 @@ async def test_subscription_with_unions_and_annotated():
 
     query = "subscription { exampleWithAnnotatedUnion { ... on C { c } } }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["exampleWithAnnotatedUnion"]["c"] == "Hi"
@@ -223,8 +224,8 @@ async def test_subscription_with_annotated():
 
     query = "subscription { example }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["example"] == "Hi"
@@ -247,8 +248,8 @@ async def test_subscription_immediate_error():
         subscription { example }
     """
 
-    result = await schema.subscribe(query)
-    result = await result.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert isinstance(result, PreExecutionError)
     assert result.errors
@@ -271,8 +272,8 @@ async def test_wrong_operation_variables():
         subscription subOp($opVar: String!){ example(name: $opVar) }
     """
 
-    result = await schema.subscribe(query)
-    result = await result.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert result.errors
     assert (

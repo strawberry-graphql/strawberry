@@ -39,7 +39,7 @@ from strawberry.types.lazy_type import LazyType
 from strawberry.types.object_type import interface
 from strawberry.types.object_type import type as strawberry_type
 from strawberry.types.private import StrawberryPrivate
-from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
+from strawberry.utils.aio import aclosing, aenumerate, aislice, resolve_awaitable
 from strawberry.utils.inspect import in_async_context
 from strawberry.utils.typing import eval_type, is_classvar
 
@@ -831,24 +831,25 @@ class ListConnection(Connection[NodeType]):
                         slice_metadata.overfetch,
                     )
 
-                # The slice above might return an object that now is not async
-                # iterable anymore (e.g. an already cached django queryset)
-                if isinstance(iterator, (AsyncIterator, AsyncIterable)):
-                    edges: list[Edge] = [
-                        edge_class.resolve_edge(
-                            cls.resolve_node(v, info=info, **kwargs),
-                            cursor=slice_metadata.start + i,
-                        )
-                        async for i, v in aenumerate(iterator)
-                    ]
-                else:
-                    edges: list[Edge] = [  # type: ignore[no-redef]
-                        edge_class.resolve_edge(
-                            cls.resolve_node(v, info=info, **kwargs),
-                            cursor=slice_metadata.start + i,
-                        )
-                        for i, v in enumerate(iterator)
-                    ]
+                async with aclosing(iterator):
+                    # The slice above might return an object that now is not async
+                    # iterable anymore (e.g. an already cached django queryset)
+                    if isinstance(iterator, (AsyncIterator, AsyncIterable)):
+                        edges: list[Edge] = [
+                            edge_class.resolve_edge(
+                                cls.resolve_node(v, info=info, **kwargs),
+                                cursor=slice_metadata.start + i,
+                            )
+                            async for i, v in aenumerate(iterator)
+                        ]
+                    else:
+                        edges: list[Edge] = [  # type: ignore[no-redef]
+                            edge_class.resolve_edge(
+                                cls.resolve_node(v, info=info, **kwargs),
+                                cursor=slice_metadata.start + i,
+                            )
+                            for i, v in enumerate(iterator)
+                        ]
 
                 has_previous_page = slice_metadata.start > 0
                 if (

@@ -60,6 +60,7 @@ from strawberry.types.execution import (
 )
 from strawberry.types.graphql import OperationType
 from strawberry.utils import IS_GQL_32
+from strawberry.utils.aio import aclosing
 from strawberry.utils.await_maybe import await_maybe
 
 from . import compat
@@ -715,12 +716,13 @@ class Schema(BaseSchema):
                     )
                 else:
                     try:
-                        async for result in aiter_or_result:
-                            yield await self._handle_execution_result(
-                                execution_context,
-                                result,
-                                extensions_runner,
-                            )
+                        async with aclosing(aiter_or_result):
+                            async for result in aiter_or_result:
+                                yield await self._handle_execution_result(
+                                    execution_context,
+                                    result,
+                                    extensions_runner,
+                                )
                     # graphql-core doesn't handle exceptions raised while executing.
                     except Exception as exc:  # noqa: BLE001
                         yield await self._handle_execution_result(
