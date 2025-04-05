@@ -23,7 +23,7 @@ from .types.object_type import asdict, input, interface, type  # noqa: A004
 from .types.private import Private
 from .types.scalar import scalar
 from .types.union import union
-from .types.unset import UNSET
+from .types.unset import UNSET, Maybe, Some
 
 __all__ = [
     "ID",
@@ -31,9 +31,11 @@ __all__ = [
     "BasePermission",
     "Info",
     "LazyType",
+    "Maybe",
     "Parent",
     "Private",
     "Schema",
+    "Some",
     "argument",
     "asdict",
     "auto",

@@ -144,7 +144,7 @@ type Query {
 
 Optional or nullable arguments can be expressed using `Optional`. If you need to
 differentiate between `null` (maps to `None` in Python) and no arguments being
-passed, you can use `UNSET`:
+passed, you can use `strawberry.Maybe`:
 
 <CodeGrid>
 
@@ -162,12 +162,14 @@ class Query:
         return f"Hello {name}!"
 
     @strawberry.field
-    def greet(self, name: Optional[str] = strawberry.UNSET) -> str:
-        if name is strawberry.UNSET:
+    def greet(self, name: strawberry.Maybe[str] = None) -> str:
+        if name:
+            if name.value:
+                return f"Hello {name.value}!"
+            else:
+                return "Name was null!"
+        else:
             return "Name was not set!"
-        if name is None:
-            return "Name was null!"
-        return f"Hello {name}!"
 ```
 
 ```graphql
@@ -219,7 +221,7 @@ class Query:
     @strawberry.field
     def greet(
         self,
-        name: Optional[str] = strawberry.UNSET,
+        name: strawberry.Maybe[str] = None,
         is_morning: Annotated[
             Optional[bool],
             strawberry.argument(
