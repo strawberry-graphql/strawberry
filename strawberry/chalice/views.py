@@ -114,7 +114,9 @@ class GraphQLView(
         return {"request": request, "response": response}  # type: ignore
 
     def create_response(
-        self, response_data: GraphQLHTTPResponse, sub_response: TemporalResponse
+        self,
+        response_data: Union[GraphQLHTTPResponse, list[GraphQLHTTPResponse]],
+        sub_response: TemporalResponse,
     ) -> Response:
         status_code = 200
 
