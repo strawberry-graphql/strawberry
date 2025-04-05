@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from collections.abc import Awaitable
-from functools import cached_property
+from functools import cache, cached_property
 from typing import TYPE_CHECKING, Any, Callable, Union
 
 if TYPE_CHECKING:
@@ -154,6 +154,17 @@ def build_field_extension_resolvers(
         f"If possible try to change the execution order so that all sync-only "
         f"extensions are executed first."
     )
+
+
+@cache
+def apply_field_extensions(field: StrawberryField) -> None:
+    """Applies the field extensions to the field.
+
+    This function is cached to avoid applying the extensions multiple times in the case
+    of multiple schema generation passes.
+    """
+    for extension in field.extensions:
+        extension.apply(field)
 
 
 __all__ = ["FieldExtension"]
