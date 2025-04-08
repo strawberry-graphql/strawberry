@@ -132,9 +132,13 @@ class SliceMetadata:
         first: int | None = None,
         last: int | None = None,
         max_results: int | None = None,
+        prefix: str | None = None,
     ) -> Self:
         """Get the slice metadata to use on ListConnection."""
         from strawberry.relay.types import PREFIX
+
+        if prefix is None:
+            prefix = PREFIX
 
         max_results = (
             max_results
@@ -146,13 +150,13 @@ class SliceMetadata:
 
         if after:
             after_type, after_parsed = from_base64(after)
-            if after_type != PREFIX:
+            if after_type != prefix:
                 raise TypeError("Argument 'after' contains a non-existing value.")
 
             start = int(after_parsed) + 1
         if before:
             before_type, before_parsed = from_base64(before)
-            if before_type != PREFIX:
+            if before_type != prefix:
                 raise TypeError("Argument 'before' contains a non-existing value.")
             end = int(before_parsed)
 
