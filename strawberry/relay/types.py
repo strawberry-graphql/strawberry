@@ -663,9 +663,11 @@ class Edge(Generic[NodeType]):
     cursor: str = field(description="A cursor for use in pagination")
     node: NodeType = field(description="The item at the end of the edge")
 
+    CURSOR_PREFIX: ClassVar[str] = PREFIX
+
     @classmethod
-    def resolve_edge(cls, node: NodeType, *, cursor: Any = None) -> Self:
-        return cls(cursor=to_base64(PREFIX, cursor), node=node)
+    def resolve_edge(cls, node: NodeType, *, cursor: Any = None, **kwargs: Any) -> Self:
+        return cls(cursor=to_base64(cls.CURSOR_PREFIX, cursor), node=node, **kwargs)
 
 
 @strawberry_type(description="A connection to a list of items.")
@@ -792,15 +794,6 @@ class ListConnection(Connection[NodeType]):
         .. _Relay Pagination algorithm:
             https://relay.dev/graphql/connections.htm#sec-Pagination-algorithm
         """
-        slice_metadata = SliceMetadata.from_arguments(
-            info,
-            before=before,
-            after=after,
-            first=first,
-            last=last,
-            max_results=max_results,
-        )
-
         type_def = get_object_definition(cls)
         assert type_def
         field_def = type_def.get_field("edges")
@@ -811,6 +804,16 @@ class ListConnection(Connection[NodeType]):
             field = field.of_type
 
         edge_class = cast("Edge[NodeType]", field)
+
+        slice_metadata = SliceMetadata.from_arguments(
+            info,
+            before=before,
+            after=after,
+            first=first,
+            last=last,
+            max_results=max_results,
+            prefix=edge_class.CURSOR_PREFIX,
+        )
 
         if isinstance(nodes, (AsyncIterator, AsyncIterable)) and in_async_context():
 
