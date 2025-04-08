@@ -9,12 +9,9 @@ class CustomEdge(relay.Edge[NodeType]):
     index: int
 
     @classmethod
-    def resolve_edge(
-        cls, node: NodeType, *, cursor: Any = None, **kwargs: Any
-    ) -> Self:
+    def resolve_edge(cls, node: NodeType, *, cursor: Any = None, **kwargs: Any) -> Self:
         assert isinstance(cursor, int)
         return super().resolve_edge(node, cursor=cursor, index=cursor, **kwargs)
-
 ```
 
 You can also specify a custom cursor prefix, in case you want to implement a different
