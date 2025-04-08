@@ -1,5 +1,6 @@
 import textwrap
-from typing import Any, Self
+from typing import Any
+from typing_extensions import Self
 
 import pytest
 
