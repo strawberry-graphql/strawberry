@@ -2,7 +2,7 @@ Release type: minor
 
 This releases improves support for `relay.Edge` subclasses.
 
-`resolve_edge` now accepts `**kwargs`, so custom fields can be added to your edge classes without wholly 
+`resolve_edge` now accepts `**kwargs`, so custom fields can be added to your edge classes without wholly
 replacing `resolve_edge`:
 ```python
 @strawberry.type(name="Edge", description="An edge in a connection.")
