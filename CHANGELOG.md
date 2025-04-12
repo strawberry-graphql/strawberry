@@ -1,6 +1,35 @@
 CHANGELOG
 =========
 
+0.264.0 - 2025-04-12
+--------------------
+
+This releases improves support for `relay.Edge` subclasses.
+
+`resolve_edge` now accepts `**kwargs`, so custom fields can be added to your edge classes without wholly
+replacing `resolve_edge`:
+```python
+@strawberry.type(name="Edge", description="An edge in a connection.")
+class CustomEdge(relay.Edge[NodeType]):
+    index: int
+
+    @classmethod
+    def resolve_edge(cls, node: NodeType, *, cursor: Any = None, **kwargs: Any) -> Self:
+        assert isinstance(cursor, int)
+        return super().resolve_edge(node, cursor=cursor, index=cursor, **kwargs)
+```
+
+You can also specify a custom cursor prefix, in case you want to implement a different
+kind of cursor than a plain `ListConnection`:
+```python
+@strawberry.type(name="Edge", description="An edge in a connection.")
+class CustomEdge(relay.Edge[NodeType]):
+    CURSOR_PREFIX: ClassVar[str] = "mycursor"
+```
+
+Contributed by [Take Weiland](https://github.com/diesieben07) via [PR #3836](https://github.com/strawberry-graphql/strawberry/pull/3836/)
+
+
 0.263.2 - 2025-04-05
 --------------------
 
