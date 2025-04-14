@@ -306,9 +306,9 @@ class Subscription:
 ## GraphQL over WebSocket protocols
 
 Strawberry support both the legacy
-[graphql-ws](https://github.com/apollographql/subscriptions-transport-ws) and
+[graphql-ws](https://github.com/enisdenjo/graphql-ws) and
 the newer recommended
-[graphql-transport-ws](https://github.com/enisdenjo/graphql-ws) WebSocket
+[graphql-transport-ws](https://github.com/apollographql/subscriptions-transport-ws) WebSocket
 sub-protocols.
 
 <Note>
