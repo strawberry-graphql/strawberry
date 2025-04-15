@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Any, NewType, Optional, TypeVar, Union
 
 import pytest
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, computed_field
 
 import strawberry
 from strawberry.experimental.pydantic._compat import (
@@ -1290,3 +1290,47 @@ def test_can_convert_pydantic_type_to_strawberry_with_specialized_list():
     user = User.from_pydantic(origin_user)
 
     assert user == User(work=[Work(name="developer"), Work(name="tester")])
+
+
+def test_can_convert_pydantic_type_to_strawberry_computed_field():
+    """Test that computed fields on a pydantic type are not accessed unless queried."""
+
+    class UserModel(BaseModel):
+        age: int
+
+        @computed_field
+        @property
+        def name(self) -> str:
+            raise Exception("`name` computed_field should not be accessed")
+
+        @computed_field
+        @property
+        def location(self) -> str:
+            return "earth"
+
+    def get_name(root) -> str:
+        return root._original_model.name
+
+    def get_location(root) -> str:
+        return root._original_model.location
+
+    @strawberry.experimental.pydantic.type(UserModel)
+    class User:
+        age: int
+        name: str = strawberry.field(resolver=get_name)
+        location: str = strawberry.field(resolver=get_location)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return User.from_pydantic(UserModel(age=20))
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ user { age location } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["user"] == {"age": 20, "location": "earth"}
