@@ -1,6 +1,32 @@
 CHANGELOG
 =========
 
+0.265.0 - 2025-04-15
+--------------------
+
+This release adds support for using strawberry.union with generics, like in this
+example:
+
+```python
+@strawberry.type
+class ObjectQueries[T]:
+    @strawberry.field
+    def by_id(
+        self, id: strawberry.ID
+    ) -> Union[T, Annotated[NotFoundError, strawberry.union("ByIdResult")]]: ...
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def some_type_queries(self, id: strawberry.ID) -> ObjectQueries[SomeType]: ...
+```
+
+which, now, creates a correct union type named `SomeTypeByIdResult`
+
+Contributed by [Jacob Allen](https://github.com/enoua5) via [PR #3515](https://github.com/strawberry-graphql/strawberry/pull/3515/)
+
+
 0.264.1 - 2025-04-15
 --------------------
 
