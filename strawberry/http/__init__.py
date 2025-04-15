@@ -20,12 +20,12 @@ def process_result(result: ResultType) -> GraphQLHTTPResponse:
     if isinstance(result, GraphQLIncrementalExecutionResults):
         return result
 
-    data: GraphQLHTTPResponse = {"data": result.data}
-
-    if result.errors:
-        data["errors"] = [err.formatted for err in result.errors]
-    if result.extensions:
-        data["extensions"] = result.extensions
+    errors, extensions = result.errors, result.extensions
+    data: GraphQLHTTPResponse = {
+        "data": result.data,
+        **({"errors": [err.formatted for err in errors]} if errors else {}),
+        **({"extensions": extensions} if extensions else {}),
+    }
 
     return data
 
