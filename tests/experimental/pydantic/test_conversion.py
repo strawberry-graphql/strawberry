@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Any, NewType, Optional, TypeVar, Union
 
 import pytest
-from pydantic import BaseModel, Field, ValidationError, computed_field
+from pydantic import BaseModel, Field, ValidationError
 
 import strawberry
 from strawberry.experimental.pydantic._compat import (
@@ -25,6 +25,9 @@ from strawberry.types.base import (
     StrawberryOptional,
 )
 from tests.experimental.pydantic.utils import needs_pydantic_v1
+
+if IS_PYDANTIC_V2:
+    from pydantic import computed_field
 
 
 def test_can_use_type_standalone():
@@ -1292,6 +1295,9 @@ def test_can_convert_pydantic_type_to_strawberry_with_specialized_list():
     assert user == User(work=[Work(name="developer"), Work(name="tester")])
 
 
+@pytest.mark.skipif(
+    not IS_PYDANTIC_V2, reason="Requires Pydantic v2 for computed_field"
+)
 def test_can_convert_pydantic_type_to_strawberry_computed_field():
     """Test that computed fields on a pydantic type are not accessed unless queried."""
 
