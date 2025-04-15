@@ -1,6 +1,6 @@
 import warnings
 from collections.abc import AsyncGenerator, Mapping
-from typing import TYPE_CHECKING, Callable, ClassVar, Optional, cast
+from typing import TYPE_CHECKING, Callable, ClassVar, Optional, Union, cast
 from typing_extensions import TypeGuard
 
 from quart import Request, Response, request
@@ -82,7 +82,9 @@ class GraphQLView(
         return Response(self.graphql_ide_html)
 
     def create_response(
-        self, response_data: "GraphQLHTTPResponse", sub_response: Response
+        self,
+        response_data: Union["GraphQLHTTPResponse", list["GraphQLHTTPResponse"]],
+        sub_response: Response,
     ) -> Response:
         sub_response.set_data(self.encode_json(response_data))
 
