@@ -474,3 +474,46 @@ def test_can_give_custom_name_to_enum_value():
     assert not result.errors
     assert result.data
     assert result.data["bestFlavour"] == "chocolateCookie"
+
+
+def test_can_use_enum_with_custom_name_as_input():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        CHOCOLATE_COOKIE = strawberry.enum_value("chocolate", name="chocolateCookie")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def get_flavour(self, flavour: IceCreamFlavour) -> str:
+            return flavour.name
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == dedent(
+            """
+        enum IceCreamFlavour {
+          VANILLA
+          chocolateCookie
+        }
+
+        type Query {
+          getFlavour(flavour: IceCreamFlavour!): String!
+        }
+        """
+        ).strip()
+    )
+
+    query = """
+    {
+        getFlavour(flavour: chocolateCookie)
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data
+    assert result.data["getFlavour"] == "CHOCOLATE_COOKIE"
