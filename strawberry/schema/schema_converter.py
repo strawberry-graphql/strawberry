@@ -254,7 +254,10 @@ class GraphQLCoreConverter:
         argument_type = cast(
             "GraphQLInputType", self.from_maybe_optional(argument.type)
         )
-        default_value = Undefined if argument.default is UNSET else argument.default
+        if argument.is_maybe():
+            default_value: Any = Undefined
+        else:
+            default_value = Undefined if argument.default is UNSET else argument.default
 
         return GraphQLArgument(
             type_=argument_type,
@@ -419,8 +422,9 @@ class GraphQLCoreConverter:
             ),
         )
         default_value: object
-
-        if field.default_value is UNSET or field.default_value is dataclasses.MISSING:
+        if isinstance(field.type, StrawberryOptional) and field.type.is_maybe:
+            default_value = Undefined
+        elif field.default_value is UNSET or field.default_value is dataclasses.MISSING:
             default_value = Undefined
         else:
             default_value = field.default_value
