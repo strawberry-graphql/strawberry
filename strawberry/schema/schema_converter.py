@@ -47,7 +47,10 @@ from strawberry.exceptions import (
     ScalarAlreadyRegisteredError,
     UnresolvedFieldTypeError,
 )
-from strawberry.extensions.field_extension import build_field_extension_resolvers
+from strawberry.extensions.field_extension import (
+    apply_field_extensions,
+    build_field_extension_resolvers,
+)
 from strawberry.schema.types.scalar import _make_scalar_type
 from strawberry.types.arguments import StrawberryArgument, convert_arguments
 from strawberry.types.base import (
@@ -683,8 +686,7 @@ class GraphQLCoreConverter:
 
         def wrap_field_extensions() -> Callable[..., Any]:
             """Wrap the provided field resolver with the middleware."""
-            for extension in field.extensions:
-                extension.apply(field)
+            apply_field_extensions(field)
 
             extension_functions = build_field_extension_resolvers(field)
 

@@ -401,3 +401,92 @@ def test_overwrite_resolve_id_and_no_node_id(mocker: MockerFixture):
     schema = strawberry.Schema(query=Query)
 
     assert str(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_multiple_schemas(mocker: MockerFixture):
+    """Avoid regression of https://github.com/strawberry-graphql/strawberry/issues/3823"""
+    # Avoid E501 errors
+    mocker.patch.object(
+        DEFAULT_SCALAR_REGISTRY[relay.GlobalID],
+        "description",
+        "__GLOBAL_ID_DESC__",
+    )
+
+    @strawberry.type
+    class Query:
+        node: relay.Node = relay.node()
+
+        @relay.connection(relay.ListConnection[relay.Node])
+        def connection(self) -> list[relay.Node]:
+            return []
+
+    schema_1 = strawberry.Schema(query=Query)
+    schema_2 = strawberry.Schema(query=Query)
+
+    expected = textwrap.dedent(
+        '''
+        """__GLOBAL_ID_DESC__"""
+        scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
+
+        """An object with a Globally Unique ID"""
+        interface Node {
+          """The Globally Unique ID of this object"""
+          id: GlobalID!
+        }
+
+        """A connection to a list of items."""
+        type NodeConnection {
+          """Pagination data for this connection"""
+          pageInfo: PageInfo!
+
+          """Contains the nodes in this connection"""
+          edges: [NodeEdge!]!
+        }
+
+        """An edge in a connection."""
+        type NodeEdge {
+          """A cursor for use in pagination"""
+          cursor: String!
+
+          """The item at the end of the edge"""
+          node: Node!
+        }
+
+        """Information to aid in pagination."""
+        type PageInfo {
+          """When paginating forwards, are there more items?"""
+          hasNextPage: Boolean!
+
+          """When paginating backwards, are there more items?"""
+          hasPreviousPage: Boolean!
+
+          """When paginating backwards, the cursor to continue."""
+          startCursor: String
+
+          """When paginating forwards, the cursor to continue."""
+          endCursor: String
+        }
+
+        type Query {
+          node(
+            """The ID of the object."""
+            id: GlobalID!
+          ): Node!
+          connection(
+            """Returns the items in the list that come before the specified cursor."""
+            before: String = null
+
+            """Returns the items in the list that come after the specified cursor."""
+            after: String = null
+
+            """Returns the first n items from the list."""
+            first: Int = null
+
+            """Returns the items in the list that come after the specified cursor."""
+            last: Int = null
+          ): NodeConnection!
+        }
+        '''
+    ).strip()
+
+    assert str(schema_1) == str(schema_2) == expected
