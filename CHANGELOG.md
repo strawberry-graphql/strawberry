@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.265.1 - 2025-04-15
+--------------------
+
+Fix bug where files would be converted into io.BytesIO when using the sanic GraphQLView
+instead of using the sanic File type
+
+Contributed by [Maypher](https://github.com/Maypher) via [PR #3751](https://github.com/strawberry-graphql/strawberry/pull/3751/)
+
+
 0.265.0 - 2025-04-15
 --------------------
 
