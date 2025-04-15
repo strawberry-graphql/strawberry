@@ -866,7 +866,7 @@ def test_generic_union_with_annotated():
     class Query:
         @strawberry.field
         def some_type_queries(self, id: strawberry.ID) -> ObjectQueries[SomeType]:
-            raise NotImplementedError()
+            raise NotImplementedError
 
     schema = strawberry.Schema(Query)
 

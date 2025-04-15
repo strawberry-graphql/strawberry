@@ -11,6 +11,7 @@ class ObjectQueries[T]:
         self, id: strawberry.ID
     ) -> Union[T, Annotated[NotFoundError, strawberry.union("ByIdResult")]]: ...
 
+
 @strawberry.type
 class Query:
     @strawberry.field
