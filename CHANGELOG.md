@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.264.1 - 2025-04-15
+--------------------
+
+Change pydantic conversion to not load field data unless requested
+
+Contributed by [Mark Moes](https://github.com/Mark90) via [PR #3812](https://github.com/strawberry-graphql/strawberry/pull/3812/)
+
+
 0.264.0 - 2025-04-12
 --------------------
 
