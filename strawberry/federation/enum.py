@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 def enum_value(
     value: Any,
+    name: Optional[str] = None,
     deprecation_reason: Optional[str] = None,
     directives: Iterable[object] = (),
     inaccessible: bool = False,
@@ -35,7 +36,12 @@ def enum_value(
     if tags:
         directives.extend(Tag(name=tag) for tag in tags)
 
-    return base_enum_value(value, deprecation_reason, directives)
+    return base_enum_value(
+        value=value,
+        name=name,
+        deprecation_reason=deprecation_reason,
+        directives=directives,
+    )
 
 
 @overload
