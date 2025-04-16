@@ -29,8 +29,6 @@ from graphql import (
     parse,
     validate_schema,
 )
-from graphql.execution import ExecutionContext as GraphQLExecutionContext
-from graphql.execution import execute, subscribe
 from graphql.execution.middleware import MiddlewareManager
 from graphql.type.directives import specified_directives
 from graphql.validation import validate
@@ -64,6 +62,15 @@ from strawberry.utils.aio import aclosing
 from strawberry.utils.await_maybe import await_maybe
 
 from . import compat
+from ._graphql_core import (
+    GraphQLExecutionContext,
+    GraphQLIncrementalExecutionResults,
+    ResultType,
+    execute,
+    experimental_execute_incrementally,
+    incremental_execution_directives,
+    subscribe,
+)
 from .base import BaseSchema
 from .config import StrawberryConfig
 from .exceptions import InvalidOperationTypeError
@@ -91,6 +98,7 @@ OriginSubscriptionResult = Union[
     OriginalExecutionResult,
     AsyncIterator[OriginalExecutionResult],
 ]
+
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.QUERY,
@@ -262,11 +270,16 @@ class Schema(BaseSchema):
                 graphql_types.append(graphql_type)
 
         try:
+            directives = specified_directives + tuple(graphql_directives)
+
+            if self.config.enable_experimental_incremental_execution:
+                directives = tuple(directives) + tuple(incremental_execution_directives)
+
             self._schema = GraphQLSchema(
                 query=query_type,
                 mutation=mutation_type,
                 subscription=subscription_type if subscription else None,
-                directives=specified_directives + tuple(graphql_directives),
+                directives=directives,
                 types=graphql_types,
                 extensions={
                     GraphQLCoreConverter.DEFINITION_BACKREF: self,
@@ -444,12 +457,16 @@ class Schema(BaseSchema):
     async def _handle_execution_result(
         self,
         context: ExecutionContext,
-        result: Union[GraphQLExecutionResult, ExecutionResult],
+        result: ResultType,
         extensions_runner: SchemaExtensionsRunner,
         *,
         # TODO: can we remove this somehow, see comment in execute
         skip_process_errors: bool = False,
     ) -> ExecutionResult:
+        # TODO: handle this, also, why do we have both GraphQLExecutionResult and ExecutionResult?
+        if isinstance(result, GraphQLIncrementalExecutionResults):
+            return result
+
         # Set errors on the context so that it's easier
         # to access in extensions
         if result.errors:
@@ -490,6 +507,17 @@ class Schema(BaseSchema):
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
         middleware_manager = self._get_middleware_manager(extensions)
 
+        execute_function = execute
+
+        if self.config.enable_experimental_incremental_execution:
+            execute_function = experimental_execute_incrementally
+
+            if execute_function is None:
+                raise RuntimeError(
+                    "Incremental execution is enabled but experimental_execute_incrementally is not available, "
+                    "please install graphql-core>=3.3.0"
+                )
+
         try:
             async with extensions_runner.operation():
                 # Note: In graphql-core the schema would be validated here but in
@@ -508,7 +536,7 @@ class Schema(BaseSchema):
                 async with extensions_runner.executing():
                     if not execution_context.result:
                         result = await await_maybe(
-                            execute(
+                            execute_function(
                                 self._schema,
                                 execution_context.graphql_document,
                                 root_value=execution_context.root_value,
@@ -524,7 +552,9 @@ class Schema(BaseSchema):
                         result = execution_context.result
                     # Also set errors on the execution_context so that it's easier
                     # to access in extensions
-                    if result.errors:
+
+                    # TODO: maybe here use the first result from incremental execution if it exists
+                    if isinstance(result, GraphQLExecutionResult) and result.errors:
                         execution_context.errors = result.errors
 
                         # Run the `Schema.process_errors` function here before
@@ -574,6 +604,16 @@ class Schema(BaseSchema):
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
         middleware_manager = self._get_middleware_manager(extensions)
 
+        execute_function = execute
+
+        if self.config.enable_experimental_incremental_execution:
+            execute_function = experimental_execute_incrementally
+
+            if execute_function is None:
+                raise RuntimeError(
+                    "Incremental execution is enabled but experimental_execute_incrementally is not available, "
+                    "please install graphql-core>=3.3.0"
+                )
         try:
             with extensions_runner.operation():
                 # Note: In graphql-core the schema would be validated here but in
@@ -615,7 +655,7 @@ class Schema(BaseSchema):
 
                 with extensions_runner.executing():
                     if not execution_context.result:
-                        result = execute(
+                        result = execute_function(
                             self._schema,
                             execution_context.graphql_document,
                             root_value=execution_context.root_value,

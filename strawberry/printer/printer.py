@@ -561,9 +561,9 @@ def print_schema_definition(
 def print_directive(
     directive: GraphQLDirective, *, schema: BaseSchema
 ) -> Optional[str]:
-    strawberry_directive = directive.extensions["strawberry-definition"]
+    strawberry_directive = directive.extensions.get("strawberry-definition")
 
-    if (
+    if strawberry_directive is None or (
         isinstance(strawberry_directive, StrawberrySchemaDirective)
         and not strawberry_directive.print_definition
     ):

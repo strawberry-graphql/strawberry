@@ -16,6 +16,7 @@ class StrawberryConfig:
     relay_max_results: int = 100
     disable_field_suggestions: bool = False
     info_class: type[Info] = Info
+    enable_experimental_incremental_execution: bool = False
 
     def __post_init__(
         self,
