@@ -507,13 +507,16 @@ class Schema(BaseSchema):
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
         middleware_manager = self._get_middleware_manager(extensions)
 
-        execute_function = (
-            experimental_execute_incrementally
-            if self.config.enable_experimental_incremental_execution
-            else execute
-        )
+        execute_function = execute
 
-        # TODO: raise if experimental_execute_incrementally is not available
+        if self.config.enable_experimental_incremental_execution:
+            execute_function = experimental_execute_incrementally
+
+            if execute_function is None:
+                raise RuntimeError(
+                    "Incremental execution is enabled but experimental_execute_incrementally is not available, "
+                    "please install graphql-core>=3.3.0"
+                )
 
         try:
             async with extensions_runner.operation():
@@ -601,14 +604,16 @@ class Schema(BaseSchema):
         extensions_runner = self.create_extensions_runner(execution_context, extensions)
         middleware_manager = self._get_middleware_manager(extensions)
 
-        execute_function = (
-            experimental_execute_incrementally
-            if self.config.enable_experimental_incremental_execution
-            else execute
-        )
+        execute_function = execute
 
-        # TODO: raise if experimental_execute_incrementally is not available
+        if self.config.enable_experimental_incremental_execution:
+            execute_function = experimental_execute_incrementally
 
+            if execute_function is None:
+                raise RuntimeError(
+                    "Incremental execution is enabled but experimental_execute_incrementally is not available, "
+                    "please install graphql-core>=3.3.0"
+                )
         try:
             with extensions_runner.operation():
                 # Note: In graphql-core the schema would be validated here but in
