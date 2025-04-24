@@ -36,7 +36,12 @@ class StrawberryConfig:
         if not issubclass(self.info_class, Info):
             raise TypeError("`info_class` must be a subclass of strawberry.Info")
         if self.batching_config is None:  # type: ignore
-            self.batching_config = {"enabled": False}
+            self.batching_config = {"enabled": False, "share_context": True}
+
+        if self.batching_config.get("enabled") and not self.batching_config.get(
+            "share_context"
+        ):
+            raise ValueError("Disabling context sharing is not supported currently.")
 
 
 __all__ = ["StrawberryConfig"]

@@ -37,3 +37,12 @@ def test_config_post_init_info_class_is_not_subclass():
         StrawberryConfig(info_class=object)
 
     assert str(exc_info.value) == "`info_class` must be a subclass of strawberry.Info"
+
+
+def test_config_post_init_batching_config():
+    with pytest.raises(ValueError) as exc_info:
+        StrawberryConfig(batching_config={"enabled": True, "share_context": False})
+
+    assert (
+        str(exc_info.value) == "Disabling context sharing is not supported currently."
+    )
