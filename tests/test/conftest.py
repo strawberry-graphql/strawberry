@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from tests.views.schema import schema
+from tests.views.schema import get_schema
 
 if TYPE_CHECKING:
     from strawberry.test import BaseGraphQLTestClient
@@ -22,7 +22,7 @@ async def aiohttp_graphql_client() -> AsyncGenerator[BaseGraphQLTestClient]:
     except ImportError:
         pytest.skip("Aiohttp not installed")
 
-    view = GraphQLView(schema=schema)
+    view = GraphQLView(schema=get_schema())
     app = web.Application()
     app.router.add_route("*", "/graphql/", view)
 
@@ -40,7 +40,7 @@ async def asgi_graphql_client() -> AsyncGenerator[BaseGraphQLTestClient]:
     except ImportError:
         pytest.skip("Starlette not installed")
 
-    yield GraphQLTestClient(TestClient(GraphQL(schema)))
+    yield GraphQLTestClient(TestClient(GraphQL(get_schema())))
 
 
 @asynccontextmanager
