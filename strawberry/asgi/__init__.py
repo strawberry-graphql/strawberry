@@ -60,7 +60,7 @@ class ASGIRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def method(self) -> HTTPMethod:
-        return cast(HTTPMethod, self.request.method.upper())
+        return cast("HTTPMethod", self.request.method.upper())
 
     @property
     def headers(self) -> Mapping[str, str]:

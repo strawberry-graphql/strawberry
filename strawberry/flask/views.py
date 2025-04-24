@@ -45,11 +45,11 @@ class FlaskHTTPRequestAdapter(SyncHTTPRequestAdapter):
 
     @property
     def method(self) -> HTTPMethod:
-        return cast(HTTPMethod, self.request.method.upper())
+        return cast("HTTPMethod", self.request.method.upper())
 
     @property
     def headers(self) -> Mapping[str, str]:
-        return self.request.headers
+        return self.request.headers  # type: ignore
 
     @property
     def post_data(self) -> Mapping[str, Union[str, bytes]]:
@@ -141,7 +141,7 @@ class AsyncFlaskHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def method(self) -> HTTPMethod:
-        return cast(HTTPMethod, self.request.method.upper())
+        return cast("HTTPMethod", self.request.method.upper())
 
     @property
     def content_type(self) -> Optional[str]:
@@ -149,7 +149,7 @@ class AsyncFlaskHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def headers(self) -> Mapping[str, str]:
-        return self.request.headers
+        return self.request.headers  # type: ignore
 
     async def get_body(self) -> str:
         return self.request.data.decode()

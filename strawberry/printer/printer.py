@@ -5,6 +5,7 @@ from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Optional,
     TypeVar,
     Union,
@@ -68,32 +69,59 @@ class PrintExtras:
 
 
 @overload
-def _serialize_dataclasses(value: dict[_T, object]) -> dict[_T, object]: ...
+def _serialize_dataclasses(
+    value: dict[_T, object],
+    *,
+    name_converter: Callable[[str], str] | None = None,
+) -> dict[_T, object]: ...
 
 
 @overload
 def _serialize_dataclasses(
     value: Union[list[object], tuple[object]],
+    *,
+    name_converter: Callable[[str], str] | None = None,
 ) -> list[object]: ...
 
 
 @overload
-def _serialize_dataclasses(value: object) -> object: ...
+def _serialize_dataclasses(
+    value: object,
+    *,
+    name_converter: Callable[[str], str] | None = None,
+) -> object: ...
 
 
-def _serialize_dataclasses(value):
+def _serialize_dataclasses(
+    value,
+    *,
+    name_converter: Callable[[str], str] | None = None,
+):
+    if name_converter is None:
+        name_converter = lambda x: x  # noqa: E731
+
     if dataclasses.is_dataclass(value):
-        return dataclasses.asdict(value)  # type: ignore
+        return {
+            name_converter(k): v
+            for k, v in dataclasses.asdict(value).items()  # type: ignore
+            if v is not UNSET
+        }
     if isinstance(value, (list, tuple)):
-        return [_serialize_dataclasses(v) for v in value]
+        return [_serialize_dataclasses(v, name_converter=name_converter) for v in value]
     if isinstance(value, dict):
-        return {k: _serialize_dataclasses(v) for k, v in value.items()}
+        return {
+            name_converter(k): _serialize_dataclasses(v, name_converter=name_converter)
+            for k, v in value.items()
+        }
 
     return value
 
 
 def print_schema_directive_params(
-    directive: GraphQLDirective, values: dict[str, Any]
+    directive: GraphQLDirective,
+    values: dict[str, Any],
+    *,
+    schema: BaseSchema,
 ) -> str:
     params = []
     for name, arg in directive.args.items():
@@ -101,7 +129,13 @@ def print_schema_directive_params(
         if value is UNSET:
             value = None
         else:
-            ast = ast_from_value(_serialize_dataclasses(value), arg.type)
+            ast = ast_from_value(
+                _serialize_dataclasses(
+                    value,
+                    name_converter=schema.config.name_converter.apply_naming_config,
+                ),
+                arg.type,
+            )
             value = ast and f"{name}: {print_ast(ast)}"
 
         if value:
@@ -117,7 +151,7 @@ def print_schema_directive(
     directive: Any, schema: BaseSchema, *, extras: PrintExtras
 ) -> str:
     strawberry_directive = cast(
-        StrawberrySchemaDirective, directive.__class__.__strawberry_directive__
+        "StrawberrySchemaDirective", directive.__class__.__strawberry_directive__
     )
     schema_converter = schema.schema_converter
     gql_directive = schema_converter.from_schema_directive(directive.__class__)
@@ -129,6 +163,7 @@ def print_schema_directive(
             )
             for f in strawberry_directive.fields
         },
+        schema=schema,
     )
 
     printed_directive = print_directive(gql_directive, schema=schema)
@@ -143,13 +178,13 @@ def print_schema_directive(
                 f_type = f_type.of_type
 
             if has_object_definition(f_type):
-                extras.types.add(cast(type, f_type))
+                extras.types.add(cast("type", f_type))
 
             if hasattr(f_type, "_scalar_definition"):
-                extras.types.add(cast(type, f_type))
+                extras.types.add(cast("type", f_type))
 
             if isinstance(f_type, EnumDefinition):
-                extras.types.add(cast(type, f_type))
+                extras.types.add(cast("type", f_type))
 
     return f" @{gql_directive.name}{params}"
 
@@ -328,7 +363,7 @@ def print_extends(type_: GraphQLObjectType, schema: BaseSchema) -> str:
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
     strawberry_type = cast(
-        Optional[StrawberryObjectDefinition],
+        "Optional[StrawberryObjectDefinition]",
         type_.extensions
         and type_.extensions.get(GraphQLCoreConverter.DEFINITION_BACKREF),
     )
@@ -345,7 +380,7 @@ def print_type_directives(
     from strawberry.schema.schema_converter import GraphQLCoreConverter
 
     strawberry_type = cast(
-        Optional[StrawberryObjectDefinition],
+        "Optional[StrawberryObjectDefinition]",
         type_.extensions
         and type_.extensions.get(GraphQLCoreConverter.DEFINITION_BACKREF),
     )
@@ -559,7 +594,7 @@ def is_builtin_directive(directive: GraphQLDirective) -> bool:
 
 def print_schema(schema: BaseSchema) -> str:
     graphql_core_schema = cast(
-        GraphQLSchema,
+        "GraphQLSchema",
         schema._schema,  # type: ignore
     )
     extras = PrintExtras()

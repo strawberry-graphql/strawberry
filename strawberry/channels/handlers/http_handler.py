@@ -289,7 +289,8 @@ class GraphQLHTTPConsumer(
 
     async def render_graphql_ide(self, request: ChannelsRequest) -> ChannelsResponse:
         return ChannelsResponse(
-            content=self.graphql_ide_html.encode(), content_type="text/html"
+            content=self.graphql_ide_html.encode(),
+            content_type="text/html; charset=utf-8",
         )
 
     def is_websocket_request(
@@ -344,7 +345,8 @@ class SyncGraphQLHTTPConsumer(
 
     def render_graphql_ide(self, request: ChannelsRequest) -> ChannelsResponse:
         return ChannelsResponse(
-            content=self.graphql_ide_html.encode(), content_type="text/html"
+            content=self.graphql_ide_html.encode(),
+            content_type="text/html; charset=utf-8",
         )
 
     # Sync channels is actually async, but it uses database_sync_to_async to call

@@ -19,6 +19,10 @@ class Query:
         return User(name="Patrick", age=100)
 
 
-schema = strawberry.Schema(query=Query)
+def create_schema():
+    return strawberry.Schema(query=Query)
+
+
+schema = create_schema()
 sample_instance = SampleClass(schema)
 not_a_schema = 42

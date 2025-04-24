@@ -106,8 +106,14 @@ class NameConverter:
             return union.graphql_name
 
         name = ""
+        types: tuple[StrawberryType, ...] = union.types
 
-        for type_ in union.types:
+        if union.concrete_of and union.concrete_of.graphql_name:
+            concrete_of_types = set(union.concrete_of.types)
+
+            types = tuple(type_ for type_ in types if type_ not in concrete_of_types)
+
+        for type_ in types:
             if isinstance(type_, LazyType):
                 type_ = cast("StrawberryType", type_.resolve_type())  # noqa: PLW2901
 
@@ -119,6 +125,9 @@ class NameConverter:
                 type_name = self.from_type(type_)
 
             name += type_name
+
+        if union.concrete_of and union.concrete_of.graphql_name:
+            name += union.concrete_of.graphql_name
 
         return name
 
@@ -132,12 +141,12 @@ class NameConverter:
         names: list[str] = []
 
         for type_ in types:
-            name = self.get_from_type(type_)
+            name = self.get_name_from_type(type_)
             names.append(name)
 
         return "".join(names) + generic_type_name
 
-    def get_from_type(self, type_: Union[StrawberryType, type]) -> str:
+    def get_name_from_type(self, type_: Union[StrawberryType, type]) -> str:
         type_ = eval_type(type_)
 
         if isinstance(type_, LazyType):
@@ -147,9 +156,9 @@ class NameConverter:
         elif isinstance(type_, StrawberryUnion):
             name = type_.graphql_name if type_.graphql_name else self.from_union(type_)
         elif isinstance(type_, StrawberryList):
-            name = self.get_from_type(type_.of_type) + "List"
+            name = self.get_name_from_type(type_.of_type) + "List"
         elif isinstance(type_, StrawberryOptional):
-            name = self.get_from_type(type_.of_type) + "Optional"
+            name = self.get_name_from_type(type_.of_type) + "Optional"
         elif hasattr(type_, "_scalar_definition"):
             strawberry_type = type_._scalar_definition
 

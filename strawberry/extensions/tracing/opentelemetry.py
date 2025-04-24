@@ -42,9 +42,10 @@ class OpenTelemetryExtension(SchemaExtension):
         *,
         execution_context: Optional[ExecutionContext] = None,
         arg_filter: Optional[ArgFilter] = None,
+        tracer_provider: Optional[trace.TracerProvider] = None,
     ) -> None:
         self._arg_filter = arg_filter
-        self._tracer = trace.get_tracer("strawberry")
+        self._tracer = trace.get_tracer("strawberry", tracer_provider=tracer_provider)
         self._span_holder = {}
         if execution_context:
             self.execution_context = execution_context

@@ -56,8 +56,7 @@ def ast_from_leaf_type(
         return IntValueNode(value=str(serialized))
     if isinstance(serialized, float) and isfinite(serialized):
         value = str(serialized)
-        if value.endswith(".0"):
-            value = value[:-2]
+        value = value.removesuffix(".0")
         return FloatValueNode(value=value)
 
     if isinstance(serialized, str):

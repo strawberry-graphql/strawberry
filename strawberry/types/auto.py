@@ -44,7 +44,7 @@ class StrawberryAutoMeta(type):
                 resolved = namespace and namespace.get(resolved)
 
             if resolved is not None:
-                instance = cast(type, resolved)
+                instance = cast("type", resolved)
 
         if instance is auto:
             return True

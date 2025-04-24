@@ -152,3 +152,36 @@ class IceCreamFlavour(Enum):
         "strawberry", deprecation_reason="Let's call the whole thing off"
     )
 ```
+
+You can also give custom names to enum values in the GraphQL schema using the
+`name` parameter:
+
+```python
+@strawberry.enum
+class IceCreamFlavour(Enum):
+    VANILLA = "vanilla"
+    CHOCOLATE_COOKIE = strawberry.enum_value("chocolate", name="chocolateCookie")
+```
+
+This will produce the following GraphQL schema:
+
+```graphql
+enum IceCreamFlavour {
+  VANILLA
+  chocolateCookie
+}
+```
+
+When querying, the custom name will be used in the response:
+
+```graphql
+{
+  "data": {
+    "bestFlavour": "chocolateCookie"
+  }
+}
+```
+
+Note that the Python enum member name (`CHOCOLATE_COOKIE`) is still used in your
+Python code, while the custom name (`chocolateCookie`) is used in the GraphQL
+schema and responses.

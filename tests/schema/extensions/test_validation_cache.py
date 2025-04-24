@@ -7,7 +7,7 @@ import strawberry
 from strawberry.extensions import ValidationCache
 
 
-@patch("strawberry.schema.execute.validate", wraps=validate)
+@patch("strawberry.schema.schema.validate", wraps=validate)
 def test_validation_cache_extension(mock_validate):
     @strawberry.type
     class Query:
@@ -49,7 +49,7 @@ def test_validation_cache_extension(mock_validate):
     assert mock_validate.call_count == 2
 
 
-@patch("strawberry.schema.execute.validate", wraps=validate)
+@patch("strawberry.schema.schema.validate", wraps=validate)
 def test_validation_cache_extension_max_size(mock_validate):
     @strawberry.type
     class Query:
@@ -102,7 +102,7 @@ async def test_validation_cache_extension_async():
 
     query = "query { hello }"
 
-    with patch("strawberry.schema.execute.validate", wraps=validate) as mock_validate:
+    with patch("strawberry.schema.schema.validate", wraps=validate) as mock_validate:
         result = await schema.execute(query)
 
         assert not result.errors

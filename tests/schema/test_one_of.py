@@ -90,7 +90,7 @@ def test_must_specify_at_least_one_key_literal(value: str, variables: dict[str, 
         variables_definitions.append("$input: ExampleInputTagged!")
 
     variables_definition_str = (
-        f'({", ".join(variables_definitions)})' if variables_definitions else ""
+        f"({', '.join(variables_definitions)})" if variables_definitions else ""
     )
 
     query = f"""
@@ -184,7 +184,7 @@ def test_works(value: str, variables: dict[str, Any], expected: dict[str, Any]):
         variables_definitions.append("$input: ExampleInputTagged!")
 
     variables_definition_str = (
-        f'({", ".join(variables_definitions)})' if variables_definitions else ""
+        f"({', '.join(variables_definitions)})" if variables_definitions else ""
     )
 
     field = next(iter(expected.keys()))

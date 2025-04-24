@@ -376,7 +376,7 @@ class AsyncBaseHTTPView(
                 await websocket.close(4406, "Subprotocol not acceptable")
 
             return websocket_response
-        request = cast(Request, request)
+        request = cast("Request", request)
 
         request_adapter = self.request_adapter_class(request)
         sub_response = await self.get_sub_response(request)
