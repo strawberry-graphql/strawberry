@@ -29,6 +29,7 @@ from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
 
+
 class Employee(Base):
     __tablename__ = "employee"
     id = Column(UUID, primary_key=True)
@@ -36,6 +37,7 @@ class Employee(Base):
     password_hash = Column(String, nullable=False)
     department_id = Column(UUID, ForeignKey("department.id"))
     department = relationship("Department", back_populates="employees")
+
 
 class Department(Base):
     __tablename__ = "department"
@@ -50,9 +52,11 @@ from strawberry_sqlalchemy_mapper import StrawberrySQLAlchemyMapper
 
 mapper = StrawberrySQLAlchemyMapper()
 
+
 @mapper.type(Employee)
 class EmployeeType:
     __exclude__ = ["password_hash"]  # Exclude sensitive fields
+
 
 @mapper.type(Department)
 class DepartmentType:
@@ -64,11 +68,13 @@ class DepartmentType:
 from strawberry.type import strawberry
 from sqlalchemy import select
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def departments(self) -> List[DepartmentType]:
         return session.scalars(select(Department)).all()
+
 
 schema = strawberry.Schema(query=Query)
 mapper.finalize()  # Finalize all mappings
@@ -81,13 +87,16 @@ mapper.finalize()  # Finalize all mappings
 class Book(Base):
     id = Column(UUID, primary_key=True)
 
+
 class Novel(Book):
     pass
+
 
 # In schema:
 @mapper.interface(Book)
 class BookInterface:
     pass
+
 
 @mapper.type(Novel)
 class NovelType:
