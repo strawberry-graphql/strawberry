@@ -7,7 +7,7 @@ now when you wanted to inffer if an input value was null or absent you'd use
 Now you can use `strawberry.Maybe` to identify if a
 value was provided or not.
 
-i.e
+e.g.
 
 ```python
 import strawberry
@@ -27,13 +27,24 @@ class UpdateUserInput:
 
 @strawberry.type
 class Mutation:
-    def update_user(self, info, input: UpdateUserInput) -> User:
-        reveal_type(input.phone)  # Some[str | None] | None
+    def update_user(self, input: UpdateUserInput) -> None:
+        reveal_type(input.phone)  # strawberry.Some[str | None] | None
+
         if input.phone:
             reveal_type(input.phone.value)  # str | None
-            update_user_phone(input.phone.value)
 
-        return User(name=input.name, phone=input.phone)
+            update_user_phone(input.phone.value)
+```
+
+Or, if you can use pattern matching:
+
+```python
+@strawberry.type
+class Mutation:
+    def update_user(self, input: UpdateUserInput) -> None:
+        match input.phone:
+            case strawberry.Some(value=value):
+                update_user_phone(input.phone.value)
 ```
 
 You can also use `strawberry.Maybe` as a field argument like so
@@ -46,5 +57,6 @@ import strawberry
 def filter_users(self, phone: strawberry.Maybe[str] = None) -> list[User]:
     if phone:
         return filter_users_by_phone(phone.value)
+
     return get_all_users()
 ```
