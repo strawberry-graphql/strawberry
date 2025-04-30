@@ -261,7 +261,6 @@ class StrawberryResolver(Generic[T]):
             annotation = self.strawberry_annotations[param]
             if annotation is None:
                 missing_annotations.append(param.name)
-
             else:
                 argument = StrawberryArgument(
                     python_name=param.name,

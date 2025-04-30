@@ -322,7 +322,7 @@ def get_user(schema: strawberry.Schema) -> dict:
     return result.data["user"]
 
 
-def test_maybe_none_to_some(maybe_schema: strawberry.Schema) -> None:
+def test_maybe(maybe_schema: strawberry.Schema) -> None:
     assert get_user(maybe_schema)["phone"] is None
     res = set_phone(maybe_schema, "123")
     assert res["phone"] == "123"

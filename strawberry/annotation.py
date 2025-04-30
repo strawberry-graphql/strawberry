@@ -30,7 +30,7 @@ from strawberry.types.enum import enum as strawberry_enum
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.private import is_private
 from strawberry.types.scalar import ScalarDefinition
-from strawberry.types.unset import UNSET, _annot_is_maybe
+from strawberry.types.unset import UNSET, _annotation_is_maybe
 from strawberry.utils.typing import eval_type, is_generic, is_type_var
 
 if TYPE_CHECKING:
@@ -317,7 +317,7 @@ class StrawberryAnnotation:
 
     @classmethod
     def _get_maybe_type(cls, annotation: Any) -> type | None:
-        return get_args(annotation)[0] if _annot_is_maybe(annotation) else None
+        return get_args(annotation)[0] if _annotation_is_maybe(annotation) else None
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:

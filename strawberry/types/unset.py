@@ -63,9 +63,6 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
-NOTHING = UnsetType()
-"""A special value that can be used to represent an unset value in a field or argument."""
-
 T = TypeVar("T")
 
 
@@ -95,10 +92,12 @@ else:
     class Maybe(Generic[T]): ...
 
 
-def _annot_is_maybe(annotation: Any) -> bool:
+def _annotation_is_maybe(annotation: Any) -> bool:
     return (orig := typing.get_origin(annotation)) and orig is Maybe
 
 
 __all__ = [
     "UNSET",
+    "Maybe",
+    "Some",
 ]

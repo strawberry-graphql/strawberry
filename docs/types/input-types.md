@@ -107,7 +107,7 @@ class Mutation:
         if name := input.name:
             ...  # update name...
         if input.phone:
-            phone = input.phone.value
+            phone = input.phone.value  # can be  str | None
             ...  # update phone...
 ```
 
