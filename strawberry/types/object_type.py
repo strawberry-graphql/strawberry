@@ -4,6 +4,7 @@ import inspect
 import sys
 import types
 from collections.abc import Sequence
+from contextlib import ExitStack, contextmanager
 from typing import (
     Any,
     Callable,
@@ -20,6 +21,7 @@ from strawberry.exceptions import (
     ObjectIsNotClassError,
 )
 from strawberry.types.base import get_object_definition
+from strawberry.types.type_extension import TypeExtension
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.str_converters import to_camel_case
 
@@ -131,13 +133,14 @@ def _process_type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
+    extensions: Sequence[TypeExtension] = (),
     original_type_annotations: Optional[dict[str, Any]] = None,
 ) -> T:
     name = name or to_camel_case(cls.__name__)
     original_type_annotations = original_type_annotations or {}
 
     interfaces = _get_interfaces(cls)
-    fields = _get_fields(cls, original_type_annotations)
+    fields = _get_fields(cls, original_type_annotations, extensions)
     is_type_of = getattr(cls, "is_type_of", None)
     resolve_type = getattr(cls, "resolve_type", None)
 
@@ -160,6 +163,9 @@ def _process_type(
         cls.__strawberry_definition__,  # type: ignore[attr-defined]
         "_type_definition",
     ).inject(cls)
+
+    for extension in extensions:
+        extension.on_object_definition(cls.__strawberry_definition__)  # type: ignore[attr-defined]
 
     # dataclasses removes attributes from the class here:
     # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
@@ -198,6 +204,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
+    extensions: Sequence[TypeExtension] = (),
 ) -> T: ...
 
 
@@ -213,6 +220,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
+    extensions: Sequence[TypeExtension] = (),
 ) -> Callable[[T], T]: ...
 
 
@@ -225,6 +233,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
+    extensions: Sequence[TypeExtension] = (),
 ) -> Union[T, Callable[[T], T]]:
     """Annotates a class as a GraphQL type.
 
@@ -239,6 +248,7 @@ def type(
         description: The description of the GraphQL type.
         directives: The directives of the GraphQL type.
         extend: Whether the class is extending an existing type.
+        extensions: A list of extensions to apply to the type.
 
     Returns:
         The class.
@@ -287,18 +297,22 @@ def type(
             if field and isinstance(field, StrawberryField) and field.type_annotation:
                 original_type_annotations[field_name] = field.type_annotation.annotation
 
-        wrapped = _wrap_dataclass(cls)
+        with ExitStack() as stack:
+            for extension in extensions:
+                stack.enter_context(contextmanager(extension.on_wrap_dataclass)(cls))
 
-        return _process_type(  # type: ignore
-            wrapped,
-            name=name,
-            is_input=is_input,
-            is_interface=is_interface,
-            description=description,
-            directives=directives,
-            extend=extend,
-            original_type_annotations=original_type_annotations,
-        )
+            wrapped = _wrap_dataclass(cls)
+            return _process_type(  # type: ignore
+                wrapped,
+                name=name,
+                is_input=is_input,
+                is_interface=is_interface,
+                description=description,
+                directives=directives,
+                extend=extend,
+                extensions=extensions,
+                original_type_annotations=original_type_annotations,
+            )
 
     if cls is None:
         return wrap
@@ -317,6 +331,7 @@ def input(
     one_of: Optional[bool] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: Sequence[TypeExtension] = (),
 ) -> T: ...
 
 
@@ -330,6 +345,7 @@ def input(
     one_of: Optional[bool] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: Sequence[TypeExtension] = (),
 ) -> Callable[[T], T]: ...
 
 
@@ -340,6 +356,7 @@ def input(
     one_of: Optional[bool] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: Sequence[TypeExtension] = (),
 ):
     """Annotates a class as a GraphQL Input type.
 
@@ -351,6 +368,7 @@ def input(
         description: The description of the GraphQL input type.
         directives: The directives of the GraphQL input type.
         one_of: Whether the input type is a `oneOf` type.
+        extensions: A list of extensions to apply to the type.
 
     Returns:
         The class.
@@ -382,6 +400,7 @@ def input(
         description=description,
         directives=directives,
         is_input=True,
+        extensions=extensions,
     )
 
 
@@ -395,6 +414,7 @@ def interface(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: Sequence[TypeExtension] = (),
 ) -> T: ...
 
 
@@ -407,6 +427,7 @@ def interface(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: Sequence[TypeExtension] = (),
 ) -> Callable[[T], T]: ...
 
 
@@ -419,6 +440,7 @@ def interface(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
+    extensions: Sequence[TypeExtension] = (),
 ):
     """Annotates a class as a GraphQL Interface.
 
@@ -429,6 +451,7 @@ def interface(
         name: The name of the GraphQL interface.
         description: The description of the GraphQL interface.
         directives: The directives of the GraphQL interface.
+        extensions: A list of extensions to apply to the type.
 
     Returns:
         The class.
@@ -455,6 +478,7 @@ def interface(
         description=description,
         directives=directives,
         is_interface=True,
+        extensions=extensions,
     )
 
 
