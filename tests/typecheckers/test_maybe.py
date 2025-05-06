@@ -48,13 +48,13 @@ def test_maybe() -> None:
         [
             Result(
                 type="note",
-                message='Revealed type is "Union[strawberry.types.unset.Some[Union[builtins.str, None]], None]"',
+                message='Revealed type is "Union[strawberry.types.maybe.Some[Union[builtins.str, None]], None]"',
                 line=12,
                 column=13,
             ),
             Result(
                 type="note",
-                message='Revealed type is "strawberry.types.unset.Some[Union[builtins.str, None]]"',
+                message='Revealed type is "strawberry.types.maybe.Some[Union[builtins.str, None]]"',
                 line=15,
                 column=17,
             ),
