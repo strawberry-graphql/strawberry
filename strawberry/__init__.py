@@ -18,6 +18,7 @@ from .types.enum import enum, enum_value
 from .types.field import field
 from .types.info import Info
 from .types.lazy_type import LazyType, lazy
+from .types.maybe import Maybe, Some
 from .types.mutation import mutation, subscription
 from .types.object_type import asdict, input, interface, type  # noqa: A004
 from .types.private import Private
@@ -31,9 +32,11 @@ __all__ = [
     "BasePermission",
     "Info",
     "LazyType",
+    "Maybe",
     "Parent",
     "Private",
     "Schema",
+    "Some",
     "argument",
     "asdict",
     "auto",

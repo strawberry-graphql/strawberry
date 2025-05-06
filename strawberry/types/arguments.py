@@ -17,13 +17,17 @@ from strawberry.exceptions import MultipleStrawberryArgumentsError, UnsupportedT
 from strawberry.scalars import is_scalar
 from strawberry.types.base import (
     StrawberryList,
+    StrawberryMaybe,
     StrawberryOptional,
     has_object_definition,
 )
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.lazy_type import LazyType, StrawberryLazyReference
+from strawberry.types.maybe import Some
 from strawberry.types.unset import UNSET as _deprecated_UNSET  # noqa: N811
-from strawberry.types.unset import _deprecated_is_unset  # noqa: F401
+from strawberry.types.unset import (
+    _deprecated_is_unset,  # noqa: F401
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -135,6 +139,10 @@ class StrawberryArgument:
 
         return is_graphql_generic(self.type)
 
+    @property
+    def is_maybe(self) -> bool:
+        return isinstance(self.type, StrawberryMaybe)
+
 
 def convert_argument(
     value: object,
@@ -143,15 +151,16 @@ def convert_argument(
     config: StrawberryConfig,
 ) -> object:
     # TODO: move this somewhere else and make it first class
+    if isinstance(type_, StrawberryOptional):
+        res = convert_argument(value, type_.of_type, scalar_registry, config)
+
+        return Some(res) if isinstance(type_, StrawberryMaybe) else res
 
     if value is None:
         return None
 
     if value is _deprecated_UNSET:
         return _deprecated_UNSET
-
-    if isinstance(type_, StrawberryOptional):
-        return convert_argument(value, type_.of_type, scalar_registry, config)
 
     if isinstance(type_, StrawberryList):
         value_list = cast("Iterable", value)

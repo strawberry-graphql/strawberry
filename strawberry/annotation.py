@@ -19,6 +19,7 @@ from typing_extensions import Self, get_args, get_origin
 
 from strawberry.types.base import (
     StrawberryList,
+    StrawberryMaybe,
     StrawberryObjectDefinition,
     StrawberryOptional,
     StrawberryTypeVar,
@@ -28,6 +29,7 @@ from strawberry.types.base import (
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.enum import enum as strawberry_enum
 from strawberry.types.lazy_type import LazyType
+from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.types.private import is_private
 from strawberry.types.scalar import ScalarDefinition
 from strawberry.types.unset import UNSET
@@ -143,6 +145,10 @@ class StrawberryAnnotation:
             return evaled_type
         if self._is_list(evaled_type):
             return self.create_list(evaled_type)
+        if type_of := self._get_maybe_type(evaled_type):
+            return StrawberryMaybe(
+                of_type=type_of,
+            )
 
         if self._is_graphql_generic(evaled_type):
             if any(is_type_var(type_) for type_ in get_args(evaled_type)):
@@ -312,6 +318,10 @@ class StrawberryAnnotation:
             or annotation_origin is abc.Sequence
             or is_list
         )
+
+    @classmethod
+    def _get_maybe_type(cls, annotation: Any) -> type | None:
+        return get_args(annotation)[0] if _annotation_is_maybe(annotation) else None
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:
