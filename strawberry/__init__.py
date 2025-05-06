@@ -18,12 +18,13 @@ from .types.enum import enum, enum_value
 from .types.field import field
 from .types.info import Info
 from .types.lazy_type import LazyType, lazy
+from .types.maybe import Maybe, Some
 from .types.mutation import mutation, subscription
 from .types.object_type import asdict, input, interface, type  # noqa: A004
 from .types.private import Private
 from .types.scalar import scalar
 from .types.union import union
-from .types.unset import UNSET, Maybe, Some
+from .types.unset import UNSET
 
 __all__ = [
     "ID",

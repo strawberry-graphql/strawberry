@@ -2,8 +2,6 @@ import dataclasses
 import typing
 from textwrap import dedent
 
-import pytest
-
 import strawberry
 from strawberry.types.unset import UNSET
 
@@ -259,100 +257,3 @@ def test_mutation_deprecation_reason():
           hello: String!
         }"""
     )
-
-
-@pytest.fixture
-def maybe_schema() -> strawberry.Schema:
-    @strawberry.type
-    class User:
-        name: str
-        phone: typing.Optional[str]
-
-    user = User(name="Patrick", phone=None)
-
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def user(self) -> User:
-            return user
-
-    @strawberry.input
-    class UpdateUserInput:
-        phone: strawberry.Maybe[str]
-
-    @strawberry.type
-    class Mutation:
-        @strawberry.mutation
-        def update_user(self, input: UpdateUserInput) -> User:
-            if input.phone:
-                user.phone = input.phone.value
-            return user
-
-    return strawberry.Schema(query=Query, mutation=Mutation)
-
-
-user_query = """
-{
-    user {
-        phone
-    }
-}
-"""
-
-
-def set_phone(schema: strawberry.Schema, phone: typing.Optional[str]) -> dict:
-    query = """
-    mutation ($phone: String) {
-        updateUser(input: { phone: $phone }) {
-            phone
-        }
-    }
-    """
-
-    result = schema.execute_sync(query, variable_values={"phone": phone})
-    assert not result.errors
-    assert result.data
-    return result.data["updateUser"]
-
-
-def get_user(schema: strawberry.Schema) -> dict:
-    result = schema.execute_sync(user_query)
-    assert not result.errors
-    assert result.data
-    return result.data["user"]
-
-
-def test_maybe(maybe_schema: strawberry.Schema) -> None:
-    assert get_user(maybe_schema)["phone"] is None
-    res = set_phone(maybe_schema, "123")
-    assert res["phone"] == "123"
-
-
-def test_maybe_some_to_none(maybe_schema: strawberry.Schema) -> None:
-    assert get_user(maybe_schema)["phone"] is None
-    set_phone(maybe_schema, "123")
-    res = set_phone(maybe_schema, None)
-    assert res["phone"] is None
-
-
-def test_maybe_absent_value(maybe_schema: strawberry.Schema) -> None:
-    set_phone(maybe_schema, "123")
-
-    query = """
-    mutation {
-        updateUser(input: {}) {
-            phone
-        }
-    }
-    """
-    result = maybe_schema.execute_sync(query)
-    assert not result.errors
-    assert result.data
-    assert result.data["updateUser"]["phone"] == "123"
-    # now check the reverse case.
-
-    set_phone(maybe_schema, None)
-    result = maybe_schema.execute_sync(query)
-    assert not result.errors
-    assert result.data
-    assert result.data["updateUser"]["phone"] is None

@@ -19,6 +19,7 @@ from typing_extensions import Self, get_args, get_origin
 
 from strawberry.types.base import (
     StrawberryList,
+    StrawberryMaybe,
     StrawberryObjectDefinition,
     StrawberryOptional,
     StrawberryTypeVar,
@@ -28,9 +29,10 @@ from strawberry.types.base import (
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.enum import enum as strawberry_enum
 from strawberry.types.lazy_type import LazyType
+from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.types.private import is_private
 from strawberry.types.scalar import ScalarDefinition
-from strawberry.types.unset import UNSET, _annotation_is_maybe
+from strawberry.types.unset import UNSET
 from strawberry.utils.typing import eval_type, is_generic, is_type_var
 
 if TYPE_CHECKING:
@@ -130,7 +132,7 @@ class StrawberryAnnotation:
         return self.__resolve_cache__
 
     def _resolve(self) -> Union[StrawberryType, type]:
-        evaled_type = cast(Any, self.evaluate())
+        evaled_type = cast("Any", self.evaluate())
 
         if is_private(evaled_type):
             return evaled_type
@@ -144,9 +146,8 @@ class StrawberryAnnotation:
         if self._is_list(evaled_type):
             return self.create_list(evaled_type)
         if type_of := self._get_maybe_type(evaled_type):
-            return StrawberryOptional(
+            return StrawberryMaybe(
                 of_type=type_of,
-                is_maybe=True,
             )
 
         if self._is_graphql_generic(evaled_type):
@@ -163,7 +164,7 @@ class StrawberryAnnotation:
         if self._is_union(evaled_type, args):
             return self.create_union(evaled_type, args)
         if is_type_var(evaled_type) or evaled_type is Self:
-            return self.create_type_var(cast(TypeVar, evaled_type))
+            return self.create_type_var(cast("TypeVar", evaled_type))
         if self._is_strawberry_type(evaled_type):
             # Simply return objects that are already StrawberryTypes
             return evaled_type

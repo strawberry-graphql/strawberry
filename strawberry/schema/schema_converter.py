@@ -52,6 +52,7 @@ from strawberry.schema.types.scalar import _make_scalar_type
 from strawberry.types.arguments import StrawberryArgument, convert_arguments
 from strawberry.types.base import (
     StrawberryList,
+    StrawberryMaybe,
     StrawberryObjectDefinition,
     StrawberryOptional,
     StrawberryType,
@@ -254,7 +255,7 @@ class GraphQLCoreConverter:
         argument_type = cast(
             "GraphQLInputType", self.from_maybe_optional(argument.type)
         )
-        if argument.is_maybe():
+        if argument.is_maybe:
             default_value: Any = Undefined
         else:
             default_value = Undefined if argument.default is UNSET else argument.default
@@ -422,7 +423,7 @@ class GraphQLCoreConverter:
             ),
         )
         default_value: object
-        if isinstance(field.type, StrawberryOptional) and field.type.is_maybe:
+        if isinstance(field.type, StrawberryMaybe):
             default_value = Undefined
         elif field.default_value is UNSET or field.default_value is dataclasses.MISSING:
             default_value = Undefined
