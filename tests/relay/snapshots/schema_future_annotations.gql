@@ -100,6 +100,7 @@ type PageInfo {
 }
 
 type Query {
+  sub: SubWithNode!
   node(
     """The ID of the object."""
     id: GlobalID!
@@ -335,4 +336,15 @@ type Query {
     """Returns the items in the list that come after the specified cursor."""
     last: Int = null
   ): FruitConnection!
+}
+
+type SubWithNode {
+  node(
+    """The ID of the object."""
+    id: GlobalID!
+  ): Node!
+  nodes(
+    """The IDs of the objects."""
+    ids: [GlobalID!]!
+  ): [Node!]!
 }
