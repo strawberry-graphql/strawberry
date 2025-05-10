@@ -49,8 +49,9 @@ def run_pyright(code: str, strict: bool = True) -> list[Result]:
         f.write(code)
 
     process_result = subprocess.run(
-        ["pyright", "--outputjson", f.name], stdout=subprocess.PIPE, check=False
+        ["pyright", "--outputjson", f.name], capture_output=True, check=False
     )
+    assert not process_result.stderr.decode("utf-8")
 
     os.unlink(f.name)  # noqa: PTH108
 
@@ -58,7 +59,7 @@ def run_pyright(code: str, strict: bool = True) -> list[Result]:
 
     result = [
         Result(
-            type=cast(ResultType, diagnostic["severity"].strip()),
+            type=cast("ResultType", diagnostic["severity"].strip()),
             message=diagnostic["message"].strip(),
             line=diagnostic["range"]["start"]["line"],
             column=diagnostic["range"]["start"]["character"] + 1,

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from functools import cached_property
 from typing import TYPE_CHECKING, Optional, cast
 
@@ -8,6 +7,8 @@ from strawberry.exceptions.exception import StrawberryException
 from strawberry.exceptions.utils.source_finder import SourceFinder
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from strawberry.exceptions.exception_source import ExceptionSource
     from strawberry.types.fields.resolver import StrawberryResolver
 
@@ -101,7 +102,7 @@ class RelayWrongResolverAnnotationError(StrawberryException):
             return None  # pragma: no cover
 
         source_finder = SourceFinder()
-        return source_finder.find_function_from_object(cast(Callable, self.function))
+        return source_finder.find_function_from_object(cast("Callable", self.function))
 
 
 __all__ = [

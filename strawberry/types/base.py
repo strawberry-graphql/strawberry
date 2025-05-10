@@ -152,7 +152,16 @@ class StrawberryContainer(StrawberryType):
 class StrawberryList(StrawberryContainer): ...
 
 
-class StrawberryOptional(StrawberryContainer): ...
+class StrawberryOptional(StrawberryContainer):
+    def __init__(
+        self,
+        of_type: Union[StrawberryType, type[WithStrawberryObjectDefinition], type],
+    ) -> None:
+        super().__init__(of_type)
+
+
+class StrawberryMaybe(StrawberryOptional):
+    pass
 
 
 class StrawberryTypeVar(StrawberryType):

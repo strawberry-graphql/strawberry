@@ -224,7 +224,7 @@ class Query:
         # This is mimicing integrations, like Django
         return [
             cast(
-                Fruit,
+                "Fruit",
                 FruitConcrete(
                     id=f.id,
                     name=f.name,

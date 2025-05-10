@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from typing import Any
+from typing import Any, Union
 
 import pytest
 
@@ -10,21 +8,25 @@ from strawberry.schema_directives import OneOf
 
 @strawberry.input(one_of=True)
 class ExampleInputTagged:
-    a: str | None = strawberry.UNSET
-    b: int | None = strawberry.UNSET
+    a: strawberry.Maybe[str]
+    b: strawberry.Maybe[int]
 
 
 @strawberry.type
 class ExampleResult:
-    a: str | None
-    b: int | None
+    a: Union[str, None]
+    b: Union[int, None]
 
 
 @strawberry.type
 class Query:
     @strawberry.field
     def test(self, input: ExampleInputTagged) -> ExampleResult:
-        return input  # type: ignore
+        if input.a:
+            return ExampleResult(a=input.a.value, b=None)
+        if input.b:
+            return ExampleResult(a=None, b=input.b.value)
+        return ExampleResult(a=None, b=None)
 
 
 schema = strawberry.Schema(query=Query)
@@ -208,21 +210,21 @@ def test_works_with_camelcasing():
 
     @strawberry.input(directives=[OneOf()])
     class ExampleWithLongerNames:
-        a_field: str | None = strawberry.UNSET
-        b_field: int | None = strawberry.UNSET
+        a_field: strawberry.Maybe[str]
+        b_field: strawberry.Maybe[int]
 
     @strawberry.type
     class Result:
-        a_field: str | None
-        b_field: int | None
+        a_field: Union[str, None]
+        b_field: Union[int, None]
 
     @strawberry.type
     class Query:
         @strawberry.field
         def test(self, input: ExampleWithLongerNames) -> Result:
             return Result(  # noqa: F821
-                a_field=None if input.a_field is strawberry.UNSET else input.a_field,
-                b_field=None if input.b_field is strawberry.UNSET else input.b_field,
+                a_field=input.a_field.value if input.a_field else None,
+                b_field=input.b_field.value if input.b_field else None,
             )
 
     schema = strawberry.Schema(query=Query)

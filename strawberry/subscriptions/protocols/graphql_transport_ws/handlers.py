@@ -77,7 +77,7 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
         try:
             try:
                 async for message in self.websocket.iter_json():
-                    await self.handle_message(cast(Message, message))
+                    await self.handle_message(cast("Message", message))
             except NonTextMessageReceived:
                 await self.handle_invalid_message("WebSocket message type must be text")
             except NonJsonMessageReceived:

@@ -41,6 +41,12 @@ def _read_file(text_file: Upload) -> str:
         if isinstance(text_file, LitestarUploadFile):
             text_file = text_file.file  # type: ignore
 
+    with contextlib.suppress(ModuleNotFoundError):
+        from sanic.request import File as SanicUploadFile
+
+        if isinstance(text_file, SanicUploadFile):
+            return text_file.body.decode()
+
     return text_file.read().decode()
 
 

@@ -99,3 +99,29 @@ schema = strawberry.Schema(
 ```
 
 </details>
+
+<details>
+  <summary>Using `tracer_provider`</summary>
+
+```python
+import strawberry
+from opentelemetry.trace import TracerProvider
+from strawberry.extensions.tracing import OpenTelemetryExtension
+
+
+class MyTracerProvider(TracerProvider):
+    def get_tracer(self, name, version=None, schema_url=None):
+        return super().get_tracer(name, version, schema_url)
+
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        OpenTelemetryExtension(
+            tracer_provider=MyTracerProvider(),
+        ),
+    ],
+)
+```
+
+</details>

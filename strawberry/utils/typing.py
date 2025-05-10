@@ -256,11 +256,11 @@ def _get_namespace_from_ast(
         and expr.value.id == "Union"
     ):
         if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
-            expr_slice = cast(Any, expr.slice).value
+            expr_slice = cast("Any", expr.slice).value
         else:
             expr_slice = expr.slice
 
-        for elt in cast(ast.Tuple, expr_slice).elts:
+        for elt in cast("ast.Tuple", expr_slice).elts:
             extra.update(_get_namespace_from_ast(elt, globalns, localns))
     elif (
         isinstance(expr, ast.Subscript)
@@ -274,12 +274,12 @@ def _get_namespace_from_ast(
         and expr.value.id == "Annotated"
     ):
         if hasattr(ast, "Index") and isinstance(expr.slice, ast.Index):
-            expr_slice = cast(Any, expr.slice).value
+            expr_slice = cast("Any", expr.slice).value
         else:
             expr_slice = expr.slice
 
         args: list[str] = []
-        for elt in cast(ast.Tuple, expr_slice).elts:
+        for elt in cast("ast.Tuple", expr_slice).elts:
             extra.update(_get_namespace_from_ast(elt, globalns, localns))
             args.append(ast.unparse(elt))
 
@@ -304,14 +304,16 @@ def eval_type(
     localns: Optional[dict] = None,
 ) -> type:
     """Evaluates a type, resolving forward references."""
+    from strawberry.parent import StrawberryParent
     from strawberry.types.auto import StrawberryAuto
     from strawberry.types.lazy_type import StrawberryLazyReference
     from strawberry.types.private import StrawberryPrivate
 
     globalns = globalns or {}
+
     # If this is not a string, maybe its args are (e.g. list["Foo"])
     if isinstance(type_, ForwardRef):
-        ast_obj = cast(ast.Expr, ast.parse(type_.__forward_arg__).body[0])
+        ast_obj = cast("ast.Expr", ast.parse(type_.__forward_arg__).body[0])
 
         # For Python 3.10+, we can use the built-in _eval_type function directly.
         # It will handle "|" notations properly
@@ -355,11 +357,27 @@ def eval_type(
                     )
                     args = (type_arg, *remaining_args)
                     break
+
                 if isinstance(arg, StrawberryAuto):
                     remaining_args = [
                         a for a in args[1:] if not isinstance(a, StrawberryAuto)
                     ]
                     args = (args[0], arg, *remaining_args)
+                    break
+
+                if isinstance(arg, StrawberryParent):
+                    remaining_args = [
+                        a for a in args[1:] if not isinstance(a, StrawberryParent)
+                    ]
+                    try:
+                        type_arg = (
+                            eval_type(args[0], globalns, localns)
+                            if isinstance(args[0], ForwardRef)
+                            else args[0]
+                        )
+                    except (NameError, TypeError):
+                        type_arg = args[0]
+                    args = (type_arg, arg, *remaining_args)
                     break
 
             # If we have only a StrawberryLazyReference and no more annotations,

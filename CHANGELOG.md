@@ -1,6 +1,338 @@
 CHANGELOG
 =========
 
+0.268.0 - 2025-05-10
+--------------------
+
+This release renames the generated type from `GlobalID` to `ID` in the GraphQL
+schema.
+
+This means that when using `relay.Node`, like in this example:
+
+```python
+@strawberry.type
+class Fruit(relay.Node):
+    code: relay.NodeID[int]
+    name: str
+```
+
+You'd create a GraphQL type that looks like this:
+
+```graphql
+type Fruit implements Node {
+  id: ID!
+  name: String!
+}
+```
+
+while previously you'd get this:
+
+```graphql
+type Fruit implements Node {
+  id: GlobalID!
+  name: String!
+}
+```
+
+The runtime behaviour is still the same, so if you want to use `GlobalID` in
+Python code, you can still do so, for example:
+
+```python
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    @staticmethod
+    async def update_fruit_weight(id: relay.GlobalID, weight: float) -> Fruit:
+        # while `id` is a GraphQL `ID` type, here is still an instance of `relay.GlobalID`
+        fruit = await id.resolve_node(info, ensure_type=Fruit)
+        fruit.weight = weight
+        return fruit
+```
+
+If you want to revert this change, and keep `GlobalID` in the schema, you can
+use the following configuration:
+
+```python
+schema = strawberry.Schema(
+    query=Query, config=StrawberryConfig(relay_use_legacy_global_id=True)
+)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3853](https://github.com/strawberry-graphql/strawberry/pull/3853/)
+
+
+0.267.0 - 2025-05-10
+--------------------
+
+This release adds support to use `strawberry.Parent` with future annotations.
+
+For example, the following code will now work as intended:
+
+```python
+from __future__ import annotations
+
+
+def get_full_name(user: strawberry.Parent[User]) -> str:
+    return f"{user.first_name} {user.last_name}"
+
+
+@strawberry.type
+class User:
+    first_name: str
+    last_name: str
+    full_name: str = strawberry.field(resolver=get_full_name)
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user(self) -> User:
+        return User(first_name="John", last_name="Doe")
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Or even when not using future annotations, but delaying the evaluation of `User`, like:
+
+
+```python
+# Note the User being delayed by passing it as a string
+def get_full_name(user: strawberry.Parent["User"]) -> str:
+    return f"{user.first_name} {user.last_name}"
+
+
+@strawberry.type
+class User:
+    first_name: str
+    last_name: str
+    full_name: str = strawberry.field(resolver=get_full_name)
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user(self) -> User:
+        return User(first_name="John", last_name="Doe")
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3851](https://github.com/strawberry-graphql/strawberry/pull/3851/)
+
+
+0.266.1 - 2025-05-06
+--------------------
+
+This release adds a new (preferable) way to handle optional updates. Up until
+now when you wanted to inffer if an input value was null or absent you'd use
+`strawberry.UNSET` which is a bit cumbersome and error prone.
+
+Now you can use `strawberry.Maybe` to identify if a
+value was provided or not.
+
+e.g.
+
+```python
+import strawberry
+
+
+@strawberry.type
+class User:
+    name: str
+    phone: str | None
+
+
+@strawberry.input
+class UpdateUserInput:
+    name: str
+    phone: strawberry.Maybe[str]
+
+
+@strawberry.type
+class Mutation:
+    def update_user(self, input: UpdateUserInput) -> None:
+        reveal_type(input.phone)  # strawberry.Some[str | None] | None
+
+        if input.phone:
+            reveal_type(input.phone.value)  # str | None
+
+            update_user_phone(input.phone.value)
+```
+
+Or, if you can use pattern matching:
+
+```python
+@strawberry.type
+class Mutation:
+    def update_user(self, input: UpdateUserInput) -> None:
+        match input.phone:
+            case strawberry.Some(value=value):
+                update_user_phone(input.phone.value)
+```
+
+You can also use `strawberry.Maybe` as a field argument like so
+
+```python
+import strawberry
+
+
+@strawberry.field
+def filter_users(self, phone: strawberry.Maybe[str] = None) -> list[User]:
+    if phone:
+        return filter_users_by_phone(phone.value)
+
+    return get_all_users()
+```
+
+Contributed by [ניר](https://github.com/nrbnlulu) via [PR #3791](https://github.com/strawberry-graphql/strawberry/pull/3791/)
+
+
+0.266.0 - 2025-04-19
+--------------------
+
+This release adds support for custom names in enum values using the `name` parameter in `strawberry.enum_value`.
+
+This allows you to specify a different name for an enum value in the GraphQL schema while keeping the original Python enum member name. For example:
+
+```python
+@strawberry.enum
+class IceCreamFlavour(Enum):
+    VANILLA = "vanilla"
+    CHOCOLATE_COOKIE = strawberry.enum_value("chocolate", name="chocolateCookie")
+```
+
+This will produce a GraphQL schema with the custom name:
+
+```graphql
+enum IceCreamFlavour {
+    VANILLA
+    chocolateCookie
+}
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3841](https://github.com/strawberry-graphql/strawberry/pull/3841/)
+
+
+0.265.1 - 2025-04-15
+--------------------
+
+Fix bug where files would be converted into io.BytesIO when using the sanic GraphQLView
+instead of using the sanic File type
+
+Contributed by [Maypher](https://github.com/Maypher) via [PR #3751](https://github.com/strawberry-graphql/strawberry/pull/3751/)
+
+
+0.265.0 - 2025-04-15
+--------------------
+
+This release adds support for using strawberry.union with generics, like in this
+example:
+
+```python
+@strawberry.type
+class ObjectQueries[T]:
+    @strawberry.field
+    def by_id(
+        self, id: strawberry.ID
+    ) -> Union[T, Annotated[NotFoundError, strawberry.union("ByIdResult")]]: ...
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def some_type_queries(self, id: strawberry.ID) -> ObjectQueries[SomeType]: ...
+```
+
+which, now, creates a correct union type named `SomeTypeByIdResult`
+
+Contributed by [Jacob Allen](https://github.com/enoua5) via [PR #3515](https://github.com/strawberry-graphql/strawberry/pull/3515/)
+
+
+0.264.1 - 2025-04-15
+--------------------
+
+Change pydantic conversion to not load field data unless requested
+
+Contributed by [Mark Moes](https://github.com/Mark90) via [PR #3812](https://github.com/strawberry-graphql/strawberry/pull/3812/)
+
+
+0.264.0 - 2025-04-12
+--------------------
+
+This releases improves support for `relay.Edge` subclasses.
+
+`resolve_edge` now accepts `**kwargs`, so custom fields can be added to your edge classes without wholly
+replacing `resolve_edge`:
+```python
+@strawberry.type(name="Edge", description="An edge in a connection.")
+class CustomEdge(relay.Edge[NodeType]):
+    index: int
+
+    @classmethod
+    def resolve_edge(cls, node: NodeType, *, cursor: Any = None, **kwargs: Any) -> Self:
+        assert isinstance(cursor, int)
+        return super().resolve_edge(node, cursor=cursor, index=cursor, **kwargs)
+```
+
+You can also specify a custom cursor prefix, in case you want to implement a different
+kind of cursor than a plain `ListConnection`:
+```python
+@strawberry.type(name="Edge", description="An edge in a connection.")
+class CustomEdge(relay.Edge[NodeType]):
+    CURSOR_PREFIX: ClassVar[str] = "mycursor"
+```
+
+Contributed by [Take Weiland](https://github.com/diesieben07) via [PR #3836](https://github.com/strawberry-graphql/strawberry/pull/3836/)
+
+
+0.263.2 - 2025-04-05
+--------------------
+
+This release contains a few improvements to how `AsyncGenerators` are handled by
+strawberry codebase, ensuring they get properly closed in case of unexpected
+errors.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3834](https://github.com/strawberry-graphql/strawberry/pull/3834/)
+
+
+0.263.1 - 2025-04-04
+--------------------
+
+This releases add support for passing in a custom `TracerProvider` to the `OpenTelemetryExtension`.
+
+Contributed by [Chase Dorsey](https://github.com/cdorsey) via [PR #3830](https://github.com/strawberry-graphql/strawberry/pull/3830/)
+
+
+0.263.0 - 2025-04-01
+--------------------
+
+Adds the ability to include pydantic computed fields when using pydantic.type decorator.
+
+Example:
+```python
+class UserModel(pydantic.BaseModel):
+    age: int
+
+    @computed_field
+    @property
+    def next_age(self) -> int:
+        return self.age + 1
+
+
+@strawberry.experimental.pydantic.type(
+    UserModel, all_fields=True, include_computed=True
+)
+class User:
+    pass
+```
+
+Will allow `nextAge` to be requested from a user entity.
+
+Contributed by [Tyler Nisonoff](https://github.com/tylernisonoff) via [PR #3798](https://github.com/strawberry-graphql/strawberry/pull/3798/)
+
+
 0.262.6 - 2025-03-28
 --------------------
 

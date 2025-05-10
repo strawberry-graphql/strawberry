@@ -65,7 +65,7 @@ try:
     from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY
     from pydantic.mypy import PydanticModelField
 
-    PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))
+    PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))  # noqa: RUF048
 
     from strawberry.experimental.pydantic._compat import IS_PYDANTIC_V1
 except ImportError:
@@ -397,7 +397,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         ]
         add_method(ctx, "__init__", init_args, NoneType())
 
-        model_type = cast(Instance, _get_type_for_expr(model_expression, ctx.api))
+        model_type = cast("Instance", _get_type_for_expr(model_expression, ctx.api))
 
         # these are the fields that the user added to the strawberry type
         new_strawberry_fields: set[str] = set()
@@ -405,7 +405,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         # TODO: think about inheritance for strawberry?
         for stmt in ctx.cls.defs.body:
             if isinstance(stmt, AssignmentStmt):
-                lhs = cast(NameExpr, stmt.lvalues[0])
+                lhs = cast("NameExpr", stmt.lvalues[0])
                 new_strawberry_fields.add(lhs.name)
 
         pydantic_fields: set[PydanticModelField] = set()

@@ -35,7 +35,7 @@ def _convert_from_pydantic_to_strawberry_type(
             if hasattr(option_type, "_pydantic_type"):
                 source_type = option_type._pydantic_type
             else:
-                source_type = cast(type, option_type)
+                source_type = cast("type", option_type)
             if isinstance(data, source_type):
                 return _convert_from_pydantic_to_strawberry_type(
                     option_type, data_from_model=data, extra=extra
@@ -83,14 +83,14 @@ def convert_pydantic_model_to_strawberry_class(
         field = cast("StrawberryField", field_)
         python_name = field.python_name
 
-        data_from_extra = extra.get(python_name, None)
-        data_from_model = (
-            getattr(model_instance, python_name, None) if model_instance else None
-        )
-
         # only convert and add fields to kwargs if they are present in the `__init__`
         # method of the class
         if field.init:
+            data_from_extra = extra.get(python_name, None)
+            data_from_model = (
+                getattr(model_instance, python_name, None) if model_instance else None
+            )
+
             kwargs[python_name] = _convert_from_pydantic_to_strawberry_type(
                 field.type, data_from_model, extra=data_from_extra
             )
