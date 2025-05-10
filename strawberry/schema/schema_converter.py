@@ -80,7 +80,7 @@ from . import compat
 from .types.concrete_type import ConcreteType
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
+    from collections.abc import Awaitable, Mapping
 
     from graphql import (
         GraphQLInputType,
@@ -259,8 +259,8 @@ class GraphQLCoreConverter:
 
     def _get_scalar_registry(
         self,
-        scalar_overrides: dict[object, Union[ScalarWrapper, ScalarDefinition]],
-    ) -> dict[object, Union[ScalarWrapper, ScalarDefinition]]:
+        scalar_overrides: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
+    ) -> Mapping[object, Union[ScalarWrapper, ScalarDefinition]]:
         scalar_registry = {**DEFAULT_SCALAR_REGISTRY}
 
         global_id_name = "GlobalID" if self.config.relay_use_legacy_global_id else "ID"
@@ -281,7 +281,7 @@ class GraphQLCoreConverter:
 
         if scalar_overrides:
             # TODO: check that the overrides are valid
-            scalar_registry.update(scalar_overrides)
+            scalar_registry.update(scalar_overrides)  # type: ignore
 
         return scalar_registry
 
