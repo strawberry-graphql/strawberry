@@ -10,6 +10,7 @@ from strawberry.extensions.field_extension import (
     SyncExtensionResolver,
 )
 from strawberry.schema.config import StrawberryConfig
+from strawberry.types.field import StrawberryField
 
 
 class UpperCaseExtension(FieldExtension):
@@ -410,3 +411,33 @@ def test_extension_has_custom_info_class():
     result = schema.execute_sync(query)
     assert result.data, result.errors
     assert result.data["string"] == "This is a test!!"
+
+
+def test_extension_applied_once():
+    """Avoid regression of https://github.com/strawberry-graphql/strawberry/issues/3823"""
+    applied = 0
+
+    class CustomExtension(FieldExtension):
+        def apply(self, field: StrawberryField):
+            nonlocal applied
+            applied += 1
+
+        def resolve(
+            self,
+            next_: Callable[..., Any],
+            source: Any,
+            info: strawberry.Info,
+            **kwargs: Any,
+        ):
+            return next_(source, info, **kwargs)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(extensions=[CustomExtension()])
+        def string(self) -> str:
+            return "This is a test!!"
+
+    for _ in range(5):
+        strawberry.Schema(query=Query)
+
+    assert applied == 1
