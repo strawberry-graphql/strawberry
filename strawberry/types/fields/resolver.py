@@ -118,7 +118,7 @@ class ReservedType(NamedTuple):
                 try:
                     evaled_annotation = annotation.evaluate()
                 except NameError:
-                    # If this is a strabwerry.Parent using ForwardRef, we will fail to
+                    # If this is a strawberry.Parent using ForwardRef, we will fail to
                     # evaluate at this moment, but at least knowing that it is a reserved
                     # type is enough for now
                     # We might want to revisit this in the future, maybe by postponing
