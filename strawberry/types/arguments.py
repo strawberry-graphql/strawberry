@@ -147,7 +147,7 @@ class StrawberryArgument:
 def convert_argument(
     value: object,
     type_: Union[StrawberryType, type],
-    scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
     config: StrawberryConfig,
 ) -> object:
     # TODO: move this somewhere else and make it first class
@@ -207,7 +207,7 @@ def convert_argument(
 def convert_arguments(
     value: dict[str, Any],
     arguments: list[StrawberryArgument],
-    scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
     config: StrawberryConfig,
 ) -> dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.

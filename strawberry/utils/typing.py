@@ -304,11 +304,13 @@ def eval_type(
     localns: Optional[dict] = None,
 ) -> type:
     """Evaluates a type, resolving forward references."""
+    from strawberry.parent import StrawberryParent
     from strawberry.types.auto import StrawberryAuto
     from strawberry.types.lazy_type import StrawberryLazyReference
     from strawberry.types.private import StrawberryPrivate
 
     globalns = globalns or {}
+
     # If this is not a string, maybe its args are (e.g. list["Foo"])
     if isinstance(type_, ForwardRef):
         ast_obj = cast("ast.Expr", ast.parse(type_.__forward_arg__).body[0])
@@ -355,11 +357,27 @@ def eval_type(
                     )
                     args = (type_arg, *remaining_args)
                     break
+
                 if isinstance(arg, StrawberryAuto):
                     remaining_args = [
                         a for a in args[1:] if not isinstance(a, StrawberryAuto)
                     ]
                     args = (args[0], arg, *remaining_args)
+                    break
+
+                if isinstance(arg, StrawberryParent):
+                    remaining_args = [
+                        a for a in args[1:] if not isinstance(a, StrawberryParent)
+                    ]
+                    try:
+                        type_arg = (
+                            eval_type(args[0], globalns, localns)
+                            if isinstance(args[0], ForwardRef)
+                            else args[0]
+                        )
+                    except (NameError, TypeError):
+                        type_arg = args[0]
+                    args = (type_arg, arg, *remaining_args)
                     break
 
             # If we have only a StrawberryLazyReference and no more annotations,

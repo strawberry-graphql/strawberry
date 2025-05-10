@@ -1,6 +1,127 @@
 CHANGELOG
 =========
 
+0.268.0 - 2025-05-10
+--------------------
+
+This release renames the generated type from `GlobalID` to `ID` in the GraphQL
+schema.
+
+This means that when using `relay.Node`, like in this example:
+
+```python
+@strawberry.type
+class Fruit(relay.Node):
+    code: relay.NodeID[int]
+    name: str
+```
+
+You'd create a GraphQL type that looks like this:
+
+```graphql
+type Fruit implements Node {
+  id: ID!
+  name: String!
+}
+```
+
+while previously you'd get this:
+
+```graphql
+type Fruit implements Node {
+  id: GlobalID!
+  name: String!
+}
+```
+
+The runtime behaviour is still the same, so if you want to use `GlobalID` in
+Python code, you can still do so, for example:
+
+```python
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    @staticmethod
+    async def update_fruit_weight(id: relay.GlobalID, weight: float) -> Fruit:
+        # while `id` is a GraphQL `ID` type, here is still an instance of `relay.GlobalID`
+        fruit = await id.resolve_node(info, ensure_type=Fruit)
+        fruit.weight = weight
+        return fruit
+```
+
+If you want to revert this change, and keep `GlobalID` in the schema, you can
+use the following configuration:
+
+```python
+schema = strawberry.Schema(
+    query=Query, config=StrawberryConfig(relay_use_legacy_global_id=True)
+)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3853](https://github.com/strawberry-graphql/strawberry/pull/3853/)
+
+
+0.267.0 - 2025-05-10
+--------------------
+
+This release adds support to use `strawberry.Parent` with future annotations.
+
+For example, the following code will now work as intended:
+
+```python
+from __future__ import annotations
+
+
+def get_full_name(user: strawberry.Parent[User]) -> str:
+    return f"{user.first_name} {user.last_name}"
+
+
+@strawberry.type
+class User:
+    first_name: str
+    last_name: str
+    full_name: str = strawberry.field(resolver=get_full_name)
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user(self) -> User:
+        return User(first_name="John", last_name="Doe")
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Or even when not using future annotations, but delaying the evaluation of `User`, like:
+
+
+```python
+# Note the User being delayed by passing it as a string
+def get_full_name(user: strawberry.Parent["User"]) -> str:
+    return f"{user.first_name} {user.last_name}"
+
+
+@strawberry.type
+class User:
+    first_name: str
+    last_name: str
+    full_name: str = strawberry.field(resolver=get_full_name)
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user(self) -> User:
+        return User(first_name="John", last_name="Doe")
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #3851](https://github.com/strawberry-graphql/strawberry/pull/3851/)
+
+
 0.266.1 - 2025-05-06
 --------------------
 

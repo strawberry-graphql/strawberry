@@ -23,6 +23,7 @@ from graphql import (
     GraphQLEnumValue,
     GraphQLError,
     GraphQLField,
+    GraphQLID,
     GraphQLInputField,
     GraphQLInputObjectType,
     GraphQLInterfaceType,
@@ -30,6 +31,7 @@ from graphql import (
     GraphQLNamedType,
     GraphQLNonNull,
     GraphQLObjectType,
+    GraphQLScalarType,
     GraphQLType,
     GraphQLUnionType,
     Undefined,
@@ -48,7 +50,12 @@ from strawberry.exceptions import (
     UnresolvedFieldTypeError,
 )
 from strawberry.extensions.field_extension import build_field_extension_resolvers
-from strawberry.schema.types.scalar import _make_scalar_type
+from strawberry.relay.types import GlobalID
+from strawberry.schema.types.scalar import (
+    DEFAULT_SCALAR_REGISTRY,
+    _get_scalar_definition,
+    _make_scalar_type,
+)
 from strawberry.types.arguments import StrawberryArgument, convert_arguments
 from strawberry.types.base import (
     StrawberryList,
@@ -64,7 +71,7 @@ from strawberry.types.enum import EnumDefinition
 from strawberry.types.field import UNRESOLVED
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.private import is_private
-from strawberry.types.scalar import ScalarWrapper
+from strawberry.types.scalar import ScalarWrapper, scalar
 from strawberry.types.union import StrawberryUnion
 from strawberry.types.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
@@ -73,14 +80,13 @@ from . import compat
 from .types.concrete_type import ConcreteType
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
+    from collections.abc import Awaitable, Mapping
 
     from graphql import (
         GraphQLInputType,
         GraphQLNullableType,
         GraphQLOutputType,
         GraphQLResolveInfo,
-        GraphQLScalarType,
     )
 
     from strawberry.directive import StrawberryDirective
@@ -186,7 +192,7 @@ def get_arguments(
     info: Info,
     kwargs: Any,
     config: StrawberryConfig,
-    scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
 ) -> tuple[list[Any], dict[str, Any]]:
     # TODO: An extension might have changed the resolver arguments,
     # but we need them here since we are calling it.
@@ -243,13 +249,41 @@ class GraphQLCoreConverter:
     def __init__(
         self,
         config: StrawberryConfig,
-        scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+        scalar_overrides: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
         get_fields: Callable[[StrawberryObjectDefinition], list[StrawberryField]],
     ) -> None:
         self.type_map: dict[str, ConcreteType] = {}
         self.config = config
-        self.scalar_registry = scalar_registry
+        self.scalar_registry = self._get_scalar_registry(scalar_overrides)
         self.get_fields = get_fields
+
+    def _get_scalar_registry(
+        self,
+        scalar_overrides: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
+    ) -> Mapping[object, Union[ScalarWrapper, ScalarDefinition]]:
+        scalar_registry = {**DEFAULT_SCALAR_REGISTRY}
+
+        global_id_name = "GlobalID" if self.config.relay_use_legacy_global_id else "ID"
+
+        scalar_registry[GlobalID] = _get_scalar_definition(
+            scalar(
+                GlobalID,
+                name=global_id_name,
+                description=GraphQLID.description,
+                parse_literal=lambda v, vars=None: GlobalID.from_id(  # noqa: A006
+                    GraphQLID.parse_literal(v, vars)
+                ),
+                parse_value=GlobalID.from_id,
+                serialize=str,
+                specified_by_url=("https://relay.dev/graphql/objectidentification.htm"),
+            )
+        )
+
+        if scalar_overrides:
+            # TODO: check that the overrides are valid
+            scalar_registry.update(scalar_overrides)  # type: ignore
+
+        return scalar_registry
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
         argument_type = cast(
@@ -784,11 +818,19 @@ class GraphQLCoreConverter:
         scalar_name = self.config.name_converter.from_type(scalar_definition)
 
         if scalar_name not in self.type_map:
+            from strawberry.relay import GlobalID
+
+            if scalar is GlobalID and hasattr(GraphQLNamedType, "reserved_types"):
+                GraphQLNamedType.reserved_types.pop("ID")
+
             implementation = (
                 scalar_definition.implementation
                 if scalar_definition.implementation is not None
                 else _make_scalar_type(scalar_definition)
             )
+
+            if scalar is GlobalID and hasattr(GraphQLNamedType, "reserved_types"):
+                GraphQLNamedType.reserved_types["ID"] = implementation
 
             self.type_map[scalar_name] = ConcreteType(
                 definition=scalar_definition, implementation=implementation

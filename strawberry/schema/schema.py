@@ -44,7 +44,6 @@ from strawberry.extensions.directives import (
 from strawberry.extensions.runner import SchemaExtensionsRunner
 from strawberry.printer import print_schema
 from strawberry.schema.schema_converter import GraphQLCoreConverter
-from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.schema.validation_rules.one_of import OneOfInputValidationRule
 from strawberry.types.base import (
     StrawberryObjectDefinition,
@@ -76,7 +75,7 @@ from .config import StrawberryConfig
 from .exceptions import InvalidOperationTypeError
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Mapping
     from typing_extensions import TypeAlias
 
     from graphql import ExecutionContext as GraphQLExecutionContext
@@ -159,7 +158,7 @@ class Schema(BaseSchema):
         execution_context_class: Optional[type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
         scalar_overrides: Optional[
-            dict[object, Union[type, ScalarWrapper, ScalarDefinition]],
+            Mapping[object, Union[type, ScalarWrapper, ScalarDefinition]],
         ] = None,
         schema_directives: Iterable[object] = (),
     ) -> None:
@@ -207,18 +206,12 @@ class Schema(BaseSchema):
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
 
-        SCALAR_OVERRIDES_DICT_TYPE = dict[
-            object, Union["ScalarWrapper", "ScalarDefinition"]
-        ]
-
-        scalar_registry: SCALAR_OVERRIDES_DICT_TYPE = {**DEFAULT_SCALAR_REGISTRY}
-        if scalar_overrides:
-            # TODO: check that the overrides are valid
-            scalar_registry.update(cast("SCALAR_OVERRIDES_DICT_TYPE", scalar_overrides))
-
         self.schema_converter = GraphQLCoreConverter(
-            self.config, scalar_registry, self.get_fields
+            self.config,
+            scalar_overrides=scalar_overrides or {},  # type: ignore
+            get_fields=self.get_fields,
         )
+
         self.directives = directives
         self.schema_directives = list(schema_directives)
 
