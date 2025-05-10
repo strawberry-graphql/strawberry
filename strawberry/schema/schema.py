@@ -199,18 +199,13 @@ class Schema(BaseSchema):
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
 
-        SCALAR_OVERRIDES_DICT_TYPE = dict[
-            object, Union["ScalarWrapper", "ScalarDefinition"]
-        ]
-
-        scalar_registry: SCALAR_OVERRIDES_DICT_TYPE = {**DEFAULT_SCALAR_REGISTRY}
-        if scalar_overrides:
-            # TODO: check that the overrides are valid
-            scalar_registry.update(cast("SCALAR_OVERRIDES_DICT_TYPE", scalar_overrides))
-
         self.schema_converter = GraphQLCoreConverter(
-            self.config, scalar_registry, self.get_fields
+            # TODO: maybe the get_scalar_registry should be a method of the converter
+            self.config,
+            self._get_scalar_registry(scalar_overrides),
+            self.get_fields,
         )
+
         self.directives = directives
         self.schema_directives = list(schema_directives)
 
@@ -298,6 +293,40 @@ class Schema(BaseSchema):
         if errors:
             formatted_errors = "\n\n".join(f"❌ {error.message}" for error in errors)
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
+
+    def _get_scalar_registry(
+        self,
+        scalar_overrides: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    ) -> dict[object, Union[ScalarWrapper, ScalarDefinition]]:
+        scalar_registry = {**DEFAULT_SCALAR_REGISTRY}
+
+        from graphql import GraphQLID
+
+        from strawberry.relay.types import GlobalID
+
+        global_id_name = "GlobalID" if self.config.relay_use_legacy_global_id else "ID"
+
+        from strawberry.schema.types.scalar import _get_scalar_definition, scalar
+
+        scalar_registry[GlobalID] = _get_scalar_definition(
+            scalar(
+                GlobalID,
+                name=global_id_name,
+                description=GraphQLID.description,
+                parse_literal=lambda v, vars=None: GlobalID.from_id(  # noqa: A006
+                    GraphQLID.parse_literal(v, vars)
+                ),
+                parse_value=GlobalID.from_id,
+                serialize=str,
+                specified_by_url=("https://relay.dev/graphql/objectidentification.htm"),
+            )
+        )
+
+        if scalar_overrides:
+            # TODO: check that the overrides are valid
+            scalar_registry.update(scalar_overrides)
+
+        return scalar_registry
 
     def get_extensions(self, sync: bool = False) -> list[SchemaExtension]:
         extensions: list[type[SchemaExtension] | SchemaExtension] = []

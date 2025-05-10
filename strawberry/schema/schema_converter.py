@@ -771,11 +771,6 @@ class GraphQLCoreConverter:
     def from_scalar(self, scalar: type) -> GraphQLScalarType:
         scalar_definition: ScalarDefinition
 
-        from strawberry.relay import GlobalID
-
-        if not self.config.relay_use_legacy_global_id and scalar is GlobalID:
-            scalar = "IDButGlobalID"
-
         if scalar in self.scalar_registry:
             _scalar_definition = self.scalar_registry[scalar]
             # TODO: check why we need the cast and we are not trying with getattr first
@@ -789,9 +784,9 @@ class GraphQLCoreConverter:
         scalar_name = self.config.name_converter.from_type(scalar_definition)
 
         if scalar_name not in self.type_map:
-            if scalar == "IDButGlobalID" and hasattr(
-                GraphQLNamedType, "reserved_types"
-            ):
+            from strawberry.relay import GlobalID
+
+            if scalar is GlobalID and hasattr(GraphQLNamedType, "reserved_types"):
                 GraphQLNamedType.reserved_types.pop("ID")
 
             implementation = (
@@ -800,9 +795,7 @@ class GraphQLCoreConverter:
                 else _make_scalar_type(scalar_definition)
             )
 
-            if scalar == "IDButGlobalID" and hasattr(
-                GraphQLNamedType, "reserved_types"
-            ):
+            if scalar is GlobalID and hasattr(GraphQLNamedType, "reserved_types"):
                 GraphQLNamedType.reserved_types["ID"] = implementation
 
             self.type_map[scalar_name] = ConcreteType(
