@@ -192,7 +192,7 @@ def get_arguments(
     info: Info,
     kwargs: Any,
     config: StrawberryConfig,
-    scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
 ) -> tuple[list[Any], dict[str, Any]]:
     # TODO: An extension might have changed the resolver arguments,
     # but we need them here since we are calling it.
@@ -249,7 +249,7 @@ class GraphQLCoreConverter:
     def __init__(
         self,
         config: StrawberryConfig,
-        scalar_overrides: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+        scalar_overrides: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
         get_fields: Callable[[StrawberryObjectDefinition], list[StrawberryField]],
     ) -> None:
         self.type_map: dict[str, ConcreteType] = {}
