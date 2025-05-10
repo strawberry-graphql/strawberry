@@ -23,6 +23,7 @@ from graphql import (
     GraphQLEnumValue,
     GraphQLError,
     GraphQLField,
+    GraphQLID,
     GraphQLInputField,
     GraphQLInputObjectType,
     GraphQLInterfaceType,
@@ -49,7 +50,12 @@ from strawberry.exceptions import (
     UnresolvedFieldTypeError,
 )
 from strawberry.extensions.field_extension import build_field_extension_resolvers
-from strawberry.schema.types.scalar import _make_scalar_type
+from strawberry.relay.types import GlobalID
+from strawberry.schema.types.scalar import (
+    DEFAULT_SCALAR_REGISTRY,
+    _get_scalar_definition,
+    _make_scalar_type,
+)
 from strawberry.types.arguments import StrawberryArgument, convert_arguments
 from strawberry.types.base import (
     StrawberryList,
@@ -65,7 +71,7 @@ from strawberry.types.enum import EnumDefinition
 from strawberry.types.field import UNRESOLVED
 from strawberry.types.lazy_type import LazyType
 from strawberry.types.private import is_private
-from strawberry.types.scalar import ScalarWrapper
+from strawberry.types.scalar import ScalarWrapper, scalar
 from strawberry.types.union import StrawberryUnion
 from strawberry.types.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
@@ -243,13 +249,41 @@ class GraphQLCoreConverter:
     def __init__(
         self,
         config: StrawberryConfig,
-        scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+        scalar_overrides: dict[object, Union[ScalarWrapper, ScalarDefinition]],
         get_fields: Callable[[StrawberryObjectDefinition], list[StrawberryField]],
     ) -> None:
         self.type_map: dict[str, ConcreteType] = {}
         self.config = config
-        self.scalar_registry = scalar_registry
+        self.scalar_registry = self._get_scalar_registry(scalar_overrides)
         self.get_fields = get_fields
+
+    def _get_scalar_registry(
+        self,
+        scalar_overrides: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    ) -> dict[object, Union[ScalarWrapper, ScalarDefinition]]:
+        scalar_registry = {**DEFAULT_SCALAR_REGISTRY}
+
+        global_id_name = "GlobalID" if self.config.relay_use_legacy_global_id else "ID"
+
+        scalar_registry[GlobalID] = _get_scalar_definition(
+            scalar(
+                GlobalID,
+                name=global_id_name,
+                description=GraphQLID.description,
+                parse_literal=lambda v, vars=None: GlobalID.from_id(  # noqa: A006
+                    GraphQLID.parse_literal(v, vars)
+                ),
+                parse_value=GlobalID.from_id,
+                serialize=str,
+                specified_by_url=("https://relay.dev/graphql/objectidentification.htm"),
+            )
+        )
+
+        if scalar_overrides:
+            # TODO: check that the overrides are valid
+            scalar_registry.update(scalar_overrides)
+
+        return scalar_registry
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
         argument_type = cast(
