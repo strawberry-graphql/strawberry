@@ -431,8 +431,8 @@ use case, like SQLAlchemy, etc.
 The `GlobalID` type is a special object that contains all the info necessary to
 identify and retrieve a given object that implements the `Node` interface.
 
-It can for example be useful in a mutation, to receive and object and retrieve
-it in its resolver. For example:
+It can for example be useful in a mutation, to receive an object and retrieve it
+in its resolver. For example:
 
 ```python
 @strawberry.type

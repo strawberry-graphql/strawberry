@@ -1,11 +1,52 @@
 Release type: minor
 
-This release changes GlobalIDs to ID in the GraphQL schema, now instead of
-having `GlobalID` as type when using `relay.Node` you'll get `ID`.
+This release renames the generated type from `GlobalID` to `ID` in the GraphQL
+schema.
 
-The runtime behaviour is still the same.
+This means that when using `relay.Node`, like in this example:
 
-If you need to use the previous behaviour you can use the following config:
+```python
+@strawberry.type
+class Fruit(relay.Node):
+    code: relay.NodeID[int]
+    name: str
+```
+
+You'd create a GraphQL type that looks like this:
+
+```graphql
+type Fruit implements Node {
+  id: ID!
+  name: String!
+}
+```
+
+while previously you'd get this:
+
+```graphql
+type Fruit implements Node {
+  id: GlobalID!
+  name: String!
+}
+```
+
+The runtime behaviour is still the same, so if you want to use `GlobalID` in
+Python code, you can still do so, for example:
+
+```python
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    @staticmethod
+    async def update_fruit_weight(id: relay.GlobalID, weight: float) -> Fruit:
+        # while `id` is a GraphQL `ID` type, here is still an instance of `relay.GlobalID`
+        fruit = await id.resolve_node(info, ensure_type=Fruit)
+        fruit.weight = weight
+        return fruit
+```
+
+If you want to revert this change, and keep `GlobalID` in the schema, you can
+use the following configuration:
 
 ```python
 schema = strawberry.Schema(
