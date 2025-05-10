@@ -12,7 +12,6 @@ from strawberry import relay
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.relay.fields import ConnectionExtension
 from strawberry.relay.utils import to_base64
-from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types.arguments import StrawberryArgument
 from strawberry.types.field import StrawberryField
 from strawberry.types.fields.resolver import StrawberryResolver
@@ -23,7 +22,7 @@ from .schema import FruitAsync, schema
 def test_query_node():
     result = schema.execute_sync(
         """
-        query TestQuery ($id: GlobalID!) {
+        query TestQuery ($id: ID!) {
             node (id: $id) {
                 ... on Node {
                     id
@@ -52,7 +51,7 @@ def test_query_node():
 async def test_query_node_with_async_permissions():
     result = await schema.execute(
         """
-        query TestQuery ($id: GlobalID!) {
+        query TestQuery ($id: ID!) {
             nodeWithAsyncPermissions (id: $id) {
                 ... on Node {
                     id
@@ -81,7 +80,7 @@ async def test_query_node_with_async_permissions():
 def test_query_node_optional():
     result = schema.execute_sync(
         """
-        query TestQuery ($id: GlobalID!) {
+        query TestQuery ($id: ID!) {
             nodeOptional (id: $id) {
                 ... on Node {
                     id
@@ -104,7 +103,7 @@ def test_query_node_optional():
 async def test_query_node_async():
     result = await schema.execute(
         """
-        query TestQuery ($id: GlobalID!) {
+        query TestQuery ($id: ID!) {
             node (id: $id) {
                 ... on Node {
                     id
@@ -133,7 +132,7 @@ async def test_query_node_async():
 async def test_query_node_optional_async():
     result = await schema.execute(
         """
-        query TestQuery ($id: GlobalID!) {
+        query TestQuery ($id: ID!) {
             nodeOptional (id: $id) {
                 ... on Node {
                     id
@@ -156,7 +155,7 @@ async def test_query_node_optional_async():
 def test_query_nodes():
     result = schema.execute_sync(
         """
-        query TestQuery ($ids: [GlobalID!]!) {
+        query TestQuery ($ids: [ID!]!) {
             nodes (ids: $ids) {
                 ... on Node {
                     id
@@ -192,7 +191,7 @@ def test_query_nodes():
 def test_query_nodes_optional():
     result = schema.execute_sync(
         """
-        query TestQuery ($ids: [GlobalID!]!) {
+        query TestQuery ($ids: [ID!]!) {
             nodesOptional (ids: $ids) {
                 ... on Node {
                     id
@@ -233,7 +232,7 @@ def test_query_nodes_optional():
 async def test_query_nodes_async():
     result = await schema.execute(
         """
-        query TestQuery ($ids: [GlobalID!]!) {
+        query TestQuery ($ids: [ID!]!) {
             nodes (ids: $ids) {
                 ... on Node {
                     id
@@ -282,7 +281,7 @@ async def test_query_nodes_async():
 async def test_query_nodes_optional_async():
     result = await schema.execute(
         """
-        query TestQuery ($ids: [GlobalID!]!) {
+        query TestQuery ($ids: [ID!]!) {
             nodesOptional (ids: $ids) {
                 ... on Node {
                     id
@@ -1454,13 +1453,6 @@ def test_query_last_higher_than_max_results(query_attr: str):
 
 
 def test_parameters(mocker: MockerFixture):
-    # Avoid E501 errors
-    mocker.patch.object(
-        DEFAULT_SCALAR_REGISTRY[relay.GlobalID],
-        "description",
-        "__GLOBAL_ID_DESC__",
-    )
-
     class CustomField(StrawberryField):
         @property
         def arguments(self) -> list[StrawberryArgument]:
@@ -1500,7 +1492,7 @@ def test_parameters(mocker: MockerFixture):
     expected = '''
     type Fruit implements Node {
       """The Globally Unique ID of this object"""
-      id: GlobalID!
+      id: ID!
     }
 
     """A connection to a list of items."""
@@ -1521,13 +1513,10 @@ def test_parameters(mocker: MockerFixture):
       node: Fruit!
     }
 
-    """__GLOBAL_ID_DESC__"""
-    scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
-
     """An object with a Globally Unique ID"""
     interface Node {
       """The Globally Unique ID of this object"""
-      id: GlobalID!
+      id: ID!
     }
 
     """Information to aid in pagination."""
@@ -1678,7 +1667,7 @@ def test_correct_model_returned(type_name: str, should_have_name: bool):
     node_id = relay.to_base64(type_name, "1")
     result = schema.execute_sync(
         """
-        query NodeQuery($id: GlobalID!) {
+        query NodeQuery($id: ID!) {
           node(id: $id) {
             __typename
             id
