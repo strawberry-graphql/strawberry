@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from tests.views.schema import schema
+from tests.views.schema import get_schema
 
 if TYPE_CHECKING:
     from strawberry.channels.testing import GraphQLWebsocketCommunicator
@@ -19,7 +19,7 @@ async def communicator(
     from strawberry.channels import GraphQLWSConsumer
     from strawberry.channels.testing import GraphQLWebsocketCommunicator
 
-    application = GraphQLWSConsumer.as_asgi(schema=schema, keep_alive_interval=50)
+    application = GraphQLWSConsumer.as_asgi(schema=get_schema(), keep_alive_interval=50)
 
     async with GraphQLWebsocketCommunicator(
         protocol=request.param,

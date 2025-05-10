@@ -19,9 +19,10 @@ from strawberry.channels.handlers.http_handler import ChannelsRequest
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.temporal_response import TemporalResponse
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
-from tests.views.schema import Query, schema
+from tests.views.schema import Query, get_schema
 from tests.websockets.views import OnWSConnectMixin
 
 from .base import (
@@ -142,14 +143,16 @@ class ChannelsHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
+        self.schema = get_schema(schema_config)
         self.ws_app = DebuggableGraphQLWSConsumer.as_asgi(
-            schema=schema,
+            schema=self.schema,
             keep_alive=False,
         )
 
         self.http_app = DebuggableGraphQLHTTPConsumer.as_asgi(
-            schema=schema,
+            schema=self.schema,
             graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
@@ -158,7 +161,7 @@ class ChannelsHttpClient(HttpClient):
         )
 
     def create_app(self, **kwargs: Any) -> None:
-        self.ws_app = DebuggableGraphQLWSConsumer.as_asgi(schema=schema, **kwargs)
+        self.ws_app = DebuggableGraphQLWSConsumer.as_asgi(schema=self.schema, **kwargs)
 
     async def _graphql_request(
         self,
@@ -266,9 +269,10 @@ class SyncChannelsHttpClient(ChannelsHttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
+        schema_config: Optional[StrawberryConfig] = None,
     ):
         self.http_app = DebuggableSyncGraphQLHTTPConsumer.as_asgi(
-            schema=schema,
+            schema=get_schema(schema_config),
             graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
