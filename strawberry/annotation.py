@@ -17,6 +17,7 @@ from typing import (
 )
 from typing_extensions import Self, get_args, get_origin
 
+from strawberry.streamable import StrawberryStreamable
 from strawberry.types.base import (
     StrawberryList,
     StrawberryMaybe,
@@ -143,6 +144,8 @@ class StrawberryAnnotation:
 
         if self._is_lazy_type(evaled_type):
             return evaled_type
+        if self._is_streamable(evaled_type, args):
+            return self.create_list(list[evaled_type])
         if self._is_list(evaled_type):
             return self.create_list(evaled_type)
         if type_of := self._get_maybe_type(evaled_type):
@@ -322,6 +325,10 @@ class StrawberryAnnotation:
     @classmethod
     def _get_maybe_type(cls, annotation: Any) -> type | None:
         return get_args(annotation)[0] if _annotation_is_maybe(annotation) else None
+
+    @classmethod
+    def _is_streamable(cls, annotation: Any, args: list[Any]) -> bool:
+        return any(isinstance(arg, StrawberryStreamable) for arg in args)
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:
