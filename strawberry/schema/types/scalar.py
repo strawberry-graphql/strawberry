@@ -48,6 +48,18 @@ def _get_scalar_definition(scalar: type) -> ScalarDefinition:
     return scalar._scalar_definition  # type: ignore[attr-defined]
 
 
+IDButGlobalID = scalar(
+    GlobalID,
+    name="ID",
+    description=GraphQLID.description,
+    parse_literal=lambda v, vars=None: GlobalID.from_id(  # noqa: A006
+        GraphQLID.parse_literal(v, vars)
+    ),
+    parse_value=GlobalID.from_id,
+    serialize=str,
+    specified_by_url=("https://relay.dev/graphql/objectidentification.htm"),
+)
+
 DEFAULT_SCALAR_REGISTRY: dict[object, ScalarDefinition] = {
     type(None): _get_scalar_definition(base_scalars.Void),
     None: _get_scalar_definition(base_scalars.Void),
@@ -76,7 +88,9 @@ DEFAULT_SCALAR_REGISTRY: dict[object, ScalarDefinition] = {
             specified_by_url=("https://relay.dev/graphql/objectidentification.htm"),
         )
     ),
+    "IDButGlobalID": _get_scalar_definition(IDButGlobalID),
 }
+
 
 __all__ = [
     "DEFAULT_SCALAR_REGISTRY",
