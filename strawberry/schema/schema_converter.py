@@ -838,10 +838,13 @@ class GraphQLCoreConverter:
         else:
             other_definition = self.type_map[scalar_name].definition
 
+            if scalar_name == "ID" and other_definition.name == "ID":
+                pass
+
             # TODO: the other definition might not be a scalar, we should
             # handle this case better, since right now we assume it is a scalar
 
-            if other_definition != scalar_definition:
+            elif other_definition != scalar_definition:
                 other_definition = cast("ScalarDefinition", other_definition)
 
                 raise ScalarAlreadyRegisteredError(scalar_definition, other_definition)
