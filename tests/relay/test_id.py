@@ -88,3 +88,52 @@ type Query {
             }
         }
     )
+
+
+def test_can_use_both_global_id_and_id() -> None:
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, id: GlobalID) -> str:
+            return "Hello World"
+
+        @strawberry.field
+        def hello2(self, id: strawberry.ID) -> str:
+            return "Hello World"
+
+    schema = strawberry.Schema(Query)
+
+    assert str(schema) == snapshot("""\
+type Query {
+  hello(id: ID!): String!
+  hello2(id: ID!): String!
+}\
+""")
+
+
+def test_can_use_both_global_id_and_id_legacy() -> None:
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, id: GlobalID) -> str:
+            return "Hello World"
+
+        @strawberry.field
+        def hello2(self, id: strawberry.ID) -> str:
+            return "Hello World"
+
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(relay_use_legacy_global_id=True)
+    )
+
+    assert str(schema) == snapshot('''\
+"""
+The `ID` scalar type represents a unique identifier, often used to refetch an object or as key for a cache. The ID type appears in a JSON response as a String; however, it is not intended to be human-readable. When expected as an input type, any string (such as `"4"`) or integer (such as `4`) input value will be accepted as an ID.
+"""
+scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
+
+type Query {
+  hello(id: GlobalID!): String!
+  hello2(id: ID!): String!
+}\
+''')

@@ -817,9 +817,9 @@ class GraphQLCoreConverter:
 
         scalar_name = self.config.name_converter.from_type(scalar_definition)
 
-        if scalar_name not in self.type_map:
-            from strawberry.relay import GlobalID
+        from strawberry.relay import GlobalID
 
+        if scalar_name not in self.type_map:
             if scalar is GlobalID and hasattr(GraphQLNamedType, "reserved_types"):
                 GraphQLNamedType.reserved_types.pop("ID")
 
@@ -841,7 +841,17 @@ class GraphQLCoreConverter:
             # TODO: the other definition might not be a scalar, we should
             # handle this case better, since right now we assume it is a scalar
 
-            if other_definition != scalar_definition:
+            # special case to allow GlobalID to be used as an ID scalar
+            # TODO: we need to find a better way to handle this, might be
+            # worth reworking our scalar implementation.
+            if (
+                hasattr(other_definition, "origin")
+                and hasattr(scalar_definition, "origin")
+                and other_definition.origin == GlobalID
+                and scalar_definition.origin == GraphQLID
+            ):
+                pass
+            elif other_definition != scalar_definition:
                 other_definition = cast("ScalarDefinition", other_definition)
 
                 raise ScalarAlreadyRegisteredError(scalar_definition, other_definition)

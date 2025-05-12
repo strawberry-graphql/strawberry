@@ -40,6 +40,7 @@ def _make_scalar_definition(scalar_type: GraphQLScalarType) -> ScalarDefinition:
         parse_literal=scalar_type.parse_literal,
         parse_value=scalar_type.parse_value,
         implementation=scalar_type,
+        origin=scalar_type,
     )
 
 
