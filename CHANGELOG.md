@@ -1,6 +1,36 @@
 CHANGELOG
 =========
 
+0.268.1 - 2025-05-12
+--------------------
+
+This releases fixed an issue that prevented from using `ID` and `GlobalID` at the same
+time, like in this example:
+
+```python
+import strawberry
+from strawberry.relay.types import GlobalID
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self, id: GlobalID) -> str:
+        return "Hello World"
+
+    @strawberry.field
+    def hello2(self, id: strawberry.ID) -> str:
+        return "Hello World"
+
+
+schema = strawberry.Schema(
+    Query,
+)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3855](https://github.com/strawberry-graphql/strawberry/pull/3855/)
+
+
 0.268.0 - 2025-05-10
 --------------------
 
