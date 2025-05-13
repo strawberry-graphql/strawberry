@@ -175,20 +175,28 @@ class OperationContextAwareGraphQLExecutionContext(GraphQLExecutionContext):
         parent_type: GraphQLObjectType,
         path: Path,
     ) -> GraphQLResolveInfo:
-        return OperationContextAwareGraphQLResolveInfo(
-            field_group.fields[0].node.name.value,
-            field_group.to_nodes(),
-            field_def.type,
+        if IS_GQL_33:
+            return OperationContextAwareGraphQLResolveInfo(
+                field_group.fields[0].node.name.value,
+                field_group.to_nodes(),
+                field_def.type,
+                parent_type,
+                path,
+                self.schema,
+                self.fragments,
+                self.root_value,
+                self.operation,
+                self.variable_values,
+                self.context_value,
+                self.is_awaitable,
+                self.operation_extensions,
+            )
+
+        return super().build_resolve_info(
+            field_def,
+            field_group,
             parent_type,
             path,
-            self.schema,
-            self.fragments,
-            self.root_value,
-            self.operation,
-            self.variable_values,
-            self.context_value,
-            self.is_awaitable,
-            self.operation_extensions,
         )
 
 
