@@ -1,6 +1,5 @@
 import builtins
-from typing import Any, Union
-from typing_extensions import Annotated
+from typing import Annotated, Any, Union
 
 from pydantic import BaseModel
 
@@ -25,17 +24,7 @@ except ImportError:
     else:
         raise
 
-try:
-    from typing import GenericAlias as TypingGenericAlias  # type: ignore
-except ImportError:
-    import sys
-
-    # python < 3.9 does not have GenericAlias (list[int], tuple[str, ...] and so on)
-    # we do this under a conditional to avoid a mypy :)
-    if sys.version_info < (3, 9):
-        TypingGenericAlias = ()
-    else:
-        raise
+from typing import GenericAlias as TypingGenericAlias  # type: ignore
 
 
 def replace_pydantic_types(type_: Any, is_input: bool) -> Any:
@@ -43,8 +32,7 @@ def replace_pydantic_types(type_: Any, is_input: bool) -> Any:
         attr = "_strawberry_input_type" if is_input else "_strawberry_type"
         if hasattr(type_, attr):
             return getattr(type_, attr)
-        else:
-            raise UnregisteredTypeException(type_)
+        raise UnregisteredTypeException(type_)
     return type_
 
 

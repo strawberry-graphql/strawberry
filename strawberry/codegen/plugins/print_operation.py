@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import textwrap
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from strawberry.codegen import CodegenFile, QueryCodegenPlugin
 from strawberry.codegen.types import (
@@ -35,8 +35,8 @@ if TYPE_CHECKING:
 
 class PrintOperationPlugin(QueryCodegenPlugin):
     def generate_code(
-        self, types: List[GraphQLType], operation: GraphQLOperation
-    ) -> List[CodegenFile]:
+        self, types: list[GraphQLType], operation: GraphQLOperation
+    ) -> list[CodegenFile]:
         code_lines = []
         for t in types:
             if not isinstance(t, GraphQLFragmentType):
@@ -139,7 +139,7 @@ class PrintOperationPlugin(QueryCodegenPlugin):
 
         raise ValueError(f"not supported: {type(value)}")  # pragma: no cover
 
-    def _print_arguments(self, arguments: List[GraphQLArgument]) -> str:
+    def _print_arguments(self, arguments: list[GraphQLArgument]) -> str:
         if not arguments:
             return ""
 
@@ -154,7 +154,7 @@ class PrintOperationPlugin(QueryCodegenPlugin):
             + ")"
         )
 
-    def _print_directives(self, directives: List[GraphQLDirective]) -> str:
+    def _print_directives(self, directives: list[GraphQLDirective]) -> str:
         if not directives:
             return ""
 
@@ -204,7 +204,7 @@ class PrintOperationPlugin(QueryCodegenPlugin):
 
         raise ValueError(f"Unsupported selection: {selection}")  # pragma: no cover
 
-    def _print_selections(self, selections: List[GraphQLSelection]) -> str:
+    def _print_selections(self, selections: list[GraphQLSelection]) -> str:
         selections_text = "\n".join(
             [self._print_selection(selection) for selection in selections]
         )

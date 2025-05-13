@@ -1,7 +1,6 @@
 import dataclasses
 import json
-from typing import List, Optional
-from typing_extensions import Annotated
+from typing import Annotated, Optional
 
 import pytest
 
@@ -65,6 +64,7 @@ def test_info_has_the_correct_shape():
     result = schema.execute_sync(query, context_value=my_context, root_value=root_value)
 
     assert not result.errors
+    assert result.data
     info = result.data["helloWorld"]
     assert info.pop("operation").startswith("OperationDefinitionNode at")
     field = json.loads(info.pop("selectedField"))
@@ -298,8 +298,8 @@ def test_info_selected_fields_undefined_variable():
     ("return_type", "return_value"),
     [
         (str, "text"),
-        (List[str], ["text"]),
-        (Optional[List[int]], None),
+        (list[str], ["text"]),
+        (Optional[list[int]], None),
     ],
 )
 def test_return_type_from_resolver(return_type, return_value):
@@ -315,12 +315,13 @@ def test_return_type_from_resolver(return_type, return_value):
     result = schema.execute_sync("{ field }")
 
     assert not result.errors
+    assert result.data
     assert result.data["field"] == return_value
 
 
 def test_return_type_from_field():
-    def resolver(info):
-        assert info.return_type == int
+    def resolver(info: strawberry.Info):
+        assert info.return_type is int
         return 0
 
     @strawberry.type
@@ -332,11 +333,12 @@ def test_return_type_from_field():
     result = schema.execute_sync("{ field }")
 
     assert not result.errors
+    assert result.data
     assert result.data["field"] == 0
 
 
 def test_field_nodes_deprecation():
-    def resolver(info):
+    def resolver(info: strawberry.Info):
         info.field_nodes
         return 0
 
@@ -350,6 +352,7 @@ def test_field_nodes_deprecation():
         result = schema.execute_sync("{ field }")
 
     assert not result.errors
+    assert result.data
     assert result.data["field"] == 0
 
 
@@ -367,7 +370,7 @@ def test_get_argument_defintion_helper():
         @strawberry.field
         def field(
             self,
-            info,
+            info: strawberry.Info,
             arg_1: Annotated[str, strawberry.argument(description="Some description")],
             arg_2: Optional[TestInput] = None,
         ) -> str:

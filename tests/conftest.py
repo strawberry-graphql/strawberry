@@ -1,15 +1,17 @@
 import pathlib
 import sys
-from typing import Any, List, Tuple
+from typing import Any
 
 import pytest
 
+from strawberry.utils import IS_GQL_32
 
-def pytest_emoji_xfailed(config: pytest.Config) -> Tuple[str, str]:
+
+def pytest_emoji_xfailed(config: pytest.Config) -> tuple[str, str]:
     return "🤷‍♂️ ", "XFAIL 🤷‍♂️ "
 
 
-def pytest_emoji_skipped(config: pytest.Config) -> Tuple[str, str]:
+def pytest_emoji_skipped(config: pytest.Config) -> tuple[str, str]:
     return "🦘 ", "SKIPPED 🦘"
 
 
@@ -17,7 +19,7 @@ pytest_plugins = ("tests.plugins.strawberry_exceptions",)
 
 
 @pytest.hookimpl  # type: ignore
-def pytest_collection_modifyitems(config: pytest.Config, items: List[pytest.Item]):
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]):
     rootdir = pathlib.Path(config.rootdir)  # type: ignore
 
     for item in items:
@@ -34,7 +36,6 @@ def pytest_collection_modifyitems(config: pytest.Config, items: List[pytest.Item
             "quart",
             "pydantic",
             "sanic",
-            "starlite",
             "litestar",
         ]
 
@@ -49,11 +50,11 @@ def pytest_ignore_collect(
 ):
     if sys.version_info < (3, 12) and "python_312" in collection_path.parts:
         return True
+    return None
 
-    markers = config.getoption("-m")
 
-    # starlite has some issues with pydantic 2, which we
-    # use in our dev deps, so we skip starlite unless
-    # we're running the tests for it
-    if "starlite" not in markers and "starlite" in collection_path.parts:
-        return True
+def skip_if_gql_32(reason: str) -> pytest.MarkDecorator:
+    return pytest.mark.skipif(
+        IS_GQL_32,
+        reason=reason,
+    )

@@ -1,6 +1,7 @@
 # type: ignore
 import typing
-from typing import Any, Generic, List, NamedTuple, Optional, Type, TypeVar, Union
+from contextlib import nullcontext
+from typing import Any, Generic, NamedTuple, Optional, TypeVar, Union
 
 import pytest
 
@@ -214,7 +215,7 @@ def test_classmethod_resolvers():
         age: int
 
         @classmethod
-        def get_users(cls) -> "List[User]":
+        def get_users(cls) -> "list[User]":
             return [cls(name="Bob", age=10), cls(name="Nancy", age=30)]
 
     @strawberry.type
@@ -236,12 +237,12 @@ def test_classmethod_resolvers():
 def test_staticmethod_resolvers():
     class Alphabet:
         @staticmethod
-        def get_letters() -> List[str]:
+        def get_letters() -> list[str]:
             return ["a", "b", "c"]
 
     @strawberry.type
     class Query:
-        letters: List[str] = strawberry.field(resolver=Alphabet.get_letters)
+        letters: list[str] = strawberry.field(resolver=Alphabet.get_letters)
 
     schema = strawberry.Schema(query=Query)
 
@@ -324,7 +325,7 @@ async def test_async_list_resolver():
     @strawberry.type
     class Query:
         @strawberry.field
-        async def best_flavours(self) -> List[str]:
+        async def best_flavours(self) -> list[str]:
             return ["strawberry", "pistachio"]
 
     schema = strawberry.Schema(query=Query)
@@ -361,7 +362,7 @@ def test_generic_resolver_factory():
 
     T = TypeVar("T")
 
-    def resolver_factory(strawberry_type: Type[T]):
+    def resolver_factory(strawberry_type: type[T]):
         def resolver() -> T:
             return strawberry_type(some=1)
 
@@ -476,12 +477,12 @@ def test_generic_resolver_list():
     class AType:
         some: int
 
-    def resolver() -> List[T]:
+    def resolver() -> list[T]:
         return [AType(some=1)]
 
     @strawberry.type
     class Query:
-        list_type: List[AType] = strawberry.field(resolver)
+        list_type: list[AType] = strawberry.field(resolver)
 
     strawberry.Schema(query=Query)
 
@@ -512,18 +513,23 @@ def arbitrarily_named_info(icon: str, info_argument: Info) -> str:
 
 
 @pytest.mark.parametrize(
-    "resolver",
-    (
-        pytest.param(name_based_info),
-        pytest.param(type_based_info),
-        pytest.param(generic_type_based_info),
-        pytest.param(arbitrarily_named_info),
-    ),
+    ("resolver", "deprecation"),
+    [
+        pytest.param(
+            name_based_info,
+            pytest.deprecated_call(match="Argument name-based matching of"),
+        ),
+        pytest.param(type_based_info, nullcontext()),
+        pytest.param(generic_type_based_info, nullcontext()),
+        pytest.param(arbitrarily_named_info, nullcontext()),
+    ],
 )
-def test_info_argument(resolver):
-    @strawberry.type
-    class ResolverGreeting:
-        hello: str = strawberry.field(resolver=resolver)
+def test_info_argument(resolver, deprecation):
+    with deprecation:
+
+        @strawberry.type
+        class ResolverGreeting:
+            hello: str = strawberry.field(resolver=resolver)
 
     schema = strawberry.Schema(query=ResolverGreeting)
     result = schema.execute_sync('{ hello(icon: "🍓") }')
@@ -559,10 +565,10 @@ class Foo:
 
 @pytest.mark.parametrize(
     "resolver",
-    (
+    [
         pytest.param(parent_no_self),
         pytest.param(Foo.static_method_parent),
-    ),
+    ],
 )
 def test_parent_argument(resolver):
     @strawberry.type
@@ -604,25 +610,11 @@ def multiple_infos(root, info1: Info, info2: Info) -> str:
 
 @pytest.mark.parametrize(
     "resolver",
-    (
+    [
         pytest.param(parent_self_and_root),
         pytest.param(multiple_parents),
         pytest.param(multiple_infos),
-        pytest.param(
-            parent_and_self,
-            marks=pytest.mark.xfail(
-                strict=True,
-                reason="`self` should not raise ConflictingArgumentsError",
-            ),
-        ),
-        pytest.param(
-            self_and_root,
-            marks=pytest.mark.xfail(
-                strict=True,
-                reason="`self` should not raise ConflictingArgumentsError",
-            ),
-        ),
-    ),
+    ],
 )
 @pytest.mark.raises_strawberry_exception(
     ConflictingArgumentsError,
@@ -632,6 +624,15 @@ def multiple_infos(root, info1: Info, info2: Info) -> str:
     ),
 )
 def test_multiple_conflicting_reserved_arguments(resolver):
+    @strawberry.type
+    class Query:
+        name: str = strawberry.field(resolver=resolver)
+
+    strawberry.Schema(query=Query)
+
+
+@pytest.mark.parametrize("resolver", [parent_and_self, self_and_root])
+def test_self_should_not_raise_conflicting_arguments_error(resolver):
     @strawberry.type
     class Query:
         name: str = strawberry.field(resolver=resolver)

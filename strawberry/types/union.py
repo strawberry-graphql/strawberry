@@ -6,20 +6,15 @@ import warnings
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
-    Collection,
-    Iterable,
-    List,
-    Mapping,
     NoReturn,
     Optional,
-    Tuple,
-    Type,
     TypeVar,
     Union,
     cast,
 )
-from typing_extensions import Annotated, get_origin
+from typing_extensions import get_origin
 
 from graphql import GraphQLNamedType, GraphQLUnionType
 
@@ -39,6 +34,8 @@ from strawberry.types.base import (
 from strawberry.types.lazy_type import LazyType
 
 if TYPE_CHECKING:
+    from collections.abc import Collection, Iterable, Mapping
+
     from graphql import (
         GraphQLAbstractType,
         GraphQLResolveInfo,
@@ -57,7 +54,7 @@ class StrawberryUnion(StrawberryType):
     def __init__(
         self,
         name: Optional[str] = None,
-        type_annotations: Tuple[StrawberryAnnotation, ...] = tuple(),
+        type_annotations: tuple[StrawberryAnnotation, ...] = (),
         description: Optional[str] = None,
         directives: Iterable[object] = (),
     ) -> None:
@@ -67,6 +64,7 @@ class StrawberryUnion(StrawberryType):
         self.directives = directives
         self._source_file = None
         self._source_line = None
+        self.concrete_of: Optional[StrawberryUnion] = None
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryType):
@@ -94,14 +92,14 @@ class StrawberryUnion(StrawberryType):
         raise InvalidTypeForUnionMergeError(self, other)
 
     @property
-    def types(self) -> Tuple[StrawberryType, ...]:
+    def types(self) -> tuple[StrawberryType, ...]:
         return tuple(
-            cast(StrawberryType, annotation.resolve())
+            cast("StrawberryType", annotation.resolve())
             for annotation in self.type_annotations
         )
 
     @property
-    def type_params(self) -> List[TypeVar]:
+    def type_params(self) -> list[TypeVar]:
         def _get_type_params(type_: StrawberryType) -> list[TypeVar]:
             if isinstance(type_, LazyType):
                 type_ = cast("StrawberryType", type_.resolve_type())
@@ -139,6 +137,7 @@ class StrawberryUnion(StrawberryType):
             return self
 
         new_types = []
+
         for type_ in self.types:
             new_type: Union[StrawberryType, type]
 
@@ -154,10 +153,13 @@ class StrawberryUnion(StrawberryType):
 
             new_types.append(new_type)
 
-        return StrawberryUnion(
+        new_union = StrawberryUnion(
             type_annotations=tuple(map(StrawberryAnnotation, new_types)),
             description=self.description,
         )
+        new_union.concrete_of = self
+
+        return new_union
 
     def __call__(self, *args: str, **kwargs: Any) -> NoReturn:
         """Do not use.
@@ -235,15 +237,12 @@ class StrawberryUnion(StrawberryType):
         if isinstance(type_, StrawberryUnion):
             return True
 
-        if get_origin(type_) is Annotated:
-            return True
-
-        return False
+        return get_origin(type_) is Annotated
 
 
 def union(
     name: str,
-    types: Optional[Collection[Type[Any]]] = None,
+    types: Optional[Collection[type[Any]]] = None,
     *,
     description: Optional[str] = None,
     directives: Iterable[object] = (),

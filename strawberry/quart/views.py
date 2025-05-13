@@ -1,6 +1,7 @@
 import warnings
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Optional, cast
+from collections.abc import AsyncGenerator, Mapping
+from typing import TYPE_CHECKING, Callable, ClassVar, Optional, cast
+from typing_extensions import TypeGuard
 
 from quart import Request, Response, request
 from quart.views import View
@@ -26,7 +27,7 @@ class QuartHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def method(self) -> HTTPMethod:
-        return cast(HTTPMethod, self.request.method.upper())
+        return cast("HTTPMethod", self.request.method.upper())
 
     @property
     def content_type(self) -> Optional[str]:
@@ -34,7 +35,7 @@ class QuartHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def headers(self) -> Mapping[str, str]:
-        return self.request.headers
+        return self.request.headers  # type: ignore
 
     async def get_body(self) -> str:
         return (await self.request.data).decode()
@@ -46,12 +47,12 @@ class QuartHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class GraphQLView(
-    AsyncBaseHTTPView[Request, Response, Response, Context, RootValue],
+    AsyncBaseHTTPView[
+        Request, Response, Response, Request, Response, Context, RootValue
+    ],
     View,
 ):
-    _ide_subscription_enabled = False
-
-    methods = ["GET", "POST"]
+    methods: ClassVar[list[str]] = ["GET", "POST"]
     allow_queries_via_get: bool = True
     request_adapter_class = QuartHTTPRequestAdapter
 
@@ -61,9 +62,11 @@ class GraphQLView(
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
+        multipart_uploads_enabled: bool = False,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
+        self.multipart_uploads_enabled = multipart_uploads_enabled
 
         if graphiql is not None:
             warnings.warn(
@@ -102,6 +105,33 @@ class GraphQLView(
                 response=e.reason,
                 status=e.status_code,
             )
+
+    async def create_streaming_response(
+        self,
+        request: Request,
+        stream: Callable[[], AsyncGenerator[str, None]],
+        sub_response: Response,
+        headers: dict[str, str],
+    ) -> Response:
+        return (
+            stream(),
+            sub_response.status_code,
+            {  # type: ignore
+                **sub_response.headers,
+                **headers,
+            },
+        )
+
+    def is_websocket_request(self, request: Request) -> TypeGuard[Request]:
+        return False
+
+    async def pick_websocket_subprotocol(self, request: Request) -> Optional[str]:
+        raise NotImplementedError
+
+    async def create_websocket_response(
+        self, request: Request, subprotocol: Optional[str]
+    ) -> Response:
+        raise NotImplementedError
 
 
 __all__ = ["GraphQLView"]

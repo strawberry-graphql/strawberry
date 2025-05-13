@@ -1,7 +1,7 @@
-from typing import AsyncIterator, List
+from collections.abc import AsyncIterator
 
 import strawberry
-from strawberry.directive import DirectiveLocation
+from strawberry.directive import DirectiveLocation, DirectiveValue
 
 
 @strawberry.type
@@ -59,11 +59,11 @@ class Query:
         return "Hello World!"
 
     @strawberry.field
-    def people(self, limit: int = 100) -> List[Person]:
+    def people(self, limit: int = 100) -> list[Person]:
         return people[:limit] if limit else people
 
     @strawberry.field
-    def items(self, count: int) -> List[Item]:
+    def items(self, count: int) -> list[Item]:
         return [Item(name="Item", index=i) for i in range(count)]
 
 
@@ -73,9 +73,14 @@ class Subscription:
     async def something(self) -> AsyncIterator[str]:
         yield "Hello World!"
 
+    @strawberry.subscription
+    async def long_running(self, count: int) -> AsyncIterator[int]:
+        for i in range(count):
+            yield i
+
 
 @strawberry.directive(locations=[DirectiveLocation.FIELD])
-def uppercase(value: str) -> str:
+def uppercase(value: DirectiveValue[str]) -> str:
     return value.upper()
 
 

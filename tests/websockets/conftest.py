@@ -1,9 +1,10 @@
 import importlib
-from typing import Any, Generator, Type
+from collections.abc import Generator
+from typing import Any
 
 import pytest
 
-from ..http.clients.base import HttpClient
+from tests.http.clients.base import HttpClient
 
 
 def _get_http_client_classes() -> Generator[Any, None, None]:
@@ -12,7 +13,6 @@ def _get_http_client_classes() -> Generator[Any, None, None]:
         ("AsgiHttpClient", "asgi", [pytest.mark.asgi]),
         ("ChannelsHttpClient", "channels", [pytest.mark.channels]),
         ("FastAPIHttpClient", "fastapi", [pytest.mark.fastapi]),
-        ("StarliteHttpClient", "starlite", [pytest.mark.starlite]),
         ("LitestarHttpClient", "litestar", [pytest.mark.litestar]),
     ]:
         try:
@@ -20,9 +20,6 @@ def _get_http_client_classes() -> Generator[Any, None, None]:
                 importlib.import_module(f"tests.http.clients.{module}"), client
             )
         except ImportError:
-            client_class = None
-        except Exception:
-            # TODO: remove this when removing Starlite
             client_class = None
 
         yield pytest.param(
@@ -37,10 +34,10 @@ def _get_http_client_classes() -> Generator[Any, None, None]:
 
 
 @pytest.fixture(params=_get_http_client_classes())
-def http_client_class(request: Any) -> Type[HttpClient]:
+def http_client_class(request: Any) -> type[HttpClient]:
     return request.param
 
 
-@pytest.fixture()
-def http_client(http_client_class: Type[HttpClient]) -> HttpClient:
+@pytest.fixture
+def http_client(http_client_class: type[HttpClient]) -> HttpClient:
     return http_client_class()

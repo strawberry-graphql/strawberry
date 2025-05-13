@@ -3,7 +3,7 @@ from __future__ import annotations
 import textwrap
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, ClassVar, Optional
 
 from strawberry.codegen import CodegenFile, QueryCodegenPlugin
 from strawberry.codegen.types import (
@@ -35,7 +35,7 @@ class PythonType:
 
 
 class PythonPlugin(QueryCodegenPlugin):
-    SCALARS_TO_PYTHON_TYPES: Dict[str, PythonType] = {
+    SCALARS_TO_PYTHON_TYPES: ClassVar[dict[str, PythonType]] = {
         "ID": PythonType("str"),
         "Int": PythonType("int"),
         "String": PythonType("str"),
@@ -49,13 +49,13 @@ class PythonPlugin(QueryCodegenPlugin):
     }
 
     def __init__(self, query: Path) -> None:
-        self.imports: Dict[str, Set[str]] = defaultdict(set)
+        self.imports: dict[str, set[str]] = defaultdict(set)
         self.outfile_name: str = query.with_suffix(".py").name
         self.query = query
 
     def generate_code(
-        self, types: List[GraphQLType], operation: GraphQLOperation
-    ) -> List[CodegenFile]:
+        self, types: list[GraphQLType], operation: GraphQLOperation
+    ) -> list[CodegenFile]:
         printed_types = list(filter(None, (self._print_type(type) for type in types)))
         imports = self._print_imports()
 
@@ -65,7 +65,7 @@ class PythonPlugin(QueryCodegenPlugin):
 
     def _print_imports(self) -> str:
         imports = [
-            f'from {import_} import {", ".join(sorted(types))}'
+            f"from {import_} import {', '.join(sorted(types))}"
             for import_, types in self.imports.items()
         ]
 
@@ -80,7 +80,7 @@ class PythonPlugin(QueryCodegenPlugin):
         if isinstance(type_, GraphQLList):
             self.imports["typing"].add("List")
 
-            return f"List[{self._get_type_name(type_.of_type)}]"
+            return f"list[{self._get_type_name(type_.of_type)}]"
 
         if isinstance(type_, GraphQLUnion):
             # TODO: wrong place for this
@@ -128,7 +128,7 @@ class PythonPlugin(QueryCodegenPlugin):
                     + ", ".join(self._print_argument_value(v) for v in argval.values)
                     + "]"
                 )
-            elif isinstance(argval.values, dict):
+            if isinstance(argval.values, dict):
                 return (
                     "{"
                     + ", ".join(
@@ -137,8 +137,7 @@ class PythonPlugin(QueryCodegenPlugin):
                     )
                     + "}"
                 )
-            else:
-                raise TypeError(f"Unrecognized values type: {argval}")
+            raise TypeError(f"Unrecognized values type: {argval}")
         if isinstance(argval, GraphQLEnumValue):
             # This is an enum.  It needs the namespace alongside the name.
             if argval.enum_type is None:
@@ -188,9 +187,9 @@ class PythonPlugin(QueryCodegenPlugin):
         if type_.name in self.SCALARS_TO_PYTHON_TYPES:
             return ""
 
-        assert (
-            type_.python_type is not None
-        ), f"Scalar type must have a python type: {type_.name}"
+        assert type_.python_type is not None, (
+            f"Scalar type must have a python type: {type_.name}"
+        )
 
         return f'{type_.name} = NewType("{type_.name}", {type_.python_type.__name__})'
 

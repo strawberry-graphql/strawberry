@@ -1,7 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import List
-from typing_extensions import Annotated
+from typing import Annotated, Union
 
 import strawberry
 
@@ -34,7 +33,7 @@ def test_field_inaccessible_printed_correctly():
         def top_products(
             self,
             first: Annotated[int, strawberry.federation.argument(inaccessible=True)],
-        ) -> List[Product]:
+        ) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(
@@ -97,7 +96,7 @@ def test_inaccessible_on_mutation():
     @strawberry.type
     class Mutation:
         @strawberry.federation.mutation(inaccessible=True)
-        def hello(self) -> str:
+        def hello(self) -> str:  # pragma: no cover
             return "Hello"
 
     schema = strawberry.federation.Schema(
@@ -250,11 +249,13 @@ def test_field_tag_printed_correctly_on_union():
     class B:
         b: str
 
-    Union = strawberry.federation.union("Union", (A, B), inaccessible=True)
+    MyUnion = Annotated[
+        Union[A, B], strawberry.federation.union("Union", inaccessible=True)
+    ]
 
     @strawberry.federation.type
     class Query:
-        hello: Union
+        hello: MyUnion
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 

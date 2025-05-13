@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from .exception import StrawberryException
 from .utils.source_finder import SourceFinder
@@ -18,7 +18,7 @@ class MissingArgumentsAnnotationsError(StrawberryException):
     def __init__(
         self,
         resolver: StrawberryResolver,
-        arguments: List[str],
+        arguments: list[str],
     ) -> None:
         self.missing_arguments = arguments
         self.function = resolver.wrapped_func

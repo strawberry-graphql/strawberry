@@ -1,28 +1,15 @@
 import asyncio
-from typing import Any, AsyncGenerator, Dict
+from collections.abc import AsyncGenerator
 
 import pytest
 
 import strawberry
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
-    CompleteMessage,
-    ConnectionAckMessage,
-    ConnectionInitMessage,
-    NextMessage,
-    SubscribeMessage,
-    SubscribeMessagePayload,
+from strawberry.subscriptions.protocols.graphql_transport_ws import (
+    types as transport_ws_types,
 )
-from strawberry.subscriptions.protocols.graphql_ws import (
-    GQL_COMPLETE,
-    GQL_CONNECTION_ACK,
-    GQL_CONNECTION_INIT,
-    GQL_CONNECTION_TERMINATE,
-    GQL_DATA,
-    GQL_START,
-    GQL_STOP,
-)
+from strawberry.subscriptions.protocols.graphql_ws import types as ws_types
 
 
 def test_base_context():
@@ -60,7 +47,7 @@ def test_with_explicit_class_context_getter():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
@@ -94,7 +81,7 @@ def test_with_implicit_class_context_getter():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
@@ -121,12 +108,12 @@ def test_with_dict_context_getter():
     def custom_context_dependency() -> str:
         return "rocks"
 
-    def get_context(value: str = Depends(custom_context_dependency)) -> Dict[str, str]:
+    def get_context(value: str = Depends(custom_context_dependency)) -> dict[str, str]:
         return {"strawberry": value}
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
@@ -151,7 +138,7 @@ def test_without_context_getter():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter[None, None](schema, context_getter=None)
+    graphql_app = GraphQLRouter(schema, context_getter=None)
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
@@ -182,7 +169,7 @@ def test_with_invalid_context_getter():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
@@ -226,36 +213,44 @@ def test_class_context_injects_connection_params_over_transport_ws():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query, subscription=Subscription)
-    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
     test_client = TestClient(app)
 
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
-        ws.send_json(ConnectionInitMessage(payload={"strawberry": "rocks"}).as_dict())
+        ws.send_json(
+            transport_ws_types.ConnectionInitMessage(
+                {"type": "connection_init", "payload": {"strawberry": "rocks"}}
+            )
+        )
 
-        response = ws.receive_json()
-        assert response == ConnectionAckMessage().as_dict()
+        connection_ack_message: transport_ws_types.ConnectionInitMessage = (
+            ws.receive_json()
+        )
+        assert connection_ack_message == {"type": "connection_ack"}
 
         ws.send_json(
-            SubscribeMessage(
-                id="sub1",
-                payload=SubscribeMessagePayload(
-                    query="subscription { connectionParams }"
-                ),
-            ).as_dict()
+            transport_ws_types.SubscribeMessage(
+                {
+                    "id": "sub1",
+                    "type": "subscribe",
+                    "payload": {"query": "subscription { connectionParams }"},
+                }
+            )
         )
 
-        response = ws.receive_json()
-        assert (
-            response
-            == NextMessage(
-                id="sub1", payload={"data": {"connectionParams": "rocks"}}
-            ).as_dict()
-        )
+        next_message: transport_ws_types.NextMessage = ws.receive_json()
+        assert next_message == {
+            "id": "sub1",
+            "type": "next",
+            "payload": {"data": {"connectionParams": "rocks"}},
+        }
 
-        ws.send_json(CompleteMessage(id="sub1").as_dict())
+        ws.send_json(
+            transport_ws_types.CompleteMessage({"id": "sub1", "type": "complete"})
+        )
 
         ws.close()
 
@@ -292,42 +287,48 @@ def test_class_context_injects_connection_params_over_ws():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query, subscription=Subscription)
-    graphql_app = GraphQLRouter[Any, None](schema=schema, context_getter=get_context)
+    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
     test_client = TestClient(app)
 
     with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json(
-            {
-                "type": GQL_CONNECTION_INIT,
-                "id": "demo",
-                "payload": {"strawberry": "rocks"},
-            }
+            ws_types.ConnectionInitMessage(
+                {
+                    "type": "connection_init",
+                    "payload": {"strawberry": "rocks"},
+                }
+            )
         )
         ws.send_json(
-            {
-                "type": GQL_START,
-                "id": "demo",
-                "payload": {
-                    "query": "subscription { connectionParams }",
-                },
-            }
+            ws_types.StartMessage(
+                {
+                    "type": "start",
+                    "id": "demo",
+                    "payload": {
+                        "query": "subscription { connectionParams }",
+                    },
+                }
+            )
         )
 
-        response = ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_ACK
+        connection_ack_message: ws_types.ConnectionAckMessage = ws.receive_json()
+        assert connection_ack_message["type"] == "connection_ack"
 
-        response = ws.receive_json()
-        assert response["type"] == GQL_DATA
-        assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"connectionParams": "rocks"}
+        data_message: ws_types.DataMessage = ws.receive_json()
+        assert data_message["type"] == "data"
+        assert data_message["id"] == "demo"
+        assert data_message["payload"]["data"] == {"connectionParams": "rocks"}
 
-        ws.send_json({"type": GQL_STOP, "id": "demo"})
-        response = ws.receive_json()
-        assert response["type"] == GQL_COMPLETE
-        assert response["id"] == "demo"
+        ws.send_json(ws_types.StopMessage({"type": "stop", "id": "demo"}))
 
-        ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+        complete_message: ws_types.CompleteMessage = ws.receive_json()
+        assert complete_message["type"] == "complete"
+        assert complete_message["id"] == "demo"
+
+        ws.send_json(
+            ws_types.ConnectionTerminateMessage({"type": "connection_terminate"})
+        )
 
         # make sure the websocket is disconnected now
         with pytest.raises(WebSocketDisconnect):

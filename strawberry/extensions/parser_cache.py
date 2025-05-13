@@ -1,8 +1,10 @@
+from collections.abc import Iterator
 from functools import lru_cache
-from typing import Iterator, Optional
+from typing import Optional
+
+from graphql.language.parser import parse
 
 from strawberry.extensions.base_extension import SchemaExtension
-from strawberry.schema.execute import parse_document
 
 
 class ParserCache(SchemaExtension):
@@ -31,7 +33,7 @@ class ParserCache(SchemaExtension):
                 cache will grow without bound.
                 More info: https://docs.python.org/3/library/functools.html#functools.lru_cache
         """
-        self.cached_parse_document = lru_cache(maxsize=maxsize)(parse_document)
+        self.cached_parse_document = lru_cache(maxsize=maxsize)(parse)
 
     def on_parse(self) -> Iterator[None]:
         execution_context = self.execution_context

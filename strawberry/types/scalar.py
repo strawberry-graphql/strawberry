@@ -6,8 +6,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Iterable,
-    Mapping,
     NewType,
     Optional,
     TypeVar,
@@ -20,6 +18,8 @@ from strawberry.types.base import StrawberryType
 from strawberry.utils.str_converters import to_camel_case
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping
+
     from graphql import GraphQLScalarType
 
 
@@ -43,6 +43,7 @@ class ScalarDefinition(StrawberryType):
     parse_value: Optional[Callable]
     parse_literal: Optional[Callable]
     directives: Iterable[object] = ()
+    origin: Optional[GraphQLScalarType | type] = None
 
     # Optionally store the GraphQLScalarType instance so that we don't get
     # duplicates
@@ -115,6 +116,7 @@ def _process_scalar(
         parse_literal=parse_literal,
         parse_value=parse_value,
         directives=directives,
+        origin=cls,  # type: ignore[arg-type]
         _source_file=_source_file,
         _source_line=_source_line,
     )

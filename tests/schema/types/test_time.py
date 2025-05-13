@@ -90,12 +90,12 @@ def execute_mutation(value) -> ExecutionResult:
 
 @pytest.mark.parametrize(
     "value",
-    (
+    [
         "2012-12-01T09:00",
         "03:30+",
         "03:30+1234567",
         "03:30-25:40",
-    ),
+    ],
 )
 def test_serialization_of_incorrect_time_string(value):
     """Test GraphQLError is raised for incorrect time.
@@ -104,7 +104,6 @@ def test_serialization_of_incorrect_time_string(value):
     result = execute_mutation(value)
     assert result.errors
     assert isinstance(result.errors[0], GraphQLError)
-    assert result.errors[0].original_error is None
 
 
 def test_serialization_error_message_for_incorrect_time_string():

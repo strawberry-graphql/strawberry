@@ -1,213 +1,237 @@
 from __future__ import annotations
 
 import asyncio
-from abc import ABC, abstractmethod
+from collections.abc import AsyncGenerator
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional, cast
-
-from graphql import ExecutionResult as GraphQLExecutionResult
-from graphql import GraphQLError
-
-from strawberry.subscriptions.protocols.graphql_ws import (
-    GQL_COMPLETE,
-    GQL_CONNECTION_ACK,
-    GQL_CONNECTION_ERROR,
-    GQL_CONNECTION_INIT,
-    GQL_CONNECTION_KEEP_ALIVE,
-    GQL_CONNECTION_TERMINATE,
-    GQL_DATA,
-    GQL_ERROR,
-    GQL_START,
-    GQL_STOP,
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generic,
+    Optional,
+    cast,
 )
+
+from strawberry.exceptions import ConnectionRejectionError
+from strawberry.http.exceptions import NonTextMessageReceived, WebSocketDisconnected
+from strawberry.http.typevars import Context, RootValue
+from strawberry.subscriptions.protocols.graphql_ws.types import (
+    CompleteMessage,
+    ConnectionInitMessage,
+    ConnectionTerminateMessage,
+    DataMessage,
+    ErrorMessage,
+    OperationMessage,
+    StartMessage,
+    StopMessage,
+)
+from strawberry.types.execution import ExecutionResult, PreExecutionError
+from strawberry.types.unset import UnsetType
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
+
+    from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncWebSocketAdapter
     from strawberry.schema import BaseSchema
-    from strawberry.subscriptions.protocols.graphql_ws.types import (
-        ConnectionInitPayload,
-        OperationMessage,
-        OperationMessagePayload,
-        StartPayload,
-    )
 
 
-class BaseGraphQLWSHandler(ABC):
+class BaseGraphQLWSHandler(Generic[Context, RootValue]):
     def __init__(
         self,
+        view: AsyncBaseHTTPView[Any, Any, Any, Any, Any, Context, RootValue],
+        websocket: AsyncWebSocketAdapter,
+        context: Context,
+        root_value: RootValue,
         schema: BaseSchema,
         debug: bool,
         keep_alive: bool,
-        keep_alive_interval: float,
+        keep_alive_interval: Optional[float],
     ) -> None:
+        self.view = view
+        self.websocket = websocket
+        self.context = context
+        self.root_value = root_value
         self.schema = schema
         self.debug = debug
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
         self.keep_alive_task: Optional[asyncio.Task] = None
-        self.subscriptions: Dict[str, AsyncGenerator] = {}
-        self.tasks: Dict[str, asyncio.Task] = {}
-        self.connection_params: Optional[ConnectionInitPayload] = None
+        self.subscriptions: dict[str, AsyncGenerator] = {}
+        self.tasks: dict[str, asyncio.Task] = {}
 
-    @abstractmethod
-    async def get_context(self) -> Any:
-        """Return the operations context."""
+    async def handle(self) -> None:
+        try:
+            try:
+                async for message in self.websocket.iter_json(
+                    ignore_parsing_errors=True
+                ):
+                    await self.handle_message(cast("OperationMessage", message))
+            except NonTextMessageReceived:
+                await self.websocket.close(
+                    code=1002, reason="WebSocket message type must be text"
+                )
+        except WebSocketDisconnected:
+            pass
+        finally:
+            if self.keep_alive_task:
+                self.keep_alive_task.cancel()
+                with suppress(BaseException):
+                    await self.keep_alive_task
 
-    @abstractmethod
-    async def get_root_value(self) -> Any:
-        """Return the schemas root value."""
-
-    @abstractmethod
-    async def send_json(self, data: OperationMessage) -> None:
-        """Send the data JSON encoded to the WebSocket client."""
-
-    @abstractmethod
-    async def close(self, code: int = 1000, reason: Optional[str] = None) -> None:
-        """Close the WebSocket with the passed code and reason."""
-
-    @abstractmethod
-    async def handle_request(self) -> Any:
-        """Handle the request this instance was created for."""
-
-    async def handle(self) -> Any:
-        return await self.handle_request()
+            await self.cleanup()
 
     async def handle_message(
         self,
         message: OperationMessage,
     ) -> None:
-        message_type = message["type"]
-
-        if message_type == GQL_CONNECTION_INIT:
+        if message["type"] == "connection_init":
             await self.handle_connection_init(message)
-        elif message_type == GQL_CONNECTION_TERMINATE:
+        elif message["type"] == "connection_terminate":
             await self.handle_connection_terminate(message)
-        elif message_type == GQL_START:
+        elif message["type"] == "start":
             await self.handle_start(message)
-        elif message_type == GQL_STOP:
+        elif message["type"] == "stop":
             await self.handle_stop(message)
 
-    async def handle_connection_init(self, message: OperationMessage) -> None:
+    async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
         payload = message.get("payload")
         if payload is not None and not isinstance(payload, dict):
-            error_message: OperationMessage = {"type": GQL_CONNECTION_ERROR}
-            await self.send_json(error_message)
-            await self.close()
+            await self.send_message({"type": "connection_error"})
+            await self.websocket.close(code=1000, reason="")
             return
 
-        payload = cast(Optional["ConnectionInitPayload"], payload)
-        self.connection_params = payload
+        if isinstance(self.context, dict):
+            self.context["connection_params"] = payload
+        elif hasattr(self.context, "connection_params"):
+            self.context.connection_params = payload
 
-        acknowledge_message: OperationMessage = {"type": GQL_CONNECTION_ACK}
-        await self.send_json(acknowledge_message)
+        try:
+            connection_ack_payload = await self.view.on_ws_connect(self.context)
+        except ConnectionRejectionError as e:
+            await self.send_message({"type": "connection_error", "payload": e.payload})
+            await self.websocket.close(code=1011, reason="")
+            return
+
+        if (
+            isinstance(connection_ack_payload, UnsetType)
+            or connection_ack_payload is None
+        ):
+            await self.send_message({"type": "connection_ack"})
+        else:
+            await self.send_message(
+                {"type": "connection_ack", "payload": connection_ack_payload}
+            )
 
         if self.keep_alive:
             keep_alive_handler = self.handle_keep_alive()
             self.keep_alive_task = asyncio.create_task(keep_alive_handler)
 
-    async def handle_connection_terminate(self, message: OperationMessage) -> None:
-        await self.close()
+    async def handle_connection_terminate(
+        self, message: ConnectionTerminateMessage
+    ) -> None:
+        await self.websocket.close(code=1000, reason="")
 
-    async def handle_start(self, message: OperationMessage) -> None:
+    async def handle_start(self, message: StartMessage) -> None:
         operation_id = message["id"]
-        payload = cast("StartPayload", message["payload"])
+        payload = message["payload"]
         query = payload["query"]
         operation_name = payload.get("operationName")
         variables = payload.get("variables")
 
-        context = await self.get_context()
-        if isinstance(context, dict):
-            context["connection_params"] = self.connection_params
-        root_value = await self.get_root_value()
-
         if self.debug:
             pretty_print_graphql_operation(operation_name, query, variables)
 
+        result_handler = self.handle_async_results(
+            operation_id, query, operation_name, variables
+        )
+        self.tasks[operation_id] = asyncio.create_task(result_handler)
+
+    async def handle_stop(self, message: StopMessage) -> None:
+        operation_id = message["id"]
+        await self.cleanup_operation(operation_id)
+
+    async def handle_keep_alive(self) -> None:
+        assert self.keep_alive_interval
+        while True:
+            await self.send_message({"type": "ka"})
+            await asyncio.sleep(self.keep_alive_interval)
+
+    async def handle_async_results(
+        self,
+        operation_id: str,
+        query: str,
+        operation_name: Optional[str],
+        variables: Optional[dict[str, object]],
+    ) -> None:
         try:
             result_source = await self.schema.subscribe(
                 query=query,
                 variable_values=variables,
                 operation_name=operation_name,
-                context_value=context,
-                root_value=root_value,
+                context_value=self.context,
+                root_value=self.root_value,
             )
-        except GraphQLError as error:
-            error_payload = error.formatted
-            await self.send_message(GQL_ERROR, operation_id, error_payload)
-            self.schema.process_errors([error])
-            return
+            self.subscriptions[operation_id] = result_source
 
-        if isinstance(result_source, GraphQLExecutionResult):
-            assert result_source.errors
-            error_payload = result_source.errors[0].formatted
-            await self.send_message(GQL_ERROR, operation_id, error_payload)
-            self.schema.process_errors(result_source.errors)
-            return
+            is_first_result = True
 
-        self.subscriptions[operation_id] = result_source
-        result_handler = self.handle_async_results(result_source, operation_id)
-        self.tasks[operation_id] = asyncio.create_task(result_handler)
-
-    async def handle_stop(self, message: OperationMessage) -> None:
-        operation_id = message["id"]
-        await self.cleanup_operation(operation_id)
-
-    async def handle_keep_alive(self) -> None:
-        while True:
-            data: OperationMessage = {"type": GQL_CONNECTION_KEEP_ALIVE}
-            await self.send_json(data)
-            await asyncio.sleep(self.keep_alive_interval)
-
-    async def handle_async_results(
-        self,
-        result_source: AsyncGenerator,
-        operation_id: str,
-    ) -> None:
-        try:
             async for result in result_source:
-                payload = {"data": result.data}
-                if result.errors:
-                    payload["errors"] = [err.formatted for err in result.errors]
-                await self.send_message(GQL_DATA, operation_id, payload)
-                # log errors after send_message to prevent potential
-                # slowdown of sending result
-                if result.errors:
-                    self.schema.process_errors(result.errors)
-        except asyncio.CancelledError:
-            # CancelledErrors are expected during task cleanup.
-            pass
-        except Exception as error:
-            # GraphQLErrors are handled by graphql-core and included in the
-            # ExecutionResult
-            error = GraphQLError(str(error), original_error=error)
-            await self.send_message(
-                GQL_DATA,
-                operation_id,
-                {"data": None, "errors": [error.formatted]},
-            )
-            self.schema.process_errors([error])
+                if is_first_result and isinstance(result, PreExecutionError):
+                    assert result.errors
 
-        await self.send_message(GQL_COMPLETE, operation_id, None)
+                    await self.send_message(
+                        ErrorMessage(
+                            type="error",
+                            id=operation_id,
+                            payload=result.errors[0].formatted,
+                        )
+                    )
+                    return
+
+                await self.send_data_message(result, operation_id)
+                is_first_result = False
+
+            await self.send_message(CompleteMessage(type="complete", id=operation_id))
+
+        except asyncio.CancelledError:
+            await self.send_message(CompleteMessage(type="complete", id=operation_id))
 
     async def cleanup_operation(self, operation_id: str) -> None:
-        await self.subscriptions[operation_id].aclose()
-        del self.subscriptions[operation_id]
+        if operation_id in self.subscriptions:
+            with suppress(RuntimeError):
+                await self.subscriptions[operation_id].aclose()
+            del self.subscriptions[operation_id]
 
         self.tasks[operation_id].cancel()
         with suppress(BaseException):
             await self.tasks[operation_id]
         del self.tasks[operation_id]
 
-    async def send_message(
-        self,
-        type_: str,
-        operation_id: str,
-        payload: Optional[OperationMessagePayload] = None,
+    async def cleanup(self) -> None:
+        for operation_id in list(self.tasks.keys()):
+            await self.cleanup_operation(operation_id)
+
+    async def send_data_message(
+        self, execution_result: ExecutionResult, operation_id: str
     ) -> None:
-        data: OperationMessage = {"type": type_, "id": operation_id}
-        if payload is not None:
-            data["payload"] = payload
-        await self.send_json(data)
+        data_message: DataMessage = {
+            "type": "data",
+            "id": operation_id,
+            "payload": {"data": execution_result.data},
+        }
+
+        if execution_result.errors:
+            data_message["payload"]["errors"] = [
+                err.formatted for err in execution_result.errors
+            ]
+
+        if execution_result.extensions:
+            data_message["payload"]["extensions"] = execution_result.extensions
+
+        await self.send_message(data_message)
+
+    async def send_message(self, message: OperationMessage) -> None:
+        await self.websocket.send_json(message)
 
 
 __all__ = ["BaseGraphQLWSHandler"]

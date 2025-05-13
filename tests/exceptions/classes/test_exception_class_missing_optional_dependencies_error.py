@@ -5,7 +5,7 @@ from strawberry.exceptions import MissingOptionalDependenciesError
 
 def test_missing_optional_dependencies_error():
     with pytest.raises(MissingOptionalDependenciesError) as exc_info:
-        raise MissingOptionalDependenciesError()
+        raise MissingOptionalDependenciesError
 
     assert exc_info.value.message == "Some optional dependencies are missing"
 

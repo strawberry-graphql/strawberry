@@ -3,11 +3,11 @@ from __future__ import annotations
 import dataclasses
 import keyword
 from collections import defaultdict
-from typing import TYPE_CHECKING, List, Tuple, Union
+from graphlib import TopologicalSorter
+from typing import TYPE_CHECKING, Union
 from typing_extensions import Protocol, TypeAlias
 
 import libcst as cst
-from graphlib import TopologicalSorter
 from graphql import (
     EnumTypeDefinitionNode,
     EnumValueDefinitionNode,
@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 
 class HasDirectives(Protocol):
-    directives: Tuple[ConstDirectiveNode, ...]
+    directives: tuple[ConstDirectiveNode, ...]
 
 
 _SCALAR_MAP = {
@@ -115,7 +115,7 @@ def _get_field_type(
 
     if isinstance(field_type, NonNullTypeNode):
         return _get_field_type(field_type.type, was_non_nullable=True)
-    elif isinstance(field_type, ListTypeNode):
+    if isinstance(field_type, ListTypeNode):
         expr = cst.Subscript(
             value=cst.Name("list"),
             slice=[
@@ -256,20 +256,19 @@ def _get_field(
     )
 
 
-ArgumentValue: TypeAlias = Union[str, bool, List["ArgumentValue"]]
+ArgumentValue: TypeAlias = Union[str, bool, list["ArgumentValue"]]
 
 
 def _get_argument_value(argument_value: ConstValueNode) -> ArgumentValue:
     if isinstance(argument_value, StringValueNode):
         return argument_value.value
-    elif isinstance(argument_value, EnumValueDefinitionNode):
+    if isinstance(argument_value, EnumValueDefinitionNode):
         return argument_value.name.value
-    elif isinstance(argument_value, ListValueNode):
+    if isinstance(argument_value, ListValueNode):
         return [_get_argument_value(arg) for arg in argument_value.values]
-    elif isinstance(argument_value, BooleanValueNode):
+    if isinstance(argument_value, BooleanValueNode):
         return argument_value.value
-    else:
-        raise NotImplementedError(f"Unknown argument value {argument_value}")
+    raise NotImplementedError(f"Unknown argument value {argument_value}")
 
 
 def _get_directives(

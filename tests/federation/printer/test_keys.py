@@ -1,7 +1,6 @@
 # type: ignore
 
 import textwrap
-from typing import List
 
 import strawberry
 from strawberry.federation.schema_directives import Key
@@ -17,7 +16,7 @@ def test_keys_federation_1():
     @strawberry.federation.type(keys=[Key(fields="upc", resolvable=True)], extend=True)
     class Product:
         upc: str = strawberry.federation.field(external=True)
-        reviews: List["Review"]
+        reviews: list["Review"]
 
     @strawberry.federation.type(keys=["body"])
     class Review:
@@ -28,7 +27,7 @@ def test_keys_federation_1():
     @strawberry.federation.type
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> List[Product]:
+        def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=False)
@@ -79,7 +78,7 @@ def test_keys_federation_2():
     @strawberry.federation.type(keys=[Key(fields="upc", resolvable=True)], extend=True)
     class Product:
         upc: str = strawberry.federation.field(external=True)
-        reviews: List["Review"]
+        reviews: list["Review"]
 
     @strawberry.federation.type(keys=["body"])
     class Review:
@@ -90,7 +89,7 @@ def test_keys_federation_2():
     @strawberry.federation.type
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> List[Product]:
+        def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)

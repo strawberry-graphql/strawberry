@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from strawberry.django.test import GraphQLTestClient
 
 
-@pytest.fixture()
+@pytest.fixture
 def graphql_client() -> GraphQLTestClient:
     from django.test.client import Client
 

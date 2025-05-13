@@ -2,21 +2,17 @@ import asyncio
 import contextlib
 import warnings
 from collections import defaultdict
+from collections.abc import AsyncGenerator, Awaitable, Sequence
 from typing import (
     Any,
-    AsyncGenerator,
-    Awaitable,
     Callable,
-    DefaultDict,
-    List,
     Optional,
-    Sequence,
 )
 from typing_extensions import Literal, Protocol, TypedDict
 from weakref import WeakSet
 
 from channels.consumer import AsyncConsumer
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from channels.generic.websocket import AsyncWebsocketConsumer
 
 
 class ChannelsMessage(TypedDict, total=False):
@@ -31,7 +27,7 @@ class ChannelsLayer(Protocol):  # pragma: no cover
 
     # Default channels API
 
-    extensions: List[Literal["groups", "flush"]]
+    extensions: list[Literal["groups", "flush"]]
 
     async def send(self, channel: str, message: dict) -> None: ...
 
@@ -62,7 +58,7 @@ class ChannelsConsumer(AsyncConsumer):
     channel_receive: Callable[[], Awaitable[dict]]
 
     def __init__(self, *args: str, **kwargs: Any) -> None:
-        self.listen_queues: DefaultDict[str, WeakSet[asyncio.Queue]] = defaultdict(
+        self.listen_queues: defaultdict[str, WeakSet[asyncio.Queue]] = defaultdict(
             WeakSet
         )
         super().__init__(*args, **kwargs)
@@ -210,7 +206,7 @@ class ChannelsConsumer(AsyncConsumer):
                 return
 
 
-class ChannelsWSConsumer(ChannelsConsumer, AsyncJsonWebsocketConsumer):
+class ChannelsWSConsumer(ChannelsConsumer, AsyncWebsocketConsumer):
     """Base channels websocket async consumer."""
 
 

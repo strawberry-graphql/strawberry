@@ -4,29 +4,26 @@ import asyncio
 import dataclasses
 import inspect
 from collections import defaultdict
-from collections.abc import AsyncIterable
-from typing import (
-    TYPE_CHECKING,
-    Any,
+from collections.abc import (
+    AsyncIterable,
     AsyncIterator,
     Awaitable,
-    Callable,
-    DefaultDict,
-    Dict,
-    ForwardRef,
     Iterable,
     Iterator,
-    List,
     Mapping,
-    Optional,
     Sequence,
-    Tuple,
-    Type,
+)
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Callable,
+    ForwardRef,
+    Optional,
     Union,
     cast,
-    overload,
 )
-from typing_extensions import Annotated, get_origin
+from typing_extensions import get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.extensions.field_extension import (
@@ -40,13 +37,14 @@ from strawberry.relay.exceptions import (
 )
 from strawberry.types.arguments import StrawberryArgument, argument
 from strawberry.types.base import StrawberryList, StrawberryOptional
+from strawberry.types.cast import cast as strawberry_cast
 from strawberry.types.field import _RESOLVER_TYPE, StrawberryField, field
 from strawberry.types.fields.resolver import StrawberryResolver
 from strawberry.types.lazy_type import LazyType
 from strawberry.utils.aio import asyncgen_to_list
-from strawberry.utils.typing import eval_type, is_generic_alias
+from strawberry.utils.typing import eval_type, is_generic_alias, is_optional, is_union
 
-from .types import Connection, GlobalID, Node, NodeIterableType, NodeType
+from .types import Connection, GlobalID, Node
 
 if TYPE_CHECKING:
     from typing_extensions import Literal
@@ -91,17 +89,32 @@ class NodeExtension(FieldExtension):
             info: Info,
             id: Annotated[GlobalID, argument(description="The ID of the object.")],
         ) -> Union[Node, None, Awaitable[Union[Node, None]]]:
-            return id.resolve_type(info).resolve_node(
+            node_type = id.resolve_type(info)
+            resolved_node = node_type.resolve_node(
                 id.node_id,
                 info=info,
                 required=not is_optional,
             )
 
+            # We are using `strawberry_cast` here to cast the resolved node to make
+            # sure `is_type_of` will not try to find its type again. Very important
+            # when returning a non type (e.g. Django/SQLAlchemy/Pydantic model), as
+            # we could end up resolving to a different type in case more than one
+            # are registered.
+            if inspect.isawaitable(resolved_node):
+
+                async def resolve() -> Any:
+                    return strawberry_cast(node_type, await resolved_node)
+
+                return resolve()
+
+            return cast("Node", strawberry_cast(node_type, resolved_node))
+
         return resolver
 
     def get_node_list_resolver(
         self, field: StrawberryField
-    ) -> Callable[[Info, List[GlobalID]], Union[List[Node], Awaitable[List[Node]]]]:
+    ) -> Callable[[Info, list[GlobalID]], Union[list[Node], Awaitable[list[Node]]]]:
         type_ = field.type
         assert isinstance(type_, StrawberryList)
         is_optional = isinstance(type_.of_type, StrawberryOptional)
@@ -109,14 +122,14 @@ class NodeExtension(FieldExtension):
         def resolver(
             info: Info,
             ids: Annotated[
-                List[GlobalID], argument(description="The IDs of the objects.")
+                list[GlobalID], argument(description="The IDs of the objects.")
             ],
-        ) -> Union[List[Node], Awaitable[List[Node]]]:
-            nodes_map: DefaultDict[Type[Node], List[str]] = defaultdict(list)
+        ) -> Union[list[Node], Awaitable[list[Node]]]:
+            nodes_map: defaultdict[type[Node], list[str]] = defaultdict(list)
             # Store the index of the node in the list of nodes of the same type
             # so that we can return them in the same order while also supporting
             # different types
-            index_map: Dict[GlobalID, Tuple[Type[Node], int]] = {}
+            index_map: dict[GlobalID, tuple[type[Node], int]] = {}
             for gid in ids:
                 node_t = gid.resolve_type(info)
                 nodes_map[node_t].append(gid.node_id)
@@ -142,9 +155,17 @@ class NodeExtension(FieldExtension):
                 if inspect.isasyncgen(nodes)
             }
 
+            # We are using `strawberry_cast` here to cast the resolved node to make
+            # sure `is_type_of` will not try to find its type again. Very important
+            # when returning a non type (e.g. Django/SQLAlchemy/Pydantic model), as
+            # we could end up resolving to a different type in case more than one
+            # are registered
+            def cast_nodes(node_t: type[Node], nodes: Iterable[Any]) -> list[Node]:
+                return [cast("Node", strawberry_cast(node_t, node)) for node in nodes]
+
             if awaitable_nodes or asyncgen_nodes:
 
-                async def resolve(resolved: Any = resolved_nodes) -> List[Node]:
+                async def resolve(resolved: Any = resolved_nodes) -> list[Node]:
                     resolved.update(
                         zip(
                             [
@@ -164,7 +185,8 @@ class NodeExtension(FieldExtension):
 
                     # Resolve any generator to lists
                     resolved = {
-                        node_t: list(nodes) for node_t, nodes in resolved.items()
+                        node_t: cast_nodes(node_t, nodes)
+                        for node_t, nodes in resolved.items()
                     }
                     return [
                         resolved[index_map[gid][0]][index_map[gid][1]] for gid in ids
@@ -174,7 +196,7 @@ class NodeExtension(FieldExtension):
 
             # Resolve any generator to lists
             resolved = {
-                node_t: list(cast(Iterator[Node], nodes))
+                node_t: cast_nodes(node_t, cast("Iterable[Node]", nodes))
                 for node_t, nodes in resolved_nodes.items()
             }
             return [resolved[index_map[gid][0]][index_map[gid][1]] for gid in ids]
@@ -183,7 +205,10 @@ class NodeExtension(FieldExtension):
 
 
 class ConnectionExtension(FieldExtension):
-    connection_type: Type[Connection[Node]]
+    connection_type: type[Connection[Node]]
+
+    def __init__(self, max_results: Optional[int] = None) -> None:
+        self.max_results = max_results
 
     def apply(self, field: StrawberryField) -> None:
         field.arguments = [
@@ -233,9 +258,13 @@ class ConnectionExtension(FieldExtension):
             f_type = f_type.resolve_type()
             field.type = f_type
 
+        if isinstance(f_type, StrawberryOptional):
+            f_type = f_type.of_type
+
         type_origin = get_origin(f_type) if is_generic_alias(f_type) else f_type
+
         if not isinstance(type_origin, type) or not issubclass(type_origin, Connection):
-            raise RelayWrongAnnotationError(field.name, cast(type, field.origin))
+            raise RelayWrongAnnotationError(field.name, cast("type", field.origin))
 
         assert field.base_resolver
         # TODO: We are not using resolver_type.type because it will call
@@ -253,13 +282,19 @@ class ConnectionExtension(FieldExtension):
                 None,
             )
 
+        if is_union(resolver_type):
+            assert is_optional(resolver_type)
+
+            resolver_type = get_args(resolver_type)[0]
+
         origin = get_origin(resolver_type)
+
         if origin is None or not issubclass(
             origin, (Iterator, Iterable, AsyncIterator, AsyncIterable)
         ):
             raise RelayWrongResolverAnnotationError(field.name, field.base_resolver)
 
-        self.connection_type = cast(Type[Connection[Node]], field.type)
+        self.connection_type = cast("type[Connection[Node]]", f_type)
 
     def resolve(
         self,
@@ -275,12 +310,13 @@ class ConnectionExtension(FieldExtension):
     ) -> Any:
         assert self.connection_type is not None
         return self.connection_type.resolve_connection(
-            cast(Iterable[Node], next_(source, info, **kwargs)),
+            cast("Iterable[Node]", next_(source, info, **kwargs)),
             info=info,
             before=before,
             after=after,
             first=first,
             last=last,
+            max_results=self.max_results,
         )
 
     async def resolve_async(
@@ -303,12 +339,13 @@ class ConnectionExtension(FieldExtension):
             nodes = await nodes
 
         resolved = self.connection_type.resolve_connection(
-            cast(Iterable[Node], nodes),
+            cast("Iterable[Node]", nodes),
             info=info,
             before=before,
             after=after,
             first=first,
             last=last,
+            max_results=self.max_results,
         )
 
         # If nodes was an AsyncIterable/AsyncIterator, resolve_connection
@@ -327,59 +364,33 @@ else:
         return field(*args, **kwargs)
 
 
-@overload
-def connection(
-    graphql_type: Optional[Type[Connection[NodeType]]] = None,
-    *,
-    resolver: Optional[_RESOLVER_TYPE[NodeIterableType[Any]]] = None,
-    name: Optional[str] = None,
-    is_subscription: bool = False,
-    description: Optional[str] = None,
-    init: Literal[True] = True,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
-    default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: List[FieldExtension] = (),  # type: ignore
-) -> Any: ...
-
-
-@overload
-def connection(
-    graphql_type: Optional[Type[Connection[NodeType]]] = None,
-    *,
-    name: Optional[str] = None,
-    is_subscription: bool = False,
-    description: Optional[str] = None,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
-    default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: List[FieldExtension] = (),  # type: ignore
-) -> StrawberryField: ...
+# we used to have `Type[Connection[NodeType]]` here, but that when we added
+# support for making the Connection type optional, we had to change it to
+# `Any` because otherwise it wouldn't be type check since `Optional[Connection[Something]]`
+# is not a `Type`, but a special form, see https://discuss.python.org/t/is-annotated-compatible-with-type-t/43898/46
+# for more information, and also https://peps.python.org/pep-0747/, which is currently
+# in draft status (and no type checker supports it yet)
+ConnectionGraphQLType = Any
 
 
 def connection(
-    graphql_type: Optional[Type[Connection[NodeType]]] = None,
+    graphql_type: Optional[ConnectionGraphQLType] = None,
     *,
     resolver: Optional[_RESOLVER_TYPE[Any]] = None,
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: List[FieldExtension] = (),  # type: ignore
+    extensions: list[FieldExtension] | None = None,
+    max_results: Optional[int] = None,
     # This init parameter is used by pyright to determine whether this field
     # is added in the constructor or not. It is not used to change
-    # any behavior at the moment.
+    # any behaviour at the moment.
     init: Literal[True, False, None] = None,
 ) -> Any:
     """Annotate a property or a method to create a relay connection field.
@@ -409,6 +420,9 @@ def connection(
         metadata: The metadata of the field.
         directives: The directives to apply to the field.
         extensions: The extensions to apply to the field.
+        max_results: The maximum number of results this connection can return.
+            Can be set to override the default value of 100 defined in the
+            schema configuration.
         init: Used only for type checking purposes.
 
     Examples:
@@ -459,6 +473,7 @@ def connection(
         https://relay.dev/graphql/connections.htm
 
     """
+    extensions = extensions or []
     f = StrawberryField(
         python_name=None,
         graphql_name=name,
@@ -471,11 +486,11 @@ def connection(
         default_factory=default_factory,
         metadata=metadata,
         directives=directives or (),
-        extensions=[*extensions, ConnectionExtension()],
+        extensions=[*extensions, ConnectionExtension(max_results=max_results)],
     )
     if resolver is not None:
         f = f(resolver)
     return f
 
 
-__all__ = ["node", "connection"]
+__all__ = ["connection", "node"]

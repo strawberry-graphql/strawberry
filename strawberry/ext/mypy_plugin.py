@@ -8,10 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    List,
     Optional,
-    Set,
-    Tuple,
     Union,
     cast,
 )
@@ -60,7 +57,7 @@ try:
 except ImportError:
     TypeVarDef = TypeVarType
 
-PYDANTIC_VERSION: Optional[Tuple[int, ...]] = None
+PYDANTIC_VERSION: Optional[tuple[int, ...]] = None
 
 # To be compatible with user who don't use pydantic
 try:
@@ -68,7 +65,7 @@ try:
     from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY
     from pydantic.mypy import PydanticModelField
 
-    PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))
+    PYDANTIC_VERSION = tuple(map(int, pydantic.__version__.split(".")))  # noqa: RUF048
 
     from strawberry.experimental.pydantic._compat import IS_PYDANTIC_V1
 except ImportError:
@@ -114,9 +111,7 @@ def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
         return AnyType(TypeOfAny.special_form)
 
     type_name = ctx.type.args[0]
-    type_ = ctx.api.analyze_type(type_name)
-
-    return type_
+    return ctx.api.analyze_type(type_name)
 
 
 def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface) -> Any:
@@ -150,14 +145,12 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface) -
     if isinstance(expr, MemberExpr):
         if expr.fullname:
             return _get_named_type(expr.fullname, api)
-        else:
-            raise InvalidNodeTypeException(expr)
+        raise InvalidNodeTypeException(expr)
 
     if isinstance(expr, CallExpr):
         if expr.analyzed:
             return _get_type_for_expr(expr.analyzed, api)
-        else:
-            raise InvalidNodeTypeException(expr)
+        raise InvalidNodeTypeException(expr)
 
     if isinstance(expr, CastExpr):
         return expr.type
@@ -180,8 +173,6 @@ def create_type_hook(ctx: DynamicClassDefContext) -> None:
         ctx.name,
         SymbolTableNode(GDEF, type_alias, plugin_generated=True),
     )
-
-    return
 
 
 def union_hook(ctx: DynamicClassDefContext) -> None:
@@ -326,7 +317,7 @@ def add_static_method_to_class(
     api: Union[SemanticAnalyzerPluginInterface, CheckerPluginInterface],
     cls: ClassDef,
     name: str,
-    args: List[Argument],
+    args: list[Argument],
     return_type: Type,
     tvar_def: Optional[TypeVarType] = None,
 ) -> None:
@@ -346,13 +337,12 @@ def add_static_method_to_class(
             cls.defs.body.remove(sym.node)
 
     # For compat with mypy < 0.93
-    if MypyVersion.VERSION < Decimal("0.93"):
+    if Decimal("0.93") > MypyVersion.VERSION:
         function_type = api.named_type("__builtins__.function")
+    elif isinstance(api, SemanticAnalyzerPluginInterface):
+        function_type = api.named_type("builtins.function")
     else:
-        if isinstance(api, SemanticAnalyzerPluginInterface):
-            function_type = api.named_type("builtins.function")
-        else:
-            function_type = api.named_generic_type("builtins.function", [])
+        function_type = api.named_generic_type("builtins.function", [])
 
     arg_types, arg_names, arg_kinds = [], [], []
     for arg in args:
@@ -407,18 +397,18 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         ]
         add_method(ctx, "__init__", init_args, NoneType())
 
-        model_type = cast(Instance, _get_type_for_expr(model_expression, ctx.api))
+        model_type = cast("Instance", _get_type_for_expr(model_expression, ctx.api))
 
         # these are the fields that the user added to the strawberry type
-        new_strawberry_fields: Set[str] = set()
+        new_strawberry_fields: set[str] = set()
 
         # TODO: think about inheritance for strawberry?
         for stmt in ctx.cls.defs.body:
             if isinstance(stmt, AssignmentStmt):
-                lhs = cast(NameExpr, stmt.lvalues[0])
+                lhs = cast("NameExpr", stmt.lvalues[0])
                 new_strawberry_fields.add(lhs.name)
 
-        pydantic_fields: Set[PydanticModelField] = set()
+        pydantic_fields: set[PydanticModelField] = set()
         try:
             fields = model_type.type.metadata[PYDANTIC_METADATA_KEY]["fields"]
             for data in fields.items():
@@ -438,7 +428,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                 ctx.reason,
             )
 
-        potentially_missing_fields: Set[PydanticModelField] = {
+        potentially_missing_fields: set[PydanticModelField] = {
             f for f in pydantic_fields if f.name not in new_strawberry_fields
         }
 
@@ -449,7 +439,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         This means that the user is using all_fields=True
         """
         is_all_fields: bool = len(potentially_missing_fields) == len(pydantic_fields)
-        missing_pydantic_fields: Set[PydanticModelField] = (
+        missing_pydantic_fields: set[PydanticModelField] = (
             potentially_missing_fields if not is_all_fields else set()
         )
 
@@ -474,9 +464,21 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
             else:
                 extra = {}
 
-                if PYDANTIC_VERSION and PYDANTIC_VERSION >= (2, 7, 0):
-                    extra["api"] = ctx.api
-
+                if PYDANTIC_VERSION:
+                    if PYDANTIC_VERSION >= (2, 7, 0):
+                        extra["api"] = ctx.api
+                    if PYDANTIC_VERSION >= (2, 8, 0):
+                        # Based on pydantic's default value
+                        # https://github.com/pydantic/pydantic/pull/9606/files#diff-469037bbe55bbf9aa359480a16040d368c676adad736e133fb07e5e20d6ac523R1066
+                        extra["force_typevars_invariant"] = False
+                    if PYDANTIC_VERSION >= (2, 9, 0):
+                        extra["model_strict"] = model_type.type.metadata[
+                            PYDANTIC_METADATA_KEY
+                        ]["config"].get("strict", False)
+                        extra["is_root_model_root"] = any(
+                            "pydantic.root_model.RootModel" in base.fullname
+                            for base in model_type.type.mro[:-1]
+                        )
                 add_method(
                     ctx,
                     "to_pydantic",

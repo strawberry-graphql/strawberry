@@ -2,7 +2,7 @@ import os
 import sys
 import threading
 from types import TracebackType
-from typing import Any, Callable, Optional, Tuple, Type, cast
+from typing import Any, Callable, Optional, cast
 
 from .exception import StrawberryException, UnableToFindExceptionSource
 
@@ -10,7 +10,7 @@ original_threading_exception_hook = threading.excepthook
 
 
 ExceptionHandler = Callable[
-    [Type[BaseException], BaseException, Optional[TracebackType]], None
+    [type[BaseException], BaseException, Optional[TracebackType]], None
 ]
 
 
@@ -20,7 +20,7 @@ def should_use_rich_exceptions() -> bool:
     return errors_disabled.lower() not in ["true", "1", "yes"]
 
 
-def _get_handler(exception_type: Type[BaseException]) -> ExceptionHandler:
+def _get_handler(exception_type: type[BaseException]) -> ExceptionHandler:
     if issubclass(exception_type, StrawberryException):
         try:
             import rich
@@ -29,7 +29,7 @@ def _get_handler(exception_type: Type[BaseException]) -> ExceptionHandler:
         else:
 
             def _handler(
-                exception_type: Type[BaseException],
+                exception_type: type[BaseException],
                 exception: BaseException,
                 traceback: Optional[TracebackType],
             ) -> None:
@@ -47,7 +47,7 @@ def _get_handler(exception_type: Type[BaseException]) -> ExceptionHandler:
 
 
 def strawberry_exception_handler(
-    exception_type: Type[BaseException],
+    exception_type: type[BaseException],
     exception: BaseException,
     traceback: Optional[TracebackType],
 ) -> None:
@@ -55,8 +55,8 @@ def strawberry_exception_handler(
 
 
 def strawberry_threading_exception_handler(
-    args: Tuple[
-        Type[BaseException],
+    args: tuple[
+        type[BaseException],
         Optional[BaseException],
         Optional[TracebackType],
         Optional[threading.Thread],
@@ -70,7 +70,7 @@ def strawberry_threading_exception_handler(
         # (we'd need to do type ignore for python 3.8 and above, but mypy
         # doesn't seem to be able to handle that and will complain in python 3.7)
 
-        cast(Any, original_threading_exception_hook)(args)
+        cast("Any", original_threading_exception_hook)(args)
 
         return
 

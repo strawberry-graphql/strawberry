@@ -1,20 +1,22 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import (
-    Any,
+from collections.abc import (
     AsyncGenerator,
     AsyncIterable,
     AsyncIterator,
     Generator,
     Iterable,
     Iterator,
-    List,
+)
+from typing import (
+    Annotated,
+    Any,
     NamedTuple,
     Optional,
     cast,
 )
-from typing_extensions import Annotated, Self
+from typing_extensions import Self
 
 import strawberry
 from strawberry import relay
@@ -199,9 +201,9 @@ class Query:
     node_with_async_permissions: relay.Node = relay.node(
         permission_classes=[DummyPermission]
     )
-    nodes: List[relay.Node] = relay.node()
+    nodes: list[relay.Node] = relay.node()
     node_optional: Optional[relay.Node] = relay.node()
-    nodes_optional: List[Optional[relay.Node]] = relay.node()
+    nodes_optional: list[Optional[relay.Node]] = relay.node()
     fruits: relay.ListConnection[Fruit] = relay.connection(resolver=fruits_resolver)
     fruits_lazy: relay.ListConnection[
         Annotated[Fruit, strawberry.lazy("tests.relay.schema")]
@@ -218,11 +220,11 @@ class Query:
         self,
         info: strawberry.Info,
         name_endswith: Optional[str] = None,
-    ) -> List[Fruit]:
+    ) -> list[Fruit]:
         # This is mimicing integrations, like Django
         return [
             cast(
-                Fruit,
+                "Fruit",
                 FruitConcrete(
                     id=f.id,
                     name=f.name,
@@ -238,7 +240,7 @@ class Query:
         self,
         info: strawberry.Info,
         name_endswith: Optional[str] = None,
-    ) -> List[Fruit]:
+    ) -> list[Fruit]:
         return [
             f
             for f in fruits.values()
@@ -250,7 +252,7 @@ class Query:
         self,
         info: strawberry.Info,
         name_endswith: Optional[str] = None,
-    ) -> List[Annotated[Fruit, strawberry.lazy("tests.relay.schema")]]:
+    ) -> list[Annotated[Fruit, strawberry.lazy("tests.relay.schema")]]:
         return [
             f
             for f in fruits.values()
@@ -322,7 +324,7 @@ class Query:
         self,
         info: strawberry.Info,
         name_endswith: Optional[str] = None,
-    ) -> List[FruitAlike]:
+    ) -> list[FruitAlike]:
         return [
             FruitAlike(f.id, f.name, f.color)
             for f in fruits.values()
@@ -330,7 +332,7 @@ class Query:
         ]
 
     @strawberry.relay.connection(strawberry.relay.ListConnection[Fruit])
-    def some_fruits(self) -> List[Fruit]:
+    def some_fruits(self) -> list[Fruit]:
         return [Fruit(id=x, name="apple", color="green") for x in range(200)]
 
 

@@ -1,5 +1,5 @@
-from typing import Any, cast
-from typing_extensions import Annotated, get_args
+from typing import Annotated, Any, cast
+from typing_extensions import get_args
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
@@ -35,7 +35,7 @@ def test_repr():
 def test_isinstance():
     assert isinstance(auto, StrawberryAuto)
     assert not isinstance(object, StrawberryAuto)
-    assert not isinstance(cast(Any, object()), StrawberryAuto)
+    assert not isinstance(cast("Any", object()), StrawberryAuto)
 
 
 def test_isinstance_with_annotation():

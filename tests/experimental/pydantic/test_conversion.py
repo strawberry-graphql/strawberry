@@ -3,7 +3,7 @@ import dataclasses
 import re
 import sys
 from enum import Enum
-from typing import Any, Dict, List, NewType, Optional, TypeVar, Union
+from typing import Any, NewType, Optional, TypeVar, Union
 
 import pytest
 from pydantic import BaseModel, Field, ValidationError
@@ -25,6 +25,9 @@ from strawberry.types.base import (
     StrawberryOptional,
 )
 from tests.experimental.pydantic.utils import needs_pydantic_v1
+
+if IS_PYDANTIC_V2:
+    from pydantic import computed_field
 
 
 def test_can_use_type_standalone():
@@ -228,7 +231,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_private_field():
     assert len(definition.fields) == 1
     assert definition.fields[0].python_name == "age"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == int
+    assert definition.fields[0].type is int
 
 
 def test_can_convert_pydantic_type_with_nested_data_to_strawberry():
@@ -261,7 +264,7 @@ def test_can_convert_pydantic_type_with_list_of_nested_data_to_strawberry():
         name: strawberry.auto
 
     class UserModel(BaseModel):
-        work: List[WorkModel]
+        work: list[WorkModel]
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -280,7 +283,7 @@ def test_can_convert_pydantic_type_with_list_of_nested_data_to_strawberry():
 
 def test_can_convert_pydantic_type_with_list_of_nested_int_to_strawberry():
     class UserModel(BaseModel):
-        hours: List[int]
+        hours: list[int]
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -300,7 +303,7 @@ def test_can_convert_pydantic_type_with_list_of_nested_int_to_strawberry():
 
 def test_can_convert_pydantic_type_with_matrix_list_of_nested_int_to_strawberry():
     class UserModel(BaseModel):
-        hours: List[List[int]]
+        hours: list[list[int]]
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -331,7 +334,7 @@ def test_can_convert_pydantic_type_with_matrix_list_of_nested_model_to_strawberr
         hour: strawberry.auto
 
     class UserModel(BaseModel):
-        hours: List[List[HourModel]]
+        hours: list[list[HourModel]]
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -602,7 +605,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_additional_list_nested_fie
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
-        work: List[Work]
+        work: list[Work]
         password: strawberry.auto
 
     origin_user = UserModel(password="abc")
@@ -633,7 +636,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_missing_data_in_nested_typ
         name: strawberry.auto
 
     class UserModel(BaseModel):
-        work: List[WorkModel]
+        work: list[WorkModel]
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -665,7 +668,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_missing_index_data_nested_
         name: strawberry.auto
 
     class UserModel(BaseModel):
-        work: List[Optional[WorkModel]]
+        work: list[Optional[WorkModel]]
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -722,7 +725,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_optional_list():
 
 def test_can_convert_pydantic_type_to_strawberry_with_optional_nested_value():
     class UserModel(BaseModel):
-        names: Optional[List[str]]
+        names: Optional[list[str]]
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
@@ -828,7 +831,7 @@ def test_can_convert_pydantic_type_to_strawberry_newtype_list():
 
     class User(BaseModel):
         age: int
-        passwords: List[Password]
+        passwords: list[Password]
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
@@ -960,7 +963,7 @@ def test_can_convert_both_output_and_input_type():
         work: Optional[Work]
 
     class Group(BaseModel):
-        users: List[User]
+        users: list[User]
 
     # Test both definition orders
     @strawberry.experimental.pydantic.input(Work)
@@ -1016,7 +1019,7 @@ def test_custom_conversion_functions():
 
         @staticmethod
         def from_pydantic(
-            instance: User, extra: Optional[Dict[str, Any]] = None
+            instance: User, extra: Optional[dict[str, Any]] = None
         ) -> "UserType":
             return UserType(
                 age=str(instance.age),
@@ -1058,7 +1061,7 @@ def test_nested_custom_conversion_functions():
 
         @staticmethod
         def from_pydantic(
-            instance: User, extra: Optional[Dict[str, Any]] = None
+            instance: User, extra: Optional[dict[str, Any]] = None
         ) -> "UserType":
             return UserType(
                 age=str(instance.age),
@@ -1121,7 +1124,7 @@ def test_can_convert_input_types_to_pydantic_with_dict():
     class User(BaseModel):
         age: int
         password: Optional[str]
-        work: Dict[str, Work]
+        work: dict[str, Work]
 
     @strawberry.experimental.pydantic.input(Work)
     class WorkInput:
@@ -1175,10 +1178,6 @@ def test_raise_missing_arguments_to_pydantic():
         data.to_pydantic()
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="generic aliases where added in python 3.9",
-)
 def test_can_convert_generic_alias_fields_to_strawberry():
     class TestModel(BaseModel):
         list_1d: list[int]
@@ -1232,21 +1231,17 @@ def test_can_convert_optional_union_type_expression_fields_to_strawberry():
 
 
 @needs_pydantic_v1
-@pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="ConstrainedList with another model does not work with 3.8",
-)
 def test_can_convert_pydantic_type_to_strawberry_with_constrained_list():
     from pydantic import ConstrainedList
 
     class WorkModel(BaseModel):
         name: str
 
-    class workList(ConstrainedList):
+    class WorkList(ConstrainedList):
         min_items = 1
 
     class UserModel(BaseModel):
-        work: workList[WorkModel]
+        work: WorkList[WorkModel]
 
     @strawberry.experimental.pydantic.type(WorkModel)
     class Work:
@@ -1268,23 +1263,20 @@ def test_can_convert_pydantic_type_to_strawberry_with_constrained_list():
 SI = TypeVar("SI", covariant=True)  # pragma: no mutate
 
 
-class SpecialList(List[SI]):
+class SpecialList(list[SI]):
     pass
 
 
 @needs_pydantic_v1
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason="SpecialList does not work with 3.8"
-)
 def test_can_convert_pydantic_type_to_strawberry_with_specialized_list():
     class WorkModel(BaseModel):
         name: str
 
-    class workList(SpecialList[SI]):
+    class WorkList(SpecialList[SI]):
         min_items = 1
 
     class UserModel(BaseModel):
-        work: workList[WorkModel]
+        work: WorkList[WorkModel]
 
     @strawberry.experimental.pydantic.type(WorkModel)
     class Work:
@@ -1301,3 +1293,50 @@ def test_can_convert_pydantic_type_to_strawberry_with_specialized_list():
     user = User.from_pydantic(origin_user)
 
     assert user == User(work=[Work(name="developer"), Work(name="tester")])
+
+
+@pytest.mark.skipif(
+    not IS_PYDANTIC_V2, reason="Requires Pydantic v2 for computed_field"
+)
+def test_can_convert_pydantic_type_to_strawberry_computed_field():
+    """Test that computed fields on a pydantic type are not accessed unless queried."""
+
+    class UserModel(BaseModel):
+        age: int
+
+        @computed_field
+        @property
+        def name(self) -> str:
+            raise Exception("`name` computed_field should not be accessed")
+
+        @computed_field
+        @property
+        def location(self) -> str:
+            return "earth"
+
+    def get_name(root) -> str:
+        return root._original_model.name
+
+    def get_location(root) -> str:
+        return root._original_model.location
+
+    @strawberry.experimental.pydantic.type(UserModel)
+    class User:
+        age: int
+        name: str = strawberry.field(resolver=get_name)
+        location: str = strawberry.field(resolver=get_location)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return User.from_pydantic(UserModel(age=20))
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ user { age location } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["user"] == {"age": 20, "location": "earth"}

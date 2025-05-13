@@ -5,12 +5,11 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    Mapping,
+    Callable,
     Optional,
-    Type,
     cast,
 )
+from typing_extensions import TypeGuard
 
 from sanic.request import Request
 from sanic.response import HTTPResponse, html
@@ -26,6 +25,8 @@ from strawberry.http.typevars import (
 from strawberry.sanic.utils import convert_request_to_files_dict
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Mapping
+
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
@@ -47,7 +48,7 @@ class SanicHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def method(self) -> HTTPMethod:
-        return cast(HTTPMethod, self.request.method.upper())
+        return cast("HTTPMethod", self.request.method.upper())
 
     @property
     def headers(self) -> Mapping[str, str]:
@@ -69,7 +70,15 @@ class SanicHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class GraphQLView(
-    AsyncBaseHTTPView[Request, HTTPResponse, TemporalResponse, Context, RootValue],
+    AsyncBaseHTTPView[
+        Request,
+        HTTPResponse,
+        TemporalResponse,
+        Request,
+        TemporalResponse,
+        Context,
+        RootValue,
+    ],
     HTTPMethodView,
 ):
     """Class based view to handle GraphQL HTTP Requests.
@@ -98,13 +107,15 @@ class GraphQLView(
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
-        json_encoder: Optional[Type[json.JSONEncoder]] = None,
-        json_dumps_params: Optional[Dict[str, Any]] = None,
+        json_encoder: Optional[type[json.JSONEncoder]] = None,
+        json_dumps_params: Optional[dict[str, Any]] = None,
+        multipart_uploads_enabled: bool = False,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
         self.json_encoder = json_encoder
         self.json_dumps_params = json_dumps_params
+        self.multipart_uploads_enabled = multipart_uploads_enabled
 
         if self.json_encoder is not None:  # pragma: no cover
             warnings.warn(
@@ -161,16 +172,57 @@ class GraphQLView(
         )
 
     async def post(self, request: Request) -> HTTPResponse:
+        self.request = request
+
         try:
             return await self.run(request)
         except HTTPException as e:
             return HTTPResponse(e.reason, status=e.status_code)
 
-    async def get(self, request: Request) -> HTTPResponse:  # type: ignore[override]
+    async def get(self, request: Request) -> HTTPResponse:
+        self.request = request
+
         try:
             return await self.run(request)
         except HTTPException as e:
             return HTTPResponse(e.reason, status=e.status_code)
+
+    async def create_streaming_response(
+        self,
+        request: Request,
+        stream: Callable[[], AsyncGenerator[str, None]],
+        sub_response: TemporalResponse,
+        headers: dict[str, str],
+    ) -> HTTPResponse:
+        response = await self.request.respond(
+            status=sub_response.status_code,
+            headers={
+                **sub_response.headers,
+                **headers,
+            },
+        )
+
+        async for chunk in stream():
+            await response.send(chunk)
+
+        await response.eof()
+
+        # returning the response will basically tell sanic to send it again
+        # to the client, so we return None to avoid that, and we ignore the type
+        # error mostly so we don't have to update the types everywhere for this
+        # corner case
+        return None  # type: ignore
+
+    def is_websocket_request(self, request: Request) -> TypeGuard[Request]:
+        return False
+
+    async def pick_websocket_subprotocol(self, request: Request) -> Optional[str]:
+        raise NotImplementedError
+
+    async def create_websocket_response(
+        self, request: Request, subprotocol: Optional[str]
+    ) -> TemporalResponse:
+        raise NotImplementedError
 
 
 __all__ = ["GraphQLView"]

@@ -1,8 +1,8 @@
 import json
-from typing import Any, Dict, Generic, List, Mapping, Optional, Union
+from collections.abc import Mapping
+from typing import Any, Generic, Optional, Union
 from typing_extensions import Protocol
 
-from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE, get_graphql_ide_html
 from strawberry.http.types import HTTPMethod, QueryParams
 
@@ -12,7 +12,7 @@ from .typevars import Request
 
 class BaseRequestProtocol(Protocol):
     @property
-    def query_params(self) -> Mapping[str, Optional[Union[str, List[str]]]]: ...
+    def query_params(self) -> Mapping[str, Optional[Union[str, list[str]]]]: ...
 
     @property
     def method(self) -> HTTPMethod: ...
@@ -23,10 +23,7 @@ class BaseRequestProtocol(Protocol):
 
 class BaseView(Generic[Request]):
     graphql_ide: Optional[GraphQL_IDE]
-
-    # TODO: we might remove this in future :)
-    _ide_replace_variables: bool = True
-    _ide_subscription_enabled: bool = True
+    multipart_uploads_enabled: bool = False
 
     def should_render_graphql_ide(self, request: BaseRequestProtocol) -> bool:
         return (
@@ -43,14 +40,17 @@ class BaseView(Generic[Request]):
 
     def parse_json(self, data: Union[str, bytes]) -> Any:
         try:
-            return json.loads(data)
+            return self.decode_json(data)
         except json.JSONDecodeError as e:
             raise HTTPException(400, "Unable to parse request body as JSON") from e
 
-    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
-        return json.dumps(response_data)
+    def decode_json(self, data: Union[str, bytes]) -> object:
+        return json.loads(data)
 
-    def parse_query_params(self, params: QueryParams) -> Dict[str, Any]:
+    def encode_json(self, data: object) -> str:
+        return json.dumps(data)
+
+    def parse_query_params(self, params: QueryParams) -> dict[str, Any]:
         params = dict(params)
 
         if "variables" in params:
@@ -69,11 +69,18 @@ class BaseView(Generic[Request]):
 
     @property
     def graphql_ide_html(self) -> str:
-        return get_graphql_ide_html(
-            subscription_enabled=self._ide_subscription_enabled,
-            replace_variables=self._ide_replace_variables,
-            graphql_ide=self.graphql_ide,
-        )
+        return get_graphql_ide_html(graphql_ide=self.graphql_ide)
+
+    def _is_multipart_subscriptions(
+        self, content_type: str, params: dict[str, str]
+    ) -> bool:
+        if content_type != "multipart/mixed":
+            return False
+
+        if params.get("boundary") != "graphql":
+            return False
+
+        return params.get("subscriptionspec", "").startswith("1.0")
 
 
 __all__ = ["BaseView"]

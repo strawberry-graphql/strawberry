@@ -2,8 +2,7 @@
 import dataclasses
 import re
 from enum import Enum
-from typing import List, Optional, TypeVar, Union
-from typing_extensions import Annotated
+from typing import Annotated, Optional, TypeVar, Union
 
 import pytest
 
@@ -49,11 +48,11 @@ def test_forward_reference():
 def test_list():
     @strawberry.type
     class Santa:
-        making_a: List[str]
+        making_a: list[str]
 
     field: StrawberryField = get_object_definition(Santa).fields[0]
 
-    assert field.type == List[str]
+    assert field.type == list[str]
 
 
 def test_literal():
@@ -63,7 +62,7 @@ def test_literal():
 
     field: StrawberryField = get_object_definition(Fabric).fields[0]
 
-    assert field.type == str
+    assert field.type is str
 
 
 def test_object():
@@ -145,11 +144,11 @@ def test_fields_with_defaults_inheritance():
 
     @strawberry.type
     class B(A):
-        attachments: Optional[List[A]] = None
+        attachments: Optional[list[A]] = None
 
     @strawberry.type
     class C(A):
-        fields: List[B]
+        fields: list[B]
 
     c_inst = C(
         text="some text",

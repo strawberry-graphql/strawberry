@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from flask import Flask
 from flask import Request as FlaskRequest
@@ -9,19 +9,19 @@ from strawberry.flask.views import AsyncGraphQLView as BaseAsyncGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
+from tests.http.context import get_context
 from tests.views.schema import Query, schema
 
-from ..context import get_context
 from .base import ResultOverrideFunction
 from .flask import FlaskHttpClient
 
 
-class GraphQLView(BaseAsyncGraphQLView):
+class GraphQLView(BaseAsyncGraphQLView[dict[str, object], object]):
     methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"]
 
     result_override: ResultOverrideFunction = None
 
-    def __init__(self, *args: str, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 
@@ -31,7 +31,7 @@ class GraphQLView(BaseAsyncGraphQLView):
 
     async def get_context(
         self, request: FlaskRequest, response: FlaskResponse
-    ) -> Dict[str, object]:
+    ) -> dict[str, object]:
         context = await super().get_context(request, response)
 
         return get_context(context)
@@ -52,6 +52,7 @@ class AsyncFlaskHttpClient(FlaskHttpClient):
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        multipart_uploads_enabled: bool = False,
     ):
         self.app = Flask(__name__)
         self.app.debug = True
@@ -63,6 +64,7 @@ class AsyncFlaskHttpClient(FlaskHttpClient):
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
+            multipart_uploads_enabled=multipart_uploads_enabled,
         )
 
         self.app.add_url_rule(

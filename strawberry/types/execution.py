@@ -4,19 +4,17 @@ import dataclasses
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    List,
     Optional,
-    Tuple,
-    Type,
+    runtime_checkable,
 )
-from typing_extensions import TypedDict
+from typing_extensions import Protocol, TypedDict
 
 from graphql import specified_rules
 
 from strawberry.utils.operation import get_first_operation, get_operation_type
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from typing_extensions import NotRequired
 
     from graphql import ASTValidationRule
@@ -33,13 +31,14 @@ if TYPE_CHECKING:
 class ExecutionContext:
     query: Optional[str]
     schema: Schema
+    allowed_operations: Iterable[OperationType]
     context: Any = None
-    variables: Optional[Dict[str, Any]] = None
+    variables: Optional[dict[str, Any]] = None
     parse_options: ParseOptions = dataclasses.field(
         default_factory=lambda: ParseOptions()
     )
     root_value: Optional[Any] = None
-    validation_rules: Tuple[Type[ASTValidationRule], ...] = dataclasses.field(
+    validation_rules: tuple[type[ASTValidationRule], ...] = dataclasses.field(
         default_factory=lambda: tuple(specified_rules)
     )
 
@@ -49,8 +48,9 @@ class ExecutionContext:
     # Values that get populated during the GraphQL execution so that they can be
     # accessed by extensions
     graphql_document: Optional[DocumentNode] = None
-    errors: Optional[List[GraphQLError]] = None
+    errors: Optional[list[GraphQLError]] = None
     result: Optional[GraphQLExecutionResult] = None
+    extensions_results: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     def __post_init__(self, provided_operation_name: str | None) -> None:
         self._provided_operation_name = provided_operation_name
@@ -87,13 +87,39 @@ class ExecutionContext:
 
 @dataclasses.dataclass
 class ExecutionResult:
-    data: Optional[Dict[str, Any]]
-    errors: Optional[List[GraphQLError]]
-    extensions: Optional[Dict[str, Any]] = None
+    data: Optional[dict[str, Any]]
+    errors: Optional[list[GraphQLError]]
+    extensions: Optional[dict[str, Any]] = None
+
+
+@dataclasses.dataclass
+class PreExecutionError(ExecutionResult):
+    """Differentiate between a normal execution result and an immediate error.
+
+    Immediate errors are errors that occur before the execution phase i.e validation errors,
+    or any other error that occur before we interact with resolvers.
+
+    These errors are required by `graphql-ws-transport` protocol in order to close the operation
+    right away once the error is encountered.
+    """
 
 
 class ParseOptions(TypedDict):
     max_tokens: NotRequired[int]
 
 
-__all__ = ["ExecutionContext", "ExecutionResult", "ParseOptions"]
+@runtime_checkable
+class SubscriptionExecutionResult(Protocol):
+    def __aiter__(self) -> SubscriptionExecutionResult:  # pragma: no cover
+        ...
+
+    async def __anext__(self) -> Any:  # pragma: no cover
+        ...
+
+
+__all__ = [
+    "ExecutionContext",
+    "ExecutionResult",
+    "ParseOptions",
+    "SubscriptionExecutionResult",
+]

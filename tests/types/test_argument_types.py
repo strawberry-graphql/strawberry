@@ -1,6 +1,6 @@
 import warnings
 from enum import Enum
-from typing import List, Optional, TypeVar
+from typing import Optional, TypeVar
 
 import pytest
 
@@ -45,12 +45,12 @@ def test_forward_reference():
 
 def test_list():
     @strawberry.field
-    def get_longest_word(words: List[str]) -> str:
+    def get_longest_word(words: list[str]) -> str:
         _ = words
         return "I cheated"
 
     argument = get_longest_word.arguments[0]
-    assert argument.type == List[str]
+    assert argument.type == list[str]
 
 
 def test_literal():
@@ -60,7 +60,7 @@ def test_literal():
         return "Lord Buckethead"
 
     argument = get_name.arguments[0]
-    assert argument.type == int
+    assert argument.type is int
 
 
 def test_object():

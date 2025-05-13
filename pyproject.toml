@@ -1,23 +1,21 @@
 [tool.poetry]
 name = "strawberry-graphql"
-packages = [ { include = "strawberry" } ]
-version = "0.236.2"
+version = "0.268.1"
+packages = [{ include = "strawberry" }]
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 keywords = ["graphql", "api", "rest", "starlette", "async"]
-
 homepage = "https://strawberry.rocks/"
 repository = "https://github.com/strawberry-graphql/strawberry"
 documentation = "https://strawberry.rocks/"
-
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Intended Audience :: Developers",
-    "Topic :: Software Development :: Libraries",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "License :: OSI Approved :: MIT License",
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "License :: OSI Approved :: MIT License",
 ]
 include = ["strawberry/py.typed"]
 
@@ -29,155 +27,168 @@ include = ["strawberry/py.typed"]
 "Sponsor on GitHub" = "https://github.com/sponsors/strawberry-graphql"
 "Sponsor on Open Collective" = "https://opencollective.com/strawberry-graphql"
 
-[build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
-
 [tool.poetry.dependencies]
-python = "^3.8"
-graphql-core = "~3.2.0"
+python = ">=3.9"
+graphql-core = { version = ">=3.2.0,<3.4.0", python = ">=3.9,<4.0" }
 typing-extensions = ">=4.5.0"
 python-dateutil = "^2.7.0"
-starlette = {version = ">=0.18.0", optional = true}
-typer = {version = ">=0.7.0", optional = true}
-pygments = {version = "^2.3", optional = true}
-uvicorn = {version = ">=0.11.6", optional = true}
-Django = {version = ">=3.2", optional = true}
-asgiref = {version = "^3.2", optional = true}
-flask = {version = ">=1.1", optional = true}
-quart = {version = ">=0.19.3", optional = true}
-opentelemetry-api = {version = "<2", optional = true}
-opentelemetry-sdk = {version = "<2", optional = true}
-chalice = {version = "^1.22", optional = true}
-pydantic = {version = ">1.6.1", optional = true}
-python-multipart = {version = ">=0.0.7", optional = true}
-sanic = {version = ">=20.12.2", optional = true}
-aiohttp = {version = "^3.7.4.post0", optional = true}
-fastapi = {version = ">=0.65.2", optional = true}
-starlite = {version = ">=1.48.0", optional = true, python = ">=3.8"}
-litestar = {version = ">=2", optional = true, python = ">=3.8"}
-channels = {version = ">=3.0.5", optional = true}
-astunparse = {version = "^1.6.3", python = "<3.9"}
-libcst = {version = ">=0.4.7", optional = true}
-rich = {version = ">=12.0.0", optional = true}
-pyinstrument = {version = ">=4.0.0", optional = true}
-graphlib_backport = {version = "*", python = "<3.9", optional = true}
+packaging = ">=23"
+starlette = { version = ">=0.18.0", optional = true }
+typer = { version = ">=0.7.0", optional = true }
+pygments = { version = "^2.3", optional = true }
+uvicorn = { version = ">=0.11.6", optional = true }
+Django = { version = ">=3.2", optional = true }
+asgiref = { version = "^3.2", optional = true }
+flask = { version = ">=1.1", optional = true }
+quart = { version = ">=0.19.3", optional = true }
+opentelemetry-api = { version = "<2", optional = true }
+opentelemetry-sdk = { version = "<2", optional = true }
+chalice = { version = "^1.22", optional = true }
+pydantic = { version = ">1.6.1", optional = true }
+python-multipart = { version = ">=0.0.7", optional = true }
+sanic = { version = ">=20.12.2", optional = true }
+aiohttp = { version = "^3.7.4.post0", optional = true }
+fastapi = { version = ">=0.65.2", optional = true }
+litestar = { version = ">=2", python = ">=3.10,<4.0", optional = true }
+channels = { version = ">=3.0.5", optional = true }
+libcst = { version = ">=0.4.7", optional = true }
+rich = { version = ">=12.0.0", optional = true }
+pyinstrument = { version = ">=4.0.0", optional = true }
 
 [tool.poetry.group.dev.dependencies]
+ruff = "^0.11.4"
 asgiref = "^3.2"
-ddtrace = ">=1.6.4"
-email-validator = {version = ">=1.1.3,<3.0.0", optional = false}
+email-validator = { version = ">=1.1.3,<3.0.0", optional = false }
 freezegun = "^1.2.1"
-libcst = {version = ">=1.0.0", optional = false}
+libcst = { version = ">=1.0.0", optional = false }
 MarkupSafe = "2.1.3"
-nox = "^2023.4.22"
+nox = "^2024.4.15"
 nox-poetry = "^1.0.3"
 opentelemetry-api = "<2"
 opentelemetry-sdk = "<2"
 pygments = "^2.3"
-pyinstrument = {version = ">=4.0.0", optional = false}
+pyinstrument = { version = ">=4.0.0", optional = false }
 pytest = "^7.2"
 pytest-asyncio = ">=0.20.3"
-pytest-codspeed = "^2.0.1"
+pytest-codspeed = { version = ">=3.0.0", python = ">=3.9" }
 pytest-cov = "^4.0.0"
 pytest-emoji = "^0.2.0"
 pytest-mock = "^3.10"
 pytest-snapshot = "^0.9.0"
-pytest-xdist = {extras = ["psutil"], version = "^3.1.0"}
+pytest-xdist = { extras = ["psutil"], version = "^3.1.0" }
 python-multipart = ">=0.0.7"
-rich = {version = ">=12.5.1", optional = false}
+rich = { version = ">=12.5.1", optional = false }
 sanic-testing = ">=22.9,<24.0"
-sentry-sdk = "^1.39.2"
-typer = {version = ">=0.7.0", optional = false}
-types-aiofiles = ">=22.1"
+typer = { version = ">=0.7.0", optional = false }
+types-aiofiles = "^24.1.0.20250326"
 types-certifi = "^2021.10.8"
 types-chardet = "^5.0.4"
 types-freezegun = "^1.1.9"
 types-python-dateutil = "^2.8.19"
 types-toml = "^0.10.8"
 types-typed-ast = "^1.5.8"
-types-ujson = "^5.6.0"
-types-protobuf = "^4.23.0.1"
-poetry-plugin-export = "^1.6.0"
+types-ujson = "^5.10.0.20250326"
+types-protobuf = "^5.29.1.20250403"
+poetry-plugin-export = { version = "^1.6.0", python = "<4.0", optional = false }
 # another bug in poetry
 urllib3 = "<2"
-graphlib_backport = {version = "*", python = "<3.9", optional = false}
+graphlib_backport = { version = "*", python = "<3.9", optional = false }
 inline-snapshot = "^0.10.1"
+types-deprecated = "^1.2.15.20241117"
+types-six = "^1.17.0.20250403"
+types-pyyaml = "^6.0.12.20240917"
+mypy = "^1.15.0"
+codeflash = ">=0.9.2"
 
 [tool.poetry.group.integrations]
 optional = true
 
 [tool.poetry.group.integrations.dependencies]
 aiohttp = "^3.7.4.post0"
-chalice = {version = "^1.22"}
+chalice = { version = "^1.22" }
 channels = ">=3.0.5,<5.0.0"
 Django = ">=3.2"
-fastapi = {version = ">=0.65.0", optional = false}
+fastapi = { version = ">=0.65.0", optional = false }
 flask = ">=1.1"
 quart = ">=0.19.3"
-pydantic = {version = ">=2.0", optional = false}
+pydantic = { version = ">=2.0", optional = false }
 pytest-aiohttp = "^1.0.3"
-pytest-django = {version = "^4.5"}
+pytest-django = { version = "^4.5" }
 sanic = ">=20.12.2"
 starlette = ">=0.13.6"
-starlite = {version = ">=1.48.0", optional = false, python = ">=3.8", extras = ["testing"]}
-litestar = {version = ">=2", optional = false, python = ">=3.8"}
+litestar = { version = ">=2", python = ">=3.10,<4.0", optional = false }
 uvicorn = ">=0.11.6"
 daphne = "^4.0.0"
+
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp"]
 asgi = ["starlette", "python-multipart"]
 debug = ["rich", "libcst"]
-debug-server = ["starlette", "uvicorn", "python-multipart", "typer", "pygments", "rich", "libcst"]
+debug-server = [
+  "starlette",
+  "uvicorn",
+  "python-multipart",
+  "typer",
+  "pygments",
+  "rich",
+  "libcst",
+]
 django = ["Django", "pytest-django", "asgiref"]
 channels = ["channels", "asgiref"]
 flask = ["flask"]
-quart=["quart"]
+quart = ["quart"]
 opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 pydantic = ["pydantic"]
 sanic = ["sanic"]
 fastapi = ["fastapi", "python-multipart"]
 chalice = ["chalice"]
 cli = ["typer", "pygments", "rich", "libcst", "graphlib_backport"]
-starlite = ["starlite"]
 litestar = ["litestar"]
 pyinstrument = ["pyinstrument"]
 
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"
 
+
 [tool.pytest.ini_options]
 addopts = "--emoji"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
 markers = [
-    "aiohttp",
-    "asgi",
-    "chalice",
-    "channels",
-    "django_db",
-    "django",
-    "fastapi",
-    "flaky",
-    "flask",
-    "quart",
-    "pydantic",
-    "relay",
-    "sanic",
-    "starlette",
-    "starlite",
+  "aiohttp",
+  "asgi",
+  "chalice",
+  "channels",
+  "django_db",
+  "django",
+  "fastapi",
+  "flaky",
+  "flask",
+  "litestar",
+  "pydantic",
+  "quart",
+  "relay",
+  "sanic",
+  "starlette",
 ]
 asyncio_mode = "auto"
 filterwarnings = [
-    "ignore::DeprecationWarning:strawberry.*.resolver",
-    "ignore:LazyType is deprecated:DeprecationWarning",
-    "ignore::DeprecationWarning:ddtrace.internal",
-    "ignore::DeprecationWarning:django.utils.encoding",
-    # ignoring the text instead of the whole warning because we'd
-    # get an error when django is not installed
-    "ignore:The default value of USE_TZ",
+  "ignore::DeprecationWarning:strawberry.*.resolver",
+  "ignore:LazyType is deprecated:DeprecationWarning",
+  "ignore::DeprecationWarning:ddtrace.internal",
+  "ignore::DeprecationWarning:django.utils.encoding",
+  # ignoring the text instead of the whole warning because we'd
+  # get an error when django is not installed
+  "ignore:The default value of USE_TZ",
+  "ignore::DeprecationWarning:pydantic_openapi_schema.*",
+  "ignore::DeprecationWarning:graphql.*",
+  "ignore::DeprecationWarning:websockets.*",
+  "ignore::DeprecationWarning:pydantic.*",
+  "ignore::UserWarning:pydantic.*",
+  "ignore::DeprecationWarning:pkg_resources.*",
 ]
+
 
 [tool.autopub]
 git-username = "Botberry"
@@ -187,201 +198,186 @@ append-github-contributor = true
 
 [tool.pyright]
 # include = ["strawberry"]
-exclude = ["**/__pycache__",]
+exclude = ["**/__pycache__", "**/.venv", "**/.pytest_cache", "**/.nox"]
 reportMissingImports = true
 reportMissingTypeStubs = false
-pythonVersion = "3.8"
+pythonVersion = "3.9"
 stubPath = ""
 
 [tool.ruff]
 line-length = 88
-target-version = "py38"
+target-version = "py39"
 fix = true
 exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
-    "tests/codegen/snapshots"
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".hg",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "venv",
+  "tests/*/snapshots",
 ]
 src = ["strawberry", "tests"]
 
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    # https://github.com/astral-sh/ruff/pull/4427
-    # equivalent to keep-runtime-typing
-    "UP006",
-    "UP007",
+  # https://github.com/astral-sh/ruff/pull/4427
+  # equivalent to keep-runtime-typing. We might want to enable those
+  # after we drop support for Python 3.9
+  "UP006",
+  "UP007",
 
-    "TID252",
-    # we use asserts in tests and to hint mypy
-    "S101",
-    "S102",
-    "S104",
-    "S324",
-    "ANN101", # missing annotation for self?
-    # definitely enable these, maybe not in tests
-    "ANN102",
-    "ANN401",
-    "PGH003",
-    "PGH004",
-    "RET504",
-    "RET505",
-    "RET506",
-    "RET507",
-    "RET503",
-    "BLE001",
-    "B008",
-    "N811",
-    "N804",
-    "N818",
-    # Variable `T` in function should be lowercase
-    # this seems a potential bug or opportunity for improvement in ruff
-    "N806",
+  # we use asserts in tests and to hint mypy
+  "S101",
 
-    # first argument should named self (found in tests)
-    "N805",
+  # Allow "Any" for annotations. We have too many Any annotations and some
+  # are legit. Maybe reconsider in the future, except for tests?
+  "ANN401",
 
-    "N815",
+  # Allow our exceptions to have names that don't end in "Error". Maybe refactor
+  # in the future? But that would be a breaking change.
+  "N818",
 
-    # shadowing builtins
-    "A001",
-    "A002",
-    "A003",
+  # Allow "type: ignore" without rule code. Because we support both mypy and
+  # pyright, and they have different codes for the same error, we can't properly
+  # fix those issues.
+  "PGH003",
 
-    "ARG001",
-    "ARG002",
-    "ARG003",
-    "ARG004",
-    "ARG005",
-    "FBT001",
-    "FBT002",
-    "FBT003",
+  # Variable `T` in function should be lowercase
+  # this seems a potential bug or opportunity for improvement in ruff
+  "N806",
 
-    "PT001",
-    "PT023",
+  # shadowing builtins
+  "A001",
+  "A002",
+  "A003",
+  "A005",
 
-    # this is pretty much handled by black
-    "E501",
+  # Unused arguments
+  "ARG001",
+  "ARG002",
+  "ARG003",
+  "ARG004",
+  "ARG005",
 
-    # enable these, we have some in tests
-    "B006",
-    "PT004",
-    "PT007",
-    "PT011",
-    "PT012",
-    "PT015",
-    "PT017",
-    "C414",
-    "N802",
+  # Boolean positional arguments
+  "FBT001",
+  "FBT002",
+  "FBT003",
 
-    "SIM117",
-    "SIM102",
+  # Too many arguments/branches/return statements
+  "PLR0913",
+  "PLR0912",
+  "PLR0911",
 
-    "F841",
-    "B027",
-    "B905",
-    "ISC001",
+  # Do not force adding _co to covariant typevars
+  "PLC0105",
 
-    # same?
-    "S105",
-    "S106",
+  # Allow private access to attributes
+  "SLF001",
 
-    "DTZ003",
-    "DTZ005",
+  # code complexity
+  "C901",
 
-    "RSE102",
-    "SLF001",
+  # Allow todo/fixme/etc comments
+  "TD002",
+  "TD003",
+  "FIX001",
+  "FIX002",
 
-    # in tests
-    "DTZ001",
+  # We don't want to add "from __future__ mport annotations" everywhere
+  "FA100",
 
-    "EM101",
-    "EM102",
-    "EM103",
+  # Docstrings, maybe to enable later
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "D105",
+  "D106",
+  "D107",
+  "D412",
 
-    "B904",
-    "B019",
+  # Allow to define exceptions text in the exception body
+  "TRY003",
+  "EM101",
+  "EM102",
+  "EM103",
 
-    "N801",
-    "N807",
+  # Allow comparisons with magic numbers
+  "PLR2004",
 
-    # pandas
-    "PD",
+  # Allow methods to use lru_cache
+  "B019",
 
-    "RUF012",
-    "PLC0105",
-    "FA102",
+  # Don't force if branches to be converted to "or"
+  "SIM114",
 
-    # code complexity
-    "C",
-    "C901",
-
-    # trailing commas
-    "COM812",
-
-    "PLR",
-    "INP",
-    "TRY",
-    "SIM300",
-    "SIM114",
-
-    "DJ008",
-    "TD002",
-    "TD003",
-    "FIX001",
-    "FIX002",
-    "FA100",
-
-    # Docstrings, maybe to enable later
-    "D100",
-    "D101",
-    "D102",
-    "D103",
-    "D104",
-    "D105",
-    "D106",
-    "D107",
-    "D412",
+  # ruff formatter recommends to disable those, as they conflict with it
+  # we don't need to ever enable those.
+  "COM812",
+  "COM819",
+  "D206",
+  "E111",
+  "E114",
+  "E117",
+  "E501",
+  "ISC001",
+  "Q000",
+  "Q001",
+  "Q002",
+  "Q003",
+  "W191",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"strawberry/schema/types/concrete_type.py" = ["TCH002"]
-"tests/*" = [
-    "RSE102",
-    "SLF001",
-    "TCH001",
-    "TCH002",
-    "TCH003",
-    "ANN001",
-    "ANN201",
-    "ANN202",
-    "ANN204",
-    "PLW0603",
-    "PLC1901",
-    "S603",
-    "S607",
-    "B018",
-    "D",
-]
+".github/*" = ["INP001"]
+"federation-compatibility/*" = ["INP001"]
+"strawberry/cli/*" = ["B008"]
 "strawberry/extensions/tracing/__init__.py" = ["TCH004"]
-"tests/http/clients/__init__.py" = ["F401"]
+"strawberry/fastapi/*" = ["B008"]
+"strawberry/annotation.py" = ["RET505"]
+"tests/*" = [
+  "ANN001",
+  "ANN201",
+  "ANN202",
+  "ANN204",
+  "B008",
+  "B018",
+  "D",
+  "DTZ001",
+  "DTZ005",
+  "FA102",
+  "N805",
+  "PLC1901",
+  "PLR2004",
+  "PLW0603",
+  "PT011",
+  "RUF012",
+  "S105",
+  "S106",
+  "S603",
+  "S607",
+  "TCH001",
+  "TCH002",
+  "TCH003",
+  "TRY002",
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["strawberry"]
@@ -389,10 +385,19 @@ known-third-party = ["django", "graphql"]
 extra-standard-library = ["typing_extensions"]
 
 [tool.ruff.format]
-exclude =[
-    'tests/codegen/snapshots/',
-    'tests/cli/snapshots/'
-]
+exclude = ['tests/codegen/snapshots/', 'tests/cli/snapshots/']
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.codeflash]
+# All paths are relative to this pyproject.toml's directory.
+module-root = "strawberry"
+tests-root = "tests"
+test-framework = "pytest"
+ignore-paths = []
+formatter-cmds = ["ruff check --exit-zero --fix $file", "ruff format $file"]
+
+[build-system]
+requires = ["poetry-core>=1.6"]
+build-backend = "poetry.core.masonry.api"

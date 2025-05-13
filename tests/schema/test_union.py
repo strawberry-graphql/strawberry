@@ -2,8 +2,7 @@ import sys
 import textwrap
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import Generic, List, Optional, TypeVar, Union
-from typing_extensions import Annotated
+from typing import Annotated, Generic, Optional, TypeVar, Union
 
 import pytest
 
@@ -521,16 +520,15 @@ def test_union_with_input_types():
         name: str
         something: Union[A, B]
 
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, data: Input) -> User:
+            return User(name=data.name, age=100)
+
     with pytest.raises(
         TypeError, match="Union for A is not supported because it is an Input type"
     ):
-
-        @strawberry.type
-        class Query:
-            @strawberry.field
-            def user(self, data: Input) -> User:
-                return User(name=data.name, age=100)
-
         strawberry.Schema(query=Query)
 
 
@@ -543,7 +541,7 @@ def test_union_with_similar_nested_generic_types():
 
     @strawberry.type
     class Container(Generic[T]):
-        items: List[T]
+        items: list[T]
 
     @strawberry.type
     class A:
@@ -684,10 +682,6 @@ def test_raises_on_union_with_int():
     InvalidUnionTypeError,
     match=r"Type `list\[...\]` cannot be used in a GraphQL Union",
 )
-@pytest.mark.skipif(
-    sys.version_info < (3, 9, 0),
-    reason="list[str] is only available on python 3.9+",
-)
 def test_raises_on_union_with_list_str():
     global ICanBeInUnion
 
@@ -708,10 +702,6 @@ def test_raises_on_union_with_list_str():
     InvalidUnionTypeError,
     match=r"Type `list\[...\]` cannot be used in a GraphQL Union",
 )
-@pytest.mark.skipif(
-    sys.version_info < (3, 9, 0),
-    reason="list[str] is only available on python 3.9+",
-)
 def test_raises_on_union_with_list_str_38():
     global ICanBeInUnion
 
@@ -721,7 +711,7 @@ def test_raises_on_union_with_list_str_38():
 
     @strawberry.type
     class Query:
-        union: Union[ICanBeInUnion, List[str]]
+        union: Union[ICanBeInUnion, list[str]]
 
     strawberry.Schema(query=Query)
 
@@ -850,3 +840,178 @@ def test_single_union():
 
     assert not result.errors
     assert result.data["something"] == {"__typename": "A", "a": 5}
+
+
+def test_generic_union_with_annotated():
+    @strawberry.type
+    class SomeType:
+        id: strawberry.ID
+        name: str
+
+    @strawberry.type
+    class NotFoundError:
+        id: strawberry.ID
+        message: str
+
+    T = TypeVar("T")
+
+    @strawberry.type
+    class ObjectQueries(Generic[T]):
+        @strawberry.field
+        def by_id(
+            self, id: strawberry.ID
+        ) -> Annotated[Union[T, NotFoundError], strawberry.union("ByIdResult")]: ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def some_type_queries(self, id: strawberry.ID) -> ObjectQueries[SomeType]:
+            raise NotImplementedError
+
+    schema = strawberry.Schema(Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+            type NotFoundError {
+              id: ID!
+              message: String!
+            }
+
+            type Query {
+              someTypeQueries(id: ID!): SomeTypeObjectQueries!
+            }
+
+            type SomeType {
+              id: ID!
+              name: String!
+            }
+
+            union SomeTypeByIdResult = SomeType | NotFoundError
+
+            type SomeTypeObjectQueries {
+              byId(id: ID!): SomeTypeByIdResult!
+            }
+            """
+        ).strip()
+    )
+
+
+def test_generic_union_with_annotated_inside():
+    @strawberry.type
+    class SomeType:
+        id: strawberry.ID
+        name: str
+
+    @strawberry.type
+    class NotFoundError:
+        id: strawberry.ID
+        message: str
+
+    T = TypeVar("T")
+
+    @strawberry.type
+    class ObjectQueries(Generic[T]):
+        @strawberry.field
+        def by_id(
+            self, id: strawberry.ID
+        ) -> Union[T, Annotated[NotFoundError, strawberry.union("ByIdResult")]]: ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def some_type_queries(self, id: strawberry.ID) -> ObjectQueries[SomeType]: ...
+
+    schema = strawberry.Schema(Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+            type NotFoundError {
+              id: ID!
+              message: String!
+            }
+
+            type Query {
+              someTypeQueries(id: ID!): SomeTypeObjectQueries!
+            }
+
+            type SomeType {
+              id: ID!
+              name: String!
+            }
+
+            union SomeTypeByIdResult = SomeType | NotFoundError
+
+            type SomeTypeObjectQueries {
+              byId(id: ID!): SomeTypeByIdResult!
+            }
+            """
+        ).strip()
+    )
+
+
+def test_annoted_union_with_two_generics():
+    @strawberry.type
+    class SomeType:
+        a: str
+
+    @strawberry.type
+    class OtherType:
+        b: str
+
+    @strawberry.type
+    class NotFoundError:
+        message: str
+
+    T = TypeVar("T")
+    U = TypeVar("U")
+
+    @strawberry.type
+    class UnionObjectQueries(Generic[T, U]):
+        @strawberry.field
+        def by_id(
+            self, id: strawberry.ID
+        ) -> Union[
+            T, Annotated[Union[U, NotFoundError], strawberry.union("ByIdResult")]
+        ]: ...
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def some_type_queries(
+            self, id: strawberry.ID
+        ) -> UnionObjectQueries[SomeType, OtherType]: ...
+
+    schema = strawberry.Schema(Query)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+            type NotFoundError {
+              message: String!
+            }
+
+            type OtherType {
+              b: String!
+            }
+
+            type Query {
+              someTypeQueries(id: ID!): SomeTypeOtherTypeUnionObjectQueries!
+            }
+
+            type SomeType {
+              a: String!
+            }
+
+            union SomeTypeOtherTypeByIdResult = SomeType | OtherType | NotFoundError
+
+            type SomeTypeOtherTypeUnionObjectQueries {
+              byId(id: ID!): SomeTypeOtherTypeByIdResult!
+            }
+            """
+        ).strip()
+    )

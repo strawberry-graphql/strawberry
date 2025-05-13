@@ -3,14 +3,24 @@ from __future__ import annotations
 import hashlib
 from functools import cached_property
 from inspect import isawaitable
-from typing import TYPE_CHECKING, Any, Callable, Generator, Iterator, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
-from ddtrace import Span, tracer
+import ddtrace
+from packaging import version
 
 from strawberry.extensions import LifecycleStep, SchemaExtension
 from strawberry.extensions.tracing.utils import should_skip_tracing
 
+parsed_ddtrace_version = version.parse(ddtrace.__version__)
+if parsed_ddtrace_version >= version.parse("3.0.0"):
+    from ddtrace.trace import Span, tracer
+else:
+    from ddtrace import Span, tracer
+
+
 if TYPE_CHECKING:
+    from collections.abc import Generator, Iterator
+
     from graphql import GraphQLResolveInfo
 
     from strawberry.types.execution import ExecutionContext
@@ -65,7 +75,7 @@ class DatadogTracingExtension(SchemaExtension):
         )
 
     def hash_query(self, query: str) -> str:
-        return hashlib.md5(query.encode("utf-8")).hexdigest()
+        return hashlib.md5(query.encode("utf-8")).hexdigest()  # noqa: S324
 
     def on_operation(self) -> Iterator[None]:
         self._operation_name = self.execution_context.operation_name

@@ -1,7 +1,6 @@
 import contextlib
 import json
 from io import BytesIO
-from typing import Type
 
 import pytest
 from urllib3 import encode_multipart_formdata
@@ -9,8 +8,8 @@ from urllib3 import encode_multipart_formdata
 from .clients.base import HttpClient
 
 
-@pytest.fixture()
-def http_client(http_client_class: Type[HttpClient]) -> HttpClient:
+@pytest.fixture
+def http_client(http_client_class: type[HttpClient]) -> HttpClient:
     with contextlib.suppress(ImportError):
         from .clients.chalice import ChaliceHttpClient
 
@@ -20,7 +19,18 @@ def http_client(http_client_class: Type[HttpClient]) -> HttpClient:
     return http_client_class()
 
 
-async def test_upload(http_client: HttpClient):
+@pytest.fixture
+def enabled_http_client(http_client_class: type[HttpClient]) -> HttpClient:
+    with contextlib.suppress(ImportError):
+        from .clients.chalice import ChaliceHttpClient
+
+        if http_client_class is ChaliceHttpClient:
+            pytest.xfail(reason="Chalice does not support uploads")
+
+    return http_client_class(multipart_uploads_enabled=True)
+
+
+async def test_multipart_uploads_are_disabled_by_default(http_client: HttpClient):
     f = BytesIO(b"strawberry")
 
     query = """
@@ -35,16 +45,35 @@ async def test_upload(http_client: HttpClient):
         files={"textFile": f},
     )
 
+    assert response.status_code == 400
+    assert response.data == b"Unsupported content type"
+
+
+async def test_upload(enabled_http_client: HttpClient):
+    f = BytesIO(b"strawberry")
+
+    query = """
+    mutation($textFile: Upload!) {
+        readText(textFile: $textFile)
+    }
+    """
+
+    response = await enabled_http_client.query(
+        query,
+        variables={"textFile": None},
+        files={"textFile": f},
+    )
+
     assert response.json.get("errors") is None
     assert response.json["data"] == {"readText": "strawberry"}
 
 
-async def test_file_list_upload(http_client: HttpClient):
+async def test_file_list_upload(enabled_http_client: HttpClient):
     query = "mutation($files: [Upload!]!) { readFiles(files: $files) }"
     file1 = BytesIO(b"strawberry1")
     file2 = BytesIO(b"strawberry2")
 
-    response = await http_client.query(
+    response = await enabled_http_client.query(
         query=query,
         variables={"files": [None, None]},
         files={"file1": file1, "file2": file2},
@@ -57,12 +86,12 @@ async def test_file_list_upload(http_client: HttpClient):
     assert data["readFiles"][1] == "strawberry2"
 
 
-async def test_nested_file_list(http_client: HttpClient):
+async def test_nested_file_list(enabled_http_client: HttpClient):
     query = "mutation($folder: FolderInput!) { readFolder(folder: $folder) }"
     file1 = BytesIO(b"strawberry1")
     file2 = BytesIO(b"strawberry2")
 
-    response = await http_client.query(
+    response = await enabled_http_client.query(
         query=query,
         variables={"folder": {"files": [None, None]}},
         files={"file1": file1, "file2": file2},
@@ -74,7 +103,7 @@ async def test_nested_file_list(http_client: HttpClient):
     assert data["readFolder"][1] == "strawberry2"
 
 
-async def test_upload_single_and_list_file_together(http_client: HttpClient):
+async def test_upload_single_and_list_file_together(enabled_http_client: HttpClient):
     query = """
         mutation($files: [Upload!]!, $textFile: Upload!) {
             readFiles(files: $files)
@@ -85,7 +114,7 @@ async def test_upload_single_and_list_file_together(http_client: HttpClient):
     file2 = BytesIO(b"strawberry2")
     file3 = BytesIO(b"strawberry3")
 
-    response = await http_client.query(
+    response = await enabled_http_client.query(
         query=query,
         variables={"files": [None, None], "textFile": None},
         files={"file1": file1, "file2": file2, "textFile": file3},
@@ -98,7 +127,7 @@ async def test_upload_single_and_list_file_together(http_client: HttpClient):
     assert data["readText"] == "strawberry3"
 
 
-async def test_upload_invalid_query(http_client: HttpClient):
+async def test_upload_invalid_query(enabled_http_client: HttpClient):
     f = BytesIO(b"strawberry")
 
     query = """
@@ -106,7 +135,7 @@ async def test_upload_invalid_query(http_client: HttpClient):
         readT
     """
 
-    response = await http_client.query(
+    response = await enabled_http_client.query(
         query,
         variables={"textFile": None},
         files={"textFile": f},
@@ -122,7 +151,7 @@ async def test_upload_invalid_query(http_client: HttpClient):
     ]
 
 
-async def test_upload_missing_file(http_client: HttpClient):
+async def test_upload_missing_file(enabled_http_client: HttpClient):
     f = BytesIO(b"strawberry")
 
     query = """
@@ -131,7 +160,7 @@ async def test_upload_missing_file(http_client: HttpClient):
     }
     """
 
-    response = await http_client.query(
+    response = await enabled_http_client.query(
         query,
         variables={"textFile": None},
         # using the wrong name to simulate a missing file
@@ -155,7 +184,7 @@ class FakeWriter:
         return self.buffer.getvalue()
 
 
-async def test_extra_form_data_fields_are_ignored(http_client: HttpClient):
+async def test_extra_form_data_fields_are_ignored(enabled_http_client: HttpClient):
     query = """mutation($textFile: Upload!) {
         readText(textFile: $textFile)
     }"""
@@ -175,7 +204,7 @@ async def test_extra_form_data_fields_are_ignored(http_client: HttpClient):
 
     data, header = encode_multipart_formdata(fields)
 
-    response = await http_client.post(
+    response = await enabled_http_client.post(
         url="/graphql",
         data=data,
         headers={
@@ -188,9 +217,9 @@ async def test_extra_form_data_fields_are_ignored(http_client: HttpClient):
     assert response.json["data"] == {"readText": "strawberry"}
 
 
-async def test_sending_invalid_form_data(http_client: HttpClient):
+async def test_sending_invalid_form_data(enabled_http_client: HttpClient):
     headers = {"content-type": "multipart/form-data; boundary=----fake"}
-    response = await http_client.post("/graphql", headers=headers)
+    response = await enabled_http_client.post("/graphql", headers=headers)
 
     assert response.status_code == 400
     # TODO: consolidate this, it seems only AIOHTTP returns the second error
@@ -202,7 +231,7 @@ async def test_sending_invalid_form_data(http_client: HttpClient):
 
 
 @pytest.mark.aiohttp
-async def test_sending_invalid_json_body(http_client: HttpClient):
+async def test_sending_invalid_json_body(enabled_http_client: HttpClient):
     f = BytesIO(b"strawberry")
     operations = "}"
     file_map = json.dumps({"textFile": ["variables.textFile"]})
@@ -215,7 +244,7 @@ async def test_sending_invalid_json_body(http_client: HttpClient):
 
     data, header = encode_multipart_formdata(fields)
 
-    response = await http_client.post(
+    response = await enabled_http_client.post(
         "/graphql",
         data=data,
         headers={

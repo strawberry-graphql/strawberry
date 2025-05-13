@@ -1,12 +1,10 @@
 import abc
 import json
+from collections.abc import Mapping
 from typing import (
     Any,
     Callable,
-    Dict,
     Generic,
-    List,
-    Mapping,
     Optional,
     Union,
 )
@@ -16,7 +14,11 @@ from graphql import GraphQLError
 from strawberry import UNSET
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
-from strawberry.http import GraphQLHTTPResponse, GraphQLRequestData, process_result
+from strawberry.http import (
+    GraphQLHTTPResponse,
+    GraphQLRequestData,
+    process_result,
+)
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
@@ -26,6 +28,7 @@ from strawberry.types.graphql import OperationType
 
 from .base import BaseView
 from .exceptions import HTTPException
+from .parse_content_type import parse_content_type
 from .types import HTTPMethod, QueryParams
 from .typevars import Context, Request, Response, RootValue, SubResponse
 
@@ -126,7 +129,7 @@ class SyncBaseHTTPView(
             allowed_operation_types=allowed_operation_types,
         )
 
-    def parse_multipart(self, request: SyncHTTPRequestAdapter) -> Dict[str, str]:
+    def parse_multipart(self, request: SyncHTTPRequestAdapter) -> dict[str, str]:
         operations = self.parse_json(request.post_data.get("operations", "{}"))
         files_map = self.parse_json(request.post_data.get("map", "{}"))
 
@@ -136,14 +139,19 @@ class SyncBaseHTTPView(
             raise HTTPException(400, "File(s) missing in form data") from e
 
     def parse_http_body(self, request: SyncHTTPRequestAdapter) -> GraphQLRequestData:
-        content_type = request.content_type or ""
+        content_type, params = parse_content_type(request.content_type or "")
 
         if request.method == "GET":
             data = self.parse_query_params(request.query_params)
         elif "application/json" in content_type:
             data = self.parse_json(request.body)
-        elif content_type.startswith("multipart/form-data"):
+        # TODO: multipart via get?
+        elif self.multipart_uploads_enabled and content_type == "multipart/form-data":
             data = self.parse_multipart(request)
+        elif self._is_multipart_subscriptions(content_type, params):
+            raise HTTPException(
+                400, "Multipart subcriptions are not supported in sync mode"
+            )
         else:
             raise HTTPException(400, "Unsupported content type")
 
@@ -155,7 +163,7 @@ class SyncBaseHTTPView(
         )
 
     def _handle_errors(
-        self, errors: List[GraphQLError], response_data: GraphQLHTTPResponse
+        self, errors: list[GraphQLError], response_data: GraphQLHTTPResponse
     ) -> None:
         """Hook to allow custom handling of errors, used by the Sentry Integration."""
 
@@ -173,8 +181,7 @@ class SyncBaseHTTPView(
         if self.should_render_graphql_ide(request_adapter):
             if self.graphql_ide:
                 return self.render_graphql_ide(request)
-            else:
-                raise HTTPException(404, "Not Found")
+            raise HTTPException(404, "Not Found")
 
         sub_response = self.get_sub_response(request)
         context = (

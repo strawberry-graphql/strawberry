@@ -4,23 +4,30 @@ import asyncio
 import warnings
 from datetime import timedelta
 from io import BytesIO
+from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    Iterable,
-    Mapping,
+    Callable,
     Optional,
+    Union,
     cast,
 )
+from typing_extensions import TypeGuard
 
-from aiohttp import web
-from strawberry.aiohttp.handlers import (
-    GraphQLTransportWSHandler,
-    GraphQLWSHandler,
+from aiohttp import http, web
+from aiohttp.multipart import BodyPartReader
+from strawberry.http.async_base_view import (
+    AsyncBaseHTTPView,
+    AsyncHTTPRequestAdapter,
+    AsyncWebSocketAdapter,
 )
-from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
-from strawberry.http.exceptions import HTTPException
+from strawberry.http.exceptions import (
+    HTTPException,
+    NonJsonMessageReceived,
+    NonTextMessageReceived,
+    WebSocketDisconnected,
+)
 from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import (
     Context,
@@ -29,6 +36,8 @@ from strawberry.http.typevars import (
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Iterable, Mapping
+
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
     from strawberry.schema import BaseSchema
@@ -47,7 +56,7 @@ class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def method(self) -> HTTPMethod:
-        return cast(HTTPMethod, self.request.method.upper())
+        return cast("HTTPMethod", self.request.method.upper())
 
     @property
     def headers(self) -> Mapping[str, str]:
@@ -56,10 +65,11 @@ class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
     async def get_form_data(self) -> FormData:
         reader = await self.request.multipart()
 
-        data: Dict[str, Any] = {}
-        files: Dict[str, Any] = {}
+        data: dict[str, Any] = {}
+        files: dict[str, Any] = {}
 
         async for field in reader:
+            assert isinstance(field, BodyPartReader)
             assert field.name
 
             if field.filename:
@@ -71,20 +81,59 @@ class AioHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def content_type(self) -> Optional[str]:
-        return self.request.content_type
+        return self.headers.get("content-type")
+
+
+class AioHTTPWebSocketAdapter(AsyncWebSocketAdapter):
+    def __init__(
+        self, view: AsyncBaseHTTPView, request: web.Request, ws: web.WebSocketResponse
+    ) -> None:
+        super().__init__(view)
+        self.request = request
+        self.ws = ws
+
+    async def iter_json(
+        self, *, ignore_parsing_errors: bool = False
+    ) -> AsyncGenerator[object, None]:
+        async for ws_message in self.ws:
+            if ws_message.type == http.WSMsgType.TEXT:
+                try:
+                    yield self.view.decode_json(ws_message.data)
+                except JSONDecodeError as e:
+                    if not ignore_parsing_errors:
+                        raise NonJsonMessageReceived from e
+
+            elif ws_message.type == http.WSMsgType.BINARY:
+                raise NonTextMessageReceived
+
+    async def send_json(self, message: Mapping[str, object]) -> None:
+        try:
+            await self.ws.send_str(self.view.encode_json(message))
+        except RuntimeError as exc:
+            raise WebSocketDisconnected from exc
+
+    async def close(self, code: int, reason: str) -> None:
+        await self.ws.close(code=code, message=reason.encode())
 
 
 class GraphQLView(
-    AsyncBaseHTTPView[web.Request, web.Response, web.Response, Context, RootValue]
+    AsyncBaseHTTPView[
+        web.Request,
+        Union[web.Response, web.StreamResponse],
+        web.Response,
+        web.Request,
+        web.WebSocketResponse,
+        Context,
+        RootValue,
+    ]
 ):
     # Mark the view as coroutine so that AIOHTTP does not confuse it with a deprecated
     # bare handler function.
     _is_coroutine = asyncio.coroutines._is_coroutine  # type: ignore[attr-defined]
 
-    graphql_transport_ws_handler_class = GraphQLTransportWSHandler
-    graphql_ws_handler_class = GraphQLWSHandler
     allow_queries_via_get = True
     request_adapter_class = AioHTTPRequestAdapter
+    websocket_adapter_class = AioHTTPWebSocketAdapter
 
     def __init__(
         self,
@@ -100,6 +149,7 @@ class GraphQLView(
             GRAPHQL_WS_PROTOCOL,
         ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
+        multipart_uploads_enabled: bool = False,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
@@ -108,6 +158,7 @@ class GraphQLView(
         self.debug = debug
         self.subscription_protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
+        self.multipart_uploads_enabled = multipart_uploads_enabled
 
         if graphiql is not None:
             warnings.warn(
@@ -125,48 +176,36 @@ class GraphQLView(
     async def get_sub_response(self, request: web.Request) -> web.Response:
         return web.Response()
 
-    async def __call__(self, request: web.Request) -> web.StreamResponse:
+    def is_websocket_request(self, request: web.Request) -> TypeGuard[web.Request]:
         ws = web.WebSocketResponse(protocols=self.subscription_protocols)
-        ws_test = ws.can_prepare(request)
+        return ws.can_prepare(request).ok
 
-        if not ws_test.ok:
-            try:
-                return await self.run(request=request)
-            except HTTPException as e:
-                return web.Response(
-                    body=e.reason,
-                    status=e.status_code,
-                )
+    async def pick_websocket_subprotocol(self, request: web.Request) -> Optional[str]:
+        ws = web.WebSocketResponse(protocols=self.subscription_protocols)
+        return ws.can_prepare(request).protocol
 
-        if ws_test.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
-            return await self.graphql_transport_ws_handler_class(
-                schema=self.schema,
-                debug=self.debug,
-                connection_init_wait_timeout=self.connection_init_wait_timeout,
-                get_context=self.get_context,  # type: ignore
-                get_root_value=self.get_root_value,
-                request=request,
-            ).handle()
-        elif ws_test.protocol == GRAPHQL_WS_PROTOCOL:
-            return await self.graphql_ws_handler_class(
-                schema=self.schema,
-                debug=self.debug,
-                keep_alive=self.keep_alive,
-                keep_alive_interval=self.keep_alive_interval,
-                get_context=self.get_context,
-                get_root_value=self.get_root_value,
-                request=request,
-            ).handle()
-        else:
-            await ws.prepare(request)
-            await ws.close(code=4406, message=b"Subprotocol not acceptable")
-            return ws
+    async def create_websocket_response(
+        self, request: web.Request, subprotocol: Optional[str]
+    ) -> web.WebSocketResponse:
+        protocols = [subprotocol] if subprotocol else []
+        ws = web.WebSocketResponse(protocols=protocols)
+        await ws.prepare(request)
+        return ws
+
+    async def __call__(self, request: web.Request) -> web.StreamResponse:
+        try:
+            return await self.run(request=request)
+        except HTTPException as e:
+            return web.Response(
+                body=e.reason,
+                status=e.status_code,
+            )
 
     async def get_root_value(self, request: web.Request) -> Optional[RootValue]:
         return None
 
     async def get_context(
-        self, request: web.Request, response: web.Response
+        self, request: web.Request, response: Union[web.Response, web.WebSocketResponse]
     ) -> Context:
         return {"request": request, "response": response}  # type: ignore
 
@@ -177,6 +216,30 @@ class GraphQLView(
         sub_response.content_type = "application/json"
 
         return sub_response
+
+    async def create_streaming_response(
+        self,
+        request: web.Request,
+        stream: Callable[[], AsyncGenerator[str, None]],
+        sub_response: web.Response,
+        headers: dict[str, str],
+    ) -> web.StreamResponse:
+        response = web.StreamResponse(
+            status=sub_response.status,
+            headers={
+                **sub_response.headers,
+                **headers,
+            },
+        )
+
+        await response.prepare(request)
+
+        async for data in stream():
+            await response.write(data.encode())
+
+        await response.write_eof()
+
+        return response
 
 
 __all__ = ["GraphQLView"]

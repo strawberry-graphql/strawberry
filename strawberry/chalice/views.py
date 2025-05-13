@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from chalice.app import Request, Response
 from strawberry.http.exceptions import HTTPException
 from strawberry.http.sync_base_view import SyncBaseHTTPView, SyncHTTPRequestAdapter
 from strawberry.http.temporal_response import TemporalResponse
-from strawberry.http.types import HTTPMethod, QueryParams
 from strawberry.http.typevars import Context, RootValue
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from strawberry.http import GraphQLHTTPResponse
     from strawberry.http.ides import GraphQL_IDE
+    from strawberry.http.types import HTTPMethod, QueryParams
     from strawberry.schema import BaseSchema
 
 
@@ -30,7 +32,7 @@ class ChaliceHTTPRequestAdapter(SyncHTTPRequestAdapter):
 
     @property
     def method(self) -> HTTPMethod:
-        return cast(HTTPMethod, self.request.method.upper())
+        return cast("HTTPMethod", self.request.method.upper())
 
     @property
     def headers(self) -> Mapping[str, str]:
@@ -54,7 +56,6 @@ class GraphQLView(
 ):
     allow_queries_via_get: bool = True
     request_adapter_class = ChaliceHTTPRequestAdapter
-    _ide_subscription_enabled = False
 
     def __init__(
         self,
@@ -92,7 +93,7 @@ class GraphQLView(
         message: str,
         error_code: str,
         http_status_code: int,
-        headers: Optional[Dict[str, str | List[str]]] = None,
+        headers: Optional[dict[str, str | list[str]]] = None,
     ) -> Response:
         """A wrapper for error responses.
 

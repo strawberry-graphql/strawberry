@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, List
+from typing import Any
 
 import pytest
 from pytest_mock import MockerFixture
@@ -24,7 +24,7 @@ def test_query_interface():
     @strawberry.type
     class Root:
         @strawberry.field
-        def assortment(self) -> List[Cheese]:
+        def assortment(self) -> list[Cheese]:
             return [
                 Italian(name="Asiago", province="Friuli"),
                 Swiss(name="Tomme", canton="Vaud"),
@@ -191,7 +191,7 @@ def test_interface_duck_typing_returning_dict():
     class Query:
         @strawberry.field
         def anime(self) -> Anime:
-            return dict(id=1, name="One Piece")  # type: ignore
+            return {"id": 1, "name": "One Piece"}  # type: ignore
 
     schema = strawberry.Schema(query=Query)
 
@@ -366,7 +366,7 @@ async def test_derived_interface(mocker: MockerFixture):
     @strawberry.type
     class Query:
         @strawberry.field
-        def friends(self) -> List[NamedNode]:
+        def friends(self) -> list[NamedNode]:
             return [Person(id=1, name="foo"), Person(id=2, name="bar")]
 
     schema = strawberry.Schema(Query, types=[Person])

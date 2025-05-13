@@ -1,7 +1,8 @@
 import asyncio
 import contextlib
+from collections.abc import AsyncGenerator
 from enum import Enum
-from typing import Any, AsyncGenerator, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from graphql import GraphQLError
 
@@ -21,7 +22,7 @@ class AlwaysFailPermission(BasePermission):
 
 
 class MyExtension(SchemaExtension):
-    def get_results(self) -> Dict[str, str]:
+    def get_results(self) -> dict[str, str]:
         return {"example": "example"}
 
 
@@ -34,17 +35,17 @@ def _read_file(text_file: Upload) -> str:
         if isinstance(text_file, UploadFile):
             text_file = text_file.file._file  # type: ignore
 
-    with contextlib.suppress(Exception):
-        from starlite import UploadFile as StarliteUploadFile
-
-        if isinstance(text_file, StarliteUploadFile):
-            text_file = text_file.file  # type: ignore
-
     with contextlib.suppress(ModuleNotFoundError):
         from litestar.datastructures import UploadFile as LitestarUploadFile
 
         if isinstance(text_file, LitestarUploadFile):
             text_file = text_file.file  # type: ignore
+
+    with contextlib.suppress(ModuleNotFoundError):
+        from sanic.request import File as SanicUploadFile
+
+        if isinstance(text_file, SanicUploadFile):
+            return text_file.body.decode()
 
     return text_file.read().decode()
 
@@ -58,7 +59,7 @@ class Flavor(Enum):
 
 @strawberry.input
 class FolderInput:
-    files: List[Upload]
+    files: list[Upload]
 
 
 @strawberry.type
@@ -145,11 +146,11 @@ class Mutation:
         return _read_file(text_file)
 
     @strawberry.mutation
-    def read_files(self, files: List[Upload]) -> List[str]:
+    def read_files(self, files: list[Upload]) -> list[str]:
         return list(map(_read_file, files))
 
     @strawberry.mutation
-    def read_folder(self, folder: FolderInput) -> List[str]:
+    def read_folder(self, folder: FolderInput) -> list[str]:
         return list(map(_read_file, folder.files))
 
     @strawberry.mutation
@@ -160,6 +161,8 @@ class Mutation:
 
 @strawberry.type
 class Subscription:
+    active_infinity_subscriptions = 0
+
     @strawberry.subscription
     async def echo(self, message: str, delay: float = 0) -> AsyncGenerator[str, None]:
         await asyncio.sleep(delay)
@@ -168,14 +171,19 @@ class Subscription:
     @strawberry.subscription
     async def request_ping(self, info: strawberry.Info) -> AsyncGenerator[bool, None]:
         ws = info.context["ws"]
-        await ws.send_json(PingMessage().as_dict())
+        await ws.send_json(PingMessage({"type": "ping"}))
         yield True
 
     @strawberry.subscription
     async def infinity(self, message: str) -> AsyncGenerator[str, None]:
-        while True:
-            yield message
-            await asyncio.sleep(1)
+        Subscription.active_infinity_subscriptions += 1
+
+        try:
+            while True:
+                yield message
+                await asyncio.sleep(1)
+        finally:
+            Subscription.active_infinity_subscriptions -= 1
 
     @strawberry.subscription
     async def context(self, info: strawberry.Info) -> AsyncGenerator[str, None]:
@@ -231,12 +239,13 @@ class Subscription:
     ) -> AsyncGenerator[str, None]:
         yield info.context["request"].channel_name
 
-        async for message in info.context["request"].channel_listen(
+        async with info.context["request"].listen_to_channel(
             type="test.message",
             timeout=timeout,
             groups=[group] if group is not None else [],
-        ):
-            yield message["text"]
+        ) as cm:
+            async for message in cm:
+                yield message["text"]
 
     @strawberry.subscription
     async def listener_with_confirmation(
@@ -258,8 +267,8 @@ class Subscription:
     @strawberry.subscription
     async def connection_params(
         self, info: strawberry.Info
-    ) -> AsyncGenerator[str, None]:
-        yield info.context["connection_params"]["strawberry"]
+    ) -> AsyncGenerator[strawberry.scalars.JSON, None]:
+        yield info.context["connection_params"]
 
     @strawberry.subscription
     async def long_finalizer(
@@ -275,7 +284,7 @@ class Subscription:
 
 class Schema(strawberry.Schema):
     def process_errors(
-        self, errors: List, execution_context: Optional[ExecutionContext] = None
+        self, errors: list, execution_context: Optional[ExecutionContext] = None
     ) -> None:
         import traceback
 

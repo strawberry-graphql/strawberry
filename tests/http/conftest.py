@@ -1,5 +1,6 @@
 import importlib
-from typing import Any, Generator, Type
+from collections.abc import Generator
+from typing import Any
 
 import pytest
 
@@ -19,7 +20,6 @@ def _get_http_client_classes() -> Generator[Any, None, None]:
         ("FlaskHttpClient", "flask", [pytest.mark.flask]),
         ("QuartHttpClient", "quart", [pytest.mark.quart]),
         ("SanicHttpClient", "sanic", [pytest.mark.sanic]),
-        ("StarliteHttpClient", "starlite", [pytest.mark.starlite]),
         ("LitestarHttpClient", "litestar", [pytest.mark.litestar]),
         (
             "SyncChannelsHttpClient",
@@ -32,12 +32,7 @@ def _get_http_client_classes() -> Generator[Any, None, None]:
                 importlib.import_module(f".{module}", package="tests.http.clients"),
                 client,
             )
-        except ImportError as e:
-            client_class = None
-        except Exception as e:
-            # Starlite is not compatible with Pydantic 2 so we get an error
-            # when importing it, for now we skip it, in future we'll remove
-            # Starlite in favour of Litestar
+        except ImportError:
             client_class = None
 
         yield pytest.param(
@@ -52,10 +47,10 @@ def _get_http_client_classes() -> Generator[Any, None, None]:
 
 
 @pytest.fixture(params=_get_http_client_classes())
-def http_client_class(request: Any) -> Type[HttpClient]:
+def http_client_class(request: Any) -> type[HttpClient]:
     return request.param
 
 
-@pytest.fixture()
-def http_client(http_client_class: Type[HttpClient]) -> HttpClient:
+@pytest.fixture
+def http_client(http_client_class: type[HttpClient]) -> HttpClient:
     return http_client_class()

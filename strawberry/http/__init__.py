@@ -2,17 +2,19 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional
-from typing_extensions import TypedDict
+from typing import TYPE_CHECKING, Any, Optional
+from typing_extensions import Literal, TypedDict
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from strawberry.types import ExecutionResult
 
 
 class GraphQLHTTPResponse(TypedDict, total=False):
-    data: Optional[Dict[str, object]]
-    errors: Optional[List[object]]
-    extensions: Optional[Dict[str, object]]
+    data: Optional[dict[str, object]]
+    errors: Optional[list[object]]
+    extensions: Optional[dict[str, object]]
 
 
 def process_result(result: ExecutionResult) -> GraphQLHTTPResponse:
@@ -31,12 +33,13 @@ class GraphQLRequestData:
     # query is optional here as it can be added by an extensions
     # (for example an extension for persisted queries)
     query: Optional[str]
-    variables: Optional[Dict[str, Any]]
+    variables: Optional[dict[str, Any]]
     operation_name: Optional[str]
-    extensions: Optional[Dict[str, Any]]
+    extensions: Optional[dict[str, Any]]
+    protocol: Literal["http", "multipart-subscription"] = "http"
 
 
-def parse_query_params(params: Dict[str, str]) -> Dict[str, Any]:
+def parse_query_params(params: dict[str, str]) -> dict[str, Any]:
     if "variables" in params:
         params["variables"] = json.loads(params["variables"])
 
@@ -54,8 +57,6 @@ def parse_request_data(data: Mapping[str, Any]) -> GraphQLRequestData:
 
 __all__ = [
     "GraphQLHTTPResponse",
-    "process_result",
     "GraphQLRequestData",
-    "parse_query_params",
-    "parse_request_data",
+    "process_result",
 ]

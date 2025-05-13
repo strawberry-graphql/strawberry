@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
 )
 
 import strawberry
@@ -27,7 +26,7 @@ class InputMutationExtension(FieldExtension):
         assert resolver
 
         name = field.graphql_name or to_camel_case(resolver.name)
-        type_dict: Dict[str, Any] = {
+        type_dict: dict[str, Any] = {
             "__doc__": f"Input data for `{name}` mutation",
             "__annotations__": {},
         }

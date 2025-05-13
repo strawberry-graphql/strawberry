@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 
 import strawberry
@@ -50,21 +48,23 @@ def test_field_default_extensions_value_set():
 def test_field_default_factory_executed_each_time():
     @strawberry.type
     class Query:
-        the_list: List[str] = strawberry.field(default_factory=list)
+        the_list: list[str] = strawberry.field(default_factory=list)
 
     assert Query().the_list == Query().the_list
     assert Query().the_list is not Query().the_list
 
 
 def test_field_with_separate_resolver_default():
-    with pytest.raises(FieldWithResolverAndDefaultValueError):
+    def fruit_resolver() -> str:  # pragma: no cover
+        return "banana"
 
-        def gun_resolver() -> str:
-            return "revolver"
+    with pytest.raises(FieldWithResolverAndDefaultValueError):
 
         @strawberry.type
         class Query:
-            weapon: str = strawberry.field(default="sword", resolver=gun_resolver)
+            weapon: str = strawberry.field(
+                default="strawberry", resolver=fruit_resolver
+            )
 
 
 def test_field_with_resolver_and_default_factory():

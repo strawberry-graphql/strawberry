@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from math import isfinite
-from typing import TYPE_CHECKING, Any, Mapping, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from graphql.language import (
     BooleanValueNode,
@@ -55,8 +56,7 @@ def ast_from_leaf_type(
         return IntValueNode(value=str(serialized))
     if isinstance(serialized, float) and isfinite(serialized):
         value = str(serialized)
-        if value.endswith(".0"):
-            value = value[:-2]
+        value = value.removesuffix(".0")
         return FloatValueNode(value=value)
 
     if isinstance(serialized, str):

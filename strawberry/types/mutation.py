@@ -5,11 +5,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    List,
-    Mapping,
     Optional,
-    Sequence,
-    Type,
     Union,
     overload,
 )
@@ -25,6 +21,7 @@ from strawberry.types.field import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
     from typing_extensions import Literal
 
     from strawberry.extensions.field_extension import FieldExtension
@@ -41,13 +38,13 @@ def mutation(
     name: Optional[str] = None,
     description: Optional[str] = None,
     init: Literal[False] = False,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: Optional[List[FieldExtension]] = None,
+    extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> T: ...
 
@@ -59,13 +56,13 @@ def mutation(
     name: Optional[str] = None,
     description: Optional[str] = None,
     init: Literal[False] = False,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: Optional[List[FieldExtension]] = None,
+    extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> T: ...
 
@@ -76,13 +73,13 @@ def mutation(
     name: Optional[str] = None,
     description: Optional[str] = None,
     init: Literal[True] = True,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: Optional[List[FieldExtension]] = None,
+    extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> Any: ...
 
@@ -93,13 +90,13 @@ def mutation(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: Optional[List[FieldExtension]] = None,
+    extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> StrawberryField: ...
 
@@ -110,13 +107,13 @@ def mutation(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: Optional[List[FieldExtension]] = None,
+    extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> StrawberryField: ...
 
@@ -126,13 +123,13 @@ def mutation(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: Optional[List[FieldExtension]] = None,
+    extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
@@ -201,13 +198,13 @@ def subscription(
     name: Optional[str] = None,
     description: Optional[str] = None,
     init: Literal[False] = False,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: Optional[List[FieldExtension]] = None,
+    extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> T: ...
 
@@ -219,13 +216,13 @@ def subscription(
     name: Optional[str] = None,
     description: Optional[str] = None,
     init: Literal[False] = False,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: Optional[List[FieldExtension]] = None,
+    extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> T: ...
 
@@ -236,13 +233,13 @@ def subscription(
     name: Optional[str] = None,
     description: Optional[str] = None,
     init: Literal[True] = True,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: Optional[List[FieldExtension]] = None,
+    extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> Any: ...
 
@@ -253,13 +250,13 @@ def subscription(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: Optional[List[FieldExtension]] = None,
+    extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> StrawberryField: ...
 
@@ -270,13 +267,13 @@ def subscription(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: Optional[List[FieldExtension]] = None,
+    extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> StrawberryField: ...
 
@@ -286,13 +283,13 @@ def subscription(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: Optional[List[FieldExtension]] = None,
+    extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
     init: Literal[True, False, None] = None,
 ) -> Any:

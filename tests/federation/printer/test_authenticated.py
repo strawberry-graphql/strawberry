@@ -1,7 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import List
-from typing_extensions import Annotated
+from typing import Annotated
 
 import strawberry
 
@@ -20,7 +19,7 @@ def test_field_authenticated_printed_correctly():
         @strawberry.federation.field(authenticated=True)
         def top_products(
             self, first: Annotated[int, strawberry.federation.argument()]
-        ) -> List[Product]:
+        ) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)

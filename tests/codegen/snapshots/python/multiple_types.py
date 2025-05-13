@@ -8,4 +8,4 @@ class OperationNameResultListOfPeople:
 
 class OperationNameResult:
     person: OperationNameResultPerson
-    list_of_people: List[OperationNameResultListOfPeople]
+    list_of_people: list[OperationNameResultListOfPeople]

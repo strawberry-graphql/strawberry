@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator, List, Type
+from typing import TYPE_CHECKING
 
 from strawberry.extensions.base_extension import SchemaExtension
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from graphql import ASTValidationRule
 
 
@@ -37,9 +39,9 @@ class AddValidationRules(SchemaExtension):
     ```
     """
 
-    validation_rules: List[Type[ASTValidationRule]]
+    validation_rules: list[type[ASTValidationRule]]
 
-    def __init__(self, validation_rules: List[Type[ASTValidationRule]]) -> None:
+    def __init__(self, validation_rules: list[type[ASTValidationRule]]) -> None:
         self.validation_rules = validation_rules
 
     def on_operation(self) -> Iterator[None]:

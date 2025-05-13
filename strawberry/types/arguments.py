@@ -4,37 +4,40 @@ import inspect
 import warnings
 from typing import (
     TYPE_CHECKING,
+    Annotated,
     Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
     Optional,
     Union,
     cast,
 )
-from typing_extensions import Annotated, get_args, get_origin
+from typing_extensions import get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from strawberry.scalars import is_scalar
 from strawberry.types.base import (
     StrawberryList,
+    StrawberryMaybe,
     StrawberryOptional,
     has_object_definition,
 )
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.lazy_type import LazyType, StrawberryLazyReference
-from strawberry.types.unset import UNSET as _deprecated_UNSET
-from strawberry.types.unset import _deprecated_is_unset  # noqa # type: ignore
+from strawberry.types.maybe import Some
+from strawberry.types.unset import UNSET as _deprecated_UNSET  # noqa: N811
+from strawberry.types.unset import (
+    _deprecated_is_unset,  # noqa: F401
+)
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping
+
     from strawberry.schema.config import StrawberryConfig
     from strawberry.types.base import StrawberryType
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
 
 
-DEPRECATED_NAMES: Dict[str, str] = {
+DEPRECATED_NAMES: dict[str, str] = {
     "UNSET": (
         "importing `UNSET` from `strawberry.arguments` is deprecated, "
         "import instead from `strawberry` or from `strawberry.types.unset`"
@@ -136,14 +139,22 @@ class StrawberryArgument:
 
         return is_graphql_generic(self.type)
 
+    @property
+    def is_maybe(self) -> bool:
+        return isinstance(self.type, StrawberryMaybe)
+
 
 def convert_argument(
     value: object,
     type_: Union[StrawberryType, type],
-    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
     config: StrawberryConfig,
 ) -> object:
     # TODO: move this somewhere else and make it first class
+    if isinstance(type_, StrawberryOptional):
+        res = convert_argument(value, type_.of_type, scalar_registry, config)
+
+        return Some(res) if isinstance(type_, StrawberryMaybe) else res
 
     if value is None:
         return None
@@ -151,11 +162,8 @@ def convert_argument(
     if value is _deprecated_UNSET:
         return _deprecated_UNSET
 
-    if isinstance(type_, StrawberryOptional):
-        return convert_argument(value, type_.of_type, scalar_registry, config)
-
     if isinstance(type_, StrawberryList):
-        value_list = cast(Iterable, value)
+        value_list = cast("Iterable", value)
         return [
             convert_argument(x, type_.of_type, scalar_registry, config)
             for x in value_list
@@ -179,7 +187,7 @@ def convert_argument(
 
         type_definition = type_.__strawberry_definition__
         for field in type_definition.fields:
-            value = cast(Mapping, value)
+            value = cast("Mapping", value)
             graphql_name = config.name_converter.from_field(field)
 
             if graphql_name in value:
@@ -190,18 +198,18 @@ def convert_argument(
                     config,
                 )
 
-        type_ = cast(type, type_)
+        type_ = cast("type", type_)
         return type_(**kwargs)
 
     raise UnsupportedTypeError(type_)
 
 
 def convert_arguments(
-    value: Dict[str, Any],
-    arguments: List[StrawberryArgument],
-    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    value: dict[str, Any],
+    arguments: list[StrawberryArgument],
+    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
     config: StrawberryConfig,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.
 
     It deals with conversion of input types to proper dataclasses and
@@ -283,9 +291,9 @@ def __getattr__(name: str) -> Any:
 
 # TODO: check exports
 __all__ = [  # noqa: F822
+    "UNSET",  # for backwards compatibility  # type: ignore
     "StrawberryArgument",
     "StrawberryArgumentAnnotation",
-    "UNSET",  # for backwards compatibility  # type: ignore
     "argument",
     "is_unset",  # for backwards compatibility  # type: ignore
 ]

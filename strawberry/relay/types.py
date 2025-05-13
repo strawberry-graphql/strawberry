@@ -4,27 +4,28 @@ import dataclasses
 import inspect
 import itertools
 import sys
-from typing import (
-    TYPE_CHECKING,
-    Any,
+from collections.abc import (
     AsyncIterable,
     AsyncIterator,
     Awaitable,
+    Iterable,
+    Iterator,
+    Sequence,
+)
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
     ClassVar,
     ForwardRef,
     Generic,
-    Iterable,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Type,
     TypeVar,
     Union,
     cast,
     overload,
 )
-from typing_extensions import Annotated, Literal, Self, TypeAlias, get_args, get_origin
+from typing_extensions import Literal, Self, TypeAlias, get_args, get_origin
 
 from strawberry.relay.exceptions import NodeIDAnnotationError
 from strawberry.types.base import (
@@ -33,11 +34,12 @@ from strawberry.types.base import (
     get_object_definition,
 )
 from strawberry.types.field import field
-from strawberry.types.info import Info  # noqa: TCH001
+from strawberry.types.info import Info  # noqa: TC001
 from strawberry.types.lazy_type import LazyType
-from strawberry.types.object_type import interface, type
+from strawberry.types.object_type import interface
+from strawberry.types.object_type import type as strawberry_type
 from strawberry.types.private import StrawberryPrivate
-from strawberry.utils.aio import aenumerate, aislice, resolve_awaitable
+from strawberry.utils.aio import aclosing, aenumerate, aislice, resolve_awaitable
 from strawberry.utils.inspect import in_async_context
 from strawberry.utils.typing import eval_type, is_classvar
 
@@ -137,7 +139,7 @@ class GlobalID:
         info: Info,
         *,
         required: Literal[True] = ...,
-        ensure_type: Type[_T],
+        ensure_type: type[_T],
     ) -> _T: ...
 
     @overload
@@ -186,7 +188,7 @@ class GlobalID:
         """
         n_type = self.resolve_type(info)
         node: Node | Awaitable[Node] = cast(
-            Awaitable[Node],
+            "Awaitable[Node]",
             n_type.resolve_node(
                 self.node_id,
                 info=info,
@@ -211,7 +213,7 @@ class GlobalID:
 
         return node
 
-    def resolve_type(self, info: Info) -> Type[Node]:
+    def resolve_type(self, info: Info) -> type[Node]:
         """Resolve the internal type name to its type itself.
 
         Args:
@@ -247,7 +249,7 @@ class GlobalID:
         info: Info,
         *,
         required: Literal[True] = ...,
-        ensure_type: Type[_T],
+        ensure_type: type[_T],
     ) -> _T: ...
 
     @overload
@@ -391,7 +393,7 @@ class Node:
             parent_type = info._raw_info.parent_type
             type_def = info.schema.get_type_by_name(parent_type.name)
             assert isinstance(type_def, StrawberryObjectDefinition)
-            origin = cast(Type[Node], type_def.origin)
+            origin = cast("type[Node]", type_def.origin)
             resolve_id = origin.resolve_id
             resolve_typename = origin.resolve_typename
 
@@ -402,7 +404,7 @@ class Node:
 
         if inspect.isawaitable(node_id):
             return cast(
-                GlobalID,
+                "GlobalID",
                 resolve_awaitable(
                     node_id,
                     lambda resolved: GlobalID(
@@ -615,10 +617,10 @@ class Node:
         if inspect.isawaitable(retval):
             return resolve_awaitable(retval, lambda resolved: next(iter(resolved)))
 
-        return next(iter(cast(Iterable[Self], retval)))
+        return next(iter(cast("Iterable[Self]", retval)))
 
 
-@type(description="Information to aid in pagination.")
+@strawberry_type(description="Information to aid in pagination.")
 class PageInfo:
     """Information to aid in pagination.
 
@@ -647,7 +649,7 @@ class PageInfo:
     )
 
 
-@type(description="An edge in a connection.")
+@strawberry_type(description="An edge in a connection.")
 class Edge(Generic[NodeType]):
     """An edge in a connection.
 
@@ -661,12 +663,14 @@ class Edge(Generic[NodeType]):
     cursor: str = field(description="A cursor for use in pagination")
     node: NodeType = field(description="The item at the end of the edge")
 
+    CURSOR_PREFIX: ClassVar[str] = PREFIX
+
     @classmethod
-    def resolve_edge(cls, node: NodeType, *, cursor: Any = None) -> Self:
-        return cls(cursor=to_base64(PREFIX, cursor), node=node)
+    def resolve_edge(cls, node: NodeType, *, cursor: Any = None, **kwargs: Any) -> Self:
+        return cls(cursor=to_base64(cls.CURSOR_PREFIX, cursor), node=node, **kwargs)
 
 
-@type(description="A connection to a list of items.")
+@strawberry_type(description="A connection to a list of items.")
 class Connection(Generic[NodeType]):
     """A connection to a list of items.
 
@@ -679,7 +683,7 @@ class Connection(Generic[NodeType]):
     """
 
     page_info: PageInfo = field(description="Pagination data for this connection")
-    edges: List[Edge[NodeType]] = field(
+    edges: list[Edge[NodeType]] = field(
         description="Contains the nodes in this connection"
     )
 
@@ -715,6 +719,7 @@ class Connection(Generic[NodeType]):
         after: Optional[str] = None,
         first: Optional[int] = None,
         last: Optional[int] = None,
+        max_results: Optional[int] = None,
         **kwargs: Any,
     ) -> AwaitableOrValue[Self]:
         """Resolve a connection from nodes.
@@ -729,6 +734,7 @@ class Connection(Generic[NodeType]):
             after: Returns the items in the list that come after the specified cursor.
             first: Returns the first n items from the list.
             last: Returns the items in the list that come after the specified cursor.
+            max_results: The maximum number of results to resolve.
             kwargs: Additional arguments passed to the resolver.
 
         Returns:
@@ -738,7 +744,7 @@ class Connection(Generic[NodeType]):
         raise NotImplementedError
 
 
-@type(name="Connection", description="A connection to a list of items.")
+@strawberry_type(name="Connection", description="A connection to a list of items.")
 class ListConnection(Connection[NodeType]):
     """A connection to a list of items.
 
@@ -751,12 +757,12 @@ class ListConnection(Connection[NodeType]):
     """
 
     page_info: PageInfo = field(description="Pagination data for this connection")
-    edges: List[Edge[NodeType]] = field(
+    edges: list[Edge[NodeType]] = field(
         description="Contains the nodes in this connection"
     )
 
     @classmethod
-    def resolve_connection(
+    def resolve_connection(  # noqa: PLR0915
         cls,
         nodes: NodeIterableType[NodeType],
         *,
@@ -765,6 +771,7 @@ class ListConnection(Connection[NodeType]):
         after: Optional[str] = None,
         first: Optional[int] = None,
         last: Optional[int] = None,
+        max_results: Optional[int] = None,
         **kwargs: Any,
     ) -> AwaitableOrValue[Self]:
         """Resolve a connection from the list of nodes.
@@ -778,6 +785,7 @@ class ListConnection(Connection[NodeType]):
             after: Returns the items in the list that come after the specified cursor.
             first: Returns the first n items from the list.
             last: Returns the items in the list that come after the specified cursor.
+            max_results: The maximum number of results to resolve.
             kwargs: Additional arguments passed to the resolver.
 
         Returns:
@@ -786,14 +794,6 @@ class ListConnection(Connection[NodeType]):
         .. _Relay Pagination algorithm:
             https://relay.dev/graphql/connections.htm#sec-Pagination-algorithm
         """
-        slice_metadata = SliceMetadata.from_arguments(
-            info,
-            before=before,
-            after=after,
-            first=first,
-            last=last,
-        )
-
         type_def = get_object_definition(cls)
         assert type_def
         field_def = type_def.get_field("edges")
@@ -803,15 +803,25 @@ class ListConnection(Connection[NodeType]):
         while isinstance(field, StrawberryContainer):
             field = field.of_type
 
-        edge_class = cast(Edge[NodeType], field)
+        edge_class = cast("Edge[NodeType]", field)
+
+        slice_metadata = SliceMetadata.from_arguments(
+            info,
+            before=before,
+            after=after,
+            first=first,
+            last=last,
+            max_results=max_results,
+            prefix=edge_class.CURSOR_PREFIX,
+        )
 
         if isinstance(nodes, (AsyncIterator, AsyncIterable)) and in_async_context():
 
             async def resolver() -> Self:
                 try:
                     iterator = cast(
-                        Union[AsyncIterator[NodeType], AsyncIterable[NodeType]],
-                        cast(Sequence, nodes)[
+                        "Union[AsyncIterator[NodeType], AsyncIterable[NodeType]]",
+                        cast("Sequence", nodes)[
                             slice_metadata.start : slice_metadata.overfetch
                         ],
                     )
@@ -824,24 +834,25 @@ class ListConnection(Connection[NodeType]):
                         slice_metadata.overfetch,
                     )
 
-                # The slice above might return an object that now is not async
-                # iterable anymore (e.g. an already cached django queryset)
-                if isinstance(iterator, (AsyncIterator, AsyncIterable)):
-                    edges: List[Edge] = [
-                        edge_class.resolve_edge(
-                            cls.resolve_node(v, info=info, **kwargs),
-                            cursor=slice_metadata.start + i,
-                        )
-                        async for i, v in aenumerate(iterator)
-                    ]
-                else:
-                    edges: List[Edge] = [  # type: ignore[no-redef]
-                        edge_class.resolve_edge(
-                            cls.resolve_node(v, info=info, **kwargs),
-                            cursor=slice_metadata.start + i,
-                        )
-                        for i, v in enumerate(iterator)
-                    ]
+                async with aclosing(iterator):
+                    # The slice above might return an object that now is not async
+                    # iterable anymore (e.g. an already cached django queryset)
+                    if isinstance(iterator, (AsyncIterator, AsyncIterable)):
+                        edges: list[Edge] = [
+                            edge_class.resolve_edge(
+                                cls.resolve_node(v, info=info, **kwargs),
+                                cursor=slice_metadata.start + i,
+                            )
+                            async for i, v in aenumerate(iterator)
+                        ]
+                    else:
+                        edges: list[Edge] = [  # type: ignore[no-redef]
+                            edge_class.resolve_edge(
+                                cls.resolve_node(v, info=info, **kwargs),
+                                cursor=slice_metadata.start + i,
+                            )
+                            for i, v in enumerate(iterator)
+                        ]
 
                 has_previous_page = slice_metadata.start > 0
                 if (
@@ -875,8 +886,10 @@ class ListConnection(Connection[NodeType]):
 
         try:
             iterator = cast(
-                Union[Iterator[NodeType], Iterable[NodeType]],
-                cast(Sequence, nodes)[slice_metadata.start : slice_metadata.overfetch],
+                "Union[Iterator[NodeType], Iterable[NodeType]]",
+                cast("Sequence", nodes)[
+                    slice_metadata.start : slice_metadata.overfetch
+                ],
             )
         except TypeError:
             assert isinstance(nodes, (Iterable, Iterator))
@@ -935,17 +948,17 @@ class ListConnection(Connection[NodeType]):
 
 
 __all__ = [
+    "PREFIX",
+    "Connection",
+    "Edge",
     "GlobalID",
     "GlobalIDValueError",
+    "ListConnection",
     "Node",
     "NodeID",
     "NodeIDAnnotationError",
     "NodeIDPrivate",
     "NodeIterableType",
     "NodeType",
-    "PREFIX",
-    "Connection",
-    "Edge",
     "PageInfo",
-    "ListConnection",
 ]

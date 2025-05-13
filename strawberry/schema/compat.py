@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Union
+from typing import TYPE_CHECKING, Union
 
 from strawberry.scalars import is_scalar as is_strawberry_scalar
 from strawberry.types.base import StrawberryType, has_object_definition
@@ -10,6 +10,7 @@ from strawberry.types.base import StrawberryType, has_object_definition
 # TYPE_CHECKING is enabled.
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
     from typing_extensions import TypeGuard
 
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
@@ -29,7 +30,7 @@ def is_interface_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
 
 def is_scalar(
     type_: Union[StrawberryType, type],
-    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
 ) -> TypeGuard[type]:
     return is_strawberry_scalar(type_, scalar_registry)
 
@@ -54,10 +55,10 @@ def is_graphql_generic(type_: Union[StrawberryType, type]) -> bool:
 
 
 __all__ = [
+    "is_enum",
+    "is_graphql_generic",
     "is_input_type",
     "is_interface_type",
     "is_scalar",
-    "is_enum",
     "is_schema_directive",
-    "is_graphql_generic",
 ]

@@ -11,15 +11,15 @@ from dataclasses import (  # type: ignore
     _field_init,
     _init_param,
 )
-from typing import Any, Dict, List
+from typing import Any
 
 
 def dataclass_init_fn(
-    fields: List[Any],
+    fields: list[Any],
     frozen: bool,
     has_post_init: bool,
     self_name: str,
-    globals_: Dict[str, Any],
+    globals_: dict[str, Any],
 ) -> Any:
     """Create an __init__ function for a dataclass.
 

@@ -5,11 +5,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Iterable,
-    List,
     Optional,
-    Sequence,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -19,41 +15,80 @@ from strawberry.types.field import field as base_field
 from strawberry.types.unset import UNSET
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping, Sequence
     from typing_extensions import Literal
 
     from strawberry.extensions.field_extension import FieldExtension
     from strawberry.permission import BasePermission
-    from strawberry.types.field import _RESOLVER_TYPE, StrawberryField
+    from strawberry.types.field import (
+        _RESOLVER_TYPE,
+        _RESOLVER_TYPE_ASYNC,
+        _RESOLVER_TYPE_SYNC,
+        StrawberryField,
+    )
 
     from .schema_directives import Override
 
 T = TypeVar("T")
 
+# NOTE: we are separating the sync and async resolvers because using both
+# in the same function will cause mypy to raise an error. Not sure if it is a bug
+
 
 @overload
 def field(
     *,
-    resolver: _RESOLVER_TYPE[T],
+    resolver: _RESOLVER_TYPE_ASYNC[T],
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
     authenticated: bool = False,
     external: bool = False,
     inaccessible: bool = False,
-    policy: Optional[List[List[str]]] = None,
-    provides: Optional[List[str]] = None,
+    policy: Optional[list[list[str]]] = None,
+    provides: Optional[list[str]] = None,
     override: Optional[Union[Override, str]] = None,
-    requires: Optional[List[str]] = None,
-    requires_scopes: Optional[List[List[str]]] = None,
+    requires: Optional[list[str]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
     tags: Optional[Iterable[str]] = (),
     shareable: bool = False,
     init: Literal[False] = False,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
-    default: Any = UNSET,
-    default_factory: Union[Callable[..., object], object] = UNSET,
-    directives: Sequence[object] = (),
-    extensions: Optional[List[FieldExtension]] = None,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
+    directives: Optional[Sequence[object]] = (),
+    extensions: Optional[list[FieldExtension]] = None,
+    graphql_type: Optional[Any] = None,
+) -> T: ...
+
+
+@overload
+def field(
+    *,
+    resolver: _RESOLVER_TYPE_SYNC[T],
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    authenticated: bool = False,
+    external: bool = False,
+    inaccessible: bool = False,
+    policy: Optional[list[list[str]]] = None,
+    provides: Optional[list[str]] = None,
+    override: Optional[Union[Override, str]] = None,
+    requires: Optional[list[str]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
+    tags: Optional[Iterable[str]] = (),
+    shareable: bool = False,
+    init: Literal[False] = False,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
+    directives: Optional[Sequence[object]] = (),
+    extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> T: ...
 
@@ -67,27 +102,28 @@ def field(
     authenticated: bool = False,
     external: bool = False,
     inaccessible: bool = False,
-    policy: Optional[List[List[str]]] = None,
-    provides: Optional[List[str]] = None,
+    policy: Optional[list[list[str]]] = None,
+    provides: Optional[list[str]] = None,
     override: Optional[Union[Override, str]] = None,
-    requires: Optional[List[str]] = None,
-    requires_scopes: Optional[List[List[str]]] = None,
+    requires: Optional[list[str]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
     tags: Optional[Iterable[str]] = (),
     shareable: bool = False,
     init: Literal[True] = True,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
-    default: Any = UNSET,
-    default_factory: Union[Callable[..., object], object] = UNSET,
-    directives: Sequence[object] = (),
-    extensions: Optional[List[FieldExtension]] = None,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
+    directives: Optional[Sequence[object]] = (),
+    extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> Any: ...
 
 
 @overload
 def field(
-    resolver: _RESOLVER_TYPE[T],
+    resolver: _RESOLVER_TYPE_ASYNC[T],
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
@@ -95,19 +131,48 @@ def field(
     authenticated: bool = False,
     external: bool = False,
     inaccessible: bool = False,
-    policy: Optional[List[List[str]]] = None,
-    provides: Optional[List[str]] = None,
+    policy: Optional[list[list[str]]] = None,
+    provides: Optional[list[str]] = None,
     override: Optional[Union[Override, str]] = None,
-    requires: Optional[List[str]] = None,
-    requires_scopes: Optional[List[List[str]]] = None,
+    requires: Optional[list[str]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
     tags: Optional[Iterable[str]] = (),
     shareable: bool = False,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
-    default: Any = UNSET,
-    default_factory: Union[Callable[..., object], object] = UNSET,
-    directives: Sequence[object] = (),
-    extensions: Optional[List[FieldExtension]] = None,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
+    directives: Optional[Sequence[object]] = (),
+    extensions: Optional[list[FieldExtension]] = None,
+    graphql_type: Optional[Any] = None,
+) -> StrawberryField: ...
+
+
+@overload
+def field(
+    resolver: _RESOLVER_TYPE_SYNC[T],
+    *,
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    authenticated: bool = False,
+    external: bool = False,
+    inaccessible: bool = False,
+    policy: Optional[list[list[str]]] = None,
+    provides: Optional[list[str]] = None,
+    override: Optional[Union[Override, str]] = None,
+    requires: Optional[list[str]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
+    tags: Optional[Iterable[str]] = (),
+    shareable: bool = False,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
+    directives: Optional[Sequence[object]] = (),
+    extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
 ) -> StrawberryField: ...
 
@@ -121,19 +186,20 @@ def field(
     authenticated: bool = False,
     external: bool = False,
     inaccessible: bool = False,
-    policy: Optional[List[List[str]]] = None,
-    provides: Optional[List[str]] = None,
+    policy: Optional[list[list[str]]] = None,
+    provides: Optional[list[str]] = None,
     override: Optional[Union[Override, str]] = None,
-    requires: Optional[List[str]] = None,
-    requires_scopes: Optional[List[List[str]]] = None,
+    requires: Optional[list[str]] = None,
+    requires_scopes: Optional[list[list[str]]] = None,
     tags: Optional[Iterable[str]] = (),
     shareable: bool = False,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[list[type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    directives: Sequence[object] = (),
-    extensions: Optional[List[FieldExtension]] = None,
+    metadata: Optional[Mapping[Any, Any]] = None,
+    directives: Optional[Sequence[object]] = (),
+    extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
@@ -153,7 +219,7 @@ def field(
         Tag,
     )
 
-    directives = list(directives)
+    directives = list(directives or [])
 
     if authenticated:
         directives.append(Authenticated())
@@ -200,6 +266,7 @@ def field(
         default_factory=default_factory,
         init=init,  # type: ignore
         directives=directives,
+        metadata=metadata,
         extensions=extensions,
         graphql_type=graphql_type,
     )

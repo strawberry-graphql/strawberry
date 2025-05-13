@@ -1,5 +1,8 @@
+import dataclasses
 import textwrap
-from typing import List
+from collections.abc import Iterable
+from typing import Optional, Union
+from typing_extensions import Self
 
 import pytest
 from pytest_mock import MockerFixture
@@ -9,7 +12,6 @@ from strawberry import relay
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.relay.fields import ConnectionExtension
 from strawberry.relay.utils import to_base64
-from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types.arguments import StrawberryArgument
 from strawberry.types.field import StrawberryField
 from strawberry.types.fields.resolver import StrawberryResolver
@@ -20,7 +22,7 @@ from .schema import FruitAsync, schema
 def test_query_node():
     result = schema.execute_sync(
         """
-        query TestQuery ($id: GlobalID!) {
+        query TestQuery ($id: ID!) {
             node (id: $id) {
                 ... on Node {
                     id
@@ -49,7 +51,7 @@ def test_query_node():
 async def test_query_node_with_async_permissions():
     result = await schema.execute(
         """
-        query TestQuery ($id: GlobalID!) {
+        query TestQuery ($id: ID!) {
             nodeWithAsyncPermissions (id: $id) {
                 ... on Node {
                     id
@@ -78,7 +80,7 @@ async def test_query_node_with_async_permissions():
 def test_query_node_optional():
     result = schema.execute_sync(
         """
-        query TestQuery ($id: GlobalID!) {
+        query TestQuery ($id: ID!) {
             nodeOptional (id: $id) {
                 ... on Node {
                     id
@@ -101,7 +103,7 @@ def test_query_node_optional():
 async def test_query_node_async():
     result = await schema.execute(
         """
-        query TestQuery ($id: GlobalID!) {
+        query TestQuery ($id: ID!) {
             node (id: $id) {
                 ... on Node {
                     id
@@ -130,7 +132,7 @@ async def test_query_node_async():
 async def test_query_node_optional_async():
     result = await schema.execute(
         """
-        query TestQuery ($id: GlobalID!) {
+        query TestQuery ($id: ID!) {
             nodeOptional (id: $id) {
                 ... on Node {
                     id
@@ -153,7 +155,7 @@ async def test_query_node_optional_async():
 def test_query_nodes():
     result = schema.execute_sync(
         """
-        query TestQuery ($ids: [GlobalID!]!) {
+        query TestQuery ($ids: [ID!]!) {
             nodes (ids: $ids) {
                 ... on Node {
                     id
@@ -189,7 +191,7 @@ def test_query_nodes():
 def test_query_nodes_optional():
     result = schema.execute_sync(
         """
-        query TestQuery ($ids: [GlobalID!]!) {
+        query TestQuery ($ids: [ID!]!) {
             nodesOptional (ids: $ids) {
                 ... on Node {
                     id
@@ -230,7 +232,7 @@ def test_query_nodes_optional():
 async def test_query_nodes_async():
     result = await schema.execute(
         """
-        query TestQuery ($ids: [GlobalID!]!) {
+        query TestQuery ($ids: [ID!]!) {
             nodes (ids: $ids) {
                 ... on Node {
                     id
@@ -279,7 +281,7 @@ async def test_query_nodes_async():
 async def test_query_nodes_optional_async():
     result = await schema.execute(
         """
-        query TestQuery ($ids: [GlobalID!]!) {
+        query TestQuery ($ids: [ID!]!) {
             nodesOptional (ids: $ids) {
                 ... on Node {
                     id
@@ -1451,16 +1453,9 @@ def test_query_last_higher_than_max_results(query_attr: str):
 
 
 def test_parameters(mocker: MockerFixture):
-    # Avoid E501 errors
-    mocker.patch.object(
-        DEFAULT_SCALAR_REGISTRY[relay.GlobalID],
-        "description",
-        "__GLOBAL_ID_DESC__",
-    )
-
     class CustomField(StrawberryField):
         @property
-        def arguments(self) -> List[StrawberryArgument]:
+        def arguments(self) -> list[StrawberryArgument]:
             return [
                 *super().arguments,
                 StrawberryArgument(
@@ -1472,7 +1467,7 @@ def test_parameters(mocker: MockerFixture):
             ]
 
         @arguments.setter
-        def arguments(self, value: List[StrawberryArgument]):
+        def arguments(self, value: list[StrawberryArgument]):
             cls = self.__class__
             return super(cls, cls).arguments.fset(self, value)
 
@@ -1480,7 +1475,7 @@ def test_parameters(mocker: MockerFixture):
     class Fruit(relay.Node):
         code: relay.NodeID[str]
 
-    def resolver(info: strawberry.Info) -> List[Fruit]: ...
+    def resolver(info: strawberry.Info) -> list[Fruit]: ...
 
     @strawberry.type
     class Query:
@@ -1497,7 +1492,7 @@ def test_parameters(mocker: MockerFixture):
     expected = '''
     type Fruit implements Node {
       """The Globally Unique ID of this object"""
-      id: GlobalID!
+      id: ID!
     }
 
     """A connection to a list of items."""
@@ -1518,13 +1513,10 @@ def test_parameters(mocker: MockerFixture):
       node: Fruit!
     }
 
-    """__GLOBAL_ID_DESC__"""
-    scalar GlobalID @specifiedBy(url: "https://relay.dev/graphql/objectidentification.htm")
-
     """An object with a Globally Unique ID"""
     interface Node {
       """The Globally Unique ID of this object"""
-      id: GlobalID!
+      id: ID!
     }
 
     """Information to aid in pagination."""
@@ -1622,3 +1614,77 @@ def test_query_after_error():
 
     assert result.errors is not None
     assert "Argument 'after' contains a non-existing value" in str(result.errors)
+
+
+@pytest.mark.parametrize(
+    ("type_name", "should_have_name"),
+    [("Fruit", False), ("PublicFruit", True)],
+)
+@pytest.mark.django_db(transaction=True)
+def test_correct_model_returned(type_name: str, should_have_name: bool):
+    @dataclasses.dataclass
+    class FruitModel:
+        id: str
+        name: str
+
+    fruits: dict[str, FruitModel] = {"1": FruitModel(id="1", name="Strawberry")}
+
+    @strawberry.type
+    class Fruit(relay.Node):
+        id: relay.NodeID[int]
+
+        @classmethod
+        def resolve_nodes(
+            cls,
+            *,
+            info: Optional[strawberry.Info] = None,
+            node_ids: Iterable[str],
+            required: bool = False,
+        ) -> Iterable[Optional[Union[Self, FruitModel]]]:
+            return [fruits[nid] if required else fruits.get(nid) for nid in node_ids]
+
+    @strawberry.type
+    class PublicFruit(relay.Node):
+        id: relay.NodeID[int]
+        name: str
+
+        @classmethod
+        def resolve_nodes(
+            cls,
+            *,
+            info: Optional[strawberry.Info] = None,
+            node_ids: Iterable[str],
+            required: bool = False,
+        ) -> Iterable[Optional[Union[Self, FruitModel]]]:
+            return [fruits[nid] if required else fruits.get(nid) for nid in node_ids]
+
+    @strawberry.type
+    class Query:
+        node: relay.Node = relay.node()
+
+    schema = strawberry.Schema(query=Query, types=[Fruit, PublicFruit])
+
+    node_id = relay.to_base64(type_name, "1")
+    result = schema.execute_sync(
+        """
+        query NodeQuery($id: ID!) {
+          node(id: $id) {
+            __typename
+            id
+            ... on PublicFruit {
+              name
+            }
+          }
+        }
+    """,
+        {"id": node_id},
+    )
+    assert result.errors is None
+    assert isinstance(result.data, dict)
+
+    assert result.data["node"]["__typename"] == type_name
+    assert result.data["node"]["id"] == node_id
+    if should_have_name:
+        assert result.data["node"]["name"] == "Strawberry"
+    else:
+        assert "name" not in result.data["node"]

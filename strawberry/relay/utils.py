@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 import dataclasses
 import sys
-from typing import TYPE_CHECKING, Any, Tuple, Union
+from typing import TYPE_CHECKING, Any, Union
 from typing_extensions import Self, assert_never
 
 from strawberry.types.base import StrawberryObjectDefinition
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from strawberry.types.info import Info
 
 
-def from_base64(value: str) -> Tuple[str, str]:
+def from_base64(value: str) -> tuple[str, str]:
     """Parse the base64 encoded relay value.
 
     Args:
@@ -131,23 +131,32 @@ class SliceMetadata:
         after: str | None = None,
         first: int | None = None,
         last: int | None = None,
+        max_results: int | None = None,
+        prefix: str | None = None,
     ) -> Self:
         """Get the slice metadata to use on ListConnection."""
         from strawberry.relay.types import PREFIX
 
-        max_results = info.schema.config.relay_max_results
+        if prefix is None:
+            prefix = PREFIX
+
+        max_results = (
+            max_results
+            if max_results is not None
+            else info.schema.config.relay_max_results
+        )
         start = 0
         end: int | None = None
 
         if after:
             after_type, after_parsed = from_base64(after)
-            if after_type != PREFIX:
+            if after_type != prefix:
                 raise TypeError("Argument 'after' contains a non-existing value.")
 
             start = int(after_parsed) + 1
         if before:
             before_type, before_parsed = from_base64(before)
-            if before_type != PREFIX:
+            if before_type != prefix:
                 raise TypeError("Argument 'before' contains a non-existing value.")
             end = int(before_parsed)
 
@@ -191,8 +200,8 @@ class SliceMetadata:
 
 
 __all__ = [
-    "from_base64",
-    "to_base64",
-    "should_resolve_list_connection_edges",
     "SliceMetadata",
+    "from_base64",
+    "should_resolve_list_connection_edges",
+    "to_base64",
 ]

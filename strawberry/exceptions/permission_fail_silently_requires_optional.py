@@ -7,7 +7,8 @@ from .exception import StrawberryException
 from .utils.source_finder import SourceFinder
 
 if TYPE_CHECKING:
-    from ..field import StrawberryField
+    from strawberry.field import StrawberryField
+
     from .exception_source import ExceptionSource
 
 
@@ -15,7 +16,7 @@ class PermissionFailSilentlyRequiresOptionalError(StrawberryException):
     def __init__(self, field: StrawberryField) -> None:
         self.field = field
         self.message = (
-            "Cannot use fail_silently=True with a non-optional " "or non-list field"
+            "Cannot use fail_silently=True with a non-optional or non-list field"
         )
         self.rich_message = (
             "fail_silently permissions can only be used with fields of type "

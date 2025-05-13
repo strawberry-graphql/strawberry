@@ -1,7 +1,4 @@
-import sys
-import warnings
-from typing import List, Optional, Union
-from typing_extensions import Annotated
+from typing import Annotated, Optional, Union
 
 import pytest
 
@@ -18,7 +15,9 @@ def test_basic_arguments():
     @strawberry.type
     class Query:
         @strawberry.field
-        def name(self, argument: str, optional_argument: Optional[str]) -> str:
+        def name(
+            self, argument: str, optional_argument: Optional[str]
+        ) -> str:  # pragma: no cover
             return "Name"
 
     definition = Query.__strawberry_definition__
@@ -45,7 +44,9 @@ def test_input_type_as_argument():
     @strawberry.type
     class Query:
         @strawberry.field
-        def name(self, input: Input, optional_input: Optional[Input]) -> str:
+        def name(
+            self, input: Input, optional_input: Optional[Input]
+        ) -> str:  # pragma: no cover
             return input.name
 
     definition = Query.__strawberry_definition__
@@ -72,7 +73,7 @@ def test_arguments_lists():
     @strawberry.type
     class Query:
         @strawberry.field
-        def names(self, inputs: List[Input]) -> List[str]:
+        def names(self, inputs: list[Input]) -> list[str]:  # pragma: no cover
             return [input.name for input in inputs]
 
     definition = Query.__strawberry_definition__
@@ -95,7 +96,7 @@ def test_arguments_lists_of_optionals():
     @strawberry.type
     class Query:
         @strawberry.field
-        def names(self, inputs: List[Optional[Input]]) -> List[str]:
+        def names(self, inputs: list[Optional[Input]]) -> list[str]:  # pragma: no cover
             return [input_.name for input_ in inputs if input_ is not None]
 
     definition = Query.__strawberry_definition__
@@ -112,7 +113,7 @@ def test_arguments_lists_of_optionals():
 
 
 def test_basic_arguments_on_resolver():
-    def name_resolver(
+    def name_resolver(  # pragma: no cover
         id: strawberry.ID, argument: str, optional_argument: Optional[str]
     ) -> str:
         return "Name"
@@ -141,7 +142,7 @@ def test_basic_arguments_on_resolver():
 def test_arguments_when_extending_a_type():
     def name_resolver(
         id: strawberry.ID, argument: str, optional_argument: Optional[str]
-    ) -> str:
+    ) -> str:  # pragma: no cover
         return "Name"
 
     @strawberry.type
@@ -172,10 +173,10 @@ def test_arguments_when_extending_a_type():
 
 
 def test_arguments_when_extending_multiple_types():
-    def name_resolver(id: strawberry.ID) -> str:
+    def name_resolver(id: strawberry.ID) -> str:  # pragma: no cover
         return "Name"
 
-    def name_2_resolver(id: strawberry.ID) -> str:
+    def name_2_resolver(id: strawberry.ID) -> str:  # pragma: no cover
         return "Name 2"
 
     @strawberry.type
@@ -213,7 +214,7 @@ def test_argument_with_default_value_none():
     @strawberry.type
     class Query:
         @strawberry.field
-        def name(self, argument: Optional[str] = None) -> str:
+        def name(self, argument: Optional[str] = None) -> str:  # pragma: no cover
             return "Name"
 
     definition = Query.__strawberry_definition__
@@ -234,7 +235,7 @@ def test_argument_with_default_value_undefined():
     @strawberry.type
     class Query:
         @strawberry.field
-        def name(self, argument: Optional[str]) -> str:
+        def name(self, argument: Optional[str]) -> str:  # pragma: no cover
             return "Name"
 
     definition = Query.__strawberry_definition__
@@ -260,7 +261,7 @@ def test_annotated_argument_on_resolver():
                 str,
                 strawberry.argument(description="This is a description"),
             ],
-        ) -> str:
+        ) -> str:  # pragma: no cover
             return "Name"
 
     definition = Query.__strawberry_definition__
@@ -284,7 +285,7 @@ def test_annotated_optional_arguments_on_resolver():
                 Optional[str],
                 strawberry.argument(description="This is a description"),
             ],
-        ) -> str:
+        ) -> str:  # pragma: no cover
             return "Name"
 
     definition = Query.__strawberry_definition__
@@ -310,7 +311,7 @@ def test_annotated_argument_with_default_value():
                 str,
                 strawberry.argument(description="This is a description"),
             ] = "Patrick",
-        ) -> str:
+        ) -> str:  # pragma: no cover
             return "Name"
 
     definition = Query.__strawberry_definition__
@@ -336,7 +337,7 @@ def test_annotated_argument_with_rename():
                 str,
                 strawberry.argument(name="argument"),
             ] = "Patrick",
-        ) -> str:
+        ) -> str:  # pragma: no cover
             return "Name"
 
     definition = Query.__strawberry_definition__
@@ -365,7 +366,7 @@ def test_multiple_annotated_arguments_exception():
                 strawberry.argument(description="This is a description"),
                 strawberry.argument(description="Another description"),
             ],
-        ) -> str:
+        ) -> str:  # pragma: no cover
             return "Name"
 
     assert str(error.value) == (
@@ -379,7 +380,9 @@ def test_annotated_with_other_information():
     @strawberry.type
     class Query:
         @strawberry.field
-        def name(self, argument: Annotated[str, "Some other info"]) -> str:
+        def name(
+            self, argument: Annotated[str, "Some other info"]
+        ) -> str:  # pragma: no cover
             return "Name"
 
     definition = Query.__strawberry_definition__
@@ -394,10 +397,6 @@ def test_annotated_with_other_information():
     assert argument.type is str
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="Annotated type was added in python 3.9",
-)
 def test_annotated_python_39():
     from typing import Annotated
 
@@ -410,7 +409,7 @@ def test_annotated_python_39():
                 str,
                 strawberry.argument(description="This is a description"),
             ],
-        ) -> str:
+        ) -> str:  # pragma: no cover
             return "Name"
 
     definition = Query.__strawberry_definition__
@@ -421,7 +420,7 @@ def test_annotated_python_39():
 
     assert argument.python_name == "argument"
     assert argument.graphql_name is None
-    assert argument.type == str
+    assert argument.type is str
     assert argument.description == "This is a description"
     assert argument.type is str
 
@@ -472,7 +471,7 @@ def test_resolver_with_invalid_field_argument_type():
     class Adjective:
         text: str
 
-    def add_adjective_resolver(adjective: Adjective) -> bool:
+    def add_adjective_resolver(adjective: Adjective) -> bool:  # pragma: no cover
         return True
 
     @strawberry.type
@@ -488,11 +487,19 @@ def test_unset_deprecation_warning():
 
 
 def test_deprecated_unset():
-    with pytest.deprecated_call():
+    warning = "`is_unset` is deprecated use `value is UNSET` instead"
+
+    with pytest.deprecated_call(match=warning):
         from strawberry.types.unset import is_unset
 
-    with warnings.catch_warnings(record=False):
+    with pytest.deprecated_call(match=warning):
         assert is_unset(UNSET)
+
+    with pytest.deprecated_call(match=warning):
         assert not is_unset(None)
+
+    with pytest.deprecated_call(match=warning):
         assert not is_unset(False)
+
+    with pytest.deprecated_call(match=warning):
         assert not is_unset("hello world")

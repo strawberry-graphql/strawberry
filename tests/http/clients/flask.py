@@ -6,7 +6,7 @@ import functools
 import json
 import urllib.parse
 from io import BytesIO
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 from typing_extensions import Literal
 
 from flask import Flask
@@ -16,13 +16,13 @@ from strawberry.flask.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
+from tests.http.context import get_context
 from tests.views.schema import Query, schema
 
-from ..context import get_context
 from .base import JSON, HttpClient, Response, ResultOverrideFunction
 
 
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(BaseGraphQLView[dict[str, object], object]):
     # this allows to test our code path for checking the request type
     # TODO: we might want to remove our check since it is done by flask
     # already
@@ -30,7 +30,7 @@ class GraphQLView(BaseGraphQLView):
 
     result_override: ResultOverrideFunction = None
 
-    def __init__(self, *args: str, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 
@@ -40,7 +40,7 @@ class GraphQLView(BaseGraphQLView):
 
     def get_context(
         self, request: FlaskRequest, response: FlaskResponse
-    ) -> Dict[str, object]:
+    ) -> dict[str, object]:
         context = super().get_context(request, response)
 
         return get_context(context)
@@ -61,6 +61,7 @@ class FlaskHttpClient(HttpClient):
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        multipart_uploads_enabled: bool = False,
     ):
         self.app = Flask(__name__)
         self.app.debug = True
@@ -72,6 +73,7 @@ class FlaskHttpClient(HttpClient):
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
+            multipart_uploads_enabled=multipart_uploads_enabled,
         )
 
         self.app.add_url_rule(
@@ -83,10 +85,10 @@ class FlaskHttpClient(HttpClient):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
-        extensions: Optional[Dict[str, Any]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
+        extensions: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
@@ -97,7 +99,7 @@ class FlaskHttpClient(HttpClient):
             extensions=extensions,
         )
 
-        data: Union[Dict[str, object], str, None] = None
+        data: Union[dict[str, object], str, None] = None
 
         if body and files:
             body.update({name: (file, name) for name, file in files.items()})
@@ -120,7 +122,7 @@ class FlaskHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ):
         with self.app.test_client() as client:
@@ -136,7 +138,7 @@ class FlaskHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> Response:
         loop = asyncio.get_running_loop()
@@ -149,7 +151,7 @@ class FlaskHttpClient(HttpClient):
     async def get(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self.request(url, "get", headers=headers)
 
@@ -158,6 +160,6 @@ class FlaskHttpClient(HttpClient):
         url: str,
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self.request(url, "post", headers=headers, data=data, json=json)

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import contextlib
 import json
+from collections.abc import AsyncGenerator
 from io import BytesIO
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, Optional
 from typing_extensions import Literal
 
 from starlite import Request, Starlite
@@ -15,9 +16,9 @@ from strawberry.http.ides import GraphQL_IDE
 from strawberry.starlite import make_graphql_controller
 from strawberry.starlite.controller import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.types import ExecutionResult
+from tests.http.context import get_context
 from tests.views.schema import Query, schema
 
-from ..context import get_context
 from .base import (
     JSON,
     DebuggableGraphQLTransportWSMixin,
@@ -95,10 +96,10 @@ class StarliteHttpClient(HttpClient):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
-        extensions: Optional[Dict[str, Any]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
+        extensions: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
@@ -112,11 +113,10 @@ class StarliteHttpClient(HttpClient):
         if body:
             if method == "get":
                 kwargs["params"] = body
+            elif files:
+                kwargs["data"] = body
             else:
-                if files:
-                    kwargs["data"] = body
-                else:
-                    kwargs["content"] = json.dumps(body)
+                kwargs["content"] = json.dumps(body)
 
         if files:
             kwargs["files"] = files
@@ -137,7 +137,7 @@ class StarliteHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         response = getattr(self.client, method)(url, headers=headers)
 
@@ -150,7 +150,7 @@ class StarliteHttpClient(HttpClient):
     async def get(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self.request(url, "get", headers=headers)
 
@@ -159,7 +159,7 @@ class StarliteHttpClient(HttpClient):
         url: str,
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         response = self.client.post(url, headers=headers, content=data, json=json)
 
@@ -174,7 +174,7 @@ class StarliteHttpClient(HttpClient):
         self,
         url: str,
         *,
-        protocols: List[str],
+        protocols: list[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
         try:
             with self.client.websocket_connect(url, protocols) as ws:
@@ -197,7 +197,7 @@ class StarliteWebSocketClient(WebSocketClient):
         self._close_code = exc.code
         self._close_reason = exc.reason
 
-    async def send_json(self, payload: Dict[str, Any]) -> None:
+    async def send_json(self, payload: dict[str, Any]) -> None:
         self.ws.send_json(payload)
 
     async def send_bytes(self, payload: bytes) -> None:
@@ -222,7 +222,7 @@ class StarliteWebSocketClient(WebSocketClient):
             self._close_code = m["code"]
             self._close_reason = m["reason"]
             return Message(type=m["type"], data=m["code"], extra=m["reason"])
-        elif m["type"] == "websocket.send":
+        if m["type"] == "websocket.send":
             return Message(type=m["type"], data=m["text"])
         return Message(type=m["type"], data=m["data"], extra=m["extra"])
 

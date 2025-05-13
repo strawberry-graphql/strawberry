@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Union, cast
-from typing_extensions import Annotated, get_args, get_origin
+from typing import Annotated, Any, Optional, Union, cast
+from typing_extensions import get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.types.base import StrawberryType
@@ -23,8 +23,8 @@ class StrawberryAutoMeta(type):
 
     """
 
-    def __init__(self, *args: str, **kwargs: Any) -> None:
-        self._instance: Optional[StrawberryAuto] = None
+    def __init__(cls, *args: str, **kwargs: Any) -> None:
+        cls._instance: Optional[StrawberryAuto] = None
         super().__init__(*args, **kwargs)
 
     def __call__(cls, *args: str, **kwargs: Any) -> Any:
@@ -34,7 +34,7 @@ class StrawberryAutoMeta(type):
         return cls._instance
 
     def __instancecheck__(
-        self,
+        cls,
         instance: Union[StrawberryAuto, StrawberryAnnotation, StrawberryType, type],
     ) -> bool:
         if isinstance(instance, StrawberryAnnotation):
@@ -44,7 +44,7 @@ class StrawberryAutoMeta(type):
                 resolved = namespace and namespace.get(resolved)
 
             if resolved is not None:
-                instance = cast(type, resolved)
+                instance = cast("type", resolved)
 
         if instance is auto:
             return True

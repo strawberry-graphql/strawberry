@@ -1,15 +1,13 @@
+import builtins
 import dataclasses
 import inspect
 import sys
 import types
+from collections.abc import Sequence
 from typing import (
     Any,
     Callable,
-    Dict,
-    List,
     Optional,
-    Sequence,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -22,7 +20,7 @@ from strawberry.exceptions import (
     ObjectIsNotClassError,
 )
 from strawberry.types.base import get_object_definition
-from strawberry.utils.dataclasses import add_custom_init_fn
+from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.utils.deprecations import DEPRECATION_MESSAGES, DeprecatedDescriptor
 from strawberry.utils.str_converters import to_camel_case
 
@@ -30,11 +28,11 @@ from .base import StrawberryObjectDefinition
 from .field import StrawberryField, field
 from .type_resolver import _get_fields
 
-T = TypeVar("T", bound=Type)
+T = TypeVar("T", bound=builtins.type)
 
 
-def _get_interfaces(cls: Type[Any]) -> List[StrawberryObjectDefinition]:
-    interfaces: List[StrawberryObjectDefinition] = []
+def _get_interfaces(cls: builtins.type[Any]) -> list[StrawberryObjectDefinition]:
+    interfaces: list[StrawberryObjectDefinition] = []
     for base in cls.__mro__[1:]:  # Exclude current class
         type_definition = get_object_definition(base)
         if type_definition and type_definition.is_interface:
@@ -43,7 +41,7 @@ def _get_interfaces(cls: Type[Any]) -> List[StrawberryObjectDefinition]:
     return interfaces
 
 
-def _check_field_annotations(cls: Type[Any]) -> None:
+def _check_field_annotations(cls: builtins.type[Any]) -> None:
     """Are any of the dataclass Fields missing type annotations?
 
     This is similar to the check that dataclasses do during creation, but allows us to
@@ -101,12 +99,12 @@ def _check_field_annotations(cls: Type[Any]) -> None:
             raise MissingFieldAnnotationError(field_name, cls)
 
 
-def _wrap_dataclass(cls: Type[T]) -> Type[T]:
+def _wrap_dataclass(cls: builtins.type[T]) -> builtins.type[T]:
     """Wrap a strawberry.type class with a dataclass and check for any issues before doing so."""
     # Ensure all Fields have been properly type-annotated
     _check_field_annotations(cls)
 
-    dclass_kwargs: Dict[str, bool] = {}
+    dclass_kwargs: dict[str, bool] = {}
 
     # Python 3.10 introduces the kw_only param. If we're on an older version
     # then generate our own custom init function
@@ -118,9 +116,20 @@ def _wrap_dataclass(cls: Type[T]) -> Type[T]:
     dclass = dataclasses.dataclass(cls, **dclass_kwargs)
 
     if sys.version_info < (3, 10):
+        from strawberry.utils.dataclasses import add_custom_init_fn
+
         add_custom_init_fn(dclass)
 
     return dclass
+
+
+def _inject_default_for_maybe_annotations(
+    cls: builtins.type[T], annotations: dict[str, Any]
+) -> None:
+    """Inject `= None` for fields with `Maybe` annotations and no default value."""
+    for name, annotation in annotations.copy().items():
+        if _annotation_is_maybe(annotation) and not hasattr(cls, name):
+            setattr(cls, name, None)
 
 
 def _process_type(
@@ -132,7 +141,7 @@ def _process_type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
-    original_type_annotations: Optional[Dict[str, Any]] = None,
+    original_type_annotations: Optional[dict[str, Any]] = None,
 ) -> T:
     name = name or to_camel_case(cls.__name__)
     original_type_annotations = original_type_annotations or {}
@@ -142,7 +151,7 @@ def _process_type(
     is_type_of = getattr(cls, "is_type_of", None)
     resolve_type = getattr(cls, "resolve_type", None)
 
-    cls.__strawberry_definition__ = StrawberryObjectDefinition(
+    cls.__strawberry_definition__ = StrawberryObjectDefinition(  # type: ignore[attr-defined]
         name=name,
         is_input=is_input,
         is_interface=is_interface,
@@ -158,7 +167,7 @@ def _process_type(
     # TODO: remove when deprecating _type_definition
     DeprecatedDescriptor(
         DEPRECATION_MESSAGES._TYPE_DEFINITION,
-        cls.__strawberry_definition__,
+        cls.__strawberry_definition__,  # type: ignore[attr-defined]
         "_type_definition",
     ).inject(cls)
 
@@ -278,7 +287,7 @@ def type(
         # >>> class Query:
         # >>>     a: int = strawberry.field(graphql_type=str)
         # so we need to extract the information before running `_wrap_dataclass`
-        original_type_annotations: Dict[str, Any] = {}
+        original_type_annotations: dict[str, Any] = {}
 
         annotations = getattr(cls, "__annotations__", {})
 
@@ -287,7 +296,8 @@ def type(
 
             if field and isinstance(field, StrawberryField) and field.type_annotation:
                 original_type_annotations[field_name] = field.type_annotation.annotation
-
+        if is_input:
+            _inject_default_for_maybe_annotations(cls, annotations)
         wrapped = _wrap_dataclass(cls)
 
         return _process_type(  # type: ignore
@@ -459,7 +469,7 @@ def interface(
     )
 
 
-def asdict(obj: Any) -> Dict[str, object]:
+def asdict(obj: Any) -> dict[str, object]:
     """Convert a strawberry object into a dictionary.
 
     This wraps the dataclasses.asdict function to strawberry.
@@ -488,8 +498,8 @@ def asdict(obj: Any) -> Dict[str, object]:
 
 __all__ = [
     "StrawberryObjectDefinition",
+    "asdict",
     "input",
     "interface",
     "type",
-    "asdict",
 ]

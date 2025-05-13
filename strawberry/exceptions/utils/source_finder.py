@@ -6,11 +6,12 @@ import sys
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Type, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 
-from ..exception_source import ExceptionSource
+from strawberry.exceptions.exception_source import ExceptionSource
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from inspect import Traceback
 
     from libcst import BinaryOperation, Call, CSTNode, FunctionDef
@@ -113,7 +114,7 @@ class LibCSTSourceFinder:
         )
 
     def _find_class_definition(
-        self, source: SourcePath, cls: Type[Any]
+        self, source: SourcePath, cls: type[Any]
     ) -> Optional[CSTNode]:
         import libcst.matchers as m
 
@@ -122,7 +123,7 @@ class LibCSTSourceFinder:
         class_defs = self._find(source.code, matcher)
         return self._find_definition_by_qualname(cls.__qualname__, class_defs)
 
-    def find_class(self, cls: Type[Any]) -> Optional[ExceptionSource]:
+    def find_class(self, cls: type[Any]) -> Optional[ExceptionSource]:
         source = self.find_source(cls.__module__)
 
         if source is None:
@@ -147,7 +148,7 @@ class LibCSTSourceFinder:
         )
 
     def find_class_attribute(
-        self, cls: Type[Any], attribute_name: str
+        self, cls: type[Any], attribute_name: str
     ) -> Optional[ExceptionSource]:
         source = self.find_source(cls.__module__)
 
@@ -560,11 +561,11 @@ class SourceFinder:
         except ImportError:
             return None  # pragma: no cover
 
-    def find_class_from_object(self, cls: Type[Any]) -> Optional[ExceptionSource]:
+    def find_class_from_object(self, cls: type[Any]) -> Optional[ExceptionSource]:
         return self.cst.find_class(cls) if self.cst else None
 
     def find_class_attribute_from_object(
-        self, cls: Type[Any], attribute_name: str
+        self, cls: type[Any], attribute_name: str
     ) -> Optional[ExceptionSource]:
         return self.cst.find_class_attribute(cls, attribute_name) if self.cst else None
 

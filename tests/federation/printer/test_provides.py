@@ -1,7 +1,6 @@
 # type: ignore
 
 import textwrap
-from typing import List
 
 import strawberry
 from strawberry.schema.config import StrawberryConfig
@@ -18,7 +17,7 @@ def test_field_provides_are_printed_correctly_camel_case_on():
     class Product:
         upc: str = strawberry.federation.field(external=True)
         the_name: str = strawberry.federation.field(external=True)
-        reviews: List["Review"]
+        reviews: list["Review"]
 
     @strawberry.federation.type
     class Review:
@@ -29,7 +28,7 @@ def test_field_provides_are_printed_correctly_camel_case_on():
     @strawberry.federation.type
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> List[Product]:
+        def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(
@@ -90,7 +89,7 @@ def test_field_provides_are_printed_correctly_camel_case_off():
     class Product:
         upc: str = strawberry.federation.field(external=True)
         the_name: str = strawberry.federation.field(external=True)
-        reviews: List["Review"]
+        reviews: list["Review"]
 
     @strawberry.federation.type
     class Review:
@@ -101,7 +100,7 @@ def test_field_provides_are_printed_correctly_camel_case_off():
     @strawberry.federation.type
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> List[Product]:
+        def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(

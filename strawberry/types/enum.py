@@ -1,11 +1,9 @@
 import dataclasses
+from collections.abc import Iterable, Mapping
 from enum import EnumMeta
 from typing import (
     Any,
     Callable,
-    Iterable,
-    List,
-    Mapping,
     Optional,
     TypeVar,
     Union,
@@ -29,7 +27,7 @@ class EnumValue:
 class EnumDefinition(StrawberryType):
     wrapped_cls: EnumMeta
     name: str
-    values: List[EnumValue]
+    values: list[EnumValue]
     description: Optional[str]
     directives: Iterable[object] = ()
 
@@ -52,6 +50,7 @@ class EnumDefinition(StrawberryType):
 @dataclasses.dataclass
 class EnumValueDefinition:
     value: Any
+    graphql_name: Optional[str] = None
     deprecation_reason: Optional[str] = None
     directives: Iterable[object] = ()
     description: Optional[str] = None
@@ -62,6 +61,7 @@ class EnumValueDefinition:
 
 def enum_value(
     value: Any,
+    name: Optional[str] = None,
     deprecation_reason: Optional[str] = None,
     directives: Iterable[object] = (),
     description: Optional[str] = None,
@@ -70,6 +70,7 @@ def enum_value(
 
     Args:
         value: The value of the enum member.
+        name: The GraphQL name of the enum member.
         deprecation_reason: The deprecation reason of the enum member,
             setting this will mark the enum member as deprecated.
         directives: The directives to attach to the enum member.
@@ -92,6 +93,7 @@ def enum_value(
     """
     return EnumValueDefinition(
         value=value,
+        graphql_name=name,
         deprecation_reason=deprecation_reason,
         directives=directives,
         description=description,
@@ -125,12 +127,16 @@ def _process_enum(
             item_directives = item_value.directives
             enum_value_description = item_value.description
             deprecation_reason = item_value.deprecation_reason
-            item_value = item_value.value
 
             # update _value2member_map_ so that doing `MyEnum.MY_VALUE` and
             # `MyEnum['MY_VALUE']` both work
-            cls._value2member_map_[item_value] = item
-            cls._member_map_[item_name]._value_ = item_value
+            cls._value2member_map_[item_value.value] = item
+            cls._member_map_[item_name]._value_ = item_value.value
+
+            if item_value.graphql_name:
+                item_name = item_value.graphql_name
+
+            item_value = item_value.value
 
         value = EnumValue(
             item_name,
@@ -228,4 +234,4 @@ def enum(
     return wrap(cls)
 
 
-__all__ = ["EnumValue", "EnumDefinition", "EnumValueDefinition", "enum", "enum_value"]
+__all__ = ["EnumDefinition", "EnumValue", "EnumValueDefinition", "enum", "enum_value"]

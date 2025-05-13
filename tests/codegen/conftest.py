@@ -2,8 +2,15 @@ import datetime
 import decimal
 import enum
 import random
-from typing import TYPE_CHECKING, Generic, List, NewType, Optional, TypeVar, Union
-from typing_extensions import Annotated
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Generic,
+    NewType,
+    Optional,
+    TypeVar,
+    Union,
+)
 from uuid import UUID
 
 import pytest
@@ -41,8 +48,8 @@ LivingThing2 = TypeVar("LivingThing2")
 
 @strawberry.type
 class LifeContainer(Generic[LivingThing1, LivingThing2]):
-    items1: List[LivingThing1]
-    items2: List[LivingThing2]
+    items1: list[LivingThing1]
+    items2: list[LivingThing2]
 
 
 PersonOrAnimal = Annotated[Union[Person, Animal], strawberry.union("PersonOrAnimal")]
@@ -79,8 +86,8 @@ class ExampleInput:
     name: str
     age: int
     person: Optional[PersonInput]
-    people: List[PersonInput]
-    optional_people: Optional[List[PersonInput]]
+    people: list[PersonInput]
+    optional_people: Optional[list[PersonInput]]
 
 
 @strawberry.type
@@ -95,12 +102,13 @@ class Query:
     time: datetime.time
     decimal: decimal.Decimal
     optional_int: Optional[int]
-    list_of_int: List[int]
-    list_of_optional_int: List[Optional[int]]
-    optional_list_of_optional_int: Optional[List[Optional[int]]]
+    list_of_int: list[int]
+    list_of_optional_int: list[Optional[int]]
+    optional_list_of_optional_int: Optional[list[Optional[int]]]
     person: Person
     optional_person: Optional[Person]
-    list_of_people: List[Person]
+    list_of_people: list[Person]
+    optional_list_of_people: Optional[list[Person]]
     enum: Color
     json: JSON
     union: PersonOrAnimal
@@ -140,12 +148,12 @@ class BlogPostInput:
 
 @strawberry.input
 class AddBlogPostsInput:
-    posts: List[BlogPostInput]
+    posts: list[BlogPostInput]
 
 
 @strawberry.type
 class AddBlogPostsOutput:
-    posts: List[BlogPost]
+    posts: list[BlogPost]
 
 
 @strawberry.type

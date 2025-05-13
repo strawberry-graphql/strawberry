@@ -1,7 +1,6 @@
 import textwrap
 from textwrap import dedent
-from typing import Optional
-from typing_extensions import Annotated
+from typing import Annotated, Optional
 
 import strawberry
 from strawberry.types.unset import UNSET
@@ -177,7 +176,7 @@ def test_setting_metadata_on_argument():
         @strawberry.field
         def hello(
             self,
-            info,
+            info: strawberry.Info,
             input: Annotated[str, strawberry.argument(metadata={"test": "foo"})],
         ) -> str:
             nonlocal field_definition

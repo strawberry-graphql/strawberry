@@ -2,7 +2,7 @@ import asyncio
 import datetime
 import random
 from datetime import date
-from typing import List, Type, cast
+from typing import cast
 
 import pytest
 from pytest_codspeed.plugin import BenchmarkFixture
@@ -27,10 +27,10 @@ def test_execute(benchmark: BenchmarkFixture):
         name: str
         age: int
         birthday: date
-        tags: List[str]
+        tags: list[str]
 
         @strawberry.field
-        def pets(self) -> List[Pet]:
+        def pets(self) -> list[Pet]:
             return [
                 Pet(
                     id=i,
@@ -42,7 +42,7 @@ def test_execute(benchmark: BenchmarkFixture):
     @strawberry.type
     class Query:
         @strawberry.field
-        def patrons(self) -> List[Patron]:
+        def patrons(self) -> list[Patron]:
             return [
                 Patron(
                     id=i,
@@ -84,13 +84,13 @@ def test_interface_performance(benchmark: BenchmarkFixture, ntypes: int):
     class Item:
         id: ID
 
-    CONCRETE_TYPES: List[Type[Item]] = [
+    CONCRETE_TYPES: list[type[Item]] = [
         strawberry.type(type(f"Item{i}", (Item,), {})) for i in range(ntypes)
     ]
 
     @strawberry.type
     class Query:
-        items: List[Item]
+        items: list[Item]
 
     schema = strawberry.Schema(query=Query, types=CONCRETE_TYPES)
     query = "query { items { id } }"
@@ -101,7 +101,8 @@ def test_interface_performance(benchmark: BenchmarkFixture, ntypes: int):
                 query,
                 root_value=Query(
                     items=[
-                        CONCRETE_TYPES[i % ntypes](id=cast(ID, i)) for i in range(1000)
+                        CONCRETE_TYPES[i % ntypes](id=cast("ID", i))
+                        for i in range(1000)
                     ]
                 ),
             )

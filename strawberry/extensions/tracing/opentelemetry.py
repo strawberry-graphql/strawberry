@@ -6,12 +6,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    FrozenSet,
-    Generator,
-    Iterable,
     Optional,
-    Set,
     Union,
 )
 
@@ -24,6 +19,8 @@ from strawberry.extensions.utils import get_path_from_info
 from .utils import should_skip_tracing
 
 if TYPE_CHECKING:
+    from collections.abc import Generator, Iterable
+
     from graphql import GraphQLResolveInfo
     from opentelemetry.trace import Span, Tracer
 
@@ -32,12 +29,12 @@ if TYPE_CHECKING:
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
-ArgFilter = Callable[[Dict[str, Any], "GraphQLResolveInfo"], Dict[str, Any]]
+ArgFilter = Callable[[dict[str, Any], "GraphQLResolveInfo"], dict[str, Any]]
 
 
 class OpenTelemetryExtension(SchemaExtension):
     _arg_filter: Optional[ArgFilter]
-    _span_holder: Dict[LifecycleStep, Span] = dict()
+    _span_holder: dict[LifecycleStep, Span]
     _tracer: Tracer
 
     def __init__(
@@ -45,9 +42,11 @@ class OpenTelemetryExtension(SchemaExtension):
         *,
         execution_context: Optional[ExecutionContext] = None,
         arg_filter: Optional[ArgFilter] = None,
+        tracer_provider: Optional[trace.TracerProvider] = None,
     ) -> None:
         self._arg_filter = arg_filter
-        self._tracer = trace.get_tracer("strawberry")
+        self._tracer = trace.get_tracer("strawberry", tracer_provider=tracer_provider)
+        self._span_holder = {}
         if execution_context:
             self.execution_context = execution_context
 
@@ -99,8 +98,8 @@ class OpenTelemetryExtension(SchemaExtension):
         self._span_holder[LifecycleStep.PARSE].end()
 
     def filter_resolver_args(
-        self, args: Dict[str, Any], info: GraphQLResolveInfo
-    ) -> Dict[str, Any]:
+        self, args: dict[str, Any], info: GraphQLResolveInfo
+    ) -> dict[str, Any]:
         if not self._arg_filter:
             return args
         return self._arg_filter(deepcopy(args), info)
@@ -118,20 +117,19 @@ class OpenTelemetryExtension(SchemaExtension):
         # Put these in decreasing order of use-cases to exit as soon as possible
         if isinstance(value, (bool, str, bytes, int, float)):
             return value
-        elif isinstance(value, (list, tuple, range)):
+        if isinstance(value, (list, tuple, range)):
             return self.convert_list_or_tuple_to_allowed_types(value)
-        elif isinstance(value, dict):
+        if isinstance(value, dict):
             return self.convert_dict_to_allowed_types(value)
-        elif isinstance(value, (set, frozenset)):
+        if isinstance(value, (set, frozenset)):
             return self.convert_set_to_allowed_types(value)
-        elif isinstance(value, complex):
+        if isinstance(value, complex):
             return str(value)  # Convert complex numbers to strings
-        elif isinstance(value, (bytearray, memoryview)):
+        if isinstance(value, (bytearray, memoryview)):
             return bytes(value)  # Convert bytearray and memoryview to bytes
-        else:
-            return str(value)
+        return str(value)
 
-    def convert_set_to_allowed_types(self, value: Union[Set, FrozenSet]) -> str:
+    def convert_set_to_allowed_types(self, value: Union[set, frozenset]) -> str:
         return (
             "{" + ", ".join(str(self.convert_to_allowed_types(x)) for x in value) + "}"
         )
@@ -194,9 +192,7 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
         **kwargs: Any,
     ) -> Any:
         if should_skip_tracing(_next, info):
-            result = _next(root, info, *args, **kwargs)
-
-            return result
+            return _next(root, info, *args, **kwargs)
 
         with self._tracer.start_as_current_span(
             f"GraphQL Resolving: {info.field_name}",
@@ -205,9 +201,7 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
             ),
         ) as span:
             self.add_tags(span, info, kwargs)
-            result = _next(root, info, *args, **kwargs)
-
-            return result
+            return _next(root, info, *args, **kwargs)
 
 
 __all__ = ["OpenTelemetryExtension", "OpenTelemetryExtensionSync"]

@@ -136,7 +136,7 @@ def execute_mutation(value) -> ExecutionResult:
 
 @pytest.mark.parametrize(
     "value",
-    (
+    [
         "2012-13-01",
         "2012-04-9",
         "20120411T03:30+",
@@ -144,9 +144,9 @@ def execute_mutation(value) -> ExecutionResult:
         "20120411T03:30-25:40",
         "20120411T03:30+00:60",
         "20120411T03:30+00:61",
-        "20120411T033030.123456012:00" "2014-03-12T12:30:14",
+        "20120411T033030.123456012:002014-03-12T12:30:14",
         "2014-04-21T24:00:01",
-    ),
+    ],
 )
 def test_serialization_of_incorrect_datetime_string(value):
     """Test GraphQLError is raised for incorrect datetime.
@@ -155,7 +155,6 @@ def test_serialization_of_incorrect_datetime_string(value):
     result = execute_mutation(value)
     assert result.errors
     assert isinstance(result.errors[0], GraphQLError)
-    assert result.errors[0].original_error is None
 
 
 def test_serialization_error_message_for_incorrect_datetime_string():

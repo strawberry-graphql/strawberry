@@ -2,8 +2,8 @@
 import enum
 import sys
 import textwrap
-from typing import Generic, TypeVar
-from typing_extensions import Annotated, TypeAlias
+from typing import Annotated, Generic, TypeVar, Union
+from typing_extensions import TypeAlias
 
 import pytest
 
@@ -38,8 +38,7 @@ class LazyEnum(enum.Enum):
 
 
 def test_lazy_type():
-    # Module path is short and relative because of the way pytest runs the file
-    LazierType = LazyType("LaziestType", "test_lazy_types")
+    LazierType = LazyType("LaziestType", "tests.types.test_lazy_types")
 
     annotation = StrawberryAnnotation(LazierType)
     resolved = annotation.resolve()
@@ -53,8 +52,7 @@ def test_lazy_type():
 
 
 def test_lazy_type_alias():
-    # Module path is short and relative because of the way pytest runs the file
-    LazierType = LazyType("LazyTypeAlias", "test_lazy_types")
+    LazierType = LazyType("LazyTypeAlias", "tests.types.test_lazy_types")
 
     annotation = StrawberryAnnotation(LazierType)
     resolved = annotation.resolve()
@@ -69,7 +67,9 @@ def test_lazy_type_alias():
 
 
 def test_lazy_type_function():
-    LethargicType = Annotated["LaziestType", strawberry.lazy("test_lazy_types")]
+    LethargicType = Annotated[
+        "LaziestType", strawberry.lazy("tests.types.test_lazy_types")
+    ]
 
     annotation = StrawberryAnnotation(LethargicType)
     resolved = annotation.resolve()
@@ -79,8 +79,7 @@ def test_lazy_type_function():
 
 
 def test_lazy_type_enum():
-    # Module path is short and relative because of the way pytest runs the file
-    LazierType = LazyType("LazyEnum", "test_lazy_types")
+    LazierType = LazyType("LazyEnum", "tests.types.test_lazy_types")
 
     annotation = StrawberryAnnotation(LazierType)
     resolved = annotation.resolve()
@@ -94,8 +93,7 @@ def test_lazy_type_enum():
 
 
 def test_lazy_type_argument():
-    # Module path is short and relative because of the way pytest runs the file
-    LazierType = LazyType("LaziestType", "test_lazy_types")
+    LazierType = LazyType("LaziestType", "tests.types.test_lazy_types")
 
     @strawberry.mutation
     def slack_off(emotion: LazierType) -> bool:
@@ -109,8 +107,7 @@ def test_lazy_type_argument():
 
 
 def test_lazy_type_field():
-    # Module path is short and relative because of the way pytest runs the file
-    LazierType = LazyType("LaziestType", "test_lazy_types")
+    LazierType = LazyType("LaziestType", "tests.types.test_lazy_types")
 
     annotation = StrawberryAnnotation(LazierType)
     field = StrawberryField(type_annotation=annotation)
@@ -127,8 +124,7 @@ def test_lazy_type_generic():
     class GenericType(Generic[T]):
         item: T
 
-    # Module path is short and relative because of the way pytest runs the file
-    LazierType = LazyType("LaziestType", "test_lazy_types")
+    LazierType = LazyType("LaziestType", "tests.types.test_lazy_types")
     ResolvedType = GenericType[LazierType]
 
     annotation = StrawberryAnnotation(ResolvedType)
@@ -142,8 +138,7 @@ def test_lazy_type_generic():
 
 
 def test_lazy_type_object():
-    # Module path is short and relative because of the way pytest runs the file
-    LazierType = LazyType("LaziestType", "test_lazy_types")
+    LazierType = LazyType("LaziestType", "tests.types.test_lazy_types")
 
     @strawberry.type
     class WaterParkFeature:
@@ -157,8 +152,7 @@ def test_lazy_type_object():
 
 
 def test_lazy_type_resolver():
-    # Module path is short and relative because of the way pytest runs the file
-    LazierType = LazyType("LaziestType", "test_lazy_types")
+    LazierType = LazyType("LaziestType", "tests.types.test_lazy_types")
 
     def slaking_pokemon() -> LazierType:
         raise NotImplementedError
@@ -170,10 +164,10 @@ def test_lazy_type_resolver():
 
 
 def test_lazy_type_in_union():
-    ActiveType = LazyType("LaziestType", "test_lazy_types")
-    ActiveEnum = LazyType("LazyEnum", "test_lazy_types")
+    ActiveType = LazyType("LaziestType", "tests.types.test_lazy_types")
+    ActiveEnum = LazyType("LazyEnum", "tests.types.test_lazy_types")
 
-    something = union(name="CoolUnion", types=(ActiveType, ActiveEnum))
+    something = Annotated[Union[ActiveType, ActiveEnum], union(name="CoolUnion")]
     annotation = StrawberryAnnotation(something)
 
     resolved = annotation.resolve()
@@ -187,10 +181,12 @@ def test_lazy_type_in_union():
 
 
 def test_lazy_function_in_union():
-    ActiveType = Annotated["LaziestType", strawberry.lazy("test_lazy_types")]
-    ActiveEnum = Annotated["LazyEnum", strawberry.lazy("test_lazy_types")]
+    ActiveType = Annotated[
+        "LaziestType", strawberry.lazy("tests.types.test_lazy_types")
+    ]
+    ActiveEnum = Annotated["LazyEnum", strawberry.lazy("tests.types.test_lazy_types")]
 
-    something = union(name="CoolUnion", types=(ActiveType, ActiveEnum))
+    something = Annotated[Union[ActiveType, ActiveEnum], union(name="CoolUnion")]
     annotation = StrawberryAnnotation(something)
 
     resolved = annotation.resolve()

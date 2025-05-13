@@ -20,7 +20,7 @@ def test_additional_schema_directives_printed_correctly_object():
 
     @strawberry.type
     class Query:
-        federatedType: FederatedType
+        federatedType: FederatedType  # noqa: N815
 
     expected_type = """
     directive @CacheControl(max_age: Int!) on OBJECT
@@ -30,11 +30,21 @@ def test_additional_schema_directives_printed_correctly_object():
     }
 
     type Query {
+      _entities(representations: [_Any!]!): [_Entity]!
+      _service: _Service!
       federatedType: FederatedType!
+    }
+
+    scalar _Any
+
+    union _Entity = FederatedType
+
+    type _Service {
+      sdl: String!
     }
     """
 
-    schema = strawberry.Schema(
+    schema = strawberry.federation.Schema(
         query=Query, config=StrawberryConfig(auto_camel_case=False)
     )
     assert schema.as_str() == textwrap.dedent(expected_type).strip()
@@ -60,7 +70,7 @@ def test_additional_schema_directives_printed_in_order_object():
 
     @strawberry.type
     class Query:
-        federatedType: FederatedType
+        federatedType: FederatedType  # noqa: N815
 
     expected_type = """
     directive @CacheControl0(max_age: Int!) on OBJECT
@@ -72,11 +82,21 @@ def test_additional_schema_directives_printed_in_order_object():
     }
 
     type Query {
+      _entities(representations: [_Any!]!): [_Entity]!
+      _service: _Service!
       federatedType: FederatedType!
+    }
+
+    scalar _Any
+
+    union _Entity = FederatedType
+
+    type _Service {
+      sdl: String!
     }
     """
 
-    schema = strawberry.Schema(
+    schema = strawberry.federation.Schema(
         query=Query, config=StrawberryConfig(auto_camel_case=False)
     )
     assert schema.as_str() == textwrap.dedent(expected_type).strip()

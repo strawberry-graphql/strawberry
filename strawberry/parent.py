@@ -1,5 +1,7 @@
-from typing import TypeVar
-from typing_extensions import Annotated
+import re
+from typing import Annotated, Any, ForwardRef, TypeVar
+
+_parent_re = re.compile(r"^(?:strawberry\.)?Parent\[(.*)\]$")
 
 
 class StrawberryParent: ...
@@ -41,4 +43,20 @@ class Query:
 ```
 """
 
-__all__ = ["Parent"]
+
+def resolve_parent_forward_arg(annotation: Any) -> Any:
+    if isinstance(annotation, str):
+        str_annotation = annotation
+    elif isinstance(annotation, ForwardRef):
+        str_annotation = annotation.__forward_arg__
+    else:
+        # If neither, return the annotation as is
+        return annotation
+
+    if parent_match := _parent_re.match(str_annotation):
+        annotation = Parent[ForwardRef(parent_match.group(1))]  # type: ignore[misc]
+
+    return annotation
+
+
+__all__ = ["Parent", "StrawberryParent", "resolve_parent_forward_arg"]

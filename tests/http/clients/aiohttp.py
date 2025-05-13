@@ -2,26 +2,27 @@ from __future__ import annotations
 
 import contextlib
 import json
+from collections.abc import AsyncGenerator, Mapping
 from io import BytesIO
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, Optional, Union
 from typing_extensions import Literal
 
 from aiohttp import web
 from aiohttp.client_ws import ClientWebSocketResponse
 from aiohttp.http_websocket import WSMsgType
 from aiohttp.test_utils import TestClient, TestServer
-from strawberry.aiohttp.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.types import ExecutionResult
+from tests.http.context import get_context
 from tests.views.schema import Query, schema
+from tests.websockets.views import OnWSConnectMixin
 
-from ..context import get_context
 from .base import (
     JSON,
-    DebuggableGraphQLTransportWSMixin,
-    DebuggableGraphQLWSMixin,
+    DebuggableGraphQLTransportWSHandler,
+    DebuggableGraphQLWSHandler,
     HttpClient,
     Message,
     Response,
@@ -30,24 +31,14 @@ from .base import (
 )
 
 
-class DebuggableGraphQLTransportWSHandler(
-    DebuggableGraphQLTransportWSMixin, GraphQLTransportWSHandler
-):
-    pass
-
-
-class DebuggableGraphQLWSHandler(DebuggableGraphQLWSMixin, GraphQLWSHandler):
-    pass
-
-
-class GraphQLView(BaseGraphQLView):
+class GraphQLView(OnWSConnectMixin, BaseGraphQLView[dict[str, object], object]):
     result_override: ResultOverrideFunction = None
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
     async def get_context(
-        self, request: web.Request, response: web.StreamResponse
-    ) -> object:
+        self, request: web.Request, response: Union[web.Response, web.WebSocketResponse]
+    ) -> dict[str, object]:
         context = await super().get_context(request, response)
 
         return get_context(context)
@@ -72,6 +63,7 @@ class AioHttpClient(HttpClient):
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        multipart_uploads_enabled: bool = False,
     ):
         view = GraphQLView(
             schema=schema,
@@ -79,6 +71,7 @@ class AioHttpClient(HttpClient):
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             keep_alive=False,
+            multipart_uploads_enabled=multipart_uploads_enabled,
         )
         view.result_override = result_override
 
@@ -103,10 +96,10 @@ class AioHttpClient(HttpClient):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
-        extensions: Optional[Dict[str, Any]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
+        extensions: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Response:
         async with TestClient(TestServer(self.app)) as client:
@@ -142,7 +135,7 @@ class AioHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         async with TestClient(TestServer(self.app)) as client:
             response = await getattr(client, method)(url, headers=headers)
@@ -156,7 +149,7 @@ class AioHttpClient(HttpClient):
     async def get(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self.request(url, "get", headers=headers)
 
@@ -165,7 +158,7 @@ class AioHttpClient(HttpClient):
         url: str,
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         async with TestClient(TestServer(self.app)) as client:
             response = await client.post(
@@ -175,7 +168,7 @@ class AioHttpClient(HttpClient):
             return Response(
                 status_code=response.status,
                 data=(await response.text()).encode(),
-                headers=response.headers,
+                headers=dict(response.headers),
             )
 
     @contextlib.asynccontextmanager
@@ -183,12 +176,12 @@ class AioHttpClient(HttpClient):
         self,
         url: str,
         *,
-        protocols: List[str],
+        protocols: list[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
-        server = TestServer(self.app)
-        await server.start_server()
-        client = TestClient(server)
-        async with client.ws_connect(url, protocols=protocols) as ws:
+        async with (
+            TestClient(TestServer(self.app)) as client,
+            client.ws_connect(url, protocols=protocols) as ws,
+        ):
             yield AioWebSocketClient(ws)
 
 
@@ -197,7 +190,10 @@ class AioWebSocketClient(WebSocketClient):
         self.ws = ws
         self._reason: Optional[str] = None
 
-    async def send_json(self, payload: Dict[str, Any]) -> None:
+    async def send_text(self, payload: str) -> None:
+        await self.ws.send_str(payload)
+
+    async def send_json(self, payload: Mapping[str, object]) -> None:
         await self.ws.send_json(payload)
 
     async def send_bytes(self, payload: bytes) -> None:
@@ -208,13 +204,17 @@ class AioWebSocketClient(WebSocketClient):
         self._reason = m.extra
         return Message(type=m.type, data=m.data, extra=m.extra)
 
-    async def receive_json(self, timeout: Optional[float] = None) -> Any:
+    async def receive_json(self, timeout: Optional[float] = None) -> object:
         m = await self.ws.receive(timeout)
         assert m.type == WSMsgType.TEXT
         return json.loads(m.data)
 
     async def close(self) -> None:
         await self.ws.close()
+
+    @property
+    def accepted_subprotocol(self) -> Optional[str]:
+        return self.ws.protocol
 
     @property
     def closed(self) -> bool:
@@ -225,5 +225,6 @@ class AioWebSocketClient(WebSocketClient):
         assert self.ws.close_code is not None
         return self.ws.close_code
 
-    def assert_reason(self, reason: str) -> None:
-        assert self._reason == reason
+    @property
+    def close_reason(self) -> Optional[str]:
+        return self._reason

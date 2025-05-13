@@ -58,13 +58,13 @@ def test_eq_on_other_type():
     assert Foo() != object()
     assert object() != Foo()
     assert Foo() != 123 != Foo()
-    assert 123 != Foo()
+    assert Foo() != 123
     assert Foo() == StrawberryAnnotation(int)
     assert StrawberryAnnotation(int) == Foo()
 
 
 def test_eq_on_non_annotation():
-    assert StrawberryAnnotation(int) != int
+    assert StrawberryAnnotation(int) is not int
     assert StrawberryAnnotation(int) != 123
 
 
@@ -72,4 +72,4 @@ def test_set_anntation():
     annotation = StrawberryAnnotation(int)
     annotation.annotation = str
 
-    assert annotation.annotation == str
+    assert annotation.annotation is str

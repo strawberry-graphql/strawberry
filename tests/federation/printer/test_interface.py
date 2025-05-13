@@ -1,5 +1,4 @@
 import textwrap
-from typing import List
 
 import strawberry
 
@@ -16,7 +15,7 @@ def test_entities_extending_interface():
     @strawberry.federation.type
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> List[Product]:
+        def top_products(self, first: int) -> list[Product]:  # pragma: no cover
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)

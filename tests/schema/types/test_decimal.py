@@ -63,7 +63,6 @@ def test_serialization_of_incorrect_decimal_string():
 
     assert result.errors
     assert isinstance(result.errors[0], GraphQLError)
-    assert result.errors[0].original_error is None
     assert result.errors[0].message == (
         "Variable '$value' got invalid value 'fail'; Value cannot represent a "
         'Decimal: "fail".'

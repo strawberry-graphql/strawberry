@@ -1,109 +1,101 @@
-from __future__ import annotations
+from typing import TypedDict, Union
+from typing_extensions import Literal, NotRequired
 
-from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
-
-from strawberry.types.unset import UNSET
-
-if TYPE_CHECKING:
-    from graphql import GraphQLFormattedError
+from graphql import GraphQLFormattedError
 
 
-@dataclass
-class GraphQLTransportMessage:
-    def as_dict(self) -> dict:
-        data = asdict(self)
-        if getattr(self, "payload", None) is UNSET:
-            # Unset fields must have a JSON value of "undefined" not "null"
-            data.pop("payload")
-        return data
-
-
-@dataclass
-class ConnectionInitMessage(GraphQLTransportMessage):
+class ConnectionInitMessage(TypedDict):
     """Direction: Client -> Server."""
 
-    payload: Optional[Dict[str, Any]] = UNSET
-    type: str = "connection_init"
+    type: Literal["connection_init"]
+    payload: NotRequired[Union[dict[str, object], None]]
 
 
-@dataclass
-class ConnectionAckMessage(GraphQLTransportMessage):
+class ConnectionAckMessage(TypedDict):
     """Direction: Server -> Client."""
 
-    payload: Optional[Dict[str, Any]] = UNSET
-    type: str = "connection_ack"
+    type: Literal["connection_ack"]
+    payload: NotRequired[Union[dict[str, object], None]]
 
 
-@dataclass
-class PingMessage(GraphQLTransportMessage):
+class PingMessage(TypedDict):
     """Direction: bidirectional."""
 
-    payload: Optional[Dict[str, Any]] = UNSET
-    type: str = "ping"
+    type: Literal["ping"]
+    payload: NotRequired[Union[dict[str, object], None]]
 
 
-@dataclass
-class PongMessage(GraphQLTransportMessage):
+class PongMessage(TypedDict):
     """Direction: bidirectional."""
 
-    payload: Optional[Dict[str, Any]] = UNSET
-    type: str = "pong"
+    type: Literal["pong"]
+    payload: NotRequired[Union[dict[str, object], None]]
 
 
-@dataclass
-class SubscribeMessagePayload:
+class SubscribeMessagePayload(TypedDict):
+    operationName: NotRequired[Union[str, None]]
     query: str
-    operationName: Optional[str] = None
-    variables: Optional[Dict[str, Any]] = None
-    extensions: Optional[Dict[str, Any]] = None
+    variables: NotRequired[Union[dict[str, object], None]]
+    extensions: NotRequired[Union[dict[str, object], None]]
 
 
-@dataclass
-class SubscribeMessage(GraphQLTransportMessage):
+class SubscribeMessage(TypedDict):
     """Direction: Client -> Server."""
 
     id: str
+    type: Literal["subscribe"]
     payload: SubscribeMessagePayload
-    type: str = "subscribe"
 
 
-@dataclass
-class NextMessage(GraphQLTransportMessage):
+class NextMessagePayload(TypedDict):
+    errors: NotRequired[list[GraphQLFormattedError]]
+    data: NotRequired[Union[dict[str, object], None]]
+    extensions: NotRequired[dict[str, object]]
+
+
+class NextMessage(TypedDict):
     """Direction: Server -> Client."""
 
     id: str
-    payload: Dict[str, Any]  # TODO: shape like FormattedExecutionResult
-    type: str = "next"
-
-    def as_dict(self) -> dict:
-        return {"id": self.id, "payload": self.payload, "type": self.type}
+    type: Literal["next"]
+    payload: NextMessagePayload
 
 
-@dataclass
-class ErrorMessage(GraphQLTransportMessage):
+class ErrorMessage(TypedDict):
     """Direction: Server -> Client."""
 
     id: str
-    payload: List[GraphQLFormattedError]
-    type: str = "error"
+    type: Literal["error"]
+    payload: list[GraphQLFormattedError]
 
 
-@dataclass
-class CompleteMessage(GraphQLTransportMessage):
+class CompleteMessage(TypedDict):
     """Direction: bidirectional."""
 
     id: str
-    type: str = "complete"
+    type: Literal["complete"]
+
+
+Message = Union[
+    ConnectionInitMessage,
+    ConnectionAckMessage,
+    PingMessage,
+    PongMessage,
+    SubscribeMessage,
+    NextMessage,
+    ErrorMessage,
+    CompleteMessage,
+]
 
 
 __all__ = [
-    "ConnectionInitMessage",
+    "CompleteMessage",
     "ConnectionAckMessage",
+    "ConnectionInitMessage",
+    "ErrorMessage",
+    "Message",
+    "NextMessage",
     "PingMessage",
     "PongMessage",
     "SubscribeMessage",
-    "NextMessage",
-    "ErrorMessage",
-    "CompleteMessage",
 ]

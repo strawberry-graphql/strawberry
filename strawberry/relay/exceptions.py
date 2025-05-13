@@ -1,19 +1,20 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional, Type, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 from strawberry.exceptions.exception import StrawberryException
 from strawberry.exceptions.utils.source_finder import SourceFinder
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from strawberry.exceptions.exception_source import ExceptionSource
     from strawberry.types.fields.resolver import StrawberryResolver
 
 
 class NodeIDAnnotationError(StrawberryException):
-    def __init__(self, message: str, cls: Type) -> None:
+    def __init__(self, message: str, cls: type) -> None:
         self.cls = cls
 
         self.message = message
@@ -41,7 +42,7 @@ class NodeIDAnnotationError(StrawberryException):
 
 
 class RelayWrongAnnotationError(StrawberryException):
-    def __init__(self, field_name: str, cls: Type) -> None:
+    def __init__(self, field_name: str, cls: type) -> None:
         self.cls = cls
         self.field_name = field_name
 
@@ -85,7 +86,7 @@ class RelayWrongResolverAnnotationError(StrawberryException):
         )
         self.suggestion = (
             "To fix this error you can annootate your resolver to return "
-            "one of the following options: `List[<NodeType>]`, "
+            "one of the following options: `list[<NodeType>]`, "
             "`Iterator[<NodeType>]`, `Iterable[<NodeType>]`, "
             "`AsyncIterator[<NodeType>]`, `AsyncIterable[<NodeType>]`, "
             "`Generator[<NodeType>, Any, Any]` and "
@@ -101,7 +102,7 @@ class RelayWrongResolverAnnotationError(StrawberryException):
             return None  # pragma: no cover
 
         source_finder = SourceFinder()
-        return source_finder.find_function_from_object(cast(Callable, self.function))
+        return source_finder.find_function_from_object(cast("Callable", self.function))
 
 
 __all__ = [

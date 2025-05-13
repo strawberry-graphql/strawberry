@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import List
 
 import pytest
 
@@ -13,7 +12,7 @@ async def test_can_use_dataloaders(mocker):
     class User:
         id: str
 
-    async def idx(keys) -> List[User]:
+    async def idx(keys) -> list[User]:
         return [User(key) for key in keys]
 
     mock_loader = mocker.Mock(side_effect=idx)

@@ -1,40 +1,96 @@
 import abc
+import contextlib
 import json
+import logging
+from collections.abc import AsyncGenerator, AsyncIterable, Mapping
 from dataclasses import dataclass
+from functools import cached_property
 from io import BytesIO
-from typing import (
-    Any,
-    AsyncContextManager,
-    AsyncGenerator,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-)
+from typing import Any, Callable, Optional, Union
 from typing_extensions import Literal
 
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
+from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
+    BaseGraphQLTransportWSHandler,
+)
+from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
+    Message as GraphQLTransportWSMessage,
+)
+from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
+from strawberry.subscriptions.protocols.graphql_ws.types import OperationMessage
 from strawberry.types import ExecutionResult
 
-JSON = Dict[str, object]
+logger = logging.getLogger("strawberry.test.http_client")
+
+JSON = dict[str, object]
 ResultOverrideFunction = Optional[Callable[[ExecutionResult], GraphQLHTTPResponse]]
 
 
 @dataclass
 class Response:
     status_code: int
-    data: bytes
-    headers: Mapping[str, str]
+    data: Union[bytes, AsyncIterable[bytes]]
+
+    def __init__(
+        self,
+        status_code: int,
+        data: Union[bytes, AsyncIterable[bytes]],
+        *,
+        headers: Optional[dict[str, str]] = None,
+    ) -> None:
+        self.status_code = status_code
+        self.data = data
+        self._headers = headers or {}
+
+    @cached_property
+    def headers(self) -> Mapping[str, str]:
+        return {k.lower(): v for k, v in self._headers.items()}
+
+    @property
+    def is_multipart(self) -> bool:
+        return self.headers.get("content-type", "").startswith("multipart/mixed")
 
     @property
     def text(self) -> str:
+        assert isinstance(self.data, bytes)
         return self.data.decode()
 
     @property
     def json(self) -> JSON:
+        assert isinstance(self.data, bytes)
         return json.loads(self.data)
+
+    async def streaming_json(self) -> AsyncIterable[JSON]:
+        if not self.is_multipart:
+            raise ValueError("Streaming not supported")
+
+        def parse_chunk(text: str) -> Union[JSON, None]:
+            # TODO: better parsing? :)
+            with contextlib.suppress(json.JSONDecodeError):
+                return json.loads(text)
+
+        if isinstance(self.data, AsyncIterable):
+            chunks = self.data
+
+            async for chunk in chunks:
+                lines = chunk.decode("utf-8").split("\r\n")
+
+                for text in lines:
+                    if data := parse_chunk(text):
+                        yield data
+        else:
+            # TODO: we do this because httpx doesn't support streaming
+            # it would be nice to fix httpx instead of doing this,
+            # but we might have the same issue in other clients too
+            # TODO: better message
+            logger.warning("Didn't receive a stream, parsing it sync")
+
+            chunks = self.data.decode("utf-8").split("\r\n")
+
+            for chunk in chunks:
+                if data := parse_chunk(chunk):
+                    yield data
 
 
 class HttpClient(abc.ABC):
@@ -45,6 +101,7 @@ class HttpClient(abc.ABC):
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        multipart_uploads_enabled: bool = False,
     ): ...
 
     @abc.abstractmethod
@@ -52,10 +109,10 @@ class HttpClient(abc.ABC):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
-        extensions: Optional[Dict[str, Any]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
+        extensions: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Response: ...
 
@@ -64,14 +121,14 @@ class HttpClient(abc.ABC):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response: ...
 
     @abc.abstractmethod
     async def get(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response: ...
 
     @abc.abstractmethod
@@ -80,17 +137,17 @@ class HttpClient(abc.ABC):
         url: str,
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response: ...
 
     async def query(
         self,
-        query: Optional[str] = None,
+        query: str,
         method: Literal["get", "post"] = "post",
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
-        extensions: Optional[Dict[str, Any]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
+        extensions: Optional[dict[str, Any]] = None,
     ) -> Response:
         return await self._graphql_request(
             method,
@@ -104,35 +161,37 @@ class HttpClient(abc.ABC):
     def _get_headers(
         self,
         method: Literal["get", "post"],
-        headers: Optional[Dict[str, str]],
-        files: Optional[Dict[str, BytesIO]],
-    ) -> Dict[str, str]:
-        addition_headers = {}
+        headers: Optional[dict[str, str]],
+        files: Optional[dict[str, BytesIO]],
+    ) -> dict[str, str]:
+        additional_headers = {}
+        headers = headers or {}
 
-        content_type = None
+        # TODO: fix case sensitivity
+        content_type = headers.get("content-type")
 
-        if method == "post" and not files:
+        if not content_type and method == "post" and not files:
             content_type = "application/json"
 
-        addition_headers = {"Content-Type": content_type} if content_type else {}
+        additional_headers = {"Content-Type": content_type} if content_type else {}
 
-        return addition_headers if headers is None else {**addition_headers, **headers}
+        return {**additional_headers, **headers}
 
     def _build_body(
         self,
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
         method: Literal["get", "post"] = "post",
-        extensions: Optional[Dict[str, Any]] = None,
-    ) -> Optional[Dict[str, object]]:
+        extensions: Optional[dict[str, Any]] = None,
+    ) -> Optional[dict[str, object]]:
         if query is None:
             assert files is None
             assert variables is None
 
             return None
 
-        body: Dict[str, object] = {"query": query}
+        body: dict[str, object] = {"query": query}
 
         if variables:
             body["variables"] = variables
@@ -160,11 +219,11 @@ class HttpClient(abc.ABC):
 
     @staticmethod
     def _build_multipart_file_map(
-        variables: Dict[str, object], files: Dict[str, BytesIO]
-    ) -> Dict[str, List[str]]:
+        variables: dict[str, object], files: dict[str, BytesIO]
+    ) -> dict[str, list[str]]:
         # TODO: remove code duplication
 
-        files_map: Dict[str, List[str]] = {}
+        files_map: dict[str, list[str]] = {}
         for key, values in variables.items():
             if isinstance(values, dict):
                 folder_key = next(iter(values.keys()))
@@ -190,12 +249,12 @@ class HttpClient(abc.ABC):
         """For use by websocket tests."""
         raise NotImplementedError
 
-    async def ws_connect(
+    def ws_connect(
         self,
         url: str,
         *,
-        protocols: List[str],
-    ) -> AsyncContextManager["WebSocketClient"]:
+        protocols: list[str],
+    ) -> contextlib.AbstractAsyncContextManager["WebSocketClient"]:
         raise NotImplementedError
 
 
@@ -214,7 +273,10 @@ class WebSocketClient(abc.ABC):
         return ""
 
     @abc.abstractmethod
-    async def send_json(self, payload: Dict[str, Any]) -> None: ...
+    async def send_text(self, payload: str) -> None: ...
+
+    @abc.abstractmethod
+    async def send_json(self, payload: Mapping[str, object]) -> None: ...
 
     @abc.abstractmethod
     async def send_bytes(self, payload: bytes) -> None: ...
@@ -222,10 +284,15 @@ class WebSocketClient(abc.ABC):
     @abc.abstractmethod
     async def receive(self, timeout: Optional[float] = None) -> Message: ...
 
+    @abc.abstractmethod
     async def receive_json(self, timeout: Optional[float] = None) -> Any: ...
 
     @abc.abstractmethod
     async def close(self) -> None: ...
+
+    @property
+    @abc.abstractmethod
+    def accepted_subprotocol(self) -> Optional[str]: ...
 
     @property
     @abc.abstractmethod
@@ -235,43 +302,66 @@ class WebSocketClient(abc.ABC):
     @abc.abstractmethod
     def close_code(self) -> int: ...
 
+    @property
     @abc.abstractmethod
-    def assert_reason(self, reason: str) -> None: ...
+    def close_reason(self) -> Optional[str]: ...
 
     async def __aiter__(self) -> AsyncGenerator[Message, None]:
         while not self.closed:
             yield await self.receive()
 
+    async def send_message(self, message: GraphQLTransportWSMessage) -> None:
+        await self.send_json(message)
 
-class DebuggableGraphQLTransportWSMixin:
-    @staticmethod
+    async def send_legacy_message(self, message: OperationMessage) -> None:
+        await self.send_json(message)
+
+
+class DebuggableGraphQLTransportWSHandler(
+    BaseGraphQLTransportWSHandler[dict[str, object], object]
+):
     def on_init(self) -> None:
-        """This method can be patched by unittests to get the instance of the
+        """This method can be patched by unit tests to get the instance of the
         transport handler when it is initialized.
         """
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        DebuggableGraphQLTransportWSMixin.on_init(self)
+        self.original_context = kwargs.get("context", {})
+        DebuggableGraphQLTransportWSHandler.on_init(self)
 
-    def get_tasks(self) -> List:
+    def get_tasks(self) -> list:
         return [op.task for op in self.operations.values()]
 
-    async def get_context(self) -> object:
-        context = await super().get_context()
-        context["ws"] = self._ws
-        context["get_tasks"] = self.get_tasks
-        context["connectionInitTimeoutTask"] = self.connection_init_timeout_task
-        return context
+    @property
+    def context(self):
+        self.original_context["ws"] = self.websocket
+        self.original_context["get_tasks"] = self.get_tasks
+        self.original_context["connectionInitTimeoutTask"] = (
+            self.connection_init_timeout_task
+        )
+        return self.original_context
+
+    @context.setter
+    def context(self, value):
+        self.original_context = value
 
 
-class DebuggableGraphQLWSMixin:
-    def get_tasks(self) -> List:
+class DebuggableGraphQLWSHandler(BaseGraphQLWSHandler[dict[str, object], object]):
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.original_context = kwargs.get("context", {})
+
+    def get_tasks(self) -> list:
         return list(self.tasks.values())
 
-    async def get_context(self) -> object:
-        context = await super().get_context()
-        context["ws"] = self._ws
-        context["get_tasks"] = self.get_tasks
-        context["connectionInitTimeoutTask"] = None
-        return context
+    @property
+    def context(self):
+        self.original_context["ws"] = self.websocket
+        self.original_context["get_tasks"] = self.get_tasks
+        self.original_context["connectionInitTimeoutTask"] = None
+        return self.original_context
+
+    @context.setter
+    def context(self, value):
+        self.original_context = value

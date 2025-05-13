@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import contextlib
 import json
+from collections.abc import AsyncGenerator, Mapping
 from io import BytesIO
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, Optional
 from typing_extensions import Literal
 
 from litestar import Litestar, Request
@@ -13,15 +14,15 @@ from litestar.testing.websocket_test_session import WebSocketTestSession
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.litestar import make_graphql_controller
-from strawberry.litestar.controller import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.types import ExecutionResult
+from tests.http.context import get_context
 from tests.views.schema import Query, schema
+from tests.websockets.views import OnWSConnectMixin
 
-from ..context import get_context
 from .base import (
     JSON,
-    DebuggableGraphQLTransportWSMixin,
-    DebuggableGraphQLWSMixin,
+    DebuggableGraphQLTransportWSHandler,
+    DebuggableGraphQLWSHandler,
     HttpClient,
     Message,
     Response,
@@ -42,16 +43,6 @@ async def get_root_value(request: Request = None):
     return Query()
 
 
-class DebuggableGraphQLTransportWSHandler(
-    DebuggableGraphQLTransportWSMixin, GraphQLTransportWSHandler
-):
-    pass
-
-
-class DebuggableGraphQLWSHandler(DebuggableGraphQLWSMixin, GraphQLWSHandler):
-    pass
-
-
 class LitestarHttpClient(HttpClient):
     def __init__(
         self,
@@ -59,12 +50,14 @@ class LitestarHttpClient(HttpClient):
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        multipart_uploads_enabled: bool = False,
     ):
         self.create_app(
             graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
+            multipart_uploads_enabled=multipart_uploads_enabled,
         )
 
     def create_app(self, result_override: ResultOverrideFunction = None, **kwargs: Any):
@@ -76,7 +69,7 @@ class LitestarHttpClient(HttpClient):
             **kwargs,
         )
 
-        class GraphQLController(BaseGraphQLController):
+        class GraphQLController(OnWSConnectMixin, BaseGraphQLController):
             graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
             graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
@@ -95,10 +88,10 @@ class LitestarHttpClient(HttpClient):
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, BytesIO]] = None,
-        headers: Optional[Dict[str, str]] = None,
-        extensions: Optional[Dict[str, Any]] = None,
+        variables: Optional[dict[str, object]] = None,
+        files: Optional[dict[str, BytesIO]] = None,
+        headers: Optional[dict[str, str]] = None,
+        extensions: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Response:
         if body := self._build_body(
@@ -134,7 +127,7 @@ class LitestarHttpClient(HttpClient):
         self,
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         response = getattr(self.client, method)(url, headers=headers)
 
@@ -147,7 +140,7 @@ class LitestarHttpClient(HttpClient):
     async def get(
         self,
         url: str,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         return await self.request(url, "get", headers=headers)
 
@@ -156,14 +149,14 @@ class LitestarHttpClient(HttpClient):
         url: str,
         data: Optional[bytes] = None,
         json: Optional[JSON] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
     ) -> Response:
         response = self.client.post(url, headers=headers, content=data, json=json)
 
         return Response(
             status_code=response.status_code,
             data=response.content,
-            headers=response.headers,
+            headers=dict(response.headers),
         )
 
     @contextlib.asynccontextmanager
@@ -171,15 +164,10 @@ class LitestarHttpClient(HttpClient):
         self,
         url: str,
         *,
-        protocols: List[str],
+        protocols: list[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
-        try:
-            with self.client.websocket_connect(url, protocols) as ws:
-                yield LitestarWebSocketClient(ws)
-        except WebSocketDisconnect as error:
-            ws = LitestarWebSocketClient(None)
-            ws.handle_disconnect(error)
-            yield ws
+        with self.client.websocket_connect(url, protocols) as ws:
+            yield LitestarWebSocketClient(ws)
 
 
 class LitestarWebSocketClient(WebSocketClient):
@@ -189,11 +177,10 @@ class LitestarWebSocketClient(WebSocketClient):
         self._close_code: Optional[int] = None
         self._close_reason: Optional[str] = None
 
-    def handle_disconnect(self, exc: WebSocketDisconnect) -> None:
-        self._closed = True
-        self._close_code = exc.code
+    async def send_text(self, payload: str) -> None:
+        self.ws.send_text(payload)
 
-    async def send_json(self, payload: Dict[str, Any]) -> None:
+    async def send_json(self, payload: Mapping[str, object]) -> None:
         self.ws.send_json(payload)
 
     async def send_bytes(self, payload: bytes) -> None:
@@ -218,19 +205,26 @@ class LitestarWebSocketClient(WebSocketClient):
             self._close_code = m["code"]
             self._close_reason = m["reason"]
             return Message(type=m["type"], data=m["code"], extra=m["reason"])
-        elif m["type"] == "websocket.send":
+        if m["type"] == "websocket.send":
             return Message(type=m["type"], data=m["text"])
+
+        assert "data" in m
         return Message(type=m["type"], data=m["data"], extra=m["extra"])
 
     async def receive_json(self, timeout: Optional[float] = None) -> Any:
         m = self.ws.receive()
         assert m["type"] == "websocket.send"
         assert "text" in m
+        assert m["text"] is not None
         return json.loads(m["text"])
 
     async def close(self) -> None:
         self.ws.close()
         self._closed = True
+
+    @property
+    def accepted_subprotocol(self) -> Optional[str]:
+        return self.ws.accepted_subprotocol
 
     @property
     def closed(self) -> bool:
@@ -241,5 +235,6 @@ class LitestarWebSocketClient(WebSocketClient):
         assert self._close_code is not None
         return self._close_code
 
-    def assert_reason(self, reason: str) -> None:
-        assert self._close_reason == reason
+    @property
+    def close_reason(self) -> Optional[str]:
+        return self._close_reason

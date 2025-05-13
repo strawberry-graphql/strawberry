@@ -7,11 +7,7 @@ from inspect import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
-    Dict,
-    List,
     Optional,
-    Type,
     Union,
 )
 
@@ -25,6 +21,8 @@ from strawberry.types.base import StrawberryList, StrawberryOptional
 from strawberry.utils.await_maybe import await_maybe
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable
+
     from graphql import GraphQLError, GraphQLErrorExtensions
 
     from strawberry.extensions.field_extension import (
@@ -56,7 +54,7 @@ class BasePermission(abc.ABC):
 
     error_extensions: Optional[GraphQLErrorExtensions] = None
 
-    error_class: Type[GraphQLError] = StrawberryGraphQLError
+    error_class: type[GraphQLError] = StrawberryGraphQLError
 
     _schema_directive: Optional[object] = None
 
@@ -103,7 +101,7 @@ class BasePermission(abc.ABC):
         if self.error_extensions:
             # Add our extensions to the error
             if not error.extensions:
-                error.extensions = dict()
+                error.extensions = {}
             error.extensions.update(self.error_extensions)
 
         raise error
@@ -138,7 +136,7 @@ class PermissionExtension(FieldExtension):
 
     def __init__(
         self,
-        permissions: List[BasePermission],
+        permissions: list[BasePermission],
         use_directives: bool = True,
         fail_silently: bool = False,
     ) -> None:
@@ -156,11 +154,19 @@ class PermissionExtension(FieldExtension):
         self.use_directives = use_directives
 
     def apply(self, field: StrawberryField) -> None:
-        """Applies all of the permission directives to the schema and sets up silent permissions."""
+        """Applies all of the permission directives (deduped) to the schema and sets up silent permissions."""
         if self.use_directives:
-            field.directives.extend(
-                p.schema_directive for p in self.permissions if p.schema_directive
-            )
+            permission_directives = [
+                perm.schema_directive
+                for perm in self.permissions
+                if perm.schema_directive
+            ]
+            # Iteration, because we want to keep order
+            for perm_directive in permission_directives:
+                # Dedupe multiple directives
+                if perm_directive in field.directives:
+                    continue
+                field.directives.append(perm_directive)
         # We can only fail silently if the field is optional or a list
         if self.fail_silently:
             if isinstance(field.type, StrawberryOptional):
@@ -169,8 +175,7 @@ class PermissionExtension(FieldExtension):
             elif isinstance(field.type, StrawberryList):
                 self.return_empty_list = True
             else:
-                errror = PermissionFailSilentlyRequiresOptionalError(field)
-                raise errror
+                raise PermissionFailSilentlyRequiresOptionalError(field)
 
     def _on_unauthorized(self, permission: BasePermission) -> Any:
         if self.fail_silently:
@@ -182,7 +187,7 @@ class PermissionExtension(FieldExtension):
         next_: SyncExtensionResolver,
         source: Any,
         info: Info,
-        **kwargs: Dict[str, Any],
+        **kwargs: dict[str, Any],
     ) -> Any:
         """Checks if the permission should be accepted and raises an exception if not."""
         for permission in self.permissions:
@@ -195,7 +200,7 @@ class PermissionExtension(FieldExtension):
         next_: AsyncExtensionResolver,
         source: Any,
         info: Info,
-        **kwargs: Dict[str, Any],
+        **kwargs: dict[str, Any],
     ) -> Any:
         for permission in self.permissions:
             has_permission = await await_maybe(

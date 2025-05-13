@@ -19,7 +19,7 @@ def process_result(result: ExecutionResult) -> GraphQLHTTPResponse:
     return {}
 
 
-@pytest.fixture()
+@pytest.fixture
 def http_client(http_client_class) -> HttpClient:
     return http_client_class(result_override=process_result)
 
