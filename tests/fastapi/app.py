@@ -2,7 +2,7 @@ from typing import Any, Union
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from strawberry.fastapi import GraphQLRouter
-from tests.views.schema import schema
+from tests.views.schema import get_schema
 
 
 def custom_context_dependency() -> str:
@@ -28,7 +28,7 @@ async def get_root_value(
     return request or ws
 
 
-def create_app(schema=schema, **kwargs: Any) -> FastAPI:
+def create_app(schema=get_schema(), **kwargs: Any) -> FastAPI:
     app = FastAPI()
 
     graphql_app = GraphQLRouter(
