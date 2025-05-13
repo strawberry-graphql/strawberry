@@ -33,7 +33,6 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
 )
 from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
 from strawberry.types import ExecutionResult, SubscriptionExecutionResult
-from strawberry.types.context_wrapper import ContextWrapper
 from strawberry.types.graphql import OperationType
 from strawberry.types.unset import UNSET, UnsetType
 
@@ -198,10 +197,6 @@ class AsyncBaseHTTPView(
 
         assert self.schema
 
-        context_wrapper = ContextWrapper(
-            context=context, extensions=request_data.extensions
-        )
-
         if request_data.protocol == "multipart-subscription":
             return await self.schema.subscribe(
                 request_data.query,  # type: ignore
@@ -209,15 +204,17 @@ class AsyncBaseHTTPView(
                 context_value=context,
                 root_value=root_value,
                 operation_name=request_data.operation_name,
+                operation_extensions=request_data.extensions,
             )
 
         return await self.schema.execute(
             request_data.query,
             root_value=root_value,
             variable_values=request_data.variables,
-            context_value=context_wrapper,
+            context_value=context,
             operation_name=request_data.operation_name,
             allowed_operation_types=allowed_operation_types,
+            operation_extensions=request_data.extensions,
         )
 
     async def parse_multipart(self, request: AsyncHTTPRequestAdapter) -> dict[str, str]:

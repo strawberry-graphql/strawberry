@@ -23,7 +23,6 @@ from strawberry.http.ides import GraphQL_IDE
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
-from strawberry.types.context_wrapper import ContextWrapper
 from strawberry.types.graphql import OperationType
 
 from .base import BaseView
@@ -116,17 +115,14 @@ class SyncBaseHTTPView(
 
         assert self.schema
 
-        context_wrapper = ContextWrapper(
-            context=context, extensions=request_data.extensions
-        )
-
         return self.schema.execute_sync(
             request_data.query,
             root_value=root_value,
             variable_values=request_data.variables,
-            context_value=context_wrapper,
+            context_value=context,
             operation_name=request_data.operation_name,
             allowed_operation_types=allowed_operation_types,
+            operation_extensions=request_data.extensions,
         )
 
     def parse_multipart(self, request: SyncHTTPRequestAdapter) -> dict[str, str]:

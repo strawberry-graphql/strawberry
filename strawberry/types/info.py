@@ -12,7 +12,6 @@ from typing import (
 )
 from typing_extensions import TypeVar
 
-from .context_wrapper import ContextWrapper
 from .nodes import convert_selections
 
 if TYPE_CHECKING:
@@ -112,18 +111,12 @@ class Info(Generic[ContextType, RootValueType]):
     @property
     def context(self) -> ContextType:
         """The context passed to the query execution."""
-        if isinstance(self._raw_info.context, ContextWrapper):
-            return self._raw_info.context.context
-
         return self._raw_info.context
 
     @property
     def input_extensions(self) -> dict[str, Any]:
         """The input extensions passed to the query execution."""
-        if isinstance(self._raw_info.context, ContextWrapper):
-            return self._raw_info.context.extensions
-
-        return {}
+        return self._raw_info.operation_extensions
 
     @property
     def root_value(self) -> RootValueType:
