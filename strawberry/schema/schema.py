@@ -77,7 +77,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
     from typing_extensions import TypeAlias
 
-    from graphql.execution.collect_fields import FieldGroup
+    from graphql.execution.collect_fields import FieldGroup  # type: ignore
     from graphql.language import DocumentNode
     from graphql.pyutils import Path
     from graphql.type import GraphQLResolveInfo
@@ -144,7 +144,7 @@ def _coerce_error(error: Union[GraphQLError, Exception]) -> GraphQLError:
     return GraphQLError(str(error), original_error=error)
 
 
-class OperationContextAwareGraphQLResolveInfo(NamedTuple):  # pyright: ignore
+class _OperationContextAwareGraphQLResolveInfo(NamedTuple):  # pyright: ignore
     field_name: str
     field_nodes: list[FieldNode]
     return_type: GraphQLOutputType
@@ -160,7 +160,7 @@ class OperationContextAwareGraphQLResolveInfo(NamedTuple):  # pyright: ignore
     operation_extensions: dict[str, Any]
 
 
-class OperationContextAwareGraphQLExecutionContext(GraphQLExecutionContext):
+class StrawberryGraphQLCoreExecutionContext(GraphQLExecutionContext):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         operation_extensions = kwargs.pop("operation_extensions", None)
 
@@ -176,7 +176,7 @@ class OperationContextAwareGraphQLExecutionContext(GraphQLExecutionContext):
         path: Path,
     ) -> GraphQLResolveInfo:
         if IS_GQL_33:
-            return OperationContextAwareGraphQLResolveInfo(
+            return _OperationContextAwareGraphQLResolveInfo(  # type: ignore
                 field_group.fields[0].node.name.value,
                 field_group.to_nodes(),
                 field_def.type,
@@ -260,7 +260,7 @@ class Schema(BaseSchema):
         self.extensions = extensions
         self._cached_middleware_manager: MiddlewareManager | None = None
         self.execution_context_class = (
-            execution_context_class or OperationContextAwareGraphQLExecutionContext
+            execution_context_class or StrawberryGraphQLCoreExecutionContext
         )
         self.config = config or StrawberryConfig()
 
