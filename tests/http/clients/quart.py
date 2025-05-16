@@ -7,6 +7,7 @@ from typing import Any, Optional
 from typing_extensions import Literal
 
 from starlette.testclient import TestClient
+from starlette.types import Receive, Scope, Send
 
 from quart import Quart
 from quart import Request as QuartRequest
@@ -58,6 +59,21 @@ class GraphQLView(BaseGraphQLView[dict[str, object], object]):
         return await super().process_result(request, result)
 
 
+class QuartAsgiAppAdapter:
+    def __init__(self, app: Quart):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        scope["asgi"] = scope.get("asgi", {})
+
+        # Our WebSocket tests depend on WebSocket close reasons.
+        # Quart only sends close reason if the ASGI spec version in the scope is => 2.3
+        # https://github.com/pallets/quart/blob/b5593ca4c8c657564cdf2d35c9f0298fce63636b/src/quart/asgi.py#L347-L348
+        scope["asgi"]["spec_version"] = "2.3"
+
+        await self.app(scope, receive, send)  # type: ignore
+
+
 class QuartHttpClient(HttpClient):
     def __init__(
         self,
@@ -89,7 +105,7 @@ class QuartHttpClient(HttpClient):
             "/graphql", view_func=view, methods=["GET"], websocket=True
         )
 
-        self.client = TestClient(self.app)
+        self.client = TestClient(QuartAsgiAppAdapter(self.app))
 
     def create_app(self, **kwargs: Any) -> None:
         self.app = Quart(__name__)
@@ -105,7 +121,7 @@ class QuartHttpClient(HttpClient):
             "/graphql", view_func=view, methods=["GET"], websocket=True
         )
 
-        self.client = TestClient(self.app)
+        self.client = TestClient(QuartAsgiAppAdapter(self.app))
 
     async def _graphql_request(
         self,
