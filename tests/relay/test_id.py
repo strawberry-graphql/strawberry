@@ -48,7 +48,7 @@ type Query {
         {
             "book": {
                 "id": "Qm9vazox",
-                "debug": "<class 'strawberry.relay.types.GlobalID'>",
+                "debug": "<class 'strawberry.relay.types._GlobalID'>",
             }
         }
     )
@@ -84,7 +84,7 @@ type Query {
         {
             "book": {
                 "id": "Qm9vazox",
-                "debug": "<class 'strawberry.relay.types.GlobalID'>",
+                "debug": "<class 'strawberry.relay.types._GlobalID'>",
             }
         }
     )
@@ -95,11 +95,11 @@ def test_can_use_both_global_id_and_id() -> None:
     class Query:
         @strawberry.field
         def hello(self, id: GlobalID) -> str:
-            return "Hello World"
+            return id.node_id
 
         @strawberry.field
         def hello2(self, id: strawberry.ID) -> str:
-            return "Hello World"
+            return id
 
     schema = strawberry.Schema(Query)
 
@@ -110,17 +110,39 @@ type Query {
 }\
 """)
 
+    result = schema.execute_sync(
+        """
+        query ($globalId: ID!, $id: ID!) {
+            a: hello(id: "Qm9vazox")
+            b: hello2(id: "1")
+            c: hello(id: $globalId)
+            d: hello2(id: $id)
+        }
+        """,
+        variable_values={"globalId": "Qm9vazox", "id": "1"},
+    )
+
+    assert result.errors is None
+    assert result.data == snapshot(
+        {
+            "a": "1",
+            "b": "1",
+            "c": "1",
+            "d": "1",
+        }
+    )
+
 
 def test_can_use_both_global_id_and_id_legacy() -> None:
     @strawberry.type
     class Query:
         @strawberry.field
         def hello(self, id: GlobalID) -> str:
-            return "Hello World"
+            return id.node_id
 
         @strawberry.field
         def hello2(self, id: strawberry.ID) -> str:
-            return "Hello World"
+            return id
 
     schema = strawberry.Schema(
         query=Query, config=StrawberryConfig(relay_use_legacy_global_id=True)
@@ -137,3 +159,25 @@ type Query {
   hello2(id: ID!): String!
 }\
 ''')
+
+    result = schema.execute_sync(
+        """
+        query ($globalId: GlobalID!, $id: ID!) {
+            a: hello(id: $globalId)
+            b: hello2(id: $id)
+            c: hello(id: "Qm9vazox")
+            d: hello2(id: "1")
+        }
+        """,
+        variable_values={"globalId": "Qm9vazox", "id": "1"},
+    )
+
+    assert result.errors is None
+    assert result.data == snapshot(
+        {
+            "a": "1",
+            "b": "1",
+            "c": "1",
+            "d": "1",
+        }
+    )

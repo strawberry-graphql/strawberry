@@ -50,7 +50,7 @@ from strawberry.exceptions import (
     UnresolvedFieldTypeError,
 )
 from strawberry.extensions.field_extension import build_field_extension_resolvers
-from strawberry.relay.types import GlobalID
+from strawberry.relay.types import GlobalID, _GlobalID
 from strawberry.schema.types.scalar import (
     DEFAULT_SCALAR_REGISTRY,
     _get_scalar_definition,
@@ -265,15 +265,12 @@ class GraphQLCoreConverter:
 
         global_id_name = "GlobalID" if self.config.relay_use_legacy_global_id else "ID"
 
-        scalar_registry[GlobalID] = _get_scalar_definition(
+        scalar_registry[_GlobalID] = _get_scalar_definition(
             scalar(
                 GlobalID,
                 name=global_id_name,
                 description=GraphQLID.description,
-                parse_literal=lambda v, vars=None: GlobalID.from_id(  # noqa: A006
-                    GraphQLID.parse_literal(v, vars)
-                ),
-                parse_value=GlobalID.from_id,
+                parse_value=lambda v: v,
                 serialize=str,
                 specified_by_url=("https://relay.dev/graphql/objectidentification.htm"),
             )
@@ -803,6 +800,13 @@ class GraphQLCoreConverter:
         return _resolver
 
     def from_scalar(self, scalar: type) -> GraphQLScalarType:
+        from strawberry.relay.types import _GlobalID
+
+        if not self.config.relay_use_legacy_global_id and scalar is _GlobalID:
+            from strawberry import ID
+
+            return self.from_scalar(ID)
+
         scalar_definition: ScalarDefinition
 
         if scalar in self.scalar_registry:
@@ -817,20 +821,12 @@ class GraphQLCoreConverter:
 
         scalar_name = self.config.name_converter.from_type(scalar_definition)
 
-        from strawberry.relay import GlobalID
-
         if scalar_name not in self.type_map:
-            if scalar is GlobalID and hasattr(GraphQLNamedType, "reserved_types"):
-                GraphQLNamedType.reserved_types.pop("ID")
-
             implementation = (
                 scalar_definition.implementation
                 if scalar_definition.implementation is not None
                 else _make_scalar_type(scalar_definition)
             )
-
-            if scalar is GlobalID and hasattr(GraphQLNamedType, "reserved_types"):
-                GraphQLNamedType.reserved_types["ID"] = implementation
 
             self.type_map[scalar_name] = ConcreteType(
                 definition=scalar_definition, implementation=implementation
@@ -841,17 +837,7 @@ class GraphQLCoreConverter:
             # TODO: the other definition might not be a scalar, we should
             # handle this case better, since right now we assume it is a scalar
 
-            # special case to allow GlobalID to be used as an ID scalar
-            # TODO: we need to find a better way to handle this, might be
-            # worth reworking our scalar implementation.
-            if (
-                hasattr(other_definition, "origin")
-                and hasattr(scalar_definition, "origin")
-                and other_definition.origin == GlobalID
-                and scalar_definition.origin == GraphQLID
-            ):
-                pass
-            elif other_definition != scalar_definition:
+            if other_definition != scalar_definition:
                 other_definition = cast("ScalarDefinition", other_definition)
 
                 raise ScalarAlreadyRegisteredError(scalar_definition, other_definition)

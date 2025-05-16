@@ -28,6 +28,8 @@ from typing import (
 from typing_extensions import Literal, Self, TypeAlias, get_args, get_origin
 
 from strawberry.relay.exceptions import NodeIDAnnotationError
+from strawberry.scalars import ID
+from strawberry.types._mapped_scalar import _mapped_scalar
 from strawberry.types.base import (
     StrawberryContainer,
     StrawberryObjectDefinition,
@@ -51,7 +53,6 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from strawberry.scalars import ID
     from strawberry.utils.await_maybe import AwaitableOrValue
 
 _T = TypeVar("_T")
@@ -72,7 +73,7 @@ class GlobalIDValueError(ValueError):
 
 
 @dataclasses.dataclass(order=True, frozen=True)
-class GlobalID:
+class _GlobalID:
     """Global ID for relay types.
 
     Different from `strawberry.ID`, this ID wraps the original object ID in a string
@@ -945,6 +946,9 @@ class ListConnection(Connection[NodeType]):
                 has_next_page=has_next_page,
             ),
         )
+
+
+GlobalID = Annotated[_GlobalID, _mapped_scalar(ID)]
 
 
 __all__ = [
