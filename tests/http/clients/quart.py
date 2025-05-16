@@ -35,7 +35,7 @@ class GraphQLView(BaseGraphQLView[dict[str, object], object]):
     result_override: ResultOverrideFunction = None
 
     def __init__(self, *args: Any, **kwargs: Any):
-        self.result_override = kwargs.pop("result_override")
+        self.result_override = kwargs.pop("result_override", None)
         super().__init__(*args, **kwargs)
 
     async def get_root_value(self, request: QuartRequest) -> Query:
