@@ -1,3 +1,4 @@
+import asyncio
 import warnings
 from collections.abc import AsyncGenerator, Mapping
 from datetime import timedelta
@@ -66,21 +67,26 @@ class QuartWebSocketAdapter(AsyncWebSocketAdapter):
     async def iter_json(
         self, *, ignore_parsing_errors: bool = False
     ) -> AsyncGenerator[object, None]:
-        while True:
-            try:
+        try:
+            while True:
+                # Raises asyncio.CancelledError when the connection is closed.
+                # https://quart.palletsprojects.com/en/latest/how_to_guides/websockets.html#detecting-disconnection
                 message = await self.ws.receive()
+
                 try:
                     yield self.view.decode_json(message)
                 except JSONDecodeError as e:
                     if not ignore_parsing_errors:
                         raise NonJsonMessageReceived from e
-            except Exception as exc:
-                raise WebSocketDisconnected from exc
+        except asyncio.CancelledError:
+            pass
 
     async def send_json(self, message: Mapping[str, object]) -> None:
         try:
+            # Raises asyncio.CancelledError when the connection is closed.
+            # https://quart.palletsprojects.com/en/latest/how_to_guides/websockets.html#detecting-disconnection
             await self.ws.send(self.view.encode_json(message))
-        except Exception as exc:
+        except asyncio.CancelledError as exc:
             raise WebSocketDisconnected from exc
 
     async def close(self, code: int, reason: str) -> None:
