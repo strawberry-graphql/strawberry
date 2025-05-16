@@ -173,7 +173,7 @@ def convert_argument(
         from strawberry.relay.types import GlobalID
 
         if type_ is GlobalID:
-            return GlobalID.from_id(value)
+            return GlobalID.from_id(value)  # type: ignore
 
         return value
 
