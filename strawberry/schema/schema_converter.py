@@ -50,7 +50,7 @@ from strawberry.exceptions import (
     UnresolvedFieldTypeError,
 )
 from strawberry.extensions.field_extension import build_field_extension_resolvers
-from strawberry.relay.types import GlobalID, _GlobalID
+from strawberry.relay.types import GlobalID
 from strawberry.schema.types.scalar import (
     DEFAULT_SCALAR_REGISTRY,
     _get_scalar_definition,
@@ -265,7 +265,7 @@ class GraphQLCoreConverter:
 
         global_id_name = "GlobalID" if self.config.relay_use_legacy_global_id else "ID"
 
-        scalar_registry[_GlobalID] = _get_scalar_definition(
+        scalar_registry[GlobalID] = _get_scalar_definition(
             scalar(
                 GlobalID,
                 name=global_id_name,
@@ -800,9 +800,9 @@ class GraphQLCoreConverter:
         return _resolver
 
     def from_scalar(self, scalar: type) -> GraphQLScalarType:
-        from strawberry.relay.types import _GlobalID
+        from strawberry.relay.types import GlobalID
 
-        if not self.config.relay_use_legacy_global_id and scalar is _GlobalID:
+        if not self.config.relay_use_legacy_global_id and scalar is GlobalID:
             from strawberry import ID
 
             return self.from_scalar(ID)

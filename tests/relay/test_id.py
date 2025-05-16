@@ -48,7 +48,7 @@ type Query {
         {
             "book": {
                 "id": "Qm9vazox",
-                "debug": "<class 'strawberry.relay.types._GlobalID'>",
+                "debug": "<class 'strawberry.relay.types.GlobalID'>",
             }
         }
     )
@@ -84,7 +84,7 @@ type Query {
         {
             "book": {
                 "id": "Qm9vazox",
-                "debug": "<class 'strawberry.relay.types._GlobalID'>",
+                "debug": "<class 'strawberry.relay.types.GlobalID'>",
             }
         }
     )
