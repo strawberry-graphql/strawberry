@@ -1,12 +1,12 @@
 import contextlib
 import json
 import urllib.parse
-from collections.abc import AsyncGenerator, Mapping
+from collections.abc import AsyncGenerator
 from io import BytesIO
 from typing import Any, Optional
 from typing_extensions import Literal
 
-from starlette.testclient import TestClient, WebSocketTestSession
+from starlette.testclient import TestClient
 
 from quart import Quart
 from quart import Request as QuartRequest
@@ -19,10 +19,10 @@ from strawberry.types import ExecutionResult
 from tests.http.context import get_context
 from tests.views.schema import Query, schema
 
+from .asgi import AsgiWebSocketClient
 from .base import (
     JSON,
     HttpClient,
-    Message,
     Response,
     ResultOverrideFunction,
     WebSocketClient,
@@ -182,64 +182,4 @@ class QuartHttpClient(HttpClient):
         protocols: list[str],
     ) -> AsyncGenerator[WebSocketClient, None]:
         with self.client.websocket_connect(url, protocols) as ws:
-            yield QuartWebSocketClient(ws)
-
-
-class QuartWebSocketClient(WebSocketClient):
-    def __init__(self, ws: WebSocketTestSession):
-        self.ws = ws
-        self._closed: bool = False
-        self._close_code: Optional[int] = None
-        self._close_reason: Optional[str] = None
-
-    async def send_text(self, payload: str) -> None:
-        self.ws.send_text(payload)
-
-    async def send_json(self, payload: Mapping[str, object]) -> None:
-        self.ws.send_json(payload)
-
-    async def send_bytes(self, payload: bytes) -> None:
-        self.ws.send_bytes(payload)
-
-    async def receive(self, timeout: Optional[float] = None) -> Message:
-        if self._closed:
-            # if close was received via exception, fake it so that recv works
-            return Message(
-                type="websocket.close", data=self._close_code, extra=self._close_reason
-            )
-        m = self.ws.receive()
-        if m["type"] == "websocket.close":
-            self._closed = True
-            self._close_code = m["code"]
-            self._close_reason = m.get("reason", None)
-            return Message(type=m["type"], data=m["code"], extra=m.get("reason", None))
-        if m["type"] == "websocket.send":
-            return Message(type=m["type"], data=m["text"])
-        return Message(type=m["type"], data=m["data"], extra=m["extra"])
-
-    async def receive_json(self, timeout: Optional[float] = None) -> Any:
-        m = self.ws.receive()
-        assert m["type"] == "websocket.send"
-        assert "text" in m
-        return json.loads(m["text"])
-
-    async def close(self) -> None:
-        self.ws.close()
-        self._closed = True
-
-    @property
-    def accepted_subprotocol(self) -> Optional[str]:
-        return self.ws.accepted_subprotocol
-
-    @property
-    def closed(self) -> bool:
-        return self._closed
-
-    @property
-    def close_code(self) -> int:
-        assert self._close_code is not None
-        return self._close_code
-
-    @property
-    def close_reason(self) -> Optional[str]:
-        return self._close_reason
+            yield AsgiWebSocketClient(ws)
