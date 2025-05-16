@@ -181,3 +181,77 @@ type Query {
             "d": "1",
         }
     )
+
+
+def test_can_return_id() -> None:
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, id: GlobalID) -> GlobalID:
+            return id
+
+        @strawberry.field
+        def hello2(self, id: strawberry.ID) -> strawberry.ID:
+            return id
+
+    schema = strawberry.Schema(Query)
+
+    result = schema.execute_sync(
+        """
+        query ($globalId: ID!, $id: ID!) {
+            a: hello(id: "Qm9vazox")
+            b: hello2(id: "1")
+            c: hello(id: $globalId)
+            d: hello2(id: $id)
+        }
+        """,
+        variable_values={"globalId": "Qm9vazox", "id": "1"},
+    )
+
+    assert result.errors is None
+    assert result.data == snapshot(
+        {
+            "a": "Qm9vazox",
+            "b": "1",
+            "c": "Qm9vazox",
+            "d": "1",
+        }
+    )
+
+
+def test_can_return_global_id_legacy() -> None:
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, id: GlobalID) -> GlobalID:
+            return id
+
+        @strawberry.field
+        def hello2(self, id: strawberry.ID) -> strawberry.ID:
+            return id
+
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(relay_use_legacy_global_id=True)
+    )
+
+    result = schema.execute_sync(
+        """
+        query ($globalId: GlobalID!, $id: ID!) {
+            a: hello(id: $globalId)
+            b: hello2(id: $id)
+            c: hello(id: "Qm9vazox")
+            d: hello2(id: "1")
+        }
+        """,
+        variable_values={"globalId": "Qm9vazox", "id": "1"},
+    )
+
+    assert result.errors is None
+    assert result.data == snapshot(
+        {
+            "a": "Qm9vazox",
+            "b": "1",
+            "c": "Qm9vazox",
+            "d": "1",
+        }
+    )
