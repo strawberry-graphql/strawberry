@@ -198,14 +198,7 @@ class GraphQLView(
     def is_websocket_request(
         self, request: Union[Request, Websocket]
     ) -> TypeGuard[Websocket]:
-        if has_websocket_context():
-            return True
-
-        # Check if the request is a WebSocket upgrade request
-        connection = request.headers.get("Connection", "").lower()
-        upgrade = request.headers.get("Upgrade", "").lower()
-
-        return "upgrade" in connection and "websocket" in upgrade
+        return has_websocket_context()
 
     async def pick_websocket_subprotocol(self, request: Websocket) -> Optional[str]:
         protocols = request.requested_subprotocols
