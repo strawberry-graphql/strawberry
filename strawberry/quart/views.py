@@ -210,11 +210,7 @@ class GraphQLView(
     async def create_websocket_response(
         self, request: Request, subprotocol: Optional[str]
     ) -> Response:
-        if subprotocol:
-            # Set the WebSocket protocol if specified
-            await websocket.accept(subprotocol=subprotocol)
-        else:
-            await websocket.accept()
+        await websocket.accept(subprotocol=subprotocol)
 
         # Return the current websocket context as the "response"
         return None
