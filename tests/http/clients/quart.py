@@ -23,6 +23,8 @@ from tests.views.schema import Query, schema
 from .asgi import AsgiWebSocketClient
 from .base import (
     JSON,
+    DebuggableGraphQLTransportWSHandler,
+    DebuggableGraphQLWSHandler,
     HttpClient,
     Response,
     ResultOverrideFunction,
@@ -32,8 +34,9 @@ from .base import (
 
 class GraphQLView(BaseGraphQLView[dict[str, object], object]):
     methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"]
-
     result_override: ResultOverrideFunction = None
+    graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
+    graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
     def __init__(self, *args: Any, **kwargs: Any):
         self.result_override = kwargs.pop("result_override", None)
