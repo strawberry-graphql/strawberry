@@ -1,12 +1,12 @@
 import asyncio
 import warnings
-from collections.abc import AsyncGenerator, Mapping
+from collections.abc import AsyncGenerator, Mapping, Sequence
 from datetime import timedelta
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Callable, ClassVar, Optional, cast
 from typing_extensions import TypeGuard
 
-from quart import Quart, Request, Response, request, websocket
+from quart import Request, Response, request, websocket
 from quart.ctx import has_websocket_context
 from quart.views import View
 from strawberry.http.async_base_view import (
@@ -113,10 +113,10 @@ class GraphQLView(
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
         debug: bool = False,
-        subscription_protocols: list[str] = [
+        subscription_protocols: Sequence[str] = (
             GRAPHQL_TRANSPORT_WS_PROTOCOL,
             GRAPHQL_WS_PROTOCOL,
-        ],
+        ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         multipart_uploads_enabled: bool = False,
     ) -> None:
