@@ -3,10 +3,10 @@ import warnings
 from collections.abc import AsyncGenerator, Mapping, Sequence
 from datetime import timedelta
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Callable, ClassVar, Optional, cast
+from typing import TYPE_CHECKING, Callable, ClassVar, Optional, Union, cast
 from typing_extensions import TypeGuard
 
-from quart import Request, Response, request, websocket
+from quart import Request, Response, Websocket, request, websocket
 from quart.ctx import has_websocket_context
 from quart.views import View
 from strawberry.http.async_base_view import (
@@ -61,9 +61,11 @@ class QuartHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class QuartWebSocketAdapter(AsyncWebSocketAdapter):
-    def __init__(self, view: AsyncBaseHTTPView, request: Request, ws: Response) -> None:
+    def __init__(
+        self, view: AsyncBaseHTTPView, request: Websocket, response: Response
+    ) -> None:
         super().__init__(view)
-        self.ws = websocket
+        self.ws = request
 
     async def iter_json(
         self, *, ignore_parsing_errors: bool = False
@@ -99,7 +101,7 @@ class QuartWebSocketAdapter(AsyncWebSocketAdapter):
 
 class GraphQLView(
     AsyncBaseHTTPView[
-        Request, Response, Response, Request, Response, Context, RootValue
+        Request, Response, Response, Websocket, Response, Context, RootValue
     ],
     View,
 ):
@@ -153,18 +155,24 @@ class GraphQLView(
 
         return sub_response
 
-    async def get_context(self, request: Request, response: Response) -> Context:
+    async def get_context(
+        self, request: Union[Request, Websocket], response: Union[Response, Websocket]
+    ) -> Context:
         return {"request": request, "response": response}  # type: ignore
 
-    async def get_root_value(self, request: Request) -> Optional[RootValue]:
+    async def get_root_value(
+        self, request: Union[Request, Websocket]
+    ) -> Optional[RootValue]:
         return None
 
     async def get_sub_response(self, request: Request) -> Response:
         return Response(status=200, content_type="application/json")
 
-    async def dispatch_request(self) -> "ResponseReturnValue":  # type: ignore
+    async def dispatch_request(self, **kwargs: object) -> "ResponseReturnValue":
         try:
-            return await self.run(request=request)
+            return await self.run(
+                request=websocket if has_websocket_context() else request
+            )
         except HTTPException as e:
             return Response(
                 response=e.reason,
@@ -187,7 +195,9 @@ class GraphQLView(
             },
         )
 
-    def is_websocket_request(self, request: Request) -> TypeGuard[Request]:
+    def is_websocket_request(
+        self, request: Union[Request, Websocket]
+    ) -> TypeGuard[Websocket]:
         if has_websocket_context():
             return True
 
@@ -197,27 +207,17 @@ class GraphQLView(
 
         return "upgrade" in connection and "websocket" in upgrade
 
-    async def pick_websocket_subprotocol(self, request: Request) -> Optional[str]:
-        # Get the requested protocols
-        protocols_header = websocket.headers.get("Sec-WebSocket-Protocol", "")
-        if not protocols_header:
-            return None
-
-        # Find the first matching protocol
-        requested_protocols = [p.strip() for p in protocols_header.split(",")]
-        for protocol in requested_protocols:
-            if protocol in self.subscription_protocols:
-                return protocol
-
-        return None
+    async def pick_websocket_subprotocol(self, request: Websocket) -> Optional[str]:
+        protocols = request.requested_subprotocols
+        intersection = set(protocols) & set(self.subscription_protocols)
+        sorted_intersection = sorted(intersection, key=protocols.index)
+        return next(iter(sorted_intersection), None)
 
     async def create_websocket_response(
-        self, request: Request, subprotocol: Optional[str]
+        self, request: Websocket, subprotocol: Optional[str]
     ) -> Response:
-        await websocket.accept(subprotocol=subprotocol)
-
-        # Return the current websocket context as the "response"
-        return None
+        await request.accept(subprotocol=subprotocol)
+        return Response()
 
 
 __all__ = ["GraphQLView"]
