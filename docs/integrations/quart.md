@@ -231,6 +231,6 @@ class MyGraphQLView(GraphQLView):
             # Accept with a custom acknowledgment payload
             return {"message": f"Hello, {username}!"}
 
-        # Accept without a acknowledgment payload
+        # Accept without an acknowledgment payload
         return await super().on_ws_connect(context)
 ```
