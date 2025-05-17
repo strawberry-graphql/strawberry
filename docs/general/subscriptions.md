@@ -422,7 +422,7 @@ view = GraphQLView.as_view(
 )
 
 app = Quart(__name__)
-app.app.add_url_rule(
+app.add_url_rule(
     "/graphql",
     view_func=view,
     methods=["GET"],
