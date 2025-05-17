@@ -17,6 +17,7 @@ from strawberry.http.async_base_view import (
 from strawberry.http.exceptions import (
     HTTPException,
     NonJsonMessageReceived,
+    NonTextMessageReceived,
     WebSocketDisconnected,
 )
 from strawberry.http.ides import GraphQL_IDE
@@ -72,6 +73,9 @@ class QuartWebSocketAdapter(AsyncWebSocketAdapter):
                 # Raises asyncio.CancelledError when the connection is closed.
                 # https://quart.palletsprojects.com/en/latest/how_to_guides/websockets.html#detecting-disconnection
                 message = await self.ws.receive()
+
+                if not isinstance(message, str):
+                    raise NonTextMessageReceived
 
                 try:
                     yield self.view.decode_json(message)
