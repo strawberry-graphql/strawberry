@@ -204,6 +204,7 @@ class AsyncBaseHTTPView(
                 context_value=context,
                 root_value=root_value,
                 operation_name=request_data.operation_name,
+                operation_extensions=request_data.extensions,
             )
 
         return await self.schema.execute(
@@ -213,6 +214,7 @@ class AsyncBaseHTTPView(
             context_value=context,
             operation_name=request_data.operation_name,
             allowed_operation_types=allowed_operation_types,
+            operation_extensions=request_data.extensions,
         )
 
     async def parse_multipart(self, request: AsyncHTTPRequestAdapter) -> dict[str, str]:
@@ -306,7 +308,7 @@ class AsyncBaseHTTPView(
                 await websocket.close(4406, "Subprotocol not acceptable")
 
             return websocket_response
-        request = cast(Request, request)
+        request = cast("Request", request)
 
         request_adapter = self.request_adapter_class(request)
         sub_response = await self.get_sub_response(request)
@@ -472,6 +474,7 @@ class AsyncBaseHTTPView(
             query=data.get("query"),
             variables=data.get("variables"),
             operation_name=data.get("operationName"),
+            extensions=data.get("extensions"),
             protocol=protocol,
         )
 

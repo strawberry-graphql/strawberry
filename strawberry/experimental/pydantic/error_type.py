@@ -116,7 +116,7 @@ def error_type(
         ]
 
         wrapped: type[WithStrawberryObjectDefinition] = _wrap_dataclass(cls)
-        extra_fields = cast(list[dataclasses.Field], _get_fields(wrapped, {}))
+        extra_fields = cast("list[dataclasses.Field]", _get_fields(wrapped, {}))
         private_fields = get_private_fields(wrapped)
 
         all_model_fields.extend(

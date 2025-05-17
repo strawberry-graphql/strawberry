@@ -48,7 +48,7 @@ class SanicHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
     @property
     def method(self) -> HTTPMethod:
-        return cast(HTTPMethod, self.request.method.upper())
+        return cast("HTTPMethod", self.request.method.upper())
 
     @property
     def headers(self) -> Mapping[str, str]:
@@ -179,7 +179,7 @@ class GraphQLView(
         except HTTPException as e:
             return HTTPResponse(e.reason, status=e.status_code)
 
-    async def get(self, request: Request) -> HTTPResponse:  # type: ignore[override]
+    async def get(self, request: Request) -> HTTPResponse:
         self.request = request
 
         try:

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import inspect
 import warnings
-from collections.abc import Iterable, Mapping
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -18,15 +17,21 @@ from strawberry.exceptions import MultipleStrawberryArgumentsError, UnsupportedT
 from strawberry.scalars import is_scalar
 from strawberry.types.base import (
     StrawberryList,
+    StrawberryMaybe,
     StrawberryOptional,
     has_object_definition,
 )
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.lazy_type import LazyType, StrawberryLazyReference
+from strawberry.types.maybe import Some
 from strawberry.types.unset import UNSET as _deprecated_UNSET  # noqa: N811
-from strawberry.types.unset import _deprecated_is_unset  # noqa: F401
+from strawberry.types.unset import (
+    _deprecated_is_unset,  # noqa: F401
+)
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping
+
     from strawberry.schema.config import StrawberryConfig
     from strawberry.types.base import StrawberryType
     from strawberry.types.scalar import ScalarDefinition, ScalarWrapper
@@ -134,11 +139,19 @@ class StrawberryArgument:
 
         return is_graphql_generic(self.type)
 
+    @property
+    def is_maybe(self) -> bool:
+        return isinstance(self.type, StrawberryMaybe)
+
 
 def _is_leaf_type(
     type_: Union[StrawberryType, type],
     scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    skip_classes: tuple[type, ...] = (),
 ) -> bool:
+    if type_ in skip_classes:
+        return False
+
     if is_scalar(type_, scalar_registry):
         return True
 
@@ -158,9 +171,13 @@ def _is_leaf_type(
 def _is_optional_leaf_type(
     type_: Union[StrawberryType, type],
     scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    skip_classes: tuple[type, ...] = (),
 ) -> bool:
+    if type_ in skip_classes:
+        return False
+
     if isinstance(type_, StrawberryOptional):
-        return _is_leaf_type(type_.of_type, scalar_registry)
+        return _is_leaf_type(type_.of_type, scalar_registry, skip_classes)
 
     return False
 
@@ -168,10 +185,16 @@ def _is_optional_leaf_type(
 def convert_argument(
     value: object,
     type_: Union[StrawberryType, type],
-    scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
     config: StrawberryConfig,
 ) -> object:
+    from strawberry.relay.types import GlobalID
+
     # TODO: move this somewhere else and make it first class
+    if isinstance(type_, StrawberryOptional):
+        res = convert_argument(value, type_.of_type, scalar_registry, config)
+
+        return Some(res) if isinstance(type_, StrawberryMaybe) else res
 
     if value is None:
         return None
@@ -179,21 +202,27 @@ def convert_argument(
     if value is _deprecated_UNSET:
         return _deprecated_UNSET
 
-    if isinstance(type_, StrawberryOptional):
-        return convert_argument(value, type_.of_type, scalar_registry, config)
-
     if isinstance(type_, StrawberryList):
-        value_list = cast(Iterable, value)
-        if _is_leaf_type(type_.of_type, scalar_registry) or _is_optional_leaf_type(
-            type_.of_type, scalar_registry
+        value_list = cast("Iterable", value)
+
+        if _is_leaf_type(
+            type_.of_type, scalar_registry, skip_classes=(GlobalID,)
+        ) or _is_optional_leaf_type(
+            type_.of_type, scalar_registry, skip_classes=(GlobalID,)
         ):
             return list(value_list)
+
+        value_list = cast("Iterable", value)
+
         return [
             convert_argument(x, type_.of_type, scalar_registry, config)
             for x in value_list
         ]
 
     if _is_leaf_type(type_, scalar_registry):
+        if type_ is GlobalID:
+            return GlobalID.from_id(value)  # type: ignore
+
         return value
 
     if isinstance(type_, LazyType):
@@ -208,7 +237,7 @@ def convert_argument(
 
         type_definition = type_.__strawberry_definition__
         for field in type_definition.fields:
-            value = cast(Mapping, value)
+            value = cast("Mapping", value)
             graphql_name = config.name_converter.from_field(field)
 
             if graphql_name in value:
@@ -219,7 +248,7 @@ def convert_argument(
                     config,
                 )
 
-        type_ = cast(type, type_)
+        type_ = cast("type", type_)
         return type_(**kwargs)
 
     raise UnsupportedTypeError(type_)
@@ -228,7 +257,7 @@ def convert_argument(
 def convert_arguments(
     value: dict[str, Any],
     arguments: list[StrawberryArgument],
-    scalar_registry: dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Mapping[object, Union[ScalarWrapper, ScalarDefinition]],
     config: StrawberryConfig,
 ) -> dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.

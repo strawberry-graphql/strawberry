@@ -1,7 +1,6 @@
 # ruff: noqa: F821
 from __future__ import annotations
 
-import inspect
 from collections import abc  # noqa: F401
 from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator  # noqa: F401
 from typing import (
@@ -14,6 +13,7 @@ import pytest
 
 import strawberry
 from strawberry.types.execution import PreExecutionError
+from strawberry.utils.aio import aclosing
 
 
 @pytest.mark.asyncio
@@ -32,8 +32,8 @@ async def test_subscription():
 
     query = "subscription { example }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["example"] == "Hi"
@@ -65,8 +65,8 @@ async def test_subscription_with_permission():
 
     query = "subscription { example }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["example"] == "Hi"
@@ -88,8 +88,8 @@ async def test_subscription_with_arguments():
 
     query = 'subscription { example(name: "Nina") }'
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["example"] == "Hi Nina"
@@ -125,8 +125,8 @@ async def test_subscription_return_annotations(return_annotation: str):
 
     query = "subscription { example }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["example"] == "Hi"
@@ -158,8 +158,8 @@ async def test_subscription_with_unions():
 
     query = "subscription { exampleWithUnion { ... on A { a } } }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["exampleWithUnion"]["a"] == "Hi"
@@ -197,8 +197,8 @@ async def test_subscription_with_unions_and_annotated():
 
     query = "subscription { exampleWithAnnotatedUnion { ... on C { c } } }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["exampleWithAnnotatedUnion"]["c"] == "Hi"
@@ -224,8 +224,8 @@ async def test_subscription_with_annotated():
 
     query = "subscription { example }"
 
-    sub = await schema.subscribe(query)
-    result = await sub.__anext__()
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert not result.errors
     assert result.data["example"] == "Hi"
@@ -245,14 +245,17 @@ async def test_subscription_immediate_error():
     schema = strawberry.Schema(query=Query, subscription=Subscription)
 
     query = """#graphql
-            subscription { example }
-            """
-    res_or_agen = await schema.subscribe(query)
-    assert isinstance(res_or_agen, PreExecutionError)
-    assert res_or_agen.errors
+        subscription { example }
+    """
+
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
+
+    assert isinstance(result, PreExecutionError)
+    assert result.errors
 
 
-async def test_worng_opeartion_variables():
+async def test_wrong_operation_variables():
     @strawberry.type
     class Query:
         x: str = "Hello"
@@ -266,11 +269,11 @@ async def test_worng_opeartion_variables():
     schema = strawberry.Schema(query=Query, subscription=Subscription)
 
     query = """#graphql
-                subscription subOp($opVar: String!){ example(name: $opVar) }
-            """
+        subscription subOp($opVar: String!){ example(name: $opVar) }
+    """
 
-    result = await schema.subscribe(query)
-    assert not inspect.isasyncgen(result)
+    async with aclosing(await schema.subscribe(query)) as sub_result:
+        result = await sub_result.__anext__()
 
     assert result.errors
     assert (

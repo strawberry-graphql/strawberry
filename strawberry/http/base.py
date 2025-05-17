@@ -59,6 +59,12 @@ class BaseView(Generic[Request]):
             if variables:
                 params["variables"] = self.parse_json(variables)
 
+        if "extensions" in params:
+            extensions = params["extensions"]
+
+            if extensions:
+                params["extensions"] = self.parse_json(extensions)
+
         return params
 
     @property

@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from graphql import GraphQLError
 
     from strawberry.directive import StrawberryDirective
+    from strawberry.schema.schema import SubscriptionResult
     from strawberry.schema.schema_converter import GraphQLCoreConverter
     from strawberry.types import (
         ExecutionContext,
@@ -27,7 +28,6 @@ if TYPE_CHECKING:
     from strawberry.types.union import StrawberryUnion
 
     from .config import StrawberryConfig
-    from .subscribe import SubscriptionResult
 
 
 class BaseSchema(Protocol):
@@ -47,6 +47,7 @@ class BaseSchema(Protocol):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
+        operation_extensions: Optional[dict[str, Any]] = None,
     ) -> ExecutionResult:
         raise NotImplementedError
 
@@ -59,6 +60,7 @@ class BaseSchema(Protocol):
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
+        operation_extensions: Optional[dict[str, Any]] = None,
     ) -> ExecutionResult:
         raise NotImplementedError
 
@@ -70,6 +72,7 @@ class BaseSchema(Protocol):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        operation_extensions: Optional[dict[str, Any]] = None,
     ) -> SubscriptionResult:
         raise NotImplementedError
 

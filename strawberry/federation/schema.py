@@ -158,7 +158,7 @@ class Schema(BaseSchema):
             type_name = representation.pop("__typename")
             type_ = self.schema_converter.type_map[type_name]
 
-            definition = cast(StrawberryObjectDefinition, type_.definition)
+            definition = cast("StrawberryObjectDefinition", type_.definition)
 
             if hasattr(definition.origin, "resolve_reference"):
                 resolve_reference = definition.origin.resolve_reference

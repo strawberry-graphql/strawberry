@@ -108,7 +108,7 @@ class NodeExtension(FieldExtension):
 
                 return resolve()
 
-            return cast(Node, strawberry_cast(node_type, resolved_node))
+            return cast("Node", strawberry_cast(node_type, resolved_node))
 
         return resolver
 
@@ -161,7 +161,7 @@ class NodeExtension(FieldExtension):
             # we could end up resolving to a different type in case more than one
             # are registered
             def cast_nodes(node_t: type[Node], nodes: Iterable[Any]) -> list[Node]:
-                return [cast(Node, strawberry_cast(node_t, node)) for node in nodes]
+                return [cast("Node", strawberry_cast(node_t, node)) for node in nodes]
 
             if awaitable_nodes or asyncgen_nodes:
 
@@ -196,7 +196,7 @@ class NodeExtension(FieldExtension):
 
             # Resolve any generator to lists
             resolved = {
-                node_t: cast_nodes(node_t, cast(Iterable[Node], nodes))
+                node_t: cast_nodes(node_t, cast("Iterable[Node]", nodes))
                 for node_t, nodes in resolved_nodes.items()
             }
             return [resolved[index_map[gid][0]][index_map[gid][1]] for gid in ids]
@@ -264,7 +264,7 @@ class ConnectionExtension(FieldExtension):
         type_origin = get_origin(f_type) if is_generic_alias(f_type) else f_type
 
         if not isinstance(type_origin, type) or not issubclass(type_origin, Connection):
-            raise RelayWrongAnnotationError(field.name, cast(type, field.origin))
+            raise RelayWrongAnnotationError(field.name, cast("type", field.origin))
 
         assert field.base_resolver
         # TODO: We are not using resolver_type.type because it will call
@@ -294,7 +294,7 @@ class ConnectionExtension(FieldExtension):
         ):
             raise RelayWrongResolverAnnotationError(field.name, field.base_resolver)
 
-        self.connection_type = cast(type[Connection[Node]], f_type)
+        self.connection_type = cast("type[Connection[Node]]", f_type)
 
     def resolve(
         self,
@@ -310,7 +310,7 @@ class ConnectionExtension(FieldExtension):
     ) -> Any:
         assert self.connection_type is not None
         return self.connection_type.resolve_connection(
-            cast(Iterable[Node], next_(source, info, **kwargs)),
+            cast("Iterable[Node]", next_(source, info, **kwargs)),
             info=info,
             before=before,
             after=after,
@@ -339,7 +339,7 @@ class ConnectionExtension(FieldExtension):
             nodes = await nodes
 
         resolved = self.connection_type.resolve_connection(
-            cast(Iterable[Node], nodes),
+            cast("Iterable[Node]", nodes),
             info=info,
             before=before,
             after=after,
@@ -386,7 +386,7 @@ def connection(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
-    extensions: list[FieldExtension] = (),  # type: ignore
+    extensions: list[FieldExtension] | None = None,
     max_results: Optional[int] = None,
     # This init parameter is used by pyright to determine whether this field
     # is added in the constructor or not. It is not used to change
@@ -473,6 +473,7 @@ def connection(
         https://relay.dev/graphql/connections.htm
 
     """
+    extensions = extensions or []
     f = StrawberryField(
         python_name=None,
         graphql_name=name,

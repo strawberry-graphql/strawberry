@@ -1,15 +1,32 @@
 import sys
 from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator, Awaitable
+from contextlib import asynccontextmanager, suppress
 from typing import (
     Any,
     Callable,
     Optional,
     TypeVar,
     Union,
+    cast,
 )
 
 _T = TypeVar("_T")
 _R = TypeVar("_R")
+
+
+@asynccontextmanager
+async def aclosing(thing: _T) -> AsyncGenerator[_T, None]:
+    """Ensure that an async generator is closed properly.
+
+    Port from the stdlib contextlib.asynccontextmanager. Can be removed
+    and replaced with the stdlib version when we drop support for Python
+    versions before 3.10.
+    """
+    try:
+        yield thing
+    finally:
+        with suppress(Exception):
+            await cast("AsyncGenerator", thing).aclose()
 
 
 async def aenumerate(
@@ -42,11 +59,13 @@ async def aislice(
     except StopIteration:
         return
 
+    i = 0
     try:
-        async for i, element in aenumerate(aiterable):
+        async for element in aiterable:
             if i == nexti:
                 yield element
                 nexti = next(it)
+            i += 1
     except StopIteration:
         return
 

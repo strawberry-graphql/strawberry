@@ -37,11 +37,16 @@ from .base import (
 
 
 def generate_get_path(
-    path, query: str, variables: Optional[dict[str, Any]] = None
+    path: str,
+    query: str,
+    variables: Optional[dict[str, Any]] = None,
+    extensions: Optional[dict[str, Any]] = None,
 ) -> str:
     body: dict[str, Any] = {"query": query}
     if variables is not None:
         body["variables"] = json_module.dumps(variables)
+    if extensions is not None:
+        body["extensions"] = json_module.dumps(extensions)
 
     parts = [f"{k}={v}" for k, v in body.items()]
     return f"{path}?{'&'.join(parts)}"
@@ -163,14 +168,19 @@ class ChannelsHttpClient(HttpClient):
     async def _graphql_request(
         self,
         method: Literal["get", "post"],
-        query: str,
+        query: Optional[str] = None,
         variables: Optional[dict[str, object]] = None,
         files: Optional[dict[str, BytesIO]] = None,
         headers: Optional[dict[str, str]] = None,
+        extensions: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Response:
         body = self._build_body(
-            query=query, variables=variables, files=files, method=method
+            query=query,
+            variables=variables,
+            files=files,
+            method=method,
+            extensions=extensions,
         )
 
         headers = self._get_headers(method=method, headers=headers, files=files)
@@ -184,7 +194,7 @@ class ChannelsHttpClient(HttpClient):
             endpoint_url = "/graphql"
         else:
             body = b""
-            endpoint_url = generate_get_path("/graphql", query, variables)
+            endpoint_url = generate_get_path("/graphql", query, variables, extensions)
 
         return await self.request(
             url=endpoint_url, method=method, body=body, headers=headers

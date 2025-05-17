@@ -65,3 +65,46 @@ def test_returns_extension_passed_by_user_and_directives_extension_sync():
         schema.get_extensions(sync=True), [MyExtension, DirectivesExtensionSync]
     ):
         assert isinstance(ext, ext_cls)
+
+
+def test_no_duplicate_extensions_with_directives():
+    """Test to verify that extensions are not duplicated when directives are present.
+
+    This test initially fails with the current implementation but passes
+    after fixing the get_extensions method.
+    """
+
+    schema = strawberry.Schema(
+        query=Query, extensions=[MyExtension], directives=[uppercase]
+    )
+
+    extensions = schema.get_extensions()
+
+    # Count how many times our extension appears
+    ext_count = sum(1 for e in extensions if isinstance(e, MyExtension))
+
+    # With current implementation this fails as ext_count is 2
+    assert ext_count == 1, f"Extension appears {ext_count} times instead of once"
+
+
+def test_extension_order_preserved():
+    """Test to verify that extension order is preserved while removing duplicates."""
+
+    class Extension1(SchemaExtension):
+        pass
+
+    class Extension2(SchemaExtension):
+        pass
+
+    schema = strawberry.Schema(
+        query=Query, extensions=[Extension1, Extension2], directives=[uppercase]
+    )
+
+    extensions = schema.get_extensions()
+    extension_types = [
+        type(ext)
+        for ext in extensions
+        if not isinstance(ext, (DirectivesExtension, DirectivesExtensionSync))
+    ]
+
+    assert extension_types == [Extension1, Extension2], "Extension order not preserved"

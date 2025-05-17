@@ -27,7 +27,7 @@ def get_operation_type(
 
     if operation_name:
         for d in graphql_document.definitions:
-            d = cast(OperationDefinitionNode, d)
+            d = cast("OperationDefinitionNode", d)
             if d.name and d.name.value == operation_name:
                 definition = d
                 break

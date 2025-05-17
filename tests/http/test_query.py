@@ -4,6 +4,8 @@ import pytest
 from graphql import GraphQLError
 from pytest_mock import MockFixture
 
+from tests.conftest import skip_if_gql_32
+
 from .clients.base import HttpClient
 
 
@@ -199,6 +201,22 @@ async def test_query_context(method: Literal["get", "post"], http_client: HttpCl
 
     assert response.status_code == 200
     assert data["valueFromContext"] == "a value from context"
+
+
+@skip_if_gql_32
+@pytest.mark.parametrize("method", ["get", "post"])
+async def test_query_extensions(
+    method: Literal["get", "post"], http_client: HttpClient
+):
+    response = await http_client.query(
+        method=method,
+        query='{ valueFromExtensions(key:"test") }',
+        extensions={"test": "hello"},
+    )
+    data = response.json["data"]
+
+    assert response.status_code == 200
+    assert data["valueFromExtensions"] == "hello"
 
 
 @pytest.mark.parametrize("method", ["get", "post"])

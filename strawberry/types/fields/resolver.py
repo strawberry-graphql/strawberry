@@ -25,7 +25,7 @@ from strawberry.exceptions import (
     ConflictingArgumentsError,
     MissingArgumentsAnnotationsError,
 )
-from strawberry.parent import StrawberryParent
+from strawberry.parent import StrawberryParent, resolve_parent_forward_arg
 from strawberry.types.arguments import StrawberryArgument
 from strawberry.types.base import StrawberryType, has_object_definition
 from strawberry.types.info import Info
@@ -118,10 +118,17 @@ class ReservedType(NamedTuple):
                 try:
                     evaled_annotation = annotation.evaluate()
                 except NameError:
-                    continue
-                else:
-                    if self.is_reserved_type(evaled_annotation):
-                        type_parameters.append(parameter)
+                    # If this is a strawberry.Parent using ForwardRef, we will fail to
+                    # evaluate at this moment, but at least knowing that it is a reserved
+                    # type is enough for now
+                    # We might want to revisit this in the future, maybe by postponing
+                    # this check to when the schema is actually being created
+                    evaled_annotation = resolve_parent_forward_arg(
+                        annotation.annotation
+                    )
+
+                if self.is_reserved_type(evaled_annotation):
+                    type_parameters.append(parameter)
 
         if len(type_parameters) > 1:
             raise ConflictingArgumentsError(
@@ -147,7 +154,7 @@ class ReservedType(NamedTuple):
         return None
 
     def is_reserved_type(self, other: builtins.type) -> bool:
-        origin = cast(type, get_origin(other)) or other
+        origin = cast("type", get_origin(other)) or other
         if origin is Annotated:
             # Handle annotated arguments such as Private[str] and DirectiveValue[str]
             return type_has_annotation(other, self.type)

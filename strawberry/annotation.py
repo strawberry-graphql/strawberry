@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import logging
 import sys
 import typing
+import warnings
 from collections import abc
 from enum import Enum
 from typing import (
@@ -19,6 +19,7 @@ from typing_extensions import Self, get_args, get_origin
 
 from strawberry.types.base import (
     StrawberryList,
+    StrawberryMaybe,
     StrawberryObjectDefinition,
     StrawberryOptional,
     StrawberryTypeVar,
@@ -28,6 +29,7 @@ from strawberry.types.base import (
 from strawberry.types.enum import EnumDefinition
 from strawberry.types.enum import enum as strawberry_enum
 from strawberry.types.lazy_type import LazyType
+from strawberry.types.maybe import _annotation_is_maybe
 from strawberry.types.private import is_private
 from strawberry.types.scalar import ScalarDefinition
 from strawberry.types.unset import UNSET
@@ -130,7 +132,7 @@ class StrawberryAnnotation:
         return self.__resolve_cache__
 
     def _resolve(self) -> Union[StrawberryType, type]:
-        evaled_type = cast(Any, self.evaluate())
+        evaled_type = cast("Any", self.evaluate())
 
         if is_private(evaled_type):
             return evaled_type
@@ -143,6 +145,10 @@ class StrawberryAnnotation:
             return evaled_type
         if self._is_list(evaled_type):
             return self.create_list(evaled_type)
+        if type_of := self._get_maybe_type(evaled_type):
+            return StrawberryMaybe(
+                of_type=type_of,
+            )
 
         if self._is_graphql_generic(evaled_type):
             if any(is_type_var(type_) for type_ in get_args(evaled_type)):
@@ -158,7 +164,7 @@ class StrawberryAnnotation:
         if self._is_union(evaled_type, args):
             return self.create_union(evaled_type, args)
         if is_type_var(evaled_type) or evaled_type is Self:
-            return self.create_type_var(cast(TypeVar, evaled_type))
+            return self.create_type_var(cast("TypeVar", evaled_type))
         if self._is_strawberry_type(evaled_type):
             # Simply return objects that are already StrawberryTypes
             return evaled_type
@@ -197,7 +203,9 @@ class StrawberryAnnotation:
         types = get_args(evaled_type)
         non_optional_types = tuple(
             filter(
-                lambda x: x is not type(None) and x is not type(UNSET),
+                lambda x: x is not type(None)
+                and x is not type(UNSET)
+                and x != type[UNSET],
                 types,
             )
         )
@@ -240,9 +248,12 @@ class StrawberryAnnotation:
 
         union_args = [arg for arg in args if isinstance(arg, StrawberryUnion)]
         if len(union_args) > 1:
-            logging.warning(
-                "Duplicate union definition detected. "
-                "Only the first definition will be considered"
+            warnings.warn(
+                (
+                    "Duplicate union definition detected. "
+                    "Only the first definition will be considered"
+                ),
+                stacklevel=2,
             )
 
         if union_args:
@@ -307,6 +318,10 @@ class StrawberryAnnotation:
             or annotation_origin is abc.Sequence
             or is_list
         )
+
+    @classmethod
+    def _get_maybe_type(cls, annotation: Any) -> type | None:
+        return get_args(annotation)[0] if _annotation_is_maybe(annotation) else None
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:
