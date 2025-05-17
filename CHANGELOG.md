@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.268.2 - 2025-05-17
+--------------------
+
+This release (finally) fixes support for using `ID` and `GlobalID`
+in the same schema.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #3859](https://github.com/strawberry-graphql/strawberry/pull/3859/)
+
+
 0.268.1 - 2025-05-12
 --------------------
 
