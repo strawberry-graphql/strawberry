@@ -60,7 +60,7 @@ class QuartHTTPRequestAdapter(AsyncHTTPRequestAdapter):
 
 
 class QuartWebSocketAdapter(AsyncWebSocketAdapter):
-    def __init__(self, view: AsyncBaseHTTPView, request, ws) -> None:
+    def __init__(self, view: AsyncBaseHTTPView, request: Request, ws: Response) -> None:
         super().__init__(view)
         self.ws = websocket
 
