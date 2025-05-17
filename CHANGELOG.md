@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.269.0 - 2025-05-17
+--------------------
+
+This release adds support for input extension (To explain and document)
+
+Contributed by [Omar Marzouk](https://github.com/omarzouk) via [PR #3461](https://github.com/strawberry-graphql/strawberry/pull/3461/)
+
+
 0.268.2 - 2025-05-17
 --------------------
 
