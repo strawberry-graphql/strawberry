@@ -328,7 +328,7 @@ Strawberry allows you to choose which protocols you want to accept. All
 integrations supporting subscriptions can be configured with a list of
 `subscription_protocols` to accept. By default, all protocols are accepted.
 
-##### AIOHTTP
+### AIOHTTP
 
 ```python
 from strawberry.aiohttp.views import GraphQLView
@@ -341,7 +341,7 @@ view = GraphQLView(
 )
 ```
 
-##### ASGI
+### ASGI
 
 ```python
 from strawberry.asgi import GraphQL
@@ -358,7 +358,7 @@ app = GraphQL(
 )
 ```
 
-##### Django + Channels
+### Django + Channels
 
 ```python
 import os
@@ -384,7 +384,7 @@ application = GraphQLProtocolTypeRouter(
 Note: Check the [channels integraton](../integrations/channels.md) page for more
 information regarding it.
 
-#### FastAPI
+### FastAPI
 
 ```python
 from strawberry.fastapi import GraphQLRouter
@@ -399,11 +399,38 @@ graphql_router = GraphQLRouter(
         GRAPHQL_WS_PROTOCOL,
     ],
 )
+
 app = FastAPI()
 app.include_router(graphql_router, prefix="/graphql")
 ```
 
-### Single result operations
+### Quart
+
+```python
+from strawberry.quart.views import GraphQLView
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from quart import Quart
+from api.schema import schema
+
+view = GraphQLView.as_view(
+    "graphql_view",
+    schema=schema,
+    subscription_protocols=[
+        GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        GRAPHQL_WS_PROTOCOL,
+    ],
+)
+
+app = Quart(__name__)
+app.app.add_url_rule(
+    "/graphql",
+    view_func=view,
+    methods=["GET"],
+    websocket=True,
+)
+```
+
+## Single result operations
 
 In addition to _streaming operations_ (i.e. subscriptions), the
 `graphql-transport-ws` protocol supports so called _single result operations_
@@ -411,7 +438,7 @@ In addition to _streaming operations_ (i.e. subscriptions), the
 
 This enables clients to use one protocol and one connection for queries,
 mutations and subscriptions. Take a look at the
-[protocols repository](https://github.com/enisdenjo/graphql-ws) to learn how to
+[protocol's repository](https://github.com/enisdenjo/graphql-ws) to learn how to
 correctly set up the graphql client of your choice.
 
 Strawberry supports single result operations out of the box when the
