@@ -219,23 +219,5 @@ class GraphQLView(
         # Return the current websocket context as the "response"
         return None
 
-    @classmethod
-    def register_route(cls, app: Quart, rule_name: str, path: str, **kwargs):
-        """Helper method to register both HTTP and WebSocket handlers for a given path.
-
-        Args:
-            app: The Quart application
-            rule_name: The name of the rule
-            path: The path to register the handlers for
-            **kwargs: Parameters to pass to the GraphQLView constructor
-        """
-        # Register both HTTP and WebSocket handler at the same path
-        view_func = cls.as_view(rule_name, **kwargs)
-        app.add_url_rule(path, view_func=view_func, methods=["GET", "POST"])
-
-        # Register the WebSocket handler using the same view function
-        # Quart will handle routing based on the WebSocket upgrade header
-        app.add_url_rule(path, view_func=view_func, methods=["GET"], websocket=True)
-
 
 __all__ = ["GraphQLView"]
