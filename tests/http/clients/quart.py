@@ -19,6 +19,7 @@ from strawberry.quart.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
 from tests.views.schema import Query, schema
+from tests.websockets.views import OnWSConnectMixin
 
 from .asgi import AsgiWebSocketClient
 from .base import (
@@ -32,7 +33,7 @@ from .base import (
 )
 
 
-class GraphQLView(BaseGraphQLView[dict[str, object], object]):
+class GraphQLView(OnWSConnectMixin, BaseGraphQLView[dict[str, object], object]):
     methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"]
     result_override: ResultOverrideFunction = None
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
