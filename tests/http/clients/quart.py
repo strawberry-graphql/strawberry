@@ -3,7 +3,7 @@ import json
 import urllib.parse
 from collections.abc import AsyncGenerator
 from io import BytesIO
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from typing_extensions import Literal
 
 from starlette.testclient import TestClient
@@ -12,6 +12,7 @@ from starlette.types import Receive, Scope, Send
 from quart import Quart
 from quart import Request as QuartRequest
 from quart import Response as QuartResponse
+from quart import Websocket as QuartWebsocket
 from quart.datastructures import FileStorage
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
@@ -43,12 +44,14 @@ class GraphQLView(OnWSConnectMixin, BaseGraphQLView[dict[str, object], object]):
         self.result_override = kwargs.pop("result_override", None)
         super().__init__(*args, **kwargs)
 
-    async def get_root_value(self, request: QuartRequest) -> Query:
+    async def get_root_value(
+        self, request: Union[QuartRequest, QuartWebsocket]
+    ) -> Query:
         await super().get_root_value(request)  # for coverage
         return Query()
 
     async def get_context(
-        self, request: QuartRequest, response: QuartResponse
+        self, request: Union[QuartRequest, QuartWebsocket], response: QuartResponse
     ) -> dict[str, object]:
         context = await super().get_context(request, response)
 

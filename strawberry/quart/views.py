@@ -156,7 +156,7 @@ class GraphQLView(
         return sub_response
 
     async def get_context(
-        self, request: Union[Request, Websocket], response: Union[Response, Websocket]
+        self, request: Union[Request, Websocket], response: Response
     ) -> Context:
         return {"request": request, "response": response}  # type: ignore
 
