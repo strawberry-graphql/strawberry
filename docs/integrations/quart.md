@@ -188,7 +188,7 @@ class MyGraphQLView(GraphQLView):
     async def render_graphql_ide(self, request: Request) -> Response:
         custom_html = """<html><body><h1>Custom GraphQL IDE</h1></body></html>"""
 
-        return Response(self.graphql_ide_html)
+        return Response(custom_html)
 ```
 
 ### on_ws_connect
