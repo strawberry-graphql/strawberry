@@ -126,7 +126,10 @@ class QuartHttpClient(HttpClient):
             view_func=view,
         )
         self.app.add_url_rule(
-            "/graphql", view_func=view, methods=["GET"], websocket=True
+            "/graphql",
+            view_func=view,
+            methods=["GET"],
+            websocket=True,
         )
 
         self.client = TestClient(QuartAsgiAppAdapter(self.app))
