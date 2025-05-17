@@ -14,6 +14,7 @@ from typing import (
 from strawberry.exceptions import ConnectionRejectionError
 from strawberry.http.exceptions import NonTextMessageReceived, WebSocketDisconnected
 from strawberry.http.typevars import Context, RootValue
+from strawberry.schema.exceptions import CannotGetOperationTypeError
 from strawberry.subscriptions.protocols.graphql_ws.types import (
     CompleteMessage,
     ConnectionInitMessage,
@@ -193,6 +194,14 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
 
             await self.send_message(CompleteMessage(type="complete", id=operation_id))
 
+        except CannotGetOperationTypeError:
+            await self.send_message(
+                ErrorMessage(
+                    type="error",
+                    id=operation_id,
+                    payload={"message": "Can't get GraphQL operation type"},
+                )
+            )
         except asyncio.CancelledError:
             await self.send_message(CompleteMessage(type="complete", id=operation_id))
 

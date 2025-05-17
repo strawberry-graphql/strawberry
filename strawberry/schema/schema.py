@@ -71,7 +71,7 @@ from strawberry.utils.await_maybe import await_maybe
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
-from .exceptions import InvalidOperationTypeError
+from .exceptions import CannotGetOperationTypeError, InvalidOperationTypeError
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -495,8 +495,13 @@ class Schema(BaseSchema):
                 context.errors = [error]
                 return PreExecutionError(data=None, errors=[error])
 
-        if context.operation_type not in context.allowed_operations:
-            raise InvalidOperationTypeError(context.operation_type)
+        try:
+            operation_type = context.operation_type
+        except RuntimeError as error:
+            raise CannotGetOperationTypeError from error
+
+        if operation_type not in context.allowed_operations:
+            raise InvalidOperationTypeError(operation_type)
 
         async with extensions_runner.validation():
             _run_validation(context)
