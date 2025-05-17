@@ -204,6 +204,7 @@ class AsyncBaseHTTPView(
                 context_value=context,
                 root_value=root_value,
                 operation_name=request_data.operation_name,
+                operation_extensions=request_data.extensions,
             )
 
         return await self.schema.execute(
@@ -213,6 +214,7 @@ class AsyncBaseHTTPView(
             context_value=context,
             operation_name=request_data.operation_name,
             allowed_operation_types=allowed_operation_types,
+            operation_extensions=request_data.extensions,
         )
 
     async def parse_multipart(self, request: AsyncHTTPRequestAdapter) -> dict[str, str]:
@@ -472,6 +474,7 @@ class AsyncBaseHTTPView(
             query=data.get("query"),
             variables=data.get("variables"),
             operation_name=data.get("operationName"),
+            extensions=data.get("extensions"),
             protocol=protocol,
         )
 

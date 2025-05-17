@@ -122,6 +122,7 @@ class SyncBaseHTTPView(
             context_value=context,
             operation_name=request_data.operation_name,
             allowed_operation_types=allowed_operation_types,
+            operation_extensions=request_data.extensions,
         )
 
     def parse_multipart(self, request: SyncHTTPRequestAdapter) -> dict[str, str]:
@@ -154,6 +155,7 @@ class SyncBaseHTTPView(
             query=data.get("query"),
             variables=data.get("variables"),
             operation_name=data.get("operationName"),
+            extensions=data.get("extensions"),
         )
 
     def _handle_errors(
