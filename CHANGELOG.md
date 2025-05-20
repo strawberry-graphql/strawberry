@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.270.0 - 2025-05-20
+--------------------
+
+This release adds support for GraphQL over WebSocket transport protocols to the Quart integration.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3860](https://github.com/strawberry-graphql/strawberry/pull/3860/)
+
+
 0.269.0 - 2025-05-17
 --------------------
 
