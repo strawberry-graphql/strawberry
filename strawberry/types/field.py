@@ -475,7 +475,7 @@ def field(
     directives: Optional[Sequence[object]] = (),
     extensions: Optional[list[FieldExtension]] = None,
     graphql_type: Optional[Any] = None,
-) -> Any: ...
+) -> StrawberryField: ...
 
 
 @overload
@@ -515,23 +515,23 @@ def field(
 
 
 def field(
-    resolver: Optional[_RESOLVER_TYPE[Any]] = None,
+    resolver=None,
     *,
-    name: Optional[str] = None,
-    is_subscription: bool = False,
-    description: Optional[str] = None,
-    permission_classes: Optional[list[type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
-    default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
-    metadata: Optional[Mapping[Any, Any]] = None,
-    directives: Optional[Sequence[object]] = (),
-    extensions: Optional[list[FieldExtension]] = None,
-    graphql_type: Optional[Any] = None,
+    name=None,
+    is_subscription=False,
+    description=None,
+    permission_classes=None,
+    deprecation_reason=None,
+    default=dataclasses.MISSING,
+    default_factory=dataclasses.MISSING,
+    metadata=None,
+    directives=(),
+    extensions=None,
+    graphql_type=None,
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
-    init: Literal[True, False, None] = None,
+    init=None,
 ) -> Any:
     """Annotates a method or property as a GraphQL field.
 
