@@ -406,6 +406,13 @@ class AsyncBaseHTTPView(
            - Guarantees the done signal is queued before drain task completes
 
         Heartbeats are sent every 5 seconds when the drain task isn't sending data.
+
+        Note: Due to the asynchronous nature of the heartbeat task, an extra heartbeat
+        message may be sent after the final stream boundary message. This is safe because
+        both the MIME specification (RFC 2046) and Apollo's GraphQL Multipart HTTP protocol
+        require clients to ignore any content after the final boundary marker. Additionally,
+        Apollo's protocol defines heartbeats as empty JSON objects that clients must
+        silently ignore.
         """
         queue: asyncio.Queue[tuple[bool, bool, Any]] = asyncio.Queue(
             maxsize=1,  # Critical: maxsize=1 for flow control.
