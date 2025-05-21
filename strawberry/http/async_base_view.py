@@ -385,7 +385,7 @@ class AsyncBaseHTTPView(
         - raised (bool): True if this contains an exception to be re-raised
         - done (bool): True if this is the final signal indicating stream completion
         - data: The actual message content to yield, or exception if raised=True
-               Note: data is always None when done=True
+               Note: data is always None when done=True and can be ignored
 
         Note: This implementation addresses two critical concerns:
 
@@ -458,6 +458,11 @@ class AsyncBaseHTTPView(
 
                     if done:
                         # Received done signal (data is None), stream is complete.
+                        # Note that we may not get here because of the race between
+                        # task.done() and queue.get(), but that's OK because if
+                        # task.done() is True, the actual final message (including any
+                        # exception) has been consumed. The only intent here is to
+                        # ensure that data=None is not yielded.
                         break
 
                     if raised:
