@@ -408,8 +408,8 @@ class AsyncBaseHTTPView(
         Heartbeats are sent every 5 seconds when the drain task isn't sending data.
         """
         queue: asyncio.Queue[tuple[bool, bool, Any]] = asyncio.Queue(
-            1
-        )  # Critical: maxsize=1 for flow control
+            maxsize=1,  # Critical: maxsize=1 for flow control.
+        )
         cancelling = False
 
         async def drain() -> None:
@@ -421,16 +421,15 @@ class AsyncBaseHTTPView(
                     await queue.put((True, False, e))
                 else:
                     raise
-            # Signal that the stream is complete - critical for handling race condition
-            # This operation blocks until the queue has space, ensuring task.done()
-            # means this signal is in the queue
+            # Send completion signal to prevent race conditions. The queue.put()
+            # blocks until space is available (due to maxsize=1), guaranteeing that
+            # when task.done() is True, the final stream message has been dequeued.
             await queue.put((False, True, None))  # Always use None with done=True
 
         async def heartbeat() -> None:
             while True:
-                await queue.put(
-                    (False, False, self.encode_multipart_data({}, separator))
-                )
+                item = self.encode_multipart_data({}, separator)
+                await queue.put((False, False, item))
 
                 await asyncio.sleep(5)
 
@@ -452,13 +451,13 @@ class AsyncBaseHTTPView(
                     await heartbeat_task
 
             try:
-                # When task.done() is True, the final boundary done signal has been
-                # queued due to queue size 1 and the blocking nature of queue.put()
+                # When task.done() is True, the final stream message has been
+                # dequeued due to queue size 1 and the blocking nature of queue.put().
                 while not task.done():
                     raised, done, data = await queue.get()
 
                     if done:
-                        # Received done signal (data is None), stream is complete
+                        # Received done signal (data is None), stream is complete.
                         break
 
                     if raised:
