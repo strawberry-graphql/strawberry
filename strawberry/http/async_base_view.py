@@ -372,28 +372,65 @@ class AsyncBaseHTTPView(
         )
 
     def _stream_with_heartbeat(
-        self,
-        stream: Callable[[], AsyncGenerator[str, None]],
-        separator: str = "graphql",
+        self, stream: Callable[[], AsyncGenerator[str, None]], separator: str
     ) -> Callable[[], AsyncGenerator[str, None]]:
-        """Adds a heartbeat to the stream, to prevent the connection from closing when there are no messages being sent."""
-        queue: asyncio.Queue[tuple[bool, Any]] = asyncio.Queue(1)
+        """Add heartbeat messages to a GraphQL stream to prevent connection timeouts.
 
+        This method wraps an async stream generator with heartbeat functionality by:
+        1. Creating a queue to coordinate between data and heartbeat messages
+        2. Running two concurrent tasks: one for original stream data, one for heartbeats
+        3. Merging both message types into a single output stream
+
+        Messages in the queue are tuples of (raised, done, data) where:
+        - raised (bool): True if this contains an exception to be re-raised
+        - done (bool): True if this is the final signal indicating stream completion
+        - data: The actual message content to yield, or exception if raised=True
+               Note: data is always None when done=True
+
+        Note: This implementation addresses two critical concerns:
+
+        1. Race condition: There's a potential race between checking task.done() and
+           processing the final message. We solve this by having the drain task send
+           an explicit (False, True, None) completion signal as its final action.
+           Without this signal, we might exit before processing the final boundary.
+
+           Since the queue size is 1 and the drain task will only complete after
+           successfully queueing the done signal, task.done() guarantees the done
+           signal is either in the queue or has already been processed. This ensures
+           we never miss the final boundary.
+
+        2. Flow control: The queue has maxsize=1, which is essential because:
+           - It provides natural backpressure between producers and consumer
+           - Prevents heartbeat messages from accumulating when drain is active
+           - Ensures proper task coordination without complex synchronization
+           - Guarantees the done signal is queued before drain task completes
+
+        Heartbeats are sent every 5 seconds when the drain task isn't sending data.
+        """
+        queue: asyncio.Queue[tuple[bool, bool, Any]] = asyncio.Queue(
+            1
+        )  # Critical: maxsize=1 for flow control
         cancelling = False
 
         async def drain() -> None:
             try:
                 async for item in stream():
-                    await queue.put((False, item))
+                    await queue.put((False, False, item))
             except Exception as e:
                 if not cancelling:
-                    await queue.put((True, e))
+                    await queue.put((True, False, e))
                 else:
                     raise
+            # Signal that the stream is complete - critical for handling race condition
+            # This operation blocks until the queue has space, ensuring task.done()
+            # means this signal is in the queue
+            await queue.put((False, True, None))  # Always use None with done=True
 
         async def heartbeat() -> None:
             while True:
-                await queue.put((False, self.encode_multipart_data({}, separator)))
+                await queue.put(
+                    (False, False, self.encode_multipart_data({}, separator))
+                )
 
                 await asyncio.sleep(5)
 
@@ -415,24 +452,20 @@ class AsyncBaseHTTPView(
                     await heartbeat_task
 
             try:
+                # When task.done() is True, the final boundary done signal has been
+                # queued due to queue size 1 and the blocking nature of queue.put()
                 while not task.done():
-                    raised, data = await queue.get()
+                    raised, done, data = await queue.get()
+
+                    if done:
+                        # Received done signal (data is None), stream is complete
+                        break
 
                     if raised:
                         await cancel_tasks()
                         raise data
 
                     yield data
-
-                if not queue.empty():
-                    raised, data = queue.get_nowait()
-
-                    if raised:
-                        await cancel_tasks()
-                        raise data
-
-                    if data == f"\r\n--{separator}--\r\n":
-                        yield data
             finally:
                 await cancel_tasks()
 
