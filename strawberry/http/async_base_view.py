@@ -372,7 +372,9 @@ class AsyncBaseHTTPView(
         )
 
     def _stream_with_heartbeat(
-        self, stream: Callable[[], AsyncGenerator[str, None]]
+        self,
+        stream: Callable[[], AsyncGenerator[str, None]],
+        separator: str = "graphql",
     ) -> Callable[[], AsyncGenerator[str, None]]:
         """Adds a heartbeat to the stream, to prevent the connection from closing when there are no messages being sent."""
         queue: asyncio.Queue[tuple[bool, Any]] = asyncio.Queue(1)
@@ -391,7 +393,7 @@ class AsyncBaseHTTPView(
 
         async def heartbeat() -> None:
             while True:
-                await queue.put((False, self.encode_multipart_data({}, "graphql")))
+                await queue.put((False, self.encode_multipart_data({}, separator)))
 
                 await asyncio.sleep(5)
 
@@ -421,6 +423,16 @@ class AsyncBaseHTTPView(
                         raise data
 
                     yield data
+
+                if not queue.empty():
+                    raised, data = queue.get_nowait()
+
+                    if raised:
+                        await cancel_tasks()
+                        raise data
+
+                    if data == f"\r\n--{separator}--\r\n":
+                        yield data
             finally:
                 await cancel_tasks()
 
@@ -439,7 +451,7 @@ class AsyncBaseHTTPView(
 
             yield f"\r\n--{separator}--\r\n"
 
-        return self._stream_with_heartbeat(stream)
+        return self._stream_with_heartbeat(stream, separator)
 
     async def parse_multipart_subscriptions(
         self, request: AsyncHTTPRequestAdapter
