@@ -22,16 +22,17 @@ async def test_stream_with_heartbeat_should_yield_items_correctly(
     expected: list[str],
 ) -> None:
     """
-    Verifies that _stream_with_heartbeat correctly processes all stream items.
+    Verifies _stream_with_heartbeat reliably delivers all items in correct order.
 
-    Ensures three key requirements are met:
-    1. Completeness: All items from the source stream appear in the output
-    2. Uniqueness: Each expected item appears exactly once (no duplicates)
+    Tests three critical stream properties:
+    1. Completeness: All source items appear in output (especially the last item)
+    2. Uniqueness: Each expected item appears exactly once
     3. Order: Original sequence of items is preserved
 
-    Uses parametrization to test various input sizes and runs 100 concurrent
-    streams with randomized delays to detect potential race conditions between the
-    drain task and queue consumer that might affect item delivery or ordering.
+    Uses multiple test cases via parametrization and runs 100 concurrent streams
+    with randomized delays to stress-test the implementation. This specifically
+    targets race conditions between the drain task and queue consumer that could
+    cause missing items, duplicates, or reordering.
     """
 
     assert len(set(expected)) == len(expected), "Test requires unique elements"
