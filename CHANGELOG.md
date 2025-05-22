@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.270.1 - 2025-05-22
+--------------------
+
+Fix multipart subscriptions by always yielding the closing boundary if it's enqueued.
+
+Contributed by [Roger Yang](https://github.com/RogerHYang) via [PR #3866](https://github.com/strawberry-graphql/strawberry/pull/3866/)
+
+
 0.270.0 - 2025-05-20
 --------------------
 
