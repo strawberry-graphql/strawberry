@@ -28,6 +28,7 @@ async def test_stream_with_heartbeat_should_always_yield_final_item() -> None:
         final_item = token_hex(8)
 
         async def stream() -> AsyncGenerator[str, None]:
+            yield ""
             yield final_item
 
         items = []
