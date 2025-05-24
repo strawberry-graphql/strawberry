@@ -199,7 +199,7 @@ class BaseGraphQLWSHandler(Generic[Context, RootValue]):
                 ErrorMessage(
                     type="error",
                     id=operation_id,
-                    payload={"message": "Can't get GraphQL operation type"},
+                    payload={"message": f'Unknown operation named "{operation_name}".'},
                 )
             )
         except asyncio.CancelledError:

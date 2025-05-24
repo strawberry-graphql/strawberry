@@ -125,7 +125,9 @@ async def test_invalid_operation_selection(ws: WebSocketClient):
     error_message: ErrorMessage = await ws.receive_json()
     assert error_message["type"] == "error"
     assert error_message["id"] == "demo"
-    assert error_message["payload"] == {"message": "Can't get GraphQL operation type"}
+    assert error_message["payload"] == {
+        "message": 'Unknown operation named "Subscription2".'
+    }
 
 
 async def test_connections_are_accepted_by_default(ws_raw: WebSocketClient):
