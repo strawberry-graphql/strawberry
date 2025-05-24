@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.270.2 - 2025-05-24
+--------------------
+
+This release resolves the issue of subscriptions started via the legacy `graphql-ws` WebSocket subprotocol getting stuck if a non-existing `operationName` was specified.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3858](https://github.com/strawberry-graphql/strawberry/pull/3858/)
+
+
 0.270.1 - 2025-05-22
 --------------------
 
