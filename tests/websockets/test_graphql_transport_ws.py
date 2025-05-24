@@ -529,6 +529,25 @@ async def test_invalid_operation_selection(ws: WebSocketClient):
     await ws.receive(timeout=2)
     assert ws.closed
     assert ws.close_code == 4400
+    assert ws.close_reason == 'Unknown operation named "Subscription2".'
+
+
+async def test_operation_selection_without_operations(ws: WebSocketClient):
+    await ws.send_message(
+        {
+            "type": "subscribe",
+            "id": "sub1",
+            "payload": {
+                "query": """
+                    fragment Fragment1 on Query { __typename }
+                """,
+            },
+        }
+    )
+
+    await ws.receive(timeout=2)
+    assert ws.closed
+    assert ws.close_code == 4400
     assert ws.close_reason == "Can't get GraphQL operation type"
 
 
@@ -828,6 +847,27 @@ async def test_single_result_invalid_operation_selection(ws: WebSocketClient):
             "id": "sub1",
             "type": "subscribe",
             "payload": {"query": query, "operationName": "Query2"},
+        }
+    )
+
+    await ws.receive(timeout=2)
+    assert ws.closed
+    assert ws.close_code == 4400
+    assert ws.close_reason == 'Unknown operation named "Query2".'
+
+
+async def test_single_result_operation_selection_without_operations(
+    ws: WebSocketClient,
+):
+    await ws.send_message(
+        {
+            "id": "sub1",
+            "type": "subscribe",
+            "payload": {
+                "query": """
+                    fragment Fragment1 on Query { __typename }
+                """,
+            },
         }
     )
 

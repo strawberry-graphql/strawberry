@@ -142,6 +142,25 @@ async def test_invalid_operation_selection(ws: WebSocketClient):
     }
 
 
+async def test_operation_selection_without_operations(ws: WebSocketClient):
+    await ws.send_legacy_message(
+        {
+            "type": "start",
+            "id": "demo",
+            "payload": {
+                "query": """
+                    fragment Fragment1 on Query { __typename }
+                """,
+            },
+        }
+    )
+
+    error_message: ErrorMessage = await ws.receive_json()
+    assert error_message["type"] == "error"
+    assert error_message["id"] == "demo"
+    assert error_message["payload"] == {"message": "Can't get GraphQL operation type"}
+
+
 async def test_connections_are_accepted_by_default(ws_raw: WebSocketClient):
     await ws_raw.send_legacy_message({"type": "connection_init"})
     connection_ack_message: ConnectionAckMessage = await ws_raw.receive_json()
