@@ -480,6 +480,37 @@ async def test_simple_subscription(ws: WebSocketClient):
     await ws.send_message({"id": "sub1", "type": "complete"})
 
 
+@pytest.mark.parametrize(
+    ("extra_payload", "expected_message"),
+    [
+        ({}, "Hi1"),
+        ({"operationName": None}, "Hi1"),
+        ({"operationName": "Subscription1"}, "Hi1"),
+        ({"operationName": "Subscription2"}, "Hi2"),
+    ],
+)
+async def test_operation_selection(
+    ws: WebSocketClient, extra_payload, expected_message
+):
+    await ws.send_json(
+        {
+            "type": "subscribe",
+            "id": "sub1",
+            "payload": {
+                "query": """
+                    subscription Subscription1 { echo(message: "Hi1") }
+                    subscription Subscription2 { echo(message: "Hi2") }
+                """,
+                **extra_payload,
+            },
+        }
+    )
+
+    next_message: NextMessage = await ws.receive_json()
+    assert_next(next_message, "sub1", {"echo": expected_message})
+    await ws.send_message({"id": "sub1", "type": "complete"})
+
+
 async def test_subscription_syntax_error(ws: WebSocketClient):
     await ws.send_message(
         {
@@ -727,26 +758,37 @@ async def test_single_result_mutation_operation(ws: WebSocketClient):
     assert complete_message == {"id": "sub1", "type": "complete"}
 
 
-async def test_single_result_operation_selection(ws: WebSocketClient):
+@pytest.mark.parametrize(
+    ("extra_payload", "expected_message"),
+    [
+        ({}, "Hello Strawberry1"),
+        ({"operationName": None}, "Hello Strawberry1"),
+        ({"operationName": "Query1"}, "Hello Strawberry1"),
+        ({"operationName": "Query2"}, "Hello Strawberry2"),
+    ],
+)
+async def test_single_result_operation_selection(
+    ws: WebSocketClient, extra_payload, expected_message
+):
     query = """
         query Query1 {
-            hello
+            hello(name: "Strawberry1")
         }
         query Query2 {
-            hello(name: "Strawberry")
+            hello(name: "Strawberry2")
         }
     """
 
-    await ws.send_message(
+    await ws.send_json(
         {
             "id": "sub1",
             "type": "subscribe",
-            "payload": {"query": query, "operationName": "Query2"},
+            "payload": {"query": query, **extra_payload},
         }
     )
 
     next_message: NextMessage = await ws.receive_json()
-    assert_next(next_message, "sub1", {"hello": "Hello Strawberry"})
+    assert_next(next_message, "sub1", {"hello": expected_message})
 
     complete_message: CompleteMessage = await ws.receive_json()
     assert complete_message == {"id": "sub1", "type": "complete"}

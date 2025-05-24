@@ -81,8 +81,19 @@ async def test_simple_subscription(ws: WebSocketClient):
     assert complete_message["id"] == "demo"
 
 
-async def test_operation_selection(ws: WebSocketClient):
-    await ws.send_legacy_message(
+@pytest.mark.parametrize(
+    ("extra_payload", "expected_message"),
+    [
+        ({}, "Hi1"),
+        ({"operationName": None}, "Hi1"),
+        ({"operationName": "Subscription1"}, "Hi1"),
+        ({"operationName": "Subscription2"}, "Hi2"),
+    ],
+)
+async def test_operation_selection(
+    ws: WebSocketClient, extra_payload, expected_message
+):
+    await ws.send_json(
         {
             "type": "start",
             "id": "demo",
@@ -91,7 +102,7 @@ async def test_operation_selection(ws: WebSocketClient):
                     subscription Subscription1 { echo(message: "Hi1") }
                     subscription Subscription2 { echo(message: "Hi2") }
                 """,
-                "operationName": "Subscription2",
+                **extra_payload,
             },
         }
     )
@@ -99,7 +110,7 @@ async def test_operation_selection(ws: WebSocketClient):
     data_message: DataMessage = await ws.receive_json()
     assert data_message["type"] == "data"
     assert data_message["id"] == "demo"
-    assert data_message["payload"]["data"] == {"echo": "Hi2"}
+    assert data_message["payload"]["data"] == {"echo": expected_message}
 
     await ws.send_legacy_message({"type": "stop", "id": "demo"})
 
