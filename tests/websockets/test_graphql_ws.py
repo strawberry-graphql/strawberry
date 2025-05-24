@@ -86,6 +86,7 @@ async def test_simple_subscription(ws: WebSocketClient):
     [
         ({}, "Hi1"),
         ({"operationName": None}, "Hi1"),
+        ({"operationName": ""}, "Hi1"),
         ({"operationName": "Subscription1"}, "Hi1"),
         ({"operationName": "Subscription2"}, "Hi2"),
     ],

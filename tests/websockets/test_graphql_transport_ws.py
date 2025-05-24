@@ -485,6 +485,7 @@ async def test_simple_subscription(ws: WebSocketClient):
     [
         ({}, "Hi1"),
         ({"operationName": None}, "Hi1"),
+        ({"operationName": ""}, "Hi1"),
         ({"operationName": "Subscription1"}, "Hi1"),
         ({"operationName": "Subscription2"}, "Hi2"),
     ],
@@ -763,6 +764,7 @@ async def test_single_result_mutation_operation(ws: WebSocketClient):
     [
         ({}, "Hello Strawberry1"),
         ({"operationName": None}, "Hello Strawberry1"),
+        ({"operationName": ""}, "Hello Strawberry1"),
         ({"operationName": "Query1"}, "Hello Strawberry1"),
         ({"operationName": "Query2"}, "Hello Strawberry2"),
     ],
