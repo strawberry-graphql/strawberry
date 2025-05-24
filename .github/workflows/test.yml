@@ -62,6 +62,7 @@ jobs:
             3.11
             3.12
             3.13
+            3.14-dev
 
       - run: pip install poetry nox nox-poetry uv
       - run: nox -r -t tests -s "${{ matrix.session.session }}"
