@@ -512,6 +512,26 @@ async def test_operation_selection(
     await ws.send_message({"id": "sub1", "type": "complete"})
 
 
+async def test_invalid_operation_selection(ws: WebSocketClient):
+    await ws.send_message(
+        {
+            "type": "subscribe",
+            "id": "sub1",
+            "payload": {
+                "query": """
+                    subscription Subscription1 { echo(message: "Hi1") }
+                """,
+                "operationName": "Subscription2",
+            },
+        }
+    )
+
+    await ws.receive(timeout=2)
+    assert ws.closed
+    assert ws.close_code == 4400
+    assert ws.close_reason == "Can't get GraphQL operation type"
+
+
 async def test_subscription_syntax_error(ws: WebSocketClient):
     await ws.send_message(
         {
