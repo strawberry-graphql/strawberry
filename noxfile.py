@@ -8,7 +8,7 @@ nox.options.reuse_existing_virtualenvs = True
 nox.options.error_on_external_run = True
 nox.options.default_venv_backend = "uv"
 
-PYTHON_VERSIONS = ["3.13", "3.12", "3.11", "3.10", "3.9"]
+PYTHON_VERSIONS = ["3.14", "3.13", "3.12", "3.11", "3.10"]
 
 GQL_CORE_VERSIONS = [
     "3.2.3",
