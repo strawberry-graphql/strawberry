@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.270.4 - 2025-05-29
+--------------------
+
+This release fixes that the Strawberry debug server no longer supported
+WebSockets out of the box.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3872](https://github.com/strawberry-graphql/strawberry/pull/3872/)
+
+
 0.270.3 - 2025-05-29
 --------------------
 
