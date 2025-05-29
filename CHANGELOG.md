@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.270.3 - 2025-05-29
+--------------------
+
+This release fixes an dependency issue with the Strawberry CLI and
+libcst.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3875](https://github.com/strawberry-graphql/strawberry/pull/3875/)
+
+
 0.270.2 - 2025-05-24
 --------------------
 
