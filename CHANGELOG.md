@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.270.5 - 2025-06-01
+--------------------
+
+In this release, we improved some GraphQL over WS error messages. More precise
+error messages are now returned if Strawberry fails to find an operation in the
+query document.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3869](https://github.com/strawberry-graphql/strawberry/pull/3869/)
+
+
 0.270.4 - 2025-05-29
 --------------------
 
