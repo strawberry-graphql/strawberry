@@ -216,13 +216,18 @@ class BaseGraphQLTransportWSHandler(Generic[Context, RootValue]):
             await self.websocket.close(code=4400, reason=exc.message)
             return
 
+        operation_name = message["payload"].get("operationName")
+
         try:
-            operation_type = get_operation_type(
-                graphql_document, message["payload"].get("operationName")
-            )
+            operation_type = get_operation_type(graphql_document, operation_name)
         except RuntimeError:
             await self.websocket.close(
-                code=4400, reason="Can't get GraphQL operation type"
+                code=4400,
+                reason=(
+                    f'Unknown operation named "{operation_name}".'
+                    if operation_name
+                    else "Can't get GraphQL operation type"
+                ),
             )
             return
 
