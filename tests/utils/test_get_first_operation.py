@@ -1,8 +1,8 @@
+import pytest
 from graphql import OperationType, parse
 
-from strawberry.utils.operation import get_first_operation, get_operation_type
-import pytest
 from strawberry.types.graphql import OperationType
+from strawberry.utils.operation import get_first_operation, get_operation_type
 
 
 def test_document_without_operation_definition_notes():
