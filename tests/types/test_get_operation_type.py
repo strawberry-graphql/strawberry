@@ -77,18 +77,24 @@ subscription UserAgent {
 """)
 
 
-@pytest.mark.parametrize(("document", "operation", "expectation"), [
-    (query_collision, "UserAgent", OperationType.QUERY),
-    (query_no_collision, "UserAgent", OperationType.QUERY),
-    (mutation_collision, "UserAgent", OperationType.MUTATION),
-    (mutation_no_collision, "UserAgent", OperationType.MUTATION),
-    (subscription_collision, "UserAgent", OperationType.SUBSCRIPTION),
-    (subscription_no_collison, "UserAgent", OperationType.SUBSCRIPTION),
-    (query_collision, None, OperationType.QUERY),
-    (mutation_collision, None, OperationType.MUTATION)
-    (subscription_collision, None, OperationType.SUBSCRIPTION),
-])    
-def test_get_operation_type_with_fragment_name_collision(document, operation, expectation):
+@pytest.mark.parametrize(
+    ("document", "operation", "expectation"),
+    [
+        (query_collision, "UserAgent", OperationType.QUERY),
+        (query_no_collision, "UserAgent", OperationType.QUERY),
+        (mutation_collision, "UserAgent", OperationType.MUTATION),
+        (mutation_no_collision, "UserAgent", OperationType.MUTATION),
+        (subscription_collision, "UserAgent", OperationType.SUBSCRIPTION),
+        (subscription_no_collison, "UserAgent", OperationType.SUBSCRIPTION),
+        (query_collision, None, OperationType.QUERY),
+        (mutation_collision, None, OperationType.MUTATION)(
+            subscription_collision, None, OperationType.SUBSCRIPTION
+        ),
+    ],
+)
+def test_get_operation_type_with_fragment_name_collision(
+    document, operation, expectation
+):
     assert get_operation_type(document, operation) == expectation
 
 
