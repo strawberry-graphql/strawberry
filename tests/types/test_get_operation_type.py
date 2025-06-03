@@ -1,4 +1,5 @@
 from graphql import parse
+import pytest
 
 from strawberry.types.graphql import OperationType
 from strawberry.utils.operation import get_operation_type
@@ -95,3 +96,16 @@ def test_get_operation_type_with_fragment_name_collision():
     assert get_operation_type(query_collision) == OperationType.QUERY
     assert get_operation_type(mutation_collision) == OperationType.MUTATION
     assert get_operation_type(subscription_collision) == OperationType.SUBSCRIPTION
+
+
+def test_get_operation_type_only_fragments():
+    only_fragments = parse("""
+      fragment Foo on Bar {
+        id
+      }
+    """)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        get_operation_type(only_fragments)
+
+    assert "Can't get GraphQL operation type" in str(excinfo.value)
