@@ -642,6 +642,32 @@ def test_lazy_union():
     assert result.data["b"]["__typename"] == "TypeB"
 
 
+def test_lazy_union_with_generic():
+    UnionValue = Annotated["UnionValue", lazy("tests.schema.test_lazy.type_e")]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def a(self) -> UnionValue:
+            from tests.schema.test_lazy.type_e import ValueContainer, MyEnum
+
+            return ValueContainer(value=MyEnum.ONE)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+     {
+        a {
+            __typename
+        }
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert result.data["a"]["__typename"] == "MyEnumValueContainer"
+
+
 @pytest.mark.raises_strawberry_exception(
     InvalidUnionTypeError, match="Type `int` cannot be used in a GraphQL Union"
 )
