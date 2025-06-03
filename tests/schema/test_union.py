@@ -649,7 +649,7 @@ def test_lazy_union_with_generic():
     class Query:
         @strawberry.field
         def a(self) -> UnionValue:
-            from tests.schema.test_lazy.type_e import ValueContainer, MyEnum
+            from tests.schema.test_lazy.type_e import MyEnum, ValueContainer
 
             return ValueContainer(value=MyEnum.ONE)
 

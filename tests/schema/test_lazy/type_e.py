@@ -1,6 +1,5 @@
 from enum import Enum
-import sys
-from typing import Annotated, Generic, TypeVar
+from typing import Generic, TypeVar
 
 import strawberry
 
