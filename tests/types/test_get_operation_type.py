@@ -1,5 +1,5 @@
-from graphql import parse
 import pytest
+from graphql import parse
 
 from strawberry.types.graphql import OperationType
 from strawberry.utils.operation import get_operation_type
