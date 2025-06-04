@@ -1,6 +1,25 @@
 CHANGELOG
 =========
 
+0.270.6 - 2025-06-04
+--------------------
+
+This release fixes that the `create_type` tool asked users to pass a `name` for
+fields without resolvers even when a `name` was already provided.
+
+The following code now works as expected:
+
+```python
+import strawberry
+from strawberry.tools import create_type
+
+first_name = strawberry.field(name="firstName")
+Query = create_type(f"Query", [first_name])
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3885](https://github.com/strawberry-graphql/strawberry/pull/3885/)
+
+
 0.270.5 - 2025-06-01
 --------------------
 
