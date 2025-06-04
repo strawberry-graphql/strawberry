@@ -128,7 +128,7 @@ def test_requires_resolver_or_name_to_create_type_field():
 
 def test_can_create_type_field_from_resolver_only():
     def get_name() -> str:
-        return "foo"
+        return "foo"  # pragma: no cover
 
     name = strawberry.field(resolver=get_name)
 
@@ -153,7 +153,7 @@ def test_can_create_type_field_from_name_only():
 
 def test_can_create_type_field_from_resolver_and_name():
     def get_first_name() -> str:
-        return "foo"
+        return "foo"  # pragma: no cover
 
     first_name = strawberry.field(name="firstName", resolver=get_first_name)
 
