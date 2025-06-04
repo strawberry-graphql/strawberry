@@ -119,11 +119,50 @@ def test_create_type_empty_list():
         create_type("MyType", [])
 
 
-def test_create_type_field_no_name():
+def test_requires_resolver_or_name_to_create_type_field():
     name = strawberry.field()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Field doesn't have a name"):
         create_type("MyType", [name])
+
+
+def test_can_create_type_field_from_resolver_only():
+    def get_name() -> str:
+        return "foo"
+
+    name = strawberry.field(resolver=get_name)
+
+    MyType = create_type("MyType", [name])
+
+    definition = get_object_definition(MyType, strict=True)
+    assert len(definition.fields) == 1
+    assert definition.fields[0].python_name == "get_name"
+    assert definition.fields[0].graphql_name is None
+
+
+def test_can_create_type_field_from_name_only():
+    first_name = strawberry.field(name="firstName", graphql_type=str)
+
+    MyType = create_type("MyType", [first_name])
+
+    definition = get_object_definition(MyType, strict=True)
+    assert len(definition.fields) == 1
+    assert definition.fields[0].python_name == "first_name"
+    assert definition.fields[0].graphql_name == "firstName"
+
+
+def test_can_create_type_field_from_resolver_and_name():
+    def get_first_name() -> str:
+        return "foo"
+
+    first_name = strawberry.field(name="firstName", resolver=get_first_name)
+
+    MyType = create_type("MyType", [first_name])
+
+    definition = get_object_definition(MyType, strict=True)
+    assert len(definition.fields) == 1
+    assert definition.fields[0].python_name == "get_first_name"
+    assert definition.fields[0].graphql_name == "firstName"
 
 
 def test_create_type_field_invalid():
