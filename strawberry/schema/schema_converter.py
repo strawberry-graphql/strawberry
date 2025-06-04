@@ -968,8 +968,11 @@ class GraphQLCoreConverter:
     def validate_same_type_definition(
         self, name: str, type_definition: StrawberryType, cached_type: ConcreteType
     ) -> None:
-        # if the type definitions are the same we can return
-        if cached_type.definition == type_definition:
+        # Skip validation if _unsafe_disable_same_type_validation is True
+        if (
+            self.config._unsafe_disable_same_type_validation
+            or cached_type.definition == type_definition
+        ):
             return
 
         # otherwise we need to check if we are dealing with different instances

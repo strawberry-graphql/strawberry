@@ -6,6 +6,7 @@ import pytest
 
 import strawberry
 from strawberry.exceptions import DuplicatedTypeName
+from strawberry.schema.config import StrawberryConfig
 
 
 @pytest.mark.raises_strawberry_exception(
@@ -151,6 +152,40 @@ def test_allows_multiple_instance_of_same_generic():
         type Query {
           first: IntA!
           second: IntA!
+        }
+        """
+    ).strip()
+
+    assert str(schema) == expected_schema
+
+
+def test_allows_duplicated_types_when_validation_disabled():
+    @strawberry.type(name="DuplicatedType")
+    class A:
+        a: int
+
+    @strawberry.type(name="DuplicatedType")
+    class B:
+        b: int
+
+    @strawberry.type
+    class Query:
+        field: int
+
+    schema = strawberry.Schema(
+        query=Query,
+        types=[A, B],
+        config=StrawberryConfig(_unsafe_disable_same_type_validation=True),
+    )
+
+    expected_schema = textwrap.dedent(
+        """
+        type DuplicatedType {
+          a: Int!
+        }
+
+        type Query {
+          field: Int!
         }
         """
     ).strip()
