@@ -4,7 +4,6 @@ from typing import Optional
 
 import strawberry
 from strawberry.types.field import StrawberryField
-from strawberry.utils.str_converters import to_snake_case
 
 
 def create_type(
@@ -51,9 +50,7 @@ def create_type(
         if not isinstance(field, StrawberryField):
             raise TypeError("Field is not an instance of StrawberryField")
 
-        field_name = field.python_name or (
-            to_snake_case(field.graphql_name) if field.graphql_name else None
-        )
+        field_name = field.python_name or field.graphql_name
 
         if field_name is None:
             raise ValueError(

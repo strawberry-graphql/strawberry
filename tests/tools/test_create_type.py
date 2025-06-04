@@ -147,7 +147,7 @@ def test_can_create_type_field_from_name_only():
 
     definition = get_object_definition(MyType, strict=True)
     assert len(definition.fields) == 1
-    assert definition.fields[0].python_name == "first_name"
+    assert definition.fields[0].python_name == "firstName"
     assert definition.fields[0].graphql_name == "firstName"
 
 
