@@ -50,6 +50,9 @@ def create_type(
         if not isinstance(field, StrawberryField):
             raise TypeError("Field is not an instance of StrawberryField")
 
+        # Fields created using `strawberry.field` without a resolver don't have a
+        # `python_name`. In that case, we fall back to the field's `graphql_name`
+        # set via the `name` argument passed to `strawberry.field`.
         field_name = field.python_name or field.graphql_name
 
         if field_name is None:
