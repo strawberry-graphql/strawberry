@@ -17,6 +17,7 @@ class StrawberryConfig:
     relay_use_legacy_global_id: bool = False
     disable_field_suggestions: bool = False
     info_class: type[Info] = Info
+    _unsafe_disable_same_type_validation: bool = False
 
     def __post_init__(
         self,
