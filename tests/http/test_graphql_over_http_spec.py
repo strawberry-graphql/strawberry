@@ -5,9 +5,25 @@ https://github.com/graphql/graphql-http/blob/main/src/audits/server.ts
 
 import pytest
 
-from tests.http.clients.chalice import ChaliceHttpClient
-from tests.http.clients.django import DjangoHttpClient
-from tests.http.clients.sanic import SanicHttpClient
+try:
+    from tests.http.clients.async_django import AsyncDjangoHttpClient
+except ImportError:
+    AsyncDjangoHttpClient = None
+
+try:
+    from tests.http.clients.chalice import ChaliceHttpClient
+except ImportError:
+    ChaliceHttpClient = None
+
+try:
+    from tests.http.clients.django import DjangoHttpClient
+except ImportError:
+    DjangoHttpClient = None
+
+try:
+    from tests.http.clients.sanic import SanicHttpClient
+except ImportError:
+    SanicHttpClient = None
 
 
 @pytest.mark.xfail(
@@ -18,7 +34,7 @@ async def test_22eb(http_client):
     """
     SHOULD accept application/graphql-response+json and match the content-type
     """
-    if isinstance(http_client, ChaliceHttpClient):
+    if type(http_client) is ChaliceHttpClient:
         pytest.xfail("The Chalice test client does not return any response headers")
 
     response = await http_client.query(
@@ -37,7 +53,7 @@ async def test_4655(http_client):
     """
     MUST accept application/json and match the content-type
     """
-    if isinstance(http_client, ChaliceHttpClient):
+    if type(http_client) is ChaliceHttpClient:
         pytest.xfail("The Chalice test client does not return any response headers")
 
     response = await http_client.query(
@@ -56,7 +72,7 @@ async def test_47de(http_client):
     """
     SHOULD accept */* and use application/json for the content-type
     """
-    if isinstance(http_client, ChaliceHttpClient):
+    if type(http_client) is ChaliceHttpClient:
         pytest.xfail("The Chalice test client does not return any response headers")
 
     response = await http_client.query(
@@ -75,7 +91,7 @@ async def test_80d8(http_client):
     """
     SHOULD assume application/json content-type when accept is missing
     """
-    if isinstance(http_client, ChaliceHttpClient):
+    if type(http_client) is ChaliceHttpClient:
         pytest.xfail("The Chalice test client does not return any response headers")
 
     response = await http_client.query(
@@ -169,7 +185,7 @@ async def test_9abe(http_client):
     """
     MAY respond with 4xx status code if content-type is not supplied on POST requests
     """
-    if isinstance(http_client, DjangoHttpClient):
+    if type(http_client) in [AsyncDjangoHttpClient, DjangoHttpClient]:
         pytest.xfail("Our Django test client defaults to multipart/form-data")
 
     response = await http_client.post(
@@ -196,7 +212,12 @@ async def test_a5bf(http_client):
     """
     MAY use 400 status code when request body is missing on POST
     """
-    if isinstance(http_client, (DjangoHttpClient, ChaliceHttpClient, SanicHttpClient)):
+    if type(http_client) in [
+        AsyncDjangoHttpClient,
+        DjangoHttpClient,
+        ChaliceHttpClient,
+        SanicHttpClient,
+    ]:
         pytest.xfail(
             "Our Django, Chalice, and Sanic test clients currently require a body"
         )
