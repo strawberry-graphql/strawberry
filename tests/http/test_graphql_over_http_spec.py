@@ -345,7 +345,7 @@ async def test_b8b3(http_client):
 )
 async def test_94b_(http_client, parameter):
     """
-    SHOULD allow null varibales/operationName/extensions parameter when accepting application/graphql-response+json
+    SHOULD allow null variables/operationName/extensions parameter when accepting application/graphql-response+json
     """
     response = await http_client.post(
         url="/graphql",
