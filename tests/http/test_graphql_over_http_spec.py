@@ -1,4 +1,3 @@
-# ruff: noqa: N802
 import pytest
 
 from tests.http.clients.chalice import ChaliceHttpClient
@@ -10,7 +9,7 @@ from tests.http.clients.sanic import SanicHttpClient
     reason="Our integrations currently only return application/json",
     raises=AssertionError,
 )
-async def test_22EB(http_client):
+async def test_22eb(http_client):
     """
     SHOULD accept application/graphql-response+json and match the content-type
     """
@@ -48,7 +47,7 @@ async def test_4655(http_client):
     assert "application/json" in response.headers["content-type"]
 
 
-async def test_47DE(http_client):
+async def test_47de(http_client):
     """
     SHOULD accept */* and use application/json for the content-type
     """
@@ -67,7 +66,7 @@ async def test_47DE(http_client):
     assert "application/json" in response.headers["content-type"]
 
 
-async def test_80D8(http_client):
+async def test_80d8(http_client):
     """
     SHOULD assume application/json content-type when accept is missing
     """
@@ -83,7 +82,7 @@ async def test_80D8(http_client):
     assert "application/json" in response.headers["content-type"]
 
 
-async def test_82A3(http_client):
+async def test_82a3(http_client):
     """
     MUST use utf-8 encoding when responding
     """
@@ -101,7 +100,7 @@ async def test_82A3(http_client):
         pytest.fail("Response body is not UTF-8 encoded")
 
 
-async def test_BF61(http_client):
+async def test_bf61(http_client):
     """
     MUST accept utf-8 encoded request
     """
@@ -113,7 +112,7 @@ async def test_BF61(http_client):
     assert response.status_code == 200
 
 
-async def test_78D5(http_client):
+async def test_78d5(http_client):
     """
     MUST assume utf-8 in request if encoding is unspecified
     """
@@ -125,7 +124,7 @@ async def test_78D5(http_client):
     assert response.status_code == 200
 
 
-async def test_2C94(http_client):
+async def test_2c94(http_client):
     """
     MUST accept POST requests
     """
@@ -137,7 +136,7 @@ async def test_2C94(http_client):
     assert response.status_code == 200
 
 
-async def test_5A70(http_client):
+async def test_5a70(http_client):
     """
     MAY accept application/x-www-form-urlencoded formatted GET requests
     """
@@ -145,7 +144,7 @@ async def test_5A70(http_client):
     assert response.status_code == 200
 
 
-async def test_9C48(http_client):
+async def test_9c48(http_client):
     """
     MAY NOT allow executing mutations on GET requests
     """
@@ -161,7 +160,7 @@ async def test_9C48(http_client):
     reason="OPTIONAL - currently supported by Channels, Chalice, and Sanic",
     raises=AssertionError,
 )
-async def test_9ABE(http_client):
+async def test_9abe(http_client):
     """
     MAY respond with 4xx status code if content-type is not supplied on POST requests
     """
@@ -176,7 +175,7 @@ async def test_9ABE(http_client):
     assert 400 <= response.status_code <= 499
 
 
-async def test_03D4(http_client):
+async def test_03d4(http_client):
     """
     MUST accept application/json POST requests
     """
@@ -188,7 +187,7 @@ async def test_03D4(http_client):
     assert response.status_code == 200
 
 
-async def test_A5BF(http_client):
+async def test_a5bf(http_client):
     """
     MAY use 400 status code when request body is missing on POST
     """
@@ -204,7 +203,7 @@ async def test_A5BF(http_client):
     assert response.status_code == 400
 
 
-async def test_423L(http_client):
+async def test_423l(http_client):
     """
     MAY use 400 status code on missing {query} parameter
     """
@@ -228,7 +227,7 @@ async def test_423L(http_client):
     [{"obj": "ect"}, 0, False, ["array"]],
     ids=["LKJ0", "LKJ1", "LKJ2", "LKJ3"],
 )
-async def test_LKJx(http_client, invalid):
+async def test_lkj_(http_client, invalid):
     """
     MAY use 400 status code on invalid {query} parameter
     """
@@ -240,7 +239,7 @@ async def test_LKJx(http_client, invalid):
     assert response.status_code == 400
 
 
-async def test_34A2(http_client):
+async def test_34a2(http_client):
     """
     SHOULD allow string {query} parameter when accepting application/graphql-response+json
     """
@@ -255,7 +254,7 @@ async def test_34A2(http_client):
     assert response.status_code == 200
 
 
-async def test_13EE(http_client):
+async def test_13ee(http_client):
     """
     MUST allow string {query} parameter when accepting application/json
     """
@@ -281,7 +280,7 @@ async def test_13EE(http_client):
     [{"obj": "ect"}, 0, False, ["array"]],
     ids=["6C00", "6C01", "6C02", "6C03"],
 )
-async def test_6C0x(http_client, invalid):
+async def test_6c0_(http_client, invalid):
     """
     MAY use 400 status code on invalid {operationName} parameter
     """
@@ -314,7 +313,7 @@ async def test_8161(http_client):
     assert response.status_code == 200
 
 
-async def test_B8B3(http_client):
+async def test_b8b3(http_client):
     """
     MUST allow string {operationName} parameter when accepting application/json
     """
@@ -339,7 +338,7 @@ async def test_B8B3(http_client):
     ["variables", "operationName", "extensions"],
     ids=["94B0", "94B1", "94B2"],
 )
-async def test_94Bx(http_client, parameter):
+async def test_94b_(http_client, parameter):
     """
     SHOULD allow null varibales/operationName/extensions parameter when accepting application/graphql-response+json
     """
@@ -363,7 +362,7 @@ async def test_94Bx(http_client, parameter):
     ["variables", "operationName", "extensions"],
     ids=["0220", "0221", "0222"],
 )
-async def test_022x(http_client, parameter):
+async def test_022_(http_client, parameter):
     """
     MUST allow null variables/operationName/extensions parameter when accepting application/json
     """
@@ -390,7 +389,7 @@ async def test_022x(http_client, parameter):
     ["string", 0, False, ["array"]],
     ids=["4760", "4761", "4762", "4763"],
 )
-async def test_476x(http_client, invalid):
+async def test_476_(http_client, invalid):
     """
     MAY use 400 status code on invalid {variables} parameter
     """
@@ -405,7 +404,7 @@ async def test_476x(http_client, invalid):
     assert response.status_code == 400
 
 
-async def test_2EA1(http_client):
+async def test_2ea1(http_client):
     """
     SHOULD allow map {variables} parameter when accepting application/graphql-response+json
     """
@@ -423,7 +422,7 @@ async def test_2EA1(http_client):
     assert response.status_code == 200
 
 
-async def test_28B9(http_client):
+async def test_28b9(http_client):
     """
     MUST allow map {variables} parameter when accepting application/json
     """
@@ -443,7 +442,7 @@ async def test_28B9(http_client):
     assert "errors" not in response.json
 
 
-async def test_D6D5(http_client):
+async def test_d6d5(http_client):
     """
     MAY allow URL-encoded JSON string {variables} parameter in GETs when accepting application/graphql-response+json
     """
@@ -456,7 +455,7 @@ async def test_D6D5(http_client):
     assert response.status_code == 200
 
 
-async def test_6A70(http_client):
+async def test_6a70(http_client):
     """
     MAY allow URL-encoded JSON string {variables} parameter in GETs when accepting application/json
     """
@@ -479,7 +478,7 @@ async def test_6A70(http_client):
     ["string", 0, False, ["array"]],
     ids=["58B0", "58B1", "58B2", "58B3"],
 )
-async def test_58Bx(http_client, invalid):
+async def test_58b_(http_client, invalid):
     """
     MAY use 400 status code on invalid {extensions} parameter
     """
@@ -494,7 +493,7 @@ async def test_58Bx(http_client, invalid):
     assert response.status_code == 400
 
 
-async def test_428F(http_client):
+async def test_428f(http_client):
     """
     SHOULD allow map {extensions} parameter when accepting application/graphql-response+json
     """
@@ -512,7 +511,7 @@ async def test_428F(http_client):
     assert response.status_code == 200
 
 
-async def test_1B7A(http_client):
+async def test_1b7a(http_client):
     """
     MUST allow map {extensions} parameter when accepting application/json
     """
@@ -532,7 +531,7 @@ async def test_1B7A(http_client):
     assert "errors" not in response.json
 
 
-async def test_B6DC(http_client):
+async def test_b6dc(http_client):
     """
     MAY use 4xx or 5xx status codes on JSON parsing failure
     """
@@ -544,7 +543,7 @@ async def test_B6DC(http_client):
     assert 400 <= response.status_code <= 599
 
 
-async def test_BCF8(http_client):
+async def test_bcf8(http_client):
     """
     MAY use 400 status code on JSON parsing failure
     """
@@ -568,7 +567,7 @@ async def test_8764(http_client):
     assert 400 <= response.status_code <= 599
 
 
-async def test_3E3A(http_client):
+async def test_3e3a(http_client):
     """
     MAY use 400 status code if parameters are invalid
     """
@@ -580,7 +579,7 @@ async def test_3E3A(http_client):
     assert response.status_code == 400
 
 
-async def test_39AA(http_client):
+async def test_39aa(http_client):
     """
     MUST accept a map for the {extensions} parameter
     """
@@ -600,7 +599,7 @@ async def test_39AA(http_client):
     assert "errors" not in response.json
 
 
-async def test_572B(http_client):
+async def test_572b(http_client):
     """
     SHOULD use 200 status code on document parsing failure when accepting application/json
     """
@@ -615,7 +614,7 @@ async def test_572B(http_client):
     assert response.status_code == 200
 
 
-async def test_DFE2(http_client):
+async def test_dfe2(http_client):
     """
     SHOULD use 200 status code on document validation failure when accepting application/json
     """
@@ -632,7 +631,7 @@ async def test_DFE2(http_client):
     assert response.status_code == 200
 
 
-async def test_7B9B(http_client):
+async def test_7b9b(http_client):
     """
     SHOULD use a status code of 200 on variable coercion failure when accepting application/json
     """
@@ -653,7 +652,7 @@ async def test_7B9B(http_client):
 @pytest.mark.xfail(
     reason="Currently results in status 200 with GraphQL errors", raises=AssertionError
 )
-async def test_865D(http_client):
+async def test_865d(http_client):
     """
     SHOULD use 4xx or 5xx status codes on document parsing failure when accepting application/graphql-response+json
     """
@@ -671,7 +670,7 @@ async def test_865D(http_client):
 @pytest.mark.xfail(
     reason="Currently results in status 200 with GraphQL errors", raises=AssertionError
 )
-async def test_556A(http_client):
+async def test_556a(http_client):
     """
     SHOULD use 400 status code on document parsing failure when accepting application/graphql-response+json
     """
@@ -689,7 +688,7 @@ async def test_556A(http_client):
 @pytest.mark.xfail(
     reason="Currently results in status 200 with GraphQL errors", raises=AssertionError
 )
-async def test_D586(http_client):
+async def test_d586(http_client):
     """
     SHOULD NOT contain the data entry on document parsing failure when accepting application/graphql-response+json
     """
@@ -708,7 +707,7 @@ async def test_D586(http_client):
 @pytest.mark.xfail(
     reason="Currently results in status 200 with GraphQL errors", raises=AssertionError
 )
-async def test_51FE(http_client):
+async def test_51fe(http_client):
     """
     SHOULD use 4xx or 5xx status codes on document validation failure when accepting application/graphql-response+json
     """
@@ -728,7 +727,7 @@ async def test_51FE(http_client):
 @pytest.mark.xfail(
     reason="Currently results in status 200 with GraphQL errors", raises=AssertionError
 )
-async def test_74FF(http_client):
+async def test_74ff(http_client):
     """
     SHOULD use 400 status code on document validation failure when accepting application/graphql-response+json
     """
@@ -748,7 +747,7 @@ async def test_74FF(http_client):
 @pytest.mark.xfail(
     reason="Currently results in status 200 with GraphQL errors", raises=AssertionError
 )
-async def test_5E5B(http_client):
+async def test_5e5b(http_client):
     """
     SHOULD NOT contain the data entry on document validation failure when accepting application/graphql-response+json
     """
@@ -769,7 +768,7 @@ async def test_5E5B(http_client):
 @pytest.mark.xfail(
     reason="Currently results in status 200 with GraphQL errors", raises=AssertionError
 )
-async def test_86EE(http_client):
+async def test_86ee(http_client):
     """
     SHOULD use a status code of 400 on variable coercion failure when accepting application/graphql-response+json
     """
