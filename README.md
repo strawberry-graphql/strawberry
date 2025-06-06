@@ -2,24 +2,23 @@
 
 # Strawberry GraphQL
 
-> Python GraphQL library based on dataclasses
+> Python GraphQL library leveraging modern Python features like dataclasses and type hints to create GraphQL APIs.
 
 [![CircleCI](https://img.shields.io/circleci/token/307b40d5e152e074d34f84d30d226376a15667d5/project/github/strawberry-graphql/strawberry/main.svg?style=for-the-badge)](https://circleci.com/gh/strawberry-graphql/strawberry/tree/main)
 [![Discord](https://img.shields.io/discord/689806334337482765?label=discord&logo=discord&logoColor=white&style=for-the-badge&color=blue)](https://discord.gg/ZkRTEJQ)
 [![PyPI](https://img.shields.io/pypi/v/strawberry-graphql?logo=pypi&logoColor=white&style=for-the-badge)](https://pypi.org/project/strawberry-graphql/)
 
-## Installation ( Quick Start )
+## Quick Start
 
-The quick start method provides a server and CLI to get going quickly. Install
-with:
+### Installation
 
 ```shell
 pip install "strawberry-graphql[debug-server]"
 ```
 
-## Getting Started
+### Basic Example
 
-Create a file called `app.py` with the following code:
+Create a new file `app.py`:
 
 ```python
 import strawberry
@@ -41,79 +40,222 @@ class Query:
 schema = strawberry.Schema(query=Query)
 ```
 
-This will create a GraphQL schema defining a `User` type and a single query
-field `user` that will return a hardcoded user.
-
-To run the debug server run the following command:
+Run the debug server:
 
 ```shell
 strawberry server app
 ```
 
-Open the debug server by clicking on the following link:
-[http://0.0.0.0:8000/graphql](http://0.0.0.0:8000/graphql)
+Visit [http://0.0.0.0:8000/graphql](http://0.0.0.0:8000/graphql) to access GraphiQL and explore your API.
 
-This will open GraphiQL where you can test the API.
+## Features
 
-### Type-checking
+### Type Checking with MyPy
 
-Strawberry comes with a [mypy] plugin that enables statically type-checking your
-GraphQL schema. To enable it, add the following lines to your `mypy.ini`
-configuration:
+Enable static type checking with [MyPy](https://mypy.readthedocs.io/), Python's optional static type checker, by adding to your `mypy.ini`:
 
 ```ini
 [mypy]
 plugins = strawberry.ext.mypy_plugin
 ```
 
-[mypy]: http://www.mypy-lang.org/
+Visit the [MyPy documentation](https://mypy.readthedocs.io/en/stable/introduction.html) to learn more about Python type checking.
 
 ### Django Integration
 
-A Django view is provided for adding a GraphQL endpoint to your application.
-
-1. Add the app to your `INSTALLED_APPS`.
+1. Add to `INSTALLED_APPS`:
 
 ```python
 INSTALLED_APPS = [
-    ...,  # your other apps
     "strawberry.django",
+    # ... your other apps
 ]
 ```
 
-2. Add the view to your `urls.py` file.
+2. Configure URL routing in `urls.py`:
 
 ```python
 from strawberry.django.views import GraphQLView
 from .schema import schema
 
 urlpatterns = [
-    ...,
     path("graphql", GraphQLView.as_view(schema=schema)),
 ]
 ```
 
-## WebSockets
+### WebSocket Support
 
-To support graphql Subscriptions over WebSockets you need to provide a WebSocket
-enabled server. The debug server can be made to support WebSockets with these
-commands:
+For GraphQL subscriptions over WebSockets:
 
 ```shell
 pip install 'strawberry-graphql[debug-server]'
 pip install 'uvicorn[standard]'
 ```
 
-## Examples
+## Testing
 
-* [Various examples on how to use Strawberry](https://github.com/strawberry-graphql/examples)
-* [Full stack example using Starlette, SQLAlchemy, Typescript codegen and Next.js](https://github.com/jokull/python-ts-graphql-demo)
-* [Quart + Strawberry tutorial](https://github.com/rockyburt/Ketchup)
+Strawberry provides built-in testing utilities through `BaseGraphQLTestClient`. Let's look at how to set up and use different testing clients.
 
-## Contributing
+First, let's create a schema with test data:
 
-We use [poetry](https://github.com/sdispater/poetry) to manage dependencies, to
-get started follow these steps:
+```python
+import strawberry
+
+
+@strawberry.type
+class User:
+    name: str
+    age: int
+
+
+# Setup test data
+test_users = {
+    "123": User(name="Patrick", age=100),
+    "456": User(name="John", age=25),
+}
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user(self, id: str) -> User:
+        return test_users[id]
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Now let's explore different ways to test this schema:
+
+### 1. Testing with httpx
+
+```python
+from strawberry.test import BaseGraphQLTestClient
+import httpx
+
+
+class HttpxTestClient(BaseGraphQLTestClient):
+    def __init__(self) -> None:
+        self.client = httpx.Client(base_url="http://localhost:8000")
+
+    def request(self, body: str, headers=None, files=None):
+        headers = headers or {}
+        response = self.client.post(
+            "/graphql",
+            json=body,
+            headers=headers,
+            files=files,
+        )
+        return response.json()
+
+
+def test_query():
+    client = HttpxTestClient()
+    response = client.query(
+        """
+        {
+            user(id: "123") {
+                name
+                age
+            }
+        }
+        """
+    )
+    assert response.data["user"]["name"] == "Patrick"
+    assert not response.errors
+```
+
+### 2. Testing with requests
+
+```python
+from strawberry.test import BaseGraphQLTestClient
+from requests import Session
+
+
+class RequestsTestClient(BaseGraphQLTestClient):
+    def __init__(self) -> None:
+        self.client = Session()
+        self.client.base_url = "http://localhost:8000"
+
+    def request(self, body: str, headers=None, files=None):
+        headers = headers or {}
+        response = self.client.post(
+            f"{self.client.base_url}/graphql",
+            json=body,
+            headers=headers,
+            files=files,
+        )
+        return response.json()
+
+
+def test_query_with_variables():
+    client = RequestsTestClient()
+    response = client.query(
+        """
+        query GetUser($id: ID!) {
+            user(id: $id) {
+                name
+                age
+            }
+        }
+        """,
+        variables={"id": "123"},
+    )
+    assert response.data["user"]["name"] == "Patrick"
+    assert not response.errors
+```
+
+### 3. Testing with aiohttp (async)
+
+```python
+from strawberry.test import BaseGraphQLTestClient
+import aiohttp
+import asyncio
+
+
+class AiohttpTestClient(BaseGraphQLTestClient):
+    def __init__(self) -> None:
+        self.base_url = "http://localhost:8000"
+
+    async def async_request(self, body: str, headers=None, files=None):
+        headers = headers or {}
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                f"{self.base_url}/graphql",
+                json=body,
+                headers=headers,
+            ) as response:
+                return await response.json()
+
+    def request(self, body: str, headers=None, files=None):
+        return asyncio.run(self.async_request(body, headers, files))
+
+
+def test_async_query():
+    client = AiohttpTestClient()
+    response = client.query(
+        """
+        {
+            user(id: "123") {
+                name
+                age
+            }
+        }
+        """
+    )
+    assert response.data["user"]["name"] == "Patrick"
+    assert not response.errors
+```
+
+## Examples & Resources
+
+- [Official Examples Repository](https://github.com/strawberry-graphql/examples)
+- [Full-stack Demo (Starlette + SQLAlchemy + TypeScript + Next.js)](https://github.com/jokull/python-ts-graphql-demo)
+- [Quart Integration Tutorial](https://github.com/rockyburt/Ketchup)
+
+## Development
+
+### Setting Up Development Environment
 
 ```shell
 git clone https://github.com/strawberry-graphql/strawberry
@@ -122,31 +264,22 @@ poetry install --with integrations
 poetry run pytest
 ```
 
-For all further detail, check out the [Contributing Page](CONTRIBUTING.md)
-
-
-### Pre commit
-
-We have a configuration for
-[pre-commit](https://github.com/pre-commit/pre-commit), to add the hook run the
-following command:
+### Pre-commit Hooks
 
 ```shell
 pre-commit install
 ```
 
-## Links
+## Community & Support
 
-- Project homepage: https://strawberry.rocks
-- Repository: https://github.com/strawberry-graphql/strawberry
-- Issue tracker: https://github.com/strawberry-graphql/strawberry/issues
-  - In case of sensitive bugs like security vulnerabilities, please contact
-    patrick.arminio@gmail.com directly instead of using the issue tracker. We
-    value your effort to improve the security and privacy of this project!
+- Documentation: [https://strawberry.rocks](https://strawberry.rocks)
+- GitHub Repository: [https://github.com/strawberry-graphql/strawberry](https://github.com/strawberry-graphql/strawberry)
+- Issue Tracker: [https://github.com/strawberry-graphql/strawberry/issues](https://github.com/strawberry-graphql/strawberry/issues)
+- Discord Community: Join our active community on [Discord](https://discord.gg/ZkRTEJQ) for real-time discussions, questions, and support
+- Security Issues: Contact patrick.arminio@gmail.com directly
 
-## Licensing
+## License
 
-The code in this project is licensed under MIT license. See [LICENSE](./LICENSE)
-for more information.
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
 
 ![Recent Activity](https://images.repography.com/0/strawberry-graphql/strawberry/recent-activity/d751713988987e9331980363e24189ce.svg)
