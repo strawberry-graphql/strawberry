@@ -1,3 +1,8 @@
+"""
+This file essentially mirrors the GraphQL over HTTP audits:
+https://github.com/graphql/graphql-http/blob/main/src/audits/server.ts
+"""
+
 import pytest
 
 from tests.http.clients.chalice import ChaliceHttpClient
