@@ -135,7 +135,7 @@ debug-server = [
   "rich",
   "libcst",
 ]
-django = ["Django", "pytest-django", "asgiref"]
+django = ["Django", "asgiref"]
 channels = ["channels", "asgiref"]
 flask = ["flask"]
 quart = ["quart"]
