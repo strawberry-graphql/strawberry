@@ -429,8 +429,10 @@ class StrawberryObjectDefinition(StrawberryType):
             if hasattr(real_concrete_type, "_enum_definition"):
                 real_concrete_type = real_concrete_type._enum_definition
 
-            if isinstance(expected_concrete_type, type) and issubclass(
-                real_concrete_type, expected_concrete_type
+            if (
+                isinstance(expected_concrete_type, type)
+                and isinstance(real_concrete_type, type)
+                and issubclass(real_concrete_type, expected_concrete_type)
             ):
                 return True
 
