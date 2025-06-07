@@ -52,6 +52,8 @@ class ExecutionContext:
     result: Optional[GraphQLExecutionResult] = None
     extensions_results: dict[str, Any] = dataclasses.field(default_factory=dict)
 
+    operation_extensions: Optional[dict[str, Any]] = None
+
     def __post_init__(self, provided_operation_name: str | None) -> None:
         self._provided_operation_name = provided_operation_name
 
