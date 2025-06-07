@@ -93,7 +93,6 @@ types-protobuf = "^5.29.1.20250403"
 poetry-plugin-export = { version = "^1.6.0", python = "<4.0", optional = false }
 # another bug in poetry
 urllib3 = "<2"
-graphlib_backport = { version = "*", python = "<3.9", optional = false }
 inline-snapshot = "^0.10.1"
 types-deprecated = "^1.2.15.20241117"
 types-six = "^1.17.0.20250403"
@@ -145,7 +144,7 @@ pydantic = ["pydantic"]
 sanic = ["sanic"]
 fastapi = ["fastapi", "python-multipart"]
 chalice = ["chalice"]
-cli = ["typer", "pygments", "rich", "libcst", "graphlib_backport"]
+cli = ["typer", "pygments", "rich", "libcst"]
 litestar = ["litestar"]
 pyinstrument = ["pyinstrument"]
 
