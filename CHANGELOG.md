@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.271.1 - 2025-06-07
+--------------------
+
+This Release contains fix of enum value was not working in generic container in lazy union.
+
+Contributed by [Alex](https://github.com/benzolium) via [PR #3883](https://github.com/strawberry-graphql/strawberry/pull/3883/)
+
+
 0.271.0 - 2025-06-04
 --------------------
 

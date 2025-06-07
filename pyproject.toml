@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "strawberry-graphql"
-version = "0.271.0"
+version = "0.271.1"
 packages = [{ include = "strawberry" }]
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
