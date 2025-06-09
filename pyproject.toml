@@ -1,15 +1,11 @@
-[tool.poetry]
+[project]
 name = "strawberry-graphql"
 version = "0.271.1"
-packages = [{ include = "strawberry" }]
 description = "A library for creating GraphQL APIs"
-authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
-license = "MIT"
+authors = [{ name = "Patrick Arminio", email = "patrick.arminio@gmail.com" }]
+license = { text = "MIT" }
 readme = "README.md"
 keywords = ["graphql", "api", "rest", "starlette", "async"]
-homepage = "https://strawberry.rocks/"
-repository = "https://github.com/strawberry-graphql/strawberry"
-documentation = "https://strawberry.rocks/"
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
@@ -17,9 +13,18 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
   "License :: OSI Approved :: MIT License",
 ]
-include = ["strawberry/py.typed"]
+requires-python = ">=3.9,<4.0"
+dependencies = [
+  "graphql-core>=3.2.0,<3.4.0",
+  "typing-extensions>=4.5.0",
+  "python-dateutil~=2.7",
+  "packaging>=23",
+]
 
-[tool.poetry.urls]
+[project.urls]
+homepage = "https://strawberry.rocks/"
+repository = "https://github.com/strawberry-graphql/strawberry"
+documentation = "https://strawberry.rocks/"
 "Changelog" = "https://strawberry.rocks/changelog"
 "Discord" = "https://discord.com/invite/3uQ2PaY"
 "Twitter" = "https://twitter.com/strawberry_gql"
@@ -27,34 +32,39 @@ include = ["strawberry/py.typed"]
 "Sponsor on GitHub" = "https://github.com/sponsors/strawberry-graphql"
 "Sponsor on Open Collective" = "https://opencollective.com/strawberry-graphql"
 
-[tool.poetry.dependencies]
-python = ">=3.9"
-graphql-core = { version = ">=3.2.0,<3.4.0", python = ">=3.9,<4.0" }
-typing-extensions = ">=4.5.0"
-python-dateutil = "^2.7.0"
-packaging = ">=23"
-starlette = { version = ">=0.18.0", optional = true }
-typer = { version = ">=0.7.0", optional = true }
-pygments = { version = "^2.3", optional = true }
-uvicorn = { version = ">=0.11.6", optional = true }
-Django = { version = ">=3.2", optional = true }
-asgiref = { version = "^3.2", optional = true }
-flask = { version = ">=1.1", optional = true }
-quart = { version = ">=0.19.3", optional = true }
-opentelemetry-api = { version = "<2", optional = true }
-opentelemetry-sdk = { version = "<2", optional = true }
-chalice = { version = "^1.22", optional = true }
-pydantic = { version = ">1.6.1", optional = true }
-python-multipart = { version = ">=0.0.7", optional = true }
-sanic = { version = ">=20.12.2", optional = true }
-aiohttp = { version = "^3.7.4.post0", optional = true }
-fastapi = { version = ">=0.65.2", optional = true }
-litestar = { version = ">=2", python = ">=3.10,<4.0", optional = true }
-channels = { version = ">=3.0.5", optional = true }
-libcst = { version = ">=0.4.7,<1.8.0", optional = true }
-rich = { version = ">=12.0.0", optional = true }
-pyinstrument = { version = ">=4.0.0", optional = true }
-websockets = { version = "^15.0.1", optional = true }
+[project.scripts]
+strawberry = "strawberry.cli:run"
+
+[project.optional-dependencies]
+aiohttp = ["aiohttp>=3.7.4.post0,<4"]
+asgi = ["starlette>=0.18.0", "python-multipart>=0.0.7"]
+debug = ["rich>=12.0.0", "libcst>=0.4.7,<1.8.0"]
+debug-server = [
+  "starlette>=0.18.0",
+  "uvicorn>=0.11.6",
+  "websockets>=15.0.1,<16",
+  "python-multipart>=0.0.7",
+  "typer>=0.7.0",
+  "pygments~=2.3",
+  "rich>=12.0.0",
+  "libcst>=0.4.7,<1.8.0",
+]
+django = ["Django>=3.2", "asgiref~=3.2"]
+channels = ["channels>=3.0.5", "asgiref~=3.2"]
+flask = ["flask>=1.1"]
+quart = ["quart>=0.19.3"]
+opentelemetry = ["opentelemetry-api<2", "opentelemetry-sdk<2"]
+pydantic = ["pydantic>1.6.1"]
+sanic = ["sanic>=20.12.2"]
+fastapi = ["fastapi>=0.65.2", "python-multipart>=0.0.7"]
+chalice = ["chalice~=1.22"]
+cli = ["typer>=0.7.0", "pygments~=2.3", "rich>=12.0.0", "libcst>=0.4.7,<1.8.0"]
+litestar = ["litestar>=2; python_version~='3.10'"]
+pyinstrument = ["pyinstrument>=4.0.0"]
+
+[tool.poetry]
+packages = [{ include = "strawberry" }]
+include = ["strawberry/py.typed"]
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.4"
@@ -119,38 +129,6 @@ starlette = ">=0.13.6"
 litestar = { version = ">=2", python = ">=3.10,<4.0", optional = false }
 uvicorn = ">=0.11.6"
 daphne = "^4.0.0"
-
-
-[tool.poetry.extras]
-aiohttp = ["aiohttp"]
-asgi = ["starlette", "python-multipart"]
-debug = ["rich", "libcst"]
-debug-server = [
-  "starlette",
-  "uvicorn",
-  "websockets",
-  "python-multipart",
-  "typer",
-  "pygments",
-  "rich",
-  "libcst",
-]
-django = ["Django", "asgiref"]
-channels = ["channels", "asgiref"]
-flask = ["flask"]
-quart = ["quart"]
-opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
-pydantic = ["pydantic"]
-sanic = ["sanic"]
-fastapi = ["fastapi", "python-multipart"]
-chalice = ["chalice"]
-cli = ["typer", "pygments", "rich", "libcst"]
-litestar = ["litestar"]
-pyinstrument = ["pyinstrument"]
-
-[tool.poetry.scripts]
-strawberry = "strawberry.cli:run"
-
 
 [tool.pytest.ini_options]
 addopts = "--emoji"
