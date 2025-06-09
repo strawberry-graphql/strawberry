@@ -1,6 +1,27 @@
 CHANGELOG
 =========
 
+0.271.2 - 2025-06-09
+--------------------
+
+This release fixes an `AttributeError` that occurred when a fragment and an `OperationDefinitionNode` shared the same name, and the fragment appeared first in the document.
+
+The following example will now work as expected:
+
+```graphql
+fragment UserAgent on UserAgentType {
+  id
+}
+
+query UserAgent {
+  userAgent {
+    ...UserAgent
+  }
+}
+
+Contributed by [pre-commit-ci](https://github.com/pre-commit-ci) via [PR #3893](https://github.com/strawberry-graphql/strawberry/pull/3893/)
+
+
 0.271.1 - 2025-06-07
 --------------------
 
