@@ -2,7 +2,7 @@ Release type: minor
 
 This release features a dedicated extension to disable introspection queries.
 Disabling introspection queries was already possible using the
-`AddValidationRules` extension. However, using this new extension requires less
+`AddValidationRules` extension. However, using this new extension requires fewer
 steps and makes the feature more discoverable.
 
 ## Usage example:
