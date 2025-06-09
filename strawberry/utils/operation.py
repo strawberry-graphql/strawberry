@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, Optional
 
 from graphql.language import OperationDefinitionNode
 
@@ -27,7 +27,8 @@ def get_operation_type(
 
     if operation_name:
         for d in graphql_document.definitions:
-            d = cast("OperationDefinitionNode", d)
+            if not isinstance(d, OperationDefinitionNode):
+                continue
             if d.name and d.name.value == operation_name:
                 definition = d
                 break
