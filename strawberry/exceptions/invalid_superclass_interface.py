@@ -9,7 +9,7 @@ class InvalidSuperclassInterfaceError(Exception):
     ) -> None:
         pretty_interface_names = ", ".join(interface.name for interface in interfaces)
         message = (
-            f"An Input class {input_name!r} cannot inherit "
-            f"from an Interface(s) {pretty_interface_names!r}"
+            f"Input class {input_name!r} cannot inherit "
+            f"from interface(s): {pretty_interface_names}"
         )
         super().__init__(message)

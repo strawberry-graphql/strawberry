@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -431,20 +432,34 @@ def test_input_cannot_inherit_from_interface():
     class SomeInterface:
         some_arg: str
 
-    with pytest.raises(InvalidSuperclassInterfaceError):
+    with pytest.raises(
+        InvalidSuperclassInterfaceError,
+        match=re.escape(
+            "Input class 'SomeInput' cannot inherit from interface(s): SomeInterface"
+        ),
+    ):
 
         @strawberry.input
-        class SomeInput(SomeInterface):  # this should throw an error
+        class SomeInput(SomeInterface):
             another_arg: str
+
+
+def test_input_cannot_inherit_from_interfaces():
+    @strawberry.interface
+    class SomeInterface:
+        some_arg: str
 
     @strawberry.interface
     class SomeOtherInterface:
         some_other_arg: str
 
-    with pytest.raises(InvalidSuperclassInterfaceError):
+    with pytest.raises(
+        InvalidSuperclassInterfaceError,
+        match=re.escape(
+            "Input class 'SomeOtherInput' cannot inherit from interface(s): SomeInterface, SomeOtherInterface"
+        ),
+    ):
 
         @strawberry.input
-        class SomeOtherInput(
-            SomeInterface, SomeOtherInterface
-        ):  # this should throw an error
+        class SomeOtherInput(SomeInterface, SomeOtherInterface):
             another_arg: str
