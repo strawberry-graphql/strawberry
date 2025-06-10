@@ -71,7 +71,7 @@ jobs:
           ref: "refs/pull/${{ github.event.number }}/merge"
 
       - name: Release file check
-        uses: ./.github/release-check-action
+        uses: strawberry-graphql/strawberry/.github/release-check-action@main
         id: release-check
         if: github.event.pull_request.draft == false
 
