@@ -51,8 +51,9 @@ query UserAgent {
     ...UserAgent
   }
 }
+```
 
-Contributed by [pre-commit-ci](https://github.com/pre-commit-ci) via [PR #3893](https://github.com/strawberry-graphql/strawberry/pull/3893/)
+Contributed by [Arthur](https://github.com/Speedy1991) via [PR #3882](https://github.com/strawberry-graphql/strawberry/pull/3882/)
 
 
 0.271.1 - 2025-06-07
