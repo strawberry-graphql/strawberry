@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.272.1 - 2025-06-10
+--------------------
+
+This release modifies export-schema cli to include an EOF newline if --output option is provided. This allows better review in github.com for the generated schema files.
+
+Contributed by [Yunkai Zhou](https://github.com/yunkaiz) via [PR #3896](https://github.com/strawberry-graphql/strawberry/pull/3896/)
+
+
 0.272.0 - 2025-06-10
 --------------------
 
