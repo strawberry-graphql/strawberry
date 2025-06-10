@@ -1,6 +1,39 @@
 CHANGELOG
 =========
 
+0.272.0 - 2025-06-10
+--------------------
+
+This release features a dedicated extension to disable introspection queries.
+Disabling introspection queries was already possible using the
+`AddValidationRules` extension. However, using this new extension requires fewer
+steps and makes the feature more discoverable.
+
+## Usage example:
+
+```python
+import strawberry
+from strawberry.extensions import DisableIntrospection
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        DisableIntrospection(),
+    ],
+)
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3895](https://github.com/strawberry-graphql/strawberry/pull/3895/)
+
+
 0.271.2 - 2025-06-09
 --------------------
 
