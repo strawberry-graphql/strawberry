@@ -32,7 +32,7 @@ def export_schema(
     schema_text = print_schema(schema_symbol)
 
     if output:
-        Path(output).write_text(schema_text)
+        Path(output).write_text(schema_text + "\n")
         typer.echo(f"Schema exported to {output}")
     else:
         print(schema_text)  # noqa: T201
