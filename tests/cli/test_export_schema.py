@@ -94,5 +94,5 @@ def test_output_option(cli_app: Typer, cli_runner: CliRunner, tmp_path):
             "type User {\n"
             "  name: String!\n"
             "  age: Int!\n"
-            "}"
+            "}\n"
         )
