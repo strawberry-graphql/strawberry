@@ -1,8 +1,8 @@
-from typing import Iterable
+from collections.abc import Iterable
 
 
 class InvalidSuperclassInterfaceError(Exception):
-    def __init__(self, input_name: str, interface_names: Iterable[str]):
+    def __init__(self, input_name: str, interface_names: Iterable[str]) -> None:
         interface_names = ", ".join(interface_names)
         message = (
             f"An Input class {input_name!r} cannot inherit "

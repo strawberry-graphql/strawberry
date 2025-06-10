@@ -5,8 +5,8 @@ import pytest
 from pytest_mock import MockerFixture
 
 import strawberry
-from strawberry.types.base import StrawberryObjectDefinition
 from strawberry.exceptions import InvalidSuperclassInterfaceError
+from strawberry.types.base import StrawberryObjectDefinition
 
 
 def test_query_interface():

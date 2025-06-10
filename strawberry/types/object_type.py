@@ -156,8 +156,7 @@ def _process_type(
         interface_names = [interface.name for interface in interfaces]
 
         raise InvalidSuperclassInterfaceError(
-            input_name=name,
-            interface_names=interface_names
+            input_name=name, interface_names=interface_names
         )
 
     cls.__strawberry_definition__ = StrawberryObjectDefinition(  # type: ignore[attr-defined]
