@@ -20,6 +20,13 @@ from strawberry.extensions import AddValidationRules
 from graphql import ValidationRule
 
 
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
 class MyCustomRule(ValidationRule): ...
 
 
@@ -52,6 +59,13 @@ from strawberry.extensions import AddValidationRules
 from graphql import ValidationRule
 
 
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
 class CustomRule(ValidationRule):
     def enter_field(self, node, *args) -> None:
         if node.name.value == "example":
@@ -80,6 +94,14 @@ import strawberry
 from strawberry.extensions import AddValidationRules
 from graphql.validation import NoDeprecatedCustomRule
 
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
 schema = strawberry.Schema(
     Query,
     extensions=[
@@ -97,6 +119,14 @@ schema = strawberry.Schema(
 import strawberry
 from strawberry.extensions import AddValidationRules
 from graphql.validation import NoSchemaIntrospectionCustomRule
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
 
 schema = strawberry.Schema(
     Query,
