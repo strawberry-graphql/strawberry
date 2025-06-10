@@ -153,7 +153,9 @@ def _process_type(
     resolve_type = getattr(cls, "resolve_type", None)
 
     if is_input and interfaces:
-        raise InvalidSuperclassInterfaceError(input_name=name, interfaces=interfaces)
+        raise InvalidSuperclassInterfaceError(
+            cls=cls, input_name=name, interfaces=interfaces
+        )
 
     cls.__strawberry_definition__ = StrawberryObjectDefinition(  # type: ignore[attr-defined]
         name=name,

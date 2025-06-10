@@ -108,23 +108,28 @@ def test_input_with_nonscalar_field_default():
     assert result.data["example"] == expected_result
 
 
+@pytest.mark.raises_strawberry_exception(
+    InvalidSuperclassInterfaceError,
+    match=re.escape(
+        "Input class 'SomeInput' cannot inherit from interface(s): SomeInterface"
+    ),
+)
 def test_input_cannot_inherit_from_interface():
     @strawberry.interface
     class SomeInterface:
         some_arg: str
 
-    with pytest.raises(
-        InvalidSuperclassInterfaceError,
-        match=re.escape(
-            "Input class 'SomeInput' cannot inherit from interface(s): SomeInterface"
-        ),
-    ):
-
-        @strawberry.input
-        class SomeInput(SomeInterface):
-            another_arg: str
+    @strawberry.input
+    class SomeInput(SomeInterface):
+        another_arg: str
 
 
+@pytest.mark.raises_strawberry_exception(
+    InvalidSuperclassInterfaceError,
+    match=re.escape(
+        "Input class 'SomeOtherInput' cannot inherit from interface(s): SomeInterface, SomeOtherInterface"
+    ),
+)
 def test_input_cannot_inherit_from_interfaces():
     @strawberry.interface
     class SomeInterface:
@@ -134,13 +139,6 @@ def test_input_cannot_inherit_from_interfaces():
     class SomeOtherInterface:
         some_other_arg: str
 
-    with pytest.raises(
-        InvalidSuperclassInterfaceError,
-        match=re.escape(
-            "Input class 'SomeOtherInput' cannot inherit from interface(s): SomeInterface, SomeOtherInterface"
-        ),
-    ):
-
-        @strawberry.input
-        class SomeOtherInput(SomeInterface, SomeOtherInterface):
-            another_arg: str
+    @strawberry.input
+    class SomeOtherInput(SomeInterface, SomeOtherInterface):
+        another_arg: str
