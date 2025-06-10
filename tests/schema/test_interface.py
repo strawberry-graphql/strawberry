@@ -1,4 +1,3 @@
-import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -6,7 +5,6 @@ import pytest
 from pytest_mock import MockerFixture
 
 import strawberry
-from strawberry.exceptions import InvalidSuperclassInterfaceError
 from strawberry.types.base import StrawberryObjectDefinition
 
 
@@ -425,41 +423,3 @@ def test_resolve_type_on_interface_returning_interface():
     assert result.data
     assert result.data["one"] == {"id": "1", "__typename": "Video"}
     assert result.data["two"] == {"id": "2", "__typename": "Image"}
-
-
-def test_input_cannot_inherit_from_interface():
-    @strawberry.interface
-    class SomeInterface:
-        some_arg: str
-
-    with pytest.raises(
-        InvalidSuperclassInterfaceError,
-        match=re.escape(
-            "Input class 'SomeInput' cannot inherit from interface(s): SomeInterface"
-        ),
-    ):
-
-        @strawberry.input
-        class SomeInput(SomeInterface):
-            another_arg: str
-
-
-def test_input_cannot_inherit_from_interfaces():
-    @strawberry.interface
-    class SomeInterface:
-        some_arg: str
-
-    @strawberry.interface
-    class SomeOtherInterface:
-        some_other_arg: str
-
-    with pytest.raises(
-        InvalidSuperclassInterfaceError,
-        match=re.escape(
-            "Input class 'SomeOtherInput' cannot inherit from interface(s): SomeInterface, SomeOtherInterface"
-        ),
-    ):
-
-        @strawberry.input
-        class SomeOtherInput(SomeInterface, SomeOtherInterface):
-            another_arg: str

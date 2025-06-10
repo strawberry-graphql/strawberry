@@ -1,7 +1,11 @@
+import re
 import textwrap
 from typing import Optional
 
+import pytest
+
 import strawberry
+from strawberry.exceptions import InvalidSuperclassInterfaceError
 from strawberry.printer import print_schema
 from tests.conftest import skip_if_gql_32
 
@@ -102,3 +106,41 @@ def test_input_with_nonscalar_field_default():
     assert not result.errors
     expected_result = {"inputId": 10, "nonScalarId": 10, "nonScalarNullableField": None}
     assert result.data["example"] == expected_result
+
+
+def test_input_cannot_inherit_from_interface():
+    @strawberry.interface
+    class SomeInterface:
+        some_arg: str
+
+    with pytest.raises(
+        InvalidSuperclassInterfaceError,
+        match=re.escape(
+            "Input class 'SomeInput' cannot inherit from interface(s): SomeInterface"
+        ),
+    ):
+
+        @strawberry.input
+        class SomeInput(SomeInterface):
+            another_arg: str
+
+
+def test_input_cannot_inherit_from_interfaces():
+    @strawberry.interface
+    class SomeInterface:
+        some_arg: str
+
+    @strawberry.interface
+    class SomeOtherInterface:
+        some_other_arg: str
+
+    with pytest.raises(
+        InvalidSuperclassInterfaceError,
+        match=re.escape(
+            "Input class 'SomeOtherInput' cannot inherit from interface(s): SomeInterface, SomeOtherInterface"
+        ),
+    ):
+
+        @strawberry.input
+        class SomeOtherInput(SomeInterface, SomeOtherInterface):
+            another_arg: str
