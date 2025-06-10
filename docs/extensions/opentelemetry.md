@@ -102,7 +102,7 @@ class Query:
 
 def arg_filter(kwargs, info):
     filtered_kwargs = {}
-    for name, value in kwargs:
+    for name, value in kwargs.items():
         # Never include any arguments called "password"
         if name == "password":
             continue
