@@ -14,6 +14,14 @@ This extension adds a validator to limit the query depth of GraphQL operations.
 import strawberry
 from strawberry.extensions import QueryDepthLimiter
 
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
 schema = strawberry.Schema(
     Query,
     extensions=[
@@ -63,7 +71,28 @@ should be ignored or not by the attributes of the `IgnoreContext` class.
 
 ```python
 import strawberry
-from strawberry.extensions import QueryDepthLimiter
+from strawberry.extensions import QueryDepthLimiter, IgnoreContext
+
+
+@strawberry.type
+class Book:
+    title: str
+    author: "User"
+
+
+@strawberry.type
+class User:
+    favourite_books: list[Book]
+    published_books: list[Book]
+
+
+@strawberry.type
+class Query:
+    book: Book
+
+    @strawberry.field
+    def user(self) -> User:
+        return User(favourite_books=[], published_books=[])
 
 
 def should_ignore(ignore: IgnoreContext):
@@ -114,7 +143,29 @@ schema.execute(
 
 ```python
 import strawberry
-from strawberry.extensions import QueryDepthLimiter
+from strawberry.extensions import QueryDepthLimiter, IgnoreContext
+
+
+@strawberry.type
+class Book:
+    title: str
+    author: "User"
+
+
+@strawberry.type
+class User:
+    name: str | None
+    favourite_books: list[Book]
+    published_books: list[Book]
+
+
+@strawberry.type
+class Query:
+    book: Book
+
+    @strawberry.field
+    def user(self, name: str | None = None) -> User:
+        return User(name=name, favourite_books=[], published_books=[])
 
 
 def should_ignore(ignore: IgnoreContext):
