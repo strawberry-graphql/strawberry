@@ -88,7 +88,12 @@ class User:
 
 @strawberry.type
 class Query:
-    book: Book
+    @strawberry.field
+    def book(self) -> Book:
+        return Book(
+            title="The Hitchhiker's Guide to the Strawberry Fields",
+            author=User(favourite_books=[], published_books=[]),
+        )
 
     @strawberry.field
     def user(self) -> User:
@@ -109,33 +114,33 @@ schema = strawberry.Schema(
 # This query fails
 schema.execute(
     """
-  query TooDeep {
-    book {
-      author {
-        publishedBooks {
-          title
+    query TooDeep {
+        book {
+            author {
+                publishedBooks {
+                    title
+                }
+            }
         }
-      }
     }
-  }
-"""
+    """
 )
 
 # This query succeeds because the `user` field is ignored
 schema.execute(
     """
-  query NotTooDeep {
-    user {
-      favouriteBooks {
-        author {
-          publishedBooks {
-            title
-          }
+    query NotTooDeep {
+        user {
+            favouriteBooks {
+                author {
+                    publishedBooks {
+                        title
+                    }
+                }
+            }
         }
-      }
     }
-  }
-"""
+    """
 )
 ```
 
@@ -161,7 +166,12 @@ class User:
 
 @strawberry.type
 class Query:
-    book: Book
+    @strawberry.field
+    def book(self) -> Book:
+        return Book(
+            title="The Hitchhiker's Guide to the Strawberry Fields",
+            author=User(favourite_books=[], published_books=[]),
+        )
 
     @strawberry.field
     def user(self, name: str | None = None) -> User:
@@ -182,32 +192,32 @@ schema = strawberry.Schema(
 # This query fails
 schema.execute(
     """
-  query TooDeep {
-    book {
-      author {
-        publishedBooks {
-          title
+    query TooDeep {
+        book {
+            author {
+                publishedBooks {
+                    title
+                }
+            }
         }
-      }
     }
-  }
-"""
+    """
 )
 
 # This query succeeds because the `user` field is ignored
 schema.execute(
     """
-  query NotTooDeep {
-    user(name:"matt") {
-      favouriteBooks {
-        author {
-          publishedBooks {
-            title
-          }
+    query NotTooDeep {
+        user(name:"matt") {
+            favouriteBooks {
+                author {
+                    publishedBooks {
+                        title
+                    }
+                }
+            }
         }
-      }
     }
-  }
-"""
+    """
 )
 ```
