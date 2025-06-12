@@ -1,3 +1,4 @@
+import sys
 import typer
 
 from rich.console import Console
@@ -37,7 +38,7 @@ def locate_definition(
 
     if not schema_type:
         err_console.print(f"Definition not found: {symbol}")
-        return
+        sys.exit(1)
 
     location = (
         finder.find_class_attribute_from_object(schema_type.origin, field)
@@ -47,6 +48,6 @@ def locate_definition(
 
     if not location:
         err_console.print(f"Definition not found: {symbol}")
-        return
+        sys.exit(1)
 
     typer.echo(f"{location.path}:{location.error_line}:{location.error_column + 1}")
