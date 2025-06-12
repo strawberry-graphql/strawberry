@@ -1,4 +1,5 @@
 import sys
+
 import typer
 from rich.console import Console
 
