@@ -5,7 +5,6 @@ from rich.console import Console
 
 from strawberry.cli.app import app
 from strawberry.cli.utils import load_schema
-from strawberry.exceptions.utils.source_finder import SourceFinder
 from strawberry.utils.locate_definition import (
     locate_definition as locate_definition_util,
 )

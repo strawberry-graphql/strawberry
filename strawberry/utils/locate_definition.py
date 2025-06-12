@@ -1,6 +1,6 @@
 from __future__ import annotations
-from strawberry.exceptions.utils.source_finder import SourceFinder
 
+from strawberry.exceptions.utils.source_finder import SourceFinder
 from strawberry.schema.schema import Schema
 
 
