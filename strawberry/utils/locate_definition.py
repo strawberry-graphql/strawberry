@@ -1,7 +1,10 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
 from strawberry.exceptions.utils.source_finder import SourceFinder
-from strawberry.schema.schema import Schema
+
+if TYPE_CHECKING:
+    from strawberry.schema.schema import Schema
 
 
 def locate_definition(schema_symbol: Schema, symbol: str) -> str | None:
