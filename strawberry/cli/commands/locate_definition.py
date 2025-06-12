@@ -5,6 +5,9 @@ from rich.console import Console
 from strawberry.cli.app import app
 from strawberry.cli.utils import load_schema
 from strawberry.exceptions.utils.source_finder import SourceFinder
+from strawberry.utils.locate_definition import (
+    locate_definition as locate_definition_util,
+)
 
 err_console = Console(stderr=True)
 
@@ -26,27 +29,10 @@ def locate_definition(
 ) -> None:
     schema_symbol = load_schema(schema, app_dir)
 
-    finder = SourceFinder()
+    location = locate_definition_util(schema_symbol, symbol)
 
-    if "." in symbol:
-        model, field = symbol.split(".")
+    if location:
+        typer.echo(location)
     else:
-        model, field = symbol, None
-
-    schema_type = schema_symbol.get_type_by_name(model)
-
-    if not schema_type:
         err_console.print(f"Definition not found: {symbol}")
         sys.exit(1)
-
-    location = (
-        finder.find_class_attribute_from_object(schema_type.origin, field)
-        if field
-        else finder.find_class_from_object(schema_type.origin)
-    )
-
-    if not location:
-        err_console.print(f"Definition not found: {symbol}")
-        sys.exit(1)
-
-    typer.echo(f"{location.path}:{location.error_line}:{location.error_column + 1}")
