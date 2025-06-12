@@ -166,7 +166,8 @@ class LibCSTSourceFinder:
         attribute_definitions = m.findall(
             class_def,
             m.AssignTarget(target=m.Name(value=attribute_name))
-            | m.AnnAssign(target=m.Name(value=attribute_name)),
+            | m.AnnAssign(target=m.Name(value=attribute_name))
+            | m.FunctionDef(name=m.Name(value=attribute_name)),
         )
 
         if not attribute_definitions:
