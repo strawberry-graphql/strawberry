@@ -1,6 +1,5 @@
 import sys
 import typer
-
 from rich.console import Console
 
 from strawberry.cli.app import app
