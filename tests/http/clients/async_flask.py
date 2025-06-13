@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-from datetime import timedelta
 from typing import Any, Optional
 
 from flask import Flask
@@ -53,11 +51,6 @@ class AsyncFlaskHttpClient(FlaskHttpClient):
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
-        keep_alive: bool = False,
-        keep_alive_interval: float = 1,
-        debug: bool = False,
-        subscription_protocols: Sequence[str] = (),
-        connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
     ):

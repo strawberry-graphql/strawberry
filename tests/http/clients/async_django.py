@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterable, Sequence
-from datetime import timedelta
+from collections.abc import AsyncIterable
 from typing import Optional
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
@@ -47,11 +46,6 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
-        keep_alive: bool = False,
-        keep_alive_interval: float = 1,
-        debug: bool = False,
-        subscription_protocols: Sequence[str] = (),
-        connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         result_override: ResultOverrideFunction = None,
         multipart_uploads_enabled: bool = False,
     ):
