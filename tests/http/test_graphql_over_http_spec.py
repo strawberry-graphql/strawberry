@@ -29,9 +29,6 @@ async def test_22eb(http_client):
     """
     SHOULD accept application/graphql-response+json and match the content-type
     """
-    if isinstance(http_client, ChaliceHttpClient):
-        pytest.xfail("The Chalice test client does not return any response headers")
-
     response = await http_client.query(
         method="post",
         headers={
@@ -48,9 +45,6 @@ async def test_4655(http_client):
     """
     MUST accept application/json and match the content-type
     """
-    if isinstance(http_client, ChaliceHttpClient):
-        pytest.xfail("The Chalice test client does not return any response headers")
-
     response = await http_client.query(
         method="post",
         headers={
@@ -67,9 +61,6 @@ async def test_47de(http_client):
     """
     SHOULD accept */* and use application/json for the content-type
     """
-    if isinstance(http_client, ChaliceHttpClient):
-        pytest.xfail("The Chalice test client does not return any response headers")
-
     response = await http_client.query(
         method="post",
         headers={
@@ -86,9 +77,6 @@ async def test_80d8(http_client):
     """
     SHOULD assume application/json content-type when accept is missing
     """
-    if isinstance(http_client, ChaliceHttpClient):
-        pytest.xfail("The Chalice test client does not return any response headers")
-
     response = await http_client.query(
         method="post",
         headers={"Content-Type": "application/json"},
