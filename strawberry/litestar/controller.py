@@ -253,7 +253,7 @@ class GraphQLController(
     graphql_ide: Optional[GraphQL_IDE] = "graphiql"
     debug: bool = False
     connection_init_wait_timeout: timedelta = timedelta(minutes=1)
-    protocols: tuple[str, ...] = (
+    protocols: Sequence[str] = (
         GRAPHQL_TRANSPORT_WS_PROTOCOL,
         GRAPHQL_WS_PROTOCOL,
     )
