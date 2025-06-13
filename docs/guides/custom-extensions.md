@@ -232,6 +232,42 @@ schema = strawberry.Schema(
 
 </details>
 
+<details>
+  <summary>Operation Extensions (Requires GraphQL 3.3)</summary>
+
+```python
+import time
+import strawberry
+from strawberry.extensions import SchemaExtension
+
+
+class QueryStatsExtension(SchemaExtension):
+    def on_operation(self):
+        execution_context = self.execution_context
+
+        if execution_context.operation_extensions:
+            if execution_context.operation_extensions.get("stats", False):
+                start_time = time.time()
+                yield
+                end_time = time.time()
+                self.execution_context.extensions_results["stats"] = {
+                    "query_time": end_time - start_time
+                }
+                return
+
+        yield
+
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        QueryStatsExtension,
+    ],
+)
+```
+
+</details>
+
 ### Execution Context
 
 The `SchemaExtension` object has an `execution_context` property on `self` of
