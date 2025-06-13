@@ -1,6 +1,180 @@
 CHANGELOG
 =========
 
+0.273.0 - 2025-06-10
+--------------------
+
+Starting with this release, Strawberry will throw an error if one of your input
+types tries to inherit from one or more interfaces. This new error enforces the
+GraphQL specification that input types cannot implement interfaces.
+
+The following code, for example, will now throw an error:
+
+```python
+import strawberry
+
+
+@strawberry.interface
+class SomeInterface:
+    some_field: str
+
+
+@strawberry.input
+class SomeInput(SomeInterface):
+    another_field: int
+```
+
+Contributed by [Ivan Gonzalez](https://github.com/scratchmex) via [PR #1254](https://github.com/strawberry-graphql/strawberry/pull/1254/)
+
+
+0.272.1 - 2025-06-10
+--------------------
+
+This release modifies export-schema cli to include an EOF newline if --output option is provided. This allows better review in github.com for the generated schema files.
+
+Contributed by [Yunkai Zhou](https://github.com/yunkaiz) via [PR #3896](https://github.com/strawberry-graphql/strawberry/pull/3896/)
+
+
+0.272.0 - 2025-06-10
+--------------------
+
+This release features a dedicated extension to disable introspection queries.
+Disabling introspection queries was already possible using the
+`AddValidationRules` extension. However, using this new extension requires fewer
+steps and makes the feature more discoverable.
+
+## Usage example:
+
+```python
+import strawberry
+from strawberry.extensions import DisableIntrospection
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        DisableIntrospection(),
+    ],
+)
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3895](https://github.com/strawberry-graphql/strawberry/pull/3895/)
+
+
+0.271.2 - 2025-06-09
+--------------------
+
+This release fixes an `AttributeError` that occurred when a fragment and an `OperationDefinitionNode` shared the same name, and the fragment appeared first in the document.
+
+The following example will now work as expected:
+
+```graphql
+fragment UserAgent on UserAgentType {
+  id
+}
+
+query UserAgent {
+  userAgent {
+    ...UserAgent
+  }
+}
+```
+
+Contributed by [Arthur](https://github.com/Speedy1991) via [PR #3882](https://github.com/strawberry-graphql/strawberry/pull/3882/)
+
+
+0.271.1 - 2025-06-07
+--------------------
+
+This Release contains fix of enum value was not working in generic container in lazy union.
+
+Contributed by [Alex](https://github.com/benzolium) via [PR #3883](https://github.com/strawberry-graphql/strawberry/pull/3883/)
+
+
+0.271.0 - 2025-06-04
+--------------------
+
+Added a new configuration option `_unsafe_disable_same_type_validation` that allows disabling the same type validation check in the schema converter. This is useful in cases where you need to have multiple type definitions with the same name in your schema.
+
+Example:
+
+```python
+@strawberry.type(name="DuplicatedType")
+class A:
+    a: int
+
+
+@strawberry.type(name="DuplicatedType")
+class B:
+    b: int
+
+
+schema = strawberry.Schema(
+    query=Query,
+    types=[A, B],
+    config=strawberry.StrawberryConfig(_unsafe_disable_same_type_validation=True),
+)
+```
+
+Note: This is an unsafe option and should be used with caution as it bypasses a safety check in the schema converter.
+
+Contributed by [Asylbek](https://github.com/narmatov-asylbek) via [PR #3887](https://github.com/strawberry-graphql/strawberry/pull/3887/)
+
+
+0.270.6 - 2025-06-04
+--------------------
+
+This release fixes that the `create_type` tool asked users to pass a `name` for
+fields without resolvers even when a `name` was already provided.
+
+The following code now works as expected:
+
+```python
+import strawberry
+from strawberry.tools import create_type
+
+first_name = strawberry.field(name="firstName")
+Query = create_type(f"Query", [first_name])
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3885](https://github.com/strawberry-graphql/strawberry/pull/3885/)
+
+
+0.270.5 - 2025-06-01
+--------------------
+
+In this release, we improved some GraphQL over WS error messages. More precise
+error messages are now returned if Strawberry fails to find an operation in the
+query document.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3869](https://github.com/strawberry-graphql/strawberry/pull/3869/)
+
+
+0.270.4 - 2025-05-29
+--------------------
+
+This release fixes that the Strawberry debug server no longer supported
+WebSockets out of the box.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3872](https://github.com/strawberry-graphql/strawberry/pull/3872/)
+
+
+0.270.3 - 2025-05-29
+--------------------
+
+This release fixes an dependency issue with the Strawberry CLI and
+libcst.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #3875](https://github.com/strawberry-graphql/strawberry/pull/3875/)
+
+
 0.270.2 - 2025-05-24
 --------------------
 

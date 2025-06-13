@@ -16,6 +16,14 @@ GraphQL document.
 import strawberry
 from strawberry.extensions import MaxAliasesLimiter
 
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
 schema = strawberry.Schema(
     Query,
     extensions=[

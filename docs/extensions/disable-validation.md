@@ -24,6 +24,14 @@ might want to consider using the [ValidationCache](./validation-cache) instead.
 import strawberry
 from strawberry.extensions import DisableValidation
 
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
 schema = strawberry.Schema(
     Query,
     extensions=[

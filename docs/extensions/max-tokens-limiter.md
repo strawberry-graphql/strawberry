@@ -16,6 +16,14 @@ GraphQL document sent to the server.
 import strawberry
 from strawberry.extensions import MaxTokensLimiter
 
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello, world!"
+
+
 schema = strawberry.Schema(
     Query,
     extensions=[
