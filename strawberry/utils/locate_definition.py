@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 
 from strawberry.exceptions.utils.source_finder import SourceFinder
 
+from strawberry.utils.str_converters import to_snake_case
+
 if TYPE_CHECKING:
     from strawberry.schema.schema import Schema
 
@@ -22,7 +24,9 @@ def locate_definition(schema_symbol: Schema, symbol: str) -> str | None:
         return None
 
     location = (
-        finder.find_class_attribute_from_object(schema_type.origin, field)
+        finder.find_class_attribute_from_object(
+            schema_type.origin, to_snake_case(field)
+        )
         if field
         else finder.find_class_from_object(schema_type.origin)
     )
