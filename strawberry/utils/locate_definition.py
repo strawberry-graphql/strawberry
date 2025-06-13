@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from strawberry.exceptions.utils.source_finder import SourceFinder
-
 from strawberry.utils.str_converters import to_snake_case
 
 if TYPE_CHECKING:
