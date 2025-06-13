@@ -2,20 +2,31 @@ from __future__ import annotations
 
 import json
 import warnings
+from collections.abc import AsyncGenerator, Sequence
+from datetime import timedelta
+from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Optional,
+    Union,
     cast,
 )
 from typing_extensions import TypeGuard
 
-from sanic.request import Request
-from sanic.response import HTTPResponse, html
+from sanic import HTTPResponse, Request, Websocket, html
 from sanic.views import HTTPMethodView
-from strawberry.http.async_base_view import AsyncBaseHTTPView, AsyncHTTPRequestAdapter
-from strawberry.http.exceptions import HTTPException
+from strawberry.http.async_base_view import (
+    AsyncBaseHTTPView,
+    AsyncHTTPRequestAdapter,
+    AsyncWebSocketAdapter,
+)
+from strawberry.http.exceptions import (
+    HTTPException,
+    NonJsonMessageReceived,
+    NonTextMessageReceived,
+)
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.http.types import FormData, HTTPMethod, QueryParams
 from strawberry.http.typevars import (
@@ -23,6 +34,7 @@ from strawberry.http.typevars import (
     RootValue,
 )
 from strawberry.sanic.utils import convert_request_to_files_dict
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Mapping
@@ -69,13 +81,40 @@ class SanicHTTPRequestAdapter(AsyncHTTPRequestAdapter):
         return FormData(form=self.request.form, files=files)
 
 
+class SanicWebSocketAdapter(AsyncWebSocketAdapter):
+    def __init__(
+        self, view: AsyncBaseHTTPView, request: Websocket, response: Websocket
+    ) -> None:
+        super().__init__(view)
+        self.ws = request
+
+    async def iter_json(
+        self, *, ignore_parsing_errors: bool = False
+    ) -> AsyncGenerator[object, None]:
+        async for message in self.ws:
+            if not isinstance(message, str):
+                raise NonTextMessageReceived
+
+            try:
+                yield self.view.decode_json(message)
+            except JSONDecodeError as e:
+                if not ignore_parsing_errors:
+                    raise NonJsonMessageReceived from e
+
+    async def send_json(self, message: Mapping[str, object]) -> None:
+        await self.ws.send(self.view.encode_json(message))
+
+    async def close(self, code: int, reason: str) -> None:
+        await self.ws.close(code, reason)
+
+
 class GraphQLView(
     AsyncBaseHTTPView[
         Request,
         HTTPResponse,
         TemporalResponse,
-        Request,
-        TemporalResponse,
+        Websocket,
+        Websocket,
         Context,
         RootValue,
     ],
@@ -100,6 +139,7 @@ class GraphQLView(
 
     allow_queries_via_get = True
     request_adapter_class = SanicHTTPRequestAdapter
+    websocket_adapter_class = SanicWebSocketAdapter
 
     def __init__(
         self,
@@ -107,12 +147,25 @@ class GraphQLView(
         graphiql: Optional[bool] = None,
         graphql_ide: Optional[GraphQL_IDE] = "graphiql",
         allow_queries_via_get: bool = True,
+        keep_alive: bool = True,
+        keep_alive_interval: float = 1,
+        debug: bool = False,
+        subscription_protocols: Sequence[str] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
+        connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         json_encoder: Optional[type[json.JSONEncoder]] = None,
         json_dumps_params: Optional[dict[str, Any]] = None,
         multipart_uploads_enabled: bool = False,
     ) -> None:
         self.schema = schema
         self.allow_queries_via_get = allow_queries_via_get
+        self.keep_alive = keep_alive
+        self.keep_alive_interval = keep_alive_interval
+        self.debug = debug
+        self.protocols = subscription_protocols
+        self.connection_init_wait_timeout = connection_init_wait_timeout
         self.json_encoder = json_encoder
         self.json_dumps_params = json_dumps_params
         self.multipart_uploads_enabled = multipart_uploads_enabled
@@ -143,11 +196,15 @@ class GraphQLView(
         else:
             self.graphql_ide = graphql_ide
 
-    async def get_root_value(self, request: Request) -> Optional[RootValue]:
+    async def get_root_value(
+        self, request: Union[Request, Websocket]
+    ) -> Optional[RootValue]:
         return None
 
     async def get_context(
-        self, request: Request, response: TemporalResponse
+        self,
+        request: Union[Request, Websocket],
+        response: Union[TemporalResponse, Websocket],
     ) -> Context:
         return {"request": request, "response": response}  # type: ignore
 
@@ -187,6 +244,9 @@ class GraphQLView(
         except HTTPException as e:
             return HTTPResponse(e.reason, status=e.status_code)
 
+    async def websocket(self, request: Request, ws: Websocket) -> Websocket:
+        return await self.run(ws)
+
     async def create_streaming_response(
         self,
         request: Request,
@@ -213,16 +273,19 @@ class GraphQLView(
         # corner case
         return None  # type: ignore
 
-    def is_websocket_request(self, request: Request) -> TypeGuard[Request]:
-        return False
+    def is_websocket_request(
+        self, request: Union[Request, Websocket]
+    ) -> TypeGuard[Websocket]:
+        # TODO: sanic gives us a WebSocketConnection when ASGI is used, which has a completely different inferface???
+        return isinstance(request, Websocket)
 
-    async def pick_websocket_subprotocol(self, request: Request) -> Optional[str]:
-        raise NotImplementedError
+    async def pick_websocket_subprotocol(self, request: Websocket) -> Optional[str]:
+        return None
 
     async def create_websocket_response(
-        self, request: Request, subprotocol: Optional[str]
-    ) -> TemporalResponse:
-        raise NotImplementedError
+        self, request: Websocket, subprotocol: Optional[str]
+    ) -> Websocket:
+        return request
 
 
 __all__ = ["GraphQLView"]

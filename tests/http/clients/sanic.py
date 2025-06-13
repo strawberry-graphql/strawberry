@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+import contextlib
+import uuid
+from collections.abc import AsyncGenerator
 from io import BytesIO
 from json import dumps
 from random import randint
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from typing_extensions import Literal
 
+from starlette.testclient import TestClient
+
+from sanic import Request as SanicRequest
 from sanic import Sanic
-from sanic.request import Request as SanicRequest
+from sanic import Websocket as SanicWebsocket
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.http.ides import GraphQL_IDE
 from strawberry.http.temporal_response import TemporalResponse
@@ -15,24 +21,40 @@ from strawberry.sanic.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult
 from tests.http.context import get_context
 from tests.views.schema import Query, schema
+from tests.websockets.views import OnWSConnectMixin
 
-from .base import JSON, HttpClient, Response, ResultOverrideFunction
+from .asgi import AsgiWebSocketClient
+from .base import (
+    JSON,
+    DebuggableGraphQLTransportWSHandler,
+    DebuggableGraphQLWSHandler,
+    HttpClient,
+    Response,
+    ResultOverrideFunction,
+    WebSocketClient,
+)
 
 
-class GraphQLView(BaseGraphQLView[object, Query]):
+class GraphQLView(OnWSConnectMixin, BaseGraphQLView[dict[str, object], object]):
     result_override: ResultOverrideFunction = None
+    graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
+    graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
     def __init__(self, *args: Any, **kwargs: Any):
-        self.result_override = kwargs.pop("result_override")
+        self.result_override = kwargs.pop("result_override", None)
         super().__init__(*args, **kwargs)
 
-    async def get_root_value(self, request: SanicRequest) -> Query:
+    async def get_root_value(
+        self, request: Union[SanicRequest, SanicWebsocket]
+    ) -> Query:
         await super().get_root_value(request)  # for coverage
         return Query()
 
     async def get_context(
-        self, request: SanicRequest, response: TemporalResponse
-    ) -> object:
+        self,
+        request: Union[SanicRequest, SanicWebsocket],
+        response: Union[TemporalResponse, SanicWebsocket],
+    ) -> dict[str, object]:
         context = await super().get_context(request, response)
 
         return get_context(context)
@@ -58,17 +80,38 @@ class SanicHttpClient(HttpClient):
         self.app = Sanic(
             f"test_{int(randint(0, 1000))}",  # noqa: S311
         )
-        view = GraphQLView.as_view(
+        http_view = GraphQLView.as_view(
             schema=schema,
             graphiql=graphiql,
             graphql_ide=graphql_ide,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
+            keep_alive=False,
             multipart_uploads_enabled=multipart_uploads_enabled,
         )
-        self.app.add_route(
-            view,
-            "/graphql",
+        ws_view = GraphQLView(
+            schema=schema,
+            graphiql=graphiql,
+            graphql_ide=graphql_ide,
+            allow_queries_via_get=allow_queries_via_get,
+            result_override=result_override,
+            keep_alive=False,
+            multipart_uploads_enabled=multipart_uploads_enabled,
+        )
+        # self.app.add_route(http_view, "/graphql")
+
+        # TODO: do we need the ws view here even?
+        self.app.add_websocket_route(ws_view.websocket, "/graphql", subprotocols=[])
+
+    def create_app(self, **kwargs: Any) -> None:
+        self.app = Sanic(f"test-{uuid.uuid4().hex}")
+        http_view = GraphQLView.as_view(schema=schema, **kwargs)
+        ws_view = GraphQLView(schema=schema, **kwargs)
+        # self.app.add_route(http_view, "/graphql")
+
+        protocols = kwargs.get("subscription_protocols", [])
+        self.app.add_websocket_route(
+            ws_view.websocket, "/graphql", subprotocols=protocols
         )
 
     async def _graphql_request(
@@ -153,3 +196,14 @@ class SanicHttpClient(HttpClient):
             data=response.content,
             headers=response.headers,
         )
+
+    @contextlib.asynccontextmanager
+    async def ws_connect(
+        self,
+        url: str,
+        *,
+        protocols: list[str],
+    ) -> AsyncGenerator[WebSocketClient, None]:
+        with TestClient(self.app) as client:
+            with client.websocket_connect(url, protocols) as ws:
+                yield AsgiWebSocketClient(ws)

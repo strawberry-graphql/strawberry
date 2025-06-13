@@ -15,6 +15,7 @@ def _get_http_client_classes() -> Generator[Any, None, None]:
         ("FastAPIHttpClient", "fastapi", [pytest.mark.fastapi]),
         ("LitestarHttpClient", "litestar", [pytest.mark.litestar]),
         ("QuartHttpClient", "quart", [pytest.mark.quart]),
+        ("SanicHttpClient", "sanic", [pytest.mark.sanic]),
     ]:
         try:
             client_class = getattr(
