@@ -13,7 +13,7 @@ def locate_definition(schema_symbol: Schema, symbol: str) -> str | None:
     finder = SourceFinder()
 
     if "." in symbol:
-        model, field = symbol.split(".")
+        model, field = symbol.split(".", 1)
     else:
         model, field = symbol, None
 
